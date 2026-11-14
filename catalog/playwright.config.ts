@@ -2,7 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 // Visual and axe checks of the static catalogue (web.md §6 B5). Tolerances are
 // Playwright's defaults with no mask, as in Ductus e2e/visual.spec.ts, until
-// the plan sets a threshold of its own. Baselines are Linux Chromium.
+// the plan sets a threshold of its own. Baselines are rendered on the CI
+// runner (ubuntu-latest, Chromium), as in Ductus; a local run may differ.
 export default defineConfig({
   testDir: "./e2e",
   retries: process.env.CI ? 1 : 0,

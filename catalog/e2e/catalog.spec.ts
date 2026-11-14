@@ -43,7 +43,7 @@ for (const theme of THEMES) {
       test(`matches its baselines at ${width} px`, async ({ page }) => {
         await open(page, theme, width);
         for (const name of COMPONENTS) {
-          await expect(page.getByRole("region", { name })).toHaveScreenshot(`${name}-${theme}-${width}.png`);
+          await expect.soft(page.getByRole("region", { name })).toHaveScreenshot(`${name}-${theme}-${width}.png`);
         }
       });
     }
