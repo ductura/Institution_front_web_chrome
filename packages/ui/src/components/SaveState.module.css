@@ -1,0 +1,11 @@
+/* Same look as Ductus .sync-chip (globals.css): SYNCED has --synced, never --accent. */
+.chip { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-2); white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink-3); }
+.chip[data-tone="progress"] .dot { border-color: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+.chip[data-tone="ok"] { font-weight: 600; }
+.chip[data-tone="ok"] .dot { border-color: var(--synced); background: var(--synced); }
+.chip[data-tone="warn"] .dot { border-color: var(--cmt); background: var(--cmt); }
+.chip[data-tone="error"] { color: var(--ink); font-weight: 600; }
+.chip[data-tone="error"] .dot { border-color: var(--ink); background: var(--ink); }
+@keyframes pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .chip[data-tone="progress"] .dot { animation: none; } }
