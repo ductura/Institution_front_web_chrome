@@ -43,6 +43,21 @@ test("a busy submit button in a form does not submit and stays focusable", async
   await expect(page.locator("body")).toHaveAttribute("data-submitted", "yes");
 });
 
+// Review FAIL on aa4b3c5: a busy field takes no typing; the same field when not busy does.
+test("a busy text field takes no input, a normal one does", async ({ page }) => {
+  await open(page, "dark", 1440);
+  const section = page.getByRole("region", { name: "TextField" });
+  const busy = section.locator("input[aria-busy=true]").first();
+  await busy.click();
+  await busy.pressSequentially("Uvod");
+  await busy.press("Backspace");
+  await expect(busy).toHaveValue("");
+  await expect(busy).not.toBeEditable();
+  const empty = section.getByPlaceholder("Npr. Javne politike u lokalnoj zajednici").first();
+  await empty.pressSequentially("Uvod");
+  await expect(empty).toHaveValue("Uvod");
+});
+
 for (const theme of THEMES) {
   test.describe(`${theme} shell`, () => {
     test("shows every component in all five states, on the shell and on the white sheet", async ({ page }) => {
