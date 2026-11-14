@@ -11,6 +11,8 @@ async function open(page: Page, theme: (typeof THEMES)[number], width: number): 
   const foreign: string[] = [];
   page.on("request", (r) => { if (!r.url().startsWith("http://127.0.0.1:4174/")) foreign.push(r.url()); });
   await page.setViewportSize({ width, height: 900 });
+  // The progress pulse stops under reduced motion (SaveState.module.css), so pixels are stable.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(theme === "light" ? "/?theme=light" : "/");
   await page.evaluate(async () => { await document.fonts.ready; });
   return foreign;
