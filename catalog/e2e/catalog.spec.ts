@@ -18,6 +18,31 @@ async function open(page: Page, theme: (typeof THEMES)[number], width: number): 
   return foreign;
 }
 
+// QA FAIL on aa4b3c5: in a real form, the busy submit button submits nothing and keeps focus.
+test("a busy submit button in a form does not submit and stays focusable", async ({ page }) => {
+  await open(page, "dark", 1440);
+  const section = page.getByRole("region", { name: "Button" });
+  await section.locator("button[aria-busy=true]").first().evaluate((button) => {
+    const ready = [...document.querySelectorAll("button")].find((b) => b.textContent === "Predaj rad" && !b.disabled)!;
+    const form = document.createElement("form");
+    button.replaceWith(form);
+    form.append(button, ready);
+    for (const [b, id] of [[button, "busy"], [ready, "ready"]] as const) {
+      (b as HTMLButtonElement).type = "submit";
+      b.setAttribute("data-testid", id);
+    }
+    form.addEventListener("submit", (e) => { e.preventDefault(); document.body.dataset.submitted = "yes"; });
+  });
+  const busy = page.getByTestId("busy");
+  await busy.click({ force: true }); // aria-disabled: Playwright would wait for "enabled"
+  await busy.press("Enter");
+  await expect(busy).toBeFocused();
+  await expect(page.locator("body")).not.toHaveAttribute("data-submitted", "yes");
+  // Control: the same form submits through its button that is not busy.
+  await page.getByTestId("ready").click();
+  await expect(page.locator("body")).toHaveAttribute("data-submitted", "yes");
+});
+
 for (const theme of THEMES) {
   test.describe(`${theme} shell`, () => {
     test("shows every component in all five states, on the shell and on the white sheet", async ({ page }) => {
