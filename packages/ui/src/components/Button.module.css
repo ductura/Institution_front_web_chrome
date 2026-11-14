@@ -1,0 +1,9 @@
+.button {
+  min-height: 44px; padding: 0 18px; border-radius: var(--radius-control);
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600;
+}
+.button:hover:not(:disabled, [aria-disabled="true"]) { background: var(--accent-hover); border-color: var(--accent-hover); }
+.button[data-tone="quiet"] { background: transparent; color: var(--ink); border-color: var(--field-rule); }
+.button[data-tone="quiet"]:hover:not(:disabled, [aria-disabled="true"]) { background: var(--hover); border-color: var(--field-rule); }
+.button[aria-busy="true"] { cursor: progress; }
+.button:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); border-color: var(--well); }

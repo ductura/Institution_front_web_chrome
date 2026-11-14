@@ -1,0 +1,14 @@
+.field { display: grid; gap: 6px; max-width: 360px; }
+.label { color: var(--ink); font-weight: 600; }
+.input {
+  min-height: 44px; padding: 0 12px; font: inherit; color: var(--ink);
+  background: var(--field); border: 1px solid var(--field-rule); border-radius: var(--radius-control);
+}
+.input::placeholder { color: var(--field-placeholder); opacity: 1; }
+/* The white sheet has no --error of its own, so error text and edge use --ink on
+   --error-soft (as Ductus .sync-chip error does); the message carries the meaning. */
+.input[aria-invalid="true"] { border: 2px solid var(--ink); background: var(--error-soft); }
+.input[aria-busy="true"] { cursor: progress; }
+.input:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); }
+.note { margin: 0; color: var(--ink-3); }
+.note[data-error] { color: var(--ink); font-weight: 600; }

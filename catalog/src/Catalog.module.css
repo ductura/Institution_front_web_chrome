@@ -1,0 +1,11 @@
+.page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.page h1, .page h2 { font-family: var(--ff-display); font-weight: 400; margin: 0 0 12px; }
+.component { display: grid; gap: 16px; margin-bottom: 40px; padding: 16px; background: var(--ground); }
+.shell, .sheet { padding: 16px; }
+.sheet.sheet { max-width: none; margin: 0; padding: 16px; }
+.surface { margin: 0 0 8px; color: var(--ink-3); }
+.states { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 0; }
+.state { display: grid; gap: 8px; align-content: start; }
+.state dt { color: var(--ink-3); }
+.state dd { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 0; }
+.state p { margin: 0; }

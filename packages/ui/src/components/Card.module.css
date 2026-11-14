@@ -1,0 +1,8 @@
+.card {
+  display: grid; gap: 8px; width: 100%; max-width: 360px; padding: 16px 18px;
+  background: var(--card); color: var(--ink); border: 1px solid var(--raised-rule); border-radius: var(--radius);
+}
+.title { margin: 0; font-family: var(--ff-display); font-size: 20px; font-weight: 500; line-height: 1.2; }
+.quiet { margin: 0; color: var(--ink-3); }
+.error { margin: 0; padding: 8px 10px; color: var(--ink); background: var(--error-soft); border-radius: var(--radius-sm); }
+.card[aria-disabled="true"] { background: var(--well); border-style: dashed; color: var(--ink-3); }
