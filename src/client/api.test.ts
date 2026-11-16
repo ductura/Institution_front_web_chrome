@@ -13,6 +13,13 @@ function answering(status: number, body: string | null, contentType = "applicati
   return { api: createApi({ baseUrl: "https://ductura.example.invalid", fetchImpl }), fetchImpl };
 }
 
+function vectorInput(route: string, name: string): never {
+  const vector = VECTORS.find((v) => v.route === route && v.name === name);
+  if (vector === undefined) throw new Error(`no vector ${name} for ${route}`);
+  const { params, query, body } = structuredClone(vector.request);
+  return { params, query, body } as never;
+}
+
 function vectorBody(route: string, status: number): Record<string, unknown> {
   const vector = VECTORS.find((v) => v.route === route && v.response.status === status);
   if (vector === undefined) throw new Error(`no ${status} vector for ${route}`);
@@ -92,6 +99,23 @@ describe("src/client/api answers", () => {
     expect(await api("platform.health.get", NONE)).toEqual({ ok: false, status: 0, code: "unexpected" });
   });
 
+  it("reads a contracted 409 answer and refuses one that breaks its schema", async () => {
+    const input = vectorInput("live.document.put", "conflict");
+    const token = "1b2c3d4e-5f60-4718-8293-a4b5c6d7e8fa";
+    expect(await answering(409, JSON.stringify({ outcome: "conflict", token })).api("live.document.put", input))
+      .toMatchObject({ ok: true, status: 409, body: { outcome: "conflict", token } });
+    expect(await answering(409, JSON.stringify({ outcome: "conflict", token, extra: 1 })).api("live.document.put", input))
+      .toEqual({ ok: false, status: 409, code: "unexpected" });
+    expect(await answering(409, JSON.stringify({ error: "conflict", code: "conflict" })).api("live.document.put", input))
+      .toEqual({ ok: false, status: 409, code: "unexpected" });
+  });
+
+  it("keeps a problem body on revision-requests 409 an error", async () => {
+    const input = vectorInput("collaboration.revision-requests.post", "stale-counter");
+    expect(await answering(409, JSON.stringify({ error: "not_allowed", code: "not_allowed" })).api("collaboration.revision-requests.post", input))
+      .toEqual({ ok: false, status: 409, code: "not_allowed" });
+  });
+
   it("never renames an unknown error code", async () => {
     const { api } = answering(503, JSON.stringify({ status: "made_up" }));
     expect(await api("platform.ready.get", NONE)).toEqual({ ok: false, status: 503, code: "unexpected" });
@@ -136,6 +160,22 @@ describe("src/client/api input", () => {
     const body = { logout_token: "izmisljeni", extra: "x" };
     expect(await api("auth.backchannel-logout.post", { ...NONE, body })).toMatchObject({ code: "client_rejected" });
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("refuses a body field no branch of an anyOf body names", async () => {
+    const { api, fetchImpl } = answering(200, "{}");
+    const input = vectorInput("collaboration.revision-requests.post", "stale-counter") as { params: unknown; body: Record<string, unknown> };
+    expect(await api("collaboration.revision-requests.post", { ...input, body: { ...input.body, injected: 1 } } as never))
+      .toEqual({ ok: false, status: 0, code: "client_rejected" });
+    expect(await api("collaboration.revision-requests.post", { ...input, body: { ...input.body, documentId: "x" } } as never))
+      .toEqual({ ok: false, status: 0, code: "client_rejected" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("sends the open live document body, whose field names the contract leaves free", async () => {
+    const { api, fetchImpl } = answering(200, JSON.stringify({ outcome: "accepted", token: "1b2c3d4e-5f60-4718-8293-a4b5c6d7e8fa" }));
+    expect(await api("live.document.put", vectorInput("live.document.put", "accepted"))).toMatchObject({ ok: true, status: 200 });
+    expect(String(fetchImpl.mock.calls[0]?.[1]?.body)).toContain('"schemaVersion":1');
   });
 
   it("refuses input that cannot be copied as JSON", async () => {

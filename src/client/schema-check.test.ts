@@ -17,6 +17,7 @@ function responseSchemas(): Node[] {
     for (const sub of Object.values((s.properties ?? {}) as Node)) walk(sub);
     if (typeof s.items === "object") walk(s.items);
     if (typeof s.additionalProperties === "object") walk(s.additionalProperties);
+    for (const sub of Object.values((s.patternProperties ?? {}) as Node)) walk(sub);
     for (const sub of [...((s.anyOf ?? []) as unknown[]), ...((s.oneOf ?? []) as unknown[])]) walk(sub);
   };
   for (const methods of Object.values((openapi as unknown as { paths: Record<string, Record<string, Node>> }).paths)) {
@@ -51,10 +52,14 @@ describe("schema check against the contract", () => {
     }
   });
 
-  it("closes every object of a response: additionalProperties is false", () => {
-    for (const s of schemas.filter((x) => x.type === "object" || x.properties !== undefined)) {
-      expect(s.additionalProperties).toBe(false);
-    }
+  it("closes every object of a response except the ones the contract leaves open", () => {
+    // 2.0.0: the live document snapshot (live.document.get 200) and the empty
+    // anchor of a collaboration list item are open by contract; nothing else is.
+    const open = schemas.filter((x) => (x.type === "object" || x.properties !== undefined) && x.additionalProperties !== false);
+    expect([...new Set(open.map((s) => JSON.stringify(s)))].sort()).toEqual([
+      JSON.stringify({ additionalProperties: true, type: "object", properties: {} }),
+      JSON.stringify({ type: "object", properties: {} }),
+    ]);
   });
 });
 
@@ -64,6 +69,47 @@ describe("schema check rules", () => {
     expect(() => matchesSchema({ $ref: "#/x" } as Schema, 1)).toThrow(UnsupportedSchemaError);
     expect(() => matchesSchema({ type: "string", format: "email" }, "a@b")).toThrow(UnsupportedSchemaError);
     expect(() => matchesSchema({ type: "decimal" }, 1)).toThrow(UnsupportedSchemaError);
+    expect(() => matchesSchema({ allOf: [true] } as Schema, 1)).toThrow(UnsupportedSchemaError);
+    expect(() => matchesSchema({ type: "array", uniqueItems: true }, [1])).toThrow(UnsupportedSchemaError);
+  });
+
+  it("checks minItems and maxItems on arrays only", () => {
+    expect(matchesSchema({ type: "array", minItems: 1 }, [])).toBe(false);
+    expect(matchesSchema({ type: "array", minItems: 1 }, ["a"])).toBe(true);
+    expect(matchesSchema({ type: "array", maxItems: 256 }, Array.from({ length: 256 }, () => "a"))).toBe(true);
+    expect(matchesSchema({ type: "array", maxItems: 256 }, Array.from({ length: 257 }, () => "a"))).toBe(false);
+    expect(matchesSchema({ minItems: 1, maxItems: 0 }, "ab")).toBe(true);
+    expect(matchesSchema({ minItems: 1 }, {})).toBe(true);
+  });
+
+  it("checks minProperties on objects only, counting own keys", () => {
+    const schema = { type: "object", minProperties: 1, properties: { min: { type: "integer" } }, additionalProperties: false };
+    expect(matchesSchema(schema, {})).toBe(false);
+    expect(matchesSchema(schema, { min: 1 })).toBe(true);
+    expect(matchesSchema(schema, Object.create({ min: 1 }) as object)).toBe(false);
+    expect(matchesSchema({ minProperties: 1 }, [])).toBe(true);
+    expect(matchesSchema({ minProperties: 1 }, "")).toBe(true);
+  });
+
+  it("checks patternProperties before additionalProperties", () => {
+    const hex = "a".repeat(64);
+    const schema = { type: "object", additionalProperties: false, patternProperties: { "^[0-9a-f]{64}$": { type: "string" } } };
+    expect(matchesSchema(schema, {})).toBe(true);
+    expect(matchesSchema(schema, { [hex]: "doc" })).toBe(true);
+    expect(matchesSchema(schema, { [hex]: 1 })).toBe(false);
+    const bad = ["A".repeat(64), "a".repeat(63), "a".repeat(65), `${hex}\n`, `${hex}\r\n`, `${hex}\t`, `${hex}\u00a0`, `${hex}\u007f`, "toString"];
+    for (const key of bad) expect(matchesSchema(schema, { [key]: "doc" })).toBe(false);
+    expect(matchesSchema(schema, JSON.parse('{"__proto__":"doc"}'))).toBe(false);
+    const open = { type: "object", patternProperties: { "^a$": { type: "string" } } };
+    expect(matchesSchema(open, { b: 1 })).toBe(true);
+    expect(matchesSchema(open, { a: 1 })).toBe(false);
+  });
+
+  it("checks a key in properties against its pattern too", () => {
+    const schema = { type: "object", properties: { ab: { type: "string" } }, patternProperties: { "^a": { maxLength: 1 } }, additionalProperties: false };
+    expect(matchesSchema(schema, { ab: "x" })).toBe(true);
+    expect(matchesSchema(schema, { ab: "xy" })).toBe(false);
+    expect(matchesSchema(schema, { ab: 1 })).toBe(false);
   });
 
   it("checks types, integer and finite numbers", () => {

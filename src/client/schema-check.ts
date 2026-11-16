@@ -22,6 +22,10 @@ export const SUPPORTED_KEYWORDS: ReadonlySet<string> = new Set([
   "maximum",
   "format",
   "description",
+  "minItems",
+  "maxItems",
+  "minProperties",
+  "patternProperties",
 ]);
 
 const SUPPORTED_FORMATS: ReadonlySet<string> = new Set(["date-time"]);
@@ -100,15 +104,25 @@ export function matchesSchema(schema: Schema, value: unknown): boolean {
     if (typeof s.minimum === "number" && value < s.minimum) return false;
     if (typeof s.maximum === "number" && value > s.maximum) return false;
   }
-  if (Array.isArray(value) && s.items !== undefined) {
-    if (!value.every((item) => matchesSchema(s.items as Schema, item))) return false;
+  if (Array.isArray(value)) {
+    if (typeof s.minItems === "number" && value.length < s.minItems) return false;
+    if (typeof s.maxItems === "number" && value.length > s.maxItems) return false;
+    if (s.items !== undefined && !value.every((item) => matchesSchema(s.items as Schema, item))) return false;
   }
   if (isPlainObject(value)) {
     const properties = (s.properties ?? {}) as Record<string, Schema>;
+    const patterns = Object.entries((s.patternProperties ?? {}) as Record<string, Schema>)
+      .map(([pattern, sub]) => [new RegExp(pattern, "u"), sub] as const);
+    const names = Object.keys(value);
+    if (typeof s.minProperties === "number" && names.length < s.minProperties) return false;
     for (const name of (s.required ?? []) as string[]) if (!Object.hasOwn(value, name)) return false;
-    for (const name of Object.keys(value)) {
-      const sub = Object.hasOwn(properties, name) ? properties[name] : (s.additionalProperties as Schema | undefined);
-      if (sub !== undefined && !matchesSchema(sub, value[name])) return false;
+    for (const name of names) {
+      // A name in properties or matching a pattern meets each of those schemas;
+      // additionalProperties applies only to a name that is in neither.
+      const subs = patterns.filter(([pattern]) => pattern.test(name)).map(([, sub]) => sub);
+      if (Object.hasOwn(properties, name)) subs.push(properties[name] as Schema);
+      if (subs.length === 0 && s.additionalProperties !== undefined) subs.push(s.additionalProperties as Schema);
+      if (!subs.every((sub) => matchesSchema(sub, value[name]))) return false;
     }
   }
   return true;

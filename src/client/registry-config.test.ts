@@ -47,15 +47,15 @@ describe("registry configuration", () => {
 
   it("the lockfile pins the published @ductura tarballs by integrity", () => {
     const lock = read("src/client/pnpm-lock.yaml");
-    for (const name of ["@ductura/contracts@1.0.1", "@ductura/test-fakes@0.1.1"]) {
+    for (const name of ["@ductura/contracts@2.0.0", "@ductura/test-fakes@1.0.0"]) {
       expect(lock).toMatch(new RegExp(`'${name}':\\n    resolution: \\{integrity: sha512-[A-Za-z0-9+/=]+, tarball: https://npm\\.pkg\\.github\\.com/download/`));
     }
   });
 
   it("pins @ductura/contracts and @ductura/test-fakes to exact versions", () => {
     const pkg = JSON.parse(read("src/client/package.json")) as Record<string, Record<string, string>>;
-    expect(pkg.dependencies).toEqual({ "@ductura/contracts": "1.0.1" });
-    expect(pkg.devDependencies?.["@ductura/test-fakes"]).toBe("0.1.1");
+    expect(pkg.dependencies).toEqual({ "@ductura/contracts": "2.0.0" });
+    expect(pkg.devDependencies?.["@ductura/test-fakes"]).toBe("1.0.0");
     for (const version of [...Object.values(pkg.dependencies ?? {}), ...Object.values(pkg.devDependencies ?? {})]) {
       expect(version).toMatch(/^\d+\.\d+\.\d+$/);
     }

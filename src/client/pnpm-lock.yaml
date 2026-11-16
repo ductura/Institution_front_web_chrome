@@ -9,12 +9,12 @@ importers:
   .:
     dependencies:
       '@ductura/contracts':
-        specifier: 1.0.1
-        version: 1.0.1
+        specifier: 2.0.0
+        version: 2.0.0
     devDependencies:
       '@ductura/test-fakes':
-        specifier: 0.1.1
-        version: 0.1.1
+        specifier: 1.0.0
+        version: 1.0.0
       '@types/node':
         specifier: 26.6.4
         version: 26.6.4
@@ -27,11 +27,11 @@ importers:
 
 packages:
 
-  '@ductura/contracts@1.0.1':
-    resolution: {integrity: sha512-XAEb5JnMNo33ZdfzqW3bgEIJwOohgDQUD3p/tSR1Yq5EH2SAd0zHm+X8hjvuYfgb6l0655MsfP1TXnnUgXZ8oA==, tarball: https://npm.pkg.github.com/download/@ductura/contracts/1.0.1/a02e55537a929a40e0b5b65ee7baabfcf4df77a3}
+  '@ductura/contracts@2.0.0':
+    resolution: {integrity: sha512-OynmkxRTfP5wNP1IMuHm1u2xfonkOjk5lB66kAUu1jFlLbhum3lQYjgNNslxHx/ejGTN5cCSvzYMIReSfyZYVw==, tarball: https://npm.pkg.github.com/download/@ductura/contracts/2.0.0/749edadcde8f33615e12b14f980668edbcfc9e87}
 
-  '@ductura/test-fakes@0.1.1':
-    resolution: {integrity: sha512-Ue2jpBX9yOXPPXt0wNPXZ1+lBS7BOvVRoJ5yM8bMRbe9sJjHtw8hK/+sN8O52GBhH4KJ5BMkX7HGnXnDt1XJhg==, tarball: https://npm.pkg.github.com/download/@ductura/test-fakes/0.1.1/9599902e5d53b3d3068ec4f361297ae756975a3a}
+  '@ductura/test-fakes@1.0.0':
+    resolution: {integrity: sha512-P5D30CgOjzx29qJ2gZYWxpdHqNBZzBhZd7mXENH5FK3upPwRrkZyPhnLMkfIvVoqCxzDFzO/pEWVFdvywYRPXA==, tarball: https://npm.pkg.github.com/download/@ductura/test-fakes/1.0.0/7e38a2de0f54b6fbd1e58d930d8b6bb7bc11a985}
 
   '@emnapi/core@2.0.0-beta.2':
     resolution: {integrity: sha512-MzCVoWtcg4Pm2B3je5mMvYMvj3MmBKw+fU7vbsJc9/iT8ip6/eYIHo/Dsm/mr+wsHB6SEyJDuxB09Yy6r/8+4A==}
@@ -609,9 +609,9 @@ packages:
 
 snapshots:
 
-  '@ductura/contracts@1.0.1': {}
+  '@ductura/contracts@2.0.0': {}
 
-  '@ductura/test-fakes@0.1.1':
+  '@ductura/test-fakes@1.0.0':
     dependencies:
       oidc-provider: 9.12.2
     transitivePeerDependencies:
