@@ -40,8 +40,9 @@ describe("AppShell sign-out and Početna (#802 part B)", () => {
   // Web: ShellLogout's `lead` comes with 2.c3-b; until then the same label
   // stands alone in the sign-out place, still only with a role.
   it("shows the role label in the sign-out place only with a role", () => {
-    const signOut = shell.slice(shell.indexOf('place === "signOut" ? ('));
-    expect(signOut).toMatch(/^[^]*?\{role !== null \? <span className=\{styles\.who\}>\{t\.shell\.role\[role\]\}<\/span> : null\}/);
+    const from = shell.indexOf('place === "signOut" ? (');
+    const signOut = shell.slice(from, shell.indexOf(") : null;", from));
+    expect(signOut).toMatch(/\{role !== null \? <span className=\{styles\.who\}>\{t\.shell\.role\[role\]\}<\/span> : null\}/);
   });
 
   it("leads the brand and the first crumb, Početna, to homeHref(role)", () => {

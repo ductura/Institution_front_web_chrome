@@ -1,3 +1,6 @@
+import { readdirSync } from "node:fs";
+import { basename } from "node:path";
+
 import * as ui from "@ductura/ui";
 import { describe, expect, it } from "vitest";
 
@@ -14,6 +17,15 @@ describe("every component has a catalogue entry with all five states (web.md §6
   it("the catalogue covers every component src/components exports (DAN-753)", () => {
     expect(componentNames(screens)).toEqual(["AppShell", "ErrorScreen", "RouteLoading"]);
     expect(catalogGaps(screens, SCREEN_ENTRIES)).toEqual([]);
+  });
+
+  it("src/components exports every component file, so none skips the catalogue (DAN-753)", () => {
+    const root = new URL("../../src/components/", import.meta.url);
+    const files = readdirSync(root, { recursive: true, encoding: "utf8" })
+      .filter((file) => file.endsWith(".tsx") && !/\.(?:test|spec)\.tsx$/.test(file) && !file.startsWith("node_modules"))
+      .map((file) => basename(file, ".tsx"))
+      .sort();
+    expect(files).toEqual(componentNames(screens));
   });
 
   it("the five states are the plan's, in its order", () => {

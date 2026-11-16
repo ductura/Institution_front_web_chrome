@@ -1,3 +1,5 @@
+"use client";
+
 import { toggleTheme } from "@ductura/ui";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
