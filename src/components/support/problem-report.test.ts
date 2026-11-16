@@ -48,12 +48,28 @@ describe("empty, too long or invalid is not sent (K3)", () => {
     ["a".repeat(1001), "tooLong"], ["\u202E" + "a".repeat(1000), "tooLong"],
     ["a\r\nb", "invalid"], ["a\u007F", "invalid"], ["a\u0000", "invalid"], ["abc\u0085", "invalid"],
     ["\u202E", "invalid"], ["a\u2066b", "invalid"], ["a\uD800", "invalid"], ["\uDC00".repeat(1001), "invalid"],
-    ["\u{1F600}".repeat(1000), "ok"], ["a\nb\tc", "ok"],
+    ["\u{1F600}".repeat(1000), "ok"], ["\u{1F600}".repeat(1001), "tooLong"], ["a\nb\tc", "ok"],
+    ["Ne mogu spremiti\n\u010D\u0107\u017E\u0161\u0111 \u010C\u0106\u017D\u0160\u0110", "ok"], ["a\u0007b", "invalid"],
   ];
   it.each(cases)("%j is %s", (text, expected) => {
     expect(checkDescription(text)).toBe(expected);
     const body = buildProblemReportBody({ ...inputOf("recorded"), description: text });
     expect(body === null).toBe(expected !== "ok");
+  });
+});
+
+describe("the longest body stays under the route's 8192 bytes (x-max-body-bytes)", () => {
+  // Most UTF-8 bytes per code point: four-byte characters, or two-byte JSON escapes of " and \.
+  it.each(["\u{1F600}", '"', "\\", "\u20AC"])("1000 x %j with the longest context", (char) => {
+    const body = buildProblemReportBody({
+      ...inputOf("recorded"),
+      appVersion: "9999.9999.9999+" + "f".repeat(40),
+      description: char.repeat(1000),
+      route: "/" + "a".repeat(127),
+      syncState: "RECOVERY_REQUIRED",
+    });
+    expect(body).not.toBeNull();
+    expect(new TextEncoder().encode(JSON.stringify(body)).length).toBeLessThan(8192);
   });
 });
 
