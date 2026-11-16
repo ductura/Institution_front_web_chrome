@@ -24,8 +24,10 @@ export type IndexedDbProbe =
 
 /** The parts of an `IDBOpenDBRequest` the probe uses. */
 export interface ProbeOpenRequest {
-  onsuccess: ((event: unknown) => void) | null;
-  onerror: ((event: unknown) => void) | null;
+  // `never` parameters, so the DOM's `IDBOpenDBRequest` (handlers taking an
+  // Event) is assignable and `probeIndexedDb(window)` typechecks.
+  onsuccess: ((event: never) => unknown) | null;
+  onerror: ((event: never) => unknown) | null;
   readonly result?: { close(): void } | undefined;
 }
 
@@ -42,6 +44,9 @@ export interface StorageEnv {
   indexedDB?: ProbeIdbFactory | null;
   localStorage?: StorageLike | null;
 }
+
+/** Largest delay a browser timer keeps (2^31 - 1 ms). */
+const MAX_TIMER_MS = 2_147_483_647;
 
 /** Name of the database the probe opens and deletes again. */
 export const PROBE_DATABASE = "ductura-platform-probe";
@@ -66,16 +71,18 @@ function discard(factory: ProbeIdbFactory, request: ProbeOpenRequest): void {
 /**
  * Opens and deletes a probe database. `available` only after a real
  * `onsuccess` inside `timeoutMs`; a success that comes later still leaves
- * `timeout`, and the probe database is deleted either way.
+ * `timeout`, and the probe database is deleted either way. Pass `window`.
  */
 export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<IndexedDbProbe> {
   let factory: ProbeIdbFactory | null | undefined;
+  let opens: boolean;
   try {
     factory = env.indexedDB;
+    opens = !!factory && typeof factory.open === "function";
   } catch {
     return Promise.resolve(unavailable("blocked"));
   }
-  if (!factory || typeof factory.open !== "function") return Promise.resolve(unavailable("missing"));
+  if (!factory || !opens) return Promise.resolve(unavailable("missing"));
   const idb = factory;
 
   return new Promise((resolve) => {
@@ -86,7 +93,10 @@ export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<Index
       clearTimeout(timer);
       resolve(answer);
     };
-    const timer = setTimeout(() => finish(unavailable("timeout")), Math.max(0, Number.isFinite(timeoutMs) ? timeoutMs : 0));
+    // Timers overflow above 2^31 - 1 ms and fire at once; clamp instead. A
+    // non-finite or negative deadline means an immediate timeout.
+    const delay = Number.isFinite(timeoutMs) ? Math.min(Math.max(0, timeoutMs), MAX_TIMER_MS) : 0;
+    const timer = setTimeout(() => finish(unavailable("timeout")), delay);
 
     let request: ProbeOpenRequest;
     try {
@@ -117,7 +127,8 @@ export function memoryStorage(): StorageLike {
     get length() {
       return items.size;
     },
-    key: (index) => [...items.keys()][index] ?? null,
+    // WebIDL unsigned long: NaN is 0, fractions are cut.
+    key: (index) => [...items.keys()][Math.trunc(Number(index)) >>> 0] ?? null,
     getItem: (key) => items.get(String(key)) ?? null,
     setItem: (key, value) => void items.set(String(key), String(value)),
     removeItem: (key) => void items.delete(String(key)),

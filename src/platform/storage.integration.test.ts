@@ -7,7 +7,7 @@ import { memoryStorage, PROBE_DATABASE, probeIndexedDb, safeLocalStorage, type P
 
 type Outcome = "success" | "error" | "never";
 
-function fakeFactory(outcome: Outcome, delayMs = 0) {
+function fakeFactory(outcome: Outcome, delayMs = 0, closeThrows = false) {
   const deleted: string[] = [];
   const opened: string[] = [];
   let closed = 0;
@@ -15,10 +15,19 @@ function fakeFactory(outcome: Outcome, delayMs = 0) {
   const factory: ProbeIdbFactory = {
     open(name) {
       opened.push(name);
-      const request: ProbeOpenRequest = { onsuccess: null, onerror: null, result: { close: () => void closed++ } };
+      const request: ProbeOpenRequest = {
+        onsuccess: null,
+        onerror: null,
+        result: {
+          close: () => {
+            closed++;
+            if (closeThrows) throw new Error("InvalidStateError");
+          },
+        },
+      };
       pending = request;
       if (outcome !== "never") {
-        setTimeout(() => (outcome === "success" ? request.onsuccess?.({}) : request.onerror?.({})), delayMs);
+        setTimeout(() => (outcome === "success" ? request.onsuccess?.({} as never) : request.onerror?.({} as never)), delayMs);
       }
       return request;
     },
@@ -115,11 +124,64 @@ describe("probeIndexedDb", () => {
   });
 
   it("still answers when close and deleteDatabase throw", async () => {
-    const fake = fakeFactory("success");
+    const fake = fakeFactory("success", 0, true);
     fake.factory.deleteDatabase = () => {
       throw new Error("blocked");
     };
     await expect(probeIndexedDb({ indexedDB: fake.factory })).resolves.toEqual({ state: "available" });
+  });
+
+  it("warns, not throws, when the open getter throws", async () => {
+    const factory = {
+      get open(): never {
+        throw new Error("SecurityError");
+      },
+      deleteDatabase: () => undefined,
+    } as unknown as ProbeIdbFactory;
+    await expect(probeIndexedDb({ indexedDB: factory })).resolves.toEqual({ ...WARNING, reason: "blocked" });
+  });
+
+  it("is available, and still deletes, when the result getter throws on success", async () => {
+    const deleted: string[] = [];
+    const factory: ProbeIdbFactory = {
+      open: () => {
+        const request = {
+          onsuccess: null,
+          onerror: null,
+          get result(): never {
+            throw new Error("InvalidStateError");
+          },
+        } as ProbeOpenRequest;
+        setTimeout(() => request.onsuccess?.({} as never), 0);
+        return request;
+      },
+      deleteDatabase: (name) => void deleted.push(name),
+    };
+    await expect(probeIndexedDb({ indexedDB: factory })).resolves.toEqual({ state: "available" });
+    expect(deleted).toEqual([PROBE_DATABASE]);
+  });
+
+  it("stays timeout when onerror comes after the deadline, and still cleans up", async () => {
+    vi.useFakeTimers();
+    const fake = fakeFactory("error", 5000);
+    const answer = probeIndexedDb({ indexedDB: fake.factory }, 2000);
+    await vi.advanceTimersByTimeAsync(5000);
+    await expect(answer).resolves.toEqual({ ...WARNING, reason: "timeout" });
+    expect(fake.deleted).toEqual([PROBE_DATABASE]);
+  });
+
+  it("clamps a deadline beyond the timer limit instead of timing out at once", async () => {
+    vi.useFakeTimers();
+    const fake = fakeFactory("success", 5);
+    const answer = probeIndexedDb({ indexedDB: fake.factory }, 3e9);
+    await vi.advanceTimersByTimeAsync(5);
+    await expect(answer).resolves.toEqual({ state: "available" });
+  });
+
+  it("accepts the real window type", () => {
+    // Type-level only: the DOM's IDBFactory and Storage fit the probe types.
+    const check = (w: Window) => [probeIndexedDb(w, 0), safeLocalStorage(w)];
+    expect(typeof check).toBe("function");
   });
 });
 
@@ -156,6 +218,11 @@ describe("safeLocalStorage", () => {
     expect(safeLocalStorage(throwing).persistent).toBe(false);
     const dropping: StorageLike = { ...memoryStorage(), setItem: () => undefined, getItem: () => null };
     expect(safeLocalStorage({ localStorage: dropping }).persistent).toBe(false);
+    const thrower = () => {
+      throw new Error("SecurityError");
+    };
+    expect(safeLocalStorage({ localStorage: { ...memoryStorage(), getItem: thrower } }).persistent).toBe(false);
+    expect(safeLocalStorage({ localStorage: { ...memoryStorage(), removeItem: thrower } }).persistent).toBe(false);
   });
 });
 
@@ -165,6 +232,7 @@ describe("memoryStorage", () => {
     s.setItem("k", "v");
     s.setItem("n", 1 as unknown as string);
     expect([s.length, s.key(0), s.getItem("n"), s.key(5)]).toEqual([2, "k", "1", null]);
+    expect([s.key(Number.NaN), s.key(1.9)]).toEqual(["k", "n"]);
     s.removeItem("k");
     expect(s.getItem("k")).toBeNull();
     s.clear();
