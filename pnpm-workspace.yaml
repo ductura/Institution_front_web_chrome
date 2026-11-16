@@ -1,5 +1,7 @@
-# pnpm workspace for the React packages (DAN-750, web 2.c1). The root skeleton
+# pnpm workspace for the React packages (DAN-750, web 2.c1) and the forbidden
+# terms scan of locales (DAN-753, 2.c4-a0). The root skeleton
 # keeps npm and package-lock.json until 2.c3 and E-0.3 move it over.
 packages:
   - packages/*
   - catalog
+  - scripts/forbidden-terms
