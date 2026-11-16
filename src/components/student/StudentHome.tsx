@@ -29,7 +29,8 @@ export default function StudentHome({ read, enroll, signIn, view = "home" }: {
   /**
    * Web (DAN-753): where "Prijava" leads, for the page's own address. Sign-in
    * is the preloader's (AAI@EduHr, D-09), and no URL of the API is written
-   * outside src/client, so the page passes it in.
+   * outside src/client, so the page passes it in. `returnTo` is this page's own
+   * path, unencoded; the page encodes it into the address it returns.
    */
   signIn: (returnTo: string) => string;
   view?: StudentView;
