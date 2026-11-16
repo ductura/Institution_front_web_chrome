@@ -7,7 +7,10 @@ import { messagesHr } from "../../../locales/hr.ts";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
 import {
   buildProblemReportBody,
+  browserFromUserAgent,
   checkDescription,
+  PROBLEM_REPORT_ROUTES,
+  problemReportRoute,
   outcomeFromResponse,
   retryAtFrom,
   type ProblemReportInput,
@@ -26,9 +29,25 @@ const vectors = (JSON.parse(raw) as { vectors: Vector[] }).vectors;
 const vector = (name: string): Vector => vectors.find((v) => v.name === name) as Vector;
 const NOW = 1_800_000_000_000;
 
-/** The vector's body as form input, its keys in reverse order. */
-const inputOf = (name: string): ProblemReportInput =>
-  Object.fromEntries(Object.entries(vector(name).request.body ?? {}).reverse()) as ProblemReportInput;
+// Invented addresses and user agents that give the vectors' route and browser.
+const PATHNAME: Record<string, string> = { "/zadaci": "/zadaci/?naslov=Moj%20rad#uvod", null: "/nepoznato/123" };
+const USER_AGENT: Record<string, string> = {
+  "firefox 140": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0",
+  "other null": "curl/8.0",
+};
+
+/** The form input that gives the vector's body, its keys in reverse order. */
+const inputOf = (name: string): ProblemReportInput => {
+  const body = vector(name).request.body as Record<string, unknown> & { browser: { family: string; major: unknown } };
+  return {
+    userAgent: USER_AGENT[`${body.browser.family} ${String(body.browser.major)}`],
+    syncState: body.syncState,
+    pathname: PATHNAME[String(body.route)],
+    description: body.description,
+    category: body.category,
+    appVersion: body.appVersion,
+  } as ProblemReportInput;
+};
 
 const textAt = (catalogue: unknown, key: string): unknown =>
   key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], catalogue);
@@ -65,7 +84,8 @@ describe("the longest body stays under the route's 8192 bytes (x-max-body-bytes)
       ...inputOf("recorded"),
       appVersion: "9999.9999.9999+" + "f".repeat(40),
       description: char.repeat(1000),
-      route: "/" + "a".repeat(127),
+      pathname: "/nastavnik/zadatak/" + "a".repeat(2000) + "/rad/" + "b".repeat(2000) + "/jezik",
+      userAgent: "Mozilla/5.0 Firefox/999",
       syncState: "RECOVERY_REQUIRED",
     });
     expect(body).not.toBeNull();
@@ -87,6 +107,46 @@ describe("body equals the vector body (K2)", () => {
 
   it("a category outside the route's set is not sent", () => {
     expect(buildProblemReportBody(inputOf("invalid-input"))).toBeNull();
+  });
+});
+
+describe("no identifier from the address or the user agent leaves the page", () => {
+  const ID = "00000000-0000-4000-8000-000000000001";
+  it("an id becomes its template, a query and a hash are dropped", () => {
+    const body = buildProblemReportBody({ ...inputOf("recorded"), pathname: `/nastavnik/rad/${ID}?naslov=Uvod#odlomak` });
+    expect(body?.route).toBe("/nastavnik/rad/[id]");
+    expect(JSON.stringify(body)).not.toMatch(/00000000|naslov|Uvod|odlomak|Gecko|Linux/);
+  });
+
+  it.each([
+    ["/", "/"], ["/rad", "/rad"], ["/rad/", "/rad"], ["/rad?naslov=Moj%20rad#uvod", "/rad"],
+    [`/zadatak/${ID}`, "/zadatak/[id]"], ["/nastavnik/rad/abc", "/nastavnik/rad/[id]"],
+    ["/nastavnik/zadatak/novi", "/nastavnik/zadatak/novi"], ["/nastavnik/zadatak/abc/uredi", "/nastavnik/zadatak/[assignmentId]/uredi"],
+    ["/rad/abc/predaja", "/rad/[assignmentId]/predaja"], ["/upis/kolegij/k1", "/upis/kolegij/[courseId]"],
+    ["/zadatak/", null], ["/zadatak//", null], ["/nepoznato", null], ["/nepoznato/123", null], ["rad", null], ["", null],
+    ["https://ductura.example/rad", null], ["\\rad", null], ["/toString", null], ["/__proto__", null], ["/RAD", null],
+  ])("%j gives %s", (path, template) => {
+    expect(problemReportRoute(path)).toBe(template);
+  });
+
+  it("every template maps to itself and fits the route schema", () => {
+    expect(PROBLEM_REPORT_ROUTES).toHaveLength(27);
+    for (const route of PROBLEM_REPORT_ROUTES) {
+      expect(problemReportRoute(route)).toBe(route);
+      expect(route.length).toBeLessThanOrEqual(128);
+      expect(route).toMatch(/^\/(?:(?:[a-z]+(?:-[a-z]+)*|\[[A-Za-z]+\])(?:\/(?:[a-z]+(?:-[a-z]+)*|\[[A-Za-z]+\]))*)?$/);
+    }
+  });
+
+  it.each([
+    ["Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0", "firefox", 133],
+    ["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15", "safari", 18],
+    ["Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0", "chromium", 130],
+    ["Mozilla/5.0 Chrome/99999.0", "chromium", null],
+    ["curl/8.0", "other", null],
+    ["", "other", null],
+  ] as const)("user agent %j", (ua, family, major) => {
+    expect(browserFromUserAgent(ua)).toEqual({ family, major });
   });
 });
 

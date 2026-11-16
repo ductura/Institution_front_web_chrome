@@ -14,15 +14,72 @@ export type BrowserFamily = "chromium" | "firefox" | "safari" | "other";
 export type SyncState =
   | "EDITING" | "SAVING_LOCAL" | "LOCAL_DURABLE" | "SYNCING" | "SYNCED" | "CONFLICT" | "ERROR" | "RECOVERY_REQUIRED";
 
-/** The form's input; the page gives the route template, never the path itself. */
+/** The form's input: the page's address and the browser's user agent stay here. */
 export type ProblemReportInput = {
+  appVersion: string;
+  category: ProblemReportCategory;
+  description: string;
+  pathname: string;
+  syncState: SyncState | null;
+  userAgent: string;
+};
+
+/** The wire body; route is a template of PROBLEM_REPORT_ROUTES, browser only family and major. */
+export type ProblemReportBody = {
   appVersion: string;
   browser: { family: BrowserFamily; major: number | null };
   category: ProblemReportCategory;
   description: string;
-  route: string | null;
+  route: ProblemReportRoute | null;
   syncState: SyncState | null;
 };
+
+/**
+ * The server's closed list of 27 page templates (openapi summary of the route),
+ * as Ductus src/domain/support/problem-report.ts at 393b8e0.
+ */
+export const PROBLEM_REPORT_ROUTES = [
+  "/", "/kako-radi", "/nastavnik", "/nastavnik/brz-put", "/nastavnik/kolegiji", "/nastavnik/mentorstva",
+  "/nastavnik/rad/[id]", "/nastavnik/rad/[id]/reprodukcija",
+  "/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik", "/nastavnik/zadatak/[assignmentId]/uredi",
+  "/nastavnik/zadatak/novi", "/prijava", "/rad", "/rad/[assignmentId]/dnevnik-pristupa",
+  "/rad/[assignmentId]/predaja", "/rad/[assignmentId]/reprodukcija", "/stanje", "/upis",
+  "/upis/kolegij/[courseId]", "/ustanova", "/ustanova/kolegiji", "/ustanova/korisnici", "/ustanova/pravila",
+  "/zadaci", "/zadaci/kolegiji", "/zadaci/radovi", "/zadatak/[id]",
+] as const;
+export type ProblemReportRoute = (typeof PROBLEM_REPORT_ROUTES)[number];
+
+const isRoute = (value: string): value is ProblemReportRoute => (PROBLEM_REPORT_ROUTES as readonly string[]).includes(value);
+
+/**
+ * The template of a page path, sent instead of the path: a query and a hash
+ * are dropped, an id segment becomes its bracket name,
+ * and a path that is no known page gives null. No identifier leaves the page.
+ */
+export function problemReportRoute(pathname: string): ProblemReportRoute | null {
+  const path = pathname.split(/[?#]/, 1)[0] ?? "";
+  if (!path.startsWith("/")) return null;
+  const trimmed = path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
+  if (isRoute(trimmed)) return trimmed;
+  const segments = trimmed.split("/");
+  return PROBLEM_REPORT_ROUTES.find((template) => {
+    const parts = template.split("/");
+    return parts.length === segments.length
+      && parts.every((part, i) => (part.startsWith("[") ? segments[i] !== "" : part === segments[i]));
+  }) ?? null;
+}
+
+/** Family and major version only; the rest of the user agent stays here. */
+export function browserFromUserAgent(userAgent: string): ProblemReportBody["browser"] {
+  const major = (pattern: RegExp): number | null => {
+    const value = Number(pattern.exec(userAgent)?.[1]);
+    return Number.isInteger(value) && value >= 0 && value <= 999 ? value : null;
+  };
+  if (/Firefox\/\d/.test(userAgent)) return { family: "firefox", major: major(/Firefox\/(\d+)/) };
+  if (/(?:Chrome|Chromium|CriOS)\/\d/.test(userAgent)) return { family: "chromium", major: major(/(?:Chrome|Chromium|CriOS)\/(\d+)/) };
+  if (/Safari\/\d/.test(userAgent) && /Version\/\d/.test(userAgent)) return { family: "safari", major: major(/Version\/(\d+)/) };
+  return { family: "other", major: null };
+}
 
 export type DescriptionCheck = "ok" | "empty" | "tooLong" | "invalid";
 
@@ -53,17 +110,18 @@ export function checkDescription(text: string): DescriptionCheck {
 
 /**
  * The body the form sends, keys in sorted order (the JCS form of these values),
- * or null when the description or category is outside its class.
+ * or null when the description or category is outside its class. The address
+ * goes as its template and the user agent as family and major only.
  */
-export function buildProblemReportBody(input: ProblemReportInput): ProblemReportInput | null {
+export function buildProblemReportBody(input: ProblemReportInput): ProblemReportBody | null {
   if (checkDescription(input.description) !== "ok") return null;
   if (!(PROBLEM_REPORT_CATEGORIES as readonly string[]).includes(input.category)) return null;
   return {
     appVersion: input.appVersion,
-    browser: { family: input.browser.family, major: input.browser.major },
+    browser: browserFromUserAgent(input.userAgent),
     category: input.category,
     description: input.description,
-    route: input.route,
+    route: problemReportRoute(input.pathname),
     syncState: input.syncState,
   };
 }
