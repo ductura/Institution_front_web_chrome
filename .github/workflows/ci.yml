@@ -2,6 +2,8 @@ name: CI
 on:
   push: { branches: [main] }
   pull_request:
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -19,3 +21,34 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with: { name: playwright-report, path: test-results/ }
+  client:
+    # src/client (DAN-752, web 2.c3): the client generated from @ductura/contracts.
+    # Its own package and lockfile, so only this job reads GitHub Packages; the
+    # job token, read only, is passed to the install step only.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    defaults:
+      run:
+        working-directory: src/client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: '@ductura'
+      - run: npm install -g pnpm@10.33.0
+      - name: Lockfile bootstrap (removed in the next commit)
+        run: pnpm install --ignore-workspace --lockfile-only && cat pnpm-lock.yaml
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install (GitHub Packages, read only)
+        run: pnpm install --ignore-workspace --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Typecheck
+        run: pnpm run typecheck
+      - name: Tests (contract vectors, schema check, no direct API call, registry)
+        run: pnpm run test

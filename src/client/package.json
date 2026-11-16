@@ -1,0 +1,21 @@
+{
+  "name": "@ductura/web-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The only way the web calls the API: the client generated from @ductura/contracts (DAN-752, web 2.c3)",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ductura/contracts": "1.0.1"
+  },
+  "devDependencies": {
+    "@ductura/test-fakes": "0.1.1",
+    "@types/node": "26.6.4",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  }
+}
