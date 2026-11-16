@@ -12,7 +12,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
@@ -101,7 +101,7 @@ const SEMANTICS: Record<Component, Record<CatalogState, (c: Locator) => Promise<
 const shellOf = async (c: Locator, nav: boolean, crumb: string | null) => {
   await expect(c.getByRole("link", { name: t.shell.homeCrumb, exact: true })).toBeVisible();
   // ☰ shows only below 800 px and the side bar is a closed drawer there, so both are read from the DOM.
-  await expect(c.locator('button[aria-controls="bocna-navigacija"]')).toHaveAttribute("aria-expanded", "false");
+  await expect(c.locator('button[aria-controls^="bocna-navigacija-"]')).toHaveAttribute("aria-expanded", "false");
   await expect(c.locator(`nav[aria-label="${t.shell.workNav}"]`)).toHaveCount(nav ? 1 : 0);
   if (crumb !== null) await expect(c.getByRole("navigation", { name: t.shell.breadcrumb })).toContainText(crumb);
 };
@@ -122,6 +122,30 @@ const errorScreen = (title: string, retry: boolean) => async (c: Locator) => {
   await expect(c.getByRole("link", { name: t.auth.home })).toHaveAttribute("href", "/");
   await expect(c.getByRole("button", { name: t.auth.retry })).toHaveCount(retry ? 1 : 0);
   await expect(c.getByRole("alert")).toHaveCount(retry ? 1 : 0);
+};
+
+const home = t.student.home;
+// The invented list of catalog/src/entries.tsx: course A with two assignments (the second's notice first), course B empty.
+const studentList = async (c: Locator) => {
+  const links = c.locator('a[href^="/rad?zadatak="]');
+  await expect(links).toHaveCount(2);
+  await expect(links.nth(0)).toContainText(home.open);
+  await expect(links.nth(1)).toContainText(home.readNotice);
+  await expect(c.getByText("Rok: 30. studenoga 2026. u 23:59")).toHaveCount(1);
+  await expect(c.getByText(t.student.assignments.noAssignments)).toHaveCount(1);
+  await expect(c.locator('[data-motif="city"]')).toHaveCount(1);
+  await expect(c.locator('[data-motif="research"]')).toHaveCount(1);
+};
+const unavailable = async (c: Locator) => {
+  await expect(c.getByRole("alert")).toContainText(home.unavailableHeading);
+  await expect(c.getByRole("alert")).toContainText(home.unavailableBody);
+  await expect(c.locator('a[href^="/rad?zadatak="]')).toHaveCount(0);
+};
+const firstArrival = async (c: Locator) => {
+  await expect(c.getByRole("heading", { name: home.empty.heading })).toBeVisible();
+  await expect(c.getByRole("heading", { name: home.empty.codeHeading })).toBeVisible();
+  await expect(c.locator("ol > li")).toHaveCount(3);
+  await expect(c.getByRole("alert")).toHaveCount(0);
 };
 
 /** Semantics of each state of each screen, on the shell only. */
@@ -156,6 +180,55 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
     greška: errorScreen(t.errorPage.errorTitle, true),
     puno: errorScreen(t.errorPage.notFoundTitle, false),
     onemogućeno: errorScreen(t.errorPage.errorTitle, false),
+  },
+  StudentHome: {
+    prazno: async (c) => {
+      await expect(c.getByRole("heading", { level: 1 })).toHaveText(home.heading);
+      await firstArrival(c);
+    },
+    učitavanje: loading(t.workspace.panelLoading),
+    greška: async (c) => {
+      await expect(c.getByRole("heading", { level: 1 })).toHaveText(home.heading);
+      await unavailable(c);
+      await expect(c.getByRole("link", { name: t.auth.retry })).toHaveAttribute("href", "/zadaci");
+    },
+    puno: async (c) => {
+      await expect(c.getByText(home.lede)).toBeVisible();
+      await expect(c.locator('a[href="/upis"]')).toHaveCount(1);
+      await studentList(c);
+    },
+    onemogućeno: async (c) => {
+      await expect(c.getByRole("status")).toHaveText(t.student.assignments.signedOut);
+      await expect(c.getByRole("link", { name: t.student.signIn })).toHaveAttribute("href", "/prijava?returnTo=%2Fzadaci");
+      await expect(c.locator('a[href^="/rad?zadatak="]')).toHaveCount(0);
+    },
+  },
+  MyAssignments: {
+    prazno: async (c) => {
+      await expect(c.getByRole("heading", { level: 3 })).toHaveText("Izmišljeni kolegij B");
+      await expect(c.getByText(t.student.assignments.noAssignments)).toBeVisible();
+    },
+    učitavanje: loading(t.workspace.panelLoading),
+    greška: async (c) => {
+      await expect(c.getByRole("heading", { level: 1 })).toHaveText(home.courses);
+      await unavailable(c);
+      await expect(c.getByRole("link", { name: t.auth.retry })).toHaveAttribute("href", "/zadaci/kolegiji");
+    },
+    puno: async (c) => {
+      await expect(c.getByRole("heading", { level: 3 })).toHaveCount(2);
+      await studentList(c);
+    },
+    onemogućeno: async (c) => {
+      await expect(c.getByRole("heading", { level: 2 })).toHaveCount(2);
+      await expect(c.getByRole("heading", { level: 3 })).toHaveCount(0);
+    },
+  },
+  EmptyHome: {
+    prazno: firstArrival,
+    učitavanje: loading(t.workspace.panelLoading),
+    greška: unavailable,
+    puno: firstArrival,
+    onemogućeno: firstArrival,
   },
   RouteLoading: {
     prazno: loading(t.workspace.panelLoading),

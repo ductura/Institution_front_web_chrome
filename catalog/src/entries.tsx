@@ -1,7 +1,9 @@
 import { Button, Card, SaveState, TextField } from "@ductura/ui";
 
 import { messagesHr as t } from "../../locales/hr.ts";
-import { AppShell, ErrorScreen, RouteLoading } from "../../src/components/index.ts";
+import {
+  AppShell, EmptyHome, ErrorScreen, MyAssignments, RouteLoading, StudentHome, type MyCourse,
+} from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
 
@@ -43,14 +45,28 @@ export const ENTRIES = {
 const SCOPE = "c2NvcGUtb2YtYW4taW52ZW50ZWQtcGVyc29u";
 const work = [t.shell.nav.assignments];
 const page = <p>{t.home.workBody}</p>;
+// Invented courses and assignments only (as in StudentHome.test.ts). Sign-in is
+// the preloader's; the catalogue only shows where the link would lead.
+const signIn = (returnTo: string) => `/prijava?returnTo=${encodeURIComponent(returnTo)}`;
+const courses: MyCourse[] = [
+  {
+    id: "00000000-0000-4000-8000-00000000000a",
+    name: "Izmišljeni kolegij A",
+    assignments: [
+      { id: "10000000-0000-4000-8000-000000000001", title: "Izmišljeni esej", dueAt: "2026-11-30T22:59:00.000Z", noticeFirst: false },
+      { id: "10000000-0000-4000-8000-000000000002", title: "Izmišljeni prikaz", dueAt: "2026-12-05T22:59:00.000Z", noticeFirst: true },
+    ],
+  },
+  { id: "00000000-0000-4000-8000-00000000000b", name: "Izmišljeni kolegij B", assignments: [] },
+];
 
 export const SCREEN_ENTRIES = {
   AppShell: {
-    prazno: () => <AppShell role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
-    učitavanje: () => <AppShell role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain><p role="status">{t.student.loading}</p></AppShell>,
-    greška: () => <AppShell role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain><p role="alert">{t.errorPage.errorBody}</p></AppShell>,
-    puno: () => <AppShell role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain>{page}</AppShell>,
-    onemogućeno: () => <AppShell role={null} scope={SCOPE} crumbs={[]} ownMain>{page}</AppShell>,
+    prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
+    učitavanje: () => <AppShell navId="bocna-navigacija-2" role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain><p role="status">{t.student.loading}</p></AppShell>,
+    greška: () => <AppShell navId="bocna-navigacija-3" role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain><p role="alert">{t.errorPage.errorBody}</p></AppShell>,
+    puno: () => <AppShell navId="bocna-navigacija-4" role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain>{page}</AppShell>,
+    onemogućeno: () => <AppShell navId="bocna-navigacija-5" role={null} scope={SCOPE} crumbs={[]} ownMain>{page}</AppShell>,
   },
   ErrorScreen: {
     prazno: () => <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
@@ -65,5 +81,26 @@ export const SCREEN_ENTRIES = {
     greška: () => <RouteLoading label={t.student.loading} />,
     puno: () => <RouteLoading label={t.workspace.statusLoading} />,
     onemogućeno: () => <RouteLoading label={t.workspace.panelLoading} />,
+  },
+  StudentHome: {
+    prazno: () => <StudentHome read={{ kind: "ready", courses: [] }} enroll={null} signIn={signIn} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <StudentHome read={{ kind: "unavailable" }} enroll={null} signIn={signIn} />,
+    puno: () => <StudentHome read={{ kind: "ready", courses }} enroll={null} signIn={signIn} />,
+    onemogućeno: () => <StudentHome read={{ kind: "signedOut" }} enroll={null} signIn={signIn} />,
+  },
+  MyAssignments: {
+    prazno: () => <MyAssignments courses={[{ ...courses[1]!, assignments: [] }]} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <StudentHome read={{ kind: "unavailable" }} enroll={null} signIn={signIn} view="courses" />,
+    puno: () => <MyAssignments courses={courses} />,
+    onemogućeno: () => <MyAssignments courses={courses} level={2} />,
+  },
+  EmptyHome: {
+    prazno: () => <EmptyHome enroll={null} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <StudentHome read={{ kind: "unavailable" }} enroll={null} signIn={signIn} />,
+    puno: () => <EmptyHome enroll={null} />,
+    onemogućeno: () => <EmptyHome enroll={null} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
