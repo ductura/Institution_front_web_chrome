@@ -58,10 +58,20 @@ function sentCode(body: unknown): string | undefined {
   return [fields.code, fields.error, fields.status].find((v): v is string => typeof v === "string");
 }
 
+/** Statuses of 400 and above that the contract reads as an answer, not an error (2.0.0). */
+const ANSWERS: readonly string[] = ["collaboration.revision-requests.post 409", "live.document.put 409"];
+
+function isAnswer(vector: FakeVector): boolean {
+  const { status, body } = vector.response;
+  if (status < 400) return true;
+  return ANSWERS.includes(`${vector.route} ${status}`) && typeof body === "object" && body !== null
+    && !Array.isArray(body) && !("error" in body) && !("code" in body);
+}
+
 function expectAnswer(vector: FakeVector, result: { ok: boolean; status: number; code?: string; body?: unknown }): void {
   const { status, body, contentType } = vector.response;
   expect(result.status).toBe(status);
-  if (status < 400) {
+  if (isAnswer(vector)) {
     expect(result.ok).toBe(true);
     expect(result.body).toEqual(contentType?.startsWith("application/json") ? body : undefined);
     return;
@@ -78,6 +88,13 @@ describe("contract vectors through the generated client", () => {
     const routes = new Set(VECTORS.map((v) => v.route));
     expect([...routes].sort()).toEqual(Object.keys(ROUTE_TABLE).sort());
     expect([...RESPONSES.keys()].sort()).toEqual(Object.keys(ROUTE_TABLE).sort());
+  });
+
+  it("has an answer vector for every contracted answer of 400 and above", () => {
+    // Both ways: expectAnswer below fails when the generated client reads any
+    // other vector of 400 and above as ok, or one of these as an error.
+    const answered = VECTORS.filter((v) => v.response.status >= 400 && isAnswer(v));
+    expect([...new Set(answered.map((v) => `${v.route} ${v.response.status}`))].sort()).toEqual([...ANSWERS]);
   });
 
   for (const vector of VECTORS) {
