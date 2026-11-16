@@ -49,3 +49,56 @@ jobs:
         run: pnpm run typecheck
       - name: Tests (contract vectors, schema check, no direct API call, registry)
         run: pnpm run test
+
+  # @ductura/ui and its catalogue (DAN-750, web 2.c1): typecheck, unit tests,
+  # visual baselines and axe. Moved from ui.yml so ci-ok can need it (DAN-885).
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install -g pnpm@10.33.0
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm -r run typecheck
+      - name: Unit tests (tokens, provenance, save state, catalogue coverage)
+        run: pnpm -r run test
+      - name: Browser
+        run: pnpm --filter @ductura/catalog exec playwright install --with-deps chromium
+      - name: Visual and axe tests of the catalogue
+        run: pnpm --filter @ductura/catalog run test:visual
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: catalog-report, path: catalog/test-results/ }
+
+  # The one required status (DAN-885): green only when every job above
+  # succeeded; failure, cancelled, skipped or a missing result fails it.
+  # A plain job, so the check is named exactly ci-ok.
+  ci-ok:
+    name: ci-ok
+    if: ${{ always() }}
+    needs: [test, client, ui]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Every needed job succeeded
+        shell: bash
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          # ci-ok:begin
+          set -euo pipefail
+          if ! jq -e 'type == "object" and length > 0' >/dev/null 2>&1 <<< "$NEEDS"; then
+            echo "::error::needs must be a non-empty JSON object"
+            exit 1
+          fi
+          problems="$(jq -r 'to_entries[] | ((.value | objects | .result) // "missing") as $r
+            | select($r != "success") | "job \(.key) result: \($r)"' <<< "$NEEDS")"
+          if [ -n "$problems" ]; then
+            while IFS= read -r line; do echo "::error::$line"; done <<< "$problems"
+            exit 1
+          fi
+          echo "ci-ok: $(jq length <<< "$NEEDS") job(s) passed"
+          # ci-ok:end

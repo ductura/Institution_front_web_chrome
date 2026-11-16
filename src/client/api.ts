@@ -3,7 +3,12 @@
 // do: the input is copied once and only that copy is checked and sent, the web
 // sends no field the contract does not name, and a success answer must match
 // its response schema in openapi/v1.json exactly, so an unknown field is a
-// contract break ("unexpected"), never passed on silently.
+// contract break ("unexpected"), never passed on silently. Contract 2.0.0
+// leaves three places open, and only these: the live document body that
+// live.document.put sends (any field name), the snapshot of live.document.get
+// and the empty anchor of a collaboration list item. A 409 of live.document.put
+// and collaboration.revision-requests.post can be an answer (ok), checked
+// against its own schema like a 2xx.
 // Evidence ingest is the recorded exception: see README.md. no-direct-api.test.ts
 // keeps every other call out of the code.
 import { createClient, validateInput, type OperationId, type Operations, type Result } from "@ductura/contracts";
@@ -11,10 +16,11 @@ import openapi from "@ductura/contracts/openapi/v1.json" with { type: "json" };
 import { matchesSchema, type Schema } from "./schema-check";
 
 type ResponseSpec = { readonly content?: Readonly<Record<string, { readonly schema?: Schema }>> };
+type BodySchema = { readonly properties?: object; readonly anyOf?: readonly BodySchema[]; readonly additionalProperties?: unknown };
 type Operation = {
   readonly operationId: string;
   readonly parameters?: readonly { readonly name: string; readonly in: string }[];
-  readonly requestBody?: { readonly content: Readonly<Record<string, { readonly schema: { readonly properties?: object } }>> };
+  readonly requestBody?: { readonly content: Readonly<Record<string, { readonly schema: BodySchema }>> };
   readonly responses: Readonly<Record<string, ResponseSpec>>;
 };
 const OPERATIONS: readonly Operation[] = Object.values(
@@ -29,12 +35,22 @@ export const RESPONSES: ReadonlyMap<string, Readonly<Record<string, ResponseSpec
 const PARTS = ["params", "query", "body"] as const;
 type Part = (typeof PARTS)[number];
 
-/** The field names the contract gives each part of each operation's input. */
-const NAMES: ReadonlyMap<string, Readonly<Record<Part, ReadonlySet<string>>>> = new Map(
+/** The field names a body schema gives: every branch of an anyOf; null when any name is allowed. */
+function bodyNames(schema: BodySchema): string[] | null {
+  if (schema.anyOf !== undefined) {
+    const branches = schema.anyOf.map(bodyNames);
+    return branches.includes(null) ? null : branches.flatMap((names) => names ?? []);
+  }
+  return schema.additionalProperties === true ? null : Object.keys(schema.properties ?? {});
+}
+
+/** The field names the contract gives each part of each operation's input; null is any name. */
+const NAMES: ReadonlyMap<string, Readonly<Record<Part, ReadonlySet<string> | null>>> = new Map(
   OPERATIONS.map((op) => {
     const of = (where: string) => new Set((op.parameters ?? []).filter((p) => p.in === where).map((p) => p.name));
-    const body = Object.values(op.requestBody?.content ?? {}).flatMap((media) => Object.keys(media.schema.properties ?? {}));
-    return [op.operationId, { params: of("path"), query: of("query"), body: new Set(body) }] as const;
+    const bodies = Object.values(op.requestBody?.content ?? {}).map((media) => bodyNames(media.schema));
+    const body = bodies.includes(null) ? null : new Set(bodies.flatMap((names) => names ?? []));
+    return [op.operationId, { params: of("path"), query: of("query"), body }] as const;
   }),
 );
 
@@ -49,8 +65,8 @@ function snapshot(value: unknown): unknown {
   return value === undefined ? undefined : JSON.parse(JSON.stringify(value)) as unknown;
 }
 
-function onlyNamed(names: ReadonlySet<string>, value: unknown): boolean {
-  return typeof value !== "object" || value === null || Object.keys(value).every((key) => names.has(key));
+function onlyNamed(names: ReadonlySet<string> | null, value: unknown): boolean {
+  return names === null || typeof value !== "object" || value === null || Object.keys(value).every((key) => names.has(key));
 }
 
 /**
