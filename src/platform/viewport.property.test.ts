@@ -9,6 +9,31 @@ const anyNumber = fc.oneof(
 );
 
 describe("caret stays visible for any keyboard height", () => {
+  it("on realistic screens: whole-pixel keyboards from none to full height", () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 300, max: 1400 }),
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        fc.integer({ min: 0, max: 400 }),
+        fc.integer({ min: -2000, max: 4000 }),
+        fc.integer({ min: 12, max: 40 }),
+        (innerHeight, share, offsetTop, caretTop, caretHeight) => {
+          const keyboard = Math.round(innerHeight * share);
+          const area = visibleArea({ innerWidth: 390, innerHeight, visual: { height: innerHeight - keyboard, offsetTop } });
+          const delta = caretScrollDelta({ top: caretTop, bottom: caretTop + caretHeight }, area, 8);
+          const top = caretTop - delta;
+          if (caretHeight < area.visibleHeight) {
+            expect(top).toBeGreaterThanOrEqual(area.offsetTop);
+            expect(top + caretHeight).toBeLessThanOrEqual(area.offsetTop + area.visibleHeight);
+          } else {
+            expect(top).toBe(area.offsetTop);
+          }
+        },
+      ),
+      { numRuns: 2000 },
+    );
+  });
+
   it("ends inside the visible part, or top-aligned when it cannot fit", () => {
     fc.assert(
       fc.property(

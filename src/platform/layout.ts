@@ -8,8 +8,8 @@ export type Layout = "phone" | "tablet" | "desktop";
 
 /** Widest phone layout, matching `@media (max-width: 640px)`. */
 export const PHONE_MAX = 640;
-/** First desktop width, matching `@media (max-width: 799.98px)` for the shell. */
-export const DESKTOP_MIN = 800;
+/** Widest tablet width, the same number as `@media (max-width: 799.98px)` in the shell. */
+export const TABLET_MAX = 799.98;
 
 /**
  * The layout for a viewport width in CSS px. A width that is not a finite,
@@ -18,7 +18,7 @@ export const DESKTOP_MIN = 800;
 export function layoutForWidth(width: number): Layout {
   if (!Number.isFinite(width) || width < 0) return "phone";
   if (width <= PHONE_MAX) return "phone";
-  if (width < DESKTOP_MIN) return "tablet";
+  if (width <= TABLET_MAX) return "tablet";
   return "desktop";
 }
 
@@ -28,7 +28,8 @@ export const TARGET_MIN_AA = 24;
 /**
  * The target size the design asks for (`tokens/globals.css`): 44 px, or 32 px
  * in dense bars. Both are above the AA minimum; a coarse pointer never gets
- * the dense size.
+ * the dense size. CSS picks 44 px by phone width (`globals.css`); this picks by
+ * pointer, so a touch tablet asks for 44 px where a dense bar may show 32.
  */
 export function targetMinSize(pointer: "coarse" | "fine", dense = false): number {
   return dense && pointer === "fine" ? 32 : 44;

@@ -78,13 +78,16 @@ export function caretScrollDelta(
   const bottom = Math.max(rawTop, rawBottom);
   const height = bottom - top;
   const visible = Math.max(area.visibleHeight, 0);
-  if (height >= visible) return top - area.offsetTop;
+  if (height >= visible) {
+    const align = top - area.offsetTop;
+    return Number.isFinite(align) ? align : 0;
+  }
   const air = clamp(finite(margin, 0), 0, (visible - height) / 2);
   const low = area.offsetTop + air;
   const high = area.offsetTop + visible - air;
-  if (top < low) return top - low;
-  if (bottom > high) return bottom - high;
-  return 0;
+  const delta = top < low ? top - low : bottom > high ? bottom - high : 0;
+  // Finite extremes can still overflow; never hand back an infinite scroll.
+  return Number.isFinite(delta) ? delta : 0;
 }
 
 type Listener = () => void;
@@ -102,7 +105,9 @@ export interface ViewportWindow extends Listens {
 
 /**
  * Calls `onChange` now and after every viewport change; returns the function
- * that stops listening.
+ * that stops listening. The full height never shrinks at the same width, so a
+ * desktop window made shorter also reads as `keyboardOpen`: read it together
+ * with `pointer: "coarse"` from `detectCapabilities`.
  */
 export function trackVisibleArea(win: ViewportWindow, onChange: (area: VisibleArea) => void): () => void {
   let last: VisibleArea | undefined;
@@ -118,10 +123,17 @@ export function trackVisibleArea(win: ViewportWindow, onChange: (area: VisibleAr
   vv?.addEventListener("resize", update);
   vv?.addEventListener("scroll", update);
   win.addEventListener("resize", update);
-  update();
-  return () => {
+  const stop = () => {
     vv?.removeEventListener("resize", update);
     vv?.removeEventListener("scroll", update);
     win.removeEventListener("resize", update);
   };
+  try {
+    update();
+  } catch (error) {
+    // A callback that throws on the first call must not leave listeners behind.
+    stop();
+    throw error;
+  }
+  return stop;
 }

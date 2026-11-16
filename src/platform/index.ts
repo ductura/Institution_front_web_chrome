@@ -17,4 +17,4 @@ export {
   type ViewportWindow,
   type VisibleArea,
 } from "./viewport.ts";
-export { DESKTOP_MIN, layoutForWidth, meetsTargetSize, PHONE_MAX, TARGET_MIN_AA, targetMinSize, type Layout } from "./layout.ts";
+export { layoutForWidth, meetsTargetSize, PHONE_MAX, TABLET_MAX, TARGET_MIN_AA, targetMinSize, type Layout } from "./layout.ts";

@@ -81,6 +81,11 @@ describe("caretScrollDelta", () => {
     expect(caretScrollDelta({ top: 620, bottom: 600 }, area)).toBe(620 - 492);
   });
 
+  it("never returns an infinite scroll for finite extremes", () => {
+    expect(caretScrollDelta({ top: -Number.MAX_VALUE, bottom: -Number.MAX_VALUE + 1 }, { visibleHeight: 500, offsetTop: Number.MAX_VALUE })).toBe(0);
+    expect(caretScrollDelta({ top: Number.MAX_VALUE, bottom: Number.MAX_VALUE }, { visibleHeight: 0, offsetTop: -Number.MAX_VALUE })).toBe(0);
+  });
+
   it("gives zero for non-finite input", () => {
     expect(caretScrollDelta({ top: Number.NaN, bottom: 10 }, area)).toBe(0);
     expect(caretScrollDelta({ top: 0, bottom: 10 }, { visibleHeight: Infinity, offsetTop: 0 })).toBe(0);
@@ -123,6 +128,16 @@ describe("trackVisibleArea", () => {
     expect(seen.at(-1)).toMatchObject({ keyboardOpen: false });
     expect(count()).toBe(3);
     stop();
+    expect(count()).toBe(0);
+  });
+
+  it("leaves no listeners behind when the first callback throws", () => {
+    const { win, count } = fakeWindow();
+    expect(() =>
+      trackVisibleArea(win, () => {
+        throw new Error("consumer failed");
+      }),
+    ).toThrow("consumer failed");
     expect(count()).toBe(0);
   });
 

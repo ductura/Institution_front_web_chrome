@@ -6,7 +6,11 @@ import type { MessageKey } from "../../locales/hr.ts";
  * the fallback, so a caller never sees an exception from here.
  */
 
-/** The parts of `window` the probes read; tests pass a fake of this shape. */
+/**
+ * The parts of `window` the probes read; pass `window` itself, not methods
+ * taken off it (a detached `matchMedia` throws and reads as `fine`). Tests
+ * pass a fake of this shape.
+ */
 export interface PlatformEnv {
   navigator?: {
     clipboard?: { writeText?: (text: string) => Promise<void> };
@@ -17,6 +21,7 @@ export interface PlatformEnv {
     body?: { appendChild(node: unknown): unknown; removeChild(node: unknown): unknown } | null;
     execCommand?: (command: string) => boolean;
     queryCommandSupported?: (command: string) => boolean;
+    activeElement?: { focus?(options?: { preventScroll?: boolean }): void } | null;
   };
   indexedDB?: unknown;
   matchMedia?: (query: string) => { matches: boolean };
@@ -88,13 +93,28 @@ function execCopy(text: string, env: PlatformEnv): boolean {
   scratch.setAttribute?.("readonly", "");
   scratch.setAttribute?.("aria-hidden", "true");
   if (scratch.style) Object.assign(scratch.style, { position: "fixed", opacity: "0", top: "0", left: "0" });
+  // select() moves focus to the scratch node; give it back afterwards, so the
+  // editor keeps its caret (and a phone keeps its keyboard).
+  const focused = doc.activeElement ?? null;
   doc.body.appendChild(scratch);
+  let copied = false;
   try {
     scratch.select();
-    return doc.execCommand("copy") === true;
+    copied = doc.execCommand("copy") === true;
   } finally {
-    doc.body.removeChild(scratch);
+    // Cleanup never turns a copy that worked into a failure.
+    try {
+      doc.body.removeChild(scratch);
+    } catch {
+      // Already removed.
+    }
+    try {
+      focused?.focus?.({ preventScroll: true });
+    } catch {
+      // The old focus is gone.
+    }
   }
+  return copied;
 }
 
 /**

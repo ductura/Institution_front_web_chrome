@@ -82,6 +82,46 @@ describe("writeClipboard without permission", () => {
     expect(attached).toEqual([]);
   });
 
+  it("keeps a copy that worked when removing the scratch node throws, and gives focus back", async () => {
+    const { doc, copied } = fakeDocument(true);
+    let focused = 0;
+    doc.activeElement = { focus: () => void focused++ };
+    doc.body!.removeChild = () => {
+      throw new Error("NotFoundError");
+    };
+    await expect(writeClipboard("Tekst.", { document: doc })).resolves.toEqual({ ok: true, via: "exec-command" });
+    expect(copied).toEqual(["Tekst."]);
+    expect(focused).toBe(1);
+  });
+
+  it("never throws when a getter on the way throws", async () => {
+    const throwingNavigator = {
+      get navigator(): never {
+        throw new Error("SecurityError");
+      },
+    } as PlatformEnv;
+    await expect(writeClipboard("Tekst.", throwingNavigator)).resolves.toMatchObject({ ok: false });
+    await expect(permissionState("x", throwingNavigator)).resolves.toBe("unknown");
+    const throwingParts = {
+      navigator: {
+        get clipboard(): never {
+          throw new Error("SecurityError");
+        },
+        get permissions(): never {
+          throw new Error("SecurityError");
+        },
+      },
+      document: {
+        ...fakeDocument(true).doc,
+        get body(): never {
+          throw new Error("SecurityError");
+        },
+      },
+    } as PlatformEnv;
+    await expect(writeClipboard("Tekst.", throwingParts)).resolves.toMatchObject({ ok: false });
+    await expect(permissionState("x", throwingParts)).resolves.toBe("unknown");
+  });
+
   it("returns the warning in an environment with neither", async () => {
     await expect(writeClipboard("Tekst.", {})).resolves.toMatchObject({ ok: false });
   });

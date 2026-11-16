@@ -7,7 +7,7 @@ describe("layoutForWidth", () => {
   });
 
   it("splits exactly at the @media limits", () => {
-    expect([640, 640.5, 799.98, 800].map(layoutForWidth)).toEqual(["phone", "tablet", "tablet", "desktop"]);
+    expect([640, 640.5, 799.98, 799.99, 800].map(layoutForWidth)).toEqual(["phone", "tablet", "tablet", "desktop", "desktop"]);
   });
 
   it("gives the narrowest layout for a width that is not a number", () => {
