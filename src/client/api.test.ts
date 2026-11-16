@@ -71,6 +71,22 @@ describe("src/client/api answers", () => {
     expect(await noJson.api("platform.health.get", NONE)).toEqual({ ok: false, status: 200, code: "unexpected" });
   });
 
+  it("refuses any body where the contract declares none, whatever its content type", async () => {
+    const body = { logout_token: "izmisljeni" };
+    for (const [text, type] of [["unexpected", "text/plain"], ["<p>x</p>", "text/html"], ["x", ""]] as const) {
+      const fetchImpl = vi.fn<typeof fetch>(async () => {
+        const res = new Response(text, { status: 200 });
+        if (type === "") res.headers.delete("content-type");
+        else res.headers.set("content-type", type);
+        return res;
+      });
+      const api = createApi({ baseUrl: "https://ductura.example.invalid", fetchImpl });
+      expect(await api("auth.backchannel-logout.post", { ...NONE, body })).toEqual({ ok: false, status: 200, code: "unexpected" });
+    }
+    const empty = answering(200, null);
+    expect(await empty.api("auth.backchannel-logout.post", { ...NONE, body })).toMatchObject({ ok: true, status: 200 });
+  });
+
   it("refuses a JSON content type with a body that is not JSON", async () => {
     const { api } = answering(200, "{not json");
     expect(await api("platform.health.get", NONE)).toEqual({ ok: false, status: 0, code: "unexpected" });

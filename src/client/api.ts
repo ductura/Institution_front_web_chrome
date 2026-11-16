@@ -53,12 +53,16 @@ function onlyNamed(names: ReadonlySet<string>, value: unknown): boolean {
   return typeof value !== "object" || value === null || Object.keys(value).every((key) => names.has(key));
 }
 
-/** True when a success answer is exactly what the contract declares for its status. */
-export function responseMatches(id: string, status: number, body: unknown): boolean {
+/**
+ * True when a success answer is exactly what the contract declares for its
+ * status. bodyBytes is the size of the body as received: the generated client
+ * drops a body that is not JSON, so "no body" is checked on the wire.
+ */
+export function responseMatches(id: string, status: number, body: unknown, bodyBytes: number): boolean {
   const spec = RESPONSES.get(id)?.[String(status)];
   if (spec === undefined) return false;
   const schema = spec.content?.["application/json"]?.schema;
-  if (schema === undefined) return body === undefined;
+  if (schema === undefined) return body === undefined && bodyBytes === 0;
   return body !== undefined && matchesSchema(schema, body);
 }
 
@@ -71,7 +75,7 @@ export type ApiOptions = {
 
 export function createApi(options: ApiOptions = {}) {
   const baseUrl = options.baseUrl ?? globalThis.location.origin;
-  const call = createClient(baseUrl, options.fetchImpl ?? ((input, init) => fetch(input, init)));
+  const transport: typeof fetch = options.fetchImpl ?? ((input, init) => fetch(input, init));
   return async function api<Id extends OperationId>(id: Id, input: Input<Id>): Promise<ApiResult<Id>> {
     const names = NAMES.get(id);
     let wire: Record<Part, unknown>;
@@ -83,9 +87,15 @@ export function createApi(options: ApiOptions = {}) {
     if (names === undefined || !PARTS.every((part) => onlyNamed(names[part], wire[part]) && validateInput(id, part, wire[part]))) {
       return { ok: false, status: 0, code: "client_rejected" };
     }
+    let bodyBytes = 0;
+    const measured: typeof fetch = async (url, init) => {
+      const res = await transport(url, init);
+      bodyBytes = res.type === "opaqueredirect" ? 0 : (await res.clone().arrayBuffer()).byteLength;
+      return res;
+    };
     let result: Result<Id>;
     try {
-      result = await call(id, wire as Input<Id>);
+      result = await createClient(baseUrl, measured)(id, wire as Input<Id>);
     } catch (error) {
       // A JSON content type with a body that is not JSON breaks the contract too.
       if (error instanceof SyntaxError) return { ok: false, status: 0, code: "unexpected" } as Result<Id>;
@@ -93,6 +103,6 @@ export function createApi(options: ApiOptions = {}) {
     }
     if (!result.ok) return result;
     const { status, body } = result as unknown as { status: number; body: unknown };
-    return responseMatches(id, status, body) ? result : ({ ok: false, status, code: "unexpected" } as Result<Id>);
+    return responseMatches(id, status, body, bodyBytes) ? result : ({ ok: false, status, code: "unexpected" } as Result<Id>);
   };
 }
