@@ -74,6 +74,11 @@ export type AppShellProps = {
    * sign in again. Shown even without a role.
    */
   account?: ReactNode;
+  /**
+   * Id of the side bar that ☰ controls. Web (DAN-753): one per page, so the
+   * catalogue gives each of its shells its own; the app keeps the default.
+   */
+  navId?: string;
   /** The page brings its own `<main id="sadrzaj">` (the workspace, FE-D1). */
   ownMain?: boolean;
   /**
@@ -91,7 +96,7 @@ export type AppShellProps = {
  * (I2); signing out (the same POST as everywhere, without JavaScript, I5)
  * joins with 2.c3-b. Below 800 px the side bar is a drawer behind ☰.
  */
-export default function AppShell({ role, scope, current, crumbs, account, ownMain = false, drawer = false, children }: AppShellProps) {
+export default function AppShell({ role, scope, current, crumbs, account, navId = "bocna-navigacija", ownMain = false, drawer = false, children }: AppShellProps) {
   const [open, setOpen] = useState(false);
   const sidebar = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -148,7 +153,7 @@ export default function AppShell({ role, scope, current, crumbs, account, ownMai
   return (
     <div className={drawer ? `${styles.shell} ${styles.drawerShell}` : styles.shell}>
       {open ? <div className={styles.shade} onClick={close} aria-hidden="true" /> : null}
-      <aside ref={sidebar} className={styles.sidebar} data-open={open} aria-label={t.shell.sideNav} id="bocna-navigacija">
+      <aside ref={sidebar} className={styles.sidebar} data-open={open} aria-label={t.shell.sideNav} id={navId}>
         <a className={styles.brand} href={home} aria-label={t.shell.home}>
           <Logo />
           <span>{t.app.name}</span>
@@ -199,7 +204,7 @@ export default function AppShell({ role, scope, current, crumbs, account, ownMai
             className={`${styles.iconButton} ${styles.menuButton}`}
             aria-label={open ? t.shell.closeNav : t.shell.openNav}
             aria-expanded={open}
-            aria-controls="bocna-navigacija"
+            aria-controls={navId}
             onClick={() => setOpen((was) => !was)}
           >
             <Icon name="menu" />

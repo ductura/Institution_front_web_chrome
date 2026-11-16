@@ -30,6 +30,17 @@ describe("accountPlace", () => {
   });
 });
 
+// Web (DAN-753, review PASS c.6905999818): ☰ and the side bar share one id,
+// the app's own by default and the catalogue's per shell.
+describe("AppShell side bar id", () => {
+  it("defaults to bocna-navigacija and ties ☰ to the same id", () => {
+    expect(shell).toContain('navId = "bocna-navigacija"');
+    expect(shell).toContain("id={navId}>");
+    expect(shell).toContain("aria-controls={navId}");
+    expect(shell).not.toMatch(/(?:id|aria-controls)="bocna-navigacija"/);
+  });
+});
+
 describe("AppShell sign-out and Početna (#802 part B)", () => {
   it("decides the account place by accountPlace, not by the role", () => {
     expect(shell).toContain("const place = accountPlace(scope, account !== undefined);");
