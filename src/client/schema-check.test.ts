@@ -88,6 +88,10 @@ describe("schema check rules", () => {
     expect(matchesSchema({ type: "string", format: "date-time" }, "2026-11-16T00:00:00Z")).toBe(true);
     expect(matchesSchema({ type: "string", format: "date-time" }, "2026-13-40T99:00:00Z")).toBe(false);
     expect(matchesSchema({ type: "string", format: "date-time" }, "yesterday")).toBe(false);
+    for (const impossible of ["2026-02-31T00:00:00Z", "2026-02-30T24:00:00Z", "2026-04-31T00:00:00Z", "2026-01-01T00:60:00Z", "2026-01-01T00:00:00+24:00"]) {
+      expect(matchesSchema({ type: "string", format: "date-time" }, impossible)).toBe(false);
+    }
+    expect(matchesSchema({ type: "string", format: "date-time" }, "2028-02-29T23:59:60.5+01:00")).toBe(true);
   });
 
   it("refuses an inherited or extra field when additionalProperties is false", () => {

@@ -97,6 +97,39 @@ describe("src/client/api input", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it("checks and sends one copy: a getter cannot change the body after the check", async () => {
+    const { api, fetchImpl } = answering(200, JSON.stringify({ locale: "hr" }));
+    let reads = 0;
+    const body = { get locale() { reads += 1; return reads === 1 ? "hr" : "xx"; } } as unknown as { locale: "hr" };
+    await api("profile.interface-locale.post", { ...NONE, body });
+    expect(reads).toBe(1);
+    expect(fetchImpl.mock.calls[0]?.[1]?.body).toBe('{"locale":"hr"}');
+  });
+
+  it("refuses a body whose inherited toJSON would send other fields", async () => {
+    const { api, fetchImpl } = answering(200, JSON.stringify({ locale: "hr" }));
+    const body = Object.assign(Object.create({ toJSON: () => ({ locale: "xx", role: "admin" }) }) as object, { locale: "hr" });
+    expect(await api("profile.interface-locale.post", { ...NONE, body: body as { locale: "hr" } })).toMatchObject({ code: "client_rejected" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("sends no query or form field the contract does not name, even where the server would accept it", async () => {
+    const { api, fetchImpl } = answering(303, null);
+    const query = { code: "c", state: "s", returnTo: "https://zlo.example.invalid" } as unknown as { code: string };
+    expect(await api("auth.callback.get", { ...NONE, query })).toMatchObject({ code: "client_rejected" });
+    const body = { logout_token: "izmisljeni", extra: "x" };
+    expect(await api("auth.backchannel-logout.post", { ...NONE, body })).toMatchObject({ code: "client_rejected" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("refuses input that cannot be copied as JSON", async () => {
+    const { api, fetchImpl } = answering(200, "{}");
+    const body: Record<string, unknown> = { locale: "hr" };
+    body.self = body;
+    expect(await api("profile.interface-locale.post", { ...NONE, body: body as { locale: "hr" } })).toMatchObject({ code: "client_rejected" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it("sends to the given origin only, on the contracted path", async () => {
     const { api, fetchImpl } = answering(200, JSON.stringify({ status: "ok" }));
     await api("platform.health.get", NONE);

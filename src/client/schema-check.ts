@@ -28,7 +28,19 @@ const SUPPORTED_FORMATS: ReadonlySet<string> = new Set(["date-time"]);
 
 export class UnsupportedSchemaError extends Error {}
 
-const DATE_TIME = /^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})$/;
+const DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[Zz]|[+-](\d{2}):(\d{2}))$/;
+
+/** RFC 3339 date-time with a real calendar date; second 60 is a leap second. */
+function isDateTime(value: string): boolean {
+  const m = DATE_TIME.exec(value);
+  if (m === null) return false;
+  const [year, month, day, hour, minute, second, offH, offM] = m.slice(1).map((x) => Number(x ?? 0)) as [
+    number, number, number, number, number, number, number, number,
+  ];
+  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return month >= 1 && month <= 12 && day >= 1 && day <= days
+    && hour <= 23 && minute <= 59 && second <= 60 && offH <= 23 && offM <= 59;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -77,7 +89,7 @@ export function matchesSchema(schema: Schema, value: unknown): boolean {
     if (typeof s.pattern === "string" && !new RegExp(s.pattern, "u").test(value)) return false;
     if (s.format !== undefined) {
       if (!SUPPORTED_FORMATS.has(s.format as string)) throw new UnsupportedSchemaError(`format ${String(s.format)}`);
-      if (!DATE_TIME.test(value) || Number.isNaN(Date.parse(value))) return false;
+      if (!isDateTime(value)) return false;
     }
   }
   if (typeof value === "number") {
