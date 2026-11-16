@@ -5,6 +5,10 @@
 .sheet.sheet { max-width: none; margin: 0; padding: 16px; }
 .surface { margin: 0 0 8px; color: var(--ink-3); }
 .states { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 0; }
+/* A screen takes the whole width, one state under another (DAN-753). */
+.states.screens { grid-template-columns: minmax(0, 1fr); }
+/* The shell's fixed side bar stays inside its own cell, not the catalogue window. */
+.states.screens dd { display: block; contain: layout; border: 1px solid var(--rule); }
 .state { display: grid; gap: 8px; align-content: start; }
 .state dt { color: var(--ink-3); }
 .state dd { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 0; }

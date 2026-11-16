@@ -1,0 +1,6 @@
+{
+  "extends": "../../packages/ui/tsconfig.json",
+  "compilerOptions": { "allowImportingTsExtensions": true },
+  "include": [".", "../../packages/ui/src/css-modules.d.ts"],
+  "exclude": ["node_modules"]
+}

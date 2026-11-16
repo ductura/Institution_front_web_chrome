@@ -4,9 +4,11 @@ import "@ductura/ui/tokens.css";
 import { createRoot } from "react-dom/client";
 
 import { CATALOG_STATES } from "./coverage";
-import { ENTRIES } from "./entries";
+import { ENTRIES, SCREEN_ENTRIES } from "./entries";
 import styles from "./Catalog.module.css";
 
+// A screen (src/components) is the shell itself, so it shows only on the shell;
+// the white sheet sits inside a screen, never around it (DAN-753).
 // ?theme=light shows the light shell; anything else is the dark default (D-188).
 const theme = new URLSearchParams(location.search).get("theme") === "light" ? "light" : "dark";
 document.documentElement.setAttribute("data-theme", theme);
@@ -15,14 +17,14 @@ function Catalog() {
   return (
     <main className={styles.page}>
       <h1>Katalog komponenti</h1>
-      {Object.entries(ENTRIES).map(([name, states]) => (
+      {[...Object.entries(ENTRIES), ...Object.entries(SCREEN_ENTRIES)].map(([name, states]) => (
         <section key={name} id={name} aria-labelledby={`${name}-h`} className={styles.component}>
           <h2 id={`${name}-h`}>{name}</h2>
-          {(["ljuska", "list"] as const).map((surface) => (
+          {(name in SCREEN_ENTRIES ? ["ljuska"] as const : ["ljuska", "list"] as const).map((surface) => (
             <div key={surface} className={surface === "list" ? `sheet ${styles.sheet}` : styles.shell}
               data-sheet-theme={surface === "list" ? "light" : undefined}>
               <p className={styles.surface}>{surface === "list" ? "Bijeli list" : "Ljuska"}</p>
-              <dl className={styles.states}>
+              <dl className={name in SCREEN_ENTRIES ? `${styles.states} ${styles.screens}` : styles.states}>
                 {CATALOG_STATES.map((state) => (
                   <div key={state} className={styles.state}>
                     <dt>{state}</dt>

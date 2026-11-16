@@ -4,6 +4,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { CATALOG_STATES } from "../src/coverage";
 
 const COMPONENTS = ["Button", "TextField", "SaveState", "Card"];
+// The screens of src/components (DAN-753): on the shell only, one under another.
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading"];
 const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 
@@ -68,6 +70,11 @@ for (const theme of THEMES) {
         await expect(section.locator(".sheet[data-sheet-theme=light]")).toHaveCount(1);
         for (const state of CATALOG_STATES) await expect(section.getByText(state, { exact: true })).toHaveCount(2);
       }
+      for (const name of SCREENS) {
+        const section = page.getByRole("region", { name });
+        await expect(section.locator(".sheet")).toHaveCount(0);
+        for (const state of CATALOG_STATES) await expect(section.getByText(state, { exact: true })).toHaveCount(1);
+      }
       await expect(page.getByText(/^Spremljeno$/)).toHaveCount(0);
       expect(foreign).toEqual([]);
     });
@@ -84,7 +91,7 @@ for (const theme of THEMES) {
     for (const width of WIDTHS) {
       test(`matches its baselines at ${width} px`, async ({ page }) => {
         await open(page, theme, width);
-        for (const name of COMPONENTS) {
+        for (const name of [...COMPONENTS, ...SCREENS]) {
           await expect.soft(page.getByRole("region", { name })).toHaveScreenshot(`${name}-${theme}-${width}.png`);
         }
       });
