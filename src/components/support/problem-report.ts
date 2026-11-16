@@ -11,8 +11,12 @@ export const PROBLEM_REPORT_DESCRIPTION_MAX = 1000;
 export const PROBLEM_REPORT_CATEGORIES = ["technical", "account", "course"] as const;
 export type ProblemReportCategory = (typeof PROBLEM_REPORT_CATEGORIES)[number];
 export type BrowserFamily = "chromium" | "firefox" | "safari" | "other";
-export type SyncState =
-  | "EDITING" | "SAVING_LOCAL" | "LOCAL_DURABLE" | "SYNCING" | "SYNCED" | "CONFLICT" | "ERROR" | "RECOVERY_REQUIRED";
+export const SYNC_STATES = [
+  "EDITING", "SAVING_LOCAL", "LOCAL_DURABLE", "SYNCING", "SYNCED", "CONFLICT", "ERROR", "RECOVERY_REQUIRED",
+] as const;
+export type SyncState = (typeof SYNC_STATES)[number];
+// A release (1.2.3, optionally +commit) or a bare commit: digits and hex only, as the route's schema.
+const APP_VERSION = /^(?:(?:0|[1-9][0-9]{0,3})\.(?:0|[1-9][0-9]{0,3})\.(?:0|[1-9][0-9]{0,3})(?:\+[0-9a-f]{7,40})?|[0-9a-f]{7,40})$/;
 
 /** The form's input: the page's address and the browser's user agent stay here. */
 export type ProblemReportInput = {
@@ -110,12 +114,14 @@ export function checkDescription(text: string): DescriptionCheck {
 
 /**
  * The body the form sends, keys in sorted order (the JCS form of these values),
- * or null when the description or category is outside its class. The address
+ * or null when the description, category, app version or sync state is outside its class. The address
  * goes as its template and the user agent as family and major only.
  */
 export function buildProblemReportBody(input: ProblemReportInput): ProblemReportBody | null {
   if (checkDescription(input.description) !== "ok") return null;
   if (!(PROBLEM_REPORT_CATEGORIES as readonly string[]).includes(input.category)) return null;
+  if (!APP_VERSION.test(input.appVersion)) return null;
+  if (input.syncState !== null && !(SYNC_STATES as readonly string[]).includes(input.syncState)) return null;
   return {
     appVersion: input.appVersion,
     browser: browserFromUserAgent(input.userAgent),

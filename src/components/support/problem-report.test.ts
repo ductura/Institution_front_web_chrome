@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import fc from "fast-check";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -147,6 +148,99 @@ describe("no identifier from the address or the user agent leaves the page", () 
     ["", "other", null],
   ] as const)("user agent %j", (ua, family, major) => {
     expect(browserFromUserAgent(ua)).toEqual({ family, major });
+  });
+});
+
+// Every assertion of Ductus 393b8e0 on what the web builds and reads, row by row:
+// src/components/support/problem-report-client.test.ts ("description classes",
+// "the request body", "server answers") and the rows of
+// src/domain/support/problem-report.test.ts and its property test for the fields
+// the web fills. The parser's own rows (extra or missing keys, not a plain object)
+// test the server's parser; the web's answer is that it builds exactly six keys.
+describe("source parity (Ductus 393b8e0)", () => {
+  const WORK_TEXT = "Uvod. Ovaj rad istra\u017Euje utjecaj lokalne samouprave na izlaznost.";
+  const at = (patch: Partial<ProblemReportInput>) => buildProblemReportBody({ ...inputOf("recorded"), ...patch });
+  it.each([
+    ["", "empty"], ["   \n\t \n", "empty"], ["\u200B", "empty"], [" \n\t\u00A0\u200B", "empty"],
+    ["a", "ok"], ["a".repeat(1000), "ok"], ["a".repeat(1001), "tooLong"],
+    ["\u{1F600}".repeat(1000), "ok"], ["\u{1F600}".repeat(1001), "tooLong"],
+    ["\u017E".repeat(1000), "ok"], ["\u010D\u0107\u017E".repeat(333) + "\u010D", "ok"], ["\u010D\u0107\u017E".repeat(334), "tooLong"],
+    ["Ne mogu spremiti\n\u010D\u0107\u017E\u0161\u0111 \u010C\u0106\u017D\u0160\u0110", "ok"], ["Prvi redak\nDrugi redak\tkraj", "ok"],
+    ["a\u0007b", "invalid"], ["a\u202Eb", "invalid"], ["a\uD83D", "invalid"], ["a\uD800b", "invalid"],
+    ["a\rb", "invalid"], ["a\u0000b", "invalid"], ["a\u0085b", "invalid"],
+  ])("description %j is %s, and is built exactly when ok", (text, expected) => {
+    expect(checkDescription(text)).toBe(expected);
+    expect(at({ description: text }) !== null).toBe(expected === "ok");
+  });
+
+  it.each([
+    ["technical", true], ["account", true], ["course", true], ["other", false], ["Technical", false], [null, false], [5, false],
+  ])("category %j is built: %s", (category, built) => {
+    expect(at({ category: category as ProblemReportInput["category"] }) !== null).toBe(built);
+  });
+
+  it.each([
+    ["1.2.3", true], ["0.0.0+68a05dd", true], ["68a05ddd", true], ["68a05ddd5f3c9e0e8a1b2c3d4e5f60718293a4b5", true],
+    ["1.2.3-rad-o-izborima", false], ["1.2", false], ["01.2.3", false], ["68A05DDD", false], ["68a05d", false], [WORK_TEXT, false],
+  ])("app version %j is built: %s", (appVersion, built) => {
+    expect(at({ appVersion }) !== null).toBe(built);
+  });
+
+  it.each([
+    ["SYNCED", true], ["RECOVERY_REQUIRED", true], [null, true], ["synced", false], ["SAVED", false], [WORK_TEXT, false],
+  ])("sync state %j is built: %s", (syncState, built) => {
+    expect(at({ syncState: syncState as ProblemReportInput["syncState"] }) !== null).toBe(built);
+  });
+
+  it("builds exactly the six wire keys, whatever else the input holds", () => {
+    const body = at({ title: WORK_TEXT, documentId: "x", url: "/rad" } as Partial<ProblemReportInput>);
+    expect(Object.keys(body ?? {})).toEqual(["appVersion", "browser", "category", "description", "route", "syncState"]);
+    expect(Object.keys(body?.browser ?? {})).toEqual(["family", "major"]);
+  });
+
+  it("the chromium page of the source builds its route and browser", () => {
+    const body = at({
+      pathname: "/nastavnik/rad/00000000-0000-4000-8000-000000000001",
+      userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    });
+    expect(body).toMatchObject({ route: "/nastavnik/rad/[id]", browser: { family: "chromium", major: 131 } });
+  });
+
+  it("a page outside the list and an unknown agent give null route and other browser", () => {
+    expect(at({ pathname: "/nepoznato/123", userAgent: "" })).toMatchObject({ route: null, browser: { family: "other", major: null } });
+  });
+
+  it.each([
+    ["created", 201, { reference: "PR-3FA9C01B2E" }, { kind: "sent", reference: "PR-3FA9C01B2E" }],
+    ["created without a reference", 201, {}, "support.failure.unknown"],
+    ["created with a lower-case number", 201, { reference: "PR-3fa9c01b2e" }, "support.failure.unknown"],
+    ["signed out", 401, { error: "unauthorized" }, "support.failure.signedOut"],
+    ["body too large", 413, { error: "too_large" }, "support.failure.tooLarge"],
+    ["refused input", 422, { error: "invalid_input" }, "support.failure.invalid"],
+    ["hourly limit", 429, { error: "too_many_reports" }, "support.failure.tooMany"],
+    ["unavailable", 503, { error: "unavailable" }, "support.failure.unavailable"],
+    ["unexpected status", 500, null, "support.failure.unknown"],
+    ["bad request", 400, { error: "invalid_json" }, "support.failure.unknown"],
+    ["unreadable body", 503, null, "support.failure.unavailable"],
+  ] as const)("answer %s", (_name, status, body, expected) => {
+    const outcome = outcomeFromResponse(status, body, null, NOW);
+    if (typeof expected === "string") expect(outcome).toEqual({ kind: "failed", messageKey: expected, retryAt: null });
+    else expect(outcome).toEqual(expected);
+  });
+
+  it("a page address never reaches the body as anything but a listed template (property)", () => {
+    fc.assert(fc.property(fc.oneof(fc.string(), fc.string({ unit: "grapheme" }), fc.constantFrom(...PROBLEM_REPORT_ROUTES)), (path) => {
+      const route = problemReportRoute(path);
+      expect(route === null || (PROBLEM_REPORT_ROUTES as readonly string[]).includes(route)).toBe(true);
+    }));
+  });
+
+  it("any user agent gives a family of four and a major of 0 to 999 or null (property)", () => {
+    fc.assert(fc.property(fc.string(), (ua) => {
+      const { family, major } = browserFromUserAgent(ua);
+      expect(["chromium", "firefox", "safari", "other"]).toContain(family);
+      expect(major === null || (Number.isInteger(major) && major >= 0 && major <= 999)).toBe(true);
+    }));
   });
 });
 
