@@ -1,5 +1,8 @@
 import { Button, Card, SaveState, TextField } from "@ductura/ui";
 
+import { messagesHr as t } from "../../locales/hr.ts";
+import { AppShell, ErrorScreen, RouteLoading } from "../../src/components/index.ts";
+
 import type { CatalogEntries, CatalogState } from "./coverage";
 
 type Entry = Record<CatalogState, () => React.ReactNode>;
@@ -33,5 +36,34 @@ export const ENTRIES = {
     greška: () => <Card title="Moji radovi" error="Popis se nije učitao. Pokušajte ponovno." />,
     puno: () => <Card title="Seminarski rad"><p>Uvod u temu i plan poglavlja.</p></Card>,
     onemogućeno: () => <Card title="Moji radovi" disabled><p>Zadatak je zatvoren.</p></Card>,
+  },
+} satisfies Record<string, Entry> satisfies CatalogEntries;
+
+// The web's own components (src/components, DAN-753), texts from locales/ only.
+const SCOPE = "c2NvcGUtb2YtYW4taW52ZW50ZWQtcGVyc29u";
+const work = [t.shell.nav.assignments];
+const page = <p>{t.home.workBody}</p>;
+
+export const SCREEN_ENTRIES = {
+  AppShell: {
+    prazno: () => <AppShell role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
+    učitavanje: () => <AppShell role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain><p role="status">{t.student.loading}</p></AppShell>,
+    greška: () => <AppShell role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain><p role="alert">{t.errorPage.errorBody}</p></AppShell>,
+    puno: () => <AppShell role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain>{page}</AppShell>,
+    onemogućeno: () => <AppShell role={null} scope={SCOPE} crumbs={[]} ownMain>{page}</AppShell>,
+  },
+  ErrorScreen: {
+    prazno: () => <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
+    učitavanje: () => <RouteLoading label={t.student.loading} />,
+    greška: () => <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} onRetry={() => {}} />,
+    puno: () => <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
+    onemogućeno: () => <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} />,
+  },
+  RouteLoading: {
+    prazno: () => <RouteLoading label={t.workspace.panelLoading} />,
+    učitavanje: () => <RouteLoading label={t.fastPath.loading} />,
+    greška: () => <RouteLoading label={t.student.loading} />,
+    puno: () => <RouteLoading label={t.workspace.statusLoading} />,
+    onemogućeno: () => <RouteLoading label={t.workspace.panelLoading} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;

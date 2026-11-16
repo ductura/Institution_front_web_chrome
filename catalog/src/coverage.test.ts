@@ -2,12 +2,18 @@ import * as ui from "@ductura/ui";
 import { describe, expect, it } from "vitest";
 
 import { CATALOG_STATES, catalogGaps, componentNames } from "./coverage";
-import { ENTRIES } from "./entries";
+import * as screens from "../../src/components/index.ts";
+import { ENTRIES, SCREEN_ENTRIES } from "./entries";
 
 describe("every component has a catalogue entry with all five states (web.md §6 B5)", () => {
   it("the catalogue covers every component @ductura/ui exports", () => {
     expect(componentNames(ui)).toEqual(["Button", "Card", "SaveState", "TextField"]);
     expect(catalogGaps(ui, ENTRIES)).toEqual([]);
+  });
+
+  it("the catalogue covers every component src/components exports (DAN-753)", () => {
+    expect(componentNames(screens)).toEqual(["AppShell", "ErrorScreen", "RouteLoading"]);
+    expect(catalogGaps(screens, SCREEN_ENTRIES)).toEqual([]);
   });
 
   it("the five states are the plan's, in its order", () => {
