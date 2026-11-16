@@ -25,7 +25,7 @@ export type IndexedDbProbe =
 /** The parts of an `IDBOpenDBRequest` the probe uses. */
 export interface ProbeOpenRequest {
   // `never` parameters, so the DOM's `IDBOpenDBRequest` (handlers taking an
-  // Event) is assignable and `probeIndexedDb(window)` typechecks.
+  // Event) is assignable and the browser global object typechecks as env.
   onsuccess: ((event: never) => unknown) | null;
   onerror: ((event: never) => unknown) | null;
   readonly result?: { close(): void } | undefined;
@@ -71,7 +71,7 @@ function discard(factory: ProbeIdbFactory, request: ProbeOpenRequest): void {
 /**
  * Opens and deletes a probe database. `available` only after a real
  * `onsuccess` inside `timeoutMs`; a success that comes later still leaves
- * `timeout`, and the probe database is deleted either way. Pass `window`.
+ * `timeout`, and the probe database is deleted either way. Pass the browser global object.
  */
 export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<IndexedDbProbe> {
   let factory: ProbeIdbFactory | null | undefined;
