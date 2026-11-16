@@ -157,6 +157,9 @@ describe("no identifier from the address or the user agent leaves the page", () 
 // src/domain/support/problem-report.test.ts and its property test for the fields
 // the web fills. The parser's own rows (extra or missing keys, not a plain object)
 // test the server's parser; the web's answer is that it builds exactly six keys.
+// The app version and sync state rows test the server's parser too: the model
+// passes both on as given (orchestrator, #11 c.6927601561: no code change here),
+// and src/client refuses a value outside the schema before the network (873-2).
 describe("source parity (Ductus 393b8e0)", () => {
   const WORK_TEXT = "Uvod. Ovaj rad istra\u017Euje utjecaj lokalne samouprave na izlaznost.";
   const at = (patch: Partial<ProblemReportInput>) => buildProblemReportBody({ ...inputOf("recorded"), ...patch });
@@ -177,19 +180,6 @@ describe("source parity (Ductus 393b8e0)", () => {
     ["technical", true], ["account", true], ["course", true], ["other", false], ["Technical", false], [null, false], [5, false],
   ])("category %j is built: %s", (category, built) => {
     expect(at({ category: category as ProblemReportInput["category"] }) !== null).toBe(built);
-  });
-
-  it.each([
-    ["1.2.3", true], ["0.0.0+68a05dd", true], ["68a05ddd", true], ["68a05ddd5f3c9e0e8a1b2c3d4e5f60718293a4b5", true],
-    ["1.2.3-rad-o-izborima", false], ["1.2", false], ["01.2.3", false], ["68A05DDD", false], ["68a05d", false], [WORK_TEXT, false],
-  ])("app version %j is built: %s", (appVersion, built) => {
-    expect(at({ appVersion }) !== null).toBe(built);
-  });
-
-  it.each([
-    ["SYNCED", true], ["RECOVERY_REQUIRED", true], [null, true], ["synced", false], ["SAVED", false], [WORK_TEXT, false],
-  ])("sync state %j is built: %s", (syncState, built) => {
-    expect(at({ syncState: syncState as ProblemReportInput["syncState"] }) !== null).toBe(built);
   });
 
   it("builds exactly the six wire keys, whatever else the input holds", () => {

@@ -8,7 +8,6 @@ export {
   PROBLEM_REPORT_ROUTES,
   problemReportRoute,
   retryAtFrom,
-  SYNC_STATES,
   type BrowserFamily,
   type DescriptionCheck,
   type ProblemReportBody,
