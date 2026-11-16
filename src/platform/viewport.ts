@@ -74,18 +74,18 @@ export function caretScrollDelta(
 ): number {
   const { top: rawTop, bottom: rawBottom } = caret;
   if (![rawTop, rawBottom, area.visibleHeight, area.offsetTop].every(Number.isFinite)) return 0;
-  const top = Math.min(rawTop, rawBottom);
-  const bottom = Math.max(rawTop, rawBottom);
-  const height = bottom - top;
+  const caretTop = Math.min(rawTop, rawBottom);
+  const caretBottom = Math.max(rawTop, rawBottom);
+  const height = caretBottom - caretTop;
   const visible = Math.max(area.visibleHeight, 0);
   if (height >= visible) {
-    const align = top - area.offsetTop;
+    const align = caretTop - area.offsetTop;
     return Number.isFinite(align) ? align : 0;
   }
   const air = clamp(finite(margin, 0), 0, (visible - height) / 2);
   const low = area.offsetTop + air;
   const high = area.offsetTop + visible - air;
-  const delta = top < low ? top - low : bottom > high ? bottom - high : 0;
+  const delta = caretTop < low ? caretTop - low : caretBottom > high ? caretBottom - high : 0;
   // Finite extremes can still overflow; never hand back an infinite scroll.
   return Number.isFinite(delta) ? delta : 0;
 }

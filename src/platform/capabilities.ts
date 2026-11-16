@@ -30,7 +30,7 @@ export interface PlatformEnv {
 /** The textarea `writeClipboard` selects for the `execCommand` fallback. */
 export interface ClipboardScratch {
   value: string;
-  style?: { position?: string; opacity?: string; top?: string; left?: string };
+  style?: { position?: string; opacity?: string; insetBlockStart?: string; insetInlineStart?: string };
   setAttribute?(name: string, value: string): void;
   select(): void;
 }
@@ -92,7 +92,7 @@ function execCopy(text: string, env: PlatformEnv): boolean {
   scratch.value = text;
   scratch.setAttribute?.("readonly", "");
   scratch.setAttribute?.("aria-hidden", "true");
-  if (scratch.style) Object.assign(scratch.style, { position: "fixed", opacity: "0", top: "0", left: "0" });
+  if (scratch.style) Object.assign(scratch.style, { position: "fixed", opacity: "0", insetBlockStart: "0", insetInlineStart: "0" });
   // select() moves focus to the scratch node; give it back afterwards, so the
   // editor keeps its caret (and a phone keeps its keyboard).
   const focused = doc.activeElement ?? null;
