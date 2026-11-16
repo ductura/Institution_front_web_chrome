@@ -31,6 +31,13 @@ describe("registry configuration", () => {
     expect(files.filter((file) => SECRET.test(read(file)))).toEqual([]);
   });
 
+  it("the lockfile pins the published @ductura tarballs by integrity", () => {
+    const lock = read("src/client/pnpm-lock.yaml");
+    for (const name of ["@ductura/contracts@1.0.1", "@ductura/test-fakes@0.1.1"]) {
+      expect(lock).toMatch(new RegExp(`'${name}':\\n    resolution: \\{integrity: sha512-[A-Za-z0-9+/=]+, tarball: https://npm\\.pkg\\.github\\.com/download/`));
+    }
+  });
+
   it("pins @ductura/contracts and @ductura/test-fakes to exact versions", () => {
     const pkg = JSON.parse(read("src/client/package.json")) as Record<string, Record<string, string>>;
     expect(pkg.dependencies).toEqual({ "@ductura/contracts": "1.0.1" });
@@ -50,13 +57,9 @@ describe("registry configuration", () => {
     const ci = read(".github/workflows/ci.yml");
     const steps = ci.split(/\n(?=\s*- )/);
     const withToken = steps.filter((step) => /NODE_AUTH_TOKEN|GITHUB_TOKEN|secrets\./.test(step));
-    // Bootstrap: one extra lockfile-only step until the lockfile is committed.
-    expect(withToken.length).toBeGreaterThanOrEqual(1);
-    expect(withToken.length).toBeLessThanOrEqual(2);
-    for (const step of withToken) {
-      expect(step).toMatch(/run: pnpm install --ignore-workspace (?:--frozen-lockfile\n|--lockfile-only && cat pnpm-lock\.yaml\n)/);
-      expect(step).toMatch(/NODE_AUTH_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
-    }
+    expect(withToken).toHaveLength(1);
+    expect(withToken[0]).toMatch(/run: pnpm install --ignore-workspace --frozen-lockfile\n/);
+    expect(withToken[0]).toMatch(/NODE_AUTH_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
     for (const file of WORKFLOWS.filter((f) => f !== ".github/workflows/ci.yml")) {
       expect(read(file)).not.toMatch(/secrets\.|NODE_AUTH_TOKEN/);
     }

@@ -40,10 +40,6 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: '@ductura'
       - run: npm install -g pnpm@10.33.0
-      - name: Lockfile bootstrap (removed in the next commit)
-        run: pnpm install --ignore-workspace --lockfile-only && cat pnpm-lock.yaml
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Install (GitHub Packages, read only)
         run: pnpm install --ignore-workspace --frozen-lockfile
         env:
