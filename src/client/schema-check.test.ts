@@ -91,7 +91,13 @@ describe("schema check rules", () => {
     for (const impossible of ["2026-02-31T00:00:00Z", "2026-02-30T24:00:00Z", "2026-04-31T00:00:00Z", "2026-01-01T00:60:00Z", "2026-01-01T00:00:00+24:00"]) {
       expect(matchesSchema({ type: "string", format: "date-time" }, impossible)).toBe(false);
     }
-    expect(matchesSchema({ type: "string", format: "date-time" }, "2028-02-29T23:59:60.5+01:00")).toBe(true);
+    // A leap second exists only at 23:59:60 UTC.
+    for (const leap of ["2016-12-31T23:59:60Z", "2016-12-31T23:59:60.5Z", "2017-01-01T00:59:60+01:00", "2016-12-31T18:59:60-05:00"]) {
+      expect(matchesSchema({ type: "string", format: "date-time" }, leap)).toBe(true);
+    }
+    for (const notLeap of ["2028-02-29T23:59:60.5+01:00", "2026-01-01T12:30:60Z", "2026-01-01T23:58:60Z", "2016-12-31T23:59:60-05:00"]) {
+      expect(matchesSchema({ type: "string", format: "date-time" }, notLeap)).toBe(false);
+    }
   });
 
   it("refuses an inherited or extra field when additionalProperties is false", () => {

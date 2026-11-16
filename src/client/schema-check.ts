@@ -28,18 +28,22 @@ const SUPPORTED_FORMATS: ReadonlySet<string> = new Set(["date-time"]);
 
 export class UnsupportedSchemaError extends Error {}
 
-const DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[Zz]|[+-](\d{2}):(\d{2}))$/;
+const DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[Zz]|([+-])(\d{2}):(\d{2}))$/;
 
-/** RFC 3339 date-time with a real calendar date; second 60 is a leap second. */
+/**
+ * RFC 3339 date-time with a real calendar date. Second 60 (a leap second) is
+ * valid only when the time is 23:59 in UTC, once the offset is applied.
+ */
 function isDateTime(value: string): boolean {
   const m = DATE_TIME.exec(value);
   if (m === null) return false;
-  const [year, month, day, hour, minute, second, offH, offM] = m.slice(1).map((x) => Number(x ?? 0)) as [
-    number, number, number, number, number, number, number, number,
-  ];
+  const [year, month, day, hour, minute, second] = m.slice(1, 7).map(Number) as [number, number, number, number, number, number];
+  const offset = (m[7] === "-" ? -1 : 1) * (Number(m[8] ?? 0) * 60 + Number(m[9] ?? 0));
   const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  return month >= 1 && month <= 12 && day >= 1 && day <= days
-    && hour <= 23 && minute <= 59 && second <= 60 && offH <= 23 && offM <= 59;
+  const valid = month >= 1 && month <= 12 && day >= 1 && day <= days && hour <= 23 && minute <= 59 && second <= 60
+    && Number(m[8] ?? 0) <= 23 && Number(m[9] ?? 0) <= 59;
+  const utcMinute = (((hour * 60 + minute - offset) % 1440) + 1440) % 1440;
+  return valid && (second < 60 || utcMinute === 1439);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
