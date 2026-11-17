@@ -447,3 +447,59 @@ test("the semantics table covers every component and state the catalogue shows",
   for (const name of COMPONENTS) expect(Object.keys(SEMANTICS[name])).toEqual([...CATALOG_STATES]);
   for (const name of SCREENS) expect(Object.keys(SCREEN_SEMANTICS[name])).toEqual([...CATALOG_STATES]);
 });
+
+// DAN-891 (891-3, D-202 t. 1): from 800 px the shell's side bar is the reference's
+// 64 px rail; below it, the same drawer behind ☰ as before. Negative cases first.
+test("below 800 px the side bar stays a 248 px drawer behind ☰", async ({ page }) => {
+  for (const width of [768, 390]) {
+    await open(page, "dark", width);
+    const c = cell(page, "AppShell", "Ljuska", "puno");
+    const aside = c.locator("aside");
+    await expect(aside).toBeHidden();
+    await c.getByRole("button", { name: t.shell.openNav }).click();
+    await expect(aside).toBeVisible();
+    expect((await aside.boundingBox())!.width, `${width} px`).toBe(248);
+    const item = aside.getByRole("link", { name: t.shell.nav.assignments });
+    expect(await item.evaluate((a) => getComputedStyle(a).textAlign), `${width} px`).not.toBe("center");
+  }
+});
+
+for (const theme of THEMES) {
+  for (const width of [1440, 1024, 800]) {
+    test(`${theme} shell at ${width} px: the side bar is a 64 px rail from 800 px`, async ({ page }) => {
+      await open(page, theme, width);
+      const c = cell(page, "AppShell", "Ljuska", "puno");
+      const aside = c.locator("aside");
+      const rail = (await aside.boundingBox())!;
+      expect(rail.width).toBe(64);
+      const area = (await c.locator("header").boundingBox())!;
+      expect(Math.abs(area.x - (rail.x + rail.width))).toBeLessThanOrEqual(0.5);
+
+      const links = aside.locator("a");
+      await expect(links).toHaveCount(7); // logo, five items, "Kako Ductura radi"
+      for (const box of await links.evaluateAll((all) => all.map((a) => a.getBoundingClientRect().toJSON() as DOMRect))) {
+        expect(box.width).toBeGreaterThanOrEqual(44);
+        expect(box.height).toBeGreaterThanOrEqual(44);
+        expect(box.left).toBeGreaterThanOrEqual(rail.x);
+        expect(box.right).toBeLessThanOrEqual(rail.x + rail.width);
+      }
+      // The text itself, not only its box: nothing is cut off at the rail's edge.
+      const texts = await aside.evaluate((a) => [...a.querySelectorAll("a, span")]
+        .filter((el) => el.textContent!.trim() !== "" && el.getClientRects().length > 0)
+        .map((el) => {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const b = range.getBoundingClientRect();
+          return { text: el.textContent!.trim(), left: b.left, right: b.right };
+        }));
+      const n = t.shell.nav;
+      expect(texts.map((x) => x.text)).toEqual(expect.arrayContaining(
+        [n.assignments, n.courses, n.works, n.workspace, n.enroll, t.shell.howItWorks, t.shell.role.student]));
+      for (const x of texts) {
+        expect(x.left, x.text).toBeGreaterThanOrEqual(rail.x);
+        expect(x.right, x.text).toBeLessThanOrEqual(rail.x + rail.width);
+      }
+      await expect(aside.getByText(t.shell.role.student, { exact: true })).toBeVisible();
+    });
+  }
+}

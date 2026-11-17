@@ -20,7 +20,6 @@
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 40;
-  width: 236px;
   display: flex;
   flex-direction: column;
   padding: 25px 17px 16px;
@@ -194,7 +193,6 @@
 }
 
 .area {
-  margin-left: 236px;
   min-height: 100vh;
   min-width: 0;
 }
@@ -315,6 +313,71 @@
   max-width: 1580px;
   margin: 0 auto;
   padding: 0;
+}
+
+/* D-202 t. 1 (DAN-891, 891-3): from 800 px, outside the workspace, the side bar
+   is the narrow 64 px rail of the approved reference (m2-student-reference,
+   reference.css .side): the mark only, catalogue labels in a centred column
+   (no icons, D-203 t. 8). Text stays at the 12 px interface floor; longer
+   labels break inside the rail. The space line and the demo note leave the
+   rail; the top bar keeps the demo badge. */
+@media (min-width: 800px) {
+  .shell:not(.drawerShell) .sidebar {
+    width: 64px;
+    gap: 14px;
+    padding: 14px 4px;
+    border-right-color: var(--rule-2);
+  }
+
+  .shell:not(.drawerShell) .brand {
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+  }
+
+  .shell:not(.drawerShell) .word,
+  .shell:not(.drawerShell) .space,
+  .shell:not(.drawerShell) .note {
+    display: none;
+  }
+
+  .shell:not(.drawerShell) .nav {
+    gap: 4px;
+  }
+
+  .shell:not(.drawerShell) .navItem,
+  .shell:not(.drawerShell) .infoLink {
+    justify-content: center;
+    padding: 6px 2px;
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: center;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  .shell:not(.drawerShell) .navItem[aria-current="page"] {
+    background: var(--well);
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: none;
+  }
+
+  .shell:not(.drawerShell) .bottom {
+    display: grid;
+    gap: 6px;
+  }
+
+  .shell:not(.drawerShell) .account {
+    justify-content: center;
+    padding: 10px 0 0;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  .shell:not(.drawerShell) .area {
+    margin-left: 64px;
+  }
 }
 
 @media (max-width: 799.98px) {

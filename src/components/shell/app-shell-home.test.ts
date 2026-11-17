@@ -74,3 +74,30 @@ describe("AppShell sign-out and Početna (#802 part B)", () => {
     expect(findForbiddenTerms([t.shell.homeCrumb, ...Object.values(t.home)].join(" "))).toEqual([]);
   });
 });
+
+// DAN-891 (891-3): the 64 px rail is for the shell outside the workspace only, from
+// 800 px; the workspace's drawer (/rad) and the no-script fallback stay as they were.
+describe("AppShell 64 px rail (D-202 t. 1)", () => {
+  const css = readFileSync(new URL("./AppShell.module.css", import.meta.url), "utf8");
+  const railFrom = css.indexOf("@media (min-width: 800px)");
+  const rail = railFrom < 0 ? "" : css.slice(railFrom, css.indexOf("\n}\n", railFrom));
+
+  it("keeps the workspace drawer at 248 px", () => {
+    expect(css).toMatch(/\.drawerShell \.sidebar \{\s*width: 248px;/);
+  });
+
+  it("keeps the no-script fallback: the side bar in the page flow", () => {
+    expect(css).toMatch(/@media \(scripting: none\) \{\s*\.shell\.drawerShell \.sidebar \{\s*position: static;/);
+    expect(css).toMatch(/@media \(scripting: none\) and \(max-width: 799\.98px\) \{\s*\.sidebar \{\s*position: static;/);
+  });
+
+  it("scopes every rail rule to the shell that is not the drawer", () => {
+    const body = rail.slice(rail.indexOf("{") + 1);
+    const selectors = body.split("}").map((rule) => rule.split("{")[0]!.trim()).filter((sel) => sel !== "" && !sel.startsWith("/*"));
+    expect(selectors.length).toBeGreaterThan(0);
+    for (const group of selectors) {
+      for (const sel of group.split(",")) expect(sel.trim()).toMatch(/^\.shell:not\(\.drawerShell\) /);
+    }
+    expect(rail).toMatch(/\.shell:not\(\.drawerShell\) \.sidebar \{[^}]*width: 64px;/);
+  });
+});

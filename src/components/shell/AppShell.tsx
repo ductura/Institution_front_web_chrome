@@ -156,7 +156,7 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
       <aside ref={sidebar} className={styles.sidebar} data-open={open} aria-label={t.shell.sideNav} id={navId}>
         <a className={styles.brand} href={home} aria-label={t.shell.home}>
           <Logo />
-          <span>{t.app.name}</span>
+          <span className={styles.word}>{t.app.name}</span>
         </a>
         {role !== null ? (
           <>
