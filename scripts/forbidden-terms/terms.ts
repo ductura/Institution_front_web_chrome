@@ -165,7 +165,9 @@ export const FORBIDDEN_TERMS: readonly ForbiddenTerm[] = [
     instead: INTACT,
     lang: "hr",
     pattern: /(?<![\p{L}\p{N}])(?:izvornos[tc]|originalnos[tc])/u,
-    allows: /(?<![\p{L}\p{N}\p{M}])izjava o izvornosti rada(?![\p{L}\p{N}\p{M}])/gu,
+    // A mark before the words belongs to the character before them (the emoji selector U+FE0F); one after them would
+    // change their last letter.
+    allows: /(?<![\p{L}\p{N}])izjava o izvornosti rada(?![\p{L}\p{N}\p{M}])/gu,
   },
   {
     entry: "integritet",

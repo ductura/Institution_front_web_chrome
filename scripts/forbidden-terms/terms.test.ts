@@ -598,6 +598,11 @@ describe("T10: Izjava o izvornosti rada", () => {
     "Izjava o izvornosti rada:",
     "Izjava o izvo\u00ADrnosti rada",
     "Izjava o izvornosti rada i Izjava o izvornosti rada",
+    // A mark of the character before the phrase (fourth Codex review of #42).
+    "\u2764\uFE0FIzjava o izvornosti rada",
+    "\u2764\uFE0F Izjava o izvornosti rada",
+    "Izjava o izvornosti rada \u2764\uFE0F",
+    "\u00AB\u0301Izjava o izvornosti rada\u00BB",
   ])("allows %j", (text) => {
     expect(entries(text)).toEqual([]);
   });
