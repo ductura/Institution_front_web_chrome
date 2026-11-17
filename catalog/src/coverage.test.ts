@@ -15,7 +15,7 @@ describe("every component has a catalogue entry with all five states (web.md §6
   });
 
   it("the catalogue covers every component src/components exports (DAN-753)", () => {
-    expect(componentNames(screens)).toEqual(["AppShell", "EmptyHome", "ErrorScreen", "MyAssignments", "RouteLoading", "StudentHome"]);
+    expect(componentNames(screens)).toEqual(["AppShell", "EmptyHome", "ErrorScreen", "MyAssignments", "OutlinePanel", "RouteLoading", "StudentHome"]);
     expect(catalogGaps(screens, SCREEN_ENTRIES)).toEqual([]);
   });
 

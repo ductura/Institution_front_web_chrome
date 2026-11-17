@@ -5,7 +5,7 @@ import { CATALOG_STATES } from "../src/coverage";
 
 const COMPONENTS = ["Button", "TextField", "SaveState", "Card"];
 // The screens of src/components (DAN-753): on the shell only, one under another.
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome"];
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel"];
 const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 
@@ -80,7 +80,8 @@ for (const theme of THEMES) {
     });
 
     test("has no WCAG 2.2 AA violations (axe)", async ({ page }) => {
-      for (const width of [1440, 360]) {
+      // 400 px is the width of the left panel's acceptance (DAN-977); the page is checked whole.
+      for (const width of [1440, 400, 360]) {
         await open(page, theme, width);
         const result = await new AxeBuilder({ page })
           .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();

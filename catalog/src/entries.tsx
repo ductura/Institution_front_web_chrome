@@ -2,7 +2,8 @@ import { Button, Card, SaveState, TextField } from "@ductura/ui";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
-  AppShell, EmptyHome, ErrorScreen, MyAssignments, RouteLoading, StudentHome, type MyCourse,
+  AppShell, EmptyHome, ErrorScreen, MyAssignments, OutlinePanel, RouteLoading, StudentHome, type MyCourse,
+  type OutlineRow,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -60,6 +61,16 @@ const courses: MyCourse[] = [
   { id: "00000000-0000-4000-8000-00000000000b", name: "Izmišljeni kolegij B", assignments: [] },
 ];
 
+// Invented headings (DAN-977); the long title is one unbroken word, so wrapping is tested.
+let at = 0;
+const heading = (level: number, text: string, number: string | null): OutlineRow =>
+  ({ entry: { id: `izmisljeni-${(at += 1)}`, level, text, pos: at * 10 }, number });
+const outline = [
+  heading(1, "Uvod", "1"), heading(2, "Izmišljeni pojmovi", "1.1"), heading(3, "Izmišljeni pojam", "1.1.1"),
+  heading(1, "Metoda", "2"), heading(2, "Izmišljeni uzorak", "2.1"),
+  heading(3, "Izmišljenanajduljariječkojaseprotežepredalekoiznadširinepanelaipokazujelomljenjenaslovaugranicamaćelije", "2.1.3"),
+];
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -102,5 +113,12 @@ export const SCREEN_ENTRIES = {
     greška: () => <StudentHome read={{ kind: "unavailable" }} enroll={null} signIn={signIn} />,
     puno: () => <EmptyHome enroll={null} />,
     onemogućeno: () => <EmptyHome enroll={null} />,
+  },
+  OutlinePanel: {
+    prazno: () => <OutlinePanel rows={[]} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <OutlinePanel rows={[heading(0, "Nula", "0"), heading(1, "", "1"), heading(4, "Četiri", "1.0.0.1")]} />,
+    puno: () => <OutlinePanel rows={outline} />,
+    onemogućeno: () => <OutlinePanel rows={outline.map((r) => ({ ...r, number: null }))} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
