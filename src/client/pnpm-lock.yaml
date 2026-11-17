@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@ductura/contracts':
-        specifier: https://github.com/ductura/server/releases/download/contracts-v2.4.0/ductura-contracts-2.4.0.tgz
-        version: https://github.com/ductura/server/releases/download/contracts-v2.4.0/ductura-contracts-2.4.0.tgz
+        specifier: https://github.com/ductura/server/releases/download/contracts-v2.6.0/ductura-contracts-2.6.0.tgz
+        version: https://github.com/ductura/server/releases/download/contracts-v2.6.0/ductura-contracts-2.6.0.tgz
     devDependencies:
       '@ductura/test-fakes':
         specifier: https://github.com/ductura/server/releases/download/test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz
@@ -27,9 +27,9 @@ importers:
 
 packages:
 
-  '@ductura/contracts@https://github.com/ductura/server/releases/download/contracts-v2.4.0/ductura-contracts-2.4.0.tgz':
-    resolution: {integrity: sha512-4xN8jyTX63Ek63HuqPP3O6wJaUu8APbFrslNVcg18CZBo4iGEmTQqpodwsNrRQlNty+nodEhFkaew96aiO+0Dg==, tarball: https://github.com/ductura/server/releases/download/contracts-v2.4.0/ductura-contracts-2.4.0.tgz}
-    version: 2.4.0
+  '@ductura/contracts@https://github.com/ductura/server/releases/download/contracts-v2.6.0/ductura-contracts-2.6.0.tgz':
+    resolution: {integrity: sha512-s7Jp9VSwai9K/7azDNruikV0rIjLzb1c2CuJlb8wQtKPVjA5iZFqrd6bGUkHAEFDXFxge2uM+Tm2VPUR4Lsz0Q==, tarball: https://github.com/ductura/server/releases/download/contracts-v2.6.0/ductura-contracts-2.6.0.tgz}
+    version: 2.6.0
 
   '@ductura/test-fakes@https://github.com/ductura/server/releases/download/test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz':
     resolution: {integrity: sha512-UowdRyh8OjVP6y6qOGb5Z4ddd1/7MHDHTIl8gfAwuLzmcvm5sQu+tKJOadqHJVZ1/c3qw6xVCvYRDJ66zfbjQA==, tarball: https://github.com/ductura/server/releases/download/test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz}
@@ -611,7 +611,7 @@ packages:
 
 snapshots:
 
-  '@ductura/contracts@https://github.com/ductura/server/releases/download/contracts-v2.4.0/ductura-contracts-2.4.0.tgz': {}
+  '@ductura/contracts@https://github.com/ductura/server/releases/download/contracts-v2.6.0/ductura-contracts-2.6.0.tgz': {}
 
   '@ductura/test-fakes@https://github.com/ductura/server/releases/download/test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz':
     dependencies:

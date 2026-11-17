@@ -13,6 +13,7 @@
 // keeps every other call out of the code.
 import { createClient, validateInput, type OperationId, type Operations, type Result } from "@ductura/contracts";
 import openapi from "@ductura/contracts/openapi/v1.json" with { type: "json" };
+import catalog from "@ductura/contracts/errors/catalog.json" with { type: "json" };
 import { matchesSchema, type Schema } from "./schema-check";
 
 type ResponseSpec = { readonly content?: Readonly<Record<string, { readonly schema?: Schema }>> };
@@ -54,11 +55,41 @@ const NAMES: ReadonlyMap<string, Readonly<Record<Part, ReadonlySet<string> | nul
   }),
 );
 
+type CatalogEntry = { readonly status: number; readonly code: string; readonly messageKey: string };
+
+/**
+ * DAN-1062: the one session_expired entry of the error catalogue (a 401 told
+ * apart from unauthenticated by its code). Throws when the catalogue lost it,
+ * has it twice or gives it another status, so the client never guesses.
+ */
+export function sessionExpiredEntry(source: { readonly errors: readonly CatalogEntry[] }): CatalogEntry {
+  const found = source.errors.filter((entry) => entry.code === "session_expired");
+  if (found.length !== 1 || found[0]?.status !== 401) throw new Error("error catalogue: no single 401 session_expired");
+  const { status, code, messageKey } = found[0];
+  return { status, code, messageKey };
+}
+export const SESSION_EXPIRED_ENTRY = sessionExpiredEntry(catalog);
+
+/** No route of the contract lists session_expired yet (S-1D-d); the client keeps it on routes with a 401, auth.* aside. */
+export type SessionExpired = { ok: false; status: 401; code: "session_expired" };
+
+/** The code a JSON error body sends: the first string of code, error, status, as the generated client reads it. */
+function sentCode(bytes: ArrayBuffer): string | undefined {
+  try {
+    const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (typeof body !== "object" || body === null) return undefined;
+    const fields = body as { code?: unknown; error?: unknown; status?: unknown };
+    return [fields.code, fields.error, fields.status].find((value): value is string => typeof value === "string");
+  } catch {
+    return undefined;
+  }
+}
+
 export type Input<Id extends OperationId> = Pick<Operations[Id], "params" | "query" | "body">;
 
 /** Refused before the request was sent: the input breaks the contract. */
 export type Rejected = { ok: false; status: 0; code: "client_rejected" };
-export type ApiResult<Id extends OperationId> = Result<Id> | Rejected;
+export type ApiResult<Id extends OperationId> = Result<Id> | Rejected | SessionExpired;
 
 /** A plain copy of one part: getters run once, toJSON and prototypes do not travel. */
 function snapshot(value: unknown): unknown {
@@ -104,9 +135,13 @@ export function createApi(options: ApiOptions = {}) {
       return { ok: false, status: 0, code: "client_rejected" };
     }
     let bodyBytes = 0;
+    let code: string | undefined;
     const measured: typeof fetch = async (url, init) => {
       const res = await transport(url, init);
-      bodyBytes = res.type === "opaqueredirect" ? 0 : (await res.clone().arrayBuffer()).byteLength;
+      const bytes = res.type === "opaqueredirect" ? new ArrayBuffer(0) : await res.clone().arrayBuffer();
+      bodyBytes = bytes.byteLength;
+      // The same content type test as the generated client: only a body it reads as JSON.
+      if (res.headers.get("content-type")?.startsWith("application/json")) code = sentCode(bytes);
       return res;
     };
     let result: Result<Id>;
@@ -117,7 +152,11 @@ export function createApi(options: ApiOptions = {}) {
       if (error instanceof SyntaxError) return { ok: false, status: 0, code: "unexpected" } as Result<Id>;
       throw error;
     }
-    if (!result.ok) return result;
+    if (!result.ok) {
+      const expired = result.status === SESSION_EXPIRED_ENTRY.status && result.code === "unexpected"
+        && code === SESSION_EXPIRED_ENTRY.code && RESPONSES.get(id)?.["401"] !== undefined && !id.startsWith("auth.");
+      return expired ? { ok: false, status: 401, code: "session_expired" } : result;
+    }
     const { status, body } = result as unknown as { status: number; body: unknown };
     return responseMatches(id, status, body, bodyBytes) ? result : ({ ok: false, status, code: "unexpected" } as Result<Id>);
   };

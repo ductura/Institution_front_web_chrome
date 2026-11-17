@@ -20,11 +20,15 @@ Testne datoteke i `e2e/` kataloga ili paketa se ne čitaju, jer pokreću aplikac
 
 ## Paketi i registar
 
-- `@ductura/contracts` 2.4.0 i `@ductura/test-fakes` 3.0.1 (samo `devDependencies`) instaliraju se s URL-a tarballa na javnim GitHub Releases ductura/servera (oznake `contracts-v2.4.0` i `test-fakes-v3.0.1`; put DAN-965, podizanje DAN-973). Za to ne treba token. Lockfile drži točan URL i integritet (`sha512`), pa zamijenjen tarball ruši instalaciju. Obrisan tarball je također ruši: integritet štiti od podmetanja, ne od gubitka. Nova verzija ugovora ulazi PR-om koji mijenja URL. CI tada pada ako tipovi, vektori, shema ili ključne riječi više ne odgovaraju klijentu.
+- `@ductura/contracts` 2.6.0 i `@ductura/test-fakes` 3.0.1 (samo `devDependencies`) instaliraju se s URL-a tarballa na javnim GitHub Releases ductura/servera (oznake `contracts-v2.6.0` i `test-fakes-v3.0.1`; put DAN-965, podizanje DAN-973 i DAN-1062). 2.6.0 je prva verzija s katalogom grešaka; 2.7.0 i 2.8.0 dodaju rute za koje test-fakes 3.0.1 nema vektore. Za to ne treba token. Lockfile drži točan URL i integritet (`sha512`), pa zamijenjen tarball ruši instalaciju. Obrisan tarball je također ruši: integritet štiti od podmetanja, ne od gubitka. Nova verzija ugovora ulazi PR-om koji mijenja URL. CI tada pada ako tipovi, vektori, shema ili ključne riječi više ne odgovaraju klijentu.
 - Ostale ovisnosti su prikvačene na točne verzije s npm registra.
 - `.npmrc` i dalje sadrži samo registar opsega `@ductura` (`https://npm.pkg.github.com`) i nijedan token. Za ova dva paketa se ne koristi. Novi `@ductura/*` paket naveden brojem verzije, a ne URL-om, išao bi kroz GitHub Packages i tražio bi token. Test `registry-config.test.ts` to ne dopušta.
 - U CI-ju (`.github/workflows/ci.yml`, posao `client`) korak instalacije još dobiva token posla s `packages: read`, iako ga više ne treba. Uklanjanje je zaseban PR. Taj korak radi s `--ignore-scripts`, a checkout ne čuva git vjerodajnice (`persist-credentials: false`). Svaki workflow ima izričit `permissions: contents: read`.
 - Paket ima vlastiti lockfile (`pnpm-lock.yaml`, pnpm 10.33.0) i instalira se s `pnpm install --ignore-workspace`.
+
+## Istek sesije (DAN-1062)
+
+Nijedna ruta ugovora još ne navodi `session_expired` (S-1D-d), pa ga generirani klijent vraća kao `unexpected`. `createApi` ga vraća kao `{ ok: false, status: 401, code: "session_expired" }` (tip `SessionExpired`) kad je klijent dao točno `401 unexpected`, tijelo je JSON (ista provjera `content-type` kao u klijentu), prvi string među vlastitim poljima `code`, `error`, `status` je kod unosa iz `@ductura/contracts/errors/catalog.json`, a ruta u ugovoru ima 401 i nije `auth.*`. Status, kod i ključ poruke (`SESSION_EXPIRED_ENTRY`) čitaju se iz kataloga; bez točno jednog unosa 401 modul se ne učita. Svaki drugi odgovor je točno ono što daje generirani klijent (`session-expired.test.ts`, diferencijalno). Lažni server nema vektor s tim kodom, pa test šalje isti oblik na žici kao njegovo odbijanje.
 
 ## Granice generiranog klijenta
 
