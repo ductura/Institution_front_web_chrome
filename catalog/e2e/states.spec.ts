@@ -164,6 +164,36 @@ const outlineList = (numbers: string[]) => async (c: Locator) => {
   expect(fit).toEqual({ scroll: true, inside: true });
 };
 
+/**
+ * DAN-891 (891-1): where the text of the h1 and of its lede sits in the
+ * screen's root, measured on the text itself (a Range), not on the block box.
+ * "centre": both centred within 1 px; "start": the h1 starts at the content edge.
+ */
+const headingAt = (where: "centre" | "start") => async (c: Locator) => {
+  const m = await c.locator(":scope > div").first().evaluate((root) => {
+    const style = getComputedStyle(root);
+    const r = root.getBoundingClientRect();
+    const left = r.left + parseFloat(style.paddingLeft);
+    const right = r.right - parseFloat(style.paddingRight);
+    const text = (el: Element | null) => {
+      if (!el) return null;
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const b = range.getBoundingClientRect();
+      return { left: b.left, centre: (b.left + b.right) / 2 };
+    };
+    return { centre: (left + right) / 2, left, h1: text(root.querySelector("h1")), lede: text(root.querySelector("h1 + p")) };
+  });
+  expect(m.h1).not.toBeNull();
+  if (where === "start") {
+    expect(Math.abs(m.h1!.left - m.left)).toBeLessThanOrEqual(1);
+    return;
+  }
+  expect(Math.abs(m.h1!.centre - m.centre)).toBeLessThanOrEqual(1);
+  expect(m.lede).not.toBeNull();
+  expect(Math.abs(m.lede!.centre - m.centre)).toBeLessThanOrEqual(1);
+};
+
 /** Semantics of each state of each screen, on the shell only. */
 const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Promise<void>>> = {
   AppShell: {
@@ -201,17 +231,21 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
     prazno: async (c) => {
       await expect(c.getByRole("heading", { level: 1 })).toHaveText(home.heading);
       await firstArrival(c);
+      await headingAt("centre")(c);
     },
     učitavanje: loading(t.workspace.panelLoading),
     greška: async (c) => {
       await expect(c.getByRole("heading", { level: 1 })).toHaveText(home.heading);
       await unavailable(c);
       await expect(c.getByRole("link", { name: t.auth.retry })).toHaveAttribute("href", "/zadaci");
+      // Negative: the unavailable state keeps its heading at the start (891-1 centres only a list that loaded).
+      await headingAt("start")(c);
     },
     puno: async (c) => {
       await expect(c.getByText(home.lede)).toBeVisible();
       await expect(c.locator('a[href="/upis"]')).toHaveCount(1);
       await studentList(c);
+      await headingAt("centre")(c);
     },
     onemogućeno: async (c) => {
       await expect(c.getByRole("status")).toHaveText(t.student.assignments.signedOut);
@@ -229,6 +263,7 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.getByRole("heading", { level: 1 })).toHaveText(home.courses);
       await unavailable(c);
       await expect(c.getByRole("link", { name: t.auth.retry })).toHaveAttribute("href", "/zadaci/kolegiji");
+      await headingAt("start")(c);
     },
     puno: async (c) => {
       await expect(c.getByRole("heading", { level: 3 })).toHaveCount(2);
