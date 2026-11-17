@@ -44,8 +44,14 @@ const own = (o: object, key: string): unknown => (Object.hasOwn(o, key) ? (o as 
 
 function validCollapsed(value: unknown): readonly string[] | null {
   if (!Array.isArray(value) || value.length > COLLAPSED_MAX) return null;
-  if (!value.every((id) => typeof id === "string" && ID_PATTERN.test(id))) return null;
-  return new Set(value).size === value.length ? [...value] : null;
+  // An index loop, not every(): every() skips the holes of a sparse array, which would let undefined through.
+  const ids: string[] = [];
+  for (let i = 0; i < value.length; i += 1) {
+    const id: unknown = value[i];
+    if (typeof id !== "string" || !ID_PATTERN.test(id)) return null;
+    ids.push(id);
+  }
+  return new Set(ids).size === ids.length ? ids : null;
 }
 
 /** Valid settings from anything; each invalid or missing field takes its default. Never throws. */

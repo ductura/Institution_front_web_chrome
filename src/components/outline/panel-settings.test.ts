@@ -61,6 +61,17 @@ describe("panel settings: no store, a throwing store or a broken record give def
     expect(parseSettings({ layout: "kartice", headingsOnly: "true" })).toEqual(PANEL_DEFAULTS);
   });
 
+  it("rejects sparse arrays, whose holes every() and the like skip (review FAIL on 620b8ff)", () => {
+    const holed = ["a", "b"];
+    delete (holed as unknown[])[1];
+    for (const collapsed of [new Array(1), new Array(3), [, "a"], holed]) {
+      expect(parseSettings({ collapsed, levels: 2 })).toEqual({ ...PANEL_DEFAULTS, levels: 2 });
+      const store = memory();
+      writeSettings(store, KEY, { collapsed } as never);
+      expect(readSettings(store, KEY)).toEqual(parseSettings({ collapsed }));
+    }
+  });
+
   it("survives a getter or a proxy that throws", () => {
     const getter = Object.defineProperty({}, "levels", { enumerable: true, get: () => { throw new Error("izmišljeno"); } });
     const proxy = new Proxy({}, { getOwnPropertyDescriptor: () => { throw new Error("izmišljeno"); } });

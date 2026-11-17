@@ -33,8 +33,9 @@ describe("panel settings properties (DAN-979, 979-1)", () => {
     }));
   });
 
-  it("reads back any input in its normal form", () => {
-    fc.assert(fc.property(fc.anything(), (x) => {
+  it("reads back any input in its normal form, sparse arrays included", () => {
+    const sparse = fc.record({ collapsed: fc.sparseArray(fc.stringMatching(/^[a-z]{1,3}$/), { maxLength: 5 }) });
+    fc.assert(fc.property(fc.oneof(fc.anything(), sparse), (x) => {
       const store = memory();
       writeSettings(store, KEY, x as never);
       expect(readSettings(store, KEY)).toEqual(parseSettings(x));
