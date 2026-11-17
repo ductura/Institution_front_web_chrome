@@ -3,8 +3,8 @@ import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
-  AppShell, EmptyHome, ErrorScreen, MyAssignments, OutlinePanel, RouteLoading, StudentHome, TeacherCourses, type MyCourse,
-  type AssignmentSubmission, type OutlineRow, type TeacherCourse,
+  AppShell, EmptyHome, ErrorScreen, MentoredWorks, MyAssignments, OutlinePanel, RouteLoading, StudentHome, TeacherCourses,
+  type AssignmentSubmission, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -114,6 +114,20 @@ const submission = (n: number, documentId: string | null, afterDeadline?: boolea
 });
 const teacherWorks = (n: number, works: AssignmentSubmission[] | null) => ({ [`30000000-0000-4000-8000-00000000${n}0a1`]: works });
 
+// Invented mentored works (as in MentoredWorks.test.ts); the list orders them itself (DAN-871).
+const mentored = (n: number, student: MentoredWork["student"], over: Partial<MentoredWork> = {}): MentoredWork => ({
+  mentorshipId: `50000000-0000-4000-8000-0000000000${n}1`, assignmentId: `60000000-0000-4000-8000-0000000000${n}1`,
+  documentId: `izmisljeni-rad-${n}`, student, title: `Izmišljeni naslov ${n}`, workType: "bachelor_thesis", workState: "in_progress", ...over,
+});
+const mentoredWorks = [
+  mentored(1, { givenName: "Vesna", familyName: "Žbunić" }),
+  mentored(2, { givenName: "Ante", familyName: "Čvorić" }, { workState: "submitted", workType: "master_thesis" }),
+  mentored(3, { givenName: "Borna", familyName: "Crtić" }, {
+    title: "Izmišljeninaslovbezrazmakakojijeduljiodretkaipokazujedaselomiunutarćelijenasvakojširini",
+  }),
+  mentored(4, { givenName: "Ana", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started" }),
+];
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -178,5 +192,12 @@ export const SCREEN_ENTRIES = {
       />
     ),
     onemogućeno: () => <TeacherCourses courses={teacherCourses(5)} works={teacherWorks(5, [submission(1, null)])} />,
+  },
+  MentoredWorks: {
+    prazno: () => <MentoredWorks works={[]} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <MentoredWorks works={[mentored(5, null, { documentId: null, workState: "not_started" })]} />,
+    puno: () => <MentoredWorks works={mentoredWorks} />,
+    onemogućeno: () => <MentoredWorks works={[mentored(6, { givenName: "Iva", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started", workType: "doctoral_thesis" })]} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
