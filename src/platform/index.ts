@@ -18,3 +18,14 @@ export {
   type VisibleArea,
 } from "./viewport.ts";
 export { layoutForWidth, meetsTargetSize, PHONE_MAX, TABLET_MAX, TARGET_MIN_AA, targetMinSize, type Layout } from "./layout.ts";
+export {
+  memoryStorage,
+  PROBE_DATABASE,
+  probeIndexedDb,
+  safeLocalStorage,
+  type IndexedDbProbe,
+  type ProbeIdbFactory,
+  type ProbeOpenRequest,
+  type StorageEnv,
+  type StorageLike,
+} from "./storage.ts";

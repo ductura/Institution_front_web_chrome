@@ -4,6 +4,7 @@ Sloj prilagodbi preglednika (DAN-754, web 2.c5, `docs/PLAN.md` §3). Jedan kod z
 
 - `capabilities.ts`: provjera mogućnosti i zamjene. Međuspremnik: Clipboard API, zatim `execCommand("copy")`, inače ključ upozorenja `workspace.earlierDraftCopyFailed`. Dopuštenja: `unknown` kad preglednik ne može reći. Nijedna funkcija ne baca.
 - `viewport.ts`: vidljivi prostor iznad zaslonske tipkovnice iz `visualViewport` (popravak iz kostura `web-mobile`) i pomak koji drži kursor vidljivim.
+- `storage.ts`: zamjene za pohranu (Risk critical). `probeIndexedDb` javlja `available` samo nakon pravog `onsuccess` unutar roka; inače ključ upozorenja `editor.failureUnavailable` (privatni način Firefoxa i Safarija). `safeLocalStorage` daje pohranu u memoriji s `persistent: false` kad `localStorage` ne piše. Privatni prozor koji IndexedDB otvara pa ga pri zatvaranju briše (noviji Firefox, Safari 17+) ne može se razlikovati bez UA, pa javlja `available`.
 - `layout.ts`: raspored po širini (iste granice kao `@media` u `@ductura/ui`) i dodirne mete (WCAG 2.2 AA, 24 px; dizajn 44 i 32 px).
 
 Tekstovi upozorenja dolaze iz kataloga `locales/` kao ključevi; ovdje nema teksta sučelja. Scenariji u pravim preglednicima su u matrici 2.c6.
