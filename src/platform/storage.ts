@@ -123,13 +123,16 @@ export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<Index
       return;
     }
     try {
+      // Read the clock when the event arrives, before cleanup takes its time.
       request.onsuccess = () => {
+        const onTime = inTime();
         discard(idb, request);
-        finish(inTime() ? { state: "available" } : unavailable("timeout"));
+        finish(onTime ? { state: "available" } : unavailable("timeout"));
       };
       request.onerror = () => {
+        const onTime = inTime();
         discard(idb, request);
-        finish(unavailable(inTime() ? "error" : "timeout"));
+        finish(unavailable(onTime ? "error" : "timeout"));
       };
     } catch {
       finish(unavailable("error"));

@@ -152,6 +152,44 @@ describe("probeIndexedDb", () => {
     await expect(answer).resolves.toEqual({ state: "available" });
   });
 
+  it("is available when onsuccess arrives in time even if cleanup ends after the deadline", async () => {
+    const advance = monotonic();
+    const deleted: string[] = [];
+    let request: ProbeOpenRequest | undefined;
+    const factory: ProbeIdbFactory = {
+      open: () => {
+        // close() and deleteDatabase() take 2 ms each and cross the deadline.
+        request = { onsuccess: null, onerror: null, result: { close: () => advance(2) } };
+        return request;
+      },
+      deleteDatabase: (name) => {
+        advance(2);
+        deleted.push(name);
+      },
+    };
+    const answer = probeIndexedDb({ indexedDB: factory }, 2000);
+    advance(1999);
+    request!.onsuccess?.({} as never);
+    await expect(answer).resolves.toEqual({ state: "available" });
+    expect(deleted).toEqual([PROBE_DATABASE]);
+  });
+
+  it("is error, not timeout, when onerror arrives in time even if cleanup ends after the deadline", async () => {
+    const advance = monotonic();
+    let request: ProbeOpenRequest | undefined;
+    const factory: ProbeIdbFactory = {
+      open: () => {
+        request = { onsuccess: null, onerror: null, result: { close: () => advance(2) } };
+        return request;
+      },
+      deleteDatabase: () => advance(2),
+    };
+    const answer = probeIndexedDb({ indexedDB: factory }, 2000);
+    advance(1999);
+    request!.onerror?.({} as never);
+    await expect(answer).resolves.toEqual({ ...WARNING, reason: "error" });
+  });
+
   it("is timeout, never available, without a monotonic clock", async () => {
     vi.stubGlobal("performance", undefined);
     const fake = fakeFactory("never");
