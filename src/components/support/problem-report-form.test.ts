@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { messagesHr } from "../../../locales/hr.ts";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
-import { checkMessage, canSend, stepAfter, submitProblemReport, textOf, type FormStep } from "./problem-report-form";
+import { checkMessage, canSend, stepAfter, submitProblemReport, textOf, type FormStep, type SubmitResult } from "./problem-report-form";
 import { outcomeFromResponse, type ProblemReportBody, type ProblemReportInput } from "./problem-report";
 
 // DAN-873-2: the form's steps follow the route's vectors. send is a fake server
@@ -121,6 +121,41 @@ describe("texts", () => {
     expect(stepAfter({ kind: "failed", messageKey: "support.failure.unknown", retryAt: null })).toMatchObject({ lead: "support.keptLead" });
     expect(textOf("support.keptLead")).not.toMatch(/nije poslana/);
     expect(textOf("support.failedLead")).toMatch(/nije poslana/);
+  });
+
+  // Ductus problem-report-dialog.test.ts at 393b8e0: every failure text reads as
+  // plain Croatian with a next step; network and timeout come from the send
+  // adapter (873-4), not from a vector, so they are driven through stepAfter.
+  const TECHNICAL = /\b(?:HTTP|JSON|API|status|server|request|payload|\d{3})\b|poslužitelj|zahtjev|kod greške/i;
+  const REASONS = ["network", "timeout", "signedOut", "tooLarge", "invalid", "tooMany", "unavailable", "unknown"] as const;
+
+  it.each(REASONS)("%s reads as plain Croatian with a next step", (reason) => {
+    const step = stepAfter({ kind: "failed", messageKey: `support.failure.${reason}`, retryAt: null });
+    if (step.kind !== "failed") throw new Error("expected failed");
+    const message = textOf(step.messageKey) ?? "";
+    expect(message).toBe(messagesHr.support.failure[reason]);
+    expect(message).not.toMatch(TECHNICAL);
+    expect(message).toMatch(/pokušajte ponovno|pošaljite/i);
+    expect(findForbiddenTerms(message, "hr")).toEqual([]);
+  });
+
+  it.each(["network", "timeout", "unavailable", "unknown"] as const)("%s does not claim the report was not sent", (reason) => {
+    const step = stepAfter({ kind: "failed", messageKey: `support.failure.${reason}`, retryAt: null });
+    expect(step).toMatchObject({ kind: "failed", lead: "support.keptLead" });
+    if (step.kind !== "failed") return;
+    expect(`${textOf(step.lead)} ${textOf(step.messageKey)}`).not.toMatch(/nije poslana/);
+  });
+
+  it.each(["signedOut", "tooLarge", "invalid", "tooMany"] as const)("%s says the report was not sent", (reason) => {
+    expect(stepAfter({ kind: "failed", messageKey: `support.failure.${reason}`, retryAt: null })).toMatchObject({ lead: "support.failedLead" });
+  });
+
+  it("names the hourly limit for 429 and asks to shorten for 413", async () => {
+    const tooMany = await submitProblemReport(INPUT, EDITING, NOW, fake(vector("too-many-reports")));
+    const tooLarge = await submitProblemReport(INPUT, EDITING, NOW, fake(vector("body-too-large")));
+    const message = (result: SubmitResult) => textOf(((result as { step: { messageKey: string } }).step).messageKey);
+    expect(message(tooMany)).toContain("pet prijava");
+    expect(message(tooLarge)).toContain("Skratite");
   });
 
   it("a key that is no own text of the catalogue gives null", () => {
