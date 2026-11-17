@@ -14,8 +14,10 @@ jobs:
       - run: npm install
       - name: Testovi pomoćnih funkcija
         run: npm run test:helpers
+      # e2e matrica (DAN-755): svi preglednici matrice; chrome i msedge su
+      # pravi Google Chrome i Microsoft Edge, obvezni u CI-ju.
       - name: Instalacija preglednika
-        run: npx playwright install --with-deps chrome
+        run: npx playwright install --with-deps chromium chrome msedge firefox webkit
       - name: Funkcionalni testovi
         run: npm run test:functional
       - uses: actions/upload-artifact@v4
