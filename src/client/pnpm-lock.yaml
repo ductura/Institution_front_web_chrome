@@ -9,12 +9,12 @@ importers:
   .:
     dependencies:
       '@ductura/contracts':
-        specifier: 2.0.0
-        version: 2.0.0
+        specifier: https://github.com/ductura/server/releases/download/contracts-v2.1.1/ductura-contracts-2.1.1.tgz
+        version: https://github.com/ductura/server/releases/download/contracts-v2.1.1/ductura-contracts-2.1.1.tgz
     devDependencies:
       '@ductura/test-fakes':
-        specifier: 1.0.0
-        version: 1.0.0
+        specifier: https://github.com/ductura/server/releases/download/test-fakes-v2.0.1/ductura-test-fakes-2.0.1.tgz
+        version: https://github.com/ductura/server/releases/download/test-fakes-v2.0.1/ductura-test-fakes-2.0.1.tgz
       '@types/node':
         specifier: 26.6.4
         version: 26.6.4
@@ -27,11 +27,13 @@ importers:
 
 packages:
 
-  '@ductura/contracts@2.0.0':
-    resolution: {integrity: sha512-OynmkxRTfP5wNP1IMuHm1u2xfonkOjk5lB66kAUu1jFlLbhum3lQYjgNNslxHx/ejGTN5cCSvzYMIReSfyZYVw==, tarball: https://npm.pkg.github.com/download/@ductura/contracts/2.0.0/749edadcde8f33615e12b14f980668edbcfc9e87}
+  '@ductura/contracts@https://github.com/ductura/server/releases/download/contracts-v2.1.1/ductura-contracts-2.1.1.tgz':
+    resolution: {integrity: sha512-/LOzS5Gh8E7b50RWpozMR8JIAhdLW02MS9ZVvkcZOOBwt4jMgOJ5WMOINdukKFApYkaTzezNWFULRrctdMHIZw==, tarball: https://github.com/ductura/server/releases/download/contracts-v2.1.1/ductura-contracts-2.1.1.tgz}
+    version: 2.1.1
 
-  '@ductura/test-fakes@1.0.0':
-    resolution: {integrity: sha512-P5D30CgOjzx29qJ2gZYWxpdHqNBZzBhZd7mXENH5FK3upPwRrkZyPhnLMkfIvVoqCxzDFzO/pEWVFdvywYRPXA==, tarball: https://npm.pkg.github.com/download/@ductura/test-fakes/1.0.0/7e38a2de0f54b6fbd1e58d930d8b6bb7bc11a985}
+  '@ductura/test-fakes@https://github.com/ductura/server/releases/download/test-fakes-v2.0.1/ductura-test-fakes-2.0.1.tgz':
+    resolution: {integrity: sha512-q33ash56NeC+OqZQu/VvbvtvI2Z+cYru4vCpp/DZAB3wW0C0Sby4RfvqKbMR26AwwutARlc/+FRpvP3wWBZbsg==, tarball: https://github.com/ductura/server/releases/download/test-fakes-v2.0.1/ductura-test-fakes-2.0.1.tgz}
+    version: 2.0.1
 
   '@emnapi/core@2.0.0-beta.2':
     resolution: {integrity: sha512-MzCVoWtcg4Pm2B3je5mMvYMvj3MmBKw+fU7vbsJc9/iT8ip6/eYIHo/Dsm/mr+wsHB6SEyJDuxB09Yy6r/8+4A==}
@@ -609,9 +611,9 @@ packages:
 
 snapshots:
 
-  '@ductura/contracts@2.0.0': {}
+  '@ductura/contracts@https://github.com/ductura/server/releases/download/contracts-v2.1.1/ductura-contracts-2.1.1.tgz': {}
 
-  '@ductura/test-fakes@1.0.0':
+  '@ductura/test-fakes@https://github.com/ductura/server/releases/download/test-fakes-v2.0.1/ductura-test-fakes-2.0.1.tgz':
     dependencies:
       oidc-provider: 9.12.2
     transitivePeerDependencies:
