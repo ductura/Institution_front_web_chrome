@@ -17,3 +17,13 @@ export {
   type SendOutcome,
   type SyncState,
 } from "./problem-report";
+export {
+  canSend,
+  checkMessage,
+  stepAfter,
+  submitProblemReport,
+  textOf,
+  type FormOutcome,
+  type FormStep,
+  type SubmitResult,
+} from "./problem-report-form";
