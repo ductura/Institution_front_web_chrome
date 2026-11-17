@@ -4,7 +4,7 @@ import { messagesHr as t } from "../../../locales/hr.ts";
 import { OUTLINE_HR } from "../i18n/hr.ts";
 
 import { outlineTree, type OutlineNode, type OutlineRow } from "./outline-tree";
-import { activeRow, collapsedSet, filterTree, searchQuery } from "./outline-view";
+import { activeRow, branchIndexes, collapsedSet, filterTree, openBranchShown, searchQuery } from "./outline-view";
 import styles from "./OutlinePanel.module.css";
 
 export type OutlinePanelProps = {
@@ -78,6 +78,8 @@ export default function OutlinePanel({ rows, active, collapsed = [], query = "" 
   const closed = searching ? new Set<number>() : collapsedSet(tree, shut);
   const toggle = (index: number) =>
     setShut((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
+  const branches = branchIndexes(tree);
+  const anyOpen = openBranchShown(tree, closed);
   const view: View = { base, closed, marked: activeRow(shown, rows, active, closed, tree), searching, toggle };
   return h(
     "div",
@@ -88,6 +90,14 @@ export default function OutlinePanel({ rows, active, collapsed = [], query = "" 
         { className: styles.search },
         h("label", { htmlFor: `${base}-q` }, OUTLINE_HR.search),
         h("input", { id: `${base}-q`, type: "search", value: typed, onChange: (e: React.ChangeEvent<HTMLInputElement>) => setTyped(e.target.value) }),
+        // 978-2: one plain button whose text is its name; hidden while searching, when every branch is open anyway.
+        branches.length > 0 && !searching
+          ? h(
+            "button",
+            { type: "button", className: styles.all, onClick: () => setShut(anyOpen ? branches : []) },
+            anyOpen ? OUTLINE_HR.collapseAll : OUTLINE_HR.expandAll,
+          )
+          : null,
       )
       : null,
     // Always in the DOM, so a screen reader hears it when the text appears.

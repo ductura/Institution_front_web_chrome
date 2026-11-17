@@ -1,6 +1,6 @@
 # src/components/outline
 
-Lijevi panel editora, raspored Popis (DAN-977). U 977-1 je čisti model: stablo poglavlja nastaje iz ravnog popisa naslova. U 977-2 je komponenta panela, a u 977-3 sklapanje grana i aktivno poglavlje. U 978-1 dodano je traženje naslova.
+Lijevi panel editora, raspored Popis (DAN-977). U 977-1 je čisti model: stablo poglavlja nastaje iz ravnog popisa naslova. U 977-2 je komponenta panela, a u 977-3 sklapanje grana i aktivno poglavlje. U 978-1 dodano je traženje naslova, a u 978-2 „Sklopi sve”.
 
 | Datoteka | Što radi |
 | --- | --- |
@@ -24,3 +24,4 @@ Lijevi panel editora, raspored Popis (DAN-977). U 977-1 je čisti model: stablo 
 - **Aktivno poglavlje.** `aria-current="location"` je uvijek na točno jednoj vidljivoj stavci.
 - **Otvoreno za DAN-979.** `collapsed` po indeksu retka samo je početno stanje za katalog i testove. Indeks se pomiče kad se iznad doda naslov, pa ključ za spremanje odlučuje DAN-979. Kandidat je `entry.id`, ali može biti null ili ponovljen.
 - **Traženje (978-1).** Dok upit vrijedi, gumba za sklapanje nema i sve je otvoreno. Sklopljenost se ne mijenja i vraća se kad se upit isprazni. Oznaka aktivnog poglavlja ide na najdublji prikazani čvor na putu do njega, inače nigdje. `role="status"` je uvijek u DOM-u, da čitač zaslona čuje tekst „nema pogodaka”.
+- **Sklopi sve (978-2).** Jedan običan gumb s promjenjivim natpisom, bez `aria-pressed` i `aria-expanded`. Piše „Sklopi sve” dok je vidljiva neka otvorena grana, a inače „Rasklopi sve”. „Vidljiva otvorena grana” računa se iz stabla (`openBranchShown`), ne iz popisa sklopljenih indeksa, koji smije imati nevaljane vrijednosti. Gumba nema bez grana ni za vrijeme traženja.

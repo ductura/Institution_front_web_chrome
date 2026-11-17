@@ -28,4 +28,7 @@ export const OUTLINE_HR = {
   search: "Traži naslov",
   /** Status when no title holds the query. */
   noMatch: "Nema naslova s tim tekstom.",
+  /** Button that collapses every branch (978-2), and the same button when none shows open. */
+  collapseAll: "Sklopi sve",
+  expandAll: "Rasklopi sve",
 } as const;
