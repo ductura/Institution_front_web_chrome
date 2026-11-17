@@ -32,3 +32,16 @@
 .toggle:hover { background: var(--hover); color: var(--ink); }
 .toggle:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }
 .item[aria-current="location"] > .row { box-shadow: inset 2px 0 0 var(--accent); }
+/* 978-1: the title search above the outline. */
+.search { display: grid; gap: 4px; margin: 0 0 8px; font-size: 13px; color: var(--ink-2); }
+.search input {
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--field-rule);
+  border-radius: var(--radius-control);
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+}
+.search input:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }

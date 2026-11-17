@@ -4,7 +4,7 @@ import { messagesHr as t } from "../../../locales/hr.ts";
 import { OUTLINE_HR } from "../i18n/hr.ts";
 
 import { outlineTree, type OutlineNode, type OutlineRow } from "./outline-tree";
-import { activeRow, collapsedSet } from "./outline-view";
+import { activeRow, collapsedSet, filterTree, searchQuery } from "./outline-view";
 import styles from "./OutlinePanel.module.css";
 
 export type OutlinePanelProps = {
@@ -14,23 +14,27 @@ export type OutlinePanelProps = {
   active: number;
   /** Row indexes collapsed at first render; later changes are not read (keys for storage: DAN-979). */
   collapsed?: readonly number[];
+  /** Title search at first render (DAN-978); later changes are not read. */
+  query?: string;
 };
 
-type View = { base: string; closed: ReadonlySet<number>; marked: number; toggle: (index: number) => void };
+type View = {
+  base: string; closed: ReadonlySet<number>; marked: number; searching: boolean; toggle: (index: number) => void;
+};
 
 function list(nodes: readonly OutlineNode[], depth: number, view: View, id?: string, hidden?: boolean): React.ReactNode {
   return h(
     "ol",
     { role: "list", className: styles.list, "data-depth": depth, id, hidden },
-    // Keyed by position: ids may repeat or be null (977-1).
-    nodes.map((node, i) => {
+    nodes.map((node) => {
       const title = node.row.entry.text.trim() || t.outline.untitledHeading;
       const open = !view.closed.has(node.index);
       const childList = `${view.base}-${node.index}`;
       return h(
         "li",
         {
-          key: i,
+          // Keyed by row index: unique, and stable when a search cuts the tree (978-1).
+          key: node.index,
           "aria-current": view.marked === node.index ? "location" : undefined,
           className: styles.item,
           "data-node-id": node.row.entry.id ?? undefined,
@@ -38,7 +42,7 @@ function list(nodes: readonly OutlineNode[], depth: number, view: View, id?: str
         h(
           "span",
           { className: styles.row, "data-level": node.row.entry.level },
-          node.children.length > 0
+          node.children.length > 0 && !view.searching
             ? h("button", {
               type: "button",
               className: styles.toggle,
@@ -62,17 +66,36 @@ function list(nodes: readonly OutlineNode[], depth: number, view: View, id?: str
  * numbers from the input (977-2), collapsible branches and the active chapter
  * (977-3). A collapsed branch keeps its list in the DOM, hidden.
  */
-export default function OutlinePanel({ rows, active, collapsed = [] }: OutlinePanelProps) {
+export default function OutlinePanel({ rows, active, collapsed = [], query = "" }: OutlinePanelProps) {
   const base = useId();
   const tree = outlineTree(rows);
   const [shut, setShut] = useState<readonly number[]>(collapsed);
-  const closed = collapsedSet(tree, shut);
+  const [typed, setTyped] = useState(query);
+  const q = searchQuery(typed);
+  const searching = q !== "";
+  const shown = filterTree(tree, q);
+  // While searching every branch is open and has no toggle; the collapsed set comes back when the query is cleared.
+  const closed = searching ? new Set<number>() : collapsedSet(tree, shut);
   const toggle = (index: number) =>
     setShut((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
-  const view: View = { base, closed, marked: activeRow(tree, rows, active, closed), toggle };
+  const view: View = { base, closed, marked: activeRow(shown, rows, active, closed, tree), searching, toggle };
   return h(
-    "nav",
-    { "aria-label": t.outline.label, className: styles.panel },
-    tree.length > 0 ? list(tree, 1, view) : h("p", { className: styles.empty }, t.workspace.structureEmpty),
+    "div",
+    { className: styles.panel },
+    tree.length > 0
+      ? h(
+        "p",
+        { className: styles.search },
+        h("label", { htmlFor: `${base}-q` }, OUTLINE_HR.search),
+        h("input", { id: `${base}-q`, type: "search", value: typed, onChange: (e: React.ChangeEvent<HTMLInputElement>) => setTyped(e.target.value) }),
+      )
+      : null,
+    // Always in the DOM, so a screen reader hears it when the text appears.
+    h("p", { role: "status", className: styles.empty }, searching && shown.length === 0 ? OUTLINE_HR.noMatch : null),
+    h(
+      "nav",
+      { "aria-label": t.outline.label },
+      tree.length === 0 ? h("p", { className: styles.empty }, t.workspace.structureEmpty) : shown.length > 0 ? list(shown, 1, view) : null,
+    ),
   );
 }

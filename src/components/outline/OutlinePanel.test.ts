@@ -12,7 +12,7 @@ import type { OutlineRow } from "./outline-tree";
 let pos = 0;
 const row = (level: number, text: string, number: string | null = null, id: string | null = `n${pos}`): OutlineRow =>
   ({ entry: { id, level, text, pos: (pos += 10) }, number });
-const render = (rows: readonly OutlineRow[], more: { active?: number; collapsed?: readonly number[] } = {}) =>
+const render = (rows: readonly OutlineRow[], more: { active?: number; collapsed?: readonly number[]; query?: string } = {}) =>
   renderToStaticMarkup(createElement(OutlinePanel, { rows, active: -1, ...more }));
 const count = (html: string, s: string) => html.split(s).length - 1;
 
@@ -53,7 +53,8 @@ describe("OutlinePanel: negative inputs first (DAN-977, 977-2)", () => {
     const html = render(ids.map((id, i) => row(1, `Izmišljeno ${i}`, String(i + 1), id)));
     expect(count(html, "<li")).toBe(5);
     expect([...html.matchAll(/data-node-id="([^"]*)"/g)].map((m) => m[1])).toEqual(["__proto__", "isti", "isti", "toString"]);
-    expect(html).not.toMatch(/\sid="/);
+    // Node ids never become id attributes; the search field's id comes from useId (978-1).
+    expect(html.slice(html.indexOf("<nav"))).not.toMatch(/\sid="/);
   });
 
   it("keeps a 2000-character title whole", () => {
@@ -113,5 +114,33 @@ describe("OutlinePanel: collapsing and the active chapter (977-3)", () => {
 
   it("marks nothing for an active index outside the rows", () => {
     for (const active of [-1, 4, 1.5, Number.NaN]) expect(render(three(), { active })).not.toContain("aria-current");
+  });
+});
+
+describe("OutlinePanel: title search (978-1)", () => {
+  const four = () => [row(1, "Uvod", "1"), row(2, "Pojmovi", "1.1"), row(3, "Izmišljeni pojam", "1.1.1"), row(1, "Metoda", "2")];
+
+  it("has no search field on an empty list, and an empty status region otherwise", () => {
+    expect(render([])).not.toContain('type="search"');
+    const html = render(four());
+    expect(html).toMatch(new RegExp(`<label for="([^"]+)">${OUTLINE_HR.search}</label><input id="\\1" type="search"`));
+    expect(html).toMatch(/<p role="status"[^>]*><\/p>/);
+  });
+
+  it("shows the parents of a hit open, without toggles, even when collapsed", () => {
+    const html = render(four(), { query: "pojam", collapsed: [0], active: 2 });
+    expect(html).toContain("Uvod");
+    expect(html).toContain("Pojmovi");
+    expect(html).not.toContain("Metoda");
+    expect(html).not.toContain("<button");
+    expect(html).not.toContain("hidden");
+    expect(count(html, 'aria-current="location"')).toBe(1);
+  });
+
+  it("says when nothing matches, and shows no list", () => {
+    const html = render(four(), { query: "nema" });
+    expect(html).toContain(`role="status"`);
+    expect(html).toContain(OUTLINE_HR.noMatch);
+    expect(html).not.toContain("<ol");
   });
 });
