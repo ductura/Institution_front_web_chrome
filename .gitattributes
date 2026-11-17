@@ -1,0 +1,19 @@
+# Line endings (DAN-952): text is stored with LF and checked out with LF on
+# every system; the types below are binary and stay byte for byte.
+# test/unit/gitattributes.test.js checks this file.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.tgz binary
+*.gz binary
+*.pdf binary
