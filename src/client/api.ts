@@ -60,7 +60,8 @@ type CatalogEntry = { readonly status: number; readonly code: string; readonly m
 /**
  * DAN-1062: the one session_expired entry of the error catalogue (a 401 told
  * apart from unauthenticated by its code). Throws when the catalogue lost it,
- * has it twice or gives it another status, so the client never guesses.
+ * has it twice or gives it another status, so the client never guesses. Other
+ * 401 entries (unauthenticated) are the catalogue's own and do not matter here.
  */
 export function sessionExpiredEntry(source: { readonly errors: readonly CatalogEntry[] }): CatalogEntry {
   const found = source.errors.filter((entry) => entry.code === "session_expired");
@@ -78,8 +79,9 @@ function sentCode(bytes: ArrayBuffer): string | undefined {
   try {
     const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
     if (typeof body !== "object" || body === null) return undefined;
-    const fields = body as { code?: unknown; error?: unknown; status?: unknown };
-    return [fields.code, fields.error, fields.status].find((value): value is string => typeof value === "string");
+    // Own fields only: a string on a prototype never stands in for the body's own code.
+    const own = (name: string): unknown => (Object.hasOwn(body, name) ? (body as Record<string, unknown>)[name] : undefined);
+    return [own("code"), own("error"), own("status")].find((value): value is string => typeof value === "string");
   } catch {
     return undefined;
   }
@@ -141,7 +143,7 @@ export function createApi(options: ApiOptions = {}) {
       const bytes = res.type === "opaqueredirect" ? new ArrayBuffer(0) : await res.clone().arrayBuffer();
       bodyBytes = bytes.byteLength;
       // The same content type test as the generated client: only a body it reads as JSON.
-      if (res.headers.get("content-type")?.startsWith("application/json")) code = sentCode(bytes);
+      if (res.status === SESSION_EXPIRED_ENTRY.status && res.headers.get("content-type")?.startsWith("application/json")) code = sentCode(bytes);
       return res;
     };
     let result: Result<Id>;

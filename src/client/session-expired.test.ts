@@ -49,6 +49,10 @@ describe("session_expired from the error catalogue (DAN-1062)", () => {
     const twice = catalog.errors.filter((e) => e.code === "session_expired");
     expect(() => sessionExpiredEntry({ errors: [...catalog.errors, ...twice] })).toThrow();
     expect(() => sessionExpiredEntry({ errors: [{ status: 403, code: "session_expired", messageKey: "x" }] })).toThrow();
+    // Other 401 entries are allowed: the real catalogue has unauthenticated, and a third one changes nothing.
+    expect(catalog.errors.filter((e) => e.status === 401).length).toBeGreaterThan(1);
+    const third = [...catalog.errors, { status: 401, code: "other_401", messageKey: "x" }];
+    expect(sessionExpiredEntry({ errors: third })).toEqual(SESSION_EXPIRED_ENTRY);
   });
 
   it("covers routes with 401 and leaves auth.* out", () => {
@@ -93,6 +97,26 @@ describe("session_expired from the error catalogue (DAN-1062)", () => {
       }
     });
   }
+
+  it("reads only the body's own fields, whatever a prototype carries", async () => {
+    const proto = Object.prototype as Record<string, unknown>;
+    for (const name of ["code", "error", "status"]) {
+      proto[name] = "unauthenticated";
+      try {
+        const result = await createApi({ baseUrl: BASE, fetchImpl: respond(json({ error: "session_expired" })) })("student.assignments.get", INPUTS.get("student.assignments.get")!);
+        expect(result).toEqual({ ok: false, status: 401, code: "session_expired" });
+      } finally {
+        delete proto[name];
+      }
+    }
+    proto.code = "session_expired";
+    try {
+      const { api } = await both("student.assignments.get", json({ error: "unauthenticated" }));
+      expect(api).not.toMatchObject({ code: "session_expired" });
+    } finally {
+      delete proto.code;
+    }
+  });
 
   it("refuses input that breaks the contract before sending, even when the answer would be session_expired", async () => {
     let sent = 0;
