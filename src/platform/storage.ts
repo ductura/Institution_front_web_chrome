@@ -113,6 +113,7 @@ export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<Index
     // timer callback; the elapsed time decides then, not the order of events.
     // performance.now() is monotonic: a wall clock change cannot move it.
     const started = elapsedClock();
+    const inTime = () => elapsedClock() - started <= delay;
 
     let request: ProbeOpenRequest;
     try {
@@ -124,11 +125,11 @@ export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<Index
     try {
       request.onsuccess = () => {
         discard(idb, request);
-        finish(elapsedClock() - started <= delay ? { state: "available" } : unavailable("timeout"));
+        finish(inTime() ? { state: "available" } : unavailable("timeout"));
       };
       request.onerror = () => {
         discard(idb, request);
-        finish(unavailable("error"));
+        finish(unavailable(inTime() ? "error" : "timeout"));
       };
     } catch {
       finish(unavailable("error"));

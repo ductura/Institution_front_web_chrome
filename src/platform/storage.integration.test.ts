@@ -121,6 +121,16 @@ describe("probeIndexedDb", () => {
     expect(fake.closed()).toBe(1);
   });
 
+  it("is timeout when onerror runs after the deadline but before the timer callback (busy main thread)", async () => {
+    const advance = monotonic();
+    const fake = fakeFactory("never");
+    const answer = probeIndexedDb({ indexedDB: fake.factory }, 2000);
+    advance(2500);
+    fake.pending()!.onerror?.({} as never);
+    await expect(answer).resolves.toEqual({ ...WARNING, reason: "timeout" });
+    expect(fake.deleted).toEqual([PROBE_DATABASE]);
+  });
+
   it("stays timeout when the wall clock is set back while the main thread is busy", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(10_000);
