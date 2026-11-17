@@ -196,3 +196,47 @@ describe("OutlinePanel: headings only (978-3)", () => {
     expect(nav(on)).toBe(nav(render(rows, { active: 1 })));
   });
 });
+
+describe("OutlinePanel: stored settings (979-2)", () => {
+  const SCOPE = "izmisljeni-dokument";
+  const key = `ductura.outline.v1:${SCOPE}`;
+  const store = (record?: object) => ({
+    getItem: (k: string) => (record && k === key ? JSON.stringify(record) : null),
+    setItem: () => {},
+  });
+  const rowsWith = (ids: (string | null)[]) => ids.map((id, i) => row(i % 2 === 0 ? 1 : 2, `Izmišljeno ${i}`, String(i), id));
+  const hiddenLists = (html: string) => count(html, " hidden");
+  const panel = (rows: readonly OutlineRow[], s: ReturnType<typeof store> | undefined, more: object = {}) =>
+    renderToStaticMarkup(createElement(OutlinePanel, { rows, active: -1, store: s, scope: SCOPE, ...more }));
+
+  it("applies the stored collapsed ids and headings only", () => {
+    const html = panel(rowsWith(["a", "a1", "b", "b1"]), store({ collapsed: ["b"], headingsOnly: true }));
+    expect(hiddenLists(html)).toBe(1);
+    expect(html).toContain('aria-label="Potpoglavlja: 2 Izmišljeno 2" aria-expanded="false"');
+    expect(html).toContain(`aria-pressed="true">${OUTLINE_HR.headingsOnly}`);
+  });
+
+  it("keeps the same branch collapsed when a heading is added above it", () => {
+    const html = panel(rowsWith(["new", "new1", "a", "a1", "b", "b1"]), store({ collapsed: ["b"] }));
+    expect(html).toContain('aria-label="Potpoglavlja: 4 Izmišljeno 4" aria-expanded="false"');
+    expect(hiddenLists(html)).toBe(1);
+  });
+
+  it("collapses nothing for a repeated, null or missing id", () => {
+    for (const ids of [["a", "a1", "a", "a2"], [null, "x1", "b", "b1"]]) {
+      expect(hiddenLists(panel(rowsWith(ids), store({ collapsed: ["a", "gone"] })))).toBe(0);
+    }
+  });
+
+  it("uses the props without a record, with a throwing store or without a usable scope", () => {
+    const rows = rowsWith(["a", "a1", "b", "b1"]);
+    const throwing = { getItem: () => { throw new Error("izmišljeno"); }, setItem: () => {} };
+    const notAnObject = (value: string) => ({ getItem: () => value, setItem: () => {} });
+    for (const s of [store(), throwing, notAnObject("null"), notAnObject("[]"), notAnObject("42")]) {
+      const html = panel(rows, s as never, { collapsed: [0], headingsOnly: true });
+      expect(hiddenLists(html)).toBe(1);
+      expect(html).toContain(`aria-pressed="true">${OUTLINE_HR.headingsOnly}`);
+    }
+    expect(hiddenLists(panel(rows, store({ collapsed: ["b"] }), { scope: "  " }))).toBe(0);
+  });
+});

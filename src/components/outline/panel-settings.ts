@@ -5,7 +5,8 @@
  * store sits in try/catch: without a store, or with one that throws (private
  * windows, a full quota), the panel works with the defaults.
  */
-import { OUTLINE_LEVELS } from "./outline-tree";
+import { OUTLINE_LEVELS, type OutlineNode, type OutlineRow } from "./outline-tree";
+import { collapsedSet } from "./outline-view";
 
 /** The panel's layouts; one so far, so another one does not change the record. */
 export const PANEL_LAYOUTS = ["popis"] as const;
@@ -79,20 +80,61 @@ export function settingsKey(scope: string): string | null {
   return scope.trim() === "" || scope.length > SCOPE_MAX ? null : `${PANEL_SETTINGS_PREFIX}${scope}`;
 }
 
-/** The stored settings, or the defaults when there is no store, it throws, or the record is broken or too long. */
-export function readSettings(store: SettingsStore, key: string): PanelSettings {
+/**
+ * The stored settings, or null when there is no store, it throws, or there is
+ * no record or a broken, non-object or too long one (979-2): only a real
+ * settings object overrides the panel's props. Its fields are normalised one by one.
+ */
+export function readStoredSettings(store: SettingsStore, key: string): PanelSettings | null {
   let text: string | null;
   try {
     text = store ? store.getItem(key) : null;
   } catch {
-    return PANEL_DEFAULTS;
+    return null;
   }
-  if (typeof text !== "string" || text.length > MAX_RAW) return PANEL_DEFAULTS;
+  if (typeof text !== "string" || text.length > MAX_RAW) return null;
   try {
-    return parseSettings(JSON.parse(text));
+    const value: unknown = JSON.parse(text);
+    // Valid JSON that is not a settings object (null, an array, a number) is a broken record, not defaults.
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+    return parseSettings(value);
   } catch {
-    return PANEL_DEFAULTS;
+    return null;
   }
+}
+
+/** The stored settings, or the defaults when there is no store, it throws, or the record is broken or too long. */
+export function readSettings(store: SettingsStore, key: string): PanelSettings {
+  return readStoredSettings(store, key) ?? PANEL_DEFAULTS;
+}
+
+/** Ids that occur exactly once in the rows: the only ones a collapsed branch can be stored by. */
+export function uniqueIds(rows: readonly OutlineRow[]): ReadonlyMap<string, number> {
+  const seen = new Map<string, number>();
+  const twice = new Set<string>();
+  rows.forEach(({ entry }, index) => {
+    if (entry.id === null) return;
+    if (seen.has(entry.id)) twice.add(entry.id);
+    else seen.set(entry.id, index);
+  });
+  for (const id of twice) seen.delete(id);
+  return seen;
+}
+
+/**
+ * The record to write (979-2): both current states, the collapsed branches by
+ * unique id only (at most COLLAPSED_MAX, the first ones), layout and levels
+ * kept from `base`.
+ */
+export function settingsFor(
+  tree: readonly OutlineNode[], rows: readonly OutlineRow[], shut: readonly number[], headingsOnly: boolean, base: PanelSettings,
+): PanelSettings {
+  const unique = uniqueIds(rows);
+  const collapsed = [...collapsedSet(tree, shut)].sort((a, b) => a - b)
+    .map((index) => rows[index]!.entry.id)
+    .filter((id): id is string => id !== null && unique.get(id) !== undefined && ID_PATTERN.test(id))
+    .slice(0, COLLAPSED_MAX);
+  return { ...base, collapsed, headingsOnly };
 }
 
 /** Writes the settings in their normal form; false when there is no store, it throws, or the record is too long. */

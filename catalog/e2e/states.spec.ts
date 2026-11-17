@@ -476,6 +476,50 @@ test("headings only toggles, reports each press once and leaves the list", async
   expect(errors).toEqual([]);
 });
 
+// DAN-979 (979-2), Linear acceptance: panel settings survive a reload; without storage the panel works with defaults.
+const puno = (page: Page) => cell(page, "OutlinePanel", "Ljuska", "puno");
+const uvod = (page: Page) => puno(page).getByRole("button", { name: "Potpoglavlja: 1 Uvod" });
+const onlyButton = (page: Page) => puno(page).getByRole("button", { name: OUTLINE_HR.headingsOnly, exact: true });
+async function changeAndReload(page: Page, errors: string[]) {
+  await expect(uvod(page)).toHaveAttribute("aria-expanded", "true");
+  await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "false");
+  await uvod(page).click();
+  await onlyButton(page).click();
+  await expect(uvod(page)).toHaveAttribute("aria-expanded", "false");
+  await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  expect(errors).toEqual([]);
+}
+
+test("panel settings survive a reload", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await open(page, "dark", 1440);
+  await changeAndReload(page, errors);
+  await expect(uvod(page)).toHaveAttribute("aria-expanded", "false");
+  await expect(puno(page).locator(`[id="${await uvod(page).getAttribute("aria-controls")}"]`)).toBeHidden();
+  await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "true");
+  // The restored state is not reported as a press: the editor reads the same store (README).
+  await expect(puno(page).locator("[data-headings-log]")).toHaveAttribute("data-headings-log", "");
+  expect(errors).toEqual([]);
+});
+
+for (const [name, script] of [
+  ["a throwing localStorage", () => Object.defineProperty(window, "localStorage", { get() { throw new DOMException("izmišljeno", "SecurityError"); } })],
+  ["a full quota", () => { Storage.prototype.setItem = () => { throw new DOMException("izmišljeno", "QuotaExceededError"); }; }],
+] as const) {
+  test(`without storage (${name}) the panel works with defaults`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.addInitScript(script);
+    await open(page, "light", 390);
+    await changeAndReload(page, errors);
+    await expect(uvod(page)).toHaveAttribute("aria-expanded", "true");
+    await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "false");
+    expect(errors).toEqual([]);
+  });
+}
+
 test("the semantics table covers every component and state the catalogue shows", () => {
   for (const name of COMPONENTS) expect(Object.keys(SEMANTICS[name])).toEqual([...CATALOG_STATES]);
   for (const name of SCREENS) expect(Object.keys(SCREEN_SEMANTICS[name])).toEqual([...CATALOG_STATES]);
