@@ -13,7 +13,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "AccessLogView"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks", "AccessLogView"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
@@ -166,8 +166,11 @@ const outlineList = (numbers: string[]) => async (c: Locator) => {
   // The search field (978-1) sits outside the nav and must fit the cell too.
   const field = c.getByRole("searchbox", { name: OUTLINE_HR.search });
   expect(await field.evaluate((f) => f.getBoundingClientRect().right <= f.closest("dd")!.getBoundingClientRect().right)).toBe(true);
-  for (const name of [OUTLINE_HR.collapseAll, OUTLINE_HR.headingsOnly]) {
-    const button = c.getByRole("button", { name, exact: true });
+  for (const button of [
+    c.getByRole("button", { name: OUTLINE_HR.collapseAll, exact: true }),
+    c.getByRole("button", { name: OUTLINE_HR.headingsOnly, exact: true }),
+    c.getByRole("combobox", { name: OUTLINE_HR.levels }),
+  ]) {
     expect(await button.evaluate((b) => b.getBoundingClientRect().right <= b.closest("dd")!.getBoundingClientRect().right)).toBe(true);
   }
 };
@@ -390,6 +393,35 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await ownIds(c);
     },
   },
+  // DAN-871 (871-2): mentored works by family name, Croatian order; texts from locales/ only.
+  MentoredWorks: {
+    prazno: async (c) => {
+      await expect(c.getByRole("heading", { level: 2 })).toHaveText(t.mentoredWorks.empty);
+      await expect(c.getByText(t.mentoredWorks.orderNote)).toHaveCount(0);
+    },
+    učitavanje: loading(t.workspace.panelLoading),
+    greška: async (c) => {
+      await expect(c.getByRole("listitem")).toHaveCount(1);
+      await expect(c.getByText(t.mentoredWorks.unnamed)).toBeVisible();
+      await expect(c.getByRole("link")).toHaveCount(0);
+    },
+    puno: async (c) => {
+      await expect(c.getByRole("heading", { level: 2 })).toHaveText(t.mentoredWorks.listTitle);
+      await expect(c.getByRole("listitem")).toHaveText([/^Borna Crtić/, /^Ante Čvorić/, /^Ana Izmišljenić/, /^Vesna Žbunić/]);
+      await expect(c.getByRole("link", { name: t.mentoredWorks.open })).toHaveCount(3);
+      await expect(c.getByText(t.mentoredWorks.orderNote)).toBeVisible();
+      // Every row stays inside the list at every width (as TeacherCourses, 871-1).
+      const outside = await c.locator("ul").evaluateAll((lists) => lists.flatMap((ul) => {
+        const edge = ul.getBoundingClientRect().right;
+        return [...ul.querySelectorAll("li, li > *")].filter((el) => el.getBoundingClientRect().right > edge + 0.5).map((el) => el.textContent);
+      }));
+      expect(outside).toEqual([]);
+    },
+    onemogućeno: async (c) => {
+      await expect(c.getByText(t.mentoredWorks.state.not_started)).toBeVisible();
+      await expect(c.getByRole("link")).toHaveCount(0);
+    },
+  },
   RouteLoading: {
     prazno: loading(t.workspace.panelLoading),
     učitavanje: loading(t.fastPath.loading),
@@ -554,13 +586,19 @@ test("headings only toggles, reports each press once and leaves the list", async
 const puno = (page: Page) => cell(page, "OutlinePanel", "Ljuska", "puno");
 const uvod = (page: Page) => puno(page).getByRole("button", { name: "Potpoglavlja: 1 Uvod" });
 const onlyButton = (page: Page) => puno(page).getByRole("button", { name: OUTLINE_HR.headingsOnly, exact: true });
+const levelsChoice = (page: Page) => puno(page).getByRole("combobox", { name: OUTLINE_HR.levels });
+const shownNumbers = (page: Page) => outlineNav(puno(page)).locator("[data-number]:visible");
 async function changeAndReload(page: Page, errors: string[]) {
   await expect(uvod(page)).toHaveAttribute("aria-expanded", "true");
   await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "false");
+  await expect(levelsChoice(page)).toHaveValue("3");
   await uvod(page).click();
   await onlyButton(page).click();
   await expect(uvod(page)).toHaveAttribute("aria-expanded", "false");
   await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "true");
+  // 979-3: the levels choice is saved too (and works in memory without a store).
+  await levelsChoice(page).selectOption("2");
+  await expect(shownNumbers(page)).toHaveText(["1", "2", "2.1"]);
   await page.reload();
   expect(errors).toEqual([]);
 }
@@ -573,6 +611,8 @@ test("panel settings survive a reload", async ({ page }) => {
   await expect(uvod(page)).toHaveAttribute("aria-expanded", "false");
   await expect(puno(page).locator(`[id="${await uvod(page).getAttribute("aria-controls")}"]`)).toBeHidden();
   await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "true");
+  await expect(levelsChoice(page)).toHaveValue("2");
+  await expect(shownNumbers(page)).toHaveText(["1", "2", "2.1"]);
   // The restored state is not reported as a press: the editor reads the same store (README).
   await expect(puno(page).locator("[data-headings-log]")).toHaveAttribute("data-headings-log", "");
   expect(errors).toEqual([]);
@@ -590,9 +630,40 @@ for (const [name, script] of [
     await changeAndReload(page, errors);
     await expect(uvod(page)).toHaveAttribute("aria-expanded", "true");
     await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "false");
+    await expect(levelsChoice(page)).toHaveValue("3");
+    await expect(shownNumbers(page)).toHaveText(["1", "1.1", "1.1.1", "2", "2.1", "2.1.3"]);
     expect(errors).toEqual([]);
   });
 }
+
+// DAN-979 (979-3): the chosen level hides the headings below it and survives a reload; a search shows every level.
+test("levels choice hides deeper headings and survives a reload", async ({ page }) => {
+  await open(page, "dark", 360);
+  const marked = puno(page).locator("[aria-current=location] > span [data-number]");
+  const collapseAll = puno(page).getByRole("button", { name: OUTLINE_HR.collapseAll, exact: true });
+  await levelsChoice(page).selectOption("1");
+  await expect(shownNumbers(page)).toHaveText(["1", "2"]);
+  await expect(outlineNav(puno(page)).getByRole("button")).toHaveCount(0);
+  await expect(collapseAll).toHaveCount(0);
+  await expect(marked).toHaveText("1");
+  await levelsChoice(page).selectOption("2");
+  await expect(shownNumbers(page)).toHaveText(["1", "1.1", "2", "2.1"]);
+  await expect(marked).toHaveText("1.1");
+  await collapseAll.click();
+  await levelsChoice(page).selectOption("3");
+  await expect(shownNumbers(page)).toHaveText(["1", "2"]);
+  await puno(page).getByRole("button", { name: OUTLINE_HR.expandAll, exact: true }).click();
+  await levelsChoice(page).selectOption("1");
+  await page.reload();
+  await expect(levelsChoice(page)).toHaveValue("1");
+  await expect(shownNumbers(page)).toHaveText(["1", "2"]);
+  const field = puno(page).getByRole("searchbox", { name: OUTLINE_HR.search });
+  await field.fill("pojam");
+  await expect(shownNumbers(page)).toHaveText(["1", "1.1", "1.1.1"]);
+  await field.fill("");
+  await expect(shownNumbers(page)).toHaveText(["1", "2"]);
+  await expect(marked).toHaveText("1");
+});
 
 test("the semantics table covers every component and state the catalogue shows", () => {
   for (const name of COMPONENTS) expect(Object.keys(SEMANTICS[name])).toEqual([...CATALOG_STATES]);

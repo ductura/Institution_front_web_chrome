@@ -4,7 +4,7 @@ import { messagesHr as t } from "../../../locales/hr.ts";
 import { OUTLINE_HR } from "../i18n/hr.ts";
 
 import { outlineTree, type OutlineNode, type OutlineRow } from "./outline-tree";
-import { activeRow, branchIndexes, collapsedSet, filterTree, openBranchShown, searchQuery } from "./outline-view";
+import { activeRow, branchIndexes, collapsedSet, filterTree, limitLevels, openBranchShown, searchQuery } from "./outline-view";
 import {
   PANEL_DEFAULTS, readStoredSettings, settingsFor, settingsKey, uniqueIds, writeSettings, type SettingsStore,
 } from "./panel-settings";
@@ -30,7 +30,12 @@ export type OutlinePanelProps = {
   store?: SettingsStore;
   /** Whose settings: the editor gives a digest of the document id. */
   scope?: string;
+  /** Headings shown, up to level 1, 2 or 3 (979-3), at first render; anything else is 3. A stored record wins. */
+  levels?: number;
 };
+
+type Levels = 1 | 2 | 3;
+const asLevels = (n: number): Levels => (Number.isInteger(n) && n >= 1 && n <= 3 ? (n as Levels) : 3);
 
 type View = {
   base: string; closed: ReadonlySet<number>; marked: number; searching: boolean; toggle: (index: number) => void;
@@ -81,7 +86,9 @@ function list(nodes: readonly OutlineNode[], depth: number, view: View, id?: str
  * (977-3). A collapsed branch keeps its list in the DOM, hidden.
  */
 export default function OutlinePanel(
-  { rows, active, collapsed = [], query = "", headingsOnly = false, onHeadingsOnlyChange, store, scope = "" }: OutlinePanelProps,
+  {
+    rows, active, collapsed = [], query = "", headingsOnly = false, onHeadingsOnlyChange, store, scope = "", levels = 3,
+  }: OutlinePanelProps,
 ) {
   const base = useId();
   const tree = outlineTree(rows);
@@ -95,11 +102,13 @@ export default function OutlinePanel(
       base: record ?? PANEL_DEFAULTS,
       shut: record ? record.collapsed.flatMap((id) => unique.get(id) ?? []) : collapsed,
       only: record ? record.headingsOnly : headingsOnly,
+      levels: record ? record.levels : asLevels(levels),
     };
   });
   const [shut, setShut] = useState<readonly number[]>(saved.shut);
   const [typed, setTyped] = useState(query);
   const [only, setOnly] = useState(saved.only);
+  const [lv, setLv] = useState<Levels>(saved.levels);
   // Called in the click handler, never inside a state updater, which StrictMode runs twice.
   const pressOnly = () => {
     const next = !only;
@@ -109,20 +118,29 @@ export default function OutlinePanel(
   };
   const q = searchQuery(typed);
   const searching = q !== "";
-  const shown = filterTree(tree, q);
-  // While searching every branch is open and has no toggle; the collapsed set comes back when the query is cleared.
+  // While searching every branch is open and has no toggle, and every level shows; the collapsed set and the
+  // levels choice come back when the query is cleared. `shut` stays indexes over the whole tree (979-3).
+  const limited = limitLevels(tree, lv);
+  const shown = searching ? filterTree(tree, q) : limited;
   const closed = searching ? new Set<number>() : collapsedSet(tree, shut);
   // Writes in the handlers, from the current state, never inside a state updater; a failed write changes nothing on screen.
-  function save(nextShut: readonly number[], nextOnly: boolean) {
-    if (saved.key) writeSettings(store, saved.key, settingsFor(tree, rows, nextShut, nextOnly, saved.base));
+  // Always the whole tree, so a collapsed branch the levels choice hides is not dropped from the record.
+  function save(nextShut: readonly number[], nextOnly: boolean, nextLevels: Levels = lv) {
+    if (saved.key) writeSettings(store, saved.key, settingsFor(tree, rows, nextShut, nextOnly, { ...saved.base, levels: nextLevels }));
   }
+  const chooseLevels = (value: string) => {
+    const next = asLevels(Number(value));
+    setLv(next);
+    save(shut, only, next);
+  };
   const setAndSave = (next: readonly number[]) => {
     setShut(next);
     save(next, only);
   };
   const toggle = (index: number) => setAndSave(shut.includes(index) ? shut.filter((i) => i !== index) : [...shut, index]);
-  const branches = branchIndexes(tree);
-  const anyOpen = openBranchShown(tree, closed);
+  // Shown and labelled from what is on screen; acting on every branch of the whole tree.
+  const branches = branchIndexes(limited);
+  const anyOpen = openBranchShown(limited, closed);
   const view: View = { base, closed, marked: activeRow(shown, rows, active, closed, tree), searching, toggle };
   return h(
     "div",
@@ -137,10 +155,17 @@ export default function OutlinePanel(
         branches.length > 0 && !searching
           ? h(
             "button",
-            { type: "button", className: styles.all, onClick: () => setAndSave(anyOpen ? branches : []) },
+            { type: "button", className: styles.all, onClick: () => setAndSave(anyOpen ? branchIndexes(tree) : []) },
             anyOpen ? OUTLINE_HR.collapseAll : OUTLINE_HR.expandAll,
           )
           : null,
+        // 979-3: a native select; it stays usable while searching and applies when the query is cleared.
+        h("label", { htmlFor: `${base}-l` }, OUTLINE_HR.levels),
+        h(
+          "select",
+          { id: `${base}-l`, value: String(lv), onChange: (e: React.ChangeEvent<HTMLSelectElement>) => chooseLevels(e.target.value) },
+          ([1, 2, 3] as const).map((n) => h("option", { key: n, value: String(n) }, OUTLINE_HR.levelOptions[n])),
+        ),
         // 978-3: a toggle with a constant label; the state is aria-pressed only.
         h("button", { type: "button", className: styles.only, "aria-pressed": only, onClick: pressOnly }, OUTLINE_HR.headingsOnly),
       )
