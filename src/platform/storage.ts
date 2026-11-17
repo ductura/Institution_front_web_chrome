@@ -48,6 +48,18 @@ export interface StorageEnv {
 /** Largest delay a browser timer keeps (2^31 - 1 ms). */
 const MAX_TIMER_MS = 2_147_483_647;
 
+/**
+ * Monotonic milliseconds. Without `performance` (never in a supported
+ * browser) every reading is +Infinity, so a success can only become a timeout.
+ */
+function elapsedClock(): number {
+  try {
+    return typeof performance?.now === "function" ? performance.now() : Number.POSITIVE_INFINITY;
+  } catch {
+    return Number.POSITIVE_INFINITY;
+  }
+}
+
 /** Name of the database the probe opens and deletes again. */
 export const PROBE_DATABASE = "ductura-platform-probe";
 
@@ -99,8 +111,8 @@ export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<Index
     const timer = setTimeout(() => finish(unavailable("timeout")), delay);
     // A busy main thread can run onsuccess after the deadline but before the
     // timer callback; the elapsed time decides then, not the order of events.
-    // A wall clock jump forward only turns a success into a warning.
-    const started = Date.now();
+    // performance.now() is monotonic: a wall clock change cannot move it.
+    const started = elapsedClock();
 
     let request: ProbeOpenRequest;
     try {
@@ -112,7 +124,7 @@ export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<Index
     try {
       request.onsuccess = () => {
         discard(idb, request);
-        finish(Date.now() - started <= delay ? { state: "available" } : unavailable("timeout"));
+        finish(elapsedClock() - started <= delay ? { state: "available" } : unavailable("timeout"));
       };
       request.onerror = () => {
         discard(idb, request);

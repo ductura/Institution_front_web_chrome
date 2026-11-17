@@ -40,6 +40,8 @@ const WARNING = { state: "unavailable", messageKey: "editor.failureUnavailable" 
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("probeIndexedDb", () => {
@@ -100,27 +102,52 @@ describe("probeIndexedDb", () => {
     expect(fake.closed()).toBe(1);
   });
 
+  // The monotonic clock is driven by hand; the timer itself (2000 ms) never
+  // runs inside these tests, which is the busy main thread case.
+  function monotonic(start = 1000) {
+    let now = start;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    return (ms: number) => void (now += ms);
+  }
+
   it("is timeout when onsuccess runs after the deadline but before the timer callback (busy main thread)", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(0);
+    const advance = monotonic();
     const fake = fakeFactory("never");
     const answer = probeIndexedDb({ indexedDB: fake.factory }, 2000);
-    // The clock moves past the deadline without the timer having run yet.
-    vi.setSystemTime(2001);
+    advance(2001);
     fake.pending()!.onsuccess?.({} as never);
     await expect(answer).resolves.toEqual({ ...WARNING, reason: "timeout" });
     expect(fake.deleted).toEqual([PROBE_DATABASE]);
     expect(fake.closed()).toBe(1);
   });
 
-  it("is available when onsuccess runs exactly at the deadline", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(0);
+  it("stays timeout when the wall clock is set back while the main thread is busy", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(10_000);
+    const advance = monotonic();
     const fake = fakeFactory("never");
     const answer = probeIndexedDb({ indexedDB: fake.factory }, 2000);
-    vi.setSystemTime(2000);
+    advance(2500);
+    vi.setSystemTime(9_000);
+    fake.pending()!.onsuccess?.({} as never);
+    await expect(answer).resolves.toEqual({ ...WARNING, reason: "timeout" });
+  });
+
+  it("is available when onsuccess runs exactly at the deadline", async () => {
+    const advance = monotonic();
+    const fake = fakeFactory("never");
+    const answer = probeIndexedDb({ indexedDB: fake.factory }, 2000);
+    advance(2000);
     fake.pending()!.onsuccess?.({} as never);
     await expect(answer).resolves.toEqual({ state: "available" });
+  });
+
+  it("is timeout, never available, without a monotonic clock", async () => {
+    vi.stubGlobal("performance", undefined);
+    const fake = fakeFactory("never");
+    const answer = probeIndexedDb({ indexedDB: fake.factory }, 2000);
+    fake.pending()!.onsuccess?.({} as never);
+    await expect(answer).resolves.toEqual({ ...WARNING, reason: "timeout" });
   });
 
   it("never reports available without onsuccess, even with a zero or invalid deadline", async () => {
