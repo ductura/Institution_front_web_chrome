@@ -13,7 +13,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "AccessLogView"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
@@ -325,6 +325,35 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
   },
   // DAN-871 (871-1): the teacher's courses; texts from locales/ only. Every state has
   // its own course ids, so each aria-labelledby names its own section (ownIds).
+  // DAN-913-2: the student's own access log; texts from locales/ only. Only "puno"
+  // has day sections, so only it has ids (ownIds); the rest show none.
+  AccessLogView: {
+    prazno: async (c) => {
+      await expect(c.getByText(t.accessLog.empty)).toBeVisible();
+      await expect(c.locator("section")).toHaveCount(0);
+      await expect(c.getByRole("link")).toHaveCount(0);
+    },
+    učitavanje: loading(t.accessLog.loading),
+    greška: async (c) => {
+      await expect(c.getByRole("alert")).toHaveText(t.accessLog.unavailable);
+      await expect(c.getByRole("link", { name: t.accessLog.retry })).toHaveAttribute("href", "/rad/izmisljeni-zadatak/dnevnik-pristupa");
+      await expect(c.locator("section")).toHaveCount(0);
+    },
+    puno: async (c) => {
+      await expect(c.getByRole("heading", { level: 2 })).toHaveText(["Utorak, 10. 11. 2026.", "Ponedjeljak, 9. 11. 2026."]);
+      await expect(c.getByRole("listitem")).toHaveCount(3);
+      await expect(c.getByText(t.accessLog.roleAlone.seminar_teacher, { exact: true })).toHaveCount(1);
+      await expect(c.getByRole("link", { name: t.accessLog.older })).toHaveAttribute("href", /\?prije=2026-11-09T18:55:00\.000Z&zapis=/);
+      await expect(c.getByRole("link", { name: t.accessLog.newest })).toHaveCount(0);
+      await ownIds(c);
+    },
+    onemogućeno: async (c) => {
+      await expect(c.getByText(t.accessLog.noOlder)).toBeVisible();
+      await expect(c.getByText(t.accessLog.empty)).toHaveCount(0);
+      await expect(c.getByRole("link", { name: t.accessLog.newest })).toHaveAttribute("href", "/rad/izmisljeni-zadatak/dnevnik-pristupa");
+      await expect(c.locator("section")).toHaveCount(0);
+    },
+  },
   TeacherCourses: {
     prazno: async (c) => {
       await expect(c.getByRole("heading", { level: 2 })).toHaveText(t.teacherCourses.empty);

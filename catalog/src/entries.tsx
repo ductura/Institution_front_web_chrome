@@ -3,8 +3,8 @@ import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
-  AppShell, EmptyHome, ErrorScreen, MyAssignments, OutlinePanel, RouteLoading, StudentHome, TeacherCourses, type MyCourse,
-  type AssignmentSubmission, type OutlineRow, type TeacherCourse,
+  AccessLogView, accessLogDaysOf, AppShell, EmptyHome, ErrorScreen, MyAssignments, OutlinePanel, RouteLoading, StudentHome, TeacherCourses, type MyCourse,
+  type AccessLogEntry, type AssignmentSubmission, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -114,6 +114,18 @@ const submission = (n: number, documentId: string | null, afterDeadline?: boolea
 });
 const teacherWorks = (n: number, works: AssignmentSubmission[] | null) => ({ [`30000000-0000-4000-8000-00000000${n}0a1`]: works });
 
+// Invented openings of the student's own work (DAN-913-2); only "puno" has days, so no id repeats.
+const opening = (n: number, at: string, over: Partial<AccessLogEntry> = {}): AccessLogEntry => ({
+  id: `50000000-0000-4000-8000-${String(n).padStart(12, "0")}`, at, role: "mentor", surface: "live_view",
+  reader: { givenName: "Izmišljena", familyName: "Anić" }, ...over,
+});
+const accessLogDays = accessLogDaysOf([
+  opening(1, "2026-11-10T13:10:00.000Z"),
+  opening(2, "2026-11-10T08:05:00.000Z", { role: "teacher", surface: "process_summary", reader: { givenName: "Izmišljeni", familyName: "Babić" } }),
+  opening(3, "2026-11-09T18:55:00.000Z", { role: "seminar_teacher", surface: "replay", reader: null }),
+]);
+const accessLogHere = "/rad/izmisljeni-zadatak/dnevnik-pristupa";
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -178,5 +190,15 @@ export const SCREEN_ENTRIES = {
       />
     ),
     onemogućeno: () => <TeacherCourses courses={teacherCourses(5)} works={teacherWorks(5, [submission(1, null)])} />,
+  },
+  AccessLogView: {
+    prazno: () => <AccessLogView view={{ kind: "days", days: [], olderHref: null }} />,
+    učitavanje: () => <RouteLoading label={t.accessLog.loading} />,
+    greška: () => <AccessLogView view={{ kind: "unavailable", retryHref: accessLogHere }} />,
+    puno: () => (
+      <AccessLogView view={{ kind: "days", days: accessLogDays,
+        olderHref: `${accessLogHere}?prije=2026-11-09T18:55:00.000Z&zapis=50000000-0000-4000-8000-000000000003` }} />
+    ),
+    onemogućeno: () => <AccessLogView view={{ kind: "days", days: [], olderHref: null, newestHref: accessLogHere }} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;

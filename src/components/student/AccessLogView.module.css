@@ -1,0 +1,59 @@
+/* S-42, the student's own access log (DAN-294, DAN-913-2): time, who, what; a
+   column at narrow widths. From Ductus app/globals.css (.access-log__*). */
+.note {
+  color: var(--ink-2);
+}
+
+.day h2 {
+  margin: 0 0 4px;
+  font-family: var(--ff-ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 8em minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.time {
+  font-family: var(--ff-mono);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.what {
+  color: var(--ink-2);
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.more:hover {
+  border-color: var(--ink-3);
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
