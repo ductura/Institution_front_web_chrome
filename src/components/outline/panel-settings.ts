@@ -24,7 +24,15 @@ export const PANEL_DEFAULTS: PanelSettings = Object.freeze({
 
 export const COLLAPSED_MAX = 200;
 export const ID_MAX = 64;
-/** Longest record read or written, in UTF-16 units as browsers count the quota; the largest valid settings fit. */
+/**
+ * A stored id: letters, digits, - and _ (a Ductus block id is a UUID). JSON
+ * escapes none of them, so the record's length is bounded by the id lengths.
+ */
+const ID_PATTERN = new RegExp(`^[A-Za-z0-9_-]{1,${ID_MAX}}$`);
+/**
+ * Longest record read or written, in UTF-16 units as browsers count the quota.
+ * The largest valid settings fit: 200 ids of 64 unescaped characters is about 13 500.
+ */
 export const MAX_RAW = 16_384;
 /** Versioned, so a later key for collapsed branches is a new record, not a broken one. */
 export const PANEL_SETTINGS_PREFIX = "ductura.outline.v1:";
@@ -36,7 +44,7 @@ const own = (o: object, key: string): unknown => (Object.hasOwn(o, key) ? (o as 
 
 function validCollapsed(value: unknown): readonly string[] | null {
   if (!Array.isArray(value) || value.length > COLLAPSED_MAX) return null;
-  if (!value.every((id) => typeof id === "string" && id.length >= 1 && id.length <= ID_MAX)) return null;
+  if (!value.every((id) => typeof id === "string" && ID_PATTERN.test(id))) return null;
   return new Set(value).size === value.length ? [...value] : null;
 }
 

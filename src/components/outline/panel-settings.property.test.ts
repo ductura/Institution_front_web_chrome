@@ -11,7 +11,7 @@ const memory = () => {
 const valid: fc.Arbitrary<PanelSettings> = fc.record({
   layout: fc.constant("popis" as const),
   levels: fc.constantFrom(1, 2, 3) as fc.Arbitrary<1 | 2 | 3>,
-  collapsed: fc.uniqueArray(fc.string({ minLength: 1, maxLength: 64 }), { maxLength: 200 }),
+  collapsed: fc.uniqueArray(fc.stringMatching(/^[A-Za-z0-9_-]{1,64}$/), { maxLength: 200 }),
   headingsOnly: fc.boolean(),
 });
 const isValid = (s: PanelSettings) => s.layout === "popis" && [1, 2, 3].includes(s.levels) && typeof s.headingsOnly === "boolean"
@@ -23,6 +23,13 @@ describe("panel settings properties (DAN-979, 979-1)", () => {
       const store = memory();
       expect(writeSettings(store, KEY, s)).toBe(true);
       expect(readSettings(store, KEY)).toEqual(s);
+    }));
+  });
+
+  it("writes every accepted setting, however its ids are spelled", () => {
+    fc.assert(fc.property(fc.uniqueArray(fc.string({ minLength: 1, maxLength: 64, unit: "binary" }), { maxLength: 200 }), (ids) => {
+      const s = parseSettings({ collapsed: ids });
+      expect(writeSettings(memory(), KEY, s)).toBe(true);
     }));
   });
 

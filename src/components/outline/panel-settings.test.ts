@@ -53,7 +53,9 @@ describe("panel settings: no store, a throwing store or a broken record give def
 
   it("gives each invalid field its default, field by field", () => {
     for (const levels of [0, 4, 1.5, "2", null]) expect(parseSettings({ levels, headingsOnly: true })).toEqual({ ...PANEL_DEFAULTS, headingsOnly: true });
-    for (const collapsed of [Array.from({ length: 201 }, (_, i) => `b${i}`), [""], ["x".repeat(65)], [1], ["a", "a"], "a"]) {
+    // Ids are [A-Za-z0-9_-] only (a Ductus block id is a UUID): nothing JSON escapes can widen the record.
+    const escaped = ["\\", '"', "\u0000", "\n", "č", "a b", "😀", "<"];
+    for (const collapsed of [Array.from({ length: 201 }, (_, i) => `b${i}`), [""], ["x".repeat(65)], [1], ["a", "a"], "a", ...escaped.map((c) => [c])]) {
       expect(parseSettings({ collapsed, levels: 1 })).toEqual({ ...PANEL_DEFAULTS, levels: 1 });
     }
     expect(parseSettings({ layout: "kartice", headingsOnly: "true" })).toEqual(PANEL_DEFAULTS);
@@ -78,6 +80,15 @@ describe("written settings read back equal (979-1 acceptance)", () => {
     expect(writeSettings(store, KEY, full)).toBe(true);
     expect(store.items.get(KEY)!.length).toBeLessThanOrEqual(MAX_RAW);
     expect(readSettings(store, KEY)).toEqual(full);
+  });
+
+  it("fits the widest record of accepted ids, including UUIDs and the - and _ characters", () => {
+    const store = memory();
+    const widest = { ...full, collapsed: Array.from({ length: 200 }, (_, i) => `${"-_".repeat(30)}${String(i).padStart(4, "0")}`) };
+    expect(writeSettings(store, KEY, widest)).toBe(true);
+    expect(readSettings(store, KEY)).toEqual(widest);
+    const uuid = "0f8fad5b-d9cb-469f-a165-70867728950e";
+    expect(parseSettings({ collapsed: [uuid] }).collapsed).toEqual([uuid]);
   });
 
   it("writes invalid settings in their normal form", () => {
