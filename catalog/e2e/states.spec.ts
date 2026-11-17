@@ -333,7 +333,12 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.locator("section")).toHaveCount(0);
       await expect(c.getByRole("link")).toHaveCount(0);
     },
-    učitavanje: loading(t.accessLog.loading),
+    // Review FAIL c.6958308171: the view's own status line, no second main in the page.
+    učitavanje: async (c) => {
+      await expect(c.getByRole("status")).toHaveText(t.accessLog.loading);
+      await expect(c.locator("main")).toHaveCount(0);
+      await expect(c.locator("[id]")).toHaveCount(0);
+    },
     greška: async (c) => {
       await expect(c.getByRole("alert")).toHaveText(t.accessLog.unavailable);
       await expect(c.getByRole("link", { name: t.accessLog.retry })).toHaveAttribute("href", "/rad/izmisljeni-zadatak/dnevnik-pristupa");

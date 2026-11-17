@@ -193,7 +193,7 @@ export const SCREEN_ENTRIES = {
   },
   AccessLogView: {
     prazno: () => <AccessLogView view={{ kind: "days", days: [], olderHref: null }} />,
-    učitavanje: () => <RouteLoading label={t.accessLog.loading} />,
+    učitavanje: () => <AccessLogView view={{ kind: "loading" }} />,
     greška: () => <AccessLogView view={{ kind: "unavailable", retryHref: accessLogHere }} />,
     puno: () => (
       <AccessLogView view={{ kind: "days", days: accessLogDays,

@@ -24,6 +24,7 @@ const a = messagesHr.accessLog;
  * older openings exist rather than that the log is empty.
  */
 export type AccessLogViewState =
+  | { kind: "loading" }
   | { kind: "days"; days: readonly AccessLogDay[]; olderHref: string | null; newestHref?: string | null }
   | { kind: "unavailable"; retryHref: string };
 
@@ -48,6 +49,8 @@ function row(entry: AccessLogRow) {
 const more = (href: string, text: string) => h("p", null, h("a", { className: styles.more, href }, text));
 
 export default function AccessLogView({ view }: { view: AccessLogViewState }) {
+  // Inside the page's own main: a status line, never a second main (review FAIL c.6958308171).
+  if (view.kind === "loading") return h("p", { className: styles.note, role: "status" }, a.loading);
   if (view.kind === "unavailable") {
     return h(Fragment, null,
       h("p", { className: styles.note, role: "alert" }, a.unavailable),

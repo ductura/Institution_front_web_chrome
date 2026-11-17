@@ -21,6 +21,12 @@ const html = (entries: AccessLogEntry[], olderHref: string | null = null, newest
   render({ kind: "days", days: accessLogDaysOf(entries), olderHref, newestHref });
 
 describe("DAN-913-2 access log view", () => {
+  it("loading: one status line inside the page, no main, list or link", () => {
+    const out = render({ kind: "loading" });
+    expect(out).toBe(`<p class="${out.match(/class="([^"]+)"/)?.[1]}" role="status">${a.loading}</p>`);
+    expect(out).not.toMatch(/<main|<ul|<a /);
+  });
+
   it("error: an alert and a retry link, no list", () => {
     const out = render({ kind: "unavailable", retryHref: "/rad/x/dnevnik-pristupa" });
     expect(out).toContain(`role="alert">${a.unavailable}`);
