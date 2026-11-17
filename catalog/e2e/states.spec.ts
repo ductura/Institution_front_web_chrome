@@ -13,7 +13,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
@@ -357,6 +357,35 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.getByText(t.teacherCourses.noWorks)).toBeVisible();
       await expect(c.locator('a[href^="/nastavnik/rad/"]')).toHaveCount(0);
       await ownIds(c);
+    },
+  },
+  // DAN-871 (871-2): mentored works by family name, Croatian order; texts from locales/ only.
+  MentoredWorks: {
+    prazno: async (c) => {
+      await expect(c.getByRole("heading", { level: 2 })).toHaveText(t.mentoredWorks.empty);
+      await expect(c.getByText(t.mentoredWorks.orderNote)).toHaveCount(0);
+    },
+    učitavanje: loading(t.workspace.panelLoading),
+    greška: async (c) => {
+      await expect(c.getByRole("listitem")).toHaveCount(1);
+      await expect(c.getByText(t.mentoredWorks.unnamed)).toBeVisible();
+      await expect(c.getByRole("link")).toHaveCount(0);
+    },
+    puno: async (c) => {
+      await expect(c.getByRole("heading", { level: 2 })).toHaveText(t.mentoredWorks.listTitle);
+      await expect(c.getByRole("listitem")).toHaveText([/^Borna Crtić/, /^Ante Čvorić/, /^Ana Izmišljenić/, /^Vesna Žbunić/]);
+      await expect(c.getByRole("link", { name: t.mentoredWorks.open })).toHaveCount(3);
+      await expect(c.getByText(t.mentoredWorks.orderNote)).toBeVisible();
+      // Every row stays inside the list at every width (as TeacherCourses, 871-1).
+      const outside = await c.locator("ul").evaluateAll((lists) => lists.flatMap((ul) => {
+        const edge = ul.getBoundingClientRect().right;
+        return [...ul.querySelectorAll("li, li > *")].filter((el) => el.getBoundingClientRect().right > edge + 0.5).map((el) => el.textContent);
+      }));
+      expect(outside).toEqual([]);
+    },
+    onemogućeno: async (c) => {
+      await expect(c.getByText(t.mentoredWorks.state.not_started)).toBeVisible();
+      await expect(c.getByRole("link")).toHaveCount(0);
     },
   },
   RouteLoading: {
