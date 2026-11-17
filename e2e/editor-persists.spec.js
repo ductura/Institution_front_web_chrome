@@ -14,7 +14,7 @@ test('izmjena ostaje spremljena nakon osvježavanja', async ({ page, request }) 
 
   const text = `Izmjena ${test.info().project.name} ${Date.now()}`;
   await editor.fill(text);
-  await expect(page.getByRole('status')).toHaveText('Spremljeno');
+  await expect(page.getByRole('status')).toHaveText(/^Razvojni poslužitelj primio je tekst/);
 
   await page.reload();
   await expect(page.getByLabel('Sadržaj')).toHaveValue(text);
