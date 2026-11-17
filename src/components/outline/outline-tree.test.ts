@@ -19,7 +19,7 @@ describe("outlineTree: negative inputs first (DAN-977, 977-1)", () => {
   it("drops a level that is not an integer from 1 to 3 and keeps the rest", () => {
     const rows = [0, 4, -1, 1.5, Number.NaN, Infinity, -Infinity].map((l) => row(l, `Izmišljeno ${l}`));
     expect(outlineTree([...rows, row(1, "Uvod", "1")])).toEqual([
-      { row: expect.objectContaining({ number: "1" }), number: "1", depth: 1, children: [] },
+      { row: expect.objectContaining({ number: "1" }), index: 7, number: "1", depth: 1, children: [] },
     ]);
   });
 

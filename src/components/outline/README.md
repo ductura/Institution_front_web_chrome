@@ -1,6 +1,6 @@
 # src/components/outline
 
-Lijevi panel editora, raspored Popis (DAN-977). U 977-1 je čisti model: stablo poglavlja nastaje iz ravnog popisa naslova. U 977-2 je komponenta panela. Sklapanje grana i aktivno poglavlje dolaze u 977-3.
+Lijevi panel editora, raspored Popis (DAN-977). U 977-1 je čisti model: stablo poglavlja nastaje iz ravnog popisa naslova. U 977-2 je komponenta panela, a u 977-3 sklapanje grana i aktivno poglavlje.
 
 | Datoteka | Što radi |
 | --- | --- |
@@ -8,6 +8,8 @@ Lijevi panel editora, raspored Popis (DAN-977). U 977-1 je čisti model: stablo 
 | `outline-tree.test.ts` | Negativni ulazi (prazan popis, razina izvan 1–3, preskočena razina, id-ovi `__proto__`, `toString`, null i duplikati, prazni brojevi i naslovi, zamrznuti ulaz) te tri razine s numeracijom iz ulaza. |
 | `OutlinePanel.tsx` | `<nav>` s ugniježđenim `<ol data-depth>`, bez oznaka preglednika (`list-style: none`). Broj iz ulaza je zaseban element, a dugi naslov se lomi (`overflow-wrap: anywhere`). Prazan popis prikazuje tekst `workspace.structureEmpty`. Tekstovi su iz `locales/hr.ts`. |
 | `OutlinePanel.test.ts` | Statički render: negativni ulazi te tri razine s brojevima iz ulaza, svaki broj jednom. Semantiku u katalogu na pet širina provjerava `catalog/e2e/states.spec.ts`, a axe na 1440, 400 i 360 px `catalog/e2e/catalog.spec.ts`. |
+| `outline-view.ts` | `collapsedSet` od zadanih indeksa zadržava samo prikazane retke s djecom. `activeRow` za indeks iz `currentHeading` vraća redak koji nosi oznaku aktivnog poglavlja: sam redak, najbliži prethodni prikazani (za razinu izvan 1–3) ili najviši sklopljeni predak. |
+| `outline-view.test.ts` | Negativni indeksi, nevaljani `collapsed` i ulaz koji se ne mijenja; oznaka kroz sklapanje jednu i dvije razine; tekst iz `src/components/i18n/hr.ts` kroz skener zabranjenih izraza. |
 | `outline-tree.property.test.ts` | Svojstva (fast-check): svaki valjani redak javlja se jednom i istim redom, sa svojim brojem; ulaz se ne mijenja; dubina je najviše 3, a dijete je više razine od roditelja. |
 
 ## Odluke
@@ -16,3 +18,6 @@ Lijevi panel editora, raspored Popis (DAN-977). U 977-1 je čisti model: stablo 
 - **Preskočena razina.** Naslov razine 3 iza naslova razine 1 ide ispod njega na dubinu 2 i zadržava svoj broj. Potpoglavlje bez nadređenog naslova postaje korijen.
 - **Razina izvan 1–3.** Redak se izostavlja (0, 4, decimalni broj, NaN, beskonačno), a ostali ostaju.
 - **Id nije ključ.** Stablo se gradi bez mape po id-u, pa duplikati i imena poput `__proto__` ništa ne mijenjaju.
+- **Sklapanje (977-3).** Gumb ima `aria-expanded` i `aria-controls`, a skriveni popis ostaje u DOM-u s `hidden`. Oznaka gumba je „Potpoglavlja: {broj} {naslov}”. Tekst je u `src/components/i18n/hr.ts`, jer se `locales/` mijenja samo uz isti tekst na serveru.
+- **Aktivno poglavlje.** `aria-current="location"` je uvijek na točno jednoj vidljivoj stavci.
+- **Otvoreno za DAN-979.** `collapsed` po indeksu retka samo je početno stanje za katalog i testove. Indeks se pomiče kad se iznad doda naslov, pa ključ za spremanje odlučuje DAN-979. Kandidat je `entry.id`, ali može biti null ili ponovljen.

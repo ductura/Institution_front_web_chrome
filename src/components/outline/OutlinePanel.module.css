@@ -5,13 +5,30 @@
 .item { list-style-type: none; min-width: 0; }
 .row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: 20px auto minmax(0, 1fr); /* toggle (977-3), number, title */
   gap: 8px;
   align-items: baseline;
   padding: 4px 0;
 }
 .row[data-level="1"] { font-family: var(--ff-manuscript); font-size: 14px; }
 .row[data-level="2"], .row[data-level="3"] { font-size: 13px; color: var(--ink-2); }
-.number { grid-column: 1; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.title { grid-column: 2; min-width: 0; overflow-wrap: anywhere; line-height: 1.4; }
+.number { grid-column: 2; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.title { grid-column: 3; min-width: 0; overflow-wrap: anywhere; line-height: 1.4; }
 .empty { margin: 0; color: var(--ink-3); font-size: 13px; }
+/* 977-3: the toggle of a branch, and an accent rule on the active chapter. */
+.toggle {
+  grid-column: 1;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.toggle::before { content: "›"; display: inline-block; transform: rotate(90deg); }
+.toggle[aria-expanded="false"]::before { transform: none; }
+.toggle:hover { background: var(--hover); color: var(--ink); }
+.toggle:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }
+.item[aria-current="location"] > .row { box-shadow: inset 2px 0 0 var(--accent); }
