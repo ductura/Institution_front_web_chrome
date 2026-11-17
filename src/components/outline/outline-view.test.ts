@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
 import { OUTLINE_HR } from "../i18n/hr.ts";
-import { activeRow, branchIndexes, collapsedSet, openBranchShown } from "./outline-view";
+import { activeRow, branchIndexes, collapsedSet, limitLevels, openBranchShown } from "./outline-view";
 import { outlineTree, type OutlineRow } from "./outline-tree";
 
 // Invented headings only. Index:   0      1        2          3     4       5        6
@@ -73,6 +73,34 @@ describe("collapse all (DAN-978, 978-2)", () => {
     expect(openBranchShown(tree, collapsedSet(tree, [0, 4]))).toBe(true);
     expect(openBranchShown(tree, collapsedSet(tree, [1, 7, -1, 1.5, 3, 3, 4, 0]))).toBe(false);
     expect(openBranchShown(tree, collapsedSet(tree, [7, -1, 2, 6]))).toBe(true);
+  });
+});
+
+describe("levels choice (DAN-979, 979-3)", () => {
+  const flat = (nodes: readonly { index: number; children: readonly unknown[] }[]): number[] =>
+    nodes.flatMap((n) => [n.index, ...flat(n.children as never)]);
+
+  it("means no limit for a level outside 1 to 3 or not an integer", () => {
+    for (const levels of [0, 4, 1.5, Number.NaN, -1]) expect(flat(limitLevels(tree, levels))).toEqual(flat(tree));
+  });
+
+  it("keeps headings up to the chosen level, with their index and depth", () => {
+    expect(flat(limitLevels(tree, 1))).toEqual([0, 3]);
+    expect(flat(limitLevels(tree, 2))).toEqual([0, 1, 3, 4]);
+    expect(flat(limitLevels(tree, 3))).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(limitLevels(tree, 2)[1]!.children[0]).toMatchObject({ index: 4, depth: 2 });
+  });
+
+  it("measures the heading level, not the depth, past a skipped level", () => {
+    const skip = outlineTree([rows[0]!, rows[2]!]);
+    expect(flat(skip)).toEqual([0, 1]);
+    expect(flat(limitLevels(skip, 2))).toEqual([0]);
+  });
+
+  it("leaves no branch to collapse at level 1, and marks the visible ancestor", () => {
+    expect(branchIndexes(limitLevels(tree, 1))).toEqual([]);
+    expect(activeRow(limitLevels(tree, 1), rows, 2, new Set(), tree)).toBe(0);
+    expect(activeRow(limitLevels(tree, 2), rows, 2, new Set(), tree)).toBe(1);
   });
 });
 
