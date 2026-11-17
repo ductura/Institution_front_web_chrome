@@ -258,10 +258,16 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.getByText(/Nula|Četiri/)).toHaveCount(0);
       await expect(c.getByRole("alert")).toHaveCount(0);
     },
-    puno: outlineList(["1", "1.1", "1.1.1", "2", "2.1", "2.1.3"]),
+    puno: async (c) => {
+      await outlineList(["1", "1.1", "1.1.1", "2", "2.1", "2.1.3"])(c);
+      await expect(c.locator("[aria-current=location]")).toHaveCount(1);
+      await expect(c.locator("[aria-current=location] [data-number]")).toHaveText("1.1.1");
+    },
     onemogućeno: async (c) => {
-      await expect(outlineNav(c).locator("li")).toHaveCount(6);
+      await expect(outlineNav(c).locator("li:visible")).toHaveCount(4);
       await expect(c.locator("[data-number]")).toHaveCount(0);
+      await expect(c.locator("[aria-current=location]")).toHaveCount(1);
+      await expect(c.locator("[aria-current=location] > span")).toHaveText("Metoda");
     },
   },
   RouteLoading: {
@@ -322,6 +328,29 @@ for (const theme of THEMES) {
     });
   }
 }
+
+// DAN-977 (977-3): a branch collapses and opens by mouse, Enter and Space; the active
+// chapter's mark moves to the visible parent and back, and focus stays on the toggle.
+test("an outline branch collapses and opens, and the active chapter stays marked once", async ({ page }) => {
+  await open(page, "dark", 390);
+  const c = cell(page, "OutlinePanel", "Ljuska", "puno");
+  const toggle = c.getByRole("button", { name: "Potpoglavlja: 1 Uvod" });
+  const child = c.locator(`[id="${await toggle.getAttribute("aria-controls")}"]`);
+  const marked = c.locator("[aria-current=location]");
+  for (const act of [() => toggle.click(), () => toggle.press("Enter"), () => toggle.press("Space")]) {
+    await act();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(child).toBeHidden();
+    await expect(c.getByText("Izmišljeni pojam")).toBeHidden();
+    await expect(marked).toHaveCount(1);
+    await expect(marked.locator(":scope > span [data-number]")).toHaveText("1");
+    await expect(toggle).toBeFocused();
+    await act();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(child).toBeVisible();
+    await expect(marked.locator(":scope > span [data-number]")).toHaveText("1.1.1");
+  }
+});
 
 test("the semantics table covers every component and state the catalogue shows", () => {
   for (const name of COMPONENTS) expect(Object.keys(SEMANTICS[name])).toEqual([...CATALOG_STATES]);

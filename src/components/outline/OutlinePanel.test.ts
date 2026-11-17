@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { messagesHr as t } from "../../../locales/hr.ts";
+import { OUTLINE_HR } from "../i18n/hr.ts";
 
 import OutlinePanel from "./OutlinePanel";
 import type { OutlineRow } from "./outline-tree";
@@ -11,7 +12,8 @@ import type { OutlineRow } from "./outline-tree";
 let pos = 0;
 const row = (level: number, text: string, number: string | null = null, id: string | null = `n${pos}`): OutlineRow =>
   ({ entry: { id, level, text, pos: (pos += 10) }, number });
-const render = (rows: readonly OutlineRow[]) => renderToStaticMarkup(createElement(OutlinePanel, { rows }));
+const render = (rows: readonly OutlineRow[], more: { active?: number; collapsed?: readonly number[] } = {}) =>
+  renderToStaticMarkup(createElement(OutlinePanel, { rows, active: -1, ...more }));
 const count = (html: string, s: string) => html.split(s).length - 1;
 
 describe("OutlinePanel: negative inputs first (DAN-977, 977-2)", () => {
@@ -71,5 +73,45 @@ describe("OutlinePanel: three levels with the numbering from the input (977-2 ac
     expect(html).toMatch(/2\.1\.3<\/span>[^<]*<span[^>]*>Odabir</);
     // A nested list always sits inside a list item (axe list/listitem).
     expect(html).not.toMatch(/(?:<ol[^>]*>|<\/li>)<ol/);
+  });
+});
+
+describe("OutlinePanel: collapsing and the active chapter (977-3)", () => {
+  const three = () => [row(1, "Uvod", "1"), row(2, "Pojmovi", "1.1"), row(3, "", "1.1.1"), row(1, "Metoda", "2")];
+
+  it("has no toggle on a leaf, nor any toggle or mark on an empty list", () => {
+    expect(count(render([row(1, "Uvod", "1")], { active: 0 }), "<button")).toBe(0);
+    const empty = render([], { active: 0, collapsed: [0] });
+    expect(empty).not.toContain("<button");
+    expect(empty).not.toContain("aria-current");
+  });
+
+  it("names each toggle by the number and title, open by default", () => {
+    const html = render(three());
+    expect(count(html, "<button")).toBe(2);
+    expect(html).toContain(`aria-label="${OUTLINE_HR.subheadings}: 1 Uvod"`);
+    expect(html).toContain(`aria-label="${OUTLINE_HR.subheadings}: 1.1 Pojmovi"`);
+    expect(count(html, 'aria-expanded="true"')).toBe(2);
+    expect(html).not.toContain("hidden");
+  });
+
+  it("hides a collapsed branch, keeps its list for aria-controls and marks the visible parent once", () => {
+    const html = render(three(), { active: 2, collapsed: [1, 7, -1] });
+    expect(count(html, 'aria-expanded="false"')).toBe(1);
+    const controls = /aria-expanded="false"[^>]*aria-controls="([^"]+)"|aria-controls="([^"]+)"[^>]*aria-expanded="false"/.exec(html)!;
+    const id = controls[1] ?? controls[2];
+    expect(html).toMatch(new RegExp(`<ol[^>]*id="${id}"[^>]*hidden`));
+    expect(count(html, 'aria-current="location"')).toBe(1);
+    expect(html).toMatch(/aria-current="location"[^>]*data-node-id="n\d+"><span[^>]*><button[^>]*Pojmovi/);
+  });
+
+  it("marks the active chapter itself when it is visible", () => {
+    const html = render(three(), { active: 2 });
+    expect(count(html, 'aria-current="location"')).toBe(1);
+    expect(html).toMatch(/aria-current="location"[^>]*><span[^>]*><span[^>]*>1\.1\.1</);
+  });
+
+  it("marks nothing for an active index outside the rows", () => {
+    for (const active of [-1, 4, 1.5, Number.NaN]) expect(render(three(), { active })).not.toContain("aria-current");
   });
 });

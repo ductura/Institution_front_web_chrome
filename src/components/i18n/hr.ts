@@ -19,3 +19,9 @@ export const MONTHS_GENITIVE_HR = [
   "studenoga",
   "prosinca",
 ] as const;
+
+/** Texts of the left panel outline (DAN-977, 977-3); locales/ changes only with the server. */
+export const OUTLINE_HR = {
+  /** Name of the button that collapses a chapter, before its number and title. */
+  subheadings: "Potpoglavlja",
+} as const;

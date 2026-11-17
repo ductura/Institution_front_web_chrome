@@ -19,6 +19,8 @@ export type OutlineRow = { readonly entry: OutlineEntry; readonly number: string
 
 export type OutlineNode = {
   readonly row: OutlineRow;
+  /** Position of the row in the input. */
+  readonly index: number;
   readonly number: string | null;
   /** 1 for a root; one more than the parent. */
   readonly depth: number;
@@ -39,12 +41,12 @@ const shown = (level: number) => Number.isInteger(level) && level >= 1 && level 
 export function outlineTree(rows: readonly OutlineRow[]): OutlineNode[] {
   const roots: OutlineNode[] = [];
   const open: OutlineNode[] = [];
-  for (const row of rows) {
+  for (const [index, row] of rows.entries()) {
     const { level } = row.entry;
     if (!shown(level)) continue;
     while (open.length > 0 && open[open.length - 1]!.row.entry.level >= level) open.pop();
     const parent = open[open.length - 1];
-    const node: OutlineNode = { row, number: row.number, depth: parent ? parent.depth + 1 : 1, children: [] };
+    const node: OutlineNode = { row, index, number: row.number, depth: parent ? parent.depth + 1 : 1, children: [] };
     (parent ? parent.children : roots).push(node);
     open.push(node);
   }
