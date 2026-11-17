@@ -13,7 +13,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
@@ -202,6 +202,13 @@ const headingAt = (where: "centre" | "start") => async (c: Locator) => {
   expect(Math.abs(m.lede!.centre - m.centre)).toBeLessThanOrEqual(1);
 };
 
+/** Every id in the cell is the only one with that value on the page (DAN-871). */
+const ownIds = async (c: Locator) => {
+  const counts = await c.locator("[id]").evaluateAll((els) => els.map((el) => el.ownerDocument.querySelectorAll(`[id="${el.id}"]`).length));
+  expect(counts.length).toBeGreaterThan(0);
+  expect(counts.every((n) => n === 1)).toBe(true);
+};
+
 /** Semantics of each state of each screen, on the shell only. */
 const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Promise<void>>> = {
   AppShell: {
@@ -314,6 +321,39 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.locator("[aria-current=location] > span")).toHaveText("Izmišljeni uzorak");
       await expect(c.getByRole("status")).toHaveText("");
       await expect(c.getByRole("button", { name: OUTLINE_HR.headingsOnly })).toHaveAttribute("aria-pressed", "true");
+    },
+  },
+  // DAN-871 (871-1): the teacher's courses; texts from locales/ only. Every state has
+  // its own course ids, so each aria-labelledby names its own section (ownIds).
+  TeacherCourses: {
+    prazno: async (c) => {
+      await expect(c.getByRole("heading", { level: 2 })).toHaveText(t.teacherCourses.empty);
+      await expect(c.getByRole("link", { name: t.teacherCourses.newCourse })).toHaveAttribute("href", "/nastavnik/zadatak/novi");
+      await expect(c.getByText(t.teacherCourses.countNote)).toHaveCount(0);
+    },
+    učitavanje: loading(t.workspace.panelLoading),
+    greška: async (c) => {
+      await expect(c.getByRole("status")).toHaveText(t.teacherCourses.worksUnavailable);
+      await expect(c.locator('a[href^="/nastavnik/rad/"]')).toHaveCount(0);
+      await ownIds(c);
+    },
+    puno: async (c) => {
+      await expect(c.getByRole("heading", { level: 2 })).toHaveText(["Izmišljeni kolegij C", "Izmišljeni kolegij D"]);
+      await expect(c.getByRole("list", { name: t.teacherCourses.worksLabel }).getByRole("listitem")).toHaveCount(3);
+      await expect(c.getByText(t.teacherCourses.accommodation, { exact: false })).toHaveCount(1);
+      await expect(c.getByText(t.teacherCourses.countNote)).toBeVisible();
+      await ownIds(c);
+      // Every link of a work stays inside its course card at every width (CI 360 px baseline, 871-1).
+      const outside = await c.locator("section").evaluateAll((sections) => sections.flatMap((s) => {
+        const edge = s.getBoundingClientRect().right;
+        return [...s.querySelectorAll("li")].filter((li) => li.getBoundingClientRect().right > edge + 0.5).map((li) => li.textContent);
+      }));
+      expect(outside).toEqual([]);
+    },
+    onemogućeno: async (c) => {
+      await expect(c.getByText(t.teacherCourses.noWorks)).toBeVisible();
+      await expect(c.locator('a[href^="/nastavnik/rad/"]')).toHaveCount(0);
+      await ownIds(c);
     },
   },
   RouteLoading: {

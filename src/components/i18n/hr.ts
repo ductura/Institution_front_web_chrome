@@ -34,3 +34,53 @@ export const OUTLINE_HR = {
   /** Toggle (aria-pressed) for the editor's headings-only view (978-3); the label never changes. */
   headingsOnly: "Samo naslovi",
 } as const;
+
+// Ported from Ductus src/lib/i18n/hr.ts at 9c45857 (DAN-871, 871-1): the count
+// forms TeacherCourses needs.
+
+/**
+ * Picks the Croatian form a count agrees with.
+ *
+ * The rule, in full:
+ *   - last digit 1, but not the 11–14 band → `jedan` (1, 21, 101, 1001)
+ *   - last digit 2–4, but not the 11–14 band → `dva` (2, 23, 104)
+ *   - everything else, including the whole 11–14 band → `pet`
+ *
+ * Non-integers and negatives are answered by the same rule applied to the
+ * absolute value of the integer part; a fractional count has no place in this
+ * UI, and guessing at one would be a worse answer than a consistent one.
+ */
+export function pluralHr(
+  n: number,
+  jedan: string,
+  dva: string,
+  pet: string,
+): string {
+  const whole = Math.abs(Math.trunc(n));
+  const lastTwo = whole % 100;
+  const last = whole % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) {
+    return pet;
+  }
+  if (last === 1) {
+    return jedan;
+  }
+  if (last >= 2 && last <= 4) {
+    return dva;
+  }
+  return pet;
+}
+
+/**
+ * The number and the form it agrees with: `countHr(3, "rad", "rada", "radova")`
+ * → `"3 rada"`. The number is rendered as given, so a caller that passes a
+ * non-integer sees its own value back.
+ */
+export function countHr(
+  n: number,
+  jedan: string,
+  dva: string,
+  pet: string,
+): string {
+  return `${n} ${pluralHr(n, jedan, dva, pet)}`;
+}
