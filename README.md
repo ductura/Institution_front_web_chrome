@@ -6,6 +6,8 @@ Prioritetni frontend za Google Chrome na računalu. Preloader ovamo šalje koris
 
 Izmjena u editoru ostaje spremljena nakon osvježavanja stranice. Pokriva je `e2e/editor-persists.spec.js` u svakom stupcu e2e matrice (DAN-755, `docs/PLAN.md` §6): `chromium`, `chrome` (pravi Google Chrome), `firefox`, `webkit`, `edge` (Microsoft Edge), `mobile-pixel-7`, `mobile-iphone-14`, `tablet-ipad` i `tablet-ipad-landscape`. Stupci se izvode jedan po jedan jer dijele memorijski API. `chrome` i `edge` registriraju se u CI-ju ili uz `DUCTURA_BRANDED=1`; Opera se provjerava ručno prije izdanja.
 
+Razvojni editor nakon HTTP uspjeha memorijskog API-ja ne piše „Spremljeno”, nego „Razvojni poslužitelj primio je tekst · ne čuva se nakon ponovnog pokretanja” (DAN-886). To pokriva `e2e/dev-save-status.spec.js`, zajedno s negativnim slučajem odbijenog PUT-a.
+
 Preneseni Ductus e2e (DAN-755, 755-2): `e2e/local-editor.spec.js` (axe na stranici editora, WCAG 2.0/2.1 A i AA) s pomoćnikom `e2e/support/axe.js`. Ostali testovi iz Ductusa čekaju editor s dnevnikom na uređaju (E-0.3).
 
 ## Pokretanje

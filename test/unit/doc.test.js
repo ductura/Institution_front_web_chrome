@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { debounce, parseRoute, docHref, wordCount, saveStatusLabel, isKeyboardOpen } from '../../public/lib/doc.js';
+import { debounce, parseRoute, docHref, wordCount, saveStatusLabel, isKeyboardOpen, LABELS } from '../../public/lib/doc.js';
+import { findForbiddenTerms } from '../../scripts/forbidden-terms/terms.ts';
 
 test('parseRoute i docHref', () => {
   assert.deepEqual(parseRoute('#/doc/demo-1'), { view: 'doc', id: 'demo-1' });
@@ -15,8 +16,21 @@ test('wordCount', () => {
 });
 
 test('saveStatusLabel', () => {
-  assert.equal(saveStatusLabel('saved'), 'Spremljeno');
+  assert.equal(saveStatusLabel('received'), 'Razvojni poslužitelj primio je tekst · ne čuva se nakon ponovnog pokretanja');
+  assert.equal(saveStatusLabel('saved'), '');
   assert.equal(saveStatusLabel('nepoznato'), '');
+  assert.equal(saveStatusLabel('toString'), '');
+  assert.equal(saveStatusLabel('__proto__'), '');
+});
+
+// DAN-886: nijedan tekst stanja razvojnog editora nema zabranjeni izraz (PRODUCT §5).
+test('LABELS: skener pada na golom „Spremljeno”, a nijedan tekst stanja nema nalaz', () => {
+  assert.notEqual(findForbiddenTerms('Spremljeno').length, 0);
+  assert.ok(Object.keys(LABELS).length > 0);
+  for (const [state, text] of Object.entries(LABELS)) {
+    assert.deepEqual(findForbiddenTerms(text).map((t) => t.entry), [], state);
+    assert.doesNotMatch(text, /(?<!\p{L})spremljen/iu, state);
+  }
 });
 
 test('isKeyboardOpen', () => {
