@@ -23,6 +23,19 @@
   border-bottom: 1px solid var(--rule);
 }
 
+/*
+ * DAN-891 (891-1): the centred greeting of S-02 (m2-student-reference,
+ * pocetna-kolegiji). No rule under it, as in the reference; the enrol link
+ * stays under the lede until 891-2 moves enrolment to the bottom.
+ */
+.hero {
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 20px;
+  text-align: center;
+  border-bottom: 0;
+}
+
 .title {
   margin: 0;
   font-family: var(--ff-display);

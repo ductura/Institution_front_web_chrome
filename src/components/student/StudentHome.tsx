@@ -40,8 +40,11 @@ export default function StudentHome({ read, enroll, signIn, view = "home" }: {
   // empty list brings its own way to enrol. S02 has no enrol action.
   const ready = read.kind === "ready";
   const courses = view === "courses";
+  // DAN-891 (891-1): S-02 of the approved reference centres the greeting over
+  // a list that loaded; S-03 and the other states keep it at the start.
+  const hero = ready && !courses;
   return h("div", { className: styles.home },
-    h("header", { className: styles.heading },
+    h("header", { className: hero ? `${styles.heading} ${styles.hero}` : styles.heading },
       h("div", null,
         h("h1", { className: styles.title }, courses ? home.courses : home.heading),
         ready ? h("p", { className: styles.lede }, courses ? home.coursesLede : home.lede) : null),
