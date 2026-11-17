@@ -45,3 +45,17 @@
   font: inherit;
 }
 .search input:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }
+/* 978-2: "Sklopi sve" / "Rasklopi sve", a quiet text button under the search field. */
+.all {
+  justify-self: start;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+}
+.all:hover { background: var(--hover); color: var(--ink); }
+.all:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }

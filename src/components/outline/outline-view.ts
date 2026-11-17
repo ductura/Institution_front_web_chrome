@@ -75,3 +75,17 @@ export function filterTree(tree: readonly OutlineNode[], query: string): readonl
   });
   return cut(tree);
 }
+
+/** The indexes of every node with children, in order (978-2). */
+export function branchIndexes(tree: readonly OutlineNode[]): number[] {
+  return [...walk(tree)].map((path) => path[path.length - 1]!).filter((n) => n.children.length > 0).map((n) => n.index);
+}
+
+/**
+ * Whether an open branch is on screen (978-2, "Sklopi sve"). Roots are always
+ * shown, and a branch below a closed root is not, so an open root with
+ * children is exactly that; a branch open inside a collapsed one does not count.
+ */
+export function openBranchShown(tree: readonly OutlineNode[], closed: ReadonlySet<number>): boolean {
+  return tree.some((n) => n.children.length > 0 && !closed.has(n.index));
+}
