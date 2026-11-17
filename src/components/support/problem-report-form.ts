@@ -18,15 +18,20 @@ export type FormStep =
   | { kind: "editing" }
   | { kind: "sending" }
   | { kind: "sent"; reference: string }
-  | { kind: "failed"; lead: string; messageKey: string; retryAt: number | null };
+  | { kind: "failed"; lead: string; messageKey: string; retryAt: number | null }
+  | { kind: "ended"; delivery: "notSent" };
+
+/** A send that did not go because the session had ended (Ductus `ended`; the session watch comes with the form). */
+export type FormOutcome = SendOutcome | { kind: "ended" };
 
 export type SubmitResult = { check: Exclude<DescriptionCheck, "ok"> } | { refused: "category" } | { step: FormStep } | null;
 
 /** Answers after which the report may still have been recorded: these must not say it was not sent. */
 const MAYBE_RECORDED = new Set(["support.failure.network", "support.failure.timeout", "support.failure.unavailable", "support.failure.unknown"]);
 
-export function stepAfter(outcome: SendOutcome): FormStep {
+export function stepAfter(outcome: FormOutcome): FormStep {
   if (outcome.kind === "sent") return { kind: "sent", reference: outcome.reference };
+  if (outcome.kind === "ended") return { kind: "ended", delivery: "notSent" };
   const lead = MAYBE_RECORDED.has(outcome.messageKey) ? "support.keptLead" : "support.failedLead";
   return { kind: "failed", lead, messageKey: outcome.messageKey, retryAt: outcome.retryAt };
 }

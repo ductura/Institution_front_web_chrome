@@ -146,6 +146,16 @@ describe("texts", () => {
     expect(`${textOf(step.lead)} ${textOf(step.messageKey)}`).not.toMatch(/nije poslana/);
   });
 
+  // Ductus problem-report-dialog.test.ts:65 at 393b8e0: an ended session reads in plain words and keeps no description.
+  it("an ended session is its own step, not sent", () => {
+    expect(stepAfter({ kind: "ended" })).toEqual({ kind: "ended", delivery: "notSent" });
+    const t = messagesHr.support;
+    expect(t.ended).toMatch(/nije poslan/);
+    expect(t.ended).toMatch(/uklonjen/);
+    expect(t.ended).not.toMatch(TECHNICAL);
+    expect(findForbiddenTerms(t.ended, "hr")).toEqual([]);
+  });
+
   it.each(["signedOut", "tooLarge", "invalid", "tooMany"] as const)("%s says the report was not sent", (reason) => {
     expect(stepAfter({ kind: "failed", messageKey: `support.failure.${reason}`, retryAt: null })).toMatchObject({ lead: "support.failedLead" });
   });

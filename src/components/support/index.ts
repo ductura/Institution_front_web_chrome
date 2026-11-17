@@ -23,6 +23,7 @@ export {
   stepAfter,
   submitProblemReport,
   textOf,
+  type FormOutcome,
   type FormStep,
   type SubmitResult,
 } from "./problem-report-form";
