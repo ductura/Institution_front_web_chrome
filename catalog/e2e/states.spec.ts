@@ -12,7 +12,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
@@ -148,6 +148,22 @@ const firstArrival = async (c: Locator) => {
   await expect(c.getByRole("alert")).toHaveCount(0);
 };
 
+// DAN-977 (977-2): the outline of entries.tsx, three levels; one number per item, nothing sticks out.
+const outlineNav = (c: Locator) => c.getByRole("navigation", { name: t.outline.label });
+const outlineList = (numbers: string[]) => async (c: Locator) => {
+  const nav = outlineNav(c);
+  await expect(nav.locator("ol[data-depth]")).toHaveCount(5);
+  await expect(nav.locator("ol[data-depth='3'] > li")).toHaveCount(2);
+  await expect(nav.locator("[data-number]")).toHaveText(numbers);
+  expect(await nav.locator("li").evaluateAll((li) => li.map((e) => getComputedStyle(e).listStyleType)))
+    .toEqual(Array(6).fill("none"));
+  const fit = await nav.evaluate((n) => ({
+    scroll: n.scrollWidth <= n.clientWidth,
+    inside: n.getBoundingClientRect().right <= n.closest("dd")!.getBoundingClientRect().right,
+  }));
+  expect(fit).toEqual({ scroll: true, inside: true });
+};
+
 /** Semantics of each state of each screen, on the shell only. */
 const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Promise<void>>> = {
   AppShell: {
@@ -229,6 +245,24 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
     greška: unavailable,
     puno: firstArrival,
     onemogućeno: firstArrival,
+  },
+  OutlinePanel: {
+    prazno: async (c) => {
+      await expect(outlineNav(c)).toHaveText(t.workspace.structureEmpty);
+      await expect(c.locator("ol")).toHaveCount(0);
+    },
+    učitavanje: loading(t.workspace.panelLoading),
+    greška: async (c) => {
+      await expect(outlineNav(c).locator("li")).toHaveCount(1);
+      await expect(c.getByText(t.outline.untitledHeading, { exact: true })).toHaveCount(1);
+      await expect(c.getByText(/Nula|Četiri/)).toHaveCount(0);
+      await expect(c.getByRole("alert")).toHaveCount(0);
+    },
+    puno: outlineList(["1", "1.1", "1.1.1", "2", "2.1", "2.1.3"]),
+    onemogućeno: async (c) => {
+      await expect(outlineNav(c).locator("li")).toHaveCount(6);
+      await expect(c.locator("[data-number]")).toHaveCount(0);
+    },
   },
   RouteLoading: {
     prazno: loading(t.workspace.panelLoading),

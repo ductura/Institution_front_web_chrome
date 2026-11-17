@@ -1,11 +1,13 @@
 # src/components/outline
 
-Lijevi panel editora, raspored Popis (DAN-977). Ovaj dio (977-1) je čisti model: stablo poglavlja nastaje iz ravnog popisa naslova. Komponenta panela dolazi u 977-2, a sklapanje grana i aktivno poglavlje u 977-3.
+Lijevi panel editora, raspored Popis (DAN-977). U 977-1 je čisti model: stablo poglavlja nastaje iz ravnog popisa naslova. U 977-2 je komponenta panela. Sklapanje grana i aktivno poglavlje dolaze u 977-3.
 
 | Datoteka | Što radi |
 | --- | --- |
 | `outline-tree.ts` | `OutlineEntry` je zrcalo istoimenog tipa iz Ductusa `src/editor/outline.ts`. `outlineTree` od redaka razine 1 do 3 gradi stablo: svaki naslov ide pod najbliži prethodni naslov niže razine. |
 | `outline-tree.test.ts` | Negativni ulazi (prazan popis, razina izvan 1–3, preskočena razina, id-ovi `__proto__`, `toString`, null i duplikati, prazni brojevi i naslovi, zamrznuti ulaz) te tri razine s numeracijom iz ulaza. |
+| `OutlinePanel.tsx` | `<nav>` s ugniježđenim `<ol data-depth>`, bez oznaka preglednika (`list-style: none`). Broj iz ulaza je zaseban element, a dugi naslov se lomi (`overflow-wrap: anywhere`). Prazan popis prikazuje tekst `workspace.structureEmpty`. Tekstovi su iz `locales/hr.ts`. |
+| `OutlinePanel.test.ts` | Statički render: negativni ulazi te tri razine s brojevima iz ulaza, svaki broj jednom. Semantiku u katalogu na pet širina provjerava `catalog/e2e/states.spec.ts`, a axe na 1440, 400 i 360 px `catalog/e2e/catalog.spec.ts`. |
 | `outline-tree.property.test.ts` | Svojstva (fast-check): svaki valjani redak javlja se jednom i istim redom, sa svojim brojem; ulaz se ne mijenja; dubina je najviše 3, a dijete je više razine od roditelja. |
 
 ## Odluke
