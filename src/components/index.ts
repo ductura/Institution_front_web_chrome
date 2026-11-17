@@ -8,3 +8,4 @@ export { default as StudentHome, type StudentView } from "./student/StudentHome"
 export type { MyAssignment, MyAssignmentsRead, MyCourse } from "./student/my-assignments-read";
 export * from "./support/index";
 export * from "./outline/index";
+export * from "./teacher/index";

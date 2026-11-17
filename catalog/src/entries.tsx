@@ -3,8 +3,8 @@ import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
-  AppShell, EmptyHome, ErrorScreen, MyAssignments, OutlinePanel, RouteLoading, StudentHome, type MyCourse,
-  type OutlineRow,
+  AppShell, EmptyHome, ErrorScreen, MyAssignments, OutlinePanel, RouteLoading, StudentHome, TeacherCourses, type MyCourse,
+  type AssignmentSubmission, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -86,6 +86,25 @@ function HeadingsProbe() {
   );
 }
 
+// Invented teacher courses (as in TeacherCourses.test.ts); each state has its own
+// ids, so no heading id repeats on the page (DAN-871).
+const teacherCourses = (n: number): TeacherCourse[] => [
+  {
+    id: `20000000-0000-4000-8000-00000000${n}0c1`, name: "Izmišljeni kolegij C", academicYear: "2026/2027", aiPolicy: "partially_allowed",
+    assignments: [
+      { id: `30000000-0000-4000-8000-00000000${n}0a1`, title: "Izmišljeni seminar", workType: "seminar_paper", opensAt: "2026-10-01T07:00:00.000Z", dueAt: "2026-11-30T22:59:00.000Z", currentVersion: 1, enrolledStudents: 12 },
+      { id: `30000000-0000-4000-8000-00000000${n}0a2`, title: "Izmišljeni esej", workType: "essay", opensAt: "2026-10-01T07:00:00.000Z", dueAt: "2026-12-14T22:59:00.000Z", currentVersion: 2, enrolledStudents: 1 },
+    ],
+  },
+  { id: `20000000-0000-4000-8000-00000000${n}0c2`, name: "Izmišljeni kolegij D", academicYear: "2025/2026", aiPolicy: "prohibited", assignments: [] },
+];
+const submission = (n: number, documentId: string | null, afterDeadline?: boolean): AssignmentSubmission => ({
+  studentId: `40000000-0000-4000-8000-0000000000e${n}`, documentId, submitted: afterDeadline !== undefined,
+  revision: afterDeadline === undefined ? null : 3, requestedMinute: afterDeadline === undefined ? null : "2026-11-30T21:00:00.000Z",
+  afterDeadline: afterDeadline ?? null,
+});
+const teacherWorks = (n: number, works: AssignmentSubmission[] | null) => ({ [`30000000-0000-4000-8000-00000000${n}0a1`]: works });
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -137,5 +156,18 @@ export const SCREEN_ENTRIES = {
     // No numbers; branch "2" collapsed (977-3), searched for "uzorak" (978-1): "2" and "2.1" show open,
     // and the active 2.1.3, not a hit, gives its mark to "2.1".
     onemogućeno: () => <OutlinePanel rows={outline.map((r) => ({ ...r, number: null }))} collapsed={[3]} active={5} query="uzorak" headingsOnly />,
+  },
+  TeacherCourses: {
+    prazno: () => <TeacherCourses courses={[]} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <TeacherCourses courses={teacherCourses(3)} works={teacherWorks(3, null)} />,
+    puno: () => (
+      <TeacherCourses
+        courses={teacherCourses(4)}
+        works={teacherWorks(4, [submission(1, "izmisljeni-rad-1", false), submission(2, "izmisljeni-rad-2"), submission(3, "izmisljeni-rad-3", true)])}
+        accommodations={{ "30000000-0000-4000-8000-0000000040a1": ["40000000-0000-4000-8000-0000000000e2"] }}
+      />
+    ),
+    onemogućeno: () => <TeacherCourses courses={teacherCourses(5)} works={teacherWorks(5, [submission(1, null)])} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
