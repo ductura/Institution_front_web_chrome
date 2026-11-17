@@ -1,0 +1,17 @@
+{
+  "name": "@ductura/web-domain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Client side of the domain ported from Ductus with its tests: literal text search, Croatian collation, deterministic diff (DAN-990, web 2.c4)",
+  "type": "module",
+  "exports": { ".": "./index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  }
+}
