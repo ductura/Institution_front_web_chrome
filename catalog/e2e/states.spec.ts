@@ -166,6 +166,8 @@ const outlineList = (numbers: string[]) => async (c: Locator) => {
   // The search field (978-1) sits outside the nav and must fit the cell too.
   const field = c.getByRole("searchbox", { name: OUTLINE_HR.search });
   expect(await field.evaluate((f) => f.getBoundingClientRect().right <= f.closest("dd")!.getBoundingClientRect().right)).toBe(true);
+  const all = c.getByRole("button", { name: OUTLINE_HR.collapseAll, exact: true });
+  expect(await all.evaluate((b) => b.getBoundingClientRect().right <= b.closest("dd")!.getBoundingClientRect().right)).toBe(true);
 };
 
 /** Semantics of each state of each screen, on the shell only. */
@@ -380,6 +382,30 @@ test("an outline search shows the parents of a hit and gives the collapsed state
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await expect(child).toBeHidden();
   await expect(outlineNav(c).locator("[data-number]:visible")).toHaveText(["1", "2", "2.1", "2.1.3"]);
+});
+
+// DAN-978 (978-2): "Sklopi sve" leaves only the roots, with the mark on the active chapter's root;
+// a single toggle still works after it, and "Rasklopi sve" brings everything back.
+test("collapse all leaves the roots and keeps the active chapter marked once", async ({ page }) => {
+  await open(page, "dark", 360);
+  const c = cell(page, "OutlinePanel", "Ljuska", "puno");
+  const numbers = outlineNav(c).locator("[data-number]:visible");
+  const marked = c.locator("[aria-current=location] > span [data-number]");
+  const collapse = c.getByRole("button", { name: OUTLINE_HR.collapseAll, exact: true });
+  const expand = c.getByRole("button", { name: OUTLINE_HR.expandAll, exact: true });
+  await collapse.click();
+  await expect(numbers).toHaveText(["1", "2"]);
+  await expect(marked).toHaveText("1");
+  await expect(expand).toBeFocused();
+  await c.getByRole("button", { name: "Potpoglavlja: 1 Uvod" }).click();
+  await expect(numbers).toHaveText(["1", "1.1", "2"]);
+  await expect(marked).toHaveText("1.1");
+  await expect(collapse).toBeVisible();
+  await collapse.click();
+  await expand.press("Enter");
+  await expect(numbers).toHaveText(["1", "1.1", "1.1.1", "2", "2.1", "2.1.3"]);
+  await expect(marked).toHaveText("1.1.1");
+  await expect(collapse).toBeFocused();
 });
 
 test("the semantics table covers every component and state the catalogue shows", () => {

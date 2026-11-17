@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
 import { OUTLINE_HR } from "../i18n/hr.ts";
-import { activeRow, collapsedSet } from "./outline-view";
+import { activeRow, branchIndexes, collapsedSet, openBranchShown } from "./outline-view";
 import { outlineTree, type OutlineRow } from "./outline-tree";
 
 // Invented headings only. Index:   0      1        2          3     4       5        6
@@ -53,6 +53,26 @@ describe("the active chapter stays marked once through collapsing (977-3 accepta
     const odd = [rows[0]!, { ...rows[1]!, entry: { ...rows[1]!.entry, level: 0 } }, { ...rows[2]!, entry: { ...rows[2]!.entry, level: Number.NaN } }];
     expect(activeRow(outlineTree(odd), odd, 1, new Set())).toBe(0);
     expect(activeRow(outlineTree(odd), odd, 2, new Set())).toBe(0);
+  });
+});
+
+describe("collapse all (DAN-978, 978-2)", () => {
+  it("lists no branch for an empty tree or one of leaves only", () => {
+    expect(branchIndexes([])).toEqual([]);
+    expect(branchIndexes(outlineTree([rows[0]!, rows[3]!]))).toEqual([]);
+    expect(openBranchShown([], new Set())).toBe(false);
+  });
+
+  it("lists every branch in order", () => {
+    expect(branchIndexes(tree)).toEqual([0, 1, 3, 4]);
+  });
+
+  it("sees an open branch only where it is shown", () => {
+    expect(openBranchShown(tree, collapsedSet(tree, []))).toBe(true);
+    expect(openBranchShown(tree, collapsedSet(tree, [0, 3]))).toBe(false);
+    expect(openBranchShown(tree, collapsedSet(tree, [0, 4]))).toBe(true);
+    expect(openBranchShown(tree, collapsedSet(tree, [1, 7, -1, 1.5, 3, 3, 4, 0]))).toBe(false);
+    expect(openBranchShown(tree, collapsedSet(tree, [7, -1, 2, 6]))).toBe(true);
   });
 });
 

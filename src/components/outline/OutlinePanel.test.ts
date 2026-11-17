@@ -89,7 +89,8 @@ describe("OutlinePanel: collapsing and the active chapter (977-3)", () => {
 
   it("names each toggle by the number and title, open by default", () => {
     const html = render(three());
-    expect(count(html, "<button")).toBe(2);
+    // The branch toggles only; "Sklopi sve" (978-2) has no aria-label.
+    expect(count(html, `aria-label="${OUTLINE_HR.subheadings}:`)).toBe(2);
     expect(html).toContain(`aria-label="${OUTLINE_HR.subheadings}: 1 Uvod"`);
     expect(html).toContain(`aria-label="${OUTLINE_HR.subheadings}: 1.1 Pojmovi"`);
     expect(count(html, 'aria-expanded="true"')).toBe(2);
@@ -142,5 +143,28 @@ describe("OutlinePanel: title search (978-1)", () => {
     expect(html).toContain(`role="status"`);
     expect(html).toContain(OUTLINE_HR.noMatch);
     expect(html).not.toContain("<ol");
+  });
+});
+
+describe("OutlinePanel: collapse all (978-2)", () => {
+  const four = () => [row(1, "Uvod", "1"), row(2, "Pojmovi", "1.1"), row(3, "Izmišljeni pojam", "1.1.1"), row(1, "Metoda", "2")];
+  const allButton = (html: string) => [...html.matchAll(/<button type="button"[^>]*>([^<]+)<\/button>/g)].map((m) => m[1]);
+
+  it("has no collapse-all button without a branch, on an empty list, or during a search", () => {
+    expect(allButton(render([row(1, "Uvod", "1"), row(1, "Metoda", "2")]))).toEqual([]);
+    expect(allButton(render([]))).toEqual([]);
+    expect(allButton(render(four(), { query: "pojam" }))).toEqual([]);
+  });
+
+  it("offers to collapse while a branch is open and to expand when none shows open", () => {
+    expect(allButton(render(four()))).toEqual([OUTLINE_HR.collapseAll]);
+    expect(allButton(render(four(), { collapsed: [0] }))).toEqual([OUTLINE_HR.expandAll]);
+    expect(allButton(render(four(), { collapsed: [0, 1, 7, -1, 0] }))).toEqual([OUTLINE_HR.expandAll]);
+    expect(allButton(render(four(), { collapsed: [7, -1, 2] }))).toEqual([OUTLINE_HR.collapseAll]);
+  });
+
+  it("is a plain button: its text is its name, with no pressed or expanded state", () => {
+    const html = render(four());
+    expect(html).toMatch(new RegExp(`<button type="button" class="[^"]+">${OUTLINE_HR.collapseAll}</button>`));
   });
 });
