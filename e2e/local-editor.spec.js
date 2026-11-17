@@ -12,11 +12,11 @@ async function openEditor(page) {
   await expect(editorOf(page)).toBeEditable();
 }
 
-/** Upisuje tekst i čeka da ga API potvrdi kao spremljen. */
+/** Upisuje tekst i čeka da ga razvojni API primi (DAN-886). */
 async function typeAndSave(page, text) {
   await editorOf(page).fill(text);
   await expect(editorOf(page)).toHaveValue(text);
-  await expect(page.getByRole('status')).toHaveText('Spremljeno');
+  await expect(page.getByRole('status')).toHaveText(/^Razvojni poslužitelj primio je tekst/);
 }
 
 test.describe('local editor (Ductus #197)', () => {

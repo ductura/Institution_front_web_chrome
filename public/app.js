@@ -47,7 +47,7 @@ async function renderDoc(id) {
   const updateWords = () => { words.textContent = `${wordCount(editor.value)} riječi`; };
   const save = debounce(async () => {
     setState('saving');
-    try { await api.save({ id, title: title.value, content: editor.value }); setState('saved'); }
+    try { await api.save({ id, title: title.value, content: editor.value }); setState('received'); }
     catch { setState('error'); }
   }, 600);
   const onInput = () => { setState('dirty'); updateWords(); save(); };

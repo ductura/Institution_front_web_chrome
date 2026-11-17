@@ -22,9 +22,17 @@ export function wordCount(text = '') {
   return words.length;
 }
 
-const LABELS = { idle: '', dirty: 'Nespremljene izmjene', saving: 'Spremanje…', saved: 'Spremljeno', error: 'Greška pri spremanju' };
+// DAN-886: memorijski API drži tekst samo do ponovnog pokretanja, pa HTTP
+// uspjeh ne smije reći „Spremljeno” (PRODUCT §5); kaže tko je tekst primio.
+export const LABELS = {
+  idle: '',
+  dirty: 'Nespremljene izmjene',
+  saving: 'Spremanje…',
+  received: 'Razvojni poslužitelj primio je tekst · ne čuva se nakon ponovnog pokretanja',
+  error: 'Greška pri spremanju',
+};
 export function saveStatusLabel(state) {
-  return LABELS[state] ?? '';
+  return Object.hasOwn(LABELS, state) ? LABELS[state] : '';
 }
 
 /** Zaslonska tipkovnica je vjerojatno otvorena kad vidljivi dio padne ispod 75 % visine prozora. */

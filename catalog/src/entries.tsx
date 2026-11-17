@@ -115,10 +115,12 @@ export const SCREEN_ENTRIES = {
     onemogućeno: () => <EmptyHome enroll={null} />,
   },
   OutlinePanel: {
-    prazno: () => <OutlinePanel rows={[]} />,
+    prazno: () => <OutlinePanel rows={[]} active={-1} />,
     učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
-    greška: () => <OutlinePanel rows={[heading(0, "Nula", "0"), heading(1, "", "1"), heading(4, "Četiri", "1.0.0.1")]} />,
-    puno: () => <OutlinePanel rows={outline} />,
-    onemogućeno: () => <OutlinePanel rows={outline.map((r) => ({ ...r, number: null }))} />,
+    greška: () => <OutlinePanel rows={[heading(0, "Nula", "0"), heading(1, "", "1"), heading(4, "Četiri", "1.0.0.1")]} active={-1} />,
+    puno: () => <OutlinePanel rows={outline} active={2} />,
+    // No numbers; branch "2" collapsed (977-3), searched for "uzorak" (978-1): "2" and "2.1" show open,
+    // and the active 2.1.3, not a hit, gives its mark to "2.1".
+    onemogućeno: () => <OutlinePanel rows={outline.map((r) => ({ ...r, number: null }))} collapsed={[3]} active={5} query="uzorak" />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
