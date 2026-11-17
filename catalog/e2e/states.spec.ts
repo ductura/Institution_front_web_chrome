@@ -343,6 +343,12 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.getByText(t.teacherCourses.accommodation, { exact: false })).toHaveCount(1);
       await expect(c.getByText(t.teacherCourses.countNote)).toBeVisible();
       await ownIds(c);
+      // Every link of a work stays inside its course card at every width (CI 360 px baseline, 871-1).
+      const outside = await c.locator("section").evaluateAll((sections) => sections.flatMap((s) => {
+        const edge = s.getBoundingClientRect().right;
+        return [...s.querySelectorAll("li")].filter((li) => li.getBoundingClientRect().right > edge + 0.5).map((li) => li.textContent);
+      }));
+      expect(outside).toEqual([]);
     },
     onemogućeno: async (c) => {
       await expect(c.getByText(t.teacherCourses.noWorks)).toBeVisible();

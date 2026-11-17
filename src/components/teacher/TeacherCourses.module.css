@@ -125,6 +125,22 @@
   color: var(--ink-3);
 }
 
+/*
+ * DAN-871 (871-1), the one change from Ductus: each part of a work's row stays
+ * whole, but the row may wrap between the parts, so at 360-400 px "Jezik rada"
+ * stays inside the card. `pre` keeps each part's leading space; the links stay
+ * inline in the text.
+ */
+.works {
+  min-width: 0;
+}
+
+.works .submission,
+.works .accommodation {
+  display: inline-block;
+  white-space: pre;
+}
+
 /* DAN-332 PR 4: the state of a submission is text in the colour of the list, never a colour of its own (D-128). */
 .submission,
 .accommodation {
