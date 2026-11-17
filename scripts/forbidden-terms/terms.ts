@@ -37,6 +37,11 @@ export type ForbiddenTerm = {
   readonly contextual?: { readonly word: RegExp };
   /** Set when an allowed phrase must not be put together across a phrase end (`foldPhrases`). */
   readonly readsPhrases?: true;
+  /**
+   * Words the entry lets through, matched (flag `g`) on `foldCase`, where letters keep their diacritics; every
+   * occurrence is masked before `pattern` is matched, so no letter that only folds into these words passes.
+   */
+  readonly allows?: RegExp;
 };
 
 // Patterns are literals. Most keep letters and digits away from both ends of
@@ -153,15 +158,14 @@ export const FORBIDDEN_TERMS: readonly ForbiddenTerm[] = [
   },
   // New rows of #179 table B. The adjectives "izvorni / originalni" and "nepravilan format" stay allowed.
   { entry: "plagijat", instead: NOTHING, lang: "hr", pattern: /(?<![\p{L}\p{N}])plagi[jr]/u },
-  // T10, owner decision (DAN-1034): exactly the phrase "Izjava o izvornosti rada" stays, read on `foldPhrases`;
-  // a root not preceded by "izjava o " or not followed by "i rada" is flagged, and so is every other form.
+  // T10, owner decision (DAN-1034): exactly the phrase "Izjava o izvornosti rada" stays (`allows`); every other form
+  // is flagged, a phrase with a letter that only folds into it ("rađa", "ráda") included.
   {
     entry: "izvornost",
     instead: INTACT,
     lang: "hr",
-    pattern:
-      /(?<![\p{L}\p{N}])(?:izvornost(?<!(?<![\p{L}\p{N}])izjava o izvornost)|izvornost(?!i rada(?![\p{L}\p{N}]))|izvornosc|originalnos[tc])/u,
-    readsPhrases: true,
+    pattern: /(?<![\p{L}\p{N}])(?:izvornos[tc]|originalnos[tc])/u,
+    allows: /(?<![\p{L}\p{N}\p{M}])izjava o izvornosti rada(?![\p{L}\p{N}\p{M}])/gu,
   },
   {
     entry: "integritet",
@@ -412,6 +416,15 @@ export function foldPhrases(text: string): string {
     .replace(/^[ \uFFFF]+|[ \uFFFF]+$/g, "");
 }
 
+/** `text` in lower case with invisible characters dropped and white space of one line made one space; diacritics stay. */
+export function foldCase(text: string): string {
+  return text
+    .normalize("NFKC")
+    .replace(INVISIBLE, "")
+    .toLocaleLowerCase("hr")
+    .replace(/[\p{Zs}\t]+/gu, " ");
+}
+
 /** Dictionary entries that occur in `text`, in dictionary order; with `lang`, only the entries of that language. */
 export function findForbiddenTerms(text: string, lang?: Language): ForbiddenTerm[] {
   const folded = foldText(text);
@@ -419,6 +432,12 @@ export function findForbiddenTerms(text: string, lang?: Language): ForbiddenTerm
   return FORBIDDEN_TERMS.filter(
     (entry) =>
       (lang === undefined || entry.lang === lang) &&
-      entry.pattern.test(entry.contextual || entry.readsPhrases ? phrases : folded),
+      entry.pattern.test(
+        entry.allows
+          ? foldText(foldCase(text).replace(entry.allows, "."))
+          : entry.contextual || entry.readsPhrases
+            ? phrases
+            : folded,
+      ),
   );
 }

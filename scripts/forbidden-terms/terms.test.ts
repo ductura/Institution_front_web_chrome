@@ -559,6 +559,14 @@ describe("T10: Izjava o izvornosti rada", () => {
     "Izjava o\nizvornosti rada",
     "Izjava o\r\nizvornosti rada",
     "Izjava o originalnosti rada",
+    // Letters that fold into the phrase are not the phrase (Codex review of #42).
+    "Izjava o izvornosti rađa raspravu.",
+    "Izjava o izvornosti ráda",
+    "Izjava o izvornošti rada",
+    "Izjava o izvornosti rada\u0301",
+    "Izjava o izvornosti rada\u0335",
+    "İzjava o izvornosti rada",
+    "Izjava o\u2028izvornosti rada",
   ])("still flags %j", (text) => {
     expect(entries(text)).toContain("izvornost");
   });
@@ -572,6 +580,8 @@ describe("T10: Izjava o izvornosti rada", () => {
     "Izjava o\tizvornosti rada",
     "Izjava o izvornosti rada.",
     "Izjava o izvornosti rada:",
+    "Izjava o izvo\u00ADrnosti rada",
+    "Izjava o izvornosti rada i Izjava o izvornosti rada",
   ])("allows %j", (text) => {
     expect(entries(text)).toEqual([]);
   });
