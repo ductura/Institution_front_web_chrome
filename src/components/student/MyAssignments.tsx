@@ -1,11 +1,15 @@
-import { createElement as h } from "react";
+import { createElement as h, Suspense, use, type ReactElement } from "react";
 
 import { messagesHr } from "../../../locales/hr.ts";
 import { zagrebParts } from "../summary/zagreb-time.ts";
 
+import ErrorScreen from "../shell/ErrorScreen";
+import RouteLoading from "../shell/RouteLoading";
+
 import { courseMotif } from "./course-motif";
-import type { MyCourse } from "./my-assignments-read";
+import type { MyAssignmentsRead, MyCourse } from "./my-assignments-read";
 import styles from "./MyAssignments.module.css";
+import StudentHome from "./StudentHome";
 
 const t = messagesHr.student.assignments;
 const home = messagesHr.student.home;
@@ -28,7 +32,33 @@ function dueHr(iso: string): string {
  * `level` is the course name's heading level: h3 under the "Moji kolegiji" h2
  * of S01, h2 right under the page h1 of S02, so no heading level is skipped.
  */
-export default function MyAssignments({ courses, level = 3 }: { courses: readonly MyCourse[]; level?: 2 | 3 }) {
+type ListProps = { courses: readonly MyCourse[]; level?: 2 | 3 };
+/**
+ * DAN-876: the S02 page body over student.assignments.get. `read` is
+ * readMyAssignments(createApi()), made once by the page, outside render; it
+ * never rejects. `signIn` as in StudentHome (D-09).
+ */
+type ReadProps = { read: Promise<MyAssignmentsRead>; signIn: (returnTo: string) => string };
+
+export default function MyAssignments(props: ListProps | ReadProps): ReactElement {
+  if ("read" in props) {
+    return h(Suspense, { fallback: h(RouteLoading, { label: messagesHr.workspace.panelLoading }) }, h(Settled, props));
+  }
+  return list(props);
+}
+
+/**
+ * Unavailable is ErrorScreen, the page's only h1. A list and signed out are
+ * StudentHome's own S02 states, so signing in stays the AAI@EduHr link.
+ */
+function Settled({ read, signIn }: ReadProps): ReactElement {
+  const settled = use(read);
+  if (settled.kind === "unavailable") return h(ErrorScreen, { title: home.unavailableHeading, body: home.unavailableBody });
+  return h("main", { id: "sadrzaj", tabIndex: -1, className: "page" },
+    h(StudentHome, { read: settled, enroll: null, signIn, view: "courses" }));
+}
+
+function list({ courses, level = 3 }: ListProps) {
   return h("div", { className: styles.grid },
     courses.map((course) =>
       h("section", { key: course.id, className: styles.course, "aria-labelledby": `kolegij-${course.id}` },
