@@ -5,6 +5,9 @@ import { OUTLINE_HR } from "../i18n/hr.ts";
 
 import { outlineTree, type OutlineNode, type OutlineRow } from "./outline-tree";
 import { activeRow, branchIndexes, collapsedSet, filterTree, openBranchShown, searchQuery } from "./outline-view";
+import {
+  PANEL_DEFAULTS, readStoredSettings, settingsFor, settingsKey, uniqueIds, writeSettings, type SettingsStore,
+} from "./panel-settings";
 import styles from "./OutlinePanel.module.css";
 
 export type OutlinePanelProps = {
@@ -20,6 +23,13 @@ export type OutlinePanelProps = {
   headingsOnly?: boolean;
   /** Told the new state once per press; the editor's headings-only view listens (E-0.3). */
   onHeadingsOnlyChange?: (on: boolean) => void;
+  /**
+   * Browser store for the panel settings (979-2), given only in the browser, never in SSR.
+   * With a usable `scope` and a stored record, the record wins over `collapsed` and `headingsOnly`.
+   */
+  store?: SettingsStore;
+  /** Whose settings: the editor gives a digest of the document id. */
+  scope?: string;
 };
 
 type View = {
@@ -71,17 +81,30 @@ function list(nodes: readonly OutlineNode[], depth: number, view: View, id?: str
  * (977-3). A collapsed branch keeps its list in the DOM, hidden.
  */
 export default function OutlinePanel(
-  { rows, active, collapsed = [], query = "", headingsOnly = false, onHeadingsOnlyChange }: OutlinePanelProps,
+  { rows, active, collapsed = [], query = "", headingsOnly = false, onHeadingsOnlyChange, store, scope = "" }: OutlinePanelProps,
 ) {
   const base = useId();
   const tree = outlineTree(rows);
-  const [shut, setShut] = useState<readonly number[]>(collapsed);
+  // Read once (979-2): a stored record wins over the props; ids map back to rows only when unique.
+  const [saved] = useState(() => {
+    const key = store ? settingsKey(scope) : null;
+    const record = key ? readStoredSettings(store, key) : null;
+    const unique = uniqueIds(rows);
+    return {
+      key,
+      base: record ?? PANEL_DEFAULTS,
+      shut: record ? record.collapsed.flatMap((id) => unique.get(id) ?? []) : collapsed,
+      only: record ? record.headingsOnly : headingsOnly,
+    };
+  });
+  const [shut, setShut] = useState<readonly number[]>(saved.shut);
   const [typed, setTyped] = useState(query);
-  const [only, setOnly] = useState(headingsOnly);
+  const [only, setOnly] = useState(saved.only);
   // Called in the click handler, never inside a state updater, which StrictMode runs twice.
   const pressOnly = () => {
     const next = !only;
     setOnly(next);
+    save(shut, next);
     onHeadingsOnlyChange?.(next);
   };
   const q = searchQuery(typed);
@@ -89,8 +112,15 @@ export default function OutlinePanel(
   const shown = filterTree(tree, q);
   // While searching every branch is open and has no toggle; the collapsed set comes back when the query is cleared.
   const closed = searching ? new Set<number>() : collapsedSet(tree, shut);
-  const toggle = (index: number) =>
-    setShut((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
+  // Writes in the handlers, from the current state, never inside a state updater; a failed write changes nothing on screen.
+  function save(nextShut: readonly number[], nextOnly: boolean) {
+    if (saved.key) writeSettings(store, saved.key, settingsFor(tree, rows, nextShut, nextOnly, saved.base));
+  }
+  const setAndSave = (next: readonly number[]) => {
+    setShut(next);
+    save(next, only);
+  };
+  const toggle = (index: number) => setAndSave(shut.includes(index) ? shut.filter((i) => i !== index) : [...shut, index]);
   const branches = branchIndexes(tree);
   const anyOpen = openBranchShown(tree, closed);
   const view: View = { base, closed, marked: activeRow(shown, rows, active, closed, tree), searching, toggle };
@@ -107,7 +137,7 @@ export default function OutlinePanel(
         branches.length > 0 && !searching
           ? h(
             "button",
-            { type: "button", className: styles.all, onClick: () => setShut(anyOpen ? branches : []) },
+            { type: "button", className: styles.all, onClick: () => setAndSave(anyOpen ? branches : []) },
             anyOpen ? OUTLINE_HR.collapseAll : OUTLINE_HR.expandAll,
           )
           : null,

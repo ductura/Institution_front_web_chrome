@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { outlineTree, type OutlineRow } from "./outline-tree";
 import {
-  clearPanelSettings, MAX_RAW, PANEL_DEFAULTS, PANEL_SETTINGS_PREFIX, parseSettings, readSettings, settingsKey, writeSettings,
+  clearPanelSettings, COLLAPSED_MAX, readStoredSettings, settingsFor, MAX_RAW, PANEL_DEFAULTS, PANEL_SETTINGS_PREFIX, parseSettings, readSettings, settingsKey, writeSettings,
   type PanelSettings,
 } from "./panel-settings";
 
@@ -114,5 +115,36 @@ describe("written settings read back equal (979-1 acceptance)", () => {
     expect([...store.items.keys()]).toEqual(["ductura.theme"]);
     expect(() => clearPanelSettings({ length: 1, key: throwing("SecurityError"), removeItem: throwing("SecurityError") })).not.toThrow();
     expect(() => clearPanelSettings(null)).not.toThrow();
+  });
+});
+
+describe("stored record and the record to write (979-2)", () => {
+  it("tells no record, a broken one and a throwing store apart from a stored one", () => {
+    expect(readStoredSettings(memory(), KEY)).toBeNull();
+    expect(readStoredSettings(raw("{"), KEY)).toBeNull();
+    expect(readStoredSettings({ getItem: throwing("SecurityError"), setItem: () => {} }, KEY)).toBeNull();
+    expect(readStoredSettings(undefined, KEY)).toBeNull();
+    expect(readStoredSettings(raw('{"levels":2}'), KEY)).toEqual({ ...PANEL_DEFAULTS, levels: 2 });
+  });
+
+  const row = (id: string | null, level: number): OutlineRow => ({ entry: { id, level, text: "Izmišljeno", pos: 0 }, number: null });
+
+  it("keeps only branches with a unique id, and both states", () => {
+    const rows = [row("a", 1), row("a1", 2), row(null, 1), row("n1", 2), row("d", 1), row("d1", 2), row("d", 1), row("d2", 2), row("e", 1)];
+    const tree = outlineTree(rows);
+    const base = { ...PANEL_DEFAULTS, levels: 2 as const };
+    expect(settingsFor(tree, rows, [0, 2, 4, 6, 8, 99, -1], true, base))
+      .toEqual({ layout: "popis", levels: 2, collapsed: ["a"], headingsOnly: true });
+  });
+
+  it("keeps the first COLLAPSED_MAX ids, so a long outline still saves", () => {
+    const rows = Array.from({ length: 250 }, (_, i) => [row(`g${i}`, 1), row(`g${i}c`, 2)]).flat();
+    const tree = outlineTree(rows);
+    const all = rows.map((_, i) => i).filter((i) => i % 2 === 0);
+    const s = settingsFor(tree, rows, all, false, PANEL_DEFAULTS);
+    expect(s.collapsed).toHaveLength(COLLAPSED_MAX);
+    const store = memory();
+    expect(writeSettings(store, KEY, s)).toBe(true);
+    expect(readSettings(store, KEY).collapsed).toHaveLength(COLLAPSED_MAX);
   });
 });

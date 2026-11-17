@@ -79,9 +79,18 @@ const outline = [
  */
 function HeadingsProbe() {
   const [log, setLog] = useState<readonly boolean[]>([]);
+  // 979-2: the browser's localStorage, read here and not at module load (states.test renders this in node).
+  const [store] = useState(() => {
+    try {
+      return typeof window === "undefined" ? undefined : window.localStorage;
+    } catch {
+      return undefined;
+    }
+  });
   return (
     <div data-headings-log={log.join(",")}>
-      <OutlinePanel rows={outline} active={2} onHeadingsOnlyChange={(on) => setLog((prev) => [...prev, on])} />
+      <OutlinePanel rows={outline} active={2} store={store} scope="izmisljeni-dokument"
+        onHeadingsOnlyChange={(on) => setLog((prev) => [...prev, on])} />
     </div>
   );
 }
