@@ -211,6 +211,18 @@ const ownIds = async (c: Locator) => {
   expect(counts.length).toBeGreaterThan(0);
   expect(counts.every((n) => n === 1)).toBe(true);
 };
+// Review FAIL c.6958308171 (cxcrweb38): a view that sits inside the page's own main adds no
+// main of its own and no id another element of the page already has. Exactly one main holds
+// the cell (the catalogue's), none is inside it, and every id in the cell is unique in the
+// document; zero ids is fine. Each state of the view must hold this, not only "učitavanje".
+const insidePageMain = async (c: Locator) => {
+  const seen = await c.evaluate((dd) => ({
+    mains: [...dd.ownerDocument.querySelectorAll("main")].filter((m) => m.contains(dd) || dd.contains(m)).length,
+    mainsInside: dd.querySelectorAll("main, [role='main']").length,
+    shared: [...dd.querySelectorAll("[id]")].map((el) => el.id).filter((id) => dd.ownerDocument.querySelectorAll(`[id="${CSS.escape(id)}"]`).length !== 1),
+  }));
+  expect(seen).toEqual({ mains: 1, mainsInside: 0, shared: [] });
+};
 
 /** Semantics of each state of each screen, on the shell only. */
 const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Promise<void>>> = {
@@ -335,17 +347,19 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.getByText(t.accessLog.empty)).toBeVisible();
       await expect(c.locator("section")).toHaveCount(0);
       await expect(c.getByRole("link")).toHaveCount(0);
+      await insidePageMain(c);
     },
     // Review FAIL c.6958308171: the view's own status line, no second main in the page.
     učitavanje: async (c) => {
       await expect(c.getByRole("status")).toHaveText(t.accessLog.loading);
-      await expect(c.locator("main")).toHaveCount(0);
       await expect(c.locator("[id]")).toHaveCount(0);
+      await insidePageMain(c);
     },
     greška: async (c) => {
       await expect(c.getByRole("alert")).toHaveText(t.accessLog.unavailable);
       await expect(c.getByRole("link", { name: t.accessLog.retry })).toHaveAttribute("href", "/rad/izmisljeni-zadatak/dnevnik-pristupa");
       await expect(c.locator("section")).toHaveCount(0);
+      await insidePageMain(c);
     },
     puno: async (c) => {
       await expect(c.getByRole("heading", { level: 2 })).toHaveText(["Utorak, 10. 11. 2026.", "Ponedjeljak, 9. 11. 2026."]);
@@ -354,12 +368,14 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.getByRole("link", { name: t.accessLog.older })).toHaveAttribute("href", /\?prije=2026-11-09T18:55:00\.000Z&zapis=/);
       await expect(c.getByRole("link", { name: t.accessLog.newest })).toHaveCount(0);
       await ownIds(c);
+      await insidePageMain(c);
     },
     onemogućeno: async (c) => {
       await expect(c.getByText(t.accessLog.noOlder)).toBeVisible();
       await expect(c.getByText(t.accessLog.empty)).toHaveCount(0);
       await expect(c.getByRole("link", { name: t.accessLog.newest })).toHaveAttribute("href", "/rad/izmisljeni-zadatak/dnevnik-pristupa");
       await expect(c.locator("section")).toHaveCount(0);
+      await insidePageMain(c);
     },
   },
   TeacherCourses: {
