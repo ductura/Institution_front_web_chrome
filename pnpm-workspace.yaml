@@ -7,3 +7,4 @@ packages:
   - scripts/forbidden-terms
   - src/components
   - src/platform
+  - src/domain
