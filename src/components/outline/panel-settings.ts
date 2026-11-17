@@ -82,8 +82,8 @@ export function settingsKey(scope: string): string | null {
 
 /**
  * The stored settings, or null when there is no store, it throws, or there is
- * no record or a broken or too long one (979-2): only a real record overrides
- * the panel's props.
+ * no record or a broken, non-object or too long one (979-2): only a real
+ * settings object overrides the panel's props. Its fields are normalised one by one.
  */
 export function readStoredSettings(store: SettingsStore, key: string): PanelSettings | null {
   let text: string | null;
@@ -94,7 +94,10 @@ export function readStoredSettings(store: SettingsStore, key: string): PanelSett
   }
   if (typeof text !== "string" || text.length > MAX_RAW) return null;
   try {
-    return parseSettings(JSON.parse(text));
+    const value: unknown = JSON.parse(text);
+    // Valid JSON that is not a settings object (null, an array, a number) is a broken record, not defaults.
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+    return parseSettings(value);
   } catch {
     return null;
   }

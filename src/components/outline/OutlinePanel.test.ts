@@ -231,7 +231,8 @@ describe("OutlinePanel: stored settings (979-2)", () => {
   it("uses the props without a record, with a throwing store or without a usable scope", () => {
     const rows = rowsWith(["a", "a1", "b", "b1"]);
     const throwing = { getItem: () => { throw new Error("izmišljeno"); }, setItem: () => {} };
-    for (const s of [store(), throwing]) {
+    const notAnObject = (value: string) => ({ getItem: () => value, setItem: () => {} });
+    for (const s of [store(), throwing, notAnObject("null"), notAnObject("[]"), notAnObject("42")]) {
       const html = panel(rows, s as never, { collapsed: [0], headingsOnly: true });
       expect(hiddenLists(html)).toBe(1);
       expect(html).toContain(`aria-pressed="true">${OUTLINE_HR.headingsOnly}`);

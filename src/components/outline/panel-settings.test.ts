@@ -121,7 +121,9 @@ describe("written settings read back equal (979-1 acceptance)", () => {
 describe("stored record and the record to write (979-2)", () => {
   it("tells no record, a broken one and a throwing store apart from a stored one", () => {
     expect(readStoredSettings(memory(), KEY)).toBeNull();
-    expect(readStoredSettings(raw("{"), KEY)).toBeNull();
+    // Valid JSON that is not a settings object is a broken record too (Codex P2 on 34b4915).
+    for (const value of ["{", "null", "[]", "42", '"popis"', "true", '[{"levels":2}]']) expect(readStoredSettings(raw(value), KEY)).toBeNull();
+    expect(readStoredSettings(raw("{}"), KEY)).toEqual(PANEL_DEFAULTS);
     expect(readStoredSettings({ getItem: throwing("SecurityError"), setItem: () => {} }, KEY)).toBeNull();
     expect(readStoredSettings(undefined, KEY)).toBeNull();
     expect(readStoredSettings(raw('{"levels":2}'), KEY)).toEqual({ ...PANEL_DEFAULTS, levels: 2 });
