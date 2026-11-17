@@ -10,10 +10,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ductura/contracts": "https://github.com/ductura/server/releases/download/contracts-v2.1.1/ductura-contracts-2.1.1.tgz"
+    "@ductura/contracts": "https://github.com/ductura/server/releases/download/contracts-v2.4.0/ductura-contracts-2.4.0.tgz"
   },
   "devDependencies": {
-    "@ductura/test-fakes": "https://github.com/ductura/server/releases/download/test-fakes-v2.0.1/ductura-test-fakes-2.0.1.tgz",
+    "@ductura/test-fakes": "https://github.com/ductura/server/releases/download/test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz",
     "@types/node": "26.6.4",
     "typescript": "5.9.3",
     "vitest": "5.0.3"
