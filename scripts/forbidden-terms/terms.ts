@@ -38,8 +38,8 @@ export type ForbiddenTerm = {
   /** Set when an allowed phrase must not be put together across a phrase end (`foldPhrases`). */
   readonly readsPhrases?: true;
   /**
-   * Words the entry lets through, matched (flag `g`) on `foldCase`, where every letter stays as written; every
-   * occurrence is masked before `pattern` is matched, so no letter that only folds into these words passes.
+   * Words the entry lets through (flag `g`), read by `allowedReading`: matched on `foldCase`, where every letter stays
+   * as written, and masked only when `foldText` finds each of them as words of their own too.
    */
   readonly allows?: RegExp;
 };
@@ -429,6 +429,19 @@ export function foldCase(text: string): string {
     .replace(/[ \u00A0\t]+/g, " ");
 }
 
+/**
+ * The text `pattern` reads for an entry with `allows`. Every occurrence of the allowed words as written is masked,
+ * but only when `foldText` finds as many of them set apart from other letters: a character next to them that folds
+ * into a letter or a digit ("radaⓐ", "rada¹", a word joiner before a letter) joins them to a longer word, and then
+ * nothing is masked.
+ */
+function allowedReading(text: string, allows: RegExp): string {
+  const written = foldCase(text);
+  const folded = foldText(text);
+  const count = (reading: string): number => reading.match(allows)?.length ?? 0;
+  return count(written) === count(folded) ? foldText(written.replace(allows, ".")) : folded;
+}
+
 /** Dictionary entries that occur in `text`, in dictionary order; with `lang`, only the entries of that language. */
 export function findForbiddenTerms(text: string, lang?: Language): ForbiddenTerm[] {
   const folded = foldText(text);
@@ -438,7 +451,7 @@ export function findForbiddenTerms(text: string, lang?: Language): ForbiddenTerm
       (lang === undefined || entry.lang === lang) &&
       entry.pattern.test(
         entry.allows
-          ? foldText(foldCase(text).replace(entry.allows, "."))
+          ? allowedReading(text, entry.allows)
           : entry.contextual || entry.readsPhrases
             ? phrases
             : folded,

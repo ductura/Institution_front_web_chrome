@@ -575,6 +575,14 @@ describe("T10: Izjava o izvornosti rada", () => {
     "Izjava o izvornosti\u2009rada",
     "Izjava\u3000o izvornosti rada",
     "Izjava o izvornosti ra\uFB06a",
+    // Characters next to the phrase that fold into a letter or a digit (third Codex review of #42).
+    "Izjava o izvornosti rada\u24D0",
+    "\u24D0Izjava o izvornosti rada",
+    "Izjava o izvornosti rada\u00B9",
+    "Izjava o izvornosti rada\u{1D41A}",
+    "Izjava o izvornosti rada\u2060a",
+    "a\u2060Izjava o izvornosti rada",
+    "Izjava o izvornosti rada\u24D0 i Izjava o izvornosti rada",
   ])("still flags %j", (text) => {
     expect(entries(text)).toContain("izvornost");
   });
