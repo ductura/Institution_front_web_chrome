@@ -539,3 +539,71 @@ describe("§5 deltas", () => {
     expect(entries(text)).toEqual([]);
   });
 });
+
+// T10, owner decision (DAN-1034, Ductus#2028 c.6961865046): the entry "izvornost" lets exactly the phrase
+// "Izjava o izvornosti rada" through; every other form of the root is still flagged.
+describe("T10: Izjava o izvornosti rada", () => {
+  it.each([
+    "izvornost teksta",
+    "Provjera izvornosti",
+    "Izvornost rada",
+    "Izjava o izvornosti",
+    "Izvornosti rada",
+    "Izjava o izvornosti radova",
+    "Izjava o izvornosti rada i izvornost teksta",
+    "Neizjava o izvornosti rada",
+    "Izjava o izvornosci rada",
+    "Izjava o izvornost rada",
+    "Izjava. O izvornosti rada",
+    "Izjava o izvornosti. Rada",
+    "Izjava o\nizvornosti rada",
+    "Izjava o\r\nizvornosti rada",
+    "Izjava o originalnosti rada",
+    // Letters that fold into the phrase are not the phrase (Codex review of #42).
+    "Izjava o izvornosti rađa raspravu.",
+    "Izjava o izvornosti ráda",
+    "Izjava o izvornošti rada",
+    "Izjava o izvornosti rada\u0301",
+    "Izjava o izvornosti rada\u0335",
+    "İzjava o izvornosti rada",
+    "Izjava o\u2028izvornosti rada",
+    // Letters and spaces that only NFKC or a case mapping turns into the phrase (second Codex review of #42).
+    "Izjava o izvornosti ra\u1D48a",
+    "Izjava o izvornosti \uFF52\uFF41\uFF44\uFF41",
+    "Izjava o izvornosti \u{1D42B}ada",
+    "Izjava o izvornosti \u202Erada",
+    "Izjava o izvornosti\u2009rada",
+    "Izjava\u3000o izvornosti rada",
+    "Izjava o izvornosti ra\uFB06a",
+    // Characters next to the phrase that fold into a letter or a digit (third Codex review of #42).
+    "Izjava o izvornosti rada\u24D0",
+    "\u24D0Izjava o izvornosti rada",
+    "Izjava o izvornosti rada\u00B9",
+    "Izjava o izvornosti rada\u{1D41A}",
+    "Izjava o izvornosti rada\u2060a",
+    "a\u2060Izjava o izvornosti rada",
+    "Izjava o izvornosti rada\u24D0 i Izjava o izvornosti rada",
+  ])("still flags %j", (text) => {
+    expect(entries(text)).toContain("izvornost");
+  });
+
+  it.each([
+    "Izjava o izvornosti rada",
+    "IZJAVA O IZVORNOSTI RADA",
+    "izjava o izvornosti rada",
+    "Izjava o izvornosti rada",
+    "Izjava  o   izvornosti    rada",
+    "Izjava o\tizvornosti rada",
+    "Izjava o izvornosti rada.",
+    "Izjava o izvornosti rada:",
+    "Izjava o izvo\u00ADrnosti rada",
+    "Izjava o izvornosti rada i Izjava o izvornosti rada",
+    // A mark of the character before the phrase (fourth Codex review of #42).
+    "\u2764\uFE0FIzjava o izvornosti rada",
+    "\u2764\uFE0F Izjava o izvornosti rada",
+    "Izjava o izvornosti rada \u2764\uFE0F",
+    "\u00AB\u0301Izjava o izvornosti rada\u00BB",
+  ])("allows %j", (text) => {
+    expect(entries(text)).toEqual([]);
+  });
+});

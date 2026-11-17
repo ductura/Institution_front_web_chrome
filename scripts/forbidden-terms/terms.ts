@@ -15,7 +15,9 @@
  * B of #179 and its English equivalents (owner, 12. 10. 2026.). The allowed
  * actions of §5 ("Kopiraj navod", "kopiranje navoda", "Kopirano u
  * međuspremnik", "Copy citation", "Sakrij …", progress percentages) stay out of
- * every pattern, in exactly those words.
+ * every pattern, in exactly those words, and so does "Izjava o izvornosti rada"
+ * (T10, owner decision, DAN-1034). That entry and its tests in terms.test.ts
+ * are the one difference from the copy of ductura/server.
  */
 export type Language = "hr" | "en";
 
@@ -35,6 +37,11 @@ export type ForbiddenTerm = {
   readonly contextual?: { readonly word: RegExp };
   /** Set when an allowed phrase must not be put together across a phrase end (`foldPhrases`). */
   readonly readsPhrases?: true;
+  /**
+   * Words the entry lets through (flag `g`), read by `allowedReading`: matched on `foldCase`, where every letter stays
+   * as written, and masked only when `foldText` finds each of them as words of their own too.
+   */
+  readonly allows?: RegExp;
 };
 
 // Patterns are literals. Most keep letters and digits away from both ends of
@@ -151,11 +158,16 @@ export const FORBIDDEN_TERMS: readonly ForbiddenTerm[] = [
   },
   // New rows of #179 table B. The adjectives "izvorni / originalni" and "nepravilan format" stay allowed.
   { entry: "plagijat", instead: NOTHING, lang: "hr", pattern: /(?<![\p{L}\p{N}])plagi[jr]/u },
+  // T10, owner decision (DAN-1034): exactly the phrase "Izjava o izvornosti rada" stays (`allows`); every other form
+  // is flagged, a phrase with a letter that only folds into it ("rađa", "ráda") included.
   {
     entry: "izvornost",
     instead: INTACT,
     lang: "hr",
     pattern: /(?<![\p{L}\p{N}])(?:izvornos[tc]|originalnos[tc])/u,
+    // A mark before the words belongs to the character before them (the emoji selector U+FE0F); one after them would
+    // change their last letter.
+    allows: /(?<![\p{L}\p{N}])izjava o izvornosti rada(?![\p{L}\p{N}\p{M}])/gu,
   },
   {
     entry: "integritet",
@@ -406,6 +418,32 @@ export function foldPhrases(text: string): string {
     .replace(/^[ \uFFFF]+|[ \uFFFF]+$/g, "");
 }
 
+/**
+ * `text` as `allows` reads it: ASCII capitals in lower case, the soft hyphen and the three characters of zero width
+ * dropped (`characters.ts` leaves them to the dictionary too), and a run of spaces, no-break spaces and tabs made one
+ * space. Nothing is normalized, so a letter that NFKC, a diacritic fold or a case mapping outside ASCII would turn
+ * into a letter of an allowed phrase ("ᵈ", "ｄ", "đ", "İ") stays what it is and the phrase does not match.
+ */
+export function foldCase(text: string): string {
+  return text
+    .replace(/[\u00AD\u200B\u200C\u200D]/g, "")
+    .replace(/[A-Z]/g, (letter) => letter.toLowerCase())
+    .replace(/[ \u00A0\t]+/g, " ");
+}
+
+/**
+ * The text `pattern` reads for an entry with `allows`. Every occurrence of the allowed words as written is masked,
+ * but only when `foldText` finds as many of them set apart from other letters: a character next to them that folds
+ * into a letter or a digit ("radaⓐ", "rada¹", a word joiner before a letter) joins them to a longer word, and then
+ * nothing is masked.
+ */
+function allowedReading(text: string, allows: RegExp): string {
+  const written = foldCase(text);
+  const folded = foldText(text);
+  const count = (reading: string): number => reading.match(allows)?.length ?? 0;
+  return count(written) === count(folded) ? foldText(written.replace(allows, ".")) : folded;
+}
+
 /** Dictionary entries that occur in `text`, in dictionary order; with `lang`, only the entries of that language. */
 export function findForbiddenTerms(text: string, lang?: Language): ForbiddenTerm[] {
   const folded = foldText(text);
@@ -413,6 +451,12 @@ export function findForbiddenTerms(text: string, lang?: Language): ForbiddenTerm
   return FORBIDDEN_TERMS.filter(
     (entry) =>
       (lang === undefined || entry.lang === lang) &&
-      entry.pattern.test(entry.contextual || entry.readsPhrases ? phrases : folded),
+      entry.pattern.test(
+        entry.allows
+          ? allowedReading(text, entry.allows)
+          : entry.contextual || entry.readsPhrases
+            ? phrases
+            : folded,
+      ),
   );
 }
