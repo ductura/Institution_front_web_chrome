@@ -166,8 +166,11 @@ const outlineList = (numbers: string[]) => async (c: Locator) => {
   // The search field (978-1) sits outside the nav and must fit the cell too.
   const field = c.getByRole("searchbox", { name: OUTLINE_HR.search });
   expect(await field.evaluate((f) => f.getBoundingClientRect().right <= f.closest("dd")!.getBoundingClientRect().right)).toBe(true);
-  for (const name of [OUTLINE_HR.collapseAll, OUTLINE_HR.headingsOnly]) {
-    const button = c.getByRole("button", { name, exact: true });
+  for (const button of [
+    c.getByRole("button", { name: OUTLINE_HR.collapseAll, exact: true }),
+    c.getByRole("button", { name: OUTLINE_HR.headingsOnly, exact: true }),
+    c.getByRole("combobox", { name: OUTLINE_HR.levels }),
+  ]) {
     expect(await button.evaluate((b) => b.getBoundingClientRect().right <= b.closest("dd")!.getBoundingClientRect().right)).toBe(true);
   }
 };
@@ -480,13 +483,19 @@ test("headings only toggles, reports each press once and leaves the list", async
 const puno = (page: Page) => cell(page, "OutlinePanel", "Ljuska", "puno");
 const uvod = (page: Page) => puno(page).getByRole("button", { name: "Potpoglavlja: 1 Uvod" });
 const onlyButton = (page: Page) => puno(page).getByRole("button", { name: OUTLINE_HR.headingsOnly, exact: true });
+const levelsChoice = (page: Page) => puno(page).getByRole("combobox", { name: OUTLINE_HR.levels });
+const shownNumbers = (page: Page) => outlineNav(puno(page)).locator("[data-number]:visible");
 async function changeAndReload(page: Page, errors: string[]) {
   await expect(uvod(page)).toHaveAttribute("aria-expanded", "true");
   await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "false");
+  await expect(levelsChoice(page)).toHaveValue("3");
   await uvod(page).click();
   await onlyButton(page).click();
   await expect(uvod(page)).toHaveAttribute("aria-expanded", "false");
   await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "true");
+  // 979-3: the levels choice is saved too (and works in memory without a store).
+  await levelsChoice(page).selectOption("2");
+  await expect(shownNumbers(page)).toHaveText(["1", "2", "2.1"]);
   await page.reload();
   expect(errors).toEqual([]);
 }
@@ -499,6 +508,8 @@ test("panel settings survive a reload", async ({ page }) => {
   await expect(uvod(page)).toHaveAttribute("aria-expanded", "false");
   await expect(puno(page).locator(`[id="${await uvod(page).getAttribute("aria-controls")}"]`)).toBeHidden();
   await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "true");
+  await expect(levelsChoice(page)).toHaveValue("2");
+  await expect(shownNumbers(page)).toHaveText(["1", "2", "2.1"]);
   // The restored state is not reported as a press: the editor reads the same store (README).
   await expect(puno(page).locator("[data-headings-log]")).toHaveAttribute("data-headings-log", "");
   expect(errors).toEqual([]);
@@ -516,9 +527,40 @@ for (const [name, script] of [
     await changeAndReload(page, errors);
     await expect(uvod(page)).toHaveAttribute("aria-expanded", "true");
     await expect(onlyButton(page)).toHaveAttribute("aria-pressed", "false");
+    await expect(levelsChoice(page)).toHaveValue("3");
+    await expect(shownNumbers(page)).toHaveText(["1", "1.1", "1.1.1", "2", "2.1", "2.1.3"]);
     expect(errors).toEqual([]);
   });
 }
+
+// DAN-979 (979-3): the chosen level hides the headings below it and survives a reload; a search shows every level.
+test("levels choice hides deeper headings and survives a reload", async ({ page }) => {
+  await open(page, "dark", 360);
+  const marked = puno(page).locator("[aria-current=location] > span [data-number]");
+  const collapseAll = puno(page).getByRole("button", { name: OUTLINE_HR.collapseAll, exact: true });
+  await levelsChoice(page).selectOption("1");
+  await expect(shownNumbers(page)).toHaveText(["1", "2"]);
+  await expect(outlineNav(puno(page)).getByRole("button")).toHaveCount(0);
+  await expect(collapseAll).toHaveCount(0);
+  await expect(marked).toHaveText("1");
+  await levelsChoice(page).selectOption("2");
+  await expect(shownNumbers(page)).toHaveText(["1", "1.1", "2", "2.1"]);
+  await expect(marked).toHaveText("1.1");
+  await collapseAll.click();
+  await levelsChoice(page).selectOption("3");
+  await expect(shownNumbers(page)).toHaveText(["1", "2"]);
+  await puno(page).getByRole("button", { name: OUTLINE_HR.expandAll, exact: true }).click();
+  await levelsChoice(page).selectOption("1");
+  await page.reload();
+  await expect(levelsChoice(page)).toHaveValue("1");
+  await expect(shownNumbers(page)).toHaveText(["1", "2"]);
+  const field = puno(page).getByRole("searchbox", { name: OUTLINE_HR.search });
+  await field.fill("pojam");
+  await expect(shownNumbers(page)).toHaveText(["1", "1.1", "1.1.1"]);
+  await field.fill("");
+  await expect(shownNumbers(page)).toHaveText(["1", "2"]);
+  await expect(marked).toHaveText("1");
+});
 
 test("the semantics table covers every component and state the catalogue shows", () => {
   for (const name of COMPONENTS) expect(Object.keys(SEMANTICS[name])).toEqual([...CATALOG_STATES]);

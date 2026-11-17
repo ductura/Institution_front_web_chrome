@@ -33,4 +33,7 @@ export const OUTLINE_HR = {
   expandAll: "Rasklopi sve",
   /** Toggle (aria-pressed) for the editor's headings-only view (978-3); the label never changes. */
   headingsOnly: "Samo naslovi",
+  /** Label and options of the levels choice (979-3): headings up to level 1, 2 or 3. */
+  levels: "Razine naslova",
+  levelOptions: { 1: "1", 2: "1–2", 3: "1–3" },
 } as const;

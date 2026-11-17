@@ -240,3 +240,38 @@ describe("OutlinePanel: stored settings (979-2)", () => {
     expect(hiddenLists(panel(rows, store({ collapsed: ["b"] }), { scope: "  " }))).toBe(0);
   });
 });
+
+describe("OutlinePanel: levels choice (979-3)", () => {
+  const rows3 = () => [row(1, "Uvod", "1", "a"), row(2, "Pojmovi", "1.1", "b"), row(3, "Pojam", "1.1.1", "c"), row(1, "Metoda", "2", "d")];
+  const selected = (html: string) => /<option value="(\d)" selected="">/.exec(html)?.[1];
+  const numbers = (html: string) => [...nav(html).matchAll(/data-number="">([^<]+)</g)].map((m) => m[1]);
+  const render3 = (more: object) => renderToStaticMarkup(createElement(OutlinePanel, { rows: rows3(), active: 2, ...more }));
+
+  it("has no levels choice on an empty list", () => {
+    expect(render([])).not.toContain("<select");
+  });
+
+  it("treats an invalid levels prop as 1–3", () => {
+    for (const levels of [0, 4, 1.5, Number.NaN]) {
+      const html = render3({ levels });
+      expect(selected(html)).toBe("3");
+      expect(numbers(html)).toEqual(["1", "1.1", "1.1.1", "2"]);
+    }
+  });
+
+  it("shows headings up to the chosen level, with a labelled choice and no dangling aria-controls", () => {
+    const html = render3({ levels: 2 });
+    expect(html).toMatch(new RegExp(`<label for="([^"]+)">${OUTLINE_HR.levels}</label><select id="\\1"`));
+    expect(selected(html)).toBe("2");
+    expect(numbers(html)).toEqual(["1", "1.1", "2"]);
+    expect(html).toContain('aria-current="location"');
+    for (const [, id] of html.matchAll(/aria-controls="([^"]+)"/g)) expect(html).toContain(`id="${id}"`);
+    expect(numbers(render3({ levels: 1 }))).toEqual(["1", "2"]);
+  });
+
+  it("takes the stored levels over the prop, and the prop without a record", () => {
+    const store = (record?: object) => ({ getItem: () => (record ? JSON.stringify(record) : null), setItem: () => {} });
+    expect(selected(render3({ levels: 3, store: store({ levels: 1 }), scope: "izmisljeni-dokument" }))).toBe("1");
+    expect(selected(render3({ levels: 2, store: store(), scope: "izmisljeni-dokument" }))).toBe("2");
+  });
+});

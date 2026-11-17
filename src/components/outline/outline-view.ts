@@ -89,3 +89,17 @@ export function branchIndexes(tree: readonly OutlineNode[]): number[] {
 export function openBranchShown(tree: readonly OutlineNode[], closed: ReadonlySet<number>): boolean {
   return tree.some((n) => n.children.length > 0 && !closed.has(n.index));
 }
+
+/**
+ * The tree cut to headings of level 1 to `levels` (979-3), by the heading's
+ * level, not its depth: past a skipped level a level-3 heading sits at depth
+ * 2 and still goes at "1–2". A child is always of a higher level than its
+ * parent, so cutting a subtree loses nothing above it. A level outside 1 to 3
+ * means no limit. Nodes keep their index, number and depth.
+ */
+export function limitLevels(tree: readonly OutlineNode[], levels: number): readonly OutlineNode[] {
+  if (!Number.isInteger(levels) || levels < 1 || levels > 3) return tree;
+  const cut = (nodes: readonly OutlineNode[]): OutlineNode[] =>
+    nodes.filter((n) => n.row.entry.level <= levels).map((n) => ({ ...n, children: cut(n.children) }));
+  return cut(tree);
+}
