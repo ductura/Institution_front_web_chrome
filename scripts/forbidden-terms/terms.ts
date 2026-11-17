@@ -15,7 +15,9 @@
  * B of #179 and its English equivalents (owner, 12. 10. 2026.). The allowed
  * actions of §5 ("Kopiraj navod", "kopiranje navoda", "Kopirano u
  * međuspremnik", "Copy citation", "Sakrij …", progress percentages) stay out of
- * every pattern, in exactly those words.
+ * every pattern, in exactly those words, and so does "Izjava o izvornosti rada"
+ * (T10, owner decision, DAN-1034). That entry and its tests in terms.test.ts
+ * are the one difference from the copy of ductura/server.
  */
 export type Language = "hr" | "en";
 
@@ -151,11 +153,15 @@ export const FORBIDDEN_TERMS: readonly ForbiddenTerm[] = [
   },
   // New rows of #179 table B. The adjectives "izvorni / originalni" and "nepravilan format" stay allowed.
   { entry: "plagijat", instead: NOTHING, lang: "hr", pattern: /(?<![\p{L}\p{N}])plagi[jr]/u },
+  // T10, owner decision (DAN-1034): exactly the phrase "Izjava o izvornosti rada" stays, read on `foldPhrases`;
+  // a root not preceded by "izjava o " or not followed by "i rada" is flagged, and so is every other form.
   {
     entry: "izvornost",
     instead: INTACT,
     lang: "hr",
-    pattern: /(?<![\p{L}\p{N}])(?:izvornos[tc]|originalnos[tc])/u,
+    pattern:
+      /(?<![\p{L}\p{N}])(?:izvornost(?<!(?<![\p{L}\p{N}])izjava o izvornost)|izvornost(?!i rada(?![\p{L}\p{N}]))|izvornosc|originalnos[tc])/u,
+    readsPhrases: true,
   },
   {
     entry: "integritet",

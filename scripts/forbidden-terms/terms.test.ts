@@ -539,3 +539,40 @@ describe("§5 deltas", () => {
     expect(entries(text)).toEqual([]);
   });
 });
+
+// T10, owner decision (DAN-1034, Ductus#2028 c.6961865046): the entry "izvornost" lets exactly the phrase
+// "Izjava o izvornosti rada" through; every other form of the root is still flagged.
+describe("T10: Izjava o izvornosti rada", () => {
+  it.each([
+    "izvornost teksta",
+    "Provjera izvornosti",
+    "Izvornost rada",
+    "Izjava o izvornosti",
+    "Izvornosti rada",
+    "Izjava o izvornosti radova",
+    "Izjava o izvornosti rada i izvornost teksta",
+    "Neizjava o izvornosti rada",
+    "Izjava o izvornosci rada",
+    "Izjava o izvornost rada",
+    "Izjava. O izvornosti rada",
+    "Izjava o izvornosti. Rada",
+    "Izjava o\nizvornosti rada",
+    "Izjava o\r\nizvornosti rada",
+    "Izjava o originalnosti rada",
+  ])("still flags %j", (text) => {
+    expect(entries(text)).toContain("izvornost");
+  });
+
+  it.each([
+    "Izjava o izvornosti rada",
+    "IZJAVA O IZVORNOSTI RADA",
+    "izjava o izvornosti rada",
+    "Izjava o izvornosti rada",
+    "Izjava  o   izvornosti    rada",
+    "Izjava o\tizvornosti rada",
+    "Izjava o izvornosti rada.",
+    "Izjava o izvornosti rada:",
+  ])("allows %j", (text) => {
+    expect(entries(text)).toEqual([]);
+  });
+});
