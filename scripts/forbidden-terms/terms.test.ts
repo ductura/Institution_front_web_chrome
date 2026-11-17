@@ -567,6 +567,14 @@ describe("T10: Izjava o izvornosti rada", () => {
     "Izjava o izvornosti rada\u0335",
     "İzjava o izvornosti rada",
     "Izjava o\u2028izvornosti rada",
+    // Letters and spaces that only NFKC or a case mapping turns into the phrase (second Codex review of #42).
+    "Izjava o izvornosti ra\u1D48a",
+    "Izjava o izvornosti \uFF52\uFF41\uFF44\uFF41",
+    "Izjava o izvornosti \u{1D42B}ada",
+    "Izjava o izvornosti \u202Erada",
+    "Izjava o izvornosti\u2009rada",
+    "Izjava\u3000o izvornosti rada",
+    "Izjava o izvornosti ra\uFB06a",
   ])("still flags %j", (text) => {
     expect(entries(text)).toContain("izvornost");
   });

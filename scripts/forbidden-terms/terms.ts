@@ -38,7 +38,7 @@ export type ForbiddenTerm = {
   /** Set when an allowed phrase must not be put together across a phrase end (`foldPhrases`). */
   readonly readsPhrases?: true;
   /**
-   * Words the entry lets through, matched (flag `g`) on `foldCase`, where letters keep their diacritics; every
+   * Words the entry lets through, matched (flag `g`) on `foldCase`, where every letter stays as written; every
    * occurrence is masked before `pattern` is matched, so no letter that only folds into these words passes.
    */
   readonly allows?: RegExp;
@@ -416,13 +416,17 @@ export function foldPhrases(text: string): string {
     .replace(/^[ \uFFFF]+|[ \uFFFF]+$/g, "");
 }
 
-/** `text` in lower case with invisible characters dropped and white space of one line made one space; diacritics stay. */
+/**
+ * `text` as `allows` reads it: ASCII capitals in lower case, the soft hyphen and the three characters of zero width
+ * dropped (`characters.ts` leaves them to the dictionary too), and a run of spaces, no-break spaces and tabs made one
+ * space. Nothing is normalized, so a letter that NFKC, a diacritic fold or a case mapping outside ASCII would turn
+ * into a letter of an allowed phrase ("ᵈ", "ｄ", "đ", "İ") stays what it is and the phrase does not match.
+ */
 export function foldCase(text: string): string {
   return text
-    .normalize("NFKC")
-    .replace(INVISIBLE, "")
-    .toLocaleLowerCase("hr")
-    .replace(/[\p{Zs}\t]+/gu, " ");
+    .replace(/[\u00AD\u200B\u200C\u200D]/g, "")
+    .replace(/[A-Z]/g, (letter) => letter.toLowerCase())
+    .replace(/[ \u00A0\t]+/g, " ");
 }
 
 /** Dictionary entries that occur in `text`, in dictionary order; with `lang`, only the entries of that language. */
