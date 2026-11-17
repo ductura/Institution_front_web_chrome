@@ -20,9 +20,11 @@ Testne datoteke i `e2e/` kataloga ili paketa se ne čitaju, jer pokreću aplikac
 
 ## Paketi i registar
 
-- `@ductura/contracts` je prikvačen na točno `1.0.1`, a `@ductura/test-fakes` na `0.1.1` (samo `devDependencies`). Nova verzija ugovora ulazi PR-om koji mijenja broj. CI tada pada ako tipovi, vektori, shema ili ključne riječi više ne odgovaraju klijentu.
-- `.npmrc` sadrži samo registar opsega `@ductura` (`https://npm.pkg.github.com`) i nijedan token. U CI-ju (`.github/workflows/ci.yml`, posao `client`) token posla ima samo `packages: read` i dolazi samo u korak instalacije. Taj korak radi s `--ignore-scripts`, a checkout ne čuva git vjerodajnice (`persist-credentials: false`). Svaki workflow ima izričit `permissions: contents: read`. Lokalno vrijedi korisnikov npm config izvan repoa.
-- Paket ima vlastiti lockfile (`pnpm-lock.yaml`, integritet objavljenih tarballa) i instalira se s `pnpm install --ignore-workspace`, pa ostali poslovi u `ci.yml` (npm kostur `test`, `ui`) ne trebaju pristup paketima.
+- `@ductura/contracts` 2.1.1 i `@ductura/test-fakes` 2.0.1 (samo `devDependencies`) instaliraju se s URL-a tarballa na javnim GitHub Releases ductura/servera (oznake `contracts-v2.1.1` i `test-fakes-v2.0.1`, DAN-965). Za to ne treba token. Lockfile drži točan URL i integritet (`sha512`), pa zamijenjen tarball ruši instalaciju. Obrisan tarball je također ruši: integritet štiti od podmetanja, ne od gubitka. Nova verzija ugovora ulazi PR-om koji mijenja URL. CI tada pada ako tipovi, vektori, shema ili ključne riječi više ne odgovaraju klijentu.
+- Ostale ovisnosti su prikvačene na točne verzije s npm registra.
+- `.npmrc` i dalje sadrži samo registar opsega `@ductura` (`https://npm.pkg.github.com`) i nijedan token. Za ova dva paketa se ne koristi. Novi `@ductura/*` paket naveden brojem verzije, a ne URL-om, išao bi kroz GitHub Packages i tražio bi token. Test `registry-config.test.ts` to ne dopušta.
+- U CI-ju (`.github/workflows/ci.yml`, posao `client`) korak instalacije još dobiva token posla s `packages: read`, iako ga više ne treba. Uklanjanje je zaseban PR. Taj korak radi s `--ignore-scripts`, a checkout ne čuva git vjerodajnice (`persist-credentials: false`). Svaki workflow ima izričit `permissions: contents: read`.
+- Paket ima vlastiti lockfile (`pnpm-lock.yaml`, pnpm 10.33.0) i instalira se s `pnpm install --ignore-workspace`.
 
 ## Granice generiranog klijenta
 
@@ -33,7 +35,7 @@ Testne datoteke i `e2e/` kataloga ili paketa se ne čitaju, jer pokreću aplikac
 
 ```bash
 cd src/client
-pnpm install --ignore-workspace --ignore-scripts   # treba čitanje GitHub Packages
+pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts   # bez tokena
 pnpm run typecheck
 pnpm run test
 ```

@@ -1,7 +1,9 @@
-// Registry configuration for @ductura packages (DAN-752): the scope points at
-// GitHub Packages, no token or secret is in the repo, versions are exact, and
-// CI reads packages with the job token in the install step only (no persisted
-// git credentials, no install scripts), and never writes packages.
+// Registry configuration for @ductura packages (DAN-752, DAN-965): both come
+// from release tarballs on the public GitHub Releases of ductura/server, pinned
+// by URL and integrity, so the install needs no token. No token or secret is in
+// the repo, other versions are exact, and CI still passes the job token to the
+// install step only (no persisted git credentials, no install scripts) and never
+// writes packages.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -18,6 +20,12 @@ function walk(dir: string, keep: (name: string) => boolean): string[] {
 }
 
 const WORKFLOWS = walk(".github/workflows", (name) => /\.ya?ml$/.test(name));
+const RELEASES = "https://github.com/ductura/server/releases/download/";
+const VERSIONS: Record<string, string> = { "@ductura/contracts": "2.1.1", "@ductura/test-fakes": "2.0.1" };
+const TARBALLS: Record<string, string> = {
+  "@ductura/contracts": `${RELEASES}contracts-v2.1.1/ductura-contracts-2.1.1.tgz`,
+  "@ductura/test-fakes": `${RELEASES}test-fakes-v2.0.1/ductura-test-fakes-2.0.1.tgz`,
+};
 const TOKEN_USE = /NODE_AUTH_TOKEN|GITHUB_TOKEN|github\.token|secrets\./;
 
 /** Anything that looks like a credential or a place for one. */
@@ -45,20 +53,40 @@ describe("registry configuration", () => {
     expect(walk("src/client", (name) => /^\.?pnpmfile\.c?js$/.test(name))).toEqual([]);
   });
 
-  it("the lockfile pins the published @ductura tarballs by integrity", () => {
+  it("no @ductura package resolves through GitHub Packages", () => {
     const lock = read("src/client/pnpm-lock.yaml");
-    for (const name of ["@ductura/contracts@2.0.0", "@ductura/test-fakes@1.0.0"]) {
-      expect(lock).toMatch(new RegExp(`'${name}':\\n    resolution: \\{integrity: sha512-[A-Za-z0-9+/=]+, tarball: https://npm\\.pkg\\.github\\.com/download/`));
+    expect(lock).not.toContain("npm.pkg.github.com");
+    const keys = new Set([...lock.matchAll(/^ {2}'?(@ductura\/[^:']+(?::[^']*)?)'?:$/gm)].map((m) => m[1]));
+    expect([...keys].sort()).toEqual(Object.entries(TARBALLS).map(([name, url]) => `${name}@${url}`).sort());
+    const tarballs = [...lock.matchAll(/tarball: ([^}\s]+)/g)].map((m) => m[1] ?? "");
+    expect(tarballs).toHaveLength(2);
+    for (const url of tarballs) expect(url.startsWith(RELEASES)).toBe(true);
+  });
+
+  it("the lockfile pins the release tarballs by integrity", () => {
+    const lock = read("src/client/pnpm-lock.yaml");
+    for (const [name, url] of Object.entries(TARBALLS)) {
+      const u = url.replaceAll(".", "\\.");
+      expect(lock).toMatch(new RegExp(`\\n {6}'${name}':\\n {8}specifier: ${u}\\n {8}version: ${u}\\n`));
+      expect(lock).toMatch(new RegExp(`\\n {2}'${name}@${u}':\\n {4}resolution: \\{integrity: sha512-[A-Za-z0-9+/]{86}==, tarball: ${u}\\}\\n {4}version: ${VERSIONS[name]?.replaceAll(".", "\\.")}\\n`));
+      expect(lock.split("\nsnapshots:\n")[1]).toMatch(new RegExp(`\\n {2}'${name}@${u}':`));
     }
   });
 
-  it("pins @ductura/contracts and @ductura/test-fakes to exact versions", () => {
+  it.each(Object.entries(TARBALLS))("%s: the release tag and the file name carry the pinned version", (name, url) => {
+    const short = name.replace("@ductura/", "");
+    const version = VERSIONS[name] ?? "";
+    expect(url).toBe(`${RELEASES}${short}-v${version}/ductura-${short}-${version}.tgz`);
+  });
+
+  it("pins @ductura packages to the release tarball URLs and the others to exact versions", () => {
     const pkg = JSON.parse(read("src/client/package.json")) as Record<string, Record<string, string>>;
-    expect(pkg.dependencies).toEqual({ "@ductura/contracts": "2.0.0" });
-    expect(pkg.devDependencies?.["@ductura/test-fakes"]).toBe("1.0.0");
-    for (const version of [...Object.values(pkg.dependencies ?? {}), ...Object.values(pkg.devDependencies ?? {})]) {
-      expect(version).toMatch(/^\d+\.\d+\.\d+$/);
-    }
+    expect(pkg.dependencies).toEqual({ "@ductura/contracts": TARBALLS["@ductura/contracts"] });
+    expect(pkg.devDependencies?.["@ductura/test-fakes"]).toBe(TARBALLS["@ductura/test-fakes"]);
+    const others = { ...pkg.dependencies, ...pkg.devDependencies };
+    for (const name of Object.keys(TARBALLS)) delete others[name];
+    expect(Object.keys(others).length).toBeGreaterThan(0);
+    for (const version of Object.values(others)) expect(version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
   it("every workflow names its permissions; none writes, and only the client job reads packages", () => {
