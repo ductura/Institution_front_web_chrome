@@ -31,4 +31,6 @@ export const OUTLINE_HR = {
   /** Button that collapses every branch (978-2), and the same button when none shows open. */
   collapseAll: "Sklopi sve",
   expandAll: "Rasklopi sve",
+  /** Toggle (aria-pressed) for the editor's headings-only view (978-3); the label never changes. */
+  headingsOnly: "Samo naslovi",
 } as const;

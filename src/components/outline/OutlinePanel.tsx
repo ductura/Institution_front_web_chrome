@@ -16,6 +16,10 @@ export type OutlinePanelProps = {
   collapsed?: readonly number[];
   /** Title search at first render (DAN-978); later changes are not read. */
   query?: string;
+  /** "Samo naslovi" at first render (DAN-978, 978-3); later changes are not read. */
+  headingsOnly?: boolean;
+  /** Told the new state once per press; the editor's headings-only view listens (E-0.3). */
+  onHeadingsOnlyChange?: (on: boolean) => void;
 };
 
 type View = {
@@ -66,11 +70,20 @@ function list(nodes: readonly OutlineNode[], depth: number, view: View, id?: str
  * numbers from the input (977-2), collapsible branches and the active chapter
  * (977-3). A collapsed branch keeps its list in the DOM, hidden.
  */
-export default function OutlinePanel({ rows, active, collapsed = [], query = "" }: OutlinePanelProps) {
+export default function OutlinePanel(
+  { rows, active, collapsed = [], query = "", headingsOnly = false, onHeadingsOnlyChange }: OutlinePanelProps,
+) {
   const base = useId();
   const tree = outlineTree(rows);
   const [shut, setShut] = useState<readonly number[]>(collapsed);
   const [typed, setTyped] = useState(query);
+  const [only, setOnly] = useState(headingsOnly);
+  // Called in the click handler, never inside a state updater, which StrictMode runs twice.
+  const pressOnly = () => {
+    const next = !only;
+    setOnly(next);
+    onHeadingsOnlyChange?.(next);
+  };
   const q = searchQuery(typed);
   const searching = q !== "";
   const shown = filterTree(tree, q);
@@ -98,6 +111,8 @@ export default function OutlinePanel({ rows, active, collapsed = [], query = "" 
             anyOpen ? OUTLINE_HR.collapseAll : OUTLINE_HR.expandAll,
           )
           : null,
+        // 978-3: a toggle with a constant label; the state is aria-pressed only.
+        h("button", { type: "button", className: styles.only, "aria-pressed": only, onClick: pressOnly }, OUTLINE_HR.headingsOnly),
       )
       : null,
     // Always in the DOM, so a screen reader hears it when the text appears.

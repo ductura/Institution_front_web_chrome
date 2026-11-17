@@ -15,6 +15,7 @@ const row = (level: number, text: string, number: string | null = null, id: stri
 const render = (rows: readonly OutlineRow[], more: { active?: number; collapsed?: readonly number[]; query?: string } = {}) =>
   renderToStaticMarkup(createElement(OutlinePanel, { rows, active: -1, ...more }));
 const count = (html: string, s: string) => html.split(s).length - 1;
+const nav = (html: string) => html.slice(html.indexOf("<nav"));
 
 describe("OutlinePanel: negative inputs first (DAN-977, 977-2)", () => {
   it("an empty list keeps the labelled nav with the empty text and no list", () => {
@@ -81,7 +82,10 @@ describe("OutlinePanel: collapsing and the active chapter (977-3)", () => {
   const three = () => [row(1, "Uvod", "1"), row(2, "Pojmovi", "1.1"), row(3, "", "1.1.1"), row(1, "Metoda", "2")];
 
   it("has no toggle on a leaf, nor any toggle or mark on an empty list", () => {
-    expect(count(render([row(1, "Uvod", "1")], { active: 0 }), "<button")).toBe(0);
+    // Inside the nav only: "Samo naslovi" (978-3) sits above it, also over a single leaf.
+    const leaf = render([row(1, "Uvod", "1")], { active: 0 });
+    expect(count(nav(leaf), "<button")).toBe(0);
+    expect(leaf).toContain(`aria-pressed="false">${OUTLINE_HR.headingsOnly}<`);
     const empty = render([], { active: 0, collapsed: [0] });
     expect(empty).not.toContain("<button");
     expect(empty).not.toContain("aria-current");
@@ -133,7 +137,8 @@ describe("OutlinePanel: title search (978-1)", () => {
     expect(html).toContain("Uvod");
     expect(html).toContain("Pojmovi");
     expect(html).not.toContain("Metoda");
-    expect(html).not.toContain("<button");
+    expect(nav(html)).not.toContain("<button");
+    expect(html).toContain(`>${OUTLINE_HR.headingsOnly}</button>`);
     expect(html).not.toContain("hidden");
     expect(count(html, 'aria-current="location"')).toBe(1);
   });
@@ -148,7 +153,8 @@ describe("OutlinePanel: title search (978-1)", () => {
 
 describe("OutlinePanel: collapse all (978-2)", () => {
   const four = () => [row(1, "Uvod", "1"), row(2, "Pojmovi", "1.1"), row(3, "Izmišljeni pojam", "1.1.1"), row(1, "Metoda", "2")];
-  const allButton = (html: string) => [...html.matchAll(/<button type="button"[^>]*>([^<]+)<\/button>/g)].map((m) => m[1]);
+  // Plain buttons only: "Samo naslovi" (978-3) carries aria-pressed.
+  const allButton = (html: string) => [...html.matchAll(/<button type="button" class="[^"]+">([^<]+)<\/button>/g)].map((m) => m[1]);
 
   it("has no collapse-all button without a branch, on an empty list, or during a search", () => {
     expect(allButton(render([row(1, "Uvod", "1"), row(1, "Metoda", "2")]))).toEqual([]);
@@ -166,5 +172,27 @@ describe("OutlinePanel: collapse all (978-2)", () => {
   it("is a plain button: its text is its name, with no pressed or expanded state", () => {
     const html = render(four());
     expect(html).toMatch(new RegExp(`<button type="button" class="[^"]+">${OUTLINE_HR.collapseAll}</button>`));
+  });
+});
+
+describe("OutlinePanel: headings only (978-3)", () => {
+  const four = () => [row(1, "Uvod", "1"), row(2, "Pojmovi", "1.1"), row(1, "Metoda", "2")];
+  const pressed = (html: string) => [...html.matchAll(/aria-pressed="(true|false)">([^<]+)</g)].map((m) => [m[1], m[2]]);
+
+  it("has no headings-only button on an empty list", () => {
+    expect(render([])).not.toContain("aria-pressed");
+  });
+
+  it("is a toggle with a constant label, off by default, on with headingsOnly", () => {
+    expect(pressed(render(four()))).toEqual([["false", OUTLINE_HR.headingsOnly]]);
+    expect(pressed(renderToStaticMarkup(createElement(OutlinePanel, { rows: four(), active: -1, headingsOnly: true }))))
+      .toEqual([["true", OUTLINE_HR.headingsOnly]]);
+    expect(pressed(render(four(), { query: "pojmovi" }))).toEqual([["false", OUTLINE_HR.headingsOnly]]);
+  });
+
+  it("leaves the list of headings as it is", () => {
+    const rows = four();
+    const on = renderToStaticMarkup(createElement(OutlinePanel, { rows, active: 1, headingsOnly: true }));
+    expect(nav(on)).toBe(nav(render(rows, { active: 1 })));
   });
 });

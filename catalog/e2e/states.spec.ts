@@ -166,8 +166,10 @@ const outlineList = (numbers: string[]) => async (c: Locator) => {
   // The search field (978-1) sits outside the nav and must fit the cell too.
   const field = c.getByRole("searchbox", { name: OUTLINE_HR.search });
   expect(await field.evaluate((f) => f.getBoundingClientRect().right <= f.closest("dd")!.getBoundingClientRect().right)).toBe(true);
-  const all = c.getByRole("button", { name: OUTLINE_HR.collapseAll, exact: true });
-  expect(await all.evaluate((b) => b.getBoundingClientRect().right <= b.closest("dd")!.getBoundingClientRect().right)).toBe(true);
+  for (const name of [OUTLINE_HR.collapseAll, OUTLINE_HR.headingsOnly]) {
+    const button = c.getByRole("button", { name, exact: true });
+    expect(await button.evaluate((b) => b.getBoundingClientRect().right <= b.closest("dd")!.getBoundingClientRect().right)).toBe(true);
+  }
 };
 
 /**
@@ -311,6 +313,7 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(outlineNav(c).getByRole("button")).toHaveCount(0);
       await expect(c.locator("[aria-current=location] > span")).toHaveText("Izmišljeni uzorak");
       await expect(c.getByRole("status")).toHaveText("");
+      await expect(c.getByRole("button", { name: OUTLINE_HR.headingsOnly })).toHaveAttribute("aria-pressed", "true");
     },
   },
   RouteLoading: {
@@ -441,6 +444,36 @@ test("collapse all leaves the roots and keeps the active chapter marked once", a
   await expect(numbers).toHaveText(["1", "1.1", "1.1.1", "2", "2.1", "2.1.3"]);
   await expect(marked).toHaveText("1.1.1");
   await expect(collapse).toBeFocused();
+});
+
+// DAN-978 (978-3): "Samo naslovi" is a toggle with a constant label; each press is reported once,
+// the list of headings stays, and the pressed state shows without colour.
+test("headings only toggles, reports each press once and leaves the list", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await open(page, "dark", 360);
+  const c = cell(page, "OutlinePanel", "Ljuska", "puno");
+  const only = c.getByRole("button", { name: OUTLINE_HR.headingsOnly, exact: true });
+  const log = c.locator("[data-headings-log]");
+  const look = () => only.evaluate((b) => [getComputedStyle(b).fontWeight, getComputedStyle(b).borderTopColor].join(" "));
+  await expect(log).toHaveAttribute("data-headings-log", "");
+  await expect(only).toHaveAttribute("aria-pressed", "false");
+  const off = await look();
+  await only.click();
+  await expect(only).toHaveAttribute("aria-pressed", "true");
+  expect((await look()).split(" ")[0]).not.toBe(off.split(" ")[0]);
+  await only.press("Enter");
+  await expect(only).toHaveAttribute("aria-pressed", "false");
+  await only.press("Space");
+  await expect(only).toHaveAttribute("aria-pressed", "true");
+  await expect(log).toHaveAttribute("data-headings-log", "true,false,true");
+  await expect(only).toBeFocused();
+  await expect(outlineNav(c).locator("[data-number]:visible")).toHaveCount(6);
+  // Without a listener (state onemogućeno, pressed from the start) a press still toggles, with no error.
+  const quiet = cell(page, "OutlinePanel", "Ljuska", "onemogućeno").getByRole("button", { name: OUTLINE_HR.headingsOnly });
+  await quiet.click();
+  await expect(quiet).toHaveAttribute("aria-pressed", "false");
+  expect(errors).toEqual([]);
 });
 
 test("the semantics table covers every component and state the catalogue shows", () => {

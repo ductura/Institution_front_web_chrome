@@ -59,3 +59,18 @@
 }
 .all:hover { background: var(--hover); color: var(--ink); }
 .all:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }
+/* 978-3: "Samo naslovi"; pressed shows by weight and a rule, not by colour alone. */
+.only {
+  justify-self: start;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+}
+.only[aria-pressed="true"] { border-color: var(--accent); color: var(--ink); font-weight: 600; }
+.only:hover { background: var(--hover); color: var(--ink); }
+.only:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }
