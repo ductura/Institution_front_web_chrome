@@ -70,8 +70,8 @@ function discard(factory: ProbeIdbFactory, request: ProbeOpenRequest): void {
 
 /**
  * Opens and deletes a probe database. `available` only after a real
- * `onsuccess` inside `timeoutMs`; a success that comes later still leaves
- * `timeout`, and the probe database is deleted either way. Pass the browser global object.
+ * `onsuccess` inside `timeoutMs`, measured when the event runs; a success
+ * that comes later still leaves `timeout`, and the probe database is deleted either way. Pass the browser global object.
  */
 export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<IndexedDbProbe> {
   let factory: ProbeIdbFactory | null | undefined;
@@ -97,6 +97,10 @@ export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<Index
     // non-finite or negative deadline means an immediate timeout.
     const delay = Number.isFinite(timeoutMs) ? Math.min(Math.max(0, timeoutMs), MAX_TIMER_MS) : 0;
     const timer = setTimeout(() => finish(unavailable("timeout")), delay);
+    // A busy main thread can run onsuccess after the deadline but before the
+    // timer callback; the elapsed time decides then, not the order of events.
+    // A wall clock jump forward only turns a success into a warning.
+    const started = Date.now();
 
     let request: ProbeOpenRequest;
     try {
@@ -108,7 +112,7 @@ export function probeIndexedDb(env: StorageEnv, timeoutMs = 2000): Promise<Index
     try {
       request.onsuccess = () => {
         discard(idb, request);
-        finish({ state: "available" });
+        finish(Date.now() - started <= delay ? { state: "available" } : unavailable("timeout"));
       };
       request.onerror = () => {
         discard(idb, request);

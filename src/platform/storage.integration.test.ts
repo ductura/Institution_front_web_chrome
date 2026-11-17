@@ -100,6 +100,29 @@ describe("probeIndexedDb", () => {
     expect(fake.closed()).toBe(1);
   });
 
+  it("is timeout when onsuccess runs after the deadline but before the timer callback (busy main thread)", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+    const fake = fakeFactory("never");
+    const answer = probeIndexedDb({ indexedDB: fake.factory }, 2000);
+    // The clock moves past the deadline without the timer having run yet.
+    vi.setSystemTime(2001);
+    fake.pending()!.onsuccess?.({} as never);
+    await expect(answer).resolves.toEqual({ ...WARNING, reason: "timeout" });
+    expect(fake.deleted).toEqual([PROBE_DATABASE]);
+    expect(fake.closed()).toBe(1);
+  });
+
+  it("is available when onsuccess runs exactly at the deadline", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+    const fake = fakeFactory("never");
+    const answer = probeIndexedDb({ indexedDB: fake.factory }, 2000);
+    vi.setSystemTime(2000);
+    fake.pending()!.onsuccess?.({} as never);
+    await expect(answer).resolves.toEqual({ state: "available" });
+  });
+
   it("never reports available without onsuccess, even with a zero or invalid deadline", async () => {
     for (const ms of [0, -5, Number.NaN, Infinity]) {
       vi.useFakeTimers();
