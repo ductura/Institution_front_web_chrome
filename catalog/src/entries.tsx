@@ -1,4 +1,5 @@
 import { Button, Card, SaveState, TextField } from "@ductura/ui";
+import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
@@ -71,6 +72,20 @@ const outline = [
   heading(3, "Izmišljenanajduljariječkojaseprotežepredalekoiznadširinepanelaipokazujelomljenjenaslovaugranicamaćelije", "2.1.3"),
 ];
 
+/**
+ * Test rig of the catalogue, not of the component (978-3): logs every
+ * "Samo naslovi" report on one wrapper that never changes, so e2e can see
+ * that the panel reports each press exactly once.
+ */
+function HeadingsProbe() {
+  const [log, setLog] = useState<readonly boolean[]>([]);
+  return (
+    <div data-headings-log={log.join(",")}>
+      <OutlinePanel rows={outline} active={2} onHeadingsOnlyChange={(on) => setLog((prev) => [...prev, on])} />
+    </div>
+  );
+}
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -118,9 +133,9 @@ export const SCREEN_ENTRIES = {
     prazno: () => <OutlinePanel rows={[]} active={-1} />,
     učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
     greška: () => <OutlinePanel rows={[heading(0, "Nula", "0"), heading(1, "", "1"), heading(4, "Četiri", "1.0.0.1")]} active={-1} />,
-    puno: () => <OutlinePanel rows={outline} active={2} />,
+    puno: () => <HeadingsProbe />,
     // No numbers; branch "2" collapsed (977-3), searched for "uzorak" (978-1): "2" and "2.1" show open,
     // and the active 2.1.3, not a hit, gives its mark to "2.1".
-    onemogućeno: () => <OutlinePanel rows={outline.map((r) => ({ ...r, number: null }))} collapsed={[3]} active={5} query="uzorak" />,
+    onemogućeno: () => <OutlinePanel rows={outline.map((r) => ({ ...r, number: null }))} collapsed={[3]} active={5} query="uzorak" headingsOnly />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
