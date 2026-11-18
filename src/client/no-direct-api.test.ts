@@ -134,18 +134,23 @@ export function normalise(text: string): string {
 }
 
 /**
- * What is wrong with a file's waivers: each names a rule that matches once, on
- * the recorded line, in the text as written and in the normalised text alike.
+ * What is wrong with a file's waivers: each names a rule that matches nowhere
+ * once its recorded source line is blanked, in the text as written or
+ * normalised (so no other line decodes into a match), and exactly once in the
+ * normalised text, on that line (so the line is live code, not in a comment).
  */
 export function waiverProblems(text: string, rules: Readonly<Record<string, string>>): string[] {
   return Object.entries(rules).flatMap(([name, line]) => {
     const rule = RULES.find(([n]) => n === name)?.[1];
     if (!rule) return [`${name}: no such rule`];
-    const all = new RegExp(rule.source, `${rule.flags}g`);
-    const forms = [text, normalise(text)];
-    const hits = forms.map((form) => form.split(/\r?\n/).flatMap((each) => (each.match(all) ?? []).map(() => each)));
-    const ok = forms.every((form, i) => form.match(all)?.length === 1 && hits[i]?.length === 1 && hits[i]?.[0] === line);
-    return ok ? [] : [`${name}: ${JSON.stringify(hits)}`];
+    const lines = text.split(/\r?\n/);
+    const at = lines.indexOf(line);
+    const rest = lines.map((each, i) => (i === at ? "" : each)).join("\n");
+    const live = normalise(text);
+    const hits = live.split(/\r?\n/).filter((each) => rule.test(each));
+    const ok = live.match(new RegExp(rule.source, `${rule.flags}g`))?.length === 1 && hits[0] === line
+      && ![rest, normalise(rest)].some((form) => rule.test(form));
+    return ok ? [] : [`${name}: ${JSON.stringify({ at, hits })}`];
   });
 }
 
@@ -182,8 +187,20 @@ function sources(dir: string, top: boolean): string[] {
   });
 }
 
+/** The scanned paths relative to the root, in POSIX form; api is node:path or path.win32. */
+export function scannedFiles(paths: readonly string[], root: string, api = { relative, sep }): string[] {
+  return paths.map((path) => toPosix(api.relative(root, path), api.sep));
+}
+
+/** The files checked for direct calls: all but the client and the closed exception list. */
+export function checkedFiles(files: readonly string[]): string[] {
+  return files.filter((file) => file !== CLIENT && listed(EXCEPTIONS, file) === undefined);
+}
+
+const scannedPaths = SCANNED.flatMap((dir) => sources(join(ROOT, dir), dir === "catalog"));
+
 describe("no API call outside src/client/api.ts", () => {
-  const files = SCANNED.flatMap((dir) => sources(join(ROOT, dir), dir === "catalog")).map((path) => toPosix(relative(ROOT, path)));
+  const files = scannedFiles(scannedPaths, ROOT);
 
   it("reads the app sources, the client and the skeleton included", () => {
     for (const file of [CLIENT, "public/app.js", "public/index.html", "src/client/schema-check.ts", "catalog/src/main.tsx"]) {
@@ -191,8 +208,7 @@ describe("no API call outside src/client/api.ts", () => {
     }
   });
 
-  const findings = new Map(files
-    .filter((file) => file !== CLIENT && listed(EXCEPTIONS, file) === undefined)
+  const findings = new Map(checkedFiles(files)
     .map((file) => [file, directCalls(readFileSync(join(ROOT, file), "utf8"), file)] as const));
 
   it("finds no direct call in any other file", () => {
@@ -266,6 +282,17 @@ describe("paths read the same with Windows separators", () => {
       .toEqual(["packages\\qa\\json.ts", "a/b\\c.ts"]);
   });
 
+  it("the real file list reads the same through path.win32, exceptions and the client included", () => {
+    const winPath = (path: string) => `C:${path.replaceAll("/", "\\")}`;
+    const posixFiles = scannedFiles(scannedPaths, ROOT);
+    const winFiles = scannedFiles(scannedPaths.map(winPath), winPath(ROOT), win32);
+    expect(winFiles).toEqual(posixFiles);
+    expect(winFiles).toContain("public/app.js");
+    expect(checkedFiles(winFiles)).toEqual(checkedFiles(posixFiles));
+    expect(checkedFiles(winFiles)).not.toContain("public/app.js");
+    expect(checkedFiles(winFiles)).not.toContain(CLIENT);
+  });
+
   it("reads config files and the packages directory with Windows separators", () => {
     const vite = 'import { defineConfig } from "vite";';
     expect(directCalls(vite, win("catalog\\vite.config.ts"))).toEqual([]);
@@ -315,6 +342,12 @@ describe("a waiver lifts one rule in one file, nothing more", () => {
     expect(waiverProblems(`${LINE} // x\n`, { Reflect: LINE })).not.toEqual([]);
     // The recorded line commented out, another Reflect live: each form has one match, on different lines.
     expect(waiverProblems(`/*\n${LINE}\n*/\nconst k = \\u0052eflect.ownKeys(o);\n`, { Reflect: LINE })).not.toEqual([]);
+    // The recorded line commented out and a live line that decodes to the same text (review c.6986876959).
+    expect(waiverProblems(`/*\n${LINE}\n*/\n${LINE.replace("R", "\\u0052")}\n`, { Reflect: LINE })).not.toEqual([]);
+    // A recorded line that closes a comment: blanking it would hide the decoded match after it.
+    expect(waiverProblems("/*\nReflect.x(o) */\n\\u0052eflect.y(o)\n*/\n", { Reflect: "Reflect.x(o) */" })).not.toEqual([]);
+    // A second match that starts on the recorded line and ends on the next one.
+    expect(waiverProblems("img.src = url; x.src\n  = u;\n", { "image or src": "img.src = url; x.src" })).not.toEqual([]);
     // A second match that spans a line break.
     expect(waiverProblems("img.src = url;\nother.src\n  = u;\n", { "image or src": "img.src = url;" })).not.toEqual([]);
     // A second Reflect that only decoding reveals, and one that decoding hides.
