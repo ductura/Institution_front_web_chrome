@@ -15,3 +15,9 @@ export * from "./document/document/text-blocks";
 export * from "./document/document/validate-sources";
 // Bibliography derived from a document (Ductus src/domain/citation/bibliography).
 export { deriveBibliography, formatCitation, type Bibliography, type BibliographyEntry } from "./document/citation";
+// Protected content and the word diff (Ductus src/domain/diff).
+export * from "./document/diff";
+// Comment anchors, shares, revision requests (Ductus src/domain/collaboration).
+export * from "./document/collaboration";
+export * from "./document/collaboration/revision-input";
+export * from "./document/collaboration/snapshot-hash";
