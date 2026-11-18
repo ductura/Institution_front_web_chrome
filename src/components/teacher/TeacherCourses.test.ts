@@ -68,6 +68,17 @@ describe("TeacherCourses (Z3 A)", () => {
     expect(text(html)).not.toContain(t.countNote);
   });
 
+  // DAN-1082 (owner, Z-01): the same button, text and route, in both states of the list.
+  it("offers a new course above a populated list too, with the same text and route", () => {
+    for (const courses of [[], COURSES]) {
+      const html = render(courses);
+      expect(html.match(/href="\/nastavnik\/zadatak\/novi"/g)).toHaveLength(1);
+      expect(html).toContain(`href="/nastavnik/zadatak/novi">${t.newCourse}</a>`);
+    }
+    const html = render(COURSES);
+    expect(html.indexOf("/nastavnik/zadatak/novi")).toBeLessThan(html.indexOf("Kolegij A"));
+  });
+
   it("links every work of an assignment to its live view, numbered in the order read, with no student id", () => {
     const STUDENT = "00000000-0000-4000-8000-0000000000e1";
     const html = render(COURSES, {

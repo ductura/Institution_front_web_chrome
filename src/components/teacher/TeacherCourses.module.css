@@ -26,6 +26,12 @@
   color: var(--ink-2);
 }
 
+/* DAN-1082: the new-course button above a populated list. */
+.newCourse {
+  display: flex;
+  margin: 0 0 12px;
+}
+
 .courseHead {
   display: flex;
   flex-wrap: wrap;
