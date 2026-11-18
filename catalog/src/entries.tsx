@@ -4,7 +4,7 @@ import { useState } from "react";
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
   AppShell, EmptyHome, ErrorScreen, MentoredWorks, MyAssignments, OutlinePanel, RouteLoading, Settings, StudentHome, TeacherCourses,
-  type AssignmentSubmission, type CatalogueKey, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
+  type AssignmentSubmission, type CatalogueKey, type SettingsCall, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -135,6 +135,10 @@ const settingsKeys: CatalogueKey[] = [
   { key: "network.session_idle_minutes", levels: ["network_security"], kind: "integer", default: 120, min: 15, max: 120 },
 ];
 const personal = [{ ...settingsKeys[0]!, value: false }, { ...settingsKeys[1]!, value: true }];
+// The catalogue's stand-in for createApi(): every save is confirmed as sent, nothing leaves the page.
+const settingsCall = (async (_id: string, input: { body?: { key?: string; value?: unknown; locale?: string } }) => ({
+  ok: true, status: 200, body: input.body?.locale !== undefined ? { locale: input.body.locale } : { key: input.body?.key, value: input.body?.value, bound: null, changed: true },
+})) as unknown as SettingsCall;
 const settingsRead = (locale: "hr" | "en" | null, settings = personal) => ({ kind: "ready" as const, catalogue: settingsKeys, settings, locale });
 
 export const SCREEN_ENTRIES = {
@@ -211,10 +215,10 @@ export const SCREEN_ENTRIES = {
   },
   // DAN-872: only keys of the catalogue; the interface language on top.
   Settings: {
-    prazno: () => <Settings read={settingsRead(null, [])} />,
+    prazno: () => <Settings read={settingsRead(null, [])} call={settingsCall} />,
     učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
-    greška: () => <Settings read={{ kind: "unavailable" }} />,
-    puno: () => <Settings read={settingsRead("hr")} notice="changed" />,
-    onemogućeno: () => <Settings read={settingsRead("en")} locale="en" busy />,
+    greška: () => <Settings read={{ kind: "unavailable" }} call={settingsCall} />,
+    puno: () => <Settings read={settingsRead("hr")} call={settingsCall} notice="changed" />,
+    onemogućeno: () => <Settings read={settingsRead(null)} call={settingsCall} locale="en" busy />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;

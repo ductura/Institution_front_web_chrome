@@ -1,67 +1,79 @@
-import { createElement as h, useId } from "react";
+import { createElement as h, useId, useState } from "react";
 
 import { INTERFACE_LOCALES, type InterfaceLocale } from "../i18n/locale.ts";
 import { LANGUAGE_NAMES, SETTINGS_EN, SETTINGS_HR } from "../i18n/settings.ts";
 
-import type { PersonalSetting, SettingsRead, SettingValue } from "./settings-model";
+import {
+  applyLocale, applySetting, type PersonalSetting, type ReadySettings, type SettingsCall, type SettingsNotice, type SettingsRead,
+} from "./settings-model";
 import styles from "./Settings.module.css";
 
-export type SettingsNotice = "changed" | "rejected" | "failed" | null;
+export type { SettingsNotice };
 
 export type SettingsProps = {
-  /** readSettings(createApi()), made by the page. */
+  /** readAccountSettings(createApi()), made by the page. */
   read: SettingsRead;
-  /** The language the screen is drawn in; the saved one (read.locale), else the default. */
+  /** createApi(): every change goes through applySetting or applyLocale. */
+  call: SettingsCall;
+  /** The language before anything is saved (the page's default); a saved one wins. */
   locale?: InterfaceLocale;
-  /** The answer to the last change; drawn in a live status. */
+  /** The first answer shown, and whether a change is on its way (the catalogue's states). */
   notice?: SettingsNotice;
-  /** True while a change is on its way: every control waits. */
   busy?: boolean;
-  /** The page passes these on to saveSetting and saveInterfaceLocale. */
-  onSetting?: (key: string, value: SettingValue) => void;
-  onLocale?: (locale: InterfaceLocale) => void;
 };
 
 /**
  * DAN-872: the caller's own settings. The interface language (F-06, the
  * screen only, never the language of a work) and the personal keys of the
  * catalogue that have a label; the screen offers only what the catalogue
- * allows (an integer within min and max, an enum's values). Written with
- * `createElement`, like TeacherCourses, so unit tests need no JSX compiler.
+ * allows (an integer within min and max, an enum's values). Each change is
+ * saved through `call`; only keys of the catalogue leave the browser. The
+ * language in effect (saved, else `locale`, else hr) draws the text, marks
+ * the radio and is the `lang` of the screen. Written with `createElement`,
+ * like TeacherCourses, so unit tests need no JSX compiler.
  */
-export default function Settings({ read, locale: drawn, notice = null, busy = false, onSetting, onLocale }: SettingsProps) {
-  const locale = drawn ?? (read.kind === "ready" ? read.locale : null) ?? "hr";
-  const t = locale === "en" ? SETTINGS_EN : SETTINGS_HR;
+export default function Settings({ read: first, call, locale: fallback, notice: firstNotice = null, busy: firstBusy = false }: SettingsProps) {
+  const [read, setRead] = useState(first);
+  const [notice, setNotice] = useState<SettingsNotice>(firstNotice);
+  const [busy, setBusy] = useState(firstBusy);
   const id = useId();
+  const locale: InterfaceLocale = (read.kind === "ready" ? read.locale : null) ?? fallback ?? "hr";
+  const t = locale === "en" ? SETTINGS_EN : SETTINGS_HR;
   const head = [h("h1", { key: "h" }, t.heading), h("p", { key: "l", className: styles.lede }, t.lede)];
   if (read.kind !== "ready") {
-    return h("div", { className: styles.root }, ...head,
+    return h("div", { className: styles.root, lang: locale }, ...head,
       read.kind === "signedOut" ? h("p", { role: "status" }, t.signedOut) : h("p", { role: "alert", className: styles.alert }, t.unavailable));
   }
+  const change = (apply: (now: ReadySettings) => Promise<{ read: ReadySettings; notice: SettingsNotice }>) => {
+    if (busy) return;
+    setBusy(true);
+    void apply(read).then((next) => { setRead(next.read); setNotice(next.notice); }, () => setNotice("failed")).finally(() => setBusy(false));
+  };
   const labels: Record<string, string> = t.keys;
   const shown = read.settings.filter((s) => Object.hasOwn(labels, s.key));
   const control = (s: PersonalSetting) => {
     const props = { id: `${id}-${s.key}`, disabled: busy, className: styles.control };
+    const save = (value: unknown) => change((now) => applySetting(call, now, s.key, value));
     if (s.kind === "boolean") {
-      return h("input", { ...props, type: "checkbox", checked: s.value === true, onChange: (e: { target: { checked: boolean } }) => onSetting?.(s.key, e.target.checked) });
+      return h("input", { ...props, type: "checkbox", checked: s.value === true, onChange: (e: { target: { checked: boolean } }) => save(e.target.checked) });
     }
     if (s.kind === "enum") {
-      return h("select", { ...props, value: String(s.value), onChange: (e: { target: { value: string } }) => onSetting?.(s.key, e.target.value) },
+      return h("select", { ...props, value: String(s.value), onChange: (e: { target: { value: string } }) => save(e.target.value) },
         (s.values ?? []).map((v) => h("option", { key: v, value: v }, v)));
     }
     return h("input", {
       ...props, type: "number", inputMode: "numeric", min: s.min, max: s.max, step: 1, value: String(s.value),
-      onChange: (e: { target: { value: string } }) => onSetting?.(s.key, Number(e.target.value)),
+      onChange: (e: { target: { value: string } }) => save(e.target.value === "" ? null : Number(e.target.value)),
     });
   };
-  return h("div", { className: styles.root }, ...head,
+  return h("div", { className: styles.root, lang: locale }, ...head,
     h("fieldset", { className: styles.group, disabled: busy },
       h("legend", null, t.language.legend),
       h("p", { id: `${id}-note`, className: styles.note }, t.language.note),
       INTERFACE_LOCALES.map((code) => h("label", { key: code, className: styles.choice, lang: code },
         h("input", {
-          type: "radio", name: `${id}-locale`, value: code, checked: (read.locale ?? "hr") === code, "aria-describedby": `${id}-note`,
-          onChange: () => onLocale?.(code),
+          type: "radio", name: `${id}-locale`, value: code, checked: locale === code, "aria-describedby": `${id}-note`,
+          onChange: () => change((now) => applyLocale(call, INTERFACE_LOCALES, now, code)),
         }),
         LANGUAGE_NAMES[code]))),
     h("div", { className: styles.group },

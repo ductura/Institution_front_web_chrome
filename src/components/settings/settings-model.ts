@@ -59,7 +59,7 @@ const NONE = { params: undefined, query: undefined, body: undefined };
  * connection included, unavailable: never a screen of defaults the caller
  * did not choose. A personal row without a value falls back to what it inherits.
  */
-export async function readSettings(call: SettingsCall): Promise<SettingsRead> {
+export async function readAccountSettings(call: SettingsCall): Promise<SettingsRead> {
   try {
     const [catalogue, values, locale] = await Promise.all([
       call("settings.catalogue.get", NONE),
@@ -133,4 +133,27 @@ export async function saveInterfaceLocale(call: SettingsCall, registered: readon
   } catch {
     return UNAVAILABLE;
   }
+}
+
+/** What the screen says after a change: done, refused before sending, or not confirmed. */
+export type SettingsNotice = "changed" | "rejected" | "failed" | null;
+export type ReadySettings = Extract<SettingsRead, { kind: "ready" }>;
+
+/**
+ * One change from the screen: saveSetting, then the screen as it now stands.
+ * Only a confirmed answer changes what is shown; a refusal keeps the old value.
+ */
+export async function applySetting(call: SettingsCall, read: ReadySettings, key: string, value: unknown) {
+  const result = await saveSetting(call, read.catalogue, key, value);
+  if (!result.ok) return { read, notice: result.code === "client_rejected" ? "rejected" : "failed" } as const;
+  const saved = result.body.value;
+  const settings = read.settings.map((s) => (s.key === key && saved !== null ? { ...s, value: saved } : s));
+  return { read: { ...read, settings }, notice: "changed" } as const;
+}
+
+/** The language choice from the screen: saveInterfaceLocale, then the saved language. */
+export async function applyLocale(call: SettingsCall, registered: readonly string[], read: ReadySettings, locale: unknown) {
+  const result = await saveInterfaceLocale(call, registered, locale);
+  if (!result.ok) return { read, notice: result.code === "client_rejected" ? "rejected" : "failed" } as const;
+  return { read: { ...read, locale: result.body.locale }, notice: "changed" } as const;
 }

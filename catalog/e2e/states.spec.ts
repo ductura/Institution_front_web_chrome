@@ -415,6 +415,7 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
     onemogućeno: async (c) => {
       await expect(c.getByRole("heading", { level: 1 })).toHaveText(SETTINGS_EN.heading);
       await expect(c.getByRole("radio", { name: "English" })).toBeChecked();
+      await expect(c.locator(":scope > div").first()).toHaveAttribute("lang", "en");
       for (const control of await c.locator("input").all()) await expect(control).toBeDisabled();
     },
   },
@@ -721,3 +722,17 @@ for (const theme of THEMES) {
     });
   }
 }
+
+// Review of 7b1a4f9: a change on the screen goes through its call and shows the answer.
+test("Settings saves a change through its call and takes the saved language", async ({ page }) => {
+  await page.goto("/");
+  const c = cell(page, "Settings", "Ljuska", "puno");
+  const email = c.getByRole("checkbox", { name: SETTINGS_HR.keys["notifications.email"] });
+  await email.check();
+  await expect(email).toBeChecked();
+  await expect(c.getByRole("status")).toHaveText(SETTINGS_HR.notice.changed);
+  await c.getByRole("radio", { name: "English" }).check();
+  await expect(c.getByRole("heading", { level: 1 })).toHaveText(SETTINGS_EN.heading);
+  await expect(c.locator(":scope > div").first()).toHaveAttribute("lang", "en");
+  await expect(c.getByRole("status")).toHaveText(SETTINGS_EN.notice.changed);
+});

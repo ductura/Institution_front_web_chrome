@@ -11,7 +11,7 @@ import { INTERFACE_LOCALES } from "../i18n/locale.ts";
 import { SETTINGS_EN, SETTINGS_HR } from "../i18n/settings.ts";
 
 import Settings from "./Settings";
-import { readSettings, saveInterfaceLocale, saveSetting, type CatalogueKey, type SettingsCall, type SettingsRead } from "./settings-model";
+import { applyLocale, applySetting, readAccountSettings, saveInterfaceLocale, saveSetting, type CatalogueKey, type SettingsCall, type SettingsRead } from "./settings-model";
 
 const CATALOGUE: CatalogueKey[] = [
   { key: "notifications.email", levels: ["personal"], kind: "boolean", default: true },
@@ -103,7 +103,7 @@ describe("saveInterfaceLocale (DAN-872)", () => {
   });
 });
 
-describe("readSettings (DAN-872)", () => {
+describe("readAccountSettings (DAN-872)", () => {
   const ok = (body: unknown) => ({ ok: true, status: 200, body });
   const answers = {
     "settings.catalogue.get": ok({ keys: CATALOGUE }),
@@ -116,7 +116,7 @@ describe("readSettings (DAN-872)", () => {
   };
 
   it("gives the personal keys with the own value, else the inherited one, else the default", async () => {
-    const read = await readSettings(counting(answers).call);
+    const read = await readAccountSettings(counting(answers).call);
     expect(read.kind === "ready" && read.settings.map((s) => [s.key, s.value])).toEqual([
       ["notifications.email", false], ["display.reduced_motion", false], ["display.page_size", 30], ["display.density", "normal"],
     ]);
@@ -125,7 +125,7 @@ describe("readSettings (DAN-872)", () => {
 
   it("a stored value the catalogue does not allow falls back, never shown as held", async () => {
     const values = ok({ level: "personal", course: null, values: [{ key: "display.density", value: "gone", bound: null, updatedAt: "2026-11-16T08:15:00.000Z" }], inherited: [] });
-    const read = await readSettings(counting({ ...answers, "settings.values.get": values }).call);
+    const read = await readAccountSettings(counting({ ...answers, "settings.values.get": values }).call);
     expect(read.kind === "ready" && read.settings.find((s) => s.key === "display.density")?.value).toBe("normal");
   });
 
@@ -134,7 +134,7 @@ describe("readSettings (DAN-872)", () => {
     [{ "profile.interface-locale.get": { ok: false, status: 503, code: "unavailable" } }, "unavailable"],
     [{ "settings.catalogue.get": new TypeError("Failed to fetch") }, "unavailable"],
   ])("a failure reads %j, never defaults", async (over, kind) => {
-    expect(await readSettings(counting({ ...answers, ...over }).call)).toEqual({ kind });
+    expect(await readAccountSettings(counting({ ...answers, ...over }).call)).toEqual({ kind });
   });
 });
 
@@ -146,7 +146,7 @@ describe("Settings screen (DAN-872)", () => {
   const text = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 
   it("draws only keys with a label, and the default language checked", () => {
-    const html = renderToStaticMarkup(h(Settings, { read: ready }));
+    const html = renderToStaticMarkup(h(Settings, { read: ready, call: counting().call }));
     expect(text(html)).toContain(SETTINGS_HR.keys["notifications.email"]);
     expect(html).not.toContain("display.page_size");
     expect(html).toMatch(/checked="" value="hr"/);
@@ -154,19 +154,29 @@ describe("Settings screen (DAN-872)", () => {
   });
 
   it("draws in the saved language when the page passes none", () => {
-    const html = renderToStaticMarkup(h(Settings, { read: { ...ready, locale: "en" } }));
+    const html = renderToStaticMarkup(h(Settings, { read: { ...ready, locale: "en" }, call: counting().call }));
     expect(text(html)).toContain(SETTINGS_EN.heading);
     expect(html).toMatch(/checked="" value="en"/);
   });
 
+  it("marks the language it is drawn in, and gives the screen that lang (review of 7b1a4f9)", () => {
+    const html = renderToStaticMarkup(h(Settings, { read: ready, call: counting().call, locale: "en" }));
+    expect(html).toMatch(/checked="" value="en"/);
+    expect(html).not.toMatch(/checked="" value="hr"/);
+    expect(html).toMatch(/^<div[^>]* lang="en"/);
+    const saved = renderToStaticMarkup(h(Settings, { read: { ...ready, locale: "hr" }, call: counting().call, locale: "en" }));
+    expect(saved).toMatch(/^<div[^>]* lang="hr"/);
+    expect(saved).toMatch(/checked="" value="hr"/);
+  });
+
   it("draws in English when the locale is en", () => {
-    const html = renderToStaticMarkup(h(Settings, { read: ready, locale: "en", notice: "rejected" }));
+    const html = renderToStaticMarkup(h(Settings, { read: ready, call: counting().call, locale: "en", notice: "rejected" }));
     expect(text(html)).toContain(SETTINGS_EN.heading);
     expect(text(html)).toContain(SETTINGS_EN.notice.rejected);
   });
 
   it("disables every control while busy", () => {
-    const html = renderToStaticMarkup(h(Settings, { read: ready, busy: true }));
+    const html = renderToStaticMarkup(h(Settings, { read: ready, call: counting().call, busy: true }));
     expect(html).toMatch(/<fieldset[^>]*disabled=""/);
     expect(html).toMatch(/type="checkbox"[^>]*disabled=""|disabled=""[^>]*type="checkbox"/);
   });
@@ -176,5 +186,39 @@ describe("Settings screen (DAN-872)", () => {
     for (const [lang, table] of [["hr", SETTINGS_HR], ["en", SETTINGS_EN]] as const) {
       for (const line of all(table)) expect(findForbiddenTerms(line, lang), line).toEqual([]);
     }
+  });
+});
+
+describe("applySetting and applyLocale: the screen's changes (DAN-872)", () => {
+  const ready = {
+    kind: "ready" as const, catalogue: CATALOGUE, locale: null,
+    settings: [{ ...CATALOGUE[0]!, value: true }],
+  };
+
+  it("a confirmed save shows the saved value and says so", async () => {
+    const { call, sent } = counting({ "settings.values.put": { ok: true, status: 200, body: { key: "notifications.email", value: false, bound: null, changed: true } } });
+    const next = await applySetting(call, ready, "notifications.email", false);
+    expect(sent).toHaveLength(1);
+    expect(next.notice).toBe("changed");
+    expect(next.read.settings[0]?.value).toBe(false);
+  });
+
+  it("a key outside the catalogue is rejected with no call and nothing changes", async () => {
+    const { call, sent } = counting();
+    expect(await applySetting(call, ready, "notifications.sms", false)).toEqual({ read: ready, notice: "rejected" });
+    expect(sent).toEqual([]);
+  });
+
+  it("a refused save keeps the old value", async () => {
+    const { call } = counting({ "settings.values.put": { ok: false, status: 503, code: "unavailable" } });
+    expect(await applySetting(call, ready, "notifications.email", false)).toEqual({ read: ready, notice: "failed" });
+  });
+
+  it("a saved language becomes the screen's; an unregistered one is rejected with no call", async () => {
+    const saved = counting({ "profile.interface-locale.post": { ok: true, status: 200, body: { locale: "en" } } });
+    expect((await applyLocale(saved.call, INTERFACE_LOCALES, ready, "en")).read.locale).toBe("en");
+    const refused = counting();
+    expect(await applyLocale(refused.call, INTERFACE_LOCALES, ready, "de")).toEqual({ read: ready, notice: "rejected" });
+    expect(refused.sent).toEqual([]);
   });
 });

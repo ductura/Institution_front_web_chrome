@@ -6,7 +6,7 @@ import type { AddressInfo } from "node:net";
 import { createFakeServer, FAKE_VECTOR_HEADER, VECTORS, type FakeVector } from "@ductura/test-fakes/fake-server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  readSettings, saveInterfaceLocale, saveSetting, type CatalogueKey, type SettingsCall,
+  applyLocale, applySetting, readAccountSettings, saveInterfaceLocale, saveSetting, type CatalogueKey, type SettingsCall,
 } from "../components/settings/settings-model";
 import { createApi } from "./api";
 
@@ -48,10 +48,10 @@ const READ = {
 };
 const CATALOGUE = (READ.catalogue.response.body as { keys: CatalogueKey[] }).keys;
 
-describe("readSettings over the fake server (DAN-872)", () => {
+describe("readAccountSettings over the fake server (DAN-872)", () => {
   it("reads the catalogue's personal keys with the caller's values and the saved locale, one request each", async () => {
     const sent = { count: 0 };
-    const read = await readSettings(callFor(READ, sent));
+    const read = await readAccountSettings(callFor(READ, sent));
     expect(sent.count).toBe(3);
     expect(read).toEqual({
       kind: "ready",
@@ -70,7 +70,7 @@ describe("readSettings over the fake server (DAN-872)", () => {
     ["profile.interface-locale.get", "unauthorized", "signedOut"],
   ])("%s %s reads %s", async (route, name, kind) => {
     const key = route === "settings.catalogue.get" ? "catalogue" : route === "settings.values.get" ? "values" : "locale";
-    expect(await readSettings(callFor({ ...READ, [key]: vector(route, name) }, { count: 0 }))).toEqual({ kind });
+    expect(await readAccountSettings(callFor({ ...READ, [key]: vector(route, name) }, { count: 0 }))).toEqual({ kind });
   });
 });
 
@@ -125,5 +125,26 @@ describe("saveInterfaceLocale over the fake server (DAN-872)", () => {
     expect(await api("profile.interface-locale.post", { params: undefined, query: undefined, body: { locale: "de" } }))
       .toEqual({ ok: false, status: 0, code: "client_rejected" });
     expect(sent.count).toBe(0);
+  });
+});
+
+describe("the screen's changes over the fake server (DAN-872)", () => {
+  it("applySetting saves a catalogue key once and shows the vector's value; a foreign key sends nothing", async () => {
+    const read = await readAccountSettings(callFor(READ, { count: 0 }));
+    if (read.kind !== "ready") throw new Error("not ready");
+    const sent = { count: 0 };
+    const call = callFor({ saved: vector("settings.values.put", "saved") }, sent);
+    const next = await applySetting(call, read, "notifications.email", false);
+    expect(next.notice).toBe("changed");
+    expect(sent.count).toBe(1);
+    expect(await applySetting(call, read, "notifications.sms", false)).toEqual({ read, notice: "rejected" });
+    expect(sent.count).toBe(1);
+  });
+
+  it("applyLocale saves en and the screen takes it", async () => {
+    const read = await readAccountSettings(callFor(READ, { count: 0 }));
+    if (read.kind !== "ready") throw new Error("not ready");
+    const next = await applyLocale(callFor({ saved: vector("profile.interface-locale.post", "saved") }, { count: 0 }), ["hr", "en"], read, "en");
+    expect(next).toEqual({ read: { ...read, locale: "en" }, notice: "changed" });
   });
 });
