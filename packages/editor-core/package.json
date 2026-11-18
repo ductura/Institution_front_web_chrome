@@ -1,0 +1,19 @@
+{
+  "name": "@ductura/editor-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ductura editor-core: canonical document model and editor, ported from Ductus (DAN-888)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  }
+}

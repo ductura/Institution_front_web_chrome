@@ -1,0 +1,10 @@
+{
+  "extends": "../ui/tsconfig.json",
+  "compilerOptions": {
+    // Verbatim port from Ductus, whose tsconfig has no noUncheckedIndexedAccess;
+    // under it the unchanged sources give 8 type errors (DAN-990, DAN-888).
+    "noUncheckedIndexedAccess": false,
+    "jsx": "preserve"
+  },
+  "include": ["src"]
+}
