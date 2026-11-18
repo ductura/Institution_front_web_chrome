@@ -28,7 +28,7 @@ export function shellRole(role: SessionRole | null): ShellRole | null {
   return null;
 }
 
-export type PageKind = "studentHome" | "studentCourses" | "pending";
+export type PageKind = "studentHome" | "studentCourses" | "teacherCourses" | "mentoredWorks" | "pending";
 export type Page = {
   readonly path: string;
   readonly label: string;
@@ -38,7 +38,12 @@ export type Page = {
 };
 
 const ROLES: readonly ShellRole[] = ["student", "teacher", "admin"];
-const KINDS: Readonly<Record<string, PageKind>> = { "/zadaci": "studentHome", "/zadaci/kolegiji": "studentCourses" };
+const KINDS: Readonly<Record<string, PageKind>> = {
+  "/zadaci": "studentHome",
+  "/zadaci/kolegiji": "studentCourses",
+  "/nastavnik": "teacherCourses",
+  "/nastavnik/mentorstva": "mentoredWorks",
+};
 
 /** Every page: the navigation of each role (nav.ts) and "Kako Ductura radi" for everyone. */
 export const PAGES: readonly Page[] = [

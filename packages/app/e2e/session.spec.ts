@@ -14,6 +14,8 @@ const assignments = JSON.parse(readFileSync(new URL("../../../src/components/stu
   vectors: { name: string; response: { body: unknown } }[];
 };
 const ready = assignments.vectors.find((v) => v.name === "ready")!.response.body;
+// Bodies of the teacher.courses.get "courses" and teacher.mentorships.get "works" vectors of @ductura/test-fakes 3.0.1.
+const teacher = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", import.meta.url), "utf8")) as Record<string, unknown>;
 
 type Me = { status: number; body?: unknown };
 
@@ -27,6 +29,10 @@ async function fakeServer(page: Page, me: Me) {
   });
   await page.route("**/api/v1/student/assignments", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) }));
+  await page.route("**/api/v1/teacher/courses", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
+  await page.route("**/api/v1/teacher/mentorships", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.mentorships.get"]) }));
   await page.route("**/api/v1/auth/login**", async (route) => {
     seen.login.push(route.request().url());
     await route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><html lang=\"hr\"><title>AAI@EduHr</title><p>Lažni AAI@EduHr</p></html>" });
@@ -93,7 +99,14 @@ test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({
   await page.goto("/app/web/");
   await expect(page).toHaveURL(/\/app\/web\/nastavnik$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
+  await expect(page.getByText("Izmišljeni kolegij nastavnika")).toBeVisible();
   await expect(page.getByText(INSTITUTION)).toBeVisible();
+  await axe(page);
+
+  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Radovi uz mentora" }).click();
+  await expect(page).toHaveURL(/\/app\/web\/nastavnik\/mentorstva$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radovi uz mentora");
+  await expect(page.getByText("Izmišljeni diplomski rad")).toBeVisible();
   await axe(page);
 
   await page.unrouteAll({ behavior: "wait" });
@@ -120,4 +133,31 @@ test("an unanswering institution server shows a retry, not an empty app", async 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prijavu nije bilo moguće provjeriti");
   await expect(page.getByRole("button", { name: "Pokušaj ponovno" })).toBeVisible();
   await axe(page);
+});
+
+test("a teacher's read: 403 asks for a teacher account, 503 offers a retry that reads again", async ({ page }) => {
+  await fakeServer(page, { status: 200, body: { role: "teacher", institution: { displayName: INSTITUTION } } });
+  let courses = 0;
+  await page.route("**/api/v1/teacher/courses", (route) => {
+    courses += 1;
+    return route.fulfill({ status: 503, contentType: "application/json", body: "{\"code\":\"unavailable\",\"error\":\"unavailable\"}" });
+  });
+  await page.route("**/api/v1/teacher/mentorships", (route) =>
+    route.fulfill({ status: 403, contentType: "application/json", body: "{\"code\":\"forbidden\",\"error\":\"forbidden\"}" }));
+  await page.goto("/app/web/nastavnik");
+  await expect(page.getByRole("alert")).toHaveText("Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.");
+  await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
+  await expect.poll(() => courses).toBe(2);
+  await axe(page);
+  await page.goto("/app/web/nastavnik/mentorstva");
+  await expect(page.getByText("Prijavite se nastavničkim računom.")).toBeVisible();
+});
+
+test("a teacher's read answering 401 sends the browser to sign-in", async ({ page }) => {
+  const seen = await fakeServer(page, { status: 200, body: { role: "teacher" } });
+  await page.route("**/api/v1/teacher/courses", (route) =>
+    route.fulfill({ status: 401, contentType: "application/json", body: "{\"code\":\"unauthorized\",\"error\":\"unauthorized\"}" }));
+  await page.goto("/app/web/nastavnik");
+  await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
+  expect(new URL(seen.login.at(-1)!).searchParams.get("returnTo")).toBe("/app/web/nastavnik");
 });
