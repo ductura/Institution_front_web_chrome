@@ -78,7 +78,7 @@ const RULES: readonly (readonly [string, RegExp])[] = [
   ["generated client outside api.ts", /["'`]@ductura\/contracts["'`]/],
   ["test fakes", /@ductura\/test-fakes/],
   // A test file or anything in a directory the scan skips (catalog/e2e, dist ...).
-  ["test file import", /["'`][^"'`\n]*(?:\.(?:test|spec)(?:\.[cm]?[jt]sx?)?|(?:^|[/\\"'`])(?:e2e|dist|test-results|playwright-report)(?:[/\\][^"'`\n]*)?)["'`]/],
+  ["test file import", /["'`][^"'`\n]*(?:\.(?:test|spec)(?:\.[cm]?[jt]sx?)?|(?:^|[/\\"'`])(?:e2e|dist|test-results|playwright-report)(?:[/\\][^"'`\n]*)?)["'`]/i],
   ["computed global", /\b(?:globalThis|window|self|top|parent|frames|opener|defaultView)\s*(?:\?\.)?\s*\[/],
   ["global alias", /(?:[=(,:]|\breturn)\s*(?:globalThis|window|self|top|parent|frames|opener)\b\s*(?![\s.?\w])|\(\s*(?:globalThis|window|self)\s+as\b/],
   ["Reflect", /\bReflect\b/],
@@ -133,7 +133,11 @@ export interface Walk {
   readonly relative: (from: string, to: string) => string;
   readonly sep: string;
 }
-const NODE: Walk = { readdir: (dir) => readdirSync(dir), isDirectory: (path) => statSync(path).isDirectory(), join, relative, sep };
+/** The real file system with the path functions of api (node:path by default). */
+export function nodeWalk(api: Pick<Walk, "join" | "relative" | "sep"> = { join, relative, sep }): Walk {
+  return { readdir: (dir) => readdirSync(dir), isDirectory: (path) => statSync(path).isDirectory(),
+    join: api.join, relative: api.relative, sep: api.sep };
+}
 
 function sources(dir: string, top: boolean, walk: Walk): string[] {
   let entries: string[];
@@ -153,7 +157,7 @@ function sources(dir: string, top: boolean, walk: Walk): string[] {
 }
 
 /** Every scanned file, relative to the root and in POSIX form. */
-export function scannedFiles(root: string, walk: Walk = NODE): string[] {
+export function scannedFiles(root: string, walk: Walk = nodeWalk()): string[] {
   return SCANNED.flatMap((dir) => sources(walk.join(root, dir), dir === "catalog", walk))
     .map((path) => toPosix(walk.relative(root, path), walk.sep));
 }
@@ -199,7 +203,11 @@ describe("no API call outside src/client/api.ts", () => {
 describe("paths read the same with Windows separators", () => {
   /** A walk over a synthetic tree: absolute path -> entries (a directory) or null (a file); the drive letter case is not kept. */
   const tree = (api: typeof win32, root: string, entries: readonly string[], join = api.join): Walk => {
-    const key = (path: string) => api.join(path).replace(/^[a-z]:/, (drive) => drive.toUpperCase());
+    const key = (path: string) => {
+      // Only a path the injected join made: a "/" in a Windows path means the platform join slipped in.
+      if (api === win32 && path.includes("/")) throw new Error(`not a Windows path: ${path}`);
+      return api.join(path).replace(/^[a-z]:/, (drive) => drive.toUpperCase());
+    };
     const nodes = new Map<string, string[] | null>([[key(root), []]]);
     for (const entry of entries) {
       const parts = entry.split("/");
@@ -220,7 +228,7 @@ describe("paths read the same with Windows separators", () => {
     "packages/x/src/y.ts", "catalog/src/main.tsx", "app/x.svg"];
 
   it("reads a synthetic tree through path.win32 as the same POSIX list, a C:, UNC or trailing root alike", () => {
-    for (const root of ["C:\\repo", "C:\\repo\\", "\\\\srv\\share\\repo", "\\\\srv\\share\\repo\\"]) {
+    for (const root of ["C:\\repo", "C:\\repo\\", "C:\\work\\..\\repo", "\\\\srv\\share\\repo", "\\\\srv\\share\\repo\\"]) {
       expect(scannedFiles(root, tree(win32, root, ENTRIES))).toEqual(LISTED);
     }
     expect(scannedFiles("/repo", tree(posix, "/repo", ENTRIES))).toEqual(LISTED);
@@ -235,8 +243,8 @@ describe("paths read the same with Windows separators", () => {
     const toReal = (path: string) => resolve(ROOT, win32.relative(WIN_ROOT, path).replaceAll("\\", "/"));
     const WIN_ROOT = "C:\\work\\web";
     const real = scannedFiles(ROOT);
-    const winFiles = scannedFiles(WIN_ROOT, { readdir: (dir) => readdirSync(toReal(dir)),
-      isDirectory: (path) => statSync(toReal(path)).isDirectory(), join: win32.join, relative: win32.relative, sep: win32.sep });
+    const winFiles = scannedFiles(WIN_ROOT, { ...nodeWalk(win32), readdir: (dir) => readdirSync(toReal(dir)),
+      isDirectory: (path) => statSync(toReal(path)).isDirectory() });
     expect(winFiles).toEqual(real);
     expect(winFiles).toContain("public/app.js");
     expect(checkedFiles(winFiles)).toEqual(checkedFiles(real));
@@ -310,6 +318,8 @@ describe("the scan catches the ways around it", () => {
     'export * from "../../dist/client.js"',
     'import { health } from "..\\\\e2e\\\\net"',
     'export * from "..\\\\..\\\\dist\\\\client.js"',
+    'import { health } from "..\\\\E2E\\\\net"',
+    'import { c } from "../Dist/c.js"',
     'import "./e2e"',
     "navigator.sendBeacon(u, data)",
     "new EventSource(u)",
