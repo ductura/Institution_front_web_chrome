@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
-  AppShell, EmptyHome, ErrorScreen, MentoredWorks, MyAssignments, OutlinePanel, RouteLoading, StudentHome, TeacherCourses,
+  AppShell, EmptyHome, ErrorScreen, MentoredWorks, MyAssignments, OutlinePanel, RouteLoading, SignInPanel, StudentHome, TeacherCourses,
   type AssignmentSubmission, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
@@ -149,6 +149,16 @@ export const SCREEN_ENTRIES = {
     greška: () => <RouteLoading label={t.student.loading} />,
     puno: () => <RouteLoading label={t.workspace.statusLoading} />,
     onemogućeno: () => <RouteLoading label={t.workspace.panelLoading} />,
+  },
+  // DAN-1081: the card's four states on the catalogue's five. Each cell has its own
+  // heading id: "prijava-kartica" would turn the whole light catalogue dark (globals.css).
+  // "Povezivanje…" stands in for a redirect text locales/hr.ts does not have yet.
+  SignInPanel: {
+    prazno: () => <SignInPanel headingId="prijava-kartica-1" state="default" href={signIn("/")} />,
+    učitavanje: () => <SignInPanel headingId="prijava-kartica-2" state="redirecting" href={signIn("/")} redirectingText={t.liveView.connection.loading} />,
+    greška: () => <SignInPanel headingId="prijava-kartica-3" state="failed" href={signIn("/zadaci")} />,
+    puno: () => <SignInPanel headingId="prijava-kartica-4" state="default" href={signIn("/rad?zadatak=izmisljeni-zadatak-1")} />,
+    onemogućeno: () => <SignInPanel headingId="prijava-kartica-5" state="unavailable" href={signIn("/zadaci")} />,
   },
   StudentHome: {
     prazno: () => <StudentHome read={{ kind: "ready", courses: [] }} enroll={null} signIn={signIn} />,

@@ -13,7 +13,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "SignInPanel", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
@@ -212,6 +212,25 @@ const ownIds = async (c: Locator) => {
   expect(counts.every((n) => n === 1)).toBe(true);
 };
 
+// DAN-1081: the sign-in card. One h1, one link to AAI@EduHr with the caller's href, no field.
+const signInPanel = (title: string, href: string, kind: "plain" | "busy" | "alert", body: string) => async (c: Locator) => {
+  await expect(c.getByRole("heading", { level: 1 })).toHaveText(title);
+  const a = c.getByRole("link", { name: t.signIn.button });
+  await expect(a).toHaveAttribute("href", href);
+  await expect(c.getByRole("link")).toHaveCount(1);
+  await expect(c.locator("input, form, button, select, textarea")).toHaveCount(0);
+  if (kind === "busy") await expect(a).toHaveAttribute("aria-busy", "true");
+  else expect(await a.getAttribute("aria-busy")).toBeNull();
+  await expect(c.getByRole("alert")).toHaveCount(kind === "alert" ? 1 : 0);
+  if (kind === "alert") await expect(c.getByRole("alert")).toHaveText(body);
+  else await expect(c.getByText(body)).toBeVisible();
+  expect((await a.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+  await a.focus();
+  await expect(a).toBeFocused();
+};
+const signInHref = (to: string) => `/prijava?returnTo=${encodeURIComponent(to)}`;
+const cardTitle = `${t.signIn.cardTitle} ${t.signIn.cardTitleAccent}`;
+
 /** Semantics of each state of each screen, on the shell only. */
 const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Promise<void>>> = {
   AppShell: {
@@ -244,6 +263,16 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
     greška: errorScreen(t.errorPage.errorTitle, true),
     puno: errorScreen(t.errorPage.notFoundTitle, false),
     onemogućeno: errorScreen(t.errorPage.errorTitle, false),
+  },
+  SignInPanel: {
+    prazno: signInPanel(cardTitle, signInHref("/"), "plain", t.signIn.cardBody),
+    učitavanje: async (c) => {
+      await signInPanel(cardTitle, signInHref("/"), "busy", t.signIn.cardBody)(c);
+      await expect(c.getByRole("status")).toHaveText(t.liveView.connection.loading);
+    },
+    greška: signInPanel(t.auth.failedTitle, signInHref("/zadaci"), "alert", t.auth.failedBody),
+    puno: signInPanel(cardTitle, signInHref("/rad?zadatak=izmisljeni-zadatak-1"), "plain", t.signIn.cardBody),
+    onemogućeno: signInPanel(t.auth.failedTitle, signInHref("/zadaci"), "alert", t.auth.unavailableBody),
   },
   StudentHome: {
     prazno: async (c) => {
