@@ -222,7 +222,8 @@ export function violations(files: readonly string[], read: (file: string) => Uin
   { found: [string, string[]][]; problems: string[] } {
   const scanned = new Map(files.map((file) => {
     const bytes = read(file);
-    return [file, { bytes, broken: directCalls(Buffer.from(bytes).toString("utf8"), file) }] as const;
+    // Hash and findings now, before the next read can reuse the same buffer.
+    return [file, { sha256: contentSha256(bytes), broken: directCalls(Buffer.from(bytes).toString("utf8"), file) }] as const;
   }));
   const problems: string[] = [];
   if (Object.getPrototypeOf(list) !== Object.prototype) problems.push("the waiver list has another prototype");
@@ -242,7 +243,7 @@ export function violations(files: readonly string[], read: (file: string) => Uin
           else if (UNWAIVABLE.has(rule)) problems.push(`${key}: ${rule} cannot be waived`);
           else if (!file.broken.includes(rule)) problems.push(`${key}: ${rule} has no hit`);
         }
-        if (contentSha256(file.bytes) !== entry.sha256) problems.push(`${key}: stale, the content changed (sha256)`);
+        if (file.sha256 !== entry.sha256) problems.push(`${key}: stale, the content changed (sha256)`);
         waived.set(key, entry.rules);
       }
     }
@@ -488,6 +489,32 @@ describe("a waiver lifts its rules only from the file whose content it froze", (
     const result = violations([FILE], () => withByte(0xfe), { [FILE]: entry(["Reflect"], contentSha256(withByte(0xff))) });
     expect(result.problems).toEqual([`${FILE}: stale, the content changed (sha256)`]);
     expect(result.found).toEqual([[FILE, ["Reflect"]]]);
+  });
+
+  it("a waiver lifts every rule it lists, and nothing else", () => {
+    const text = `${TEXT}const d = Object.getOwnPropertyDescriptor(o, k);\nfetch(u);\n`;
+    const list = { [FILE]: entry(["Reflect", "property descriptor"], contentSha256(bytes(text))) };
+    expect(directCalls(text, FILE)).toEqual(expect.arrayContaining(["Reflect", "property descriptor", "fetch"]));
+    expect(violations([FILE], () => bytes(text), list)).toEqual({ found: [[FILE, ["fetch"]]], problems: [] });
+  });
+
+  it("a stale waiver beside a current one lifts nothing in either file", () => {
+    const list = { [FILE]: entry(), "pkg/a/other.ts": entry(["Reflect"], contentSha256(bytes(`${TEXT}\n`))) };
+    expect(run(list)).toEqual({ found: [[FILE, ["Reflect"]], ["pkg/a/other.ts", ["Reflect"]]],
+      problems: ["pkg/a/other.ts: stale, the content changed (sha256)"] });
+  });
+
+  it("each file is hashed from its own bytes, even if the reader reuses one buffer", () => {
+    // Same length, so a reader that writes each file into one buffer leaves only the last one in it.
+    const own = new Map([[FILE, bytes("Reflect.ownKeys(o);\n")], ["pkg/a/other.ts", bytes("Reflect.has(o, kk);\n")]]);
+    const shared = new Uint8Array(20);
+    const reuse = (file: string) => {
+      shared.set(own.get(file)!);
+      return shared;
+    };
+    const list = { [FILE]: entry(["Reflect"], contentSha256(own.get("pkg/a/other.ts")!)) };
+    expect(violations([FILE, "pkg/a/other.ts"], reuse, list)).toEqual({ found: [[FILE, ["Reflect"]], ["pkg/a/other.ts", ["Reflect"]]],
+      problems: [`${FILE}: stale, the content changed (sha256)`] });
   });
 
   it("each file is read once, and the rules checked are the rules used", () => {
