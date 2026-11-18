@@ -7,9 +7,11 @@
 // must be on an allowlist, so an unlisted library cannot bring its own fetch.
 // Known limit: this is a text scan, not an AST lint (the web has no ESLint yet);
 // review still reads new code. Test files and catalog/e2e (and the same in a
-// package) are not scanned, and no app file may import a test file.
+// package) are not scanned, and no app file may import a test file. Paths are
+// compared in POSIX form: on Windows "\\" is read as "/" (list keys always), so
+// the scan is the same there; elsewhere "\\" is part of a name.
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, posix, relative, resolve, sep, win32 } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -35,6 +37,28 @@ export const EXCEPTIONS: Readonly<Record<string, { readonly fetchCalls: number }
   "public/app.js": { fetchCalls: 3 },
 };
 
+/** The path in POSIX form; "\\" is a separator only where the platform says so. */
+export function toPosix(path: string, separator: string = sep): string {
+  return separator === "\\" ? path.replaceAll("\\", "/") : path;
+}
+
+/** The own key of a closed list that names a POSIX path; keys are read with "\\" as "/", and two that meet fail. */
+export function listed(list: object, file: string): string | undefined {
+  const keys = Object.keys(list).filter((key) => toPosix(key, "\\") === file);
+  if (keys.length > 1) throw new Error(`${file} is listed ${keys.length} times: ${keys.join(", ")}`);
+  return keys[0];
+}
+
+/** Own keys of a list not already in POSIX form, on any platform. */
+export function nonPosixKeys(list: object): string[] {
+  return Reflect.ownKeys(list).map(String).filter((key) => key !== toPosix(key, "\\"));
+}
+
+/** Whether a directory is a packages/ directory, whose children skip their own e2e and build output. */
+export function isPackagesDir(dir: string, separator: string = sep): boolean {
+  return /\/packages\/*$/.test(toPosix(dir, separator));
+}
+
 const BARE_IMPORTS = new Set(["react", "react-dom/client", "react/jsx-runtime", "@ductura/ui", "@ductura/ui/fonts.css",
   "@ductura/ui/tokens.css", "@ductura/contracts/openapi/v1.json"]);
 const CONFIG_IMPORTS = new Set(["vite", "vitest/config", "@playwright/test", "@vitejs/plugin-react"]);
@@ -54,7 +78,7 @@ const RULES: readonly (readonly [string, RegExp])[] = [
   ["generated client outside api.ts", /["'`]@ductura\/contracts["'`]/],
   ["test fakes", /@ductura\/test-fakes/],
   // A test file or anything in a directory the scan skips (catalog/e2e, dist ...).
-  ["test file import", /["'`][^"'`\n]*(?:\.(?:test|spec)(?:\.[cm]?[jt]sx?)?|(?:^|[/"'`])(?:e2e|dist|test-results|playwright-report)(?:\/[^"'`\n]*)?)["'`]/],
+  ["test file import", /["'`][^"'`\n]*(?:\.(?:test|spec)(?:\.[cm]?[jt]sx?)?|(?:^|[/\\"'`])(?:e2e|dist|test-results|playwright-report)(?:[/\\][^"'`\n]*)?)["'`]/],
   ["computed global", /\b(?:globalThis|window|self|top|parent|frames|opener|defaultView)\s*(?:\?\.)?\s*\[/],
   ["global alias", /(?:[=(,:]|\breturn)\s*(?:globalThis|window|self|top|parent|frames|opener)\b\s*(?![\s.?\w])|\(\s*(?:globalThis|window|self)\s+as\b/],
   ["Reflect", /\bReflect\b/],
@@ -101,25 +125,46 @@ export function directCalls(text: string, file = ""): string[] {
   return broken;
 }
 
-function sources(dir: string, top: boolean): string[] {
+/** The file system and path functions the scan walks with; a test passes path.win32 and a tree of its own. */
+export interface Walk {
+  readonly readdir: (dir: string) => string[];
+  readonly isDirectory: (path: string) => boolean;
+  readonly join: (...parts: string[]) => string;
+  readonly relative: (from: string, to: string) => string;
+  readonly sep: string;
+}
+const NODE: Walk = { readdir: (dir) => readdirSync(dir), isDirectory: (path) => statSync(path).isDirectory(), join, relative, sep };
+
+function sources(dir: string, top: boolean, walk: Walk): string[] {
   let entries: string[];
   try {
-    entries = readdirSync(dir);
+    entries = walk.readdir(dir);
   } catch {
     return [];
   }
   return entries.flatMap((name) => {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) {
+    const path = walk.join(dir, name);
+    if (walk.isDirectory(path)) {
       if (SKIP_ANYWHERE.has(name) || (top && SKIP_TOP.has(name))) return [];
-      return sources(path, dir.endsWith("/packages"));
+      return sources(path, isPackagesDir(dir, walk.sep), walk);
     }
     return SOURCE.test(name) && !TEST.test(name) ? [path] : [];
   });
 }
 
+/** Every scanned file, relative to the root and in POSIX form. */
+export function scannedFiles(root: string, walk: Walk = NODE): string[] {
+  return SCANNED.flatMap((dir) => sources(walk.join(root, dir), dir === "catalog", walk))
+    .map((path) => toPosix(walk.relative(root, path), walk.sep));
+}
+
+/** The files checked for direct calls: all but the client and the closed exception list. */
+export function checkedFiles(files: readonly string[], list: object = EXCEPTIONS): string[] {
+  return files.filter((file) => file !== CLIENT && listed(list, file) === undefined);
+}
+
 describe("no API call outside src/client/api.ts", () => {
-  const files = SCANNED.flatMap((dir) => sources(join(ROOT, dir), dir === "catalog")).map((path) => relative(ROOT, path));
+  const files = scannedFiles(ROOT);
 
   it("reads the app sources, the client and the skeleton included", () => {
     for (const file of [CLIENT, "public/app.js", "public/index.html", "src/client/schema-check.ts", "catalog/src/main.tsx"]) {
@@ -128,8 +173,7 @@ describe("no API call outside src/client/api.ts", () => {
   });
 
   it("finds no direct call in any other file", () => {
-    const found = files
-      .filter((file) => file !== CLIENT && !Object.hasOwn(EXCEPTIONS, file))
+    const found = checkedFiles(files)
       .map((file) => [file, directCalls(readFileSync(join(ROOT, file), "utf8"), file)] as const)
       .filter(([, rules]) => rules.length > 0);
     expect(found).toEqual([]);
@@ -139,11 +183,99 @@ describe("no API call outside src/client/api.ts", () => {
     expect(Object.keys(EXCEPTIONS).sort()).toEqual(["public/app.js"]);
   });
 
+  it("every list key is already in POSIX form, and no scanned path holds a backslash", () => {
+    expect(nonPosixKeys(EXCEPTIONS)).toEqual([]);
+    expect(files.filter((file) => file.includes("\\"))).toEqual([]);
+  });
+
   it("the skeleton keeps its three calls to /api/documents, no more", () => {
     const text = readFileSync(join(ROOT, "public/app.js"), "utf8");
     expect(text.match(/\bfetch\b/g)).toHaveLength(EXCEPTIONS["public/app.js"]?.fetchCalls ?? 0);
     expect(new Set(directCalls(text, "public/app.js"))).toEqual(new Set(["fetch", "API URL", "image or src"]));
     expect([...text.matchAll(/`\$\{API\}([^`]*)`/g)].map((m) => m[1]?.split("/")[1])).toEqual(["documents", "documents", "documents"]);
+  });
+});
+
+describe("paths read the same with Windows separators", () => {
+  /** A walk over a synthetic tree: absolute path -> entries (a directory) or null (a file); the drive letter case is not kept. */
+  const tree = (api: typeof win32, root: string, entries: readonly string[], join = api.join): Walk => {
+    const key = (path: string) => api.join(path).replace(/^[a-z]:/, (drive) => drive.toUpperCase());
+    const nodes = new Map<string, string[] | null>([[key(root), []]]);
+    for (const entry of entries) {
+      const parts = entry.split("/");
+      parts.forEach((name, i) => {
+        const dir = key(api.join(root, ...parts.slice(0, i)));
+        const path = key(api.join(dir, name));
+        if (!nodes.has(path)) nodes.set(path, i === parts.length - 1 ? null : []);
+        if (!nodes.get(dir)?.includes(name)) nodes.get(dir)?.push(name);
+      });
+    }
+    return { readdir: (dir) => [...(nodes.get(key(dir)) ?? [])], isDirectory: (path) => Array.isArray(nodes.get(key(path))),
+      join, relative: api.relative, sep: api.sep };
+  };
+  const ENTRIES = ["public/app.js", "public/index.html", "src/client/api.ts", "src/client/x.test.ts", "src/a/e2e/b.ts",
+    "packages/x/vite.config.ts", "packages/x/src/y.ts", "packages/x/e2e/z.ts", "packages/x/dist/z.js", "packages/x/node_modules/m/i.js",
+    "catalog/e2e/v.ts", "catalog/src/main.tsx", "app/x.svg"];
+  const LISTED = ["src/client/api.ts", "src/a/e2e/b.ts", "public/app.js", "public/index.html", "packages/x/vite.config.ts",
+    "packages/x/src/y.ts", "catalog/src/main.tsx", "app/x.svg"];
+
+  it("reads a synthetic tree through path.win32 as the same POSIX list, a C:, UNC or trailing root alike", () => {
+    for (const root of ["C:\\repo", "C:\\repo\\", "\\\\srv\\share\\repo", "\\\\srv\\share\\repo\\"]) {
+      expect(scannedFiles(root, tree(win32, root, ENTRIES))).toEqual(LISTED);
+    }
+    expect(scannedFiles("/repo", tree(posix, "/repo", ENTRIES))).toEqual(LISTED);
+  });
+
+  it("the drive letter case of a walked path does not change the list", () => {
+    const lower = (...parts: string[]) => win32.join(...parts).replace(/^C:/, "c:");
+    expect(scannedFiles("C:\\repo", tree(win32, "C:\\repo", ENTRIES, lower))).toEqual(LISTED);
+  });
+
+  it("the real file list reads the same through path.win32, exceptions and the client left out", () => {
+    const toReal = (path: string) => resolve(ROOT, win32.relative(WIN_ROOT, path).replaceAll("\\", "/"));
+    const WIN_ROOT = "C:\\work\\web";
+    const real = scannedFiles(ROOT);
+    const winFiles = scannedFiles(WIN_ROOT, { readdir: (dir) => readdirSync(toReal(dir)),
+      isDirectory: (path) => statSync(toReal(path)).isDirectory(), join: win32.join, relative: win32.relative, sep: win32.sep });
+    expect(winFiles).toEqual(real);
+    expect(winFiles).toContain("public/app.js");
+    expect(checkedFiles(winFiles)).toEqual(checkedFiles(real));
+    expect(checkedFiles(winFiles)).not.toContain("public/app.js");
+    expect(checkedFiles(winFiles)).not.toContain(CLIENT);
+  });
+
+  it.each([["a\\b\\c.ts", "a/b/c.ts"], ["a/b\\c.ts", "a/b/c.ts"], ["a/b/c.ts", "a/b/c.ts"], ["a\\b\\", "a/b/"]])(
+    "%s reads as %s on Windows", (path, posixPath) => {
+      expect(toPosix(path, win32.sep)).toBe(posixPath);
+    });
+
+  it("reads config files and packages directories with Windows separators, a trailing one included", () => {
+    const vite = 'import { defineConfig } from "vite";';
+    expect(directCalls(vite, toPosix("catalog\\vite.config.ts", win32.sep))).toEqual([]);
+    expect(directCalls(vite, toPosix("packages/ui\\vite.config.ts", win32.sep))).toEqual([]);
+    expect(directCalls(vite, toPosix("catalog\\src\\main.tsx", win32.sep))).toEqual(["import vite"]);
+    expect(["C:\\repo\\packages", "C:\\repo\\packages\\", "/repo/packages", "/repo/packages/", "C:\\repo\\src", "C:\\repo\\mypackages"]
+      .map((dir) => isPackagesDir(dir, dir.startsWith("C:") ? win32.sep : posix.sep))).toEqual([true, true, true, true, false, false]);
+  });
+
+  it("keeps a backslash as part of a name where the separator is /", () => {
+    expect(toPosix("packages/ui\\vite.config.ts", posix.sep)).toBe("packages/ui\\vite.config.ts");
+    expect(directCalls('import { defineConfig } from "vite";', "packages/ui\\vite.config.ts")).toEqual(["import vite"]);
+    expect(isPackagesDir("/repo\\packages", posix.sep)).toBe(false);
+    expect(scannedFiles("/repo", tree(posix, "/repo", ["public/a\\b.js"]))).toEqual(["public/a\\b.js"]);
+  });
+
+  it("a list key is read with \\ as /, two keys for one path fail, and nothing else matches", () => {
+    expect(checkedFiles(["public/app.js", "public/x.js"], Object.fromEntries([["public\\app.js", {}]]))).toEqual(["public/x.js"]);
+    expect(listed(EXCEPTIONS, "public/app.js")).toBe("public/app.js");
+    expect(() => listed(Object.fromEntries([["public/app.js", 1], ["public\\app.js", 2]]), "public/app.js")).toThrow(/2 times/);
+    expect(() => checkedFiles(["public/app.js"], Object.fromEntries([["public/app.js", 1], ["public\\app.js", 2]]))).toThrow(/2 times/);
+    for (const file of ["public/app.jsx", "./public/app.js", "Public/app.js", "public/app.js ", "public/app.js/", "public\\app.js",
+      "__proto__", "constructor", "toString", "hasOwnProperty"]) {
+      expect(listed(EXCEPTIONS, file)).toBeUndefined();
+    }
+    expect(nonPosixKeys(Object.fromEntries([["packages\\qa\\json.ts", {}], ["a/b\\c.ts", {}], ["a/b.ts", {}]])))
+      .toEqual(["packages\\qa\\json.ts", "a/b\\c.ts"]);
   });
 });
 
@@ -176,6 +308,8 @@ describe("the scan catches the ways around it", () => {
     'import { health } from "../e2e/net"',
     'const m = await import("../e2e/net.ts")',
     'export * from "../../dist/client.js"',
+    'import { health } from "..\\\\e2e\\\\net"',
+    'export * from "..\\\\..\\\\dist\\\\client.js"',
     'import "./e2e"',
     "navigator.sendBeacon(u, data)",
     "new EventSource(u)",
