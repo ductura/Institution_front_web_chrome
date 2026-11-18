@@ -110,7 +110,7 @@ export default function TeacherCourses({ courses, works = {}, accommodations = {
   return h(Fragment, null,
     // DAN-1082 (Z-01): "Novi kolegij i zadatak" is the button on this screen, not
     // a place in the rail, so it stays above a populated list too.
-    h("p", { className: styles.newCourse },
+    h("div", { className: styles.newCourse },
       h("a", { className: "btn", href: "/nastavnik/zadatak/novi" }, t.newCourse)),
     courses.map((course) =>
       h("section", { key: course.id, className: styles.course, "aria-labelledby": `kolegij-${course.id}` },
