@@ -3,7 +3,7 @@ import { fc, test } from "@fast-check/vitest";
 import { Editor } from "@tiptap/core";
 import { describe, expect } from "vitest";
 
-import { normalizeDocument, VALIDATION_ERROR_CODES, type CanonicalDocumentV2, type NodeId } from "../domain/document";
+import { normalizeDocument, VALIDATION_ERROR_CODES, type CanonicalDocumentV2, type NodeId } from "../document/document";
 
 import { INTEROP_ERROR_CODES, type IdFactory } from "./interop";
 import { canonicalToTiptapV2, tiptapToCanonicalV2 } from "./interop-v2";

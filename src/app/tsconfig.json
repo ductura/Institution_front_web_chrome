@@ -1,0 +1,7 @@
+{
+  "extends": "../components/tsconfig.json",
+  // Next.js App Router pages copied from Ductus 0cdb0f1f. They are type-checked
+  // here until they move onto the Vite router of packages/app.
+  "include": [".", "../../packages/ui/src/css-modules.d.ts"],
+  "exclude": ["node_modules"]
+}

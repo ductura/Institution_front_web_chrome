@@ -14,7 +14,7 @@ import {
   normalizeDocument,
   type CanonicalDocument,
   type DocumentNode,
-} from "../domain/document";
+} from "../document/document";
 
 // With the `u` flag a valid pair is one code point outside this range, so the
 // class matches only surrogates that stand alone.

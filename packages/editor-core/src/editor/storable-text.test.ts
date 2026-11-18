@@ -6,8 +6,8 @@
 import { describe, expect, it } from "vitest";
 import {
   newNodeId, paragraphNode, textNode, validateDocument, type CanonicalDocument,
-} from "../domain/document";
-import { canonicalizeJcs } from "../domain/forensics/jcs";
+} from "../document/document";
+import { canonicalizeJcs } from "../document/forensics/jcs";
 import { storableDocument, storableText } from "./storable-text";
 
 const P1 = newNodeId(() => "aaaaaaaa-0000-4000-8000-000000000001");

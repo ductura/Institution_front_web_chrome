@@ -50,8 +50,8 @@ import {
   type Step,
 } from "@tiptap/pm/transform";
 
-import { isAllowedText } from "../domain/document/forbidden";
-import { isSourceId, MAX_CITATION_LOCATOR_CODE_POINTS } from "../domain/document/schema";
+import { isAllowedText } from "../document/document/forbidden";
+import { isSourceId, MAX_CITATION_LOCATOR_CODE_POINTS } from "../document/document/schema";
 
 export const CITATION = "citation";
 

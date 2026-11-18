@@ -2,8 +2,8 @@ import { Editor } from "@tiptap/core";
 import { Fragment, Slice } from "@tiptap/pm/model";
 import { describe, expect, it } from "vitest";
 
-import { createTextAnchor, resolveTextAnchor } from "../domain/collaboration/anchor";
-import type { NodeId } from "../domain/document";
+import { createTextAnchor, resolveTextAnchor } from "../document/collaboration/anchor";
+import type { NodeId } from "../document/document";
 
 import { tiptapToCanonical, type TiptapDocumentJSON, type TiptapNodeJSON } from "./interop";
 import { createEditorExtensions, ID_CARRYING_TYPES, NODE_ID_ATTRIBUTE } from "./schema";

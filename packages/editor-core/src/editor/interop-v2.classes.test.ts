@@ -2,7 +2,7 @@
 import { Editor, getSchema } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
 
-import type { CanonicalDocumentV2, DocumentSource, NodeId, SourceId } from "../domain/document";
+import type { CanonicalDocumentV2, DocumentSource, NodeId, SourceId } from "../document/document";
 
 import { canonicalToTiptap, tiptapToCanonical, type IdFactory } from "./interop";
 import { canonicalToTiptapV2, tiptapToCanonicalV2 } from "./interop-v2";

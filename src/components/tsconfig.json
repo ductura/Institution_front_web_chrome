@@ -1,6 +1,33 @@
 {
   "extends": "../../packages/ui/tsconfig.json",
-  "compilerOptions": { "allowImportingTsExtensions": true },
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    // Bridge for the code copied from Ductus 0cdb0f1f, which imports through
+    // the Ductus "@/" alias. Editor and domain paths point at their new place
+    // in @ductura/editor-core; the rest resolves under src/. Imports with no
+    // target here (server, adapters, most of client) are the remaining work.
+    "paths": {
+      "@/editor": ["../../packages/editor-core/src/editor"],
+      "@/editor/*": ["../../packages/editor-core/src/editor/*"],
+      "@/domain/json": ["../../packages/editor-core/src/document/json"],
+      "@/domain/forensics/*": ["../../packages/editor-core/src/document/forensics/*"],
+      "@/domain/document": ["../../packages/editor-core/src/document/document"],
+      "@/domain/document/*": ["../../packages/editor-core/src/document/document/*"],
+      "@/domain/citation": ["../../packages/editor-core/src/document/citation"],
+      "@/domain/citation/*": ["../../packages/editor-core/src/document/citation/*"],
+      "@/domain/collaboration": ["../../packages/editor-core/src/document/collaboration"],
+      "@/domain/collaboration/*": ["../../packages/editor-core/src/document/collaboration/*"],
+      "@/domain/diff": ["../../packages/editor-core/src/document/diff"],
+      "@/domain/diff/*": ["../../packages/editor-core/src/document/diff/*"],
+      "@/domain/text/*": ["../../packages/editor-core/src/document/text/*"],
+      "@/domain/sync": ["../../packages/editor-core/src/sync"],
+      "@/domain/sync/*": ["../../packages/editor-core/src/sync/*"],
+      "@/domain/serverSync/*": ["../../packages/editor-core/src/serverSync/*"],
+      "@/lib/journal/*": ["../../packages/editor-core/src/journal/*"],
+      "@/lib/sync/*": ["../../packages/editor-core/src/sync/runner/*"],
+      "@/*": ["../*"]
+    }
+  },
   "include": [".", "../../packages/ui/src/css-modules.d.ts"],
   "exclude": ["node_modules"]
 }

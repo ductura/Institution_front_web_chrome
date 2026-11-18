@@ -5,7 +5,7 @@ import type { Transaction } from "@tiptap/pm/state";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { newNodeId, type NodeId } from "../domain/document";
+import { newNodeId, type NodeId } from "../document/document";
 
 import { startFreshHistory } from "./history";
 import { replaceWithStoredDocument } from "./identity";

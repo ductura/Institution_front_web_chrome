@@ -5,7 +5,7 @@ import type { Transaction } from "@tiptap/pm/state";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { verifyCanonicalEvidencePayloadV2 } from "@/domain/forensics/evidence-chain-v2";
+import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
 
 import { changeOf, EvidenceRecorder, type SegmentContext } from "./capture";
 import { tiptapToCanonical } from "./interop";

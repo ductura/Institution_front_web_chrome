@@ -2,12 +2,12 @@
 import { describe, expect, it } from "vitest";
 
 import { createEditStepsV1Replayer } from "@/adapters/evidence/edit-steps-v1-replayer";
-import { verifyCanonicalEvidencePayloadV2 } from "@/domain/forensics/evidence-chain-v2";
-import { digestCanonicalDocumentV2, replayEvidenceSegmentsV2 } from "@/domain/forensics/evidence-replay-v2";
+import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
+import { digestCanonicalDocumentV2, replayEvidenceSegmentsV2 } from "../document/forensics/evidence-replay-v2";
 import {
   EVIDENCE_SEGMENT_SCHEMA_V2,
   EVIDENCE_SEGMENT_SCHEMA_V3,
-} from "@/domain/forensics/evidence-segment-v2";
+} from "../document/forensics/evidence-segment-v2";
 
 import type { SegmentContext } from "./capture";
 import { canonical, recordedEditor, typeChar } from "./capture.fixture";

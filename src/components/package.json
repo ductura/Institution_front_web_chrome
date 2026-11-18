@@ -10,13 +10,19 @@
   },
   "dependencies": {
     "@ductura/ui": "workspace:*",
+    "@tiptap/core": "3.33.0",
+    "@tiptap/pm": "3.33.0",
+    "@tiptap/react": "3.33.0",
+    "dexie": "4.4.7",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@fast-check/vitest": "0.5.0",
     "@types/node": "26.6.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "fake-indexeddb": "6.2.8",
     "fast-check": "4.10.2",
     "typescript": "5.9.3",
     "vitest": "5.0.3"

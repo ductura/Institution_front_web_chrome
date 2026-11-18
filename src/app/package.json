@@ -1,0 +1,30 @@
+{
+  "name": "@ductura/Institution_front_web_chrome-pages",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Next.js App Router pages copied from Ductus 0cdb0f1f, kept type-checked until they move onto the Vite router of packages/app",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ductura/ui": "workspace:*",
+    "@tiptap/core": "3.33.0",
+    "@tiptap/pm": "3.33.0",
+    "@tiptap/react": "3.33.0",
+    "dexie": "4.4.7",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@fast-check/vitest": "0.5.0",
+    "@types/node": "26.6.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "fake-indexeddb": "6.2.8",
+    "fast-check": "4.10.2",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  }
+}

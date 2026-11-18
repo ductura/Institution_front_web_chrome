@@ -2,8 +2,8 @@ import { getSchema } from "@tiptap/core";
 import { EditorState } from "@tiptap/pm/state";
 import { describe, expect, it } from "vitest";
 
-import { createTextAnchor } from "@/domain/collaboration";
-import type { NodeId } from "@/domain/document";
+import { createTextAnchor } from "../document/collaboration";
+import type { NodeId } from "../document/document";
 
 import { anchorRange, commentHighlightKey, commentHighlightPlugin, createAnchorPlacer } from "./comment-anchor";
 import { createEditorExtensions, NODE_ID_ATTRIBUTE } from "./schema";

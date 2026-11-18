@@ -24,7 +24,7 @@ import {
   type CanonicalDocument,
   type DocumentNode,
   type NodeId,
-} from "../domain/document";
+} from "../document/document";
 
 import { NODE_ID_ATTRIBUTE } from "./interop";
 

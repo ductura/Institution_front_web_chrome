@@ -4,7 +4,7 @@ import { TextSelection, type Transaction } from "@tiptap/pm/state";
 import { ReplaceStep, StepMap, type Step } from "@tiptap/pm/transform";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { CanonicalDocument, NodeId } from "../domain/document";
+import type { CanonicalDocument, NodeId } from "../document/document";
 
 import { tiptapToCanonical, type TiptapDocumentJSON } from "./interop";
 import { createEditorExtensions, NODE_ID_ATTRIBUTE } from "./schema";

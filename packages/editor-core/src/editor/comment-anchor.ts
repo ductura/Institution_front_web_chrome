@@ -14,7 +14,7 @@ import type { Node as PmNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
-import { resolveTextAnchor, type TextAnchor } from "@/domain/collaboration";
+import { resolveTextAnchor, type TextAnchor } from "../document/collaboration";
 
 import { NODE_ID_ATTRIBUTE } from "./interop";
 

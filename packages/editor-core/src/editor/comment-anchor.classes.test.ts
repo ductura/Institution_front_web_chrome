@@ -2,8 +2,8 @@ import { Editor } from "@tiptap/core";
 import type { Node as PmNode, Slice } from "@tiptap/pm/model";
 import { describe, expect, it } from "vitest";
 
-import { createTextAnchor, type TextAnchor } from "../domain/collaboration";
-import { newNodeId, type CanonicalDocument, type NodeId } from "../domain/document";
+import { createTextAnchor, type TextAnchor } from "../document/collaboration";
+import { newNodeId, type CanonicalDocument, type NodeId } from "../document/document";
 
 import { anchorRange, commentHighlightKey, commentHighlightPlugin, createAnchorPlacer, type CommentRange } from "./comment-anchor";
 import { startFreshHistory } from "./history";

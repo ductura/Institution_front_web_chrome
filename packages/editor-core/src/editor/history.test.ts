@@ -1,7 +1,7 @@
 import { Editor } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
 
-import { paragraphNode, textNode, DOCUMENT_SCHEMA_VERSION, type CanonicalDocument, type NodeId } from "../domain/document";
+import { paragraphNode, textNode, DOCUMENT_SCHEMA_VERSION, type CanonicalDocument, type NodeId } from "../document/document";
 
 import { startFreshHistory } from "./history";
 import { replaceWithStoredDocument } from "./identity";

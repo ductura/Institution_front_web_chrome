@@ -26,9 +26,9 @@ import type { Node as PmNode } from "@tiptap/pm/model";
 import type { Transaction } from "@tiptap/pm/state";
 import { Step } from "@tiptap/pm/transform";
 
-import { EDIT_STEP_FORMAT_V1, parseEditSteps } from "@/domain/document/edit-step";
-import { exceedsEvidenceSegmentLimit } from "@/domain/forensics/evidence-chain-v2";
-import { digestCanonicalDocumentV2 } from "@/domain/forensics/evidence-replay-v2";
+import { EDIT_STEP_FORMAT_V1, parseEditSteps } from "../document/document/edit-step";
+import { exceedsEvidenceSegmentLimit } from "../document/forensics/evidence-chain-v2";
+import { digestCanonicalDocumentV2 } from "../document/forensics/evidence-replay-v2";
 import {
   canonicalEvidenceSegment,
   EVIDENCE_CANONICALIZATION_V2,
@@ -37,9 +37,9 @@ import {
   type EvidenceEventV3,
   type EvidenceSegment,
   type EvidenceSource,
-} from "@/domain/forensics/evidence-segment-v2";
-import { canonicalizeJcs, type JcsJsonValue } from "@/domain/forensics/jcs";
-import { sha256WebCrypto } from "@/domain/forensics/crypto";
+} from "../document/forensics/evidence-segment-v2";
+import { canonicalizeJcs, type JcsJsonValue } from "../document/forensics/jcs";
+import { sha256WebCrypto } from "../document/forensics/crypto";
 
 import { writtenSteps } from "./capture-rewrite";
 import { nodeIdFixesOf } from "./identity";

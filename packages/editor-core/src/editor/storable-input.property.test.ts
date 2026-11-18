@@ -3,7 +3,7 @@ import { TextSelection } from "@tiptap/pm/state";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import type { NodeId } from "../domain/document";
+import type { NodeId } from "../document/document";
 
 import { createEditorExtensions, NODE_ID_ATTRIBUTE } from "./schema";
 import { StorableInput } from "./storable-input";

@@ -8,3 +8,5 @@ packages:
   - src/components
   - src/platform
   - src/domain
+  - src/app
+  - src/lib

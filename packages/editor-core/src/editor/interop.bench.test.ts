@@ -29,7 +29,7 @@ import {
   DOCUMENT_SCHEMA_VERSION,
   type CanonicalDocument,
   type NodeId,
-} from "../domain/document";
+} from "../document/document";
 
 import { canonicalToTiptap, tiptapToCanonical } from "./interop";
 

@@ -1,0 +1,33 @@
+{
+  "name": "@ductura/editor-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ductura editor core ported from Ductus: Tiptap schema, document model, edit steps, citations, diff, collaboration anchors, sync states and the local journal",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tiptap/core": "3.33.0",
+    "@tiptap/extension-bold": "3.33.0",
+    "@tiptap/extension-document": "3.33.0",
+    "@tiptap/extension-heading": "3.33.0",
+    "@tiptap/extension-history": "3.33.0",
+    "@tiptap/extension-italic": "3.33.0",
+    "@tiptap/extension-paragraph": "3.33.0",
+    "@tiptap/extension-placeholder": "3.33.0",
+    "@tiptap/extension-text": "3.33.0",
+    "@tiptap/pm": "3.33.0",
+    "dexie": "4.4.7"
+  },
+  "devDependencies": {
+    "@fast-check/vitest": "0.5.0",
+    "@types/node": "26.6.4",
+    "fake-indexeddb": "6.2.8",
+    "fast-check": "4.10.2",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  }
+}

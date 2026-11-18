@@ -4,7 +4,7 @@ import type { Transaction } from "@tiptap/pm/state";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { findLiteral } from "@/domain/text/find-literal";
+import { findLiteral } from "../document/text/find-literal";
 
 import { EvidenceRecorder } from "./capture";
 import { canonical, replays } from "./capture.fixture";

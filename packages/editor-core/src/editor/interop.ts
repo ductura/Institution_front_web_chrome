@@ -32,8 +32,8 @@ import {
   type NodeId,
   type PlainBlockType,
   type ValidationErrorCode,
-} from "../domain/document";
-import { isPlainObject } from "../domain/json";
+} from "../document/document";
+import { isPlainObject } from "../document/json";
 
 /**
  * Tiptap attribute that carries the canonical `NodeId` through editing. It is

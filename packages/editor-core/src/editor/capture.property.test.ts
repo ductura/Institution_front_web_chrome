@@ -6,10 +6,10 @@ import { TextSelection, type Transaction } from "@tiptap/pm/state";
 import { describe, expect, it } from "vitest";
 
 import { createEditStepsV1Replayer } from "@/adapters/evidence/edit-steps-v1-replayer";
-import { verifyCanonicalEvidencePayloadV2 } from "@/domain/forensics/evidence-chain-v2";
-import { replayEvidenceSegmentsV2 } from "@/domain/forensics/evidence-replay-v2";
-import type { EvidenceEvent, EvidenceSegment, EvidenceSourceV2 } from "@/domain/forensics/evidence-segment-v2";
-import type { JcsJsonValue } from "@/domain/forensics/jcs";
+import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
+import { replayEvidenceSegmentsV2 } from "../document/forensics/evidence-replay-v2";
+import type { EvidenceEvent, EvidenceSegment, EvidenceSourceV2 } from "../document/forensics/evidence-segment-v2";
+import type { JcsJsonValue } from "../document/forensics/jcs";
 
 import { CaptureError, changeOf, EvidenceRecorder, type SegmentContext } from "./capture";
 import { tiptapToCanonical } from "./interop";

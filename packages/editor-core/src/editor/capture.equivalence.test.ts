@@ -4,11 +4,11 @@ import type { Transaction } from "@tiptap/pm/state";
 import { describe, expect, it } from "vitest";
 
 import { createEditStepsV1Replayer } from "@/adapters/evidence/edit-steps-v1-replayer";
-import { verifyDocumentSnapshot } from "@/domain/document/snapshot";
-import { verifyCanonicalEvidencePayloadV2 } from "@/domain/forensics/evidence-chain-v2";
-import { digestCanonicalDocumentV2, replayEvidenceSegmentsV2 } from "@/domain/forensics/evidence-replay-v2";
-import type { EvidenceSourceV2 } from "@/domain/forensics/evidence-segment-v2";
-import type { JcsJsonValue } from "@/domain/forensics/jcs";
+import { verifyDocumentSnapshot } from "../document/document/snapshot";
+import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
+import { digestCanonicalDocumentV2, replayEvidenceSegmentsV2 } from "../document/forensics/evidence-replay-v2";
+import type { EvidenceSourceV2 } from "../document/forensics/evidence-segment-v2";
+import type { JcsJsonValue } from "../document/forensics/jcs";
 
 import { changeOf, EvidenceRecorder, type SegmentContext } from "./capture";
 import { tiptapToCanonical } from "./interop";

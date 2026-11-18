@@ -3,9 +3,9 @@ import { Editor } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
 
 import { createEditStepsV1Replayer } from "@/adapters/evidence/edit-steps-v1-replayer";
-import { REVISION_ZERO_JCS, REVISION_ZERO_SHA256 } from "@/domain/document/revision-zero";
-import { digestCanonicalDocumentV2 } from "@/domain/forensics/evidence-replay-v2";
-import { canonicalizeJcs, type JcsJsonValue } from "@/domain/forensics/jcs";
+import { REVISION_ZERO_JCS, REVISION_ZERO_SHA256 } from "../document/document/revision-zero";
+import { digestCanonicalDocumentV2 } from "../document/forensics/evidence-replay-v2";
+import { canonicalizeJcs, type JcsJsonValue } from "../document/forensics/jcs";
 
 import { BulletItem, bulletItemBackspace, bulletItemEnter } from "./bullet-item";
 import { blocks, canonical, ID_A, recordedEditor, replays, typeChar } from "./capture.fixture";

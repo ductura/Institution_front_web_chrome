@@ -23,9 +23,9 @@ import {
   type InlineNodeV2,
   type SourceId,
   type ValidationError,
-} from "../domain/document";
-import { validateSources } from "../domain/document/validate-sources";
-import { isPlainObject } from "../domain/json";
+} from "../document/document";
+import { validateSources } from "../document/document/validate-sources";
+import { isPlainObject } from "../document/json";
 import {
   defaultIdFactory,
   inlineToTiptap,

@@ -5,11 +5,11 @@ import { TextSelection, type Transaction } from "@tiptap/pm/state";
 import { describe, expect, it, vi } from "vitest";
 
 import { createEditStepsV1Replayer } from "@/adapters/evidence/edit-steps-v1-replayer";
-import { verifyCanonicalEvidencePayloadV2 } from "@/domain/forensics/evidence-chain-v2";
-import { replayEvidenceSegmentsV2 } from "@/domain/forensics/evidence-replay-v2";
+import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
+import { replayEvidenceSegmentsV2 } from "../document/forensics/evidence-replay-v2";
 import { writeSource } from "@/components/editor/sources";
-import type { EvidenceEvent, EvidenceSegment, EvidenceSource } from "@/domain/forensics/evidence-segment-v2";
-import type { JcsJsonValue } from "@/domain/forensics/jcs";
+import type { EvidenceEvent, EvidenceSegment, EvidenceSource } from "../document/forensics/evidence-segment-v2";
+import type { JcsJsonValue } from "../document/forensics/jcs";
 import { projectProcessSummary } from "@/domain/projection/process-summary";
 
 import { changeOf, EvidenceRecorder, type BuiltSegment, type SegmentContext } from "./capture";

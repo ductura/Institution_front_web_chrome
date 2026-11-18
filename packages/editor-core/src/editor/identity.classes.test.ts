@@ -2,8 +2,8 @@ import { Editor } from "@tiptap/core";
 import { Fragment, Slice, type Node as PmNode } from "@tiptap/pm/model";
 import { describe, expect, it } from "vitest";
 
-import { createTextAnchor, resolveTextAnchor, type TextAnchor } from "../domain/collaboration";
-import { newNodeId, type CanonicalDocument, type NodeId } from "../domain/document";
+import { createTextAnchor, resolveTextAnchor, type TextAnchor } from "../document/collaboration";
+import { newNodeId, type CanonicalDocument, type NodeId } from "../document/document";
 
 import { startFreshHistory } from "./history";
 import { mintMissingIds, replaceWithStoredDocument } from "./identity";

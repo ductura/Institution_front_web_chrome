@@ -52,7 +52,7 @@ import {
   type CanonicalDocument,
   type NodeId,
   type ValidationError,
-} from "../domain/document";
+} from "../document/document";
 
 import { canonicalToTiptap, NODE_ID_ATTRIBUTE } from "./interop";
 

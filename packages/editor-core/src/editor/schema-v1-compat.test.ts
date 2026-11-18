@@ -6,9 +6,9 @@ import { Editor } from "@tiptap/core";
 import type { Transaction } from "@tiptap/pm/state";
 import { describe, expect, it } from "vitest";
 
-import type { CanonicalDocument } from "@/domain/document/schema";
-import { verifyDocumentSnapshot } from "@/domain/document/snapshot";
-import { canonicalizeJcs } from "@/domain/forensics/jcs";
+import type { CanonicalDocument } from "../document/document/schema";
+import { verifyDocumentSnapshot } from "../document/document/snapshot";
+import { canonicalizeJcs } from "../document/forensics/jcs";
 
 import { changeOf, EvidenceRecorder, type SegmentContext } from "./capture";
 import { canonical, recordedEditor, replays, typeChar, type Recorded } from "./capture.fixture";

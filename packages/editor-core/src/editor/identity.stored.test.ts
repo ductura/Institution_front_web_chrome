@@ -3,7 +3,7 @@ import { Slice } from "@tiptap/pm/model";
 import { Step, Transform } from "@tiptap/pm/transform";
 import { describe, expect, it, vi } from "vitest";
 
-import { paragraphNode, textNode, DOCUMENT_SCHEMA_VERSION, type CanonicalDocument, type NodeId } from "../domain/document";
+import { paragraphNode, textNode, DOCUMENT_SCHEMA_VERSION, type CanonicalDocument, type NodeId } from "../document/document";
 
 import { mintMissingIds, repeatedNodeIds, replaceWithStoredDocument, withoutNodeIds, REMOVAL_MEMORY } from "./identity";
 import { canonicalToTiptap, tiptapToCanonical } from "./interop";

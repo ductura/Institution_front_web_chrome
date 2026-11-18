@@ -5,7 +5,7 @@ import type { Transaction } from "@tiptap/pm/state";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { deriveChapters } from "../domain/document";
+import { deriveChapters } from "../document/document";
 
 import { blockPosition, ChapterNumbers, chapterNumbersOf, numberedHeadings } from "./chapter-numbers";
 import { tiptapToCanonical } from "./interop";

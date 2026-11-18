@@ -26,7 +26,7 @@ import { closeHistory } from "@tiptap/pm/history";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, type EditorState, type Transaction } from "@tiptap/pm/state";
 
-import { findLiteral, isSearchableText, type LiteralQuery } from "@/domain/text/find-literal";
+import { findLiteral, isSearchableText, type LiteralQuery } from "../document/text/find-literal";
 
 import { FIND_REPLACE_META } from "./source";
 

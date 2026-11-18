@@ -32,7 +32,7 @@ import { isHistoryTransaction } from "@tiptap/pm/history";
 import { Plugin, PluginKey, type Transaction } from "@tiptap/pm/state";
 import { ReplaceAroundStep, ReplaceStep } from "@tiptap/pm/transform";
 
-import type { EvidenceSource } from "@/domain/forensics/evidence-segment-v2";
+import type { EvidenceSource } from "../document/forensics/evidence-segment-v2";
 
 import { changeOf, type EvidenceRecorder } from "./capture";
 
