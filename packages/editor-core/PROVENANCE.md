@@ -8,6 +8,7 @@ obrnutom zamjenom retka uvoza i traži izvorni SHA.
 
 | Ductus put → web put | Git blob SHA izvora | SHA-256 izvora | Izmijenjen |
 | --- | --- | --- | --- |
+| `domain/document/forbidden.test.ts` | `b7b187d1c640701a80c77654bb13e65b2b4c53ec` | `bdc2abcdbc97ce6e205a696c3b47fe8175793627a95a0004110e7aab859b7e13` | ne |
 | `domain/document/forbidden.ts` | `652652cabbb4277f8f7fddd20127c8e71d2fc06d` | `13606201732d800d7735662a14ead63a258c782962ecf9ed176a52d8700bba40` | ne |
 | `domain/document/revision-zero.test.ts` | `4bda175c76c8c403060bdf4178f3623bc9ca4a78` | `6acdd5207677fecd97959ba72fdff880c00097a18813bbb951cb53e5351f7a42` | ne |
 | `domain/document/revision-zero.ts` | `a58c3ab693e83fa05a1c2aeb2a1bd9fb7188ede9` | `c9490658ff369830e4c2b8bad4605b9bd9577fecdf3b0e26058221f2c952c234` | ne |
@@ -29,3 +30,17 @@ obrnutom zamjenom retka uvoza i traži izvorni SHA.
 ## Izmjene
 
 - `src/domain/document/snapshot.ts`: uvoz `@/domain/forensics/jcs` → `../forensics/jcs` (alias `@/` u web paketu ne postoji). Jedina izmjena.
+
+## Nepreneseni testovi izvora (odgoda do 888-2, razlog je veličina)
+
+Moduli ovog dijela imaju u Ductusu još ove testove. Svi su odgođeni samo zbog
+ograničenja veličine dijela (oko 2500 redaka), ne zbog ovisnosti; prenose se
+bajt po bajt u 888-2 zajedno s modulima koje pokrivaju.
+
+| Izvorni test | Razlog odgode |
+| --- | --- |
+| `domain/document/validate.test.ts` (361 redak) | pokriva `validate.ts`; uvozi samo prenesene module, odgođen zbog veličine |
+| `domain/document/validate-v2.test.ts` (508 redaka) | pokriva `validate.ts` i `validate-sources.ts`; isto |
+| `domain/document/schema-version.test.ts` | čita `forensics/golden-vectors/format-reservation.json`, stiže s vektorima forensics |
+| `domain/forensics/crypto.test.ts` | čita stablo izvora po `process.cwd()` (test „nema pozivatelja”): traži prilagodbu u web paketu |
+| `domain/*.property.test.ts` | traže `@fast-check/vitest`, stižu s ovisnošću |

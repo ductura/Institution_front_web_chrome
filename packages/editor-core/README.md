@@ -24,3 +24,8 @@ Promjena prenesene datoteke ide prvo u Ductus, pa novim prijenosom ovamo.
 
 `pnpm --filter @ductura/editor-core run typecheck` i `… run test`; CI posao `ui`
 pokreće oboje kroz `pnpm -r run …`.
+
+## Odgođeni testovi
+
+Izvorni testovi koji još nisu preneseni (s razlogom za svaki) navedeni su u
+odjeljku „Nepreneseni testovi izvora” u [PROVENANCE.md](PROVENANCE.md).

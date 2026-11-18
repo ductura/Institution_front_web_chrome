@@ -32,8 +32,8 @@ const UNDO_IMPORT: Record<string, [string, string]> = {
 
 describe("code ported from Ductus at a recorded commit (PROVENANCE.md)", () => {
   it("names the source commit and a fixed number of ported files", () => {
-    expect(MANIFEST).toContain(SOURCE_COMMIT);
-    expect(ROWS).toHaveLength(17);
+    expect(MANIFEST).toMatch(new RegExp(`^\`${SOURCE_COMMIT}\` `, "m"));
+    expect(ROWS).toHaveLength(18);
     expect(ROWS.filter((r) => r.changed).map((r) => r.path)).toEqual(["domain/document/snapshot.ts"]);
   });
 
