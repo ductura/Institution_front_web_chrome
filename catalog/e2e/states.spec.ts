@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import { OUTLINE_HR } from "../../src/components/i18n/hr.ts";
+import { SETTINGS_EN, SETTINGS_HR } from "../../src/components/i18n/settings.ts";
 import { CATALOG_STATES, type CatalogState } from "../src/coverage";
 
 // web 2.c2 (DAN-751): every catalogue component, in every state, on both
@@ -13,7 +14,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks", "Settings"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
@@ -386,6 +387,35 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
     onemogućeno: async (c) => {
       await expect(c.getByText(t.mentoredWorks.state.not_started)).toBeVisible();
       await expect(c.getByRole("link")).toHaveCount(0);
+    },
+  },
+  // DAN-872: the language choice and the labelled personal keys; nothing sticks out at any width.
+  Settings: {
+    prazno: async (c) => {
+      await expect(c.getByRole("heading", { level: 1 })).toHaveText(SETTINGS_HR.heading);
+      await expect(c.getByRole("radio", { name: "Hrvatski" })).toBeChecked();
+      await expect(c.getByText(SETTINGS_HR.none)).toBeVisible();
+      await expect(c.getByRole("checkbox")).toHaveCount(0);
+    },
+    učitavanje: loading(t.workspace.panelLoading),
+    greška: async (c) => {
+      await expect(c.getByRole("alert")).toHaveText(SETTINGS_HR.unavailable);
+      await expect(c.getByRole("radio")).toHaveCount(0);
+    },
+    puno: async (c) => {
+      await expect(c.getByRole("group", { name: SETTINGS_HR.language.legend })).toBeVisible();
+      await expect(c.getByRole("checkbox", { name: SETTINGS_HR.keys["notifications.email"] })).not.toBeChecked();
+      await expect(c.getByRole("checkbox", { name: SETTINGS_HR.keys["display.reduced_motion"] })).toBeChecked();
+      await expect(c.getByRole("status")).toHaveText(SETTINGS_HR.notice.changed);
+      await ownIds(c);
+      const outside = await c.locator("label, input, legend, h2").evaluateAll((els) => els.filter((el) =>
+        el.getBoundingClientRect().right > el.closest("dd")!.getBoundingClientRect().right + 0.5).map((el) => el.textContent));
+      expect(outside).toEqual([]);
+    },
+    onemogućeno: async (c) => {
+      await expect(c.getByRole("heading", { level: 1 })).toHaveText(SETTINGS_EN.heading);
+      await expect(c.getByRole("radio", { name: "English" })).toBeChecked();
+      for (const control of await c.locator("input").all()) await expect(control).toBeDisabled();
     },
   },
   RouteLoading: {

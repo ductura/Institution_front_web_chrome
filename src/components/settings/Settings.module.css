@@ -1,0 +1,100 @@
+/* DAN-872: the caller's settings, on the shared tokens (D-188). */
+.root {
+  display: grid;
+  gap: 16px;
+  max-width: 640px;
+}
+
+.root h1 {
+  margin: 0;
+  font-family: var(--ff-display);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.lede,
+.note {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.group {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  background: var(--chrome);
+}
+
+.group legend,
+.group h2 {
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* A legend sits on the border unless it floats; this keeps it inside like the h2. */
+.group legend {
+  float: left;
+  width: 100%;
+}
+
+.choice,
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  justify-content: space-between;
+  border-top: 1px solid var(--hover);
+  overflow-wrap: anywhere;
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.control {
+  flex: none;
+  min-width: 24px;
+  min-height: 24px;
+  accent-color: var(--accent);
+}
+
+.control:focus-visible,
+.choice input:focus-visible {
+  outline: var(--focus-width) solid var(--accent);
+  outline-offset: var(--focus-offset);
+}
+
+.alert {
+  margin: 0;
+  color: var(--ink);
+}
+
+.notice {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.choice input {
+  min-width: 24px;
+  min-height: 24px;
+  accent-color: var(--accent);
+}

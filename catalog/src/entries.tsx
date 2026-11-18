@@ -3,8 +3,8 @@ import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
-  AppShell, EmptyHome, ErrorScreen, MentoredWorks, MyAssignments, OutlinePanel, RouteLoading, StudentHome, TeacherCourses,
-  type AssignmentSubmission, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
+  AppShell, EmptyHome, ErrorScreen, MentoredWorks, MyAssignments, OutlinePanel, RouteLoading, Settings, StudentHome, TeacherCourses,
+  type AssignmentSubmission, type CatalogueKey, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -128,6 +128,15 @@ const mentoredWorks = [
   mentored(4, { givenName: "Ana", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started" }),
 ];
 
+// The settings catalogue of the fake server's vector (DAN-872); the values are invented.
+const settingsKeys: CatalogueKey[] = [
+  { key: "notifications.email", levels: ["personal"], kind: "boolean", default: true },
+  { key: "display.reduced_motion", levels: ["personal"], kind: "boolean", default: false },
+  { key: "network.session_idle_minutes", levels: ["network_security"], kind: "integer", default: 120, min: 15, max: 120 },
+];
+const personal = [{ ...settingsKeys[0]!, value: false }, { ...settingsKeys[1]!, value: true }];
+const settingsRead = (locale: "hr" | "en" | null, settings = personal) => ({ kind: "ready" as const, catalogue: settingsKeys, settings, locale });
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -199,5 +208,13 @@ export const SCREEN_ENTRIES = {
     greška: () => <MentoredWorks works={[mentored(5, null, { documentId: null, workState: "not_started" })]} />,
     puno: () => <MentoredWorks works={mentoredWorks} />,
     onemogućeno: () => <MentoredWorks works={[mentored(6, { givenName: "Iva", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started", workType: "doctoral_thesis" })]} />,
+  },
+  // DAN-872: only keys of the catalogue; the interface language on top.
+  Settings: {
+    prazno: () => <Settings read={settingsRead(null, [])} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <Settings read={{ kind: "unavailable" }} />,
+    puno: () => <Settings read={settingsRead("hr")} notice="changed" />,
+    onemogućeno: () => <Settings read={settingsRead("en")} locale="en" busy />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;

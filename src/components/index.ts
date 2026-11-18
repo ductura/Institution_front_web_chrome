@@ -9,3 +9,5 @@ export type { MyAssignment, MyAssignmentsRead, MyCourse } from "./student/my-ass
 export * from "./support/index";
 export * from "./outline/index";
 export * from "./teacher/index";
+export { default as Settings, type SettingsNotice, type SettingsProps } from "./settings/Settings";
+export { allowedSetting, readSettings, saveInterfaceLocale, saveSetting, type CatalogueKey, type SettingsCall, type SettingsRead } from "./settings/settings-model";
