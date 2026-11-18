@@ -20,10 +20,13 @@ Jedini put kojim web zove API (DAN-752, web 2.c3). Poziv ide kroz klijent generi
 - zastarjeli sažetak;
 - datoteka koja se ne provjerava (ne postoji, `api.ts`, `EXCEPTIONS`);
 - pravilo bez pogotka ili nepoznato pravilo;
-- ključ koji nije POSIX;
-- unos koji nije točno `{ rules, sha256 }` s 64 heks znaka malim slovima.
+- ključ koji nije POSIX, nije string ili je skriven;
+- popis s prototipom koji nije `Object.prototype`;
+- unos koji nije običan objekt s točno `{ rules, sha256 }` kao vlastitim podatkovnim poljima (64 heks znaka malim slovima, neprazan popis različitih pravila).
 
-Sažetak se računa nad sadržajem u kojem je `\r\n` zamijenjen s `\n`, pa Windows checkout daje isti sažetak. To nije Git blob SHA. Za datoteku bez CRLF jednak je `sha256sum`; inače:
+Bilo koji problem u popisu znači da se ne skida nijedno izuzeće.
+
+Sažetak se računa nad sadržajem u kojem je `\r\n` zamijenjen s `\n`, pa Windows checkout daje isti sažetak. To nije Git blob SHA. Za datoteku bez CRLF jednak je `sha256sum`. Inače se računa ovom naredbom za bash (na Windowsu u Git Bashu):
 
 ```bash
 node -e 'const b=require("fs").readFileSync(process.argv[1]);console.log(require("crypto").createHash("sha256").update(Buffer.from(b.toString("latin1").replaceAll("\r\n","\n"),"latin1")).digest("hex"))' <put>

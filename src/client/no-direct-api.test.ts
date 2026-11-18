@@ -185,9 +185,11 @@ export function checkedFiles(files: readonly string[], list: object = EXCEPTIONS
   return files.filter((file) => file !== CLIENT && listed(list, file) === undefined);
 }
 
-/** A waiver's rules if it is exactly two own data fields, a 64-digit lower-case sha256 and distinct rule names; else why not. */
+/** A waiver's rules if it is a plain object of exactly two own data fields, a 64-digit lower-case sha256 and distinct rule names; else why not. */
 function waiverEntry(entry: unknown): { rules: string[]; sha256: string } | string {
   if (typeof entry !== "object" || entry === null) return "not exactly rules and sha256";
+  const proto: unknown = Object.getPrototypeOf(entry);
+  if (proto !== Object.prototype && proto !== null) return "not exactly rules and sha256";
   const fields = Object.getOwnPropertyDescriptors(entry);
   const names = Reflect.ownKeys(fields).map(String).sort();
   if (names.join() !== "rules,sha256" || !("value" in fields.rules!) || !("value" in fields.sha256!)) return "not exactly rules and sha256";
@@ -204,43 +206,42 @@ function waiverEntry(entry: unknown): { rules: string[]; sha256: string } | stri
  * The rules each checked file breaks once its waiver is applied, and what is
  * wrong with the waiver list. Each file is read once; its findings and hash come
  * from the same bytes. A waiver is looked up by its exact own key and lifts its
- * rules only if it is well formed and the hash matches.
+ * rules only if the whole list has no problem (so the hash matches).
  */
 export function violations(files: readonly string[], read: (file: string) => Uint8Array, list: object = WAIVED_RULES):
   { found: [string, string[]][]; problems: string[] } {
+  const scanned = new Map(files.map((file) => {
+    const bytes = read(file);
+    return [file, { bytes, broken: directCalls(Buffer.from(bytes).toString("utf8"), file) }] as const;
+  }));
   const problems: string[] = [];
-  const listOk = Object.getPrototypeOf(list) === Object.prototype;
-  if (!listOk) problems.push("the waiver list has another prototype");
-  const keys = new Set<string>();
+  if (Object.getPrototypeOf(list) !== Object.prototype) problems.push("the waiver list has another prototype");
+  const waived = new Map<string, string[]>();
   for (const key of Reflect.ownKeys(list)) {
     if (typeof key !== "string") problems.push(`${String(key)}: a waiver key that is not a string`);
     else if (!Object.prototype.propertyIsEnumerable.call(list, key)) problems.push(`${key}: a hidden waiver key`);
     else if (key !== toPosix(key, "\\")) problems.push(`${key}: not in POSIX form`);
-    else if (!files.includes(key)) problems.push(`${key}: not a checked file`);
-    else keys.add(key);
+    else {
+      const file = scanned.get(key);
+      const entry = waiverEntry(Object.getOwnPropertyDescriptor(list, key)?.value);
+      if (!file) problems.push(`${key}: not a checked file`);
+      else if (typeof entry === "string") problems.push(`${key}: ${entry}`);
+      else {
+        for (const rule of entry.rules) {
+          if (!RULES.some(([name]) => name === rule)) problems.push(`${key}: no such rule: ${rule}`);
+          else if (!file.broken.includes(rule)) problems.push(`${key}: ${rule} has no hit`);
+        }
+        if (contentSha256(file.bytes) !== entry.sha256) problems.push(`${key}: stale, the content changed (sha256)`);
+        waived.set(key, entry.rules);
+      }
+    }
   }
-  const found = files.flatMap((file): [string, string[]][] => {
-    const bytes = read(file);
-    const broken = directCalls(Buffer.from(bytes).toString("utf8"), file);
-    const lifted = keys.has(file) ? liftedRules(file, bytes, broken) : [];
+  // Any problem in the list lifts nothing anywhere.
+  const found = [...scanned].flatMap(([file, { broken }]): [string, string[]][] => {
+    const lifted = problems.length === 0 ? waived.get(file) ?? [] : [];
     const left = broken.filter((rule) => !lifted.includes(rule));
     return left.length > 0 ? [[file, left]] : [];
   });
-  /** The rules a listed file's waiver lifts: none unless the list, the entry, every rule and the hash are right. */
-  function liftedRules(file: string, bytes: Uint8Array, broken: readonly string[]): string[] {
-    const entry = waiverEntry(Object.getOwnPropertyDescriptor(list, file)?.value);
-    if (typeof entry === "string") {
-      problems.push(`${file}: ${entry}`);
-      return [];
-    }
-    const before = problems.length;
-    for (const rule of entry.rules) {
-      if (!RULES.some(([name]) => name === rule)) problems.push(`${file}: no such rule: ${rule}`);
-      else if (!broken.includes(rule)) problems.push(`${file}: ${rule} has no hit`);
-    }
-    if (contentSha256(bytes) !== entry.sha256) problems.push(`${file}: stale, the content changed (sha256)`);
-    return listOk && problems.length === before ? entry.rules : [];
-  }
   return { found, problems };
 }
 
@@ -389,8 +390,9 @@ describe("a waiver lifts its rules only from the file whose content it froze", (
       const text = `${TEXT}${call}\n`;
       const result = violations([FILE], () => bytes(text), { [FILE]: entry(["Reflect"], contentSha256(bytes(text))) });
       expect(result.problems).toEqual([]);
-      expect(result.found).toHaveLength(1);
-      expect(result.found[0]?.[1]).not.toContain("Reflect");
+      const left = directCalls(text, FILE).filter((rule) => rule !== "Reflect");
+      expect(left).not.toEqual([]);
+      expect(result.found).toEqual([[FILE, left]]);
     }
   });
 
@@ -446,9 +448,27 @@ describe("a waiver lifts its rules only from the file whose content it froze", (
     ["a symbol key", { [Symbol("x")]: entry() }, /not a string/],
     ["a hidden key", Object.defineProperty({}, FILE, { enumerable: false, value: entry() }), /hidden/],
     ["another prototype", Object.setPrototypeOf({ [FILE]: entry() }, { [FILE]: entry() }) as object, /prototype/],
-  ])("%s is a problem and lifts nothing", (_, list, problem) => {
+    ["an entry with another prototype", { [FILE]: Object.setPrototypeOf(entry(), { line: 3 }) as object }, /exactly rules and sha256/],
+  ])("%s is a problem and lifts nothing, not even a valid waiver beside it", (_, list, problem) => {
     expect(run(list).problems.join("\n")).toMatch(problem);
     expect(run(list).found.find(([file]) => file === FILE)?.[1]).toEqual(["Reflect"]);
+    if (Object.getPrototypeOf(list) !== Object.prototype || Reflect.ownKeys(list).includes(FILE)) return;
+    const beside = Object.defineProperty(list, FILE, { enumerable: true, value: entry() });
+    expect(run(beside).problems.join("\n")).toMatch(problem);
+    expect(run(beside).found.find(([file]) => file === FILE)?.[1]).toEqual(["Reflect"]);
+  });
+
+  it("each file is read once, and the rules checked are the rules used", () => {
+    let reads = 0;
+    const changing = () => bytes(reads++ === 0 ? TEXT : `${TEXT}fetch(u);\n`);
+    expect(violations([FILE], changing, { [FILE]: entry() })).toEqual({ found: [], problems: [] });
+    expect(reads).toBe(1);
+    let gets = 0;
+    const rules = new Proxy(["Reflect"], { get: (target, key, receiver) =>
+      key === "0" && gets++ > 0 ? "fetch" : Reflect.get(target, key, receiver) as unknown });
+    const text = `${TEXT}fetch(u);\n`;
+    const result = violations([FILE], () => bytes(text), { [FILE]: entry(rules, contentSha256(bytes(text))) });
+    expect(result).toEqual({ found: [[FILE, ["fetch"]]], problems: [] });
   });
 
   it("a getter that would name more rules on a second read lifts nothing", () => {
