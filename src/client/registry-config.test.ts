@@ -21,9 +21,9 @@ function walk(dir: string, keep: (name: string) => boolean): string[] {
 
 const WORKFLOWS = walk(".github/workflows", (name) => /\.ya?ml$/.test(name));
 const RELEASES = "https://github.com/ductura/server/releases/download/";
-const VERSIONS: Record<string, string> = { "@ductura/contracts": "2.6.0", "@ductura/test-fakes": "3.0.1" };
+const VERSIONS: Record<string, string> = { "@ductura/contracts": "2.8.0", "@ductura/test-fakes": "3.0.1" };
 const TARBALLS: Record<string, string> = {
-  "@ductura/contracts": `${RELEASES}contracts-v2.6.0/ductura-contracts-2.6.0.tgz`,
+  "@ductura/contracts": `${RELEASES}contracts-v2.8.0/ductura-contracts-2.8.0.tgz`,
   "@ductura/test-fakes": `${RELEASES}test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz`,
 };
 const TOKEN_USE = /NODE_AUTH_TOKEN|GITHUB_TOKEN|github\.token|secrets\./;
