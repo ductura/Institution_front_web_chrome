@@ -71,6 +71,79 @@ export function sessionExpiredEntry(source: { readonly errors: readonly CatalogE
 }
 export const SESSION_EXPIRED_ENTRY = sessionExpiredEntry(catalog);
 
+type Paths = Readonly<Record<string, Readonly<Record<string, Operation>>>>;
+export type LoginRoute = { readonly path: string; readonly param: string };
+
+/**
+ * DAN-1081: the login route (auth.login.get) and its returnTo query, read from
+ * the contract, never written by hand. Throws when the contract has no single
+ * GET auth.login.get on a local path or no returnTo query, so a link is never
+ * guessed.
+ */
+export function loginRoute(paths: Paths): LoginRoute {
+  const found = Object.entries(paths).filter(([, methods]) => methods.get?.operationId === "auth.login.get");
+  const [path, methods] = found[0] ?? [];
+  const param = (methods?.get?.parameters ?? []).find((p) => p.in === "query" && p.name === "returnTo")?.name;
+  if (found.length !== 1 || path === undefined || !path.startsWith("/") || path.startsWith("//") || param === undefined) {
+    throw new Error("contract: no single GET auth.login.get with a returnTo query");
+  }
+  return { path, param };
+}
+export const LOGIN_ROUTE = loginRoute((openapi as unknown as { paths: Paths }).paths);
+
+// The server's rule for returnTo (ductura/server server/session/return-to.ts),
+// copied, never widened: the server checks it again, this only keeps the link
+// from carrying what the server would discard.
+const RETURN_TO_MAX = 512;
+const RETURN_TO_BASE = "https://ductura.invalid";
+// C0 and C1 controls, line and paragraph separators, invisible format characters and lone surrogates.
+const RETURN_TO_UNSAFE = /[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]/u;
+const RETURN_TO_DECODE_ROUNDS = 3;
+
+/** True for /api and below in any case or percent-encoding, up to three rounds deep; undecodable counts too. */
+function isApiPath(pathname: string): boolean {
+  let path = pathname;
+  for (let round = 0; round <= RETURN_TO_DECODE_ROUNDS; round += 1) {
+    const lower = path.toLowerCase();
+    if (lower === "/api" || lower.startsWith("/api/")) return true;
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(path);
+    } catch {
+      return true;
+    }
+    if (decoded === path) return false;
+    path = decoded;
+  }
+  return true;
+}
+
+/** The path the server would return to after login, as the server would normalise it; null when it would fall back. */
+export function signInReturnTo(value: unknown): string | null {
+  try {
+    if (typeof value !== "string" || value.length === 0 || value.length > RETURN_TO_MAX) return null;
+    // "//host" and "/\host" are protocol-relative in browsers.
+    if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\") || RETURN_TO_UNSAFE.test(value)) return null;
+    const parsed = new URL(value, RETURN_TO_BASE);
+    if (parsed.origin !== RETURN_TO_BASE || isApiPath(parsed.pathname)) return null;
+    // Dot segments are removed by the parser ("/.//host" becomes "//host"), so the result is checked again.
+    const result = parsed.pathname + parsed.search + parsed.hash;
+    return result.startsWith("//") || result.startsWith("/\\") ? null : result;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * DAN-1081: the same-origin link that starts AAI@EduHr login. returnTo goes in
+ * only when the server's rule keeps it; anything else gives the plain login
+ * link. Never throws.
+ */
+export function signInHref(returnTo?: unknown): string {
+  const target = signInReturnTo(returnTo);
+  return target === null ? LOGIN_ROUTE.path : `${LOGIN_ROUTE.path}?${LOGIN_ROUTE.param}=${encodeURIComponent(target)}`;
+}
+
 /** No route of the contract lists session_expired yet (S-1D-d); the client keeps it on routes with a 401, auth.* aside. */
 export type SessionExpired = { ok: false; status: 401; code: "session_expired" };
 
