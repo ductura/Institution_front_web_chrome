@@ -16,3 +16,30 @@ export interface MentoredWork {
   workType: MentoredWorkType;
   workState: MentoredWorkState;
 }
+
+export type MentoredWorksRead =
+  | { kind: "ready"; works: MentoredWork[] }
+  | { kind: "signedOut" }
+  | { kind: "notTeacher" }
+  | { kind: "unavailable" };
+
+/** What the page needs of createApi(): teacher.mentorships.get, its answers only. */
+export type MentoredWorksCall = (
+  id: "teacher.mentorships.get",
+  input: { params: undefined; query: undefined; body: undefined },
+) => Promise<{ ok: true; status: 200; body: { works: MentoredWork[] } } | { ok: false; status: number; code: string }>;
+
+/**
+ * One call of teacher.mentorships.get (#2028, after 871-3): 200 the works as
+ * they came, 401 signed out, 403 not a teacher, everything else unavailable.
+ */
+export async function readMentoredWorks(call: MentoredWorksCall): Promise<MentoredWorksRead> {
+  try {
+    const result = await call("teacher.mentorships.get", { params: undefined, query: undefined, body: undefined });
+    if (result.ok) return { kind: "ready", works: result.body.works };
+    if (result.status === 401) return { kind: "signedOut" };
+    return result.status === 403 ? { kind: "notTeacher" } : { kind: "unavailable" };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}

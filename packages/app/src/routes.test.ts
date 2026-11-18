@@ -42,6 +42,9 @@ describe("resolve", () => {
     }
     expect(resolve("/zadaci", "student")).toMatchObject({ kind: "page", page: { kind: "studentHome" } });
     expect(resolve("/zadaci/kolegiji", "student")).toMatchObject({ kind: "page", page: { kind: "studentCourses" } });
+    expect(resolve("/nastavnik", "teacher")).toMatchObject({ kind: "page", page: { kind: "teacherCourses" } });
+    expect(resolve("/nastavnik/mentorstva", "teacher")).toMatchObject({ kind: "page", page: { kind: "mentoredWorks" } });
+    expect(resolve("/nastavnik/brz-put", "teacher")).toMatchObject({ kind: "page", page: { kind: "pending" } });
   });
 
   it("sends a page of another role back to the role's own home", () => {
