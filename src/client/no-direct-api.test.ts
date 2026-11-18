@@ -35,6 +35,31 @@ export const EXCEPTIONS: Readonly<Record<string, { readonly fetchCalls: number }
   "public/app.js": { fetchCalls: 3 },
 };
 
+/**
+ * Closed list of rules waived for one exact file each (ODLUKA ORKESTRATORA
+ * Ductus#2028 c.6982164435, DAN-888). Both files are verbatim Ductus code in
+ * editor-core that inspects a value's own keys to reject unsafe JSON; it never
+ * reaches the network, and verbatim code is not edited. Only the named rule is
+ * waived for the named path; every other rule, the network ones included,
+ * still applies there, and an entry that no longer matches a finding fails.
+ */
+export const WAIVED_RULES: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  "packages/editor-core/src/domain/json.ts": Object.freeze(["Reflect"]),
+  "packages/editor-core/src/domain/forensics/jcs.ts": Object.freeze(["property descriptor"]),
+});
+
+/** The rules a file breaks once its waivers, if any, are taken out. */
+export function unwaived(file: string, broken: readonly string[]): string[] {
+  const waived = Object.hasOwn(WAIVED_RULES, file) ? (WAIVED_RULES[file] ?? []) : [];
+  return broken.filter((rule) => !waived.includes(rule));
+}
+
+/** Waivers (file and rule) that match no finding of that file; findings maps file to rules broken. */
+export function staleWaivers(findings: ReadonlyMap<string, readonly string[]>): string[] {
+  return Object.entries(WAIVED_RULES).flatMap(([file, rules]) =>
+    rules.filter((rule) => !(findings.get(file) ?? []).includes(rule)).map((rule) => `${file}: ${rule}`));
+}
+
 const BARE_IMPORTS = new Set(["react", "react-dom/client", "react/jsx-runtime", "@ductura/ui", "@ductura/ui/fonts.css",
   "@ductura/ui/tokens.css", "@ductura/contracts/openapi/v1.json"]);
 const CONFIG_IMPORTS = new Set(["vite", "vitest/config", "@playwright/test", "@vitejs/plugin-react"]);
@@ -127,10 +152,13 @@ describe("no API call outside src/client/api.ts", () => {
     }
   });
 
+  const findings = new Map(files
+    .filter((file) => file !== CLIENT && !Object.hasOwn(EXCEPTIONS, file))
+    .map((file) => [file, directCalls(readFileSync(join(ROOT, file), "utf8"), file)] as const));
+
   it("finds no direct call in any other file", () => {
-    const found = files
-      .filter((file) => file !== CLIENT && !Object.hasOwn(EXCEPTIONS, file))
-      .map((file) => [file, directCalls(readFileSync(join(ROOT, file), "utf8"), file)] as const)
+    const found = [...findings]
+      .map(([file, rules]) => [file, unwaived(file, rules)] as const)
       .filter(([, rules]) => rules.length > 0);
     expect(found).toEqual([]);
   });
@@ -139,11 +167,70 @@ describe("no API call outside src/client/api.ts", () => {
     expect(Object.keys(EXCEPTIONS).sort()).toEqual(["public/app.js"]);
   });
 
+  it("the waiver list is closed: one exact path, one exact rule", () => {
+    expect(Object.entries(WAIVED_RULES).sort()).toEqual([
+      ["packages/editor-core/src/domain/forensics/jcs.ts", ["property descriptor"]],
+      ["packages/editor-core/src/domain/json.ts", ["Reflect"]],
+    ]);
+    expect(Object.isFrozen(WAIVED_RULES)).toBe(true);
+    for (const rules of Object.values(WAIVED_RULES)) expect(Object.isFrozen(rules)).toBe(true);
+  });
+
+  it("every waiver still matches a finding in its file", () => {
+    expect(staleWaivers(findings)).toEqual([]);
+  });
+
   it("the skeleton keeps its three calls to /api/documents, no more", () => {
     const text = readFileSync(join(ROOT, "public/app.js"), "utf8");
     expect(text.match(/\bfetch\b/g)).toHaveLength(EXCEPTIONS["public/app.js"]?.fetchCalls ?? 0);
     expect(new Set(directCalls(text, "public/app.js"))).toEqual(new Set(["fetch", "API URL", "image or src"]));
     expect([...text.matchAll(/`\$\{API\}([^`]*)`/g)].map((m) => m[1]?.split("/")[1])).toEqual(["documents", "documents", "documents"]);
+  });
+});
+
+describe("a waiver lifts one rule in one file, nothing more", () => {
+  const JSON_FILE = "packages/editor-core/src/domain/json.ts";
+  const JCS_FILE = "packages/editor-core/src/domain/forensics/jcs.ts";
+  const read = (file: string) => readFileSync(join(ROOT, file), "utf8");
+  const network = ['fetch("/x")', "new XMLHttpRequest()", "navigator.sendBeacon(u, d)", "new WebSocket(u)",
+    'new Image().src = "/ap" + "i/v1/health"', "Reflect.get(globalThis, name)(url)",
+    'Object.getOwnPropertyDescriptor(globalThis, "fe" + "tch")!.value(u)', 'import mande from "mande"'];
+
+  for (const file of [JSON_FILE, JCS_FILE]) {
+    for (const call of network) {
+      it(`a call inserted into ${file} is still caught: ${call}`, () => {
+        expect(unwaived(file, directCalls(read(file), file))).toEqual([]);
+        expect(unwaived(file, directCalls(`${read(file)}\n${call}\n`, file))).not.toEqual([]);
+      });
+    }
+  }
+
+  it("a fetch( inserted into json.ts is caught as fetch", () => {
+    expect(unwaived(JSON_FILE, directCalls(`${read(JSON_FILE)}\nfetch(url);\n`, JSON_FILE))).toContain("fetch");
+  });
+
+  it("each rule stays on for the other waived file", () => {
+    expect(unwaived(JCS_FILE, directCalls("Reflect.ownKeys(value)", JCS_FILE))).toEqual(["Reflect"]);
+    expect(unwaived(JSON_FILE, directCalls("Object.getOwnPropertyDescriptor(o, k)", JSON_FILE)))
+      .toEqual(["property descriptor"]);
+  });
+
+  for (const file of ["src/client/schema-check.ts", "packages/editor-core/src/domain/document/schema.ts",
+    "packages/editor-core/src/domain/json.tsx", "./packages/editor-core/src/domain/json.ts",
+    "packages/editor-core/src/domain/JSON.ts", "packages/editor-core/src/domain/json.ts ", "__proto__", "constructor"]) {
+    it(`Reflect is still caught in ${JSON.stringify(file)}`, () => {
+      expect(unwaived(file, directCalls("Reflect.ownKeys(value)", file))).toEqual(["Reflect"]);
+      expect(unwaived(file, directCalls("Object.getOwnPropertyDescriptor(o, k)", file))).toEqual(["property descriptor"]);
+    });
+  }
+
+  it("a waiver that matches no finding is reported as stale", () => {
+    const findings = new Map([[JSON_FILE, ["Reflect"]], [JCS_FILE, ["property descriptor"]]]);
+    expect(staleWaivers(findings)).toEqual([]);
+    expect(staleWaivers(new Map([[JSON_FILE, ["Reflect"]]]))).toEqual([`${JCS_FILE}: property descriptor`]);
+    expect(staleWaivers(new Map([[JSON_FILE, ["fetch"]], [JCS_FILE, ["property descriptor"]]])))
+      .toEqual([`${JSON_FILE}: Reflect`]);
+    expect(staleWaivers(new Map())).toEqual([`${JSON_FILE}: Reflect`, `${JCS_FILE}: property descriptor`]);
   });
 });
 
