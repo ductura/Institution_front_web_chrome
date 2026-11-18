@@ -1,0 +1,138 @@
+/**
+ * F-8 3d-2c2b: which saver writes the sheet of `/rad`. With an assignment the
+ * evidence session records, chains and sends (3d-2c2); without one the local
+ * saver writes the journal and nothing goes to `/api/evidence/*` (W6, D8).
+ */
+
+import type { FetchLike } from "@/client/evidence-ingest";
+import { browserEvidenceSessionDeps } from "@/client/evidence-session-deps";
+import type { OnlineSource } from "@/client/online-status";
+import type { CanonicalDocument } from "@/domain/document";
+import type { SyncState } from "@/domain/sync/states";
+import type { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
+import {
+  LocalDocumentSaver, type LoadResult, type SaverSnapshot,
+} from "@/lib/journal/local-document-saver";
+
+import { EvidenceSession, type EvidenceSnapshot } from "./evidence-session";
+
+/** A snapshot of either saver; only the evidence session ever sets `closedBy`. */
+export type DocumentSnapshot = SaverSnapshot & Partial<Pick<EvidenceSnapshot, "closedBy" | "refused" | "submitted" | "stopped" | "unconfirmed">>;
+
+/**
+ * Whether the sheet may hold changes the server has not confirmed (DAN-314).
+ * Only a ready sheet whose evidence session says so is confirmed; the local
+ * saver never sends, so its text is never confirmed.
+ */
+export function unconfirmedOf(phase: string, snapshot: DocumentSnapshot | null, invalid = false): boolean {
+  return phase !== "ready" || invalid || snapshot?.unconfirmed !== false;
+}
+
+/**
+ * Whether the work is submitted (DAN-215, K7c/K7d): closed by submission, or
+ * the server's confirmed submission carried by a load that stopped earlier,
+ * such as a sticky local state. The local saver never knows of one.
+ */
+export function submittedOf(snapshot: DocumentSnapshot | null): boolean {
+  return snapshot?.closedBy === "submission" || snapshot?.submitted === true;
+}
+
+/**
+ * The notice of the evidence session, if any (3d-2c2 §3): the server's work
+ * differs, or it refused the last step for good, or the recorder stopped and
+ * what follows stays on this device (DAN-699). A stopped recorder whose local
+ * save also failed gives no notice: the failure's own text says the text is
+ * not kept (Codex #1901 c.4533816077). The stop notice shows while the newest
+ * change is still being saved locally, so its text names no finished save
+ * (review #1901 c.6786923958); `stoppedSaved` says when that save is done.
+ */
+export function evidenceNotice(snapshot: DocumentSnapshot | null): "conflict" | "refused" | "stopped" | null {
+  // Only the evidence session sets `closedBy`: the local saver's own
+  // RECOVERY_REQUIRED is the unreadable local record, not the server's work.
+  if (!snapshot || snapshot.closedBy === undefined) return null;
+  if (READ_ONLY_STATES.includes(snapshot.state) && snapshot.closedBy !== "submission") return "conflict";
+  // A stopped recorder comes before a refused row: a reload resumes nothing
+  // after it (#1901, review bot c.6786590285).
+  if (snapshot.stopped) return snapshot.failure ? null : "stopped";
+  return snapshot.refused ? "refused" : null;
+}
+
+/** States in which the newest change is already in the local journal. */
+const LOCALLY_SAVED: readonly SyncState[] = ["LOCAL_DURABLE", "SYNCING", "SYNCED"];
+
+/**
+ * Whether the stop notice may add that the text is saved on the device: only
+ * once the local save of the newest change has finished, never while it is
+ * typed (EDITING) or still being written (SAVING_LOCAL) (review #1901
+ * c.6786923958, orchestrator c.6786961844).
+ */
+export function stoppedSaved(snapshot: DocumentSnapshot | null): boolean {
+  return evidenceNotice(snapshot) === "stopped" && snapshot !== null && LOCALLY_SAVED.includes(snapshot.state);
+}
+
+/** States in which this tab is typing or writing the newest change. */
+const WRITING: readonly SyncState[] = ["EDITING", "SAVING_LOCAL"];
+
+/**
+ * What the polite save region of the status bar may say (attack 14): `typing`
+ * when a change is typed or written in this tab now, `saved` once it is on
+ * the device. A stopped recorder keeps the chip at ERROR, so its snapshot
+ * says both, and the saved line is the stop notice's (QA #1901 c.6787896540).
+ * `snapshot` is null when it does not speak for the sheet.
+ */
+export function saveAnnouncement(
+  chip: SyncState | "blocked" | null, snapshot: DocumentSnapshot | null,
+): { readonly typing: boolean; readonly saved: "durable" | "stoppedSaved" | null } {
+  const stopped = evidenceNotice(snapshot) === "stopped" && snapshot !== null;
+  const typing = (chip === "EDITING" || chip === "SAVING_LOCAL") || (stopped && WRITING.includes(snapshot.state));
+  const saved = chip === "LOCAL_DURABLE" ? "durable" : stoppedSaved(snapshot) ? "stoppedSaved" : null;
+  return { typing, saved };
+}
+
+/**
+ * Whether the saver's snapshot speaks for the sheet (chip and notice): a
+ * ready sheet, or one the evidence session loaded in a sticky state, whose
+ * local record was read and whose server work differs (3d-2c2 §3). Any other
+ * recovery could not read the local record and says so instead.
+ */
+export function snapshotSpeaks(phase: string, stickyLoad: boolean): boolean {
+  return phase === "ready" || (phase === "recovery" && stickyLoad);
+}
+
+/** What the provider asks of its saver (3d-2c2 §2, the shared surface). */
+export type DocumentSaver = {
+  load(): Promise<LoadResult>;
+  edit(): void;
+  propose(doc: CanonicalDocument): Promise<void>;
+  settled(): Promise<void>;
+  snapshot(): DocumentSnapshot;
+  subscribe(listener: (snapshot: DocumentSnapshot) => void): () => void;
+};
+
+/** States after which the evidence session writes and sends nothing more (3d-2c2 §3). */
+const READ_ONLY_STATES: readonly SyncState[] = ["CONFLICT", "RECOVERY_REQUIRED"];
+
+/** Whether the sheet must stop taking text: a closed package or a sticky state. */
+export function writingClosed(snapshot: DocumentSnapshot): boolean {
+  return snapshot.closedBy === "submission" || READ_ONLY_STATES.includes(snapshot.state);
+}
+
+/** The saver of one held lock; `evidence` is set only with an assignment. */
+export function createDocumentSaver(input: {
+  journal: AtomicDexieJournal;
+  documentId: string;
+  assignmentId: string | null;
+  /** Whether this tab's sign-in is still the browser's (F-154); asked before each evidence request. */
+  current: () => boolean;
+  fetchImpl?: FetchLike;
+  source?: OnlineSource;
+}): { saver: DocumentSaver; evidence: EvidenceSession | null } {
+  const { journal, documentId, assignmentId, current } = input;
+  if (!assignmentId) return { saver: new LocalDocumentSaver(journal, documentId), evidence: null };
+  const evidence = new EvidenceSession(browserEvidenceSessionDeps({
+    journal, documentId, assignmentId, current,
+    ...(input.fetchImpl ? { fetchImpl: input.fetchImpl } : {}),
+    ...(input.source ? { source: input.source } : {}),
+  }));
+  return { saver: evidence, evidence };
+}

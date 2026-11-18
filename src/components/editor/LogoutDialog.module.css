@@ -1,0 +1,45 @@
+/* The "Odjava" dialog of design demo-tok-v2 on the shared dialog base (src/components/shell/Dialog.module.css, Z-08). */
+.dialog {
+  composes: dialog from "../shell/Dialog.module.css";
+}
+
+.body {
+  composes: body from "../shell/Dialog.module.css";
+}
+
+.title {
+  composes: title from "../shell/Dialog.module.css";
+}
+
+.text {
+  composes: text from "../shell/Dialog.module.css";
+}
+
+.note {
+  composes: note from "../shell/Dialog.module.css";
+}
+
+.error {
+  composes: error from "../shell/Dialog.module.css";
+}
+
+.actions {
+  composes: actions from "../shell/Dialog.module.css";
+}
+
+.confirm {
+  composes: primary from "../shell/Dialog.module.css";
+}
+
+.secondary {
+  composes: secondary from "../shell/Dialog.module.css";
+}
+
+.stay {
+  composes: quiet from "../shell/Dialog.module.css";
+}
+
+/* The copy kept outside the work (3d-2c, P3), set apart from the sign-out text. */
+.copy {
+  composes: section from "../shell/Dialog.module.css";
+}

@@ -1,0 +1,280 @@
+import { describe, expect, it } from "vitest";
+
+import { INTERFACE_LOCALES } from "@/lib/i18n/locale";
+
+import {
+  MULTI_TAB_BLOCKED_MESSAGE,
+  MULTI_TAB_BLOCKED_TEXT,
+  MULTI_TAB_BLOCKED_TONE,
+  SYNC_STATE_LABELS,
+  SYNC_STATE_TEXT,
+  SYNC_TONES,
+  chipContent,
+  localChip,
+  type SyncTone,
+} from "./labels";
+import { SYNC_STATES, type SyncState } from "./states";
+
+/** Words that would turn an honest state into a generic "it's saved". */
+const FORBIDDEN_BARE_LABELS = ["Spremljeno", "Saved", "Spremeno", "Sačuvano"];
+
+describe("sync state labels", () => {
+  it("covers exactly the eight states, with no extras", () => {
+    expect(Object.keys(SYNC_STATE_LABELS).sort()).toEqual([...SYNC_STATES].sort());
+  });
+
+  it.each(SYNC_STATES)("gives %s a non-empty Croatian label", (state) => {
+    const { label } = SYNC_STATE_LABELS[state];
+    expect(typeof label).toBe("string");
+    expect(label.trim()).not.toBe("");
+    expect(label).toBe(label.trim());
+  });
+
+  it.each(SYNC_STATES)("gives %s a tone from the declared vocabulary", (state) => {
+    expect(SYNC_TONES).toContain(SYNC_STATE_LABELS[state].tone);
+  });
+
+  it("never uses a bare generic 'saved' label for any state", () => {
+    for (const state of SYNC_STATES) {
+      expect(FORBIDDEN_BARE_LABELS).not.toContain(SYNC_STATE_LABELS[state].label);
+    }
+  });
+
+  it("says 'na uređaju' for LOCAL_DURABLE, so it cannot read as server sync", () => {
+    const { label } = SYNC_STATE_LABELS.LOCAL_DURABLE;
+    expect(label).toContain("na uređaju");
+    expect(label).not.toContain("Sinkron");
+  });
+
+  // docs/PRODUCT.md §5 "Rječnik sučelja", docs/PLAN-DEMO.md F-8 (#178 attack 2).
+  it("says 'Spremljeno na poslužitelju' for SYNCED, the form the dictionary prescribes", () => {
+    expect(SYNC_STATE_LABELS.SYNCED.label).toBe("Spremljeno na poslužitelju");
+    expect(chipContent("SYNCED").text).toBe("Spremljeno na poslužitelju");
+  });
+
+  it("names the server in SYNCED only, and the device in LOCAL_DURABLE only", () => {
+    const naming = (word: string) =>
+      SYNC_STATES.filter((state) =>
+        SYNC_STATE_LABELS[state].label.toLocaleLowerCase("hr").includes(word),
+      );
+    expect(naming("poslužitelj")).toEqual(["SYNCED"]);
+    expect(naming("uređaj")).toEqual(["LOCAL_DURABLE"]);
+  });
+
+  it("never says 'spremljeno' without saying where", () => {
+    for (const state of SYNC_STATES) {
+      const label = SYNC_STATE_LABELS[state].label.toLocaleLowerCase("hr");
+      if (/spremljen/.test(label)) {
+        expect(label, state).toMatch(/^spremljeno na (uređaju|poslužitelju)$/);
+      }
+    }
+  });
+
+  it("keeps LOCAL_DURABLE and SYNCED distinct in both label and tone", () => {
+    const local = SYNC_STATE_LABELS.LOCAL_DURABLE;
+    const synced = SYNC_STATE_LABELS.SYNCED;
+    expect(local.label).not.toBe(synced.label);
+    // Local durability must not borrow the all-clear tone the server earns.
+    expect(local.tone).not.toBe(synced.tone);
+  });
+
+  it("gives every state a label distinct from every other state's", () => {
+    const labels = SYNC_STATES.map((state) => SYNC_STATE_LABELS[state].label);
+    expect(new Set(labels).size).toBe(SYNC_STATES.length);
+  });
+
+  it("uses the plan's wording for the two in-flight states", () => {
+    expect(SYNC_STATE_LABELS.SAVING_LOCAL.label).toBe("Spremam lokalno");
+    expect(SYNC_STATE_LABELS.SYNCING.label).toBe("Sinkroniziram");
+  });
+
+  it("animates only the in-flight states", () => {
+    const progress = SYNC_STATES.filter(
+      (state) => SYNC_STATE_LABELS[state].tone === "progress",
+    );
+    expect(progress).toEqual(["SAVING_LOCAL", "SYNCING"]);
+  });
+
+  it("reserves the 'ok' tone for the one state the server has confirmed", () => {
+    const ok = SYNC_STATES.filter((state) => SYNC_STATE_LABELS[state].tone === "ok");
+    expect(ok).toEqual(["SYNCED"]);
+  });
+
+  it("marks the two states that demand an explicit decision as trouble", () => {
+    expect(SYNC_STATE_LABELS.CONFLICT.tone).toBe("warn");
+    expect(SYNC_STATE_LABELS.RECOVERY_REQUIRED.tone).toBe("error");
+  });
+});
+
+describe("chipContent", () => {
+  it.each(SYNC_STATES)("renders %s as its own label and tone", (state) => {
+    expect(chipContent(state)).toEqual({
+      text: SYNC_STATE_LABELS[state].label,
+      tone: SYNC_STATE_LABELS[state].tone,
+    });
+  });
+
+  it("treats an omitted `blocked` as not blocked", () => {
+    expect(chipContent("SYNCED")).toEqual(chipContent("SYNCED", false));
+  });
+
+  it.each(SYNC_STATES)("lets `blocked` win over %s", (state) => {
+    expect(chipContent(state, true)).toEqual({
+      text: MULTI_TAB_BLOCKED_MESSAGE,
+      tone: MULTI_TAB_BLOCKED_TONE,
+    });
+  });
+
+  it("never reports a state's own label while blocked", () => {
+    const blockedTexts = new Set(
+      SYNC_STATES.map((state: SyncState) => chipContent(state, true).text),
+    );
+    expect(blockedTexts).toEqual(new Set([MULTI_TAB_BLOCKED_MESSAGE]));
+  });
+
+  it("names the other tab in Croatian, as a full sentence", () => {
+    expect(MULTI_TAB_BLOCKED_MESSAGE).toBe("Dokument je otvoren u drugoj kartici.");
+  });
+
+  it("uses a declared tone for the blocked notice", () => {
+    const tone: SyncTone = MULTI_TAB_BLOCKED_TONE;
+    expect(SYNC_TONES).toContain(tone);
+  });
+
+  it("is pure: repeated calls return equal content", () => {
+    for (const state of SYNC_STATES) {
+      expect(chipContent(state)).toEqual(chipContent(state));
+      expect(chipContent(state, true)).toEqual(chipContent(state, true));
+    }
+  });
+});
+
+describe("localChip", () => {
+  const ready = { blocked: false, recoveryRequired: false, failed: false };
+  const DURABLE = SYNC_STATE_LABELS.LOCAL_DURABLE.label;
+
+  it("says nothing while the journal is still being read", () => {
+    expect(localChip({ ...ready, saverState: null })).toBeNull();
+  });
+
+  it.each(SYNC_STATES)("shows the saver's own %s when nothing outranks it", (state) => {
+    expect(localChip({ ...ready, saverState: state })).toEqual({ ...chipContent(state), state });
+  });
+
+  it.each(SYNC_STATES)("a blocked tab outranks everything, %s included", (state) => {
+    for (const recoveryRequired of [false, true]) {
+      for (const failed of [false, true]) {
+        expect(localChip({ blocked: true, recoveryRequired, failed, saverState: state }))
+          .toEqual({ text: MULTI_TAB_BLOCKED_MESSAGE, tone: MULTI_TAB_BLOCKED_TONE, state: "blocked" });
+      }
+    }
+  });
+
+  it.each([...SYNC_STATES, null])("recovery outranks a failure and the saver's %s", (saverState) => {
+    for (const failed of [false, true]) {
+      expect(localChip({ blocked: false, recoveryRequired: true, failed, saverState })?.state)
+        .toBe("RECOVERY_REQUIRED");
+    }
+  });
+
+  it.each([...SYNC_STATES, null])("a failure outranks the saver's %s", (saverState) => {
+    expect(localChip({ ...ready, failed: true, saverState })?.state).toBe("ERROR");
+  });
+
+  it("says Spremljeno na uređaju only when the saver does and nothing has stopped", () => {
+    for (const blocked of [false, true]) {
+      for (const recoveryRequired of [false, true]) {
+        for (const failed of [false, true]) {
+          for (const saverState of [...SYNC_STATES, null]) {
+            const chip = localChip({ blocked, recoveryRequired, failed, saverState });
+            const durable = !blocked && !recoveryRequired && !failed && saverState === "LOCAL_DURABLE";
+            expect(chip?.text === DURABLE).toBe(durable);
+          }
+        }
+      }
+    }
+  });
+});
+
+// M11.5-P01b: the same rules in English (docs/PRODUCT.md §5, English column:
+// "saved (without saying where)").
+describe("sync state labels in English", () => {
+  const EN = SYNC_STATE_TEXT.en;
+
+  it("has wording for every registered interface language", () => {
+    expect(Object.keys(SYNC_STATE_TEXT).sort()).toEqual([...INTERFACE_LOCALES].sort());
+    expect(Object.keys(MULTI_TAB_BLOCKED_TEXT).sort()).toEqual([...INTERFACE_LOCALES].sort());
+  });
+
+  it("covers exactly the eight states, each with its own trimmed label", () => {
+    expect(Object.keys(EN).sort()).toEqual([...SYNC_STATES].sort());
+    for (const state of SYNC_STATES) {
+      expect(EN[state].trim(), state).not.toBe("");
+      expect(EN[state], state).toBe(EN[state].trim());
+    }
+    expect(new Set(SYNC_STATES.map((state) => EN[state])).size).toBe(SYNC_STATES.length);
+  });
+
+  it("never says 'saved' without saying where", () => {
+    for (const state of SYNC_STATES) {
+      const label = EN[state].toLowerCase();
+      expect(FORBIDDEN_BARE_LABELS.map((word) => word.toLowerCase()), state).not.toContain(label);
+      if (/\bsaved\b/.test(label)) {
+        expect(label, state).toMatch(/^saved on (this device|the server)$/);
+      }
+    }
+  });
+
+  it("names the server in SYNCED only, and the device only while the work is local", () => {
+    const naming = (word: string) => SYNC_STATES.filter((state) => EN[state].toLowerCase().includes(word));
+    expect(naming("server")).toEqual(["SYNCED"]);
+    expect(naming("device")).toEqual(["SAVING_LOCAL", "LOCAL_DURABLE"]);
+    expect(EN.LOCAL_DURABLE).toBe("Saved on this device");
+    expect(EN.SYNCED).toBe("Saved on the server");
+  });
+
+  it("keeps the Croatian table as the source of the Croatian words", () => {
+    for (const state of SYNC_STATES) {
+      expect(SYNC_STATE_TEXT.hr[state]).toBe(SYNC_STATE_LABELS[state].label);
+    }
+    expect(MULTI_TAB_BLOCKED_TEXT.hr).toBe(MULTI_TAB_BLOCKED_MESSAGE);
+  });
+
+  it("contains no Croatian letters", () => {
+    for (const text of [...SYNC_STATES.map((state) => EN[state]), MULTI_TAB_BLOCKED_TEXT.en]) {
+      expect(text).not.toMatch(/[čćđšžČĆĐŠŽ]/u);
+    }
+  });
+
+  it.each(SYNC_STATES)("changes only the words of %s, never its tone", (state) => {
+    expect(chipContent(state, false, "en")).toEqual({ text: EN[state], tone: SYNC_STATE_LABELS[state].tone });
+    expect(chipContent(state, true, "en")).toEqual({ text: MULTI_TAB_BLOCKED_TEXT.en, tone: MULTI_TAB_BLOCKED_TONE });
+  });
+
+  it("defaults to Croatian, unchanged", () => {
+    for (const state of SYNC_STATES) {
+      for (const blocked of [false, true]) {
+        expect(chipContent(state, blocked)).toEqual(chipContent(state, blocked, "hr"));
+      }
+    }
+  });
+
+  it("applies the same precedence in English as in Croatian", () => {
+    for (const blocked of [false, true]) {
+      for (const recoveryRequired of [false, true]) {
+        for (const failed of [false, true]) {
+          for (const saverState of [...SYNC_STATES, null]) {
+            const input = { blocked, recoveryRequired, failed, saverState };
+            const hr = localChip(input);
+            const en = localChip(input, "en");
+            expect(localChip(input, "hr")).toEqual(hr);
+            expect(en?.state).toBe(hr?.state);
+            expect(en?.tone).toBe(hr?.tone);
+            const said = en?.text === EN.LOCAL_DURABLE;
+            expect(said).toBe(!blocked && !recoveryRequired && !failed && saverState === "LOCAL_DURABLE");
+          }
+        }
+      }
+    }
+  });
+});

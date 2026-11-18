@@ -1,0 +1,60 @@
+import { cookies } from "next/headers";
+
+import AppShell from "@/components/shell/AppShell";
+import { shellSession } from "@/components/shell/shell-session";
+import LiveWorkView from "@/components/teacher/LiveWorkView";
+import { teacherAccess } from "@/components/teacher/teacher-access";
+import { isDocumentId } from "@/domain/collaboration";
+import { messagesHr as t } from "@/lib/i18n/messages.hr";
+import { pageActivity } from "@/server/auth/activity";
+import { liveSessionToken } from "@/server/auth/ended-mark";
+import { sessionPrincipal } from "@/server/auth/principal";
+import { withActor } from "@/server/db";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const metadata = { title: `${t.liveView.context} · ${t.app.name}` };
+
+/**
+ * The teacher's live view of one work (DAN-86 step 2b). Who may read the
+ * text is decided by the live route and its RPC on every request (BACKEND
+ * 4.12 t. 4); this page only checks that someone is signed in, so a person
+ * without a session is offered sign-in instead of a view that cannot load.
+ * The page renders no text of the work on the server (4.12, attack 24).
+ */
+export default async function LiveWorkPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const token = liveSessionToken(await cookies());
+  pageActivity(token);
+  // The cookie digest and the server time of this render (D-118).
+  const { tag, at } = shellSession(token);
+  const principal = await sessionPrincipal(token, withActor);
+  const session = principal.kind === "signed-in" && tag !== null ? { tag, at } : null;
+  const returnTo = `/nastavnik/rad/${encodeURIComponent(id)}`;
+  // Only which navigation to show; the live route decides who may read the work.
+  const role = session !== null && (await teacherAccess(token, withActor)) === "allowed" ? "teacher" : null;
+
+  let body;
+  if (!isDocumentId(id)) {
+    body = <p role="status">{t.liveView.invalid}</p>;
+  } else if (session === null) {
+    body = (
+      <>
+        <p role="status">{t.liveView.signInFirst}</p>
+        {/* The login route answers with a redirect: a plain link, never a prefetched one. */}
+        <p><a href={`/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`}>{t.liveView.signIn}</a></p>
+      </>
+    );
+  } else {
+    body = <LiveWorkView documentId={id} session={session} canComment={role === "teacher"} />;
+  }
+
+  return (
+    <AppShell endsOnDevice session={{ tag, at }} role={role} scope={principal.kind === "signed-in" ? principal.scope : null} crumbs={[t.liveView.context]}>
+      <div className="page">
+        <h1 className="visually-hidden">{t.liveView.context}</h1>
+        {body}
+      </div>
+    </AppShell>
+  );
+}

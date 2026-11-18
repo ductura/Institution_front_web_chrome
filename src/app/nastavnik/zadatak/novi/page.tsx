@@ -1,0 +1,71 @@
+import Link from "next/link";
+import { cookies } from "next/headers";
+
+import AccessCard from "@/components/auth/AccessCard";
+import { accessShellScope, teacherPageAccess } from "@/components/auth/access-kind";
+import AppShell from "@/components/shell/AppShell";
+import { shellSession } from "@/components/shell/shell-session";
+import TeacherSetup from "@/components/teacher/TeacherSetup";
+import { chooseCourse, newAssignmentReturnTo } from "@/components/teacher/existing-course";
+import { teacherPageRead } from "@/components/teacher/teacher-access";
+import { messagesHr as t } from "@/lib/i18n/messages.hr";
+import { pageActivity } from "@/server/auth/activity";
+import { liveSessionToken } from "@/server/auth/ended-mark";
+import { withActor } from "@/server/db";
+import { readTeacherCourses } from "@/server/institution/teacher-courses";
+
+import styles from "./page.module.css";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const metadata = { title: `${t.teacher.title} · ${t.app.name}` };
+
+// FE-D10 (screen 10, design demo-tok-v2 step 2). Server access check is only
+// a UX boundary; both POST routes recheck every write in the database under
+// the authenticated principal. DAN-378: in place of the form, Z-03 for a
+// closed session, "not signed in" without one and Z-05 for a signed-in
+// person without the teacher role, who is offered no new sign-in.
+// DAN-310 (M2.4-P01): `?kolegij=<id>` adds an assignment to a course the
+// teacher already has. The course is read only for an allowed teacher, from
+// the same RLS read as /nastavnik; a course of someone else, a missing one and
+// a malformed id read alike, and the POST route still decides the write.
+export default async function TeacherNewAssignmentPage({ searchParams }: {
+  searchParams: Promise<{ kolegij?: string | string[] }>;
+}) {
+  const param = (await searchParams).kolegij;
+  const token = liveSessionToken(await cookies());
+  pageActivity(token);
+  // One statement, one snapshot: the session and the role never disagree (#1242 round 1).
+  const { access, principal } = await teacherPageRead(token, withActor);
+  const screen = teacherPageAccess(access, principal.kind, token);
+  const card = screen === "expired" || screen === "signedOut" || screen === "denied";
+  const choice = screen === "allowed" && param !== undefined
+    ? chooseCourse(param, await readTeacherCourses(token, withActor))
+    : chooseCourse(undefined, null);
+  const existing = choice.kind === "found" ? choice.course : null;
+  const returnTo = newAssignmentReturnTo(param);
+  const title = existing ? t.teacher.existingCourse.title : t.teacher.title;
+  return (
+    <AppShell
+      endsOnDevice
+      session={shellSession(token)}
+      scope={accessShellScope(screen, principal)}
+      role={screen === "allowed" ? "teacher" : null}
+      current="/nastavnik/zadatak/novi"
+      crumbs={[t.teacherCourses.title, title]}
+    >
+      <div className={`page ${styles.page}`}>
+        {card ? (
+          <AccessCard kind={screen} returnTo={returnTo} what="newCourse" />
+        ) : (
+          <h1 className={styles.title}>{title}</h1>
+        )}
+        {screen === "allowed" && choice.kind === "missing" ? <p role="alert">{t.teacher.existingCourse.missing}</p> : null}
+        {screen === "allowed" && choice.kind === "unavailable" ? <p role="status">{t.teacher.existingCourse.unavailable}</p> : null}
+        {screen === "allowed" && (choice.kind === "new" || existing) ? <TeacherSetup key={existing?.id ?? "new"} existingCourse={existing} /> : null}
+        {screen === "unavailable" ? <p role="status">{t.teacher.unavailable}</p> : null}
+        {screen === "denied" ? null : <p><Link href="/nastavnik">{t.teacher.backCourses}</Link></p>}
+      </div>
+    </AppShell>
+  );
+}

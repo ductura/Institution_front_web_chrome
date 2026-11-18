@@ -1,0 +1,137 @@
+import { describe, expect, it } from "vitest";
+
+import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
+import { messagesHr } from "@/lib/i18n/messages.hr";
+
+// DAN-227, #476 row 1: the S3 notice text follows D-142 and D-143 and the
+// contract on #476 (6264090492, amended by 6264107382 and 6264128457).
+// AssignmentNotice renders recorded, notRecorded and teacher with
+// Object.values, so the key order below is the order on screen.
+const s = messagesHr.student;
+
+function strings(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  if (value && typeof value === "object") return Object.values(value).flatMap(strings);
+  return [];
+}
+
+const notice = () =>
+  [s.step, s.recordedHeading, s.notRecordedHeading, s.teacherHeading, s.teacherExtended, s.retention, s.note, s.checkbox,
+    s.notConsent, s.confirmed, ...strings(s.recorded), ...strings(s.notRecorded), ...strings(s.teacher)];
+
+describe("S3 notice text (D-142, D-143)", () => {
+  it("no longer says single inputs are not recorded", () => {
+    for (const text of strings(s.notRecorded)) {
+      expect(text).not.toContain("Pojedinačni unosi");
+      expect(text).not.toContain("ritam pisanja");
+    }
+  });
+
+  it("names the key and how long it is held as not recorded, and no measure from time", () => {
+    expect(s.notRecorded.inputs).toContain("tipka");
+    expect(s.notRecorded.inputs).toContain("držana");
+    expect(s.notRecorded.inputs).toContain("ne računaju se brzina, ritam ni bilo kakva mjera, osim sesija");
+  });
+
+  it("names the P-01 sessions as the one measure from time (F-171)", () => {
+    expect(s.notRecorded.inputs).toContain("sesije se određuju prekidom dužim od praga P-01");
+    for (const text of notice()) expect(text).not.toMatch(/brzina, pauze|nikad se ne računaju/);
+  });
+
+  it("says the replay neither skips nor marks pauses (D-63, 31. 10. 2026., F-171)", () => {
+    expect(s.notRecorded.inputs).toContain("Reprodukcija neće preskakati ni isticati stanke.");
+    for (const text of notice()) expect(text).not.toMatch(/skočiti|skok/);
+    // The removed D-63 (a): no skipped pauses and no mention of their length.
+    for (const text of notice()) {
+      expect(text).not.toMatch(/preskače duge stanke|preskočena stanka|koliko su trajale/);
+    }
+  });
+
+  it("announces every change character by character, only for the live view and the replay", () => {
+    expect(s.recorded.live.startsWith("U ovom zadatku bilježit će se")).toBe(true);
+    expect(s.recorded.live).toContain("znak po znak");
+    expect(s.recorded.live).toContain("prikazu uživo");
+    expect(s.recorded.live).toContain("reprodukciji");
+  });
+
+  it("names the input mark the mentor sees (D-54, D-127, F-171)", () => {
+    expect(s.recorded.live).toContain("bilježit će se i način unosa");
+    expect(s.recorded.live).toContain("nastavnik (mentor) vidjeti oznaku kad uređivač uz unos nije vidio pritisak tipke ni lijepljenje");
+  });
+
+  it("describes the mark as what the editor saw, never as who typed or how (F-177)", () => {
+    // A phone keyboard or an IME also leaves the mark, and a program can press keys without one.
+    expect(s.recorded.live).toContain("nekih tipkovnica na mobitelu");
+    expect(s.recorded.live).toContain("ne tko ga je napisao");
+    for (const text of notice()) expect(text).not.toMatch(/nije unesen tipkovnicom|nije utipkan/);
+  });
+
+  it("tells the student the mentor sees the work live, deleted text included", () => {
+    expect(s.teacherHeading).toBe("Što vidi nastavnik (mentor)");
+    expect(s.teacher.state).toContain("uživo");
+    expect(s.teacher.state).toContain("obrisati");
+    // Live does not reach the mentor while the student is offline.
+    expect(s.teacher.state).toContain("bez mreže vidjet će tek kad se veza vrati");
+    expect(s.checkbox).toContain("što vidi nastavnik (mentor)");
+  });
+
+  it("gives the replay to the mentor and the same replay to the student (D-154)", () => {
+    expect(s.teacher.replay.startsWith("Nastavnik (mentor) zadatka moći će")).toBe(true);
+    expect(s.teacher.replay).toContain("znak po znak");
+    expect(s.teacher.replay).toContain("Istu reprodukciju svog rada vidjet ćete i Vi.");
+    for (const text of notice()) expect(text).not.toMatch(/reprodukciju ne vidiš|Samo nastavnik/);
+  });
+
+  it("states the purpose and never grading or ranking", () => {
+    expect(s.teacher.purpose).toContain("služit će");
+    expect(s.teacher.purpose).toContain("nikad ocjeni");
+    expect(s.teacher.purpose).toContain("rangiranju");
+  });
+
+  it("keeps the on-screen order of the lists", () => {
+    expect(Object.keys(s.recorded)).toEqual(["steps", "live", "chain", "versions"]);
+    expect(Object.keys(s.notRecorded)).toEqual(["inputs", "outside", "device"]);
+    expect(Object.keys(s.teacher)).toEqual(["state", "replay", "purpose", "history", "workingNotes", "noVerdict"]);
+  });
+
+  it("names the mentor's working records by kind and the student's right of access (D-130, DAN-235)", () => {
+    const w = s.teacher.workingNotes;
+    expect(w.startsWith("Mentor (nastavnik zadatka) moći će voditi")).toBe(true);
+    for (const kind of ["oznaku zadnjeg pregleda s vremenom", "privatne bilješke", "predloške komentara", "Rubrika i nacrt izvješća"]) {
+      expect(w).toContain(kind);
+    }
+    expect(w).toContain("nisu prikaz rada");
+    expect(w).toContain("nećete ih vidjeti u aplikaciji");
+    expect(w).toContain("zatražiti pravom pristupa");
+  });
+
+  it("states every D-130 limit and promises nothing D-135 leaves conditional", () => {
+    const w = s.teacher.workingNotes;
+    expect(w).toContain("nema mjera ni zaključaka koje je izračunala Ductura");
+    expect(w).toContain("Ne ulaze u sažetak, izvoz ni predaju");
+    expect(w).toContain("brišu se kad i rad");
+    expect(w).toContain("ne smiju utjecati na kašnjenje ni ocjenu");
+    expect(w).toContain("u Ducturi zasad ne vode");
+    // DAN-235 acceptance: grade publication is named as not available yet (D-135, D-136).
+    expect(w).toContain("Ni objava ocjene u Ducturi zasad nije dostupna");
+    // No access log (rule 17) is built, and nothing promises a future grade publication.
+    expect(w).not.toMatch(/dnevnik pristupa|objavit će|bit će objavljen/);
+  });
+
+  it("claims nothing the contract leaves open", () => {
+    for (const text of notice()) {
+      expect(text).not.toMatch(/nitko drugi|odmah|svakih \d|minuta\b/i);
+      expect(text).not.toMatch(/\d+\s*%/);
+    }
+  });
+
+  it("describes the chain as a digital fingerprint linked to the previous one, without hash or chain", () => {
+    expect(s.recorded.chain).toBe("Svaki korak spremanja dobiva digitalni otisak povezan s prethodnim, pa se svaka kasnija izmjena zapisa vidi.");
+    expect(s.recorded.chain).not.toMatch(/hash|lanac/i);
+    expect(findForbiddenTerms(s.recorded.chain)).toEqual([]);
+  });
+
+  it("passes the forbidden-terms check in every student string", () => {
+    for (const text of strings(s)) expect({ text, found: findForbiddenTerms(text) }).toEqual({ text, found: [] });
+  });
+});
