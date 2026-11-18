@@ -39,6 +39,16 @@ describe("navFor", () => {
     expect(navFor("teacher")).toContainEqual({ href: "/nastavnik/mentorstva", label: "Radovi uz mentora" });
   });
 
+  // DAN-1082 (owner, 18. 11. 2026.): the teacher's rail holds places only.
+  it("gives a teacher exactly three places, in order, and no action among them", () => {
+    expect(navFor("teacher")).toEqual([
+      { href: "/nastavnik", label: "Moji kolegiji" },
+      { href: "/nastavnik/brz-put", label: "Brz put" },
+      { href: "/nastavnik/mentorstva", label: "Radovi uz mentora" },
+    ]);
+    expect(navFor("teacher").some((item) => item.href === "/nastavnik/zadatak/novi")).toBe(false);
+  });
+
   it("gives a student, from DAN-309 (B2), her works right after her courses", () => {
     const student = navFor("student").map((item) => item.href);
     expect(student.slice(0, 3)).toEqual(["/zadaci", "/zadaci/kolegiji", "/zadaci/radovi"]);
