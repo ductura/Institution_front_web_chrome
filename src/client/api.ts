@@ -141,7 +141,12 @@ export function signInReturnTo(value: unknown): string | null {
  */
 export function signInHref(returnTo?: unknown): string {
   const target = signInReturnTo(returnTo);
-  return target === null ? LOGIN_ROUTE.path : `${LOGIN_ROUTE.path}?${LOGIN_ROUTE.param}=${encodeURIComponent(target)}`;
+  if (target === null || typeof returnTo !== "string") return LOGIN_ROUTE.path;
+  // Normalising percent-encodes ("č" becomes six characters), so the target can
+  // outgrow the limit the server checks before it normalises. The input as given
+  // is within that limit and the server normalises it to the same target.
+  const sent = target.length <= RETURN_TO_MAX && signInReturnTo(target) === target ? target : returnTo;
+  return `${LOGIN_ROUTE.path}?${LOGIN_ROUTE.param}=${encodeURIComponent(sent)}`;
 }
 
 /** No route of the contract lists session_expired yet (S-1D-d); the client keeps it on routes with a 401, auth.* aside. */

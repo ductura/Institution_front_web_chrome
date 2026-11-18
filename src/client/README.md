@@ -32,7 +32,7 @@ Nijedna ruta ugovora još ne navodi `session_expired` (S-1D-d), pa ga generirani
 
 ## Poveznica za prijavu (DAN-1081)
 
-`signInHref(returnTo?)` daje relativnu poveznicu iste domene na rutu `auth.login.get`. Putanju i ime parametra `returnTo` čita iz `openapi/v1.json` ugovora; ako ugovor nema točno jednu takvu GET rutu s tim parametrom, modul se ne učita. `returnTo` ulazi u poveznicu samo ako ga zadrži pravilo jednako serverskom `safeReturnTo` (ductura/server `server/session/return-to.ts`), u obliku koji bi server vratio; sve ostalo daje poveznicu bez njega. Funkcija ne baca. Server `returnTo` provjerava ponovno, pa je ovo obrana u dubini, nikad šira od serverske (`sign-in-href.test.ts`).
+`signInHref(returnTo?)` daje relativnu poveznicu iste domene na rutu `auth.login.get`. Putanju i ime parametra `returnTo` čita iz `openapi/v1.json` ugovora; ako ugovor nema točno jednu takvu GET rutu s tim parametrom, modul se ne učita. `returnTo` ulazi u poveznicu samo ako ga zadrži pravilo jednako serverskom `safeReturnTo` (ductura/server `server/session/return-to.ts`), u obliku koji bi server vratio; sve ostalo daje poveznicu bez njega. Server granicu od 512 znakova provjerava prije normalizacije, a normalizacija postotno kodira (`č` postaje šest znakova), pa kad bi normalizirani oblik prešao granicu, poveznica nosi ulaz kakav je dan: server ga normalizira u isto odredište. Funkcija ne baca. Server `returnTo` provjerava ponovno, pa je ovo obrana u dubini, nikad šira od serverske (`sign-in-href.test.ts`).
 
 ## Granice generiranog klijenta
 

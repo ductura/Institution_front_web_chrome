@@ -62,6 +62,10 @@ const ATTACKS: readonly [string, unknown][] = [
   ["undecodable", "/%E0%A4%A"],
   ["empty", ""],
   ["over 512", `/${"a".repeat(512)}`],
+  ["over 512 in characters that expand", `/${"č".repeat(512)}`],
+  ["DEL", "/rad\u007f"],
+  ["Windows path", "C:\\Users\\rad"],
+  ["Windows path after slash", "/C:\\Users"],
   ["undefined", undefined],
   ["null", null],
   ["number", 42],
@@ -84,7 +88,42 @@ const KEPT: readonly [string, string, string][] = [
   ["api deeper is a path", "/rad/api", "/rad/api"],
   ["exactly 512", `/${"a".repeat(511)}`, `/${"a".repeat(511)}`],
   ["query with & and =", "/rad?a=1&b=2", "/rad?a=1&b=2"],
+  ["NBSP is percent-encoded", "/rad\u00a0x?q=\u00a0#\u00a0", "/rad%C2%A0x?q=%C2%A0#%C2%A0"],
+  ["space in query and hash", "/rad?q=a b#c d", "/rad?q=a%20b#c%20d"],
 ];
+
+/**
+ * Normalising percent-encodes: one "č" becomes six characters, an astral
+ * character twelve. The server checks the length before it normalises, so
+ * these are kept, and the link must still carry something the server keeps.
+ */
+const EXPANDING: readonly [string, string][] = [
+  ["100 × č (Codex, api.ts:144)", `/${"č".repeat(100)}`],
+  ["exactly 512, all č", `/${"č".repeat(511)}`],
+  ["exactly 512, č in path, query and hash", `/${"č".repeat(170)}?${"š".repeat(170)}#${"ž".repeat(169)}`],
+  ["NBSP to the limit", `/${"\u00a0".repeat(511)}`],
+  // The URL parser trims trailing spaces, so the query ends in a letter.
+  ["spaces to the limit", `/rad?q=${" ".repeat(504)}x`],
+  ["quotes and angle brackets to the limit", `/rad?q=${"\"<>".repeat(168)}`],
+  ["one-, two- and three-byte UTF-8 to the limit", `/${"é€ ".repeat(170)}x`],
+  ["astral characters", `/${"😀".repeat(255)}`],
+  ["expansion with dot segments", `/a/../${"č".repeat(300)}`],
+];
+
+/** The returnTo value the link sends, as the server reads it from the query. */
+function sentReturnTo(value: unknown): string | null {
+  return new URL(signInHref(value), ORIGIN).searchParams.get(LOGIN_ROUTE.param);
+}
+
+/** The server's rule on what the link sends: within its limit and leading to the same place. */
+function serverKeeps(value: unknown): void {
+  const target = signInReturnTo(value);
+  const sent = sentReturnTo(value);
+  expect(target).not.toBeNull();
+  expect(sent).not.toBeNull();
+  expect((sent as string).length).toBeLessThanOrEqual(512);
+  expect(signInReturnTo(sent)).toBe(target);
+}
 
 describe("the login route comes from the contract", () => {
   it("is the path of auth.login.get that the generated client sends to", async () => {
@@ -127,9 +166,16 @@ describe("signInHref", () => {
     expect([...href.searchParams.keys()]).toEqual([LOGIN_ROUTE.param]);
     expect(href.searchParams.get(LOGIN_ROUTE.param)).toBe(expected);
     expect(href.hash).toBe("");
+    serverKeeps(value);
   });
 
-  it.each([...ATTACKS.map(([, v]) => v), ...KEPT.map(([, v]) => v)])("is a same-origin relative link for %j", (value) => {
+  it.each(EXPANDING)("keeps returnTo when normalising lengthens it: %s", (_, value) => {
+    expect(value.length).toBeLessThanOrEqual(512);
+    expect((signInReturnTo(value) as string).length).toBeGreaterThan(512);
+    serverKeeps(value);
+  });
+
+  it.each([...ATTACKS.map(([, v]) => v), ...KEPT.map(([, v]) => v), ...EXPANDING.map(([, v]) => v)])("is a same-origin relative link for %j", (value) => {
     const href = signInHref(value);
     expect(href.startsWith("/")).toBe(true);
     expect(href.startsWith("//")).toBe(false);
@@ -154,6 +200,7 @@ describe("signInHref", () => {
         expect(kept.startsWith("/")).toBe(true);
         expect(kept.startsWith("//")).toBe(false);
         expect(new URL(kept, ORIGIN).origin).toBe(ORIGIN);
+        serverKeeps(`/${String.fromCharCode(code)}x`);
       }
     }
   });
