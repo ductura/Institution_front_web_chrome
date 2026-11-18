@@ -15,8 +15,9 @@ export type NavItem = {
 
 const NAV: Record<ShellRole, readonly NavItem[]> = {
   teacher: [
+    // DAN-1082: three places. "Novi kolegij i zadatak" is an action, not a
+    // place: it is the button on "Moji kolegiji" (TeacherCourses), not an item.
     { href: "/nastavnik", label: t.shell.nav.courses },
-    { href: "/nastavnik/zadatak/novi", label: t.shell.nav.newCourse },
     { href: "/nastavnik/brz-put", label: t.shell.nav.fastPath },
     // DAN-492 (N-16): the works the teacher mentors (DAN-477).
     { href: "/nastavnik/mentorstva", label: t.shell.nav.mentoredWorks },
