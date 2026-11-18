@@ -142,9 +142,9 @@ export function waiverProblems(text: string, rules: Readonly<Record<string, stri
     const rule = RULES.find(([n]) => n === name)?.[1];
     if (!rule) return [`${name}: no such rule`];
     const all = new RegExp(rule.source, `${rule.flags}g`);
-    const hits = [text, normalise(text)].map((form) =>
-      form.split(/\r?\n/).flatMap((each) => (each.match(all) ?? []).map(() => each)));
-    const ok = hits.every((found) => found.length === 1 && found[0] === line);
+    const forms = [text, normalise(text)];
+    const hits = forms.map((form) => form.split(/\r?\n/).flatMap((each) => (each.match(all) ?? []).map(() => each)));
+    const ok = forms.every((form, i) => form.match(all)?.length === 1 && hits[i]?.length === 1 && hits[i]?.[0] === line);
     return ok ? [] : [`${name}: ${JSON.stringify(hits)}`];
   });
 }
@@ -284,8 +284,9 @@ describe("a waiver lifts one rule in one file, nothing more", () => {
     'new Image().src = "/ap" + "i/v1/health"', "Reflect.get(globalThis, name)(url)",
     'Object.getOwnPropertyDescriptor(globalThis, "fe" + "tch")!.value(u)', 'import mande from "mande"'];
 
-  for (const file of [FILE, "pkg\\a\\json.ts", "pkg/a\\json.ts"].map((path) => toPosix(path, win32.sep))) {
-    it(`lifts only Reflect in ${file} (Windows path)`, () => {
+  for (const path of [FILE, "pkg\\a\\json.ts", "pkg/a\\json.ts"]) {
+    const file = toPosix(path, win32.sep);
+    it(`lifts only Reflect in ${path} (Windows path)`, () => {
       expect(unwaived(file, directCalls(LINE, file), list)).toEqual([]);
       for (const call of network) expect(unwaived(file, directCalls(`${LINE}\n${call}\n`, file), list)).not.toEqual([]);
       expect(unwaived(file, directCalls(`${LINE}\nfetch(url);`, file), list)).toEqual(["fetch"]);
@@ -313,7 +314,9 @@ describe("a waiver lifts one rule in one file, nothing more", () => {
     expect(waiverProblems(`x\r\n${LINE}\r\n`, { Reflect: LINE })).toEqual([]);
     expect(waiverProblems(`${LINE} // x\n`, { Reflect: LINE })).not.toEqual([]);
     // The recorded line commented out, another Reflect live: each form has one match, on different lines.
-    expect(waiverProblems(`/*\n${LINE}\n*/\nconst k = Reflect.ownKeys(o);\n`, { Reflect: LINE })).not.toEqual([]);
+    expect(waiverProblems(`/*\n${LINE}\n*/\nconst k = \\u0052eflect.ownKeys(o);\n`, { Reflect: LINE })).not.toEqual([]);
+    // A second match that spans a line break.
+    expect(waiverProblems("img.src = url;\nother.src\n  = u;\n", { "image or src": "img.src = url;" })).not.toEqual([]);
     // A second Reflect that only decoding reveals, and one that decoding hides.
     expect(waiverProblems(`${LINE}\nconst k = \\u0052eflect.ownKeys(o);\n`, { Reflect: LINE })).not.toEqual([]);
     expect(waiverProblems(`${LINE}\n/* Reflect */\n`, { Reflect: LINE })).not.toEqual([]);
