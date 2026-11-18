@@ -1,0 +1,12 @@
+{
+  "extends": "../ui/tsconfig.json",
+  "compilerOptions": {
+    // Ported verbatim from Ductus, whose tsconfig has no noUncheckedIndexedAccess
+    // (same choice as src/domain/tsconfig.json, DAN-990).
+    "noUncheckedIndexedAccess": false,
+    // Tests read JSON vectors and the faculty citation style, as in Ductus.
+    "resolveJsonModule": true
+  },
+  "include": ["src", "vitest.config.ts"],
+  "exclude": ["node_modules"]
+}
