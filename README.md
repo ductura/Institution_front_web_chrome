@@ -10,6 +10,17 @@ Razvojni editor nakon HTTP uspjeha memorijskog API-ja ne piše „Spremljeno”,
 
 Preneseni Ductus e2e (DAN-755, 755-2): `e2e/local-editor.spec.js` (axe na stranici editora, WCAG 2.0/2.1 A i AA) s pomoćnikom `e2e/support/axe.js`. Ostali testovi iz Ductusa čekaju editor s dnevnikom na uređaju (E-0.3).
 
+## Front institucije (`packages/app`)
+
+Domaćin aplikacije prema ugovoru #2028 c.6993786629 §1 i §3.3. `pnpm build` gradi ekrane iz `src/components` pod bazom `/app/web/`, a `pnpm dev` ih poslužuje na :5173 pod `/app/web/` i `/app/chrome/` (isti build). Na startu aplikacija zove `GET /api/v1/me`. Na 401 šalje preglednik na `/api/v1/auth/login?returnTo=<trenutna putanja>` (AAI@EduHr, D-09), a na 200 otvara početni ekran uloge s imenom ustanove u ljusci. „Odjava” šalje `POST /api/v1/auth/logout` pa vodi na `/`. API ide samo kroz `src/client/api.ts`. `dev-server.mjs` prosljeđuje `/api/v1/*` na `INSTITUTION_SERVER_URL` (zadano `http://127.0.0.1:4000`), pa front radi i izravno na :5173. Kroz edge na :8000 te zahtjeve prima Institution_server.
+
+```bash
+pnpm install && (cd src/client && pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts)
+pnpm build
+pnpm dev                                   # http://localhost:5173/app/web/
+pnpm --filter @ductura/app run test:e2e    # lažni /api/v1, axe
+```
+
 ## Pokretanje
 
 ```bash

@@ -2,7 +2,7 @@
 // the two checks against app/ wait for the web's routes (E-0.3, 2.c6).
 import { describe, expect, it } from "vitest";
 
-import { accountPlace, homeHref, navFor, offersProblemReport } from "./nav";
+import { accountPlace, appHref, homeHref, navFor, offersProblemReport } from "./nav";
 
 // #802 part B, QA (4), and D-202 t. 2: the brand and "Početna" lead to the
 // home of the signed-in person's role.
@@ -83,5 +83,19 @@ describe("offersProblemReport", () => {
 
   it("never offers it without a signed-in person", () => {
     expect(offersProblemReport(null)).toBe(false);
+  });
+});
+
+// #2028 c.6993786629 §1: the app is served under /app/web and /app/chrome.
+describe("appHref", () => {
+  it("puts every path of the app under its base, the home under base/", () => {
+    expect(appHref("/app/web", "/zadaci")).toBe("/app/web/zadaci");
+    expect(appHref("/app/chrome", "/ustanova/korisnici")).toBe("/app/chrome/ustanova/korisnici");
+    expect(appHref("/app/web", "/")).toBe("/app/web/");
+  });
+
+  it("leaves the path alone without a base", () => {
+    expect(appHref("", "/nastavnik")).toBe("/nastavnik");
+    expect(appHref("", "/")).toBe("/");
   });
 });

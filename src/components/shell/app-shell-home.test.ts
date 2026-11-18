@@ -57,7 +57,7 @@ describe("AppShell sign-out and Početna (#802 part B)", () => {
   });
 
   it("leads the brand and the first crumb, Početna, to homeHref(role)", () => {
-    expect(shell).toContain("const home = homeHref(role);");
+    expect(shell).toContain("const home = appHref(base, homeHref(role));");
     expect(shell).toMatch(/<a className=\{styles\.brand\} href=\{home\}/);
     const crumbs = shell.slice(shell.indexOf("aria-label={t.shell.breadcrumb}"));
     expect(crumbs).toMatch(/^[^]*?<a\s+className=\{styles\.homeCrumb\}\s+href=\{home\}[^]*?\{t\.shell\.homeCrumb\}[^]*?\{crumbs\.map/);

@@ -241,3 +241,116 @@ export function createApi(options: ApiOptions = {}) {
     return responseMatches(id, status, body, bodyBytes) ? result : ({ ok: false, status, code: "unexpected" } as Result<Id>);
   };
 }
+
+// ---------------------------------------------------------------------------
+// Session of the institution front (contract #2028 c.6993786629 §3.3).
+// GET /api/v1/me is not in @ductura/contracts 2.8.0 yet: Institution_server
+// adds it (w1111a), and until the contract names it, it is read here by hand,
+// the one file that may call the API. Its answer is read field by field and
+// unknown fields are ignored, so a wider answer never breaks the shell.
+
+/** The session route of the institution server (same origin). */
+export const SESSION_PATH = "/api/v1/me";
+
+/** Account kinds that sign in at an institution (Institution_server server/roles/account-kinds.ts). */
+export const SESSION_ROLES = ["student", "teacher", "institution_admin", "network_engineer"] as const;
+export type SessionRole = (typeof SESSION_ROLES)[number];
+
+export type Session = {
+  /** The role the shell shows: institution_admin, then teacher, then student, then any other; null without one. */
+  readonly role: SessionRole | null;
+  readonly roles: readonly SessionRole[];
+  readonly displayName: string | null;
+  /** The institution's display name, shown in the shell. */
+  readonly institution: string | null;
+};
+
+export type SessionRead =
+  | { readonly kind: "signedIn"; readonly session: Session }
+  | { readonly kind: "signedOut" }
+  | { readonly kind: "unavailable" };
+
+const ROLE_ORDER: readonly SessionRole[] = ["institution_admin", "teacher", "student", "network_engineer"];
+const ROLE_ALIASES: Readonly<Record<string, SessionRole>> = { admin: "institution_admin" };
+
+function asRole(value: unknown): SessionRole | null {
+  if (typeof value !== "string") return null;
+  const role = ROLE_ALIASES[value] ?? value;
+  return (SESSION_ROLES as readonly string[]).includes(role) ? (role as SessionRole) : null;
+}
+
+function text(value: unknown): string | null {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+/** The session from a 200 body of GET /api/v1/me; null when the body is not an object. Own fields only. */
+export function parseSession(body: unknown): Session | null {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
+  const own = (from: object, name: string): unknown => (Object.hasOwn(from, name) ? (from as Record<string, unknown>)[name] : undefined);
+  const listed = own(body, "roles");
+  const found = new Set<SessionRole>();
+  const single = asRole(own(body, "role"));
+  if (single !== null) found.add(single);
+  if (Array.isArray(listed)) for (const item of listed) {
+    const role = asRole(item);
+    if (role !== null) found.add(role);
+  }
+  const roles = ROLE_ORDER.filter((role) => found.has(role));
+  const institution = own(body, "institution");
+  const institutionName = typeof institution === "object" && institution !== null
+    ? text(own(institution, "displayName")) ?? text(own(institution, "name"))
+    : text(institution);
+  return {
+    role: roles[0] ?? null,
+    roles,
+    displayName: text(own(body, "displayName")),
+    institution: institutionName ?? text(own(body, "institutionName")),
+  };
+}
+
+/**
+ * One read of the session: 200 with a JSON object is signed in, 401 signed
+ * out, anything else (a broken connection included) unavailable. Same origin,
+ * with the session cookie.
+ */
+export async function readSession(options: ApiOptions = {}): Promise<SessionRead> {
+  const baseUrl = options.baseUrl ?? globalThis.location.origin;
+  const transport: typeof fetch = options.fetchImpl ?? ((input, init) => fetch(input, init));
+  try {
+    const res = await transport(new URL(SESSION_PATH, baseUrl), {
+      method: "GET",
+      credentials: "include",
+      redirect: "manual",
+      headers: { accept: "application/json" },
+    });
+    if (res.status === 401) return { kind: "signedOut" };
+    if (res.status !== 200 || !res.headers.get("content-type")?.startsWith("application/json")) return { kind: "unavailable" };
+    const session = parseSession(await res.json());
+    return session === null ? { kind: "unavailable" } : { kind: "signedIn", session };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}
+
+/** Leaves the app for an address of the same origin. The only navigation out of the app. */
+export function leaveFor(href: string): void {
+  globalThis.location.assign(href);
+}
+
+/** Sends the browser to AAI@EduHr sign-in, returning to `here` (the app's own path) afterwards. */
+export function goToSignIn(here: string, leave: (href: string) => void = leaveFor): void {
+  leave(signInHref(here));
+}
+
+/**
+ * Signs out through auth.logout.post (303 on success). True when the server
+ * ended the session; the caller then leaves for the preloader.
+ */
+export async function signOut(options: ApiOptions = {}): Promise<boolean> {
+  try {
+    const result = await createApi(options)("auth.logout.post", { params: undefined, query: undefined, body: undefined } as Input<"auth.logout.post">);
+    return result.ok;
+  } catch {
+    return false;
+  }
+}
