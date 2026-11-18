@@ -21,6 +21,7 @@ obrnutom zamjenom retka uvoza i traži izvorni SHA.
 | `domain/document/validate.ts` | `bf4906a17d30cc29660e4637f8819c325ccdc516` | `16b224e8f76f32f477d50cf54d261eccf56b0fbb4b38969d7d095ad449e42216` | ne |
 | `domain/forensics/crypto.test.ts` | `d8bd19392afcf9e061981e8922db5aa4a14689fd` | `8f2fa6398338ecbb0a791d474b000fc510bd244217c7e53a10bd85f64d61d589` | ne |
 | `domain/forensics/crypto.ts` | `b8934b98632a1c6bfc5c1881c3223fc9f5352726` | `a2ff9cae580a602f075f85367c0094e24f95e3f160735610c4af87ae5caff3de` | ne |
+| `domain/forensics/forensics.test.ts` | `f038e39e990df9a0f46cb8c0ca3e50955b37a104` | `cc6bbe78a21414e1922956bce1ee5c03747fd9f29fa4c592a4ddfff4cd561572` | ne |
 | `domain/forensics/integrity.ts` | `3550a51d5e5d814c7264c8a0053e014a173a3a27` | `35fdacae7a6179de5e2a87dcbc027edc29a13416ab32de7d0cab5444d1f20f7c` | ne |
 | `domain/forensics/jcs.test.ts` | `978a418eba0829f874de83145c5a2b2c5904a149` | `cde60fa753fc26f535ae12fcd87cd6482be5a204c11d54f90cf19081dd2a47c4` | ne |
 | `domain/forensics/jcs.ts` | `9e51c48eee12db09b8c09f472b1def2d40827019` | `3e421dce7249d33af27e937f3f316f326b03f49b9102f7269f98ff0e547f0723` | ne |
