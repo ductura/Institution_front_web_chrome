@@ -52,7 +52,8 @@ Kod koji radi i ima testove prenosi se **sa svojim testovima** kao dokazom jedna
 | `src/editor` | 34 testa u `src/editor` (property, ekvivalencija, shema, unos) | `packages/editor-core` | E-0.1, E-0.2 (Ductus), E-0.3 |
 | `src/lib/journal`, `src/lib/sync` | 17 + 4 testa (atomični dnevnik, odjava, drain, `evidence-test-kit`) | `packages/editor-core` | E-0.3 |
 | `src/domain/sync`, `src/domain/serverSync` | 19 + 4 testa; `tests/unit/server-sync-messages.test.ts` | `packages/editor-core` (**PRIJEDLOG**; migracija §3 ih šalje kopijom, §2c traži „osam stanja” u paketu; vidi [KARTA](https://github.com/ductura/.github/blob/main/docs/plan/KARTA.md)) | E-0.3 |
-| `src/domain/{document,diff,citation,text,provenance,collaboration}` | 23, 3, 4, 1, 10 (`provenance`), 10 testova u tim mapama | `src/domain/` | 2.c4 |
+| `src/domain/document` sa zatvorenjem uvoza koje treba shema (`src/domain/json.ts`, `src/domain/forensics/{jcs,crypto,integrity,ledger}.ts`) | 23 testa u `document` i izvorni testovi tog zatvorenja | `packages/editor-core` (odluka vlasnika, pristup B, Ductus#2028 c.6980945867) | DAN-888 |
+| `src/domain/{diff,citation,text,provenance,collaboration}` | 3, 4, 1, 10 (`provenance`), 10 testova u tim mapama | `src/domain/` | 2.c4 |
 | `src/client/*` | 18 testova u `src/client` | `src/client/`; `fetch` na rute Next.js zamjenjuje generirani klijent | 2.c3 |
 | `src/components/*` bez `landing`, `how-it-works`, `auth` | testovi u tim mapama (npr. 20 `student`, 18 `teacher`, 19 `editor`, 17 `shell`, 12 `admin`) | `src/components/` | 2.c4 |
 | `app/rad`, `zadaci`, `zadatak`, `nastavnik`, `ustanova`, `upis`, `stanje` | e2e u `e2e/login/*` za te stranice (npr. `student-workspace`, `teacher-home`, `institution-courses-page`, `submission`, `enroll-code`) | `app/` | 2.c4, 2.c6 |

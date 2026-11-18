@@ -15,9 +15,11 @@ DAN-946 (web uvozi paket s jednog mjesta).
 ## Pravilo prijenosa
 
 Datoteke su kopirane bajt po bajt s Ductusa na commitu
-`ce908f7a652bfc810a8c266346cd574b8d395da6`. Jedina izmjena sadržaja je uvoz u
-`snapshot.ts`. Tablica „Ductus put → web put, SHA-256 izvora, je li izmijenjen”
-je u [PROVENANCE.md](PROVENANCE.md), a `src/provenance.test.ts` je provjerava.
+`ce908f7a652bfc810a8c266346cd574b8d395da6`. Jedina izmjena sadržaja je uvoz
+`@/domain/forensics/jcs` → `../forensics/jcs` u `snapshot.ts` i
+`snapshot.fuzz.property.test.ts`. Tablice „Bajt po bajt” i „Prilagođeno” (Ductus
+put → web put, SHA izvora, je li izmijenjen) su u [PROVENANCE.md](PROVENANCE.md),
+a `src/provenance.test.ts` ih provjerava.
 Promjena prenesene datoteke ide prvo u Ductus, pa novim prijenosom ovamo.
 
 ## Provjere
@@ -25,7 +27,7 @@ Promjena prenesene datoteke ide prvo u Ductus, pa novim prijenosom ovamo.
 `pnpm --filter @ductura/editor-core run typecheck` i `… run test`; CI posao `ui`
 pokreće oboje kroz `pnpm -r run …`.
 
-## Odgođeni testovi
+## Izvorni testovi
 
-Izvorni testovi koji još nisu preneseni (s razlogom za svaki) navedeni su u
-odjeljku „Nepreneseni testovi izvora” u [PROVENANCE.md](PROVENANCE.md).
+Preneseni su svi izvorni testovi prenesenih modula; popis je u odjeljku
+„Izvorni testovi” u [PROVENANCE.md](PROVENANCE.md).

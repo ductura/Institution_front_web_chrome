@@ -13,10 +13,25 @@ const MANIFEST = readFileSync(here("PROVENANCE.md"), "utf8");
 const SOURCE_COMMIT = "ce908f7a652bfc810a8c266346cd574b8d395da6";
 
 type Row = { path: string; sha1: string; sha256: string; changed: boolean };
-const ROWS: Row[] = MANIFEST.split("\n")
-  .map((line) => line.match(/^\| `([^`]+)` \| `([0-9a-f]{40})` \| `([0-9a-f]{64})` \| (da|ne) \|$/))
-  .filter((m): m is RegExpMatchArray => m !== null)
-  .map(([, path, sha1, sha256, changed]) => ({ path: path!, sha1: sha1!, sha256: sha256!, changed: changed === "da" }));
+const ROW = /^\| `([^`]+)` \| `([0-9a-f]{40})` \| `([0-9a-f]{64})` \| (da|ne) \|$/;
+
+/** The text of a "## <title>" section, up to the next heading of that level. */
+function section(title: string): string {
+  const parts = MANIFEST.split(/^## /m).filter((part) => part.startsWith(`${title}\n`));
+  if (parts.length !== 1) throw new Error(`PROVENANCE.md needs exactly one "## ${title}" section`);
+  return parts[0]!;
+}
+
+function rows(text: string): Row[] {
+  return text.split("\n")
+    .map((line) => line.match(ROW))
+    .filter((m): m is RegExpMatchArray => m !== null)
+    .map(([, path, sha1, sha256, changed]) => ({ path: path!, sha1: sha1!, sha256: sha256!, changed: changed === "da" }));
+}
+
+const SAME = rows(section("Bajt po bajt"));
+const ADAPTED = rows(section("Prilagođeno"));
+const ROWS = [...SAME, ...ADAPTED];
 
 /** Ported files: everything under src/domain (the part of the Ductus tree ported so far). */
 function portedFiles(dir = "src/domain"): string[] {
@@ -28,17 +43,52 @@ function portedFiles(dir = "src/domain"): string[] {
 /** The one edit made at the port, undone, to get the source back. */
 const UNDO_IMPORT: Record<string, [string, string]> = {
   "domain/document/snapshot.ts": ['"../forensics/jcs"', '"@/domain/forensics/jcs"'],
+  "domain/document/snapshot.fuzz.property.test.ts": ['"../forensics/jcs"', '"@/domain/forensics/jcs"'],
 };
+
+/**
+ * Every Ductus test at SOURCE_COMMIT whose imports lead only to ported modules
+ * (worked out from the source tree, which is not in this checkout): PLAN §4
+ * asks for the same tests with the code, so each must be ported.
+ */
+const SOURCE_TESTS = [
+  "domain/document/forbidden.test.ts",
+  "domain/document/revision-zero.test.ts",
+  "domain/document/schema-version.test.ts",
+  "domain/document/schema.test.ts",
+  "domain/document/snapshot.fuzz.property.test.ts",
+  "domain/document/snapshot.test.ts",
+  "domain/document/validate-v2.property.test.ts",
+  "domain/document/validate-v2.test.ts",
+  "domain/document/validate.hardening.test.ts",
+  "domain/document/validate.test.ts",
+  "domain/forensics/canonicalization.property.test.ts",
+  "domain/forensics/crypto.test.ts",
+  "domain/forensics/forensics.test.ts",
+  "domain/forensics/jcs.test.ts",
+  "domain/json.test.ts",
+];
 
 describe("code ported from Ductus at a recorded commit (PROVENANCE.md)", () => {
   it("names the source commit and a fixed number of ported files", () => {
     expect(MANIFEST).toMatch(new RegExp(`^\`${SOURCE_COMMIT}\` `, "m"));
-    expect(ROWS).toHaveLength(20);
-    expect(ROWS.filter((r) => r.changed).map((r) => r.path)).toEqual(["domain/document/snapshot.ts"]);
+    expect(ROWS).toHaveLength(27);
   });
 
-  it("lists every file under src/domain and no file that is missing", () => {
-    expect(ROWS.map((r) => r.path).sort()).toEqual(portedFiles().sort());
+  it("keeps unchanged files in one table and adapted files in the other", () => {
+    expect(SAME.filter((r) => r.changed)).toEqual([]);
+    expect(ADAPTED.map((r) => [r.path, r.changed])).toEqual(Object.keys(UNDO_IMPORT).sort().map((path) => [path, true]));
+  });
+
+  it("lists every file under src/domain exactly once and no file that is missing", () => {
+    const listed = ROWS.map((r) => r.path);
+    expect(new Set(listed).size).toBe(listed.length);
+    expect(listed.sort()).toEqual(portedFiles().sort());
+  });
+
+  it("ports every source test of the ported modules", () => {
+    expect(SOURCE_TESTS.filter((path) => !ROWS.some((r) => r.path === path))).toEqual([]);
+    expect(ROWS.filter((r) => /\.test\.ts$/.test(r.path)).map((r) => r.path).sort()).toEqual([...SOURCE_TESTS].sort());
   });
 
   for (const row of ROWS) {
