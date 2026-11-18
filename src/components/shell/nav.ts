@@ -88,3 +88,13 @@ export function homeHref(role: ShellRole | null): string {
  * the shell links it for everyone, with or without a role.
  */
 export const HOW_IT_WORKS_HREF = "/kako-radi";
+
+/**
+ * A path of the app under `base`, the prefix the app is served under (/app/web
+ * or /app/chrome, #2028 c.6993786629 §1): "/" is the base itself. An empty
+ * base leaves the path as it is.
+ */
+export function appHref(base: string, path: string): string {
+  if (base === "") return path;
+  return path === "/" ? `${base}/` : `${base}${path}`;
+}

@@ -36,6 +36,10 @@ Nijedna ruta ugovora još ne navodi `session_expired` (S-1D-d), pa ga generirani
 
 `signInHref(returnTo?)` daje relativnu poveznicu iste domene na rutu `auth.login.get`. Putanju i ime parametra `returnTo` čita iz `openapi/v1.json` ugovora; ako ugovor nema točno jednu takvu GET rutu s tim parametrom, modul se ne učita. `returnTo` ulazi u poveznicu samo ako ga zadrži pravilo jednako serverskom `safeReturnTo` (ductura/server `server/session/return-to.ts`), u obliku koji bi server vratio; sve ostalo daje poveznicu bez njega. Server granicu od 512 znakova provjerava prije normalizacije, a normalizacija postotno kodira (`č` postaje šest znakova), pa kad bi normalizirani oblik prešao granicu, poveznica nosi ulaz kakav je dan: server ga normalizira u isto odredište. Funkcija ne baca. Server `returnTo` provjerava ponovno, pa je ovo obrana u dubini, nikad šira od serverske (`sign-in-href.test.ts`).
 
+## Sesija fronta institucije (#2028 c.6993786629 §3.3)
+
+`GET /api/v1/me` još nije u ugovoru 2.8.0 (dodaje ga Institution_server, w1111a), pa ga `readSession()` čita ručno, samo u ovoj datoteci, s `credentials: "include"`. 200 s JSON objektom znači da je korisnik prijavljen (`parseSession` čita `role` ili `roles`, `displayName` te `institution.displayName` ili `institutionName`; ostala polja ne čita). 401 znači da nije prijavljen, a sve ostalo da sesija nije dostupna. `goToSignIn(here)` vodi na `signInHref(here)`. `signOut()` ide kroz `auth.logout.post` iz ugovora. `leaveFor(href)` je jedini izlaz iz aplikacije, jer `no-direct-api.test.ts` zabranjuje `location.assign` izvan ove datoteke. Kad ugovor dobije rutu sesije, `readSession` prelazi na `createApi`.
+
 ## Granice generiranog klijenta
 
 - U pregledniku je svako preusmjeravanje ručno i neprozirno (`opaqueredirect`), pa generirani klijent svaki 3xx na rutama prijave javlja kao `ok: true, status: 303`. Zaglavlja odgovora (`location`, `retry-after`) ne provjerava se prema ugovoru.

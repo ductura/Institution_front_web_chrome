@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { messagesHr as t } from "../../../locales/hr.ts";
 
 import styles from "./AppShell.module.css";
-import { accountPlace, HOW_IT_WORKS_HREF, homeHref, navFor, type ShellRole } from "./nav";
+import { accountPlace, appHref, HOW_IT_WORKS_HREF, homeHref, navFor, type ShellRole } from "./nav";
 
 // Ported from Ductus src/components/shell/AppShell.tsx at 078c780f (DAN-753,
 // 2.c4-a1). Not here yet: the sign-out (ShellLogout) and the session mark
@@ -87,6 +87,13 @@ export type AppShellProps = {
    * out stay one press away.
    */
   drawer?: boolean;
+  /**
+   * The path the app is served under (/app/web or /app/chrome, #2028
+   * c.6993786629 §1); every link of the shell starts with it. Empty by default.
+   */
+  base?: string;
+  /** The institution's name from the session, in the top bar at every width; none when absent. */
+  institution?: string | null;
   children: ReactNode;
 };
 
@@ -96,12 +103,12 @@ export type AppShellProps = {
  * (I2); signing out (the same POST as everywhere, without JavaScript, I5)
  * joins with 2.c3-b. Below 800 px the side bar is a drawer behind ☰.
  */
-export default function AppShell({ role, scope, current, crumbs, account, navId = "bocna-navigacija", ownMain = false, drawer = false, children }: AppShellProps) {
+export default function AppShell({ role, scope, current, crumbs, account, navId = "bocna-navigacija", ownMain = false, drawer = false, base = "", institution = null, children }: AppShellProps) {
   const [open, setOpen] = useState(false);
   const sidebar = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const items = navFor(role);
-  const home = homeHref(role);
+  const home = appHref(base, homeHref(role));
   const place = accountPlace(scope, account !== undefined);
 
   useEffect(() => {
@@ -167,7 +174,7 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
                   <li key={item.href}>
                     <a
                       className={styles.navItem}
-                      href={item.href}
+                      href={appHref(base, item.href)}
                       aria-current={current === item.href ? "page" : undefined}
                       onClick={() => setOpen(false)}
                     >
@@ -183,7 +190,7 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
           {/* "Kako Ductura radi" (DAN-431, J-02): for everyone, with or without a role. */}
           <a
             className={styles.infoLink}
-            href={HOW_IT_WORKS_HREF}
+            href={appHref(base, HOW_IT_WORKS_HREF)}
             aria-current={current === HOW_IT_WORKS_HREF ? "page" : undefined}
             onClick={() => setOpen(false)}
           >
@@ -227,6 +234,7 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
             ))}
           </nav>
           <div className={styles.actions}>
+            {institution !== null ? <span className={styles.institution}>{institution}</span> : null}
             <span className={styles.demo}>{t.shell.demoBadge}</span>
             <ThemeToggle />
             {drawer ? accountBlock : null}

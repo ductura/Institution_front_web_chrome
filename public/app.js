@@ -2,16 +2,15 @@ import { debounce, parseRoute, docHref, wordCount, saveStatusLabel } from './lib
 
 const VARIANT = 'Chrome';
 const API = window.DUCTURA_API ?? '/api';
-const AUTH = { authorization: 'Bearer ana@fpzg.hr' }; // razvoj; kasnije AAI@EduHr sesija
 
 const view = document.getElementById('view');
 document.getElementById('variant').textContent = VARIANT;
 
 const api = {
-  list: () => fetch(`${API}/documents`, { headers: AUTH }).then((r) => r.json()),
-  get: (id) => fetch(`${API}/documents/${id}`, { headers: AUTH }).then((r) => (r.ok ? r.json() : null)),
+  list: () => fetch(`${API}/documents`).then((r) => r.json()),
+  get: (id) => fetch(`${API}/documents/${id}`).then((r) => (r.ok ? r.json() : null)),
   save: (doc) => fetch(`${API}/documents/${doc.id}`, {
-    method: 'PUT', headers: { ...AUTH, 'content-type': 'application/json' }, body: JSON.stringify(doc),
+    method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(doc),
   }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }),
 };
 

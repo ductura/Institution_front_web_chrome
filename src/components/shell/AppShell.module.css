@@ -256,6 +256,22 @@
   margin-left: auto;
 }
 
+/* The institution's name from the session (#2028 c.6993786629 §3.3). */
+.institution {
+  max-width: 32ch;
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 640px) {
+  .institution {
+    max-width: 14ch;
+  }
+}
+
 .demo {
   font-size: 12px;
   color: var(--ink-3);
@@ -369,6 +385,8 @@
   }
 
   .shell:not(.drawerShell) .account {
+    flex-direction: column;
+    gap: 6px;
     justify-content: center;
     padding: 10px 0 0;
     text-align: center;
