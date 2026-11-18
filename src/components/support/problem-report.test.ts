@@ -17,7 +17,7 @@ import {
   type ProblemReportInput,
 } from "./problem-report";
 
-// Verbatim copy of ductura/server server/contracts/vectors/support.problem-report.post.json
+// Verbatim copy of ductura/Institution_server server/contracts/vectors/support.problem-report.post.json
 // at ea171eff (Ductus#1836 c.6926566704); git blob 6bfb2d32 as in test-fakes-v1.0.0.
 const raw = readFileSync(new URL("./fixtures/support.problem-report.post.json", import.meta.url), "utf8");
 type Vector = {

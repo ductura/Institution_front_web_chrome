@@ -1,5 +1,5 @@
 // The locales scan (S-1L.1, DAN-768, PR-b2), contract Ductus#1836
-// c.6890523605, "Invarijante i negativni testovi". Copied from ductura/server
+// c.6890523605, "Invarijante i negativni testovi". Copied from ductura/Institution_server
 // scripts/forbidden-terms/scan.test.ts at 2e9a9b3 (DAN-753, 2.c4-a0) without
 // the cases of hr.json and its Risk: exceptions, which the web does not have.
 // The first case scans the real locales/; every negative case runs on a copy in a temporary folder,

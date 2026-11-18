@@ -1,5 +1,5 @@
 {
-  "name": "@ductura/web-domain",
+  "name": "@ductura/Institution_front_web_chrome-domain",
   "version": "0.1.0",
   "private": true,
   "description": "Client side of the domain ported from Ductus with its tests: literal text search, Croatian collation, deterministic diff (DAN-990, web 2.c4)",

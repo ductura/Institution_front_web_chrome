@@ -1,5 +1,5 @@
 {
-  "name": "@ductura/web-platform",
+  "name": "@ductura/Institution_front_web_chrome-platform",
   "version": "0.1.0",
   "private": true,
   "description": "Browser adaptation layer: capabilities and fallbacks, visible area above the on-screen keyboard, layout by width, touch targets (DAN-754, web 2.c5)",
