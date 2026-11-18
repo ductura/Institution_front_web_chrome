@@ -16,6 +16,22 @@ Jedini put kojim web zove API (DAN-752, web 2.c3). Poziv ide kroz klijent generi
 
 **Zapisana iznimka ugovora: klijent evidencije.** `evidence/open` i `evidence/commit` traže zaglavlje `ductus-protocol`, `Origin` i kolačić. Generirani klijent ih ne šalje, a od greške čita samo kod, pa gubi stanje rada iz 409 i `stage` iz 503 (ductura/server [`docs/vs1-rute.md`](https://github.com/ductura/server/blob/main/docs/vs1-rute.md)). Ductusov `evidence-ingest` stiže u kasnijem rezu, zajedno s domenom (2.c4, E-0.3). Iznimka vrijedi dok `RequestSpec` ugovora ne dobije zaglavlja. Na zatvoreni popis ulazi tek s modulom, ograničena na `evidence/open` i `evidence/commit`.
 
+**Izuzeta pravila (`WAIVED_RULES`).** Zatvoren popis „put → `{ rules, sha256 }`” za doslovno prenesen kod (Ductus#2028 c.6989236137). Sadrži doslovne Ductus datoteke iz `packages/editor-core`: `src/document/json.ts` i `src/document/document/edit-step.ts` (`Reflect`) te `src/document/forensics/jcs.ts` (`property descriptor`). To su provjere vlastitih ključeva i pristupnika na nepouzdanom JSON-u, ne mrežni pozivi. Izuzeće skida samo navedena pravila i vrijedi samo dok je SHA-256 sadržaja datoteke jednak zapisanome. Jamstvo je „cijela datoteka pregledana i zamrznuta”: svaka promjena bilo kojeg bajta traži novi pregled i novi sažetak. Sva ostala pravila, i mrežna, vrijede i za navedenu datoteku, a pravila o uvozu (neodobreni vanjski uvoz, `test file import`, `test fakes`, `@ductura/contracts` izvan `api.ts`) ne mogu se izuzeti, jer sažetak ne zamrzava uvezeni modul. Problem je, i tada se ništa ne skida:
+- zastarjeli sažetak;
+- datoteka koja se ne provjerava (ne postoji, `api.ts`, `EXCEPTIONS`);
+- pravilo bez pogotka ili nepoznato pravilo;
+- ključ koji nije POSIX, nije string ili je skriven;
+- popis s prototipom koji nije `Object.prototype`;
+- unos koji nije običan objekt s točno `{ rules, sha256 }` kao vlastitim podatkovnim poljima (64 heks znaka malim slovima, neprazan popis različitih pravila).
+
+Bilo koji problem u popisu znači da se ne skida nijedno izuzeće.
+
+Sažetak se računa nad sadržajem u kojem je `\r\n` zamijenjen s `\n`, pa Windows checkout daje isti sažetak. To nije Git blob SHA. Za datoteku bez CRLF jednak je `sha256sum`. Inače se računa ovom naredbom za bash (na Windowsu u Git Bashu):
+
+```bash
+node -e 'const b=require("fs").readFileSync(process.argv[1]);console.log(require("crypto").createHash("sha256").update(Buffer.from(b.toString("latin1").replaceAll("\r\n","\n"),"latin1")).digest("hex"))' <put>
+```
+
 **Razdjelnici putanja.** Skener uspoređuje putanje u POSIX obliku. Na Windowsu se `\` čita kao `/`, pa `EXCEPTIONS`, `CONFIG` i `packages/` daju isti ishod kao na Linuxu. Drugdje je `\` dio imena, pa skenirana putanja s `\` ruši test. Ključ popisa mora već biti u POSIX obliku, jer bi na Linuxu ključ s `\` čitao drugu datoteku. Dva ključa koja daju isti put su greška. Pravilo uvoza testne datoteke prihvaća oba razdjelnika i ne razlikuje velika i mala slova imena mapa (`E2E`, `Dist`), jer ih Windows ne razlikuje. Popis datoteka gradi jedna funkcija (`scannedFiles`) s ubrizganim datotečnim sustavom i `node:path`. CI radi na Linuxu, pa test istu funkciju pušta s `path.win32` kroz stvarno stablo repoa i kroz sintetičko stablo (`C:\`, UNC, završni razdjelnik).
 
 Testne datoteke i `e2e/` kataloga ili paketa se ne čitaju, jer pokreću aplikaciju, a nisu njezin dio. Datoteka aplikacije ne smije uvesti testnu datoteku. Alati u korijenu (`dev-server.mjs`, `playwright.config.js`) također nisu kod aplikacije.

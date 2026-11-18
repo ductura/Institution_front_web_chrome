@@ -9,7 +9,10 @@
 // review still reads new code. Test files and catalog/e2e (and the same in a
 // package) are not scanned, and no app file may import a test file. Paths are
 // compared in POSIX form: on Windows "\\" is read as "/" (list keys always), so
-// the scan is the same there; elsewhere "\\" is part of a name.
+// the scan is the same there; elsewhere "\\" is part of a name. A rule is
+// waived only for a file whose whole content was reviewed and frozen by its
+// SHA-256 (WAIVED_RULES); any other byte makes the waiver stale.
+import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, posix, relative, resolve, sep, win32 } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -36,6 +39,33 @@ const CLIENT = "src/client/api.ts";
 export const EXCEPTIONS: Readonly<Record<string, { readonly fetchCalls: number }>> = {
   "public/app.js": { fetchCalls: 3 },
 };
+
+/**
+ * Closed list of rules waived for one exact file (ODLUKA Ductus#2028
+ * c.6989236137, DAN-888): POSIX path, the rules, and contentSha256 of the
+ * file as reviewed. The entries are the verbatim Ductus files of editor-core
+ * (w1119a, Ductus#2028): own-key and accessor checks on untrusted JSON, not
+ * network calls. Every other rule, the network ones included, still applies
+ * to a listed file.
+ */
+export const WAIVED_RULES: Readonly<Record<string, { readonly rules: readonly string[]; readonly sha256: string }>> =
+  Object.freeze({
+    "packages/editor-core/src/document/json.ts":
+      { rules: ["Reflect"], sha256: "cde02656c3bc490ffe6be823e7fbd0f6cc732df3c8bd97a060c29f75dd45ffb1" },
+    "packages/editor-core/src/document/forensics/jcs.ts":
+      { rules: ["property descriptor"], sha256: "3e421dce7249d33af27e937f3f316f326b03f49b9102f7269f98ff0e547f0723" },
+    "packages/editor-core/src/document/document/edit-step.ts":
+      { rules: ["Reflect"], sha256: "3495e5e704cc1f71a944e2b25ddfce35f740388d3654272a7df6c54e0d31d55d" },
+  });
+
+/** Rules about what a file imports: the imported module is not frozen by the hash, so they are never waived. */
+const UNWAIVABLE = new Set(["test file import", "test fakes", "generated client outside api.ts"]);
+
+/** SHA-256 (lower-case hex) of a file's bytes with CRLF read as LF, so a Windows checkout hashes the same. */
+export function contentSha256(bytes: Uint8Array): string {
+  const lf = Buffer.from(Buffer.from(bytes).toString("latin1").replaceAll("\r\n", "\n"), "latin1");
+  return createHash("sha256").update(lf).digest("hex");
+}
 
 /** The path in POSIX form; "\\" is a separator only where the platform says so. */
 export function toPosix(path: string, separator: string = sep): string {
@@ -110,7 +140,8 @@ export function normalise(text: string): string {
 }
 
 function bareImports(text: string): string[] {
-  const found = [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
+  // `.from` is a property (`${path}.from` in an error path), never the `from` of an import clause.
+  const found = [...text.matchAll(/(?:(?<!\.)\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
   return found.map((m) => m[1] ?? "").filter((spec) => !spec.startsWith(".") && !spec.startsWith("/"));
 }
 
@@ -167,6 +198,75 @@ export function checkedFiles(files: readonly string[], list: object = EXCEPTIONS
   return files.filter((file) => file !== CLIENT && listed(list, file) === undefined);
 }
 
+/** A waiver's rules if it is a plain object of exactly two own data fields, a 64-digit lower-case sha256 and distinct rule names; else why not. */
+function waiverEntry(entry: unknown): { rules: string[]; sha256: string } | string {
+  const own = (value: object, key: string) => Object.getOwnPropertyDescriptor(value, key);
+  if (typeof entry !== "object" || entry === null) return "not exactly rules and sha256";
+  const proto: unknown = Object.getPrototypeOf(entry);
+  const keys = Reflect.ownKeys(entry);
+  const rulesField = own(entry, "rules");
+  const shaField = own(entry, "sha256");
+  if ((proto !== Object.prototype && proto !== null) || keys.length !== 2 || !rulesField || !("value" in rulesField)
+    || !shaField || !("value" in shaField)) return "not exactly rules and sha256";
+  const sha256: unknown = shaField.value;
+  if (typeof sha256 !== "string" || !/^[0-9a-f]{64}$/.test(sha256)) return "sha256 is not 64 lower-case hex digits";
+  // Copied by own index, not by iterator, so the names checked are the names used.
+  const list: unknown = rulesField.value;
+  const length = Array.isArray(list) ? own(list, "length") : undefined;
+  const rules = length && typeof length.value === "number"
+    ? Array.from({ length: length.value }, (_, i) => own(list as object, String(i))) : [];
+  const names = rules.map((field) => (field && "value" in field && typeof field.value === "string" ? field.value : undefined));
+  if (names.length === 0 || names.some((name) => name === undefined) || new Set(names).size !== names.length) {
+    return "rules is not a list of distinct rule names";
+  }
+  return { rules: names as string[], sha256 };
+}
+
+/**
+ * The rules each checked file breaks once its waiver is applied, and what is
+ * wrong with the waiver list. Each file is read once; its findings and hash come
+ * from the same bytes. A waiver is looked up by its exact own key and lifts its
+ * rules only if the whole list has no problem (so the hash matches).
+ */
+export function violations(files: readonly string[], read: (file: string) => Uint8Array, list: object = WAIVED_RULES):
+  { found: [string, string[]][]; problems: string[] } {
+  const scanned = new Map(files.map((file) => {
+    const bytes = read(file);
+    // Hash and findings now, before the next read can reuse the same buffer.
+    return [file, { sha256: contentSha256(bytes), broken: directCalls(Buffer.from(bytes).toString("utf8"), file) }] as const;
+  }));
+  const problems: string[] = [];
+  if (Object.getPrototypeOf(list) !== Object.prototype) problems.push("the waiver list has another prototype");
+  const waived = new Map<string, string[]>();
+  for (const key of Reflect.ownKeys(list)) {
+    if (typeof key !== "string") problems.push(`${String(key)}: a waiver key that is not a string`);
+    else if (!Object.prototype.propertyIsEnumerable.call(list, key)) problems.push(`${key}: a hidden waiver key`);
+    else if (key !== toPosix(key, "\\")) problems.push(`${key}: not in POSIX form`);
+    else {
+      const file = scanned.get(key);
+      const entry = waiverEntry(Object.getOwnPropertyDescriptor(list, key)?.value);
+      if (!file) problems.push(`${key}: not a checked file`);
+      else if (typeof entry === "string") problems.push(`${key}: ${entry}`);
+      else {
+        for (const rule of entry.rules) {
+          if (!RULES.some(([name]) => name === rule)) problems.push(`${key}: no such rule: ${rule}`);
+          else if (UNWAIVABLE.has(rule)) problems.push(`${key}: ${rule} cannot be waived`);
+          else if (!file.broken.includes(rule)) problems.push(`${key}: ${rule} has no hit`);
+        }
+        if (file.sha256 !== entry.sha256) problems.push(`${key}: stale, the content changed (sha256)`);
+        waived.set(key, entry.rules);
+      }
+    }
+  }
+  // Any problem in the list lifts nothing anywhere.
+  const found = [...scanned].flatMap(([file, { broken }]): [string, string[]][] => {
+    const lifted = problems.length === 0 ? waived.get(file) ?? [] : [];
+    const left = broken.filter((rule) => !lifted.includes(rule));
+    return left.length > 0 ? [[file, left]] : [];
+  });
+  return { found, problems };
+}
+
 describe("no API call outside src/client/api.ts", () => {
   const files = scannedFiles(ROOT);
 
@@ -176,11 +276,15 @@ describe("no API call outside src/client/api.ts", () => {
     }
   });
 
-  it("finds no direct call in any other file", () => {
-    const found = checkedFiles(files)
-      .map((file) => [file, directCalls(readFileSync(join(ROOT, file), "utf8"), file)] as const)
-      .filter(([, rules]) => rules.length > 0);
-    expect(found).toEqual([]);
+  it("finds no direct call in any other file, and every waiver is current", () => {
+    expect(violations(checkedFiles(files), (file) => readFileSync(join(ROOT, file)))).toEqual({ found: [], problems: [] });
+  });
+
+  it("the waiver list is closed: only the verbatim editor-core files", () => {
+    expect(Reflect.ownKeys(WAIVED_RULES)).toEqual(["packages/editor-core/src/document/json.ts",
+      "packages/editor-core/src/document/forensics/jcs.ts", "packages/editor-core/src/document/document/edit-step.ts"]);
+    expect(Object.isFrozen(WAIVED_RULES)).toBe(true);
+    expect(Object.getPrototypeOf(WAIVED_RULES)).toBe(Object.prototype);
   });
 
   it("the exception list is closed", () => {
@@ -188,7 +292,7 @@ describe("no API call outside src/client/api.ts", () => {
   });
 
   it("every list key is already in POSIX form, and no scanned path holds a backslash", () => {
-    expect(nonPosixKeys(EXCEPTIONS)).toEqual([]);
+    expect([...nonPosixKeys(EXCEPTIONS), ...nonPosixKeys(WAIVED_RULES)]).toEqual([]);
     expect(files.filter((file) => file.includes("\\"))).toEqual([]);
   });
 
@@ -287,6 +391,165 @@ describe("paths read the same with Windows separators", () => {
   });
 });
 
+describe("a waiver lifts its rules only from the file whose content it froze", () => {
+  const FILE = "pkg/a/json.ts";
+  const TEXT = "export function keys(value: object) {\n  return Reflect.ownKeys(value);\n}\n";
+  const bytes = (text: string) => Buffer.from(text, "utf8");
+  const SHA = contentSha256(bytes(TEXT));
+  const disk = new Map<string, Buffer>([[FILE, bytes(TEXT)], ["pkg/a/other.ts", bytes(TEXT)], ["pkg/a/plain.ts", bytes("export const a = 1;\n")]]);
+  const read = (file: string) => {
+    const found = disk.get(file);
+    if (!found) throw new Error(`no such file: ${file}`);
+    return found;
+  };
+  const run = (list: object, files = [...disk.keys()], reader = read) => violations(files, reader, list);
+  const entry = (rules: unknown = ["Reflect"], sha256: unknown = SHA) => ({ rules, sha256 });
+
+  it("a current waiver lifts only its rule in only its file", () => {
+    expect(run({ [FILE]: entry() })).toEqual({ found: [["pkg/a/other.ts", ["Reflect"]]], problems: [] });
+    for (const call of ['fetch("/x")', "new XMLHttpRequest()", "navigator.sendBeacon(u, d)", "new WebSocket(u)",
+      'new Image().src = "/ap" + "i/v1/health"', 'Object.getOwnPropertyDescriptor(globalThis, "fe" + "tch")!.value(u)',
+      'import mande from "mande"']) {
+      const text = `${TEXT}${call}\n`;
+      const result = violations([FILE], () => bytes(text), { [FILE]: entry(["Reflect"], contentSha256(bytes(text))) });
+      expect(result.problems).toEqual([]);
+      const left = directCalls(text, FILE).filter((rule) => rule !== "Reflect");
+      expect(left).not.toEqual([]);
+      expect(result.found).toEqual([[FILE, left]]);
+    }
+  });
+
+  it("the hash is SHA-256 of the content with CRLF read as LF, lower-case hex", () => {
+    expect(contentSha256(bytes("abc"))).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    expect(contentSha256(bytes(TEXT.replaceAll("\n", "\r\n")))).toBe(SHA);
+    for (const text of [TEXT.replaceAll("\n", "\r"), TEXT.replace("\n", "\r\r\n"), `\uFEFF${TEXT}`, TEXT.replace("ownKeys", "ownkeys")]) {
+      expect(contentSha256(bytes(text))).not.toBe(SHA);
+    }
+  });
+
+  it.each([
+    ["one byte changed", TEXT.replace("value)", "value )")],
+    ["a Reflect line added", `${TEXT}const k = Reflect.has(o, "x");\n`],
+    ["a BOM added", `\uFEFF${TEXT}`],
+    ["a lone CR", TEXT.replace("\n", "\r")],
+  ])("%s makes the waiver stale and lifts nothing", (_, text) => {
+    const result = violations([FILE], () => bytes(text), { [FILE]: entry() });
+    expect(result.problems).toEqual([`${FILE}: stale, the content changed (sha256)`]);
+    expect(result.found[0]?.[1]).toContain("Reflect");
+  });
+
+  it("a CRLF checkout of the same content keeps the waiver", () => {
+    expect(violations([FILE], () => bytes(TEXT.replaceAll("\n", "\r\n")), { [FILE]: entry() })).toEqual({ found: [], problems: [] });
+  });
+
+  it.each([
+    ["a key with a backslash", { "pkg\\a\\json.ts": entry() }, /not in POSIX form/],
+    ["a file that does not exist", { "pkg/a/gone.ts": entry() }, /not a checked file/],
+    ["the client", { [CLIENT]: entry() }, /not a checked file/],
+    ["an exception", { "public/app.js": entry() }, /not a checked file/],
+    ["a rule with no hit", { "pkg/a/plain.ts": entry(["Reflect"], contentSha256(bytes("export const a = 1;\n"))) }, /Reflect has no hit/],
+    ["an unknown rule", { [FILE]: entry(["Reflect", "reflect"]) }, /no such rule: reflect/],
+    ["an import", { [FILE]: entry(["import mande"]) }, /no such rule/],
+    ["upper-case hex", { [FILE]: entry(["Reflect"], SHA.toUpperCase()) }, /64 lower-case hex/],
+    ["63 hex digits", { [FILE]: entry(["Reflect"], SHA.slice(1)) }, /64 lower-case hex/],
+    ["a non-hex digit", { [FILE]: entry(["Reflect"], `g${SHA.slice(1)}`) }, /64 lower-case hex/],
+    ["a trailing newline", { [FILE]: entry(["Reflect"], `${SHA}\n`) }, /64 lower-case hex/],
+    ["a space", { [FILE]: entry(["Reflect"], ` ${SHA}`) }, /64 lower-case hex/],
+    ["a non-string sha256", { [FILE]: entry(["Reflect"], 1) }, /64 lower-case hex/],
+    ["no rules", { [FILE]: entry([]) }, /rules/],
+    ["rules that are not a list", { [FILE]: entry("Reflect") }, /rules/],
+    ["a duplicate rule", { [FILE]: entry(["Reflect", "Reflect"]) }, /rules/],
+    ["one key named rules,sha256", { [FILE]: { "rules,sha256": 1 } }, /exactly rules and sha256/],
+    ["rules whose iterator differs from its elements", { [FILE]: entry(Object.assign([1], {
+      [Symbol.iterator]: function* () { yield "Reflect"; } })) }, /distinct rule names/],
+    ["a rule held by a getter", { [FILE]: entry(Object.defineProperty([], "0", { enumerable: true, get: () => "Reflect" })) }, /distinct rule names/],
+    ["a rule that is not a string", { [FILE]: entry(["Reflect", 1]) }, /distinct rule names/],
+    ["a getter as the entry", Object.defineProperty({}, FILE, { enumerable: true, get: () => entry() }), /exactly rules and sha256/],
+    ["an extra field", { [FILE]: { ...entry(), line: "x" } }, /exactly rules and sha256/],
+    ["inherited fields", { [FILE]: Object.create(entry()) as object }, /exactly rules and sha256/],
+    ["a getter", { [FILE]: Object.defineProperty({ sha256: SHA }, "rules", { enumerable: true, get: () => ["Reflect"] }) }, /exactly rules and sha256/],
+    ["a null entry", { [FILE]: null }, /exactly rules and sha256/],
+    ["__proto__ as a path", JSON.parse(`{"__proto__": ${JSON.stringify(entry())}}`) as object, /__proto__: not a checked file/],
+    ["constructor as a path", { constructor: entry() }, /not a checked file/],
+    ["toString as a path", { toString: entry() }, /not a checked file/],
+    ["a symbol key", { [Symbol("x")]: entry() }, /not a string/],
+    ["a hidden key", Object.defineProperty({}, FILE, { enumerable: false, value: entry() }), /hidden/],
+    ["another prototype", Object.setPrototypeOf({ [FILE]: entry() }, { [FILE]: entry() }) as object, /prototype/],
+    ["an entry with another prototype", { [FILE]: Object.setPrototypeOf(entry(), { line: 3 }) as object }, /exactly rules and sha256/],
+  ])("%s is a problem and lifts nothing, not even a valid waiver beside it", (_, list, problem) => {
+    expect(run(list).problems.join("\n")).toMatch(problem);
+    expect(run(list).found.find(([file]) => file === FILE)?.[1]).toEqual(["Reflect"]);
+    if (Object.getPrototypeOf(list) !== Object.prototype || Reflect.ownKeys(list).includes(FILE)) return;
+    const beside = Object.defineProperty(list, FILE, { enumerable: true, value: entry() });
+    expect(run(beside).problems.join("\n")).toMatch(problem);
+    expect(run(beside).found.find(([file]) => file === FILE)?.[1]).toEqual(["Reflect"]);
+  });
+
+  it.each(["test file import", "test fakes", "generated client outside api.ts"])("%s cannot be waived, even on a current file", (rule) => {
+    const text = `${TEXT}import "./net.test";\nimport "@ductura/test-fakes";\nimport "@ductura/contracts";\n`;
+    const list = { [FILE]: entry(["Reflect", rule], contentSha256(bytes(text))) };
+    const result = violations([FILE], () => bytes(text), list);
+    expect(directCalls(text, FILE)).toContain(rule);
+    expect(result.problems).toEqual([`${FILE}: ${rule} cannot be waived`]);
+    expect(result.found).toEqual([[FILE, directCalls(text, FILE)]]);
+  });
+
+  it("a changed byte that is not valid UTF-8 still makes the waiver stale", () => {
+    const withByte = (byte: number) => Buffer.concat([bytes(TEXT), Buffer.from([byte])]);
+    expect(withByte(0xff).toString("utf8")).toBe(withByte(0xfe).toString("utf8"));
+    const result = violations([FILE], () => withByte(0xfe), { [FILE]: entry(["Reflect"], contentSha256(withByte(0xff))) });
+    expect(result.problems).toEqual([`${FILE}: stale, the content changed (sha256)`]);
+    expect(result.found).toEqual([[FILE, ["Reflect"]]]);
+  });
+
+  it("a waiver lifts every rule it lists, and nothing else", () => {
+    const text = `${TEXT}const d = Object.getOwnPropertyDescriptor(o, k);\nfetch(u);\n`;
+    const list = { [FILE]: entry(["Reflect", "property descriptor"], contentSha256(bytes(text))) };
+    expect(directCalls(text, FILE)).toEqual(expect.arrayContaining(["Reflect", "property descriptor", "fetch"]));
+    expect(violations([FILE], () => bytes(text), list)).toEqual({ found: [[FILE, ["fetch"]]], problems: [] });
+  });
+
+  it("a stale waiver beside a current one lifts nothing in either file", () => {
+    const list = { [FILE]: entry(), "pkg/a/other.ts": entry(["Reflect"], contentSha256(bytes(`${TEXT}\n`))) };
+    expect(run(list)).toEqual({ found: [[FILE, ["Reflect"]], ["pkg/a/other.ts", ["Reflect"]]],
+      problems: ["pkg/a/other.ts: stale, the content changed (sha256)"] });
+  });
+
+  it("each file is hashed from its own bytes, even if the reader reuses one buffer", () => {
+    // Same length, so a reader that writes each file into one buffer leaves only the last one in it.
+    const own = new Map([[FILE, bytes("Reflect.ownKeys(o);\n")], ["pkg/a/other.ts", bytes("Reflect.has(o, kk);\n")]]);
+    const shared = new Uint8Array(20);
+    const reuse = (file: string) => {
+      shared.set(own.get(file)!);
+      return shared;
+    };
+    const list = { [FILE]: entry(["Reflect"], contentSha256(own.get("pkg/a/other.ts")!)) };
+    expect(violations([FILE, "pkg/a/other.ts"], reuse, list)).toEqual({ found: [[FILE, ["Reflect"]], ["pkg/a/other.ts", ["Reflect"]]],
+      problems: [`${FILE}: stale, the content changed (sha256)`] });
+  });
+
+  it("each file is read once, and the rules checked are the rules used", () => {
+    let reads = 0;
+    const changing = () => bytes(reads++ === 0 ? TEXT : `${TEXT}fetch(u);\n`);
+    expect(violations([FILE], changing, { [FILE]: entry() })).toEqual({ found: [], problems: [] });
+    expect(reads).toBe(1);
+    let gets = 0;
+    const rules = new Proxy(["Reflect"], { get: (target, key, receiver) =>
+      key === "0" && gets++ > 0 ? "fetch" : Reflect.get(target, key, receiver) as unknown });
+    const text = `${TEXT}fetch(u);\n`;
+    const result = violations([FILE], () => bytes(text), { [FILE]: entry(rules, contentSha256(bytes(text))) });
+    expect(result).toEqual({ found: [[FILE, ["fetch"]]], problems: [] });
+  });
+
+  it("a getter that would name more rules on a second read lifts nothing", () => {
+    let reads = 0;
+    const rules = { get rules() { reads += 1; return reads > 1 ? ["Reflect", "fetch"] : ["Reflect"]; } };
+    const list = { [FILE]: Object.defineProperties({ sha256: SHA }, Object.getOwnPropertyDescriptors(rules)) };
+    expect(run(list).problems).not.toEqual([]);
+    expect(run(list).found.find(([file]) => file === FILE)?.[1]).toEqual(["Reflect"]);
+  });
+});
+
 describe("the scan catches the ways around it", () => {
   const caught: readonly string[] = [
     'fetch("/api/v1/health")',
@@ -351,6 +614,15 @@ describe("the scan catches the ways around it", () => {
   it("lets plain code through", () => {
     expect(directCalls('import { createApi } from "../client/api";\nconst api = createApi();\nawait api("platform.health.get", input);')).toEqual([]);
     expect(directCalls('import { useState } from "react";\nconst prefetched = true; // nothing is fetched here')).toEqual([]);
+  });
+
+  it("reads a .from property in a string as a property, and every import clause still as an import", () => {
+    expect(directCalls('reject("invalid_position", `${path}.from`);\nreject("x", `${path}.to`);')).toEqual([]);
+    expect(directCalls('const p = path + ".from" + "x";')).toEqual([]);
+    for (const text of ['import mande from"mande"', 'import { m } from "mande"', 'import {m}from"mande"', 'export * from "mande"',
+      'import m from\n"mande"', 'import * as m from "mande"']) {
+      expect(directCalls(text)).toEqual(["import mande"]);
+    }
   });
 
   it("allows tool imports only in the config files of the catalogue and packages", () => {
