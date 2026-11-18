@@ -13,7 +13,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "SignInPanel", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks", "SignInPanel"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {

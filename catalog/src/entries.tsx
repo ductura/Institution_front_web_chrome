@@ -150,16 +150,6 @@ export const SCREEN_ENTRIES = {
     puno: () => <RouteLoading label={t.workspace.statusLoading} />,
     onemogućeno: () => <RouteLoading label={t.workspace.panelLoading} />,
   },
-  // DAN-1081: the card's four states on the catalogue's five. Each cell has its own
-  // heading id: "prijava-kartica" would turn the whole light catalogue dark (globals.css).
-  // "Povezivanje…" stands in for a redirect text locales/hr.ts does not have yet.
-  SignInPanel: {
-    prazno: () => <SignInPanel headingId="prijava-kartica-1" state="default" href={signIn("/")} />,
-    učitavanje: () => <SignInPanel headingId="prijava-kartica-2" state="redirecting" href={signIn("/")} redirectingText={t.liveView.connection.loading} />,
-    greška: () => <SignInPanel headingId="prijava-kartica-3" state="failed" href={signIn("/zadaci")} />,
-    puno: () => <SignInPanel headingId="prijava-kartica-4" state="default" href={signIn("/rad?zadatak=izmisljeni-zadatak-1")} />,
-    onemogućeno: () => <SignInPanel headingId="prijava-kartica-5" state="unavailable" href={signIn("/zadaci")} />,
-  },
   StudentHome: {
     prazno: () => <StudentHome read={{ kind: "ready", courses: [] }} enroll={null} signIn={signIn} />,
     učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
@@ -209,5 +199,16 @@ export const SCREEN_ENTRIES = {
     greška: () => <MentoredWorks works={[mentored(5, null, { documentId: null, workState: "not_started" })]} />,
     puno: () => <MentoredWorks works={mentoredWorks} />,
     onemogućeno: () => <MentoredWorks works={[mentored(6, { givenName: "Iva", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started", workType: "doctoral_thesis" })]} />,
+  },
+  // DAN-1081: the card's four states on the catalogue's five. Last, so no earlier
+  // region moves by a sub-pixel and loses its baseline. Each cell has its own heading
+  // id: "prijava-kartica" would turn the whole light catalogue dark (globals.css).
+  // "Povezivanje…" stands in for a redirect text locales/hr.ts does not have yet.
+  SignInPanel: {
+    prazno: () => <SignInPanel headingId="prijava-kartica-1" state="default" href={signIn("/")} />,
+    učitavanje: () => <SignInPanel headingId="prijava-kartica-2" state="redirecting" href={signIn("/")} redirectingText={t.liveView.connection.loading} />,
+    greška: () => <SignInPanel headingId="prijava-kartica-3" state="failed" href={signIn("/zadaci")} />,
+    puno: () => <SignInPanel headingId="prijava-kartica-4" state="default" href={signIn("/rad?zadatak=izmisljeni-zadatak-1")} />,
+    onemogućeno: () => <SignInPanel headingId="prijava-kartica-5" state="unavailable" href={signIn("/zadaci")} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
