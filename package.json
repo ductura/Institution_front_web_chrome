@@ -1,5 +1,5 @@
 {
-  "name": "@ductura/web-chrome",
+  "name": "@ductura/institution-front-web-chrome",
   "version": "0.1.0",
   "private": true,
   "description": "Ductura prioritetni frontend za Google Chrome na računalu",

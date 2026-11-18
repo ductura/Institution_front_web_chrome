@@ -1,6 +1,6 @@
 // DAN-1081 (1081-W1): the sign-in link. Its path and query name come from the
 // contract (auth.login.get), and returnTo goes in only when the server's rule
-// (ductura/server server/session/return-to.ts) keeps it; the attack table is
+// (ductura/Institution_server server/session/return-to.ts) keeps it; the attack table is
 // the one of that rule's own tests, so the client is never wider than the
 // server. Invented paths and hosts only.
 import { createClient } from "@ductura/contracts";

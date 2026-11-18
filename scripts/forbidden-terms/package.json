@@ -2,7 +2,7 @@
   "name": "@ductura/forbidden-terms",
   "version": "0.1.0",
   "private": true,
-  "description": "Forbidden terms scan of the interface catalogue locales (Ductus PRODUCT §5), copied from ductura/server (DAN-753)",
+  "description": "Forbidden terms scan of the interface catalogue locales (Ductus PRODUCT §5), copied from ductura/Institution_server (DAN-753)",
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",

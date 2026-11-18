@@ -1,6 +1,6 @@
 /**
  * The scan of every interface text in locales/** (S-1L.1, DAN-768, PR-b2; Ductus#1836 c.6890523605, c.6890541239).
- * Copied from ductura/server scripts/forbidden-terms at 2e9a9b3 (DAN-753, 2.c4-a0); only the lists differ.
+ * Copied from ductura/Institution_server scripts/forbidden-terms at 2e9a9b3 (DAN-753, 2.c4-a0); only the lists differ.
  * Every file is on a closed list; every leaf is read and checked, or the scan fails with an input error.
  */
 import { readFileSync, readdirSync, type Dirent } from "node:fs";
@@ -67,7 +67,7 @@ export const SCAN_ERROR_CODES = [
   "STALE_EXCEPTION",
 ] as const;
 
-/** `messageKey` is `forbiddenTerms.<code in lower case>`, as in ductura/server locales/hr.json (its docs/CODE_STYLE.md §8). */
+/** `messageKey` is `forbiddenTerms.<code in lower case>`, as in ductura/Institution_server locales/hr.json (its docs/CODE_STYLE.md §8). */
 export type ScanError = Readonly<{
   code: (typeof SCAN_ERROR_CODES)[number];
   messageKey: string;

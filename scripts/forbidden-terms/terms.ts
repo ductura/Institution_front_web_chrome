@@ -17,7 +17,7 @@
  * međuspremnik", "Copy citation", "Sakrij …", progress percentages) stay out of
  * every pattern, in exactly those words, and so does "Izjava o izvornosti rada"
  * (T10, owner decision, DAN-1034). That entry and its tests in terms.test.ts
- * are the one difference from the copy of ductura/server.
+ * are the one difference from the copy of ductura/Institution_server.
  */
 export type Language = "hr" | "en";
 

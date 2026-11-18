@@ -91,7 +91,7 @@ export function loginRoute(paths: Paths): LoginRoute {
 }
 export const LOGIN_ROUTE = loginRoute((openapi as unknown as { paths: Paths }).paths);
 
-// The server's rule for returnTo (ductura/server server/session/return-to.ts),
+// The server's rule for returnTo (ductura/Institution_server server/session/return-to.ts),
 // copied, never widened: the server checks it again, this only keeps the link
 // from carrying what the server would discard.
 const RETURN_TO_MAX = 512;

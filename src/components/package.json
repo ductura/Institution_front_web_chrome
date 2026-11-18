@@ -1,5 +1,5 @@
 {
-  "name": "@ductura/web-components",
+  "name": "@ductura/Institution_front_web_chrome-components",
   "version": "0.1.0",
   "private": true,
   "description": "Web screens by area, ported from Ductus src/components (DAN-753, 2.c4)",

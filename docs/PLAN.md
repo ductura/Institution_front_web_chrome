@@ -2,8 +2,8 @@ Kanonski plan migracije: [PLAN-MIGRACIJE.md](https://github.com/ductura/.github/
 
 # Ductura/web: plan repozitorija
 
-Stanje: 14. 11. 2026. · **Samo plan.** Izvori kao u [plan servera](https://github.com/ductura/server/blob/main/docs/PLAN.md); Ductus `origin/main` 220b5db7.
-**Odluka vlasnika 14. 11. (A1):** jedan web repo umjesto tri. Cilj je `ductura/web`, preimenovanjem postojećeg `web-chrome`. `web-mobile` i `web-other` arhiviraju se **nakon vlasnikove potvrde plana, ne sada**. Razlike preglednika i mobilni prikaz rješavaju se prilagodbom u istom kodu. Ovaj dokument zamjenjuje ranije zasebne planove za `web-chrome`, `web-mobile` i `web-other`. Uključene su i odluke A2, A3 i B1, B4, B5 (vidi [plan servera](https://github.com/ductura/server/blob/main/docs/PLAN.md)).
+Stanje: 14. 11. 2026. · **Samo plan.** Izvori kao u [plan servera](https://github.com/ductura/Institution_server/blob/main/docs/PLAN.md); Ductus `origin/main` 220b5db7.
+**Odluka vlasnika 14. 11. (A1):** jedan web repo umjesto tri. Cilj je `ductura/Institution_front_web_chrome`, preimenovanjem postojećeg `web-chrome`. `web-mobile` i `web-other` arhiviraju se **nakon vlasnikove potvrde plana, ne sada**. Razlike preglednika i mobilni prikaz rješavaju se prilagodbom u istom kodu. Ovaj dokument zamjenjuje ranije zasebne planove za `web-chrome`, `web-mobile` i `web-other`. Uključene su i odluke A2, A3 i B1, B4, B5 (vidi [plan servera](https://github.com/ductura/Institution_server/blob/main/docs/PLAN.md)).
 
 ## 1. Svrha i granica
 
