@@ -43,11 +43,20 @@ export const EXCEPTIONS: Readonly<Record<string, { readonly fetchCalls: number }
 /**
  * Closed list of rules waived for one exact file (ODLUKA Ductus#2028
  * c.6989236137, DAN-888): POSIX path, the rules, and contentSha256 of the
- * file as reviewed. Empty until the verbatim editor-core files arrive. Every
- * other rule, the network ones included, still applies to a listed file.
+ * file as reviewed. The entries are the verbatim Ductus files of editor-core
+ * (w1119a, Ductus#2028): own-key and accessor checks on untrusted JSON, not
+ * network calls. Every other rule, the network ones included, still applies
+ * to a listed file.
  */
 export const WAIVED_RULES: Readonly<Record<string, { readonly rules: readonly string[]; readonly sha256: string }>> =
-  Object.freeze({});
+  Object.freeze({
+    "packages/editor-core/src/document/json.ts":
+      { rules: ["Reflect"], sha256: "cde02656c3bc490ffe6be823e7fbd0f6cc732df3c8bd97a060c29f75dd45ffb1" },
+    "packages/editor-core/src/document/forensics/jcs.ts":
+      { rules: ["property descriptor"], sha256: "3e421dce7249d33af27e937f3f316f326b03f49b9102f7269f98ff0e547f0723" },
+    "packages/editor-core/src/document/document/edit-step.ts":
+      { rules: ["Reflect"], sha256: "3495e5e704cc1f71a944e2b25ddfce35f740388d3654272a7df6c54e0d31d55d" },
+  });
 
 /** Rules about what a file imports: the imported module is not frozen by the hash, so they are never waived. */
 const UNWAIVABLE = new Set(["test file import", "test fakes", "generated client outside api.ts"]);
@@ -131,7 +140,8 @@ export function normalise(text: string): string {
 }
 
 function bareImports(text: string): string[] {
-  const found = [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
+  // `.from` is a property (`${path}.from` in an error path), never the `from` of an import clause.
+  const found = [...text.matchAll(/(?:(?<!\.)\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
   return found.map((m) => m[1] ?? "").filter((spec) => !spec.startsWith(".") && !spec.startsWith("/"));
 }
 
@@ -270,8 +280,9 @@ describe("no API call outside src/client/api.ts", () => {
     expect(violations(checkedFiles(files), (file) => readFileSync(join(ROOT, file)))).toEqual({ found: [], problems: [] });
   });
 
-  it("the waiver list is closed and empty until its files arrive", () => {
-    expect(Reflect.ownKeys(WAIVED_RULES)).toEqual([]);
+  it("the waiver list is closed: only the verbatim editor-core files", () => {
+    expect(Reflect.ownKeys(WAIVED_RULES)).toEqual(["packages/editor-core/src/document/json.ts",
+      "packages/editor-core/src/document/forensics/jcs.ts", "packages/editor-core/src/document/document/edit-step.ts"]);
     expect(Object.isFrozen(WAIVED_RULES)).toBe(true);
     expect(Object.getPrototypeOf(WAIVED_RULES)).toBe(Object.prototype);
   });
@@ -603,6 +614,15 @@ describe("the scan catches the ways around it", () => {
   it("lets plain code through", () => {
     expect(directCalls('import { createApi } from "../client/api";\nconst api = createApi();\nawait api("platform.health.get", input);')).toEqual([]);
     expect(directCalls('import { useState } from "react";\nconst prefetched = true; // nothing is fetched here')).toEqual([]);
+  });
+
+  it("reads a .from property in a string as a property, and every import clause still as an import", () => {
+    expect(directCalls('reject("invalid_position", `${path}.from`);\nreject("x", `${path}.to`);')).toEqual([]);
+    expect(directCalls('const p = path + ".from" + "x";')).toEqual([]);
+    for (const text of ['import mande from"mande"', 'import { m } from "mande"', 'import {m}from"mande"', 'export * from "mande"',
+      'import m from\n"mande"', 'import * as m from "mande"']) {
+      expect(directCalls(text)).toEqual(["import mande"]);
+    }
   });
 
   it("allows tool imports only in the config files of the catalogue and packages", () => {
