@@ -48,6 +48,12 @@ export const WAIVED_RULES: Readonly<Record<string, readonly string[]>> = Object.
   "packages/editor-core/src/domain/forensics/jcs.ts": Object.freeze(["property descriptor"]),
 });
 
+/** The only line each waived file may have that breaks its waived rule. */
+const WAIVED_LINES: Readonly<Record<string, string>> = {
+  "packages/editor-core/src/domain/json.ts": "  return Reflect.ownKeys(value).every(",
+  "packages/editor-core/src/domain/forensics/jcs.ts": "      const descriptor = Object.getOwnPropertyDescriptor(object, key);",
+};
+
 /** The rules a file breaks once its waivers, if any, are taken out. */
 export function unwaived(file: string, broken: readonly string[]): string[] {
   const waived = Object.hasOwn(WAIVED_RULES, file) ? (WAIVED_RULES[file] ?? []) : [];
@@ -172,8 +178,29 @@ describe("no API call outside src/client/api.ts", () => {
       ["packages/editor-core/src/domain/forensics/jcs.ts", ["property descriptor"]],
       ["packages/editor-core/src/domain/json.ts", ["Reflect"]],
     ]);
+    // Own keys of every kind, so a hidden (non-enumerable) entry cannot slip past.
+    expect(Reflect.ownKeys(WAIVED_RULES).map(String).sort()).toEqual([
+      "packages/editor-core/src/domain/forensics/jcs.ts",
+      "packages/editor-core/src/domain/json.ts",
+    ]);
     expect(Object.isFrozen(WAIVED_RULES)).toBe(true);
-    for (const rules of Object.values(WAIVED_RULES)) expect(Object.isFrozen(rules)).toBe(true);
+    for (const rules of Object.values(WAIVED_RULES)) {
+      expect(Object.isFrozen(rules)).toBe(true);
+      expect(Reflect.ownKeys(rules)).toEqual(["0", "length"]);
+    }
+  });
+
+  it("each waiver covers only the one verbatim line that needs it", () => {
+    for (const [file, rules] of Object.entries(WAIVED_RULES)) {
+      const text = readFileSync(join(ROOT, file), "utf8");
+      for (const name of rules) {
+        const rule = RULES.find(([n]) => n === name)?.[1];
+        expect(rule).toBeDefined();
+        const global = new RegExp(rule!.source, "g");
+        expect([text.match(global)?.length, normalise(text).match(global)?.length]).toEqual([1, 1]);
+        expect(text.split("\n").filter((line) => rule!.test(line))).toEqual([WAIVED_LINES[file]]);
+      }
+    }
   });
 
   it("every waiver still matches a finding in its file", () => {

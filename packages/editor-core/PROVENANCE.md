@@ -19,6 +19,7 @@ obrnutom zamjenom retka uvoza i traži izvorni SHA.
 | `domain/document/validate-sources.ts` | `66b30fd5603be962e2642451604029bf00e1ad0e` | `e47aebd7168c21e130209914b0d3d6f56881b2b58d74629fb4856fda0e66c7f4` | ne |
 | `domain/document/validate.hardening.test.ts` | `3b2c63b82691dc3a8a125f71be72ba87cd10708c` | `117cf5363c830ca8291e0df37bdcc1f7ba1d9ddc161d6b3dd018fe6265bb88f5` | ne |
 | `domain/document/validate.ts` | `bf4906a17d30cc29660e4637f8819c325ccdc516` | `16b224e8f76f32f477d50cf54d261eccf56b0fbb4b38969d7d095ad449e42216` | ne |
+| `domain/forensics/crypto.test.ts` | `d8bd19392afcf9e061981e8922db5aa4a14689fd` | `8f2fa6398338ecbb0a791d474b000fc510bd244217c7e53a10bd85f64d61d589` | ne |
 | `domain/forensics/crypto.ts` | `b8934b98632a1c6bfc5c1881c3223fc9f5352726` | `a2ff9cae580a602f075f85367c0094e24f95e3f160735610c4af87ae5caff3de` | ne |
 | `domain/forensics/integrity.ts` | `3550a51d5e5d814c7264c8a0053e014a173a3a27` | `35fdacae7a6179de5e2a87dcbc027edc29a13416ab32de7d0cab5444d1f20f7c` | ne |
 | `domain/forensics/jcs.test.ts` | `978a418eba0829f874de83145c5a2b2c5904a149` | `cde60fa753fc26f535ae12fcd87cd6482be5a204c11d54f90cf19081dd2a47c4` | ne |
@@ -27,20 +28,24 @@ obrnutom zamjenom retka uvoza i traži izvorni SHA.
 | `domain/json.test.ts` | `7178dfd770b127ceae83a974737cc0bff19ea360` | `9495752162463b842c1749a159b203fc88d72d6f5eeac1dfde2eb20dac673f4a` | ne |
 | `domain/json.ts` | `783873e4201ea9e327a10eb3e36e0d7d90c1ffc6` | `cde02656c3bc490ffe6be823e7fbd0f6cc732df3c8bd97a060c29f75dd45ffb1` | ne |
 
+## Doseg prenesenih testova
+
+- `src/domain/forensics/crypto.test.ts` („has no caller outside src/domain/forensics/crypto*”) obilazi stablo od `process.cwd()`. Testovi paketa rade iz mape paketa, pa ovdje provjerava pozivatelje unutar `packages/editor-core` (`src/`); kod weba izvan paketa taj test ne čita.
+
 ## Izmjene
 
 - `src/domain/document/snapshot.ts`: uvoz `@/domain/forensics/jcs` → `../forensics/jcs` (alias `@/` u web paketu ne postoji). Jedina izmjena.
 
-## Nepreneseni testovi izvora (odgoda do 888-2, razlog je veličina)
+## Nepreneseni testovi izvora (odgoda do 888-2)
 
-Moduli ovog dijela imaju u Ductusu još ove testove. Svi su odgođeni samo zbog
-ograničenja veličine dijela (oko 2500 redaka), ne zbog ovisnosti; prenose se
-bajt po bajt u 888-2 zajedno s modulima koje pokrivaju.
+Moduli ovog dijela imaju u Ductusu još ove testove. `validate.test` i
+`validate-v2.test` odgođeni su samo zbog ograničenja veličine dijela (oko 2500
+redaka); ostali čekaju podatke ili ovisnost navedenu u tablici. Prenose se bajt
+po bajt s modulima koje pokrivaju.
 
 | Izvorni test | Razlog odgode |
 | --- | --- |
 | `domain/document/validate.test.ts` (361 redak) | pokriva `validate.ts`; uvozi samo prenesene module, odgođen zbog veličine |
 | `domain/document/validate-v2.test.ts` (508 redaka) | pokriva `validate.ts` i `validate-sources.ts`; isto |
 | `domain/document/schema-version.test.ts` | čita `forensics/golden-vectors/format-reservation.json`, stiže s vektorima forensics |
-| `domain/forensics/crypto.test.ts` | čita stablo izvora po `process.cwd()` (test „nema pozivatelja”): traži prilagodbu u web paketu |
-| `domain/*.property.test.ts` | traže `@fast-check/vitest`, stižu s ovisnošću |
+| `domain/document/snapshot.fuzz.property.test.ts`, `domain/document/validate-v2.property.test.ts`, `domain/forensics/canonicalization.property.test.ts` | traže `@fast-check/vitest`, stižu s ovisnošću |
