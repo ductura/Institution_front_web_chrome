@@ -16,6 +16,8 @@ Jedini put kojim web zove API (DAN-752, web 2.c3). Poziv ide kroz klijent generi
 
 **Zapisana iznimka ugovora: klijent evidencije.** `evidence/open` i `evidence/commit` traže zaglavlje `ductus-protocol`, `Origin` i kolačić. Generirani klijent ih ne šalje, a od greške čita samo kod, pa gubi stanje rada iz 409 i `stage` iz 503 (ductura/server [`docs/vs1-rute.md`](https://github.com/ductura/server/blob/main/docs/vs1-rute.md)). Ductusov `evidence-ingest` stiže u kasnijem rezu, zajedno s domenom (2.c4, E-0.3). Iznimka vrijedi dok `RequestSpec` ugovora ne dobije zaglavlja. Na zatvoreni popis ulazi tek s modulom, ograničena na `evidence/open` i `evidence/commit`.
 
+**Razdjelnici putanja.** Skener uspoređuje putanje u POSIX obliku. Na Windowsu se `\` čita kao `/`, pa `EXCEPTIONS`, `CONFIG` i `packages/` daju isti ishod kao na Linuxu. Drugdje je `\` dio imena, pa skenirana putanja s `\` ruši test. Ključ popisa mora već biti u POSIX obliku, jer bi na Linuxu ključ s `\` čitao drugu datoteku. Dva ključa koja daju isti put su greška. Pravilo uvoza testne datoteke prihvaća oba razdjelnika i ne razlikuje velika i mala slova imena mapa (`E2E`, `Dist`), jer ih Windows ne razlikuje. Popis datoteka gradi jedna funkcija (`scannedFiles`) s ubrizganim datotečnim sustavom i `node:path`. CI radi na Linuxu, pa test istu funkciju pušta s `path.win32` kroz stvarno stablo repoa i kroz sintetičko stablo (`C:\`, UNC, završni razdjelnik).
+
 Testne datoteke i `e2e/` kataloga ili paketa se ne čitaju, jer pokreću aplikaciju, a nisu njezin dio. Datoteka aplikacije ne smije uvesti testnu datoteku. Alati u korijenu (`dev-server.mjs`, `playwright.config.js`) također nisu kod aplikacije.
 
 ## Paketi i registar
