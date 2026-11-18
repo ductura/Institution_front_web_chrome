@@ -49,6 +49,9 @@ export const EXCEPTIONS: Readonly<Record<string, { readonly fetchCalls: number }
 export const WAIVED_RULES: Readonly<Record<string, { readonly rules: readonly string[]; readonly sha256: string }>> =
   Object.freeze({});
 
+/** Rules about what a file imports: the imported module is not frozen by the hash, so they are never waived. */
+const UNWAIVABLE = new Set(["test file import", "test fakes", "generated client outside api.ts"]);
+
 /** SHA-256 (lower-case hex) of a file's bytes with CRLF read as LF, so a Windows checkout hashes the same. */
 export function contentSha256(bytes: Uint8Array): string {
   const lf = Buffer.from(Buffer.from(bytes).toString("latin1").replaceAll("\r\n", "\n"), "latin1");
@@ -187,19 +190,26 @@ export function checkedFiles(files: readonly string[], list: object = EXCEPTIONS
 
 /** A waiver's rules if it is a plain object of exactly two own data fields, a 64-digit lower-case sha256 and distinct rule names; else why not. */
 function waiverEntry(entry: unknown): { rules: string[]; sha256: string } | string {
+  const own = (value: object, key: string) => Object.getOwnPropertyDescriptor(value, key);
   if (typeof entry !== "object" || entry === null) return "not exactly rules and sha256";
   const proto: unknown = Object.getPrototypeOf(entry);
-  if (proto !== Object.prototype && proto !== null) return "not exactly rules and sha256";
-  const fields = Object.getOwnPropertyDescriptors(entry);
-  const names = Reflect.ownKeys(fields).map(String).sort();
-  if (names.join() !== "rules,sha256" || !("value" in fields.rules!) || !("value" in fields.sha256!)) return "not exactly rules and sha256";
-  const sha256: unknown = fields.sha256!.value;
-  const rules: unknown = Array.isArray(fields.rules!.value) ? [...(fields.rules!.value as unknown[])] : fields.rules!.value;
+  const keys = Reflect.ownKeys(entry);
+  const rulesField = own(entry, "rules");
+  const shaField = own(entry, "sha256");
+  if ((proto !== Object.prototype && proto !== null) || keys.length !== 2 || !rulesField || !("value" in rulesField)
+    || !shaField || !("value" in shaField)) return "not exactly rules and sha256";
+  const sha256: unknown = shaField.value;
   if (typeof sha256 !== "string" || !/^[0-9a-f]{64}$/.test(sha256)) return "sha256 is not 64 lower-case hex digits";
-  if (!Array.isArray(rules) || rules.length === 0 || !rules.every((rule) => typeof rule === "string") || new Set(rules).size !== rules.length) {
+  // Copied by own index, not by iterator, so the names checked are the names used.
+  const list: unknown = rulesField.value;
+  const length = Array.isArray(list) ? own(list, "length") : undefined;
+  const rules = length && typeof length.value === "number"
+    ? Array.from({ length: length.value }, (_, i) => own(list as object, String(i))) : [];
+  const names = rules.map((field) => (field && "value" in field && typeof field.value === "string" ? field.value : undefined));
+  if (names.length === 0 || names.some((name) => name === undefined) || new Set(names).size !== names.length) {
     return "rules is not a list of distinct rule names";
   }
-  return { rules: rules as string[], sha256 };
+  return { rules: names as string[], sha256 };
 }
 
 /**
@@ -229,6 +239,7 @@ export function violations(files: readonly string[], read: (file: string) => Uin
       else {
         for (const rule of entry.rules) {
           if (!RULES.some(([name]) => name === rule)) problems.push(`${key}: no such rule: ${rule}`);
+          else if (UNWAIVABLE.has(rule)) problems.push(`${key}: ${rule} cannot be waived`);
           else if (!file.broken.includes(rule)) problems.push(`${key}: ${rule} has no hit`);
         }
         if (contentSha256(file.bytes) !== entry.sha256) problems.push(`${key}: stale, the content changed (sha256)`);
@@ -436,6 +447,10 @@ describe("a waiver lifts its rules only from the file whose content it froze", (
     ["no rules", { [FILE]: entry([]) }, /rules/],
     ["rules that are not a list", { [FILE]: entry("Reflect") }, /rules/],
     ["a duplicate rule", { [FILE]: entry(["Reflect", "Reflect"]) }, /rules/],
+    ["one key named rules,sha256", { [FILE]: { "rules,sha256": 1 } }, /exactly rules and sha256/],
+    ["rules whose iterator differs from its elements", { [FILE]: entry(Object.assign([1], {
+      [Symbol.iterator]: function* () { yield "Reflect"; } })) }, /distinct rule names/],
+    ["a rule held by a getter", { [FILE]: entry(Object.defineProperty([], "0", { enumerable: true, get: () => "Reflect" })) }, /distinct rule names/],
     ["a rule that is not a string", { [FILE]: entry(["Reflect", 1]) }, /distinct rule names/],
     ["a getter as the entry", Object.defineProperty({}, FILE, { enumerable: true, get: () => entry() }), /exactly rules and sha256/],
     ["an extra field", { [FILE]: { ...entry(), line: "x" } }, /exactly rules and sha256/],
@@ -456,6 +471,23 @@ describe("a waiver lifts its rules only from the file whose content it froze", (
     const beside = Object.defineProperty(list, FILE, { enumerable: true, value: entry() });
     expect(run(beside).problems.join("\n")).toMatch(problem);
     expect(run(beside).found.find(([file]) => file === FILE)?.[1]).toEqual(["Reflect"]);
+  });
+
+  it.each(["test file import", "test fakes", "generated client outside api.ts"])("%s cannot be waived, even on a current file", (rule) => {
+    const text = `${TEXT}import "./net.test";\nimport "@ductura/test-fakes";\nimport "@ductura/contracts";\n`;
+    const list = { [FILE]: entry(["Reflect", rule], contentSha256(bytes(text))) };
+    const result = violations([FILE], () => bytes(text), list);
+    expect(directCalls(text, FILE)).toContain(rule);
+    expect(result.problems).toEqual([`${FILE}: ${rule} cannot be waived`]);
+    expect(result.found).toEqual([[FILE, directCalls(text, FILE)]]);
+  });
+
+  it("a changed byte that is not valid UTF-8 still makes the waiver stale", () => {
+    const withByte = (byte: number) => Buffer.concat([bytes(TEXT), Buffer.from([byte])]);
+    expect(withByte(0xff).toString("utf8")).toBe(withByte(0xfe).toString("utf8"));
+    const result = violations([FILE], () => withByte(0xfe), { [FILE]: entry(["Reflect"], contentSha256(withByte(0xff))) });
+    expect(result.problems).toEqual([`${FILE}: stale, the content changed (sha256)`]);
+    expect(result.found).toEqual([[FILE, ["Reflect"]]]);
   });
 
   it("each file is read once, and the rules checked are the rules used", () => {
