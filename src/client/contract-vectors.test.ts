@@ -83,11 +83,17 @@ function expectAnswer(vector: FakeVector, result: { ok: boolean; status: number;
   if (named !== undefined) expect(result.code).toBe(named);
 }
 
+// Added by contracts 2.7.0 and 2.8.0; @ductura/test-fakes 3.0.1 has no vectors for them.
+const NO_VECTORS_YET: readonly string[] = ["downloads.manifest.get", "student.assignment-work.get"];
+
 describe("contract vectors through the generated client", () => {
   it("has vectors for every operation of the contract and nothing else", () => {
     const routes = new Set(VECTORS.map((v) => v.route));
-    expect([...routes].sort()).toEqual(Object.keys(ROUTE_TABLE).sort());
-    expect([...RESPONSES.keys()].sort()).toEqual(Object.keys(ROUTE_TABLE).sort());
+    const tableRoutes = Object.keys(ROUTE_TABLE);
+    expect([...routes].sort()).toEqual([...tableRoutes].sort());
+    // The contract may be ahead of test-fakes only by the named operations.
+    expect([...RESPONSES.keys()].sort()).toEqual([...tableRoutes, ...NO_VECTORS_YET].sort());
+    for (const r of NO_VECTORS_YET) expect(routes.has(r)).toBe(false);
   });
 
   it("has an answer vector for every contracted answer of 400 and above", () => {
