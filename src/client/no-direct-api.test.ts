@@ -58,6 +58,11 @@ export function listed(list: object, file: string): string | undefined {
   return keys[0];
 }
 
+/** Own keys of a list not already in POSIX form, on any platform. */
+export function nonPosixKeys(list: object): string[] {
+  return Reflect.ownKeys(list).map(String).filter((key) => key !== toPosix(key, "\\"));
+}
+
 /** Whether a directory is a packages/ directory, whose children skip their own e2e and build output. */
 export function isPackagesDir(dir: string, separator: string = sep): boolean {
   return toPosix(dir, separator).endsWith("/packages");
@@ -128,16 +133,19 @@ export function normalise(text: string): string {
     .replace(/(["'`])\s*,\s*(["'`])/g, "$1/$2");
 }
 
-/** What is wrong with a file's waivers: each names a rule that matches exactly one line, the recorded one. */
+/**
+ * What is wrong with a file's waivers: each names a rule that matches once, on
+ * the recorded line, in the text as written and in the normalised text alike.
+ */
 export function waiverProblems(text: string, rules: Readonly<Record<string, string>>): string[] {
   return Object.entries(rules).flatMap(([name, line]) => {
     const rule = RULES.find(([n]) => n === name)?.[1];
     if (!rule) return [`${name}: no such rule`];
     const all = new RegExp(rule.source, `${rule.flags}g`);
-    const counts = [text.match(all)?.length ?? 0, normalise(text).match(all)?.length ?? 0];
-    const lines = text.split(/\r?\n/).filter((each) => rule.test(each));
-    const ok = counts[0] === 1 && counts[1] === 1 && lines.length === 1 && lines[0] === line;
-    return ok ? [] : [`${name}: ${counts.join("/")} matches on ${JSON.stringify(lines)}`];
+    const hits = [text, normalise(text)].map((form) =>
+      form.split(/\r?\n/).flatMap((each) => (each.match(all) ?? []).map(() => each)));
+    const ok = hits.every((found) => found.length === 1 && found[0] === line);
+    return ok ? [] : [`${name}: ${JSON.stringify(hits)}`];
   });
 }
 
@@ -209,12 +217,12 @@ describe("no API call outside src/client/api.ts", () => {
 
   it("every list key is already in POSIX form", () => {
     expect(Object.getPrototypeOf(WAIVED_RULES)).toBe(Object.prototype);
-    for (const key of [...Reflect.ownKeys(EXCEPTIONS), ...Reflect.ownKeys(WAIVED_RULES)]) expect(key).toBe(toPosix(String(key)));
+    expect([...nonPosixKeys(EXCEPTIONS), ...nonPosixKeys(WAIVED_RULES)]).toEqual([]);
   });
 
   it("each waiver covers only its recorded line and still matches a finding", () => {
     for (const [file, rules] of Object.entries(WAIVED_RULES)) {
-      expect(waiverProblems(readFileSync(join(ROOT, file), "utf8"), rules)).toEqual([]);
+      expect(waiverProblems(readFileSync(join(ROOT, toPosix(file, "\\")), "utf8"), rules)).toEqual([]);
     }
     expect(staleWaivers(findings)).toEqual([]);
   });
@@ -253,6 +261,9 @@ describe("paths read the same with Windows separators", () => {
       expect(listed(EXCEPTIONS, win(file))).toBeUndefined();
     }
     expect(() => listed(Object.fromEntries([["public/app.js", 1], ["public\\app.js", 2]]), "public/app.js")).toThrow(/2 times/);
+    // On Linux a "\\" key would read a decoy file of that name at the root, so a list key must already be POSIX.
+    expect(nonPosixKeys(Object.fromEntries([["packages\\qa\\json.ts", {}], ["a/b\\c.ts", {}], ["a/b.ts", {}]])))
+      .toEqual(["packages\\qa\\json.ts", "a/b\\c.ts"]);
   });
 
   it("reads config files and the packages directory with Windows separators", () => {
@@ -301,6 +312,12 @@ describe("a waiver lifts one rule in one file, nothing more", () => {
     expect(waiverProblems("Reflect.has(o, k)\n", { Reflect: LINE })).not.toEqual([]);
     expect(waiverProblems(`x\r\n${LINE}\r\n`, { Reflect: LINE })).toEqual([]);
     expect(waiverProblems(`${LINE} // x\n`, { Reflect: LINE })).not.toEqual([]);
+    // The recorded line commented out, another Reflect live: each form has one match, on different lines.
+    expect(waiverProblems(`/*\n${LINE}\n*/\nconst k = Reflect.ownKeys(o);\n`, { Reflect: LINE })).not.toEqual([]);
+    // A second Reflect that only decoding reveals, and one that decoding hides.
+    expect(waiverProblems(`${LINE}\nconst k = \\u0052eflect.ownKeys(o);\n`, { Reflect: LINE })).not.toEqual([]);
+    expect(waiverProblems(`${LINE}\n/* Reflect */\n`, { Reflect: LINE })).not.toEqual([]);
+    expect(waiverProblems(`${LINE} Reflect.has(o, k)\n`, { Reflect: LINE })).not.toEqual([]);
     expect(waiverProblems(LINE, { reflect: LINE })).toEqual(["reflect: no such rule"]);
   });
 });

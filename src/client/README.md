@@ -18,7 +18,7 @@ Jedini put kojim web zove API (DAN-752, web 2.c3). Poziv ide kroz klijent generi
 
 **Izuzeta pravila (`WAIVED_RULES`).** Zatvoren popis „put → pravilo → jedini dopušteni redak” za doslovno prenesen kod (Ductus#2028 c.6982164435). Prazan je dok te datoteke ne stignu. Sva ostala pravila, i mrežna, vrijede i za navedenu datoteku. Stavka koja ne odgovara nijednom nalazu ruši test.
 
-**Razdjelnici putanja.** Skener uspoređuje putanje u POSIX obliku. Na Windowsu se `\` čita kao `/`, a u ključevima popisa uvijek, pa `EXCEPTIONS`, `WAIVED_RULES`, `CONFIG` i `packages/` daju isti ishod kao na Linuxu. Drugdje je `\` dio imena, pa skenirana putanja s `\` ruši test. Dva ključa koja nakon toga postaju isti put su greška. CI radi na Linuxu, pa se Windows provjerava `path.win32` putanjama kroz iste funkcije.
+**Razdjelnici putanja.** Skener uspoređuje putanje u POSIX obliku. Na Windowsu se `\` čita kao `/`, pa `EXCEPTIONS`, `WAIVED_RULES`, `CONFIG` i `packages/` daju isti ishod kao na Linuxu. Drugdje je `\` dio imena, pa skenirana putanja s `\` ruši test. Ključ popisa mora već biti u POSIX obliku, jer bi na Linuxu ključ s `\` čitao drugu datoteku. Dva ključa koja daju isti put su greška. CI radi na Linuxu, pa se Windows provjerava `path.win32` putanjama kroz iste funkcije.
 
 Testne datoteke i `e2e/` kataloga ili paketa se ne čitaju, jer pokreću aplikaciju, a nisu njezin dio. Datoteka aplikacije ne smije uvesti testnu datoteku. Alati u korijenu (`dev-server.mjs`, `playwright.config.js`) također nisu kod aplikacije.
 
