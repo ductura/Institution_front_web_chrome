@@ -2,11 +2,13 @@
 
 import {
   Button, Checkbox, Details, Dialog, Icon, ICON_NAMES, SAVE_STATES, SaveState, Select, Skeleton, Tag, TextArea, ToastRegion,
-  Fingerprint, KeyValueList, Steps, toggleTheme, useToasts, type SaveStateName,
+  DataTable, Fingerprint, KeyValueList, StateTag, Steps, SUBMISSION_STATES, toggleTheme, useToasts,
+  type DataTableColumn, type SaveStateName, type SubmissionState,
 } from "@ductura/ui";
 import { useEffect, useRef, useState } from "react";
 
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
+import { zagrebWall } from "../../lib/i18n/zagreb";
 
 type Token = { name: string; value: string };
 
@@ -34,6 +36,35 @@ const sample = (
     {t.uiPreview.sheetSample} <a href="#sadrzaj">{t.uiPreview.sheetLink}</a>
   </p>
 );
+
+type SampleRow = { id: SubmissionState; name: string; at: number | null };
+
+const sampleStudents: Record<SubmissionState, string> = {
+  submitted: "Ana Anić (demo)",
+  not_submitted: "Ivo Čavlek (demo)",
+  late: "Petra Šimić (demo)",
+  pending: "Luka Zorić (demo)",
+  gap: "Maja Babić (demo)",
+};
+const sampleRows: SampleRow[] = SUBMISSION_STATES.map((state, index) => ({
+  id: state,
+  name: sampleStudents[state],
+  at: state === "not_submitted" || state === "pending" ? null : Date.UTC(2026, 10, 19, 9 + index, 5 * index),
+}));
+
+function zagrebMinute(ms: number) {
+  const { day, month, year, hour, minute } = zagrebWall(ms);
+  return `${day}. ${month}. ${year}. ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+const sampleColumns: DataTableColumn<SampleRow>[] = [
+  { id: "student", header: t.uiPreview.student, cell: (row) => row.name, sortValue: (row) => row.name, rowHeader: true },
+  { id: "state", header: t.uiPreview.state, cell: (row) => <StateTag state={row.id} /> },
+  {
+    id: "at", header: t.uiPreview.submittedAt, sortValue: (row) => row.at,
+    cell: (row) => row.at === null ? "" : <time dateTime={new Date(row.at).toISOString()}>{zagrebMinute(row.at)}</time>,
+  },
+];
 
 export default function UiPreview() {
   const [tokens, setTokens] = useState<Token[]>([]);
@@ -117,6 +148,13 @@ export default function UiPreview() {
             value: <Fingerprint value={"0123456789abcdef".repeat(4)} />,
           },
         ]} />
+      </section>
+
+      <section aria-labelledby="pregled-tablica" style={{ display: "grid", gap: 16, minWidth: 0 }}>
+        <h2 id="pregled-tablica">{t.uiPreview.table}</h2>
+        <DataTable caption={t.uiPreview.tableCaption} columns={sampleColumns} rows={sampleRows} rowKey={(row) => row.id} empty={t.uiPreview.tableEmpty} />
+        <DataTable caption={t.uiPreview.tableEmptyCaption} columns={sampleColumns} rows={[]} rowKey={(row) => row.id} empty={t.uiPreview.tableEmpty} />
+        <DataTable caption={t.uiPreview.tableLoadingCaption} columns={sampleColumns} rows={[]} rowKey={(row) => row.id} empty={t.uiPreview.tableEmpty} loading />
       </section>
 
       <section aria-labelledby="pregled-ikone">

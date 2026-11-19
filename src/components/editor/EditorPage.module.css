@@ -1,7 +1,7 @@
 /* WEB-14 (E§1): the sheet of paper on the ground, up to 820 px wide, above the 30 px status bar. */
 .page {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   min-height: 100dvh;
   background: var(--ground);
   color: var(--ink);
@@ -13,6 +13,8 @@
   font-family: var(--ff-ui);
   font-size: 13px;
 }
+/* The toolbar row (WEB-15) is empty and takes no height while the editor is not mounted. */
+.toolbar { padding: 0 16px; }
 .area { overflow: auto; padding: 24px 16px 48px; }
 .sheet {
   box-sizing: border-box;

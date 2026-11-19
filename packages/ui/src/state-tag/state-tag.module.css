@@ -1,0 +1,11 @@
+/* Ink on --well in every state (a pair tokens.test.ts proves in both themes); the state colour is only the border. */
+.tag {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 22px; padding: 0 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--ink); background: var(--well);
+  border: 1px solid var(--rule-2);
+}
+.mark { font-size: 11px; line-height: 1; }
+.tag[data-state="submitted"] { border-color: var(--synced); }
+.tag[data-state="pending"] { border-color: var(--accent); }
+.tag[data-state="late"], .tag[data-state="gap"] { border-color: var(--warn); }
+.tag[data-state="gap"] { border-style: dashed; }
