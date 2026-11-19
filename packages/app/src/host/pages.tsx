@@ -17,7 +17,7 @@ import { hostText } from "../text";
 import { useHost } from "./context";
 
 // The pages the host shows, one per route of app/[base]/. Each reads the
-// institution server only through src/client (/api/v1).
+// institution server only through src/client.
 
 /** A page of the navigation not yet connected to the institution server: its heading and a note. */
 export function PendingPage() {
