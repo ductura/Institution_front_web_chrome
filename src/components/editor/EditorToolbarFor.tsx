@@ -264,7 +264,8 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
                 roving="blockStyle"
                 tabIndex={stop === "blockStyle" ? 0 : -1}
                 disabled={!state.editable}
-                open={openMenu === "blockStyle" && state.editable}
+                // Never gated on editable: a menu hidden that way would reopen by itself.
+                open={openMenu === "blockStyle"}
                 onOpenChange={(open) => {
                   setFocusKey("blockStyle");
                   setOpenMenu(open ? "blockStyle" : null);
