@@ -8,7 +8,7 @@
 // server records the acknowledgment only if its own fingerprint of the
 // stored version is the same, so a student never confirms a text they did
 // not see.
-import { createApi } from "@/client/api";
+import { createApi } from "../../client/api";
 
 import { NOTICE_TEMPLATE_VERSION, noticeFingerprint, type NoticeFingerprintInput } from "./obavijest/notice-fingerprint";
 

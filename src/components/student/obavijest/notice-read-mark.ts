@@ -1,4 +1,4 @@
-import { createApi } from "@/client/api";
+import { createApi } from "../../../client/api";
 
 // WEB-12 (PO-7): the notice screen tells the server once that the student
 // opened this version of the notice, over student.notice-read.post. It is a

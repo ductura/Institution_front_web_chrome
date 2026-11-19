@@ -3,7 +3,7 @@
 // the notice screen that is its only caller. Institution_server computes the
 // same fingerprint in institution.notice_fingerprint; the golden vectors in
 // notice-fingerprint.test.ts are the ones its SQL test holds.
-import { canonicalizeJcs } from "@/domain/forensics/jcs";
+import { canonicalizeJcs } from "../../../../packages/editor-core/src/document/forensics/jcs";
 
 /**
  * The fingerprint of the assignment notice a student acknowledges (DAN-306,
