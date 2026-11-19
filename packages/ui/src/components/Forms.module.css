@@ -16,6 +16,9 @@
 .check { display: inline-flex; gap: 10px; align-items: center; min-height: 44px; color: var(--ink); cursor: pointer; }
 .box { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 .box[aria-invalid="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* The error mark above is an outline too and outranks the global :focus-visible
+   ring, so without this an invalid box looks the same focused or not (WCAG 2.4.7). */
+.box[aria-invalid="true"]:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }
 .box:disabled, .box:disabled + span { cursor: not-allowed; color: var(--ink-3); }
 
 .tag {
