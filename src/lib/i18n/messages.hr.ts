@@ -2040,6 +2040,7 @@ export const hr = {
     declared: "Vaša izjava",
     declaredTag: "izjavljeno",
     statement: "Potvrdom izjavljujete da ste pregledali što je zabilježeno u Ducturi o ovom radu.",
+    statementWithoutRecord: "Zabilježene stavke ovdje trenutačno nisu prikazane. Potvrdom potvrđujete samo svoju izjavu.",
     keptHere: "Potvrda se ne šalje poslužitelju; vrijedi samo u ovom koraku predaje u ovom pregledniku.",
     confirm: "Potvrđujem izjavu",
     next: "Dalje",

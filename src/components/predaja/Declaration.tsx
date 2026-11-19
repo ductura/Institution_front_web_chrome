@@ -33,9 +33,14 @@ export type RecordedRead =
   | { readonly kind: "loading" }
   | { readonly kind: "error" };
 
-/** Where the flow keeps the confirmation: this tab only, never the server (P-7). */
-export function confirmationKey(assignmentId: string): string {
-  return `ductura.predaja.izjava.${assignmentId}`;
+/**
+ * Where the flow keeps the confirmation: this tab only, never the server
+ * (P-7), under this session and assignment. A sign-out leaves the tab's
+ * storage, so the next person signed in here has another session and finds
+ * nothing ticked. Without a known session nothing is kept.
+ */
+export function confirmationKey(session: string | null, assignmentId: string): string | null {
+  return session === null ? null : `ductura.predaja.izjava.${session}.${assignmentId}`;
 }
 
 function isEmpty(summary: RecordedSummary): boolean {
@@ -99,7 +104,7 @@ export function DeclarationView({ recorded, confirmed, onConfirm, onNext, onBack
       {recorded.kind === "error" && <Button tone="quiet" onClick={onRetry}>{t.retry}</Button>}
       <Card title={t.declared}>
         <Tag>{t.declaredTag}</Tag>
-        <p>{t.statement}</p>
+        <p>{recorded.kind === "ready" ? t.statement : t.statementWithoutRecord}</p>
         <Checkbox label={t.confirm} hint={t.keptHere} checked={confirmed}
           onChange={(event) => onConfirm(event.currentTarget.checked)} />
       </Card>
@@ -114,10 +119,13 @@ export function DeclarationView({ recorded, confirmed, onConfirm, onNext, onBack
 
 export type DeclarationProps = {
   readonly assignmentId: string;
+  /** A digest of the session cookie from the server, never the cookie; null when there is none. */
+  readonly session: string | null;
   readonly recorded: RecordedRead;
 };
 
-export function readConfirmed(key: string): boolean {
+export function readConfirmed(key: string | null): boolean {
+  if (key === null) return false;
   try {
     return window.sessionStorage.getItem(key) === "1";
   } catch {
@@ -125,7 +133,8 @@ export function readConfirmed(key: string): boolean {
   }
 }
 
-export function writeConfirmed(key: string, confirmed: boolean): void {
+export function writeConfirmed(key: string | null, confirmed: boolean): void {
+  if (key === null) return;
   try {
     if (confirmed) window.sessionStorage.setItem(key, "1");
     else window.sessionStorage.removeItem(key);
@@ -135,9 +144,9 @@ export function writeConfirmed(key: string, confirmed: boolean): void {
 }
 
 /** The step with its state: never ticked in advance, kept when the student comes back from step 3. */
-export default function Declaration({ assignmentId, recorded }: DeclarationProps) {
+export default function Declaration({ assignmentId, session, recorded }: DeclarationProps) {
   const router = useRouter();
-  const key = confirmationKey(assignmentId);
+  const key = confirmationKey(session, assignmentId);
   const [confirmed, setConfirmed] = useState(false);
   // Read after the first render, so the server's markup (unticked) matches.
   useEffect(() => setConfirmed(readConfirmed(key)), [key]);

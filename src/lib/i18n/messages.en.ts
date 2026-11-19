@@ -2007,6 +2007,7 @@ const en = {
     declared: "Your declaration",
     declaredTag: "declared",
     statement: "By confirming you declare that you have reviewed what Ductura recorded about this work.",
+    statementWithoutRecord: "The recorded items are not shown here right now. By confirming you confirm only your own declaration.",
     keptHere: "The confirmation is not sent to the server; it holds only in this submission step in this browser.",
     confirm: "I confirm the declaration",
     next: "Next",
