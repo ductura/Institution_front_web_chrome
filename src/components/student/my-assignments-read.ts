@@ -9,9 +9,20 @@ export type MyAssignment = {
   dueAt: string;
   /** The current version's notice is not acknowledged yet; /rad opens it first. */
   noticeFirst: boolean;
+  /** WEB-09 (A-3): a later deadline the teacher gave this student; null or absent: none. */
+  extendedDueAt?: string | null;
 };
 
-export type MyCourse = { id: string; name: string; assignments: MyAssignment[] };
+/** WEB-09 (A-3): a teacher of the course as student.assignments.get names them. */
+export type CourseTeacher = { id: string; givenName: string; familyName: string; role: "holder" | "collaborator" };
+
+export type MyCourse = {
+  id: string;
+  name: string;
+  academicYear?: string;
+  teachers?: CourseTeacher[];
+  assignments: MyAssignment[];
+};
 
 export type MyAssignmentsRead =
   | { kind: "ready"; courses: MyCourse[] }

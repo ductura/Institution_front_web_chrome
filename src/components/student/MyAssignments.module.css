@@ -76,6 +76,15 @@
   overflow-wrap: anywhere;
 }
 
+/* WEB-09 (A-3): the course's teachers under its name. */
+.teachers {
+  margin: 0;
+  padding: 14px 24px 0;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
 .none {
   margin: 0;
   padding: 18px 24px;
