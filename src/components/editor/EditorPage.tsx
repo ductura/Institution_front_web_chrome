@@ -8,22 +8,27 @@ import styles from "./EditorPage.module.css";
  * The editor page (WEB-14, E§1): the course and assignment above, one sheet
  * of paper up to 820 px wide with the work's title, and the status bar below.
  * `children` is what the sheet holds (the editor, or why there is none);
- * `status` is the StatusBar.
+ * `status` is the StatusBar; `toolbar`, when the editor is mounted, sits
+ * above the sheet (WEB-15), outside it, so it never scrolls away with the text.
  */
 export default function EditorPage({
   course,
   title,
   status,
+  toolbar = null,
   children,
 }: {
   course: string | null;
   title: string | null;
   status: ReactNode;
+  toolbar?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className={styles.page}>
       <p className={styles.context}>{course !== null && title !== null ? `${course} / ${title}` : t.workspace.title}</p>
+      {/* Always rendered, so the grid keeps its rows with or without a toolbar. */}
+      <div className={styles.toolbar}>{toolbar}</div>
       <main id="sadrzaj" className={styles.area}>
         <article className={styles.sheet} aria-label={t.workspace.documentLabel}>
           <h1 className={styles.title}>{title ?? t.workspace.documentUntitled}</h1>

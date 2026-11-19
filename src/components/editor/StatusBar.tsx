@@ -25,6 +25,37 @@ export function shownSaveState(save: Pick<StatusSave, "state" | "receiptSigned">
   return save.state === "SYNCED" && !save.receiptSigned ? "LOCAL_DURABLE" : save.state;
 }
 
+/** The phases of the writing page's document provider (LocalDocument). */
+export type DocumentPhase = "loading" | "blocked" | "ready" | "recovery" | "unavailable" | "signed-out";
+
+/**
+ * What the document provider reports, as the bar reads it (WEB-14b).
+ * `receiptVerifiedHere`: the explicit result of the receipt check, true only
+ * once a receipt for the text on the sheet passed the Ed25519 check in this
+ * page session (G3). A SYNCED read back from the journal (a reload, or the
+ * server's version taken over) is not that: until a new receipt is verified
+ * here the bar says the text is on the device. The local saver never sends,
+ * so it never passes true.
+ */
+export type SaveRead = {
+  readonly phase: DocumentPhase;
+  readonly state: SaveStateName | null;
+  readonly receiptVerifiedHere: boolean;
+};
+
+/**
+ * The bar's `save` for one read of the provider, or null while there is no
+ * state to claim: the journal is still read, the browser has no storage, or
+ * the session has ended. Another tab's lock shows the block (A-12) and no
+ * state; a sheet in recovery says RECOVERY_REQUIRED, never its last state.
+ */
+export function statusSaveOf(read: SaveRead): StatusSave | null {
+  if (read.phase === "blocked") return { state: "LOCAL_DURABLE", receiptSigned: false, blocked: true };
+  if (read.phase === "recovery") return { state: "RECOVERY_REQUIRED", receiptSigned: false, blocked: false };
+  if (read.phase !== "ready" || read.state === null) return null;
+  return { state: read.state, receiptSigned: read.receiptVerifiedHere && read.state === "SYNCED", blocked: false };
+}
+
 /**
  * The 30 px status bar under the sheet. `save` is null while no journal is
  * open on this page: the bar then says that nothing is saved here, never a
