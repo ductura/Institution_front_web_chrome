@@ -30,8 +30,11 @@ export default function NewCourseForm({ here, years }: { here: string; years: re
   const [created, setCreated] = useState<Created | null>(null);
   // After "another" the button is gone; focus returns to the first field.
   const formRef = useRef<HTMLDivElement>(null);
-  const set = (key: keyof NewCourseFields) => (event: { target: { value: string } }) =>
+  // An edited field drops its old error; the next submit checks it again.
+  const set = (key: keyof NewCourseFields) => (event: { target: { value: string } }) => {
     setFields((now) => ({ ...now, [key]: event.target.value }));
+    setErrors((now) => (now[key] === undefined ? now : { ...now, [key]: undefined }));
+  };
 
   async function submit() {
     if (busy) return;
