@@ -219,6 +219,35 @@ describe("submitWork", () => {
     expect(submitOutcomeFrom({ ...result, code: "not_open" }, { status: "not_open" }, SENT)).toEqual({ kind: "greska", code: "not_open" });
   });
 
+  it("checks the receipt against what was sent, though the caller changes its input meanwhile", async () => {
+    const input = { ...SENT };
+    let answer: (r: Response) => void = () => {};
+    const delayed: typeof fetch = () => new Promise((done) => { answer = done; });
+    const pending = submitWork(input, { api: { baseUrl: BASE, fetchImpl: delayed } });
+    await Promise.resolve();
+    input.revision = 8;
+    input.documentId = "izmisljeni-rad-0002";
+    await new Promise((done) => setTimeout(done, 0));
+    answer(new Response(JSON.stringify(submitted(RECEIPT)), { status: 200, headers: { "content-type": "application/json" } }));
+    expect(await pending).toEqual({ kind: "predano", receipt: RECEIPT });
+  });
+
+  it("does not take a receipt for the revision the input changed to", async () => {
+    const input = { ...SENT };
+    let answer: (r: Response) => void = () => {};
+    const delayed: typeof fetch = () => new Promise((done) => { answer = done; });
+    const pending = submitWork(input, { api: { baseUrl: BASE, fetchImpl: delayed } });
+    input.revision = 8;
+    await new Promise((done) => setTimeout(done, 0));
+    const eight = { ...RECEIPT, payload: { ...RECEIPT.payload, revision: 8 } };
+    answer(new Response(JSON.stringify(submitted(eight)), { status: 200, headers: { "content-type": "application/json" } }));
+    expect(await pending).toEqual({ kind: "nepoznato" });
+  });
+
+  it("is session-expired on a 401 whose JSON body is broken", async () => {
+    expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(401, "{not json") } })).toEqual({ kind: "session-expired" });
+  });
+
   it("is session-expired on a 401 session_expired", async () => {
     const outcome = await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(401, { code: "session_expired" }) } });
     expect(outcome).toEqual({ kind: "session-expired" });

@@ -31,7 +31,7 @@
  * the contract's.
  */
 
-import { createApi, errorBody, RESPONSES, type ApiOptions, type ApiResult } from "./api";
+import { browserTransport, createApi, errorBody, RESPONSES, type ApiOptions, type ApiResult } from "./api";
 import { matchesSchema, type Schema } from "./schema-check";
 
 type SubmitSuccess = Extract<ApiResult<"submission.submit.post">, { ok: true }>;
@@ -178,12 +178,24 @@ export type SubmitDeps = {
 export async function submitWork(input: SubmitInput, deps: SubmitDeps = {}): Promise<SubmitOutcome> {
   if (deps.current !== undefined && !deps.current()) return EXPIRED;
   let outcome: ReturnType<typeof submitOutcomeFrom>;
+  let sent: SubmitInput;
   try {
-    const api = createApi({ ...deps.api, protocol: "1" });
+    // One copy, read once: what is sent is what the answer is checked against, whatever the caller changes meanwhile.
+    sent = { assignmentId: String(input.assignmentId), documentId: String(input.documentId), revision: Number(input.revision) };
+    const transport = deps.api?.fetchImpl ?? browserTransport;
+    let answered = 0;
+    const measured: typeof fetch = async (url, init) => {
+      const response = await transport(url, init);
+      answered = response.status;
+      return response;
+    };
+    const api = createApi({ ...deps.api, fetchImpl: measured, protocol: "1" });
     const result = await api("submission.submit.post", {
-      params: undefined, query: undefined, body: { documentId: input.documentId, revision: input.revision },
+      params: undefined, query: undefined, body: { documentId: sent.documentId, revision: sent.revision },
     });
-    outcome = submitOutcomeFrom(result, errorBody(result), input);
+    // A 401 whose body is not JSON reaches here as status 0: it is still the end of the session.
+    if (!result.ok && result.status === 0 && answered === 401) return EXPIRED;
+    outcome = submitOutcomeFrom(result, errorBody(result), sent);
   } catch {
     return UNKNOWN;
   }
@@ -191,10 +203,10 @@ export async function submitWork(input: SubmitInput, deps: SubmitDeps = {}): Pro
   if (deps.local === undefined) return UNKNOWN;
   // The session may have ended while the submission was on its way: no second request then.
   if (deps.current !== undefined && !deps.current()) return EXPIRED;
-  const state = await readSubmissionState(deps.local, input.assignmentId);
+  const state = await readSubmissionState(deps.local, sent.assignmentId);
   if (state.kind === "session-expired") return EXPIRED;
   const agrees = (state.kind === "ceka" && state.revision === outcome.revision)
-    || (state.kind === "potvrdeno" && receiptFor(state.receipt, { ...input, revision: outcome.revision }));
+    || (state.kind === "potvrdeno" && receiptFor(state.receipt, { ...sent, revision: outcome.revision }));
   return agrees ? { kind: "stanje", revision: outcome.revision, state } : UNKNOWN;
 }
 
