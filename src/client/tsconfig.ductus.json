@@ -1,0 +1,11 @@
+{
+  // The modules ported from Ductus 0cdb0f1 and the editor-core sources they
+  // import were written without noUncheckedIndexedAccess (Ductus tsconfig);
+  // under it they give type errors without being wrong, as in
+  // packages/editor-core and src/domain (DAN-990). Everything else in
+  // src/client stays under tsconfig.json.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noUncheckedIndexedAccess": false },
+  "include": ["comments.ts", "comments.test.ts", "revision-requests.ts", "revision-requests.test.ts"],
+  "exclude": []
+}
