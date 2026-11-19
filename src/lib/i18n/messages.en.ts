@@ -1540,6 +1540,7 @@ const en = {
     issuedNote: "A code was issued and is valid until {until}.",
     revokedNote: "The code was revoked.",
     nothingRevokedNote: "The course had no valid code.",
+    unknownNote: "It is not known whether the last code request went through. Issue a new code before sharing one.",
     dialogTitle: "Enrolment code: {course}",
     dialogLead: "A new code replaces the previous one; the old code stops working.",
     validUntil: "Valid until (Zagreb time)",
@@ -1554,7 +1555,7 @@ const en = {
     errors: {
       invalid: "The server did not accept that date. Choose another.",
       forbidden: "You do not teach this course, so you cannot issue or revoke its code.",
-      unavailable: "The code cannot be issued or revoked right now. Please try again.",
+      unavailable: "It is not known whether the request went through. The code shown may no longer work; issue a new code.",
     },
   },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,

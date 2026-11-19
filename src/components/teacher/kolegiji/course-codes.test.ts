@@ -70,9 +70,16 @@ describe("nextNote", () => {
     expect(nextNote(null, { kind: "revoked", revoked: false }, until)).toEqual({ kind: "nothingRevoked" });
   });
 
-  it("leaves the previous note after an error", () => {
+  it("leaves the previous note after a refusal", () => {
     const issued = { kind: "issued", validUntil: until } as const;
-    expect(nextNote(issued, { kind: "unavailable" }, until)).toBe(issued);
+    expect(nextNote(issued, { kind: "forbidden" }, until)).toBe(issued);
+    expect(nextNote(issued, { kind: "invalid" }, until)).toBe(issued);
     expect(nextNote(null, { kind: "forbidden" }, until)).toBeNull();
+  });
+
+  it("claims no code valid after an unknown outcome (the server may have applied it)", () => {
+    const issued = { kind: "issued", validUntil: until } as const;
+    expect(nextNote(issued, { kind: "unavailable" }, until)).toEqual({ kind: "unknown" });
+    expect(nextNote(null, { kind: "unavailable" }, until)).toEqual({ kind: "unknown" });
   });
 });

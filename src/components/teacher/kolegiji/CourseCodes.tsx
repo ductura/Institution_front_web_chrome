@@ -35,6 +35,7 @@ function byYear(courses: readonly Course[]): [string, Course[]][] {
 
 function noteText(note: CodeNote): string {
   if (note.kind === "issued") return t.issuedNote.replace("{until}", formatDateTimeHr(note.validUntil));
+  if (note.kind === "unknown") return t.unknownNote;
   return note.kind === "revoked" ? t.revokedNote : t.nothingRevokedNote;
 }
 
@@ -100,6 +101,8 @@ export default function CourseCodes({ courses, here }: { courses: readonly Cours
     } else if (outcome.kind === "revoked") {
       setCode(null);
     } else {
+      // An unknown outcome may have replaced or revoked the shown code: never keep showing it.
+      if (outcome.kind === "unavailable") setCode(null);
       setFailure(outcome.kind);
     }
   }

@@ -1563,6 +1563,7 @@ export const hr = {
     issuedNote: "Kod je izdan i vrijedi do {until}.",
     revokedNote: "Kod je opozvan.",
     nothingRevokedNote: "Kolegij nije imao važeći kod.",
+    unknownNote: "Nije poznato je li zadnji zahtjev za kod proveden. Prije dijeljenja izdajte novi kod.",
     dialogTitle: "Kod za upis: {course}",
     dialogLead: "Novi kod zamjenjuje prethodni; stari kod od tada više ne vrijedi.",
     validUntil: "Vrijedi do (po zagrebačkom vremenu)",
@@ -1577,7 +1578,7 @@ export const hr = {
     errors: {
       invalid: "Poslužitelj nije prihvatio taj datum. Odaberite drugi.",
       forbidden: "Ne predajete na ovom kolegiju pa ne možete izdati ni opozvati njegov kod.",
-      unavailable: "Kod trenutačno nije moguće izdati ni opozvati. Pokušajte ponovno.",
+      unavailable: "Nije poznato je li zahtjev proveden. Prikazani kod možda više ne vrijedi; izdajte novi kod.",
     },
   },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,

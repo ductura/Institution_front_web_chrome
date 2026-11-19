@@ -57,11 +57,17 @@ export function codeOutcome(answer: Answer): CodeOutcome {
 /** What a course's row says after this visit's dialogs; nothing before the first one. */
 export type CodeNote =
   | { kind: "issued"; validUntil: string }
-  | { kind: "revoked" | "nothingRevoked" };
+  | { kind: "revoked" | "nothingRevoked" | "unknown" };
 
-/** The note a row keeps after an outcome; an error leaves the previous note. */
+/**
+ * The note a row keeps after an outcome. A refusal (403, 400/422) changed
+ * nothing and leaves the previous note; "unavailable" is an unknown outcome:
+ * the server may have replaced or revoked the code, so no earlier code is
+ * claimed valid any more.
+ */
 export function nextNote(previous: CodeNote | null, outcome: CodeOutcome, validUntil: string): CodeNote | null {
   if (outcome.kind === "issued") return { kind: "issued", validUntil };
   if (outcome.kind === "revoked") return { kind: outcome.revoked ? "revoked" : "nothingRevoked" };
+  if (outcome.kind === "unavailable") return { kind: "unknown" };
   return previous;
 }
