@@ -1,8 +1,7 @@
 import Link from "next/link";
 
 import RoleShell from "@/components/shell/RoleShell";
-import AccessLogPanel from "@/components/student/AccessLogPanel";
-import { assignmentIdOf, cursorOf } from "@/components/student/access-log-read";
+import { assignmentIdOf } from "@/components/student/access-log-read";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 export const dynamic = "force-dynamic";
@@ -10,18 +9,16 @@ export const metadata = { title: `${t.accessLog.context} · ${t.app.name}` };
 
 /**
  * S-42 (DAN-294; WEB-13 over /api/v1): the student's own access log (PRODUCT
- * §5 rule 17). The shell checks the session (me); the log itself is read in
- * the browser through the contract (AccessLogPanel): evidence.open.post
- * without `start` finds the student's own work, never makes one, and
- * student.access-log.get answers only for its owner. Another student's work,
- * an unknown one and a failed read never show a row.
+ * §5 rule 17). The shell checks the session (me). The contract has no
+ * read-only route from the assignment to the student's own work, which
+ * student.access-log.get needs, and evidence.open.post is never used for it
+ * (it opens the document; orchestrator, #87 c.7010793472). Until the server
+ * adds that route the log reads as unavailable, with no call at all.
  */
 export default async function StudentAccessLogPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ assignmentId: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { assignmentId: raw } = await params;
   const assignmentId = assignmentIdOf(raw);
@@ -35,7 +32,7 @@ export default async function StudentAccessLogPage({
         ) : (
           <>
             <p><Link href={`/rad/${assignmentId}`}>{t.accessLog.backToWork}</Link></p>
-            <AccessLogPanel assignmentId={assignmentId} cursor={cursorOf(await searchParams)} here={here} />
+            <p className="access-log__note" role="status">{t.accessLog.unavailable}</p>
           </>
         )}
       </div>

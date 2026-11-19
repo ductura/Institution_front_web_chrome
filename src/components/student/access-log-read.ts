@@ -3,13 +3,14 @@ import type { createApi } from "@/client/api";
 import { accessLogDaysOf, type AccessLogDay } from "./access-log-days";
 
 /**
- * WEB-13 (S-42 over /api/v1): the student's own access log, read in the
- * browser through the contract only. The page knows the assignment; the log
- * route wants the work, so the work is found with evidence.open.post without
- * `start`, which never makes a work, then student.access-log.get reads one
- * page. evidence.open wants Same Origin and `ductus-protocol: 1`, which only
- * the browser sends, so both reads run there. Another student's work, an
- * unknown one and a refusal read the same "not found" (C-23).
+ * WEB-13 (S-42 over /api/v1): the student's own access log, through the
+ * contract only. The page knows the assignment; student.access-log.get wants
+ * the work (documentId). The contract has no read-only route from one to the
+ * other, and evidence.open.post opens the document and has side effects, so
+ * it is never used for this (orchestrator, #87 c.7010793472). Until the
+ * server adds that route the page shows the log as unavailable without any
+ * call; readAccessLogPage is the read it will use. Another student's work,
+ * an unknown one and a refusal read the same "not found" (C-23).
  */
 
 type Api = ReturnType<typeof createApi>;
@@ -19,7 +20,6 @@ export type AccessLogCursor = { readonly beforeAt: string; readonly beforeId: st
 
 export type AccessLogRead =
   | { readonly kind: "ok"; readonly days: AccessLogDay[]; readonly next: AccessLogCursor | null; readonly continued: boolean }
-  | { readonly kind: "notStarted" }
   | { readonly kind: "notFound" }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
@@ -49,22 +49,12 @@ export function pageHref(here: string, cursor: AccessLogCursor | null): string {
   return `${here}?${new URLSearchParams({ prije: cursor.beforeAt, zapis: cursor.beforeId }).toString()}`;
 }
 
-const SIGNED_OUT: ReadonlySet<string> = new Set(["unauthenticated", "unauthorized", "session_expired"]);
+const SIGNED_OUT: ReadonlySet<string> = new Set(["unauthorized", "session_expired"]);
 
-/**
- * One page of the log for `assignmentId`. `open` is createApi with protocol
- * "1" (evidence.open.post), `read` is createApi without it.
- */
-export async function readAccessLog(open: Api, read: Api, assignmentId: string, cursor: AccessLogCursor | null): Promise<AccessLogRead> {
-  const work = await open("evidence.open.post", { params: undefined, query: undefined, body: { assignmentId } });
-  if (!work.ok) {
-    if (SIGNED_OUT.has(work.code)) return { kind: "signedOut" };
-    if (work.code === "not_started") return { kind: "notStarted" };
-    if (work.status === 403 || work.status === 404 || work.status === 409) return { kind: "notFound" };
-    return { kind: "unavailable" };
-  }
+/** One page of the log of the work `documentId`; `read` is createApi(). */
+export async function readAccessLogPage(read: Api, documentId: string, cursor: AccessLogCursor | null): Promise<AccessLogRead> {
   const log = await read("student.access-log.get", {
-    params: { documentId: work.body.documentId },
+    params: { documentId },
     query: cursor === null ? {} : { beforeAt: cursor.beforeAt, beforeId: cursor.beforeId },
     body: undefined,
   });

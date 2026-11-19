@@ -6,7 +6,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
  * log as the server read it. Each stored opening is one row of five minutes
  * under its Zagreb day, the newest first; nothing is summed, counted or timed
  * (D-274 MQ10, PRODUCT §5 rule 17). A reader without a name pair is shown by
- * role alone. No state of its own: the page's reader (AccessLogPanel) gives it the days.
+ * role alone. No state of its own: the caller gives it the days of one page (readAccessLogPage).
  */
 
 const a = t.accessLog;
