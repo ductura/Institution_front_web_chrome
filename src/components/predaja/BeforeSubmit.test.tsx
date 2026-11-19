@@ -5,9 +5,10 @@ import type { LocalCall, SubmissionNote } from "@/client/submission";
 
 import type { ProcessSummaryV1 } from "../summary/ProcessSummaryView";
 import {
-  BeforeSubmitView, loadNotes, pastedText, saveNote, stageOf,
-  type BeforeSubmitViewProps, type NotesRead, type Stage, type SummaryRead,
+  BeforeSubmitView, loadNotes, pastedText, saveNote,
+  type BeforeSubmitViewProps, type NotesRead, type SummaryRead,
 } from "./BeforeSubmit";
+import { stageOf, type Stage } from "./stage";
 import { noteFailure, noteProblem } from "./NoteDialog";
 
 // Invented summary of an invented work (no real student data).

@@ -4,7 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { signInHref } from "../../../../../client/api";
 import { serverApi } from "../../../../../client/server";
 import { assignmentIdOf, editorWorkRead } from "../../../../../components/editor/EditorPage.read";
-import BeforeSubmit, { stageOf, type Stage, type SummaryRead } from "../../../../../components/predaja/BeforeSubmit";
+import BeforeSubmit, { type SummaryRead } from "../../../../../components/predaja/BeforeSubmit";
+import { stageOf, type Stage } from "../../../../../components/predaja/stage";
 import RoleShell from "../../../../../components/shell/RoleShell";
 import { messagesHr as t } from "../../../../../lib/i18n/messages.hr";
 

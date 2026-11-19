@@ -14,6 +14,7 @@ import { zagrebParts } from "../summary/zagreb-time";
 import styles from "./BeforeSubmit.module.css";
 import { confirmationKey, readConfirmed } from "./Declaration";
 import { NoteDialog, type NoteAdded } from "./NoteDialog";
+import type { Stage } from "./stage";
 
 const t = messagesHr.beforeSubmit;
 const s = messagesHr.summary;
@@ -32,20 +33,6 @@ export type NotesRead =
   | { readonly kind: "ready"; readonly notes: readonly SubmissionNote[] }
   | { readonly kind: "loading" }
   | { readonly kind: "unavailable" };
-
-/** Where the assignment stands, from student.assignments.get and student.assignment-work.get. */
-export type Stage =
-  | { readonly kind: "open" }
-  | { readonly kind: "closed"; readonly dueAt: string }
-  | { readonly kind: "submitted" }
-  | { readonly kind: "unavailable" };
-
-/** The stage of a work: submitted first, then the deadline against `now`. */
-export function stageOf(workState: string, dueAt: string, now: number): Stage {
-  if (workState === "submitted") return { kind: "submitted" };
-  const due = Date.parse(dueAt);
-  return Number.isFinite(due) && due < now ? { kind: "closed", dueAt } : { kind: "open" };
-}
 
 /** The pasted row: each number with its threshold, nothing summed (§5 rule 12). Never holds the flow. */
 export function pastedText(summary: SummaryRead): string {
