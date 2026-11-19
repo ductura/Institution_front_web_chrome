@@ -42,6 +42,8 @@ export const hr = {
       fastPath: "Brz put",
       // DAN-492 (N-16): the works a teacher mentors, outside any course.
       mentoredWorks: "Radovi uz mentora",
+      // WEB-17 (A-9): the course summary (N-17), the teacher's fourth place.
+      summary: "Zbirni pregled",
       workspace: "Radni prostor",
       enroll: "Upis u kolegij",
       institution: "Pregled ustanove",

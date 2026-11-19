@@ -2,7 +2,7 @@
 
 import {
   Button, Checkbox, Details, Dialog, Icon, ICON_NAMES, SAVE_STATES, SaveState, Select, Skeleton, Tag, TextArea, ToastRegion,
-  toggleTheme, useToasts, type SaveStateName,
+  Fingerprint, KeyValueList, Steps, toggleTheme, useToasts, type SaveStateName,
 } from "@ductura/ui";
 import { useEffect, useRef, useState } from "react";
 
@@ -99,6 +99,24 @@ export default function UiPreview() {
         </p>
         <Skeleton label={t.uiPreview.loading} />
         <Details summary={t.uiPreview.detailsSummary}><p>{t.uiPreview.detailsBody}</p></Details>
+      </section>
+
+      <section aria-labelledby="pregled-predaja" style={{ display: "grid", gap: 16 }}>
+        <h2 id="pregled-predaja">{t.submission.title}</h2>
+        <Steps currentStep={5} />
+        <KeyValueList items={[
+          {
+            id: "requested-at",
+            label: t.submission.requestedAt,
+            value: <time dateTime="2026-11-19T10:00:00Z">19. 11. 2026. 11:00</time>,
+            details: { summary: "UTC", children: "2026-11-19T10:00:00Z" },
+          },
+          {
+            id: "text-hash",
+            label: t.submission.textHash,
+            value: <Fingerprint value={"0123456789abcdef".repeat(4)} />,
+          },
+        ]} />
       </section>
 
       <section aria-labelledby="pregled-ikone">
