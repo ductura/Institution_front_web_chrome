@@ -1489,6 +1489,16 @@ const en = {
     deniedNext: "Contact the coordinator at your institution.",
     backToOwn: "Back to my space",
   },
+  // WEB-08 (A-5, A-6): the sign-in states and the shell's sign-out dialog.
+  signInState: {
+    signedOutTitle: "You are signed out",
+    signedOutBody: "You signed out of Ductura and of AAI@EduHr. Sign in again to continue.",
+    unavailableTitle: "Sign-in is not available right now",
+    noRoleTitle: "Your account has no role yet",
+    noRoleBody: "You signed in with AAI@EduHr, but your account at this faculty has no role yet.",
+    noRoleNext: "Ask your faculty's administrator to give you a role, then sign in again.",
+    logoutBody: "You will be signed out of Ductura and of AAI@EduHr in this browser, then return to the front page.",
+  },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,
   // read only, as docs/design/ductura/m2-reference/a03-kolegiji-tim-i-grupe.html
   // writes them. Students are only counted, never named.

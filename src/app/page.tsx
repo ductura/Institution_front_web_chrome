@@ -1,9 +1,18 @@
-import { messagesHr as t } from "../lib/i18n/messages.hr";
+import { redirect } from "next/navigation";
 
-// WEB-01: the public home for a visitor, with no read of the session. The
-// signed-in home and the way to sign in come with WEB-02 and WEB-08; the
-// earlier page that read the database is in src/_cekanje/app/page.tsx.
-export default function HomePage() {
+import { homeHref } from "@/components/shell/nav";
+import { readShellAccess } from "@/components/shell/shell-read";
+import { messagesHr as t } from "@/lib/i18n/messages.hr";
+
+export const dynamic = "force-dynamic";
+
+// WEB-08: the public home. A signed-in person goes on to their role's home
+// (a student to "Moji zadaci"), an account without a role to /prijava, which
+// shows A-5. Everyone else sees the public page with the way to sign in.
+export default async function HomePage() {
+  const access = await readShellAccess();
+  if (access.kind === "signedIn") redirect(homeHref(access.role));
+  if (access.kind === "noRole") redirect("/prijava");
   return (
     <main id="sadrzaj" className="page">
       <p>{t.landing.eyebrow}</p>
@@ -12,6 +21,9 @@ export default function HomePage() {
       </h1>
       <p>{t.landing.intro}</p>
       <p>{t.landing.aaiOnly}</p>
+      <p>
+        <a className="btn" href="/prijava">{t.auth.signIn}</a>
+      </p>
     </main>
   );
 }

@@ -372,3 +372,14 @@
     transition: none;
   }
 }
+
+/* WEB-08: the state of /prijava above the button. */
+.notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule-2);
+  border-left: 3px solid var(--accent, currentColor);
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+}

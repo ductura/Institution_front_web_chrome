@@ -393,6 +393,14 @@
     overflow-wrap: anywhere;
   }
 
+  /* WEB-08: "Odjava" (a @ductura/ui Button) fits the 64 px rail. */
+  .shell:not(.drawerShell) .account :global(button) {
+    width: 100%;
+    min-width: 0;
+    padding: 6px 2px;
+    font-size: 12px;
+  }
+
   .shell:not(.drawerShell) .area {
     margin-left: 64px;
   }
@@ -419,7 +427,7 @@
   }
 
   .topbar {
-    min-height: 64px;
+    min-height: 76px;
     padding: 0 16px;
     gap: 10px;
   }
