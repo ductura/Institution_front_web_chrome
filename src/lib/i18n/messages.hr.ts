@@ -940,12 +940,15 @@ export const hr = {
   },
   toolbar: {
     label: "Oblikovanje teksta",
+    // WEB-15 (E§3.6 toolbar2): the block style, as the prototype names it.
+    blockStyle: "Stil odlomka",
+    blockStyleMenu: "Stil odlomka",
     paragraph: "Odlomak",
     bulletItem: "Popis",
     quote: "Blok-citat",
-    heading1: "Naslov 1",
-    heading2: "Naslov 2",
-    heading3: "Naslov 3",
+    heading1: "Naslov rada",
+    heading2: "Poglavlje",
+    heading3: "Potpoglavlje",
     bold: "Podebljano",
     italic: "Kurziv",
     undo: "Poništi",

@@ -40,10 +40,12 @@ type Props = {
   roving: string;
   tabIndex: number;
   className?: string;
+  /** Says so with aria-disabled and does not open; stays reachable (WEB-15). */
+  disabled?: boolean;
 };
 
 export default function ToolbarMenu({
-  label, menuLabel, groupLabel, items, open, onOpenChange, onSelect, roving, tabIndex, className,
+  label, menuLabel, groupLabel, items, open, onOpenChange, onSelect, roving, tabIndex, className, disabled = false,
 }: Props) {
   const id = useId();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -56,6 +58,7 @@ export default function ToolbarMenu({
   }, [open, active]);
 
   const openAt = (which: "first" | "last") => {
+    if (disabled) return;
     setActive(which === "first" ? 0 : Math.max(0, items.length - 1));
     onOpenChange(true);
   };
@@ -114,6 +117,7 @@ export default function ToolbarMenu({
         data-roving={roving}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-disabled={disabled ? "true" : undefined}
         aria-controls={open ? id : undefined}
         tabIndex={tabIndex}
         onMouseDown={(event) => event.preventDefault()}

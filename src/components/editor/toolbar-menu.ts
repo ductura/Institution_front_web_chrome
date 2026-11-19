@@ -47,13 +47,11 @@ export function menuKey(key: string, at: number, count: number): MenuKeyAction {
 
 /**
  * The order in which tools leave the toolbar for "Više" when it is too narrow
- * (prototype `c` values: the smaller heading first; then, E1, the block
- * quote and the list, which the prototype never collapses; last, DAN-211,
- * "Ponovi", so the toolbar in words still fits one line at 400 px).
- * Undo, paragraph, bold and italic always stay on the toolbar: a phone has
- * no keyboard shortcut for undo.
+ * (WEB-15, E§3.6 toolbar2 priorities, smallest first: Ponovi 20, Blok-citat
+ * 24, Popis 25). The block style never collapses (prototype), and undo, bold
+ * and italic stay on the toolbar: a phone has no keyboard shortcut for undo.
  */
-export const COLLAPSE_ORDER = ["heading3", "heading2", "heading1", "quote", "bulletItem", "redo"] as const;
+export const COLLAPSE_ORDER = ["redo", "quote", "bulletItem"] as const;
 
 export const MAX_COLLAPSED = COLLAPSE_ORDER.length;
 

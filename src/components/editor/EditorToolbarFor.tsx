@@ -1,42 +1,46 @@
 "use client";
 
 /**
- * The toolbar above the sheet (F-8 step 1, design editor-v11 §5.1 point 2).
+ * The toolbar above the sheet (WEB-15, E§3.6 toolbar2; F-8 step 1).
  *
- * Only what the F1 schema holds: undo and redo, paragraph and headings 1-3,
- * bold and italic, bullet item and quote (E1), in the order and the words of
- * the approved toolbar (DAN-211, m0-rad-reference), groups set apart by a rule.
- * Every button runs an editor command, so a change reaches the journal
- * exactly as typing does; the toolbar itself stores nothing.
+ * Only what the V2 schema holds: undo and redo, the block style (paragraph,
+ * title of the work, chapter, subchapter), bold and italic, bullet item and
+ * quote, in the prototype's order, groups set apart by a rule. Buttons show
+ * the icons of @ductura/ui and carry their name in aria-label and title; the
+ * block style is a menu that names the current style, as the prototype's
+ * select does. Every control runs an editor command, so a change reaches the
+ * journal exactly as typing does; the toolbar itself stores nothing.
  *
  * One Tab stop (WAI-ARIA toolbar): arrows, Home and End move between buttons.
  * While the editor may not be written in (loading, another tab, a failure,
- * signing out) every button says so with `aria-disabled` and does nothing,
+ * signing out) every control says so with `aria-disabled` and does nothing,
  * and stays reachable, so a keyboard user learns why nothing happens.
  *
- * FE-D5 (editor-v11 "Više ▾", "Prikaz ▾"): when the toolbar is too narrow the
- * headings move, smallest first, then the quote, the list and "Ponovi", into
- * the "Više" menu, where each item runs the very same command with the very
- * same check as its button; "Prikaz" holds the sheet theme. Layout, grouping and labels only: no command changes.
+ * FE-D5 ("Više ▾", "Prikaz ▾"): when the toolbar is too narrow, "Ponovi",
+ * the quote and the list move into "Više" (prototype priorities), where each
+ * item runs the very same command with the very same check as its button;
+ * "Prikaz" holds the sheet theme.
  *
  * This module never imports the local document (journal, sync, sign-out), so
  * the public sandbox (DAN-354) can load it alone; `EditorToolbar.tsx` binds it
  * to the writing page's document.
  */
 
+import { Icon, type IconName } from "@ductura/ui";
 import { useEditorState, type Editor } from "@tiptap/react";
 import {
-  Fragment, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode,
+  Fragment, useLayoutEffect, useRef, useState, type KeyboardEvent,
 } from "react";
 
 import { setSheetTheme, useSheetTheme } from "@/components/shell/useSheetTheme";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import type { SheetTheme } from "@/lib/ui/sheet-theme";
 
+import styles from "./EditorToolbar.module.css";
 import ToolbarMenu from "./ToolbarMenu";
 import { MAX_COLLAPSED, rovingIndex, splitTools } from "./toolbar-menu";
 
-type ToolbarState = {
+export type ToolbarState = {
   editable: boolean;
   paragraph: boolean;
   bulletItem: boolean;
@@ -50,12 +54,12 @@ type ToolbarState = {
   canRedo: boolean;
 };
 
-const IDLE: ToolbarState = {
+export const IDLE: ToolbarState = {
   editable: false, paragraph: false, bulletItem: false, quote: false, heading1: false, heading2: false, heading3: false,
   bold: false, italic: false, canUndo: false, canRedo: false,
 };
 
-function stateOf(editor: Editor | null): ToolbarState {
+export function stateOf(editor: Editor | null): ToolbarState {
   if (!editor || editor.isDestroyed) return IDLE;
   const editable = editor.isEditable;
   return {
@@ -73,57 +77,75 @@ function stateOf(editor: Editor | null): ToolbarState {
   };
 }
 
-type Tool = {
+export type BlockStyle = "paragraph" | "heading1" | "heading2" | "heading3";
+
+/** The prototype's `#blockStyle` options, in its order. */
+export const BLOCK_STYLES: readonly { key: BlockStyle; label: string; run: (editor: Editor) => void }[] = [
+  { key: "paragraph", label: t.toolbar.paragraph, run: (e) => e.chain().focus().setParagraph().run() },
+  ...([1, 2, 3] as const).map((level) => ({
+    key: `heading${level}` as const,
+    label: t.toolbar[`heading${level}`],
+    run: (e: Editor) => e.chain().focus().setHeading({ level }).run(),
+  })),
+];
+
+/**
+ * The one block style the whole selection has, or null: inside a list item
+ * or a quote, or across blocks of different styles, no style is claimed.
+ */
+export function blockStyleOf(state: ToolbarState): BlockStyle | null {
+  const on = BLOCK_STYLES.filter(({ key }) => state[key]);
+  return on.length === 1 ? on[0]!.key : null;
+}
+
+export type Tool = {
   key: string;
   label: string;
-  /** Tools of one group sit together; a rule separates the groups (reference `.sep`). */
-  group: "history" | "block" | "mark" | "list";
-  /** What the button shows when it is not its label; the label is its accessible name and title. */
-  glyph?: ReactNode;
+  /** Tools of one group sit together; a rule separates the groups (prototype `.sep`). */
+  group: "history" | "block";
+  /** The block style is a menu, not a button; it has no icon of its own. */
+  icon?: IconName;
+  /** Shown in the title and aria-keyshortcuts, e.g. "Ctrl+Z". */
+  keys?: string;
   /** Toggle buttons only: whether it is on. */
   pressed?: (state: ToolbarState) => boolean;
   enabled?: (state: ToolbarState) => boolean;
   run: (editor: Editor) => void;
 };
 
-// The order and the words of the approved toolbar (m0-rad-reference
-// radni-prostor.html): Poništi Ponovi | Odlomak Naslov 1-3 | B I | Popis
-// Blok-citat. Words, not icons (D-203 t. 8); only what the F1 schema holds.
-const TOOLS: readonly Tool[] = [
+// E§3.6 toolbar2, student: Poništi Ponovi | Stil odlomka Podebljano Kurziv
+// Popis Blok-citat; only what the V2 schema holds (list = bulletItem).
+export const TOOLS: readonly Tool[] = [
   {
-    key: "undo", label: t.toolbar.undo, group: "history",
+    key: "undo", label: t.toolbar.undo, group: "history", icon: "undo", keys: "Ctrl+Z",
     enabled: (s) => s.canUndo, run: (e) => e.chain().focus().undo().run(),
   },
   {
-    key: "redo", label: t.toolbar.redo, group: "history",
+    key: "redo", label: t.toolbar.redo, group: "history", icon: "redo", keys: "Ctrl+Y",
     enabled: (s) => s.canRedo, run: (e) => e.chain().focus().redo().run(),
   },
+  // Rendered as the block style menu; its items run BLOCK_STYLES.
+  { key: "blockStyle", label: t.toolbar.blockStyle, group: "block", run: () => undefined },
   {
-    key: "paragraph", label: t.toolbar.paragraph, group: "block",
-    pressed: (s) => s.paragraph, run: (e) => e.chain().focus().setParagraph().run(),
-  },
-  ...([1, 2, 3] as const).map((level): Tool => ({
-    key: `heading${level}`, label: t.toolbar[`heading${level}`], group: "block",
-    pressed: (s) => s[`heading${level}`],
-    run: (e) => e.chain().focus().setHeading({ level }).run(),
-  })),
-  {
-    key: "bold", label: t.toolbar.bold, group: "mark", glyph: <b>B</b>,
+    key: "bold", label: t.toolbar.bold, group: "block", icon: "bold", keys: "Ctrl+B",
     pressed: (s) => s.bold, run: (e) => e.chain().focus().toggleBold().run(),
   },
   {
-    key: "italic", label: t.toolbar.italic, group: "mark", glyph: <i>I</i>,
+    key: "italic", label: t.toolbar.italic, group: "block", icon: "italic", keys: "Ctrl+I",
     pressed: (s) => s.italic, run: (e) => e.chain().focus().toggleItalic().run(),
   },
   {
-    key: "bulletItem", label: t.toolbar.bulletItem, group: "list",
+    key: "bulletItem", label: t.toolbar.bulletItem, group: "block", icon: "bulletList",
     pressed: (s) => s.bulletItem, run: (e) => e.chain().focus().toggleNode("bulletItem", "paragraph").run(),
   },
   {
-    key: "quote", label: t.toolbar.quote, group: "list",
+    key: "quote", label: t.toolbar.quote, group: "block", icon: "quote",
     pressed: (s) => s.quote, run: (e) => e.chain().focus().toggleNode("quote", "paragraph").run(),
   },
 ];
+
+const titleOf = (tool: Tool) => (tool.keys ? `${tool.label} (${tool.keys})` : tool.label);
+const ariaKeys = (keys: string | undefined) => keys?.replace("Ctrl", "Control");
 
 /** Whether the toolbar's own buttons have wrapped onto a second line. */
 function wraps(toolbar: HTMLElement): boolean {
@@ -148,7 +170,7 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
   const theme = useSheetTheme();
   const listRef = useRef<HTMLDivElement>(null);
   const [focusKey, setFocusKey] = useState<string>(TOOLS[0]!.key);
-  const [openMenu, setOpenMenu] = useState<"more" | "view" | null>(null);
+  const [openMenu, setOpenMenu] = useState<"more" | "view" | "blockStyle" | null>(null);
   const [collapsed, setCollapsed] = useState(0);
   const [width, setWidth] = useState(0);
   const widthRef = useRef(0);
@@ -194,6 +216,7 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
   const { shown, more } = splitTools(TOOLS, collapsed);
   const moreOpen = openMenu === "more" && more.length > 0;
   const usableOf = (tool: Tool) => state.editable && (tool.enabled?.(state) ?? true);
+  const style = blockStyleOf(state);
   const rovingKeys = [...shown.map((tool) => tool.key), ...(more.length ? ["more"] : []), "view"];
   const stop = rovingKeys.includes(focusKey) ? focusKey : rovingKeys[0];
 
@@ -228,16 +251,49 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
       {shown.map((tool, index) => {
         const usable = usableOf(tool);
         const opensGroup = index > 0 && shown[index - 1]!.group !== tool.group;
+        const sep = opensGroup ? <span className="editor-toolbar__sep" aria-hidden="true" /> : null;
+        if (tool.key === "blockStyle") {
+          // The prototype's select: names the current style, or "Stil odlomka" when none is one.
+          return (
+            <Fragment key={tool.key}>
+              {sep}
+              <ToolbarMenu
+                className={styles.style}
+                label={style ? BLOCK_STYLES.find(({ key }) => key === style)!.label : t.toolbar.blockStyle}
+                menuLabel={t.toolbar.blockStyleMenu}
+                roving="blockStyle"
+                tabIndex={stop === "blockStyle" ? 0 : -1}
+                disabled={!state.editable}
+                open={openMenu === "blockStyle" && state.editable}
+                onOpenChange={(open) => {
+                  setFocusKey("blockStyle");
+                  setOpenMenu(open ? "blockStyle" : null);
+                }}
+                items={BLOCK_STYLES.map(({ key, label }) => ({
+                  key, label, role: "menuitemradio", checked: style === key, disabled: !state.editable,
+                }))}
+                // The command refocuses the sheet, so the caret stays where it was.
+                onSelect={(key) => {
+                  const chosen = BLOCK_STYLES.find((candidate) => candidate.key === key);
+                  if (!chosen || !editor || editor.isDestroyed || !editor.isEditable) return "keep";
+                  chosen.run(editor);
+                  return "close";
+                }}
+              />
+            </Fragment>
+          );
+        }
         return (
           <Fragment key={tool.key}>
-            {opensGroup ? <span className="editor-toolbar__sep" aria-hidden="true" /> : null}
+            {sep}
             <button
               type="button"
-              className="btn editor-toolbar__button"
+              className={`btn editor-toolbar__button ${styles.icon}`}
               data-tool={tool.key}
               data-roving={tool.key}
               aria-label={tool.label}
-              title={tool.glyph ? tool.label : undefined}
+              aria-keyshortcuts={ariaKeys(tool.keys)}
+              title={titleOf(tool)}
               aria-pressed={tool.pressed ? tool.pressed(state) : undefined}
               aria-disabled={usable ? undefined : "true"}
               tabIndex={tool.key === stop ? 0 : -1}
@@ -248,7 +304,7 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
                 run(tool);
               }}
             >
-              {tool.glyph ? <span aria-hidden="true">{tool.glyph}</span> : tool.label}
+              {tool.icon ? <Icon name={tool.icon} size={18} /> : tool.label}
             </button>
           </Fragment>
         );
@@ -268,7 +324,7 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
           items={more.map((tool) => ({
             key: tool.key,
             label: tool.label,
-            ...(tool.glyph ? { glyph: tool.glyph } : {}),
+            ...(tool.icon ? { glyph: <Icon name={tool.icon} /> } : {}),
             role: tool.pressed ? "menuitemcheckbox" : "menuitem",
             checked: tool.pressed ? tool.pressed(state) : false,
             disabled: !usableOf(tool),

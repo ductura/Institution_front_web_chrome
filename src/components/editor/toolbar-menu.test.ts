@@ -4,7 +4,7 @@ import {
   COLLAPSE_ORDER, MAX_COLLAPSED, menuKey, openerKey, rovingIndex, splitTools,
 } from "./toolbar-menu";
 
-const TOOLS = ["undo", "redo", "paragraph", "heading1", "heading2", "heading3", "bold", "italic"]
+const TOOLS = ["undo", "redo", "blockStyle", "bold", "italic", "bulletItem", "quote"]
   .map((key) => ({ key }));
 const keys = (tools: { key: string }[]) => tools.map((tool) => tool.key);
 
@@ -65,38 +65,21 @@ describe("tools that do not fit", () => {
     expect(more).toEqual([]);
   });
 
-  it("move to Više smallest heading first, in toolbar order inside the menu", () => {
-    expect(keys(splitTools(TOOLS, 1).more)).toEqual(["heading3"]);
-    expect(keys(splitTools(TOOLS, 2).more)).toEqual(["heading2", "heading3"]);
-    expect(keys(splitTools(TOOLS, 3).more)).toEqual(["heading1", "heading2", "heading3"]);
-    expect(keys(splitTools(TOOLS, 3).shown)).toEqual(["undo", "redo", "paragraph", "bold", "italic"]);
+  it("move to Više by the prototype priority, redo first, in toolbar order inside the menu (WEB-15)", () => {
+    expect(keys(splitTools(TOOLS, 1).more)).toEqual(["redo"]);
+    expect(keys(splitTools(TOOLS, 2).more)).toEqual(["redo", "quote"]);
+    expect(keys(splitTools(TOOLS, 3).more)).toEqual(["redo", "bulletItem", "quote"]);
+    expect(keys(splitTools(TOOLS, 3).shown)).toEqual(["undo", "blockStyle", "bold", "italic"]);
   });
 
-  it("then the block quote and the list (E1), after every heading, in toolbar order", () => {
-    const withList = ["undo", "redo", "paragraph", "heading1", "heading2", "heading3", "bold", "italic", "bulletItem", "quote"]
-      .map((key) => ({ key }));
-    expect(keys(splitTools(withList, 3).shown)).toEqual(expect.arrayContaining(["bulletItem", "quote"]));
-    expect(keys(splitTools(withList, 4).more)).toEqual(["heading1", "heading2", "heading3", "quote"]);
-    expect(keys(splitTools(withList, 4).shown)).toContain("bulletItem");
-    expect(keys(splitTools(withList, 5).more)).toEqual(["heading1", "heading2", "heading3", "bulletItem", "quote"]);
-    expect(keys(splitTools(withList, 5).shown)).toEqual(["undo", "redo", "paragraph", "bold", "italic"]);
-  });
-
-  it("last moves redo (DAN-211), so the worded toolbar fits one line at 400 px", () => {
-    const withList = ["undo", "redo", "paragraph", "heading1", "heading2", "heading3", "bold", "italic", "bulletItem", "quote"]
-      .map((key) => ({ key }));
-    expect(keys(splitTools(withList, 5).shown)).toContain("redo");
-    expect(keys(splitTools(withList, 6).more)).toEqual(["redo", "heading1", "heading2", "heading3", "bulletItem", "quote"]);
-    expect(keys(splitTools(withList, 6).shown)).toEqual(["undo", "paragraph", "bold", "italic"]);
-  });
-
-  it("never moves undo, paragraph, bold or italic, whatever the count", () => {
+  it("never moves undo, the block style, bold or italic, whatever the count", () => {
     expect(MAX_COLLAPSED).toBe(COLLAPSE_ORDER.length);
-    for (const collapsed of [-1, 3, 4, 6, 99]) {
+    for (const collapsed of [-1, 1, 2, 3, 6, 99]) {
       const { shown, more } = splitTools(TOOLS, collapsed);
-      expect(keys(shown)).toEqual(expect.arrayContaining(["undo", "paragraph", "bold", "italic"]));
+      expect(keys(shown)).toEqual(expect.arrayContaining(["undo", "blockStyle", "bold", "italic"]));
       expect(shown.length + more.length).toBe(TOOLS.length);
     }
     expect(splitTools(TOOLS, -1).more).toEqual([]);
+    expect(keys(splitTools(TOOLS, 99).more)).toEqual(["redo", "bulletItem", "quote"]);
   });
 });
