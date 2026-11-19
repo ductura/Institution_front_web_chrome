@@ -23,8 +23,9 @@ Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za 
 | `app/[base]/layout.tsx` | Provjeri bazu (`src/bases.ts`, inače „Stranica ne postoji” iz `app/not-found.tsx`) i oko stranice postavi domaćina `src/host/Host.tsx`. |
 | `src/host/Host.tsx` | Jedno čitanje sesije. Na 401 preusmjerava na prijavu, a na grešku pokazuje ekran s „Pokušaj ponovno”. Ljuska prikazuje ulogu, ime ustanove i „Odjava” (`SignOut.tsx`). Stranicu druge uloge i `/` vodi na početni ekran uloge. Poveznice aplikacije otvara Next router, bez ponovnog učitavanja. |
 | `app/[base]/zadaci/`, `zadaci/kolegiji/`, `nastavnik/`, `nastavnik/mentorstva/` | Spojeni ekrani (`src/host/pages.tsx`). |
-| `app/[base]/[[...path]]/` | Ostale rute navigacije, dok ne dobiju vlastitu: naslov i napomena da prikaz još nije spojen. |
-| `src/routes.ts` | Čiste funkcije: baza, putanja, stranica po ulozi (rute iz `src/components/shell/nav.ts`), preusmjeravanje na početni ekran uloge. |
+| `app/[base]/zadaci/radovi/`, `rad/`, `rad/[assignmentId]/{predaja,dnevnik-pristupa,reprodukcija}/`, `upis/`, `upis/kolegij/[courseId]/`, `zadatak/[id]/` | Studentske stranice Ductusa na svojim adresama, iza oznake `TREBA API` (u datoteci piše koja operacija `/api/v1` nedostaje u `src/client`). Do tada pokazuju naslov i napomenu da prikaz još nije spojen. |
+| `app/[base]/[[...path]]/` | Ostale rute navigacije, dok ne dobiju vlastitu: naslov i napomena. |
+| `src/routes.ts` | Čiste funkcije: baza, putanja, stranica po ulozi (rute iz `src/components/shell/nav.ts` i stranice Ductusa s dinamičkim segmentom, npr. `/zadatak/[id]`), preusmjeravanje na početni ekran uloge. |
 | `vitest.config.ts` | Jedinični testovi čistih dijelova (`src/**/*.test.ts`). |
 | `src/text.ts` | Nekoliko tekstova samog domaćina. `text.test.ts` ih provjerava skenerom zabranjenih izraza. |
 | `e2e/session.spec.ts` | Lažni `/api/v1` (`page.route`): 401 vodi na prijavu s `returnTo`, 200 otvara ekran uloge, odjava, nedostupan poslužitelj, nastavnička čitanja (200, 401, 403, 503). Uz to provjerava konzolu i axe. Poslužitelj je `next build && next start`. Tijela nastavničkih odgovora u `e2e/fixtures/teacher.json` su vektori iz `@ductura/test-fakes` 3.0.1. |

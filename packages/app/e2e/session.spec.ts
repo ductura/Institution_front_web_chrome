@@ -162,3 +162,23 @@ test("a teacher's read answering 401 sends the browser to sign-in", async ({ pag
   await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
   expect(new URL(seen.login.at(-1)!).searchParams.get("returnTo")).toBe("/app/web/nastavnik");
 });
+
+test("a student's Ductus pages open at their addresses, marked as not connected yet", async ({ page }) => {
+  const errors = errorsOf(page);
+  const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
+  await page.goto("/app/chrome/rad/izm-zadatak-1/predaja");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Predaja rada");
+  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await axe(page);
+
+  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji radovi" }).click();
+  await expect(page).toHaveURL(/\/app\/chrome\/zadaci\/radovi$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji radovi");
+  expect(seen.me).toBe(1);
+  expect(errors).toEqual([]);
+
+  await page.unrouteAll({ behavior: "wait" });
+  await fakeServer(page, { status: 200, body: { roles: ["teacher"], institutionName: INSTITUTION } });
+  await page.goto("/app/web/rad/izm-zadatak-1/predaja");
+  await expect(page).toHaveURL(/\/app\/web\/nastavnik$/);
+});

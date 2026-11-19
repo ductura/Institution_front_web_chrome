@@ -100,5 +100,5 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
     return shell(undefined, [], <section className="page"><h1>{t.home.welcome}</h1><p>{hostText.noRole}</p></section>);
   }
   const { page } = resolved;
-  return shell(page.path, crumbsOf(page, role), <HostContext value={{ base, page, role }}>{children}</HostContext>);
+  return shell(page.current, crumbsOf(page, role), <HostContext value={{ base, page, role }}>{children}</HostContext>);
 }
