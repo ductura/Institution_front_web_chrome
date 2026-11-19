@@ -1,4 +1,4 @@
-// WEB-10 (S: E-4 "Moji radovi", A-10): the student's works over /api/v1. The
+// WEB-10 (S: E-4 "Moji radovi", A-10): the student's works through src/client. The
 // courses and assignments come from student.assignments.get, as on /zadaci;
 // the state of each work from student.assignment-work.get. No import of
 // src/client: the page passes createApi() in, as MyAssignments' read does.
