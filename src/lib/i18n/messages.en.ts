@@ -1248,6 +1248,23 @@ const en = {
         unavailable: "Enrolment is not possible right now. Try again.",
         offline: "No connection to the server. Check your network and try again.",
       },
+      codeErrors: {
+        invalidCode: "This code does not exist. Check it with your teacher and enter it again.",
+        expiredCode: "This code has expired. Ask your teacher for a new code.",
+        signedOut: "Your sign-in has expired. Sign in again, then enter the code.",
+      },
+      already: {
+        title: "You are already enrolled",
+        body: "You are already enrolled in this course. There is no need to enter the code again.",
+        open: "Open the course",
+        close: "Enter another code",
+      },
+      empty: {
+        title: "You are enrolled in the course",
+        body: "The course has no published assignment yet. When your teacher publishes one, you will see it among your assignments.",
+        assignments: "My assignments",
+        close: "Close",
+      },
       course: {
         none: "You are enrolled in the course, but it has no open assignment yet. When your teacher publishes one, come back to this page.",
         notFound: "This course is not available to this account. Enrol in it with the code your teacher gives you.",
