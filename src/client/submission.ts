@@ -152,9 +152,11 @@ export function submitOutcomeFrom(
     if (kept.status === "already_requested" && typeof kept.revision === "number") {
       return { kind: "already_requested", revision: kept.revision };
     }
-    if (kept.status === "stale_revision" && typeof kept.currentRevision === "number") {
-      return { kind: "greska", code: "stale_revision", currentRevision: kept.currentRevision };
+    if (kept.status === "stale_revision") {
+      return typeof kept.currentRevision === "number" ? { kind: "greska", code: "stale_revision", currentRevision: kept.currentRevision } : UNKNOWN;
     }
+    // A 409 is read from its kept body only, never from the status code alone.
+    return kept.status === "not_acknowledged" || kept.status === "not_open" ? { kind: "greska", code: kept.status } : UNKNOWN;
   }
   const code = result.code === undefined || !Object.hasOwn(REFUSALS, result.code) ? undefined : REFUSALS[result.code];
   // 408 timeout, 503 unavailable, 429, 500, "unexpected": the work may have been submitted.
@@ -184,6 +186,8 @@ export async function submitWork(input: SubmitInput, deps: SubmitDeps = {}): Pro
   }
   if (outcome.kind !== "already_requested") return outcome;
   if (deps.local === undefined) return UNKNOWN;
+  // The session may have ended while the submission was on its way: no second request then.
+  if (deps.current !== undefined && !deps.current()) return EXPIRED;
   const state = await readSubmissionState(deps.local, input.assignmentId);
   if (state.kind === "session-expired") return EXPIRED;
   const agrees = (state.kind === "ceka" && state.revision === outcome.revision)

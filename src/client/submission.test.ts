@@ -5,7 +5,7 @@
 import { answerFake, FAKE_VECTOR_HEADER, VECTORS, type FakeVector } from "@ductura/test-fakes/fake-server";
 import { describe, expect, it } from "vitest";
 import {
-  addNote, NOTE_MAX, readNotes, readRequirements, readSubmissionState, submitWork,
+  addNote, NOTE_MAX, readNotes, readRequirements, readSubmissionState, submitOutcomeFrom, submitWork,
   type LocalCall, type SubmissionReceipt, type SubmitInput,
 } from "./submission";
 
@@ -180,9 +180,39 @@ describe("submitWork", () => {
       },
     );
 
+    it("sends no read once the session ended while the submission was on its way", async () => {
+      const calls: Parameters<LocalCall>[] = [];
+      let live = true;
+      const ending: typeof fetch = async (url, init) => {
+        const answer = await fakeOf(vector, [])(url, init);
+        live = false;
+        return answer;
+      };
+      const outcome = await submitWork(SENT, {
+        current: () => live, api: { baseUrl: BASE, fetchImpl: ending }, local: local(200, { state: "ceka", revision: 6, requestedAt: REQUESTED_AT }, calls),
+      });
+      expect(outcome).toEqual({ kind: "session-expired" });
+      expect(calls).toHaveLength(0);
+    });
+
     it("is nepoznato without a reader", async () => {
       expect(await submitWork(SENT, { api })).toEqual({ kind: "nepoznato" });
     });
+  });
+
+  it.each([
+    [{ status: "stale_revision" }],
+    [{ status: "stale_revision", currentRevision: "9" }],
+    [{ status: "not_open", extra: 1 }],
+  ])("a 409 %j out of the contract's shape is nepoznato, never a known refusal", async (body) => {
+    expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(409, body) } })).toEqual({ kind: "nepoznato" });
+  });
+
+  it("reads a 409 from its kept body, never from the code alone", () => {
+    const result = { ok: false, status: 409, code: "stale_revision" };
+    expect(submitOutcomeFrom(result, { status: "stale_revision" }, SENT)).toEqual({ kind: "nepoznato" });
+    expect(submitOutcomeFrom(result, undefined, SENT)).toEqual({ kind: "nepoznato" });
+    expect(submitOutcomeFrom({ ...result, code: "not_open" }, { status: "not_open" }, SENT)).toEqual({ kind: "greska", code: "not_open" });
   });
 
   it("is session-expired on a 401 session_expired", async () => {
