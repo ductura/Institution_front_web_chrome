@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { baseOf, crumbsOf, internalRoute, PAGES, resolve, routeOf, shellRole } from "./routes";
+import { baseOf, crumbsOf, internalRoute, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -57,6 +57,63 @@ describe("resolve", () => {
     expect(resolve("/kako-radi", null)).toMatchObject({ kind: "page" });
     expect(resolve("/kako-radi", "teacher")).toMatchObject({ kind: "page" });
     expect(resolve("/nema-ovoga", "student")).toEqual({ kind: "notFound" });
+  });
+});
+
+describe("pathMatches", () => {
+  it("matches a bracketed segment to any one non-empty segment", () => {
+    expect(pathMatches("/zadatak/[id]", "/zadatak/izm-1")).toBe(true);
+    expect(pathMatches("/rad/[assignmentId]/predaja", "/rad/a1/predaja")).toBe(true);
+    expect(pathMatches("/zadatak/[id]", "/zadatak")).toBe(false);
+    expect(pathMatches("/zadatak/[id]", "/zadatak/")).toBe(false);
+    expect(pathMatches("/zadatak/[id]", "/zadatak/a/b")).toBe(false);
+    expect(pathMatches("/rad/[assignmentId]/predaja", "/rad/a1/reprodukcija")).toBe(false);
+    expect(pathMatches("/upis", "/upis")).toBe(true);
+  });
+});
+
+describe("the student's pages of Ductus app/", () => {
+  it("open for a student under any id, with their own label", () => {
+    expect(resolve("/zadatak/izm-1", "student")).toMatchObject({ kind: "page", page: { label: "Zadatak" } });
+    expect(resolve("/rad/a1/predaja", "student")).toMatchObject({ kind: "page", page: { label: "Predaja rada" } });
+    expect(resolve("/rad/a1/dnevnik-pristupa", "student")).toMatchObject({ kind: "page", page: { label: "Dnevnik pristupa" } });
+    expect(resolve("/rad/a1/reprodukcija", "student")).toMatchObject({ kind: "page", page: { label: "Reprodukcija Vašeg rada" } });
+    expect(resolve("/upis/kolegij/k1", "student")).toMatchObject({ kind: "page", page: { label: "Upis u kolegij", current: "/upis" } });
+  });
+
+  it("lead another role home, and leave unknown pages of them not found", () => {
+    expect(resolve("/rad/a1/predaja", "teacher")).toEqual({ kind: "redirect", to: "/nastavnik" });
+    expect(resolve("/zadatak/izm-1", "teacher")).toMatchObject({ kind: "page" });
+    expect(resolve("/zadatak/izm-1", "admin")).toEqual({ kind: "redirect", to: "/ustanova" });
+    expect(resolve("/rad/a1/nesto", "student")).toEqual({ kind: "notFound" });
+  });
+
+  it("open in the app from a screen's link", () => {
+    expect(internalRoute("/zadatak/izm-1", "/app/web")).toBe("/zadatak/izm-1");
+    expect(internalRoute("/app/chrome/rad/a1/predaja", "/app/chrome")).toBe("/rad/a1/predaja");
+  });
+});
+
+describe("the teacher's pages of Ductus app/", () => {
+  it("open for a teacher under any id, and lead a student home", () => {
+    expect(resolve("/nastavnik/rad/r1", "teacher")).toMatchObject({ kind: "page", page: { label: "Rad uživo" } });
+    expect(resolve("/nastavnik/rad/r1/reprodukcija", "teacher")).toMatchObject({ kind: "page", page: { label: "Reprodukcija rada" } });
+    expect(resolve("/nastavnik/zadatak/novi", "teacher")).toMatchObject({ kind: "page", page: { current: "/nastavnik" } });
+    expect(resolve("/nastavnik/zadatak/z1/uredi", "teacher")).toMatchObject({ kind: "page", page: { label: "Nova verzija zadatka" } });
+    expect(resolve("/nastavnik/zadatak/z1/rad/d1/jezik", "teacher")).toMatchObject({ kind: "page", page: { label: "Jezik rada jednog studenta" } });
+    expect(resolve("/nastavnik/kolegiji", "teacher")).toMatchObject({ kind: "page", page: { kind: "teacherCourses" } });
+    expect(resolve("/nastavnik/rad/r1", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
+    expect(resolve("/nastavnik/zadatak/z1", "teacher")).toEqual({ kind: "notFound" });
+  });
+});
+
+describe("publicPage", () => {
+  it("gives the pages opened without a session: Stanje sustava and Prijava", () => {
+    expect(publicPage("/stanje")).toMatchObject({ label: "Stanje sustava" });
+    expect(publicPage("/prijava")).toMatchObject({ label: "Prijava" });
+    expect(publicPage("/zadaci")).toBeNull();
+    expect(publicPage("/kako-radi")).toBeNull();
+    expect(publicPage("/")).toBeNull();
   });
 });
 

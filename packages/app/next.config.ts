@@ -8,7 +8,7 @@ import type { NextConfig } from "next";
 // under /app/web/_next/ (assetPrefix) and Next serves them from there.
 const root = path.join(import.meta.dirname, "../..");
 
-// /api/v1 belongs to the institution server. Behind the edge it never reaches
+// The API path belongs to the institution server. Behind the edge it never reaches
 // this app; on `next dev`, `next start` and Vercel it is passed on to
 // INSTITUTION_SERVER_URL, read when the app is built.
 const institutionServer = (process.env.INSTITUTION_SERVER_URL ?? "http://127.0.0.1:4000").replace(/\/+$/, "");
