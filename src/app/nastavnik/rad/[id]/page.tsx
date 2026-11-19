@@ -1,6 +1,6 @@
-import LiveWorkFrame, { isWorkId } from "@/components/teacher/LiveWorkFrame";
-import RecordLimits from "@/components/teacher/RecordLimits";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import LiveWorkFrame, { isWorkId } from "../../../../components/teacher/LiveWorkFrame";
+import RecordLimits from "../../../../components/teacher/RecordLimits";
+import { messagesHr } from "../../../../lib/i18n/messages.hr";
 
 const t = messagesHr.teacherLiveWork;
 
