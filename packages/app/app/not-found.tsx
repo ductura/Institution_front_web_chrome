@@ -1,4 +1,4 @@
-import ErrorScreen from "../../../src/components/shell/ErrorScreen.tsx";
+import ErrorScreen from "../../../src/components/shell/ErrorScreen.ts";
 import { messagesHr as t } from "../../../locales/hr.ts";
 
 /** A path under /app outside /app/web/ and /app/chrome/. */

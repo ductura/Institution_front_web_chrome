@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, Ref } from "react";
 
 import styles from "./Button.module.css";
 
@@ -6,6 +6,8 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   tone?: "primary" | "quiet";
   /** Work in progress: the button stays focusable but does nothing (aria-disabled). */
   busy?: boolean;
+  /** React 19 passes a ref as a prop; a dialog's initialFocus points here (WEB-04). */
+  ref?: Ref<HTMLButtonElement>;
 };
 
 export function Button({ tone = "primary", busy = false, type = "button", className, onClick, ...rest }: ButtonProps) {

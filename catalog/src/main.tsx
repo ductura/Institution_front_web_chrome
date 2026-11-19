@@ -10,6 +10,10 @@ import styles from "./Catalog.module.css";
 // A screen (src/components) is the shell itself, so it shows only on the shell;
 // the white sheet sits inside a screen, never around it (DAN-753).
 // ?theme=light shows the light shell; anything else is the dark default (D-188).
+// Parts of the shell's own panels sit on --chrome and never on the sheet (WEB-06).
+const SHELL_ONLY = new Set(["PanelTabs"]);
+const shellOnly = (name: string) => name in SCREEN_ENTRIES || SHELL_ONLY.has(name);
+
 const theme = new URLSearchParams(location.search).get("theme") === "light" ? "light" : "dark";
 document.documentElement.setAttribute("data-theme", theme);
 
@@ -20,7 +24,7 @@ function Catalog() {
       {[...Object.entries(ENTRIES), ...Object.entries(SCREEN_ENTRIES)].map(([name, states]) => (
         <section key={name} id={name} aria-labelledby={`${name}-h`} className={styles.component}>
           <h2 id={`${name}-h`}>{name}</h2>
-          {(name in SCREEN_ENTRIES ? ["ljuska"] as const : ["ljuska", "list"] as const).map((surface) => (
+          {(shellOnly(name) ? ["ljuska"] as const : ["ljuska", "list"] as const).map((surface) => (
             <div key={surface} className={surface === "list" ? `sheet ${styles.sheet}` : styles.shell}
               data-sheet-theme={surface === "list" ? "light" : undefined}>
               <p className={styles.surface}>{surface === "list" ? "Bijeli list" : "Ljuska"}</p>
