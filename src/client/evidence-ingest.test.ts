@@ -484,6 +484,37 @@ describe("WEB-38: both routes through createApi and the contract", () => {
     expect(protocolsOf(calls)).toEqual(["2", "2"]);
   });
 
+  // WEB-ER (Ductus#2028 c.7020060555): a 5xx stays a 5xx when its JSON cannot be read.
+  it("a 5xx declared JSON that is not JSON holds the row and the same key goes out again", async () => {
+    const protocol = createCommitProtocol();
+    const broken = (status: number) => new Response("{", { status, headers: { "content-type": "application/json" } });
+    const { calls, fetchImpl } = scripted(broken(500), broken(503), committed("committed", BASE.revision, trusted.sign({})));
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const outcome = await commitEvidence(INPUT, fetchImpl, protocol);
+      expect(outcome).toEqual({ status: "transport_error" });
+      expect(isRetryable(outcome)).toBe(true);
+      expect(ackedRevision(outcome)).toBeNull();
+      expect(protocol).toMatchObject({ version: "2", agreed: false, probe: null });
+    }
+    expect(await commitEvidence(INPUT, fetchImpl, protocol)).toMatchObject({ status: "committed", revision: BASE.revision });
+    expect(protocolsOf(calls)).toEqual(["2", "2", "2"]);
+    const keys = calls.map(({ init }) => JSON.parse(init.body as string).clientTransactionId);
+    expect(keys).toEqual([INPUT.clientTransactionId, INPUT.clientTransactionId, INPUT.clientTransactionId]);
+    expect(calls[1]!.init.body).toBe(calls[0]!.init.body);
+    expect(calls[2]!.init.body).toBe(calls[0]!.init.body);
+  });
+
+  it("an unreadable success still confirms nothing, and an unreadable 4xx is not retried by itself", async () => {
+    const broken = (status: number) => new Response("{", { status, headers: { "content-type": "application/json" } });
+    for (const status of [200, 202, 409, 422]) {
+      const outcome = await commitEvidence(INPUT, scripted(broken(status)).fetchImpl);
+      expect(outcome).toEqual({ status: "invalid" });
+      expect(isRetryable(outcome)).toBe(false);
+      expect(ackedRevision(outcome)).toBeNull();
+    }
+    expect(await openWork(ASSIGNMENT, scripted(broken(503)).fetchImpl)).toEqual({ status: "unavailable" });
+  });
+
   it("without a transport of its own goes out through the browser's, under the same rules", async () => {
     const browser = vi.fn<typeof globalThis.fetch>(async () => json(426, { status: "upgrade_required" }));
     vi.stubGlobal("fetch", browser);
