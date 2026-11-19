@@ -340,7 +340,6 @@ export const hr = {
     existingCourse: {
       title: "Novi zadatak u kolegiju",
       link: "Novi zadatak u kolegiju",
-      choose: "Odaberi kolegij",
       missing: "Kolegij nije dostupan ovom računu.",
       unavailable: "Kolegij trenutačno nije moguće učitati. Pokušajte ponovno.",
       codeKept: "Upisni kod kolegija ostaje isti.",

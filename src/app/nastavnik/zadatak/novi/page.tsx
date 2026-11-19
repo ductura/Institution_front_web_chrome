@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { signInHref } from "@/client/api";
 import { serverApi } from "@/client/server";
 import TeacherSetup from "@/components/teacher/TeacherSetup";
+import { assignmentSetupMessages } from "@/components/teacher/TeacherSetup/messages.hr";
 import { newAssignmentHref } from "@/components/teacher/links";
 import { readTeacherCourses, type TeacherCourse } from "@/components/teacher/teacher-courses-read";
 import { messagesHr } from "@/lib/i18n/messages.hr";
@@ -35,7 +36,7 @@ export default async function NewAssignmentPage({ searchParams }: {
     body = course ? <TeacherSetup key={course.id} course={course} /> : (
       <>
         <p role="alert">{t.missing}</p>
-        <p><Link href={path}>{t.choose}</Link></p>
+        <p><Link href={path}>{assignmentSetupMessages.choose}</Link></p>
       </>
     );
   }
@@ -53,7 +54,7 @@ function CourseSelection({ courses }: { courses: TeacherCourse[] }) {
   if (!courses.length) return <p>{messagesHr.teacherCourseCodes.emptyNext}</p>;
   return (
     <section aria-labelledby="odabir-kolegija">
-      <h2 id="odabir-kolegija">{t.choose}</h2>
+      <h2 id="odabir-kolegija">{assignmentSetupMessages.choose}</h2>
       <ul>{courses.map(({ id, name, academicYear }) => (
         <li key={id}><Link href={newAssignmentHref(id)}>{name} · {academicYear}</Link></li>
       ))}</ul>
