@@ -21,6 +21,9 @@ const NAV: Record<ShellRole, readonly NavItem[]> = {
     { href: "/nastavnik/brz-put", label: t.shell.nav.fastPath },
     // DAN-492 (N-16): the works the teacher mentors (DAN-477).
     { href: "/nastavnik/mentorstva", label: t.shell.nav.mentoredWorks },
+    // WEB-17 (A-9, owner 19. 11. 2026., #2028 c.6997707653): "Zbirni" joins
+    // the teacher's navigation; N-17 shows its empty state until its read.
+    { href: "/nastavnik/zbirni", label: t.shell.nav.summary },
   ],
   student: [
     { href: "/zadaci", label: t.shell.nav.assignments },
