@@ -9,4 +9,5 @@ export const hostText = {
   pending: "Ovaj prikaz još nije spojen na poslužitelj ustanove.",
   noRole: "Ovaj račun još nema ulogu u ustanovi. Ulogu dodjeljuje administrator ustanove.",
   signOutFailed: "Odjava nije uspjela. Pokušajte ponovno.",
+  signIn: "Prijava",
 } as const;

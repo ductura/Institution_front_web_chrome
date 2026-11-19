@@ -1,0 +1,14 @@
+/* WEB-14: the status bar of the editor page, 30 px, in the shell's chrome. */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 30px;
+  padding: 0 16px;
+  border-top: 1px solid var(--rule);
+  background: var(--chrome);
+  color: var(--ink-2);
+  font-family: var(--ff-ui);
+  font-size: 12px;
+  overflow: hidden;
+}

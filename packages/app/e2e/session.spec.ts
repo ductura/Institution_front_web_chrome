@@ -162,3 +162,76 @@ test("a teacher's read answering 401 sends the browser to sign-in", async ({ pag
   await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
   expect(new URL(seen.login.at(-1)!).searchParams.get("returnTo")).toBe("/app/web/nastavnik");
 });
+
+test("a student's Ductus pages open at their addresses, marked as not connected yet", async ({ page }) => {
+  const errors = errorsOf(page);
+  const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
+  await page.goto("/app/chrome/rad/izm-zadatak-1/predaja");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Predaja rada");
+  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await axe(page);
+
+  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji radovi" }).click();
+  await expect(page).toHaveURL(/\/app\/chrome\/zadaci\/radovi$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji radovi");
+  expect(seen.me).toBe(1);
+  expect(errors).toEqual([]);
+
+  await page.unrouteAll({ behavior: "wait" });
+  await fakeServer(page, { status: 200, body: { roles: ["teacher"], institutionName: INSTITUTION } });
+  await page.goto("/app/web/rad/izm-zadatak-1/predaja");
+  await expect(page).toHaveURL(/\/app\/web\/nastavnik$/);
+});
+
+test("a teacher's Ductus pages open at their addresses, and /nastavnik/kolegiji forwards to /nastavnik", async ({ page }) => {
+  const errors = errorsOf(page);
+  await fakeServer(page, { status: 200, body: { roles: ["teacher"], institutionName: INSTITUTION } });
+  await page.goto("/app/chrome/nastavnik/kolegiji");
+  await expect(page).toHaveURL(/\/app\/chrome\/nastavnik$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
+
+  await page.goto("/app/web/nastavnik/zadatak/izm-zadatak-1/uredi");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nova verzija zadatka");
+  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await axe(page);
+  await page.goto("/app/web/nastavnik/rad/izm-rad-1/reprodukcija");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Reprodukcija rada");
+  expect(errors).toEqual([]);
+});
+
+test("the administrator's Ductus pages open at their addresses, and only for the administrator", async ({ page }) => {
+  const errors = errorsOf(page);
+  const seen = await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
+  await page.goto("/app/web/ustanova/pravila");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pravila fakulteta");
+  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await axe(page);
+  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Korisnici" }).click();
+  await expect(page).toHaveURL(/\/app\/web\/ustanova\/korisnici$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Korisnici");
+  expect(seen.me).toBe(1);
+  expect(errors).toEqual([]);
+
+  await page.unrouteAll({ behavior: "wait" });
+  await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
+  await page.goto("/app/chrome/ustanova/kolegiji");
+  await expect(page).toHaveURL(/\/app\/chrome\/zadaci$/);
+});
+
+test("Stanje sustava and Prijava open without reading the session", async ({ page }) => {
+  const errors = errorsOf(page);
+  const seen = await fakeServer(page, { status: 401 });
+  await page.goto("/app/chrome/stanje");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Stanje sustava");
+  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await axe(page);
+  expect(errors).toEqual([]);
+
+  await page.goto("/app/chrome/prijava?returnTo=%2Fzadaci%2Fkolegiji");
+  await expect.poll(() => seen.login.length).toBe(1);
+  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/zadaci/kolegiji");
+  await page.goto("/app/web/prijava?returnTo=https%3A%2F%2Fexample.org%2F");
+  await expect.poll(() => seen.login.length).toBe(2);
+  expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/app/web/");
+  expect(seen.me).toBe(0);
+});
