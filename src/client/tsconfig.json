@@ -42,6 +42,8 @@
   // Ported from Ductus 0cdb0f1 and checked by tsconfig.ductus.json instead.
   "exclude": [
     "comments.ts", "comments.test.ts", "revision-requests.ts", "revision-requests.test.ts",
-    "evidence-ingest.ts", "evidence-ingest.test.ts"
+    "evidence-ingest.ts", "evidence-ingest.test.ts",
+    "live-publisher.ts", "live-publisher.test.ts", "logout-hold.ts", "logout-hold.test.ts",
+    "logout-request.ts", "logout-request.test.ts"
   ]
 }

@@ -1,7 +1,9 @@
 import { fc, test } from "@fast-check/vitest";
 import { describe, expect, it, vi } from "vitest";
 
-import { NOTICE_TEMPLATE_VERSION, noticeFingerprint } from "@/domain/notice/fingerprint";
+import { createApi } from "@/client/api";
+
+import { NOTICE_TEMPLATE_VERSION, noticeFingerprint } from "./obavijest/notice-fingerprint";
 
 import { acknowledgeNotice, initialNotice, mayRecord, noticeStep, type ShownNotice } from "./notice-gate";
 
@@ -26,8 +28,17 @@ const NOTICE: ShownNotice = {
 
 const expected = (notice: ShownNotice) => noticeFingerprint({ ...notice, templateVersion: NOTICE_TEMPLATE_VERSION });
 
-function sentBody(send: ReturnType<typeof vi.fn>): unknown {
-  return JSON.parse((send.mock.calls[0]! as unknown as [string, RequestInit])[1].body as string);
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+
+/** createApi over a recording transport, as the browser would call it from web.test. */
+function wire(reply: () => Response | Promise<Response>) {
+  const send = vi.fn(async (_url: URL | string, _init?: RequestInit) => reply());
+  return { send, api: createApi({ baseUrl: "http://web.test", fetchImpl: send as unknown as typeof fetch }) };
+}
+
+function sentBody(send: ReturnType<typeof wire>["send"], call = 0): unknown {
+  return JSON.parse(send.mock.calls[call]![1]!.body as string);
 }
 
 describe("F-7 notice gate", () => {
@@ -56,79 +67,71 @@ describe("F-7 notice gate", () => {
   });
 });
 
-describe("F-7 acknowledgment transport contract (#314 proposal)", () => {
-  it("posts the version and the fingerprint of the shown notice to the acknowledgment route", async () => {
-    const send = vi.fn(async () => Response.json({ acknowledgedAt: AT }));
-    expect(await acknowledgeNotice(NOTICE, send as unknown as typeof fetch)).toEqual({ kind: "acknowledged", at: AT });
-    const [path, options] = send.mock.calls[0]! as unknown as [string, RequestInit];
-    expect(path).toBe(`/api/institution/assignments/${ID}/acknowledgment`);
-    expect(options).toMatchObject({
-      method: "POST",
-      credentials: "same-origin",
-      cache: "no-store",
-      redirect: "error",
-      headers: { "content-type": "application/json" },
-    });
-    expect(JSON.parse(options.body as string)).toEqual({ versionNo: 3, fingerprint: await expected(NOTICE) });
+describe("WEB-12 acknowledgment over institution.acknowledgment.post", () => {
+  it("posts the version and the fingerprint of the shown notice to the contract route", async () => {
+    const { send, api } = wire(() => json({ acknowledgedAt: AT }));
+    expect(await acknowledgeNotice(NOTICE, api)).toEqual({ kind: "acknowledged", at: AT });
+    const [url, options] = send.mock.calls[0]!;
+    expect(new URL(String(url)).pathname).toBe(`/api/v1/institution/assignments/${ID}/acknowledgment`);
+    expect(options).toMatchObject({ method: "POST" });
+    expect(sentBody(send)).toEqual({ versionNo: 3, fingerprint: await expected(NOTICE) });
   });
 
   it("sends a different fingerprint for any other shown text, and none of the view's other fields", async () => {
-    const send = vi.fn(async () => Response.json({ acknowledgedAt: AT }));
+    const { send, api } = wire(() => json({ acknowledgedAt: AT }));
     const shown = { ...NOTICE, acknowledgedAt: null, extra: "x" } as ShownNotice;
-    await acknowledgeNotice(shown, send as unknown as typeof fetch);
-    await acknowledgeNotice({ ...NOTICE, instructions: `${NOTICE.instructions} ` }, send as unknown as typeof fetch);
-    const [same, changed] = send.mock.calls.map((call) =>
-      JSON.parse((call as unknown as [string, RequestInit])[1].body as string) as { fingerprint: string });
-    expect(same!.fingerprint).toBe(await expected(NOTICE));
-    expect(changed!.fingerprint).not.toBe(same!.fingerprint);
+    await acknowledgeNotice(shown, api);
+    await acknowledgeNotice({ ...NOTICE, instructions: `${NOTICE.instructions} ` }, api);
+    const same = sentBody(send, 0) as { fingerprint: string };
+    const changed = sentBody(send, 1) as { fingerprint: string };
+    expect(same).toEqual({ versionNo: 3, fingerprint: await expected(NOTICE) });
+    expect(changed.fingerprint).not.toBe(same.fingerprint);
   });
 
   it("sends nothing when the fingerprint cannot be computed", async () => {
-    const send = vi.fn();
+    const { send, api } = wire(() => json({ acknowledgedAt: AT }));
     const subtle = vi.spyOn(globalThis.crypto.subtle, "digest").mockRejectedValueOnce(new Error("no Web Crypto"));
-    expect(await acknowledgeNotice(NOTICE, send as unknown as typeof fetch)).toEqual({ kind: "unavailable" });
-    expect(await acknowledgeNotice({ ...NOTICE, dueAt: "jučer" }, send as unknown as typeof fetch)).toEqual({ kind: "unavailable" });
+    expect(await acknowledgeNotice(NOTICE, api)).toEqual({ kind: "unavailable" });
+    expect(await acknowledgeNotice({ ...NOTICE, dueAt: "jučer" }, api)).toEqual({ kind: "unavailable" });
     expect(send).not.toHaveBeenCalled();
     subtle.mockRestore();
   });
 
   it("calls nothing with a malformed id or version", async () => {
-    const send = vi.fn();
+    const { send, api } = wire(() => json({ acknowledgedAt: AT }));
     for (const [id, version] of [["x", 1], [ID, 0], [ID, 1.5], [ID, Number.NaN]] as const) {
-      const notice = { ...NOTICE, assignmentId: id, versionNo: version };
-      expect(await acknowledgeNotice(notice, send as unknown as typeof fetch)).toEqual({ kind: "invalid" });
+      expect(await acknowledgeNotice({ ...NOTICE, assignmentId: id, versionNo: version }, api)).toEqual({ kind: "invalid" });
     }
     expect(send).not.toHaveBeenCalled();
   });
 
   it.each([
-    [401, "unauthorized"],
-    [403, "forbidden"],
-    [404, "unavailable"],
-    [409, "stale"],
-    [409, "stale", "notice_changed"],
+    [401, "unauthorized", "unauthorized"],
+    [403, "forbidden", "forbidden"],
+    [403, "forbidden", "origin_mismatch"],
+    [404, "unavailable", "not_found"],
     [409, "stale", "conflict"],
-    [400, "invalid"],
-    [422, "invalid"],
-    [201, "unavailable"],
-    [503, "unavailable"],
-  ] as const)("keeps HTTP %i as the local %s state", async (status, kind, error: string = "raw diagnostics") => {
-    const send = vi.fn(async () => Response.json({ acknowledgedAt: AT, error }, { status }));
-    expect(await acknowledgeNotice(NOTICE, send as unknown as typeof fetch)).toEqual({ kind });
+    [409, "stale", "notice_changed"],
+    [400, "invalid", "invalid_json"],
+    [422, "invalid", "invalid_input"],
+    [503, "unavailable", "unavailable"],
+  ] as const)("keeps HTTP %i as the local %s state", async (status, kind, error) => {
+    const { api } = wire(() => json({ error }, status));
+    expect(await acknowledgeNotice(NOTICE, api)).toEqual({ kind });
   });
 
-  it.each([[{}], [{ acknowledgedAt: "jučer" }], [{ acknowledgedAt: 1 }], [[AT]], [null],
-    [{ acknowledgedAt: "2026-02-31T09:00:00Z" }], [{ acknowledgedAt: "2026-11-03T24:00:00Z" }]])(
-    "never claims an acknowledgment on a malformed reply %o",
+  it.each([[{}], [{ acknowledgedAt: "jučer" }], [{ acknowledgedAt: 1 }], [[AT]], [null], [{ acknowledgedAt: AT, extra: 1 }],
+    [{ acknowledgedAt: "2026-02-31T09:00:00.000Z" }], [{ acknowledgedAt: "2026-11-03T24:00:00.000Z" }]])(
+    "never claims an acknowledgment on a reply the contract or the calendar refuses: %o",
     async (body) => {
-      const send = vi.fn(async () => Response.json(body));
-      expect(await acknowledgeNotice(NOTICE, send as unknown as typeof fetch)).toEqual({ kind: "unavailable" });
+      const { api } = wire(() => json(body));
+      expect(await acknowledgeNotice(NOTICE, api)).toEqual({ kind: "unavailable" });
     },
   );
 
   it("treats a transport failure as unavailable", async () => {
-    const offline = vi.fn(async () => { throw new Error("offline"); });
-    expect(await acknowledgeNotice(NOTICE, offline as unknown as typeof fetch)).toEqual({ kind: "unavailable" });
+    const { api } = wire(() => { throw new Error("offline"); });
+    expect(await acknowledgeNotice(NOTICE, api)).toEqual({ kind: "unavailable" });
   });
 });
 
@@ -145,7 +148,7 @@ test.prop([
   }),
 ])("B1: the body is the version and the fingerprint of the shown fields, nothing else", async (fields) => {
   const notice = { ...NOTICE, ...fields };
-  const send = vi.fn(async () => Response.json({ acknowledgedAt: AT }));
-  await acknowledgeNotice(notice, send as unknown as typeof fetch);
+  const { send, api } = wire(() => json({ acknowledgedAt: AT }));
+  await acknowledgeNotice(notice, api);
   expect(sentBody(send)).toEqual({ versionNo: fields.versionNo, fingerprint: await expected(notice) });
 });
