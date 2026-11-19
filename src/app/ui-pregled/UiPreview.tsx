@@ -39,10 +39,16 @@ const sample = (
 
 type SampleRow = { id: SubmissionState; name: string; at: number | null };
 
-const sampleStudents = ["Ana Anić (demo)", "Ivo Čavlek (demo)", "Petra Šimić (demo)", "Luka Zorić (demo)", "Maja Babić (demo)"];
+const sampleStudents: Record<SubmissionState, string> = {
+  submitted: "Ana Anić (demo)",
+  not_submitted: "Ivo Čavlek (demo)",
+  late: "Petra Šimić (demo)",
+  pending: "Luka Zorić (demo)",
+  gap: "Maja Babić (demo)",
+};
 const sampleRows: SampleRow[] = SUBMISSION_STATES.map((state, index) => ({
   id: state,
-  name: sampleStudents[index],
+  name: sampleStudents[state],
   at: state === "not_submitted" || state === "pending" ? null : Date.UTC(2026, 10, 19, 9 + index, 5 * index),
 }));
 
