@@ -1,5 +1,5 @@
 import AppHeader from "@/components/shell/AppHeader";
-import RouteLoading from "@/components/shell/RouteLoading";
+import { RouteLoading } from "@ductura/ui";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 // DAN-294 (S-42): shown while the page reads the access log.

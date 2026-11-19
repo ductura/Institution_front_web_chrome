@@ -18,7 +18,7 @@ export type PanelTabsProps = {
 };
 
 /**
- * The tabs of the right panel (design editor-v11 §5.1): a sticky strip of
+ * The tabs of the right panel (design editor-v11 §5.1; moved from the web's shell, WEB-06): a sticky strip of
  * text tabs, the open one underlined in the primary colour and set in bold, so
  * the choice never rests on colour alone.
  *
@@ -29,7 +29,7 @@ export type PanelTabsProps = {
  * Keyboard (WAI-ARIA tabs pattern, automatic activation): the list is one Tab
  * stop; Left/Right move and open, Home/End go to the ends.
  */
-export default function PanelTabs({ label, tabs, initial }: PanelTabsProps) {
+export function PanelTabs({ label, tabs, initial }: PanelTabsProps) {
   const base = useId();
   const first = tabs.some((tab) => tab.id === initial) ? initial : tabs[0]?.id;
   const [open, setOpen] = useState(first);
@@ -44,9 +44,9 @@ export default function PanelTabs({ label, tabs, initial }: PanelTabsProps) {
       : event.key === "Home" ? 0
       : event.key === "End" ? last
       : null;
-    if (next === null) return;
+    const id = next === null ? undefined : tabs[next]?.id;
+    if (id === undefined) return;
     event.preventDefault();
-    const id = tabs[next].id;
     setOpen(id);
     buttons.current.get(id)?.focus();
   };
