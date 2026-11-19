@@ -1260,6 +1260,26 @@ export const hr = {
         unavailable: "Upis trenutačno nije moguć. Pokušajte ponovno.",
         offline: "Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.",
       },
+      // WEB-11 (A-2): the server's own refusals over student.enrollments.post.
+      codeErrors: {
+        invalidCode: "Ovaj kod ne postoji. Provjerite ga s nastavnikom i upišite ponovno.",
+        expiredCode: "Ovaj kod je istekao. Zatražite novi kod od nastavnika.",
+        signedOut: "Prijava je istekla. Prijavite se ponovno pa upišite kod.",
+      },
+      // PD-5: the code belongs to a course the student is already in.
+      already: {
+        title: "Već ste upisani",
+        body: "Već ste upisani u ovaj kolegij. Kod nije potrebno ponovno upisivati.",
+        open: "Otvori kolegij",
+        close: "Upiši drugi kod",
+      },
+      // PD-6: enrolled, but the course has no published assignment yet.
+      empty: {
+        title: "Upisani ste u kolegij",
+        body: "U kolegiju zasad nema objavljenog zadatka. Kad ga nastavnik objavi, vidjet ćete ga među svojim zadacima.",
+        assignments: "Moji zadaci",
+        close: "Zatvori",
+      },
       course: {
         none: "Upisani ste u kolegij, ali u njemu zasad nema otvorenog zadatka. Kad ga nastavnik objavi, vratite se na ovu stranicu.",
         notFound: "Ovaj kolegij nije dostupan ovom računu. Upišite ga kodom koji Vam daje nastavnik.",
