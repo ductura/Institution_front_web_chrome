@@ -1,4 +1,4 @@
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { messagesHr } from "../../../lib/i18n/messages.hr";
 
 const t = messagesHr.teacherSummary;
 

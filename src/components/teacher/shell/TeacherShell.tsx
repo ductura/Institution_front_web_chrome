@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { messagesHr as t } from "@/lib/i18n/messages.hr";
+import { messagesHr as t } from "../../../lib/i18n/messages.hr";
 
 import AppShell from "../../shell/AppShell";
 import { homeHref } from "../../shell/nav";

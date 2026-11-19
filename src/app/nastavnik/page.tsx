@@ -12,14 +12,14 @@ const t = messagesHr.teacherCourses;
 export const dynamic = "force-dynamic";
 export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
 
-// WEB-17 (Ductus#2028 c.7008147932): the teacher's home over /api/v1. The
+// WEB-17 (Ductus#2028 c.7008147932): the teacher's home through the institution server. The
 // shell (layout) has read the session; the courses come from
 // teacher.courses.get under the request's cookie, so the server decides
 // whose. The works of each assignment and the course actions (codes, a new
 // assignment) join with N-01 and N-02/03 (WEB-18, WEB-19).
 export default async function TeacherHomePage() {
-  const api = serverApi((await cookies()).toString());
-  const read = await readTeacherCourses(api);
+  const server = serverApi((await cookies()).toString());
+  const read = await readTeacherCourses(server);
   let body;
   if (read.kind === "ready") {
     body = <TeacherCourses courses={read.courses} />;

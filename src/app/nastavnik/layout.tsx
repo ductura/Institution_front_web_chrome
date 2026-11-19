@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import TeacherShell from "@/components/teacher/shell/TeacherShell";
+import TeacherShell from "../../components/teacher/shell/TeacherShell";
 
 export const dynamic = "force-dynamic";
 
