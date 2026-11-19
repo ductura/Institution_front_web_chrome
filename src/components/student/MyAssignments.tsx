@@ -45,14 +45,20 @@ function teacherNames(teachers: readonly CourseTeacher[]): string {
  * card per own course with its decorative motif, and in it the assignments
  * of the current version. Only what the read returns: no work state, mentor
  * or edit time. "Pročitaj upute" when the current version's notice is not
- * acknowledged, else "Otvori zadatak"; both go to /rad/<id>, which decides access
+ * acknowledged, else "Otvori zadatak"; both go to /rad (`assignmentHref`), which decides access
  * and sends an unacknowledged notice to /zadatak/<id> (PRODUCT §5 rule 6).
  * The list arrives ordered from the read and is drawn as it comes. Written
  * with `createElement`, like TeacherCourses, so unit tests need no JSX compiler.
  * `level` is the course name's heading level: h3 under the "Moji kolegiji" h2
  * of S01, h2 right under the page h1 of S02, so no heading level is skipped.
  */
-type ListProps = { courses: readonly MyCourse[]; level?: 2 | 3 };
+type ListProps = { courses: readonly MyCourse[]; level?: 2 | 3; assignmentHref?: AssignmentHref };
+
+/** Where an assignment opens. Each host routes its own: the Vite host keeps `/rad?zadatak=`. */
+export type AssignmentHref = (assignmentId: string) => string;
+
+/** The address the Vite host (packages/app) routes; the Next page passes `/rad/<id>` (WEB-09). */
+export const legacyAssignmentHref: AssignmentHref = (id) => `/rad?zadatak=${id}`;
 /**
  * DAN-876: the S02 page body over student.assignments.get. `read` is
  * readMyAssignments(createApi()), made once by the page, outside render; it
@@ -78,7 +84,7 @@ function Settled({ read, signIn }: ReadProps): ReactElement {
     h(StudentHome, { read: settled, enroll: null, signIn, view: "courses" }));
 }
 
-function list({ courses, level = 3 }: ListProps) {
+function list({ courses, level = 3, assignmentHref = legacyAssignmentHref }: ListProps) {
   return h("div", { className: styles.grid },
     courses.map((course) =>
       h("section", { key: course.id, className: styles.course, "aria-labelledby": `kolegij-${course.id}` },
@@ -94,7 +100,7 @@ function list({ courses, level = 3 }: ListProps) {
           : h("ul", { className: styles.assignments },
             course.assignments.map((assignment) =>
               h("li", { key: assignment.id },
-                h("a", { className: styles.assignment, href: `/rad/${encodeURIComponent(assignment.id)}` },
+                h("a", { className: styles.assignment, href: assignmentHref(assignment.id) },
                   h("span", { className: styles.title }, assignment.title),
                   h("span", { className: styles.bottom },
                     h("span", { className: styles.due }, deadline(assignment)),

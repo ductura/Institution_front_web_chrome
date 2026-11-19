@@ -12,6 +12,9 @@ export const metadata = { title: `${t.student.assignments.title} · ${t.app.name
 
 const HERE = "/zadaci";
 
+/** The Next route of a work (WEB-14); it sends an unacknowledged notice first. */
+const workHref = (assignmentId: string) => `/rad/${encodeURIComponent(assignmentId)}`;
+
 /**
  * The list, read only once RoleShell has found a session with a role: signed
  * out never reaches student.assignments.get. A 401 between the two reads is
@@ -29,7 +32,7 @@ async function Assignments() {
   );
   return (
     <div className="page">
-      <StudentHome read={read} enroll={enroll} signIn={signInPage} />
+      <StudentHome read={read} enroll={enroll} signIn={signInPage} assignmentHref={workHref} />
     </div>
   );
 }
