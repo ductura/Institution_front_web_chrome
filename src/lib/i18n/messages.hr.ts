@@ -1260,6 +1260,26 @@ export const hr = {
         unavailable: "Upis trenutačno nije moguć. Pokušajte ponovno.",
         offline: "Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.",
       },
+      // WEB-11 (A-2): the server's own refusals over student.enrollments.post.
+      codeErrors: {
+        invalidCode: "Ovaj kod ne postoji. Provjerite ga s nastavnikom i upišite ponovno.",
+        expiredCode: "Ovaj kod je istekao. Zatražite novi kod od nastavnika.",
+        signedOut: "Prijava je istekla. Prijavite se ponovno pa upišite kod.",
+      },
+      // PD-5: the code belongs to a course the student is already in.
+      already: {
+        title: "Već ste upisani",
+        body: "Već ste upisani u ovaj kolegij. Kod nije potrebno ponovno upisivati.",
+        open: "Otvori kolegij",
+        close: "Upiši drugi kod",
+      },
+      // PD-6: enrolled, but the course has no published assignment yet.
+      empty: {
+        title: "Upisani ste u kolegij",
+        body: "U kolegiju zasad nema objavljenog zadatka. Kad ga nastavnik objavi, vidjet ćete ga među svojim zadacima.",
+        assignments: "Moji zadaci",
+        close: "Zatvori",
+      },
       course: {
         none: "Upisani ste u kolegij, ali u njemu zasad nema otvorenog zadatka. Kad ga nastavnik objavi, vratite se na ovu stranicu.",
         notFound: "Ovaj kolegij nije dostupan ovom računu. Upišite ga kodom koji Vam daje nastavnik.",
@@ -1537,6 +1557,35 @@ export const hr = {
     emptyNote: "Kolegij stvara nastavnik s potvrđenom ulogom; potvrda je u „Korisnici i uloge”.",
     unavailable: "Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
+    // WEB-20 (Ductus#2028): the administrator creates a course with its holder and groups.
+    newCourse: {
+      title: "Novi kolegij",
+      lead: "Kolegij izrađuje administrator ustanove. Nositelj ga zatim vidi među svojim kolegijima.",
+      name: "Naziv kolegija",
+      academicYear: "Akademska godina",
+      aiPolicy: "AI pomoć",
+      holder: "Identifikator nositelja",
+      holderHint: "Identifikator nastavnika s potvrđenom ulogom, kako je naveden u „Korisnici i uloge”.",
+      groups: "Seminarske grupe",
+      groupsHint: "Jedna grupa po retku, najviše 20. Može ostati prazno.",
+      submit: "Izradi kolegij",
+      busy: "Izrađuje se…",
+      nameRequired: "Upišite naziv kolegija.",
+      nameTooLong: "Naziv može imati najviše 160 znakova.",
+      holderInvalid: "Upišite identifikator nositelja u obliku 8-4-4-4-12 znakova.",
+      groupsTooMany: "Najviše 20 grupa.",
+      groupTooLong: "Naziv grupe može imati najviše 80 znakova.",
+      groupDuplicate: "Dvije grupe imaju isti naziv.",
+      created: "Kolegij „{name}” je izrađen.",
+      createdGroups: "Seminarske grupe",
+      createdNoGroups: "Kolegij nema seminarskih grupa.",
+      another: "Izradi još jedan kolegij",
+      conflict: "Kolegij s tim nazivom u toj akademskoj godini već postoji.",
+      invalid: "Server nije prihvatio podatke. Provjerite nositelja: mora biti nastavnik ove ustanove s potvrđenom ulogom.",
+      forbidden: "Kolegij može izraditi samo administrator ustanove.",
+      signedOut: "Sesija je završila. Prijavite se ponovno pa izradite kolegij.",
+      unavailable: "Kolegij trenutačno nije moguće izraditi. Pokušajte ponovno.",
+    },
   },
   // DAN-590 (M2.12-P03, A-04): the faculty rule versions of DAN-315, read
   // only. The package of form rules (facultyRules below, M4) has no data yet
