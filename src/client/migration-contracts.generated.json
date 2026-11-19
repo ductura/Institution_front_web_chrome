@@ -1,0 +1,1125 @@
+{
+  "institution.admin-courses.post": {
+    "path": "/api/v1/institution/admin/courses",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "academicYear",
+        "aiPolicy",
+        "holderId",
+        "groups"
+      ],
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^(?!\\s)[\\s\\S]*(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "academicYear": {
+          "pattern": "^[0-9]{4}/[0-9]{4}(?![\\s\\S])",
+          "type": "string"
+        },
+        "aiPolicy": {
+          "anyOf": [
+            {
+              "const": "prohibited",
+              "type": "string"
+            },
+            {
+              "const": "partially_allowed",
+              "type": "string"
+            },
+            {
+              "const": "encouraged",
+              "type": "string"
+            }
+          ]
+        },
+        "holderId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        },
+        "groups": {
+          "maxItems": 20,
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^(?!\\s)[\\s\\S]*(?<!\\s)(?![\\s\\S])",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "groups"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "groups": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.course-assignments.post": {
+    "path": "/api/v1/institution/courses/{courseId}/assignments",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "requestKey",
+        "title",
+        "instructions",
+        "workType",
+        "opensAt",
+        "dueAt",
+        "aiPolicy",
+        "aiPurposes",
+        "evidenceProfile",
+        "importAllowed",
+        "wordMin",
+        "wordMax"
+      ],
+      "properties": {
+        "requestKey": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        },
+        "title": {
+          "pattern": "^(?:(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[\\uD800-\\uDBFF](?![\\uDC00-\\uDFFF])|[^\\uD800-\\uDBFF\\u0000])){1,200}(?![\\s\\S])",
+          "type": "string"
+        },
+        "instructions": {
+          "pattern": "^(?:(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[\\uD800-\\uDBFF](?![\\uDC00-\\uDFFF])|[^\\uD800-\\uDBFF\\u0000])){0,20000}(?![\\s\\S])",
+          "type": "string"
+        },
+        "workType": {
+          "anyOf": [
+            {
+              "const": "short_paper",
+              "type": "string"
+            },
+            {
+              "const": "essay",
+              "type": "string"
+            },
+            {
+              "const": "seminar_paper",
+              "type": "string"
+            },
+            {
+              "const": "bachelor_thesis",
+              "type": "string"
+            },
+            {
+              "const": "master_thesis",
+              "type": "string"
+            },
+            {
+              "const": "specialist_thesis",
+              "type": "string"
+            },
+            {
+              "const": "doctoral_thesis",
+              "type": "string"
+            }
+          ]
+        },
+        "opensAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,6})?(?:Z|[+-](?:(?:0\\d|1[0-3]):[0-5]\\d|14:00))(?![\\s\\S])",
+          "type": "string"
+        },
+        "dueAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,6})?(?:Z|[+-](?:(?:0\\d|1[0-3]):[0-5]\\d|14:00))(?![\\s\\S])",
+          "type": "string"
+        },
+        "aiPolicy": {
+          "anyOf": [
+            {
+              "const": "prohibited",
+              "type": "string"
+            },
+            {
+              "const": "partially_allowed",
+              "type": "string"
+            },
+            {
+              "const": "encouraged",
+              "type": "string"
+            }
+          ]
+        },
+        "aiPurposes": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "const": "formatting",
+                "type": "string"
+              },
+              {
+                "const": "proofreading",
+                "type": "string"
+              },
+              {
+                "const": "literature_search",
+                "type": "string"
+              },
+              {
+                "const": "transcription",
+                "type": "string"
+              },
+              {
+                "const": "translation",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "evidenceProfile": {
+          "anyOf": [
+            {
+              "const": "basic",
+              "type": "string"
+            },
+            {
+              "const": "extended",
+              "type": "string"
+            }
+          ]
+        },
+        "importAllowed": {
+          "type": "boolean"
+        },
+        "wordMin": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "maximum": 1000000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wordMax": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "maximum": 1000000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.course-group-teachers.post": {
+    "path": "/api/v1/institution/groups/{groupId}/teachers",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "groupId"
+      ],
+      "properties": {
+        "groupId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "teacherId"
+      ],
+      "properties": {
+        "teacherId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "assigned"
+              ],
+              "properties": {
+                "assigned": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.course-groups.get": {
+    "path": "/api/v1/institution/courses/{courseId}/groups",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "groups"
+              ],
+              "properties": {
+                "groups": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "teachers",
+                      "students"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "teachers": {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "givenName",
+                            "familyName"
+                          ],
+                          "properties": {
+                            "id": {
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                              "type": "string"
+                            },
+                            "givenName": {
+                              "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                              "type": "string"
+                            },
+                            "familyName": {
+                              "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "students": {
+                        "minimum": 0,
+                        "maximum": 9007199254740991,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.course-groups.post": {
+    "path": "/api/v1/institution/courses/{courseId}/groups",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^(?!\\s)[\\s\\S]*(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "profile.me.get": {
+    "path": "/api/v1/me",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "institution",
+                "roles",
+                "displayName"
+              ],
+              "properties": {
+                "institution": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "slug",
+                    "displayName"
+                  ],
+                  "properties": {
+                    "slug": {
+                      "type": "string"
+                    },
+                    "displayName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "roles": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "const": "student",
+                        "type": "string"
+                      },
+                      {
+                        "const": "teacher",
+                        "type": "string"
+                      },
+                      {
+                        "const": "network_engineer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "institution_admin",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "displayName": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.assignments.get": {
+    "path": "/api/v1/student/assignments",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "courses"
+              ],
+              "properties": {
+                "courses": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "assignments"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "academicYear": {
+                        "pattern": "^\\d{4}/\\d{4}$",
+                        "type": "string"
+                      },
+                      "groups": {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "properties": {
+                            "id": {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            "name": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "teachers": {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "givenName",
+                            "familyName",
+                            "role"
+                          ],
+                          "properties": {
+                            "id": {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            "givenName": {
+                              "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                              "type": "string"
+                            },
+                            "familyName": {
+                              "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                              "type": "string"
+                            },
+                            "role": {
+                              "anyOf": [
+                                {
+                                  "const": "holder",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "collaborator",
+                                  "type": "string"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "assignments": {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "title",
+                            "dueAt",
+                            "noticeFirst"
+                          ],
+                          "properties": {
+                            "id": {
+                              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                              "type": "string"
+                            },
+                            "title": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "dueAt": {
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                              "type": "string"
+                            },
+                            "noticeFirst": {
+                              "type": "boolean"
+                            },
+                            "workType": {
+                              "anyOf": [
+                                {
+                                  "const": "short_paper",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "essay",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "seminar_paper",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "bachelor_thesis",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "master_thesis",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "specialist_thesis",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "doctoral_thesis",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "mentor": {
+                              "anyOf": [
+                                {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "id",
+                                    "givenName",
+                                    "familyName"
+                                  ],
+                                  "properties": {
+                                    "id": {
+                                      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                                      "type": "string"
+                                    },
+                                    "givenName": {
+                                      "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                      "type": "string"
+                                    },
+                                    "familyName": {
+                                      "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "extendedDueAt": {
+                              "anyOf": [
+                                {
+                                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.enrollments.post": {
+    "path": "/api/v1/student/enrollments",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "code"
+      ],
+      "properties": {
+        "code": {
+          "maxLength": 64,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "outcome",
+                "courseId"
+              ],
+              "properties": {
+                "outcome": {
+                  "anyOf": [
+                    {
+                      "const": "enrolled",
+                      "type": "string"
+                    },
+                    {
+                      "const": "already_enrolled",
+                      "type": "string"
+                    },
+                    {
+                      "const": "enrolled_no_assignment",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "courseId": {
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input",
+        "invalid_code",
+        "expired_code"
+      ],
+      "429": [
+        "too_many_attempts"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.notice-read.post": {
+    "path": "/api/v1/student/assignments/{assignmentId}/notice-read",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "versionNo"
+      ],
+      "properties": {
+        "versionNo": {
+          "minimum": 1,
+          "maximum": 2147483647,
+          "type": "integer"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "readAt"
+              ],
+              "properties": {
+                "readAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_assignment_id",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  }
+}
