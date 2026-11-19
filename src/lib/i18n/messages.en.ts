@@ -1194,6 +1194,7 @@ const en = {
         inProgress: "Work started, not submitted",
         submitted: "Submitted {time}",
         afterDeadline: "Submitted {time}, after the deadline",
+        submittedNoTime: "Submitted",
       },
       readNotice: "Read the instructions",
       start: "Open assignment",
