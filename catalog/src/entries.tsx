@@ -1,9 +1,12 @@
-import { Button, Card, Icon, ICON_NAMES, SaveState, TextField, type IconName } from "@ductura/ui";
+import {
+  Button, Card, Checkbox, Details, Dialog, ErrorScreen, Icon, ICON_NAMES, PanelTabs, RouteLoading, SaveState, Select, Skeleton, Tag,
+  TextArea, TextField, ToastRegion, type IconName,
+} from "@ductura/ui";
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
-  AppShell, EmptyHome, ErrorScreen, MentoredWorks, MyAssignments, OutlinePanel, RouteLoading, StudentHome, TeacherCourses,
+  AppShell, EmptyHome, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
   type AssignmentSubmission, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
@@ -12,6 +15,16 @@ import type { CatalogEntries, CatalogState } from "./coverage";
 type Entry = Record<CatalogState, () => React.ReactNode>;
 
 // Invented example text only; no real people or student work.
+const GROUPS = [{ value: "a", label: "Grupa A" }, { value: "b", label: "Grupa B" }];
+// The toast region is fixed to the viewport; in the catalogue it sits in the flow.
+function ToastInline({ toasts }: { toasts: Parameters<typeof ToastRegion>[0]["toasts"] }) {
+  return (
+    <>
+      <p>Obavijesti: {toasts.length}</p>
+      <ToastRegion inline toasts={toasts} onDismiss={() => undefined} label="Obavijesti" closeLabel="Zatvori" />
+    </>
+  );
+}
 const ICON_LABELS: Record<IconName, string> = {
   undo: "Poništi", redo: "Ponovi", paragraph: "Odlomak", heading: "Naslov", bold: "Podebljano", italic: "Kurziv",
   bulletList: "Popis", quote: "Citat", chevronDown: "Više",
@@ -53,6 +66,97 @@ export const ENTRIES = {
     greška: () => <Button tone="quiet"><Icon name="redo" /> Pokušajte ponovno</Button>,
     puno: () => <>{ICON_NAMES.map((name) => <span key={name}><Icon name={name} /> {ICON_LABELS[name]}</span>)}</>,
     onemogućeno: () => <Button tone="quiet" disabled><Icon name="bold" /> Podebljano</Button>,
+  },
+  // WEB-04: inline (modal={false}) so every state shows in the page flow.
+  Dialog: {
+    prazno: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined}
+      actions={<Button tone="quiet">Ostani</Button>}><p>Odjaviti se s ovog uređaja?</p></Dialog>,
+    učitavanje: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined} dismissible={false}
+      actions={<Button busy>Odjavljivanje…</Button>}><p>Odjava je u tijeku.</p></Dialog>,
+    greška: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined}
+      error="Odjava nije uspjela. Pokušajte ponovno." actions={<Button>Pokušajte ponovno</Button>}><p>Odjaviti se s ovog uređaja?</p></Dialog>,
+    puno: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined}
+      actions={<><Button tone="quiet">Ostani</Button><Button>Odjavi se</Button></>}>
+      <p>Rad je spremljen na poslužitelju. Nakon odjave na ovom uređaju ostaje samo ono što nije poslano.</p>
+      <p>Ponovna prijava ide preko AAI@EduHr.</p></Dialog>,
+    onemogućeno: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined}
+      actions={<Button disabled>Odjavi se</Button>}><p>Odjava trenutačno nije dostupna.</p></Dialog>,
+  },
+  ToastRegion: {
+    prazno: () => <ToastInline toasts={[]} />,
+    učitavanje: () => <ToastInline toasts={[{ id: 1, text: "Šaljem izmjene…", tone: "neutral" }]} />,
+    greška: () => <ToastInline toasts={[{ id: 1, text: "Izmjena nije poslana. Pokušajte ponovno.", tone: "error" }]} />,
+    puno: () => <ToastInline toasts={[1, 2, 3].map((id) => ({ id, text: `Komentar ${id} je dodan.`, tone: "neutral" as const }))} />,
+    onemogućeno: () => <ToastInline toasts={[{ id: 1, text: "Obavijesti su isključene.", tone: "neutral" }]} />,
+  },
+  // WEB-05 form elements; invented course data only.
+  Checkbox: {
+    prazno: () => <Checkbox label="Pročitao sam obavijest o zadatku" />,
+    učitavanje: () => <Checkbox label="Pročitao sam obavijest o zadatku" hint="Učitavanje…" aria-busy />,
+    greška: () => <Checkbox label="Pročitao sam obavijest o zadatku" error="Potvrdite da ste pročitali obavijest." />,
+    puno: () => <Checkbox label="Pročitao sam obavijest o zadatku" defaultChecked hint="Potvrđeno." />,
+    onemogućeno: () => <Checkbox label="Pročitao sam obavijest o zadatku" disabled defaultChecked />,
+  },
+  Select: {
+    prazno: () => <Select label="Grupa" placeholder="Odaberite grupu" options={GROUPS} />,
+    učitavanje: () => <Select label="Grupa" placeholder="Odaberite grupu" options={[]} busy hint="Učitavanje…" />,
+    greška: () => <Select label="Grupa" placeholder="Odaberite grupu" options={GROUPS} error="Odaberite grupu." />,
+    puno: () => <Select label="Grupa" options={GROUPS} defaultValue="b" hint="Grupa B, utorkom." />,
+    onemogućeno: () => <Select label="Grupa" options={GROUPS} defaultValue="a" disabled />,
+  },
+  TextArea: {
+    prazno: () => <TextArea label="Napomena za studente" placeholder="Npr. Rad predajte do kraja tjedna" />,
+    učitavanje: () => <TextArea label="Napomena za studente" busy hint="Učitavanje…" />,
+    greška: () => <TextArea label="Napomena za studente" error="Napomena je preduga." defaultValue="Izmišljeni tekst napomene." />,
+    puno: () => <TextArea label="Napomena za studente" defaultValue="Rad pišite u Ducturi; obavijest o zadatku vrijedi za cijelu grupu." hint="Najviše 500 znakova." />,
+    onemogućeno: () => <TextArea label="Napomena za studente" disabled defaultValue="Zadatak je zatvoren." />,
+  },
+  Tag: {
+    prazno: () => <Tag>Bez grupe</Tag>,
+    učitavanje: () => <Tag>Učitavanje…</Tag>,
+    greška: () => <Tag tone="warn">Rok je prošao</Tag>,
+    puno: () => <><Tag>Grupa A</Tag> <Tag tone="accent">2026./2027.</Tag> <Tag tone="warn">Rok produljen</Tag></>,
+    onemogućeno: () => <Tag>Zatvoreno</Tag>,
+  },
+  Skeleton: {
+    prazno: () => <Skeleton label="Učitavanje…" lines={1} />,
+    učitavanje: () => <Skeleton label="Učitavanje popisa zadataka…" />,
+    greška: () => <><Skeleton label="Učitavanje…" lines={1} /><p>Popis se nije učitao. Pokušajte ponovno.</p></>,
+    puno: () => <Skeleton label="Učitavanje rada…" lines={6} />,
+    onemogućeno: () => <Skeleton label="Učitavanje zaustavljeno." lines={2} />,
+  },
+  Details: {
+    prazno: () => <Details summary="Pravila zadatka"><p>Nastavnik još nije dodao pravila.</p></Details>,
+    učitavanje: () => <Details summary="Pravila zadatka" open><p>Učitavanje…</p></Details>,
+    greška: () => <Details summary="Pravila zadatka" open><p>Pravila se nisu učitala. Pokušajte ponovno.</p></Details>,
+    puno: () => <Details summary="Pravila zadatka" open><p>Rad se piše u Ducturi. Nastavnik vidi rad dok nastaje.</p></Details>,
+    onemogućeno: () => <Details summary="Pravila zadatka"><p>Zadatak je zatvoren.</p></Details>,
+  },
+  // WEB-06: moved from the web's shell; the web passes its own words.
+  ErrorScreen: {
+    prazno: () => <ErrorScreen retryLabel={t.auth.retry} homeLabel={t.auth.home} title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
+    učitavanje: () => <RouteLoading label={t.student.loading} />,
+    greška: () => <ErrorScreen retryLabel={t.auth.retry} homeLabel={t.auth.home} title={t.errorPage.errorTitle} body={t.errorPage.errorBody} onRetry={() => {}} />,
+    puno: () => <ErrorScreen retryLabel={t.auth.retry} homeLabel={t.auth.home} title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
+    onemogućeno: () => <ErrorScreen retryLabel={t.auth.retry} homeLabel={t.auth.home} title={t.errorPage.errorTitle} body={t.errorPage.errorBody} />,
+  },
+  RouteLoading: {
+    prazno: () => <RouteLoading label={t.workspace.panelLoading} />,
+    učitavanje: () => <RouteLoading label={t.fastPath.loading} />,
+    greška: () => <RouteLoading label={t.student.loading} />,
+    puno: () => <RouteLoading label={t.workspace.statusLoading} />,
+    onemogućeno: () => <RouteLoading label={t.workspace.panelLoading} />,
+  },
+  PanelTabs: {
+    prazno: () => <PanelTabs label="Ploče" tabs={[{ id: "komentari", label: "Komentari", content: <p>Još nema komentara.</p> }]} />,
+    učitavanje: () => <PanelTabs label="Ploče" tabs={[{ id: "komentari", label: "Komentari", content: <p>Učitavanje…</p> }]} />,
+    greška: () => <PanelTabs label="Ploče" tabs={[{ id: "izvori", label: "Izvori", content: <p>Izvori se nisu učitali. Pokušajte ponovno.</p> }]} />,
+    puno: () => <PanelTabs label="Ploče" initial="izvori" tabs={[
+      { id: "komentari", label: "Komentari", content: <p>Dva komentara uz odlomak 2.</p> },
+      { id: "izvori", label: "Izvori", content: <p>Tri izmišljena izvora.</p> },
+      { id: "pravila", label: "Pravila", content: <p>Pravila zadatka.</p> },
+    ]} />,
+    onemogućeno: () => <PanelTabs label="Ploče" tabs={[{ id: "pravila", label: "Pravila", content: <p>Zadatak je zatvoren.</p> }]} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
 
@@ -148,20 +252,6 @@ export const SCREEN_ENTRIES = {
     greška: () => <AppShell navId="bocna-navigacija-3" role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain><p role="alert">{t.errorPage.errorBody}</p></AppShell>,
     puno: () => <AppShell navId="bocna-navigacija-4" role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain>{page}</AppShell>,
     onemogućeno: () => <AppShell navId="bocna-navigacija-5" role={null} scope={SCOPE} crumbs={[]} ownMain>{page}</AppShell>,
-  },
-  ErrorScreen: {
-    prazno: () => <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
-    učitavanje: () => <RouteLoading label={t.student.loading} />,
-    greška: () => <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} onRetry={() => {}} />,
-    puno: () => <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
-    onemogućeno: () => <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} />,
-  },
-  RouteLoading: {
-    prazno: () => <RouteLoading label={t.workspace.panelLoading} />,
-    učitavanje: () => <RouteLoading label={t.fastPath.loading} />,
-    greška: () => <RouteLoading label={t.student.loading} />,
-    puno: () => <RouteLoading label={t.workspace.statusLoading} />,
-    onemogućeno: () => <RouteLoading label={t.workspace.panelLoading} />,
   },
   StudentHome: {
     prazno: () => <StudentHome read={{ kind: "ready", courses: [] }} enroll={null} signIn={signIn} />,

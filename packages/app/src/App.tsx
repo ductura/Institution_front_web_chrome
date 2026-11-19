@@ -1,9 +1,11 @@
+import { RouteLoading } from "@ductura/ui";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import {
-  AppShell, appHref, ErrorScreen, MentoredWorks, readMentoredWorks, readTeacherCourses, RouteLoading, StudentHome, TeacherCourses,
+  AppShell, appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, StudentHome, TeacherCourses,
   type MentoredWorksCall, type MyAssignmentsRead, type ShellRole, type TeacherCoursesCall,
 } from "../../../src/components/index.ts";
+import ErrorScreen from "../../../src/components/shell/ErrorScreen.ts";
 import { readMyAssignments, type AssignmentsCall } from "../../../src/components/student/my-assignments-read.ts";
 import { messagesHr as t } from "../../../locales/hr.ts";
 import { createApi, goToSignIn, leaveFor, readSession, signInHref, signOut, type SessionRead } from "../../../src/client/api.ts";

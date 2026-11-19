@@ -6,8 +6,9 @@ import { createElement as h } from "react";
  * the plain AppHeader. Not AppShell: the fallback has no session to mark for
  * the other tabs (SessionObserver, D-118), so it reads none and claims none.
  * Written with createElement, like the other screens tested by static render.
+ * Moved from the web's shell (WEB-06).
  */
-export default function RouteLoading({ label }: { label: string }) {
+export function RouteLoading({ label }: { label: string }) {
   return h(
     "main",
     { id: "sadrzaj", tabIndex: -1, className: "page", "aria-busy": "true" },

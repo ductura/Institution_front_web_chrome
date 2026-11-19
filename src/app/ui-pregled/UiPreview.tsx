@@ -1,7 +1,10 @@
 "use client";
 
-import { Icon, ICON_NAMES, SAVE_STATES, SaveState, toggleTheme, type SaveStateName } from "@ductura/ui";
-import { useEffect, useState } from "react";
+import {
+  Button, Checkbox, Details, Dialog, Icon, ICON_NAMES, SAVE_STATES, SaveState, Select, Skeleton, Tag, TextArea, ToastRegion,
+  toggleTheme, useToasts, type SaveStateName,
+} from "@ductura/ui";
+import { useEffect, useRef, useState } from "react";
 
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
 
@@ -34,15 +37,22 @@ const sample = (
 
 export default function UiPreview() {
   const [tokens, setTokens] = useState<Token[]>([]);
-  const [theme, setTheme] = useState("dark");
-  useEffect(() => setTokens(readTokens()), [theme]);
+  // Read after mounting and after every toggle, so the values always match the
+  // theme on <html>, a kept light theme included.
+  useEffect(() => setTokens(readTokens()), []);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const stayRef = useRef<HTMLButtonElement>(null);
+  const { toasts, show, dismiss } = useToasts();
 
   return (
     <main id="sadrzaj" className="page" style={{ display: "grid", gap: 24, padding: 24, maxWidth: 1200 }}>
       <h1>{t.uiPreview.title}</h1>
       <p>{t.uiPreview.intro}</p>
       <p>
-        <button type="button" className="btn" onClick={() => setTheme(toggleTheme(document.documentElement, globalThis.localStorage))}>
+        <button type="button" className="btn" onClick={() => {
+          toggleTheme(document.documentElement, globalThis.localStorage);
+          setTokens(readTokens());
+        }}>
           {t.uiPreview.theme}
         </button>
       </p>
@@ -59,6 +69,36 @@ export default function UiPreview() {
             <SaveState state="EDITING" blocked />
           </li>
         </ul>
+      </section>
+
+      <section aria-labelledby="pregled-dijalog">
+        <h2 id="pregled-dijalog">{t.uiPreview.dialogs}</h2>
+        <p style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <Button tone="quiet" onClick={() => setDialogOpen(true)}>{t.uiPreview.openDialog}</Button>
+          <Button tone="quiet" onClick={() => show(t.uiPreview.toastText)}>{t.uiPreview.showToast}</Button>
+          <Button tone="quiet" onClick={() => show(t.uiPreview.errorToastText, "error")}>{t.uiPreview.showErrorToast}</Button>
+        </p>
+        <Dialog open={dialogOpen} title={t.uiPreview.dialogTitle} onClose={() => setDialogOpen(false)} initialFocus={stayRef}
+          actions={<>
+            <Button ref={stayRef} tone="quiet" onClick={() => setDialogOpen(false)}>{t.uiPreview.dialogStay}</Button>
+            <Button onClick={() => setDialogOpen(false)}>{t.uiPreview.dialogClose}</Button>
+          </>}>
+          <p>{t.uiPreview.dialogText}</p>
+        </Dialog>
+        <ToastRegion toasts={toasts} onDismiss={dismiss} label={t.uiPreview.toasts} closeLabel={t.uiPreview.dialogClose} />
+      </section>
+
+      <section aria-labelledby="pregled-obrasci" style={{ display: "grid", gap: 16 }}>
+        <h2 id="pregled-obrasci">{t.uiPreview.forms}</h2>
+        <Checkbox label={t.uiPreview.checkbox} />
+        <Select label={t.uiPreview.select} placeholder={t.uiPreview.selectPlaceholder}
+          options={[{ value: "a", label: t.uiPreview.groupA }, { value: "b", label: t.uiPreview.groupB }]} />
+        <TextArea label={t.uiPreview.textarea} hint={t.uiPreview.textareaHint} />
+        <p style={{ display: "flex", gap: 8 }}>
+          <Tag>{t.uiPreview.tagGroup}</Tag><Tag tone="accent">{t.uiPreview.tagYear}</Tag><Tag tone="warn">{t.uiPreview.tagExtended}</Tag>
+        </p>
+        <Skeleton label={t.uiPreview.loading} />
+        <Details summary={t.uiPreview.detailsSummary}><p>{t.uiPreview.detailsBody}</p></Details>
       </section>
 
       <section aria-labelledby="pregled-ikone">
