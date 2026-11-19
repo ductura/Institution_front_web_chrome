@@ -10,12 +10,15 @@ import { ENTRIES, SCREEN_ENTRIES } from "./entries";
 
 describe("every component has a catalogue entry with all five states (web.md §6 B5)", () => {
   it("the catalogue covers every component @ductura/ui exports", () => {
-    expect(componentNames(ui)).toEqual(["Button", "Card", "SaveState", "TextField"]);
+    expect(componentNames(ui)).toEqual([
+      "Button", "Card", "Checkbox", "Details", "Dialog", "ErrorScreen", "Icon", "PanelTabs", "RouteLoading", "SaveState", "Select", "Skeleton",
+      "Tag", "TextArea", "TextField", "ToastRegion",
+    ]);
     expect(catalogGaps(ui, ENTRIES)).toEqual([]);
   });
 
   it("the catalogue covers every component src/components exports (DAN-753)", () => {
-    expect(componentNames(screens)).toEqual(["AppShell", "EmptyHome", "ErrorScreen", "MentoredWorks", "MyAssignments", "OutlinePanel", "RouteLoading", "StudentHome", "TeacherCourses"]);
+    expect(componentNames(screens)).toEqual(["AppShell", "EmptyHome", "MentoredWorks", "MyAssignments", "OutlinePanel", "StudentHome", "TeacherCourses"]);
     expect(catalogGaps(screens, SCREEN_ENTRIES)).toEqual([]);
   });
 
@@ -35,8 +38,8 @@ describe("every component has a catalogue entry with all five states (web.md §6
   const all = Object.fromEntries(CATALOG_STATES.map((s) => [s, () => null]));
 
   it("fails for a new component without an entry", () => {
-    const exports = { ...ui, Dialog: () => null };
-    expect(catalogGaps(exports, ENTRIES)).toEqual(["Dialog: nema unosa u katalogu"]);
+    const exports = { ...ui, Popover: () => null };
+    expect(catalogGaps(exports, ENTRIES)).toEqual(["Popover: nema unosa u katalogu"]);
   });
 
   it("fails for an entry missing a state, and for an extra state", () => {

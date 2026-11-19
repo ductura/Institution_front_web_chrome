@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { messagesHr as t } from "../../../locales/hr.ts";
 
-import RouteLoading from "./RouteLoading";
+import { RouteLoading } from "@ductura/ui";
 
 describe("route loading (#732 item 4)", () => {
   it("announces the wait in the page's main, without a session mark", () => {

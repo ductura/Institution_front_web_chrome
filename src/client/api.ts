@@ -397,3 +397,74 @@ export async function signOut(options: ApiOptions = {}): Promise<boolean> {
     return false;
   }
 }
+
+// ---------------------------------------------------------------------------
+// WEB-02 (Ductus#2028 c.7008147932): the Next.js app passes every /api/v1/*
+// request on to Institution_server, and its server-side pages read through
+// createApi with the request's cookies. Both live here, the one file that may
+// call the API; src/client/server.ts and src/app/api/v1/[...path] only wire
+// them up. The web never reaches the database.
+
+/** The path prefix the institution server owns; nothing else is passed on. */
+export const SERVER_PREFIX = "/api/v1/";
+
+/** Hop-by-hop headers (RFC 9110 §7.6.1) and those the transport sets itself: never passed on. */
+const NOT_FORWARDED: ReadonlySet<string> = new Set([
+  "connection", "keep-alive", "proxy-connection", "proxy-authenticate", "proxy-authorization", "te", "trailer",
+  "transfer-encoding", "upgrade", "host", "content-length",
+]);
+/** The transport already decoded the body, so its encoding and length no longer hold. */
+const NOT_RETURNED: ReadonlySet<string> = new Set([...NOT_FORWARDED, "content-encoding", "set-cookie"]);
+const NULL_BODY_STATUS: ReadonlySet<number> = new Set([101, 103, 204, 205, 304]);
+
+function proxyError(status: number, error: string): Response {
+  return Response.json({ error }, { status, headers: { "cache-control": "no-store" } });
+}
+
+/**
+ * One request of the browser, passed on to the institution server at
+ * `server` (an origin) unchanged: method, path, query, body and headers but
+ * the hop-by-hop ones, with the cookie. Redirects are not followed, so a 303
+ * of sign-in or sign-out reaches the browser with its Location and every
+ * Set-Cookie. A path outside /api/v1/ is 404; an unreachable server is 502.
+ */
+export async function forwardToServer(request: Request, server: string, transport: typeof fetch = (input, init) => fetch(input, init)): Promise<Response> {
+  const incoming = new URL(request.url);
+  if (!incoming.pathname.startsWith(SERVER_PREFIX)) return proxyError(404, "not_found");
+  const target = new URL(incoming.pathname + incoming.search, server);
+  const headers = new Headers();
+  request.headers.forEach((value, name) => {
+    if (!NOT_FORWARDED.has(name)) headers.set(name, value);
+  });
+  headers.set("x-forwarded-host", request.headers.get("host") ?? incoming.host);
+  headers.set("x-forwarded-proto", incoming.protocol.replace(/:$/, ""));
+  const withBody = request.method !== "GET" && request.method !== "HEAD";
+  let res: Response;
+  try {
+    res = await transport(target, {
+      method: request.method,
+      headers,
+      body: withBody ? await request.arrayBuffer() : undefined,
+      redirect: "manual",
+      cache: "no-store",
+    });
+  } catch {
+    return proxyError(502, "server_unavailable");
+  }
+  const out = new Headers();
+  res.headers.forEach((value, name) => {
+    if (!NOT_RETURNED.has(name)) out.set(name, value);
+  });
+  for (const cookie of res.headers.getSetCookie()) out.append("set-cookie", cookie);
+  const empty = request.method === "HEAD" || NULL_BODY_STATUS.has(res.status);
+  return new Response(empty ? null : res.body, { status: res.status, statusText: res.statusText, headers: out });
+}
+
+/** A transport that sends `cookie` (the browser request's Cookie header) with every call; for server-side reads. */
+export function cookieTransport(cookie: string, transport: typeof fetch = (input, init) => fetch(input, init)): typeof fetch {
+  return (input, init) => {
+    const headers = new Headers(init?.headers);
+    if (cookie !== "") headers.set("cookie", cookie);
+    return transport(input, { ...init, headers, cache: "no-store" });
+  };
+}
