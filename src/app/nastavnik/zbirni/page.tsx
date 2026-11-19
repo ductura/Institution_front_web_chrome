@@ -1,21 +1,101 @@
-import { messagesHr } from "../../../lib/i18n/messages.hr";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { Button, Select } from "@ductura/ui";
+
+import { signInHref } from "@/client/api";
+import { serverApi } from "@/client/server";
+import { readAssignmentOverview, type TeacherCall } from "@/client/teacher-reads";
+import AssignmentOverview from "@/components/teacher/AssignmentOverview";
+import { readTeacherCourses } from "@/components/teacher/teacher-courses-read";
+import { messagesHr } from "@/lib/i18n/messages.hr";
+
+import styles from "../page.module.css";
 
 const t = messagesHr.teacherSummary;
+const HREF = "/nastavnik/zbirni";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
 
-// WEB-17 (A-9, N-17): "Zbirni pregled" in the teacher's side bar. The summary
-// read comes later; until then the page shows only its empty state, with no
-// call and no number (D-242: at least five students, no names, no ranking).
-export default function TeacherSummaryPage() {
+/**
+ * TODO(ugovor): teacher.assignment-overview.get comes with
+ * @ductura/contracts 3.2.0 (SRV-27, SRV-32) and its handler with SRV-29. Until
+ * src/client gives it a transport, the read is not wired and the page says the
+ * overview is unavailable: never an empty or invented list.
+ */
+const overviewCall: TeacherCall = async () => ({ ok: false, status: 503, code: "not_wired" });
+
+type Choice = { id: string; title: string; label: string };
+
+function hrefFor(assignmentId: string): string {
+  return `${HREF}?zadatak=${encodeURIComponent(assignmentId)}`;
+}
+
+/**
+ * `/nastavnik/zbirni` (WEB-33, N-17): the teacher picks one of the
+ * assignments of teacher.courses.get and sees its submissions, a row per
+ * student. An id that is not one of the teacher's assignments is not read:
+ * the first assignment is shown instead. The shell (layout) has already read
+ * the session and the role.
+ */
+export default async function TeacherSummaryPage({ searchParams }: { searchParams: Promise<{ zadatak?: string | string[] }> }) {
+  const server = serverApi((await cookies()).toString());
+  const courses = await readTeacherCourses(server);
+  if (courses.kind === "signedOut") redirect(signInHref(HREF));
+
+  const unavailable = (retry: string) => (
+    <>
+      <p role="alert" className={styles.alert}>{t.unavailable}</p>
+      <p><a className={styles.retry} href={retry}>{t.retry}</a></p>
+    </>
+  );
+
+  let body;
+  if (courses.kind !== "ready") {
+    body = unavailable(HREF);
+  } else {
+    const choices: Choice[] = courses.courses.flatMap((course) => course.assignments.map((assignment) => ({
+      id: assignment.id,
+      title: assignment.title,
+      label: t.assignmentOption.replace("{course}", course.name).replace("{assignment}", assignment.title),
+    })));
+    const asked = (await searchParams).zadatak;
+    const chosen = choices.find((choice) => choice.id === asked) ?? choices[0];
+    if (chosen === undefined) {
+      body = (
+        <section aria-labelledby="zbirni-prazno">
+          <h2 id="zbirni-prazno">{t.emptyTitle}</h2>
+          <p role="status">{t.emptyBody}</p>
+        </section>
+      );
+    } else {
+      const overview = await readAssignmentOverview(overviewCall, chosen.id);
+      if (overview.kind === "session-expired") redirect(signInHref(hrefFor(chosen.id)));
+      body = (
+        <>
+          <form method="get" className={styles.head}>
+            <Select name="zadatak" label={t.pickLabel} defaultValue={chosen.id}
+              options={choices.map((choice) => ({ value: choice.id, label: choice.label }))} />
+            <Button type="submit">{t.pickSubmit}</Button>
+          </form>
+          {overview.kind === "ready"
+            ? <AssignmentOverview assignmentId={chosen.id} assignmentTitle={chosen.title} rows={overview.rows} />
+            : unavailable(hrefFor(chosen.id))}
+        </>
+      );
+    }
+  }
+
   return (
-    <div className="page">
-      <h1>{t.title}</h1>
-      <p>{t.lead}</p>
-      <section aria-labelledby="zbirni-prazno">
-        <h2 id="zbirni-prazno">{t.emptyTitle}</h2>
-        <p role="status">{t.emptyBody}</p>
-      </section>
+    <div className={`page ${styles.page}`}>
+      <div className={styles.head}>
+        <div className={styles.heading}>
+          <h1>{t.title}</h1>
+          <p className={styles.lead}>{t.lead}</p>
+        </div>
+      </div>
+      {body}
     </div>
   );
 }

@@ -1544,15 +1544,37 @@ export const hr = {
     noRoleNext: "Javite se administratoru svojeg fakulteta da Vam dodijeli ulogu, pa se ponovno prijavite.",
     logoutBody: "Odjavit ćete se iz Ducture i iz sustava AAI@EduHr u ovom pregledniku, a zatim se vraćate na početnu stranicu.",
   },
-  // WEB-17 (A-9, N-17): the teacher's "Zbirni pregled" in the side bar. Until
-  // the summary's read arrives it shows only its empty state; when it does,
-  // it is a course with at least five students, without names and without a
-  // ranking (D-242, PRODUCT §5 rule 2).
+  // WEB-17 (A-9), WEB-33 (N-17): the teacher's "Zbirni pregled" of one
+  // assignment, as in the prototype (A-9): a row per student with the state of
+  // the submission and of the record. Sorting is by column, never a ranking
+  // (PRODUCT §5 rule 2); a record gap is a fact, not a mark (rule 3). The
+  // "Dorada" column stays empty until wave 8.
   teacherSummary: {
     title: "Zbirni pregled",
-    lead: "Zbirni pregled kolegija bez imena studenata, samo za kolegij s najmanje pet studenata.",
-    emptyTitle: "Zbirni pregled još nema podataka",
-    emptyBody: "Kad zbirni pregled bude dostupan, ovdje ćete vidjeti zbirne brojke za svoje kolegije. Pojedinačni studenti se ovdje ne prikazuju.",
+    lead: "Stanje predaje za svakog studenta odabranog zadatka. Redak vodi na potvrdu predaje.",
+    emptyTitle: "Još nema zadataka",
+    emptyBody: "Zbirni pregled prikazuje predaje jednog zadatka. Kad u kolegiju objavite zadatak, ovdje ga možete odabrati.",
+    pickLabel: "Zadatak",
+    pickSubmit: "Prikaži",
+    assignmentOption: "{course} · {assignment}",
+    caption: "Predaje zadatka {assignment}",
+    noStudents: "U ovom zadatku još nema studenata.",
+    unavailable: "Zbirni pregled trenutačno nije dostupan. Pokušajte ponovno.",
+    retry: "Pokušaj ponovno",
+    columns: {
+      student: "Student",
+      state: "Stanje",
+      submittedAt: "Vrijeme predaje",
+      afterDeadline: "Nakon roka",
+      record: "Stanje zapisa",
+      revision: "Dorada",
+    },
+    noName: "Ime nije dostupno",
+    noGroup: "bez grupe",
+    group: "grupa {group}",
+    recordContinuous: "Zapis je cjelovit",
+    no: "Ne",
+    none: "–",
   },
   // WEB-18 (N-01, dk-h, A-7, A-8): the teacher's courses and their enrolment
   // codes. The server keeps only a hash: the code is shown once, in the dialog
