@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { baseOf, crumbsOf, internalRoute, PAGES, pathMatches, resolve, routeOf, shellRole } from "./routes";
+import { baseOf, crumbsOf, internalRoute, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -104,6 +104,16 @@ describe("the teacher's pages of Ductus app/", () => {
     expect(resolve("/nastavnik/kolegiji", "teacher")).toMatchObject({ kind: "page", page: { kind: "teacherCourses" } });
     expect(resolve("/nastavnik/rad/r1", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
     expect(resolve("/nastavnik/zadatak/z1", "teacher")).toEqual({ kind: "notFound" });
+  });
+});
+
+describe("publicPage", () => {
+  it("gives the pages opened without a session: Stanje sustava and Prijava", () => {
+    expect(publicPage("/stanje")).toMatchObject({ label: "Stanje sustava" });
+    expect(publicPage("/prijava")).toMatchObject({ label: "Prijava" });
+    expect(publicPage("/zadaci")).toBeNull();
+    expect(publicPage("/kako-radi")).toBeNull();
+    expect(publicPage("/")).toBeNull();
   });
 });
 

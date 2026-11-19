@@ -1,17 +1,18 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import {
-  appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, StudentHome, TeacherCourses,
+  appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, RouteLoading, StudentHome, TeacherCourses,
   type MentoredWorksCall, type MyAssignmentsRead, type TeacherCoursesCall,
 } from "../../../../src/components/index.ts";
 import { readMyAssignments, type AssignmentsCall } from "../../../../src/components/student/my-assignments-read.ts";
 import { messagesHr as t } from "../../../../locales/hr.ts";
-import { createApi, goToSignIn, signInHref } from "../../../../src/client/api.ts";
+import { createApi, goToSignIn, leaveFor, signInHref } from "../../../../src/client/api.ts";
 
 import type { Base } from "../bases";
-import { routeOf } from "../routes";
+import { internalRoute, routeOf } from "../routes";
 import { hostText } from "../text";
 import { useHost } from "./context";
 
@@ -27,6 +28,30 @@ export function PendingPage() {
       <p>{hostText.pending}</p>
     </section>
   );
+}
+
+/** A public page not yet connected: outside the shell, so with its own main. */
+export function PublicPendingPage() {
+  return (
+    <main id="sadrzaj" tabIndex={-1}>
+      <PendingPage />
+    </main>
+  );
+}
+
+/**
+ * Ductus /prijava: sign-in is AAI@EduHr only (D-09), so the page goes straight
+ * to the login of the institution server. A returnTo of the app ("/zadaci" or
+ * "/app/web/zadaci") comes back under this base; any other goes to its home.
+ */
+export function SignInPage() {
+  const { base } = useHost();
+  const returnTo = useSearchParams().get("returnTo");
+  useEffect(() => {
+    const route = returnTo === null ? null : internalRoute(returnTo, base);
+    leaveFor(signInHref(appHref(base, route ?? "/")));
+  }, [base, returnTo]);
+  return <RouteLoading label={hostText.signingIn} />;
 }
 
 /** S01 and S02 over student.assignments.get, read once per visit. */

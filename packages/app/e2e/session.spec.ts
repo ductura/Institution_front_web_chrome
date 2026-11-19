@@ -217,3 +217,21 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   await page.goto("/app/chrome/ustanova/kolegiji");
   await expect(page).toHaveURL(/\/app\/chrome\/zadaci$/);
 });
+
+test("Stanje sustava and Prijava open without reading the session", async ({ page }) => {
+  const errors = errorsOf(page);
+  const seen = await fakeServer(page, { status: 401 });
+  await page.goto("/app/chrome/stanje");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Stanje sustava");
+  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await axe(page);
+  expect(errors).toEqual([]);
+
+  await page.goto("/app/chrome/prijava?returnTo=%2Fzadaci%2Fkolegiji");
+  await expect.poll(() => seen.login.length).toBe(1);
+  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/zadaci/kolegiji");
+  await page.goto("/app/web/prijava?returnTo=https%3A%2F%2Fexample.org%2F");
+  await expect.poll(() => seen.login.length).toBe(2);
+  expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/app/web/");
+  expect(seen.me).toBe(0);
+});

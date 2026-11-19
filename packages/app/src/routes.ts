@@ -7,6 +7,7 @@ import { messagesHr as t } from "../../../locales/hr.ts";
 import type { SessionRole } from "../../../src/client/api.ts";
 
 import type { Base } from "./bases";
+import { hostText } from "./text";
 
 export { BASES, type Base } from "./bases";
 
@@ -39,6 +40,8 @@ export type Page = {
   readonly roles: readonly ShellRole[];
   /** The navigation item it marks as current, if any. */
   readonly current?: string;
+  /** Opened without reading the session and outside the shell, as Ductus /stanje and /prijava. */
+  readonly public?: boolean;
 };
 
 /** Whether a route is a page's path: the same segments, a bracketed one standing for any. */
@@ -76,7 +79,14 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/uredi", label: t.teacher.newVersion.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik", label: t.teacher.workLanguageException.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
+  { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
+  { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
 ];
+
+/** The public page of a route, or null when the route needs the session. */
+export function publicPage(route: string): Page | null {
+  return PAGES.find((p) => p.public === true && pathMatches(p.path, route)) ?? null;
+}
 
 export type Resolved =
   | { readonly kind: "redirect"; readonly to: string }

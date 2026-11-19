@@ -8,7 +8,7 @@ import { messagesHr as t } from "../../../../locales/hr.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
 import type { Base } from "../bases";
-import { crumbsOf, internalRoute, resolve, routeOf, shellRole } from "../routes";
+import { crumbsOf, internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
 import { hostText } from "../text";
 import { HostContext } from "./context";
 import SignOut from "./SignOut";
@@ -28,6 +28,7 @@ function nextPath(base: Base, route: string): string {
 export default function Host({ base, children }: { base: Base; children: ReactNode }) {
   const router = useRouter();
   const route = routeOf(`/app${usePathname()}`, base);
+  const open = publicPage(route);
   const [session, setSession] = useState<SessionRead | null>(null);
 
   const load = useCallback(() => {
@@ -37,7 +38,11 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
       setSession(read);
     });
   }, [base]);
-  useEffect(load, [load]);
+  // A public page reads no session; leaving it for a page of the shell reads it.
+  const isPublic = open !== null;
+  useEffect(() => {
+    if (!isPublic) load();
+  }, [load, isPublic]);
 
   const navigate = useCallback((to: string, replace = false) => {
     if (replace) router.replace(nextPath(base, to));
@@ -67,9 +72,11 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   }, [resolved, navigate]);
 
   useEffect(() => {
-    const page = resolved?.kind === "page" ? resolved.page.label : null;
+    const page = open?.label ?? (resolved?.kind === "page" ? resolved.page.label : null);
     document.title = page === null ? t.app.name : `${page} · ${t.app.name}`;
-  }, [resolved]);
+  }, [open, resolved]);
+
+  if (open !== null) return <HostContext value={{ base, page: open, role: null }}>{children}</HostContext>;
 
   if (session === null) return <RouteLoading label={hostText.loading} />;
   if (session.kind === "signedOut") return <RouteLoading label={hostText.signingIn} />;
