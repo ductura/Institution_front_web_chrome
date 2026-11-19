@@ -9,7 +9,7 @@ import type { BuiltSegment } from "../../editor";
 import type { AtomicDexieJournal } from "../../journal/atomic-dexie-journal";
 
 import {
-  capture, DOC, journalKit, json, openedAfter, PROFILE, R0, raw, receiptKey, runnerFor, save, server, shifting, trusted, UTC,
+  capture, conflict, DOC, journalKit, json, openedAfter, PROFILE, R0, raw, receiptKey, runnerFor, save, server, shifting, trusted, UTC,
   type Chain,
 } from "./evidence-test-kit";
 
@@ -48,7 +48,7 @@ async function refused(rows: number, answer: Response): Promise<AtomicDexieJourn
   await runnerFor(journal, server(R0, () => answer)).step(DOC);
   return journal;
 }
-const chainConflict = () => json(409, { status: "chain_conflict", currentRevision: R0 + 2 });
+const chainConflict = () => conflict("chain_conflict", R0 + 2);
 const seqOf = async (journal: AtomicDexieJournal) => (await journal.readEvidence(DOC)).meta!.localSeq;
 
 /** Everything the journal holds for `DOC`, to prove a refusal wrote nothing. */
@@ -81,8 +81,8 @@ describe("F-8 3d-2b1: leaving CONFLICT and RECOVERY_REQUIRED", () => {
       expect(reads[field], field).toBe(1);
     }
   });
-  it.each(["stale_base", "chain_conflict", "not_continuous"])("1: after %s nothing is taken without a confirmation", async (status) => {
-    const journal = await refused(2, json(409, { status, currentRevision: R0 + 2 }));
+  it.each(["stale_base", "chain_conflict", "not_continuous"] as const)("1: after %s nothing is taken without a confirmation", async (status) => {
+    const journal = await refused(2, conflict(status, R0 + 2));
     expect((await journal.readEvidence(DOC)).meta?.state).toBe("CONFLICT");
     await refuses(journal, "confirmation_required", async () =>
       journal.adoptServerEvidence(DOC, SERVER, false, DECIDED, await seqOf(journal)));
