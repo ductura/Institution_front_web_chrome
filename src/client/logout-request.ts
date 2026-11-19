@@ -12,6 +12,9 @@ import {
   type CookieJar, type MarkStore, type SessionMark,
 } from "./session-marks";
 
+// The native follow-up POST lives in ./api, the one module allowed to make a request (no-direct-api.test.ts).
+export { followLogoutNatively } from "./api";
+
 /**
  * POST to the logout route; true only for its redirect, which comes after
  * the route cleared the cookie (and closed the session, unless the database
@@ -32,21 +35,6 @@ export async function postLogout(fetchImpl?: ApiOptions["fetchImpl"], timeoutMs 
   } finally {
     clearTimeout(timer);
   }
-}
-
-/**
- * After a successful `postLogout`: the same POST once more, natively, so the
- * browser follows the route's redirect on to the provider's logout (DAN-212);
- * the fetch cannot follow it. It arrives without the cookie, so it closes
- * nothing twice. A form of its own, so it holds while the page re-renders.
- */
-export function followLogoutNatively(): void {
-  const form = document.createElement("form");
-  form.method = "post";
-  form.action = "/api/v1/auth/logout";
-  form.hidden = true;
-  document.body.append(form);
-  form.submit();
 }
 
 export type SignOutDeps = {

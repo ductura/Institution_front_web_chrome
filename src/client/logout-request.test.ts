@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { LOGOUT_PATH, logoutPath } from "./api";
 import { LOGOUT_TIMEOUT_MS } from "./logout-hold";
 import { followLogoutNatively, postLogout, signOutHere, type SignOutDeps } from "./logout-request";
 import { CURRENT_KEY, ENDED_KEY, hasEnded, type CookieJar, type MarkStore } from "./session-marks";
@@ -218,5 +219,31 @@ describe("followLogoutNatively", () => {
     expect(body.children).toEqual([expect.objectContaining({
       tag: "form", method: "post", action: "/api/v1/auth/logout", hidden: true, submitted: true, children: [],
     })]);
+  });
+});
+
+describe("logoutPath (WEB-39)", () => {
+  const post = (operationId: string) => ({ post: { operationId, responses: {} } });
+
+  it("reads the route from the contract", () => {
+    expect(LOGOUT_PATH).toBe("/api/v1/auth/logout");
+    expect(logoutPath({ "/x/logout": post("auth.logout.post"), "/x/logout-all": post("auth.logout-all.post") })).toBe("/x/logout");
+  });
+
+  it("throws when the contract has none, two, or no local path", () => {
+    expect(() => logoutPath({ "/x/logout-all": post("auth.logout-all.post") })).toThrow("auth.logout.post");
+    expect(() => logoutPath({ "/a": post("auth.logout.post"), "/b": post("auth.logout.post") })).toThrow("auth.logout.post");
+    expect(() => logoutPath({ "https://evil.example/logout": post("auth.logout.post") })).toThrow("auth.logout.post");
+    expect(() => logoutPath({ "//evil.example/logout": post("auth.logout.post") })).toThrow("auth.logout.post");
+  });
+
+  it("the form posts to the route the contract names, on the document it is given", () => {
+    const appended: { action?: string; submitted?: boolean }[] = [];
+    const form = { method: "", action: "", hidden: false, submitted: false, submit() { this.submitted = true; } };
+    followLogoutNatively({
+      createElement: (() => form) as unknown as Document["createElement"],
+      body: { append: (node: typeof form) => void appended.push(node) } as unknown as HTMLElement,
+    });
+    expect(appended).toEqual([expect.objectContaining({ method: "post", action: LOGOUT_PATH, hidden: true, submitted: true })]);
   });
 });
