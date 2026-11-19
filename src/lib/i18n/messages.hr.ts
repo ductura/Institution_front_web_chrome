@@ -1500,6 +1500,17 @@ export const hr = {
     deniedNext: "Javite se koordinatoru na svojoj ustanovi.",
     backToOwn: "Natrag na moj prostor",
   },
+  // WEB-08 (A-5, A-6): the sign-in states and the shell's sign-out dialog.
+  // Sign-out ends the Ductura session and the AAI@EduHr session, then "/".
+  signInState: {
+    signedOutTitle: "Odjavljeni ste",
+    signedOutBody: "Odjavili ste se iz Ducture i iz sustava AAI@EduHr. Za nastavak se ponovno prijavite.",
+    unavailableTitle: "Prijava trenutačno nije dostupna",
+    noRoleTitle: "Vaš račun još nema ulogu",
+    noRoleBody: "Prijava sustavom AAI@EduHr je uspjela, ali Vašem računu na ovom fakultetu još nije dodijeljena uloga.",
+    noRoleNext: "Javite se administratoru svojeg fakulteta da Vam dodijeli ulogu, pa se ponovno prijavite.",
+    logoutBody: "Odjavit ćete se iz Ducture i iz sustava AAI@EduHr u ovom pregledniku, a zatim se vraćate na početnu stranicu.",
+  },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,
   // read only, as docs/design/ductura/m2-reference/a03-kolegiji-tim-i-grupe.html
   // writes them. Students are only counted, never named.

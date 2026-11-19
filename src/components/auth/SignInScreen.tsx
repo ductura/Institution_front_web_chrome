@@ -8,6 +8,8 @@ import styles from "./SignInScreen.module.css";
 export type SignInScreenProps = {
   /** The login route with a checked returnTo (signInHref). */
   href: string;
+  /** WEB-08: the state of /prijava above the button (signed out, expired, failed, unavailable). */
+  notice?: { title: string; body: string; alert?: boolean };
 };
 
 /** Official AAI@EduHr help: identity problems belong to the home institution. */
@@ -21,7 +23,7 @@ const AAI_HELP_URL = "https://www.aaiedu.hr/kontakt";
  * plain link; the login route answers with a redirect to the provider. Help
  * and the code note are <details>, so the page works without JavaScript.
  */
-export default function SignInScreen({ href }: SignInScreenProps) {
+export default function SignInScreen({ href, notice }: SignInScreenProps) {
   return (
     <div className={styles.screen}>
       <AppHeader
@@ -79,6 +81,11 @@ export default function SignInScreen({ href }: SignInScreenProps) {
             <em className={styles.accent}>{t.prijava.cardTitleAccent}</em>
           </h2>
           <p className={styles.body}>{t.prijava.cardBody}</p>
+          {notice ? (
+            <div className={styles.notice} role={notice.alert ? "alert" : "status"}>
+              <strong>{notice.title}</strong> {notice.body}
+            </div>
+          ) : null}
           <a className={styles.button} href={href}>
             <span className={styles.aai} aria-hidden="true">
               aai
