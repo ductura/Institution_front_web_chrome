@@ -1,6 +1,6 @@
 # src/platform
 
-Sloj prilagodbi preglednika (DAN-754, web 2.c5, `docs/PLAN.md` §3). Jedan kod za sve preglednike, mobitel i tablet; razlike se rješavaju provjerom mogućnosti, nikad nizom preglednika (UA).
+Sloj prilagodbi preglednika (DAN-754, web 2.c5, [kanonski plan](https://github.com/ductura/.github/blob/main/docs/plan/PLAN-MIGRACIJE.md#katalog-zadataka)). Jedan kod za sve preglednike, mobitel i tablet; razlike se rješavaju provjerom mogućnosti, nikad nizom preglednika (UA).
 
 - `capabilities.ts`: provjera mogućnosti i zamjene. Međuspremnik: Clipboard API, zatim `execCommand("copy")`, inače ključ upozorenja `workspace.earlierDraftCopyFailed`. Dopuštenja: `unknown` kad preglednik ne može reći. Nijedna funkcija ne baca.
 - `viewport.ts`: vidljivi prostor iznad zaslonske tipkovnice iz `visualViewport` (popravak iz kostura `web-mobile`) i pomak koji drži kursor vidljivim.
