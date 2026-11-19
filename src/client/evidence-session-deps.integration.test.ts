@@ -212,6 +212,22 @@ describe("WEB-38: F-155 through the drain", () => {
     expect(meta?.state).not.toBe("SYNCED");
   });
 
+  // #105 review: the answer the client refuses never closes the session, even
+  // when the open route would confirm a submission.
+  it("closes nothing on a not_accepting with a field the contract does not name", async () => {
+    const journal = await started();
+    await save(journal, SEG[0]!);
+    const odd: Answer = () => json(409, { status: "not_accepting", invented: true });
+    const { deps, sent } = session(journal, [odd], () => opened(true));
+    const runner = deps.createRunner(await work(deps));
+    let closed = 0;
+    deps.watchSubmission?.(() => { closed += 1; });
+    await runner.step(DOC);
+    expect(closed).toBe(0);
+    expect(sent).toEqual({ open: 1, commit: 1 });
+    expect((await journal.readEvidence(DOC)).pending).toHaveLength(1);
+  });
+
   it("closes nothing when the open route says not submitted", async () => {
     const journal = await started();
     await save(journal, SEG[0]!);

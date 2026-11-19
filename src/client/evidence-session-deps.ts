@@ -21,17 +21,36 @@ import type { QueuedTransaction } from "../../packages/editor-core/src/sync/jour
 import { createDrainRunner, type DrainJournal } from "../../packages/editor-core/src/sync/runner/drain-runner";
 import { createEvidenceTransport, evidenceVerifierFor } from "../../packages/editor-core/src/sync/runner/evidence-transport";
 
-import { browserTransport } from "./api";
+import { browserTransport, responseMatches } from "./api";
 import { createCommitProtocol, openWork, type FetchLike } from "./evidence-ingest";
 import { readOnline, type OnlineSource } from "./online-status";
 
-/** The end of the commit route's path (`evidence.commit.post`). */
+/** The commit route: its operation and the end of its path. */
+const COMMIT_OPERATION = "evidence.commit.post";
 const COMMIT_ROUTE = "/evidence/commit";
 
 /** Whether a request createApi makes goes to the commit route; anything unreadable does not. */
 function isCommitRoute(input: string): boolean {
   try {
     return new URL(input, "https://route.invalid").pathname.endsWith(COMMIT_ROUTE);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * WEB-38 (#105 review): whether a commit 409 is exactly the contract's
+ * `not_accepting`, read as createApi reads an error body of a protocol route
+ * (JSON content type, the declared shape for the status, nothing more). An
+ * answer createApi would not read, an unknown field included, closes nothing.
+ */
+async function declaredNotAccepting(response: Response): Promise<boolean> {
+  if (!response.headers.get("content-type")?.startsWith("application/json")) return false;
+  try {
+    const bytes = await response.clone().arrayBuffer();
+    const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    return responseMatches(COMMIT_OPERATION, 409, body, bytes.byteLength)
+      && (body as { status?: unknown }).status === "not_accepting";
   } catch {
     return false;
   }
@@ -84,12 +103,9 @@ export function watchClosedBySubmission(
   };
   const wrapped: FetchLike = async (input, init) => {
     const response = await fetchImpl(input, init);
-    if (isCommitRoute(input) && response.status === 409) {
-      const body: unknown = await response.clone().json().catch(() => undefined);
-      if (typeof body === "object" && body !== null && (body as { status?: unknown }).status === "not_accepting"
-        && await confirmed()) {
-        for (const listener of [...listeners]) listener();
-      }
+    if (isCommitRoute(input) && response.status === 409 && await declaredNotAccepting(response)
+      && await confirmed()) {
+      for (const listener of [...listeners]) listener();
     }
     return response;
   };

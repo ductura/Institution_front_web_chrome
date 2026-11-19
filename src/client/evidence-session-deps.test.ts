@@ -109,7 +109,7 @@ describe("browserEvidenceSessionDeps: stored profile (Codex #803)", () => {
 // F-155: a commit 409 not_accepting is a submission, a version not
 // acknowledged or one not open yet; only the server's "submitted" closes.
 describe("watchClosedBySubmission (F-155)", () => {
-  const notAccepting = async () => new Response(JSON.stringify({ status: "not_accepting" }), { status: 409 });
+  const notAccepting = async () => Response.json({ status: "not_accepting" }, { status: 409 });
 
   async function heard(path: string, isSubmitted: () => Promise<boolean>) {
     let asked = 0;
@@ -157,6 +157,22 @@ describe("watchClosedBySubmission (F-155)", () => {
       .toEqual({ asked: 0, fired: 0, status: 409, body: { status: "not_accepting" } });
   });
 
+  // WEB-38 (#105 review): only the contract's own not_accepting closes; an
+  // answer createApi would not read is not asked about, whatever open says.
+  it.each([
+    ["an unknown field", () => Response.json({ status: "not_accepting", invented: true }, { status: 409 })],
+    ["a body that is not JSON", () => new Response("{", { status: 409, headers: { "content-type": "application/json" } })],
+    ["no JSON content type", () => new Response(JSON.stringify({ status: "not_accepting" }), { status: 409 })],
+    ["another 409 of the contract", () => Response.json({ status: "stale_base", currentRevision: 1, documentHash: "d".repeat(64), headSegmentHash: null, lastSequenceTo: 0 }, { status: 409 })],
+  ])("closes nothing and asks nothing for %s", async (_name, answer) => {
+    let asked = 0;
+    let fired = 0;
+    const closed = watchClosedBySubmission(async () => answer(), async () => { asked += 1; return true; });
+    closed.watch(() => { fired += 1; });
+    expect((await closed.fetchImpl(COMMIT, { method: "POST" })).status).toBe(409);
+    expect({ asked, fired }).toEqual({ asked: 0, fired: 0 });
+  });
+
   // WEB-38: the route is known by its path; anything that only looks like it is not.
   it("asks nothing for a path that merely contains the commit route, or an unreadable one", async () => {
     for (const path of [`${COMMIT}/x`, `${ORIGIN}/api/v1/evidence/commitment`, "http://[unreadable"]) {
@@ -177,7 +193,7 @@ describe("F-155 confirmation under the F-154 guard", () => {
       paths.push(String(input));
       if (input === COMMIT) {
         signedIn.value = false;
-        return new Response(JSON.stringify({ status: "not_accepting" }), { status: 409 });
+        return Response.json({ status: "not_accepting" }, { status: 409 });
       }
       return new Response(JSON.stringify({ status: "opened" }), { status: 200 });
     });
