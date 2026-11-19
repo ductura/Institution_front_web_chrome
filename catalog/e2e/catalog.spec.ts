@@ -5,9 +5,11 @@ import { CATALOG_STATES } from "../src/coverage";
 
 const COMPONENTS = [
   "Button", "TextField", "SaveState", "Card", "Icon", "Dialog", "ToastRegion", "Checkbox", "Select", "TextArea", "Tag", "Skeleton", "Details",
+  "ErrorScreen", "RouteLoading",
 ];
 // The screens of src/components (DAN-753): on the shell only, one under another.
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"];
+// PanelTabs (WEB-06) is a part of the shell's panel: on the shell only, like the screens.
+const SCREENS = ["AppShell", "PanelTabs", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"];
 const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 

@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode, type RefObject, type SyntheticEvent } from "react";
 
 import styles from "./Dialog.module.css";

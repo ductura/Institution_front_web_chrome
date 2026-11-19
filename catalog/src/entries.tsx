@@ -1,12 +1,12 @@
 import {
-  Button, Card, Checkbox, Details, Dialog, Icon, ICON_NAMES, SaveState, Select, Skeleton, Tag, TextArea, TextField, ToastRegion,
-  type IconName,
+  Button, Card, Checkbox, Details, Dialog, ErrorScreen, Icon, ICON_NAMES, PanelTabs, RouteLoading, SaveState, Select, Skeleton, Tag,
+  TextArea, TextField, ToastRegion, type IconName,
 } from "@ductura/ui";
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
-  AppShell, EmptyHome, ErrorScreen, MentoredWorks, MyAssignments, OutlinePanel, RouteLoading, StudentHome, TeacherCourses,
+  AppShell, EmptyHome, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
   type AssignmentSubmission, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
@@ -132,6 +132,32 @@ export const ENTRIES = {
     puno: () => <Details summary="Pravila zadatka" open><p>Rad se piše u Ducturi. Nastavnik vidi rad dok nastaje.</p></Details>,
     onemogućeno: () => <Details summary="Pravila zadatka"><p>Zadatak je zatvoren.</p></Details>,
   },
+  // WEB-06: moved from the web's shell; the web passes its own words.
+  ErrorScreen: {
+    prazno: () => <ErrorScreen retryLabel={t.auth.retry} homeLabel={t.auth.home} title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
+    učitavanje: () => <RouteLoading label={t.student.loading} />,
+    greška: () => <ErrorScreen retryLabel={t.auth.retry} homeLabel={t.auth.home} title={t.errorPage.errorTitle} body={t.errorPage.errorBody} onRetry={() => {}} />,
+    puno: () => <ErrorScreen retryLabel={t.auth.retry} homeLabel={t.auth.home} title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
+    onemogućeno: () => <ErrorScreen retryLabel={t.auth.retry} homeLabel={t.auth.home} title={t.errorPage.errorTitle} body={t.errorPage.errorBody} />,
+  },
+  RouteLoading: {
+    prazno: () => <RouteLoading label={t.workspace.panelLoading} />,
+    učitavanje: () => <RouteLoading label={t.fastPath.loading} />,
+    greška: () => <RouteLoading label={t.student.loading} />,
+    puno: () => <RouteLoading label={t.workspace.statusLoading} />,
+    onemogućeno: () => <RouteLoading label={t.workspace.panelLoading} />,
+  },
+  PanelTabs: {
+    prazno: () => <PanelTabs label="Ploče" tabs={[{ id: "komentari", label: "Komentari", content: <p>Još nema komentara.</p> }]} />,
+    učitavanje: () => <PanelTabs label="Ploče" tabs={[{ id: "komentari", label: "Komentari", content: <p>Učitavanje…</p> }]} />,
+    greška: () => <PanelTabs label="Ploče" tabs={[{ id: "izvori", label: "Izvori", content: <p>Izvori se nisu učitali. Pokušajte ponovno.</p> }]} />,
+    puno: () => <PanelTabs label="Ploče" initial="izvori" tabs={[
+      { id: "komentari", label: "Komentari", content: <p>Dva komentara uz odlomak 2.</p> },
+      { id: "izvori", label: "Izvori", content: <p>Tri izmišljena izvora.</p> },
+      { id: "pravila", label: "Pravila", content: <p>Pravila zadatka.</p> },
+    ]} />,
+    onemogućeno: () => <PanelTabs label="Ploče" tabs={[{ id: "pravila", label: "Pravila", content: <p>Zadatak je zatvoren.</p> }]} />,
+  },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
 
 // The web's own components (src/components, DAN-753), texts from locales/ only.
@@ -226,20 +252,6 @@ export const SCREEN_ENTRIES = {
     greška: () => <AppShell navId="bocna-navigacija-3" role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain><p role="alert">{t.errorPage.errorBody}</p></AppShell>,
     puno: () => <AppShell navId="bocna-navigacija-4" role="student" scope={SCOPE} current="/zadaci" crumbs={work} ownMain>{page}</AppShell>,
     onemogućeno: () => <AppShell navId="bocna-navigacija-5" role={null} scope={SCOPE} crumbs={[]} ownMain>{page}</AppShell>,
-  },
-  ErrorScreen: {
-    prazno: () => <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
-    učitavanje: () => <RouteLoading label={t.student.loading} />,
-    greška: () => <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} onRetry={() => {}} />,
-    puno: () => <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />,
-    onemogućeno: () => <ErrorScreen title={t.errorPage.errorTitle} body={t.errorPage.errorBody} />,
-  },
-  RouteLoading: {
-    prazno: () => <RouteLoading label={t.workspace.panelLoading} />,
-    učitavanje: () => <RouteLoading label={t.fastPath.loading} />,
-    greška: () => <RouteLoading label={t.student.loading} />,
-    puno: () => <RouteLoading label={t.workspace.statusLoading} />,
-    onemogućeno: () => <RouteLoading label={t.workspace.panelLoading} />,
   },
   StudentHome: {
     prazno: () => <StudentHome read={{ kind: "ready", courses: [] }} enroll={null} signIn={signIn} />,

@@ -1,5 +1,5 @@
 import AppHeader from "@/components/shell/AppHeader";
-import RouteLoading from "@/components/shell/RouteLoading";
+import { RouteLoading } from "@ductura/ui";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 // DAN-309: shown while /zadaci/radovi reads the student's works; a wait,

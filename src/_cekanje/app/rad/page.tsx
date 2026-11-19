@@ -16,7 +16,7 @@ import { InstructionsPanel, WorkPanel } from "@/components/editor/SidePanels";
 import SourcesPanel from "@/components/editor/SourcesPanel";
 import { LocalStatusLength } from "@/components/editor/StatusLength";
 import AppShell from "@/components/shell/AppShell";
-import PanelTabs from "@/components/shell/PanelTabs";
+import { PanelTabs } from "@ductura/ui";
 import SheetFrame from "@/components/shell/SheetFrame";
 import { readShellRole } from "@/components/shell/shell-role";
 import WorkspaceShell, { RailSection } from "@/components/shell/WorkspaceShell";
