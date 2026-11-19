@@ -1886,6 +1886,15 @@ export const hr = {
     detailsSummary: "Pravila zadatka",
     detailsBody: "Rad se piše u Ducturi. Nastavnik vidi rad dok nastaje.",
     blocked: "Druga kartica",
+    // WEB-29: DataTable and StateTag with invented students.
+    table: "Tablica i oznake stanja",
+    tableCaption: "Predaje zadatka (izmišljeni podaci)",
+    tableEmptyCaption: "Prazna tablica",
+    tableLoadingCaption: "Tablica koja se učitava",
+    tableEmpty: "Još nema predaja.",
+    student: "Student",
+    state: "Stanje",
+    submittedAt: "Vrijeme predaje",
   },
   statusPage: {
     pageTitle: "Stanje sustava",

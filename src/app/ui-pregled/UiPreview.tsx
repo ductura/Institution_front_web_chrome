@@ -4,9 +4,11 @@ import {
   Button, Checkbox, Details, Dialog, Icon, ICON_NAMES, SAVE_STATES, SaveState, Select, Skeleton, Tag, TextArea, ToastRegion,
   toggleTheme, useToasts, type SaveStateName,
 } from "@ductura/ui";
+import { DataTable, StateTag, SUBMISSION_STATES, type DataTableColumn, type SubmissionState } from "@ductura/ui";
 import { useEffect, useRef, useState } from "react";
 
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
+import { zagrebWall } from "../../lib/i18n/zagreb";
 
 type Token = { name: string; value: string };
 
@@ -34,6 +36,32 @@ const sample = (
     {t.uiPreview.sheetSample} <a href="#sadrzaj">{t.uiPreview.sheetLink}</a>
   </p>
 );
+
+type SampleRow = { id: string; name: string; state: SubmissionState; at: number | null };
+
+// WEB-29: invented students (data, not interface text), one per state; times
+// are shown to the minute in Europe/Zagreb and sorted by instant.
+const sampleStudents = ["Ana Anić (demo)", "Ivo Čavlek (demo)", "Petra Šimić (demo)", "Luka Zorić (demo)", "Maja Babić (demo)"];
+const sampleRows: SampleRow[] = SUBMISSION_STATES.map((state, i) => ({
+  id: state,
+  name: sampleStudents[i] ?? state,
+  state,
+  at: state === "not_submitted" ? null : Date.UTC(2026, 10, 19, 9 + i, 5 * i),
+}));
+
+const zagrebMinute = (ms: number) => {
+  const w = zagrebWall(ms);
+  return `${w.day}. ${w.month}. ${w.year}. ${String(w.hour).padStart(2, "0")}:${String(w.minute).padStart(2, "0")}`;
+};
+
+const sampleColumns: DataTableColumn<SampleRow>[] = [
+  { id: "student", header: t.uiPreview.student, cell: (r) => r.name, sortValue: (r) => r.name, rowHeader: true },
+  { id: "state", header: t.uiPreview.state, cell: (r) => <StateTag state={r.state} /> },
+  {
+    id: "at", header: t.uiPreview.submittedAt, sortValue: (r) => r.at,
+    cell: (r) => (r.at === null ? "" : <time dateTime={new Date(r.at).toISOString()}>{zagrebMinute(r.at)}</time>),
+  },
+];
 
 export default function UiPreview() {
   const [tokens, setTokens] = useState<Token[]>([]);
@@ -99,6 +127,16 @@ export default function UiPreview() {
         </p>
         <Skeleton label={t.uiPreview.loading} />
         <Details summary={t.uiPreview.detailsSummary}><p>{t.uiPreview.detailsBody}</p></Details>
+      </section>
+
+      <section aria-labelledby="pregled-tablica" style={{ display: "grid", gap: 16 }}>
+        <h2 id="pregled-tablica">{t.uiPreview.table}</h2>
+        <p style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {SUBMISSION_STATES.map((state) => <StateTag key={state} state={state} />)}
+        </p>
+        <DataTable caption={t.uiPreview.tableCaption} columns={sampleColumns} rows={sampleRows} rowKey={(r) => r.id} empty={t.uiPreview.tableEmpty} />
+        <DataTable caption={t.uiPreview.tableEmptyCaption} columns={sampleColumns} rows={[]} rowKey={(r) => r.id} empty={t.uiPreview.tableEmpty} />
+        <DataTable caption={t.uiPreview.tableLoadingCaption} columns={sampleColumns} rows={[]} rowKey={(r) => r.id} empty={t.uiPreview.tableEmpty} loading />
       </section>
 
       <section aria-labelledby="pregled-ikone">
