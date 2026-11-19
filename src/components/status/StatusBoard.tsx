@@ -12,7 +12,7 @@ const TICK_MS = 5_000;
 const moment = (): Moment => ({ mono: performance.now(), wall: Date.now() });
 
 /**
- * Fetches /api/status every POLL_MS and marks the last answer stale once no
+ * Reads the public status (platform.status.get on /api/v1) every POLL_MS and marks the last answer stale once no
  * new one has come for STALE_AFTER_MS (DAN-429). Age is measured on this
  * page's own clocks (isStaleAt), never against the server's checkedAt. When
  * the page comes back from sleep or the network returns, it asks at once.
