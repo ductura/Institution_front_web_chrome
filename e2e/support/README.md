@@ -1,6 +1,6 @@
 # e2e/support
 
-Pomoćnici za e2e testove, preneseni iz Ductusa `e2e/` (DAN-755, `docs/PLAN.md` §4 i §6).
+Pomoćnici za e2e testove, preneseni iz Ductusa `e2e/` (DAN-755, [kanonski plan](https://github.com/ductura/.github/blob/main/docs/plan/PLAN-MIGRACIJE.md#katalog-zadataka) i §6).
 
 | Datoteka | Što | Izvor u Ductusu (b36c82b9) |
 |---|---|---|

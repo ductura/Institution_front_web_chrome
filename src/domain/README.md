@@ -1,6 +1,6 @@
 # src/domain
 
-Klijentski dio domene preuzet iz Ductusa sa svojim testovima (`docs/PLAN.md` §4, korak 2.c4). Čiste funkcije: bez I/O-a, bez vremena, bez teksta sučelja.
+Klijentski dio domene preuzet iz Ductusa sa svojim testovima ([kanonski plan](https://github.com/ductura/.github/blob/main/docs/plan/PLAN-MIGRACIJE.md#katalog-zadataka), korak 2.c4). Čiste funkcije: bez I/O-a, bez vremena, bez teksta sučelja.
 
 - `text/find-literal.ts`: doslovna pretraga unutar jednog niza teksta (bez regularnih izraza), pomaci u UTF-16, pogodak nikad ne presijeca surogatni par; `isSearchableText` odbija upit koji se ne može upisati ni spremiti.
 - `text/compare-hr.ts`: usporedba riječi po hrvatskoj abecedi (dž, lj i nj su jedno slovo), neovisno o ICU podacima preglednika.
