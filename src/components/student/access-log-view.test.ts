@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { accessLogDaysOf } from "@/domain/privacy/access-log-days";
+import { accessLogDaysOf, type AccessLogEntry } from "./access-log-days";
 import { messagesEn } from "@/lib/i18n/messages.en";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -17,14 +17,26 @@ import { AccessLogDays, AccessLogUnavailable, dayHeading, readerLabel } from "./
 const a = messagesHr.accessLog;
 const id = (n: number) => `00000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
 type Row = Record<string, unknown>;
-const row = (n: number, iso: string, over: Row = {}): Row => ({
-  entry_id: id(n), opened_at: new Date(iso), surface: "live_view", reader_role: "mentor",
-  reader_given_name: "Nastavnik", reader_family_name: "B", ...over,
-});
+// The cases name the old database columns; the row is the contract entry of student.access-log.get (WEB-13).
+const row = (n: number, iso: string, over: Row = {}): AccessLogEntry => {
+  const r: Row = {
+    entry_id: id(n), opened_at: iso, surface: "live_view", reader_role: "mentor",
+    reader_given_name: "Nastavnik", reader_family_name: "B", ...over,
+  };
+  const given = r.reader_given_name as string | null;
+  const family = r.reader_family_name as string | null;
+  return {
+    id: r.entry_id as string,
+    at: new Date(r.opened_at as string).toISOString(),
+    role: r.reader_role as AccessLogEntry["role"],
+    surface: r.surface as AccessLogEntry["surface"],
+    reader: given === null || family === null ? null : { givenName: given, familyName: family },
+  };
+};
 const strings = (value: unknown): string[] =>
   typeof value === "string" ? [value] : typeof value === "object" && value !== null ? Object.values(value).flatMap(strings) : [];
-const days = (rows: Row[]) => accessLogDaysOf(rows)!;
-const html = (rows: Row[], olderHref: string | null = null) => renderToStaticMarkup(createElement(AccessLogDays, { days: days(rows), olderHref }));
+const days = (rows: AccessLogEntry[]) => accessLogDaysOf(rows);
+const html = (rows: AccessLogEntry[], olderHref: string | null = null) => renderToStaticMarkup(createElement(AccessLogDays, { days: days(rows), olderHref }));
 
 describe("DAN-294 S-42 view", () => {
   it("empty: the empty note, no list and no older link", () => {
@@ -58,7 +70,8 @@ describe("DAN-294 S-42 view", () => {
   it("a reader without a name is the role alone; an unknown role or surface stays visible", () => {
     const out = html([
       row(1, "2026-11-10T13:10:00Z", { reader_given_name: null, reader_family_name: null, reader_role: "seminar_teacher" }),
-      row(2, "2026-11-10T13:05:00Z", { reader_role: "owner", surface: "elsewhere" }),
+      // The contract sends `unknown` for a role or surface the server has no word for; createApi refuses any other value.
+      row(2, "2026-11-10T13:05:00Z", { reader_role: "unknown", surface: "unknown" }),
     ]);
     expect(out).toContain(`<span>${a.roleAlone.seminar_teacher}</span>`);
     expect(out).toContain(`Nastavnik B · ${a.roles.unknown}`);

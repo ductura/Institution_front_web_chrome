@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { onWake, REQUEST_TIMEOUT_MS, statusLoader } from "./status-loader";
+import { contractStatusRequest, onWake, REQUEST_TIMEOUT_MS, statusLoader } from "./status-loader";
 
 const body = { checkedAt: "2026-11-12T10:25:00.000Z", components: { writing: "radi", submission: "radi", mentorView: "radi" } };
 
@@ -129,5 +129,51 @@ describe("onWake", () => {
     win.dispatchEvent(new Event("pageshow"));
     win.dispatchEvent(new Event("online"));
     expect(wake).not.toHaveBeenCalled();
+  });
+});
+
+describe("contractStatusRequest (WEB-13, platform.status.get on /api/v1)", () => {
+  type Api = NonNullable<Parameters<typeof contractStatusRequest>[0]>;
+  const BODY = { checkedAt: "2026-11-19T10:00:00.000Z", components: { writing: "radi", submission: "ne_radi", mentorView: "nije_ukljuceno" } };
+  const api = (result: unknown) => (async () => result) as unknown as Api;
+
+  it("gives a checked answer back as a 200 the loader parses", async () => {
+    const response = await contractStatusRequest(api({ ok: true, status: 200, body: BODY }))(new AbortController().signal);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(BODY);
+  });
+
+  it("gives a failure its status, and a client refusal 502", async () => {
+    expect((await contractStatusRequest(api({ ok: false, status: 503, code: "unavailable" }))(new AbortController().signal)).ok).toBe(false);
+    expect((await contractStatusRequest(api({ ok: false, status: 0, code: "client_rejected" }))(new AbortController().signal)).status).toBe(502);
+  });
+
+  it("rejects on abort without waiting for the answer", async () => {
+    const controller = new AbortController();
+    const pending = contractStatusRequest((() => new Promise(() => {})) as unknown as Api)(controller.signal);
+    controller.abort();
+    await expect(pending).rejects.toThrow();
+  });
+
+  it("starts no second call while one is still out, and a new one once it answered", async () => {
+    let calls = 0;
+    let answer: (value: unknown) => void = () => {};
+    const request = contractStatusRequest((() => {
+      calls += 1;
+      return new Promise((done) => (answer = done));
+    }) as unknown as Api);
+    const first = new AbortController();
+    const hung = request(first.signal);
+    first.abort();
+    await expect(hung).rejects.toThrow();
+    const second = request(new AbortController().signal);
+    expect(calls).toBe(1);
+    answer({ ok: true, status: 200, body: BODY });
+    expect((await second).status).toBe(200);
+    const third = new AbortController();
+    const again = request(third.signal);
+    expect(calls).toBe(2);
+    third.abort();
+    await expect(again).rejects.toThrow();
   });
 });
