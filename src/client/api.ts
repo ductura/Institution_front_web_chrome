@@ -9,8 +9,10 @@
 // and the empty anchor of a collaboration list item. A 409 of live.document.put
 // and collaboration.revision-requests.post can be an answer (ok), checked
 // against its own schema like a 2xx.
-// Evidence ingest is the recorded exception: see README.md. no-direct-api.test.ts
-// keeps every other call out of the code.
+// The evidence routes read a ductus-protocol header that the contract's
+// RequestSpec does not carry yet: createApi sends it for those routes only,
+// when the caller names the protocol (ApiOptions.protocol, README.md).
+// no-direct-api.test.ts keeps every other call out of the code.
 import { createClient, validateInput, type OperationId, type Operations, type Result } from "@ductura/contracts";
 import openapi from "@ductura/contracts/openapi/v1.json" with { type: "json" };
 import catalog from "@ductura/contracts/errors/catalog.json" with { type: "json" };
@@ -193,12 +195,47 @@ export function responseMatches(id: string, status: number, body: unknown, bodyB
   return body !== undefined && matchesSchema(schema, body);
 }
 
+/**
+ * The routes whose server reads `ductus-protocol` (the contract's summaries:
+ * evidence open, commit and replay, the submission and the live read). The contract's
+ * RequestSpec names no request headers yet, so the list is written here and
+ * closed; protocol.test.ts checks it against the vectors' headers.
+ */
+export const PROTOCOL_ROUTES: ReadonlySet<string> = new Set([
+  "evidence.open.post", "evidence.commit.post", "evidence.replay.post", "submission.submit.post", "live.document.get",
+]);
+export type ProtocolVersion = "1" | "2";
+
+/** The error body when it is exactly one the contract declares for the status; else undefined. */
+function declaredError(id: string, status: number, bytes: ArrayBuffer): unknown {
+  const schema = RESPONSES.get(id)?.[String(status)]?.content?.["application/json"]?.schema;
+  if (schema === undefined) return undefined;
+  try {
+    const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    return matchesSchema(schema, body) ? body : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export type ApiOptions = {
   /** Origin of the API; the page's own origin by default. */
   readonly baseUrl?: string;
   /** Transport for tests; the browser's fetch by default. */
   readonly fetchImpl?: typeof fetch;
+  /**
+   * `ductus-protocol` for a route of PROTOCOL_ROUTES; ignored for any other.
+   * With it, an error of that route also keeps its body (`errorBody`) when the
+   * body is exactly one the contract declares for its status: a 409 stale_base
+   * carries the work's state. Without it nothing changes.
+   */
+  readonly protocol?: ProtocolVersion;
 };
+
+/** The body an error of a protocol route kept (ApiOptions.protocol); undefined for anything else. */
+export function errorBody(result: { readonly ok: boolean }): unknown {
+  return !result.ok && Object.hasOwn(result, "body") ? (result as { body?: unknown }).body : undefined;
+}
 
 export function createApi(options: ApiOptions = {}) {
   const baseUrl = options.baseUrl ?? globalThis.location.origin;
@@ -216,10 +253,14 @@ export function createApi(options: ApiOptions = {}) {
     }
     let bodyBytes = 0;
     let code: string | undefined;
+    const protocol = options.protocol !== undefined && PROTOCOL_ROUTES.has(id) ? options.protocol : undefined;
+    let errorBytes: ArrayBuffer | null = null;
     const measured: typeof fetch = async (url, init) => {
-      const res = await transport(url, init);
+      const headers = protocol === undefined ? init?.headers : { ...(init?.headers as Record<string, string>), "ductus-protocol": protocol };
+      const res = await transport(url, protocol === undefined ? init : { ...init, headers });
       const bytes = res.type === "opaqueredirect" ? new ArrayBuffer(0) : await res.clone().arrayBuffer();
       bodyBytes = bytes.byteLength;
+      if (protocol !== undefined && res.status >= 400 && res.headers.get("content-type")?.startsWith("application/json")) errorBytes = bytes;
       // The same content type test as the generated client: only a body it reads as JSON.
       if (res.status === SESSION_EXPIRED_ENTRY.status && res.headers.get("content-type")?.startsWith("application/json")) code = sentCode(bytes);
       return res;
@@ -235,7 +276,9 @@ export function createApi(options: ApiOptions = {}) {
     if (!result.ok) {
       const expired = result.status === SESSION_EXPIRED_ENTRY.status && result.code === "unexpected"
         && code === SESSION_EXPIRED_ENTRY.code && RESPONSES.get(id)?.["401"] !== undefined && !id.startsWith("auth.");
-      return expired ? { ok: false, status: 401, code: "session_expired" } : result;
+      if (expired) return { ok: false, status: 401, code: "session_expired" };
+      const kept = errorBytes === null ? undefined : declaredError(id, result.status, errorBytes);
+      return kept === undefined ? result : ({ ...result, body: kept } as Result<Id>);
     }
     const { status, body } = result as unknown as { status: number; body: unknown };
     return responseMatches(id, status, body, bodyBytes) ? result : ({ ok: false, status, code: "unexpected" } as Result<Id>);
