@@ -16,6 +16,8 @@
     "@ductura/test-fakes": "https://github.com/ductura/Institution_server/releases/download/test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz",
     "@types/node": "26.6.4",
     "@types/react": "19.3.0",
+    "dexie": "4.4.7",
+    "fake-indexeddb": "6.2.8",
     "typescript": "5.9.3",
     "vitest": "5.0.3"
   }
