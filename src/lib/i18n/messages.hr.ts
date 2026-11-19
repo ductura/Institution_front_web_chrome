@@ -1551,7 +1551,7 @@ export const hr = {
   // "Dorada" column stays empty until wave 8.
   teacherSummary: {
     title: "Zbirni pregled",
-    lead: "Stanje predaje za svakog studenta odabranog zadatka. Redak vodi na potvrdu predaje.",
+    lead: "Stanje predaje za svakog studenta odabranog zadatka.",
     emptyTitle: "Još nema zadataka",
     emptyBody: "Zbirni pregled prikazuje predaje jednog zadatka. Kad u kolegiju objavite zadatak, ovdje ga možete odabrati.",
     pickLabel: "Zadatak",

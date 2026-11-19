@@ -3,12 +3,12 @@ import { redirect } from "next/navigation";
 
 import { Button, Select } from "@ductura/ui";
 
-import { signInHref } from "@/client/api";
-import { serverApi } from "@/client/server";
-import { readAssignmentOverview, type TeacherCall } from "@/client/teacher-reads";
-import AssignmentOverview from "@/components/teacher/AssignmentOverview";
-import { readTeacherCourses } from "@/components/teacher/teacher-courses-read";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { signInHref } from "../../../client/api";
+import { serverApi } from "../../../client/server";
+import { readAssignmentOverview, type TeacherCall } from "../../../client/teacher-reads";
+import AssignmentOverview, { chooseAssignment, type OverviewChoice } from "../../../components/teacher/AssignmentOverview";
+import { readTeacherCourses } from "../../../components/teacher/teacher-courses-read";
+import { messagesHr } from "../../../lib/i18n/messages.hr";
 
 import styles from "../page.module.css";
 
@@ -21,12 +21,10 @@ export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
 /**
  * TODO(ugovor): teacher.assignment-overview.get comes with
  * @ductura/contracts 3.2.0 (SRV-27, SRV-32) and its handler with SRV-29. Until
- * src/client gives it a transport, the read is not wired and the page says the
- * overview is unavailable: never an empty or invented list.
+ * src/client (lane W-A) gives it a transport, the read is not wired and the
+ * page says the overview is unavailable: never an empty or invented list.
  */
 const overviewCall: TeacherCall = async () => ({ ok: false, status: 503, code: "not_wired" });
-
-type Choice = { id: string; title: string; label: string };
 
 function hrefFor(assignmentId: string): string {
   return `${HREF}?zadatak=${encodeURIComponent(assignmentId)}`;
@@ -35,34 +33,25 @@ function hrefFor(assignmentId: string): string {
 /**
  * `/nastavnik/zbirni` (WEB-33, N-17): the teacher picks one of the
  * assignments of teacher.courses.get and sees its submissions, a row per
- * student. An id that is not one of the teacher's assignments is not read:
- * the first assignment is shown instead. The shell (layout) has already read
- * the session and the role.
+ * student (AssignmentOverview). The shell (layout) has already read the
+ * session and the role.
  */
 export default async function TeacherSummaryPage({ searchParams }: { searchParams: Promise<{ zadatak?: string | string[] }> }) {
   const server = serverApi((await cookies()).toString());
   const courses = await readTeacherCourses(server);
   if (courses.kind === "signedOut") redirect(signInHref(HREF));
 
-  const unavailable = (retry: string) => (
-    <>
-      <p role="alert" className={styles.alert}>{t.unavailable}</p>
-      <p><a className={styles.retry} href={retry}>{t.retry}</a></p>
-    </>
-  );
-
   let body;
   if (courses.kind !== "ready") {
-    body = unavailable(HREF);
+    body = <AssignmentOverview assignmentTitle="" rows={null} retryHref={HREF} />;
   } else {
-    const choices: Choice[] = courses.courses.flatMap((course) => course.assignments.map((assignment) => ({
+    const choices: OverviewChoice[] = courses.courses.flatMap((course) => course.assignments.map((assignment) => ({
       id: assignment.id,
       title: assignment.title,
       label: t.assignmentOption.replace("{course}", course.name).replace("{assignment}", assignment.title),
     })));
-    const asked = (await searchParams).zadatak;
-    const chosen = choices.find((choice) => choice.id === asked) ?? choices[0];
-    if (chosen === undefined) {
+    const chosen = chooseAssignment(choices, (await searchParams).zadatak);
+    if (chosen === null) {
       body = (
         <section aria-labelledby="zbirni-prazno">
           <h2 id="zbirni-prazno">{t.emptyTitle}</h2>
@@ -79,9 +68,8 @@ export default async function TeacherSummaryPage({ searchParams }: { searchParam
               options={choices.map((choice) => ({ value: choice.id, label: choice.label }))} />
             <Button type="submit">{t.pickSubmit}</Button>
           </form>
-          {overview.kind === "ready"
-            ? <AssignmentOverview assignmentId={chosen.id} assignmentTitle={chosen.title} rows={overview.rows} />
-            : unavailable(hrefFor(chosen.id))}
+          <AssignmentOverview assignmentTitle={chosen.title} retryHref={hrefFor(chosen.id)}
+            rows={overview.kind === "ready" ? overview.rows : null} />
         </>
       );
     }

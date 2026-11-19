@@ -2,23 +2,23 @@
 
 import { DataTable, StateTag, type DataTableColumn } from "@ductura/ui";
 
-import type { OverviewRow } from "@/client/teacher-reads";
-import { formatDateTimeHr } from "@/lib/i18n/hr";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import type { OverviewRow } from "../../client/teacher-reads";
+import { formatDateTimeHr } from "../../lib/i18n/hr";
+import { messagesHr } from "../../lib/i18n/messages.hr";
+
+import styles from "./AssignmentOverview.module.css";
 
 const t = messagesHr.teacherSummary;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export type OverviewChoice = { readonly id: string; readonly title: string; readonly label: string };
 
 /**
- * N-07 of one student's submission in one assignment (WEB-35), or null for
- * ids no route could read. The overview has no document or submission id
- * (SRV-27), so the receipt is keyed the way teacher.submission-receipt.get is.
- * TODO(N-07): the route of WEB-35 is not settled yet (Ductus#2028, PITANJE).
+ * The assignment the page shows: the one asked for when it is one of the
+ * teacher's, else the first; null when the teacher has none. An id that is not
+ * the teacher's is never read.
  */
-export function submissionHref(assignmentId: string, studentId: string): string | null {
-  if (!UUID.test(assignmentId) || !UUID.test(studentId)) return null;
-  return `/nastavnik/zadatak/${assignmentId.toLowerCase()}/predaja/${studentId.toLowerCase()}`;
+export function chooseAssignment(choices: readonly OverviewChoice[], asked: string | readonly string[] | undefined): OverviewChoice | null {
+  return choices.find((choice) => choice.id === asked) ?? choices[0] ?? null;
 }
 
 /** The UTC minute of the overview (`YYYY-MM-DDTHH:MMZ`) as an instant, or null. */
@@ -41,64 +41,72 @@ function record(row: OverviewRow) {
   return <StateTag state="pending" />;
 }
 
-function student(assignmentId: string, row: OverviewRow) {
-  const name = row.name ?? t.noName;
+/**
+ * The student and the group. TODO(N-07): the row leads to the submission
+ * receipt once WEB-35 mounts its teacher route (Ductus#2028, PITANJE); the
+ * overview has no document or submission id (SRV-27), so until then there is
+ * no link rather than a link to a page that does not exist.
+ */
+function student(row: OverviewRow) {
   const group = row.group === null ? t.noGroup : t.group.replace("{group}", row.group);
-  const href = submissionHref(assignmentId, row.studentId);
-  return (
-    <>
-      {href === null ? name : <a href={href}>{name}</a>}
-      {` · ${group}`}
-    </>
-  );
+  return `${row.name ?? t.noName} · ${group}`;
 }
 
-export function overviewColumns(assignmentId: string): DataTableColumn<OverviewRow>[] {
-  return [
-    {
-      id: "student", header: t.columns.student, rowHeader: true,
-      cell: (row) => student(assignmentId, row),
-      // A missing name sorts last instead of as its stand-in text.
-      sortValue: (row) => row.name,
-    },
-    { id: "state", header: t.columns.state, cell: state },
-    {
-      id: "submittedAt", header: t.columns.submittedAt,
-      cell: (row) => (row.requestedMinute === null ? t.none : (
-        <time dateTime={row.requestedMinute}>{formatDateTimeHr(row.requestedMinute)}</time>
-      )),
-      sortValue: (row) => instant(row.requestedMinute),
-    },
-    {
-      id: "afterDeadline", header: t.columns.afterDeadline,
-      cell: (row) => (!row.submitted ? t.none : row.afterDeadline ? <StateTag state="late" /> : t.no),
-    },
-    { id: "record", header: t.columns.record, cell: record },
-    // Wave 8 fills it ("Zatraži doradu"); until then the column is empty.
-    { id: "revision", header: t.columns.revision, cell: () => null },
-  ];
-}
+export const OVERVIEW_COLUMNS: readonly DataTableColumn<OverviewRow>[] = [
+  // A missing name sorts last instead of as its stand-in text.
+  { id: "student", header: t.columns.student, rowHeader: true, cell: student, sortValue: (row) => row.name },
+  { id: "state", header: t.columns.state, cell: state },
+  {
+    id: "submittedAt", header: t.columns.submittedAt,
+    cell: (row) => (row.requestedMinute === null ? t.none : (
+      <time dateTime={row.requestedMinute}>{formatDateTimeHr(row.requestedMinute)}</time>
+    )),
+    sortValue: (row) => instant(row.requestedMinute),
+  },
+  {
+    id: "afterDeadline", header: t.columns.afterDeadline,
+    cell: (row) => (!row.submitted ? t.none : row.afterDeadline ? <StateTag state="late" /> : t.no),
+  },
+  { id: "record", header: t.columns.record, cell: record },
+  // Wave 8 fills it ("Zatraži doradu"); until then the column is empty.
+  { id: "revision", header: t.columns.revision, cell: () => null },
+];
 
 export type AssignmentOverviewProps = {
-  assignmentId: string;
   assignmentTitle: string;
-  rows: readonly OverviewRow[];
+  /** The rows of teacher.assignment-overview.get; null when the read failed. */
+  rows: readonly OverviewRow[] | null;
+  loading?: boolean;
+  /** Where "Pokušaj ponovno" leads when the read failed. */
+  retryHref?: string;
 };
 
 /**
  * N-17 (WEB-33): one assignment's submissions, a row per student, from
  * teacher.assignment-overview.get. No text, no hash and no submission id; the
  * overview opens no work, so it writes no access-log row (SRV-28). Sorting by
- * the submission time works from the keyboard through the DataTable header.
+ * name and submission time works from the keyboard through the DataTable
+ * header. A failed read is said as such, never shown as an empty list.
  */
-export default function AssignmentOverview({ assignmentId, assignmentTitle, rows }: AssignmentOverviewProps) {
+export default function AssignmentOverview({ assignmentTitle, rows, loading = false, retryHref }: AssignmentOverviewProps) {
+  if (rows === null && !loading) {
+    return (
+      <div>
+        <p role="alert">{t.unavailable}</p>
+        {retryHref !== undefined && <p><a href={retryHref}>{t.retry}</a></p>}
+      </div>
+    );
+  }
   return (
-    <DataTable
-      caption={t.caption.replace("{assignment}", assignmentTitle)}
-      columns={overviewColumns(assignmentId)}
-      rows={rows}
-      rowKey={(row) => row.studentId}
-      empty={t.noStudents}
-    />
+    <div className={styles.overview}>
+      <DataTable
+        caption={t.caption.replace("{assignment}", assignmentTitle)}
+        columns={OVERVIEW_COLUMNS}
+        rows={rows ?? []}
+        rowKey={(row) => row.studentId}
+        empty={t.noStudents}
+        loading={loading}
+      />
+    </div>
   );
 }

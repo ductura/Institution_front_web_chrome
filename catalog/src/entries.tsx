@@ -5,8 +5,9 @@ import {
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
+import type { OverviewRow } from "../../src/client/teacher-reads";
 import {
-  AppShell, EmptyHome, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
+  AppShell, AssignmentOverview, EmptyHome, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
   type AssignmentSubmission, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
@@ -245,6 +246,19 @@ const mentoredWorks = [
   mentored(4, { givenName: "Ana", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started" }),
 ];
 
+// Invented overview rows (as in AssignmentOverview.test.ts, WEB-33): submitted,
+// after the deadline with a record gap, waiting for its receipt, and not submitted.
+const overviewRow = (n: number, over: Partial<OverviewRow> = {}): OverviewRow => ({
+  studentId: `70000000-0000-4000-8000-0000000000${n}1`, name: `Izmišljena Osoba ${n}`, group: "A",
+  submitted: false, requestedMinute: null, afterDeadline: false, evidenceRecord: null, ...over,
+});
+const overviewRows = [
+  overviewRow(1, { submitted: true, requestedMinute: "2026-11-20T09:05Z", afterDeadline: true, evidenceRecord: "with_gaps" }),
+  overviewRow(2),
+  overviewRow(3, { group: "B", submitted: true, requestedMinute: "2026-11-02T13:32Z", evidenceRecord: "continuous" }),
+  overviewRow(4, { submitted: true, requestedMinute: "2026-11-14T08:00Z" }),
+];
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -295,6 +309,14 @@ export const SCREEN_ENTRIES = {
       />
     ),
     onemogućeno: () => <TeacherCourses courses={teacherCourses(5)} works={teacherWorks(5, [submission(1, null)])} />,
+  },
+  AssignmentOverview: {
+    prazno: () => <AssignmentOverview assignmentTitle="Izmišljeni seminar" rows={[]} />,
+    učitavanje: () => <AssignmentOverview assignmentTitle="Izmišljeni seminar" rows={null} loading />,
+    greška: () => <AssignmentOverview assignmentTitle="Izmišljeni seminar" rows={null} retryHref="/nastavnik/zbirni" />,
+    puno: () => <AssignmentOverview assignmentTitle="Izmišljeni seminar" rows={overviewRows} />,
+    // Names the server does not have: shown as missing, never as a stand-in.
+    onemogućeno: () => <AssignmentOverview assignmentTitle="Izmišljeni esej" rows={[overviewRow(5, { name: null, group: null })]} />,
   },
   MentoredWorks: {
     prazno: () => <MentoredWorks works={[]} />,

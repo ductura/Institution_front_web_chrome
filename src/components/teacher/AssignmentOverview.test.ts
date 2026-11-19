@@ -8,7 +8,7 @@ import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
 import type { OverviewRow } from "@/client/teacher-reads";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import AssignmentOverview, { overviewColumns, submissionHref } from "./AssignmentOverview";
+import AssignmentOverview, { chooseAssignment, OVERVIEW_COLUMNS } from "./AssignmentOverview";
 
 const t = messagesHr.teacherSummary;
 const A = "00000000-0000-4000-8000-0000000000a1";
@@ -25,8 +25,8 @@ const ROWS: OverviewRow[] = [
   row(4, { name: null, group: null, submitted: true, requestedMinute: "2026-11-01T08:00Z", evidenceRecord: null }),
 ];
 
-const render = (rows: readonly OverviewRow[]) =>
-  renderToStaticMarkup(h(AssignmentOverview, { assignmentId: A, assignmentTitle: "Izmišljeni zadatak", rows }));
+const render = (rows: readonly OverviewRow[] | null, extra: { loading?: boolean; retryHref?: string } = {}) =>
+  renderToStaticMarkup(h(AssignmentOverview, { assignmentTitle: "Izmišljeni zadatak", rows, ...extra }));
 const text = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 /** The cells of the row whose header holds `marker`. */
 const cells = (html: string, marker: string) => {
@@ -52,27 +52,45 @@ describe("AssignmentOverview (N-17)", () => {
 
   it("shows a missing name as missing, never a stand-in, and a receipt not yet bound as waiting", () => {
     const html = render(ROWS);
-    expect(cells(html, "/predaja/" + S(4))).toEqual([`${t.noName} · ${t.noGroup}`, "✓ Predano", "1. studenoga 2026. u 09:00", "Ne", "… Čeka potvrdu", ""]);
+    expect(cells(html, t.noName)).toEqual([`${t.noName} · ${t.noGroup}`, "✓ Predano", "1. studenoga 2026. u 09:00", "Ne", "… Čeka potvrdu", ""]);
   });
 
-  it("leads each row to N-07 by assignment and student, and refuses ids no route could read", () => {
-    const html = render(ROWS);
-    expect(html).toContain(`href="/nastavnik/zadatak/${A}/predaja/${S(2)}"`);
-    expect(submissionHref(A.toUpperCase(), S(1))).toBe(`/nastavnik/zadatak/${A}/predaja/${S(1)}`);
-    expect(submissionHref(A, "../x")).toBeNull();
-    expect(submissionHref("x", S(1))).toBeNull();
-    expect(text(render([row(5, { studentId: "nije-uuid" })]))).toContain("Izmišljena Osoba 5");
-    expect(render([row(5, { studentId: "nije-uuid" })])).not.toContain("<a ");
+  it("draws no link until N-07 has a teacher route (TODO(N-07))", () => {
+    expect(render(ROWS)).not.toContain("<a ");
+  });
+
+  it("says a failed read is unavailable, with a retry, and never draws an empty table", () => {
+    const html = render(null, { retryHref: "/nastavnik/zbirni?zadatak=x" });
+    expect(html).toContain('role="alert"');
+    expect(text(html)).toContain(t.unavailable);
+    expect(html).toContain('href="/nastavnik/zbirni?zadatak=x"');
+    expect(html).not.toContain("<table");
+    expect(text(html)).not.toContain(t.noStudents);
+  });
+
+  it("is busy while loading, without rows", () => {
+    const html = render(null, { loading: true });
+    expect(html).toContain('aria-busy="true"');
+    expect(html).not.toContain('scope="row"');
+  });
+
+  it("chooses the asked assignment only when it is the teacher's, else the first", () => {
+    const choices = [{ id: A, title: "Prvi", label: "K · Prvi" }, { id: S(9), title: "Drugi", label: "K · Drugi" }];
+    expect(chooseAssignment(choices, S(9))?.title).toBe("Drugi");
+    expect(chooseAssignment(choices, "00000000-0000-4000-8000-0000000000ff")?.title).toBe("Prvi");
+    expect(chooseAssignment(choices, [S(9), A])?.title).toBe("Prvi");
+    expect(chooseAssignment(choices, undefined)?.title).toBe("Prvi");
+    expect(chooseAssignment([], A)).toBeNull();
   });
 
   it("sorts by submission time on its instant, rows without a time last", () => {
-    const column = overviewColumns(A).find((c) => c.id === "submittedAt");
+    const column = OVERVIEW_COLUMNS.find((c) => c.id === "submittedAt");
     const keys = ROWS.map((r) => column?.sortValue?.(r));
     expect(keys[0]).toBeNull();
     expect((keys[3] as Date).toISOString()).toBe("2026-11-01T08:00:00.000Z");
     expect(render(ROWS)).toContain('<button type="button"');
     // Only name and time sort: state, record and revision are no ranking (§5 rule 2).
-    expect(overviewColumns(A).filter((c) => c.sortValue).map((c) => c.id)).toEqual(["student", "submittedAt"]);
+    expect(OVERVIEW_COLUMNS.filter((c) => c.sortValue).map((c) => c.id)).toEqual(["student", "submittedAt"]);
   });
 
   it("shows the empty row when the assignment has no students", () => {
