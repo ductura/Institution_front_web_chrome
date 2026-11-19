@@ -16,15 +16,32 @@ type Api = ReturnType<typeof createApi>;
  * WEB-13: the status read through the contract's platform.status.get on
  * /api/v1 (createApi checks the body against the contract), given back as a
  * Response so the loader stays the same. An answer that is not 200 is a
- * failure of its status (a client-side refusal reads as 502). The client
- * takes no signal, so an abort rejects at once and a late answer is dropped.
+ * failure of its status (a client-side refusal reads as 502).
+ * createApi takes no signal and no-direct-api allows fetch only in
+ * src/client/api.ts, so an abort cannot stop the network call: it rejects at
+ * once, and while a call is still out every later request waits on that same
+ * call instead of starting another, so a hanging server never holds more than
+ * one request of this board (Codex review on #87). Passing the signal through
+ * the client is a change of src/client (W-A).
  */
 export function contractStatusRequest(api?: Api): (signal: AbortSignal) => Promise<Response> {
+  let out: Promise<Awaited<ReturnType<Api>>> | null = null;
+  const call = () => {
+    if (out === null) {
+      const started = (api ?? createApi())("platform.status.get", { params: undefined, query: undefined, body: undefined });
+      out = started;
+      const clear = () => {
+        if (out === started) out = null;
+      };
+      started.then(clear, clear);
+    }
+    return out;
+  };
   return (signal) =>
     new Promise<Response>((resolve, reject) => {
       if (signal.aborted) return reject(new DOMException("aborted", "AbortError"));
       signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
-      (api ?? createApi())("platform.status.get", { params: undefined, query: undefined, body: undefined }).then(
+      call().then(
         (result) => resolve(result.ok ? Response.json(result.body) : new Response(null, { status: result.status === 0 ? 502 : result.status })),
         reject,
       );

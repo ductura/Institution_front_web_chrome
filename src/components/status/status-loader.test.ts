@@ -154,4 +154,26 @@ describe("contractStatusRequest (WEB-13, platform.status.get on /api/v1)", () =>
     controller.abort();
     await expect(pending).rejects.toThrow();
   });
+
+  it("starts no second call while one is still out, and a new one once it answered", async () => {
+    let calls = 0;
+    let answer: (value: unknown) => void = () => {};
+    const request = contractStatusRequest((() => {
+      calls += 1;
+      return new Promise((done) => (answer = done));
+    }) as unknown as Api);
+    const first = new AbortController();
+    const hung = request(first.signal);
+    first.abort();
+    await expect(hung).rejects.toThrow();
+    const second = request(new AbortController().signal);
+    expect(calls).toBe(1);
+    answer({ ok: true, status: 200, body: BODY });
+    expect((await second).status).toBe(200);
+    const third = new AbortController();
+    const again = request(third.signal);
+    expect(calls).toBe(2);
+    third.abort();
+    await expect(again).rejects.toThrow();
+  });
 });
