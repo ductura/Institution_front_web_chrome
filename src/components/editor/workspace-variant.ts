@@ -13,7 +13,7 @@
  * the top bar.
  */
 
-import type { Read, SubmissionRead, WordRange } from "@/client/submission";
+import type { Read, SubmissionRead, WordRange } from "../../client/submission";
 
 import type { EditorWorkRead } from "./EditorPage.read";
 
