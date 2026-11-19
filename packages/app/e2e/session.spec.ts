@@ -182,3 +182,19 @@ test("a student's Ductus pages open at their addresses, marked as not connected 
   await page.goto("/app/web/rad/izm-zadatak-1/predaja");
   await expect(page).toHaveURL(/\/app\/web\/nastavnik$/);
 });
+
+test("a teacher's Ductus pages open at their addresses, and /nastavnik/kolegiji forwards to /nastavnik", async ({ page }) => {
+  const errors = errorsOf(page);
+  await fakeServer(page, { status: 200, body: { roles: ["teacher"], institutionName: INSTITUTION } });
+  await page.goto("/app/chrome/nastavnik/kolegiji");
+  await expect(page).toHaveURL(/\/app\/chrome\/nastavnik$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
+
+  await page.goto("/app/web/nastavnik/zadatak/izm-zadatak-1/uredi");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nova verzija zadatka");
+  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await axe(page);
+  await page.goto("/app/web/nastavnik/rad/izm-rad-1/reprodukcija");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Reprodukcija rada");
+  expect(errors).toEqual([]);
+});

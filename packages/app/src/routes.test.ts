@@ -94,6 +94,19 @@ describe("the student's pages of Ductus app/", () => {
   });
 });
 
+describe("the teacher's pages of Ductus app/", () => {
+  it("open for a teacher under any id, and lead a student home", () => {
+    expect(resolve("/nastavnik/rad/r1", "teacher")).toMatchObject({ kind: "page", page: { label: "Rad uživo" } });
+    expect(resolve("/nastavnik/rad/r1/reprodukcija", "teacher")).toMatchObject({ kind: "page", page: { label: "Reprodukcija rada" } });
+    expect(resolve("/nastavnik/zadatak/novi", "teacher")).toMatchObject({ kind: "page", page: { current: "/nastavnik" } });
+    expect(resolve("/nastavnik/zadatak/z1/uredi", "teacher")).toMatchObject({ kind: "page", page: { label: "Nova verzija zadatka" } });
+    expect(resolve("/nastavnik/zadatak/z1/rad/d1/jezik", "teacher")).toMatchObject({ kind: "page", page: { label: "Jezik rada jednog studenta" } });
+    expect(resolve("/nastavnik/kolegiji", "teacher")).toMatchObject({ kind: "page", page: { kind: "teacherCourses" } });
+    expect(resolve("/nastavnik/rad/r1", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
+    expect(resolve("/nastavnik/zadatak/z1", "teacher")).toEqual({ kind: "notFound" });
+  });
+});
+
 describe("crumbsOf", () => {
   it("gives the role's home no crumb and other pages their label", () => {
     const home = PAGES.find((p) => p.path === "/zadaci")!;
