@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+
+import { assignmentIdOf, editorWorkRead } from "./EditorPage.read";
+
+// WEB-14: the editor page's read of one assignment from student.assignments.get
+// and student.assignment-work.get. Invented data only.
+const ID = "0b6f3c2e-4a1d-4c8e-9f20-1a2b3c4d5e6f";
+const OTHER = "9e8d7c6b-5a49-4382-8170-6f5e4d3c2b1a";
+const assignment = { id: ID, title: "Seminarski rad: kućno kompostiranje", dueAt: "2027-01-15T22:59:00.000Z", noticeFirst: false };
+const courses = (a = assignment) => ({ ok: true as const, status: 200, body: { courses: [{ name: "Izmišljeni seminar iz ekologije grada", assignments: [a] }] } });
+const works = (workState: string, assignmentId = ID) => ({ ok: true as const, status: 200, body: { assignments: [{ assignmentId, workState }] } });
+
+describe("assignmentIdOf", () => {
+  it("takes a UUID in lowercase and refuses anything else", () => {
+    expect(assignmentIdOf(ID.toUpperCase())).toBe(ID);
+    for (const raw of ["", "rad", `${ID}x`, "../x", ID.replace(/-/g, "")]) expect(assignmentIdOf(raw)).toBeNull();
+  });
+});
+
+describe("editorWorkRead", () => {
+  it("is ready with the course, title and work state", () => {
+    expect(editorWorkRead(ID, courses(), works("in_progress"))).toEqual({
+      kind: "ready", course: "Izmišljeni seminar iz ekologije grada", title: assignment.title, dueAt: assignment.dueAt, workState: "in_progress",
+    });
+    expect(editorWorkRead(ID, courses({ ...assignment, id: ID.toUpperCase() }), works("submitted"))).toMatchObject({ kind: "ready", workState: "submitted" });
+  });
+
+  it("is signed out on a 401 from either read", () => {
+    expect(editorWorkRead(ID, { ok: false, status: 401 }, works("in_progress"))).toEqual({ kind: "signedOut" });
+    expect(editorWorkRead(ID, courses(), { ok: false, status: 401 })).toEqual({ kind: "signedOut" });
+  });
+
+  it("opens the notice first when it is not acknowledged", () => {
+    expect(editorWorkRead(ID, courses({ ...assignment, noticeFirst: true }), works("in_progress"))).toEqual({ kind: "noticeFirst" });
+  });
+
+  it("is not found for an assignment the caller does not have", () => {
+    expect(editorWorkRead(OTHER, courses(), works("in_progress"))).toEqual({ kind: "notFound" });
+    expect(editorWorkRead(ID, { ok: true, status: 200, body: { courses: [] } }, works("in_progress", OTHER))).toEqual({ kind: "notFound" });
+  });
+
+  it("never guesses: a failed read, a missing row or an unknown state is unavailable", () => {
+    expect(editorWorkRead(ID, { ok: false, status: 503 }, works("in_progress"))).toEqual({ kind: "unavailable" });
+    expect(editorWorkRead(ID, courses(), { ok: false, status: 0 })).toEqual({ kind: "unavailable" });
+    expect(editorWorkRead(ID, courses(), works("in_progress", OTHER))).toEqual({ kind: "unavailable" });
+    expect(editorWorkRead(ID, courses(), works("draft"))).toEqual({ kind: "unavailable" });
+  });
+});

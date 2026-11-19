@@ -1,0 +1,30 @@
+/* WEB-14 (E§1): the sheet of paper on the ground, up to 820 px wide, above the 30 px status bar. */
+.page {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+  background: var(--ground);
+  color: var(--ink);
+}
+.context {
+  margin: 0;
+  padding: 10px 16px;
+  color: var(--ink-2);
+  font-family: var(--ff-ui);
+  font-size: 13px;
+}
+.area { overflow: auto; padding: 24px 16px 48px; }
+.sheet {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 820px;
+  min-height: 60vh;
+  margin: 0 auto;
+  padding: 56px 64px;
+  background: var(--sheet);
+  box-shadow: var(--shadow);
+  font-family: var(--ff-manuscript);
+}
+.title { margin: 0 0 24px; font-size: var(--fs-h1); }
+.note { color: var(--ink-2); font-family: var(--ff-ui); }
+@media (max-width: 600px) { .sheet { padding: 32px 20px; } }
