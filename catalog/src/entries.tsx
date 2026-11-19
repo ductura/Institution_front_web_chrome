@@ -1,4 +1,7 @@
-import { Button, Card, Dialog, Icon, ICON_NAMES, SaveState, TextField, ToastRegion, type IconName } from "@ductura/ui";
+import {
+  Button, Card, Checkbox, Details, Dialog, Icon, ICON_NAMES, SaveState, Select, Skeleton, Tag, TextArea, TextField, ToastRegion,
+  type IconName,
+} from "@ductura/ui";
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
@@ -12,6 +15,7 @@ import type { CatalogEntries, CatalogState } from "./coverage";
 type Entry = Record<CatalogState, () => React.ReactNode>;
 
 // Invented example text only; no real people or student work.
+const GROUPS = [{ value: "a", label: "Grupa A" }, { value: "b", label: "Grupa B" }];
 // The toast region is fixed to the viewport; in the catalogue it sits in the flow.
 function ToastInline({ toasts }: { toasts: Parameters<typeof ToastRegion>[0]["toasts"] }) {
   return (
@@ -84,6 +88,49 @@ export const ENTRIES = {
     greška: () => <ToastInline toasts={[{ id: 1, text: "Izmjena nije poslana. Pokušajte ponovno.", tone: "error" }]} />,
     puno: () => <ToastInline toasts={[1, 2, 3].map((id) => ({ id, text: `Komentar ${id} je dodan.`, tone: "neutral" as const }))} />,
     onemogućeno: () => <ToastInline toasts={[{ id: 1, text: "Obavijesti su isključene.", tone: "neutral" }]} />,
+  },
+  // WEB-05 form elements; invented course data only.
+  Checkbox: {
+    prazno: () => <Checkbox label="Pročitao sam obavijest o zadatku" />,
+    učitavanje: () => <Checkbox label="Pročitao sam obavijest o zadatku" hint="Učitavanje…" aria-busy />,
+    greška: () => <Checkbox label="Pročitao sam obavijest o zadatku" error="Potvrdite da ste pročitali obavijest." />,
+    puno: () => <Checkbox label="Pročitao sam obavijest o zadatku" defaultChecked hint="Potvrđeno." />,
+    onemogućeno: () => <Checkbox label="Pročitao sam obavijest o zadatku" disabled defaultChecked />,
+  },
+  Select: {
+    prazno: () => <Select label="Grupa" placeholder="Odaberite grupu" options={GROUPS} />,
+    učitavanje: () => <Select label="Grupa" placeholder="Odaberite grupu" options={[]} busy hint="Učitavanje…" />,
+    greška: () => <Select label="Grupa" placeholder="Odaberite grupu" options={GROUPS} error="Odaberite grupu." />,
+    puno: () => <Select label="Grupa" options={GROUPS} defaultValue="b" hint="Grupa B, utorkom." />,
+    onemogućeno: () => <Select label="Grupa" options={GROUPS} defaultValue="a" disabled />,
+  },
+  TextArea: {
+    prazno: () => <TextArea label="Napomena za studente" placeholder="Npr. Rad predajte do kraja tjedna" />,
+    učitavanje: () => <TextArea label="Napomena za studente" busy hint="Učitavanje…" />,
+    greška: () => <TextArea label="Napomena za studente" error="Napomena je preduga." defaultValue="Izmišljeni tekst napomene." />,
+    puno: () => <TextArea label="Napomena za studente" defaultValue="Rad pišite u Ducturi; obavijest o zadatku vrijedi za cijelu grupu." hint="Najviše 500 znakova." />,
+    onemogućeno: () => <TextArea label="Napomena za studente" disabled defaultValue="Zadatak je zatvoren." />,
+  },
+  Tag: {
+    prazno: () => <Tag>Bez grupe</Tag>,
+    učitavanje: () => <Tag>Učitavanje…</Tag>,
+    greška: () => <Tag tone="warn">Rok je prošao</Tag>,
+    puno: () => <><Tag>Grupa A</Tag> <Tag tone="accent">2026./2027.</Tag> <Tag tone="warn">Rok produljen</Tag></>,
+    onemogućeno: () => <Tag>Zatvoreno</Tag>,
+  },
+  Skeleton: {
+    prazno: () => <Skeleton label="Učitavanje…" lines={1} />,
+    učitavanje: () => <Skeleton label="Učitavanje popisa zadataka…" />,
+    greška: () => <><Skeleton label="Učitavanje…" lines={1} /><p>Popis se nije učitao. Pokušajte ponovno.</p></>,
+    puno: () => <Skeleton label="Učitavanje rada…" lines={6} />,
+    onemogućeno: () => <Skeleton label="Učitavanje zaustavljeno." lines={2} />,
+  },
+  Details: {
+    prazno: () => <Details summary="Pravila zadatka"><p>Nastavnik još nije dodao pravila.</p></Details>,
+    učitavanje: () => <Details summary="Pravila zadatka" open><p>Učitavanje…</p></Details>,
+    greška: () => <Details summary="Pravila zadatka" open><p>Pravila se nisu učitala. Pokušajte ponovno.</p></Details>,
+    puno: () => <Details summary="Pravila zadatka" open><p>Rad se piše u Ducturi. Nastavnik vidi rad dok nastaje.</p></Details>,
+    onemogućeno: () => <Details summary="Pravila zadatka"><p>Zadatak je zatvoren.</p></Details>,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
 

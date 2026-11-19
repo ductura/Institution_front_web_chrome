@@ -10,7 +10,9 @@ import { ENTRIES, SCREEN_ENTRIES } from "./entries";
 
 describe("every component has a catalogue entry with all five states (web.md §6 B5)", () => {
   it("the catalogue covers every component @ductura/ui exports", () => {
-    expect(componentNames(ui)).toEqual(["Button", "Card", "Dialog", "Icon", "SaveState", "TextField", "ToastRegion"]);
+    expect(componentNames(ui)).toEqual([
+      "Button", "Card", "Checkbox", "Details", "Dialog", "Icon", "SaveState", "Select", "Skeleton", "Tag", "TextArea", "TextField", "ToastRegion",
+    ]);
     expect(catalogGaps(ui, ENTRIES)).toEqual([]);
   });
 

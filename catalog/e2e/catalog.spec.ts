@@ -3,7 +3,9 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { CATALOG_STATES } from "../src/coverage";
 
-const COMPONENTS = ["Button", "TextField", "SaveState", "Card", "Icon", "Dialog", "ToastRegion"];
+const COMPONENTS = [
+  "Button", "TextField", "SaveState", "Card", "Icon", "Dialog", "ToastRegion", "Checkbox", "Select", "TextArea", "Tag", "Skeleton", "Details",
+];
 // The screens of src/components (DAN-753): on the shell only, one under another.
 const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"];
 const WIDTHS = [1440, 1024, 768, 390, 360];

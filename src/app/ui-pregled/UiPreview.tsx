@@ -1,7 +1,8 @@
 "use client";
 
 import {
-  Button, Dialog, Icon, ICON_NAMES, SAVE_STATES, SaveState, ToastRegion, toggleTheme, useToasts, type SaveStateName,
+  Button, Checkbox, Details, Dialog, Icon, ICON_NAMES, SAVE_STATES, SaveState, Select, Skeleton, Tag, TextArea, ToastRegion,
+  toggleTheme, useToasts, type SaveStateName,
 } from "@ductura/ui";
 import { useEffect, useRef, useState } from "react";
 
@@ -81,6 +82,19 @@ export default function UiPreview() {
           <p>{t.uiPreview.dialogText}</p>
         </Dialog>
         <ToastRegion toasts={toasts} onDismiss={dismiss} label={t.uiPreview.toasts} closeLabel={t.uiPreview.dialogClose} />
+      </section>
+
+      <section aria-labelledby="pregled-obrasci" style={{ display: "grid", gap: 16 }}>
+        <h2 id="pregled-obrasci">{t.uiPreview.forms}</h2>
+        <Checkbox label={t.uiPreview.checkbox} />
+        <Select label={t.uiPreview.select} placeholder={t.uiPreview.selectPlaceholder}
+          options={[{ value: "a", label: t.uiPreview.groupA }, { value: "b", label: t.uiPreview.groupB }]} />
+        <TextArea label={t.uiPreview.textarea} hint={t.uiPreview.textareaHint} />
+        <p style={{ display: "flex", gap: 8 }}>
+          <Tag>{t.uiPreview.tagGroup}</Tag><Tag tone="accent">{t.uiPreview.tagYear}</Tag><Tag tone="warn">{t.uiPreview.tagExtended}</Tag>
+        </p>
+        <Skeleton label={t.uiPreview.loading} />
+        <Details summary={t.uiPreview.detailsSummary}><p>{t.uiPreview.detailsBody}</p></Details>
       </section>
 
       <section aria-labelledby="pregled-ikone">
