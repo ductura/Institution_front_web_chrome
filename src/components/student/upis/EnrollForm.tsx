@@ -47,9 +47,10 @@ export default function EnrollForm({ signInHref }: { signInHref: string }) {
     setSending(false);
   }
 
+  // The code stays in the field, so the submit button stays enabled and the
+  // dialog can give the focus back to it.
   function again() {
     setResult(null);
-    setCode("");
   }
 
   if (result?.kind === "enrolled") return <p className={styles.status} role="status">{e.opening}</p>;
