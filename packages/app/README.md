@@ -14,7 +14,7 @@ Konfiguracija ide samo kroz env varijable, bez tajni u repou:
 | --- | --- | --- |
 | `INSTITUTION_SERVER_URL` | `http://127.0.0.1:4000` | Kamo Next prosljeđuje `/api/v1/*` kad radi bez edgea (`next dev`, `next start`, Vercel). Čita se pri gradnji. Kroz edge na :8000 `/api/v1/*` ide izravno Institution_serveru. |
 
-Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za svaki drugi segment stranica ne postoji. Edge ovamo šalje samo `/app/web/*` i `/app/chrome/*`, pa su datoteke gradnje pod `/app/web/_next/` (`assetPrefix`), a javne datoteke u `public/web/`. Bez edgea `/` vodi na `/app/web/`. Za Vercel je projekt `packages/app` s presetom Next.js (`vercel.json`).
+Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za svaki drugi segment stranica ne postoji. Edge ovamo šalje samo `/app/web/*` i `/app/chrome/*`, pa su datoteke gradnje pod `/app/web/_next/` (`assetPrefix`), a javne datoteke u `public/web/`. Za Vercel je projekt `packages/app` s presetom Next.js (`vercel.json`).
 
 | Datoteka | Što |
 | --- | --- |

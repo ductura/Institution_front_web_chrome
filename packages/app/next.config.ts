@@ -26,10 +26,6 @@ const nextConfig: NextConfig = {
   // The screens, locales and the client are imported from the workspace root.
   turbopack: { root },
   outputFileTracingRoot: root,
-  // Without the edge (`next dev`, Vercel) "/" is no preloader; it opens the front.
-  async redirects() {
-    return [{ source: "/", destination: "/app/web/", basePath: false, permanent: false }];
-  },
   async rewrites() {
     return [{ source: "/api/v1/:path*", destination: `${institutionServer}/api/v1/:path*`, basePath: false }];
   },
