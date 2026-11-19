@@ -4,12 +4,12 @@ import { describe, expect, it } from "vitest";
 
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import LiveWorkView, { isWorkId, liveWorkHref, submissionHref, SUMMARY_ANCHOR, type LiveWorkFrame } from "./LiveWorkView";
+import LiveWorkFrame, { isWorkId, liveWorkHref, submissionHref, SUMMARY_ANCHOR, type LiveWorkFrameData } from "./LiveWorkFrame";
 
 const t = messagesHr.teacherLiveWork;
 
 // Invented work and people (demo-*); no real student data.
-const FRAME: LiveWorkFrame = {
+const FRAME: LiveWorkFrameData = {
   studentName: "Demo Studentica",
   assignmentTitle: "Izmišljeni seminar: javne politike",
   submitted: false,
@@ -17,12 +17,12 @@ const FRAME: LiveWorkFrame = {
   nextId: "demo-rad-3",
 };
 
-const render = (props: Partial<Parameters<typeof LiveWorkView>[0]> = {}) =>
-  renderToStaticMarkup(h(LiveWorkView, {
+const render = (props: Partial<Parameters<typeof LiveWorkFrame>[0]> = {}) =>
+  renderToStaticMarkup(h(LiveWorkFrame, {
     documentId: "demo-rad-2", frame: FRAME, recordState: "complete", text: h("p", null, "TEKST"), ...props,
   }));
 
-describe("LiveWorkView (WEB-34, N-06)", () => {
+describe("LiveWorkFrame (WEB-34, N-06)", () => {
   it("shows the student, the assignment, the neighbours and the text slot", () => {
     const html = render();
     expect(html).toContain("<h1>Demo Studentica</h1>");
@@ -84,5 +84,12 @@ describe("work links", () => {
       expect(submissionHref(bad)).toBeNull();
     }
     expect(isWorkId("č".repeat(256))).toBe(true);
+  });
+
+  it("keeps a slash inside one path segment: \"../\" (the decoded ..%2F) is a work id, never a path step", () => {
+    // Same rule as links.ts and the evidence.document id CHECK; only "." and ".." alone are refused.
+    expect(isWorkId("../")).toBe(true);
+    expect(liveWorkHref("../")).toBe("/nastavnik/rad/..%2F");
+    expect(submissionHref("../")).toBe("/nastavnik/rad/..%2F/predaja");
   });
 });

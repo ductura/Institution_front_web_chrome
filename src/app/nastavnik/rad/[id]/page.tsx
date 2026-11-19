@@ -1,4 +1,4 @@
-import LiveWorkView, { isWorkId } from "@/components/teacher/LiveWorkView";
+import LiveWorkFrame, { isWorkId } from "@/components/teacher/LiveWorkFrame";
 import RecordLimits from "@/components/teacher/RecordLimits";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -31,7 +31,7 @@ export default async function LiveWorkPage({ params }: { params: Promise<{ id: s
   }
   return (
     <div className="page">
-      <LiveWorkView
+      <LiveWorkFrame
         documentId={id}
         frame={null}
         recordState={null}
