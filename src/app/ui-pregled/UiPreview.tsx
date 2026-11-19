@@ -34,15 +34,19 @@ const sample = (
 
 export default function UiPreview() {
   const [tokens, setTokens] = useState<Token[]>([]);
-  const [theme, setTheme] = useState("dark");
-  useEffect(() => setTokens(readTokens()), [theme]);
+  // Read after mounting and after every toggle, so the values always match the
+  // theme on <html>, a kept light theme included.
+  useEffect(() => setTokens(readTokens()), []);
 
   return (
     <main id="sadrzaj" className="page" style={{ display: "grid", gap: 24, padding: 24, maxWidth: 1200 }}>
       <h1>{t.uiPreview.title}</h1>
       <p>{t.uiPreview.intro}</p>
       <p>
-        <button type="button" className="btn" onClick={() => setTheme(toggleTheme(document.documentElement, globalThis.localStorage))}>
+        <button type="button" className="btn" onClick={() => {
+          toggleTheme(document.documentElement, globalThis.localStorage);
+          setTokens(readTokens());
+        }}>
           {t.uiPreview.theme}
         </button>
       </p>
