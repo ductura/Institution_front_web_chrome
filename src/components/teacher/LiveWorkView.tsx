@@ -1,83 +1,126 @@
-"use client";
-
 /**
- * The teacher's live view of one work (DAN-86 steps 2b and 2c, D-142; route
- * GET /api/live/<id>, BACKEND 4.12). The text is the last state the student
- * published, read through one `startLiveReader`, which shows only the exact
- * document its ETag names. It is rendered as React text, read-only: nothing
- * here writes to the document (D-34). The connection line speaks about this
- * page's own requests, never about the student (4.12 t. 8). The teacher marks
- * a passage to comment on it (B-10); a comment is shown as a mark over the
- * text, never inside the document. Beside the text stands what the record
- * cannot show (K-3, D-80 point 3). The text itself is drawn only by
- * `LiveText`, which the student's "Kako vidi nastavnik" view shares.
+ * N-06, the teacher's live view of one work, read-only (WEB-34; DAN-86,
+ * D-142). This is the frame around the text: the heading, the previous and
+ * the next work, the bar about gaps in the record when the process summary
+ * says `has_gaps` (C-18), the bar for a work not yet submitted and the link
+ * to its submission (N-07) once it is. Nothing here writes to the work
+ * (D-34) and there is no "Zatraži doradu" (wave 8) and no link to extend
+ * the deadline (wave 11).
+ *
+ * The text itself is drawn only by `LiveText` (PRODUCT §5 rule 5) and the
+ * summary only by `SummaryCard`; the page passes both in as `text` and
+ * `aside`. Their readers (live.document.get, projection.process-summary.post)
+ * are not in src/client yet (Ductus#2028, wweb34 PITANJE), so until then the
+ * page passes a placeholder. Written with `createElement` like `LiveText`, so
+ * the unit test renders it with `renderToStaticMarkup`.
  */
 
-import { useRef, useState } from "react";
+import { createElement as h, type ReactNode } from "react";
 
-import type { SessionMark } from "@/client/session-marks";
-import type { TextAnchor } from "@/domain/collaboration";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { anchorForSelection, placeThreads, type TextRange } from "./comment-place";
-import LiveText, { liveStopped, openMarks, useLiveView } from "./LiveText";
 import styles from "./LiveWorkView.module.css";
-import RecordLimits from "./RecordLimits";
-import { selectedRange, selectInBlock } from "./selection";
-import SummaryCard from "./SummaryCard";
-import TeacherComments, { useComments, type PlacedThread } from "./TeacherComments";
 
-const t = messagesHr.liveView;
+const t = messagesHr.teacherLiveWork;
 
-export default function LiveWorkView({ documentId, session, canComment }: {
-  documentId: string; session: SessionMark | null;
-  /** Only a teacher gets the comment panel; the server refuses anyone else anyway (`collaboration.actor_role`). */
-  canComment: boolean;
-}) {
-  const { view, current } = useLiveView(documentId, session);
-  const stopped = liveStopped(view);
-  const comments = useComments(documentId, current, !stopped && canComment);
-  const [draft, setDraft] = useState<TextAnchor | null>(null);
-  const textRef = useRef<HTMLDivElement>(null);
+/**
+ * TODO(ugovor): who and what the work is, and its neighbours in the
+ * teacher's list. No published route gives this by document id yet
+ * (Ductus#2028, wweb34 PITANJE point 3); a name the server does not have is
+ * `null`, never a stand-in.
+ */
+export type LiveWorkFrame = {
+  readonly studentName: string | null;
+  readonly assignmentTitle: string | null;
+  /** True once the server holds a submission of this work (B-6: never inferred here). */
+  readonly submitted: boolean;
+  readonly previousId: string | null;
+  readonly nextId: string | null;
+};
 
-  const threads = !stopped && comments.outcome?.kind === "ok" ? comments.outcome.threads : [];
-  // Placed again against every new state of the text: an edited paragraph never keeps a stale place.
-  const placed: PlacedThread[] = placeThreads(view.document, threads);
-  const marks = openMarks(placed);
+/** `recordState` of ProcessSummaryV1 (contract 2.9.1); null while the summary is not read. */
+export type RecordState = "complete" | "has_gaps";
 
-  // The anchor is made from the text on screen, so it never carries text the teacher has not seen (attack 8).
-  const takeSelection = () => {
-    const root = textRef.current;
-    if (!root || !view.document) return;
-    const range = selectedRange(root, window.getSelection());
-    const anchor = range && anchorForSelection(view.document, range.nodeId, range.start, range.end);
-    if (anchor) setDraft(anchor);
-  };
-  const show = (range: TextRange) => {
-    if (textRef.current) selectInBlock(textRef.current, range.nodeId, range.start, range.end);
-  };
+/** The id of the summary region the gap bar links to. */
+export const SUMMARY_ANCHOR = "sazetak-procesa";
 
-  return (
-    <div className={styles.layout}>
-      <div className={styles.main}>
-        <LiveText view={view} marks={marks} textRef={textRef} onSelect={takeSelection} />
-      </div>
-      <aside className={styles.aside} aria-label={t.sidePanel}>
-        {stopped || !canComment ? null : (
-          <TeacherComments
-            documentId={documentId}
-            outcome={comments.outcome}
-            placed={placed}
-            draft={draft}
-            current={current}
-            onReload={() => void comments.load()}
-            onDraftDone={() => setDraft(null)}
-            onShow={show}
-          />
-        )}
-        {stopped ? null : <SummaryCard documentId={documentId} current={current} />}
-        <RecordLimits />
-      </aside>
-    </div>
+const DOCUMENT_ID_MAX = 256;
+// C0, DEL and C1, like [[:cntrl:]]; the same shape as the evidence.document id CHECK.
+const CONTROL = /\p{Cc}/u;
+
+/** True for an id the live route could read; "." and ".." would resolve as path steps. */
+export function isWorkId(value: unknown): value is string {
+  if (typeof value !== "string" || value.trim() !== value || value === "." || value === "..") return false;
+  const length = [...value].length;
+  return length >= 1 && length <= DOCUMENT_ID_MAX && !CONTROL.test(value);
+}
+
+/** N-06 for `documentId`, or null for an id no route could read. */
+export function liveWorkHref(documentId: unknown): string | null {
+  return isWorkId(documentId) ? `/nastavnik/rad/${encodeURIComponent(documentId)}` : null;
+}
+
+/** N-07, the submission of `documentId` (WEB-35), or null for an id no route could read. */
+export function submissionHref(documentId: unknown): string | null {
+  const live = liveWorkHref(documentId);
+  return live === null ? null : `${live}/predaja`;
+}
+
+function neighbour(id: string | null, label: string, rel: "prev" | "next") {
+  const href = liveWorkHref(id);
+  return href === null ? null : h("li", null, h("a", { href, rel, className: styles.link }, label));
+}
+
+export type LiveWorkViewProps = {
+  documentId: string;
+  /** Null until the frame's read exists (TODO(ugovor)); the view then shows only the text. */
+  frame: LiveWorkFrame | null;
+  recordState: RecordState | null;
+  /** `LiveText` of this work, or the page's placeholder. */
+  text: ReactNode;
+  /** The summary and the limits of the record. */
+  aside?: ReactNode;
+};
+
+export default function LiveWorkView({ documentId, frame, recordState, text, aside }: LiveWorkViewProps) {
+  const title = frame?.studentName ?? t.untitled;
+  const nav = frame === null ? [] : [
+    neighbour(frame.previousId, t.previous, "prev"),
+    neighbour(frame.nextId, t.next, "next"),
+  ].filter((item) => item !== null);
+  const receipt = frame?.submitted ? submissionHref(documentId) : null;
+
+  const bars: ReactNode[] = [];
+  if (recordState === "has_gaps") {
+    bars.push(h(
+      "p",
+      { key: "gaps", className: styles.note, role: "status", "data-bar": "gaps" },
+      t.gaps,
+      " ",
+      h("a", { href: `#${SUMMARY_ANCHOR}`, className: styles.link }, t.gapsLink),
+    ));
+  }
+  if (frame !== null && !frame.submitted) {
+    bars.push(h("p", { key: "open", className: styles.note, role: "status", "data-bar": "not-submitted" }, t.notSubmitted));
+  }
+
+  return h(
+    "div",
+    null,
+    h(
+      "header",
+      { className: styles.status },
+      h("h1", null, title),
+      frame?.assignmentTitle ? h("p", { className: styles.muted }, frame.assignmentTitle) : null,
+      receipt === null ? null : h("p", null, h("a", { href: receipt, className: styles.link }, t.submission)),
+      nav.length === 0 ? null : h("nav", { "aria-label": t.neighbours }, h("ul", null, ...nav)),
+    ),
+    ...bars,
+    h(
+      "div",
+      { className: styles.layout },
+      h("div", { className: styles.main }, text),
+      h("aside", { className: styles.aside, "aria-label": t.sidePanel, id: SUMMARY_ANCHOR }, aside),
+    ),
   );
 }
