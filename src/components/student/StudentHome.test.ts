@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { messagesHr } from "../../../locales/hr.ts";
 
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
+import { messagesHr as webHr } from "../../lib/i18n/messages.hr";
 import { courseMotif } from "./course-motif";
 import type { MyAssignmentsRead, MyCourse } from "./my-assignments-read";
 import StudentHome from "./StudentHome";
@@ -48,15 +49,15 @@ describe("StudentHome, Archivum S01 on /zadaci (DAN-344)", () => {
     expect(html).toContain(home.courses);
     expect(html).toContain(`aria-labelledby="kolegij-${COURSE_A}"`);
     expect(html).toContain(`aria-labelledby="kolegij-${COURSE_B}"`);
-    expect(html).toContain('href="/rad?zadatak=10000000-0000-4000-8000-000000000001"');
-    expect(html).toContain('href="/rad?zadatak=10000000-0000-4000-8000-000000000002"');
+    expect(html).toContain('href="/rad/10000000-0000-4000-8000-000000000001"');
+    expect(html).toContain('href="/rad/10000000-0000-4000-8000-000000000002"');
     expect(html).toContain("Rok: 30. studenoga 2026. u 23:59");
     expect(html).toContain(t.noAssignments);
   });
 
   it("labels an unacknowledged notice “Pročitaj upute” and the rest “Otvori zadatak”", () => {
     const html = render({ kind: "ready", courses });
-    const links = html.match(/<a [^>]*href="\/rad\?zadatak=[^"]+"[^>]*>.*?<\/a>/g) ?? [];
+    const links = html.match(/<a [^>]*href="\/rad\/[^"]+"[^>]*>.*?<\/a>/g) ?? [];
     expect(links).toHaveLength(2);
     expect(links[0]).toContain(home.open);
     expect(links[0]).not.toContain(home.readNotice);
@@ -70,6 +71,37 @@ describe("StudentHome, Archivum S01 on /zadaci (DAN-344)", () => {
     expect(html).not.toMatch(/izmijenjen|predan|u tijeku/i);
   });
 
+  it("WEB-09 (A-3): the academic year, the course's teachers with their role, and an extended deadline in place of the deadline", () => {
+    const added = webHr.student.home;
+    const html = render({
+      kind: "ready",
+      courses: [{
+        id: COURSE_A,
+        name: "Izmišljeni seminar iz ekologije grada",
+        academicYear: "2026/2027",
+        teachers: [
+          { id: "20000000-0000-4000-8000-000000000001", givenName: "Iva", familyName: "Izmišljena", role: "holder" },
+          { id: "20000000-0000-4000-8000-000000000002", givenName: "Ana", familyName: "Primjerić", role: "collaborator" },
+        ],
+        assignments: [
+          { id: "10000000-0000-4000-8000-000000000003", title: "Izmišljeni seminar", dueAt: "2026-11-30T22:59:00.000Z", noticeFirst: false, extendedDueAt: "2026-12-07T22:59:00.000Z" },
+          { id: "10000000-0000-4000-8000-000000000004", title: "Izmišljeni prikaz", dueAt: "2026-12-05T22:59:00.000Z", noticeFirst: false, extendedDueAt: null },
+        ],
+      }],
+    });
+    expect(html).toContain(`${home.courseLabel} · 2026./2027.`);
+    expect(html).toContain(`${added.teachers}: Iva Izmišljena (${added.teacherRole.holder}), Ana Primjerić (${added.teacherRole.collaborator})`);
+    expect(html).toContain("Produljeni rok: 7. prosinca 2026. u 23:59");
+    expect(html).not.toContain("Rok: 30. studenoga 2026.");
+    expect(html).toContain("Rok: 5. prosinca 2026. u 23:59");
+    expect(html).toContain('href="/rad/10000000-0000-4000-8000-000000000003"');
+    // A course the read gives no teachers or year for shows neither.
+    const bare = render({ kind: "ready", courses });
+    expect(bare).not.toContain(`${added.teachers}:`);
+    expect(bare).not.toContain(`${home.courseLabel} · `);
+    expect(findForbiddenTerms(JSON.stringify([added.teachers, added.teacherRole, added.extendedDue, added.enrollLink]))).toEqual([]);
+  });
+
   it("unavailable is its own state, not the empty list and no list at all", () => {
     const html = render({ kind: "unavailable" });
     expect(html).toContain('role="alert"');
@@ -81,7 +113,7 @@ describe("StudentHome, Archivum S01 on /zadaci (DAN-344)", () => {
     expect(html).not.toContain("data-upis");
     expect(html).not.toContain(home.courses);
     expect(html).not.toContain(home.lede);
-    expect(html).not.toContain("/rad?zadatak=");
+    expect(html).not.toContain("/rad/");
     expect(html).not.toContain('href="/upis"');
   });
 
@@ -103,7 +135,7 @@ describe("StudentHome, Archivum S01 on /zadaci (DAN-344)", () => {
     expect(html).not.toContain(home.courses);
     expect(html).not.toContain('role="alert"');
     expect(html).not.toContain(home.unavailableHeading);
-    expect(html).not.toContain("/rad?zadatak=");
+    expect(html).not.toContain("/rad/");
   });
 
   it("signed out keeps the AAI@EduHr sign-in and reads nothing", () => {
@@ -111,7 +143,7 @@ describe("StudentHome, Archivum S01 on /zadaci (DAN-344)", () => {
     expect(html).toContain(t.signedOut);
     expect(html).toContain('href="/prijava?returnTo=%2Fzadaci"');
     expect(html).not.toContain(home.lede);
-    expect(html).not.toContain("/rad?zadatak=");
+    expect(html).not.toContain("/rad/");
   });
 
   it("S02 shows the same cards under its own heading, without the enrol action", () => {
@@ -125,7 +157,7 @@ describe("StudentHome, Archivum S01 on /zadaci (DAN-344)", () => {
     // axe heading-order: no level is skipped under the page h1.
     expect(html).toMatch(new RegExp(`<h2 id="kolegij-${COURSE_A}"`));
     expect(html).not.toContain("<h3");
-    expect(html).toContain('href="/rad?zadatak=10000000-0000-4000-8000-000000000002"');
+    expect(html).toContain('href="/rad/10000000-0000-4000-8000-000000000002"');
     expect(html).toContain(home.readNotice);
   });
 

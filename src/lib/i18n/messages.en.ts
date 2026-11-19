@@ -1212,6 +1212,12 @@ const en = {
       due: "Deadline: {time}",
       open: "Open assignment",
       readNotice: "Read the instructions",
+      // WEB-09 (A-3): the course's teachers and an extended deadline, as student.assignments.get returns them.
+      teachers: "Teachers",
+      teacherRole: { holder: "course holder", collaborator: "collaborator" },
+      extendedDue: "Extended deadline: {time}",
+      // Until /upis moves over (WEB-11), the empty state leads there instead of holding the form.
+      enrollLink: "Enrol with a course code",
       unavailableHeading: "This view is not available right now.",
       unavailableBody: "The data could not be loaded. This does not mean there are no courses or works.",
       // S01_prazna: the first arrival, verbatim from the package's PNG.

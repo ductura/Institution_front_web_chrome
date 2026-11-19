@@ -30,7 +30,7 @@ describe("MyAssignments over student.assignments.get (DAN-876)", () => {
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(html).toContain(`<h1>${home.unavailableHeading}</h1>`);
     expect(html).toContain(home.unavailableBody);
-    expect(html).not.toContain("/rad?zadatak=");
+    expect(html).not.toContain("/rad/");
     for (const course of courses) expect(html).not.toContain(course.name);
   });
 
@@ -38,14 +38,14 @@ describe("MyAssignments over student.assignments.get (DAN-876)", () => {
     const html = await settled({ kind: "signedOut" });
     expect(html).toContain(t.signedOut);
     expect(html).toContain(`href="/prijava?returnTo=%2Fzadaci%2Fkolegiji"`);
-    expect(html).not.toContain("/rad?zadatak=");
+    expect(html).not.toContain("/rad/");
   });
 
   it("while the read is pending, the page is RouteLoading and shows no assignment", () => {
     const html = renderToStaticMarkup(createElement(MyAssignments, { read: new Promise<MyAssignmentsRead>(() => {}), signIn }));
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain(`<p role="status">${messagesHr.workspace.panelLoading}</p>`);
-    expect(html).not.toContain("/rad?zadatak=");
+    expect(html).not.toContain("/rad/");
   });
 
   it("ready-empty is the empty state, not an error", async () => {
@@ -62,7 +62,7 @@ describe("MyAssignments over student.assignments.get (DAN-876)", () => {
       expect(html).toContain(course.name);
       for (const assignment of course.assignments) {
         expect(html).toContain(assignment.title);
-        expect(html).toContain(`href="/rad?zadatak=${assignment.id}"`);
+        expect(html).toContain(`href="/rad/${assignment.id}"`);
       }
     }
     expect(html).toContain("Rok: 1. prosinca 2026. u 23:59");
