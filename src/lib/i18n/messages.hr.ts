@@ -1554,6 +1554,41 @@ export const hr = {
     emptyTitle: "Zbirni pregled još nema podataka",
     emptyBody: "Kad zbirni pregled bude dostupan, ovdje ćete vidjeti zbirne brojke za svoje kolegije. Pojedinačni studenti se ovdje ne prikazuju.",
   },
+  // WEB-18 (N-01, dk-h, A-7, A-8): the teacher's courses and their enrolment
+  // codes. The server keeps only a hash: the code is shown once, in the dialog
+  // that issued it; afterwards the page only says that one was issued.
+  teacherCourseCodes: {
+    title: "Kolegiji i kodovi za upis",
+    lead: "Kolegiji u kojima predajete. Studenti se upisuju kodom koji ovdje izdajete.",
+    emptyTitle: "Još nemate kolegija",
+    emptyBody: "Kolegij izrađuje administrator fakulteta i dodjeljuje ga nositelju. Kad Vas doda u kolegij, on se pojavljuje ovdje.",
+    emptyNext: "Treba li Vam novi kolegij, javite se administratoru svojeg fakulteta.",
+    unavailable: "Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.",
+    retry: "Pokušaj ponovno",
+    yearHeading: "Akademska godina {year}",
+    assignments: { none: "Još nema zadataka", one: "zadatak", few: "zadatka", many: "zadataka" },
+    codeButton: "Kod za upis",
+    issuedNote: "Kod je izdan i vrijedi do {until}.",
+    revokedNote: "Kod je opozvan.",
+    nothingRevokedNote: "Kolegij nije imao važeći kod.",
+    unknownNote: "Nije poznato je li zadnji zahtjev za kod proveden. Prije dijeljenja izdajte novi kod.",
+    dialogTitle: "Kod za upis: {course}",
+    dialogLead: "Novi kod zamjenjuje prethodni; stari kod od tada više ne vrijedi.",
+    validUntil: "Vrijedi do (po zagrebačkom vremenu)",
+    validUntilInvalid: "Upišite postojeći datum i vrijeme.",
+    issue: "Izdaj novi kod",
+    issuing: "Izdajem…",
+    revoke: "Opozovi kod",
+    revoking: "Opozivam…",
+    close: "Zatvori",
+    shownOnce: "Kod se prikazuje samo sada. Zapišite ga ili ga prenesite studentima prije zatvaranja.",
+    codeLabel: "Kod za upis",
+    errors: {
+      invalid: "Poslužitelj nije prihvatio taj datum. Odaberite drugi.",
+      forbidden: "Ne predajete na ovom kolegiju pa ne možete izdati ni opozvati njegov kod.",
+      unavailable: "Nije poznato je li zahtjev proveden. Prikazani kod možda više ne vrijedi; izdajte novi kod.",
+    },
+  },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,
   // read only, as docs/design/ductura/m2-reference/a03-kolegiji-tim-i-grupe.html
   // writes them. Students are only counted, never named.
