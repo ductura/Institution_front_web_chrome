@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { signInHref } from "../../../client/api";
@@ -21,7 +21,8 @@ export const dynamic = "force-dynamic";
 
 /** What the sheet holds until the editor-core journal is wired (WEB-14 part 2). */
 function sheetBody(read: Extract<EditorWorkRead, { kind: "ready" | "unavailable" }>) {
-  if (read.kind === "unavailable") return <SheetNote>{t.workspace.unavailable}</SheetNote>;
+  // The server could not answer: say so, never that the assignment is not this account's.
+  if (read.kind === "unavailable") return <SheetNote>{t.student.unavailable}</SheetNote>;
   if (read.workState === "submitted") return <SheetNote>{t.editor.submittedReadOnly}</SheetNote>;
   if (read.workState === "not_started") return <SheetNote>{t.workspace.notStarted}</SheetNote>;
   return (
@@ -44,7 +45,8 @@ export default async function WorkPage({ params }: { params: Promise<{ assignmen
   const assignmentId = assignmentIdOf(raw);
   if (assignmentId === null) notFound();
   const here = `/rad/${assignmentId}`;
-  const cookie = (await cookies()).toString();
+  // The Cookie header as the browser sent it: re-serialising the cookies could alter a value.
+  const cookie = (await headers()).get("cookie") ?? "";
   const api = serverApi(cookie);
   // A server that cannot be reached is an unavailable read, not an error page.
   const [assignments, work] = await Promise.all([
