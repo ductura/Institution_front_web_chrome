@@ -13,9 +13,11 @@
 // RequestSpec does not carry yet: createApi sends it for those routes only,
 // when the caller names the protocol (ApiOptions.protocol, README.md).
 // no-direct-api.test.ts keeps every other call out of the code.
-import { createClient, validateInput, type OperationId, type Operations, type Result } from "@ductura/contracts";
+import { canonicalJson, createClient, validateInput, type OperationId, type Operations, type SharedErrorCode } from "@ductura/contracts";
 import openapi from "@ductura/contracts/openapi/v1.json" with { type: "json" };
 import catalog from "@ductura/contracts/errors/catalog.json" with { type: "json" };
+import migrationContracts from "./migration-contracts.generated.json" with { type: "json" };
+import type { MigrationOperations } from "./migration-contract-types.generated";
 import { matchesSchema, type Schema } from "./schema-check";
 
 type ResponseSpec = { readonly content?: Readonly<Record<string, { readonly schema?: Schema }>> };
@@ -30,10 +32,24 @@ const OPERATIONS: readonly Operation[] = Object.values(
   (openapi as unknown as { paths: Record<string, Record<string, Operation>> }).paths,
 ).flatMap((methods) => Object.values(methods));
 
+type MigrationRoute = {
+  readonly path: string;
+  readonly method: string;
+  readonly params?: Schema;
+  readonly body?: Schema;
+  readonly responses: Readonly<Record<string, ResponseSpec>>;
+  readonly errors: Readonly<Record<string, readonly string[]>>;
+};
+
+// WEB-07: remove this supplement once the published package includes these operations.
+const MIGRATION_ROUTES: ReadonlyMap<string, MigrationRoute> = new Map(Object.entries(migrationContracts));
+const responses = new Map(OPERATIONS.map((op) => [op.operationId, op.responses] as const));
+for (const [id, route] of MIGRATION_ROUTES) {
+  responses.set(id, { ...responses.get(id), ...route.responses });
+}
+
 /** Responses of every operation of the contract, by operationId, then status. */
-export const RESPONSES: ReadonlyMap<string, Readonly<Record<string, ResponseSpec>>> = new Map(
-  OPERATIONS.map((op) => [op.operationId, op.responses] as const),
-);
+export const RESPONSES: ReadonlyMap<string, Readonly<Record<string, ResponseSpec>>> = responses;
 
 const PARTS = ["params", "query", "body"] as const;
 type Part = (typeof PARTS)[number];
@@ -155,23 +171,32 @@ export function signInHref(returnTo?: unknown): string {
 export type SessionExpired = { ok: false; status: 401; code: "session_expired" };
 
 /** The code a JSON error body sends: the first string of code, error, status, as the generated client reads it. */
+function codeFromBody(body: unknown): string | undefined {
+  if (typeof body !== "object" || body === null) return undefined;
+  const own = (name: string): unknown => (Object.hasOwn(body, name) ? (body as Record<string, unknown>)[name] : undefined);
+  return [own("code"), own("error"), own("status")].find((value): value is string => typeof value === "string");
+}
+
 function sentCode(bytes: ArrayBuffer): string | undefined {
   try {
-    const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
-    if (typeof body !== "object" || body === null) return undefined;
-    // Own fields only: a string on a prototype never stands in for the body's own code.
-    const own = (name: string): unknown => (Object.hasOwn(body, name) ? (body as Record<string, unknown>)[name] : undefined);
-    return [own("code"), own("error"), own("status")].find((value): value is string => typeof value === "string");
+    return codeFromBody(JSON.parse(new TextDecoder().decode(bytes)));
   } catch {
     return undefined;
   }
 }
 
-export type Input<Id extends OperationId> = Pick<Operations[Id], "params" | "query" | "body">;
+type ApiOperations = Omit<Operations, keyof MigrationOperations> & MigrationOperations;
+export type ApiOperationId = keyof ApiOperations;
+export type Input<Id extends ApiOperationId> = Pick<ApiOperations[Id], "params" | "query" | "body">;
+type WireInput = Record<Part, unknown>;
 
 /** Refused before the request was sent: the input breaks the contract. */
 export type Rejected = { ok: false; status: 0; code: "client_rejected" };
-export type ApiResult<Id extends OperationId> = Result<Id> | Rejected | SessionExpired;
+export type ApiResult<Id extends ApiOperationId> =
+  | (ApiOperations[Id]["success"] & { ok: true })
+  | { ok: false; status: number; code: ApiOperations[Id]["errorCode"] | SharedErrorCode | "unexpected" }
+  | Rejected
+  | SessionExpired;
 
 /** A plain copy of one part: getters run once, toJSON and prototypes do not travel. */
 function snapshot(value: unknown): unknown {
@@ -237,18 +262,74 @@ export function errorBody(result: { readonly ok: boolean }): unknown {
   return !result.ok && Object.hasOwn(result, "body") ? (result as { body?: unknown }).body : undefined;
 }
 
+function acceptsPart(schema: Schema | undefined, part: unknown): boolean {
+  return schema === undefined ? part === undefined : matchesSchema(schema, part);
+}
+
+function migrationError(route: MigrationRoute, status: number, body: unknown): string {
+  const sent = codeFromBody(body);
+  const codes = route.errors[String(status)] ?? [];
+  if (sent === undefined) return codes.length === 1 ? codes[0] ?? "unexpected" : "unexpected";
+  if (status === 401 && codes.length > 0 && sent === SESSION_EXPIRED_ENTRY.code) return sent;
+  if ((status === 429 && sent === "too_many_requests") || (status === 500 && sent === "internal")) return sent;
+  return codes.includes(sent) ? sent : "unexpected";
+}
+
+async function callMigrationRoute<Id extends ApiOperationId>(
+  id: Id, route: MigrationRoute, wire: WireInput, baseUrl: string, transport: typeof fetch,
+): Promise<ApiResult<Id>> {
+  if (wire.query !== undefined || !acceptsPart(route.params, wire.params) || !acceptsPart(route.body, wire.body)) {
+    return { ok: false, status: 0, code: "client_rejected" };
+  }
+  let requestBody: string | undefined;
+  if (route.body !== undefined) {
+    try {
+      requestBody = canonicalJson(wire.body);
+    } catch {
+      return { ok: false, status: 0, code: "client_rejected" };
+    }
+  }
+  const params = wire.params as Record<string, string> | undefined;
+  const path = route.path.replace(/\{(\w+)\}/g, (_, name: string) => encodeURIComponent(params?.[name] ?? ""));
+  const response = await transport(new URL(path, baseUrl), {
+    method: route.method,
+    redirect: "manual",
+    headers: requestBody === undefined ? undefined : { "content-type": "application/json" },
+    body: requestBody,
+  });
+  const status = response.status;
+  const bytes = await response.arrayBuffer();
+  let body: unknown;
+  if (response.headers.get("content-type")?.startsWith("application/json")) {
+    try {
+      body = JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      return { ok: false, status: 0, code: "unexpected" };
+    }
+  }
+  if (status >= 400) return { ok: false, status, code: migrationError(route, status, body) } as ApiResult<Id>;
+  if (!responseMatches(id, status, body, bytes.byteLength)) return { ok: false, status, code: "unexpected" };
+  return { ok: true, status, body, headers: {} } as ApiResult<Id>;
+}
+
 export function createApi(options: ApiOptions = {}) {
   const baseUrl = options.baseUrl ?? globalThis.location.origin;
   const transport: typeof fetch = options.fetchImpl ?? ((input, init) => fetch(input, init));
-  return async function api<Id extends OperationId>(id: Id, input: Input<Id>): Promise<ApiResult<Id>> {
+  return async function api<Id extends ApiOperationId>(id: Id, input: Input<Id>): Promise<ApiResult<Id>> {
     const names = NAMES.get(id);
-    let wire: Record<Part, unknown>;
+    let wire: WireInput;
     try {
       wire = { params: snapshot(input.params), query: snapshot(input.query), body: snapshot(input.body) };
     } catch {
       return { ok: false, status: 0, code: "client_rejected" };
     }
-    if (names === undefined || !PARTS.every((part) => onlyNamed(names[part], wire[part]) && validateInput(id, part, wire[part]))) {
+    if (names === undefined) {
+      const route = MIGRATION_ROUTES.get(id);
+      if (route === undefined) return { ok: false, status: 0, code: "client_rejected" };
+      return callMigrationRoute(id, route, wire, baseUrl, transport);
+    }
+    const publishedId = id as OperationId;
+    if (!PARTS.every((part) => onlyNamed(names[part], wire[part]) && validateInput(publishedId, part, wire[part]))) {
       return { ok: false, status: 0, code: "client_rejected" };
     }
     let bodyBytes = 0;
@@ -265,12 +346,12 @@ export function createApi(options: ApiOptions = {}) {
       if (res.status === SESSION_EXPIRED_ENTRY.status && res.headers.get("content-type")?.startsWith("application/json")) code = sentCode(bytes);
       return res;
     };
-    let result: Result<Id>;
+    let result: Awaited<ReturnType<ReturnType<typeof createClient>>>;
     try {
-      result = await createClient(baseUrl, measured)(id, wire as Input<Id>);
+      result = await createClient(baseUrl, measured)(publishedId, wire as Pick<Operations[OperationId], Part>);
     } catch (error) {
       // A JSON content type with a body that is not JSON breaks the contract too.
-      if (error instanceof SyntaxError) return { ok: false, status: 0, code: "unexpected" } as Result<Id>;
+      if (error instanceof SyntaxError) return { ok: false, status: 0, code: "unexpected" };
       throw error;
     }
     if (!result.ok) {
@@ -278,19 +359,17 @@ export function createApi(options: ApiOptions = {}) {
         && code === SESSION_EXPIRED_ENTRY.code && RESPONSES.get(id)?.["401"] !== undefined && !id.startsWith("auth.");
       if (expired) return { ok: false, status: 401, code: "session_expired" };
       const kept = errorBytes === null ? undefined : declaredError(id, result.status, errorBytes);
-      return kept === undefined ? result : ({ ...result, body: kept } as Result<Id>);
+      return (kept === undefined ? result : { ...result, body: kept }) as ApiResult<Id>;
     }
     const { status, body } = result as unknown as { status: number; body: unknown };
-    return responseMatches(id, status, body, bodyBytes) ? result : ({ ok: false, status, code: "unexpected" } as Result<Id>);
+    return responseMatches(id, status, body, bodyBytes) ? result as ApiResult<Id> : { ok: false, status, code: "unexpected" };
   };
 }
 
 // ---------------------------------------------------------------------------
 // Session of the institution front (contract #2028 c.6993786629 §3.3).
-// GET /api/v1/me is not in @ductura/contracts 2.8.0 yet: Institution_server
-// adds it (w1111a), and until the contract names it, it is read here by hand,
-// the one file that may call the API. Its answer is read field by field and
-// unknown fields are ignored, so a wider answer never breaks the shell.
+// The existing shell uses this reader for the older session shapes. New callers
+// can use createApi("profile.me.get") for the closed migration contract.
 
 /** The session route of the institution server (same origin). */
 export const SESSION_PATH = "/api/v1/me";

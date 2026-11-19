@@ -5,7 +5,7 @@
 // install step only (no persisted git credentials, no install scripts) and never
 // writes packages.
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -15,15 +15,15 @@ function walk(dir: string, keep: (name: string) => boolean): string[] {
   return readdirSync(join(ROOT, dir)).flatMap((name) => {
     if (name === "node_modules" || name === ".git") return [];
     const path = join(dir, name);
-    return statSync(join(ROOT, path)).isDirectory() ? walk(path, keep) : keep(name) ? [relative(".", path)] : [];
+    return statSync(join(ROOT, path)).isDirectory() ? walk(path, keep) : keep(name) ? [relative(".", path).split(sep).join("/")] : [];
   });
 }
 
 const WORKFLOWS = walk(".github/workflows", (name) => /\.ya?ml$/.test(name));
 const RELEASES = "https://github.com/ductura/Institution_server/releases/download/";
-const VERSIONS: Record<string, string> = { "@ductura/contracts": "2.8.0", "@ductura/test-fakes": "3.0.1" };
+const VERSIONS: Record<string, string> = { "@ductura/contracts": "2.9.1", "@ductura/test-fakes": "3.0.1" };
 const TARBALLS: Record<string, string> = {
-  "@ductura/contracts": `${RELEASES}contracts-v2.8.0/ductura-contracts-2.8.0.tgz`,
+  "@ductura/contracts": `${RELEASES}contracts-v2.9.1/ductura-contracts-2.9.1.tgz`,
   "@ductura/test-fakes": `${RELEASES}test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz`,
 };
 const TOKEN_USE = /NODE_AUTH_TOKEN|GITHUB_TOKEN|github\.token|secrets\./;
