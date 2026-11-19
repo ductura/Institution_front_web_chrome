@@ -2,8 +2,10 @@
 
 /**
  * The editor mounted on `/rad/<assignmentId>` (WEB-14b) for a work already
- * started. The work is opened once through src/client (`openWork`,
- * evidence.open.post over createApi); its documentId names the journal. Then
+ * started. First the person's journal scope is read from /api/v1/me (WEB-14c,
+ * fail closed: without a valid `journalScope` nothing is opened). Then the
+ * work is opened once through src/client (`openWork`, evidence.open.post over
+ * createApi); its documentId names the document in that journal. Then
  * LocalDocument owns the editor, the journal, the Web Lock (one writer per
  * document, A-12) and the EvidenceSession that sends the text and verifies
  * each receipt. The toolbar (WEB-15) and the status bar read that provider.
@@ -17,7 +19,7 @@ import { openWork, type OpenOutcome } from "@/client/evidence-ingest";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import EditorPage, { SheetNote } from "./EditorPage";
-import { journalScopeOf } from "./EditorPage.scope";
+import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
 import { LocalDocumentProvider, LocalEditor } from "./LocalDocument";
 import StatusBar from "./StatusBar";
@@ -31,11 +33,11 @@ export type OpenRead =
   | { readonly kind: "reload" }
   | { readonly kind: "unavailable" };
 
-/** What the page does with one answer of the open route; the journal scope only for an opened work. */
-export async function openReadOf(outcome: OpenOutcome, scopeOf: (documentId: string) => Promise<string> = journalScopeOf): Promise<OpenRead> {
+/** What the page does with one answer of the open route, under the person's journal scope. */
+export function openReadOf(outcome: OpenOutcome, scope: string): OpenRead {
   switch (outcome.status) {
     case "opened":
-      return { kind: "ready", documentId: outcome.work.documentId, scope: await scopeOf(outcome.work.documentId) };
+      return { kind: "ready", documentId: outcome.work.documentId, scope };
     case "unauthenticated":
       return { kind: "signedOut" };
     case "not_found":
@@ -46,6 +48,25 @@ export async function openReadOf(outcome: OpenOutcome, scopeOf: (documentId: str
     default:
       return { kind: "unavailable" };
   }
+}
+
+export type WorkReaders = {
+  readonly readScope: () => Promise<ScopeRead>;
+  readonly open: (assignmentId: string) => Promise<OpenOutcome>;
+};
+
+const LIVE_READERS: WorkReaders = { readScope: () => readJournalScope(), open: (id) => openWork(id) };
+
+/**
+ * The scope first, then the work: no valid scope (WEB-14c) opens nothing, not
+ * even the evidence session, and the page shows that the work cannot be opened.
+ */
+export async function readWork(assignmentId: string, readers: WorkReaders = LIVE_READERS): Promise<OpenRead> {
+  const scope = await readers.readScope().catch((): ScopeRead => ({ kind: "unavailable" }));
+  if (scope.kind === "signedOut") return { kind: "signedOut" };
+  if (scope.kind !== "scope") return { kind: "unavailable" };
+  const outcome = await readers.open(assignmentId).catch((): OpenOutcome => ({ status: "unavailable" }));
+  return openReadOf(outcome, scope.scope);
 }
 
 function Note({ read, here }: { read: Exclude<OpenRead, { kind: "ready" }>; here: string }) {
@@ -66,9 +87,7 @@ export default function EditorPageWork({ assignmentId, course, title }: { assign
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
     let live = true;
-    void openWork(assignmentId)
-      .catch((): OpenOutcome => ({ status: "unavailable" }))
-      .then((outcome) => openReadOf(outcome))
+    void readWork(assignmentId)
       .catch((): OpenRead => ({ kind: "unavailable" }))
       .then((next) => { if (live) setRead(next); });
     return () => { live = false; };
@@ -82,7 +101,7 @@ export default function EditorPageWork({ assignmentId, course, title }: { assign
     );
   }
   return (
-    <LocalDocumentProvider key={read.documentId} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId}>
+    <LocalDocumentProvider key={`${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId}>
       <EditorPage course={course} title={title} toolbar={<EditorToolbar />} status={<StatusBarLive evidence />}>
         <LocalEditor />
       </EditorPage>
