@@ -1,5 +1,11 @@
-import type { FastPathStudent, TextBlock } from "@/components/teacher/fast-path";
-import type { ProcessSummaryV1 } from "@/domain/projection/process-summary";
+import type { FastPathRecord, FastPathStudent, TextBlock } from "@/components/teacher/fast-path";
+
+/**
+ * The summary as the fast path record holds it (Ductus ProcessSummaryV1). It is
+ * taken from the record so that this catalogue does not import the Ductus
+ * projection module, which this repository does not have.
+ */
+type ProcessSummaryV1 = FastPathRecord["summary"];
 
 /**
  * Invented students and texts for the fast path (F-11) in the unit and e2e
