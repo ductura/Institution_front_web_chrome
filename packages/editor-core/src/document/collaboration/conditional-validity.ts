@@ -42,7 +42,8 @@ export type ReviewRequestWithConditions = {
 
 /** Feature flag. U spikeu se čita iz env; u produkciji iz configa. */
 export function isConditionalValidityEnabled(): boolean {
-  return process.env.CONDITIONAL_VALIDITY === "true";
+  // Front (w1119a): the browser has no `process`, so there the flag is off instead of a ReferenceError.
+  return typeof process !== "undefined" && process.env?.CONDITIONAL_VALIDITY === "true";
 }
 
 /** Konzervativni normalizator za spike (whitespace + trailing punctuation). */
