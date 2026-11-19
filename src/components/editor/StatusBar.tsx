@@ -30,14 +30,17 @@ export type DocumentPhase = "loading" | "blocked" | "ready" | "recovery" | "unav
 
 /**
  * What the document provider reports, as the bar reads it (WEB-14b).
- * `evidence`: the evidence session saves this sheet, so its SYNCED comes only
- * from a receipt verified in this page session (G3); the local saver never
- * sends, so nothing it reports is signed.
+ * `receiptVerifiedHere`: the explicit result of the receipt check, true only
+ * once a receipt for the text on the sheet passed the Ed25519 check in this
+ * page session (G3). A SYNCED read back from the journal (a reload, or the
+ * server's version taken over) is not that: until a new receipt is verified
+ * here the bar says the text is on the device. The local saver never sends,
+ * so it never passes true.
  */
 export type SaveRead = {
   readonly phase: DocumentPhase;
   readonly state: SaveStateName | null;
-  readonly evidence: boolean;
+  readonly receiptVerifiedHere: boolean;
 };
 
 /**
@@ -50,7 +53,7 @@ export function statusSaveOf(read: SaveRead): StatusSave | null {
   if (read.phase === "blocked") return { state: "LOCAL_DURABLE", receiptSigned: false, blocked: true };
   if (read.phase === "recovery") return { state: "RECOVERY_REQUIRED", receiptSigned: false, blocked: false };
   if (read.phase !== "ready" || read.state === null) return null;
-  return { state: read.state, receiptSigned: read.evidence && read.state === "SYNCED", blocked: false };
+  return { state: read.state, receiptSigned: read.receiptVerifiedHere && read.state === "SYNCED", blocked: false };
 }
 
 /**

@@ -59,22 +59,32 @@ describe("StatusBar", () => {
 describe("statusSaveOf", () => {
   const PHASES: DocumentPhase[] = ["loading", "blocked", "ready", "recovery", "unavailable", "signed-out"];
 
-  it("signs SYNCED only for the evidence session", () => {
-    expect(statusSaveOf({ phase: "ready", state: "SYNCED", evidence: true })).toEqual({ state: "SYNCED", receiptSigned: true, blocked: false });
-    const local = statusSaveOf({ phase: "ready", state: "SYNCED", evidence: false });
-    expect(local).not.toBeNull();
-    expect(shownSaveState(local!)).toBe("LOCAL_DURABLE");
+  it("shows SYNCED with a receipt verified in this page session", () => {
+    const save = statusSaveOf({ phase: "ready", state: "SYNCED", receiptVerifiedHere: true });
+    expect(save).toEqual({ state: "SYNCED", receiptSigned: true, blocked: false });
+    expect(render(save)).toContain(SAVE_STATES.SYNCED.label);
+  });
+
+  it("never shows SYNCED read back from the journal without a new receipt here", () => {
+    // Reopened sheet: the journal holds SYNCED (a reload, or the server's
+    // version taken over), but no receipt has been verified in this session.
+    const reopened = statusSaveOf({ phase: "ready", state: "SYNCED", receiptVerifiedHere: false });
+    expect(reopened).not.toBeNull();
+    expect(shownSaveState(reopened!)).toBe("LOCAL_DURABLE");
+    const html = render(reopened);
+    expect(html).not.toContain(SAVE_STATES.SYNCED.label);
+    expect(html).toContain(SAVE_STATES.LOCAL_DURABLE.label);
   });
 
   it("never signs a state other than SYNCED", () => {
     for (const state of STATES.filter((s) => s !== "SYNCED")) {
-      expect(statusSaveOf({ phase: "ready", state, evidence: true })).toEqual({ state, receiptSigned: false, blocked: false });
+      expect(statusSaveOf({ phase: "ready", state, receiptVerifiedHere: true })).toEqual({ state, receiptSigned: false, blocked: false });
     }
   });
 
   it("shows the block of another tab whatever the state", () => {
     for (const state of [null, ...STATES]) {
-      const save = statusSaveOf({ phase: "blocked", state, evidence: true });
+      const save = statusSaveOf({ phase: "blocked", state, receiptVerifiedHere: true });
       expect(save?.blocked).toBe(true);
       expect(render(save)).toContain(BLOCKED_TEXT);
     }
@@ -82,19 +92,19 @@ describe("statusSaveOf", () => {
 
   it("says recovery in recovery, never the last state", () => {
     for (const state of [null, ...STATES]) {
-      expect(statusSaveOf({ phase: "recovery", state, evidence: true })?.state).toBe("RECOVERY_REQUIRED");
+      expect(statusSaveOf({ phase: "recovery", state, receiptVerifiedHere: true })?.state).toBe("RECOVERY_REQUIRED");
     }
   });
 
   it("claims nothing while loading, without storage, after the session ended, or without a state", () => {
     for (const phase of ["loading", "unavailable", "signed-out"] as const) {
-      for (const state of [null, ...STATES]) expect(statusSaveOf({ phase, state, evidence: true })).toBeNull();
+      for (const state of [null, ...STATES]) expect(statusSaveOf({ phase, state, receiptVerifiedHere: true })).toBeNull();
     }
-    expect(statusSaveOf({ phase: "ready", state: null, evidence: true })).toBeNull();
+    expect(statusSaveOf({ phase: "ready", state: null, receiptVerifiedHere: true })).toBeNull();
   });
 
   it("covers every phase", () => {
-    expect(PHASES.map((phase) => statusSaveOf({ phase, state: "SYNCING", evidence: true })?.state ?? null))
+    expect(PHASES.map((phase) => statusSaveOf({ phase, state: "SYNCING", receiptVerifiedHere: true })?.state ?? null))
       .toEqual([null, "LOCAL_DURABLE", "SYNCING", "RECOVERY_REQUIRED", null, null]);
   });
 });
