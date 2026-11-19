@@ -1,15 +1,11 @@
-import { notFound } from "next/navigation";
-
-import { baseOfSegment } from "../../../src/bases";
-import Host from "./Host";
+import { PendingPage } from "../../../src/host/pages";
 
 /**
- * Every path under /app/web/ and /app/chrome/ (#2028 c.6993786629 §1). Until
- * the pages move to routes of their own, the host reads the session and picks
- * the page of the path (src/App.tsx, src/routes.ts) in the browser.
+ * Every path under the base without a route of its own: the host leads "/"
+ * to the role's home and shows "Stranica ne postoji" in the shell for a path
+ * no page has (src/routes.ts PAGES); a page of PAGES without a route of its
+ * own would show its heading and the pending note.
  */
-export default async function Page({ params }: { params: Promise<{ base: string }> }) {
-  const base = baseOfSegment((await params).base);
-  if (base === null) notFound();
-  return <Host base={base} />;
+export default function Page() {
+  return <PendingPage />;
 }
