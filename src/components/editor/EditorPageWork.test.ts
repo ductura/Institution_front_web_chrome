@@ -1,8 +1,11 @@
+import { readFileSync } from "node:fs";
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
 
 import type { OpenOutcome, OpenedWork } from "@/client/evidence-ingest";
 import { readLogoutHold } from "@/client/logout-hold";
+import { hasEnded, observeSession, type MarkStore } from "@/client/session-marks";
 import { emptyDocument, type DocumentTransaction } from "@/domain/document";
 import { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
 
@@ -12,6 +15,7 @@ import { openReadOf, readWork, type WorkReaders } from "./EditorPageWork";
 // WEB-14b/14c: what the page does with the person's journal scope and each
 // answer of evidence.open.post. Invented people, works and text only.
 const SCOPE = "b".repeat(64);
+const SESSION = { tag: "izmisljena-sesija-0001", at: 1_000 };
 const DOC_A = "11111111-1111-4111-8111-1111111111aa";
 const DOC_B = "11111111-1111-4111-8111-1111111111bb";
 const work = (documentId: string) => ({ documentId }) as OpenedWork;
@@ -26,7 +30,7 @@ function readers(scope: ScopeRead, works: Record<string, string> = { "zadatak-a"
 
 describe("openReadOf", () => {
   it("opens the opened work under the person's scope", () => {
-    expect(openReadOf({ status: "opened", work: work(DOC_A) }, SCOPE)).toEqual({ kind: "ready", documentId: DOC_A, scope: SCOPE });
+    expect(openReadOf({ status: "opened", work: work(DOC_A) }, SCOPE, SESSION)).toEqual({ kind: "ready", documentId: DOC_A, scope: SCOPE, session: SESSION });
   });
 
   it.each([
@@ -36,14 +40,14 @@ describe("openReadOf", () => {
     ["upgrade_required", "reload"],
     ["unavailable", "unavailable"],
   ] as const)("%s mounts no editor (%s)", (status, kind) => {
-    expect(openReadOf({ status } as OpenOutcome, SCOPE)).toEqual({ kind });
+    expect(openReadOf({ status } as OpenOutcome, SCOPE, SESSION)).toEqual({ kind });
   });
 });
 
 describe("readWork (fail closed on the scope)", () => {
   it("reads the scope, then opens the work", async () => {
-    const r = readers({ kind: "scope", scope: SCOPE });
-    expect(await readWork("zadatak-a", r)).toEqual({ kind: "ready", documentId: DOC_A, scope: SCOPE });
+    const r = readers({ kind: "scope", scope: SCOPE, session: SESSION });
+    expect(await readWork("zadatak-a", r)).toEqual({ kind: "ready", documentId: DOC_A, scope: SCOPE, session: SESSION });
     expect(r.open).toHaveBeenCalledWith("zadatak-a");
   });
 
@@ -58,14 +62,37 @@ describe("readWork (fail closed on the scope)", () => {
   });
 
   it("a scope read that throws opens nothing", async () => {
-    const r = { ...readers({ kind: "scope", scope: SCOPE }), readScope: vi.fn(async (): Promise<ScopeRead> => { throw new Error("izmišljeni kvar"); }) };
+    const r = { ...readers({ kind: "scope", scope: SCOPE, session: SESSION }), readScope: vi.fn(async (): Promise<ScopeRead> => { throw new Error("izmišljeni kvar"); }) };
     expect(await readWork("zadatak-a", r)).toEqual({ kind: "unavailable" });
     expect(r.open).not.toHaveBeenCalled();
   });
 
   it("an open that throws is unavailable", async () => {
-    const r = { ...readers({ kind: "scope", scope: SCOPE }), open: vi.fn(async (): Promise<OpenOutcome> => { throw new Error("izmišljeni kvar"); }) };
+    const r = { ...readers({ kind: "scope", scope: SCOPE, session: SESSION }), open: vi.fn(async (): Promise<OpenOutcome> => { throw new Error("izmišljeni kvar"); }) };
     expect(await readWork("zadatak-a", r)).toEqual({ kind: "unavailable" });
+  });
+});
+
+describe("the session mark (SRV-ST)", () => {
+  function memory(): MarkStore {
+    const data = new Map<string, string>();
+    return { getItem: (k) => data.get(k) ?? null, setItem: (k, v) => void data.set(k, v), removeItem: (k) => void data.delete(k) };
+  }
+
+  it("the mark of the opened work ends once another sign-in is observed, and not before", async () => {
+    const read = await readWork("zadatak-a", readers({ kind: "scope", scope: SCOPE, session: SESSION }));
+    if (read.kind !== "ready") throw new Error("the work should open");
+    const store = memory();
+    observeSession(store, read.session.tag, read.session.at);
+    expect(hasEnded(store, read.session, null)).toBe(false);
+    observeSession(store, "druga-izmisljena-sesija", read.session.at + 1);
+    expect(hasEnded(store, read.session, null)).toBe(true);
+  });
+
+  it("the page observes the mark and hands it to the provider", () => {
+    const code = readFileSync(new URL("./EditorPageWork.tsx", import.meta.url), "utf8");
+    expect(code).toMatch(/<SessionObserver tag=\{read\.session\.tag\} at=\{read\.session\.at\} \/>/);
+    expect(code).toMatch(/<LocalDocumentProvider [^>]*session=\{read\.session\}/);
   });
 });
 
@@ -85,7 +112,7 @@ describe("one person, two works: one journal", () => {
 
   it("both works open under the same scope, and the sign-out summary counts both", async () => {
     vi.stubGlobal("indexedDB", indexedDB);
-    const r = readers({ kind: "scope", scope: SCOPE }, { "zadatak-a": DOC_A, "zadatak-b": DOC_B });
+    const r = readers({ kind: "scope", scope: SCOPE, session: SESSION }, { "zadatak-a": DOC_A, "zadatak-b": DOC_B });
     const a = await readWork("zadatak-a", r);
     const b = await readWork("zadatak-b", r);
     if (a.kind !== "ready" || b.kind !== "ready") throw new Error("both works should open");

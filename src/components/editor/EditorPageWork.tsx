@@ -3,7 +3,9 @@
 /**
  * The editor mounted on `/rad/<assignmentId>` (WEB-14b) for a work already
  * started. First the person's journal scope is read from the session route (WEB-14c,
- * fail closed: without a valid `journalScope` nothing is opened). Then the
+ * fail closed: without a valid `journalScope` and `sessionTag` nothing is
+ * opened). The session mark goes to SessionObserver and the provider, so a
+ * sign-out or another sign-in elsewhere stops this sheet. Then the
  * work is opened once through src/client (`openWork`, evidence.open.post over
  * createApi); its documentId names the document in that journal. Then
  * LocalDocument owns the editor, the journal, the Web Lock (one writer per
@@ -16,6 +18,8 @@ import { useEffect, useState } from "react";
 
 import { signInHref } from "@/client/api";
 import { openWork, type OpenOutcome } from "@/client/evidence-ingest";
+import type { SessionMark } from "@/client/session-marks";
+import SessionObserver from "@/components/shell/SessionObserver";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import EditorPage, { SheetNote } from "./EditorPage";
@@ -27,17 +31,17 @@ import StatusBarLive from "./StatusBarLive";
 
 export type OpenRead =
   | { readonly kind: "opening" }
-  | { readonly kind: "ready"; readonly documentId: string; readonly scope: string }
+  | { readonly kind: "ready"; readonly documentId: string; readonly scope: string; readonly session: SessionMark }
   | { readonly kind: "signedOut" }
   | { readonly kind: "closed" }
   | { readonly kind: "reload" }
   | { readonly kind: "unavailable" };
 
-/** What the page does with one answer of the open route, under the person's journal scope. */
-export function openReadOf(outcome: OpenOutcome, scope: string): OpenRead {
+/** What the page does with one answer of the open route, under the person's journal scope and session. */
+export function openReadOf(outcome: OpenOutcome, scope: string, session: SessionMark): OpenRead {
   switch (outcome.status) {
     case "opened":
-      return { kind: "ready", documentId: outcome.work.documentId, scope };
+      return { kind: "ready", documentId: outcome.work.documentId, scope, session };
     case "unauthenticated":
       return { kind: "signedOut" };
     case "not_found":
@@ -66,7 +70,7 @@ export async function readWork(assignmentId: string, readers: WorkReaders = LIVE
   if (scope.kind === "signedOut") return { kind: "signedOut" };
   if (scope.kind !== "scope") return { kind: "unavailable" };
   const outcome = await readers.open(assignmentId).catch((): OpenOutcome => ({ status: "unavailable" }));
-  return openReadOf(outcome, scope.scope);
+  return openReadOf(outcome, scope.scope, scope.session);
 }
 
 function Note({ read, here }: { read: Exclude<OpenRead, { kind: "ready" }>; here: string }) {
@@ -101,10 +105,13 @@ export default function EditorPageWork({ assignmentId, course, title }: { assign
     );
   }
   return (
-    <LocalDocumentProvider key={`${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId}>
-      <EditorPage course={course} title={title} toolbar={<EditorToolbar />} status={<StatusBarLive evidence />}>
-        <LocalEditor />
-      </EditorPage>
-    </LocalDocumentProvider>
+    <>
+      <SessionObserver tag={read.session.tag} at={read.session.at} />
+      <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
+        <EditorPage course={course} title={title} toolbar={<EditorToolbar />} status={<StatusBarLive evidence />}>
+          <LocalEditor />
+        </EditorPage>
+      </LocalDocumentProvider>
+    </>
   );
 }
