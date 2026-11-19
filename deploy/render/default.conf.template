@@ -1,0 +1,27 @@
+# nginx-unprivileged fills ${PORT} from the environment at start (envsubst of
+# /etc/nginx/templates); nginx variables such as $uri are left as they are.
+server {
+    listen       ${PORT};
+    server_name  _;
+    root         /usr/share/nginx/html;
+    absolute_redirect off;
+
+    location = /            { return 302 /app/web/; }
+    location = /app/web     { return 302 /app/web/; }
+    location = /app/chrome  { return 302 /app/chrome/; }
+
+    # The build references its files under /app/web/ from both bases.
+    location /app/web/assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # Every path that is not a file gets index.html; the app's router picks the screen.
+    location /app/web/ {
+        add_header Cache-Control "no-cache";
+        try_files $uri /app/web/index.html;
+    }
+    location /app/chrome/ {
+        rewrite ^/app/chrome/(.*)$ /app/web/$1 last;
+    }
+}
