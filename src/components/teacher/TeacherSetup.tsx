@@ -45,7 +45,7 @@ function StudentPreview({ body }: { body: AssignmentBody }) {
   const range = wordRangeHr({ min: body.wordMin, max: body.wordMax });
   const banned = AI_PURPOSES.filter((purpose) => !body.aiPurposes.includes(purpose));
   return (
-    <section className={styles.preview} aria-labelledby="pregled">
+    <section className={styles.card} aria-labelledby="pregled">
       <h3 id="pregled">{t.teacher.preview.heading}</h3>
       <p className={styles.listHead}>{body.title}</p>
       <p>{a.workTypes[body.workType]} · {t.teacher.preview.opensFrom} {formatDateTimeHr(body.opensAt)} · {t.teacher.preview.due} {formatDateTimeHr(body.dueAt)}</p>
