@@ -1204,6 +1204,8 @@ export const hr = {
         inProgress: "Rad je započet, nije predan",
         submitted: "Predano {time}",
         afterDeadline: "Predano {time}, nakon roka",
+        // WEB-10: student.assignment-work.get gives the state without its time.
+        submittedNoTime: "Predano",
       },
       readNotice: "Pročitaj upute",
       start: "Otvori zadatak",
