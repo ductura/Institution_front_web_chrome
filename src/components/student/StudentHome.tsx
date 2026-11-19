@@ -3,7 +3,7 @@ import { createElement as h, type ReactNode } from "react";
 import { messagesHr } from "../../../locales/hr.ts";
 
 import EmptyHome from "./EmptyHome";
-import MyAssignments from "./MyAssignments";
+import MyAssignments, { type AssignmentHref } from "./MyAssignments";
 import type { MyAssignmentsRead } from "./my-assignments-read";
 import styles from "./StudentHome.module.css";
 
@@ -23,7 +23,7 @@ const PATH: Record<StudentView, string> = { home: "/zadaci", courses: "/zadaci/k
  * only in the empty state (S01_prazna). Written with `createElement`, like
  * MyAssignments, so unit tests need no JSX compiler.
  */
-export default function StudentHome({ read, enroll, signIn, view = "home" }: {
+export default function StudentHome({ read, enroll, signIn, view = "home", assignmentHref }: {
   read: MyAssignmentsRead;
   enroll: ReactNode;
   /**
@@ -34,6 +34,8 @@ export default function StudentHome({ read, enroll, signIn, view = "home" }: {
    */
   signIn: (returnTo: string) => string;
   view?: StudentView;
+  /** WEB-09: where an assignment opens on this host; MyAssignments keeps `/rad?zadatak=` by default. */
+  assignmentHref?: AssignmentHref;
 }) {
   // Subtitle and enrol action only beside a list that loaded: the
   // unavailable state shows the title alone, as in the package, and the
@@ -50,10 +52,10 @@ export default function StudentHome({ read, enroll, signIn, view = "home" }: {
         ready ? h("p", { className: styles.lede }, courses ? home.coursesLede : home.lede) : null),
       !courses && ready && read.courses.length > 0 ? h("a", { className: styles.enroll, href: "/upis" },
         h("span", { "aria-hidden": "true", className: styles.plus }, "+"), t.enroll) : null),
-    body(read, enroll, signIn, view));
+    body(read, enroll, signIn, view, assignmentHref));
 }
 
-function body(read: MyAssignmentsRead, enroll: ReactNode, signIn: (returnTo: string) => string, view: StudentView) {
+function body(read: MyAssignmentsRead, enroll: ReactNode, signIn: (returnTo: string) => string, view: StudentView, assignmentHref?: AssignmentHref) {
   const here = PATH[view];
   if (read.kind === "signedOut") {
     return h("div", { className: styles.state },
@@ -73,8 +75,8 @@ function body(read: MyAssignmentsRead, enroll: ReactNode, signIn: (returnTo: str
   }
   // On S02 the page heading already says "Moji kolegiji", so the course names
   // are the h2 right under it.
-  if (view === "courses") return h(MyAssignments, { courses: read.courses, level: 2 });
+  if (view === "courses") return h(MyAssignments, { courses: read.courses, level: 2, assignmentHref });
   return h("section", { "aria-labelledby": "moji-kolegiji" },
     h("h2", { id: "moji-kolegiji", className: styles.sectionTitle }, home.courses),
-    h(MyAssignments, { courses: read.courses }));
+    h(MyAssignments, { courses: read.courses, assignmentHref }));
 }

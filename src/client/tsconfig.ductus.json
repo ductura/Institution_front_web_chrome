@@ -5,7 +5,16 @@
   // packages/editor-core and src/domain (DAN-990). Everything else in
   // src/client stays under tsconfig.json.
   "extends": "./tsconfig.json",
-  "compilerOptions": { "noUncheckedIndexedAccess": false },
-  "include": ["comments.ts", "comments.test.ts", "revision-requests.ts", "revision-requests.test.ts"],
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": false,
+    // WEB-38: editor-core files the evidence modules reach still import
+    // through the Ductus "@/" alias ("@/lib/i18n/hr"); "@/" is src/, as in
+    // vitest.config.ts and src/components/tsconfig.json.
+    "paths": { "@/*": ["../*"] }
+  },
+  "include": [
+    "comments.ts", "comments.test.ts", "revision-requests.ts", "revision-requests.test.ts",
+    "evidence-ingest.ts", "evidence-ingest.test.ts"
+  ],
   "exclude": []
 }

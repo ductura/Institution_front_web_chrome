@@ -1206,6 +1206,8 @@ export const hr = {
         inProgress: "Rad je započet, nije predan",
         submitted: "Predano {time}",
         afterDeadline: "Predano {time}, nakon roka",
+        // WEB-10: student.assignment-work.get gives the state without its time.
+        submittedNoTime: "Predano",
       },
       readNotice: "Pročitaj upute",
       start: "Otvori zadatak",
@@ -1226,6 +1228,12 @@ export const hr = {
       due: "Rok: {time}",
       open: "Otvori zadatak",
       readNotice: "Pročitaj upute",
+      // WEB-09 (A-3): the course's teachers and an extended deadline, as student.assignments.get returns them.
+      teachers: "Nastavnici",
+      teacherRole: { holder: "nositelj", collaborator: "suradnik" },
+      extendedDue: "Produljeni rok: {time}",
+      // Until /upis moves over (WEB-11), the empty state leads there instead of holding the form.
+      enrollLink: "Upiši kolegij kodom",
       unavailableHeading: "Prikaz trenutačno nije dostupan.",
       unavailableBody: "Podatke nije bilo moguće učitati. To ne znači da nema kolegija ili radova.",
       // S01_prazna: the first arrival, verbatim from the package's PNG.
