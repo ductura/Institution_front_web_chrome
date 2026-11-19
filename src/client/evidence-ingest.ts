@@ -38,8 +38,12 @@ import type { DrainOutcome, SignedCommitReceiptVerifier } from "../../packages/e
 
 import { createApi, errorBody, type ApiOptions, type ProtocolVersion } from "./api";
 
-/** The transport `createApi` sends through; the browser's own by default. */
-export type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+/**
+ * A transport as Ductus callers write it (the drain's evidence transport, the
+ * session's guards): the URL as text and an init. `createApi` sends through
+ * it; without one, through the browser's own.
+ */
+export type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
 
 /** Ductus `commit-envelope`: "1" signs at once, "2" may answer 202 `pending_signature`. */
 const DUCTUS_PROTOCOL_VERSION = "1" satisfies ProtocolVersion;
@@ -180,7 +184,11 @@ async function send(
   fetchImpl: FetchLike | undefined,
   protocol: ProtocolVersion,
 ): Promise<Answer> {
-  const options: ApiOptions = fetchImpl === undefined ? { protocol } : { fetchImpl, protocol };
+  const options: ApiOptions = fetchImpl === undefined ? { protocol } : {
+    // createApi hands its transport a URL object.
+    fetchImpl: (url, init) => fetchImpl(url instanceof Request ? url.url : String(url), init ?? {}),
+    protocol,
+  };
   try {
     const api = createApi(options);
     const result = id === "evidence.open.post"

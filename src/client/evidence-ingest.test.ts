@@ -88,7 +88,7 @@ function openBody(over: Record<string, unknown> = {}) {
 function scripted(...answers: (Response | Error)[]) {
   const calls: { url: string; init: RequestInit }[] = [];
   const fetchImpl: FetchLike = async (url, init) => {
-    calls.push({ url: String(url), init: init ?? {} });
+    calls.push({ url, init });
     const next = answers.shift();
     if (next === undefined) throw new Error("unexpected request");
     if (next instanceof Error) throw next;
@@ -256,7 +256,7 @@ describe("DAN-595: the Ductus-Protocol header", () => {
     const calls: { url: string; init: RequestInit }[] = [];
     const waiting: ((answer: Response | Error) => void)[] = [];
     const fetchImpl: FetchLike = (url, init) => {
-      calls.push({ url: String(url), init: init ?? {} });
+      calls.push({ url, init });
       return new Promise((resolve, reject) => {
         waiting.push((answer) => (answer instanceof Error ? reject(answer) : resolve(answer)));
       });
