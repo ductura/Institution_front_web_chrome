@@ -2,7 +2,7 @@
 .list {
   display: grid;
   gap: 12px;
-  margin: 20px 0 0;
+  margin: 12px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -55,4 +55,14 @@
   font-size: 22px;
   letter-spacing: 0.06em;
   overflow-wrap: anywhere;
+}
+
+.year {
+  margin-top: 24px;
+}
+
+:global(.page) .yearHeading {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
 }

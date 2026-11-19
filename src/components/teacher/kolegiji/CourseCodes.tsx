@@ -21,6 +21,18 @@ function assignmentsText(count: number): string {
   return count === 0 ? t.assignments.none : countHr(count, t.assignments.one, t.assignments.few, t.assignments.many);
 }
 
+/** "2026/2027" as Croatian writes it: "2026./2027.". */
+function yearText(year: string): string {
+  return `${year.replace("/", "./")}.`;
+}
+
+/** The courses grouped by academic year, in the order the server sent them (year descending). */
+function byYear(courses: readonly Course[]): [string, Course[]][] {
+  const groups = new Map<string, Course[]>();
+  for (const course of courses) groups.set(course.academicYear, [...(groups.get(course.academicYear) ?? []), course]);
+  return [...groups];
+}
+
 function noteText(note: CodeNote): string {
   if (note.kind === "issued") return t.issuedNote.replace("{until}", formatDateTimeHr(note.validUntil));
   return note.kind === "revoked" ? t.revokedNote : t.nothingRevokedNote;
@@ -94,26 +106,31 @@ export default function CourseCodes({ courses, here }: { courses: readonly Cours
 
   return (
     <>
-      <ul className={styles.list}>
-        {courses.map((course) => {
-          const note = notes[course.id];
-          return (
-            <li key={course.id}>
-              <Card title={course.name}>
-                <div className={styles.row}>
-                  <div className={styles.text}>
-                    <p className={styles.meta}>
-                      {course.academicYear.replace("/", "./")}. · {aiLabel}: {policies[course.aiPolicy]} · {assignmentsText(course.assignments.length)}
-                    </p>
-                    {note ? <p className={styles.note} role="status">{noteText(note)}</p> : null}
-                  </div>
-                  <Button tone="quiet" onClick={() => show(course)} aria-label={`${t.codeButton}: ${course.name}`}>{t.codeButton}</Button>
-                </div>
-              </Card>
-            </li>
-          );
-        })}
-      </ul>
+      {byYear(courses).map(([year, list]) => (
+        <section key={year} className={styles.year} aria-labelledby={`godina-${year}`}>
+          <h2 id={`godina-${year}`} className={styles.yearHeading}>{t.yearHeading.replace("{year}", yearText(year))}</h2>
+          <ul className={styles.list}>
+            {list.map((course) => {
+              const note = notes[course.id];
+              return (
+                <li key={course.id}>
+                  <Card title={course.name}>
+                    <div className={styles.row}>
+                      <div className={styles.text}>
+                        <p className={styles.meta}>
+                          {aiLabel}: {policies[course.aiPolicy]} · {assignmentsText(course.assignments.length)}
+                        </p>
+                        {note ? <p className={styles.note} role="status">{noteText(note)}</p> : null}
+                      </div>
+                      <Button tone="quiet" onClick={() => show(course)} aria-label={`${t.codeButton}: ${course.name}`}>{t.codeButton}</Button>
+                    </div>
+                  </Card>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
       <Dialog
         open={open !== null}
         title={open ? t.dialogTitle.replace("{course}", open.name) : ""}

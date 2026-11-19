@@ -1557,6 +1557,7 @@ export const hr = {
     emptyNext: "Treba li Vam novi kolegij, javite se administratoru svojeg fakulteta.",
     unavailable: "Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
+    yearHeading: "Akademska godina {year}",
     assignments: { none: "Još nema zadataka", one: "zadatak", few: "zadatka", many: "zadataka" },
     codeButton: "Kod za upis",
     issuedNote: "Kod je izdan i vrijedi do {until}.",

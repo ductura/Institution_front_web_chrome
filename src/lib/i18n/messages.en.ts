@@ -1534,6 +1534,7 @@ const en = {
     emptyNext: "If you need a new course, contact your faculty administrator.",
     unavailable: "Courses are currently unavailable. Please try again.",
     retry: "Try again",
+    yearHeading: "Academic year {year}",
     assignments: { none: "No assignments yet", one: "assignment", few: "assignments", many: "assignments" },
     codeButton: "Enrolment code",
     issuedNote: "A code was issued and is valid until {until}.",
