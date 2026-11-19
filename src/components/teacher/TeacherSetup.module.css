@@ -140,3 +140,26 @@
 .fields:disabled .control {
   cursor: not-allowed;
 }
+
+.steps,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+
+.steps {
+  padding: 0;
+  list-style: none;
+  color: var(--ink-2);
+}
+
+.steps [aria-current="step"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+}
+
+.actions {
+  justify-content: flex-end;
+}
