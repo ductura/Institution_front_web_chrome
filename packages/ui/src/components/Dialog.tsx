@@ -59,7 +59,8 @@ export function Dialog({
       if (dismissible) onClose();
       return;
     }
-    if (event.key !== "Tab") return;
+    // Inline, the dialog is part of the page: Tab moves on through the page.
+    if (event.key !== "Tab" || !modal) return;
     const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE));
     const next = items[trappedIndex(items.indexOf(document.activeElement as HTMLElement), items.length, event.shiftKey)];
     event.preventDefault();

@@ -36,8 +36,9 @@ const sample = (
 
 export default function UiPreview() {
   const [tokens, setTokens] = useState<Token[]>([]);
-  const [theme, setTheme] = useState("dark");
-  useEffect(() => setTokens(readTokens()), [theme]);
+  // Read after mounting and after every toggle, so the values always match the
+  // theme on <html>, a kept light theme included.
+  useEffect(() => setTokens(readTokens()), []);
   const [dialogOpen, setDialogOpen] = useState(false);
   const stayRef = useRef<HTMLButtonElement>(null);
   const { toasts, show, dismiss } = useToasts();
@@ -47,7 +48,10 @@ export default function UiPreview() {
       <h1>{t.uiPreview.title}</h1>
       <p>{t.uiPreview.intro}</p>
       <p>
-        <button type="button" className="btn" onClick={() => setTheme(toggleTheme(document.documentElement, globalThis.localStorage))}>
+        <button type="button" className="btn" onClick={() => {
+          toggleTheme(document.documentElement, globalThis.localStorage);
+          setTokens(readTokens());
+        }}>
           {t.uiPreview.theme}
         </button>
       </p>
