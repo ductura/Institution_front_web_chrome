@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { renderToStaticMarkup as html } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -54,5 +56,14 @@ describe("form elements (WEB-05)", () => {
   it("Details is native details and summary", () => {
     expect(html(<Details summary="Pravila zadatka" open><p>Tekst</p></Details>))
       .toMatch(/^<details open=""[^>]*><summary[^>]*>Pravila zadatka<\/summary>/);
+  });
+
+  it("Checkbox: an invalid box still shows the focus ring (WCAG 2.4.7)", () => {
+    // The error mark is an outline that outranks the global :focus-visible rule,
+    // so the invalid state needs its own focus rule with the shared focus tokens.
+    const css = readFileSync(new URL("./Forms.module.css", import.meta.url), "utf8");
+    const rule = /\.box\[aria-invalid="true"\]:focus-visible\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(rule).toMatch(/outline:\s*var\(--focus-width\) solid var\(--accent\)/);
+    expect(rule).toMatch(/outline-offset:\s*var\(--focus-offset\)/);
   });
 });
