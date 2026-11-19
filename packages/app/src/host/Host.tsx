@@ -3,7 +3,10 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
-import { AppShell, appHref, ErrorScreen, RouteLoading } from "../../../../src/components/index.ts";
+import { RouteLoading } from "@ductura/ui";
+
+import { AppShell, appHref } from "../../../../src/components/index.ts";
+import ErrorScreen from "../../../../src/components/shell/ErrorScreen.ts";
 import { messagesHr as t } from "../../../../locales/hr.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
