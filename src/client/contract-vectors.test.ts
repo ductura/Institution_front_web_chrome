@@ -11,6 +11,7 @@ import { createClient, validateInput, type OperationId } from "@ductura/contract
 import { answerFake, createFakeServer, FAKE_VECTOR_HEADER, ROUTE_TABLE, VECTORS, type FakeVector } from "@ductura/test-fakes/fake-server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApi, RESPONSES, type Input } from "./api";
+import migrationVectors from "./migration-contract-vectors.generated.json" with { type: "json" };
 
 const server = createFakeServer();
 let baseUrl = "";
@@ -92,7 +93,8 @@ describe("contract vectors through the generated client", () => {
     const tableRoutes = Object.keys(ROUTE_TABLE);
     expect([...routes].sort()).toEqual([...tableRoutes].sort());
     // The contract may be ahead of test-fakes only by the named operations.
-    expect([...RESPONSES.keys()].sort()).toEqual([...tableRoutes, ...NO_VECTORS_YET].sort());
+    const allRoutes = new Set([...tableRoutes, ...NO_VECTORS_YET, ...migrationVectors.map((vector) => vector.route)]);
+    expect([...RESPONSES.keys()].sort()).toEqual([...allRoutes].sort());
     for (const r of NO_VECTORS_YET) expect(routes.has(r)).toBe(false);
   });
 
