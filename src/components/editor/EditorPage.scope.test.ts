@@ -41,23 +41,23 @@ describe("journalScopeOf", () => {
 
 describe("readJournalScope", () => {
   it("reads /api/v1/me with the session cookie", async () => {
-    const fetchImpl = me({ ...PERSON, journalScope: SCOPE });
-    expect(await readJournalScope({ baseUrl: BASE, fetchImpl })).toEqual({ kind: "scope", scope: SCOPE });
-    const [url, init] = (fetchImpl as unknown as { mock: { calls: [URL, RequestInit][] } }).mock.calls[0]!;
+    const transport = me({ ...PERSON, journalScope: SCOPE });
+    expect(await readJournalScope({ baseUrl: BASE, transport })).toEqual({ kind: "scope", scope: SCOPE });
+    const [url, init] = (transport as unknown as { mock: { calls: [URL, RequestInit][] } }).mock.calls[0]!;
     expect(String(url)).toBe(`${BASE}/api/v1/me`);
     expect(init).toMatchObject({ method: "GET", credentials: "include", redirect: "manual" });
   });
 
   it("fails closed on a 200 without a valid journalScope", async () => {
-    expect(await readJournalScope({ baseUrl: BASE, fetchImpl: me(PERSON) })).toEqual({ kind: "noScope" });
-    expect(await readJournalScope({ baseUrl: BASE, fetchImpl: me({ ...PERSON, journalScope: "x" }) })).toEqual({ kind: "noScope" });
+    expect(await readJournalScope({ baseUrl: BASE, transport: me(PERSON) })).toEqual({ kind: "noScope" });
+    expect(await readJournalScope({ baseUrl: BASE, transport: me({ ...PERSON, journalScope: "x" }) })).toEqual({ kind: "noScope" });
   });
 
   it("401 is signed out; any other answer or a broken connection is unavailable", async () => {
-    expect(await readJournalScope({ baseUrl: BASE, fetchImpl: me({}, { status: 401 }) })).toEqual({ kind: "signedOut" });
-    expect(await readJournalScope({ baseUrl: BASE, fetchImpl: me({}, { status: 403 }) })).toEqual({ kind: "unavailable" });
-    expect(await readJournalScope({ baseUrl: BASE, fetchImpl: me({ journalScope: SCOPE }, { type: "text/html" }) })).toEqual({ kind: "unavailable" });
+    expect(await readJournalScope({ baseUrl: BASE, transport: me({}, { status: 401 }) })).toEqual({ kind: "signedOut" });
+    expect(await readJournalScope({ baseUrl: BASE, transport: me({}, { status: 403 }) })).toEqual({ kind: "unavailable" });
+    expect(await readJournalScope({ baseUrl: BASE, transport: me({ journalScope: SCOPE }, { type: "text/html" }) })).toEqual({ kind: "unavailable" });
     const broken = vi.fn(async () => { throw new TypeError("offline"); }) as unknown as typeof fetch;
-    expect(await readJournalScope({ baseUrl: BASE, fetchImpl: broken })).toEqual({ kind: "unavailable" });
+    expect(await readJournalScope({ baseUrl: BASE, transport: broken })).toEqual({ kind: "unavailable" });
   });
 });

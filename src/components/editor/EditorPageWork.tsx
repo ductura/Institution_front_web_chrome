@@ -2,7 +2,7 @@
 
 /**
  * The editor mounted on `/rad/<assignmentId>` (WEB-14b) for a work already
- * started. First the person's journal scope is read from /api/v1/me (WEB-14c,
+ * started. First the person's journal scope is read from the session route (WEB-14c,
  * fail closed: without a valid `journalScope` nothing is opened). Then the
  * work is opened once through src/client (`openWork`, evidence.open.post over
  * createApi); its documentId names the document in that journal. Then
