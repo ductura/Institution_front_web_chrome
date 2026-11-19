@@ -25,6 +25,7 @@ Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za 
 | `app/[base]/zadaci/`, `zadaci/kolegiji/`, `nastavnik/`, `nastavnik/mentorstva/` | Spojeni ekrani (`src/host/pages.tsx`). |
 | `app/[base]/zadaci/radovi/`, `rad/`, `rad/[assignmentId]/{predaja,dnevnik-pristupa,reprodukcija}/`, `upis/`, `upis/kolegij/[courseId]/`, `zadatak/[id]/` | Studentske stranice Ductusa na svojim adresama, iza oznake `TREBA API` (u datoteci piše koja operacija `/api/v1` nedostaje u `src/client`). Do tada pokazuju naslov i napomenu da prikaz još nije spojen. |
 | `app/[base]/nastavnik/{brz-put,rad/[id],rad/[id]/reprodukcija,zadatak/novi,zadatak/[assignmentId]/uredi,zadatak/[assignmentId]/rad/[documentId]/jezik}/` | Nastavničke stranice Ductusa, iza oznake `TREBA API` kao i studentske. `nastavnik/kolegiji/` samo preusmjerava na `nastavnik/` pod istom bazom, kao u Ductusu. |
+| `app/[base]/ustanova/{,korisnici,kolegiji,pravila}/` | Stranice administratora ustanove (A-01 do A-04), iza oznake `TREBA API`: ugovor za njih još nema čitanje. |
 | `app/[base]/[[...path]]/` | Ostale rute navigacije, dok ne dobiju vlastitu: naslov i napomena. |
 | `src/routes.ts` | Čiste funkcije: baza, putanja, stranica po ulozi (rute iz `src/components/shell/nav.ts` i stranice Ductusa s dinamičkim segmentom, npr. `/zadatak/[id]`), preusmjeravanje na početni ekran uloge. |
 | `vitest.config.ts` | Jedinični testovi čistih dijelova (`src/**/*.test.ts`). |
@@ -36,4 +37,4 @@ Spojeni ekrani:
 - student: S01 i S02 (`student.assignments.get`);
 - nastavnik: „Moji kolegiji” (`teacher.courses.get`) i „Radovi uz mentora” (`teacher.mentorships.get`). Na 401 vodi na prijavu, na 403 traži nastavnički račun, a na ostalo javlja grešku i nudi „Pokušaj ponovno”.
 
-Ostale rute iz navigacije zasad imaju naslov i napomenu da prikaz još nije spojen na poslužitelj ustanove. Ekrani administratora ustanove čekaju rute za čitanje u ugovoru; `@ductura/contracts` 2.8.0 za `/ustanova` ima samo POST.
+Ostale rute iz navigacije zasad imaju naslov i napomenu da prikaz još nije spojen na poslužitelj ustanove. Ekrani administratora ustanove imaju vlastite rute, ali čekaju rute za čitanje u ugovoru; `@ductura/contracts` 2.8.0 za `/api/v1/institution` ima samo POST.
