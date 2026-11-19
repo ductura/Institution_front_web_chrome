@@ -154,14 +154,21 @@ export default function TeacherSetup({ course }: { course: ExistingCourse }) {
                 <TextField label={a.wordMax} inputMode="numeric" value={draft.wordMax}
                   onChange={(event) => edit("wordMax", event.target.value)} />
               </div>
+              <Select label={wizard.groups} options={[]} placeholder={wizard.unavailable} disabled />
             </>}
-            {step === 3 && (
+            {step === 3 && <>
               <Select label={wizard.help} value={allowsHelp ? "course" : "none"}
                 options={courseProhibits ? [noHelp] : helpOptions}
                 hint={courseProhibits ? tools.courseProhibits : t.teacher.course.policies[course.aiPolicy]}
                 onChange={(event) => edit("aiPurposes", event.target.value === "course" ? [...AI_PURPOSES] : [])} />
-            )}
-            {step === 4 && <ul className={styles.summary}>{wizard.recorded.map((text) => <li key={text}>{text}</li>)}</ul>}
+              {!courseProhibits && <p className={styles.hint}>{wizard.summaryHelpPending}</p>}
+              <Select label={wizard.externalTools} options={[]} placeholder={wizard.unavailable} disabled />
+            </>}
+            {step === 4 && <>
+              <p>{wizard.recordingNotice}</p>
+              <ul className={styles.summary}>{wizard.recorded.map((text) => <li key={text}>{text}</li>)}</ul>
+              <p>{wizard.recordingScope}</p>
+            </>}
             {body && <>
               <StudentPreview body={body} />
               <p className={styles.hint}>{t.teacher.existingCourse.studentsNotified} {wizard.noNotifications}</p>
