@@ -1,7 +1,10 @@
 export { Button, type ButtonProps } from "./components/Button";
 export { Card, type CardProps } from "./components/Card";
+export { Dialog, type DialogProps } from "./components/Dialog";
 export { SaveState, type SaveStateProps } from "./components/SaveState";
 export { BLOCKED_TEXT, SAVE_STATES, saveStateContent, type SaveStateName, type SaveTone } from "./components/save-state";
 export { TextField, type TextFieldProps } from "./components/TextField";
+export { ToastRegion, useToasts, type ToastRegionProps } from "./components/Toast";
+export { MAX_TOASTS, TOAST_TIMEOUT_MS, type ToastItem, type ToastTone } from "./components/toast-queue";
 export { readTheme, saveTheme, THEME_KEY, themeOf, toggleTheme, type ShellTheme } from "./theme/theme";
 export { Icon, ICON_NAMES, type IconName, type IconProps } from "./icons/icons";

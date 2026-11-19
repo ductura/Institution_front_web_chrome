@@ -1,4 +1,4 @@
-import { Button, Card, Icon, ICON_NAMES, SaveState, TextField, type IconName } from "@ductura/ui";
+import { Button, Card, Dialog, Icon, ICON_NAMES, SaveState, TextField, ToastRegion, type IconName } from "@ductura/ui";
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
@@ -12,6 +12,15 @@ import type { CatalogEntries, CatalogState } from "./coverage";
 type Entry = Record<CatalogState, () => React.ReactNode>;
 
 // Invented example text only; no real people or student work.
+// The toast region is fixed to the viewport; in the catalogue it sits in the flow.
+function ToastInline({ toasts }: { toasts: Parameters<typeof ToastRegion>[0]["toasts"] }) {
+  return (
+    <>
+      <p>Obavijesti: {toasts.length}</p>
+      <ToastRegion inline toasts={toasts} onDismiss={() => undefined} label="Obavijesti" closeLabel="Zatvori" />
+    </>
+  );
+}
 const ICON_LABELS: Record<IconName, string> = {
   undo: "Poništi", redo: "Ponovi", paragraph: "Odlomak", heading: "Naslov", bold: "Podebljano", italic: "Kurziv",
   bulletList: "Popis", quote: "Citat", chevronDown: "Više",
@@ -53,6 +62,28 @@ export const ENTRIES = {
     greška: () => <Button tone="quiet"><Icon name="redo" /> Pokušajte ponovno</Button>,
     puno: () => <>{ICON_NAMES.map((name) => <span key={name}><Icon name={name} /> {ICON_LABELS[name]}</span>)}</>,
     onemogućeno: () => <Button tone="quiet" disabled><Icon name="bold" /> Podebljano</Button>,
+  },
+  // WEB-04: inline (modal={false}) so every state shows in the page flow.
+  Dialog: {
+    prazno: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined}
+      actions={<Button tone="quiet">Ostani</Button>}><p>Odjaviti se s ovog uređaja?</p></Dialog>,
+    učitavanje: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined} dismissible={false}
+      actions={<Button busy>Odjavljivanje…</Button>}><p>Odjava je u tijeku.</p></Dialog>,
+    greška: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined}
+      error="Odjava nije uspjela. Pokušajte ponovno." actions={<Button>Pokušajte ponovno</Button>}><p>Odjaviti se s ovog uređaja?</p></Dialog>,
+    puno: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined}
+      actions={<><Button tone="quiet">Ostani</Button><Button>Odjavi se</Button></>}>
+      <p>Rad je spremljen na poslužitelju. Nakon odjave na ovom uređaju ostaje samo ono što nije poslano.</p>
+      <p>Ponovna prijava ide preko AAI@EduHr.</p></Dialog>,
+    onemogućeno: () => <Dialog open modal={false} title="Odjava" onClose={() => undefined}
+      actions={<Button disabled>Odjavi se</Button>}><p>Odjava trenutačno nije dostupna.</p></Dialog>,
+  },
+  ToastRegion: {
+    prazno: () => <ToastInline toasts={[]} />,
+    učitavanje: () => <ToastInline toasts={[{ id: 1, text: "Šaljem izmjene…", tone: "neutral" }]} />,
+    greška: () => <ToastInline toasts={[{ id: 1, text: "Izmjena nije poslana. Pokušajte ponovno.", tone: "error" }]} />,
+    puno: () => <ToastInline toasts={[1, 2, 3].map((id) => ({ id, text: `Komentar ${id} je dodan.`, tone: "neutral" as const }))} />,
+    onemogućeno: () => <ToastInline toasts={[{ id: 1, text: "Obavijesti su isključene.", tone: "neutral" }]} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
 

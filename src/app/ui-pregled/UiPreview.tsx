@@ -1,7 +1,9 @@
 "use client";
 
-import { Icon, ICON_NAMES, SAVE_STATES, SaveState, toggleTheme, type SaveStateName } from "@ductura/ui";
-import { useEffect, useState } from "react";
+import {
+  Button, Dialog, Icon, ICON_NAMES, SAVE_STATES, SaveState, ToastRegion, toggleTheme, useToasts, type SaveStateName,
+} from "@ductura/ui";
+import { useEffect, useRef, useState } from "react";
 
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
 
@@ -36,6 +38,9 @@ export default function UiPreview() {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [theme, setTheme] = useState("dark");
   useEffect(() => setTokens(readTokens()), [theme]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const stayRef = useRef<HTMLButtonElement>(null);
+  const { toasts, show, dismiss } = useToasts();
 
   return (
     <main id="sadrzaj" className="page" style={{ display: "grid", gap: 24, padding: 24, maxWidth: 1200 }}>
@@ -59,6 +64,23 @@ export default function UiPreview() {
             <SaveState state="EDITING" blocked />
           </li>
         </ul>
+      </section>
+
+      <section aria-labelledby="pregled-dijalog">
+        <h2 id="pregled-dijalog">{t.uiPreview.dialogs}</h2>
+        <p style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <Button tone="quiet" onClick={() => setDialogOpen(true)}>{t.uiPreview.openDialog}</Button>
+          <Button tone="quiet" onClick={() => show(t.uiPreview.toastText)}>{t.uiPreview.showToast}</Button>
+          <Button tone="quiet" onClick={() => show(t.uiPreview.errorToastText, "error")}>{t.uiPreview.showErrorToast}</Button>
+        </p>
+        <Dialog open={dialogOpen} title={t.uiPreview.dialogTitle} onClose={() => setDialogOpen(false)} initialFocus={stayRef}
+          actions={<>
+            <Button ref={stayRef} tone="quiet" onClick={() => setDialogOpen(false)}>{t.uiPreview.dialogStay}</Button>
+            <Button onClick={() => setDialogOpen(false)}>{t.uiPreview.dialogClose}</Button>
+          </>}>
+          <p>{t.uiPreview.dialogText}</p>
+        </Dialog>
+        <ToastRegion toasts={toasts} onDismiss={dismiss} label={t.uiPreview.toasts} closeLabel={t.uiPreview.dialogClose} />
       </section>
 
       <section aria-labelledby="pregled-ikone">
