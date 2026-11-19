@@ -6,8 +6,9 @@ import { messagesHr as t } from "../../../locales/hr.ts";
 
 import type { SessionRole } from "../../../src/client/api.ts";
 
-export const BASES = ["/app/web", "/app/chrome"] as const;
-export type Base = (typeof BASES)[number];
+import type { Base } from "./bases";
+
+export { BASES, type Base } from "./bases";
 
 /** /app/chrome for a path under it, /app/web for every other path. */
 export function baseOf(pathname: string): Base {

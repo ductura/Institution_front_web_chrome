@@ -1,5 +1,5 @@
 {
   "extends": "../ui/tsconfig.json",
   "compilerOptions": { "types": ["node", "vite/client"], "allowImportingTsExtensions": true, "resolveJsonModule": true },
-  "include": ["src", "e2e", "vite.config.ts", "playwright.config.ts", "../ui/src/css-modules.d.ts"]
+  "include": ["app", "src", "e2e", "next.config.ts", "vite.config.ts", "playwright.config.ts", "../ui/src/css-modules.d.ts"]
 }
