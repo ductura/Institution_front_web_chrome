@@ -10,12 +10,12 @@ import {
   AI_PURPOSES,
   WORK_TYPES,
   assignmentBody,
-  createAssignment,
   parseWordRange,
   type AiPurpose,
   type AssignmentCreation,
   type WorkType,
 } from "./assignment-create";
+import { publishAssignment } from "./TeacherSetup/assignment-mutations";
 import { createCourse, type CourseCreation, type CoursePolicy } from "./course-create";
 import { createCourseThenCode, enrollmentCodeExpiry, type EnrollmentCodeCreation } from "./enrollment-code-create";
 import type { ExistingCourse } from "./existing-course";
@@ -176,7 +176,7 @@ export default function TeacherSetup({ existingCourse = null }: { existingCourse
     const serialized = JSON.stringify(body);
     if (request.current?.body !== serialized) request.current = { body: serialized, id: crypto.randomUUID() };
     const key = request.current.id;
-    void guarded(async () => setAssignmentResult(await createAssignment(course.id, body, key)));
+    void guarded(async () => setAssignmentResult(await publishAssignment(course.id, body, key)));
   }
 
   const courseNotice =
