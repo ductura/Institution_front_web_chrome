@@ -1,17 +1,19 @@
 import { readFileSync } from "node:fs";
-import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { ProcessSummaryV1 } from "@/domain/projection/process-summary";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { extractUiText, isUiTextModule } from "../../../scripts/forbidden-terms/scan";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
-import { ProcessSummaryView } from "./ProcessSummaryView";
+import { ProcessSummaryView, type ProcessSummaryViewProps } from "./ProcessSummaryView";
 import { zagrebParts } from "./zagreb-time";
+
+/** The summary as the view takes it (Ductus ProcessSummaryV1); the projection module is not in this repository. */
+type ProcessSummaryV1 = ProcessSummaryViewProps["summary"];
 
 const t = messagesHr.summary;
 
@@ -288,7 +290,7 @@ describe("ProcessSummaryView: interface vocabulary", () => {
   it("keeps its text where the forbidden-terms scan reads it", () => {
     const catalogue = "src/lib/i18n/messages.hr.ts";
     expect(isUiTextModule(catalogue)).toBe(true);
-    const read = extractUiText(catalogue, readFileSync(path.resolve(catalogue), "utf8"), "catalogue").map((piece) => piece.text);
+    const read = extractUiText(catalogue, readFileSync(fileURLToPath(new URL(`../../../${catalogue}`, import.meta.url)), "utf8"), "catalogue").map((piece) => piece.text);
     for (const text of [t.title, t.sameForEveryone, t.gaps.explanation, t.pastes.origins.not_observed, t.recordState.has_gaps]) {
       expect(read).toContain(text);
     }
