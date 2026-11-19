@@ -42,6 +42,8 @@ export const hr = {
       fastPath: "Brz put",
       // DAN-492 (N-16): the works a teacher mentors, outside any course.
       mentoredWorks: "Radovi uz mentora",
+      // WEB-17 (A-9): the course summary (N-17), the teacher's fourth place.
+      summary: "Zbirni pregled",
       workspace: "Radni prostor",
       enroll: "Upis u kolegij",
       institution: "Pregled ustanove",
@@ -1513,6 +1515,16 @@ export const hr = {
     noRoleBody: "Prijava sustavom AAI@EduHr je uspjela, ali Vašem računu na ovom fakultetu još nije dodijeljena uloga.",
     noRoleNext: "Javite se administratoru svojeg fakulteta da Vam dodijeli ulogu, pa se ponovno prijavite.",
     logoutBody: "Odjavit ćete se iz Ducture i iz sustava AAI@EduHr u ovom pregledniku, a zatim se vraćate na početnu stranicu.",
+  },
+  // WEB-17 (A-9, N-17): the teacher's "Zbirni pregled" in the side bar. Until
+  // the summary's read arrives it shows only its empty state; when it does,
+  // it is a course with at least five students, without names and without a
+  // ranking (D-242, PRODUCT §5 rule 2).
+  teacherSummary: {
+    title: "Zbirni pregled",
+    lead: "Zbirni pregled kolegija bez imena studenata, samo za kolegij s najmanje pet studenata.",
+    emptyTitle: "Zbirni pregled još nema podataka",
+    emptyBody: "Kad zbirni pregled bude dostupan, ovdje ćete vidjeti zbirne brojke za svoje kolegije. Pojedinačni studenti se ovdje ne prikazuju.",
   },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,
   // read only, as docs/design/ductura/m2-reference/a03-kolegiji-tim-i-grupe.html

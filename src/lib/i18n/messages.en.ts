@@ -41,6 +41,8 @@ const en = {
       fastPath: "Quick path",
       // DAN-492 (N-16): the works a teacher mentors, outside any course.
       mentoredWorks: "Mentored works",
+      // WEB-17 (A-9): the course summary (N-17), the teacher's fourth place.
+      summary: "Course summary",
       workspace: "Workspace",
       enroll: "Join a course",
       institution: "Institution overview",
@@ -1498,6 +1500,13 @@ const en = {
     noRoleBody: "You signed in with AAI@EduHr, but your account at this faculty has no role yet.",
     noRoleNext: "Ask your faculty's administrator to give you a role, then sign in again.",
     logoutBody: "You will be signed out of Ductura and of AAI@EduHr in this browser, then return to the front page.",
+  },
+  // WEB-17 (A-9, N-17): the teacher's course summary; empty until its read arrives.
+  teacherSummary: {
+    title: "Course summary",
+    lead: "A summary of a course without student names, only for a course with at least five students.",
+    emptyTitle: "The course summary has no data yet",
+    emptyBody: "Once the course summary is available, you will see summary figures for your courses here. Individual students are not shown here.",
   },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,
   // read only, as docs/design/ductura/m2-reference/a03-kolegiji-tim-i-grupe.html
