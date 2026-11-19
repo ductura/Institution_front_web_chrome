@@ -7,7 +7,8 @@
   "engines": { "node": ">=22.18" },
   "scripts": {
     "build": "pnpm --filter @ductura/app run build",
-    "dev": "pnpm run build && node dev-server.mjs",
+    "dev": "pnpm --filter @ductura/app run dev",
+    "start": "pnpm --filter @ductura/app run start",
     "test": "npm run test:helpers && npm run test:functional",
     "test:helpers": "node --test \"test/unit/*.test.js\"",
     "test:functional": "playwright test"

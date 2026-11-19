@@ -3,3 +3,5 @@ test-results/
 playwright-report/
 .env
 dist/
+.next/
+next-env.d.ts
