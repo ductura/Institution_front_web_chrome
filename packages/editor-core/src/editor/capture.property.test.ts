@@ -5,7 +5,7 @@ import { Fragment, Slice } from "@tiptap/pm/model";
 import { TextSelection, type Transaction } from "@tiptap/pm/state";
 import { describe, expect, it } from "vitest";
 
-import { createEditStepsV1Replayer } from "@/adapters/evidence/edit-steps-v1-replayer";
+import { createEditStepsV1Replayer } from "../document/forensics/replay/edit-steps-v1-replayer";
 import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
 import { replayEvidenceSegmentsV2 } from "../document/forensics/evidence-replay-v2";
 import type { EvidenceEvent, EvidenceSegment, EvidenceSourceV2 } from "../document/forensics/evidence-segment-v2";
