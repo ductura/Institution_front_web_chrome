@@ -4,11 +4,11 @@ import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import type { MentorshipRequest } from "@/client/mentorship-requests";
+import type { MentorshipCall, MentorshipRequest } from "@/client/mentorship-requests";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
-import MentorshipRequests, { decisionNote, MentorshipRequestsView, reasonToSend } from "./MentorshipRequests";
+import MentorshipRequests, { decisionNote, MentorshipRequestsView, reasonToSend, submitDecision } from "./MentorshipRequests";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => undefined }) }));
 
@@ -49,6 +49,73 @@ describe("reasonToSend", () => {
     expect(reasonToSend("")).toBeUndefined();
     expect(reasonToSend("  \n ")).toBeUndefined();
     expect(reasonToSend("  Tema je izvan mog područja. ")).toBe("Tema je izvan mog područja.");
+  });
+});
+
+// A synthetic transport: records each call and gives the answer it was set up with.
+function transport(answer: Awaited<ReturnType<MentorshipCall>> | Error) {
+  const calls: Parameters<MentorshipCall>[] = [];
+  const call: MentorshipCall = async (...args) => {
+    calls.push(args);
+    if (answer instanceof Error) throw answer;
+    return answer;
+  };
+  return { call, calls };
+}
+function deps(call: MentorshipCall | null) {
+  const seen = { refresh: 0, signIn: 0 };
+  return { seen, deps: { call, refresh: () => { seen.refresh += 1; }, signIn: () => { seen.signIn += 1; } } };
+}
+const ONE = request(1, "Iva Izmišljena");
+
+describe("submitDecision over a synthetic transport (B-6)", () => {
+  it("\"Odbij\" → \"Odbij zahtjev\" sends the trimmed reason, then drops the request and reads the page again", async () => {
+    const { call, calls } = transport({ ok: true, status: 200, body: { requestId: ONE.requestId, decision: "decline" } });
+    const { seen, deps: d } = deps(call);
+    expect(await submitDecision(d, ONE, "decline", "  Tema je izvan mog područja.  ")).toEqual({ tone: "status", text: t.declined, drop: true });
+    expect(calls).toEqual([["teacher.mentorship-request-decision.post",
+      { body: { requestId: ONE.requestId, decision: "decline", reason: "Tema je izvan mog područja." } }]]);
+    expect(seen).toEqual({ refresh: 1, signIn: 0 });
+  });
+
+  it("a blank reason is not sent, and approve never sends one", async () => {
+    const declined = transport({ ok: true, status: 200, body: { requestId: ONE.requestId, decision: "decline" } });
+    await submitDecision(deps(declined.call).deps, ONE, "decline", "   ");
+    expect(declined.calls[0]?.[1]).toEqual({ body: { requestId: ONE.requestId, decision: "decline" } });
+    const approved = transport({ ok: true, status: 200, body: { requestId: ONE.requestId, decision: "approve" } });
+    const { seen, deps: d } = deps(approved.call);
+    expect(await submitDecision(d, ONE, "approve", "ostatak iz polja")).toEqual({ tone: "status", text: t.approved, drop: true });
+    expect(approved.calls[0]?.[1]).toEqual({ body: { requestId: ONE.requestId, decision: "approve" } });
+    expect(seen.refresh).toBe(1);
+  });
+
+  it.each([
+    ["503", { ok: false, status: 503, code: "unavailable" } as const],
+    ["an answer for another decision", { ok: true, status: 200, body: { requestId: ONE.requestId, decision: "approve" } } as const],
+    ["a broken connection", new TypeError("Failed to fetch")],
+  ])("%s keeps the request, says nothing of success and reads nothing again", async (_name, answer) => {
+    const { call } = transport(answer);
+    const { seen, deps: d } = deps(call);
+    expect(await submitDecision(d, ONE, "decline", "Razlog")).toEqual({ tone: "alert", text: t.unknown, drop: false });
+    expect(seen).toEqual({ refresh: 0, signIn: 0 });
+  });
+
+  it("409 drops the request as already decided and reads the page again", async () => {
+    const { seen, deps: d } = deps(transport({ ok: false, status: 409, code: "conflict" }).call);
+    expect(await submitDecision(d, ONE, "approve")).toEqual({ tone: "alert", text: t.alreadyDecided, drop: true });
+    expect(seen).toEqual({ refresh: 1, signIn: 0 });
+  });
+
+  it("401 goes to the sign-in with no note", async () => {
+    const { seen, deps: d } = deps(transport({ ok: false, status: 401, code: "session_expired" }).call);
+    expect(await submitDecision(d, ONE, "approve")).toBeNull();
+    expect(seen).toEqual({ refresh: 0, signIn: 1 });
+  });
+
+  it("without a transport (TODO(ugovor)) nothing is sent and the outcome is unknown", async () => {
+    const { seen, deps: d } = deps(null);
+    expect(await submitDecision(d, ONE, "approve")).toEqual({ tone: "alert", text: t.unknown, drop: false });
+    expect(seen).toEqual({ refresh: 0, signIn: 0 });
   });
 });
 

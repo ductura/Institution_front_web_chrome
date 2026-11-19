@@ -4,13 +4,14 @@ import { Button, Card, Dialog, TextArea } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { goToSignIn } from "@/client/api";
+// Relative paths, like MentoredWorks: packages/app imports src/components without the "@/" alias.
+import { goToSignIn } from "../../client/api.ts";
 import {
   decideMentorshipRequest, REASON_MAX,
   type Decision, type DecisionOutcome, type MentorshipCall, type MentorshipRequest,
-} from "@/client/mentorship-requests";
-import { formatDateHr } from "@/lib/i18n/hr";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+} from "../../client/mentorship-requests.ts";
+import { formatDateHr } from "../../lib/i18n/hr.ts";
+import { messagesHr } from "../../lib/i18n/messages.hr.ts";
 
 import styles from "./MentoredWorks.module.css";
 
@@ -50,6 +51,36 @@ export function reasonToSend(text: string): string | undefined {
   return trimmed === "" ? undefined : trimmed;
 }
 
+/** What one decision needs besides the request: the transport, and what follows a recorded or ended one. */
+export type DecisionDeps = {
+  readonly call: MentorshipCall | null;
+  /** Reads the page again after a decision the server recorded (or 409). */
+  readonly refresh: () => void;
+  /** An ended session goes to the AAI@EduHr sign-in. */
+  readonly signIn: () => void;
+};
+
+/**
+ * One decision, start to end: the reason as typed (sent trimmed, none when
+ * blank), the server's answer, then a refresh when the request leaves the
+ * list. Without a transport (TODO(ugovor)) nothing is sent and the outcome is
+ * unknown. Returns the note to show, or null after a sign-in redirect.
+ */
+export async function submitDecision(
+  deps: DecisionDeps, request: MentorshipRequest, decision: Decision, reasonText = "",
+): Promise<DecisionNote | null> {
+  const reason = decision === "decline" ? reasonToSend(reasonText) : undefined;
+  const input = { requestId: request.requestId, decision, ...(reason === undefined ? {} : { reason }) };
+  const outcome: DecisionOutcome = deps.call === null ? { kind: "nepoznato" } : await decideMentorshipRequest(deps.call, input);
+  if (outcome.kind === "session-expired") {
+    deps.signIn();
+    return null;
+  }
+  const note = decisionNote(outcome, decision);
+  if (note?.drop) deps.refresh();
+  return note;
+}
+
 function requestMeta(request: MentorshipRequest): string {
   const type = workTypes[request.workType] ?? "";
   const sent = t.sentOn.replace("{date}", formatDateHr(request.requestedAt));
@@ -83,25 +114,18 @@ export function MentorshipRequestsView({ read, here, call }: { read: RequestsRea
   const [reason, setReason] = useState("");
   const [dialogError, setDialogError] = useState<string | null>(null);
 
-  async function decide(request: MentorshipRequest, decision: Decision, text?: string) {
+  async function decide(request: MentorshipRequest, decision: Decision, text = "") {
     if (busy !== null) return;
     setNote(null);
     setDialogError(null);
     setBusy({ id: request.requestId, decision });
-    const input = { requestId: request.requestId, decision, ...(text === undefined ? {} : { reason: text }) };
-    const outcome: DecisionOutcome = call === null ? { kind: "nepoznato" } : await decideMentorshipRequest(call, input);
+    const next = await submitDecision({ call, refresh: () => router.refresh(), signIn: () => goToSignIn(here) }, request, decision, text);
     setBusy(null);
-    if (outcome.kind === "session-expired") {
-      goToSignIn(here);
-      return;
-    }
-    const next = decisionNote(outcome, decision);
     if (next === null) return;
     if (next.drop) {
       setGone((now) => new Set(now).add(request.requestId));
       setDeclining(null);
       setNote(next);
-      router.refresh();
     } else if (declining !== null) {
       setDialogError(next.text);
     } else {
@@ -170,7 +194,7 @@ export function MentorshipRequestsView({ read, here, call }: { read: RequestsRea
           <>
             <Button tone="quiet" disabled={busy !== null} onClick={closeDecline}>{t.cancel}</Button>
             <Button busy={busy !== null}
-              onClick={() => declining && void decide(declining, "decline", reasonToSend(reason))}>
+              onClick={() => declining && void decide(declining, "decline", reason)}>
               {busy !== null ? t.declining : t.confirmDecline}
             </Button>
           </>
