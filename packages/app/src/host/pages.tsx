@@ -2,9 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { RouteLoading } from "@ductura/ui";
 
 import {
-  appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, RouteLoading, StudentHome, TeacherCourses,
+  appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, StudentHome, TeacherCourses,
   type MentoredWorksCall, type MyAssignmentsRead, type TeacherCoursesCall,
 } from "../../../../src/components/index.ts";
 import { readMyAssignments, type AssignmentsCall } from "../../../../src/components/student/my-assignments-read.ts";

@@ -1,6 +1,6 @@
 "use client";
 
-import ErrorScreen from "../../../src/components/shell/ErrorScreen.tsx";
+import ErrorScreen from "../../../src/components/shell/ErrorScreen.ts";
 import { messagesHr as t } from "../../../locales/hr.ts";
 
 // From Ductus src/app/error.tsx (#732 item 3): an unexpected error of a page.

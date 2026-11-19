@@ -6,7 +6,7 @@ import "@ductura/ui/tokens.css";
 import { readTheme } from "@ductura/ui";
 import { useLayoutEffect } from "react";
 
-import ErrorScreen from "../../../src/components/shell/ErrorScreen.tsx";
+import ErrorScreen from "../../../src/components/shell/ErrorScreen.ts";
 import { messagesHr as t } from "../../../locales/hr.ts";
 
 // From Ductus src/app/global-error.tsx (#732 item 3): an error in the root
