@@ -87,7 +87,8 @@ function schemaAt(id: string, status: string): Schema {
 const SUBMITTED = schemaAt("submission.submit.post", "200");
 // The one receipt shape (SignedSubmissionReceiptV2), read from the contract, never written here.
 const RECEIPT = ((SUBMITTED as { properties?: Record<string, Schema> }).properties?.receipt ?? false);
-const TIME = { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$" } as const;
+// The receipt's time shape, and a real calendar date and time (schema-check's date-time).
+const TIME = { type: "string", format: "date-time", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$" } as const;
 const REVISION = { type: "integer", minimum: 1, maximum: Number.MAX_SAFE_INTEGER } as const;
 const closed = (properties: Record<string, Schema>): Schema =>
   ({ type: "object", additionalProperties: false, required: Object.keys(properties), properties });
@@ -122,6 +123,8 @@ const EXPIRED = { kind: "session-expired" } as const;
 function receiptFor(receipt: unknown, match: { assignmentId: string; documentId?: string; revision?: number }): receipt is SubmissionReceipt {
   if (!matchesSchema(RECEIPT, receipt)) return false;
   const p = (receipt as SubmissionReceipt).payload;
+  // The contract checks only the digits' layout; a receipt dated on no real day is no receipt.
+  if (![p.requestedAt, p.dueAt, p.signedAt].every((time) => matchesSchema(TIME, time))) return false;
   return p.assignmentId === match.assignmentId.toLowerCase()
     && (match.documentId === undefined || p.documentId === match.documentId)
     && (match.revision === undefined || p.revision === match.revision);

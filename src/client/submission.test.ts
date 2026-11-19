@@ -127,6 +127,8 @@ describe("submitWork", () => {
     ["another document", submitted({ ...RECEIPT, payload: { ...RECEIPT.payload, documentId: "izmisljeni-rad-0002" } })],
     ["another assignment", submitted({ ...RECEIPT, payload: { ...RECEIPT.payload, assignmentId: "00000000-0000-4000-8000-0000000000a2" } })],
     ["no receipt", { status: "submitted" }],
+    ["a signing time on no real day", submitted({ ...RECEIPT, payload: { ...RECEIPT.payload, signedAt: "2026-13-40T25:61:61.123456Z" } })],
+    ["a deadline on 31 November", submitted({ ...RECEIPT, payload: { ...RECEIPT.payload, dueAt: "2026-11-31T22:59:00.000000Z" } })],
   ])("a 200 with %s is nepoznato, never predano", async (_, body) => {
     expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(200, body) } })).toEqual({ kind: "nepoznato" });
   });
@@ -170,6 +172,8 @@ describe("submitWork", () => {
       ["potvrdeno for the revision sent, not the one held", { state: "potvrdeno", receipt: RECEIPT }],
       ["potvrdeno for another document", { state: "potvrdeno", receipt: { ...six, payload: { ...six.payload, documentId: "izmisljeni-rad-0002" } } }],
       ["an answer out of shape", { state: "ceka", revision: 6 }],
+      ["ceka at a time that is no date", { state: "ceka", revision: 6, requestedAt: "2026-13-40T25:61:61.123456Z" }],
+      ["ceka on 30 February", { state: "ceka", revision: 6, requestedAt: "2026-02-30T10:00:00.000000Z" }],
     ])("is nepoznato, never not submitted, when the read gives %s", async (_, body) => {
       expect(await submitWork(SENT, { api, local: local(200, body) })).toEqual({ kind: "nepoznato" });
     });
@@ -227,6 +231,7 @@ describe("readSubmissionState (TODO(ugovor))", () => {
     [{ state: "ceka", revision: 7, requestedAt: "2026-12-20T21:14:05.123456Z" }, { kind: "ceka", revision: 7, requestedAt: "2026-12-20T21:14:05.123456Z" }],
     [{ state: "potvrdeno", receipt: RECEIPT }, { kind: "potvrdeno", receipt: RECEIPT }],
     [{ state: "ceka", revision: 7, requestedAt: "2026-12-20T21:14:05Z" }, { kind: "nepoznato" }],
+    [{ state: "ceka", revision: 7, requestedAt: "2026-13-40T25:61:61.123456Z" }, { kind: "nepoznato" }],
     [{ state: "ceka", revision: 0, requestedAt: "2026-12-20T21:14:05.123456Z" }, { kind: "nepoznato" }],
     [{ state: "none", receipt: RECEIPT }, { kind: "nepoznato" }],
     [{ state: "potvrdeno", receipt: { ...RECEIPT, extra: 1 } }, { kind: "nepoznato" }],
