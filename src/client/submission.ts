@@ -11,7 +11,10 @@
  *   which is `nedovrseno`;
  * - 408, 503, a broken connection and any shape outside the contract are
  *   `nepoznato`: the work may be submitted, so the page never says it is not;
- * - 409 `already_requested` reads the state of the submission (`stanje`);
+ * - 409 `already_requested` reads the state of the submission: `stanje` only
+ *   when it is `ceka` or `potvrdeno` for the revision the 409 names (and, for a
+ *   receipt, the document sent); `none` or any other revision or document is
+ *   `nepoznato`, so the page never says the work is not submitted;
  * - 401 is `session-expired`, the shell's flow for an ended session;
  * - the declared refusals the inventory does not map (`stale_revision`,
  *   `not_acknowledged`, `not_open`, 404, 413, 426 and the refusals of the
@@ -61,8 +64,8 @@ export type SubmitOutcome =
   | { readonly kind: "nepoznato" }
   | { readonly kind: "greska"; readonly code: SubmitError; readonly currentRevision?: number }
   | { readonly kind: "session-expired" }
-  /** 409 already_requested: the server holds `revision`; `state` is what the read gave. */
-  | { readonly kind: "stanje"; readonly revision: number; readonly state: SubmissionRead };
+  /** 409 already_requested: the server holds `revision`, and the read agrees. */
+  | { readonly kind: "stanje"; readonly revision: number; readonly state: Exclude<SubmissionState, { kind: "none" }> };
 
 export type SubmitInput = { readonly assignmentId: string; readonly documentId: string; readonly revision: number };
 
@@ -161,7 +164,7 @@ export function submitOutcomeFrom(
 export type SubmitDeps = {
   /** False once the session has ended in this browser: nothing is sent (D-118). */
   readonly current?: () => boolean;
-  /** TODO(ugovor): student.submission.get; without it already_requested reads as `nepoznato`. */
+  /** TODO(ugovor): student.submission.get; without it already_requested is `nepoznato`. */
   readonly local?: LocalCall;
   readonly api?: ApiOptions;
 };
@@ -180,8 +183,12 @@ export async function submitWork(input: SubmitInput, deps: SubmitDeps = {}): Pro
     return UNKNOWN;
   }
   if (outcome.kind !== "already_requested") return outcome;
-  const state = deps.local === undefined ? UNKNOWN : await readSubmissionState(deps.local, input.assignmentId);
-  return { kind: "stanje", revision: outcome.revision, state };
+  if (deps.local === undefined) return UNKNOWN;
+  const state = await readSubmissionState(deps.local, input.assignmentId);
+  if (state.kind === "session-expired") return EXPIRED;
+  const agrees = (state.kind === "ceka" && state.revision === outcome.revision)
+    || (state.kind === "potvrdeno" && receiptFor(state.receipt, { ...input, revision: outcome.revision }));
+  return agrees ? { kind: "stanje", revision: outcome.revision, state } : UNKNOWN;
 }
 
 async function readLocal<T>(
