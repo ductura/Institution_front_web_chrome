@@ -1,4 +1,4 @@
-import { Button, Card, SaveState, TextField } from "@ductura/ui";
+import { Button, Card, Icon, ICON_NAMES, SaveState, TextField, type IconName } from "@ductura/ui";
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
@@ -12,6 +12,10 @@ import type { CatalogEntries, CatalogState } from "./coverage";
 type Entry = Record<CatalogState, () => React.ReactNode>;
 
 // Invented example text only; no real people or student work.
+const ICON_LABELS: Record<IconName, string> = {
+  undo: "Poništi", redo: "Ponovi", paragraph: "Odlomak", heading: "Naslov", bold: "Podebljano", italic: "Kurziv",
+  bulletList: "Popis", quote: "Citat", chevronDown: "Više",
+};
 export const ENTRIES = {
   Button: {
     prazno: () => <Button tone="quiet">Odustani</Button>,
@@ -40,6 +44,15 @@ export const ENTRIES = {
     greška: () => <Card title="Moji radovi" error="Popis se nije učitao. Pokušajte ponovno." />,
     puno: () => <Card title="Seminarski rad"><p>Uvod u temu i plan poglavlja.</p></Card>,
     onemogućeno: () => <Card title="Moji radovi" disabled><p>Zadatak je zatvoren.</p></Card>,
+  },
+  // The toolbar icons (WEB-03) have no states of their own; each state shows
+  // them in a button with its name, where one applies.
+  Icon: {
+    prazno: () => <Button tone="quiet"><Icon name="paragraph" /> Odlomak</Button>,
+    učitavanje: () => <Button tone="quiet" busy><Icon name="undo" /> Poništi</Button>,
+    greška: () => <Button tone="quiet"><Icon name="redo" /> Pokušajte ponovno</Button>,
+    puno: () => <>{ICON_NAMES.map((name) => <span key={name}><Icon name={name} /> {ICON_LABELS[name]}</span>)}</>,
+    onemogućeno: () => <Button tone="quiet" disabled><Icon name="bold" /> Podebljano</Button>,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
 

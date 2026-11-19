@@ -1831,6 +1831,23 @@ export const hr = {
     errorTitle: "Stranicu nije bilo moguće prikazati",
     errorBody: "Dogodila se neočekivana greška. Pokušajte ponovno; ako se ponovi, vratite se na početnu.",
   },
+  // WEB-03: the development preview of @ductura/ui (/ui-pregled), never in a production build.
+  uiPreview: {
+    title: "Pregled sučelja",
+    intro: "Razvojna stranica: tokeni, ikone i stanja spremanja iz paketa @ductura/ui. U produkciji ne postoji.",
+    theme: "Promijeni svijetlu ili tamnu temu",
+    tokens: "Tokeni",
+    token: "Token",
+    value: "Vrijednost",
+    sheets: "List za pisanje",
+    darkSheet: "Tamni list",
+    whiteSheet: "Bijeli list",
+    sheetSample: "Odlomak teksta na listu, s poveznicom i oznakom.",
+    sheetLink: "poveznica",
+    icons: "Ikone trake alata",
+    saveStates: "Stanja spremanja",
+    blocked: "Druga kartica",
+  },
   statusPage: {
     pageTitle: "Stanje sustava",
     title: "Stanje sustava",
