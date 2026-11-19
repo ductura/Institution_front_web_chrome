@@ -24,9 +24,9 @@ describe("Dialog focus (WEB-04)", () => {
   });
 
   it("gives the focus back to the opener only while it is on the page", () => {
-    const opener = { focus: () => undefined } as unknown as Element;
-    expect(returnTarget(opener, () => true)).toBe(opener);
-    expect(returnTarget(opener, () => false)).toBeNull();
+    const previous = { focus: () => undefined } as unknown as Element;
+    expect(returnTarget(previous, () => true)).toBe(previous);
+    expect(returnTarget(previous, () => false)).toBeNull();
     expect(returnTarget(null, () => true)).toBeNull();
   });
 

@@ -20,8 +20,8 @@ export function trappedIndex(current: number, count: number, backwards: boolean)
   return backwards ? (current - 1 + count) % count : (current + 1) % count;
 }
 
-/** Where the focus goes back after the dialog closes: the opener, while it is still on the page. */
-export function returnTarget(opener: Element | null, isConnected: (el: Element) => boolean): HTMLElement | null {
-  if (opener === null || !isConnected(opener)) return null;
-  return typeof (opener as HTMLElement).focus === "function" ? (opener as HTMLElement) : null;
+/** Where the focus goes back after the dialog closes: what had it before, while that is still on the page. */
+export function returnTarget(previousFocus: Element | null, isConnected: (el: Element) => boolean): HTMLElement | null {
+  if (previousFocus === null || !isConnected(previousFocus)) return null;
+  return typeof (previousFocus as HTMLElement).focus === "function" ? (previousFocus as HTMLElement) : null;
 }

@@ -30,20 +30,20 @@ export function Dialog({
   open, title, children, actions, onClose, dismissible = true, initialFocus, error, modal = true,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
-  const opener = useRef<Element | null>(null);
+  const previousFocus = useRef<Element | null>(null);
   const titleId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
     // Inline (not modal) the dialog is part of the page: open by its attribute, the focus left alone.
     if (dialog === null || !open || !modal) return;
-    opener.current = document.activeElement;
+    previousFocus.current = document.activeElement;
     if (!dialog.open) dialog.showModal();
     const first = initialFocus?.current ?? dialog.querySelector<HTMLElement>(FOCUSABLE) ?? dialog;
     first.focus();
     return () => {
       if (dialog.open) dialog.close();
-      returnTarget(opener.current, (el) => el.isConnected)?.focus();
+      returnTarget(previousFocus.current, (el) => el.isConnected)?.focus();
     };
   }, [open, modal, initialFocus]);
 
