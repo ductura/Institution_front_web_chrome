@@ -5,6 +5,7 @@ packages:
   - packages/*
   - catalog
   - scripts/forbidden-terms
+  - scripts/ductus
   - src/components
   - src/platform
   - src/domain

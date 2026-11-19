@@ -10,7 +10,8 @@
     "dev": "pnpm run build && node dev-server.mjs",
     "test": "npm run test:helpers && npm run test:functional",
     "test:helpers": "node --test \"test/unit/*.test.js\"",
-    "test:functional": "playwright test"
+    "test:functional": "playwright test",
+    "test:e2e:ductus": "playwright test --config playwright.ductus.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

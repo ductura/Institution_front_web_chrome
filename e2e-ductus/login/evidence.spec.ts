@@ -1,0 +1,662 @@
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Page, type Request, type Route } from "@playwright/test";
+
+import { CURRENT_KEY, SESSION_END_CHANNEL } from "../../src/client/session-marks";
+import { canonicalizeJcs } from "../../src/domain/forensics/jcs";
+import { pluralHr } from "../../src/lib/i18n/hr";
+import { messagesHr } from "../../src/lib/i18n/messages.hr";
+import { flipSignatureByte, stackCheckpoint } from "./evidence-receipt";
+import { clickSignOut, editorMounted, logoutDialogOf, signIn } from "./support";
+import { admin, closeWork, seedSubmission, seedWork, workDocument } from "./work-seed";
+import { APP_ORIGIN } from "./origin";
+
+// F-8 3d-2c2 (contract #476 c.6391714810 §6 e2e 1-12, G2 and G3
+// c.6393716541, 3d-2c2a §4): the sheet of `/rad?zadatak=` records, chains and
+// sends the evidence, and "Spremljeno na poslužitelju" comes only from a
+// receipt the browser verified. The oracle for the server is the database's
+// checkpoint of the document. Every account, course, assignment and text is
+// invented.
+
+const t = messagesHr;
+const OPEN = 30_000;
+const COMMIT = "**/api/evidence/commit";
+
+const editorOf = (page: Page) => page.getByRole("textbox", { name: t.workspace.documentLabel });
+const chipOf = (page: Page) => page.locator(".workspace__status .sync-chip");
+const pathOf = (request: Request) => new URL(request.url()).pathname;
+
+function recordRequests(page: Page, pattern = /^\/api\/evidence\//): Request[] {
+  const requests: Request[] = [];
+  page.on("request", (request) => {
+    if (pattern.test(pathOf(request))) requests.push(request);
+  });
+  return requests;
+}
+const commitsOf = (requests: Request[]) => requests.filter((r) => pathOf(r) === "/api/evidence/commit");
+
+type SentSegment = { events: { source: string; steps: unknown[] }[] };
+
+/**
+ * The segments of every commit from now on, each distinct body once: a body
+ * sent again unchanged (a retry, or DAN-595's same bytes under "1" after a 426
+ * to "2") is the same commit, not a second one.
+ */
+async function sentSegments(page: Page): Promise<SentSegment[]> {
+  const segments: SentSegment[] = [];
+  const seen = new Set<string>();
+  await page.route(COMMIT, async (route) => {
+    const text = route.request().postData() ?? "";
+    if (!seen.has(text)) {
+      seen.add(text);
+      const sent = JSON.parse(text) as { segments: string[] };
+      for (const segment of sent.segments) segments.push(JSON.parse(Buffer.from(segment, "base64").toString("utf8")) as SentSegment);
+    }
+    await route.continue();
+  });
+  return segments;
+}
+
+/** A writable sheet of a new invented assignment; returns its document id. */
+async function openSheet(page: Page): Promise<{ assignment: string; documentId: string }> {
+  await signIn(page, "/rad");
+  const assignment = await seedWork();
+  await page.goto(`/rad?zadatak=${assignment}`);
+  // DAN-330: the work starts on the student's click.
+  await page.getByRole("button", { name: t.workspace.startWork }).click();
+  await expect(editorOf(page)).toHaveAttribute("contenteditable", "true", { timeout: OPEN });
+  // The first opening refreshes the render into a freshly mounted editor (#731).
+  await editorMounted(page);
+  return { assignment, documentId: await workDocument(assignment) };
+}
+
+async function type(page: Page, text: string): Promise<void> {
+  await editorOf(page).click();
+  await editorOf(page).press("Control+End");
+  await page.keyboard.type(text);
+}
+
+type Local = { snapshot?: { document: unknown; revision?: number }; pending: { tx: Record<string, unknown> }[]; meta?: Record<string, unknown> };
+
+/** What this browser's journal holds for the document. */
+async function localOf(page: Page, documentId: string): Promise<Local> {
+  return page.evaluate(async (id) => {
+    const read = <T>(request: IDBRequest<T>) => new Promise<T>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    for (const { name } of await indexedDB.databases()) {
+      if (!name?.startsWith("ductus-journal-v1-")) continue;
+      const db = await read(indexedDB.open(name));
+      try {
+        const tx = db.transaction(["snapshots", "pending", "meta"], "readonly");
+        const [snapshot, pending, meta] = await Promise.all([
+          read(tx.objectStore("snapshots").get(id)),
+          read(tx.objectStore("pending").getAll()),
+          read(tx.objectStore("meta").get(id)),
+        ]);
+        if (meta) return { snapshot, pending: (pending as { documentId?: string }[]).filter((row) => row.documentId === id), meta };
+      } finally {
+        db.close();
+      }
+    }
+    return { pending: [] };
+  }, documentId) as Promise<Local>;
+}
+
+const serverOf = (documentId: string) => admin((client) => stackCheckpoint(client, documentId));
+
+/** The server and this browser hold the same text. */
+async function sameOnServer(page: Page, documentId: string): Promise<void> {
+  const local = await localOf(page, documentId);
+  await expect.poll(async () => (await serverOf(documentId))?.body).toBe(canonicalizeJcs(local.snapshot!.document as never));
+}
+
+/** The chip never shows SYNCED during `ms`. */
+async function neverSynced(page: Page, ms: number): Promise<void> {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    expect(await chipOf(page).getAttribute("data-state")).not.toBe("SYNCED");
+    await page.waitForTimeout(200);
+  }
+}
+
+/** The browser's `online` event, which starts the drain (G2). */
+async function networkBack(page: Page): Promise<void> {
+  await page.context().setOffline(true);
+  await page.context().setOffline(false);
+}
+
+/** Screenshots at 1440 and 375 px (docs/SESSIONS.md §6), each with axe. */
+async function shoot(page: Page, name: string): Promise<void> {
+  const viewport = page.viewportSize();
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await test.info().attach(`${name}-${width}`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  }
+  if (viewport) await page.setViewportSize(viewport);
+}
+
+test.afterEach(closeWork);
+
+test('3d-2c2: typing reaches "Spremljeno na poslužitelju" only with the server\'s signed receipt', async ({ page }) => {
+  const { documentId } = await openSheet(page);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  await page.route(COMMIT, async (route) => {
+    await held;
+    await route.continue();
+  }, { times: 1 });
+  await type(page, "Izmišljena prva rečenica.");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCING", { timeout: OPEN });
+  await neverSynced(page, 2000);
+  release();
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  await expect(chipOf(page)).toHaveText(/Spremljeno na poslužitelju/);
+  await sameOnServer(page, documentId);
+  await shoot(page, "3d-2c2-spremljeno-na-posluzitelju");
+});
+
+test("3d-2c2: a reload continues the chain", async ({ page }) => {
+  const { documentId } = await openSheet(page);
+  const answers: number[] = [];
+  page.on("response", (response) => {
+    if (pathOf(response.request()) === "/api/evidence/commit") answers.push(response.status());
+  });
+  await type(page, "Prije osvježavanja.");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  const first = (await serverOf(documentId))!.revision;
+  await page.reload();
+  await expect(editorOf(page)).toHaveAttribute("contenteditable", "true", { timeout: OPEN });
+  // G3: a reload never shows SYNCED from what was stored.
+  await expect(chipOf(page)).toHaveAttribute("data-state", "LOCAL_DURABLE");
+  await type(page, " Nakon osvježavanja.");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  // DAN-595: a stack without protocol 2 answers the tab's first "2" with 426
+  // before reading the body, once per page load; everything else is 200.
+  expect(answers.filter((status) => status !== 200 && status !== 426)).toEqual([]);
+  expect(answers.filter((status) => status === 426).length).toBeLessThanOrEqual(2);
+  expect((await serverOf(documentId))!.revision).toBeGreaterThan(first);
+  await sameOnServer(page, documentId);
+});
+
+test("3d-2c2: offline text is sent after the network returns", async ({ page }) => {
+  const { documentId } = await openSheet(page);
+  await page.route(COMMIT, (route) => route.abort("internetdisconnected"));
+  await type(page, "Tekst dok veza ne radi.");
+  await neverSynced(page, 3000);
+  expect((await localOf(page, documentId)).pending.length).toBeGreaterThan(0);
+  await page.unroute(COMMIT);
+  await networkBack(page);
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  await sameOnServer(page, documentId);
+});
+
+test("3d-2c2: a forged receipt never shows server-saved", async ({ page }) => {
+  const { documentId } = await openSheet(page);
+  await page.route(COMMIT, async (route: Route) => {
+    const response = await route.fetch();
+    const answer = await response.json() as { receipt?: { signedReceipt?: { signature?: { signatureBase64Url?: string } } } };
+    const signature = answer.receipt?.signedReceipt?.signature;
+    if (typeof signature?.signatureBase64Url === "string") signature.signatureBase64Url = flipSignatureByte(signature.signatureBase64Url);
+    await route.fulfill({ response, json: answer });
+  });
+  const answered = page.waitForResponse((r) => pathOf(r.request()) === "/api/evidence/commit", { timeout: OPEN });
+  await type(page, "Tekst s krivotvorenom potvrdom.");
+  await answered;
+  await neverSynced(page, 5000);
+  expect((await localOf(page, documentId)).pending.length).toBeGreaterThan(0);
+});
+
+test("3d-2c2: a 503 is retried with the same key and bytes", async ({ page }) => {
+  await openSheet(page);
+  const bodies: string[] = [];
+  let failures = 2;
+  await page.route(COMMIT, async (route) => {
+    bodies.push(route.request().postData() ?? "");
+    if (failures > 0) {
+      failures -= 1;
+      await route.fulfill({ status: 503, json: {} });
+      return;
+    }
+    await route.continue();
+  });
+  await type(page, "Tekst koji poslužitelj prvo ne primi.");
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await expect.poll(() => bodies.length, { timeout: OPEN }).toBeGreaterThan(attempt);
+    await networkBack(page);
+  }
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  expect(bodies.length).toBeGreaterThanOrEqual(3);
+  expect(new Set(bodies.slice(0, 3)).size).toBe(1);
+});
+
+// M3.10-P02 (DAN-320, D-211): the server commits and the answer never reaches
+// the tab. The request reaches the real route, which commits and signs; the
+// tab gets a reset connection. Server-saved shows only after the retry, which
+// sends the same bytes under the same key and gets `duplicate` with the lost
+// receipt, and the server's revision moves once per transaction, never for
+// the retry.
+test("M3.10-P02: an answer lost after the commit is retried with the same bytes and moves the revision once", async ({ page }) => {
+  const { documentId } = await openSheet(page);
+  const before = (await serverOf(documentId))?.revision ?? 0;
+  type Exchange = { body: string; txid: string; answer: { status?: string } | null };
+  const exchanges: Exchange[] = [];
+  let lost: Exchange | null = null;
+  await page.route(COMMIT, async (route) => {
+    const body = route.request().postData() ?? "";
+    const exchange: Exchange = { body, txid: (JSON.parse(body) as { clientTransactionId: string }).clientTransactionId, answer: null };
+    exchanges.push(exchange);
+    const response = await route.fetch();
+    const text = await response.text();
+    try {
+      exchange.answer = JSON.parse(text) as Exchange["answer"];
+    } catch {
+      exchange.answer = null;
+    }
+    if (lost === null && response.status() === 200 && exchange.answer?.status === "committed") {
+      lost = exchange;
+      await route.abort("connectionreset");
+      return;
+    }
+    await route.fulfill({ response, body: text });
+  });
+  await type(page, "Izmišljeni odlomak čiji se odgovor izgubi.");
+  await expect.poll(() => lost !== null, { timeout: OPEN }).toBe(true);
+  const dropped = lost as unknown as Exchange;
+  // The server holds the commit; the tab does not know it.
+  await expect.poll(async () => (await serverOf(documentId))?.revision ?? 0, { timeout: OPEN }).toBeGreaterThan(before);
+  // Until a retry of the row goes out, nothing shows server-saved. A retry is
+  // recorded before its request leaves, so a state read before it was seen
+  // cannot come from its answer; a new edit may start the drain sooner.
+  // Only what goes out after the lost answer; the probe under "2" that a 426
+  // turned back before it carries the same key too.
+  const retriesOf = () => exchanges.slice(exchanges.indexOf(dropped) + 1).filter((exchange) => exchange.txid === dropped.txid);
+  for (const end = Date.now() + 1500; Date.now() < end;) {
+    const state = await chipOf(page).getAttribute("data-state");
+    if (retriesOf().length > 0) break;
+    expect(state).not.toBe("SYNCED");
+    await page.waitForTimeout(200);
+  }
+
+  await networkBack(page);
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  const retries = retriesOf();
+  expect(retries.length).toBeGreaterThan(0);
+  for (const retry of retries) expect(retry.body).toBe(dropped.body);
+  const answered = retries.filter((retry) => retry.answer?.status !== undefined && retry.answer.status !== "upgrade_required");
+  // A retry the tab gave up on may still reach the route, so there can be more
+  // than one; each is `duplicate` with the lost answer itself, receipt and
+  // signature included, and only the status differs. The revision check below
+  // still holds the server to one commit for the key.
+  expect(answered.length).toBeGreaterThan(0);
+  for (const retry of answered) {
+    expect(retry.answer?.status).toBe("duplicate");
+    expect({ ...retry.answer, status: "committed" }).toEqual(dropped.answer);
+  }
+  // One revision per transaction the server committed; the retry adds none.
+  const committed = new Set(exchanges.filter((exchange) => exchange.answer?.status === "committed").map((exchange) => exchange.txid));
+  expect(committed.has(dropped.txid)).toBe(true);
+  expect((await serverOf(documentId))?.revision).toBe(before + committed.size);
+  await sameOnServer(page, documentId);
+});
+
+test("3d-2c2: a 409 conflict stops sending and makes the sheet read-only", async ({ page }) => {
+  await openSheet(page);
+  const requests = recordRequests(page);
+  await page.route(COMMIT, (route) => route.fulfill({ status: 409, json: { status: "stale_base", currentRevision: 7 } }));
+  await type(page, "Tekst prije sukoba.");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "CONFLICT", { timeout: OPEN });
+  await expect(editorOf(page)).toHaveAttribute("contenteditable", "false");
+  await expect(page.getByRole("alert").filter({ hasText: t.editor.evidenceConflict })).toBeVisible();
+  const sent = commitsOf(requests).length;
+  await networkBack(page);
+  await page.waitForTimeout(5000);
+  expect(commitsOf(requests)).toHaveLength(sent);
+  await shoot(page, "3d-2c2-sukob");
+});
+
+// Review #811 (c.6418056374, 1): a reload keeps the conflict's notice and
+// chip; the local record was read, so the recovery text is not shown.
+test("3d-2c2: after a 409 conflict a reload stays read-only with the conflict notice", async ({ page }) => {
+  await openSheet(page);
+  const requests = recordRequests(page);
+  await page.route(COMMIT, (route) => route.fulfill({ status: 409, json: { status: "stale_base", currentRevision: 7 } }));
+  const TEXT = "Tekst prije sukoba i osvježavanja.";
+  await type(page, TEXT);
+  await expect(chipOf(page)).toHaveAttribute("data-state", "CONFLICT", { timeout: OPEN });
+  const sent = commitsOf(requests).length;
+  await page.reload();
+  await expect(editorOf(page)).toContainText(TEXT, { timeout: OPEN });
+  await expect(page.getByRole("alert").filter({ hasText: t.editor.evidenceConflict })).toBeVisible({ timeout: OPEN });
+  await expect(page.getByRole("alert").filter({ hasText: t.editor.recovery })).toHaveCount(0);
+  await expect(chipOf(page)).toHaveAttribute("data-state", "CONFLICT");
+  await expect(editorOf(page)).toHaveAttribute("contenteditable", "false");
+  await networkBack(page);
+  await page.waitForTimeout(3000);
+  expect(commitsOf(requests)).toHaveLength(sent);
+  await shoot(page, "3d-2c2-sukob-nakon-osvjezavanja");
+});
+
+// 3d-2c2 §3 and e2e t. 7: a refusal for good (413), a 426 and an unreadable
+// answer are never sent again by themselves; the chip says "Greška" and the
+// notice `sendRefused` says a reload sends the text again. DAN-595: a 426 to
+// protocol "2" is asked once more under "1" with the same body; the 426 to
+// "1" is the refusal, so a 426 answers two requests and never more.
+for (const [name, status, body, protocols] of [
+  ["413", 413, { status: "too_large" }, ["2"]],
+  ["426", 426, { status: "upgrade_required" }, ["2", "1"]],
+  ["an unreadable answer", 200, { status: "nepoznato" }, ["2"]],
+] as const) {
+  test(`3d-2c2: ${name} is not retried in a loop`, async ({ page }) => {
+    await openSheet(page);
+    const requests = recordRequests(page);
+    await page.route(COMMIT, (route) => route.fulfill({ status, json: body }));
+    await type(page, `Tekst koji poslužitelj odbija (${name}).`);
+    await expect(chipOf(page)).toHaveAttribute("data-state", "ERROR", { timeout: OPEN });
+    await networkBack(page);
+    await page.waitForTimeout(10_000);
+    expect(commitsOf(requests).map((request) => request.headers()["ductus-protocol"])).toEqual(protocols);
+    expect(new Set(commitsOf(requests).map((request) => request.postData())).size).toBe(1);
+    await expect(chipOf(page)).toHaveAttribute("data-state", "ERROR");
+    await expect(page.getByRole("alert").filter({ hasText: t.editor.sendRefused })).toHaveCount(1);
+    if (status === 413) await shoot(page, "3d-2c2-posluzitelj-nije-primio");
+    // Review #811 (c.6419592134, 1): typing on keeps the notice while the
+    // same row is held, and still sends nothing.
+    await type(page, " Nastavak nakon odbijanja.");
+    await expect(chipOf(page)).toHaveAttribute("data-state", /^(LOCAL_DURABLE|ERROR)$/, { timeout: OPEN });
+    await page.waitForTimeout(5000);
+    await expect(page.getByRole("alert").filter({ hasText: t.editor.sendRefused })).toHaveCount(1);
+    expect(commitsOf(requests)).toHaveLength(protocols.length);
+  });
+}
+
+test("3d-2c2: a real paste is recorded as paste", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await openSheet(page);
+  const PASTED = "Izmišljeni zalijepljeni odlomak.";
+  const segments = await sentSegments(page);
+  await type(page, "Prije lijepljenja. ");
+  await page.evaluate((text) => navigator.clipboard.writeText(text), PASTED);
+  await page.keyboard.press("Control+V");
+  await expect(editorOf(page)).toContainText(PASTED);
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  const events = segments.flatMap((segment) => segment.events);
+  const carrying = events.filter((event) => JSON.stringify(event.steps).includes(PASTED));
+  expect(carrying.length).toBeGreaterThan(0);
+  for (const event of carrying) expect(event.source).toBe("paste");
+});
+
+// DAN-484 K4 (#866 "Izdvojeno u zaseban tiket" point 3, narrowed contract on
+// #1407 c.6626765838): two different works from the Literatura tab reach the
+// server as citation-form events, and the server holds the same text.
+test("DAN-484: the Literatura tab's text reaches the server as citation-form", async ({ page }) => {
+  const s = t.workspace.sources;
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { documentId } = await openSheet(page);
+  const segments = await sentSegments(page);
+  await type(page, "Izmišljeni odlomak ");
+  const panel = page.getByRole("complementary", { name: "Upute, literatura i komentari" });
+  await panel.getByRole("tab", { name: t.workspace.tabSources }).click();
+  const form = panel.getByRole("tabpanel").locator("form");
+  const add = async (family: string, given: string, year: string, title: string) => {
+    await panel.getByRole("tabpanel").getByRole("button", { name: s.add }).click();
+    for (const [label, value] of Object.entries({
+      [s.family]: family, [s.given]: given, [s.year]: year, [s.title]: title, [s.place]: "Zagreb", [s.publisher]: "Primjer",
+    })) await form.getByLabel(label, { exact: true }).fill(value);
+    await form.getByRole("button", { name: s.addAndCite }).click();
+  };
+  await add("Horvat", "Ana", "2021", "Izmišljena knjiga");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  await add("Kovač", "Luka", "2019", "Druga izmišljena knjiga");
+  await expect(editorOf(page)).toContainText("Izmišljeni odlomak (Horvat, 2021)(Kovač, 2019)");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+
+  const events = segments.flatMap((segment) => segment.events);
+  const carrying = (text: string) => events.filter((event) => JSON.stringify(event.steps).includes(text));
+  for (const text of [
+    "(Horvat, 2021)", "Horvat, Ana (2021) Izmišljena knjiga. Zagreb: Primjer.",
+    "(Kovač, 2019)", "Kovač, Luka (2019) Druga izmišljena knjiga. Zagreb: Primjer.",
+  ]) {
+    expect(carrying(text).map((event) => event.source), text).toEqual(["citation-form"]);
+  }
+  await sameOnServer(page, documentId);
+});
+
+test("3d-2c2: sign-out within 400 ms keeps every typed character", async ({ page }) => {
+  const { assignment, documentId } = await openSheet(page);
+  const TEXT = "Svaki znak prije odjave.";
+  await type(page, TEXT);
+  await clickSignOut(page);
+  await page.waitForURL(`${APP_ORIGIN}/`);
+  await page.context().clearCookies({ name: /^_session/ });
+  await signIn(page, `/rad?zadatak=${assignment}`);
+  await expect(editorOf(page)).toHaveAttribute("contenteditable", "true", { timeout: OPEN });
+  await expect(editorOf(page)).toContainText(TEXT);
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  expect((await serverOf(documentId))!.body).toContain(TEXT);
+});
+
+test("3d-2c2: a second tab sends nothing", async ({ page, context }) => {
+  const { assignment } = await openSheet(page);
+  const second = await context.newPage();
+  const requests = recordRequests(second);
+  await second.goto(`/rad?zadatak=${assignment}`);
+  await expect(second.getByText(t.editor.blockedHint)).toBeVisible({ timeout: OPEN });
+  await type(page, "Piše samo prva kartica.");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  await second.waitForTimeout(2000);
+  expect(requests.map(pathOf)).toEqual([]);
+  await second.close();
+});
+
+test("3d-2c2: /rad without an assignment sends no evidence", async ({ page }) => {
+  const requests = recordRequests(page);
+  await signIn(page, "/rad");
+  await expect(editorOf(page)).toHaveAttribute("contenteditable", "true", { timeout: OPEN });
+  await type(page, "Slobodni nacrt bez zadatka.");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "LOCAL_DURABLE");
+  await page.waitForTimeout(3000);
+  expect(requests.map(pathOf)).toEqual([]);
+});
+
+/**
+ * F-155: the work is really submitted on the server, so the open route asked
+ * again after the 409 says so; the 409 itself is faked only to make its
+ * moment certain.
+ */
+async function submitOnServer(page: Page, documentId: string): Promise<void> {
+  await type(page, "Tekst prije predaje.");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  await seedSubmission(documentId);
+}
+
+test("3d-2c2a §4: a submission's 409 not_accepting makes the sheet read-only with its notice", async ({ page }) => {
+  const { documentId } = await openSheet(page);
+  await submitOnServer(page, documentId);
+  await page.route(COMMIT, (route) => route.fulfill({ status: 409, json: { status: "not_accepting" } }));
+  await type(page, "Tekst nakon predaje.");
+  await expect(page.getByRole("status").filter({ hasText: t.editor.submittedReadOnly })).toBeVisible({ timeout: OPEN });
+  await expect(editorOf(page)).toHaveAttribute("contenteditable", "false");
+  await expect(chipOf(page)).toHaveAttribute("data-state", "LOCAL_DURABLE");
+  // The refused row stays on the device; nothing is deleted (3d-2c2a §4).
+  expect((await localOf(page, documentId)).pending.length).toBeGreaterThan(0);
+  await shoot(page, "3d-2c2-predano");
+});
+
+/** The submitted sheet with rows after the submission, and the open sign-out dialog. */
+async function submittedWithRows(page: Page): Promise<{ documentId: string; held: number }> {
+  const { documentId } = await openSheet(page);
+  await submitOnServer(page, documentId);
+  await page.route(COMMIT, (route) => route.fulfill({ status: 409, json: { status: "not_accepting" } }));
+  await type(page, "Tekst nakon predaje.");
+  await expect(page.getByRole("status").filter({ hasText: t.editor.submittedReadOnly })).toBeVisible({ timeout: OPEN });
+  const held = (await localOf(page, documentId)).pending.length;
+  expect(held).toBeGreaterThan(0);
+  await page.getByRole("button", { name: t.auth.logout, exact: true }).click();
+  return { documentId, held };
+}
+
+// F-155: the commit route says not_accepting also for a current version not
+// acknowledged or not open yet. Without a submission on the server the sheet
+// is not closed as submitted, and sign-out offers no deletion of the rows.
+test("F-155: a 409 not_accepting without a submission neither closes the sheet nor offers deletion", async ({ page }) => {
+  const { documentId } = await openSheet(page);
+  await page.route(COMMIT, (route) => route.fulfill({ status: 409, json: { status: "not_accepting" } }));
+  const opens = page.waitForResponse((r) => pathOf(r.request()) === "/api/evidence/open" && r.request().method() === "POST", { timeout: OPEN });
+  await type(page, "Tekst uz novu verziju zadatka.");
+  // The 409 makes the client ask the open route again, which says not submitted.
+  expect((await (await opens).json()).submitted).toBe(false);
+  await expect(page.getByRole("status").filter({ hasText: t.editor.submittedReadOnly })).toHaveCount(0);
+  await expect(editorOf(page)).toHaveAttribute("contenteditable", "true");
+  const held = (await localOf(page, documentId)).pending.length;
+  expect(held).toBeGreaterThan(0);
+  await page.getByRole("button", { name: t.auth.logout, exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: t.auth.afterSubmissionDiscard })).toHaveCount(0);
+  expect((await localOf(page, documentId)).pending).toHaveLength(held);
+});
+// F-154 (owner decision 1.3): what was written after the submission stays on
+// sign-out (D-118) and goes only on the second click of its own button.
+test("F-154: after a submission the dialog names its own rows, offers the export, and deletes only on the second click", async ({ page }) => {
+  const { documentId, held } = await submittedWithRows(page);
+  const dialog = page.getByRole("dialog");
+  const forms = t.auth.logoutAfterSubmission;
+  const after = pluralHr(held, forms.one, forms.few, forms.many);
+  await expect(dialog).toContainText(after.replace("{n}", String(held)));
+  await expect(dialog.getByRole("button", { name: t.editor.exportText })).toBeVisible();
+  await shoot(page, "f154-odjava-nakon-predaje");
+
+  // The first click only asks; Escape and "Zadrži izmjene" take it back.
+  await dialog.getByRole("button", { name: t.auth.afterSubmissionDiscard }).click();
+  await expect(dialog).toContainText(t.auth.afterSubmissionDiscardAsk);
+  await expect(dialog.getByRole("button", { name: t.auth.afterSubmissionKeep })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: t.auth.afterSubmissionDiscard })).toBeVisible();
+  await dialog.getByRole("button", { name: t.auth.afterSubmissionDiscard }).click();
+  await dialog.getByRole("button", { name: t.auth.afterSubmissionKeep }).click();
+  expect((await localOf(page, documentId)).pending).toHaveLength(held);
+
+  // The second click deletes this document's rows and nothing else.
+  await dialog.getByRole("button", { name: t.auth.afterSubmissionDiscard }).click();
+  await dialog.getByRole("button", { name: t.auth.afterSubmissionDiscardConfirm }).click();
+  await expect(dialog.getByRole("button", { name: t.auth.afterSubmissionDiscard })).toHaveCount(0);
+  expect(await localOf(page, documentId)).toEqual({ pending: [] });
+  await shoot(page, "f154-odjava-nakon-brisanja");
+});
+
+// Codex r4383074618: a session ended in another tab leaves no deletion behind.
+test("F-154: once the session ends in another tab the open dialog offers no deletion and the rows stay", async ({ page }) => {
+  const { documentId, held } = await submittedWithRows(page);
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("button", { name: t.auth.afterSubmissionDiscard })).toBeVisible();
+  await page.evaluate(({ key, channelName }) => {
+    const mark = JSON.parse(localStorage.getItem(key) ?? "null") as { tag: string } | null;
+    if (!mark) throw new Error("The signed-in page must record its session mark");
+    const channel = new BroadcastChannel(channelName);
+    channel.postMessage(mark.tag);
+    channel.close();
+  }, { key: CURRENT_KEY, channelName: SESSION_END_CHANNEL });
+  await expect(dialog.getByRole("button", { name: t.auth.afterSubmissionDiscard })).toHaveCount(0);
+  expect((await localOf(page, documentId)).pending).toHaveLength(held);
+});
+
+test("F-154: without the second click sign-out keeps the rows after the submission (D-118)", async ({ page }) => {
+  const { documentId, held } = await submittedWithRows(page);
+  await page.getByRole("dialog").getByRole("button", { name: t.auth.logoutConfirm }).click();
+  await page.waitForURL(`${APP_ORIGIN}/`);
+  expect((await localOf(page, documentId)).pending).toHaveLength(held);
+});
+
+test("O2 (DAN-289): a submitted work opens read-only and sends nothing after the opening", async ({ page }) => {
+  const { assignment, documentId } = await openSheet(page);
+  const TEXT = "Izmišljeni predani tekst.";
+  await type(page, TEXT);
+  await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+  await seedSubmission(documentId);
+
+  const requests = recordRequests(page);
+  // A submitted work publishes nothing to the live view, not even its opened text.
+  const live = recordRequests(page, /^\/api\/live\//);
+  await page.goto(`/rad?zadatak=${assignment}`);
+  await expect(page.getByRole("status").filter({ hasText: t.editor.submittedReadOnly })).toBeVisible({ timeout: OPEN });
+  await expect(editorOf(page)).toContainText(TEXT);
+  // The opening alone tells the sheet the work is submitted; nothing follows it for 5 s.
+  const opened = requests.length;
+  for (let waited = 0; waited < 5000; waited += 250) {
+    expect(await editorOf(page).getAttribute("contenteditable")).toBe("false");
+    await page.waitForTimeout(250);
+  }
+  expect(requests.slice(opened).map(pathOf)).toEqual([]);
+  expect(requests.map(pathOf)).toEqual(["/api/evidence/open"]);
+  await expect(chipOf(page)).toHaveAttribute("data-state", "LOCAL_DURABLE");
+  // Typing changes nothing on the sheet or in the journal.
+  const before = await localOf(page, documentId);
+  await editorOf(page).click();
+  await page.keyboard.type("Nakon predaje.");
+  await expect(editorOf(page)).not.toContainText("Nakon predaje.");
+  expect((await localOf(page, documentId)).meta?.localSeq).toBe(before.meta?.localSeq);
+  expect(requests.map(pathOf)).toEqual(["/api/evidence/open"]);
+  expect(live.map(pathOf)).toEqual([]);
+  await shoot(page, "o2-predani-rad");
+});
+
+// #1542 (plan #1546): a send the server never answers, or an opening it never
+// answers, holds neither the sign-out dialog nor the sign-out. Neither tab shows the
+// text after it, and the text the journal holds stays on the device for the
+// next sign-in (D-118).
+for (const waiting of ["commit", "open"] as const) {
+  test(`#1542: sign-out while the ${waiting} gets no answer ends on this device and keeps the text`, async ({ page, context }) => {
+    test.setTimeout(120_000);
+    const TEXT = "Izmišljeni tekst bez odgovora.";
+    const { assignment, documentId } = await openSheet(page);
+    const asked = page.waitForRequest((r) => pathOf(r) === `/api/evidence/${waiting}` && r.method() === "POST", { timeout: OPEN });
+    if (waiting === "commit") {
+      await context.route(COMMIT, () => {});
+    } else {
+      // The 409 makes the sheet ask the open route again (F-155), which never answers.
+      await context.route(COMMIT, (route) => route.fulfill({ status: 409, json: { status: "not_accepting" } }));
+      await context.route("**/api/evidence/open", () => {});
+    }
+    await type(page, ` ${TEXT}`);
+    await asked;
+    await expect(chipOf(page)).not.toHaveAttribute("data-state", "SYNCED");
+    await context.route("**/api/auth/logout", () => {});
+    // A second tab of the same session, open while the sign-out runs.
+    const other = await context.newPage();
+    await other.goto("/rad");
+    await editorMounted(other);
+
+    const dialog = logoutDialogOf(page);
+    await page.getByRole("button", { name: t.auth.logout, exact: true }).click();
+    // The preparation waits at most for its limits (8 s), not for the server.
+    await expect(dialog).toBeVisible({ timeout: 12_000 });
+    const confirm = new RegExp(`^(${t.auth.logoutConfirm}|${t.auth.logoutConfirmUnsaved})$`);
+    if (waiting === "commit") await expect(dialog.getByRole("button", { name: t.auth.logoutConfirm, exact: true })).toBeVisible();
+    await dialog.getByRole("button", { name: confirm }).click();
+    await expect(dialog.getByRole("alert")).toContainText(t.auth.logoutDevice, { timeout: 15_000 });
+    // Nothing unsent was deleted with the sign-out.
+    expect((await localOf(page, documentId)).pending.length).toBeGreaterThan(0);
+    await dialog.getByRole("button", { name: t.auth.logoutClose }).click();
+    // The text of the work is shown in neither tab, nor after a reload of the second.
+    for (const tab of [page, other]) {
+      await expect(editorOf(tab)).not.toContainText(TEXT);
+      await expect(tab.getByRole("button", { name: t.editor.exportText })).toHaveCount(0);
+    }
+    await other.reload();
+    await expect(other.locator("body")).not.toContainText(TEXT);
+    await other.close();
+
+    // G1: the same person signs in again with a server that answers; the
+    // text is back on the sheet and its rows get a signed answer.
+    for (const route of [COMMIT, "**/api/evidence/open", "**/api/auth/logout"]) await context.unroute(route);
+    await context.clearCookies({ name: /^_session/ });
+    await signIn(page, "/rad");
+    await page.goto(`/rad?zadatak=${assignment}`);
+    await expect(editorOf(page)).toContainText(TEXT, { timeout: OPEN });
+    await expect(chipOf(page)).toHaveAttribute("data-state", "SYNCED", { timeout: OPEN });
+    expect((await localOf(page, documentId)).pending).toEqual([]);
+  });
+}
