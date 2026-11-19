@@ -12,5 +12,7 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["*.ts"]
+  "include": ["*.ts"],
+  // Ported from Ductus 0cdb0f1 and checked by tsconfig.ductus.json instead.
+  "exclude": ["comments.ts", "comments.test.ts", "revision-requests.ts", "revision-requests.test.ts"]
 }
