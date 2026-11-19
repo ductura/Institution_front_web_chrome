@@ -18,3 +18,5 @@ export { MAX_TOASTS, TOAST_TIMEOUT_MS, type ToastItem, type ToastTone } from "./
 export { readTheme, saveTheme, THEME_KEY, themeOf, toggleTheme, type ShellTheme } from "./theme/theme";
 export { Icon, ICON_NAMES, type IconName, type IconProps } from "./icons/icons";
 export { StateTag, SUBMISSION_STATES, type StateTagProps, type SubmissionState } from "./state-tag";
+export { DataTable, type DataTableColumn, type DataTableProps } from "./table";
+export { compareKeys, nextSort, sortRows, type SortDirection, type SortKey, type SortState } from "./table/sort";
