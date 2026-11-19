@@ -1,4 +1,4 @@
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { messagesHr } from "../../lib/i18n/messages.hr";
 
 type FlowStepKey = keyof typeof messagesHr.landing.flow.steps;
 
