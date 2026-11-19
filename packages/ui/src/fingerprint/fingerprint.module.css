@@ -1,0 +1,15 @@
+.fingerprint {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  min-inline-size: 0;
+}
+
+.digest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-family: var(--ff-mono);
+  color: var(--ink);
+  user-select: all;
+}

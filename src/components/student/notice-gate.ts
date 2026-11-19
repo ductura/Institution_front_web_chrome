@@ -8,7 +8,9 @@
 // server records the acknowledgment only if its own fingerprint of the
 // stored version is the same, so a student never confirms a text they did
 // not see.
-import { NOTICE_TEMPLATE_VERSION, noticeFingerprint, type NoticeFingerprintInput } from "@/domain/notice/fingerprint";
+import { createApi } from "../../client/api";
+
+import { NOTICE_TEMPLATE_VERSION, noticeFingerprint, type NoticeFingerprintInput } from "./obavijest/notice-fingerprint";
 
 export type AckError = "stale" | "unauthorized" | "forbidden" | "invalid" | "unavailable";
 
@@ -51,29 +53,33 @@ export function mayRecord(state: NoticeState): boolean {
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
 
-// A shape match is not enough: Date.parse rolls 2026-02-31 over into March.
+type Api = ReturnType<typeof createApi>;
+
+// The contract checks the shape; Date.parse would still roll 2026-02-31 over into March.
 function isInstant(value: string): boolean {
   const ms = Date.parse(value);
-  return ISO.test(value) && !Number.isNaN(ms) && new Date(ms).toISOString().slice(0, 19) === value.slice(0, 19);
+  return !Number.isNaN(ms) && new Date(ms).toISOString() === value;
 }
 
 /** The notice as the screen shows it: the version and every field that enters its fingerprint. */
 export type ShownNotice = Omit<NoticeFingerprintInput, "templateVersion"> & { assignmentId: string; versionNo: number };
 
 /**
- * Success only for HTTP 200 with a server time; server error bodies are
- * ignored. Both answers 409 (another version, or the notice changed under the
- * same version) are `stale`: either way the screen holds an old text.
+ * WEB-12: the acknowledgment goes through createApi on
+ * institution.acknowledgment.post, so the answer is checked against the
+ * contract (a 200 without an exact server time is `unexpected`). Both answers
+ * 409 (another version, or the notice changed under the same version) are
+ * `stale`: either way the screen holds an old text.
  */
-export async function acknowledgeNotice(notice: ShownNotice, send: typeof fetch = fetch): Promise<Acknowledgment> {
+export async function acknowledgeNotice(notice: ShownNotice, api: Api = createApi()): Promise<Acknowledgment> {
   const { assignmentId, versionNo } = notice;
   if (!UUID.test(assignmentId) || !Number.isInteger(versionNo) || versionNo < 1) return { kind: "invalid" };
+  let fingerprint: string;
   try {
     // Only the fields of the fingerprint, so that nothing else of the view
     // can change it. Without Web Crypto it fails and nothing is sent.
-    const fingerprint = await noticeFingerprint({
+    fingerprint = await noticeFingerprint({
       templateVersion: NOTICE_TEMPLATE_VERSION,
       title: notice.title,
       instructions: notice.instructions,
@@ -86,26 +92,24 @@ export async function acknowledgeNotice(notice: ShownNotice, send: typeof fetch 
       wordMin: notice.wordMin,
       wordMax: notice.wordMax,
     });
-    const response = await send(`/api/institution/assignments/${assignmentId}/acknowledgment`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      credentials: "same-origin",
-      cache: "no-store",
-      redirect: "error",
-      body: JSON.stringify({ versionNo, fingerprint }),
-    });
-    if (response.status === 401) return { kind: "unauthorized" };
-    if (response.status === 403) return { kind: "forbidden" };
-    if (response.status === 409) return { kind: "stale" };
-    if ([400, 413, 415, 422].includes(response.status)) return { kind: "invalid" };
-    if (response.status !== 200) return { kind: "unavailable" };
-    const data: unknown = await response.json();
-    if (!data || typeof data !== "object" || Array.isArray(data) || !("acknowledgedAt" in data) ||
-        typeof data.acknowledgedAt !== "string" || !isInstant(data.acknowledgedAt)) {
-      return { kind: "unavailable" };
-    }
-    return { kind: "acknowledged", at: data.acknowledgedAt };
   } catch {
     return { kind: "unavailable" };
   }
+  let result: Awaited<ReturnType<Api>>;
+  try {
+    result = await api("institution.acknowledgment.post", {
+      params: { assignmentId }, query: undefined, body: { versionNo, fingerprint },
+    });
+  } catch {
+    return { kind: "unavailable" };
+  }
+  if (result.ok) {
+    const at = (result.body as { acknowledgedAt: string }).acknowledgedAt;
+    return isInstant(at) ? { kind: "acknowledged", at } : { kind: "unavailable" };
+  }
+  if (result.status === 401) return { kind: "unauthorized" };
+  if (result.status === 403) return { kind: "forbidden" };
+  if (result.status === 409) return { kind: "stale" };
+  if (result.code === "client_rejected" || [400, 408, 413, 415, 422].includes(result.status)) return { kind: "invalid" };
+  return { kind: "unavailable" };
 }

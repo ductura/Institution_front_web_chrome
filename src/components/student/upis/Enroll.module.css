@@ -1,0 +1,58 @@
+/* E-5 (WEB-11): "Upiši kolegij" on the "papir i grafit" tokens; the field, button and dialogs are @ductura/ui. */
+.screen {
+  align-items: center;
+  text-align: center;
+}
+
+.card {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 30px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--sheet);
+  box-shadow: var(--lift);
+}
+
+.card h1 {
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  text-align: left;
+}
+
+/* The server compares the code without case; showing it upper case says so. */
+.field input {
+  font-family: var(--ff-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+}
+
+@media (max-width: 420px) {
+  .card {
+    padding: 22px 16px;
+  }
+}

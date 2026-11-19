@@ -41,6 +41,8 @@ const en = {
       fastPath: "Quick path",
       // DAN-492 (N-16): the works a teacher mentors, outside any course.
       mentoredWorks: "Mentored works",
+      // WEB-17 (A-9): the course summary (N-17), the teacher's fourth place.
+      summary: "Course summary",
       workspace: "Workspace",
       enroll: "Join a course",
       institution: "Institution overview",
@@ -1192,6 +1194,7 @@ const en = {
         inProgress: "Work started, not submitted",
         submitted: "Submitted {time}",
         afterDeadline: "Submitted {time}, after the deadline",
+        submittedNoTime: "Submitted",
       },
       readNotice: "Read the instructions",
       start: "Open assignment",
@@ -1212,6 +1215,12 @@ const en = {
       due: "Deadline: {time}",
       open: "Open assignment",
       readNotice: "Read the instructions",
+      // WEB-09 (A-3): the course's teachers and an extended deadline, as student.assignments.get returns them.
+      teachers: "Teachers",
+      teacherRole: { holder: "course holder", collaborator: "collaborator" },
+      extendedDue: "Extended deadline: {time}",
+      // Until /upis moves over (WEB-11), the empty state leads there instead of holding the form.
+      enrollLink: "Enrol with a course code",
       unavailableHeading: "This view is not available right now.",
       unavailableBody: "The data could not be loaded. This does not mean there are no courses or works.",
       // S01_prazna: the first arrival, verbatim from the package's PNG.
@@ -1247,6 +1256,23 @@ const en = {
         invalid: "The enrolment was not accepted. Reload the page.",
         unavailable: "Enrolment is not possible right now. Try again.",
         offline: "No connection to the server. Check your network and try again.",
+      },
+      codeErrors: {
+        invalidCode: "This code does not exist. Check it with your teacher and enter it again.",
+        expiredCode: "This code has expired. Ask your teacher for a new code.",
+        signedOut: "Your sign-in has expired. Sign in again, then enter the code.",
+      },
+      already: {
+        title: "You are already enrolled",
+        body: "You are already enrolled in this course. There is no need to enter the code again.",
+        open: "Open the course",
+        close: "Enter another code",
+      },
+      empty: {
+        title: "You are enrolled in the course",
+        body: "The course has no published assignment yet. When your teacher publishes one, you will see it among your assignments.",
+        assignments: "My assignments",
+        close: "Close",
       },
       course: {
         none: "You are enrolled in the course, but it has no open assignment yet. When your teacher publishes one, come back to this page.",
@@ -1499,6 +1525,13 @@ const en = {
     noRoleNext: "Ask your faculty's administrator to give you a role, then sign in again.",
     logoutBody: "You will be signed out of Ductura and of AAI@EduHr in this browser, then return to the front page.",
   },
+  // WEB-17 (A-9, N-17): the teacher's course summary; empty until its read arrives.
+  teacherSummary: {
+    title: "Course summary",
+    lead: "A summary of a course without student names, only for a course with at least five students.",
+    emptyTitle: "The course summary has no data yet",
+    emptyBody: "Once the course summary is available, you will see summary figures for your courses here. Individual students are not shown here.",
+  },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,
   // read only, as docs/design/ductura/m2-reference/a03-kolegiji-tim-i-grupe.html
   // writes them. Students are only counted, never named.
@@ -1522,6 +1555,34 @@ const en = {
     emptyNote: "A course is created by a teacher with a confirmed role; confirmation is under “Users and roles”.",
     unavailable: "Courses are not available right now. Try again.",
     retry: "Try again",
+    newCourse: {
+      title: "New course",
+      lead: "A course is created by the institution administrator. The holder then sees it among their courses.",
+      name: "Course name",
+      academicYear: "Academic year",
+      aiPolicy: "AI assistance",
+      holder: "Holder identifier",
+      holderHint: "The identifier of a teacher with a confirmed role, as shown under “Users and roles”.",
+      groups: "Seminar groups",
+      groupsHint: "One group per line, at most 20. May stay empty.",
+      submit: "Create course",
+      busy: "Creating…",
+      nameRequired: "Enter the course name.",
+      nameTooLong: "The name can have at most 160 characters.",
+      holderInvalid: "Enter the holder identifier in the form of 8-4-4-4-12 characters.",
+      groupsTooMany: "At most 20 groups.",
+      groupTooLong: "A group name can have at most 80 characters.",
+      groupDuplicate: "Two groups have the same name.",
+      created: "The course “{name}” has been created.",
+      createdGroups: "Seminar groups",
+      createdNoGroups: "The course has no seminar groups.",
+      another: "Create another course",
+      conflict: "A course with this name already exists in this academic year.",
+      invalid: "The server did not accept the data. Check the holder: they must be a teacher of this institution with a confirmed role.",
+      forbidden: "Only the institution administrator can create a course.",
+      signedOut: "The session has ended. Sign in again, then create the course.",
+      unavailable: "The course cannot be created right now. Try again.",
+    },
   },
   // DAN-590 (M2.12-P03, A-04): the faculty rule versions of DAN-315, read
   // only. The package of form rules (facultyRules below, M4) has no data yet
