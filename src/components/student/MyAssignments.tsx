@@ -1,10 +1,10 @@
+import { RouteLoading } from "@ductura/ui";
 import { createElement as h, Suspense, use, type ReactElement } from "react";
 
 import { messagesHr } from "../../../locales/hr.ts";
 import { zagrebParts } from "../summary/zagreb-time.ts";
 
 import ErrorScreen from "../shell/ErrorScreen";
-import RouteLoading from "../shell/RouteLoading";
 
 import { courseMotif } from "./course-motif";
 import type { MyAssignmentsRead, MyCourse } from "./my-assignments-read";
