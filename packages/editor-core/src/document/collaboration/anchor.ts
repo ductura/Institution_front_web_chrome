@@ -92,7 +92,8 @@ export function resolveTextAnchor(anchor: TextAnchor, nodeId: NodeId, nodeText: 
   // occurrence of the same quote onto the old position (#418).
   const fullScore = (anchor.prefix ? 1 : 0) + (anchor.suffix ? 1 : 0);
   const complete = scored.filter((m) => m.score === fullScore);
-  if (complete.length === 1 && complete[0].start === anchor.startHint && complete[0].end === anchor.endHint) {
+  const [only] = complete;
+  if (complete.length === 1 && only !== undefined && only.start === anchor.startHint && only.end === anchor.endHint) {
     return { status: "exact", start: anchor.startHint, end: anchor.endHint };
   }
 
@@ -100,8 +101,8 @@ export function resolveTextAnchor(anchor: TextAnchor, nodeId: NodeId, nodeText: 
   let best = 0;
   for (const m of scored) if (m.score > best) best = m.score;
   const winners = scored.filter((m) => m.score === best);
-  if (winners.length !== 1) return { status: "ambiguous", matches: winners.length };
+  const [match] = winners;
+  if (winners.length !== 1 || match === undefined) return { status: "ambiguous", matches: winners.length };
 
-  const match = winners[0];
   return { status: "moved", start: match.start, end: match.end };
 }

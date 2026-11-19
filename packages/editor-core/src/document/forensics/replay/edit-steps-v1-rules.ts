@@ -118,6 +118,18 @@ function at(document: PmNode, pos: number): ResolvedPos {
   return resolved;
 }
 
+/**
+ * An item of a parsed slice. The parser refuses empty slice content, so every
+ * index used here is in range; a wrong one throws, as reading it did.
+ */
+function sliceItem<T>(content: readonly T[], index: number): T {
+  const item = content[index];
+  if (item === undefined) {
+    throw new TypeError(`slice has no item at ${index}`);
+  }
+  return item;
+}
+
 /** Type, level and id: what a block of a slice must repeat to continue a block. */
 function sameBlock(written: EditStepBlock, block: PmNode): boolean {
   const level = written.type === "heading" ? written.attrs.level : undefined;
@@ -156,15 +168,15 @@ function* checkReplace(
     }
   }
   const slice = step.slice;
-  if (!slice || slice.content[0].type === "text") {
+  if (!slice || sliceItem<{ type: string }>(slice.content, 0).type === "text") {
     return;
   }
   const blocks = slice.content as EditStepBlock[];
-  if ("openStart" in slice && ($from.depth !== 1 || !sameBlock(blocks[0], $from.parent))) {
+  if ("openStart" in slice && ($from.depth !== 1 || !sameBlock(sliceItem(blocks, 0), $from.parent))) {
     refuse("open_start_block");
   }
   if ("openEnd" in slice) {
-    const last = blocks[blocks.length - 1];
+    const last = sliceItem(blocks, blocks.length - 1);
     const sameParent = $from.depth === 1 && $to.depth === 1 && $from.before() === $to.before();
     const ok = sameParent
       ? last.attrs.nodeId === null
