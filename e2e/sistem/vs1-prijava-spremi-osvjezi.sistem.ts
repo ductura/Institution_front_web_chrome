@@ -42,7 +42,11 @@ test('VS-1: student se prijavi, spremi rečenicu i vidi je nakon osvježavanja',
       }, { timeout: 30_000 }),
       page.keyboard.insertText(sentence),
     ]);
-    expect(commit.status(), 'HTTP odgovor za spremanje rečenice').toBe(200);
+    if (commit.status() !== 200) {
+      const failure = await commit.json().catch(() => null);
+      const stage = typeof failure?.stage === 'string' ? `, faza ${failure.stage}` : '';
+      throw new Error(`Spremanje rečenice nije potvrđeno (HTTP ${commit.status()}${stage}).`);
+    }
     const saveState = page.locator('footer[aria-label="Stanje rada"]').getByRole('status');
     await expect(saveState).toHaveText('Spremljeno na poslužitelju', { timeout: 30_000 });
   });

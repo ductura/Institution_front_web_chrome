@@ -7,3 +7,5 @@ U ovom repou pokreni `pnpm exec playwright install chromium` ako preglednik još
 Ispis sadrži pune Git SHA-ove oba checkouta. Poslužitelj se zadano traži u `../Institution_server` u odnosu na ovaj repo. Za drugi put postavi `STOG_SERVER_DIR` na apsolutnu putanju ili putanju u odnosu na ovaj repo. Pokreni stog iz tih checkouta i ostavi ih na istim revizijama tijekom provjere.
 
 Test se prijavi kao `demo-student`, otvori rad o kućnom kompostiranju, doda jedinstvenu izmišljenu rečenicu i pričeka potvrdu spremanja na poslužitelju. Zatim osvježi stranicu i provjeri da je rečenica i dalje u radu. Rečenica ostaje u lokalnom demo radu.
+
+Za spremanje su potrebni pohrana evidencije i registrirani razvojni ključ za potpis potvrde. Ako commit vrati `503` u fazi `storage` ili `signing`, u pokretaču INT-01 provjeri te ovisnosti. `pnpm stog:zdravlje` provjerava dostupnost servisa i vezu s bazom.
