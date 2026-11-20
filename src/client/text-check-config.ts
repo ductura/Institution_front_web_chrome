@@ -1,6 +1,6 @@
 /**
  * The text check configuration read (WEB-1102, E§3.5 review2). The route has no
- * body: `GET /api/v1/student/assignments/{assignmentId}/text-check-config` answers
+ * body: the student assignment text-check-config GET answers
  * 200 `{enabledCheckIds, lektaProfileId}` and nothing else. The findings and the
  * work summary are made locally in the browser from the open document; the
  * server only says which checks the institution turned on for this assignment.
