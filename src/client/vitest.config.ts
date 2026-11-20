@@ -8,7 +8,17 @@ import { copiedFrontAliases } from "../components/vitest.alias";
 // tsconfig.json is the one src/components already uses, so both read "@/"
 // the same way. One copy of dexie and fake-indexeddb, the client's own, also
 // for editor-core's journal under these tests.
+//
+// One copy of ProseMirror as well: editor-core (the workspace install) and this
+// package's own install each carry a prosemirror-model, and a Transform from
+// one with a schema from the other cannot split a block ("Can not convert <>
+// to a Fragment"). The "@tiptap/pm" imports here are pinned to editor-core's.
+const editorCorePm = decodeURIComponent(new URL("../../packages/editor-core/node_modules/@tiptap/pm", import.meta.url).pathname);
+
 export default defineConfig({
-  resolve: { alias: copiedFrontAliases, dedupe: ["dexie", "fake-indexeddb"] },
+  resolve: {
+    alias: [{ find: /^@tiptap\/pm(?=\/|$)/, replacement: editorCorePm }, ...copiedFrontAliases],
+    dedupe: ["dexie", "fake-indexeddb"],
+  },
   test: { environment: "node" },
 });
