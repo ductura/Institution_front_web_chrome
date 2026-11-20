@@ -4,13 +4,12 @@ import { Fragment, Slice, type Node as PmNode } from "@tiptap/pm/model";
 import { TextSelection, type Transaction } from "@tiptap/pm/state";
 import { describe, expect, it, vi } from "vitest";
 
-import { createEditStepsV1Replayer } from "@/adapters/evidence/edit-steps-v1-replayer";
+import { writeSource } from "../../../../src/components/editor/sources";
 import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
 import { replayEvidenceSegmentsV2 } from "../document/forensics/evidence-replay-v2";
-import { writeSource } from "@/components/editor/sources";
 import type { EvidenceEvent, EvidenceSegment, EvidenceSource } from "../document/forensics/evidence-segment-v2";
 import type { JcsJsonValue } from "../document/forensics/jcs";
-import { projectProcessSummary } from "@/domain/projection/process-summary";
+import { createEditStepsV1Replayer } from "../document/forensics/replay/edit-steps-v1-replayer";
 
 import { changeOf, EvidenceRecorder, type BuiltSegment, type SegmentContext } from "./capture";
 import { tiptapToCanonical } from "./interop";
@@ -21,8 +20,8 @@ import { CITATION_FORM_META, NO_OBSERVATION, recordWithSource, SourceObserver, s
  * F-8 step 3d-1c (Q1, DAN-287; contract #476 issuecomment-6385376486 with
  * addenda 6385389840 and 6385392797). Every scenario runs on the real editor
  * of src/editor/ with history; the observer's props get event objects, and
- * the transactions are shaped as prosemirror-view 1.42.6 sends them. Oracles:
- * replay #391 and the process summary (P-02 = 200). Synthetic text and ids only.
+ * the transactions are shaped as prosemirror-view 1.42.6 sends them. Replay
+ * verifies the evidence the editor sends for server-side projection.
  */
 
 const IDS = ["a", "b", "c"].map((x) => `${x.repeat(8)}-0000-4000-8000-${x.repeat(12)}`);
@@ -35,7 +34,6 @@ const CONTEXT: SegmentContext = {
   sequenceFrom: 1,
   predecessorSegmentHash: null,
 };
-const THRESHOLDS = { sessionBreakAboveMinutes: 30, pasteListedAboveCharacters: 200 };
 
 type Spy = { preventDefault: ReturnType<typeof vi.fn> };
 type Options = { trusted?: boolean };
@@ -186,7 +184,7 @@ async function takeAll(recorder: EvidenceRecorder): Promise<BuiltSegment[]> {
 /**
  * The fixed QA criterion: the recorder is intact, every segment verifies,
  * replay #391 gives its `finalDocumentHash` and the editor's document. Returns
- * the events' sources and the process summary.
+ * the events and the text-length changes from replaying paste events.
  */
 async function check(t: Setup) {
   const built = await takeAll(t.recorder);
@@ -201,15 +199,18 @@ async function check(t: Setup) {
   const replay = await replayEvidenceSegmentsV2(t.initial, segments, createEditStepsV1Replayer());
   expect(replay).toMatchObject({ ok: true, documentSha256: segments.at(-1)!.finalDocumentHash });
   const replayer = createEditStepsV1Replayer();
-  const rebuilt = segments.flatMap((s): EvidenceEvent[] => s.events).reduce((doc, event) => replayer.apply(doc, event), replayer.load(t.initial));
+  const events = segments.flatMap((s): EvidenceEvent[] => s.events);
+  const pasteLengths: number[] = [];
+  let rebuilt = replayer.load(t.initial);
+  for (const event of events) {
+    const next = replayer.apply(rebuilt, event);
+    if (event.source === "paste") {
+      pasteLengths.push(next.textContent.length - rebuilt.textContent.length);
+    }
+    rebuilt = next;
+  }
   expect(replayer.toCanonical(rebuilt)).toEqual(canonical(t.editor));
-  const summary = await projectProcessSummary({
-    payloads: built.map((one) => one.bytes),
-    head: { segmentHash: built.at(-1)!.sha256, segmentCount: built.length },
-    thresholds: THRESHOLDS,
-  });
-  if (!summary.ok) throw new Error(`summary: ${summary.reason}`);
-  return { built, events: segments.flatMap((s): EvidenceEvent[] => s.events), sources: segments.flatMap((s) => s.events.map((e) => e.source)), pastes: summary.summary.pastes };
+  return { built, events, sources: events.map((event) => event.source), pasteLengths };
 }
 
 const text = (n: number) => "Izmisljeno lijepljenje ".repeat(Math.ceil(n / 23)).slice(0, n);
@@ -234,7 +235,7 @@ describe("3d-1c QA t. 1: pasting plain text", () => {
     ["at the start of a block", ["Odlomak izmisljen jedan"], 1],
     ["at the end of a block", ["Odlomak izmisljen jedan"], 24],
     ["in an empty document", [""], 1],
-  ])("250 characters %s are one paste event, listed with 250 characters; 50 are smallerCount 1", async (_name, texts, pos) => {
+  ])("250 characters %s and 50 more are two paste events with their original lengths", async (_name, texts, pos) => {
     const t = setup(texts);
     t.select(pos);
     t.pasteText(text(250));
@@ -242,10 +243,9 @@ describe("3d-1c QA t. 1: pasting plain text", () => {
     t.wait(1_000);
     t.select(pos);
     t.pasteText(text(50));
-    const { sources, pastes } = await check(t);
+    const { sources, pasteLengths } = await check(t);
     expect(sources).toEqual(["paste", "paste"]);
-    expect(pastes.listed.map((p) => p.characters)).toEqual([250]);
-    expect(pastes.smallerCount).toBe(1);
+    expect(pasteLengths).toEqual([250, 50]);
   });
 });
 
@@ -288,23 +288,20 @@ describe("3d-1c QA t. 4: dropping", () => {
     const slice = t.editor.state.selection.content();
     t.drop(slice, 34, true);
     expect(t.changes[0]!.transactions[0]!.steps.length).toBeGreaterThanOrEqual(2);
-    const { sources, pastes } = await check(t);
+    const { sources } = await check(t);
     expect(sources).toEqual(["drop"]);
-    expect(pastes.listed).toEqual([]);
-    expect(pastes.smallerCount).toBe(0);
   });
 
-  it("text dropped from outside is a drop event and no paste in the summary", async () => {
+  it("text dropped from outside is recorded as a single drop event", async () => {
     const t = setup();
     t.drop(new Slice(Fragment.from(t.editor.schema.text(text(250))), 0, 0), 5, false);
-    const { sources, pastes } = await check(t);
+    const { sources } = await check(t);
     expect(sources).toEqual(["drop"]);
-    expect(pastes).toMatchObject({ listed: [], smallerCount: 0 });
   });
 });
 
 describe("3d-1c QA t. 5: Undo after a paste", () => {
-  it("Ctrl+Z and Ctrl+Y after a paste are unattributed, and the summary has one paste", async () => {
+  it("Ctrl+Z and Ctrl+Y after a paste are unattributed, with one paste event", async () => {
     const t = setup();
     t.select(9);
     t.pasteText(text(250));
@@ -314,10 +311,9 @@ describe("3d-1c QA t. 5: Undo after a paste", () => {
     await endTask();
     t.wait(1_000);
     expect(t.key("y", true)).toBe(true);
-    const { sources, pastes } = await check(t);
+    const { sources, pasteLengths } = await check(t);
     expect(sources).toEqual(["paste", "unattributed", "unattributed"]);
-    expect(pastes.listed).toHaveLength(1);
-    expect(pastes.smallerCount).toBe(0);
+    expect(pasteLengths).toEqual([250]);
   });
 
   it("Undo from the toolbar after a paste is unattributed", async () => {
@@ -404,22 +400,17 @@ describe("citation-form", () => {
     await endTask();
     t.wait(50);
     t.typeChar("y");
-    const { sources, built, pastes } = await check(t);
+    const { sources, built } = await check(t);
     expect(sources).toEqual(["editor", "citation-form", "editor"]);
     expect(built.map((one) => one.segment.evidenceSchema)).toContain("ductus-evidence-segment-v3");
-    // Not a paste: the summary and the quick path count no paste for it (contract t. 4).
-    expect(pastes.listed).toEqual([]);
-    expect(pastes.smallerCount).toBe(0);
   });
 
-  it("a long entry from the form is no paste in the summary", async () => {
+  it("a long entry from the form is recorded as a citation-form event", async () => {
     const t = setup();
     t.select(9);
     expect(writeSource(t.editor, null, `Horvat, Ana (2021) ${"Izmisljena knjiga ".repeat(28)}`)).toBe(true);
-    const { sources, pastes } = await check(t);
+    const { sources } = await check(t);
     expect(sources).toEqual(["citation-form"]);
-    expect(pastes.listed).toEqual([]);
-    expect(pastes.smallerCount).toBe(0);
   });
 
   // Review on #866 (cxr866): with Ctrl+A the end of the selection is the document itself.
@@ -465,13 +456,12 @@ describe("3d-1c QA t. 7: untrusted or no event", () => {
     ["an untrusted drop", (t: Setup) => t.drop(new Slice(Fragment.from(t.editor.schema.text(text(250))), 0, 0), 5, false, { trusted: false })],
     ["an untrusted cut", (t: Setup) => { t.select(1, 8); t.cut({ trusted: false }); }],
     ["insertContent with uiEvent paste", (t: Setup) => t.editor.chain().setMeta("uiEvent", "paste").insertContent({ type: "text", text: text(250) }).run()],
-  ])("%s is unattributed, and the summary has no paste", async (_name, act) => {
+  ])("%s is recorded as a single unattributed event", async (_name, act) => {
     const t = setup();
     t.select(9);
     act(t);
-    const { sources, pastes } = await check(t);
+    const { sources } = await check(t);
     expect(sources).toEqual(["unattributed"]);
-    expect(pastes).toMatchObject({ listed: [], smallerCount: 0 });
   });
 
   it("a trusted event of another kind does not make a paste", async () => {
