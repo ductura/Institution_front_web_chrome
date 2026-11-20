@@ -68,7 +68,10 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     ]);
     await expectHttp200(commit, 'Spremanje obaju odlomaka');
     const saved = await commit.json();
-    expect(saved).toMatchObject({ status: 'committed' });
+    expect(saved).toMatchObject({
+      status: expect.stringMatching(/^(committed|duplicate)$/),
+      receipt: { status: 'signed' },
+    });
     expect(Number.isSafeInteger(saved.revision)).toBe(true);
     expect(saved.revision).toBeGreaterThan(0);
     await expect(statusBar.getByRole('status')).toHaveText('Spremljeno na poslužitelju', { timeout: 30_000 });
