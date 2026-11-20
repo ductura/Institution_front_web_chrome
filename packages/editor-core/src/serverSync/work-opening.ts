@@ -64,7 +64,7 @@ export async function matchesWorkOpening(
   documentId: string,
   tx: Pick<EvidenceSegmentTransaction, "document" | "segment" | "segmentHash">,
 ): Promise<boolean> {
-  if (opening[verified] !== true || opening.documentId !== documentId) return false;
+  if (!matchesWorkSchema(opening, documentId, opening.schemaVersion)) return false;
   const [segment, snapshot] = await Promise.all([
     verifyCanonicalEvidencePayloadV2(tx.segment, opening.transactionFormat),
     verifyVersionedDocumentSnapshot(tx.document),
@@ -72,4 +72,12 @@ export async function matchesWorkOpening(
   return segment.ok && snapshot.ok && segment.sha256 === tx.segmentHash &&
     segment.segment.documentId === documentId && snapshot.document.schemaVersion === opening.schemaVersion &&
     segment.segment.finalDocumentHash === snapshot.sha256;
+}
+
+export function matchesWorkSchema(
+  work: VerifiedWorkOpening,
+  documentId: string,
+  schemaVersion: DocumentSchemaVersion,
+): boolean {
+  return work[verified] === true && work.documentId === documentId && work.schemaVersion === schemaVersion;
 }
