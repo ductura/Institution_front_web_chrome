@@ -171,6 +171,9 @@ test("a student's Ductus pages open at their addresses, marked as not connected 
   await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
   await axe(page);
 
+  // Moji radovi is connected (HOST-S5): it reads an empty list.
+  await page.route("**/api/v1/student/assignments", (route) => route.fulfill({ json: { courses: [] } }));
+  await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({ json: { assignments: [] } }));
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji radovi" }).click();
   await expect(page).toHaveURL(/\/app\/chrome\/zadaci\/radovi$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji radovi");
