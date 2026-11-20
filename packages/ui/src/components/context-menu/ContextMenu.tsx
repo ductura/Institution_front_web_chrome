@@ -44,8 +44,6 @@ export function ContextMenu({ anchor, entries, label, onSelect, onClose }: Conte
   useEffect(() => {
     const menu = ref.current;
     if (!open || menu === null) return;
-    const items = Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"]'));
-    items.find((el) => el.getAttribute("aria-disabled") !== "true")?.focus();
     const outside = (event: Event) => {
       if (!menu.contains(event.target as Node)) onClose();
     };
@@ -64,6 +62,14 @@ export function ContextMenu({ anchor, entries, label, onSelect, onClose }: Conte
       if (back instanceof HTMLElement && back.isConnected) back.focus();
     };
   }, [open, onClose]);
+
+  // Only once placed is the menu visible, and a hidden element cannot take the focus.
+  const visible = placed !== null;
+  useEffect(() => {
+    if (!visible) return;
+    const items = Array.from(ref.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    items.find((el) => el.getAttribute("aria-disabled") !== "true")?.focus();
+  }, [visible]);
 
   if (!open) return null;
 

@@ -34,7 +34,7 @@ export type FindBarProps = {
 /**
  * The find bar (UI-6C, prototype #find): field, next / previous, the number of hits and Esc.
  * The page owns the document: it searches, moves the hit and shows it; the bar only asks.
- * Enter = next, Shift+Enter = previous, Escape = close.
+ * Enter = next, Shift+Enter = previous (in the field), Escape = close (anywhere in the bar).
  */
 export function FindBar({ query, onQueryChange, current, total, onNext, onPrevious, onClose, labels, autoFocus = true }: FindBarProps) {
   const input = useRef<HTMLInputElement>(null);
@@ -47,7 +47,8 @@ export function FindBar({ query, onQueryChange, current, total, onNext, onPrevio
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     const action = findKeyAction(event.key, event.shiftKey);
-    if (action === null) return;
+    // Enter on a button is that button's own activation; only the field turns it into a step.
+    if (action === null || (action !== "close" && event.target !== input.current)) return;
     event.preventDefault();
     if (action === "close") onClose();
     else if (action === "next") onNext();
