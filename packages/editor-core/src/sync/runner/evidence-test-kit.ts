@@ -11,8 +11,9 @@ import { createHash, generateKeyPairSync, sign as nodeSign } from "node:crypto";
 import { Editor } from "@tiptap/core";
 import Dexie from "dexie";
 import { IDBKeyRange, indexedDB } from "fake-indexeddb";
+import { vi } from "vitest";
 
-import { commitOutcomeFrom, createReceiptVerifier, decodeBase64, type FetchLike } from "@/client/evidence-ingest";
+import { commitOutcomeFrom, createReceiptVerifier, decodeBase64, type FetchLike } from "../../../../../src/client/evidence-ingest";
 import type { EvidenceReceiptPayloadV2, SignedEvidenceReceiptV2 } from "../../document/forensics/evidence-receipt";
 import type { EvidenceDomainKey } from "../../document/forensics/evidence-receipt-verifier";
 import { loadGoldenVectors } from "../../document/forensics/golden-vectors/load";
@@ -27,6 +28,12 @@ import { AtomicDexieJournal } from "../../journal/atomic-dexie-journal";
 
 import { createDrainRunner } from "./drain-runner";
 import { createEvidenceTransport, evidenceVerifierFor } from "./evidence-transport";
+
+// The evidence routes go through createApi of src/client/api.ts, which takes
+// the page's origin as the API's (WEB-38). Node has no page: every test that
+// imports the kit gets an invented one, as src/client/evidence-ingest.test.ts.
+export const ORIGIN = "https://ductura.example.invalid";
+vi.stubGlobal("location", { origin: ORIGIN });
 
 const { receiptV2 } = loadGoldenVectors();
 export const BASE = receiptV2.accepted[0]!.payload;
@@ -212,6 +219,14 @@ export async function answer(
 
 export const json = (status: number, body: unknown) => Response.json(body, { status });
 
+/**
+ * A 409 of the three conflicts in the contract's shape (4.13 t. 4): the
+ * server's state comes with the status, or createApi reads the body as
+ * unexpected. The hashes and sequence are invented.
+ */
+export const conflict = (status: "stale_base" | "chain_conflict" | "not_continuous", currentRevision: number) =>
+  json(409, { status, currentRevision, documentHash: "d".repeat(64), headSegmentHash: null, lastSequenceTo: 0 });
+
 export type Body = { documentId: string; clientTransactionId: string; baseRevision: number; segments: string[]; document: string };
 type Accept = (body: Body, over?: Partial<EvidenceReceiptPayloadV2>) => Response;
 export type Answer = (body: Body, accept: Accept) => Promise<Response | Error> | Response | Error;
@@ -231,7 +246,7 @@ export function server(revision = R0, ...answers: Answer[]) {
     const segmentHash = sha256(decodeBase64(body.segments[0])!);
     const known = keys.get(body.clientTransactionId);
     if (known === undefined && body.baseRevision !== revision) {
-      return json(409, { status: "stale_base", currentRevision: revision });
+      return conflict("stale_base", revision);
     }
     if (known === undefined) keys.set(body.clientTransactionId, (revision += 1));
     const committed = keys.get(body.clientTransactionId)!;

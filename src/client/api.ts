@@ -312,9 +312,12 @@ async function callMigrationRoute<Id extends ApiOperationId>(
   return { ok: true, status, body, headers: {} } as ApiResult<Id>;
 }
 
+/** The browser's own transport, for a caller that wraps it before handing it to createApi (WEB-38). */
+export const browserTransport: typeof fetch = (input, init) => fetch(input, init);
+
 export function createApi(options: ApiOptions = {}) {
   const baseUrl = options.baseUrl ?? globalThis.location.origin;
-  const transport: typeof fetch = options.fetchImpl ?? ((input, init) => fetch(input, init));
+  const transport: typeof fetch = options.fetchImpl ?? browserTransport;
   return async function api<Id extends ApiOperationId>(id: Id, input: Input<Id>): Promise<ApiResult<Id>> {
     const names = NAMES.get(id);
     let wire: WireInput;

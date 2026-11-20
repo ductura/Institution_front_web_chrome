@@ -43,6 +43,12 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: '@ductura'
       - run: npm install -g pnpm@10.33.0
+      # The evidence modules reach packages/editor-core (drain runner, journal,
+      # replayer) and with it @tiptap/* and dexie: the workspace install, as in
+      # ui and app (WEB-38 2/2, Ductus#2028). No token.
+      - name: Install workspace
+        working-directory: .
+        run: pnpm install --frozen-lockfile
       - name: Install (GitHub Packages, read only)
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
         env:

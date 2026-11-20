@@ -20,3 +20,5 @@ export { Icon, ICON_NAMES, type IconName, type IconProps } from "./icons/icons";
 export { Fingerprint, type FingerprintProps } from "./fingerprint";
 export { KeyValueList, type KeyValueItem, type KeyValueListProps } from "./key-value";
 export { Steps, type StepNumber, type StepsProps } from "./steps";
+export { StateTag, SUBMISSION_STATES, type StateTagProps, type SubmissionState } from "./state-tag";
+export { DataTable, type DataTableColumn, type DataTableProps } from "./table";

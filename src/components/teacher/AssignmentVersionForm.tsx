@@ -11,7 +11,6 @@ import { AI_PURPOSES, type AiPurpose } from "./assignment-create";
 import {
   checkVersion,
   draftOf,
-  publishVersion,
   type ChangedField,
   type CurrentVersion,
   type VersionBody,
@@ -19,6 +18,7 @@ import {
   type VersionDraft,
   type VersionPublish,
 } from "./assignment-version";
+import { publishAssignmentVersion } from "./TeacherSetup/assignment-mutations";
 import own from "./AssignmentVersionForm.module.css";
 import styles from "./TeacherSetup.module.css";
 
@@ -105,7 +105,7 @@ function VersionEditor({ current }: { current: CurrentVersion }) {
     inFlight.current = true;
     setPending(true);
     const body = check.body;
-    void publishVersion(current.assignmentId, body).then((reply) => {
+    void publishAssignmentVersion(current.assignmentId, body).then((reply) => {
       inFlight.current = false;
       if (!alive.current) return;
       setPending(false);

@@ -21,7 +21,7 @@ import {
   createReceiptVerifier,
   type FetchLike,
   type OpenedWork,
-} from "../../client/evidence-ingest";
+} from "../../../../../src/client/evidence-ingest";
 import type { QueuedRow, SignedCommitReceiptVerifier } from "../drain";
 import type { QueuedTransaction } from "../journal-types";
 import type { CommitTransport } from "./drain-runner";
