@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { AppointmentCalendar, type AppointmentCalendarLabels } from "./AppointmentCalendar";
-import { dayMark, formatMoment, gridKeyTarget, openingFocus, parseMoment, roundTrip, selectDay, slotMark, type Appointment } from "./appointment-logic";
+import { clampDay, dayMark, formatMoment, gridKeyTarget, openingFocus, parseMoment, roundTrip, selectDay, slotMark, type Appointment } from "./appointment-logic";
 
 const labels: AppointmentCalendarLabels = {
   calendar: "Kalendar termina", previousMonth: "Prethodni mjesec", nextMonth: "Sljedeći mjesec",
@@ -50,6 +50,18 @@ describe("appointment moments", () => {
     expect(gridKeyTarget("2026-11-20", "ArrowRight")).toBe("2026-11-21");
     expect(gridKeyTarget("2026-11-20", "PageDown")).toBe("2026-12-20");
     expect(gridKeyTarget("2026-11-20", "x")).toBeNull();
+  });
+});
+
+describe("focus range", () => {
+  it("clamps into min/max", () => {
+    expect(clampDay("2026-11-01", "2026-11-10")).toBe("2026-11-10");
+    expect(clampDay("2026-12-01", undefined, "2026-11-30")).toBe("2026-11-30");
+    expect(clampDay("2026-11-15", "2026-11-10", "2026-11-30")).toBe("2026-11-15");
+  });
+  it("gives the grid an enabled entry point when today is before min", () => {
+    const out = renderToStaticMarkup(<AppointmentCalendar appointments={[]} value="" onSelect={() => undefined} labels={labels} today="2026-11-01" min="2026-11-10" />);
+    expect(out).toMatch(/data-day="2026-11-10"[^>]*tabindex="0"|tabindex="0"[^>]*data-day="2026-11-10"/);
   });
 });
 

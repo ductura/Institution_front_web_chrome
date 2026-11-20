@@ -54,4 +54,11 @@ export function selectDay(day: string, time: string, min?: string, max?: string)
   return time !== "" && inRange(day, min, max) ? { date: day, time } : null;
 }
 
+/** Keeps a focus day inside min/max so the grid always has an enabled entry point. */
+export function clampDay(day: string, min?: string, max?: string): string {
+  if (min !== undefined && day < min) return min;
+  if (max !== undefined && day > max) return max;
+  return day;
+}
+
 export { addDays, addMonths, gridKeyTarget };

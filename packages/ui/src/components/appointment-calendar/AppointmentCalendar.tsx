@@ -4,7 +4,7 @@ import { useRef, useState, type KeyboardEvent } from "react";
 
 import styles from "./AppointmentCalendar.module.css";
 import { formatHrDate, inRange, monthGrid } from "../date-picker/date-logic";
-import { DEFAULT_SLOTS, addMonths, dayMark, formatMoment, gridKeyTarget, openingFocus, parseMoment, slotMark, type Appointment } from "./appointment-logic";
+import { DEFAULT_SLOTS, addMonths, clampDay, dayMark, formatMoment, gridKeyTarget, openingFocus, parseMoment, slotMark, type Appointment } from "./appointment-logic";
 
 export type AppointmentCalendarLabels = {
   calendar: string;
@@ -40,8 +40,17 @@ export type AppointmentCalendarProps = {
 /** Appointment calendar: month grid (arrows, PageUp/PageDown, Home/End) plus time slots; marks proposed and confirmed appointments. No network. */
 export function AppointmentCalendar({ appointments, value, onSelect, labels, today, slots = DEFAULT_SLOTS, min, max, disabled = false }: AppointmentCalendarProps) {
   const chosen = parseMoment(value);
-  const [focus, setFocus] = useState(() => openingFocus(value, appointments, today));
+  const [focus, setFocusRaw] = useState(() => clampDay(openingFocus(value, appointments, today), min, max));
   const [day, setDay] = useState(chosen?.date ?? "");
+  const [seen, setSeen] = useState(value);
+  const setFocus = (target: string) => setFocusRaw(clampDay(target, min, max));
+  // A controlled value that changes after mount (load, reset) moves the day and month with it.
+  if (value !== seen) {
+    setSeen(value);
+    const next = parseMoment(value);
+    setDay(next?.date ?? "");
+    if (next !== null) setFocusRaw(clampDay(next.date, min, max));
+  }
   const grid = useRef<HTMLTableElement>(null);
 
   const moveTo = (target: string) => {
