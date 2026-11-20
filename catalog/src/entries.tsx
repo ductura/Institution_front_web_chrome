@@ -23,7 +23,7 @@ import {
 
 import { DiffView, Timeline } from "@ductura/ui";
 import { ProofDialog, SourceProofsPanel } from "../../src/components/index.ts";
-import type { ProofsRead, SourceProof } from "../../src/client/source-proofs.ts";
+import { proofsPath, type ProofsRead, type SourceProof } from "../../src/client/source-proofs.ts";
 import type { ProofPicture } from "../../src/components/editor/sources/proofs/crop.ts";
 import { startCapture, type Capture } from "../../src/components/editor/sources/proofs/proof-draft.ts";
 import type { ProofsDeps } from "../../src/components/editor/sources/proofs/proofs-deps.ts";
@@ -744,7 +744,7 @@ const proofPage: ProofPicture = {
 };
 const sampleProof = (id: string, sourceId: string, page: string, note: string | null = null): SourceProof => ({
   id, sourceId, page, note, createdAt: "2026-11-20T10:15:00.000Z", size: 24000,
-  imagePath: `/api/v1/student/assignments/${PROOF_WORK}/sources/${sourceId}/proofs/${id}/image`,
+  imagePath: `${proofsPath(PROOF_WORK, sourceId) ?? ""}/${id}/image`,
 });
 const proofSources = [{ id: PROOF_S1, label: "Izmišljenić (2020)" }, { id: PROOF_S2, label: "Primjerić i Uzorak (2019)" }];
 const proofCitations = [{ sourceId: PROOF_S1, page: "14" }, { sourceId: PROOF_S1, page: "20" }, { sourceId: PROOF_S2, page: null }];

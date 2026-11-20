@@ -203,5 +203,9 @@
  "src/components/editor/spelling/engine.ts": [
   "fetch",
   "import hunspell-asm"
+ ],
+ "src/components/editor/sources/proofs/pdf-pages.ts": [
+  "import pdfjs-dist",
+  "import pdfjs-dist/build/pdf.worker.mjs"
  ]
 }
