@@ -12,7 +12,8 @@
  * (PRODUCT §5 rule 5).
  */
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Button, Dialog, TextArea, replyKeyAction } from "@ductura/ui";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import {
   changeThreadState, createComment, listComments, replyComment,
@@ -23,6 +24,8 @@ import { formatDateTimeHr } from "@/lib/i18n/hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import type { TextRange } from "./comment-place";
+import { consultationEntries, consultationText, printConsultation } from "./comments/consultation";
+import printStyles from "./comments/consultation.module.css";
 import styles from "./LiveWorkView.module.css";
 
 const t = messagesHr.comments;
@@ -31,8 +34,9 @@ const tt = messagesHr.teacherComments;
 /** `pending`: no text shown yet, so the place is not looked for and not called lost. */
 export type PlacedThread = { thread: CommentThread; range: TextRange | null; pending: boolean };
 
-function ThreadCard({ placed, current, onChanged, onShow }: {
-  placed: PlacedThread; current: () => boolean; onChanged: () => void; onShow: (range: TextRange) => void;
+function ThreadCard({ placed, current, readOnly, onChanged, onShow }: {
+  placed: PlacedThread; current: () => boolean; readOnly: boolean;
+  onChanged: () => void; onShow: (range: TextRange) => void;
 }) {
   const { thread, range, pending } = placed;
   const [draft, setDraft] = useState("");
@@ -41,7 +45,7 @@ function ThreadCard({ placed, current, onChanged, onShow }: {
   const [first, ...replies] = thread.comments;
 
   const act = async (run: () => Promise<ReplyOutcome>) => {
-    if (busy) return;
+    if (busy || readOnly) return;
     setBusy(true);
     const outcome = await run();
     setBusy(false);
@@ -72,20 +76,28 @@ function ThreadCard({ placed, current, onChanged, onShow }: {
         </p>
       ))}
       <div className={styles.actions}>
-        {range ? <button type="button" className={styles.link} onClick={() => onShow(range)}>{t.showInText}</button> : null}
-        {thread.state === "resolved" ? (
-          <button type="button" className={styles.link} disabled={busy}
-            onClick={() => void act(() => changeThreadState(thread.id, "reopen", current))}>{tt.reopen}</button>
+        {range && <Button tone="quiet" onClick={() => onShow(range)}>{t.showInText}</Button>}
+        {!readOnly && (thread.state === "resolved" ? (
+          <Button tone="quiet" busy={busy}
+            onClick={() => void act(() => changeThreadState(thread.id, "reopen", current))}>{tt.reopen}</Button>
         ) : (
-          <button type="button" className={styles.link} disabled={busy}
-            onClick={() => void act(() => changeThreadState(thread.id, "resolve", current))}>{tt.resolve}</button>
-        )}
+          <Button tone="quiet" busy={busy}
+            onClick={() => void act(() => changeThreadState(thread.id, "resolve", current))}>{tt.resolve}</Button>
+        ))}
       </div>
-      {thread.state === "resolved" ? null : (
+      {!readOnly && thread.state !== "resolved" && (
         <form className={styles.form} onSubmit={send}>
-          <textarea rows={2} aria-label={t.replyLabel} placeholder={t.replyPlaceholder} 
-            value={draft} onChange={(event) => setDraft(limitBody(event.target.value))} />
-          <button type="submit" className="btn" disabled={busy || draft.trim() === ""}>{busy ? t.replying : t.reply}</button>
+          <TextArea rows={2} label={t.replyLabel} placeholder={t.replyPlaceholder} busy={busy}
+            value={draft} onChange={(event) => setDraft(limitBody(event.target.value))}
+            onKeyDown={(event) => {
+              if (busy || event.nativeEvent.isComposing) return;
+              const action = replyKeyAction(event.key, event.ctrlKey, event.metaKey);
+              if (action === null) return;
+              event.preventDefault();
+              if (action === "cancel") setDraft("");
+              else if (draft.trim() !== "") void act(() => replyComment(thread.id, draft, current));
+            }} />
+          <Button type="submit" busy={busy} disabled={draft.trim() === ""}>{busy ? t.replying : t.reply}</Button>
         </form>
       )}
       {error ? <p role="alert" className={styles.error}>{t.replyErrors[error]}</p> : null}
@@ -100,6 +112,7 @@ function NewComment({ documentId, anchor, current, onDone }: {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Exclude<CreateOutcome, "ok"> | null>(null);
+  const titleId = useId();
   const publish = async (event: FormEvent) => {
     event.preventDefault();
     if (busy || body.trim() === "") return;
@@ -110,14 +123,14 @@ function NewComment({ documentId, anchor, current, onDone }: {
     setError(outcome);
   };
   return (
-    <form className={styles.newComment} onSubmit={(event) => void publish(event)} aria-labelledby="new-comment-title">
-      <h3 id="new-comment-title">{tt.newTitle}</h3>
+    <form className={styles.newComment} onSubmit={(event) => void publish(event)} aria-labelledby={titleId}>
+      <h3 id={titleId}>{tt.newTitle}</h3>
       <p className={styles.quote}>„{anchor.quote}”</p>
-      <textarea rows={3} aria-label={tt.bodyLabel} value={body}
+      <TextArea rows={3} label={tt.bodyLabel} value={body} busy={busy}
         onChange={(event) => setBody(limitBody(event.target.value))} />
       <div className={styles.actions}>
-        <button type="submit" className="btn" disabled={busy || body.trim() === ""}>{busy ? tt.publishing : tt.publish}</button>
-        <button type="button" className={styles.link} disabled={busy} onClick={() => onDone(false)}>{tt.cancel}</button>
+        <Button type="submit" busy={busy} disabled={body.trim() === ""}>{busy ? tt.publishing : tt.publish}</Button>
+        <Button tone="quiet" disabled={busy} onClick={() => onDone(false)}>{tt.cancel}</Button>
       </div>
       {error ? <p role="alert" className={styles.error}>{tt.errors[error]}</p> : null}
     </form>
@@ -147,12 +160,77 @@ export function useComments(documentId: string, current: () => boolean, active: 
   return { outcome: active ? outcome : null, load };
 }
 
-export default function TeacherComments({ documentId, outcome, placed, draft, current, onReload, onDraftDone, onShow }: {
+function ConsultationPrint({ placed, nodeOrder, current }: {
+  placed: readonly PlacedThread[];
+  nodeOrder: readonly { id: string }[];
+  current: () => boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string>();
+  const [status, setStatus] = useState("");
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const tp = tt.consultation;
+  const entries = open ? consultationEntries(placed, nodeOrder) : [];
+  const copy = async () => {
+    if (!current()) return;
+    setError(undefined);
+    setStatus("");
+    try {
+      await navigator.clipboard.writeText(consultationText(entries));
+      setStatus(tp.copied);
+    } catch {
+      setError(tp.copyError);
+    }
+  };
+  const print = () => {
+    if (!current()) return;
+    setStatus("");
+    const frame = frameRef.current;
+    setError(frame && printConsultation(frame, entries) ? undefined : tp.printError);
+  };
+  return (
+    <>
+      <Button tone="quiet" onClick={() => {
+        if (!current()) return;
+        setError(undefined);
+        setStatus("");
+        setOpen(true);
+      }}>{tp.title}</Button>
+      <Dialog open={open} title={tp.title} error={error} onClose={() => setOpen(false)} actions={
+        <>
+          <Button tone="quiet" disabled={entries.length === 0} onClick={() => void copy()}>{tp.copy}</Button>
+          <Button tone="quiet" disabled={entries.length === 0} onClick={print}>{tp.print}</Button>
+          <Button onClick={() => setOpen(false)}>{tp.close}</Button>
+        </>
+      }>
+        {entries.length === 0 ? <p>{tp.empty}</p> : (
+          <ol>
+            {entries.map((entry) => (
+              <li key={entry.id} className={printStyles.entry}>
+                <strong>{entry.label}</strong>
+                <blockquote>{entry.quote}</blockquote>
+                {entry.messages.map(({ id, text }) => <p key={id}>{text}</p>)}
+              </li>
+            ))}
+          </ol>
+        )}
+        <p role="status" hidden={!status}>{status}</p>
+        <iframe ref={frameRef} className={printStyles.frame} tabIndex={-1} aria-hidden="true" title={tp.title} />
+      </Dialog>
+    </>
+  );
+}
+
+export default function TeacherComments({
+  documentId, outcome, placed, nodeOrder, draft, current, readOnly = false, onReload, onDraftDone, onShow,
+}: {
   documentId: string;
   outcome: ListOutcome | null;
   placed: PlacedThread[];
+  nodeOrder: readonly { id: string }[];
   draft: TextAnchor | null;
   current: () => boolean;
+  readOnly?: boolean;
   onReload: () => void;
   onDraftDone: () => void;
   onShow: (range: TextRange) => void;
@@ -162,18 +240,27 @@ export default function TeacherComments({ documentId, outcome, placed, draft, cu
   else if (outcome.kind === "forbidden") list = <p className={styles.muted}>{t.notAvailable}</p>;
   else if (outcome.kind !== "ok") list = <p className={styles.muted} role="status">{t[outcome.kind]}</p>;
   else if (placed.length === 0) list = <p className={styles.muted}>{tt.empty}</p>;
-  else list = placed.map((p) => <ThreadCard key={p.thread.id} placed={p} current={current} onChanged={onReload} onShow={onShow} />);
+  else list = placed.map((p) => (
+    <ThreadCard key={p.thread.id} placed={p} current={current} readOnly={readOnly} onChanged={onReload} onShow={onShow} />
+  ));
 
+  const titleId = useId();
   return (
-    <section className={styles.comments} aria-labelledby="teacher-comments-title">
-      <h2 id="teacher-comments-title">{t.title}</h2>
-      {draft ? (
-        <NewComment key={`${draft.nodeId}:${draft.startHint}:${draft.endHint}`} documentId={documentId} anchor={draft} current={current}
+    <section className={styles.comments} aria-labelledby={titleId}>
+      <h2 id={titleId}>{t.title}</h2>
+      {!readOnly && (draft ? (
+        <NewComment key={`${documentId}:${draft.nodeId}:${draft.startHint}:${draft.endHint}:${draft.quote}`}
+          documentId={documentId} anchor={draft} current={current}
           onDone={(created) => { onDraftDone(); if (created) onReload(); }} />
-      ) : <p className={styles.muted}>{tt.hint}</p>}
+      ) : <p className={styles.muted}>{tt.hint}</p>)}
       {list}
       <p className={styles.muted}>{t.note}</p>
-      <button type="button" className={styles.link} onClick={onReload}>{t.refresh}</button>
+      <div className={styles.actions}>
+        <Button tone="quiet" onClick={onReload}>{t.refresh}</Button>
+        {outcome?.kind === "ok" && (
+          <ConsultationPrint key={documentId} placed={placed} nodeOrder={nodeOrder} current={current} />
+        )}
+      </div>
     </section>
   );
 }

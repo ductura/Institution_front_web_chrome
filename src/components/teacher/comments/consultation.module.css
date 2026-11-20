@@ -1,0 +1,12 @@
+.entry {
+  margin-block-end: 1rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.frame {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+  border: 0;
+}
