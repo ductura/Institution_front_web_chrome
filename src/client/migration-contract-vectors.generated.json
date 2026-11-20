@@ -2035,5 +2035,28 @@
         "aiSummaryOnly": true
       }
     }
+  },
+  {
+    "route": "institution.work-work-language.get",
+    "name": "current",
+    "kind": "success",
+    "request": {
+      "params": {
+        "assignmentId": "a04d5e6f-7081-4c93-9da4-e5f607182904",
+        "documentId": "izm-dokument-1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-nositelja-0000000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "body": {
+        "title": "Izmišljeni rad o kućnom kompostiranju",
+        "assignmentLanguage": "hr",
+        "exception": null
+      }
+    }
   }
 ]
