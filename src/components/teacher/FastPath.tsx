@@ -4,12 +4,10 @@ import { Button, PanelTabs } from "@ductura/ui";
 import Link from "next/link";
 import { createElement as h, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
-import { browserTransport, signInHref as loginHref } from "@/client/api";
-import { listRevisionRequests, type RevisionListOutcome } from "@/client/revision-requests";
+import { signInHref as loginHref } from "@/client/api";
 import { watchSessionEnd, type SessionWatch } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
 import RevisionLog from "@/components/editor/revision/RevisionLog";
-import { revisionLog } from "@/components/editor/revision/revision-log";
 import { ProcessSummaryView } from "@/components/summary/ProcessSummaryView";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -29,7 +27,7 @@ import {
 } from "./fast-path";
 import controls from "./fast-path/controls.module.css";
 import { fastPathControlsHr } from "./fast-path/messages.hr";
-import { startFastPathReader } from "./fast-path/read";
+import { readRevisionPreview, startFastPathReader, type RevisionRead } from "./fast-path/read";
 
 const t = { ...messagesHr.fastPath, ...fastPathControlsHr };
 
@@ -249,11 +247,11 @@ function Record({ student, record, href }: RecordProps) {
 function RevisionPreview({ documentId, record, current, onSignedOut }: RevisionAccess & {
   documentId: string; record: FastPathRecord;
 }) {
-  const [outcome, setOutcome] = useState<RevisionListOutcome | null>(null);
+  const [outcome, setOutcome] = useState<RevisionRead | null>(null);
   useEffect(() => {
     let active = true;
     const reading = () => active && current();
-    void listRevisionRequests(documentId, reading, { fetchImpl: browserTransport }).then((result) => {
+    void readRevisionPreview(documentId, reading).then((result) => {
       if (!reading()) return;
       if (result.kind === "signedOut") onSignedOut();
       else setOutcome(result);
@@ -263,10 +261,8 @@ function RevisionPreview({ documentId, record, current, onSignedOut }: RevisionA
 
   if (outcome === null) return h("p", { role: "status" }, t.revisionsLoading);
   if (outcome.kind !== "ok") return h("p", { role: "status" }, t.revisionsUnavailable);
-  const awaiting = outcome.requests.some((request) => request.state === "responded"
-    && request.versions.at(-1)?.response?.kind === "done");
   return h("div", null,
-    awaiting && h("p", { className: controls.round, role: "status" }, t.revisionReady),
-    h(RevisionLog, { entries: revisionLog(outcome.requests) }),
+    outcome.awaiting && h("p", { className: controls.round, role: "status" }, t.revisionReady),
+    h(RevisionLog, { entries: outcome.entries }),
   );
 }

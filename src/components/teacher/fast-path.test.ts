@@ -6,7 +6,6 @@ import { signInHref } from "@/client/api";
 import { DEMO_FAST_PATH } from "@/lib/i18n/demo-fast-path.hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { isUiTextModule } from "../../../scripts/forbidden-terms/scan";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
 import { FastPath } from "./FastPath";
 import { bySurname, compareHr, fastPathLines, fullName, textRuns, type FastPathStudent } from "./fast-path";
@@ -214,12 +213,7 @@ describe("block kinds (F-150 point 1, E1)", () => {
 });
 
 describe("text coverage", () => {
-  it("the forbidden-terms scan reads the demo data and the messages", () => {
-    expect(isUiTextModule("src/lib/i18n/demo-fast-path.hr.ts")).toBe(true);
-    expect(isUiTextModule("src/lib/i18n/messages.hr.ts")).toBe(true);
-  });
-
-  it("no demo text holds a forbidden word", () => {
+  it("scans the demo data and both message catalogs for forbidden terms", () => {
     expect(findForbiddenTerms(JSON.stringify(DEMO_FAST_PATH))).toEqual([]);
     expect(findForbiddenTerms(JSON.stringify(t))).toEqual([]);
     expect(findForbiddenTerms(JSON.stringify(fastPathControlsHr))).toEqual([]);

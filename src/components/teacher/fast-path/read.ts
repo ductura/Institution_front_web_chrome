@@ -1,5 +1,7 @@
 import { browserTransport, createApi, type ApiOptions } from "@/client/api";
 import { summaryAgrees } from "@/client/process-summary";
+import { listRevisionRequests } from "@/client/revision-requests";
+import { revisionLog, type LogEntry } from "@/components/editor/revision/revision-log";
 
 import type { FastPathLoad, FastPathStudent } from "../fast-path";
 
@@ -21,6 +23,18 @@ export async function readFastPath(assignmentId: string, options: ApiOptions = {
     // A transport error is handled like an unavailable response.
   }
   return { kind: "unavailable" };
+}
+
+export type RevisionRead =
+  | { kind: "ok"; awaiting: boolean; entries: LogEntry[] }
+  | { kind: "signedOut" | "forbidden" | "unavailable" };
+
+export async function readRevisionPreview(documentId: string, current: () => boolean, options: ApiOptions = {}): Promise<RevisionRead> {
+  const result = await listRevisionRequests(documentId, current, { fetchImpl: browserTransport, ...options });
+  if (result.kind !== "ok") return result;
+  const awaiting = result.requests.some((request) => request.state === "responded"
+    && request.versions.at(-1)?.response?.kind === "done");
+  return { kind: "ok", awaiting, entries: revisionLog(result.requests) };
 }
 
 export const FAST_PATH_REFRESH_MS = 5 * 60_000;
