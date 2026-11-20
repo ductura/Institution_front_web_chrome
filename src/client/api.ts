@@ -493,6 +493,33 @@ export async function signOut(options: ApiOptions = {}): Promise<boolean> {
   }
 }
 
+/** The path of POST auth.logout.post, read from the contract; throws unless there is exactly one local one. */
+export function logoutPath(paths: Paths): string {
+  const found = Object.entries(paths).filter(([, methods]) => methods.post?.operationId === "auth.logout.post");
+  const path = found[0]?.[0];
+  if (found.length !== 1 || path === undefined || !path.startsWith("/") || path.startsWith("//")) {
+    throw new Error("contract: no single POST auth.logout.post");
+  }
+  return path;
+}
+export const LOGOUT_PATH = logoutPath((openapi as unknown as { paths: Paths }).paths);
+
+/**
+ * WEB-39 (DAN-212): after `signOut` confirmed, the same POST once more,
+ * natively, so the browser follows the route's 303 on to the provider's
+ * logout, which a fetch cannot. It goes without the cookie, so it closes
+ * nothing twice. A hidden form of its own, so it holds while the page
+ * re-renders; the one native request outside createApi.
+ */
+export function followLogoutNatively(doc: Pick<Document, "createElement" | "body"> = document): void {
+  const form = doc.createElement("form");
+  form.method = "post";
+  form.action = LOGOUT_PATH;
+  form.hidden = true;
+  doc.body.append(form);
+  form.submit();
+}
+
 // ---------------------------------------------------------------------------
 // WEB-02 (Ductus#2028 c.7008147932): the Next.js app passes every /api/v1/*
 // request on to Institution_server, and its server-side pages read through
