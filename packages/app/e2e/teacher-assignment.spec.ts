@@ -1,9 +1,13 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 import { assignmentSetupMessages as wizard } from "../../../src/components/teacher/TeacherSetup/messages.hr";
+import type { TeacherCourse } from "../../../src/components/teacher/teacher-courses-read";
 import { messagesHr } from "../../../src/lib/i18n/messages.hr";
 
-import fixtures from "./fixtures/teacher.json";
+const fixtures = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", import.meta.url), "utf8")) as {
+  "teacher.courses.get": { courses: TeacherCourse[] };
+};
 
 const newPath = "/app/web/nastavnik/zadatak/novi";
 const { assignment, existingCourse } = messagesHr.teacher;
