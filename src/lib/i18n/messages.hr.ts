@@ -2162,6 +2162,17 @@ export const hr = {
     toDeclaration: "Natrag na izjavu",
     back: "Natrag",
   },
+  // WEB-26 (S: E-10, PD-3): step 4 of the submission. "Predano" only with the
+  // signed receipt (B-6); an unknown outcome never says the work is not submitted.
+  submit: {
+    revision: "verzija na poslužitelju",
+    submit: "Predaj rad",
+    dialogTitle: "Predati rad?",
+    dialogText: "Predaje se tekst koji vidite na ovoj stranici i nakon predaje se više ne mijenja.",
+    dialogLate: "Rok je prošao, pa će potvrda navesti da je rad predan nakon roka.",
+    cancel: "Odustani",
+    sending: "Šalje se…",
+  },
 } as const;
 
 type Widen<T> = { readonly [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };
