@@ -6,6 +6,8 @@ import { useEffect, useId, useState } from "react";
 
 import { countHr } from "../../lib/i18n/hr";
 import { messagesHr } from "../../lib/i18n/messages.hr";
+import { readJournalScope } from "../editor/EditorPage.scope";
+import { confirmationKey, stepHref } from "./flow";
 
 const t = messagesHr.declaration;
 const s = messagesHr.summary;
@@ -32,11 +34,6 @@ export type RecordedRead =
   | { readonly kind: "ready"; readonly summary: RecordedSummary }
   | { readonly kind: "loading" }
   | { readonly kind: "error" };
-
-/** Where the flow keeps the confirmation: this tab only, never the server (P-7). */
-export function confirmationKey(assignmentId: string): string {
-  return `ductura.predaja.izjava.${assignmentId}`;
-}
 
 function isEmpty(summary: RecordedSummary): boolean {
   return summary.sessions.count === 0 && summary.pastes.listed.length === 0
@@ -99,7 +96,7 @@ export function DeclarationView({ recorded, confirmed, onConfirm, onNext, onBack
       {recorded.kind === "error" && <Button tone="quiet" onClick={onRetry}>{t.retry}</Button>}
       <Card title={t.declared}>
         <Tag>{t.declaredTag}</Tag>
-        <p>{t.statement}</p>
+        <p>{recorded.kind === "ready" ? t.statement : t.statementWithoutRecord}</p>
         <Checkbox label={t.confirm} hint={t.keptHere} checked={confirmed}
           onChange={(event) => onConfirm(event.currentTarget.checked)} />
       </Card>
@@ -117,7 +114,8 @@ export type DeclarationProps = {
   readonly recorded: RecordedRead;
 };
 
-export function readConfirmed(key: string): boolean {
+export function readConfirmed(key: string | null): boolean {
+  if (key === null) return false;
   try {
     return window.sessionStorage.getItem(key) === "1";
   } catch {
@@ -125,7 +123,8 @@ export function readConfirmed(key: string): boolean {
   }
 }
 
-export function writeConfirmed(key: string, confirmed: boolean): void {
+export function writeConfirmed(key: string | null, confirmed: boolean): void {
+  if (key === null) return;
   try {
     if (confirmed) window.sessionStorage.setItem(key, "1");
     else window.sessionStorage.removeItem(key);
@@ -134,14 +133,25 @@ export function writeConfirmed(key: string, confirmed: boolean): void {
   }
 }
 
-/** The step with its state: never ticked in advance, kept when the student comes back from step 3. */
+/** The current sign-in's session tag, shared by steps 2 and 3. */
+export function useSessionTag(): string | null {
+  const [tag, setTag] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void readJournalScope().then((read) => { if (live && read.kind === "scope") setTag(read.session.tag); });
+    return () => { live = false; };
+  }, []);
+  return tag;
+}
+
+/** Keep the confirmation for this sign-in and hand it to step 3 even when storage is refused. */
 export default function Declaration({ assignmentId, recorded }: DeclarationProps) {
   const router = useRouter();
-  const key = confirmationKey(assignmentId);
+  const tag = useSessionTag();
+  const key = tag === null ? null : confirmationKey(tag, assignmentId);
   const [confirmed, setConfirmed] = useState(false);
   // Read after the first render, so the server's markup (unticked) matches.
   useEffect(() => setConfirmed(readConfirmed(key)), [key]);
-  const base = `/rad/${encodeURIComponent(assignmentId)}`;
   return (
     <DeclarationView
       recorded={recorded}
@@ -150,8 +160,8 @@ export default function Declaration({ assignmentId, recorded }: DeclarationProps
         setConfirmed(next);
         writeConfirmed(key, next);
       }}
-      onNext={() => router.push(`${base}/predaja/pregled`)}
-      onBack={() => router.push(base)}
+      onNext={() => router.push(stepHref(assignmentId, "pregled", confirmed ? tag ?? undefined : undefined))}
+      onBack={() => router.push(stepHref(assignmentId, "tekst"))}
       onRetry={() => router.refresh()}
     />
   );

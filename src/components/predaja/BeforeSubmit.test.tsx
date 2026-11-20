@@ -9,6 +9,7 @@ import {
   type BeforeSubmitViewProps, type NotesRead, type SummaryRead,
 } from "./BeforeSubmit";
 import { stageOf, type Stage } from "./stage";
+import { confirmationKey, isDeclared, stepHref } from "./flow";
 import { noteFailure, noteProblem } from "./NoteDialog";
 
 // Invented summary of an invented work (no real student data).
@@ -94,6 +95,13 @@ describe("BeforeSubmitView (WEB-25, S: E-8)", () => {
     expect(markup).toContain("Sažetak procesa trenutačno nije moguće učitati. To ne zaustavlja predaju.");
     expect(button(markup, "Dalje na predaju")).not.toContain("disabled");
     expect(button(markup, "Pokušaj ponovno")).not.toBe("");
+  });
+
+  it("without a summary read wired, says so and offers nothing to try again", () => {
+    const markup = render({ summary: { kind: "unavailable" } });
+    expect(markup).toContain("Sažetak procesa trenutačno nije moguće učitati. To ne zaustavlja predaju.");
+    expect(button(markup, "Pokušaj ponovno")).toBe("");
+    expect(button(markup, "Dalje na predaju")).not.toContain("disabled");
   });
 
   it("shows the loading variant while the summary and the notes load", () => {
@@ -191,5 +199,26 @@ describe("notes (PD-4)", () => {
 
   it("a session that ended is named", () => {
     expect(noteFailure({ kind: "session-expired" })).toContain("AAI@EduHr");
+  });
+});
+
+describe("the flow's addresses and the declaration hand-off (flow.ts)", () => {
+  it("each button of step 3 leads to its step's page", () => {
+    expect(stepHref(ASSIGNMENT, "slanje")).toBe(`/rad/${ASSIGNMENT}/predaja/slanje`);
+    expect(stepHref(ASSIGNMENT, "izjava")).toBe(`/rad/${ASSIGNMENT}/predaja/izjava`);
+    expect(stepHref(ASSIGNMENT, "potvrda")).toBe(`/rad/${ASSIGNMENT}/predaja/potvrda`);
+    expect(stepHref(ASSIGNMENT, "tekst")).toBe(`/rad/${ASSIGNMENT}`);
+    expect(stepHref(ASSIGNMENT, "pregled", "sim tag/1")).toBe(`/rad/${ASSIGNMENT}/predaja/pregled?izjava=sim%20tag%2F1`);
+  });
+
+  it("refused storage does not lose the confirmation: the hand-off of this sign-in counts", () => {
+    expect(isDeclared("sim-session-tag-aaaa", false, "sim-session-tag-aaaa")).toBe(true);
+    expect(isDeclared("sim-session-tag-aaaa", true, undefined)).toBe(true);
+  });
+
+  it("a hand-off or a kept tick of another sign-in does not count", () => {
+    expect(isDeclared("sim-session-tag-bbbb", false, "sim-session-tag-aaaa")).toBe(false);
+    expect(isDeclared(null, true, "sim-session-tag-aaaa")).toBe(false);
+    expect(confirmationKey("sim-session-tag-aaaa", ASSIGNMENT)).not.toBe(confirmationKey("sim-session-tag-bbbb", ASSIGNMENT));
   });
 });

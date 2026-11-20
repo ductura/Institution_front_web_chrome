@@ -883,8 +883,8 @@ const en = {
     // #711 F1b (contract §4): the earlier draft of this device, offered only to read and copy.
     earlierDraftSummary: "This device keeps an earlier text of yours that is not in this work.",
     // Owner (#711, O3 and amendment c): since 3d-2c2b a paste is an evidence step of the work, so the sentence that says so is back.
-    earlierDraftExplain: "The text stays where it is and is not deleted. If you want it in this work, copy it and paste it in; the record of the work then logs that as a paste.",
-    earlierDraftCopy: "Copy text",
+    earlierDraftExplain: "The text stays in the earlier draft. To use it in this work, put it on the clipboard and paste it here. The work record logs it as a paste.",
+    earlierDraftCopy: "Put text on the clipboard",
     // Owner accepted (#711 c.6396392080, b): the contract text "Kopirano u međuspremnik." fails the stem list of messages.test.ts (kopiran).
     earlierDraftCopied: "The text is on the clipboard.",
     // Owner accepted (#711 c.6396392080, a): the contract text "Tekst nije moguće kopirati." is a forbidden term (kopir-, PRODUCT §5).
@@ -898,6 +898,14 @@ const en = {
     wordMinimum: "at least {words}",
     wordMaximum: "at most {words}",
     pagesApprox: "≈ {pages} pp.",
+    backToAssignments: "← My assignments",
+    submitWork: "Submission",
+    submitOffline: "Submitting the work needs a network connection.",
+    scopeRange: "length {min} to {max}",
+    scopeMin: "length at least {min}",
+    scopeMax: "length at most {max}",
+    scopePrivate: "only you see this",
+    readOnly: "Read only",
   },
   editor: {
     placeholder: "Start writing…",
@@ -1021,9 +1029,9 @@ const en = {
     unconfirmedNote:
       "You can answer once the server has received every change to the text. If an error or a conflict is reported with the text, follow that notice first; the explanation you typed stays here.",
     keptLabel: "Unsent explanation",
-    keptHint: "This explanation was not sent because the request can no longer be answered. Copy it if you want to keep it.",
+    keptHint: "This explanation was not sent because the request can no longer be answered. Use the clipboard to keep it elsewhere.",
     keptForLabel: "Unsent explanation for revision request {n}",
-    keptUnloadedHint: "This explanation was not sent, and the requests cannot be loaded right now. Copy it if you want to keep it.",
+    keptUnloadedHint: "This explanation was not sent, and the requests cannot be loaded right now. Use the clipboard to keep it elsewhere.",
     errors: {
       signedOut: "Your sign-in has expired. Sign in again.",
       forbidden: "This account cannot answer this request.",
@@ -1417,13 +1425,13 @@ const en = {
       "The record stays linked to you on this device, and you continue it when you sign in again. Anyone who signs in on this device after you does not see your work.",
     // 3d-2c, P3 and P4 (a): a copy kept outside the work stays on sign-out.
     logoutCopy: {
-      one: "This device keeps {n} copy of text that is not in the work.",
-      few: "This device keeps {n} copies of text that are not in the work.",
-      many: "This device keeps {n} copies of text that are not in the work.",
+      one: "This device keeps {n} version of the text outside the work.",
+      few: "This device keeps {n} versions of the text outside the work.",
+      many: "This device keeps {n} versions of the text outside the work.",
     },
     logoutCopyKept:
-      "Signing out does not delete the copy. It stays linked to you on this device, and you see it again when you sign in.",
-    copyTitle: "Copy of the text",
+      "The text stays linked to you on this device. You can see it again when you sign in.",
+    copyTitle: "Text kept outside the work",
     // F-154 (owner decision 1.3): text written after the submission stays on
     // sign-out (D-118) and goes only on the author's second click.
     afterSubmissionTitle: "Changes after the submission",
@@ -1432,13 +1440,13 @@ const en = {
     afterSubmissionDiscardConfirm: "Yes, delete the changes",
     afterSubmissionKeep: "Keep the changes",
     afterSubmissionDiscardFailed: "The changes were not deleted and stay on this device. Try again.",
-    copyNewestOnly: "The actions apply to the newest copy.",
+    copyNewestOnly: "The actions apply to the newest version.",
     copyRestore: "Return the text to the work",
-    copyDiscard: "Discard the copy",
-    copyDiscardAsk: "A discarded copy cannot be restored. Discard it?",
-    copyDiscardConfirm: "Yes, discard the copy",
-    copyKeep: "Keep the copy",
-    copyDiscardFailed: "The copy was not discarded and stays on this device. Try again.",
+    copyDiscard: "Discard this version",
+    copyDiscardAsk: "A discarded version cannot be restored. Discard it?",
+    copyDiscardConfirm: "Yes, discard this version",
+    copyKeep: "Keep this version",
+    copyDiscardFailed: "This version remains on the device. Try again.",
     // #1330, #1444: ended here; nothing calls the server again.
     logoutDevice:
       "Sign-out on this device is complete. The server is not responding right now, so the sign-in there ends at the next sign-in or when it expires.",
@@ -2019,6 +2027,7 @@ const en = {
     declared: "Your declaration",
     declaredTag: "declared",
     statement: "By confirming you declare that you have reviewed what Ductura recorded about this work.",
+    statementWithoutRecord: "The recorded items are not shown here right now. By confirming you confirm only your own declaration.",
     keptHere: "The confirmation is not sent to the server; it holds only in this submission step in this browser.",
     confirm: "I confirm the declaration",
     next: "Next",
@@ -2117,15 +2126,16 @@ const en = {
     retry: "Try again",
     empty: "The server holds no signed submission receipt for this work.",
     toSubmit: "To the submission",
-    waiting: "The server received the submission request, and the receipt is not signed yet. Check the submission state a little later.",
+    pendingTitle: "Submission in progress",
+    waiting: "The submission was recorded {when}. The receipt signature is still being issued; this does not change the submission time.",
     check: "Check the submission state",
-    signingStarted: "Signing started",
+    signingStarted: "Receipt signing started",
+    notYetRecorded: "not recorded yet",
     submittedAt: "Submitted at",
     dueAt: "Deadline",
-    signedAt: "Receipt signed",
     assignmentVersion: "Assignment version",
     revision: "Text version",
-    utc: "Details in UTC",
+    utc: "Exact values from the receipt (UTC)",
     late: "The work was submitted after the deadline.",
     record: "Record state",
     records: {
