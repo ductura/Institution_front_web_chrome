@@ -114,7 +114,7 @@ function projectAtom(raw: Record<string, unknown>, path: string, errors: Interop
 }
 
 function projectInlineV3(raw: unknown, path: string, errors: InteropError[]): InlineNodeV3 | null {
-  return isPlainObject(raw) && typeof raw.type === "string" && raw.type in ATTRS_BY_ATOM
+  return isPlainObject(raw) && typeof raw.type === "string" && Object.hasOwn(ATTRS_BY_ATOM, raw.type)
     ? projectAtom(raw, path, errors)
     : projectInline(raw, path, errors);
 }
