@@ -2098,6 +2098,33 @@ const en = {
       other: "The submission cannot be sent. Try again.",
     },
   },
+  receipt: {
+    title: "Submission receipt",
+    loading: "Loading the submission receipt.",
+    error: "The submission receipt cannot be loaded right now.",
+    retry: "Try again",
+    empty: "The server holds no signed submission receipt for this work.",
+    toSubmit: "To the submission",
+    waiting: "The server received the submission request, and the receipt is not signed yet. Check the submission state a little later.",
+    check: "Check the submission state",
+    signingStarted: "Signing started",
+    submittedAt: "Submitted at",
+    dueAt: "Deadline",
+    signedAt: "Receipt signed",
+    assignmentVersion: "Assignment version",
+    revision: "Text version",
+    utc: "Details in UTC",
+    late: "The work was submitted after the deadline.",
+    record: "Record state",
+    records: {
+      continuous: "The record has no breaks.",
+      with_gaps: "The record has gaps. Gaps do not change the submission; the details are in the process summary.",
+    },
+    fingerprint: "Fingerprint of the submitted text (SHA-256)",
+    fingerprintNote: "The code confirms that the submitted text has not changed since the submission.",
+    summary: "Process summary",
+    signatureNote: "The browser does not check the signature of this receipt.",
+  },
 } as const satisfies Messages;
 
 export const messagesEn: Messages = en;

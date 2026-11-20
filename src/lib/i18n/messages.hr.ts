@@ -2135,6 +2135,35 @@ export const hr = {
       other: "Predaju nije moguće poslati. Pokušajte ponovno.",
     },
   },
+  // WEB-27 (S: E-11): step 5, the receipt; the same panel and words for the
+  // teacher (WEB-35, §5 rule 5). "Predano" only with the signed receipt (B-6).
+  receipt: {
+    title: "Potvrda predaje",
+    loading: "Učitavam potvrdu predaje.",
+    error: "Potvrdu predaje trenutačno nije moguće učitati.",
+    retry: "Pokušaj ponovno",
+    empty: "Poslužitelj nema potpisanu potvrdu predaje ovog rada.",
+    toSubmit: "Na predaju",
+    waiting: "Poslužitelj je primio zahtjev za predaju, a potvrda još nije potpisana. Provjerite stanje predaje malo kasnije.",
+    check: "Provjeri stanje predaje",
+    signingStarted: "Potpisivanje započelo",
+    submittedAt: "Vrijeme predaje",
+    dueAt: "Rok",
+    signedAt: "Potvrda potpisana",
+    assignmentVersion: "Verzija zadatka",
+    revision: "Verzija teksta",
+    utc: "Pojedinosti u UTC",
+    late: "Rad je predan nakon roka.",
+    record: "Stanje zapisa",
+    records: {
+      continuous: "Zapis je bez prekida.",
+      with_gaps: "Zapis ima praznine. Praznine ne mijenjaju predaju; pojedinosti su u sažetku procesa.",
+    },
+    fingerprint: "Otisak predanog teksta (SHA-256)",
+    fingerprintNote: "Kod potvrđuje da se predani tekst nije mijenjao od predaje.",
+    summary: "Sažetak procesa",
+    signatureNote: "Preglednik ne provjerava potpis ove potvrde.",
+  },
 } as const;
 
 type Widen<T> = { readonly [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };
