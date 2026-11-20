@@ -56,8 +56,16 @@ function whoOf(extension: DeadlineExtension, names: ReadonlyMap<string, string |
  * recorded extension the page is read again, so the list shows it.
  */
 export default function DeadlineExtensions({
-  assignmentId, read, students,
-}: { assignmentId: string; read: ExtensionsRead; students: readonly ExtensionStudent[] | null }) {
+  assignmentId, read, students, onRecorded, returnTo,
+}: {
+  assignmentId: string;
+  read: ExtensionsRead;
+  students: readonly ExtensionStudent[] | null;
+  /** What follows a recorded extension; by default the page is read again (router.refresh). */
+  onRecorded?: () => void;
+  /** Where sign-in returns after an ended session; by default the page of N-13 without a base. */
+  returnTo?: string;
+}) {
   const router = useRouter();
   const canPickOne = students !== null && students.length > 0;
   const [scope, setScope] = useState<"one" | "all">(canPickOne ? "one" : "all");
@@ -80,12 +88,13 @@ export default function DeadlineExtensions({
     setNote(null);
     const outcome = await recordDeadlineExtension(createApi(), assignmentId, { scope, studentId, dueAt, reasonId });
     setBusy(false);
-    if (outcome.kind === "session-expired") return goToSignIn(extensionsHref(assignmentId));
+    if (outcome.kind === "session-expired") return goToSignIn(returnTo ?? extensionsHref(assignmentId));
     setNote(extensionNote(outcome));
     if (outcome.kind === "zabiljezeno") {
       setDueLocal("");
       setReasonId("");
-      router.refresh();
+      if (onRecorded === undefined) router.refresh();
+      else onRecorded();
     }
   }
 

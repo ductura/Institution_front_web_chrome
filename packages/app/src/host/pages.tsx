@@ -72,10 +72,10 @@ export function StudentPage({ view }: { view: "home" | "courses" }) {
   return <StudentHome read={read} enroll={null} view={view} signIn={(returnTo) => signInHref(appHref(base, returnTo))} />;
 }
 
-type TeacherRead<T> = { kind: "ready"; value: T } | { kind: "signedOut" } | { kind: "notTeacher" } | { kind: "unavailable" };
+export type TeacherRead<T> = { kind: "ready"; value: T } | { kind: "signedOut" } | { kind: "notTeacher" } | { kind: "unavailable" };
 
 /** One read per visit and per "Pokušaj ponovno"; a signed-out answer goes to sign-in. */
-function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>>): [TeacherRead<T> | null, () => void] {
+export function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>>): [TeacherRead<T> | null, () => void] {
   const [result, setResult] = useState<TeacherRead<T> | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -95,7 +95,7 @@ function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>>): [Te
 }
 
 /** The page heading, its lead and one state of a teacher's read. */
-function TeacherPage<T>({ title, lead, read, retry, unavailable, retryLabel, ready }: {
+export function TeacherPage<T>({ title, lead, read, retry, unavailable, retryLabel, ready }: {
   title: string; lead: string; read: TeacherRead<T> | null; retry: () => void;
   unavailable: string; retryLabel: string; ready: (value: T) => ReactNode;
 }) {
