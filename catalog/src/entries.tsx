@@ -15,7 +15,7 @@ import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipR
 import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
   AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments,
-  NoteDialog, OutlinePanel, StudentHome, TeacherCourses,
+  NoteDialog, OutlinePanel, StudentHome, SubmitDialog, TeacherCourses,
   type AssignmentSubmission, type LiveWorkFrameData, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
   type TeacherCourse,
 } from "../../src/components/index.ts";
@@ -530,5 +530,19 @@ export const SCREEN_ENTRIES = {
         <MentorshipRequestsView read={{ kind: "ready", requests }} here="/nastavnik/mentorstva" call={() => new Promise(() => undefined)} />
       </div>
     ),
+  },
+  // WEB-26 (PD-3): a failed submission is told by the page, never by the dialog, so greška is the
+  // dialog asked again after the page's alert; onemogućeno is the submission on its way.
+  SubmitDialog: {
+    prazno: () => <SubmitDialog open modal={false} revision={1} late={false} sending={false} onSubmit={nothing} onClose={nothing} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => (
+      <div>
+        <p role="alert">{t.errorPage.errorBody}</p>
+        <SubmitDialog open modal={false} revision={4} late={false} sending={false} onSubmit={nothing} onClose={nothing} />
+      </div>
+    ),
+    puno: () => <SubmitDialog open modal={false} revision={4} late sending={false} onSubmit={nothing} onClose={nothing} />,
+    onemogućeno: () => <SubmitDialog open modal={false} revision={4} late={false} sending onSubmit={nothing} onClose={nothing} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;

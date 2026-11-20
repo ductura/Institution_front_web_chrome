@@ -2,7 +2,7 @@
 
 import { Button, Dialog } from "@ductura/ui";
 
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { messagesHr } from "../../lib/i18n/messages.hr";
 
 const t = messagesHr.submit;
 
@@ -15,6 +15,8 @@ export type SubmitDialogProps = {
   readonly sending: boolean;
   readonly onSubmit: () => void;
   readonly onClose: () => void;
+  /** False only in the catalogue, where the dialog stands in the page like the Dialog entry. */
+  readonly modal?: boolean;
 };
 
 /**
@@ -22,9 +24,9 @@ export type SubmitDialogProps = {
  * buttons do nothing and Escape does not close the dialog: the answer decides
  * what the page says next, never the dialog.
  */
-export function SubmitDialog({ open, revision, late, sending, onSubmit, onClose }: SubmitDialogProps) {
+export function SubmitDialog({ open, revision, late, sending, onSubmit, onClose, modal = true }: SubmitDialogProps) {
   return (
-    <Dialog open={open} title={t.dialogTitle} onClose={onClose} dismissible={!sending}
+    <Dialog open={open} modal={modal} title={t.dialogTitle} onClose={onClose} dismissible={!sending}
       actions={(
         <>
           <Button busy={sending} onClick={onSubmit}>{sending ? t.sending : t.submit}</Button>
