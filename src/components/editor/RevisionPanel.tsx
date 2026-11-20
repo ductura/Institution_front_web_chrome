@@ -25,6 +25,8 @@ import type { RevisionKind } from "@/domain/collaboration/revision-input";
 import { formatDateHr } from "@/lib/i18n/hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
+import RevisionLog from "./revision/RevisionLog";
+import { revisionLog } from "./revision/revision-log";
 import { useLocalSignedOut, useLocalSubmitted, useLocalUnconfirmed } from "./LocalDocument";
 import {
   RevisionList, clearSent, isLive, revisionFromOpen, sendAnswer, type AnswerError, type ListStatus,
@@ -155,6 +157,7 @@ function SessionRevisionPanel({ documentId, assignmentId, session }: {
   };
 
   return (
+    <>
     <RevisionList
       t={t} formatDate={formatDateHr} status={status} requests={requests} submitted={submitted} unconfirmed={unconfirmed}
       drafts={drafts} numbers={numbers} sending={sending} errors={errors} live={live}
@@ -162,5 +165,7 @@ function SessionRevisionPanel({ documentId, assignmentId, session }: {
       onAnswer={(id, kind) => void answer(id, kind)}
       onRetry={() => void load()}
     />
+    {requests.length > 0 && <RevisionLog entries={revisionLog(requests)} />}
+    </>
   );
 }
