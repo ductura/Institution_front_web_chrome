@@ -34,6 +34,8 @@
 // unit tests of AssignmentOverview and ReceiptPanel hold that variant), the
 // access-log row of reading the receipt (P-5 decides its surface), the
 // receipt signature (P-4).
+import { createRequire } from 'node:module';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { test, expect } from '@playwright/test';
 import { axe } from './support/axe.js';
 
@@ -56,6 +58,262 @@ const REQUESTS_UNAVAILABLE = 'Zahtjevi za mentorstvo trenutačno nisu dostupni. 
 const APPROVED = 'Zahtjev je odobren. Rad je u popisu radova uz mentora.';
 const DECISION_UNKNOWN = 'Nije poznato je li odluka zabilježena. Osvježite stranicu prije novog pokušaja.';
 const SHA256_HEX = /^[0-9a-f]{64}$/;
+
+const fixturePaths = {
+  roster: '/nastavnik/kolegiji/izmisljeni-kolegij/studenti',
+  overview: '/nastavnik/zbirni',
+  mentorship: '/nastavnik/mentorstva',
+  studentReceipt: '/rad/izmisljeni-zadatak/predaja/potvrda',
+  accessLog: '/rad/izmisljeni-zadatak/dnevnik-pristupa',
+};
+const fixtureNames = { submitted: 'Izmišljena Studentica B', open: 'Izmišljeni Student A', late: 'Izmišljeni Student C' };
+const requestId = '70000000-0000-4000-8000-000000000101';
+const requestName = 'Izmišljena Podnositeljica';
+const requestTitle = 'Izmišljeni završni rad';
+const liveText = 'Izmišljeni tekst o obnovi gradskog vrta.';
+
+// The app routes still have TODO(ugovor) readers. Render the same components and
+// call the existing validators with fixtures on a loopback-only Vite server.
+// The DUCTURA_STOG suite below owns Next routing, sign-in and access-log writes.
+// After pnpm install, set DUCTURA_VAL5_FIXTURE=1 and run:
+//   pnpm test:functional --project=chromium e2e/nastavnik-val5.spec.js
+// The root npm-only CI job has no Vite workspace install.
+function fixtureEntry(receipt) {
+  return `
+import '@ductura/ui/fonts.css';
+import '@ductura/ui/tokens.css';
+import '@/app/globals.css';
+import { createRoot } from 'react-dom/client';
+import { useState } from 'react';
+import CourseStudents from '@/components/teacher/CourseStudents';
+import AssignmentOverview from '@/components/teacher/AssignmentOverview';
+import LiveWorkFrame from '@/components/teacher/LiveWorkFrame';
+import LiveText from '@/components/teacher/LiveText';
+import MentoredWorks from '@/components/teacher/MentoredWorks';
+import { MentorshipRequestsView } from '@/components/teacher/MentorshipRequests';
+import { ReceiptPanel, studentReceiptRead } from '@/components/predaja/ReceiptPanel';
+import { AccessLogDays } from '@/components/student/AccessLogView';
+import { accessLogDaysOf } from '@/components/student/access-log-days';
+import { readAssignmentOverview, readTeacherReceipt } from '@/client/teacher-reads';
+import { readSubmissionState } from '@/client/submission';
+
+const paths = ${JSON.stringify(fixturePaths)};
+const names = ${JSON.stringify(fixtureNames)};
+const receipt = ${JSON.stringify(receipt)};
+const request = { requestId: '${requestId}', studentName: '${requestName}', title: '${requestTitle}',
+  workType: 'bachelor_thesis', requestedAt: '2026-12-20T09:00:00Z' };
+const { documentId, assignmentId, artifactSha256 } = receipt.payload;
+const assignmentTitle = 'Izmišljeni seminar';
+const studentId = '70000000-0000-4000-8000-000000000001';
+const openId = '70000000-0000-4000-8000-000000000002';
+const lateId = '70000000-0000-4000-8000-000000000003';
+const workPath = '/nastavnik/rad/' + documentId;
+const path = location.pathname;
+const answer = (body) => ({ ok: true, status: 200, body });
+const receiptCall = async () => answer({ state: 'potvrdeno', receipt });
+
+function Mentorship() {
+  const [works, setWorks] = useState([]);
+  // TODO(ugovor): inject the decision transport until WEB-32 wires the route.
+  async function call(id, input) {
+    const result = await window.decideFixtureMentorship(id, input);
+    if (result.ok && result.body.decision === 'approve' && result.body.requestId === request.requestId) {
+      setWorks([{ mentorshipId: request.requestId, assignmentId, documentId: null,
+        student: { givenName: 'Izmišljena', familyName: 'Podnositeljica' },
+        title: request.title, workType: request.workType, workState: 'not_started' }]);
+    }
+    return result;
+  }
+  return <><h1>Mentorstva</h1><MentorshipRequestsView read={{ kind: 'ready', requests: [request] }}
+    here={paths.mentorship} call={call} /><MentoredWorks works={works} /></>;
+}
+
+async function screen() {
+  switch (path) {
+    case paths.roster:
+      // TODO(ugovor): the roster view needs title, type and documentId to open N-06.
+      return <CourseStudents result={{ kind: 'ready', courseName: 'Izmišljeni kolegij', students: [
+        { studentId: openId, name: names.open, group: 'A', works: [] },
+        { studentId, name: names.submitted, group: 'B', works: [
+          { assignmentId, title: assignmentTitle, workType: 'seminar_paper', state: 'predano', documentId },
+        ] },
+      ] }} />;
+    case workPath:
+      // TODO(ugovor): the frame uses fixture metadata until teacher.work.get is wired.
+      return <LiveWorkFrame documentId={documentId} recordState="complete"
+        frame={{ studentName: names.submitted, assignmentTitle, submitted: true, previousId: null, nextId: null }}
+        text={<LiveText marks={[]} view={{ empty: false, connection: 'live', submitted: true, hash: artifactSha256,
+          document: { nodes: [{ id: 'odlomak-1', type: 'paragraph', children: [{ text: '${liveText}', marks: [] }] }] },
+        }} />} />;
+    case workPath + '/predaja':
+    case paths.studentReceipt: {
+      const read = path === paths.studentReceipt
+        ? await readSubmissionState(receiptCall, assignmentId)
+        : await readTeacherReceipt(receiptCall, assignmentId, studentId);
+      return <><h1>{names.submitted}</h1><ReceiptPanel read={studentReceiptRead(read, 'submitted')}
+        retryHref={path} summaryHref={workPath + '#sazetak-procesa'} submitHref={workPath} /></>;
+    }
+    case paths.overview: {
+      // TODO(ugovor): documentId on the submitted row links to N-07.
+      const read = await readAssignmentOverview(async () => answer({ rows: [
+        { studentId: lateId, name: names.late, group: 'C', submitted: true, requestedMinute: '2026-12-23T08:05Z',
+          afterDeadline: true, evidenceRecord: 'continuous' },
+        { studentId, name: names.submitted, group: 'B', submitted: true, requestedMinute: '2026-12-20T21:14Z',
+          afterDeadline: false, evidenceRecord: 'continuous', documentId },
+        { studentId: openId, name: names.open, group: 'A', submitted: false, requestedMinute: null,
+          afterDeadline: false, evidenceRecord: null },
+      ] }), assignmentId);
+      return <><h1>Zbirni pregled</h1><AssignmentOverview assignmentTitle={assignmentTitle}
+        rows={read.kind === 'ready' ? read.rows : null} /></>;
+    }
+    case paths.mentorship:
+      return <Mentorship />;
+    case paths.accessLog: {
+      const days = accessLogDaysOf([{ id: 'izmisljeni-pristup', at: '2026-12-20T21:10:00.000Z', role: 'teacher',
+        surface: 'live_view', reader: { givenName: 'Izmišljeni', familyName: 'Nastavnik' } }]);
+      return <><h1>Dnevnik pristupa</h1><AccessLogDays days={days} olderHref={null} /></>;
+    }
+    default:
+      throw new Error('Nepoznata putanja testnog prikaza: ' + path);
+  }
+}
+
+screen().then((view) => createRoot(document.getElementById('root')).render(<main>{view}</main>));
+`;
+}
+
+if (process.env.DUCTURA_VAL5_FIXTURE === '1') test.describe('WEB-36 · prikazi s izmišljenim podacima', () => {
+  // A flow opens several documents and runs axe on each one.
+  test.describe.configure({ timeout: 90_000 });
+  let server;
+  let origin;
+  let receipt;
+
+  test.beforeAll(async () => {
+    const catalog = new URL('../catalog/', import.meta.url);
+    const catalogRequire = createRequire(new URL('package.json', catalog));
+    const clientRequire = createRequire(new URL('../src/client/package.json', import.meta.url));
+    const [vite, { VECTORS }] = await Promise.all([
+      import(pathToFileURL(catalogRequire.resolve('vite')).href),
+      import(pathToFileURL(clientRequire.resolve('@ductura/test-fakes/fake-server')).href),
+    ]);
+    receipt = VECTORS.find(({ route, name }) => route === 'submission.submit.post' && name === 'submitted').response.body.receipt;
+    const workPath = `/nastavnik/rad/${receipt.payload.documentId}`;
+    const pages = new Set([...Object.values(fixturePaths), workPath, `${workPath}/predaja`]);
+    const modulePath = '/val5-fixture.jsx';
+    const moduleId = vite.normalizePath(fileURLToPath(new URL('val5-fixture.jsx', catalog)));
+    server = await vite.createServer({
+      root: fileURLToPath(catalog),
+      resolve: { alias: {
+        '@/domain/collaboration': fileURLToPath(new URL('../packages/editor-core/src/document/collaboration', import.meta.url)),
+        '@': fileURLToPath(new URL('../src', import.meta.url)),
+      } },
+      server: { host: '127.0.0.1', port: 0, ws: false, watch: null },
+      plugins: [{
+        name: 'web36-fixture',
+        configureServer({ middlewares }) {
+          middlewares.use((request, response, next) => {
+            if (!pages.has(request.url)) return next();
+            response.setHeader('Content-Type', 'text/html; charset=utf-8');
+            response.setHeader('Content-Security-Policy', "connect-src 'self'");
+            response.end(`<!doctype html><html lang="hr" data-theme="light"><meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>Izmišljeni prikaz vala 5</title><div id="root"></div><script type="module" src="${modulePath}"></script>`);
+          });
+        },
+        resolveId(id) { if (id === modulePath) return moduleId; },
+        load(id) { if (id === moduleId) return fixtureEntry(receipt); },
+      }],
+    });
+    await server.listen();
+    origin = `http://127.0.0.1:${server.httpServer.address().port}`;
+  });
+
+  test.afterAll(async () => { await server?.close(); });
+  test.afterEach(async ({ page }) => {
+    expect(await page.pageErrors()).toEqual([]);
+  });
+
+  for (const width of [1250, 400]) {
+    test(`studenti, rad, potvrde i dnevnik pristupa · ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(origin + fixturePaths.roster);
+      await expect(page.getByText(fixtureNames.open, { exact: true })).toBeVisible();
+      await page.getByRole('combobox').selectOption('B');
+      await expect(page.getByText(fixtureNames.open, { exact: true })).toHaveCount(0);
+      await expect(page.getByText(fixtureNames.submitted, { exact: true })).toBeVisible();
+      await axe(page);
+      await page.getByRole('link', { name: OPEN_SEMINAR }).click();
+      await expect(page).toHaveURL(`${origin}/nastavnik/rad/${receipt.payload.documentId}`);
+      await expect(page.getByRole('main').getByRole('document')).toHaveText(liveText);
+      await axe(page);
+      await page.getByRole('link', { name: TO_SUBMISSION }).click();
+      await expect(page).toHaveURL(`${origin}/nastavnik/rad/${receipt.payload.documentId}/predaja`);
+      await expect(page.getByText('Otisak predanog teksta (SHA-256)', { exact: true })).toBeVisible();
+      const fingerprint = await shownFingerprint(page);
+      expect(fingerprint).toBe(receipt.payload.artifactSha256);
+      await axe(page);
+      await page.goto(origin + fixturePaths.studentReceipt);
+      await expect(page.getByText('Otisak predanog teksta (SHA-256)', { exact: true })).toBeVisible();
+      expect(await shownFingerprint(page)).toBe(fingerprint);
+      await axe(page);
+      await page.goto(origin + fixturePaths.accessLog);
+      const entry = page.getByRole('listitem').filter({ hasText: 'Izmišljeni Nastavnik · nastavnik kolegija' });
+      await expect(entry).toContainText('Rad uživo');
+      await expect(entry.locator('time')).toHaveText('22:10–22:15');
+      await axe(page);
+    });
+
+    test(`zbirni pregled · ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(origin + fixturePaths.overview);
+      const table = page.getByRole('table');
+      await expect(table.getByRole('row', { name: new RegExp(fixtureNames.open) })).toContainText('Nije predano');
+      await expect(table.getByRole('row', { name: new RegExp(fixtureNames.late) })).toContainText('Nakon roka');
+      const submitted = table.getByRole('row', { name: new RegExp(fixtureNames.submitted) });
+      await expect(submitted).toContainText('Predano');
+      const column = table.getByRole('columnheader', { name: 'Vrijeme predaje' });
+      await column.getByRole('button').press('Enter');
+      await expect(column).toHaveAttribute('aria-sort', 'ascending');
+      await expect(table.locator('time')).toHaveCount(2);
+      await expect(table.locator('time').first()).toHaveAttribute('datetime', '2026-12-20T21:14Z');
+      await column.getByRole('button').press('Enter');
+      await expect(column).toHaveAttribute('aria-sort', 'descending');
+      await expect(table.locator('time').first()).toHaveAttribute('datetime', '2026-12-23T08:05Z');
+      await axe(page);
+      await submitted.getByRole('link').click();
+      await expect(page.getByText('Otisak predanog teksta (SHA-256)', { exact: true })).toBeVisible();
+    });
+
+    test(`odobravanje mentorstva · ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const decision = Promise.withResolvers();
+      const received = Promise.withResolvers();
+      await page.exposeFunction('decideFixtureMentorship', (id, input) => {
+        received.resolve({ id, input });
+        return decision.promise;
+      });
+      await page.goto(origin + fixturePaths.mentorship);
+      const approve = page.getByRole('button', { name: `Odobri: ${requestName}` });
+      await expect(approve).toBeEnabled();
+      await axe(page);
+      await approve.click();
+      try {
+        await expect(approve).toHaveAttribute('aria-busy', 'true');
+        await expect(page.getByText(APPROVED, { exact: true })).toHaveCount(0);
+        expect(await received.promise).toEqual({
+          id: 'teacher.mentorship-request-decision.post', input: { body: { requestId, decision: 'approve' } },
+        });
+      } finally {
+        decision.resolve({ ok: true, status: 200, body: { requestId, decision: 'approve' } });
+      }
+      await expect(page.getByRole('status')).toHaveText(APPROVED);
+      await expect(approve).toHaveCount(0);
+      await expect(page.getByRole('region', { name: 'Radovi · abecedno' }).getByText(requestTitle)).toBeVisible();
+      await axe(page);
+    });
+  }
+});
 
 /** Fails at once with what to start, instead of each test timing out. */
 async function reachable(url, what) {
