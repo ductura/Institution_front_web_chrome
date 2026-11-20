@@ -2123,3 +2123,20 @@ type Widen<T> = { readonly [K in keyof T]: T[K] extends string ? string : Widen<
 export type Messages = Widen<typeof hr>;
 
 export const messagesHr: Messages = hr;
+
+/** N-04 lives in the Croatian teacher shell. */
+export const courseStudentsHr = {
+  title: "Popis studenata",
+  courseTitle: "{course}: studenti",
+  filter: "Prikaz",
+  allGroups: "Svi",
+  noName: "Ime nije dostupno",
+  noWorks: "Nema zadataka.",
+  noAssignmentTitle: "Naziv zadatka nije dostupan",
+  openSeminar: "Otvori seminarski rad",
+  loading: "Učitavanje popisa studenata…",
+  unavailable: "Popis studenata trenutačno nije dostupan.",
+  retry: "Pokušaj ponovno",
+  empty: "Još se nitko nije upisao.",
+  backToCourses: "Natrag na kolegije",
+} as const;
