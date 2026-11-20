@@ -4,6 +4,8 @@ export {
   formatBibliographyEntry,
   formatCitationInText,
   formatInText,
+  formatNumberedBibliographyEntry,
+  formatNumericCitation,
   normalizePages,
   sortBibliography,
 } from "./format";

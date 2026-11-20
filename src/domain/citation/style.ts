@@ -1,7 +1,16 @@
 export type CitationStyle = {
   faculty: string;
-  style: "author-date";
+  style: "author-date" | "numeric";
   version: string;
+  /** Present exactly when `style` is "numeric": numbers by first citation. */
+  numeric?: {
+    open: string;
+    close: string;
+    /** In the list: `[1]` ("bracket") or `1.` ("dot"). */
+    listMarker: "bracket" | "dot";
+    pageLabel: string;
+    pageSeparator: string;
+  };
   inText: {
     open: string;
     close: string;
@@ -50,7 +59,7 @@ function str(obj: Record<string, unknown>, key: string, path: string): string {
 export function parseCitationStyle(input: unknown): CitationStyle {
   const root = record(input, "style");
   const style = str(root, "style", "style");
-  if (style !== "author-date") {
+  if (style !== "author-date" && style !== "numeric") {
     throw new CitationStyleError(`unsupported style "${style}"`);
   }
   const inText = record(root.inText, "style.inText");
@@ -62,9 +71,25 @@ export function parseCitationStyle(input: unknown): CitationStyle {
   if (typeof bib.periodAfterYear !== "boolean") {
     throw new CitationStyleError("style.bibliography.periodAfterYear must be a boolean");
   }
+  let numeric: CitationStyle["numeric"];
+  if (style === "numeric") {
+    const n = record(root.numeric, "style.numeric");
+    const listMarker = n.listMarker;
+    if (listMarker !== "bracket" && listMarker !== "dot") {
+      throw new CitationStyleError('style.numeric.listMarker must be "bracket" or "dot"');
+    }
+    numeric = {
+      open: str(n, "open", "style.numeric"),
+      close: str(n, "close", "style.numeric"),
+      listMarker,
+      pageLabel: str(n, "pageLabel", "style.numeric"),
+      pageSeparator: str(n, "pageSeparator", "style.numeric"),
+    };
+  }
   return {
     faculty: str(root, "faculty", "style"),
     style,
+    ...(numeric === undefined ? {} : { numeric }),
     version: str(root, "version", "style"),
     inText: {
       open: str(inText, "open", "style.inText"),

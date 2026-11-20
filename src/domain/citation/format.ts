@@ -136,6 +136,24 @@ export function formatBibliographyEntry(source: Source, style: CitationStyle): s
   return `${authors} ${year} ${body(source, style)}`;
 }
 
+function numericOf(style: CitationStyle): NonNullable<CitationStyle["numeric"]> {
+  if (style.numeric === undefined) throw new CitationInputError("the style is not numeric");
+  return style.numeric;
+}
+
+/** `[3]` or `[3, str. 12]`: the number of the source by first citation, then the locator. */
+export function formatNumericCitation(number: number, style: CitationStyle, locator?: string): string {
+  const n = numericOf(style);
+  const page = locator === undefined || locator === "" ? "" : `${n.pageSeparator}${n.pageLabel}${normalizePages(locator, style)}`;
+  return `${n.open}${number}${page}${n.close}`;
+}
+
+/** A list entry led by its number: `[3] ...` or `3. ...`. */
+export function formatNumberedBibliographyEntry(number: number, source: Source, style: CitationStyle): string {
+  const marker = numericOf(style).listMarker === "bracket" ? `[${number}]` : `${number}.`;
+  return `${marker} ${formatBibliographyEntry(source, style)}`;
+}
+
 function sortKey(author: Author): string {
   return author.kind === "person" ? `${author.family} ${author.given}` : (author.acronym ?? author.name);
 }
