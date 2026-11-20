@@ -58,7 +58,7 @@ function random(seed: number) {
 
 // Flush the observer's task-end timeout between actions, regardless of the
 // host's timer resolution. The focused source tests exercise real timers.
-const endTask = () => vi.runOnlyPendingTimersAsync();
+const endTask = () => vi.runOnlyPendingTimers();
 
 function keyEvent(name: string, ctrl: boolean, shift: boolean, trusted: boolean) {
   const code = [...name].length === 1 ? name.toUpperCase().charCodeAt(0) : { Enter: 13, Backspace: 8 }[name] ?? 0;
@@ -203,7 +203,7 @@ async function run(seed: number): Promise<Outcome> {
     at += r.pick([0, 30, 120, 450, 900, 2_000]);
     try {
       act();
-      await endTask();
+      endTask();
       if (r.next() < 0.3) await drain();
     } catch (error) {
       if (!(error instanceof CaptureError)) throw error;
