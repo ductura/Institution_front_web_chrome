@@ -128,8 +128,7 @@ export async function replayEvidenceSegmentsV2<TDocument>(
     return { ok: false, reason: "invalid_document", segmentIndex: null, sequence: null };
   }
 
-  for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
-    const segment = segments[segmentIndex];
+  for (const [segmentIndex, segment] of segments.entries()) {
     if (segment.captureContext.transactionFormat !== replayer.transactionFormat) {
       return { ok: false, reason: "unsupported_format", segmentIndex, sequence: null };
     }

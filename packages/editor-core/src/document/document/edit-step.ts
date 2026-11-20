@@ -364,8 +364,9 @@ function mark(value: unknown, path: string): EditStepMark {
 /** Non-empty, without repeats, in the canonical order (bold before italic). */
 function marks(value: unknown, path: string): EditStepMark[] {
   const parsed = items(value, path, "invalid_mark").map((item, i) => mark(item, `${path}[${i}]`));
-  for (let i = 1; i < parsed.length; i += 1) {
-    if (MARK_ORDER.indexOf(parsed[i - 1].type) >= MARK_ORDER.indexOf(parsed[i].type)) {
+  for (const [i, current] of parsed.entries()) {
+    const previous = parsed[i - 1];
+    if (previous !== undefined && MARK_ORDER.indexOf(previous.type) >= MARK_ORDER.indexOf(current.type)) {
       reject("invalid_mark", `${path}[${i}]`);
     }
   }
@@ -412,6 +413,18 @@ function isInline(value: Inline | Block): value is Inline {
 }
 
 /**
+ * A node of a parsed slice. `slice` refuses empty content (`items`), so every
+ * index used below is in range; a wrong one throws, as reading it did.
+ */
+function sliceNode(parsed: Slice, index: number): Inline | Block {
+  const node = parsed.content[index];
+  if (node === undefined) {
+    throw new TypeError(`slice has no node at ${index}`);
+  }
+  return node;
+}
+
+/**
  * One inline node. A citation is read only under a v2 budget; under v1 it is
  * a node the format does not have.
  */
@@ -432,7 +445,7 @@ function inlines(raw: readonly unknown[], path: string, budget: Budget): Inline[
   for (let i = 1; i < parsed.length; i += 1) {
     const [before, after] = [parsed[i - 1], parsed[i]];
     if (
-      before.type === "text" && after.type === "text" &&
+      before?.type === "text" && after?.type === "text" &&
       JSON.stringify(before.marks) === JSON.stringify(after.marks)
     ) {
       reject("not_canonical", `${path}[${i}]`);
@@ -498,7 +511,7 @@ function newBlocksHaveNoId(parsed: Slice, path: string): void {
   });
   const [first, end] = [parsed.content[0], parsed.content[last]];
   if (
-    last > 0 && !isInline(first) && !isInline(end) &&
+    last > 0 && first !== undefined && end !== undefined && !isInline(first) && !isInline(end) &&
     first.attrs.nodeId !== null && first.attrs.nodeId === end.attrs.nodeId
   ) {
     reject("invalid_node_id", `${path}.content[${last}].attrs.nodeId`);
@@ -546,7 +559,7 @@ function sliceKind(parsed: Slice | null): SliceKind {
   if (!parsed) {
     return "none";
   }
-  if (isInline(parsed.content[0])) {
+  if (isInline(sliceNode(parsed, 0))) {
     return "text";
   }
   if ("openStart" in parsed) {
@@ -611,7 +624,7 @@ function replaceShape(
   // a last block without text ends with it. A different start would be a
   // change of the block's type or attributes, which is `replaceAround`.
   const single = parsed.content.length === 1;
-  const lastIsEmpty = !("content" in parsed.content[parsed.content.length - 1]);
+  const lastIsEmpty = !("content" in sliceNode(parsed, parsed.content.length - 1));
   if (kind === "end" && ((width === 1 && (single || lastIsEmpty)) || (width === 2 && single))) {
     reject("not_canonical", `${path}.slice`);
   }
@@ -691,7 +704,7 @@ function replaceAroundStep(value: unknown, path: string, budget: Budget): EditSt
   const parsed = slice(own.slice, `${path}.slice`, budget);
   const only = parsed.content[0];
   if (
-    parsed.content.length !== 1 || isInline(only) || "content" in only ||
+    parsed.content.length !== 1 || only === undefined || isInline(only) || "content" in only ||
     "openStart" in parsed || "openEnd" in parsed
   ) {
     reject("invalid_slice", `${path}.slice`);
@@ -757,8 +770,14 @@ function sourceSetStep(value: unknown, path: string, budget: Budget): EditStepV2
   spend(budget, MIN_OBJECT_BYTES, `${path}.source`);
   const errors: ValidationError[] = [];
   const [source] = validateSources([own.source], errors);
-  if (errors.length > 0) {
-    reject("invalid_value", `${path}.source${errors[0].path.slice("$.sources[0]".length)}`);
+  const [fault] = errors;
+  if (fault !== undefined) {
+    reject("invalid_value", `${path}.source${fault.path.slice("$.sources[0]".length)}`);
+  }
+  // The validator returns no source only together with a fault; this keeps a
+  // step without a source unrepresentable.
+  if (source === undefined) {
+    reject("invalid_value", `${path}.source`);
   }
   return {
     ...(hash === null ? {} : { removedSha256: hash }),

@@ -191,7 +191,12 @@ function holderOf(blocks: readonly Block[], pos: number): Block | undefined {
   let high = blocks.length - 1;
   while (low < high) {
     const middle = (low + high + 1) >> 1;
-    if (blocks[middle].pos < pos) {
+    const block = blocks[middle];
+    // low < middle <= high < blocks.length, so the block is present.
+    if (block === undefined) {
+      throw new TypeError(`holderOf: no block at ${middle}`);
+    }
+    if (block.pos < pos) {
       low = middle;
     } else {
       high = middle - 1;
@@ -316,9 +321,15 @@ function plan({ next, kept, gone }: Trace, remembered: Removed, mint: NodeIdMint
     const arrivalGroups = groupBySignature(arrivals);
     for (const [key, left] of groupBySignature(gone)) {
       const arrived = arrivalGroups.get(key);
-      const id = idOf(left[0].node);
-      if (left.length === 1 && arrived?.length === 1 && typeof id === "string" && !taken.has(id.toLowerCase())) {
-        claim(arrived[0].pos, id);
+      // A group of groupBySignature always holds at least one block.
+      const [first] = left;
+      const [arrival] = arrived ?? [];
+      const id = first === undefined ? undefined : idOf(first.node);
+      if (
+        left.length === 1 && arrived?.length === 1 && arrival !== undefined &&
+        typeof id === "string" && !taken.has(id.toLowerCase())
+      ) {
+        claim(arrival.pos, id);
       }
     }
   }
@@ -499,8 +510,9 @@ export function createNodeIdentityPlugin(mint: NodeIdMinter = newNodeId): Plugin
         return null;
       }
       let traced: Trace;
-      if (transactions.length === 1 && transactions[0].before === oldState.doc) {
-        traced = traceOf(transactions[0]);
+      const [only] = transactions;
+      if (transactions.length === 1 && only !== undefined && only.before === oldState.doc) {
+        traced = traceOf(only);
       } else {
         const mapping = new Mapping();
         for (const tr of transactions) {

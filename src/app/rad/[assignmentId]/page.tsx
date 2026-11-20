@@ -5,6 +5,7 @@ import { signInHref } from "../../../client/api";
 import { serverApi } from "../../../client/server";
 import EditorPage, { SheetNote } from "../../../components/editor/EditorPage";
 import { assignmentIdOf, editorWorkRead } from "../../../components/editor/EditorPage.read";
+import EditorPageWork from "../../../components/editor/EditorPageWork";
 import StatusBar from "../../../components/editor/StatusBar";
 import WorkspaceTopBar from "../../../components/editor/WorkspaceTopBar";
 import { workspaceFrame, type WorkspaceVariant } from "../../../components/editor/workspace-variant";
@@ -21,7 +22,7 @@ const UNREACHED = { ok: false, status: 0 } as const;
 // The session cookie is read per request: nothing of a student's work is built in.
 export const dynamic = "force-dynamic";
 
-/** What the sheet holds until the editor-core journal is wired (WEB-14 part 2). */
+/** What the sheet holds when no editor is mounted. */
 function sheetBody(variant: WorkspaceVariant) {
   // The server could not answer: say so, never that the assignment is not this account's.
   if (variant === "greska") return <SheetNote>{t.student.unavailable}</SheetNote>;
@@ -40,7 +41,8 @@ function sheetBody(variant: WorkspaceVariant) {
  * (student.assignments.get, student.assignment-work.get), with the request's
  * session cookie. Signed out → AAI@EduHr sign-in, back here; a notice not yet
  * acknowledged → the notice first; anyone else's or an unknown assignment →
- * 404. No save state is claimed while no journal is open.
+ * 404. A work in progress mounts EditorPageWork. No save state is claimed
+ * while no journal is open.
  *
  * WEB-23 (S: E-7) frames the sheet: the top bar with "Predaja rada" and the
  * sheet switch, and the status bar with the scope line. A submitted work is
@@ -67,12 +69,18 @@ export default async function WorkPage({ params }: { params: Promise<{ assignmen
   if (read.kind === "notFound") notFound();
   const frame = workspaceFrame(read);
   const title = read.kind === "ready" ? read.title : null;
+  const topBar = <WorkspaceTopBar assignmentId={assignmentId} title={title} />;
+  const length = { words: null, range: frame.range };
+  // "not_started" waits for the read of work-document-plan over /api/v1.
+  if (read.kind === "ready" && frame.variant === "puno") {
+    return <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length} />;
+  }
   return (
     <EditorPage
       course={read.kind === "ready" ? read.course : null}
       title={title}
-      topBar={<WorkspaceTopBar assignmentId={assignmentId} title={title} />}
-      status={<StatusBar save={null} readOnly={frame.variant === "predano"} length={{ words: null, range: frame.range }} />}
+      topBar={topBar}
+      status={<StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
     >
       {sheetBody(frame.variant)}
     </EditorPage>

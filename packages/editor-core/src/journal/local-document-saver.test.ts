@@ -1025,17 +1025,16 @@ describe("LocalDocumentSaver: resume and reload races (#206 qa206c)", () => {
     await Promise.all([a.load(), b.load()]);
     await type(b, "B");
     expect(await a.load()).toEqual({ kind: "recovery", reason: "stale", document: text("B") });
-    const claims: string[] = [];
+    const claims: Promise<string>[] = [];
     a.subscribe((s) => {
       if (s.state !== "LOCAL_DURABLE") return;
-      void real.read(DOC).then((stored) => {
-        claims.push(documentsEqual(stored.snapshot!.document, text("")) ? "written" : "missing");
-      });
+      claims.push(real.read(DOC).then((stored) =>
+        documentsEqual(stored.snapshot!.document, text("")) ? "written" : "missing",
+      ));
     });
     await a.resume(text(""));
     await a.settled();
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(claims).toEqual(["written"]);
+    expect(await Promise.all(claims)).toEqual(["written"]);
   });
 
   it("MANJE 1b: overlapping reloads start no write until the last one has read", async () => {

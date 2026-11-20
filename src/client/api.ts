@@ -304,12 +304,23 @@ async function callMigrationRoute<Id extends ApiOperationId>(
     try {
       body = JSON.parse(new TextDecoder().decode(bytes));
     } catch {
-      return { ok: false, status: 0, code: "unexpected" };
+      return { ok: false, status: unreadableStatus(status), code: "unexpected" };
     }
   }
   if (status >= 400) return { ok: false, status, code: migrationError(route, status, body) } as ApiResult<Id>;
   if (!responseMatches(id, status, body, bytes.byteLength)) return { ok: false, status, code: "unexpected" };
   return { ok: true, status, body, headers: {} } as ApiResult<Id>;
+}
+
+/**
+ * The status of an answer declared JSON whose body is not JSON. A 5xx keeps its
+ * own status (WEB-ER, Ductus#2028 c.7020060555): the server or a proxy did not
+ * finish, so a caller may send the same request again, as for any other 5xx.
+ * Anything else is 0: an unreadable success never confirms anything, and an
+ * unreadable 4xx is not the refusal its status names.
+ */
+function unreadableStatus(status: number): number {
+  return status >= 500 && status <= 599 ? status : 0;
 }
 
 /** The browser's own transport, for a caller that wraps it before handing it to createApi (WEB-38). */
@@ -339,9 +350,11 @@ export function createApi(options: ApiOptions = {}) {
     let code: string | undefined;
     const protocol = options.protocol !== undefined && PROTOCOL_ROUTES.has(id) ? options.protocol : undefined;
     let errorBytes: ArrayBuffer | null = null;
+    let answered = 0;
     const measured: typeof fetch = async (url, init) => {
       const headers = protocol === undefined ? init?.headers : { ...(init?.headers as Record<string, string>), "ductus-protocol": protocol };
       const res = await transport(url, protocol === undefined ? init : { ...init, headers });
+      answered = res.status;
       const bytes = res.type === "opaqueredirect" ? new ArrayBuffer(0) : await res.clone().arrayBuffer();
       bodyBytes = bytes.byteLength;
       if (protocol !== undefined && res.status >= 400 && res.headers.get("content-type")?.startsWith("application/json")) errorBytes = bytes;
@@ -354,7 +367,7 @@ export function createApi(options: ApiOptions = {}) {
       result = await createClient(baseUrl, measured)(publishedId, wire as Pick<Operations[OperationId], Part>);
     } catch (error) {
       // A JSON content type with a body that is not JSON breaks the contract too.
-      if (error instanceof SyntaxError) return { ok: false, status: 0, code: "unexpected" };
+      if (error instanceof SyntaxError) return { ok: false, status: unreadableStatus(answered), code: "unexpected" };
       throw error;
     }
     if (!result.ok) {
@@ -478,6 +491,33 @@ export async function signOut(options: ApiOptions = {}): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** The path of POST auth.logout.post, read from the contract; throws unless there is exactly one local one. */
+export function logoutPath(paths: Paths): string {
+  const found = Object.entries(paths).filter(([, methods]) => methods.post?.operationId === "auth.logout.post");
+  const path = found[0]?.[0];
+  if (found.length !== 1 || path === undefined || !path.startsWith("/") || path.startsWith("//")) {
+    throw new Error("contract: no single POST auth.logout.post");
+  }
+  return path;
+}
+export const LOGOUT_PATH = logoutPath((openapi as unknown as { paths: Paths }).paths);
+
+/**
+ * WEB-39 (DAN-212): after `signOut` confirmed, the same POST once more,
+ * natively, so the browser follows the route's 303 on to the provider's
+ * logout, which a fetch cannot. It goes without the cookie, so it closes
+ * nothing twice. A hidden form of its own, so it holds while the page
+ * re-renders; the one native request outside createApi.
+ */
+export function followLogoutNatively(doc: Pick<Document, "createElement" | "body"> = document): void {
+  const form = doc.createElement("form");
+  form.method = "post";
+  form.action = LOGOUT_PATH;
+  form.hidden = true;
+  doc.body.append(form);
+  form.submit();
 }
 
 // ---------------------------------------------------------------------------
