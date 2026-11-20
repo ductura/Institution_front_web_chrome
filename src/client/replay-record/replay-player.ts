@@ -97,10 +97,14 @@ function interleave<T>(items: readonly { index: number; item: T }[], gaps: reado
   const out: (T | ({ entry: "gap" } & Gap))[] = [];
   let next = 0;
   for (const { index, item } of items) {
-    while (next < gaps.length && gaps[next].beforeIndex <= index) out.push({ entry: "gap", ...gaps[next++] });
+    let gap = gaps[next];
+    while (gap !== undefined && gap.beforeIndex <= index) {
+      out.push({ entry: "gap", ...gap });
+      gap = gaps[++next];
+    }
     out.push(item);
   }
-  while (next < gaps.length) out.push({ entry: "gap", ...gaps[next++] });
+  for (const gap of gaps.slice(next)) out.push({ entry: "gap", ...gap });
   return out;
 }
 
@@ -118,8 +122,9 @@ export async function buildReplayPlayer<TDocument>(
   // The timeline puts the "starts later" gap first, before any break; it is
   // recognised here from the verified first segment, not from its index.
   let startsLater = false;
-  if (record.segments.length > 0) {
-    const first = JSON.parse(record.segments[0]) as EvidenceSegmentV2;
+  const firstSegment = record.segments[0];
+  if (firstSegment !== undefined) {
+    const first = JSON.parse(firstSegment) as EvidenceSegmentV2;
     startsLater = first.sequenceFrom !== 1 || first.initialDocumentHash !== REVISION_ZERO_SHA256;
   }
   const gaps: Gap[] = [];

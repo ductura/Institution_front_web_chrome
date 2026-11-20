@@ -1,8 +1,6 @@
-import { PendingPage } from "../../../../../../src/host/pages";
+import { TeacherWorkPage } from "../../../../../../src/host/teacher/work/pages";
 
-// TREBA API: teacher.access.get and evidence.replay.post; src/client has no module for them yet.
-// Source: Ductus src/app/nastavnik/rad/[id]/reprodukcija/page.tsx, copied to src/app/nastavnik/rad/[id]/reprodukcija/.
-/** "Reprodukcija rada" for the teacher. */
-export default function Page() {
-  return <PendingPage />;
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <TeacherWorkPage documentId={id} view="replay" />;
 }
