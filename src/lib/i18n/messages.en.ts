@@ -883,8 +883,8 @@ const en = {
     // #711 F1b (contract §4): the earlier draft of this device, offered only to read and copy.
     earlierDraftSummary: "This device keeps an earlier text of yours that is not in this work.",
     // Owner (#711, O3 and amendment c): since 3d-2c2b a paste is an evidence step of the work, so the sentence that says so is back.
-    earlierDraftExplain: "The text stays where it is and is not deleted. If you want it in this work, copy it and paste it in; the record of the work then logs that as a paste.",
-    earlierDraftCopy: "Copy text",
+    earlierDraftExplain: "The text stays in the earlier draft. To use it in this work, put it on the clipboard and paste it here. The work record logs it as a paste.",
+    earlierDraftCopy: "Put text on clipboard",
     // Owner accepted (#711 c.6396392080, b): the contract text "Kopirano u međuspremnik." fails the stem list of messages.test.ts (kopiran).
     earlierDraftCopied: "The text is on the clipboard.",
     // Owner accepted (#711 c.6396392080, a): the contract text "Tekst nije moguće kopirati." is a forbidden term (kopir-, PRODUCT §5).
