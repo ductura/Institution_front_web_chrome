@@ -27,15 +27,16 @@ Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za 
 | `app/[base]/zadaci/radovi/`, `rad/`, `rad/[assignmentId]/{predaja,dnevnik-pristupa,reprodukcija}/`, `upis/`, `upis/kolegij/[courseId]/` | Studentske stranice Ductusa na svojim adresama, iza oznake `TREBA API` (u datoteci piše koja operacija `/api/v1` nedostaje u `src/client`). Do tada pokazuju naslov i napomenu da prikaz još nije spojen. |
 | `app/[base]/nastavnik/{brz-put,rad/[id],rad/[id]/reprodukcija,zadatak/novi,zadatak/[assignmentId]/uredi,zadatak/[assignmentId]/rad/[documentId]/jezik}/` | Nastavničke stranice Ductusa, iza oznake `TREBA API` kao i studentske. `nastavnik/kolegiji/` samo preusmjerava na `nastavnik/` pod istom bazom, kao u Ductusu. |
 | `app/[base]/ustanova/{,korisnici,kolegiji,pravila}/` | Stranice administratora ustanove (A-01 do A-04) u `src/host/institution/`. „Novi kolegij” koristi `institution.admin-courses.post`. Pregled, popisi i pravila imaju zasebne poruke o nedostupnosti do uvođenja čitanja. |
-| `app/[base]/kako-radi/` | „Kako Ductura radi” za svaku prijavljenu ulogu. Čeka prijenos `src/components/how-it-works`, koji još uvozi Ductusov `@/lib/i18n/messages.hr`. |
-| `app/[base]/stanje/`, `app/[base]/prijava/` | Javne stranice: domaćin ne čita sesiju i ne stavlja ljusku (`public` u `src/routes.ts`). „Stanje sustava” je iza oznake `TREBA API` (`platform.status.get`). „Prijava” vodi ravno na prijavu preko AAI@EduHr (D-09) i vraća na traženu stranicu pod istom bazom. |
+| `app/[base]/kako-radi/` | Statični ekran „Kako Ductura radi” za svaku prijavljenu ulogu. Koristi `src/components/how-it-works` i hrvatske poruke iz `locales/hr.ts`. |
+| `app/[base]/stanje/` | Javno „Stanje sustava” bez čitanja sesije. `StatusBoard` čita `platform.status.get` kroz `src/client` i prikazuje rezultate, zastarjelost ili grešku s ponovnim pokušajem. |
+| `app/[base]/prijava/` | Javna stranica vodi ravno na prijavu preko AAI@EduHr (D-09) i vraća na traženu stranicu pod istom bazom. |
 | `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx` | Greška stranice, greška korijenskog layouta i nepostojeća stranica, na hrvatskom. |
 | `app/[base]/[[...path]]/` | `/` pod bazom (domaćin vodi na početni ekran uloge) i putanje bez stranice („Stranica ne postoji” u ljusci). |
 | `src/routes.ts` | Čiste funkcije: baza, putanja, stranica po ulozi (rute iz `src/components/shell/nav.ts` i stranice Ductusa s dinamičkim segmentom, npr. `/zadatak/[id]`), preusmjeravanje na početni ekran uloge. |
 | `tsconfig.json` | Uz stroge opcije i Ductusov alias `@/` iz `src/components/tsconfig.json`, da domaćin montira ekrane kopirane iz Ductusa (HOST). |
 | `vitest.config.ts` | Jedinični testovi čistih dijelova (`src/**/*.test.ts`). |
 | `src/text.ts` | Nekoliko tekstova samog domaćina. `text.test.ts` ih provjerava skenerom zabranjenih izraza. |
-| `e2e/session.spec.ts` | Lažni `/api/v1` (`page.route`): 401 vodi na prijavu s `returnTo`, 200 otvara ekran uloge, odjava, nedostupan poslužitelj, nastavnička čitanja (200, 401, 403, 503). Uz to provjerava konzolu i axe. Poslužitelj je `next build && next start`. Tijela nastavničkih odgovora u `e2e/fixtures/teacher.json` su vektori iz `@ductura/test-fakes` 3.0.1. |
+| `e2e/session.spec.ts` | Lažni `/api/v1` (`page.route`): prijava s `returnTo`, odjava, ekrani uloga, „Kako Ductura radi” i javno stanje (200, 401, 503 s ponovnim pokušajem). Uz to provjerava konzolu i axe. Poslužitelj je `next build && next start`. Tijela nastavničkih odgovora u `e2e/fixtures/teacher.json` su vektori iz `@ductura/test-fakes` 3.0.1. |
 
 Spojeni ekrani:
 
