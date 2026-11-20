@@ -14,6 +14,10 @@
  "src/app/upis/page.tsx": [
   "API URL"
  ],
+ "src/client/deadline-extensions.ts": [
+  "API URL",
+  "fetch"
+ ],
  "src/components/admin/FacultyRules.module.css": [
   "global alias"
  ],
@@ -112,6 +116,9 @@
  ],
  "src/components/teacher/course-create.ts": [
   "API URL",
+  "fetch"
+ ],
+ "src/components/teacher/deadline-extensions/DeadlineExtensions.tsx": [
   "fetch"
  ],
  "src/components/teacher/enrollment-code-create.ts": [
