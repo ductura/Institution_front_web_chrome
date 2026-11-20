@@ -1516,7 +1516,7 @@ export const hr = {
     checkbox: "Pročitao/la sam obavijest. Znam što se bilježi i što vidi nastavnik (mentor).",
     confirm: "Potvrdi i otvori editor",
     confirming: "Potvrđivanje…",
-    notConsent: "Potvrda nije privola. Prije potvrde ništa se ne šalje na poslužitelj.",
+    notConsent: "Potvrda nije privola. Prije potvrde zapis rada ne šalje se na poslužitelj.",
     confirmed: "Potvrđeno {time}. Zapis počinje s prvom izmjenom.",
     openEditor: "Otvori editor",
     errors: {
