@@ -1540,6 +1540,18 @@ const en = {
     emptyTitle: "The course summary has no data yet",
     emptyBody: "Once the course summary is available, you will see summary figures for your courses here. Individual students are not shown here.",
   },
+  teacherLiveWork: {
+    untitled: "Live work",
+    sidePanel: "Process summary and record limits",
+    neighbours: "Other works",
+    previous: "Previous work",
+    next: "Next work",
+    submission: "Submission",
+    gaps: "The record of this work has gaps.",
+    gapsLink: "See the process summary",
+    notSubmitted: "The work has not been submitted yet.",
+    textPending: "The live text is not available on this page yet.",
+  },
   // WEB-18 (N-01, dk-h): the teacher's courses and their enrolment codes.
   teacherCourseCodes: {
     title: "Courses and enrolment codes",
