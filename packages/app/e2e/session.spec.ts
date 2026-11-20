@@ -202,18 +202,84 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   const seen = await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
   await page.goto("/app/web/ustanova/pravila");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pravila fakulteta");
-  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await expect(page.getByText("Prikaz pravila fakulteta trenutačno nije dostupan.")).toBeVisible();
   await axe(page);
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Korisnici" }).click();
   await expect(page).toHaveURL(/\/app\/web\/ustanova\/korisnici$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Korisnici");
+  await expect(page.getByRole("status")).toHaveText("Popis korisnika i uloga trenutačno nije dostupan.");
   expect(seen.me).toBe(1);
+  await page.goto("/app/web/ustanova");
+  await expect(page.getByRole("status")).toHaveText("Pregled ustanove trenutačno nije dostupan.");
+  await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Kolegiji" }).click();
+  await expect(page).toHaveURL(/\/app\/web\/ustanova\/kolegiji$/);
+  await expect(page.getByText("Popis kolegija i akademskih godina trenutačno nije dostupan.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Novi kolegij" })).toBeVisible();
+  expect(seen.me).toBe(2);
   expect(errors).toEqual([]);
 
   await page.unrouteAll({ behavior: "wait" });
   await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
   await page.goto("/app/chrome/ustanova/kolegiji");
   await expect(page).toHaveURL(/\/app\/chrome\/zadaci$/);
+});
+
+const ADMIN_COURSES = "**/api/v1/institution/admin/courses";
+const COURSE_NAME = "Izmišljeni seminar o gradskim vrtovima";
+const HOLDER_ID = "00000000-0000-4000-8000-000000000001";
+
+async function openNewCourse(page: Page, base: "/app/web" | "/app/chrome") {
+  await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
+  await page.goto(`${base}/ustanova/kolegiji`);
+  await page.getByLabel("Naziv kolegija").fill(COURSE_NAME);
+  await page.getByLabel("Identifikator nositelja").fill(HOLDER_ID);
+}
+
+test("course creation reports a failed write and confirms only after the API responds", async ({ page }) => {
+  await openNewCourse(page, "/app/web");
+  await page.route(ADMIN_COURSES, (route) => route.fulfill({ status: 503, json: { code: "unavailable" } }));
+  const submit = page.getByRole("button", { name: "Izradi kolegij" });
+  const confirmed = page.getByText(`Kolegij „${COURSE_NAME}” je izrađen.`, { exact: true });
+  await submit.click();
+  await expect(page.getByRole("region", { name: "Novi kolegij" }).getByRole("alert"))
+    .toHaveText("Kolegij trenutačno nije moguće izraditi. Pokušajte ponovno.");
+  await expect(confirmed).toHaveCount(0);
+  await page.unroute(ADMIN_COURSES);
+
+  let releaseResponse!: () => void;
+  const responseGate = new Promise<void>((resolve) => { releaseResponse = resolve; });
+  await page.route(ADMIN_COURSES, async (route) => {
+    await responseGate;
+    await route.fulfill({ status: 200, json: {
+      id: "00000000-0000-4000-8000-000000000002",
+      groups: [],
+    } });
+  });
+  const sent = page.waitForRequest((request) => request.url().endsWith("/api/v1/institution/admin/courses"));
+  try {
+    await submit.click();
+    const request = await sent;
+    expect(request.method()).toBe("POST");
+    expect(request.postDataJSON()).toEqual({
+      name: COURSE_NAME, holderId: HOLDER_ID, academicYear: expect.stringMatching(/^\d{4}\/\d{4}$/),
+      aiPolicy: "prohibited", groups: [],
+    });
+    await expect(page.getByRole("button", { name: "Izrađuje se…" })).toBeDisabled();
+    await expect(confirmed).toHaveCount(0);
+  } finally {
+    releaseResponse();
+  }
+  await expect(confirmed).toBeVisible();
+  await page.getByRole("button", { name: "Izradi još jedan kolegij" }).click();
+  await expect(page.getByLabel("Naziv kolegija")).toHaveValue("");
+});
+
+test("401 during course creation returns to the administrator's Chrome route after sign-in", async ({ page }) => {
+  await openNewCourse(page, "/app/chrome");
+  await page.route(ADMIN_COURSES, (route) => route.fulfill({ status: 401, json: { code: "unauthorized" } }));
+  await page.getByRole("button", { name: "Izradi kolegij" }).click();
+  await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
+  expect(new URL(page.url()).searchParams.get("returnTo")).toBe("/app/chrome/ustanova/kolegiji");
 });
 
 test("Stanje sustava and Prijava open without reading the session", async ({ page }) => {
