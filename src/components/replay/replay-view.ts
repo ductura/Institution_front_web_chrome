@@ -90,9 +90,10 @@ export function gapWords(gap: ReplayGap, beforeIndex: number): GapWords {
 export function stepsOf(total: number, history: readonly ParagraphHistoryEntry[] | null): number[] {
   if (history === null) return Array.from({ length: total + 1 }, (_, i) => i);
   const own = history.flatMap((entry) => (entry.entry === "change" ? [entry.index] : []));
-  if (own.length === 0) return own;
+  const first = own[0];
+  if (first === undefined) return own;
   const resumed = history.flatMap((entry) =>
-    entry.entry === "gap" && entry.gap === "resumed" && entry.beforeIndex > own[0] && entry.beforeIndex <= total
+    entry.entry === "gap" && entry.gap === "resumed" && entry.beforeIndex > first && entry.beforeIndex <= total
       ? [entry.beforeIndex] : []);
   return [...new Set([...own, ...resumed])].sort((a, b) => a - b);
 }
@@ -131,8 +132,9 @@ export function historyRows(history: readonly ParagraphHistoryEntry[], at: numbe
     ? entry.index <= at
     : entry.beforeIndex <= at || (entry.gap === "not_resumed" && final));
   const changes = shown.flatMap((entry) => (entry.entry === "change" ? [entry] : []));
-  if (changes.length === 0) return [];
-  const last = changes[changes.length - 1];
+  const first = changes[0];
+  const last = changes.at(-1);
+  if (first === undefined || last === undefined) return [];
   // A resumed gap after change `from` and up to change `to`.
   const resumedIn = (from: number, to: number) =>
     shown.some((entry) => entry.entry === "gap" && entry.gap === "resumed" && entry.beforeIndex > from && entry.beforeIndex <= to);
@@ -146,10 +148,10 @@ export function historyRows(history: readonly ParagraphHistoryEntry[], at: numbe
   // Later entries win: the current version is never called the first, and with
   // two versions the older one is the first recorded, which it is.
   const labels = new Map<number, string>(trailing
-    ? [[last.index, t.historyPrevious], [changes[0].index, t.historyFirst]]
+    ? [[last.index, t.historyPrevious], [first.index, t.historyFirst]]
     : [
         [changes[changes.length - 2]?.index ?? -1, t.historyPrevious],
-        [changes[0].index, t.historyFirst],
+        [first.index, t.historyFirst],
         [last.index, t.historyCurrent],
       ]);
   const versionText = (text: string | null) => (text === null ? t.historyDeleted : `„${text}”`);
