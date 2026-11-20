@@ -42,7 +42,11 @@ type SliceJson = { content: BlockJson[]; openStart?: number; openEnd?: number };
 /** Thrown when a step cannot be written; the caller refuses the change. */
 class UnwritableStep extends Error {}
 
-const blockAt = ($pos: ResolvedPos): PmNode | null => ($pos.depth === 1 ? $pos.parent : null);
+/**
+ * The text block a position lies in. In v1 to v3 that is a child of the
+ * document (depth 1); in v4 it can also be a paragraph in a box (depth 2).
+ */
+const blockAt = ($pos: ResolvedPos): PmNode | null => ($pos.depth >= 1 && $pos.parent.isTextblock ? $pos.parent : null);
 
 /** The block's markup as a slice writes it: type and attributes, no content. */
 const markup = (block: PmNode, nodeId: unknown): BlockJson =>
@@ -78,8 +82,13 @@ export function writtenSteps(doc: PmNode, json: Json): Json[] {
 /** `replaceAround` keeps the block it wraps, id included: the wrapper carries that id. */
 function aroundWithId(doc: PmNode, json: Json): Json {
   const block = doc.nodeAt(json.from as number);
-  const slice = json.slice as SliceJson;
+  const slice = json.slice as SliceJson | undefined;
+  // v4: the lift of blocks out of a box has no slice, and the wrap makes a new box without an id.
+  if (!slice) return json;
   const wrapper = slice.content[0]!;
+  if (json.gapFrom === json.from) {
+    return { ...json, slice: { ...slice, content: [{ ...wrapper, attrs: { ...wrapper.attrs, nodeId: null } }] } };
+  }
   if (!block) throw new UnwritableStep();
   return { ...json, slice: { ...slice, content: [{ ...wrapper, attrs: { ...wrapper.attrs, nodeId: block.attrs.nodeId } }] } };
 }
@@ -201,6 +210,14 @@ function fromBlockStart($from: ResolvedPos, $to: ResolvedPos, slice: SliceJson |
 function withSliceIds(json: Json, $from: ResolvedPos, $to: ResolvedPos, slice: SliceJson | undefined): Json {
   const written: Json = { ...json };
   if (!isBlockSlice(slice)) return written;
+  // v4: an atom block put over an atom block continues it (contract §9, point 3).
+  const replaced = $to.pos - $from.pos === 1 ? $from.nodeAfter : null;
+  if (replaced?.isAtom && !replaced.isInline && !slice.openStart && !slice.openEnd && slice.content.length === 1) {
+    const only = slice.content[0]!;
+    if (only.type !== replaced.type.name) throw new UnwritableStep();
+    written.slice = { ...slice, content: [{ ...only, attrs: { ...only.attrs, nodeId: replaced.attrs.nodeId } }] };
+    return written;
+  }
   const last = slice.content.length - 1;
   const content = slice.content.map((item, i): BlockJson => {
     if (i === 0 && slice.openStart === 1) {
