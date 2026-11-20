@@ -272,7 +272,8 @@ test("course creation reports a failed write and confirms only after the API res
     releaseResponse();
   }
   await expect(confirmed).toBeVisible();
-  await expect(page.getByText("Kolegij nema seminarskih grupa.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Izradi još jedan kolegij" }).click();
+  await expect(page.getByLabel("Naziv kolegija")).toHaveValue("");
 });
 
 test("401 during course creation returns to the administrator's Chrome route after sign-in", async ({ page }) => {
