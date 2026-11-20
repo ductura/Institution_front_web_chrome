@@ -1993,6 +1993,28 @@ const en = {
       nije_ukljuceno: "Not enabled",
     },
   },
+  declaration: {
+    title: "Declaration",
+    recorded: "Recorded in Ductura",
+    recordedTag: "recorded",
+    recordedNote: "From the process summary of this work. The student and the teacher see the same summary.",
+    recordedEmpty: "Nothing has been recorded in this work yet.",
+    recordedLoading: "Loading the recorded items.",
+    recordedError: "The recorded items cannot be loaded right now.",
+    retry: "Try again",
+    pastesListed: "Pastes above the threshold",
+    hasGaps: "The record has gaps",
+    declared: "Your declaration",
+    declaredTag: "declared",
+    statement: "By confirming you declare that you have reviewed what Ductura recorded about this work.",
+    statementWithoutRecord: "The recorded items are not shown here right now. By confirming you confirm only your own declaration.",
+    keptHere: "The confirmation is not sent to the server; it holds only in this submission step in this browser.",
+    confirm: "I confirm the declaration",
+    next: "Next",
+    nextHint: "Confirm the declaration to continue.",
+    back: "Back",
+    invalid: "This link does not lead to an assignment.",
+  },
 } as const satisfies Messages;
 
 export const messagesEn: Messages = en;

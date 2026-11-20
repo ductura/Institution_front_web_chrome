@@ -2024,6 +2024,30 @@ export const hr = {
       nije_ukljuceno: "Nije uključeno",
     },
   },
+  // WEB-24 (S: E-9, C-3): step 2 of the submission, the neutral name "Izjava"
+  // (B-5). The confirmation lives only in this browser's flow (P-7).
+  declaration: {
+    title: "Izjava",
+    recorded: "Zabilježeno u Ducturi",
+    recordedTag: "zabilježeno",
+    recordedNote: "Iz sažetka procesa ovog rada. Isti sažetak vide student i nastavnik.",
+    recordedEmpty: "U ovom radu još ništa nije zabilježeno.",
+    recordedLoading: "Učitavam zabilježene stavke.",
+    recordedError: "Zabilježene stavke trenutačno nije moguće učitati.",
+    retry: "Pokušaj ponovno",
+    pastesListed: "Lijepljenja veća od praga",
+    hasGaps: "Zapis ima praznine",
+    declared: "Vaša izjava",
+    declaredTag: "izjavljeno",
+    statement: "Potvrdom izjavljujete da ste pregledali što je zabilježeno u Ducturi o ovom radu.",
+    statementWithoutRecord: "Zabilježene stavke ovdje trenutačno nisu prikazane. Potvrdom potvrđujete samo svoju izjavu.",
+    keptHere: "Potvrda se ne šalje poslužitelju; vrijedi samo u ovom koraku predaje u ovom pregledniku.",
+    confirm: "Potvrđujem izjavu",
+    next: "Dalje",
+    nextHint: "Potvrdite izjavu da biste nastavili.",
+    back: "Natrag",
+    invalid: "Ova poveznica ne vodi do zadatka.",
+  },
 } as const;
 
 type Widen<T> = { readonly [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };
