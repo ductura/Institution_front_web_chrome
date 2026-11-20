@@ -4,6 +4,7 @@ import { Button, Dialog } from "@ductura/ui";
 import { useRef, useState } from "react";
 
 import { leaveFor, signOut } from "@/client/api";
+import { clearSubmissionStorage } from "@/components/predaja/storage";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 /**
@@ -27,6 +28,7 @@ export default function ShellSignOut({ className }: { className?: string }) {
     setBusy(true);
     setFailed(false);
     if (await signOut()) {
+      clearSubmissionStorage();
       leaveFor("/");
       return;
     }

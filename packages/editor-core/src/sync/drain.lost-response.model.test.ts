@@ -7,6 +7,7 @@
  * must never answer `stale_base`, because the only commits it holds are the
  * author's own. Every sequence of steps up to MAX_STEPS is walked.
  */
+import { deepStrictEqual, ok, strictEqual } from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 
 import { emptyDocument } from "../document/document";
@@ -59,7 +60,7 @@ const DOCUMENT = emptyDocument(() => "aaaaaaaa-0000-4000-8000-000000000001");
 function garble(outcome: DrainOutcome): DrainOutcome {
   const fields = Object.entries(outcome);
   const parsed = parseCommitOutcome(Object.fromEntries(fields.slice(0, -1)));
-  expect(parsed).toEqual({ status: "invalid" });
+  deepStrictEqual(parsed, { status: "invalid" });
   return parsed as DrainOutcome;
 }
 
@@ -129,8 +130,8 @@ async function drain(world: World, delivery: Delivery): Promise<World | "stale_b
   );
   // SYNCED may only describe the newest row, and only once the server holds it.
   if (events.some((e) => e.type === "SYNC_ACK")) {
-    expect(world.queue.at(-1)).toBe(sent);
-    expect(landed.get(tx.clientTransactionId)).toBe(ackedRevision(outcome));
+    strictEqual(world.queue.at(-1), sent, "SYNC_ACK must describe the newest row");
+    strictEqual(landed.get(tx.clientTransactionId), ackedRevision(outcome), "SYNC_ACK must describe a landed revision");
   }
   const acked = ackedRevision(outcome);
   return {
@@ -161,11 +162,11 @@ describe("drain model — one author, lost answers", () => {
           stale.push([...path, "signed"]);
           return;
         }
-        expect(settled.queue).toEqual([]);
+        strictEqual(settled.queue.length, 0, "the queue must drain after the network recovers");
         // Every key was applied at most once: one revision per landed key.
-        expect(settled.landed.size).toBe(settled.revision - 1);
+        strictEqual(settled.landed.size, settled.revision - 1, "one revision per landed key");
         if (world.nextSeq > 1) {
-          expect(settled.landed.has(`tx-${world.nextSeq - 1}`)).toBe(true);
+          ok(settled.landed.has(`tx-${world.nextSeq - 1}`), "the server must hold the newest edit");
         }
         return;
       }

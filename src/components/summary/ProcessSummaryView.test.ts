@@ -5,7 +5,7 @@ import { createElement, isValidElement, type ReactElement, type ReactNode } from
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { ProcessSummaryV1 } from "@/domain/projection/process-summary";
+import type { ProcessSummaryV1 } from "./ProcessSummaryView";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { extractUiText, isUiTextModule } from "../../../scripts/forbidden-terms/scan";

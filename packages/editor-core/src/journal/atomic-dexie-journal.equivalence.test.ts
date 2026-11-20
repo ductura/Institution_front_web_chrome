@@ -6,7 +6,7 @@ import { outcomeToEvents, type CommitReceiptVerification, type DrainOutcome } fr
 import type { EvidenceOpening, PendingTransaction } from "../sync/journal-types";
 import type { BuiltSegment } from "../editor";
 import {
-  capture, DOC, journalKit, json, openedAfter, R0, raw, runnerFor, save, server, UTC, type Chain,
+  capture, conflict, DOC, journalKit, openedAfter, R0, raw, runnerFor, save, server, UTC, type Chain,
 } from "../sync/runner/evidence-test-kit";
 import { AtomicDexieJournal, JournalError } from "./atomic-dexie-journal";
 
@@ -156,7 +156,7 @@ describe("M0.1 journal: taking the server's version", () => {
     await queue(journal, OTHER_ID, 2, "drugi dokument");
     await journal.startEvidence(DOC, local.opened, UTC);
     for (const built of SEG) await save(journal, built);
-    await runnerFor(journal, server(R0, () => json(409, { status: "chain_conflict", currentRevision: R0 + 2 }))).step(DOC);
+    await runnerFor(journal, server(R0, () => conflict("chain_conflict", R0 + 2))).step(DOC);
     expect((await journal.readEvidence(DOC)).meta?.state).toBe("CONFLICT");
     return journal;
   }
