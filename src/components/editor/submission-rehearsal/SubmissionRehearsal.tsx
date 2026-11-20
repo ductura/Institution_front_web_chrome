@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 import { flushSync } from "react-dom";
 import { Button, CheckActionList, Dialog } from "@ductura/ui";
 import { useEditorState, type Editor } from "@tiptap/react";
@@ -17,12 +17,17 @@ import { confirmationKey } from "../../predaja/flow";
 import { jumpTo } from "../review/ReviewPanel";
 import { reviewMessagesHr as review } from "../review/messages.hr";
 import { rowsOf } from "../review/view";
+import { submissionPackageMessages as packageText } from "../submission-package/messages.hr";
 import { packageRows, type PackageInput } from "../submission-package/package-rows";
 import styles from "./SubmissionRehearsal.module.css";
 import { rehearsalMessagesHr as t } from "./messages.hr";
 import { loadRequirements, rangeDetail, readRehearsal, wordsLabel, type Requirements } from "./rehearsal-model";
 
 type Supplement = { detail: string; open?: () => void };
+
+// A dialog's bubbling cancel event must stop before it reaches the containing drawer.
+const stopDialogEvent = (event: SyntheticEvent) => event.stopPropagation();
+const dialogBoundaryEvents = { onKeyDown: stopDialogEvent, onCancel: stopDialogEvent };
 
 export type SubmissionRehearsalProps = {
   editor: Editor | null;
@@ -36,7 +41,6 @@ export type SubmissionRehearsalProps = {
   supplements?: Partial<Record<"facultyRequirements" | "uncited" | "proofs" | "forms", Supplement>>;
   onComments?: () => void;
   onPrintPreview?: () => void;
-  onPackagePreview?: () => void;
   onJumpToDocument?: () => void;
 };
 
@@ -61,7 +65,7 @@ function Rehearsal(props: SubmissionRehearsalProps) {
   if (!editor || editor.isDestroyed) return null;
   return <>
     <Button tone="quiet" aria-haspopup="dialog" onClick={() => setOpen(true)}>{t.title}</Button>
-    {open && <div onKeyDown={(event) => event.stopPropagation()} onCancel={(event) => event.stopPropagation()}>
+    {open && <div {...dialogBoundaryEvents}>
       <RehearsalDialog {...props} editor={editor} close={close} />
     </div>}
   </>;
@@ -69,9 +73,12 @@ function Rehearsal(props: SubmissionRehearsalProps) {
 
 function RehearsalDialog({
   editor, assignmentId, documentId, sessionTag, session, enabledChecks = null, comments, approval,
-  supplements, onComments, onPrintPreview, onPackagePreview, onJumpToDocument, close,
+  supplements, onComments, onPrintPreview, onJumpToDocument, close,
 }: Omit<SubmissionRehearsalProps, "editor"> & { editor: Editor; close: () => void }) {
   const intro = useRef<HTMLParagraphElement>(null);
+  const packageIntro = useRef<HTMLParagraphElement>(null);
+  const packageButton = useRef<HTMLButtonElement>(null);
+  const [showPackage, setShowPackage] = useState(false);
   const [requirements, setRequirements] = useState<Requirements>(null);
   const [loadedComments, setLoadedComments] = useState<readonly CommentThread[]>();
   const doc = useEditorState({ editor, selector: ({ editor }) => editor.state.doc, equalityFn: (a, b) => a === b });
@@ -118,19 +125,35 @@ function RehearsalDialog({
   const openComments = (comments ?? loadedComments)?.filter((thread) => thread.state !== "resolved"
     && thread.comments.some((comment) => comment.role === "teacher" && comment.body !== null));
   const commentRange = openComments && createAnchorPlacer((thread: CommentThread) => thread.anchor)(doc, openComments).find(Boolean);
-  const approvalRow = approval === undefined ? undefined : packageRows({
-    approval, openPlaces: places.length, summaryWritten: Boolean(model.abstract?.text),
-    declaration: declared ? "filled" : "missing",
-  }).find((row) => row.id === "approval");
-  const form = messagesHr.beforeSubmit;
   const { abstract, summary, keywords } = model;
+  const rows = packageRows({
+    approval: approval ?? "none", openPlaces: places.length, summaryWritten: Boolean(abstract?.text && summary?.text),
+    declaration: declared ? "filled" : "missing",
+  });
+  const approvalDetail = approval === undefined ? t.approvalUnavailable : rows.find((row) => row.id === "approval")?.detail;
+  const form = messagesHr.beforeSubmit;
   const firstPlace = model.places[0];
 
-  return <Dialog open title={t.title} initialFocus={intro} onClose={close} actions={<>
-    {onPrintPreview && <Button tone="quiet" onClick={() => leaveFor(onPrintPreview)}>{t.print}</Button>}
-    {onPackagePreview && <Button tone="quiet" onClick={() => leaveFor(onPackagePreview)}>{t.package}</Button>}
+  function switchView(next: boolean) {
+    flushSync(() => setShowPackage(next));
+    (next ? packageIntro : packageButton).current?.focus();
+  }
+
+  return <Dialog open title={showPackage ? packageText.title : t.title} initialFocus={intro} onClose={close} actions={<>
+    {showPackage ? <Button tone="quiet" onClick={() => switchView(false)}>{t.backToRehearsal}</Button> : <>
+      {onPrintPreview && <Button tone="quiet" onClick={() => leaveFor(onPrintPreview)}>{t.print}</Button>}
+      <Button ref={packageButton} tone="quiet" onClick={() => switchView(true)}>{packageText.title}</Button>
+    </>}
     <Button onClick={close}>{t.close}</Button>
   </>}>
+    {showPackage ? <>
+      <p ref={packageIntro} tabIndex={-1}>{packageText.lead}</p>
+      <dl className={styles.rows}>{rows.map((row) =>
+        <Row key={row.id} title={packageText.rows[row.id]}>
+          {row.id === "approval" ? approvalDetail : row.detail || packageText.ok}
+        </Row>)}</dl>
+      <p>{packageText.codeNever}</p>
+    </> : <>
     <p ref={intro} tabIndex={-1}>{t.intro}</p>
     <h3>{t.blockers} ({places.length})</h3>
     <CheckActionList findings={places} labels={{ ...advisoryLabels, list: t.blockers, empty: t.noBlockers }}
@@ -161,7 +184,7 @@ function RehearsalDialog({
       <Row title={t.places} open={firstPlace && (() => select(firstPlace.from, firstPlace.to))}>
         {places.length ? t.placesCount.replace("{count}", String(places.length)) : t.noPlaces}
       </Row>
-      <Row title={t.approval}>{approvalRow?.detail ?? t.approvalUnavailable}</Row>
+      <Row title={t.approval}>{approvalDetail}</Row>
       {(["facultyRequirements", "uncited", "proofs", "forms"] as const).map((key) => {
         const supplement = supplements?.[key];
         const go = supplement?.open;
@@ -177,5 +200,6 @@ function RehearsalDialog({
       const finding = model.advice.find(({ id }) => id === findingId);
       if (finding && !editor.isDestroyed && editor.state.doc === doc) jumpInDocument(() => { jumpTo(editor, finding); });
     }} />
+    </>}
   </Dialog>;
 }

@@ -31,6 +31,12 @@ test("uses the assignment's GET range, displays the prototype form row and selec
   await expect(dialog.getByText("Potvrđena.", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Predaj rad", { exact: true })).toHaveCount(0);
   await expect(dialog.getByRole("button", { name: /pravila oblika|pokreni provjeru/i })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Predajni paket" }).click();
+  const preview = page.getByRole("dialog", { name: "Predajni paket" });
+  await expect(preview.getByText("Kod nastaje pri predaji.")).toBeVisible();
+  await expect(preview.getByRole("link")).toHaveCount(0);
+  await preview.getByRole("button", { name: "Natrag na probu predaje" }).click();
+  await expect(dialog.getByRole("button", { name: "Predajni paket" })).toBeFocused();
   await dialog.getByRole("list", { name: "Blokira predaju" }).getByRole("button", { name: "Idi na nalaz" }).click();
   await expect(dialog).toBeHidden();
   await expect(page.locator(".tiptap")).toBeFocused();

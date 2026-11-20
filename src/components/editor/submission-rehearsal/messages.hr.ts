@@ -35,5 +35,5 @@ export const rehearsalMessagesHr = {
   close: "Zatvori",
   open: "Otvori",
   print: "Kako će izgledati ispis",
-  package: "Predajni paket",
+  backToRehearsal: "Natrag na probu predaje",
 } as const;
