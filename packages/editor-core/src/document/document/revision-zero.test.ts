@@ -49,7 +49,7 @@ describe("revision 0", () => {
 
   it("returns a fresh object each time, so a caller cannot change it for others", () => {
     const first = revisionZeroDocument();
-    first.nodes.push(first.nodes[0]);
+    first.nodes.push(first.nodes[0]!);
     expect(canonicalizeJcs(revisionZeroDocument())).toBe(REVISION_ZERO_JCS);
   });
 });
@@ -78,7 +78,9 @@ describe("revision 0 of document v2", () => {
     expect(createHash("sha256").update(bytes).digest("hex")).toBe(sha256);
     expect(REVISION_ZERO_V2_SHA256).toBe(sha256);
     expect(REVISION_ZERO_V2_SHA256).not.toBe(REVISION_ZERO_SHA256);
-    expect(REVISION_ZERO_SHA256).toBe("a102ced8a59b446a86c135c8d87d3ddf9f889e4ac93bcbc1857cd7c2c73ad14b");
+    expect(REVISION_ZERO_SHA256).toBe(
+      "a102ced8a59b446a86c135c8d87d3ddf9f889e4ac93bcbc1857cd7c2c73ad14b",
+    );
   });
 
   it("is valid as v2 only: the versioned validator returns it unchanged, the v1 view refuses it", () => {
