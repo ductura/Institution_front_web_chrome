@@ -3,12 +3,10 @@
 import { Button, Dialog } from "@ductura/ui";
 import { useState } from "react";
 
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { editorPanelLayoutsHr as t } from "@/lib/i18n/messages.hr";
 
 import { DEFAULT_PREFERENCES, LAYOUTS, type LayoutPreferences, type Side } from "./preferences";
 import styles from "../SidePanels.module.css";
-
-const t = messagesHr.workspace.panelLayouts;
 
 export function PanelSettings({ side, value, onChange }: {
   side: Side;
@@ -23,24 +21,27 @@ export function PanelSettings({ side, value, onChange }: {
     <Button tone="quiet" aria-haspopup="dialog" aria-label={title} onClick={() => setOpen(true)}>
       {side === "left" ? title : <span aria-hidden="true">⚙</span>}
     </Button>
-    <Dialog open={open} title={title} onClose={() => setOpen(false)} actions={<>
-      <Button tone="quiet" onClick={() => onChange(DEFAULT_PREFERENCES[side])}>{t.reset}</Button>
-      <Button onClick={() => setOpen(false)}>{t.done}</Button>
-    </>}>
-      <fieldset className={styles.layoutChoices}>
-        <legend>{t.layout}</legend>
-        {LAYOUTS.map((layout) => <Button key={layout} tone="quiet" aria-pressed={layout === value.layout}
-          onClick={() => onChange({ ...value, layout })}>
-          <strong>{labels[layout]}</strong><span>{t.descriptions[side][layout]}</span>
-        </Button>)}
-      </fieldset>
-      <fieldset className={styles.mobileChoices}>
-        <legend>{t.mobile}</legend>
-        {(["same", ...LAYOUTS] as const).map((mobile) => <Button key={mobile} tone="quiet"
-          aria-pressed={mobile === value.mobile} onClick={() => onChange({ ...value, mobile })}>
-          {mobile === "same" ? t.same : labels[mobile]}
-        </Button>)}
-      </fieldset>
-    </Dialog>
+    {open && <div onCancel={(event) => event.stopPropagation()}
+      onKeyDown={(event) => { if (event.defaultPrevented) event.stopPropagation(); }}>
+      <Dialog open title={title} onClose={() => setOpen(false)} actions={<>
+        <Button tone="quiet" onClick={() => onChange(DEFAULT_PREFERENCES[side])}>{t.reset}</Button>
+        <Button onClick={() => setOpen(false)}>{t.done}</Button>
+      </>}>
+        <fieldset className={styles.layoutChoices}>
+          <legend>{t.layout}</legend>
+          {LAYOUTS.map((layout) => <Button key={layout} tone="quiet" aria-pressed={layout === value.layout}
+            onClick={() => onChange({ ...value, layout })}>
+            <strong>{labels[layout]}</strong><span>{t.descriptions[side][layout]}</span>
+          </Button>)}
+        </fieldset>
+        <fieldset className={styles.mobileChoices}>
+          <legend>{t.mobile}</legend>
+          {(["same", ...LAYOUTS] as const).map((mobile) => <Button key={mobile} tone="quiet"
+            aria-pressed={mobile === value.mobile} onClick={() => onChange({ ...value, mobile })}>
+            {mobile === "same" ? t.same : labels[mobile]}
+          </Button>)}
+        </fieldset>
+      </Dialog>
+    </div>}
   </>;
 }

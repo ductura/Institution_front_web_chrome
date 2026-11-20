@@ -8,6 +8,8 @@ import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import styles from "./SidePanels.module.css";
 
+export { EditorPanelLayout, type EditorPanelLayoutProps } from "./layout-prefs/EditorPanelLayout";
+
 /**
  * "Upute" and "Rad" of the right panel (FE-D9, design editor-v11 §5.1). Both
  * render one `PanelLoad`, so each has its loading, error and empty state

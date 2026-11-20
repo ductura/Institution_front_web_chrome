@@ -22,10 +22,13 @@ import type { SessionMark } from "@/client/session-marks";
 import SessionObserver from "@/components/shell/SessionObserver";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
+import CommentPanel from "./CommentPanel";
 import EditorPage, { SheetNote } from "./EditorPage";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
 import { LocalDocumentProvider, LocalEditor } from "./LocalDocument";
+import RevisionPanel from "./RevisionPanel";
+import { EditorPanelLayout } from "./SidePanels";
 import StatusBar from "./StatusBar";
 import StatusBarLive from "./StatusBarLive";
 
@@ -120,15 +123,18 @@ export default function EditorPageWork({
     <>
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
-        <EditorPage
-          course={course}
+        <EditorPanelLayout
           title={title}
-          topBar={topBar}
-          toolbar={<EditorToolbar />}
+          header={topBar ?? <p>{course} / {title}</p>}
+          tools={<EditorToolbar />}
           status={<StatusBarLive evidence length={length} />}
+          rightSections={{
+            comments: <CommentPanel documentId={read.documentId} session={read.session} />,
+            work: <RevisionPanel documentId={read.documentId} assignmentId={assignmentId} session={read.session} />,
+          }}
         >
           <LocalEditor />
-        </EditorPage>
+        </EditorPanelLayout>
       </LocalDocumentProvider>
     </>
   );

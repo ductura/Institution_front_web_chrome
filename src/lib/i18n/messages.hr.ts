@@ -15,6 +15,51 @@
  *     to the state machine it describes.
  */
 
+export const editorPanelLayoutsHr = {
+  customize: { left: "Prilagodi panel", right: "Prilagodi desni panel" },
+  layout: "Raspored",
+  mobile: "Na mobitelu",
+  same: "Kao na računalu",
+  reset: "Vrati zadano",
+  done: "Gotovo",
+  variants: {
+    left: { a: "Popis", b: "Kartice", c: "Dvije razine" },
+    right: { a: "Kartice", b: "Uz tekst", c: "Ikone uz rub" },
+  },
+  descriptions: {
+    left: {
+      a: "Sva poglavlja i potpoglavlja u jednom popisu.",
+      b: "Struktura i odjeljci kao kartice.",
+      c: "Prvo samo poglavlja. Odaberite poglavlje za prikaz potpoglavlja.",
+    },
+    right: {
+      a: "Kartice u jednom redu.",
+      b: "Panel prati poglavlje u kojem pišete.",
+      c: "Odaberite ikonu uz rub da otvorite ili sklopite panel.",
+    },
+  },
+  leftSections: {
+    requirements: "Zahtjevi", figures: "Prikazi i fusnote", stash: "Odloženo",
+    progress: "Napredak", deadlines: "Rokovi", thread: "Nit rada",
+  },
+  allChapters: "‹ Sva poglavlja",
+  subchapters: "Potpoglavlja",
+  noSubchapters: "Poglavlje nema potpoglavlja.",
+  groups: { sources: "Izvori", comments: "Komentari", review: "Pregled", work: "Mentor", assistant: "Asistent" },
+  emptyGroup: "Ovdje još nema sadržaja.",
+  wholeWork: "Cijeli rad",
+  writingIn: "Pišete u poglavlju",
+  noChapter: "Kursor nije u poglavlju",
+  chapterOutline: "Nacrt poglavlja",
+  noParagraphs: "Poglavlje još nema odlomaka.",
+  backToContext: "‹ Uz tekst",
+  focus: "Način fokusa",
+  exitFocus: "Izađi iz načina fokusa",
+  focusNotice: "Način fokusa. Esc ili Ctrl+. za izlaz.",
+  notices: "Obavijesti",
+  close: "Zatvori",
+} as const;
+
 /** The product name on screen (D-124): one value, read through `app.name`. */
 const APP_NAME = "Ductura";
 const NOTICE_STEP_COUNT = "1 od 2";
@@ -786,37 +831,6 @@ export const hr = {
     progress: "Napredak",
     sidePanel: "Upute, literatura i komentari",
     panelTabs: "Bočni panel",
-    panelLayouts: {
-      customize: { left: "Prilagodi panel", right: "Prilagodi desni panel" },
-      layout: "Raspored",
-      mobile: "Na mobitelu",
-      same: "Kao na računalu",
-      reset: "Vrati zadano",
-      done: "Gotovo",
-      variants: {
-        left: { a: "Popis", b: "Kartice", c: "Dvije razine" },
-        right: { a: "Kartice", b: "Uz tekst", c: "Ikone uz rub" },
-      },
-      descriptions: {
-        left: {
-          a: "Sva poglavlja i potpoglavlja u jednom popisu.",
-          b: "Struktura i odjeljci kao kartice.",
-          c: "Prvo samo poglavlja. Odaberite poglavlje za prikaz potpoglavlja.",
-        },
-        right: {
-          a: "Kartice u jednom redu.",
-          b: "Panel prati poglavlje u kojem pišete.",
-          c: "Odaberite ikonu uz rub da otvorite ili sklopite panel.",
-        },
-      },
-      leftSections: {
-        requirements: "Zahtjevi", figures: "Prikazi i fusnote", stash: "Odloženo",
-        progress: "Napredak", deadlines: "Rokovi", thread: "Nit rada",
-      },
-      allChapters: "‹ Sva poglavlja",
-      subchapters: "Potpoglavlja",
-      noSubchapters: "Poglavlje nema potpoglavlja.",
-    },
     tabSources: "Literatura",
     tabInstructions: "Upute",
     tabComments: "Komentari",

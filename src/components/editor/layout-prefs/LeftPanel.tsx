@@ -5,7 +5,7 @@ import { useEditorState } from "@tiptap/react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import { blockPosition, currentHeading, numberedHeadings, type NumberedHeading } from "@/editor";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { editorPanelLayoutsHr as t, messagesHr } from "@/lib/i18n/messages.hr";
 
 import HeadingOutline from "../HeadingOutline";
 import { useLocalEditor } from "../LocalDocument";
@@ -13,7 +13,6 @@ import styles from "../SidePanels.module.css";
 import type { PanelLayout } from "./preferences";
 
 const w = messagesHr.workspace;
-const t = w.panelLayouts;
 const headingKey = (heading: NumberedHeading) => heading.id ?? `pos-${heading.pos}`;
 const headingLabel = (heading: NumberedHeading) => `${heading.number}. ${heading.title || messagesHr.outline.untitledHeading}`;
 
@@ -86,11 +85,16 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
   settings: ReactNode;
   onJump: () => void;
 }) {
+  const editor = useLocalEditor();
   const content = Object.entries(t.leftSections).flatMap(([key, label]) => {
     const section = sections[key as keyof LeftSections];
     return section == null ? [] : [{ id: key, label, content: section }];
   });
-  const outline = <HeadingOutline />;
+  const outline = <div onClick={(event) => {
+    if (!(event.target instanceof Element) || !event.target.closest(".outline__link")) return;
+    onJump();
+    requestAnimationFrame(() => { if (editor && !editor.isDestroyed) editor.view.focus(); });
+  }}><HeadingOutline /></div>;
 
   return <>
     <div className={styles.panelHeading}><span>{t.variants.left[layout]}</span>{settings}</div>
