@@ -1,8 +1,6 @@
-import { PendingPage } from "../../../../../src/host/pages";
+import { TeacherWorkPage } from "../../../../../src/host/teacher/work/pages";
 
-// TREBA API: teacher.access.get and live.document.get; src/client has no module for the live view yet.
-// Source: Ductus src/app/nastavnik/rad/[id]/page.tsx, copied to src/app/nastavnik/rad/[id]/.
-/** "Rad uživo": the teacher's live view of a work. */
-export default function Page() {
-  return <PendingPage />;
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <TeacherWorkPage documentId={id} view="live" />;
 }
