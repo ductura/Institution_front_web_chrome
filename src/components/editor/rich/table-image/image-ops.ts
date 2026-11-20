@@ -17,7 +17,7 @@ export type ImageState = {
   crop?: ImageCrop;
 };
 
-export const NO_CROP: ImageCrop = { left: 0, right: 0, top: 0, bottom: 0 };
+export const NO_CROP: ImageCrop = { top: 0, left: 0, right: 0, bottom: 0 };
 
 export const clampWidth = (percent: number): number =>
   Math.max(MIN_WIDTH_PERCENT, Math.min(MAX_WIDTH_PERCENT, Math.round(Number.isFinite(percent) ? percent : MAX_WIDTH_PERCENT)));
@@ -33,7 +33,7 @@ export const clampSide = (value: number): number =>
 
 /** A crop the contract accepts: four integers 0 to 45, at least one above zero, and the picture kept in both directions. */
 export function normalizeCrop(raw: ImageCrop): ImageCrop | null {
-  const crop = { left: clampSide(raw.left), right: clampSide(raw.right), top: clampSide(raw.top), bottom: clampSide(raw.bottom) };
+  const crop = { top: clampSide(raw.top), left: clampSide(raw.left), right: clampSide(raw.right), bottom: clampSide(raw.bottom) };
   return SIDES.some((side) => crop[side] !== 0) ? crop : null;
 }
 

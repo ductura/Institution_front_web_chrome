@@ -72,16 +72,16 @@ it("tidies cell text", () => {
 
 it("crop is integers 0 to 45 with one side above zero, and needs the attachment", () => {
   const img: ImageState = { widthPercent: 60, align: "center", landscape: false, attachmentId: "22222222-2222-4222-8222-222222222222", attachmentSha256: "a".repeat(64) };
-  expect(normalizeCrop({ left: 0, right: 0, top: 0, bottom: 0 })).toBeNull();
-  expect(normalizeCrop({ left: 99, right: 2.4, top: -3, bottom: 0 })).toEqual({ left: 45, right: 2, top: 0, bottom: 0 });
-  const cropped = setCrop(img, { left: 10, right: 0, top: 0, bottom: 5 });
-  expect(cropped.crop).toEqual({ left: 10, right: 0, top: 0, bottom: 5 });
+  expect(normalizeCrop({ top: 0, left: 0, right: 0, bottom: 0 })).toBeNull();
+  expect(normalizeCrop({ top: -3, left: 99, right: 2.4, bottom: 0 })).toEqual({ top: 0, left: 45, right: 2, bottom: 0 });
+  const cropped = setCrop(img, { top: 0, left: 10, right: 0, bottom: 5 });
+  expect(cropped.crop).toEqual({ top: 0, left: 10, right: 0, bottom: 5 });
   expect(cropInset(cropped.crop!)).toBe("0% 0% 5% 10%");
   const errors: ValidationError[] = [];
   expect(validateImage({ ...cropped, type: "image", id: ID } as never, "i", ID, errors)).not.toBeNull();
   expect(errors).toEqual([]);
   expect(clearCrop(cropped).crop).toBeUndefined();
-  expect(setCrop({ ...img, attachmentId: undefined, attachmentSha256: undefined }, { left: 5, right: 0, top: 0, bottom: 0 }).crop).toBeUndefined();
+  expect(setCrop({ ...img, attachmentId: undefined, attachmentSha256: undefined }, { top: 0, left: 5, right: 0, bottom: 0 }).crop).toBeUndefined();
 });
 
 it("width stays within 20 to 100", () => {
