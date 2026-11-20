@@ -25,6 +25,11 @@ async function signInTeacher(page: Page, courseTeacher: boolean) {
     await page.getByRole('button', { name: 'Prijavi se', exact: true }).click();
   }
   await expect(page, courseTeacher ? 'Prijava nastavnika kolegija.' : 'Za drugog nastavnika učitaj seed-int04.sql.').toHaveURL(`${webOrigin}/nastavnik`);
+  const profile = await page.request.get('/api/v1/me');
+  await expect(profile).toBeOK();
+  expect(await profile.json()).toMatchObject({
+    institution: { slug: 'demo-fakultet' }, roles: expect.arrayContaining(['teacher']),
+  });
   const access = await page.request.get('/api/v1/teacher/access');
   await expect(access).toBeOK();
   expect(await access.json()).toMatchObject({ access: 'allowed' });
