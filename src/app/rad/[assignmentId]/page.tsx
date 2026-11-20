@@ -1,11 +1,13 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
-import { signInHref } from "../../../client/api";
-import { serverApi } from "../../../client/server";
+import { cookieTransport, signInHref } from "../../../client/api";
+import { institutionServerUrl, serverApi } from "../../../client/server";
 import EditorPage, { SheetNote } from "../../../components/editor/EditorPage";
 import { assignmentIdOf, editorWorkRead } from "../../../components/editor/EditorPage.read";
 import EditorPageWork from "../../../components/editor/EditorPageWork";
+import { ReadOnlyMentor } from "../../../components/editor/mentor/work-state/ReadOnlyMentor";
+import { readSubmittedWork } from "../../../components/editor/mentor/work-state/submitted-work-read";
 import StatusBar from "../../../components/editor/StatusBar";
 import WorkspaceTopBar from "../../../components/editor/WorkspaceTopBar";
 import { workspaceFrame, type WorkspaceVariant } from "../../../components/editor/workspace-variant";
@@ -75,12 +77,19 @@ export default async function WorkPage({ params }: { params: Promise<{ assignmen
   if (read.kind === "ready" && frame.variant === "puno") {
     return <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length} />;
   }
+  const submission = frame.variant === "predano"
+    ? await readSubmittedWork(assignmentId, { baseUrl: institutionServerUrl(), fetchImpl: cookieTransport(cookie) })
+    : null;
+  if (submission?.kind === "session-expired") redirect(signInHref(here));
+  const receipt = submission?.kind === "potvrdeno" ? submission.receipt.payload : undefined;
   return (
     <EditorPage
       course={read.kind === "ready" ? read.course : null}
       title={title}
       topBar={topBar}
       status={<StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
+      aside={frame.variant === "predano" && <ReadOnlyMentor role="student" submitted
+        documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />}
     >
       {sheetBody(frame.variant)}
     </EditorPage>

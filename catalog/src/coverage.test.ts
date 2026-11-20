@@ -128,6 +128,10 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/mentor/messages/WorkMessages.tsx", // WEB-1110: exercised in the Mentor card.
   "editor/mentor/milestones/WorkMentorSections.tsx", // WEB-1110: exercised in the Mentor card.
   "editor/mentor/milestones/WorkMilestones.tsx", // WEB-1110: exercised in the Mentor card.
+  "editor/mentor/timeline/WorkTimeline.tsx", // WEB-1111: dialog owned by the mounted Mentor panel.
+  "editor/mentor/work-state/MentorWorkState.tsx", // WEB-1111: subview of the editor and teacher work frames.
+  "editor/mentor/work-state/ReadOnlyMentor.tsx", // WEB-1111: authenticated entry on read-only work surfaces.
+  "teacher/mentored-students/MentoredStudents.tsx", // WEB-1111: role-gated dialog owned by Mentor.
   "editor/mentor/working-criteria/WorkingCriteria.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/rich/blocks/FormulaDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/rich/blocks/RichBlockTools.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
