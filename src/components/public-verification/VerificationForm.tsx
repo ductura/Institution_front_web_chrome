@@ -5,12 +5,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { zagrebParts } from "@/components/summary/zagreb-time";
 
-import { parseVerificationCode } from "./code";
+import { parseVerificationCode, readVerificationFields, type VerificationCode } from "./code";
 import { publicVerificationHr as t } from "./messages.hr";
 import { verifyReceipt, type VerificationResult } from "./verify-receipt";
 import styles from "./verification.module.css";
 
 type State = VerificationResult | { kind: "idle" | "invalid" | "pending" };
+const emptyCode: VerificationCode = { receiptId: "", fingerprint: "" };
 
 function ReceiptTime({ iso }: { iso: string }) {
   const local = zagrebParts(iso);
@@ -40,16 +41,14 @@ export function VerificationFeedback({ state }: { state: State }) {
 }
 
 export function VerificationForm() {
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(emptyCode);
   const [state, setState] = useState<State>({ kind: "idle" });
   const request = useRef(0);
   const lastFragment = useRef("");
   const pending = state.kind === "pending";
-  const invalid = state.kind === "invalid";
 
-  const check = useCallback(async (value: string) => {
+  const check = useCallback(async (parsed: VerificationCode | null) => {
     const current = ++request.current;
-    const parsed = parseVerificationCode(value);
     if (parsed === null) {
       setState({ kind: "invalid" });
       return;
@@ -65,8 +64,9 @@ export function VerificationForm() {
       if (fragment === lastFragment.current) return;
       lastFragment.current = fragment;
       if (!fragment) return;
-      setCode(fragment);
-      void check(fragment);
+      const parsed = parseVerificationCode(fragment);
+      setCode(parsed ?? emptyCode);
+      void check(parsed);
     }
     readQr();
     globalThis.addEventListener("hashchange", readQr);
@@ -80,21 +80,27 @@ export function VerificationForm() {
         <p className={styles.intro}>{t.intro}</p>
         <form className={styles.form} onSubmit={(event) => {
           event.preventDefault();
-          if (!pending) void check(code);
+          if (pending) return;
+          const parsed = code.fingerprint.trim() === ""
+            ? parseVerificationCode(code.receiptId)
+            : readVerificationFields(code);
+          void check(parsed);
         }}>
-          <TextField
-            label={t.code}
-            value={code}
-            onChange={(event) => {
-              setCode(event.target.value);
-              setState({ kind: "idle" });
-            }}
-            error={invalid ? t.invalid : undefined}
-            autoComplete="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            busy={pending}
-          />
+          {(["receiptId", "fingerprint"] as const).map((field) => (
+            <TextField
+              key={field}
+              label={t[field]}
+              value={code[field]}
+              onChange={(event) => {
+                setCode({ ...code, [field]: event.target.value });
+                setState({ kind: "idle" });
+              }}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              busy={pending}
+            />
+          ))}
           <Button type="submit" busy={pending}>{t.submit}</Button>
         </form>
         <VerificationFeedback state={state} />

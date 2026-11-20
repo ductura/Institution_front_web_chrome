@@ -1,9 +1,10 @@
 export const publicVerificationHr = {
   title: "Provjera potvrde",
-  intro: "Unesite kod s potvrde ili otvorite stranicu skeniranjem QR koda.",
-  code: "Kod s potvrde",
+  intro: "Unesite broj potvrde i otisak predanog rada ili skenirajte QR kod s potvrde.",
+  receiptId: "Broj potvrde",
+  fingerprint: "Otisak predanog rada (SHA-256)",
   submit: "Provjeri potvrdu",
-  invalid: "Unesite cijeli kod s potvrde ili ponovno skenirajte QR kod.",
+  invalid: "Provjerite broj potvrde i otisak ili ponovno skenirajte QR kod.",
   pending: "Provjeravam potvrdu…",
   matched: "Predani tekst nije mijenjan od predaje.",
   notMatched: "Potvrda se ne podudara s kodom.",

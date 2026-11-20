@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseVerificationCode } from "../../components/public-verification/code";
+import { parseVerificationCode, readVerificationFields } from "../../components/public-verification/code";
 
 const receiptId = "11111111-2222-4333-8444-555555555555";
 const fingerprint = "ab".repeat(32);
@@ -11,6 +11,11 @@ describe("WEB-9C verification code", () => {
     for (const input of [`#${code}`, ` ${code} `, code.replace(fingerprint, fingerprint.toUpperCase())]) {
       expect(parseVerificationCode(input)).toEqual({ receiptId, fingerprint });
     }
+  });
+
+  it("reads the two fields printed on the PDF", () => {
+    expect(readVerificationFields({ receiptId: ` ${receiptId.toUpperCase()} `, fingerprint })).toEqual({ receiptId, fingerprint });
+    expect(readVerificationFields({ receiptId, fingerprint: "" })).toBeNull();
   });
 
   it.each([

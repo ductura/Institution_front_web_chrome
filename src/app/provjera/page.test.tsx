@@ -12,7 +12,8 @@ describe("WEB-9C public verification page", () => {
     const html = renderToStaticMarkup(<PublicVerificationPage />);
     expect(html).toContain("<h1");
     expect(html).toContain(t.title);
-    expect(html).toContain(t.code);
+    expect(html).toContain(t.receiptId);
+    expect(html).toContain(t.fingerprint);
     expect(html).toContain(t.submit);
     expect(html).not.toMatch(/href=|\baction=|\bname=/);
     expect(metadata.referrer).toBe("no-referrer");
