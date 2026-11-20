@@ -1,0 +1,38 @@
+/* WEB-6A (E§1, INVENTAR 1.5 and 1.6): the editor's regions and their breakpoints. */
+.app { display: flex; flex-direction: column; height: 100dvh; background: var(--ground); color: var(--ink); }
+.top { flex: none; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 14px; background: var(--chrome); border-bottom: 1px solid var(--rule-2); }
+.tools { flex: none; display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 10px; overflow: hidden; background: var(--chrome); border-bottom: 1px solid var(--rule-2); }
+.body { flex: 1; min-height: 0; display: flex; }
+.rail { flex: none; width: var(--rail-w, 288px); overflow-y: auto; padding: 14px 10px; background: var(--chrome); border-right: 1px solid var(--rule-2); }
+.stage { flex: 1; min-width: 0; overflow-y: auto; padding: 28px 24px 80px; scroll-behavior: smooth; }
+.panel { flex: none; width: 340px; display: flex; flex-direction: column; min-height: 0; background: var(--chrome); border-left: 1px solid var(--rule-2); }
+.status { flex: none; min-height: 30px; display: flex; align-items: center; gap: 14px; padding: 0 14px; overflow-x: auto; white-space: nowrap; background: var(--chrome); border-top: 1px solid var(--rule-2); font-size: 12px; color: var(--ink-2); }
+.scrim { display: none; position: fixed; inset: 0; z-index: 39; background: var(--scrim); }
+.grow { flex: 1; }
+.onlyNarrow, .onlyMid { display: none; }
+.norail .rail { display: none; }
+
+@media (min-width: 1051px) { .panel { width: var(--panel-w, 340px); } }
+
+@media (max-width: 1250px) {
+  .onlyNarrow { display: grid; }
+  .rail { position: fixed; left: 0; top: 0; bottom: 0; z-index: 40; width: min(320px, 88vw); transform: translateX(-102%); transition: transform .15s; box-shadow: var(--lift); }
+  .railOpen .rail { transform: none; }
+  .railOpen .scrim { display: block; }
+}
+
+@media (max-width: 1050px) {
+  .onlyMid { display: grid; }
+  .panel { position: fixed; right: 0; top: 0; bottom: 0; z-index: 40; width: min(380px, 100vw); transform: translateX(102%); transition: transform .15s; box-shadow: var(--lift); }
+  .panelOpen .panel { transform: none; }
+  .panelOpen .scrim { display: block; }
+}
+
+@media (max-width: 640px) {
+  .top { gap: 6px; padding: 0 8px; }
+  .tools { height: 50px; padding: 0 6px; }
+  .stage { padding: 10px 0 70px; }
+  .status { min-height: 34px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .rail, .panel { transition: none; } }
