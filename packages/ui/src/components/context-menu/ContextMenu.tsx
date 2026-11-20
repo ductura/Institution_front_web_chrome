@@ -50,11 +50,15 @@ export function ContextMenu({ anchor, entries, label, onSelect, onClose }: Conte
       if (!menu.contains(event.target as Node)) onClose();
     };
     document.addEventListener("pointerdown", outside, true);
-    window.addEventListener("scroll", onClose, true);
+    // The menu scrolls itself when long (max-height); only the page behind it dismisses.
+    const pageScroll = (event: Event) => {
+      if (!menu.contains(event.target as Node)) onClose();
+    };
+    window.addEventListener("scroll", pageScroll, true);
     window.addEventListener("resize", onClose);
     return () => {
       document.removeEventListener("pointerdown", outside, true);
-      window.removeEventListener("scroll", onClose, true);
+      window.removeEventListener("scroll", pageScroll, true);
       window.removeEventListener("resize", onClose);
       const back = previous.current;
       if (back instanceof HTMLElement && back.isConnected) back.focus();
