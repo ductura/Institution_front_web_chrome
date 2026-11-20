@@ -37,6 +37,8 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/ToolbarMenu.tsx",
   "editor/WorkspaceTopBar.tsx",
   "editor/citations/CitationPopover.tsx",
+  "editor/addons/MarkerPalette.tsx",
+  "editor/addons/SpeechControls.tsx",
   "editor/import/ImportTextDialog.tsx",
   "editor/citations/ReviewPlaces.tsx",
   "editor/commands/EditorCommands.tsx",
