@@ -1,4 +1,4 @@
-import { EDIT_STEP_FORMAT_V1, EDIT_STEP_FORMAT_V2, EDIT_STEP_FORMAT_V3, parseEditSteps } from "../document/edit-step";
+import { EDIT_STEP_FORMAT_V1, EDIT_STEP_FORMAT_V2, EDIT_STEP_FORMAT_V3, EDIT_STEP_FORMAT_V4, parseEditSteps } from "../document/edit-step";
 import { sha256WebCrypto } from "./crypto";
 import { canonicalizeJcs, type JcsJsonValue } from "./jcs";
 
@@ -79,7 +79,11 @@ export type EvidenceEventV2 = {
   afterDocumentHash: string;
 };
 
-export type EvidenceStepFormat = typeof EDIT_STEP_FORMAT_V1 | typeof EDIT_STEP_FORMAT_V2 | typeof EDIT_STEP_FORMAT_V3;
+export type EvidenceStepFormat =
+  | typeof EDIT_STEP_FORMAT_V1
+  | typeof EDIT_STEP_FORMAT_V2
+  | typeof EDIT_STEP_FORMAT_V3
+  | typeof EDIT_STEP_FORMAT_V4;
 
 export type EvidenceCaptureContextV2 = {
   editorModel: (typeof EVIDENCE_EDITOR_MODELS_V2)[number];

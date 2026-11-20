@@ -49,6 +49,9 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/help/EditorHelpMenu.tsx",
   "editor/help/EditorNotices.tsx",
   "editor/layout-prefs/EditorPanelLayout.fixture.tsx",
+  "editor/pages/CoverDialog.tsx",
+  "editor/pages/CoverPage.tsx",
+  "editor/pages/PageFormatDialog.tsx",
   "editor/layout-prefs/EditorPanelLayout.tsx",
   "editor/layout-prefs/LeftPanel.tsx",
   "editor/layout-prefs/PanelSettings.tsx",
@@ -58,8 +61,14 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/parts/EditorCitationSettings.tsx",
   "editor/parts/EditorWorkParts.tsx",
   "editor/parts/WorkPartsDialog.tsx",
+  "editor/history/WorkHistory.tsx", // WEB-9E: awaits work.versions.get in the contract and the toolbar integration.
+  "editor/print-export/PrintExportDialog.tsx", // WEB-10E: awaits the export client and toolbar integration.
+  "editor/submission-package/SubmissionPackage.tsx", // WEB-9E: awaits the toolbar integration.
   "editor/sources/panel/SourceList.tsx",
   "editor/sources/quick-source/QuickSource.tsx",
+  "editor/rich/table-image/CropDialog.tsx", // WEB-10A: awaits the Tiptap node views of table and image.
+  "editor/rich/table-image/ImageBar.tsx", // WEB-10A
+  "editor/rich/table-image/TableBar.tsx", // WEB-10A
   "editor/triggers/TriggerPopover.tsx",
   "editor/triggers/browser/fixture.tsx",
   "how-it-works/HowItWorks.tsx",
@@ -84,6 +93,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "student/TeacherViewSheet.tsx",
   "student/WorkDocumentProvider.tsx",
   "student/radovi/MyWorks.tsx",
+  "student/receipt/ReceiptRecord.tsx", // WEB-9E: awaits mounting under ReceiptPanel (predaja, another lane).
   "student/upis/EnrollForm.tsx",
   "summary/ProcessSummaryView.tsx",
   "support/ProblemReport.tsx",
