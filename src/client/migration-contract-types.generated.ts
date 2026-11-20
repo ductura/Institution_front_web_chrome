@@ -43,6 +43,14 @@ export type MigrationOperations = {
     success: { status: 200; body: { "institution": { "slug": string; "displayName": string | null }; "roles": ("student" | "teacher" | "network_engineer" | "institution_admin")[]; "displayName": string | null }; headers: {  } };
     errorCode: "unauthorized" | "forbidden" | "unavailable";
   };
+  // Institution_server 8772012 (SRV-9B).
+  "public.verification.post": {
+    params: undefined;
+    query: undefined;
+    body: { "submissionId": string; "artifactSha256": string };
+    success: { status: 200; body: { "match": true; "submittedAt": string; "signedAt": string; "keyId": string } | { "match": false }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "unavailable";
+  };
   "student.assignments.get": {
     params: undefined;
     query: undefined;
