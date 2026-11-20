@@ -1,8 +1,8 @@
 import {
-  Button, Card, Checkbox, CommandPalette, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
+  Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
   Icon, ICON_NAMES, KeyValueList, PanelTabs, Popover, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
   Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
-  type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
+  type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
 
@@ -394,7 +394,50 @@ export const ENTRIES = {
     puno: () => <ContextMenuExample entries={SAMPLE_MENU} />,
     onemogućeno: () => <ContextMenuExample entries={SAMPLE_MENU.map((e) => e.kind === "item" ? { ...e, disabled: true } : e)} />,
   },
+  CommentThread: {
+    prazno: () => <CommentThreadExample thread={{ id: "t0", resolved: false, entries: [] }} />,
+    učitavanje: () => <p>Komentari se učitavaju…</p>,
+    greška: () => <p role="alert">Komentari se nisu učitali.</p>,
+    puno: () => <CommentThreadExample thread={SAMPLE_THREAD} />,
+    onemogućeno: () => <CommentThreadExample thread={SAMPLE_THREAD} readOnly />,
+  },
+  DatePicker: {
+    prazno: () => <DatePickerExample value="" />,
+    učitavanje: () => <p>Rok se učitava…</p>,
+    greška: () => <p role="alert">Rok se nije spremio.</p>,
+    puno: () => <DatePickerExample value="2026-11-05" />,
+    onemogućeno: () => <DatePickerExample value="2026-11-05" disabled />,
+  },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
+
+// UI-8A: comment thread and date picker (invented text only).
+const THREAD_LABELS: CommentThreadLabels = {
+  thread: "Komentar uz odlomak", reply: "Odgovor na komentar…", replyField: "Vaš odgovor", send: "Odgovori",
+  resolve: "Označi kao riješeno", reopen: "Ponovno otvori", resolved: "Riješeno", open: "Otvoreno",
+  showAll: (n) => `Prikaži sve unose (${n})`, collapse: "Sažmi",
+};
+const SAMPLE_THREAD: CommentThreadData = {
+  id: "t1", anchor: "kućno kompostiranje", resolved: false,
+  entries: [
+    { id: "e1", author: "Izmišljena Mentorica", at: "12. 11. 2026.", text: "Navedi izvor za ovu tvrdnju.", mentor: true },
+    { id: "e2", author: "Izmišljeni Student", at: "13. 11. 2026.", text: "Izvor je dodan u popis literature." },
+  ],
+};
+function CommentThreadExample({ thread, readOnly }: { thread: CommentThreadData; readOnly?: boolean }) {
+  const [t, setT] = useState(thread);
+  return <CommentThread thread={t} labels={THREAD_LABELS} readOnly={readOnly}
+    onReply={(text) => setT({ ...t, entries: [...t.entries, { id: `n${t.entries.length}`, author: "Izmišljeni Student", at: "20. 11. 2026.", text }] })}
+    onResolve={() => setT({ ...t, resolved: true })} onReopen={() => setT({ ...t, resolved: false })} />;
+}
+const DATE_LABELS: DatePickerLabels = {
+  field: "Rok za doradu", choose: "Odaberi datum", previousMonth: "Prethodni mjesec", nextMonth: "Sljedeći mjesec", invalid: "Upišite datum kao d. M. gggg.",
+  months: ["siječanj", "veljača", "ožujak", "travanj", "svibanj", "lipanj", "srpanj", "kolovoz", "rujan", "listopad", "studeni", "prosinac"],
+  weekdays: ["pon", "uto", "sri", "čet", "pet", "sub", "ned"],
+};
+function DatePickerExample({ value: initial, disabled }: { value: string; disabled?: boolean }) {
+  const [value, setValue] = useState(initial);
+  return <DatePicker value={value} onChange={setValue} labels={DATE_LABELS} today="2026-11-20" disabled={disabled} />;
+}
 
 // The web's own components (src/components, DAN-753), texts from locales/ only.
 const SCOPE = "c2NvcGUtb2YtYW4taW52ZW50ZWQtcGVyc29u";
