@@ -15,6 +15,7 @@ export type EditorShellProps = {
   /** Names for the drawers' regions (Croatian, from the page's catalogue). */
   railLabel: string;
   panelLabel: string;
+  closeLabel: string;
 };
 
 /**
@@ -22,7 +23,7 @@ export type EditorShellProps = {
  * measures (E§1). Rail and panel become drawers at 1250 and 1050 px; Esc and
  * the scrim close them. Widths come from the writer's local choice.
  */
-export default function EditorShell({ header, tools = null, rail = null, panel = null, status, children, railLabel, panelLabel }: EditorShellProps) {
+export default function EditorShell({ header, tools = null, rail = null, panel = null, status, children, railLabel, panelLabel, closeLabel }: EditorShellProps) {
   const [settings, setSettings] = useState<LayoutSettings>(DEFAULT_SETTINGS);
   const [drawer, setDrawer] = useState<"rail" | "panel" | null>(null);
   useEffect(() => setSettings(loadSettings()), []);
@@ -51,7 +52,10 @@ export default function EditorShell({ header, tools = null, rail = null, panel =
       <div className={styles.body}>
         {rail !== null && <aside className={styles.rail} aria-label={railLabel}>{rail}</aside>}
         <main id="sadrzaj" className={styles.stage}>{children}</main>
-        {panel !== null && <aside className={styles.panel} aria-label={panelLabel}>{panel}</aside>}
+        {panel !== null && <aside className={styles.panel} aria-label={panelLabel}>
+          <button type="button" className={styles.close} onClick={() => setDrawer(null)}>{closeLabel}</button>
+          {panel}
+        </aside>}
         <div className={styles.scrim} onClick={() => setDrawer(null)} />
       </div>
       <div className={styles.status}>{status}</div>
