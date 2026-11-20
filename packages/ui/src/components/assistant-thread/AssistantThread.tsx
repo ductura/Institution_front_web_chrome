@@ -68,7 +68,9 @@ export function AssistantThread({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (canSend) onSend(text);
+    if (!canSend) return;
+    field.current?.focus();
+    onSend(text);
   }
 
   function review(action: () => void) {

@@ -27,6 +27,7 @@ import { proofsPath, type ProofsRead, type SourceProof } from "../../src/client/
 import type { ProofPicture } from "../../src/components/editor/sources/proofs/crop.ts";
 import { startCapture, type Capture } from "../../src/components/editor/sources/proofs/proof-draft.ts";
 import type { ProofsDeps } from "../../src/components/editor/sources/proofs/proofs-deps.ts";
+import { assistantThreadEntry } from "./assistant-thread";
 import type { CatalogEntries, CatalogState } from "./coverage";
 
 type Entry = Record<CatalogState, () => React.ReactNode>;
@@ -219,6 +220,7 @@ function FindBarExample({ total, hint }: { total: number; hint?: string }) {
 }
 
 export const ENTRIES = {
+  AssistantThread: assistantThreadEntry,
   Timeline: {
     prazno: () => <Timeline total={0} value={0} onChange={nothing} />,
     učitavanje: () => <RouteLoading label="Učitavanje koraka…" />,
