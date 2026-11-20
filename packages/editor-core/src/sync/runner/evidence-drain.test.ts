@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
-import { decodeBase64 } from "@/client/evidence-ingest";
+import { decodeBase64 } from "../../../../../src/client/evidence-ingest";
 import { emptyDocument, type DocumentTransaction } from "../../document/document";
 import type { EvidenceReceiptPayloadV2 } from "../../document/forensics/evidence-receipt";
 import type { BuiltSegment } from "../../editor";
@@ -9,7 +9,7 @@ import type { AtomicDexieJournal } from "../../journal/atomic-dexie-journal";
 
 import { createEvidenceTransport } from "./evidence-transport";
 import {
-  capture, DOC, journalKit, json, R0, receiptKey, runnerFor, save, server, sha256, UTC, type Body, type Chain,
+  capture, conflict, DOC, journalKit, json, R0, receiptKey, runnerFor, save, server, sha256, UTC, type Body, type Chain,
 } from "./evidence-test-kit";
 
 /**
@@ -139,10 +139,10 @@ describe("F-8 3d-2a2: segments drain in order", () => {
     ]);
   });
 
-  it.each(["stale_base", "chain_conflict", "not_continuous"])("11: %s is CONFLICT; the row stays and nothing more is sent", async (status) => {
+  it.each(["stale_base", "chain_conflict", "not_continuous"] as const)("11: %s is CONFLICT; the row stays and nothing more is sent", async (status) => {
     const journal = await started();
     await save(journal, SEG[0]!);
-    const net = server(R0, () => json(409, { status, currentRevision: 9 }));
+    const net = server(R0, () => conflict(status, 9));
     const runner = runnerFor(journal, net);
     expect(await runner.step(DOC)).toMatchObject({ kind: "sent", state: "CONFLICT" });
     expect(await runner.step(DOC)).toMatchObject({ kind: "stalled" });

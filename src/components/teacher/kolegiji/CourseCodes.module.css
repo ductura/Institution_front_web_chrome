@@ -1,0 +1,68 @@
+/* WEB-18 (N-01, dk-h): tokens from packages/ui ("papir i grafit"). */
+.list {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.meta,
+.note,
+.lead,
+.shownOnce,
+.codeLabel {
+  margin: 0;
+}
+
+.meta,
+.lead,
+.shownOnce,
+.codeLabel {
+  color: var(--ink-2);
+}
+
+.note {
+  font-weight: 600;
+}
+
+.code {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+}
+
+.codeValue {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+.year {
+  margin-top: 24px;
+}
+
+:global(.page) .yearHeading {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
