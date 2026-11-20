@@ -7,7 +7,7 @@ test("the replay can be played, paused and scrubbed by keyboard", async ({ page 
   await page.clock.pauseAt(new Date(start.getTime() + 60_000));
   await page.goto("/");
   const section = page.getByRole("region", { name: "Timeline", exact: true });
-  const player = section.getByRole("group", { name: "Vremenska crta" }).filter({ has: page.locator("input:enabled") });
+  const player = section.getByRole("group", { name: "Vremenska crta" }).filter({ has: page.locator("input:enabled") }).first();
   const slider = player.getByRole("slider", { name: "Korak nastanka" });
   const play = player.getByRole("button", { name: "Pokreni reprodukciju" });
   const pause = player.getByRole("button", { name: "Pauziraj reprodukciju" });
@@ -35,7 +35,7 @@ test("the replay can be played, paused and scrubbed by keyboard", async ({ page 
   await page.clock.runFor(225);
   await expect(play).toBeFocused();
   await expect(slider).toHaveValue("3");
-  await expect(section.getByText("Izmišljeni školski vrt raste.")).toBeVisible();
+  await expect(player.locator("xpath=ancestor::dd").getByText("Izmišljeni školski vrt raste.")).toBeVisible();
   await slider.press("Home");
   await expect(slider).toHaveValue("0");
 });
@@ -44,7 +44,7 @@ for (const theme of ["dark", "light"]) {
   test(`timeline and diff pass axe in the ${theme} theme at 360 px`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 900 });
     await page.goto(`/?theme=${theme}`);
-    const diff = page.getByRole("group", { name: "Usporedba teksta" });
+    const diff = page.getByRole("group", { name: "Usporedba teksta" }).first();
     await expect(diff.locator("ins")).toHaveCSS("text-decoration-line", "underline");
     await expect(diff.locator("del")).toHaveCSS("text-decoration-line", "line-through");
     const { violations } = await new AxeBuilder({ page }).include("#Timeline").include("#DiffView")
