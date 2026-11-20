@@ -1,11 +1,9 @@
-import { fileURLToPath } from "node:url";
-
 import { defineConfig } from "vitest/config";
 
 // Unit, property and vector tests of the package, as in Ductus (node, no DOM).
 // "@/lib/i18n" is the runtime twin of the path in tsconfig.json: two sources
 // read the Croatian catalogue through the Ductus alias; it lives in src/lib/i18n.
-const i18n = fileURLToPath(new URL("../../src/lib/i18n/", import.meta.url)).replaceAll("\\", "/");
+const i18n = `${import.meta.dirname.replaceAll("\\", "/")}/../../src/lib/i18n/`;
 
 export default defineConfig({
   resolve: { alias: [{ find: /^@\/lib\/i18n\//, replacement: i18n }] },
