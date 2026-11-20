@@ -9,14 +9,14 @@ import { messagesHr as t } from "../../locales/hr.ts";
 import type { OverviewRow } from "../../src/client/teacher-reads";
 import { BeforeSubmitView, type BeforeSubmitViewProps } from "../../src/components/predaja/BeforeSubmit.tsx";
 import { DeclarationView, type DeclarationViewProps, type RecordedSummary } from "../../src/components/predaja/Declaration.tsx";
-import type { SubmissionNote } from "../../src/client/submission.ts";
+import type { SubmissionNote, SubmissionReceipt } from "../../src/client/submission.ts";
 import { WorkspaceTopBarView } from "../../src/components/editor/WorkspaceTopBar.tsx";
 import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipRequests.tsx";
 import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
   AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments,
-  NoteDialog, OutlinePanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses,
-  type AssignmentSubmission, type LiveWorkFrameData, type SubmissionViewProps, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
+  NoteDialog, OutlinePanel, ReceiptPanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses,
+  type AssignmentSubmission, type LiveWorkFrameData, type ReceiptRead, type SubmissionViewProps, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
   type TeacherCourse,
 } from "../../src/components/index.ts";
 
@@ -417,6 +417,34 @@ const submissionStep = (over: Partial<SubmissionViewProps>) => (
     onOpen={nothing} onCheck={nothing} onReload={nothing} onDeclaration={nothing} onBack={nothing} {...over} />
 );
 
+// Invented signed receipt (as in ReceiptPanel.test.tsx, WEB-27); no real identifier or key.
+const signedReceipt: SubmissionReceipt = {
+  payload: {
+    receiptSchema: "ductus-submission-receipt-v2",
+    submissionId: "11111111-1111-4111-8111-111111111111",
+    evidenceDomainId: "22222222-2222-4222-8222-222222222222",
+    principalId: "33333333-3333-4333-8333-333333333333",
+    assignmentId: "44444444-4444-4444-8444-444444444444",
+    assignmentVersion: 2,
+    documentId: "doc-izmisljeni-1",
+    evidencePackageId: "pkg-izmisljeni-1",
+    revision: 7,
+    artifactSha256: "0123456789abcdef".repeat(4),
+    evidenceHeadSegmentHash: "f".repeat(64),
+    evidenceRecord: "continuous",
+    requestedAt: "2026-11-19T13:05:00.000000Z",
+    dueAt: "2026-11-20T22:59:00.000000Z",
+    afterDeadline: false,
+    signedAt: "2026-11-19T13:05:01.000000Z",
+  },
+  payloadDigestSha256: "e".repeat(64),
+  signature: { algorithm: "Ed25519", keyId: "kljuc-izmisljeni", keyVersion: "1", signatureEncoding: "raw", signatureBase64Url: "A".repeat(86) },
+};
+const receiptPanel = (read: ReceiptRead) => (
+  <ReceiptPanel read={read} retryHref="/rad/izmisljeni/predaja/potvrda" summaryHref="/rad/izmisljeni/predaja/pregled"
+    submitHref="/rad/izmisljeni/predaja" />
+);
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -563,5 +591,13 @@ export const SCREEN_ENTRIES = {
     greška: () => submissionStep({ work: { kind: "unavailable" } }),
     puno: () => submissionStep({}),
     onemogućeno: () => submissionStep({ online: false }),
+  },
+  // WEB-27 (S: E-11): "onemogućeno" is a submission recorded and waiting for its signature, never "predano".
+  ReceiptPanel: {
+    prazno: () => receiptPanel({ kind: "none" }),
+    učitavanje: () => receiptPanel({ kind: "loading" }),
+    greška: () => receiptPanel({ kind: "error" }),
+    puno: () => receiptPanel({ kind: "potvrdeno", receipt: signedReceipt }),
+    onemogućeno: () => receiptPanel({ kind: "ceka", revision: 7, requestedAt: "2026-11-19T13:05:00.000000Z" }),
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
