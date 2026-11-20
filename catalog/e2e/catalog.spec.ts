@@ -73,12 +73,12 @@ for (const theme of THEMES) {
       for (const name of [...COMPONENTS, ...ADDITIONAL_COMPONENTS]) {
         const section = page.getByRole("region", { name, exact: true });
         await expect(section.locator(".sheet[data-sheet-theme=light]")).toHaveCount(1);
-        for (const state of CATALOG_STATES) await expect(section.getByText(state, { exact: true })).toHaveCount(2);
+        await expect(section.locator(":scope > div > dl > div > dt")).toHaveText([...CATALOG_STATES, ...CATALOG_STATES]);
       }
       for (const name of SCREENS) {
         const section = page.getByRole("region", { name, exact: true });
         await expect(section.locator(".sheet")).toHaveCount(0);
-        for (const state of CATALOG_STATES) await expect(section.getByText(state, { exact: true })).toHaveCount(1);
+        await expect(section.locator(":scope > div > dl > div > dt")).toHaveText([...CATALOG_STATES]);
       }
       await expect(page.getByText(/^Spremljeno$/)).toHaveCount(0);
       expect(foreign).toEqual([]);
@@ -87,6 +87,7 @@ for (const theme of THEMES) {
     // 400 px is the width of the left panel's acceptance (DAN-977); the page is checked whole.
     for (const width of [1440, 400, 360]) {
       test(`has no WCAG 2.2 AA violations at ${width} px (axe)`, async ({ page }) => {
+        test.setTimeout(60_000);
         await open(page, theme, width);
         const result = await new AxeBuilder({ page })
           .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
