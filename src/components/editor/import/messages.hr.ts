@@ -1,0 +1,15 @@
+export const importMessages = {
+  title: "Uvoz postojećeg teksta",
+  note: "Tekst napisan prije Ducture dobiva oznaku uvezeno, vrijeme uvoza i Vašu izjavu. Mentor ga vidi kao uvezen, a ne kao tekst nepoznatog podrijetla.",
+  body: "Tekst",
+  bodyHint: "Zalijepite tekst. Odlomke odvojite praznim retkom.",
+  file: "Ili datoteka (.txt, .md)",
+  declaration: "Potvrđujem da je ovo moj tekst, nastao prije prelaska na Ducturu.",
+  submit: "Uvezi na kraj rada",
+  cancel: "Odustani",
+  done: (count: number) => `Uvezeno ${count} riječi, označeno kao uvezeno.`,
+  empty: "Nema teksta za uvoz.",
+  needDeclaration: "Potvrdite izjavu da biste uvezli tekst.",
+  badFile: "Datoteka mora biti običan tekst (.txt ili .md).",
+  tooLarge: "Datoteka je prevelika. Uvoz je ograničen na 200 000 znakova.",
+} as const;

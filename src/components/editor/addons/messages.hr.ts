@@ -1,0 +1,15 @@
+export const addonsMessages = {
+  markerTitle: "Marker",
+  markerColor: (name: string) => `Marker: ${name}`,
+  markerRemove: "Ukloni marker",
+  dictate: "Diktiraj",
+  dictateStop: "Stani",
+  dictating: "Diktiranje je uključeno. Govorite, tekst se umeće na mjesto kursora.",
+  read: "Čitaj naglas",
+  readStop: "Stani čitanje",
+  readEmpty: "Nema teksta za čitanje. Označite dio teksta ili stavite kursor u odlomak.",
+  unsupported: "Ovaj preglednik ne podržava diktiranje i čitanje naglas.",
+  local: "Diktiranje i čitanje rade u pregledniku; Ductura ne sprema zvuk.",
+  failed: "Diktiranje je prekinuto. Pokušajte ponovno.",
+  denied: "Pristup mikrofonu nije dopušten. Dopustite ga u postavkama preglednika.",
+} as const;
