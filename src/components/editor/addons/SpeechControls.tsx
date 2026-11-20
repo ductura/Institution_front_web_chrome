@@ -21,6 +21,11 @@ export function SpeechControls({ getText, onPhrase, editable }: Props) {
   const [note, setNote] = useState("");
   const stop = useRef<(() => void) | null>(null);
 
+  const phrase = useRef(onPhrase);
+  phrase.current = onPhrase;
+  const canEdit = useRef(editable);
+  canEdit.current = editable;
+  useEffect(() => { if (!editable) stop.current?.(); }, [editable]);
   useEffect(() => { setSupport(speechSupport()); return () => { stop.current?.(); stopReading(); }; }, []);
   if (support === null) return null;
   if (!support.dictation && !support.reading) return <p role="status">{t.unsupported}</p>;
@@ -31,7 +36,7 @@ export function SpeechControls({ getText, onPhrase, editable }: Props) {
       setDictating(false); stop.current = null;
       setNote(reason === "denied" ? t.denied : reason === "failed" ? t.failed : "");
     };
-    stop.current = startDictation(onPhrase, end);
+    stop.current = startDictation((text) => { if (canEdit.current) phrase.current(text); }, end);
     if (stop.current) { setDictating(true); setNote(t.dictating); }
   };
   const toggleReading = () => {
