@@ -22,3 +22,8 @@ export { KeyValueList, type KeyValueItem, type KeyValueListProps } from "./key-v
 export { Steps, type StepNumber, type StepsProps } from "./steps";
 export { StateTag, SUBMISSION_STATES, type StateTagProps, type SubmissionState } from "./state-tag";
 export { DataTable, type DataTableColumn, type DataTableProps } from "./table";
+export { FindBar, type FindBarLabels, type FindBarProps } from "./components/find-bar/FindBar";
+export { findKeyAction, findStatus, stepHit, type FindKeyAction, type FindStatus } from "./components/find-bar/find-logic";
+export { ContextMenu, type ContextMenuProps } from "./components/context-menu/ContextMenu";
+export { useContextMenu } from "./components/context-menu/useContextMenu";
+export { type MenuEntry, type Point as MenuPoint } from "./components/context-menu/menu-logic";
