@@ -36,7 +36,12 @@ export function Popover({ open, anchor, label, children, onClose, floating = tru
     const place = () => setPosition(placePopover(target.getBoundingClientRect(), { width: el.offsetWidth, height: el.offsetHeight }, { width: innerWidth, height: innerHeight }));
     place();
     window.addEventListener("resize", place);
-    return () => window.removeEventListener("resize", place);
+    // A scroll of the page or of any ancestor moves the anchor: the popover follows it (scroll does not bubble, so capture).
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
   }, [open, floating, anchor]);
 
   useEffect(() => {

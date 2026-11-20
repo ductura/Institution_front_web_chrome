@@ -64,7 +64,8 @@ export function Drawer({
       return;
     }
     if (event.key !== "Tab" || !modal) return;
-    const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE));
+    // Hidden controls (a collapsed section, `hidden`) cannot take focus, so they are left out of the cycle.
+    const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) => el.getClientRects().length > 0);
     const next = items[trappedIndex(items.indexOf(document.activeElement as HTMLElement), items.length, event.shiftKey)];
     event.preventDefault();
     next?.focus();
