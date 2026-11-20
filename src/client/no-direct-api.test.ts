@@ -38,6 +38,9 @@ const CLIENT = "src/client/api.ts";
  */
 export const EXCEPTIONS: Readonly<Record<string, { readonly fetchCalls: number }>> = {
   "public/app.js": { fetchCalls: 3 },
+  // WEB-1104: the spelling check reads its two local static dictionary files
+  // (public/dictionaries/hr) and runs hunspell-asm; no API, no work content.
+  "src/components/editor/spelling/engine.ts": { fetchCalls: 1 },
 };
 
 /**
@@ -217,7 +220,7 @@ describe("no API call outside src/client/api.ts", () => {
   });
 
   it("the exception list is closed", () => {
-    expect(Object.keys(EXCEPTIONS).sort()).toEqual(["public/app.js"]);
+    expect(Object.keys(EXCEPTIONS).sort()).toEqual(["public/app.js", "src/components/editor/spelling/engine.ts"]);
   });
 
   it("every list key is already in POSIX form, and no scanned path holds a backslash", () => {
@@ -230,6 +233,16 @@ describe("no API call outside src/client/api.ts", () => {
     expect(text.match(/\bfetch\b/g)).toHaveLength(EXCEPTIONS["public/app.js"]?.fetchCalls ?? 0);
     expect(new Set(directCalls(text, "public/app.js"))).toEqual(new Set(["fetch", "API URL", "image or src"]));
     expect([...text.matchAll(/`\$\{API\}([^`]*)`/g)].map((m) => m[1]?.split("/")[1])).toEqual(["documents", "documents", "documents"]);
+  });
+});
+
+describe("the spelling engine's one request", () => {
+  it("is a single fetch of the two local dictionary files, never an API URL", () => {
+    const file = "src/components/editor/spelling/engine.ts";
+    const text = readFileSync(join(ROOT, file), "utf8");
+    expect(text.match(/\bfetch\b/g)).toHaveLength(EXCEPTIONS[file]?.fetchCalls ?? 0);
+    expect(text).not.toMatch(/\/api\//);
+    expect(text).toContain("/dictionaries/hr");
   });
 });
 
