@@ -71,7 +71,14 @@ export const PAGES: readonly Page[] = [
   }))),
   { path: "/zadatak/[id]", label: t.student.title, kind: "pending", roles: ["student", "teacher"] },
   { path: "/upis/kolegij/[courseId]", label: t.student.enroll.title, kind: "pending", roles: ["student"], current: "/upis" },
+  // HOST-S1: the editor of one work.
+  { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },
+  // HOST-S2: the steps of the submission (WEB-24..27).
+  { path: "/rad/[assignmentId]/predaja/izjava", label: workText.declaration.title, kind: "pending", roles: ["student"] },
+  { path: "/rad/[assignmentId]/predaja/pregled", label: workText.beforeSubmit.title, kind: "pending", roles: ["student"] },
+  { path: "/rad/[assignmentId]/predaja/slanje", label: workText.submit.title, kind: "pending", roles: ["student"] },
+  { path: "/rad/[assignmentId]/predaja/potvrda", label: workText.receipt.title, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/dnevnik-pristupa", label: t.accessLog.context, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/reprodukcija", label: t.replay.titleStudent, kind: "pending", roles: ["student"] },
   { path: "/nastavnik/kolegiji", label: t.teacherCourses.title, kind: "teacherCourses", roles: ["teacher"], current: "/nastavnik" },

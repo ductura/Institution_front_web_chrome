@@ -18,6 +18,7 @@ import { readAssignmentOverview, type OverviewRow, type TeacherCall } from "../.
 import { messagesHr } from "../../../../../src/lib/i18n/messages.hr.ts";
 
 import { TeacherPage, useTeacherRead, type TeacherRead } from "../pages";
+import { nextPath } from "../../bases";
 import { useHost } from "../context";
 
 const summary = messagesHr.teacherSummary;
@@ -44,7 +45,6 @@ export function AssignmentOverviewPage() {
     if (overview.kind === "session-expired") return { kind: "signedOut" };
     return { kind: "ready", value: { choices, chosen, rows: overview.kind === "ready" ? overview.rows : null } };
   });
-  const here = (id: string) => appHref(base, `/nastavnik/zbirni?zadatak=${encodeURIComponent(id)}`);
   return (
     <TeacherPage title={summary.title} lead={summary.lead} read={read} retry={retry}
       unavailable={summary.unavailable} retryLabel={summary.retry}
@@ -58,7 +58,7 @@ export function AssignmentOverviewPage() {
           <form onSubmit={(e) => {
             e.preventDefault();
             const id = new FormData(e.currentTarget).get("zadatak");
-            if (typeof id === "string") router.push(here(id));
+            if (typeof id === "string") router.push(nextPath(base, `/nastavnik/zbirni?zadatak=${encodeURIComponent(id)}`));
           }}>
             <Select name="zadatak" label={summary.pickLabel} defaultValue={chosen.id}
               options={choices.map((c) => ({ value: c.id, label: c.label }))} />

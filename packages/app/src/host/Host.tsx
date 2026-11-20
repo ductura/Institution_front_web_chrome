@@ -10,16 +10,11 @@ import ErrorScreen from "../../../../src/components/shell/ErrorScreen.ts";
 import { messagesHr as t } from "../../../../locales/hr.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
-import type { Base } from "../bases";
+import { nextPath, type Base } from "../bases";
 import { crumbsOf, internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
 import { hostText } from "../text";
 import { HostContext } from "./context";
 import SignOut from "./SignOut";
-
-/** Next's path of an app route: the browser's path without the basePath "/app". */
-function nextPath(base: Base, route: string): string {
-  return appHref(base, route).slice("/app".length);
-}
 
 /**
  * The institution front (#2028 c.6993786629 §3.3), as the layout of
