@@ -1,0 +1,7 @@
+.scope { --raised: var(--field); --hover: var(--well); }
+.form, .fields, .group { display: grid; gap: 10px; min-inline-size: 0; }
+.form { padding: 8px; }
+.fields { border: 0; padding: 0; margin: 0; }
+.group { border: 1px solid var(--rule-2); border-radius: var(--radius-control); padding: 8px; margin: 0; }
+.group legend { padding-inline: 4px; color: var(--ink); font-weight: 600; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }

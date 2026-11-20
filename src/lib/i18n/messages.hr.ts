@@ -875,6 +875,17 @@ export const hr = {
       unstorable: "{field} sadrži znak koji list ne prima; upiši polje ponovno.",
       pageUnstorable: "Stranica navoda sadrži znak koji list ne prima; upiši je ponovno.",
       readOnly: "List je samo za čitanje; izvori se ne mogu dodati.",
+      // WEB-7C (E§3.4): the list of sources, its search and the summary.
+      list: {
+        search: "Traži među izvorima ({n})",
+        noMatch: "Nijedan izvor ne odgovara pretrazi.",
+        cited: "Citirano ({n})",
+        uncited: "Nije citirano ({n})",
+        review: "Pregled literature",
+        summary: "{total} u popisu · citirano {cited} · nije citirano {uncited}",
+        origin: "Obvezna literatura kolegija: {mandatory} · preporučeno: {recommended}",
+        tags: { mandatory: "obvezna literatura", recommended: "preporučeno" },
+      },
     },
     instructionsEmpty: "Upute zadatka prikazuju se ovdje.",
     commentsEmpty: "Komentari nastavnika prikazuju se ovdje.",
