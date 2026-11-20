@@ -208,7 +208,9 @@
         "roles": [
           "student"
         ],
-        "displayName": "Ana Primjer"
+        "displayName": "Ana Primjer",
+        "journalScope": "4e84fd38a2f8f663661b8e1b2fc52bad9b9da56f8accead18bfd24ca20b96d12",
+        "sessionTag": "c87c2b8c6e066e9f0b3ddbb338a2188630c0364f769518a616173518dc6c603f"
       },
       "contentType": "application/json"
     }
@@ -228,7 +230,54 @@
           "institution_admin",
           "teacher"
         ],
-        "displayName": null
+        "displayName": null,
+        "journalScope": "c3c10a7bd4a52fae73329070fefa320aa45810a01f113936745f05b769698a45",
+        "sessionTag": "20b16d54e309bb495b4d7e1b3a4a15de55a95f76ec4646500be44fac8111dc1b"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "profile.me.get",
+    "name": "unauthorized",
+    "request": {},
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "profile.me.get",
+    "name": "forbidden",
+    "request": {},
+    "response": {
+      "status": 403,
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "profile.me.get",
+    "name": "unavailable",
+    "request": {},
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503
       },
       "contentType": "application/json"
     }
@@ -1403,6 +1452,171 @@
         "messageKey": "errors.unavailable",
         "status": 503,
         "requestId": "00000000-0000-4000-8000-000000002003"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.submission-receipt.get",
+    "name": "none",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1",
+        "studentId": "00000000-0000-4000-8000-0000000000e1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "state": "none"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.submission-receipt.get",
+    "name": "ceka",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1",
+        "studentId": "00000000-0000-4000-8000-0000000000e1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "state": "ceka",
+        "revision": 7,
+        "requestedAt": "2026-12-20T21:14:05.123456Z"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.submission-receipt.get",
+    "name": "potvrdeno",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1",
+        "studentId": "00000000-0000-4000-8000-0000000000e1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "state": "potvrdeno",
+        "receipt": {
+          "payload": {
+            "receiptSchema": "ductus-submission-receipt-v2",
+            "submissionId": "5b0c3e2a-7d14-4f6b-9a8e-1c2d3e4f5a01",
+            "evidenceDomainId": "00000000-0000-4000-8000-0000000000d1",
+            "principalId": "00000000-0000-4000-8000-0000000000e1",
+            "assignmentId": "00000000-0000-4000-8000-0000000000a1",
+            "assignmentVersion": 2,
+            "documentId": "izmisljeni-rad-predaje-0001",
+            "evidencePackageId": "izmisljeni-paket-0001",
+            "revision": 7,
+            "artifactSha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+            "evidenceHeadSegmentHash": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+            "evidenceRecord": "continuous",
+            "requestedAt": "2026-12-20T21:14:05.123456Z",
+            "dueAt": "2026-12-20T22:59:00.000000Z",
+            "afterDeadline": false,
+            "signedAt": "2026-12-20T21:14:06.004321Z"
+          },
+          "payloadDigestSha256": "c3c9f04a1911bd4d032a9f71956b646cde7f743c08d6ea266a53413da1758e5a",
+          "signature": {
+            "algorithm": "Ed25519",
+            "keyId": "izmisljeni-kljuc-ustanove",
+            "keyVersion": "1",
+            "signatureEncoding": "raw",
+            "signatureBase64Url": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ"
+          }
+        }
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.submission-receipt.get",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1",
+        "studentId": "00000000-0000-4000-8000-0000000000e1"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000000002"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.submission-receipt.get",
+    "name": "forbidden",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1",
+        "studentId": "00000000-0000-4000-8000-0000000000e1"
+      }
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000000003"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.submission-receipt.get",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1",
+        "studentId": "00000000-0000-4000-8000-0000000000e1"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000000004"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.submission-receipt.get",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1",
+        "studentId": "nije-uuid"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-000000001901"
       },
       "contentType": "application/json"
     }

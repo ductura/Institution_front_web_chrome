@@ -36,11 +36,12 @@ export type MigrationOperations = {
     success: { status: 200; body: { "id": string }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "invalid_input" | "unsupported_media_type" | "invalid_json" | "forbidden" | "unavailable";
   };
+  // Institution_server a362c63 (SRV-JS, SRV-ST).
   "profile.me.get": {
     params: undefined;
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "institution": { "slug": string; "displayName": string | null }; "roles": ("student" | "teacher" | "network_engineer" | "institution_admin")[]; "displayName": string | null }; headers: {  } };
+    success: { status: 200; body: { "institution": { "slug": string; "displayName": string | null }; "roles": ("student" | "teacher" | "network_engineer" | "institution_admin")[]; "displayName": string | null; "journalScope": string; "sessionTag": string }; headers: {  } };
     errorCode: "unauthorized" | "forbidden" | "unavailable";
   };
   // Institution_server 8772012 (SRV-9B).
@@ -122,5 +123,21 @@ export type MigrationOperations = {
     body: undefined;
     success: { status: 200; body: { "versions": ({ "kind": "submission"; "revision": number; "savedMinute": string; "afterDeadline": boolean } | { "kind": "checkpoint"; "revision": number; "savedMinute": string })[]; "nextBeforeRevision": number | null }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
+  };
+  // Institution_server a362c63 (SRV-30).
+  "teacher.submission-receipt.get": {
+    params: { "assignmentId": string; "studentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "state": "none" } | { "state": "ceka"; "revision": number; "requestedAt": string } | { "state": "potvrdeno"; "receipt": { "payload": { "receiptSchema": "ductus-submission-receipt-v2"; "submissionId": string; "evidenceDomainId": string; "principalId": string; "assignmentId": string; "assignmentVersion": number; "documentId": string; "evidencePackageId": string; "revision": number; "artifactSha256": string; "evidenceHeadSegmentHash": string; "evidenceRecord": "continuous" | "with_gaps"; "requestedAt": string; "dueAt": string; "afterDeadline": boolean; "signedAt": string }; "payloadDigestSha256": string; "signature": { "algorithm": "Ed25519"; "keyId": string; "keyVersion": string; "signatureEncoding": "raw"; "signatureBase64Url": string } } }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
+  };
+  // TODO(ugovor): the read agreed in Ductus#2028 c.7024185874.
+  "teacher.work.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "documentId": string; "studentId": string; "studentName": string | null; "assignmentId": string; "state": "predano" | "nije_predano" | "nakon_roka" | "ceka"; "prevDocumentId": string | null; "nextDocumentId": string | null }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
   };
 };

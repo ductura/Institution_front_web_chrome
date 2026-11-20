@@ -3,6 +3,8 @@
 // links the app opens itself. Pure functions; src/host/Host.tsx does the effects.
 import { HOW_IT_WORKS_HREF, homeHref, navFor, type ShellRole } from "../../../src/components/index.ts";
 import { messagesHr as t } from "../../../locales/hr.ts";
+import { consultationMessages } from "../../../src/components/teacher/consultation-records/messages.hr.ts";
+import { messagesHr as workText } from "../../../src/lib/i18n/messages.hr.ts";
 
 import type { SessionRole } from "../../../src/client/api.ts";
 
@@ -75,6 +77,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/kolegiji", label: t.teacherCourses.title, kind: "teacherCourses", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/rad/[id]", label: t.liveView.context, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/reprodukcija", label: t.replay.titleTeacher, kind: "pending", roles: ["teacher"] },
+  { path: "/nastavnik/rad/[id]/predaja", label: workText.receipt.title, kind: "pending", roles: ["teacher"] },
+  { path: "/nastavnik/rad/[id]/konzultacije", label: consultationMessages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/zadatak/novi", label: t.teacher.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/zadatak/[assignmentId]/uredi", label: t.teacher.newVersion.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik", label: t.teacher.workLanguageException.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
@@ -124,7 +128,7 @@ export function crumbsOf(page: Page, role: ShellRole | null): readonly string[] 
 export function internalRoute(href: string, base: Base): string | null {
   if (!href.startsWith("/") || href.startsWith("//")) return null;
   const path = href.split(/[?#]/, 1)[0] ?? "";
-  if (path === base || path.startsWith(`${base}/`)) return routeOf(path, base);
+  if (path === base || path.startsWith(`${base}/`)) return `${routeOf(path, base)}${href.slice(path.length)}`;
   if (path === "/" || PAGES.some((p) => pathMatches(p.path, path))) return path;
   return null;
 }
