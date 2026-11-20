@@ -10,10 +10,11 @@ import { BeforeSubmitView, type BeforeSubmitViewProps } from "../../src/componen
 import { DeclarationView, type DeclarationViewProps, type RecordedSummary } from "../../src/components/predaja/Declaration.tsx";
 import type { SubmissionNote } from "../../src/client/submission.ts";
 import { WorkspaceTopBarView } from "../../src/components/editor/WorkspaceTopBar.tsx";
+import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipRequests.tsx";
 import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
-  AppShell, EmptyHome, LiveWorkFrame, MentoredWorks, MyAssignments, NoteDialog, OutlinePanel, StudentHome, TeacherCourses,
-  type AssignmentSubmission, type LiveWorkFrameData, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
+  AppShell, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments, NoteDialog, OutlinePanel, StudentHome, TeacherCourses,
+  type AssignmentSubmission, type LiveWorkFrameData, type RequestsRead, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -362,6 +363,33 @@ function NoteProbe({ text = "", press = false, pending = false }: { text?: strin
   );
 }
 
+// Invented roster (WEB-31, N-04): two groups, a seminar that opens N-06, a student without a name.
+type Roster = Parameters<typeof CourseStudents>[0]["result"];
+const rosterStudents = [
+  { studentId: "izmisljeni-student-1", name: "Vesna Žbunić", group: "A", works: [
+    { assignmentId: "izmisljeni-zadatak-1", state: "predano", title: "Izmišljeni seminar", workType: "seminar_paper",
+      documentId: "70000000-0000-4000-8000-000000000011" },
+  ] },
+  { studentId: "izmisljeni-student-2", name: "Ana Izmišljenić", group: "B", works: [
+    { assignmentId: "izmisljeni-zadatak-1", state: "nakon_roka", title: "Izmišljeni seminar", workType: "seminar_paper", documentId: null },
+    { assignmentId: "izmisljeni-zadatak-2", state: "ceka", title: "Izmišljeni ogled", workType: "essay" },
+  ] },
+  { studentId: "izmisljeni-student-3", name: null, group: "A", works: [] },
+] satisfies (Roster & { kind: "ready" })["students"];
+const roster = (result: Roster) => <CourseStudents result={result} />;
+
+// Invented mentorship requests (WEB-32, N-16).
+const requests: (RequestsRead & { kind: "ready" })["requests"] = [
+  { requestId: "70000000-0000-4000-8000-000000000101", studentName: "Vesna Žbunić", title: "Izmišljeni završni rad", workType: "bachelor_thesis", requestedAt: "2026-11-02T09:00:00Z" },
+  { requestId: "70000000-0000-4000-8000-000000000102", studentName: null, title: "Izmišljeni diplomski rad", workType: "master_thesis", requestedAt: "2026-11-05T13:30:00Z" },
+];
+/** The first button pressed once on mount: a state that lives inside the screen. */
+const pressFirst = (box: HTMLDivElement | null) => {
+  if (box === null || box.dataset.pressed === "yes") return;
+  box.dataset.pressed = "yes";
+  queueMicrotask(() => box.querySelector("button")?.click());
+};
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -458,5 +486,25 @@ export const SCREEN_ENTRIES = {
     greška: () => <NoteProbe press />,
     puno: () => <NoteProbe text="Izmišljena napomena uz predaju." />,
     onemogućeno: () => <NoteProbe text="Izmišljena napomena uz predaju." press pending />,
+  },
+  // WEB-31 (N-04): "onemogućeno" is a roster with no work to open (an essay, a seminar without a document).
+  CourseStudents: {
+    prazno: () => roster({ kind: "ready", students: [], courseName: "Izmišljeni kolegij" }),
+    učitavanje: () => roster({ kind: "loading" }),
+    greška: () => roster({ kind: "unavailable", retryHref: "/nastavnik/kolegiji" }),
+    puno: () => roster({ kind: "ready", students: rosterStudents, courseName: "Izmišljeni kolegij" }),
+    onemogućeno: () => roster({ kind: "ready", students: rosterStudents.slice(1) }),
+  },
+  // WEB-32 (N-16): "onemogućeno" is a decision on its way (nothing answers): the other request waits.
+  MentorshipRequests: {
+    prazno: () => <MentorshipRequests read={{ kind: "ready", requests: [] }} here="/nastavnik/mentorstva" />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <MentorshipRequests read={{ kind: "unavailable" }} here="/nastavnik/mentorstva" />,
+    puno: () => <MentorshipRequests read={{ kind: "ready", requests }} here="/nastavnik/mentorstva" />,
+    onemogućeno: () => (
+      <div ref={pressFirst}>
+        <MentorshipRequestsView read={{ kind: "ready", requests }} here="/nastavnik/mentorstva" call={() => new Promise(() => undefined)} />
+      </div>
+    ),
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
