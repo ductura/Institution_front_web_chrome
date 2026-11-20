@@ -159,7 +159,6 @@ function SessionRevisionPanel({ documentId, assignmentId, session }: {
 
   return (
     <>
-    {!stopped && session && <WorkMentorSections documentId={documentId} role="student" current={current} />}
     <RevisionList
       t={t} formatDate={formatDateHr} status={status} requests={requests} submitted={submitted} unconfirmed={unconfirmed}
       drafts={drafts} numbers={numbers} sending={sending} errors={errors} live={live}
@@ -168,6 +167,7 @@ function SessionRevisionPanel({ documentId, assignmentId, session }: {
       onRetry={() => void load()}
     />
     {requests.length > 0 && <RevisionLog entries={revisionLog(requests)} />}
+    {!stopped && session && <WorkMentorSections documentId={documentId} role="student" current={current} />}
     </>
   );
 }
