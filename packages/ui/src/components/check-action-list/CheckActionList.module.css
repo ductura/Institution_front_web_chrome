@@ -1,0 +1,12 @@
+/* Check findings list: a required finding carries the strong rule, an advisory one the quiet rule. */
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.item { padding: 10px 12px; background: var(--well); color: var(--ink); border: 1px solid var(--rule-2); border-left: 3px solid var(--rule); border-radius: var(--radius-control); }
+.item[data-severity="required"] { border-left-color: var(--ink); }
+.head { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.severity { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.title { font-size: 14px; overflow-wrap: anywhere; }
+.detail { margin: 4px 0 0; font-size: 13.5px; color: var(--ink-3); overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.button { min-height: 32px; padding: 0 10px; font: inherit; font-size: 12.5px; color: var(--ink); background: transparent; border: 1px solid var(--field-rule); border-radius: var(--radius-control); cursor: pointer; }
+.button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.empty { margin: 0; padding: 12px; font-size: 13.5px; color: var(--ink-3); border: 1px dashed var(--rule-2); border-radius: var(--radius-control); }
