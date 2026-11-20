@@ -9,10 +9,11 @@
     "build": "pnpm --filter @ductura/app run build",
     "dev": "pnpm --filter @ductura/app run dev",
     "start": "pnpm --filter @ductura/app run start",
-    "test": "npm run test:helpers && npm run test:functional && npm run test:editor6e",
+    "test": "npm run test:helpers && npm run test:functional && npm run test:editor6e && npm run test:editor10e",
     "test:helpers": "node --test \"test/unit/*.test.js\"",
     "test:functional": "playwright test",
     "test:editor6e": "playwright test --config src/components/editor/triggers/browser/playwright.config.test.cjs",
+    "test:editor10e": "playwright test --config src/components/editor/print-export/browser/playwright.config.test.cjs",
     "next:dev": "next dev -p 3000",
     "next:build": "next build",
     "typecheck": "tsc --noEmit -p tsconfig.json"

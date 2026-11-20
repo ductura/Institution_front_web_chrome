@@ -21,6 +21,11 @@ function isDocumentId(value: unknown): value is string {
   return length >= 1 && length <= DOCUMENT_ID_MAX && !CONTROL.test(value);
 }
 
+/** WEB-1113 (N-13): the page of deadline extensions for an assignment. */
+export function extensionsHref(assignmentId: string): string {
+  return `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}/produljenje`;
+}
+
 /** The link from /nastavnik to the form for a further assignment in `courseId`. */
 export function newAssignmentHref(courseId: string): string {
   return `/nastavnik/zadatak/novi?kolegij=${encodeURIComponent(courseId)}`;

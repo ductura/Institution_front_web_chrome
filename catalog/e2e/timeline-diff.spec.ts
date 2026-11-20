@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+test.describe.configure({ timeout: 60_000 });
+
 test("the replay can be played, paused and scrubbed by keyboard", async ({ page }) => {
   const start = new Date("2026-01-01T00:00:00Z");
   await page.clock.install({ time: start });

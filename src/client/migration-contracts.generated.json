@@ -722,6 +722,110 @@
       ]
     }
   },
+  "public.verification.post": {
+    "path": "/api/v1/public/verification",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "submissionId",
+        "artifactSha256"
+      ],
+      "properties": {
+        "submissionId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+          "type": "string"
+        },
+        "artifactSha256": {
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "match",
+                    "submittedAt",
+                    "signedAt",
+                    "keyId"
+                  ],
+                  "properties": {
+                    "match": {
+                      "const": true,
+                      "type": "boolean"
+                    },
+                    "submittedAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])",
+                      "type": "string"
+                    },
+                    "signedAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])",
+                      "type": "string"
+                    },
+                    "keyId": {
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "match"
+                  ],
+                  "properties": {
+                    "match": {
+                      "const": false,
+                      "type": "boolean"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
   "student.assignments.get": {
     "path": "/api/v1/student/assignments",
     "method": "GET",
@@ -1116,6 +1220,671 @@
       ],
       "422": [
         "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.assignment-overview.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/overview",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "students"
+              ],
+              "properties": {
+                "students": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "studentId",
+                          "givenName",
+                          "familyName",
+                          "groupName",
+                          "submitted",
+                          "requestedMinute",
+                          "afterDeadline",
+                          "evidenceRecord"
+                        ],
+                        "properties": {
+                          "studentId": {
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "type": "string"
+                          },
+                          "givenName": {
+                            "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "familyName": {
+                            "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "groupName": {
+                            "anyOf": [
+                              {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "submitted": {
+                            "const": false,
+                            "type": "boolean"
+                          },
+                          "requestedMinute": {
+                            "type": "null"
+                          },
+                          "afterDeadline": {
+                            "type": "null"
+                          },
+                          "evidenceRecord": {
+                            "type": "null"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "studentId",
+                          "givenName",
+                          "familyName",
+                          "groupName",
+                          "submitted",
+                          "requestedMinute",
+                          "afterDeadline",
+                          "evidenceRecord"
+                        ],
+                        "properties": {
+                          "studentId": {
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "type": "string"
+                          },
+                          "givenName": {
+                            "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "familyName": {
+                            "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "groupName": {
+                            "anyOf": [
+                              {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "submitted": {
+                            "const": true,
+                            "type": "boolean"
+                          },
+                          "requestedMinute": {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00\\.000Z$",
+                            "type": "string"
+                          },
+                          "afterDeadline": {
+                            "type": "boolean"
+                          },
+                          "evidenceRecord": {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "const": "continuous",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "with_gaps",
+                                    "type": "string"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "studentId",
+                          "givenName",
+                          "familyName",
+                          "groupName",
+                          "submitted",
+                          "requestedMinute",
+                          "afterDeadline",
+                          "evidenceRecord"
+                        ],
+                        "properties": {
+                          "studentId": {
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "type": "string"
+                          },
+                          "givenName": {
+                            "type": "null"
+                          },
+                          "familyName": {
+                            "type": "null"
+                          },
+                          "groupName": {
+                            "anyOf": [
+                              {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "submitted": {
+                            "const": false,
+                            "type": "boolean"
+                          },
+                          "requestedMinute": {
+                            "type": "null"
+                          },
+                          "afterDeadline": {
+                            "type": "null"
+                          },
+                          "evidenceRecord": {
+                            "type": "null"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "studentId",
+                          "givenName",
+                          "familyName",
+                          "groupName",
+                          "submitted",
+                          "requestedMinute",
+                          "afterDeadline",
+                          "evidenceRecord"
+                        ],
+                        "properties": {
+                          "studentId": {
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "type": "string"
+                          },
+                          "givenName": {
+                            "type": "null"
+                          },
+                          "familyName": {
+                            "type": "null"
+                          },
+                          "groupName": {
+                            "anyOf": [
+                              {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "submitted": {
+                            "const": true,
+                            "type": "boolean"
+                          },
+                          "requestedMinute": {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00\\.000Z$",
+                            "type": "string"
+                          },
+                          "afterDeadline": {
+                            "type": "boolean"
+                          },
+                          "evidenceRecord": {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "const": "continuous",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "with_gaps",
+                                    "type": "string"
+                                  }
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.deadline-extension.post": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/deadline-extensions",
+    "method": "POST",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "body": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "scope",
+            "studentId",
+            "dueAt",
+            "reasonId"
+          ],
+          "properties": {
+            "scope": {
+              "const": "one",
+              "type": "string"
+            },
+            "studentId": {
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+              "type": "string"
+            },
+            "dueAt": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+              "type": "string"
+            },
+            "reasonId": {
+              "anyOf": [
+                {
+                  "const": "justified",
+                  "type": "string"
+                },
+                {
+                  "const": "technical",
+                  "type": "string"
+                },
+                {
+                  "const": "agreement",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "scope",
+            "dueAt",
+            "reasonId"
+          ],
+          "properties": {
+            "scope": {
+              "const": "all",
+              "type": "string"
+            },
+            "dueAt": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+              "type": "string"
+            },
+            "reasonId": {
+              "anyOf": [
+                {
+                  "const": "justified",
+                  "type": "string"
+                },
+                {
+                  "const": "technical",
+                  "type": "string"
+                },
+                {
+                  "const": "agreement",
+                  "type": "string"
+                },
+                {
+                  "const": "all",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "responses": {
+      "201": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "extension",
+                "existingSubmissionsUnchanged"
+              ],
+              "properties": {
+                "extension": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "scope",
+                    "studentId",
+                    "previousDueAt",
+                    "dueAt",
+                    "reasonId",
+                    "createdBy",
+                    "createdAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "type": "string"
+                    },
+                    "scope": {
+                      "anyOf": [
+                        {
+                          "const": "one",
+                          "type": "string"
+                        },
+                        {
+                          "const": "all",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "studentId": {
+                      "anyOf": [
+                        {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "previousDueAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    "dueAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    "reasonId": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "const": "justified",
+                              "type": "string"
+                            },
+                            {
+                              "const": "technical",
+                              "type": "string"
+                            },
+                            {
+                              "const": "agreement",
+                              "type": "string"
+                            },
+                            {
+                              "const": "all",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdBy": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    }
+                  }
+                },
+                "existingSubmissionsUnchanged": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.deadline-extensions.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/deadline-extensions",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "extensions"
+              ],
+              "properties": {
+                "extensions": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "scope",
+                      "studentId",
+                      "previousDueAt",
+                      "dueAt",
+                      "reasonId",
+                      "createdBy",
+                      "createdAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "scope": {
+                        "anyOf": [
+                          {
+                            "const": "one",
+                            "type": "string"
+                          },
+                          {
+                            "const": "all",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "studentId": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "previousDueAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "dueAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "reasonId": {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "const": "justified",
+                                "type": "string"
+                              },
+                              {
+                                "const": "technical",
+                                "type": "string"
+                              },
+                              {
+                                "const": "agreement",
+                                "type": "string"
+                              },
+                              {
+                                "const": "all",
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "createdBy": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
       ],
       "503": [
         "unavailable"

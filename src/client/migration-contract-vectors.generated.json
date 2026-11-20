@@ -234,6 +234,77 @@
     }
   },
   {
+    "route": "public.verification.post",
+    "name": "match",
+    "request": {
+      "body": {
+        "submissionId": "00000000-0000-4000-8000-00000000c0de",
+        "artifactSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "match": true,
+        "submittedAt": "2026-11-20T10:15:30.123456Z",
+        "signedAt": "2026-11-20T10:15:31.654321Z",
+        "keyId": "izmisljeni-kljuc-potvrde-1"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "public.verification.post",
+    "name": "no-match",
+    "request": {
+      "body": {
+        "submissionId": "00000000-0000-4000-8000-00000000c0de",
+        "artifactSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "match": false
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "public.verification.post",
+    "name": "too-many-requests",
+    "request": {
+      "body": {
+        "submissionId": "00000000-0000-4000-8000-00000000c0de",
+        "artifactSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    },
+    "response": {
+      "status": 429,
+      "body": {
+        "error": "too_many_requests"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "public.verification.post",
+    "name": "unavailable",
+    "request": {
+      "body": {
+        "submissionId": "00000000-0000-4000-8000-00000000c0de",
+        "artifactSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
     "route": "student.assignments.get",
     "name": "ready",
     "request": {},
@@ -464,6 +535,157 @@
       "status": 200,
       "body": {
         "readAt": "2026-11-16T07:44:02.125Z"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.assignment-overview.get",
+    "name": "students",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "students": [
+          {
+            "studentId": "00000000-0000-4000-8000-0000000000e1",
+            "givenName": "Demo",
+            "familyName": "Kompost",
+            "groupName": "Grupa A",
+            "submitted": false,
+            "requestedMinute": null,
+            "afterDeadline": null,
+            "evidenceRecord": null
+          }
+        ]
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.assignment-overview.get",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-0000000000d1"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.deadline-extensions.get",
+    "name": "list",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "extensions": [
+          {
+            "id": "00000000-0000-4000-8000-0000000000f1",
+            "scope": "one",
+            "studentId": "00000000-0000-4000-8000-0000000000e1",
+            "previousDueAt": "2026-12-20T22:59:00.000Z",
+            "dueAt": "2026-12-27T22:59:00.000Z",
+            "reasonId": "justified",
+            "createdBy": "00000000-0000-4000-8000-0000000000c1",
+            "createdAt": "2026-11-21T09:15:00.000Z"
+          }
+        ]
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.deadline-extensions.get",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-0000000000d1"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.deadline-extension.post",
+    "name": "one",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      },
+      "body": {
+        "scope": "one",
+        "studentId": "00000000-0000-4000-8000-0000000000e1",
+        "dueAt": "2026-12-27T22:59:00.000Z",
+        "reasonId": "justified"
+      }
+    },
+    "response": {
+      "status": 201,
+      "body": {
+        "extension": {
+          "id": "00000000-0000-4000-8000-0000000000f1",
+          "scope": "one",
+          "studentId": "00000000-0000-4000-8000-0000000000e1",
+          "previousDueAt": "2026-12-20T22:59:00.000Z",
+          "dueAt": "2026-12-27T22:59:00.000Z",
+          "reasonId": "justified",
+          "createdBy": "00000000-0000-4000-8000-0000000000c1",
+          "createdAt": "2026-11-21T09:15:00.000Z"
+        },
+        "existingSubmissionsUnchanged": false
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "teacher.deadline-extension.post",
+    "name": "invalid-input",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      },
+      "body": {
+        "scope": "all",
+        "dueAt": "2026-12-27T22:59:00.000Z",
+        "reasonId": "all"
+      }
+    },
+    "response": {
+      "status": 422,
+      "body": {
+        "error": "invalid_input",
+        "code": "invalid_input",
+        "messageKey": "errors.invalidInput",
+        "status": 422,
+        "requestId": "00000000-0000-4000-8000-0000000000d1"
       },
       "contentType": "application/json"
     }

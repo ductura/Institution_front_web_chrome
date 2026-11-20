@@ -1,0 +1,27 @@
+/** Interface text of the teacher's working criteria in the Mentor card (WEB-1112, E 3.5 mentor3). */
+export const workingCriteriaHr = {
+  title: "Kriteriji ocjene · {done} od {total}",
+  note: "Radna bilješka nastavnika. Student ne vidi kriterije ni procjene, a Ductura ne računa ocjenu.",
+  loading: "Učitavanje kriterija…",
+  unavailable: "Kriteriji trenutačno nisu dostupni. Pokušajte ponovno.",
+  notFound: "Kriteriji za ovaj rad nisu dostupni.",
+  retry: "Pokušaj ponovno",
+  unrated: "još nije procijenjeno",
+  assessments: { needs_work: "treba doraditi", good: "dobro", very_good: "vrlo dobro" },
+  assessmentGroup: "Procjena: {title}",
+  addNote: "+ napomena",
+  editNote: "uredi napomenu",
+  noteLabel: "Napomena uz kriterij: {title}",
+  noteHint: "Najviše {max} znakova. Napomenu vidite samo Vi.",
+  saveNote: "Spremi napomenu",
+  clearNote: "Obriši napomenu",
+  cancel: "Odustani",
+  saving: "Sprema se…",
+  saved: "Spremljeno.",
+  errors: {
+    signedOut: "Prijava je istekla. Prijavite se ponovno.",
+    notFound: "Kriterij više nije dostupan. Osvježite prikaz.",
+    invalid: "Napomena nije valjana. Skratite je i pokušajte ponovno.",
+    unknown: "Nije poznato je li promjena zabilježena. Provjerite prikaz prije novog pokušaja.",
+  },
+} as const;

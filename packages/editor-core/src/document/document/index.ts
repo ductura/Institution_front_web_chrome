@@ -8,3 +8,7 @@ export * from "./equality";
 export * from "./edit-step";
 export * from "./chapters";
 export * from "./word-count";
+export * from "./validate-v4";
+export * from "./validate-marks-v4";
+export * from "./validate-image-cover-v4";
+export * from "./consumers-v4";
