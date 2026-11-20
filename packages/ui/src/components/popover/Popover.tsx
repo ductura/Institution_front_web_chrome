@@ -26,7 +26,7 @@ export type PopoverProps = {
  */
 export function Popover({ open, anchor, label, children, onClose, floating = true }: PopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Placed after layout, from the measured size, before the browser paints.
   useLayoutEffect(() => {
@@ -57,7 +57,7 @@ export function Popover({ open, anchor, label, children, onClose, floating = tru
   };
 
   if (!open) return null;
-  const style = floating ? { left: position?.left ?? 0, top: position?.top ?? 0, visibility: position ? undefined : ("hidden" as const) } : undefined;
+  const style = floating ? { left: position?.x ?? 0, insetBlockStart: position?.y ?? 0, visibility: position ? undefined : ("hidden" as const) } : undefined;
   return (
     <div ref={ref} role="dialog" aria-label={label} className={floating ? styles.popover : `${styles.popover} ${styles.inline}`}
       style={style} onKeyDown={onKeyDown}>

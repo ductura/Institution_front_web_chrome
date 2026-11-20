@@ -10,20 +10,20 @@ const size = { width: 240, height: 120 };
 
 describe("placePopover (UI-6A)", () => {
   it("sits 6 px under the anchor, on its left edge", () => {
-    expect(placePopover({ left: 100, right: 140, top: 50, bottom: 80 }, size, viewport)).toEqual({ left: 100, top: 86 });
+    expect(placePopover({ left: 100, right: 140, top: 50, bottom: 80 }, size, viewport)).toEqual({ x: 100, y: 86 });
   });
 
   it("flips above the anchor when it does not fit below", () => {
-    expect(placePopover({ left: 100, right: 140, top: 600, bottom: 630 }, size, viewport)).toEqual({ left: 100, top: 474 });
+    expect(placePopover({ left: 100, right: 140, top: 600, bottom: 630 }, size, viewport)).toEqual({ x: 100, y: 474 });
   });
 
   it("keeps 8 px from the edges of the viewport", () => {
-    expect(placePopover({ left: -30, right: 0, top: 50, bottom: 80 }, size, viewport).left).toBe(8);
-    expect(placePopover({ left: 990, right: 1000, top: 50, bottom: 80 }, size, viewport).left).toBe(752);
+    expect(placePopover({ left: -30, right: 0, top: 50, bottom: 80 }, size, viewport).x).toBe(8);
+    expect(placePopover({ left: 990, right: 1000, top: 50, bottom: 80 }, size, viewport).x).toBe(752);
   });
 
   it("stays on the page when taller than the room", () => {
-    expect(placePopover({ left: 0, right: 10, top: 5, bottom: 20 }, { width: 240, height: 900 }, viewport).top).toBe(8);
+    expect(placePopover({ left: 0, right: 10, top: 5, bottom: 20 }, { width: 240, height: 900 }, viewport).y).toBe(8);
   });
 });
 
