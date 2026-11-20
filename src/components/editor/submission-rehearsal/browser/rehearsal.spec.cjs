@@ -4,7 +4,7 @@ const fixture = "/__fixture/submission-rehearsal";
 const requirements = "/api/v1/student/assignments/a8ee8f83-2949-4a99-b358-be77cd4938dd/requirements";
 
 test.beforeEach(async ({ page }) => {
-  await page.route(`**${fixture}`, (route) => route.fulfill({
+  await page.route(`**${fixture}*`, (route) => route.fulfill({
     contentType: "text/html",
     body: `<!doctype html><html lang="hr"><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -56,4 +56,25 @@ test("reopens with a fresh read and jumps to the summary, while Escape restores 
   await expect(dialog).toBeHidden();
   await expect(page.locator(".tiptap")).toBeFocused();
   expect(await page.evaluate(() => window.getSelection()?.anchorNode?.parentElement?.textContent)).toBe("Sažetak");
+});
+
+test("keeps the drawer on Escape and leaves it when jumping to the work", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route(`**${requirements}`, (route) => route.fulfill({ json: { wordRange: null } }));
+  await page.goto(`${fixture}?drawer`);
+  await page.getByRole("button", { name: "Otvori karticu Rad" }).click();
+  const drawer = page.getByRole("dialog", { name: "Rad", exact: true });
+  const opener = drawer.getByRole("button", { name: "Proba predaje" });
+  const rehearsal = page.getByRole("dialog", { name: "Proba predaje" });
+  await opener.click();
+  await page.keyboard.press("Tab");
+  await expect(rehearsal.getByRole("list", { name: "Blokira predaju" }).getByRole("button")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(rehearsal).toBeHidden();
+  await expect(opener).toBeFocused();
+  await opener.click();
+  await rehearsal.getByRole("button", { name: "Otvori · Summary" }).click();
+  await expect(drawer).toBeHidden();
+  await expect(page.locator(".tiptap")).toBeFocused();
+  expect(await page.evaluate(() => window.getSelection()?.anchorNode?.parentElement?.textContent)).toBe("Summary");
 });

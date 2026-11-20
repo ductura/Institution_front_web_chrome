@@ -27,7 +27,7 @@ import EditorPage, { SheetNote } from "./EditorPage";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
 import EditorCommands from "./commands/EditorCommands";
-import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalSaveRead, useLocalSavingOnDevice } from "./LocalDocument";
+import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalSaveRead, useLocalSavingOnDevice, useLocalSignedOut } from "./LocalDocument";
 import { EditorHelpDialogs, useEditorHelp, type EditorHelpView } from "./help/EditorHelp";
 import { EditorHelpMenu } from "./help/EditorHelpMenu";
 import { EditorNotices } from "./help/EditorNotices";
@@ -39,6 +39,7 @@ import StatusBarLive from "./StatusBarLive";
 import CommentPanel from "./CommentPanel";
 import RevisionPanel from "./RevisionPanel";
 import { EditorPanelLayout } from "./SidePanels";
+import { SubmissionRehearsal } from "./submission-rehearsal/SubmissionRehearsal";
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
 export type OpenRead =
@@ -150,6 +151,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   session: SessionMark;
 }) {
   const editor = useLocalEditor();
+  const signedOut = useLocalSignedOut();
   const { phase } = useLocalSaveRead();
   const savingLocally = useLocalSavingOnDevice();
   const online = useOnline();
@@ -164,8 +166,12 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       status={<StatusBarLive evidence length={length} />}
       rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} />,
         comments: <CommentPanel documentId={documentId} session={session} />,
-        work: <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />,
-        assistant: <AssistantComingSoonCard /> }}>
+        assistant: <AssistantComingSoonCard /> }}
+      renderWork={(closeDrawer) => <>
+        {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
+          sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer} />}
+        <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />
+      </>}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
       <TriggerPopover editor={editor} />

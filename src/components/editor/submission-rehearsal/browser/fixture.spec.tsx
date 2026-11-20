@@ -1,4 +1,6 @@
 import { Editor, EditorContent } from "@tiptap/react";
+import { Button, Drawer } from "@ductura/ui";
+import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import "@ductura/ui/tokens.css";
 
@@ -25,8 +27,19 @@ const editor = new Editor({
 });
 
 sessionStorage.setItem(confirmationKey(sessionTag, assignmentId), "1");
-createRoot(document.getElementById("app")!).render(<>
-  <SubmissionRehearsal editor={editor} assignmentId={assignmentId} sessionTag={sessionTag}
-    enabledChecks={["fix"]} approval="pending" comments={[]} />
-  <EditorContent editor={editor} />
-</>);
+
+function Fixture() {
+  const [drawer, setDrawer] = useState(false);
+  const closeDrawer = () => setDrawer(false);
+  const rehearsal = <SubmissionRehearsal editor={editor} assignmentId={assignmentId} sessionTag={sessionTag}
+    enabledChecks={["fix"]} approval="pending" comments={[]} onJumpToDocument={closeDrawer} />;
+  return <>
+    {new URLSearchParams(window.location.search).has("drawer") ? <>
+      <Button onClick={() => setDrawer(true)}>Otvori karticu Rad</Button>
+      <Drawer open={drawer} side="right" title="Rad" onClose={closeDrawer}>{rehearsal}</Drawer>
+    </> : rehearsal}
+    <EditorContent editor={editor} />
+  </>;
+}
+
+createRoot(document.getElementById("app")!).render(<Fixture />);

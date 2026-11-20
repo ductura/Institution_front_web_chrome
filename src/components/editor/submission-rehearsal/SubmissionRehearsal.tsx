@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { Button, CheckActionList, Dialog } from "@ductura/ui";
 import { useEditorState, type Editor } from "@tiptap/react";
 
-import type { CommentThread } from "@/client/comments";
+import { listComments, type CommentThread } from "@/client/comments";
+import { watchSessionEnd } from "@/client/session-end";
+import type { SessionMark } from "@/client/session-marks";
+import { createAnchorPlacer } from "@/editor";
 import { countTextWords } from "@/lib/i18n/length-line";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -24,7 +27,9 @@ type Supplement = { detail: string; open?: () => void };
 export type SubmissionRehearsalProps = {
   editor: Editor | null;
   assignmentId: string;
+  documentId?: string;
   sessionTag: string | null;
+  session?: SessionMark;
   enabledChecks?: readonly string[] | null;
   comments?: readonly CommentThread[];
   approval?: PackageInput["approval"];
@@ -32,6 +37,7 @@ export type SubmissionRehearsalProps = {
   onComments?: () => void;
   onPrintPreview?: () => void;
   onPackagePreview?: () => void;
+  onJumpToDocument?: () => void;
 };
 
 function Row({ title, children, open }: { title: string; children: ReactNode; open?: () => void }) {
@@ -51,28 +57,38 @@ export function SubmissionRehearsal(props: SubmissionRehearsalProps) {
 function Rehearsal(props: SubmissionRehearsalProps) {
   const [open, setOpen] = useState(false);
   const editor = props.editor;
-  const close = () => setOpen(false);
+  const close = useCallback(() => setOpen(false), []);
   if (!editor || editor.isDestroyed) return null;
   return <>
     <Button tone="quiet" aria-haspopup="dialog" onClick={() => setOpen(true)}>{t.title}</Button>
-    {open && <RehearsalDialog {...props} editor={editor} close={close} />}
+    {open && <div onKeyDown={(event) => event.stopPropagation()} onCancel={(event) => event.stopPropagation()}>
+      <RehearsalDialog {...props} editor={editor} close={close} />
+    </div>}
   </>;
 }
 
 function RehearsalDialog({
-  editor, assignmentId, sessionTag, enabledChecks = null, comments, approval,
-  supplements, onComments, onPrintPreview, onPackagePreview, close,
+  editor, assignmentId, documentId, sessionTag, session, enabledChecks = null, comments, approval,
+  supplements, onComments, onPrintPreview, onPackagePreview, onJumpToDocument, close,
 }: Omit<SubmissionRehearsalProps, "editor"> & { editor: Editor; close: () => void }) {
   const intro = useRef<HTMLParagraphElement>(null);
   const [requirements, setRequirements] = useState<Requirements>(null);
+  const [loadedComments, setLoadedComments] = useState<readonly CommentThread[]>();
   const doc = useEditorState({ editor, selector: ({ editor }) => editor.state.doc, equalityFn: (a, b) => a === b });
   const model = useMemo(() => readRehearsal(doc, enabledChecks), [doc, enabledChecks]);
   const declared = readConfirmed(sessionTag === null ? null : confirmationKey(sessionTag, assignmentId));
   useEffect(() => {
     let active = true;
-    void loadRequirements(assignmentId).then((result) => { if (active) setRequirements(result); });
-    return () => { active = false; };
-  }, [assignmentId]);
+    const watch = watchSessionEnd(session ?? null, close);
+    const current = () => active && !watch.ended();
+    if (current()) {
+      void loadRequirements(assignmentId).then((result) => { if (current()) setRequirements(result); });
+      if (documentId) void listComments(documentId, current).then((result) => {
+        if (current() && result.kind === "ok") setLoadedComments(result.threads);
+      });
+    }
+    return () => { active = false; watch.close(); };
+  }, [assignmentId, documentId, session, close]);
 
   function leaveFor(action: () => void) {
     // The shared dialog must release focus before the editor or the next preview takes it.
@@ -82,7 +98,15 @@ function RehearsalDialog({
 
   function select(from: number, to = from) {
     if (editor.isDestroyed || editor.state.doc !== doc) return;
-    leaveFor(() => { editor.chain().setTextSelection({ from, to }).scrollIntoView().run(); editor.view.focus(); });
+    jumpInDocument(() => {
+      editor.chain().setTextSelection({ from, to }).scrollIntoView().run();
+      editor.view.focus();
+    });
+  }
+
+  function jumpInDocument(action: () => void) {
+    flushSync(() => { close(); onJumpToDocument?.(); });
+    action();
   }
 
   const places = model.places.map((place) => ({
@@ -91,8 +115,9 @@ function RehearsalDialog({
   }));
   const advice = rowsOf(model.advice.slice(0, 8)).map((item) => ({ ...item, actions: [{ id: "go", label: review.goTo }] }));
   const advisoryLabels = { list: t.advisory, empty: t.noAdvice, required: review.required, advisory: review.advisory };
-  const openComments = comments?.filter((thread) => thread.state !== "resolved"
-    && thread.comments.some((comment) => comment.role === "teacher" && comment.body !== null)).length;
+  const openComments = (comments ?? loadedComments)?.filter((thread) => thread.state !== "resolved"
+    && thread.comments.some((comment) => comment.role === "teacher" && comment.body !== null));
+  const commentRange = openComments && createAnchorPlacer((thread: CommentThread) => thread.anchor)(doc, openComments).find(Boolean);
   const approvalRow = approval === undefined ? undefined : packageRows({
     approval, openPlaces: places.length, summaryWritten: Boolean(model.abstract?.text),
     declaration: declared ? "filled" : "missing",
@@ -129,8 +154,9 @@ function RehearsalDialog({
         {keywords?.text || t.unwritten}
       </Row>
       <Row title={t.declaration}>{declared ? t.confirmed : t.unconfirmed}</Row>
-      <Row title={t.comments} open={onComments && (() => leaveFor(onComments))}>
-        {openComments === undefined ? t.approvalUnavailable : t.unresolved.replace("{count}", String(openComments))}
+      <Row title={t.comments} open={commentRange ? () => select(commentRange.from, commentRange.to)
+        : onComments && (() => leaveFor(onComments))}>
+        {openComments === undefined ? t.approvalUnavailable : t.unresolved.replace("{count}", String(openComments.length))}
       </Row>
       <Row title={t.places} open={firstPlace && (() => select(firstPlace.from, firstPlace.to))}>
         {places.length ? t.placesCount.replace("{count}", String(places.length)) : t.noPlaces}
@@ -149,7 +175,7 @@ function RehearsalDialog({
     <h3>{t.advisory} ({model.advice.length})</h3>
     <CheckActionList findings={advice} labels={advisoryLabels} onAction={({ findingId }) => {
       const finding = model.advice.find(({ id }) => id === findingId);
-      if (finding && !editor.isDestroyed && editor.state.doc === doc) leaveFor(() => { jumpTo(editor, finding); });
+      if (finding && !editor.isDestroyed && editor.state.doc === doc) jumpInDocument(() => { jumpTo(editor, finding); });
     }} />
   </Dialog>;
 }
