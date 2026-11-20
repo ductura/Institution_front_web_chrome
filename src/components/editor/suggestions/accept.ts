@@ -26,12 +26,24 @@ export function planAcceptance(doc: PmNode, suggestion: Pick<Suggestion, "anchor
   doc.descendants((node, pos) => {
     if (plan || !node.isTextblock) return !plan;
     if (node.attrs[NODE_ID_ATTRIBUTE] !== suggestion.anchor.nodeId) return false;
-    const text = node.textContent;
+    // Text offsets are measured over text nodes only; an inline atom (citation, footnote) takes a
+    // document position but no text, so each offset is mapped through the children, never added to pos + 1.
+    const runs: { text: number; pos: number; length: number }[] = [];
+    let text = "";
+    node.forEach((child, offset) => {
+      if (child.isText) { runs.push({ text: text.length, pos: pos + 1 + offset, length: child.nodeSize }); text += child.text; }
+    });
     const found = resolveTextAnchor(suggestion.anchor, suggestion.anchor.nodeId, text);
     if (found.status !== "exact" && found.status !== "moved") return false;
     if (text.slice(found.start, found.end) !== suggestion.anchor.quote) return false;
-    // Text nodes of a textblock are laid out one position per UTF-16 unit after the opening token.
-    plan = { from: pos + 1 + found.start, to: pos + 1 + found.end, insert: suggestion.replacement };
+    const first = runs.findLast((r) => r.text <= found.start);
+    const last = runs.findLast((r) => r.text < found.end);
+    if (!first || !last) return false;
+    const from = first.pos + (found.start - first.text);
+    const to = last.pos + (found.end - last.text);
+    // A range that crosses a non-text node holds more than the quoted text: refuse it.
+    if (to - from !== found.end - found.start) return false;
+    plan = { from, to, insert: suggestion.replacement };
     return false;
   });
   return plan;

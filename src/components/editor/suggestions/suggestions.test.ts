@@ -26,8 +26,9 @@ const probe = (reply: Reply, seen: { path?: string; body?: unknown } = {}): Tran
 const schema = new Schema({
   nodes: {
     doc: { content: "paragraph+" },
-    paragraph: { content: "text*", group: "block", attrs: { [NODE_ID_ATTRIBUTE]: { default: null } } },
-    text: {},
+    paragraph: { content: "inline*", group: "block", attrs: { [NODE_ID_ATTRIBUTE]: { default: null } } },
+    text: { group: "inline" },
+    cite: { group: "inline", inline: true, atom: true },
   },
 });
 const docOf = (text: string) => schema.node("doc", null, [schema.node("paragraph", { [NODE_ID_ATTRIBUTE]: NODE }, schema.text(text))]);
@@ -88,6 +89,21 @@ describe("acceptance", () => {
     expect(planAcceptance(docOf("Potpuno drugi tekst."), s)).toBeNull();
     expect(planAcceptance(docOf(`Uvod. ${TEXT}`), s)).toMatchObject({ from: 7, to: 21 });
     expect(planAcceptance(schema.node("doc", null, [schema.node("paragraph", { [NODE_ID_ATTRIBUTE]: "other" }, schema.text(TEXT))]), s)).toBeNull();
+  });
+});
+
+describe("acceptance across an inline atom", () => {
+  const s = suggestionsFromList({ suggestions: [row()] })![0]!;
+  const para = (...c: ReturnType<typeof schema.text>[]) =>
+    schema.node("doc", null, [schema.node("paragraph", { [NODE_ID_ATTRIBUTE]: NODE }, c)]);
+  it("maps the offsets past an atom before the quote", () => {
+    const doc = para(schema.text("Uvod "), schema.node("cite") as never, schema.text(TEXT));
+    const plan = planAcceptance(doc, s)!;
+    expect(doc.textBetween(plan.from, plan.to)).toBe("Prvi rezultati");
+  });
+  it("refuses a quote that an atom splits", () => {
+    const doc = para(schema.text("Prvi "), schema.node("cite") as never, schema.text("rezultati su jasni."));
+    expect(planAcceptance(doc, s)).toBeNull();
   });
 });
 
