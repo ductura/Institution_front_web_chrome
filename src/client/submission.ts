@@ -184,7 +184,7 @@ export async function submitWork(input: SubmitInput, deps: SubmitDeps = {}): Pro
     // One copy, read once: what is sent is what the answer is checked against, whatever the caller changes meanwhile.
     sent = { assignmentId: String(input.assignmentId), documentId: String(input.documentId), revision: Number(input.revision) };
     const transport = deps.api?.fetchImpl ?? browserTransport;
-    const measured: typeof fetch = async (url, init) => {
+    const measured: typeof browserTransport = async (url, init) => {
       const response = await transport(url, init);
       answered = response.status;
       return response;
