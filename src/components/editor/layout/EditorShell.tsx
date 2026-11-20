@@ -52,7 +52,7 @@ export default function EditorShell({ header, tools = null, rail = null, panel =
   }, [drawer]);
 
   const vars = { "--rail-w": `${RAIL_WIDTHS[settings.rail]}px`, "--panel-w": `${PANEL_WIDTHS[settings.panel]}px` } as CSSProperties;
-  const cls = [styles.app, drawer === "rail" ? styles.railOpen : "", drawer === "panel" ? styles.panelOpen : ""].join(" ").trim();
+  const cls = drawer === "rail" ? styles.railOpen : drawer === "panel" ? styles.panelOpen : undefined;
   return (
     <EditorShellFrame className={cls} style={vars} header={<>
         {rail !== null && (

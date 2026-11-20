@@ -7,7 +7,6 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { blockPosition, currentHeading, numberedHeadings, type NumberedHeading } from "@/editor";
 import { editorPanelLayoutsHr as t, messagesHr } from "@/lib/i18n/messages.hr";
 
-import HeadingOutline from "../HeadingOutline";
 import { useLocalEditor } from "../LocalDocument";
 import styles from "../SidePanels.module.css";
 import type { PanelLayout } from "./preferences";
@@ -18,23 +17,19 @@ const headingLabel = (heading: NumberedHeading) => `${heading.number}. ${heading
 
 export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread", ReactNode>>;
 
-function ChapterCards({ onJump }: { onJump: () => void }) {
-  const editor = useLocalEditor();
-  const state = useEditorState({ editor, selector: ({ editor: instance }) => {
-    if (!instance || instance.isDestroyed) return null;
-    const headings = numberedHeadings(instance.state.doc).filter(({ level }) => level !== 1);
-    return { headings, current: currentHeading(headings, instance.state.selection.from) };
-  } });
+type Outline = { headings: NumberedHeading[]; current: NumberedHeading | undefined };
+
+function ChapterCards({ outline, go }: { outline: Outline; go: (heading: NumberedHeading) => void }) {
   const [open, setOpen] = useState<string | null>(null);
   const returnTo = useRef<string | null>(null);
   const back = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLDivElement>(null);
-  const headings = state?.headings ?? [];
+  const headings = outline.headings.filter(({ level }) => level !== 1);
   const chapterIndex = headings.findIndex((heading) => headingKey(heading) === open);
   const chapter = headings[chapterIndex];
   const firstChapter = headings.findIndex(({ level }) => level === 2);
-  const active = headings.slice(0, (state?.current ?? -1) + 1).findLast(({ level }) => level === 2)
-    ?? headings[state?.current ?? -1];
+  const { current } = outline;
+  const active = current && (headings.findLast(({ level, pos }) => level === 2 && pos <= current.pos) ?? current);
 
   useLayoutEffect(() => {
     if (open !== null) back.current?.focus();
@@ -44,15 +39,6 @@ function ChapterCards({ onJump }: { onJump: () => void }) {
       returnTo.current = null;
     }
   }, [open]);
-
-  const go = (heading: NumberedHeading) => {
-    if (!editor || editor.isDestroyed) return;
-    const pos = heading.id ? blockPosition(editor.state.doc, heading.id) : heading.pos;
-    if (pos === null) return;
-    editor.chain().setTextSelection(pos + 1).scrollIntoView().run();
-    onJump();
-    requestAnimationFrame(() => { if (!editor.isDestroyed) editor.view.focus(); });
-  };
 
   if (chapter) {
     const next = headings.findIndex((heading, index) => index > chapterIndex && heading.level <= chapter.level);
@@ -86,20 +72,34 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
   onJump: () => void;
 }) {
   const editor = useLocalEditor();
-  const content = Object.entries(t.leftSections).flatMap(([key, label]) => {
-    const section = sections[key as keyof LeftSections];
-    return section == null ? [] : [{ id: key, label, content: section }];
-  });
-  const outline = <div onClick={(event) => {
-    if (!(event.target instanceof Element) || !event.target.closest(".outline__link")) return;
+  const data = useEditorState({ editor, selector: ({ editor: instance }): Outline => {
+    const headings = instance && !instance.isDestroyed ? numberedHeadings(instance.state.doc) : [];
+    return { headings, current: headings[currentHeading(headings, instance?.state.selection.from ?? 0)] };
+  } }) ?? { headings: [], current: undefined };
+  const go = (heading: NumberedHeading) => {
+    if (!editor || editor.isDestroyed) return;
+    const pos = heading.id ? blockPosition(editor.state.doc, heading.id) : heading.pos;
+    if (pos === null) return;
+    editor.chain().setTextSelection(pos + 1).scrollIntoView().run();
     onJump();
-    requestAnimationFrame(() => { if (editor && !editor.isDestroyed) editor.view.focus(); });
-  }}><HeadingOutline /></div>;
+    requestAnimationFrame(() => { if (!editor.isDestroyed) editor.view.focus(); });
+  };
+  const content = Object.entries(t.leftSections).map(([key, label]) => ({
+    id: key, label, content: sections[key as keyof LeftSections] ?? <p className="rail-empty">{t.emptyGroup}</p>,
+  }));
+  const outline = data.headings.length ? <nav aria-label={messagesHr.outline.label}>
+    <ol className="outline">
+      {data.headings.map((heading) => <li key={headingKey(heading)} data-level={heading.level} className="outline__item">
+        <Button tone="quiet" className="outline__link" aria-current={heading === data.current ? "location" : undefined}
+          onClick={() => go(heading)}>{headingLabel(heading)}</Button>
+      </li>)}
+    </ol>
+  </nav> : <p className="rail-empty">{w.structureEmpty}</p>;
 
   return <>
     <div className={styles.panelHeading}><span>{t.variants.left[layout]}</span>{settings}</div>
     {layout === "b" ? <PanelTabs label={w.structureLabel} tabs={[{ id: "structure", label: w.structure, content: outline }, ...content]} /> : <>
-      {layout === "c" ? <ChapterCards onJump={onJump} /> : outline}
+      {layout === "c" ? <ChapterCards outline={data} go={go} /> : outline}
       {content.map(({ id, label, content: section }) => <Details key={id} summary={label}>{section}</Details>)}
     </>}
   </>;

@@ -22,7 +22,6 @@ import type { SessionMark } from "@/client/session-marks";
 import SessionObserver from "@/components/shell/SessionObserver";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
-import CommentPanel from "./CommentPanel";
 import EditorPage, { SheetNote } from "./EditorPage";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
@@ -129,7 +128,6 @@ export default function EditorPageWork({
           tools={<EditorToolbar />}
           status={<StatusBarLive evidence length={length} />}
           rightSections={{
-            comments: <CommentPanel documentId={read.documentId} session={read.session} />,
             work: <RevisionPanel documentId={read.documentId} assignmentId={assignmentId} session={read.session} />,
           }}
         >

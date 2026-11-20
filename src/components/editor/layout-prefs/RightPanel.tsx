@@ -16,7 +16,7 @@ const symbols = { sources: "▤", comments: "▱", review: "≡", work: "➤", a
 export type PanelGroup = (typeof groups)[number];
 export type RightSections = Partial<Record<PanelGroup, ReactNode>>;
 
-function ChapterContext() {
+function ChapterContext({ openGroup }: { openGroup: (group: PanelGroup) => void }) {
   const editor = useLocalEditor();
   const chapter = useEditorState({ editor, selector: ({ editor: instance }) => {
     if (!instance || instance.isDestroyed) return null;
@@ -39,6 +39,12 @@ function ChapterContext() {
       <span>{chapter ? t.writingIn : t.wholeWork}</span>
       <strong>{chapter?.title ?? t.noChapter}</strong>
     </div>
+    <h2>{t.commentsHere}</h2>
+    <Button tone="quiet" onClick={() => openGroup("comments")}>{t.groups.comments}</Button>
+    <h2>{t.sourcesHere}</h2>
+    <Button tone="quiet" onClick={() => openGroup("sources")}>{t.allSources}</Button>
+    <h2>{t.notesHere}</h2>
+    <p className="rail-empty">{t.emptyGroup}</p>
     {chapter !== null && chapter !== undefined && <Details summary={t.chapterOutline}>
       {chapter.lines.length ? <ul>{chapter.lines.map((line, index) => <li key={index}>{line}</li>)}</ul> : <p>{t.noParagraphs}</p>}
     </Details>}
@@ -55,7 +61,8 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
 }) {
   const content = (group: PanelGroup) => sections[group] ?? <p className="rail-empty">{t.emptyGroup}</p>;
   const shown = selection ?? (drawer ? groups[0] : null);
-  const view = (group: PanelGroup) => <div className={styles.rightContent}><h2>{t.groups[group]}</h2>{content(group)}</div>;
+  const label = (group: PanelGroup) => group === "work" ? t.workFull : t.groups[group];
+  const view = (group: PanelGroup) => <div className={styles.rightContent}><h2>{label(group)}</h2>{content(group)}</div>;
   return <div className={styles.rightLayout} data-layout={layout}>
     <div className={styles.rightSettings}>{settings}</div>
     {layout === "a" && <PanelTabs label={messagesHr.workspace.panelTabs}
@@ -65,10 +72,10 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
         {selection ? <Button tone="quiet" onClick={() => onSelect(null)}>{t.backToContext}</Button> : <span>{t.variants.right.b}</span>}
       </div>
       {selection ? view(selection) : <div className={styles.rightContent}>
-        <ChapterContext />
+        <ChapterContext openGroup={onSelect} />
         <h2>{t.wholeWork}</h2>
         <div className={styles.workGroups}>
-          {groups.map((group) => <Button key={group} tone="quiet" onClick={() => onSelect(group)}>{t.groups[group]}</Button>)}
+          {groups.map((group) => <Button key={group} tone="quiet" onClick={() => onSelect(group)}>{label(group)}</Button>)}
         </div>
       </div>}
     </>}
