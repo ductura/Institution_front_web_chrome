@@ -4,8 +4,8 @@
  * time, the student accepts the proposal; both sides see the same confirmed
  * slot.
  *
- * GET  /api/v1/works/{documentId}/consultation-slots            -> 200 {slots}
- * POST /api/v1/works/{documentId}/consultation-slots {startsAt}  -> 201 slot
+ * GET  works/{documentId}/consultation-slots (under the contract prefix)            -> 200 {slots}
+ * POST works/{documentId}/consultation-slots (under the contract prefix) {startsAt}  -> 201 slot
  * PATCH .../consultation-slots/{slotId} {action, startsAt?}      -> 200 slot
  *
  * A write counts as done only when the answer names the same slot and carries
