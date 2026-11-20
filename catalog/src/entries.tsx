@@ -7,8 +7,8 @@ import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import {
-  AppShell, EmptyHome, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
-  type AssignmentSubmission, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
+  AppShell, EmptyHome, LiveWorkFrame, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
+  type AssignmentSubmission, type LiveWorkFrameData, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -294,6 +294,13 @@ const mentoredWorks = [
   mentored(4, { givenName: "Ana", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started" }),
 ];
 
+// Invented live work frame (as in LiveWorkFrame.test.ts, WEB-34); the text slot holds an invented sentence.
+const liveFrame = (over: Partial<LiveWorkFrameData> = {}): LiveWorkFrameData => ({
+  studentName: "Vesna Žbunić", assignmentTitle: "Izmišljeni seminar: javne politike", submitted: false,
+  previousId: "izmisljeni-rad-1", nextId: "izmisljeni-rad-3", ...over,
+});
+const liveText = <p>Izmišljena rečenica rada koja stoji umjesto teksta uživo.</p>;
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -351,5 +358,12 @@ export const SCREEN_ENTRIES = {
     greška: () => <MentoredWorks works={[mentored(5, null, { documentId: null, workState: "not_started" })]} />,
     puno: () => <MentoredWorks works={mentoredWorks} />,
     onemogućeno: () => <MentoredWorks works={[mentored(6, { givenName: "Iva", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started", workType: "doctoral_thesis" })]} />,
+  },
+  LiveWorkFrame: {
+    prazno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={null} recordState={null} text={<p role="status">{t.workspace.panelLoading}</p>} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={null} recordState={null} text={<p role="alert">{t.errorPage.errorBody}</p>} />,
+    puno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={liveFrame()} recordState="has_gaps" text={liveText} />,
+    onemogućeno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={liveFrame({ submitted: true, previousId: null, nextId: null })} recordState="complete" text={liveText} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
