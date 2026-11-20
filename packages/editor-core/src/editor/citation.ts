@@ -60,7 +60,9 @@ export const CITATION = "citation";
  * (document-schema-v3 §3.1 and §5.5): none takes a mark, none goes into a
  * heading. A version whose schema lacks a name never meets it.
  */
-const ATOM_NAMES: ReadonlySet<string> = new Set([CITATION, "footnote", "crossReference"]);
+const ATOM_NAMES: ReadonlySet<string> = new Set([CITATION, "footnote", "crossReference", "inlineFormula"]);
+/** Blocks that hold text only: a heading, and the code block of v4 (§4.2). */
+const TEXT_ONLY: ReadonlySet<string> = new Set(["heading", "codeBlock"]);
 const isAtom = (node: PmNode) => ATOM_NAMES.has(node.type.name);
 
 /** Meta of the guard's own transaction, which takes marks off citations. */
@@ -114,19 +116,20 @@ function markedCitations(doc: PmNode): number[] {
 }
 
 /**
- * `doc` with every citation unmarked; `doc` itself when none is marked. Blocks
- * are flat (a citation sits directly in a block), as in the replayer's
- * `unmarkCitations`.
+ * `doc` with every citation unmarked; `doc` itself when none is marked. Up to
+ * v3 blocks are flat (a citation sits directly in a block), as in the
+ * replayer's `unmarkCitations`; a box of v4 is gone through to its paragraphs.
  */
 function unmarked(doc: PmNode): PmNode {
   if (markedCitations(doc).length === 0) return doc;
-  const blocks: PmNode[] = [];
-  doc.forEach((block) => {
+  const strip = (node: PmNode): PmNode => {
+    if (isAtom(node)) return node.mark([]);
+    if (node.isLeaf) return node;
     const children: PmNode[] = [];
-    block.forEach((child) => children.push(isAtom(child) ? child.mark([]) : child));
-    blocks.push(block.copy(Fragment.from(children)));
-  });
-  return doc.copy(Fragment.from(blocks));
+    node.forEach((child) => children.push(strip(child)));
+    return node.copy(Fragment.from(children));
+  };
+  return strip(doc);
 }
 
 /** True for a transaction of mark steps that marks or unmarks only citations. */
@@ -146,11 +149,12 @@ const isStructuralReplace = (step: Step) =>
  */
 function contentIntoHeading(step: Step, doc: PmNode): { from: number; to: number } | null {
   if (step instanceof ReplaceAroundStep) {
-    return step.slice.content.firstChild?.type.name === "heading" ? { from: step.gapFrom, to: step.gapTo } : null;
+    const target = step.slice.content.firstChild?.type.name;
+    return target !== undefined && TEXT_ONLY.has(target) ? { from: step.gapFrom, to: step.gapTo } : null;
   }
   if (!isStructuralReplace(step)) return null;
   const { from, to, slice } = step as ReplaceStep;
-  if (slice.size !== 0 || to - from !== 2 || doc.resolve(from).parent.type.name !== "heading") return null;
+  if (slice.size !== 0 || to - from !== 2 || !TEXT_ONLY.has(doc.resolve(from).parent.type.name)) return null;
   const $joined = doc.resolve(to);
   return { from: to, to: $joined.end() };
 }
