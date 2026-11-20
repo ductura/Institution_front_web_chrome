@@ -45,3 +45,4 @@ export { DatePicker, addDays, addMonths, formatHrDate, gridKeyTarget, inRange, i
 export { AppointmentCalendar, DEFAULT_SLOTS, dayMark, formatMoment, openingFocus, parseMoment, roundTrip, selectDay, slotMark, type Appointment, type AppointmentCalendarLabels, type AppointmentCalendarProps, type AppointmentStatus, type Moment } from "./components/appointment-calendar";
 export { CheckActionList, orderFindings, selectionOf, type CheckAction, type CheckActionListLabels, type CheckActionListProps, type CheckFinding, type CheckSelection, type CheckSeverity } from "./components/check-action-list";
 export { AssistantComingSoon, type AssistantComingSoonLabels, type AssistantComingSoonProps } from "./components/assistant-coming-soon";
+export { AssistantThread, type AssistantMessage, type AssistantThreadLabels, type AssistantThreadProps, type PersonalDataKind } from "./components/assistant-thread";
