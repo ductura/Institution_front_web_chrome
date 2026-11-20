@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@ductura/ui";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 
@@ -66,12 +67,14 @@ function Changes({ current, body, changes }: { current: CurrentVersion; body: Ve
  * Times are read on this device's clock, so the form exists only in the
  * browser: the server renders the frame and hydration never disagrees.
  */
-export default function AssignmentVersionForm({ current }: { current: CurrentVersion }) {
+type AssignmentVersionFormProps = { current: CurrentVersion; backHref?: string; onReload?: () => void };
+
+export default function AssignmentVersionForm(props: AssignmentVersionFormProps) {
   const inBrowser = useSyncExternalStore(never, () => true, () => false);
-  return inBrowser ? <VersionEditor current={current} /> : <p className={styles.hint}>…</p>;
+  return inBrowser ? <VersionEditor {...props} /> : <p className={styles.hint}>…</p>;
 }
 
-function VersionEditor({ current }: { current: CurrentVersion }) {
+function VersionEditor({ current, backHref, onReload }: AssignmentVersionFormProps) {
   const a = t.teacher.assignment;
   const next = current.versionNo + 1;
   const [draft, setDraft] = useState<VersionDraft>(() => draftOf(current));
@@ -189,11 +192,13 @@ function VersionEditor({ current }: { current: CurrentVersion }) {
           {pending ? n.pending : n.publish.replace("{n}", String(next))}
         </button>
         {error ? <p className={styles.notice} role="alert">{error}</p> : null}
-        {conflict ? <p><a href={`/nastavnik/zadatak/${current.assignmentId}/uredi`}>{n.reload}</a></p> : null}
+        {conflict && (onReload
+          ? <Button type="button" onClick={onReload}>{n.reload}</Button>
+          : <p><a href={`/nastavnik/zadatak/${current.assignmentId}/uredi`}>{n.reload}</a></p>)}
         {result?.kind === "published" ? (
           <>
             <p className={styles.notice} role="status">{n.published.replace("{n}", String(result.versionNo))}</p>
-            <p><Link href="/nastavnik">{t.teacher.backCourses}</Link></p>
+            <p>{backHref ? <a href={backHref}>{t.teacher.backCourses}</a> : <Link href="/nastavnik">{t.teacher.backCourses}</Link>}</p>
           </>
         ) : null}
       </aside>

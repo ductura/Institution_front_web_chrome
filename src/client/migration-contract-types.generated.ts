@@ -1,5 +1,6 @@
 // Generated subset of Institution_server a62e0db (API 1.24.0).
 // WEB-07: remove this supplement when the migration contracts are published.
+// HOST-T2: institution.assignment.get from API 1.38.0; the work-language GET is provisional.
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -123,6 +124,20 @@ export type MigrationOperations = {
     body: undefined;
     success: { status: 200; body: { "versions": ({ "kind": "submission"; "revision": number; "savedMinute": string; "afterDeadline": boolean } | { "kind": "checkpoint"; "revision": number; "savedMinute": string })[]; "nextBeforeRevision": number | null }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
+  };
+  "institution.assignment.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "assignmentId": string; "courseId": string; "versionNo": number; "title": string; "instructions": string; "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "opensAt": string; "dueAt": string; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "importAllowed": boolean; "wordMin": number | null; "wordMax": number | null; "groupIds"?: (string)[]; "externalToolsAllowed"?: boolean; "aiSummaryOnly"?: boolean }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "not_found" | "unavailable";
+  };
+  "institution.work-work-language.get": {
+    params: { "assignmentId": string; "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "title": string; "assignmentLanguage": "hr" | "en"; "exception": "hr" | "en" | null }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "not_found" | "unavailable";
   };
   // Institution_server 46e4aad (SRV-NG).
   "student.notice.get": {
