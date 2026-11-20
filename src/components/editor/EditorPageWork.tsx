@@ -34,6 +34,8 @@ import { EditorNotices } from "./help/EditorNotices";
 import helpStyles from "./help/EditorHelp.module.css";
 import StatusBar from "./StatusBar";
 import StatusBarLive from "./StatusBarLive";
+import RevisionPanel from "./RevisionPanel";
+import { EditorPanelLayout } from "./SidePanels";
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
 export type OpenRead =
@@ -127,17 +129,21 @@ export default function EditorPageWork({
     <>
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
-        <WorkSurface course={course} title={title} topBar={topBar} length={length} />
+        <WorkSurface course={course} title={title} topBar={topBar} length={length}
+          assignmentId={assignmentId} documentId={read.documentId} session={read.session} />
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, session }: {
   course: string;
   title: string;
   topBar?: ReactNode;
   length?: ComponentProps<typeof StatusBar>["length"];
+  assignmentId: string;
+  documentId: string;
+  session: SessionMark;
 }) {
   const editor = useLocalEditor();
   const { phase } = useLocalSaveRead();
@@ -146,15 +152,16 @@ function WorkSurface({ course, title, topBar, length }: {
   const help = useEditorHelp();
   const [view, setView] = useState<EditorHelpView | null>(null);
   return (
-    <EditorPage course={course} title={title} topBar={topBar}
-      toolbar={<EditorCommands><div className={helpStyles.toolbar}><EditorToolbar /><EditorHelpMenu onSelect={setView} /></div></EditorCommands>}
-      status={<StatusBarLive evidence length={length} />}>
+    <EditorPanelLayout title={title} header={topBar ?? <p>{course} / {title}</p>}
+      tools={<EditorCommands><div className={helpStyles.toolbar}><EditorToolbar /><EditorHelpMenu onSelect={setView} /></div></EditorCommands>}
+      status={<StatusBarLive evidence length={length} />}
+      rightSections={{ work: <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} /> }}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
       <TriggerPopover editor={editor} />
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help}
         fresh={phase === "ready" && editor?.isEmpty}
         notice={{ course, title, length: length?.range ?? undefined, instructions: null }} />
-    </EditorPage>
+    </EditorPanelLayout>
   );
 }
