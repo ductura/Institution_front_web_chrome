@@ -1,6 +1,7 @@
 import {
-  Button, Card, Checkbox, Details, Dialog, ErrorScreen, Icon, ICON_NAMES, PanelTabs, RouteLoading, SaveState, Select, Skeleton, Tag,
-  TextArea, TextField, ToastRegion, type IconName,
+  Button, Card, Checkbox, DataTable, Details, Dialog, ErrorScreen, Fingerprint, Icon, ICON_NAMES, KeyValueList, PanelTabs,
+  RouteLoading, SaveState, Select, Skeleton, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
+  type DataTableColumn, type IconName,
 } from "@ductura/ui";
 import { useState } from "react";
 
@@ -16,6 +17,16 @@ type Entry = Record<CatalogState, () => React.ReactNode>;
 
 // Invented example text only; no real people or student work.
 const GROUPS = [{ value: "a", label: "Grupa A" }, { value: "b", label: "Grupa B" }];
+const SAMPLE_DIGEST = "0123456789abcdef".repeat(4);
+const SAMPLE_WORKS = [{ title: "Izmišljeni seminar", pages: 12 }, { title: "Izmišljeni ogled", pages: 4 }];
+const WORK_COLUMNS: DataTableColumn<(typeof SAMPLE_WORKS)[number]>[] = [
+  { id: "title", header: "Rad", cell: (row) => row.title, rowHeader: true },
+  { id: "pages", header: "Stranice", cell: (row) => row.pages, numeric: true, sortValue: (row) => row.pages },
+];
+const workTable = (caption: string, rows = SAMPLE_WORKS, loading = false) => (
+  <DataTable caption={caption} rows={rows} columns={WORK_COLUMNS}
+    rowKey={(row) => row.title} empty="Još nema radova." loading={loading} />
+);
 // The toast region is fixed to the viewport; in the catalogue it sits in the flow.
 function ToastInline({ toasts }: { toasts: Parameters<typeof ToastRegion>[0]["toasts"] }) {
   return (
@@ -30,6 +41,44 @@ const ICON_LABELS: Record<IconName, string> = {
   bulletList: "Popis", quote: "Citat", chevronDown: "Više",
 };
 export const ENTRIES = {
+  DataTable: {
+    prazno: () => workTable("Radovi", []),
+    učitavanje: () => workTable("Radovi", [], true),
+    greška: () => <p role="alert">Radovi se nisu učitali.</p>,
+    puno: () => workTable("Radovi"),
+    onemogućeno: () => <p>Popis radova trenutačno nije dostupan.</p>,
+  },
+  Fingerprint: {
+    prazno: () => <p>Još nema otiska potvrde.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje otiska potvrde…" />,
+    greška: () => <p role="alert">Otisak potvrde se nije učitao.</p>,
+    puno: () => <Fingerprint value={SAMPLE_DIGEST} />,
+    onemogućeno: () => <p>Otisak potvrde trenutačno nije dostupan.</p>,
+  },
+  KeyValueList: {
+    prazno: () => <p>Još nema podataka o potvrdi.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje podataka o potvrdi…" />,
+    greška: () => <p role="alert">Podaci o potvrdi nisu se učitali.</p>,
+    puno: () => <KeyValueList items={[
+      { id: "submitted", label: "Vrijeme predaje", value: "20. 11. 2026. u 11:00",
+        details: { summary: "Vrijeme u UTC-u", children: "2026-11-20T10:00:00Z" } },
+    ]} />,
+    onemogućeno: () => <p>Podaci o potvrdi trenutačno nisu dostupni.</p>,
+  },
+  StateTag: {
+    prazno: () => <StateTag state="not_submitted" />,
+    učitavanje: () => <StateTag state="pending" />,
+    greška: () => <StateTag state="gap" />,
+    puno: () => <>{SUBMISSION_STATES.map((state) => <StateTag key={state} state={state} />)}</>,
+    onemogućeno: () => <p>Stanje predaje trenutačno nije dostupno.</p>,
+  },
+  Steps: {
+    prazno: () => <Steps currentStep={1} />,
+    učitavanje: () => <RouteLoading label="Učitavanje koraka predaje…" />,
+    greška: () => <><Steps currentStep={3} /><p role="alert">Korak nije dovršen.</p></>,
+    puno: () => <Steps currentStep={5} />,
+    onemogućeno: () => <p>Koraci predaje trenutačno nisu dostupni.</p>,
+  },
   Button: {
     prazno: () => <Button tone="quiet">Odustani</Button>,
     učitavanje: () => <Button busy>Spremanje…</Button>,
