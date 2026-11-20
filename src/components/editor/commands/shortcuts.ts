@@ -7,11 +7,12 @@ export function editorShortcut(event: KeyboardEvent) {
   if (!mod && event.altKey && event.key === "F10") return "toolbar";
   if (!mod || event.altKey) return null;
   if (event.key.toLowerCase() === "k") return "palette";
+  if (event.key.toLowerCase() === "f") return "find";
   if (event.key === "/") return "shortcuts";
   return null;
 }
 
-const available = new Set(["Ctrl+Z", "Ctrl+Y", "Ctrl+B", "Ctrl+I", "Ctrl+K", "Ctrl+/", "Esc"]);
+const available = new Set(["Ctrl+Z", "Ctrl+Y", "Ctrl+B", "Ctrl+I", "Ctrl+K", "Ctrl+F", "Ctrl+/", "Esc"]);
 
 export function shortcutGroups(editable: boolean) {
   return DEFAULT_SHORTCUT_GROUPS.map(({ title, items }, index) => ({

@@ -9,6 +9,7 @@ describe("editor shortcuts", () => {
     expect(key({ key: "k", ctrlKey: true })).toBe("palette");
     expect(key({ key: "K", metaKey: true })).toBe("palette");
     expect(key({ key: "/", metaKey: true })).toBe("shortcuts");
+    expect(key({ key: "f", ctrlKey: true })).toBe("find");
     expect(key({ key: "F10", altKey: true })).toBe("toolbar");
   });
 

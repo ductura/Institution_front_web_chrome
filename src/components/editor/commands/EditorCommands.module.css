@@ -8,3 +8,17 @@
   flex: 1;
   min-width: 0;
 }
+
+.find { color: var(--ink); background: var(--chrome); min-width: 0; }
+
+.findOptions {
+  display: flex;
+  align-items: end;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+:root:has(.find)::highlight(ductura-find-hit) { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+:root:has(.find)::highlight(ductura-find-current) { background: color-mix(in srgb, var(--accent) 60%, transparent); }
