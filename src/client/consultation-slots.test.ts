@@ -81,7 +81,7 @@ describe("updateConsultationSlot", () => {
     const calls: Parameters<SlotsCall>[] = [];
     const proposed = { ...slot, startsAt: T2, status: "proposed" };
     expect(await updateConsultationSlot(answer(200, proposed, calls), DOC, SLOT, "propose", T2)).toEqual({ kind: "saved", slot: proposed });
-    expect(calls[0][1].body).toEqual({ action: "propose", startsAt: T2 });
+    expect(calls[0]?.[1].body).toEqual({ action: "propose", startsAt: T2 });
     expect(await updateConsultationSlot(answer(200, { ...proposed, startsAt: T1 }), DOC, SLOT, "propose", T2)).toEqual(nepoznato);
   });
   it("accept leads to the same confirmed slot", async () => {
