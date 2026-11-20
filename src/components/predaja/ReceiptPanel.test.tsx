@@ -40,14 +40,17 @@ const text = (markup: string) => markup.replace(/<[^>]*>/g, " ").replace(/\s+/g,
 const SAYS_SUBMITTED = /\bPredano\b|Rad je predan/;
 
 describe("ReceiptPanel (WEB-27, S: E-11)", () => {
-  it("variant puno: the receipt in Zagreb time, each with its UTC instant, and the fingerprint", () => {
+  it("variant puno: three rows in Zagreb time, one UTC block with the exact values, and the fingerprint", () => {
     const markup = render({ kind: "potvrdeno", receipt: receipt() });
     const shown = text(markup);
     expect(shown).toContain("Predano");
     expect(shown).toContain(`${t.submittedAt} 19. studenoga 2026. u 14:05`);
     expect(shown).toContain(`${t.dueAt} 20. studenoga 2026. u 23:59`);
-    expect(shown).toContain(`${t.signedAt} 19. studenoga 2026. u 14:05`);
+    expect(shown).toContain(`${t.signingStarted} 19. studenoga 2026. u 14:05`);
+    expect(markup.match(/<details/g)).toHaveLength(1);
+    expect(markup).toMatch(new RegExp(`<summary[^>]*>${t.utc.replace(/[()]/g, "\\$&")}</summary>`));
     for (const iso of [PAYLOAD.requestedAt, PAYLOAD.dueAt, PAYLOAD.signedAt]) expect(markup).toContain(`<code>${iso}</code>`);
+    expect(shown).not.toContain("Potvrda potpisana");
     expect(shown).toContain(`${t.assignmentVersion} 2`);
     expect(shown).toContain(`${t.revision} 7`);
     expect(shown).toContain(t.records.continuous);
@@ -79,9 +82,11 @@ describe("ReceiptPanel (WEB-27, S: E-11)", () => {
     const markup = render({ kind: "ceka", revision: 7, requestedAt: PAYLOAD.requestedAt });
     const shown = text(markup);
     expect(shown).not.toMatch(SAYS_SUBMITTED);
+    expect(markup).toContain(`<h2>${t.pendingTitle}</h2>`);
     expect(shown).toContain("Čeka potvrdu");
-    expect(shown).toContain(t.waiting);
-    expect(shown).toContain(`${t.signingStarted} 19. studenoga 2026. u 14:05`);
+    expect(shown).toContain("Predaja je zabilježena 19. studenoga 2026. u 14:05. Potpis potvrde još se izdaje; vrijeme predaje se time ne mijenja.");
+    expect(shown).toContain(`${t.signingStarted} ${t.notYetRecorded}`);
+    expect(markup).toContain(`<code>${PAYLOAD.requestedAt}</code>`);
     expect(markup).toContain(`href="/rad/x/predaja/potvrda">${t.check}`);
     expect(markup).not.toContain("Otisak u međuspremnik");
   });

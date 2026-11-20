@@ -6,12 +6,12 @@
  * Pure: the read comes in, so each variant renders with
  * `renderToStaticMarkup`. "Predano" only with the signed receipt the client
  * checked against the contract (B-6); `ceka` (recorded, not signed yet)
- * never says it. Times are in Europe/Zagreb, each with its UTC instant in the
- * details. The browser does not check the Ed25519 signature (P-4) and the
+ * never says it. Times are in Europe/Zagreb; below them one details block
+ * gives the exact UTC values from the receipt (E-11). The browser does not check the Ed25519 signature (P-4) and the
  * panel says so. Not built here: /provjera, QR and PDF (wave 9).
  */
 
-import { Fingerprint, KeyValueList, StateTag, type KeyValueItem } from "@ductura/ui";
+import { Details, Fingerprint, KeyValueList, StateTag, type KeyValueItem } from "@ductura/ui";
 
 import type { SubmissionRead, SubmissionReceipt } from "@/client/submission";
 import { messagesHr } from "@/lib/i18n/messages.hr";
@@ -47,8 +47,13 @@ function zagreb(iso: string): string {
   return parts === null ? iso : `${parts.date} ${messagesHr.summary.at} ${parts.time}`;
 }
 
-function timeItem(id: string, label: string, iso: string): KeyValueItem {
-  return { id, label, value: zagreb(iso), details: { summary: t.utc, children: <code>{iso}</code> } };
+/** E-11: one block under the rows with the receipt's instants as given (ISO, UTC). */
+function UtcDetails({ rows }: { rows: readonly (readonly [string, string])[] }) {
+  return (
+    <Details summary={t.utc}>
+      <KeyValueList items={rows.map(([label, iso]) => ({ id: label, label, value: <code>{iso}</code> }))} />
+    </Details>
+  );
 }
 
 export type ReceiptPanelProps = {
@@ -82,12 +87,14 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
   if (read.kind === "ceka") {
     return (
       <div className="receipt">
+        <h2>{t.pendingTitle}</h2>
         <p><StateTag state="pending" /></p>
-        <p role="status">{t.waiting}</p>
+        <p role="status">{t.waiting.replace("{when}", zagreb(read.requestedAt))}</p>
         <KeyValueList items={[
-          timeItem("requested", t.signingStarted, read.requestedAt),
+          { id: "signed", label: t.signingStarted, value: t.notYetRecorded },
           { id: "revision", label: t.revision, value: String(read.revision) },
         ]} />
+        <UtcDetails rows={[[t.submittedAt, read.requestedAt]]} />
         <p><a href={retryHref}>{t.check}</a></p>
       </div>
     );
@@ -95,9 +102,9 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
   const p = read.receipt.payload;
   const gaps = p.evidenceRecord === "with_gaps";
   const items: KeyValueItem[] = [
-    timeItem("requested", t.submittedAt, p.requestedAt),
-    timeItem("due", t.dueAt, p.dueAt),
-    timeItem("signed", t.signedAt, p.signedAt),
+    { id: "requested", label: t.submittedAt, value: zagreb(p.requestedAt) },
+    { id: "due", label: t.dueAt, value: zagreb(p.dueAt) },
+    { id: "signed", label: t.signingStarted, value: zagreb(p.signedAt) },
     { id: "version", label: t.assignmentVersion, value: String(p.assignmentVersion) },
     { id: "revision", label: t.revision, value: String(p.revision) },
     { id: "record", label: t.record, value: t.records[p.evidenceRecord] },
@@ -115,6 +122,7 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
       </p>
       {p.afterDeadline && <p role="note">{t.late}</p>}
       <KeyValueList items={items} />
+      <UtcDetails rows={[[t.submittedAt, p.requestedAt], [t.dueAt, p.dueAt], [t.signingStarted, p.signedAt]]} />
       {summaryHref !== undefined && <p><a href={summaryHref}>{t.summary}</a></p>}
       <p>{t.signatureNote}</p>
     </div>
