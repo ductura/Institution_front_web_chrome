@@ -1,9 +1,9 @@
 import {
   Button, Card, Checkbox, DataTable, Details, Dialog, ErrorScreen, Fingerprint, Icon, ICON_NAMES, KeyValueList, PanelTabs,
-  RouteLoading, SaveState, Select, Skeleton, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
+  RouteLoading, SaveState, Select, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type DataTableColumn, type IconName,
 } from "@ductura/ui";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import type { OverviewRow } from "../../src/client/teacher-reads";
@@ -49,7 +49,34 @@ const ICON_LABELS: Record<IconName, string> = {
   undo: "Poništi", redo: "Ponovi", paragraph: "Odlomak", heading: "Naslov", bold: "Podebljano", italic: "Kurziv",
   bulletList: "Popis", quote: "Citat", chevronDown: "Više",
 };
+
+function SourceFormExample() {
+  const anchor = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  return <>
+    <Button ref={anchor} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(!open)}>Novi izvor</Button>
+    <SourceForm open={open} anchor={anchor} allowCite onClose={() => setOpen(false)}
+      onSubmit={(source) => { setTitle(source.title); setOpen(false); anchor.current?.focus(); }} />
+    <p role="status">{title}</p>
+  </>;
+}
+
+const sourcePreview = (state: CatalogState) => <SourceForm open floating={false} anchor={{ current: null }}
+  pending={state === "učitavanje"} disabled={state === "onemogućeno"}
+  error={state === "greška" ? "Dodavanje izvora nije uspjelo." : undefined}
+  initial={{ type: "book", authors: [{ kind: "organization", name: "Izmišljeni nakladnički ured" }],
+    title: "Izmišljeni priručnik", year: 2026, place: "Izmišljeni grad", publisher: "Izmišljeni nakladnik" }}
+  onSubmit={nothing} onClose={nothing} />;
+
 export const ENTRIES = {
+  SourceForm: {
+    prazno: () => <SourceFormExample />,
+    učitavanje: () => sourcePreview("učitavanje"),
+    greška: () => sourcePreview("greška"),
+    puno: () => sourcePreview("puno"),
+    onemogućeno: () => sourcePreview("onemogućeno"),
+  },
   DataTable: {
     prazno: () => workTable("Radovi", []),
     učitavanje: () => workTable("Radovi", [], true),
