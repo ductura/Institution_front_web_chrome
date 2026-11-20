@@ -29,7 +29,7 @@
 import { Icon, type IconName } from "@ductura/ui";
 import { useEditorState, type Editor } from "@tiptap/react";
 import {
-  Fragment, useLayoutEffect, useRef, useState, type KeyboardEvent,
+  Fragment, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent,
 } from "react";
 
 import { setSheetTheme, useSheetTheme } from "@/components/shell/useSheetTheme";
@@ -38,7 +38,10 @@ import type { SheetTheme } from "@/lib/ui/sheet-theme";
 
 import styles from "./EditorToolbar.module.css";
 import ToolbarMenu from "./ToolbarMenu";
-import { MAX_COLLAPSED, rovingIndex, splitTools } from "./toolbar-menu";
+import {
+  convertBlock, copyText, glyphOf, insertChar, insertHole, MAX_COLLAPSED, pushRecent, readRecent, rovingIndex,
+  SPECIAL_CHARS, splitTools, writeRecent,
+} from "./toolbar-menu";
 
 export type ToolbarState = {
   editable: boolean;
@@ -170,7 +173,9 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
   const theme = useSheetTheme();
   const listRef = useRef<HTMLDivElement>(null);
   const [focusKey, setFocusKey] = useState<string>(TOOLS[0]!.key);
-  const [openMenu, setOpenMenu] = useState<"more" | "view" | "blockStyle" | null>(null);
+  const [openMenu, setOpenMenu] = useState<"more" | "view" | "blockStyle" | "insert" | "convert" | "chars" | "export" | null>(null);
+  const [recent, setRecent] = useState<string[]>([]);
+  useEffect(() => setRecent(readRecent()), []);
   const [collapsed, setCollapsed] = useState(0);
   const [width, setWidth] = useState(0);
   const widthRef = useRef(0);
@@ -217,8 +222,44 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
   const moreOpen = openMenu === "more" && more.length > 0;
   const usableOf = (tool: Tool) => state.editable && (tool.enabled?.(state) ?? true);
   const style = blockStyleOf(state);
-  const rovingKeys = [...shown.map((tool) => tool.key), ...(more.length ? ["more"] : []), "view"];
+  const rovingKeys = [
+    ...shown.map((tool) => tool.key), "insert", "convert", "chars", ...(more.length ? ["more"] : []), "view", "export",
+  ];
   const stop = rovingKeys.includes(focusKey) ? focusKey : rovingKeys[0];
+
+
+  // WEB-6C: Umetni, Pretvori, Posebni znak and Izvezi. An item the V2 schema cannot hold is shown, disabled.
+  const writeOk = !!editor && !editor.isDestroyed && editor.isEditable && state.editable;
+  const item = (key: string, label: string, ok: boolean) => ({
+    key, label, role: "menuitem" as const, checked: false, disabled: !ok,
+  });
+  const openOf = (menu: NonNullable<typeof openMenu>) => ({
+    open: openMenu === menu,
+    onOpenChange: (open: boolean) => {
+      setFocusKey(menu);
+      setOpenMenu(open ? menu : null);
+    },
+  });
+  const insertItems = Object.entries(t.toolbar.insertItems).map(([key, label]) => item(key, label, key === "hole" && writeOk));
+  const convertItems = [
+    item("toQuote", t.toolbar.convertItems.toQuote, writeOk && !state.quote),
+    item("fromQuote", t.toolbar.convertItems.fromQuote, writeOk && state.quote),
+    item("toFootnote", t.toolbar.convertItems.toFootnote, false),
+  ];
+  const exportItems = [
+    item("docx", t.toolbar.exportItems.docx, false),
+    item("print", t.toolbar.exportItems.print, false),
+    item("copy", t.toolbar.exportItems.copy, !!editor && !editor.isDestroyed),
+  ];
+  const chars = [...recent, ...SPECIAL_CHARS.filter((ch) => !recent.includes(ch))];
+  const charItems = chars.map((ch) => ({
+    ...item(`char:${ch}`, `${glyphOf(ch)}  ${t.toolbar.specialChars[ch] ?? ""}`, writeOk),
+  }));
+  const menuProps = (menu: NonNullable<typeof openMenu>) => ({
+    roving: menu,
+    tabIndex: stop === menu ? 0 : -1,
+    ...openOf(menu),
+  });
 
   // Checked again at the click: a sign-out stops writing without a render.
   const run = (tool: Tool): boolean => {
@@ -310,6 +351,36 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
           </Fragment>
         );
       })}
+      <ToolbarMenu
+        label={t.toolbar.insert}
+        menuLabel={t.toolbar.insertMenu}
+        items={insertItems}
+        onSelect={(key) => (key === "hole" && insertHole(editor) ? "close" : "keep")}
+        {...menuProps("insert")}
+      />
+      <ToolbarMenu
+        label={t.toolbar.convert}
+        menuLabel={t.toolbar.convertMenu}
+        items={convertItems}
+        onSelect={(key) =>
+          (key === "toQuote" || key === "fromQuote") && convertBlock(editor, key === "toQuote" ? "quote" : "paragraph")
+            ? "close" : "keep"}
+        {...menuProps("convert")}
+      />
+      <ToolbarMenu
+        label={t.toolbar.specialChar}
+        menuLabel={t.toolbar.specialCharMenu}
+        items={charItems}
+        onSelect={(key) => {
+          const ch = key.slice("char:".length);
+          if (!insertChar(editor, ch)) return "keep";
+          const next = pushRecent(recent, ch);
+          setRecent(next);
+          writeRecent(next);
+          return "close";
+        }}
+        {...menuProps("chars")}
+      />
       {more.length ? (
         <ToolbarMenu
           className="editor-menu--more"
@@ -356,6 +427,17 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
           setSheetTheme(key === "light" ? "light" : "dark");
           return "close-return";
         }}
+      />
+      <ToolbarMenu
+        className={styles.last}
+        label={t.toolbar.export}
+        menuLabel={t.toolbar.exportMenu}
+        items={exportItems}
+        onSelect={(key) => {
+          if (key === "copy") void copyText(editor);
+          return key === "copy" ? "close-return" : "keep";
+        }}
+        {...menuProps("export")}
       />
     </div>
   );

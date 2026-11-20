@@ -3,10 +3,11 @@
 import { Select, Skeleton, StateTag, type SubmissionState } from "@ductura/ui";
 import { useState } from "react";
 
-import type { CourseStudent, WorkState } from "@/client/teacher-reads";
-import { isDocumentId } from "@/domain/collaboration/comment";
-import { compareHr } from "@/domain/text/compare-hr";
-import { courseStudentsHr as t } from "@/lib/i18n/messages.hr";
+// Relative paths, like MentoredWorks: packages/app and the catalogue import src/components without the "@/" alias.
+import type { CourseStudent, WorkState } from "../../client/teacher-reads";
+import { courseStudentsHr as t } from "../../lib/i18n/messages.hr";
+import { isDocumentId } from "../../../packages/editor-core/src/document/collaboration/comment";
+import { compareHr } from "../../../packages/editor-core/src/document/text/compare-hr";
 
 import styles from "./kolegiji/CourseCodes.module.css";
 

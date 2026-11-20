@@ -203,5 +203,7 @@ describe("signInHref", () => {
         serverKeeps(`/${String.fromCharCode(code)}x`);
       }
     }
-  });
+    // All 65 536 code units: since src/client runs in the recursive workspace test (#137) beside the
+    // other packages, this takes longer than the default 5 s on a CI runner; the check itself is unchanged.
+  }, 60_000);
 });

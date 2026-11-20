@@ -3,8 +3,8 @@
 import { Button, Dialog, TextArea } from "@ductura/ui";
 import { useState } from "react";
 
-import { NOTE_MAX, type Read, type SubmissionNote } from "@/client/submission";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { NOTE_MAX, type Read, type SubmissionNote } from "../../client/submission";
+import { messagesHr } from "../../lib/i18n/messages.hr";
 
 const t = messagesHr.beforeSubmit;
 
@@ -33,6 +33,8 @@ export type NoteDialogProps = {
   /** The append: the dialog closes only on the server's note (PD-4, append only). */
   readonly onAdd: (text: string) => Promise<NoteAdded>;
   readonly onAdded: (note: SubmissionNote) => void;
+  /** False only in the catalogue, where the dialog stands in the page like the Dialog entry. */
+  readonly modal?: boolean;
 };
 
 /**
@@ -41,7 +43,7 @@ export type NoteDialogProps = {
  * sent. While the note is sent the buttons do nothing and Escape does not
  * close the dialog.
  */
-export function NoteDialog({ open, onClose, onAdd, onAdded }: NoteDialogProps) {
+export function NoteDialog({ open, onClose, onAdd, onAdded, modal = true }: NoteDialogProps) {
   const [text, setText] = useState("");
   const [fieldError, setFieldError] = useState<string>();
   const [error, setError] = useState<string>();
@@ -72,7 +74,7 @@ export function NoteDialog({ open, onClose, onAdd, onAdded }: NoteDialogProps) {
   };
 
   return (
-    <Dialog open={open} title={t.noteTitle} onClose={close} dismissible={!sending} error={error}
+    <Dialog open={open} modal={modal} title={t.noteTitle} onClose={close} dismissible={!sending} error={error}
       actions={(
         <>
           <Button busy={sending} onClick={() => void add()}>{sending ? t.noteSending : t.noteAdd}</Button>
