@@ -213,3 +213,19 @@ export function deletedOption(history: readonly ParagraphHistoryEntry[]): string
 export function deletedParagraphs(changes: readonly { blockIds: readonly string[] }[], finalIds: ReadonlySet<string>): string[] {
   return [...new Set(changes.flatMap((change) => change.blockIds))].filter((id) => !finalIds.has(id));
 }
+
+/**
+ * The Timeline's positions over `steps`: the whole text is every change and already starts at
+ * change 0; one paragraph's own changes get the start of the record in front, so a paragraph
+ * with a single change still has a start and one step.
+ */
+export function timelineOf(wholeText: boolean, steps: readonly number[], n: number, place: number): { total: number; value: number } {
+  if (wholeText) return { total: steps.length - 1, value: Math.max(place, 0) };
+  return { total: steps.length, value: steps.length === 0 || n < steps[0]! ? 0 : place + 1 };
+}
+
+/** The change a Timeline position stands for (0 is the start of the record). */
+export function changeAt(wholeText: boolean, steps: readonly number[], position: number): number | null {
+  if (wholeText) return steps[position] ?? null;
+  return position === 0 ? 0 : steps[position - 1] ?? null;
+}

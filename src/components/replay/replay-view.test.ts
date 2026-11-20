@@ -7,6 +7,7 @@ import { messagesEn } from "@/lib/i18n/messages.en";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import {
+  changeAt,
   characters,
   describeChange,
   fill,
@@ -15,6 +16,7 @@ import {
   nearestStep,
   paragraphOption,
   stepsOf,
+  timelineOf,
 } from "./replay-view";
 
 // DAN-537 (rb 261): the words of the replay view. Synthetic texts only.
@@ -321,5 +323,22 @@ describe("replay words (DAN-537)", () => {
     expect(paragraphOption(2, node("  Kratko.  "))).toBe("Odlomak 2: Kratko.");
     const long = paragraphOption(1, node(`${"a".repeat(59)} ${"b".repeat(10)}`));
     expect(long).toBe(`Odlomak 1: ${"a".repeat(59)}…`);
+  });
+});
+
+describe("timelineOf and changeAt (Timeline positions)", () => {
+  it("keeps a paragraph with one change playable: the start plus that change", () => {
+    expect(timelineOf(false, [4], 4, 0)).toEqual({ total: 1, value: 1 });
+    expect(timelineOf(false, [4], 0, 0)).toEqual({ total: 1, value: 0 });
+    expect(changeAt(false, [4], 0)).toBe(0);
+    expect(changeAt(false, [4], 1)).toBe(4);
+  });
+
+  it("counts every change of a larger paragraph scope and of the whole text", () => {
+    expect(timelineOf(false, [2, 5, 7], 5, 1)).toEqual({ total: 3, value: 2 });
+    expect(changeAt(false, [2, 5, 7], 3)).toBe(7);
+    expect(timelineOf(true, [0, 1, 2, 3], 2, 2)).toEqual({ total: 3, value: 2 });
+    expect(changeAt(true, [0, 1, 2, 3], 3)).toBe(3);
+    expect(changeAt(true, [0, 1], 9)).toBeNull();
   });
 });

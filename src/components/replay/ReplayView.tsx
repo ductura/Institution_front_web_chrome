@@ -27,8 +27,8 @@ import type { ReplayPlayer } from "@/client/replay-record/replay-player";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import {
-  deletedOption, deletedParagraphs, describeChange, fill, gapWords, historyRows, nearestStep, nodeText, paragraphOption, replayBlocks,
-  sourceLabel, stepsOf,
+  changeAt, deletedOption, deletedParagraphs, describeChange, fill, gapWords, historyRows, nearestStep, nodeText, paragraphOption, replayBlocks,
+  sourceLabel, stepsOf, timelineOf,
   type ChangePart,
 } from "./replay-view";
 import styles from "./ReplayView.module.css";
@@ -218,9 +218,8 @@ export function ReplayPlayerView({ player }: { player: Player }) {
       // The player of @ductura/ui over the positions of the chosen scope: the whole text is every
       // change, one paragraph only the changes that touched it (index 0 is the start of the record).
       steps.length === 0 ? h("p", { className: styles.meta }, t.scopeNone) : h(Timeline, {
-        total: steps.length - 1,
-        value: Math.max(place, 0),
-        onChange: (to: number) => go(steps[to] ?? n),
+        ...timelineOf(scoped === null, steps, n, place),
+        onChange: (to: number) => go(changeAt(scoped === null, steps, to) ?? n),
       }),
       h("p", { className: styles.live, role: "status", "aria-live": "polite" }, live),
       h("p", { className: styles.meta }, t.stepNote),
