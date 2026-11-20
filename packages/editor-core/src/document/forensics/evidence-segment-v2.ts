@@ -1,4 +1,4 @@
-import { EDIT_STEP_FORMAT_V1, parseEditSteps } from "../document/edit-step";
+import { EDIT_STEP_FORMAT_V1, EDIT_STEP_FORMAT_V2, EDIT_STEP_FORMAT_V3, parseEditSteps } from "../document/edit-step";
 import { sha256WebCrypto } from "./crypto";
 import { canonicalizeJcs, type JcsJsonValue } from "./jcs";
 
@@ -79,9 +79,11 @@ export type EvidenceEventV2 = {
   afterDocumentHash: string;
 };
 
+export type EvidenceStepFormat = typeof EDIT_STEP_FORMAT_V1 | typeof EDIT_STEP_FORMAT_V2 | typeof EDIT_STEP_FORMAT_V3;
+
 export type EvidenceCaptureContextV2 = {
   editorModel: (typeof EVIDENCE_EDITOR_MODELS_V2)[number];
-  transactionFormat: typeof EDIT_STEP_FORMAT_V1;
+  transactionFormat: EvidenceStepFormat;
 };
 
 export type EvidenceSegmentV2 = {
@@ -348,8 +350,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * yes or no. The parser builds a clean copy; it is never used, since the hash
  * is over the bytes that were sent and a cleaned copy is not what was sent.
  */
-function areSteps(value: unknown): value is EvidenceStepV2[] {
-  return parseEditSteps(EDIT_STEP_FORMAT_V1, value).ok;
+function areSteps(value: unknown, format: EvidenceStepFormat): value is EvidenceStepV2[] {
+  return parseEditSteps(format, value).ok;
 }
 
 function isSortedUniqueStrings(value: unknown): value is string[] {
@@ -406,6 +408,7 @@ function isEvent(
   value: unknown,
   expectedSequence: number,
   version: SegmentVersion,
+  format: EvidenceStepFormat,
 ): value is EvidenceEvent {
   if (!isPlainObject(value) || !hasEventKeys(value, version)) return false;
   if (
@@ -416,7 +419,7 @@ function isEvent(
     RESERVED_SOURCES.has(value.source) ||
     !version.sources.has(value.source) ||
     (version.v4 && !hasV4Fields(value)) ||
-    !areSteps(value.steps) ||
+    !areSteps(value.steps, format) ||
     !isSha256(value.beforeDocumentHash) ||
     !isSha256(value.afterDocumentHash)
   ) {
@@ -450,15 +453,15 @@ export function isEvidenceSegmentV2(value: unknown): value is EvidenceSegmentV2 
  * sends) and the server (before it accepts) both use, through
  * `verifyCanonicalEvidencePayloadV2`.
  */
-export function isEvidenceSegment(value: unknown): value is EvidenceSegment {
+export function isEvidenceSegment(value: unknown, format: EvidenceStepFormat = EDIT_STEP_FORMAT_V1): value is EvidenceSegment {
   try {
-    return isSegmentUnguarded(value, ANY_VERSION);
+    return isSegmentUnguarded(value, ANY_VERSION, format);
   } catch {
     return false;
   }
 }
 
-function isSegmentUnguarded(value: unknown, schemas: VersionsBySchema): boolean {
+function isSegmentUnguarded(value: unknown, schemas: VersionsBySchema, format: EvidenceStepFormat = EDIT_STEP_FORMAT_V1): boolean {
   if (!isPlainObject(value) || !hasOnlyKeys(value, SEGMENT_KEYS)) return false;
   const version =
     typeof value.evidenceSchema === "string" ? schemas.get(value.evidenceSchema) : undefined;
@@ -490,7 +493,7 @@ function isSegmentUnguarded(value: unknown, schemas: VersionsBySchema): boolean 
     !hasOnlyKeys(value.captureContext, CAPTURE_CONTEXT_KEYS) ||
     typeof value.captureContext.editorModel !== "string" ||
     !EDITOR_MODELS.has(value.captureContext.editorModel) ||
-    value.captureContext.transactionFormat !== EDIT_STEP_FORMAT_V1
+    value.captureContext.transactionFormat !== format
   ) {
     return false;
   }
@@ -507,7 +510,7 @@ function isSegmentUnguarded(value: unknown, schemas: VersionsBySchema): boolean 
   for (let index = 0; index < value.events.length; index++) {
     const event = value.events[index];
     if (
-      !isEvent(event, sequenceFrom + index, version) ||
+      !isEvent(event, sequenceFrom + index, version, format) ||
       event.beforeDocumentHash !== previousAfter
     ) {
       return false;
@@ -547,14 +550,14 @@ export async function digestEvidenceSegmentV2(
   return digestOf(canonicalEvidenceSegmentV2(segment));
 }
 
-export function assertEvidenceSegment(value: unknown): asserts value is EvidenceSegment {
-  if (!isEvidenceSegment(value)) {
+export function assertEvidenceSegment(value: unknown, format?: EvidenceStepFormat): asserts value is EvidenceSegment {
+  if (!isEvidenceSegment(value, format)) {
     throw new Error("evidence-v2: invalid segment");
   }
 }
 
-export function canonicalEvidenceSegment(segment: EvidenceSegment): string {
-  assertEvidenceSegment(segment);
+export function canonicalEvidenceSegment(segment: EvidenceSegment, format?: EvidenceStepFormat): string {
+  assertEvidenceSegment(segment, format);
   return canonicalizeJcs(segment);
 }
 

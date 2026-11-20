@@ -1,4 +1,5 @@
 import {
+  type EvidenceStepFormat,
   canonicalEvidenceSegment,
   isEvidenceSegment,
   type EvidenceSegment,
@@ -78,6 +79,7 @@ export type EvidencePayloadVerificationV2 =
  */
 export async function verifyCanonicalEvidencePayloadV2(
   payload: unknown,
+  format?: EvidenceStepFormat,
 ): Promise<EvidencePayloadVerificationV2> {
   let received: Uint8Array<ArrayBuffer>;
   let text: string | null;
@@ -114,10 +116,10 @@ export async function verifyCanonicalEvidencePayloadV2(
   } catch {
     return { ok: false, reason: "invalid" };
   }
-  if (!isEvidenceSegment(parsed)) {
+  if (!isEvidenceSegment(parsed, format)) {
     return { ok: false, reason: "invalid" };
   }
-  const canonical = new TextEncoder().encode(canonicalEvidenceSegment(parsed));
+  const canonical = new TextEncoder().encode(canonicalEvidenceSegment(parsed, format));
   if (!sameBytes(canonical, received)) {
     return { ok: false, reason: "invalid" };
   }

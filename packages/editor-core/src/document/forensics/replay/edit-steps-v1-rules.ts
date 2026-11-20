@@ -15,7 +15,8 @@ import { isMark, isPlainBlockType } from "../../document/schema";
 import { EvidenceContentNotSupportedV2 } from "../evidence-replay-v2";
 import type { EvidenceEventV3 } from "../evidence-segment-v2";
 import { canonicalizeJcs, type JcsJsonValue } from "../jcs";
-import { canonicalToTiptap, tiptapToCanonical, createEditorExtensions } from "../../../editor";
+import { canonicalToTiptap, tiptapToCanonical } from "../../../editor/interop";
+import { createEditorExtensions } from "../../../editor/schema";
 
 /**
  * Rules of the `ductus-edit-steps-v1` replayer (B-12, first step), shared by
