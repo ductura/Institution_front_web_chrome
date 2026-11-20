@@ -17,7 +17,6 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type Keyboard
 import {
   listComments, replyComment, type CommentThread, type ListOutcome, type ReplyOutcome, type ThreadComment,
 } from "@/client/comments";
-import { announceCommentsLoaded, showInText } from "@/client/comments-bridge";
 import { watchSessionEnd, type SessionWatch } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
 import { limitBody } from "@/domain/collaboration";
@@ -43,8 +42,8 @@ function who(comment: ThreadComment): string {
   return comment.role === "teacher" ? t.teacher : t.student;
 }
 
-function ThreadCard({ documentId, placed, editor, current, onReplied }: {
-  documentId: string; placed: Placed; editor: Editor | null; current: () => boolean; onReplied: () => void;
+function ThreadCard({ placed, editor, current, onReplied }: {
+  placed: Placed; editor: Editor | null; current: () => boolean; onReplied: () => void;
 }) {
   const { thread, range } = placed;
   const [draft, setDraft] = useState("");
@@ -53,8 +52,6 @@ function ThreadCard({ documentId, placed, editor, current, onReplied }: {
   const [first, ...replies] = thread.comments;
 
   const show = () => {
-    // The teacher view on /rad replaced the editor: the passage is shown there (#732 item 7).
-    if (showInText(documentId, { threadId: thread.id })) return;
     if (!editor || editor.isDestroyed || !range) return;
     editor.chain().setTextSelection(range).scrollIntoView().run();
     editor.view.focus();
@@ -164,8 +161,6 @@ function SessionCommentPanel({ documentId, session }: {
     const result = await listComments(documentId, current);
     if (mine !== generation.current || stoppedRef.current) return;
     setOutcome(result);
-    // The marks of the teacher view on the same page read them again too (#732 item 7).
-    announceCommentsLoaded(documentId);
   }, [documentId, current]);
   useEffect(() => { void load(); }, [load]);
 
@@ -222,7 +217,7 @@ function SessionCommentPanel({ documentId, session }: {
   else if (outcome.kind === "forbidden") body = <p className="rail-empty">{t.notAvailable}</p>;
   else if (outcome.kind !== "ok") body = <p className="rail-empty" role="status">{t[outcome.kind]}</p>;
   else if (placed.length === 0) body = <p className="rail-empty">{t.empty}</p>;
-  else body = placed.map((p) => <ThreadCard key={p.thread.id} documentId={documentId} placed={p} editor={editor} current={current} onReplied={() => void load()} />);
+  else body = placed.map((p) => <ThreadCard key={p.thread.id} placed={p} editor={editor} current={current} onReplied={() => void load()} />);
 
   return (
     <section className="rail-section" aria-labelledby="comments-title">
