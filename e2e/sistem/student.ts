@@ -11,7 +11,7 @@ export async function signInDemoStudent(page: Page) {
 
   const me = await page.request.get('/api/v1/me');
   await expect(me).toBeOK();
-  expect(await me.json()).toMatchObject({ role: 'student' });
+  expect(await me.json()).toMatchObject({ roles: expect.arrayContaining(['student']) });
 }
 
 export async function openDemoWork(page: Page) {
