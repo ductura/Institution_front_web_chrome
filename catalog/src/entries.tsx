@@ -1,14 +1,15 @@
 import {
-  Button, Card, Checkbox, Details, Dialog, ErrorScreen, Icon, ICON_NAMES, PanelTabs, RouteLoading, SaveState, Select, Skeleton, Tag,
-  TextArea, TextField, ToastRegion, type IconName,
+  Button, Card, Checkbox, DataTable, Details, Dialog, ErrorScreen, Fingerprint, Icon, ICON_NAMES, KeyValueList, PanelTabs,
+  RouteLoading, SaveState, Select, Skeleton, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
+  type DataTableColumn, type IconName,
 } from "@ductura/ui";
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import type { OverviewRow } from "../../src/client/teacher-reads";
 import {
-  AppShell, AssignmentOverview, EmptyHome, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
-  type AssignmentSubmission, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
+  AppShell, AssignmentOverview, EmptyHome, LiveWorkFrame, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
+  type AssignmentSubmission, type LiveWorkFrameData, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -17,6 +18,16 @@ type Entry = Record<CatalogState, () => React.ReactNode>;
 
 // Invented example text only; no real people or student work.
 const GROUPS = [{ value: "a", label: "Grupa A" }, { value: "b", label: "Grupa B" }];
+const SAMPLE_DIGEST = "0123456789abcdef".repeat(4);
+const SAMPLE_WORKS = [{ title: "Izmišljeni seminar", pages: 12 }, { title: "Izmišljeni ogled", pages: 4 }];
+const WORK_COLUMNS: DataTableColumn<(typeof SAMPLE_WORKS)[number]>[] = [
+  { id: "title", header: "Rad", cell: (row) => row.title, rowHeader: true },
+  { id: "pages", header: "Stranice", cell: (row) => row.pages, numeric: true, sortValue: (row) => row.pages },
+];
+const workTable = (caption: string, rows = SAMPLE_WORKS, loading = false) => (
+  <DataTable caption={caption} rows={rows} columns={WORK_COLUMNS}
+    rowKey={(row) => row.title} empty="Još nema radova." loading={loading} />
+);
 // The toast region is fixed to the viewport; in the catalogue it sits in the flow.
 function ToastInline({ toasts }: { toasts: Parameters<typeof ToastRegion>[0]["toasts"] }) {
   return (
@@ -31,6 +42,44 @@ const ICON_LABELS: Record<IconName, string> = {
   bulletList: "Popis", quote: "Citat", chevronDown: "Više",
 };
 export const ENTRIES = {
+  DataTable: {
+    prazno: () => workTable("Radovi", []),
+    učitavanje: () => workTable("Radovi", [], true),
+    greška: () => <p role="alert">Radovi se nisu učitali.</p>,
+    puno: () => workTable("Radovi"),
+    onemogućeno: () => <p>Popis radova trenutačno nije dostupan.</p>,
+  },
+  Fingerprint: {
+    prazno: () => <p>Još nema otiska potvrde.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje otiska potvrde…" />,
+    greška: () => <p role="alert">Otisak potvrde se nije učitao.</p>,
+    puno: () => <Fingerprint value={SAMPLE_DIGEST} />,
+    onemogućeno: () => <p>Otisak potvrde trenutačno nije dostupan.</p>,
+  },
+  KeyValueList: {
+    prazno: () => <p>Još nema podataka o potvrdi.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje podataka o potvrdi…" />,
+    greška: () => <p role="alert">Podaci o potvrdi nisu se učitali.</p>,
+    puno: () => <KeyValueList items={[
+      { id: "submitted", label: "Vrijeme predaje", value: "20. 11. 2026. u 11:00",
+        details: { summary: "Vrijeme u UTC-u", children: "2026-11-20T10:00:00Z" } },
+    ]} />,
+    onemogućeno: () => <p>Podaci o potvrdi trenutačno nisu dostupni.</p>,
+  },
+  StateTag: {
+    prazno: () => <StateTag state="not_submitted" />,
+    učitavanje: () => <StateTag state="pending" />,
+    greška: () => <StateTag state="gap" />,
+    puno: () => <>{SUBMISSION_STATES.map((state) => <StateTag key={state} state={state} />)}</>,
+    onemogućeno: () => <p>Stanje predaje trenutačno nije dostupno.</p>,
+  },
+  Steps: {
+    prazno: () => <Steps currentStep={1} />,
+    učitavanje: () => <RouteLoading label="Učitavanje koraka predaje…" />,
+    greška: () => <><Steps currentStep={3} /><p role="alert">Korak nije dovršen.</p></>,
+    puno: () => <Steps currentStep={5} />,
+    onemogućeno: () => <p>Koraci predaje trenutačno nisu dostupni.</p>,
+  },
   Button: {
     prazno: () => <Button tone="quiet">Odustani</Button>,
     učitavanje: () => <Button busy>Spremanje…</Button>,
@@ -259,6 +308,13 @@ const overviewRows = [
   overviewRow(4, { submitted: true, requestedMinute: "2026-11-14T08:00Z" }),
 ];
 
+// Invented live work frame (as in LiveWorkFrame.test.ts, WEB-34); the text slot holds an invented sentence.
+const liveFrame = (over: Partial<LiveWorkFrameData> = {}): LiveWorkFrameData => ({
+  studentName: "Vesna Žbunić", assignmentTitle: "Izmišljeni seminar: javne politike", submitted: false,
+  previousId: "izmisljeni-rad-1", nextId: "izmisljeni-rad-3", ...over,
+});
+const liveText = <p>Izmišljena rečenica rada koja stoji umjesto teksta uživo.</p>;
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -324,5 +380,12 @@ export const SCREEN_ENTRIES = {
     greška: () => <MentoredWorks works={[mentored(5, null, { documentId: null, workState: "not_started" })]} />,
     puno: () => <MentoredWorks works={mentoredWorks} />,
     onemogućeno: () => <MentoredWorks works={[mentored(6, { givenName: "Iva", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started", workType: "doctoral_thesis" })]} />,
+  },
+  LiveWorkFrame: {
+    prazno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={null} recordState={null} text={<p role="status">{t.workspace.panelLoading}</p>} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={null} recordState={null} text={<p role="alert">{t.errorPage.errorBody}</p>} />,
+    puno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={liveFrame()} recordState="has_gaps" text={liveText} />,
+    onemogućeno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={liveFrame({ submitted: true, previousId: null, nextId: null })} recordState="complete" text={liveText} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;

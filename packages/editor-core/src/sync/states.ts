@@ -329,7 +329,8 @@ function ownVariantTarget(
   if (variant === null || !Object.hasOwn(transition.cases, variant)) {
     return null;
   }
-  return transition.cases[variant];
+  // Object.hasOwn above: the variant has its own case, whose target is a state.
+  return transition.cases[variant] ?? null;
 }
 
 export function syncReducer(state: SyncState, event: SyncEvent): SyncState {
