@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import { copiedFrontAliases } from "../../src/components/vitest.alias";
+import { copiedFrontAliases } from "../../src/components/vitest.alias.ts";
 
 // Unit, property and vector tests of the package, as in Ductus (node, no DOM).
 export default defineConfig({

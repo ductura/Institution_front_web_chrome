@@ -1,6 +1,7 @@
 {
   "extends": "../ui/tsconfig.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     // Ported verbatim from Ductus, whose tsconfig has no noUncheckedIndexedAccess
     // (same choice as src/domain/tsconfig.json, DAN-990).
     "noUncheckedIndexedAccess": false,

@@ -326,9 +326,9 @@ describe("3d-1c QA t. 5: Undo after a paste", () => {
     await endTask();
     t.wait(1_000);
     t.editor.commands.redo();
-    const { sources, pastes } = await check(t);
+    const { sources, pasteLengths } = await check(t);
     expect(sources).toEqual(["paste", "unattributed", "unattributed"]);
-    expect(pastes.listed).toHaveLength(1);
+    expect(pasteLengths).toEqual([250]);
   });
 
   it("Undo of typing in the same task as a trusted Enter is still unattributed", async () => {
@@ -351,10 +351,9 @@ describe("3d-1c QA t. 6: pastes are events of their own", () => {
     await endTask();
     t.wait(100);
     t.pasteText(text(150));
-    const { sources, pastes } = await check(t);
+    const { sources, pasteLengths } = await check(t);
     expect(sources).toEqual(["paste", "paste"]);
-    expect(pastes.listed).toEqual([]);
-    expect(pastes.smallerCount).toBe(2);
+    expect(pasteLengths).toEqual([150, 150]);
   });
 
   it("typing right after a paste is a new editor event", async () => {
