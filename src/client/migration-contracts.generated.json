@@ -5271,5 +5271,624 @@
         "unavailable"
       ]
     }
+  },
+  "teacher.merlin-roster.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/merlin/roster",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "rows",
+                "extensionReasons"
+              ],
+              "properties": {
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "familyName",
+                          "givenName",
+                          "submitted",
+                          "submittedMinute",
+                          "afterDeadline",
+                          "pdfName",
+                          "pdfSha256",
+                          "docxName",
+                          "docxSha256"
+                        ],
+                        "properties": {
+                          "familyName": {
+                            "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "givenName": {
+                            "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "submitted": {
+                            "const": false,
+                            "type": "boolean"
+                          },
+                          "submittedMinute": {
+                            "type": "null"
+                          },
+                          "afterDeadline": {
+                            "type": "null"
+                          },
+                          "pdfName": {
+                            "type": "null"
+                          },
+                          "pdfSha256": {
+                            "type": "null"
+                          },
+                          "docxName": {
+                            "type": "null"
+                          },
+                          "docxSha256": {
+                            "type": "null"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "familyName",
+                          "givenName",
+                          "submitted",
+                          "submittedMinute",
+                          "afterDeadline",
+                          "pdfName",
+                          "pdfSha256",
+                          "docxName",
+                          "docxSha256"
+                        ],
+                        "properties": {
+                          "familyName": {
+                            "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "givenName": {
+                            "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "submitted": {
+                            "const": true,
+                            "type": "boolean"
+                          },
+                          "submittedMinute": {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00\\.000Z$",
+                            "type": "string"
+                          },
+                          "afterDeadline": {
+                            "type": "boolean"
+                          },
+                          "pdfName": {
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{8}(?:[0-9a-f]{24})?\\.pdf$",
+                            "type": "string"
+                          },
+                          "pdfSha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string"
+                          },
+                          "docxName": {
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{8}(?:[0-9a-f]{24})?\\.docx$",
+                            "type": "string"
+                          },
+                          "docxSha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "familyName",
+                          "givenName",
+                          "submitted",
+                          "submittedMinute",
+                          "afterDeadline",
+                          "pdfName",
+                          "pdfSha256",
+                          "docxName",
+                          "docxSha256"
+                        ],
+                        "properties": {
+                          "familyName": {
+                            "type": "null"
+                          },
+                          "givenName": {
+                            "type": "null"
+                          },
+                          "submitted": {
+                            "const": false,
+                            "type": "boolean"
+                          },
+                          "submittedMinute": {
+                            "type": "null"
+                          },
+                          "afterDeadline": {
+                            "type": "null"
+                          },
+                          "pdfName": {
+                            "type": "null"
+                          },
+                          "pdfSha256": {
+                            "type": "null"
+                          },
+                          "docxName": {
+                            "type": "null"
+                          },
+                          "docxSha256": {
+                            "type": "null"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "familyName",
+                          "givenName",
+                          "submitted",
+                          "submittedMinute",
+                          "afterDeadline",
+                          "pdfName",
+                          "pdfSha256",
+                          "docxName",
+                          "docxSha256"
+                        ],
+                        "properties": {
+                          "familyName": {
+                            "type": "null"
+                          },
+                          "givenName": {
+                            "type": "null"
+                          },
+                          "submitted": {
+                            "const": true,
+                            "type": "boolean"
+                          },
+                          "submittedMinute": {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00\\.000Z$",
+                            "type": "string"
+                          },
+                          "afterDeadline": {
+                            "type": "boolean"
+                          },
+                          "pdfName": {
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{8}(?:[0-9a-f]{24})?\\.pdf$",
+                            "type": "string"
+                          },
+                          "pdfSha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string"
+                          },
+                          "docxName": {
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{8}(?:[0-9a-f]{24})?\\.docx$",
+                            "type": "string"
+                          },
+                          "docxSha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "extensionReasons": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "studentId",
+                      "dueAt",
+                      "reasonId"
+                    ],
+                    "properties": {
+                      "studentId": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "dueAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "reasonId": {
+                        "anyOf": [
+                          {
+                            "const": "justified",
+                            "type": "string"
+                          },
+                          {
+                            "const": "technical",
+                            "type": "string"
+                          },
+                          {
+                            "const": "agreement",
+                            "type": "string"
+                          },
+                          {
+                            "const": "all",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.merlin-roster-csv.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/merlin/csv",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {}
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.merlin-packages.post": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/merlin/packages",
+    "method": "POST",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "requestKey"
+      ],
+      "properties": {
+        "requestKey": {
+          "pattern": "^[A-Za-z0-9_-]{8,128}$",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "202": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "state"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "state": {
+                  "anyOf": [
+                    {
+                      "const": "queued",
+                      "type": "string"
+                    },
+                    {
+                      "const": "ready",
+                      "type": "string"
+                    },
+                    {
+                      "const": "failed",
+                      "type": "string"
+                    },
+                    {
+                      "const": "expired",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.merlin-package.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/merlin/packages/{packageId}",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId",
+        "packageId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "packageId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "state"
+                  ],
+                  "properties": {
+                    "id": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "type": "string"
+                    },
+                    "state": {
+                      "anyOf": [
+                        {
+                          "const": "queued",
+                          "type": "string"
+                        },
+                        {
+                          "const": "failed",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "state",
+                    "downloadPath",
+                    "expiresAt",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "id": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "type": "string"
+                    },
+                    "state": {
+                      "const": "ready",
+                      "type": "string"
+                    },
+                    "downloadPath": {
+                      "pattern": "^/api/v1/teacher/assignments/[0-9a-f-]{36}/merlin/packages/[0-9a-f-]{36}/download$",
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "state",
+                    "expiresAt",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "id": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                      "type": "string"
+                    },
+                    "state": {
+                      "const": "expired",
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.merlin-package-download.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/merlin/packages/{packageId}/download",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId",
+        "packageId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "packageId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {}
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "410": [
+        "not_allowed"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
