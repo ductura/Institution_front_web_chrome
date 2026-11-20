@@ -7,7 +7,7 @@ import { useEffect, useId, useState } from "react";
 import { countHr } from "../../lib/i18n/hr";
 import { messagesHr } from "../../lib/i18n/messages.hr";
 import { readJournalScope } from "../editor/EditorPage.scope";
-import { confirmationKey, stepHref } from "./flow";
+import { confirmationKey, samePath, stepHref } from "./flow";
 
 const t = messagesHr.declaration;
 const s = messagesHr.summary;
@@ -112,6 +112,8 @@ export function DeclarationView({ recorded, confirmed, onConfirm, onNext, onBack
 export type DeclarationProps = {
   readonly assignmentId: string;
   readonly recorded: RecordedRead;
+  /** Where a path of the flow (written without a host's base) is opened; the host adds its base. */
+  readonly hrefOf?: (path: string) => string;
 };
 
 export function readConfirmed(key: string | null): boolean {
@@ -145,7 +147,7 @@ export function useSessionTag(): string | null {
 }
 
 /** Keep the confirmation for this sign-in and hand it to step 3 even when storage is refused. */
-export default function Declaration({ assignmentId, recorded }: DeclarationProps) {
+export default function Declaration({ assignmentId, recorded, hrefOf = samePath }: DeclarationProps) {
   const router = useRouter();
   const tag = useSessionTag();
   const key = tag === null ? null : confirmationKey(tag, assignmentId);
@@ -160,8 +162,8 @@ export default function Declaration({ assignmentId, recorded }: DeclarationProps
         setConfirmed(next);
         writeConfirmed(key, next);
       }}
-      onNext={() => router.push(stepHref(assignmentId, "pregled", confirmed ? tag ?? undefined : undefined))}
-      onBack={() => router.push(stepHref(assignmentId, "tekst"))}
+      onNext={() => router.push(hrefOf(stepHref(assignmentId, "pregled", confirmed ? tag ?? undefined : undefined)))}
+      onBack={() => router.push(hrefOf(stepHref(assignmentId, "tekst")))}
       onRetry={() => router.refresh()}
     />
   );
