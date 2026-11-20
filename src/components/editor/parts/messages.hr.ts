@@ -23,6 +23,7 @@ export const workPartsMessages = {
   loadingSettings: "Učitavamo postavke citiranja.",
   defaultProfile: "FPZG – opći akademski rad",
   profileUnavailable: "Profil trenutačno nije dostupan.",
+  unsupportedStyle: "Editor trenutačno ne može oblikovati navode i literaturu u ovom stilu.",
   citationStyles: new Map([
     ["fpzg", "FPZG"], ["apa", "APA"], ["chicago", "Chicago"],
     ["ieee", "IEEE"], ["vancouver", "Vancouver"], ["fusnote", "Navodi u fusnotama"],

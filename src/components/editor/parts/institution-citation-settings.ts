@@ -1,10 +1,14 @@
 import { createApi, type ApiOptions } from "@/client/api";
+import { parseCitationStyle, type CitationStyle } from "@/domain/citation/style";
+import fpzgConfig from "../../../../config/faculties/fpzg/citation.json";
 
-const DEFAULT_SETTINGS = { styleId: "fpzg", profileId: null };
+const fpzgStyle = parseCitationStyle(fpzgConfig);
+const DEFAULT_SETTINGS = { styleId: "fpzg", profileId: null, formattingStyle: fpzgStyle };
 
 export async function readInstitutionCitationSettings(options: ApiOptions = {}): Promise<{
   styleId: string;
   profileId: string | null;
+  formattingStyle: CitationStyle | null;
 }> {
   try {
     const response = await createApi(options)("settings.values.get", {
@@ -20,7 +24,8 @@ export async function readInstitutionCitationSettings(options: ApiOptions = {}):
       return typeof explicit === "string" && explicit ? explicit
         : typeof fallback === "string" && fallback ? fallback : null;
     };
-    return { styleId: setting("citation.style") ?? DEFAULT_SETTINGS.styleId, profileId: setting("lekta.profile") };
+    const styleId = setting("citation.style") ?? DEFAULT_SETTINGS.styleId;
+    return { styleId, profileId: setting("lekta.profile"), formattingStyle: styleId === "fpzg" ? fpzgStyle : null };
   } catch {
     return DEFAULT_SETTINGS;
   }
