@@ -1,7 +1,7 @@
 import {
   Button, Card, Checkbox, DataTable, Details, Dialog, ErrorScreen, Fingerprint, Icon, ICON_NAMES, KeyValueList, PanelTabs,
-  RouteLoading, SaveState, Select, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
-  type DataTableColumn, type IconName,
+  RouteLoading, SaveState, SearchableList, Select, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag,
+  TextArea, TextField, ToastRegion, type DataTableColumn, type IconName,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
 
@@ -36,6 +36,19 @@ const workTable = (caption: string, rows = SAMPLE_WORKS, loading = false) => (
   <DataTable caption={caption} rows={rows} columns={WORK_COLUMNS}
     rowKey={(row) => row.title} empty="Još nema radova." loading={loading} />
 );
+
+const SAMPLE_SOURCES = [
+  { id: "a", label: "Izmišljeni županijski zbornik", description: "2026", keywords: "Izmišljeni ured Đ" },
+  { id: "b", label: "Izmišljeni vodič kroz izvore", description: "2024" },
+];
+
+function SearchableListExample() {
+  const [selected, setSelected] = useState("");
+  return <div>
+    <SearchableList items={SAMPLE_SOURCES} label="Pretraži primjere izvora" onSelect={(item) => setSelected(item.label)} />
+    <p role="status">{selected}</p>
+  </div>;
+}
 // The toast region is fixed to the viewport; in the catalogue it sits in the flow.
 function ToastInline({ toasts }: { toasts: Parameters<typeof ToastRegion>[0]["toasts"] }) {
   return (
@@ -83,6 +96,13 @@ export const ENTRIES = {
     greška: () => <p role="alert">Radovi se nisu učitali.</p>,
     puno: () => workTable("Radovi"),
     onemogućeno: () => <p>Popis radova trenutačno nije dostupan.</p>,
+  },
+  SearchableList: {
+    prazno: () => <SearchableList items={[]} onSelect={nothing} />,
+    učitavanje: () => <SearchableList items={[]} pending onSelect={nothing} />,
+    greška: () => <SearchableList items={[]} error="Izvori se nisu učitali." onSelect={nothing} />,
+    puno: () => <SearchableListExample />,
+    onemogućeno: () => <SearchableList items={SAMPLE_SOURCES} disabled onSelect={nothing} />,
   },
   Fingerprint: {
     prazno: () => <p>Još nema otiska potvrde.</p>,
