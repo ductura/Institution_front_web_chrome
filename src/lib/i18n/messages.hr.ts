@@ -1563,6 +1563,20 @@ export const hr = {
     emptyTitle: "Zbirni pregled još nema podataka",
     emptyBody: "Kad zbirni pregled bude dostupan, ovdje ćete vidjeti zbirne brojke za svoje kolegije. Pojedinačni studenti se ovdje ne prikazuju.",
   },
+  // WEB-34 (N-06): the frame of the teacher's read-only live view of one
+  // work. No "Zatraži doradu" (wave 8) and no deadline extension (wave 11).
+  teacherLiveWork: {
+    untitled: "Rad uživo",
+    sidePanel: "Sažetak procesa i granice zapisa",
+    neighbours: "Drugi radovi",
+    previous: "Prethodni rad",
+    next: "Sljedeći rad",
+    submission: "Predaja rada",
+    gaps: "U zapisu ovog rada postoje praznine.",
+    gapsLink: "Pogledaj sažetak procesa",
+    notSubmitted: "Rad još nije predan.",
+    textPending: "Prikaz teksta uživo još nije dostupan na ovoj stranici.",
+  },
   // WEB-18 (N-01, dk-h, A-7, A-8): the teacher's courses and their enrolment
   // codes. The server keeps only a hash: the code is shown once, in the dialog
   // that issued it; afterwards the page only says that one was issued.
@@ -2049,6 +2063,7 @@ export const hr = {
     declared: "Vaša izjava",
     declaredTag: "izjavljeno",
     statement: "Potvrdom izjavljujete da ste pregledali što je zabilježeno u Ducturi o ovom radu.",
+    statementWithoutRecord: "Zabilježene stavke ovdje trenutačno nisu prikazane. Potvrdom potvrđujete samo svoju izjavu.",
     keptHere: "Potvrda se ne šalje poslužitelju; vrijedi samo u ovom koraku predaje u ovom pregledniku.",
     confirm: "Potvrđujem izjavu",
     next: "Dalje",
@@ -2153,15 +2168,16 @@ export const hr = {
     retry: "Pokušaj ponovno",
     empty: "Poslužitelj nema potpisanu potvrdu predaje ovog rada.",
     toSubmit: "Na predaju",
-    waiting: "Poslužitelj je primio zahtjev za predaju, a potvrda još nije potpisana. Provjerite stanje predaje malo kasnije.",
+    pendingTitle: "Predaja u obradi",
+    waiting: "Predaja je zabilježena {when}. Potpis potvrde još se izdaje; vrijeme predaje se time ne mijenja.",
     check: "Provjeri stanje predaje",
-    signingStarted: "Potpisivanje započelo",
+    signingStarted: "Potpisivanje potvrde započelo",
+    notYetRecorded: "još nije zabilježeno",
     submittedAt: "Vrijeme predaje",
     dueAt: "Rok",
-    signedAt: "Potvrda potpisana",
     assignmentVersion: "Verzija zadatka",
     revision: "Verzija teksta",
-    utc: "Pojedinosti u UTC",
+    utc: "Točne vrijednosti iz potvrde (UTC)",
     late: "Rad je predan nakon roka.",
     record: "Stanje zapisa",
     records: {

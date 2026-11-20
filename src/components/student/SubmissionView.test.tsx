@@ -42,7 +42,7 @@ describe("SubmissionView (WEB-26, S: E-10)", () => {
   });
 
   it("never says the work is submitted on any variant", () => {
-    for (const markup of [render(), render({ work: { kind: "loading" } }), render({ sending: true }), render({ next: { go: null, text: t.unknown, action: "check", retry: false } })]) {
+    for (const markup of [render(), render({ work: { kind: "loading" } }), render({ sending: true }), render({ next: { go: null, text: t.unknown, offer: "check", retry: false } })]) {
       expect(text(markup)).not.toMatch(/\bpredano\b|Rad je predan/i);
     }
   });
@@ -99,7 +99,7 @@ describe("nextOf: the closed outcome table (S: PO-17, P-10)", () => {
 
   it("ceka after the check is never success and offers the check again", () => {
     const next = nextOf({ kind: "check", state: { kind: "ceka", revision: 7, requestedAt: "2026-11-15T21:00:00.000000Z" } });
-    expect(next).toEqual({ go: null, text: t.waiting, action: "check", retry: false });
+    expect(next).toEqual({ go: null, text: t.waiting, offer: "check", retry: false });
   });
 
   it("maps refusals, incomplete and unknown to their own lines", () => {
@@ -107,13 +107,13 @@ describe("nextOf: the closed outcome table (S: PO-17, P-10)", () => {
     expect(line(nextOf({ kind: "odbijeno", reason: "record_discontinuous" }))).toBe(t.blocked.record_discontinuous);
     expect(line(nextOf({ kind: "odbijeno", reason: "no_evidence" }))).toBe(t.blocked.no_evidence);
     expect(line(nextOf({ kind: "nedovrseno" }))).toBe(t.incomplete);
-    expect(nextOf({ kind: "nepoznato" })).toEqual({ go: null, text: t.unknown, action: "check", retry: false });
+    expect(nextOf({ kind: "nepoznato" })).toEqual({ go: null, text: t.unknown, offer: "check", retry: false });
     expect(line(nextOf({ kind: "check", state: { kind: "nepoznato" } }))).toBe(t.unknown);
     expect(nextOf({ kind: "check", state: { kind: "none" } })).toEqual({ go: null, text: t.notRecorded, retry: true });
   });
 
   it("maps the errors the inventory does not name (P-10 proposal)", () => {
-    expect(nextOf({ kind: "greska", code: "stale_revision", currentRevision: 8 })).toEqual({ go: null, text: t.errors.stale_revision, action: "reload", retry: false });
+    expect(nextOf({ kind: "greska", code: "stale_revision", currentRevision: 8 })).toEqual({ go: null, text: t.errors.stale_revision, offer: "reload", retry: false });
     expect(nextOf({ kind: "greska", code: "not_acknowledged" })).toEqual({ go: "notice" });
     expect(line(nextOf({ kind: "greska", code: "not_open" }))).toBe(t.errors.not_open);
     expect(line(nextOf({ kind: "greska", code: "too_large" }))).toBe(t.errors.too_large);
