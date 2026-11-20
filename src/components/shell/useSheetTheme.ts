@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 
 import {
   readSheetTheme, SHEET_THEME_DEFAULT, writeSheetTheme, type SheetTheme,
-} from "@/lib/ui/sheet-theme";
+} from "../../lib/ui/sheet-theme";
 
 /**
  * One sheet theme per page, shared by the sheet (SheetFrame) and whatever

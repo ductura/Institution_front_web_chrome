@@ -1,7 +1,9 @@
 export { default as AssignmentOverview, OVERVIEW_COLUMNS, type AssignmentOverviewProps } from "./AssignmentOverview";
 export { chooseAssignment, type OverviewChoice } from "./assignment-overview-choice";
+export { default as CourseStudents } from "./CourseStudents";
 export { default as LiveWorkFrame, type LiveWorkFrameData, type RecordState } from "./LiveWorkFrame";
 export { default as MentoredWorks } from "./MentoredWorks";
+export { default as MentorshipRequests, type RequestsRead } from "./MentorshipRequests";
 export { byFamilyName, liveHref, stateText, studentName, workTypeText } from "./mentored-works-view";
 export { readMentoredWorks, type MentoredWork, type MentoredWorksCall, type MentoredWorksRead, type MentoredWorkState, type MentoredWorkType } from "./mentored-works-read";
 export { default as TeacherCourses } from "./TeacherCourses";

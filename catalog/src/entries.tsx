@@ -7,9 +7,17 @@ import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import type { OverviewRow } from "../../src/client/teacher-reads";
+import { BeforeSubmitView, type BeforeSubmitViewProps } from "../../src/components/predaja/BeforeSubmit.tsx";
+import { DeclarationView, type DeclarationViewProps, type RecordedSummary } from "../../src/components/predaja/Declaration.tsx";
+import type { SubmissionNote, SubmissionReceipt } from "../../src/client/submission.ts";
+import { WorkspaceTopBarView } from "../../src/components/editor/WorkspaceTopBar.tsx";
+import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipRequests.tsx";
+import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
-  AppShell, AssignmentOverview, EmptyHome, LiveWorkFrame, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
-  type AssignmentSubmission, type LiveWorkFrameData, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
+  AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments,
+  NoteDialog, OutlinePanel, ReceiptPanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses,
+  type AssignmentSubmission, type LiveWorkFrameData, type ReceiptRead, type SubmissionViewProps, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
+  type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -315,6 +323,128 @@ const liveFrame = (over: Partial<LiveWorkFrameData> = {}): LiveWorkFrameData => 
 });
 const liveText = <p>Izmišljena rečenica rada koja stoji umjesto teksta uživo.</p>;
 
+// Invented process summaries and note (as in BeforeSubmit.test.tsx, WEB-25); no real student data.
+const summaryWithGap: ProcessSummaryV1 = {
+  summaryFormat: "ductus-process-summary-v1",
+  sessions: { evidenceKind: "observed", breakAboveMinutes: 30, count: 1,
+    items: [{ from: "2026-11-10T09:00:00.000Z", to: "2026-11-10T10:00:00.000Z" }] },
+  pastes: { evidenceKind: "observed", listedAboveCharacters: 200,
+    listed: [{ at: { from: "2026-11-10T09:20:00.000Z", to: "2026-11-10T09:21:00.000Z" }, characters: 340, origin: "not_observed" }],
+    smallerCount: 2 },
+  gaps: { evidenceKind: "observed", items: [{ previousEndedAt: "2026-11-10T09:30:00.000Z", nextStartedAt: "2026-11-10T09:45:00.000Z" }] },
+  recordState: "has_gaps",
+};
+const summaryEmpty: ProcessSummaryV1 = {
+  summaryFormat: "ductus-process-summary-v1",
+  sessions: { evidenceKind: "observed", breakAboveMinutes: 30, count: 0, items: [] },
+  pastes: { evidenceKind: "observed", listedAboveCharacters: 200, listed: [], smallerCount: 0 },
+  gaps: { evidenceKind: "observed", items: [] },
+  recordState: "complete",
+};
+const recorded = (summary: ProcessSummaryV1): RecordedSummary => summary;
+const invented: SubmissionNote = { id: "izmisljena-napomena-1", text: "Izmišljena napomena uz predaju.", createdAt: "2026-11-10T10:05:00.000000Z" };
+const nothing = () => undefined;
+const declaration = (over: Partial<DeclarationViewProps>) => (
+  <DeclarationView recorded={{ kind: "ready", summary: recorded(summaryWithGap) }} confirmed
+    onConfirm={nothing} onNext={nothing} onBack={nothing} onRetry={nothing} {...over} />
+);
+const beforeSubmit = (over: Partial<BeforeSubmitViewProps>) => (
+  <BeforeSubmitView summary={{ kind: "ready", summary: summaryWithGap }} notes={{ kind: "ready", notes: [invented] }}
+    stage={{ kind: "open" }} confirmed online onNext={nothing} onDeclaration={nothing} onBack={nothing}
+    onReceipt={nothing} onRetry={nothing} onOpenNote={nothing} {...over} />
+);
+const topBar = (title: string | null, online: boolean) => (
+  <WorkspaceTopBarView assignmentId="izmisljeni-zadatak-1" title={title} online={online} theme="light" onTheme={nothing} />
+);
+
+/** The note dialog after the given presses: its states live inside it (PD-4), so the catalogue presses its own buttons. */
+function NoteProbe({ text = "", press = false, pending = false }: { text?: string; press?: boolean; pending?: boolean }) {
+  const ref = (box: HTMLDivElement | null) => {
+    if (box === null || box.dataset.pressed === "yes") return;
+    box.dataset.pressed = "yes";
+    const field = box.querySelector("textarea");
+    if (field !== null && text !== "") {
+      // Typed as a person would, so React sees the change (a plain value assignment it would not).
+      field.focus({ preventScroll: true });
+      document.execCommand("insertText", false, text);
+      field.blur();
+    }
+    if (press) queueMicrotask(() => box.querySelector("button")?.click());
+  };
+  return (
+    <div ref={ref}>
+      <NoteDialog open modal={false} onClose={nothing} onAdded={nothing}
+        onAdd={() => (pending ? new Promise(() => undefined) : Promise.resolve({ kind: "added" as const, note: invented }))} />
+    </div>
+  );
+}
+
+// Invented roster (WEB-31, N-04): two groups, a seminar that opens N-06, a student without a name.
+type Roster = Parameters<typeof CourseStudents>[0]["result"];
+const rosterStudents = [
+  { studentId: "izmisljeni-student-1", name: "Vesna Žbunić", group: "A", works: [
+    { assignmentId: "izmisljeni-zadatak-1", state: "predano", title: "Izmišljeni seminar", workType: "seminar_paper",
+      documentId: "70000000-0000-4000-8000-000000000011" },
+  ] },
+  { studentId: "izmisljeni-student-2", name: "Ana Izmišljenić", group: "B", works: [
+    { assignmentId: "izmisljeni-zadatak-1", state: "nakon_roka", title: "Izmišljeni seminar", workType: "seminar_paper", documentId: null },
+    { assignmentId: "izmisljeni-zadatak-2", state: "ceka", title: "Izmišljeni ogled", workType: "essay" },
+  ] },
+  { studentId: "izmisljeni-student-3", name: null, group: "A", works: [] },
+] satisfies (Roster & { kind: "ready" })["students"];
+const roster = (result: Roster) => <CourseStudents result={result} />;
+
+// Invented mentorship requests (WEB-32, N-16).
+const requests: (RequestsRead & { kind: "ready" })["requests"] = [
+  { requestId: "70000000-0000-4000-8000-000000000101", studentName: "Vesna Žbunić", title: "Izmišljeni završni rad", workType: "bachelor_thesis", requestedAt: "2026-11-02T09:00:00Z" },
+  { requestId: "70000000-0000-4000-8000-000000000102", studentName: null, title: "Izmišljeni diplomski rad", workType: "master_thesis", requestedAt: "2026-11-05T13:30:00Z" },
+];
+/** The first button pressed once on mount: a state that lives inside the screen. */
+const pressFirst = (box: HTMLDivElement | null) => {
+  if (box === null || box.dataset.pressed === "yes") return;
+  box.dataset.pressed = "yes";
+  queueMicrotask(() => box.querySelector("button")?.click());
+};
+
+// Invented work on the server (WEB-26, step 4); no real student text.
+const submissionStep = (over: Partial<SubmissionViewProps>) => (
+  <SubmissionView work={{ kind: "ready", documentId: "70000000-0000-4000-8000-000000000021", revision: 4, nodes: [
+    { type: "heading", level: 1, children: [{ text: "Uvod", marks: [] }] },
+    { type: "paragraph", children: [{ text: "Izmišljena rečenica rada, ", marks: [] }, { text: "s naglaskom", marks: ["italic"] }, { text: ".", marks: [] }] },
+    { type: "bulletItem", children: [{ text: "Izmišljena prva točka", marks: [] }] },
+    { type: "bulletItem", children: [{ text: "Izmišljena druga točka", marks: [] }] },
+  ] }} stage={{ kind: "open" }} confirmed online sending={false} checking={false} next={null}
+    onOpen={nothing} onCheck={nothing} onReload={nothing} onDeclaration={nothing} onBack={nothing} {...over} />
+);
+
+// Invented signed receipt (as in ReceiptPanel.test.tsx, WEB-27); no real identifier or key.
+const signedReceipt: SubmissionReceipt = {
+  payload: {
+    receiptSchema: "ductus-submission-receipt-v2",
+    submissionId: "11111111-1111-4111-8111-111111111111",
+    evidenceDomainId: "22222222-2222-4222-8222-222222222222",
+    principalId: "33333333-3333-4333-8333-333333333333",
+    assignmentId: "44444444-4444-4444-8444-444444444444",
+    assignmentVersion: 2,
+    documentId: "doc-izmisljeni-1",
+    evidencePackageId: "pkg-izmisljeni-1",
+    revision: 7,
+    artifactSha256: "0123456789abcdef".repeat(4),
+    evidenceHeadSegmentHash: "f".repeat(64),
+    evidenceRecord: "continuous",
+    requestedAt: "2026-11-19T13:05:00.000000Z",
+    dueAt: "2026-11-20T22:59:00.000000Z",
+    afterDeadline: false,
+    signedAt: "2026-11-19T13:05:01.000000Z",
+  },
+  payloadDigestSha256: "e".repeat(64),
+  signature: { algorithm: "Ed25519", keyId: "kljuc-izmisljeni", keyVersion: "1", signatureEncoding: "raw", signatureBase64Url: "A".repeat(86) },
+};
+const receiptPanel = (read: ReceiptRead) => (
+  <ReceiptPanel read={read} retryHref="/rad/izmisljeni/predaja/potvrda" summaryHref="/rad/izmisljeni/predaja/pregled"
+    submitHref="/rad/izmisljeni/predaja" />
+);
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -387,5 +517,87 @@ export const SCREEN_ENTRIES = {
     greška: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={null} recordState={null} text={<p role="alert">{t.errorPage.errorBody}</p>} />,
     puno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={liveFrame()} recordState="has_gaps" text={liveText} />,
     onemogućeno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={liveFrame({ submitted: true, previousId: null, nextId: null })} recordState="complete" text={liveText} />,
+  },
+  // WEB-23 (S: E-7): the bar has no error of its own; a title the read could not give shows the generic one.
+  WorkspaceTopBar: {
+    prazno: () => topBar(null, true),
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <div>{topBar(null, true)}<p role="alert">{t.errorPage.errorBody}</p></div>,
+    puno: () => topBar("Izmišljeni seminar: javne politike", true),
+    onemogućeno: () => topBar("Izmišljeni seminar: javne politike", false),
+  },
+  // WEB-24 (S: E-9): the declaration step as DeclarationView draws it; the page adds only the router.
+  Declaration: {
+    prazno: () => declaration({ recorded: { kind: "ready", summary: recorded(summaryEmpty) }, confirmed: false }),
+    učitavanje: () => declaration({ recorded: { kind: "loading" }, confirmed: false }),
+    greška: () => declaration({ recorded: { kind: "error" }, confirmed: false }),
+    puno: () => declaration({}),
+    onemogućeno: () => declaration({ confirmed: false }),
+  },
+  // WEB-25 (S: E-8): the step before submitting as BeforeSubmitView draws it.
+  BeforeSubmit: {
+    prazno: () => beforeSubmit({ summary: { kind: "ready", summary: summaryEmpty }, notes: { kind: "ready", notes: [] } }),
+    učitavanje: () => beforeSubmit({ summary: { kind: "loading" }, notes: { kind: "loading" } }),
+    greška: () => beforeSubmit({ summary: { kind: "error" }, notes: { kind: "unavailable" } }),
+    puno: () => beforeSubmit({}),
+    onemogućeno: () => beforeSubmit({ online: false }),
+  },
+  // PD-4: empty, a press on "Dodaj" with nothing written, a written note, and a note on its way (nothing answers).
+  NoteDialog: {
+    prazno: () => <NoteProbe />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <NoteProbe press />,
+    puno: () => <NoteProbe text="Izmišljena napomena uz predaju." />,
+    onemogućeno: () => <NoteProbe text="Izmišljena napomena uz predaju." press pending />,
+  },
+  // WEB-31 (N-04): "onemogućeno" is a roster with no work to open (an essay, a seminar without a document).
+  CourseStudents: {
+    prazno: () => roster({ kind: "ready", students: [], courseName: "Izmišljeni kolegij" }),
+    učitavanje: () => roster({ kind: "loading" }),
+    greška: () => roster({ kind: "unavailable", retryHref: "/nastavnik/kolegiji" }),
+    puno: () => roster({ kind: "ready", students: rosterStudents, courseName: "Izmišljeni kolegij" }),
+    onemogućeno: () => roster({ kind: "ready", students: rosterStudents.slice(1) }),
+  },
+  // WEB-32 (N-16): "onemogućeno" is a decision on its way (nothing answers): the other request waits.
+  MentorshipRequests: {
+    prazno: () => <MentorshipRequests read={{ kind: "ready", requests: [] }} here="/nastavnik/mentorstva" />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <MentorshipRequests read={{ kind: "unavailable" }} here="/nastavnik/mentorstva" />,
+    puno: () => <MentorshipRequests read={{ kind: "ready", requests }} here="/nastavnik/mentorstva" />,
+    onemogućeno: () => (
+      <div ref={pressFirst}>
+        <MentorshipRequestsView read={{ kind: "ready", requests }} here="/nastavnik/mentorstva" call={() => new Promise(() => undefined)} />
+      </div>
+    ),
+  },
+  // WEB-26 (PD-3): a failed submission is told by the page, never by the dialog, so greška is the
+  // dialog asked again after the page's alert; onemogućeno is the submission on its way.
+  SubmitDialog: {
+    prazno: () => <SubmitDialog open modal={false} revision={1} late={false} sending={false} onSubmit={nothing} onClose={nothing} />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => (
+      <div>
+        <p role="alert">{t.errorPage.errorBody}</p>
+        <SubmitDialog open modal={false} revision={4} late={false} sending={false} onSubmit={nothing} onClose={nothing} />
+      </div>
+    ),
+    puno: () => <SubmitDialog open modal={false} revision={4} late sending={false} onSubmit={nothing} onClose={nothing} />,
+    onemogućeno: () => <SubmitDialog open modal={false} revision={4} late={false} sending onSubmit={nothing} onClose={nothing} />,
+  },
+  // WEB-26 (step 4): the work as the server holds it, sent only from here.
+  SubmissionView: {
+    prazno: () => submissionStep({ work: { kind: "empty" } }),
+    učitavanje: () => submissionStep({ work: { kind: "loading" } }),
+    greška: () => submissionStep({ work: { kind: "unavailable" } }),
+    puno: () => submissionStep({}),
+    onemogućeno: () => submissionStep({ online: false }),
+  },
+  // WEB-27 (S: E-11): "onemogućeno" is a submission recorded and waiting for its signature, never "predano".
+  ReceiptPanel: {
+    prazno: () => receiptPanel({ kind: "none" }),
+    učitavanje: () => receiptPanel({ kind: "loading" }),
+    greška: () => receiptPanel({ kind: "error" }),
+    puno: () => receiptPanel({ kind: "potvrdeno", receipt: signedReceipt }),
+    onemogućeno: () => receiptPanel({ kind: "ceka", revision: 7, requestedAt: "2026-11-19T13:05:00.000000Z" }),
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
