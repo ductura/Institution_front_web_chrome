@@ -1,0 +1,15 @@
+export const publicVerificationHr = {
+  title: "Provjera potvrde",
+  intro: "Unesite kod s potvrde ili otvorite stranicu skeniranjem QR koda.",
+  code: "Kod s potvrde",
+  submit: "Provjeri potvrdu",
+  invalid: "Unesite cijeli kod s potvrde ili ponovno skenirajte QR kod.",
+  pending: "Provjeravam potvrdu…",
+  matched: "Predani tekst nije mijenjan od predaje.",
+  notMatched: "Potvrda se ne podudara s kodom.",
+  unavailable: "Provjera trenutačno nije dostupna. Pokušajte ponovno.",
+  rateLimited: "Previše pokušaja. Pričekajte pa pokušajte ponovno.",
+  submittedAt: "Vrijeme predaje",
+  signedAt: "Vrijeme potpisa",
+  keyId: "Oznaka ključa potpisa",
+} as const;
