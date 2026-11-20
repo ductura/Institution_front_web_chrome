@@ -1,6 +1,10 @@
-import { createApi } from "./api";
+import { createApi, type ApiResult, type Input } from "./api";
 
 type AssignmentFailure = { kind: "signedOut" | "notTeacher" | "notFound" | "unavailable" };
+type ReadOperation = "institution.assignment.get" | "institution.work-work-language.get";
+type AssignmentRead<Id extends ReadOperation> =
+  | { kind: "ready"; value: Extract<ApiResult<Id>, { ok: true }>["body"] }
+  | AssignmentFailure;
 
 function readFailure(status: number, code?: string): AssignmentFailure {
   if (status === 401) return { kind: "signedOut" };
@@ -9,26 +13,30 @@ function readFailure(status: number, code?: string): AssignmentFailure {
   return { kind: "unavailable" };
 }
 
-export async function readAssignmentVersion(assignmentId: string, api = createApi()) {
+export async function readAssignmentVersion(
+  assignmentId: string, api = createApi(),
+): Promise<AssignmentRead<"institution.assignment.get">> {
   const id = assignmentId.toLowerCase();
   const result = await api("institution.assignment.get", { params: { assignmentId: id }, query: undefined, body: undefined }).catch(() => null);
-  if (result === null) return { kind: "unavailable" } as const;
+  if (result === null) return { kind: "unavailable" };
   if (!result.ok) return readFailure(result.status, result.code);
   if (result.body.assignmentId !== id || !Number.isFinite(Date.parse(result.body.opensAt))
     || !Number.isFinite(Date.parse(result.body.dueAt))) return readFailure(503);
-  return { kind: "ready", value: result.body } as const;
+  return { kind: "ready", value: result.body };
 }
 
-export async function readWorkLanguage(assignmentId: string, documentId: string, api = createApi()) {
+export async function readWorkLanguage(
+  assignmentId: string, documentId: string, api = createApi(),
+): Promise<AssignmentRead<"institution.work-work-language.get">> {
   if (documentId === "." || documentId === "..") return readFailure(422);
   const result = await api("institution.work-work-language.get", {
     params: { assignmentId: assignmentId.toLowerCase(), documentId }, query: undefined, body: undefined,
   }).catch(() => null);
-  if (result === null) return { kind: "unavailable" } as const;
-  return result.ok ? { kind: "ready", value: result.body } as const : readFailure(result.status, result.code);
+  if (result === null) return { kind: "unavailable" };
+  return result.ok ? { kind: "ready", value: result.body } : readFailure(result.status, result.code);
 }
 
-type Language = "hr" | "en";
+type Language = NonNullable<Input<"institution.work-work-language.post">["body"]["language"]>;
 
 export type WorkLanguageWrite =
   | { kind: "saved"; language: Language }
