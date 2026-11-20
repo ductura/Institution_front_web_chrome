@@ -1,4 +1,4 @@
-import type { ProcessSummaryV1 } from "@/domain/projection/process-summary";
+import type { ProcessSummaryV1 } from "@/client/process-summary";
 import { compareHr } from "@/domain/text/compare-hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -11,7 +11,7 @@ const t = messagesHr.fastPath;
 /**
  * The fast path of a teacher through the works of one assignment (F-11, D-80
  * point 2): the data shape and the pure parts of the screen. The shape is the
- * answer of B-11c (#757 "Oblik odgovora"), read by `src/client/fast-path.ts`.
+ * answer of B-11c (#757 "Oblik odgovora"), read by `fast-path/read.ts`.
  */
 
 export type WorkState = "notice_pending" | "writing" | "submitted";

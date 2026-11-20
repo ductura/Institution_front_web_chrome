@@ -14,3 +14,4 @@ export { default as Declaration } from "./predaja/Declaration";
 export { NoteDialog } from "./predaja/NoteDialog";
 export { ReceiptPanel, type ReceiptPanelProps, type ReceiptRead } from "./predaja/ReceiptPanel";
 export { SubmitDialog } from "./predaja/SubmitDialog";
+export { VerificationForm } from "./public-verification/VerificationForm";

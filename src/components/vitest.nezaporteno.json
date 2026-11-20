@@ -20,7 +20,6 @@
    "support/problem-report-dialog.test.ts",
    "teacher/LiveText.test.ts",
    "teacher/SummaryCard.test.ts",
-   "teacher/fast-path.test.ts",
    "teacher/teacher-access.test.ts"
   ],
   "Test čita datoteke po rasporedu repoa Ductus (app/, src/components/ od korijena) — do WEB PR-a koji ga prilagodi": [

@@ -16,7 +16,7 @@ import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipR
 import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
   AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments,
-  NoteDialog, OutlinePanel, ReceiptPanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses,
+  NoteDialog, OutlinePanel, ReceiptPanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses, VerificationForm,
   type AssignmentSubmission, type LiveWorkFrameData, type ReceiptRead, type SubmissionViewProps, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
   type TeacherCourse,
 } from "../../src/components/index.ts";
@@ -694,6 +694,7 @@ const receiptPanel = (read: ReceiptRead) => (
   <ReceiptPanel read={read} retryHref="/rad/izmisljeni/predaja/potvrda" summaryHref="/rad/izmisljeni/predaja/pregled"
     submitHref="/rad/izmisljeni/predaja" />
 );
+const verificationCode = { receiptId: signedReceipt.payload.submissionId, fingerprint: signedReceipt.payload.artifactSha256 };
 
 export const SCREEN_ENTRIES = {
   AppShell: {
@@ -849,5 +850,17 @@ export const SCREEN_ENTRIES = {
     greška: () => receiptPanel({ kind: "error" }),
     puno: () => receiptPanel({ kind: "potvrdeno", receipt: signedReceipt }),
     onemogućeno: () => receiptPanel({ kind: "ceka", revision: 7, requestedAt: "2026-11-19T13:05:00.000000Z" }),
+  },
+  VerificationForm: {
+    prazno: () => <VerificationForm state={{ kind: "idle" }} onChange={nothing} onVerify={nothing} />,
+    učitavanje: () => <VerificationForm code={verificationCode} state={{ kind: "pending" }} onVerify={nothing} />,
+    greška: () => <VerificationForm code={verificationCode} state={{ kind: "unavailable" }} onChange={nothing} onVerify={nothing} />,
+    puno: () => <VerificationForm code={verificationCode} state={{
+      kind: "matched",
+      submittedAt: "2026-11-20T10:15:30.123456Z",
+      signedAt: "2026-11-20T10:15:31.654321Z",
+      keyId: "izmisljeni-kljuc-potvrde",
+    }} onChange={nothing} onVerify={nothing} />,
+    onemogućeno: () => <VerificationForm code={verificationCode} state={{ kind: "rateLimited" }} />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;

@@ -58,6 +58,9 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/parts/EditorCitationSettings.tsx",
   "editor/parts/EditorWorkParts.tsx",
   "editor/parts/WorkPartsDialog.tsx",
+  "editor/history/WorkHistory.tsx", // WEB-9E: awaits work.versions.get in the contract and the toolbar integration.
+  "editor/print-export/PrintExportDialog.tsx", // WEB-10E: awaits the export client and toolbar integration.
+  "editor/submission-package/SubmissionPackage.tsx", // WEB-9E: awaits the toolbar integration.
   "editor/sources/panel/SourceList.tsx",
   "editor/sources/quick-source/QuickSource.tsx",
   "editor/triggers/TriggerPopover.tsx",
@@ -84,6 +87,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "student/TeacherViewSheet.tsx",
   "student/WorkDocumentProvider.tsx",
   "student/radovi/MyWorks.tsx",
+  "student/receipt/ReceiptRecord.tsx", // WEB-9E: awaits mounting under ReceiptPanel (predaja, another lane).
   "student/upis/EnrollForm.tsx",
   "summary/ProcessSummaryView.tsx",
   "support/ProblemReport.tsx",
