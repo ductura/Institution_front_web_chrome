@@ -167,20 +167,18 @@ describe("ProcessSummaryView: Europe/Zagreb times", () => {
     expect(textOf(view)).toContain(overview.editingDuration.gapNote);
   });
 
-  it("uses the supplied editing minutes and shows only observed assistant transfers in that section", () => {
+  it("uses the supplied editing minutes and shows observed assistant transfers by time", () => {
     const markup = render(summaryWith(), {
       details: {
         activeEditingMinutes: 0,
-        keyEvents: [
-          { kind: "import", at: { from: "2026-10-14T09:00:00.000Z", to: "2026-10-14T09:00:00.000Z" } },
-          { kind: "ai-transfer", at: { from: "2026-10-14T16:00:00.000Z", to: "2026-10-14T16:01:00.000Z" } },
+        assistantTransfers: [
+          { from: "2026-10-14T16:00:00.000Z", to: "2026-10-14T16:01:00.000Z" },
         ],
       },
     });
     expect(markup).toContain("0 min");
     expect(markup).toContain(`${overview.assistant.transfer} · 14. listopada 2026. od 18:00 do 18:01`);
-    expect(markup).not.toContain("11:00");
-    const empty = render(EMPTY, { details: { activeEditingMinutes: 0, keyEvents: [] } });
+    const empty = render(EMPTY, { details: { activeEditingMinutes: 0, assistantTransfers: [] } });
     expect(empty).toContain(overview.assistant.none);
     expect(empty).toContain(overview.editingDuration.unavailable);
     expect(render(EMPTY)).not.toContain(overview.assistant.none);

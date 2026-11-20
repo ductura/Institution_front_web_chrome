@@ -19,7 +19,7 @@ type Gap = ProcessSummaryV1["gaps"]["items"][number];
 
 export type ProcessSummaryDetails = {
   readonly activeEditingMinutes: number;
-  readonly keyEvents: readonly { readonly kind: "import" | "ai-transfer"; readonly at: MinuteSpan }[];
+  readonly assistantTransfers: readonly MinuteSpan[];
 };
 
 /**
@@ -150,7 +150,7 @@ export function ProcessSummaryView({ summary, details }: ProcessSummaryViewProps
   const { sessions, pastes, gaps } = summary;
   const period = workPeriod(sessions.items);
   const minutes = period === null ? null : details?.activeEditingMinutes ?? editingMinutes(sessions.items, gaps.items);
-  const transfers = details?.keyEvents.filter(({ kind }) => kind === "ai-transfer");
+  const transfers = details?.assistantTransfers;
   const sessionThreshold = `${t.sessions.threshold} ${count(sessions.breakAboveMinutes, t.units.minutesGenitive)}`;
   const listedAbove = `${t.pastes.listedThreshold} ${count(pastes.listedAboveCharacters, t.units.charactersGenitive)}`;
 
@@ -244,7 +244,7 @@ export function ProcessSummaryView({ summary, details }: ProcessSummaryViewProps
       overview.assistant.heading,
       transfers.length === 0
         ? h("p", { className: styles.empty }, overview.assistant.none)
-        : list(transfers.map(({ at }) => [
+        : list(transfers.map((at) => [
             `${overview.assistant.transfer} · ${minuteSpanText(at)} `,
             evidenceKind("observed"),
           ])),
