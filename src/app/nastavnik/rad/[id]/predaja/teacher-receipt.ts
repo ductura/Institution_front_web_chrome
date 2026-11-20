@@ -88,6 +88,8 @@ export async function readTeacherWork(call: WorkCall, documentId: string): Promi
  * is an error. A receipt of another work is an error, never shown.
  */
 export function teacherReceiptRead(read: SubmissionRead, work: TeacherWork): ReceiptRead {
+  // The work and the receipt are two reads: a failed receipt read is an error whatever the work state says.
+  if (read.kind !== "potvrdeno" && read.kind !== "ceka" && read.kind !== "none") return { kind: "error" };
   if (read.kind === "potvrdeno" && read.receipt.payload.documentId !== work.documentId) return { kind: "error" };
   return studentReceiptRead(read, work.state === "nije_predano" ? "open" : "submitted");
 }

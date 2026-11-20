@@ -92,6 +92,15 @@ describe("WEB-35 teacher receipt (N-07)", () => {
     expect(render(read)).not.toMatch(SAYS_SUBMITTED);
   });
 
+  it.each([
+    ["no transport", undefined],
+    ["a 503", receipt(503, null)],
+    ["a malformed answer", receipt(200, { state: "none", extra: 1 })],
+    ["a broken connection", (() => Promise.reject(new TypeError("Failed to fetch"))) as TeacherCall],
+  ])("a work not submitted whose receipt read fails (%s) is an error, never prazno", async (_name, call) => {
+    expect(await readOf(work(200, { ...WORK, state: "nije_predano" }), call)).toEqual({ kind: "error" });
+  });
+
   it.each(["predano", "nakon_roka", "ceka"] as const)("a work %s without a receipt is an error, never prazno", async (state) => {
     expect(await readOf(work(200, { ...WORK, state }), receipt(200, { state: "none" }))).toEqual({ kind: "error" });
   });
