@@ -8,6 +8,7 @@ import type { WorkParts } from "./WorkPartsDialog";
 
 const display = { abbreviations: false, romanNumerals: false, endnotes: false, index: false };
 const schema = new Schema({
+  marks: { bold: {} },
   nodes: {
     doc: { content: "block+" },
     heading: { group: "block", content: "text*", attrs: { level: { default: 2 } } },
@@ -65,6 +66,19 @@ it("protects an ambiguous document with duplicate section headings", () => {
   expect(readWorkParts(doc, display)).toBeNull();
   expect(writeWorkParts(tr, sections)).toBe(false);
   expect(tr.doc.eq(doc)).toBe(true);
+});
+
+it("keeps formatting when another part changes and refuses to flatten a formatted part", () => {
+  const bio = schema.node("paragraph", null, schema.text("Izmišljeni životopis.", [schema.mark("bold")]));
+  const doc = document(heading(t.biography), bio);
+  const tr = EditorState.create({ doc }).tr;
+  expect(writeWorkParts(tr, sections)).toBe(true);
+  expect(tr.doc.lastChild).toBe(bio);
+
+  const edited = EditorState.create({ doc }).tr;
+  const parts = readWorkParts(doc, display)!;
+  expect(writeWorkParts(edited, { ...parts, biography: { enabled: true, text: "Drugi izmišljeni životopis." } })).toBe(false);
+  expect(edited.doc.eq(doc)).toBe(true);
 });
 
 it("stores only the four display switches and isolates them per work", () => {

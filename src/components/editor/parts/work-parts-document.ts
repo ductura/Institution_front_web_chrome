@@ -62,7 +62,14 @@ export function writeWorkParts(tr: Transaction, value: WorkParts): boolean {
     if (section?.text === effective) continue;
     const paragraphs = effective.split("\n").map((line) => paragraph.create(null, line ? schema.text(line) : undefined));
     if (section) {
-      tr.replaceWith(tr.mapping.map(section.body), tr.mapping.map(section.to), paragraphs);
+      const from = tr.mapping.map(section.body);
+      const to = tr.mapping.map(section.to);
+      let richContent = false;
+      tr.doc.nodesBetween(from, to, (node) => {
+        if (node.type !== paragraph && (!node.isText || node.marks.length > 0)) richContent = true;
+      });
+      if (richContent) return false;
+      tr.replaceWith(from, to, paragraphs);
     } else {
       const first = tr.doc.firstChild;
       const afterTitle = first?.type === heading && first.attrs.level === 1 ? first.nodeSize : 0;

@@ -38,6 +38,8 @@ import type { SheetTheme } from "@/lib/ui/sheet-theme";
 
 import styles from "./EditorToolbar.module.css";
 import ToolbarMenu from "./ToolbarMenu";
+import { crossReferenceMessages } from "./crossref/messages.hr";
+import type { AcademicAtom } from "./footnotes/inline-atoms";
 import { workPartsMessages } from "./parts/messages.hr";
 import {
   convertBlock, copyText, glyphOf, insertChar, insertHole, MAX_COLLAPSED, pushRecent, readRecent, rovingIndex,
@@ -169,10 +171,11 @@ const THEMES: readonly { key: SheetTheme; label: string }[] = [
  * The same toolbar for any editor, e.g. the public sandbox (DAN-354), which
  * has no local document: it only runs that editor's own commands.
  */
-export default function EditorToolbarFor({ editor, onOpenWorkParts, onOpenCitationSettings }: {
+export default function EditorToolbarFor({ editor, onOpenWorkParts, onOpenCitationSettings, onOpenAcademicAtom }: {
   editor: Editor | null;
   onOpenWorkParts?: () => void;
   onOpenCitationSettings?: () => void;
+  onOpenAcademicAtom?: (kind: AcademicAtom) => boolean;
 }) {
   const state = useEditorState({ editor, selector: ({ editor: e }) => stateOf(e) }) ?? IDLE;
   const theme = useSheetTheme();
@@ -245,7 +248,11 @@ export default function EditorToolbarFor({ editor, onOpenWorkParts, onOpenCitati
       setOpenMenu(open ? menu : null);
     },
   });
-  const insertItems = Object.entries(t.toolbar.insertItems).map(([key, label]) => item(key, label, key === "hole" && writeOk));
+  const insertItems = Object.entries(t.toolbar.insertItems).map(([key, label]) => {
+    const atom = key === "footnote" || key === "xref";
+    return item(key, key === "xref" ? crossReferenceMessages.title : label,
+      writeOk && (key === "hole" || (atom && !!onOpenAcademicAtom)));
+  });
   if (onOpenWorkParts) insertItems.push(item("workParts", workPartsMessages.title, writeOk));
   const viewItems = THEMES.map(({ key, label }) => ({
     key, label, role: "menuitemradio" as const, checked: theme === key,
@@ -368,6 +375,9 @@ export default function EditorToolbarFor({ editor, onOpenWorkParts, onOpenCitati
         menuLabel={t.toolbar.insertMenu}
         items={insertItems}
         onSelect={(key) => {
+          if (key === "footnote" || key === "xref") {
+            return onOpenAcademicAtom?.(key === "footnote" ? "footnote" : "crossReference") ? "close-return" : "keep";
+          }
           if (key === "workParts" && onOpenWorkParts && editor?.isEditable && !editor.isDestroyed) {
             onOpenWorkParts();
             return "close-return";
