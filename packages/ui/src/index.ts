@@ -41,3 +41,5 @@ export { type SearchableListItem } from "./components/searchable-list/search";
 export { CommentThread, replyKeyAction, replyText, visibleEntries, type CommentEntry, type CommentThreadData, type CommentThreadLabels, type CommentThreadProps } from "./components/comment-thread";
 export { DatePicker, addDays, addMonths, formatHrDate, gridKeyTarget, inRange, isValidIso, monthGrid, parseHrDate, type DatePickerLabels, type DatePickerProps } from "./components/date-picker";
 export { AppointmentCalendar, DEFAULT_SLOTS, dayMark, formatMoment, openingFocus, parseMoment, roundTrip, selectDay, slotMark, type Appointment, type AppointmentCalendarLabels, type AppointmentCalendarProps, type AppointmentStatus, type Moment } from "./components/appointment-calendar";
+export { CheckActionList, orderFindings, selectionOf, type CheckAction, type CheckActionListLabels, type CheckActionListProps, type CheckFinding, type CheckSelection, type CheckSeverity } from "./components/check-action-list";
+export { AssistantComingSoon, type AssistantComingSoonLabels, type AssistantComingSoonProps } from "./components/assistant-coming-soon";
