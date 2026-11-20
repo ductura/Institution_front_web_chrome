@@ -431,6 +431,8 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
 for (const theme of THEMES) {
   for (const width of WIDTHS) {
     test(`${theme} shell at ${width} px: every state of every component fits and keeps its semantics`, async ({ page }) => {
+      // Every component x surface x state is walked; the catalogue has outgrown the 30 s default on the CI runner.
+      test.setTimeout(180_000);
       await open(page, theme, width);
       // No sideways scrolling of the page at any plan width.
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

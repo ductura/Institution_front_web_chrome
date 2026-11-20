@@ -1,15 +1,19 @@
 "use client";
 
+import { Button, PanelTabs } from "@ductura/ui";
 import Link from "next/link";
 import { createElement as h, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
-import { startFastPathReader } from "@/client/fast-path";
+import { signInHref as loginHref } from "@/client/api";
 import { watchSessionEnd, type SessionWatch } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
+import RevisionLog from "@/components/editor/revision/RevisionLog";
 import { ProcessSummaryView } from "@/components/summary/ProcessSummaryView";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import styles from "./FastPath.module.css";
+import { liveWorkHref, SUMMARY_ANCHOR } from "./LiveWorkFrame";
+import { readSessionMark } from "./LiveWorkView";
 import {
   bySurname,
   fastPathLines,
@@ -21,24 +25,30 @@ import {
   type FastPathStudent,
   type WorkState,
 } from "./fast-path";
+import controls from "./fast-path/controls.module.css";
+import { fastPathControlsHr } from "./fast-path/messages.hr";
+import { readRevisionPreview, startFastPathReader, type RevisionRead } from "./fast-path/read";
 
-const t = messagesHr.fastPath;
+const t = { ...messagesHr.fastPath, ...fastPathControlsHr };
 
 /**
  * Screen 11, the teacher's fast path (F-11, D-80 point 2; design demo-tok-v2
  * step 5). Students by surname on the left; for the chosen one the lines,
  * the state of the record, and either the text or the process summary.
  *
- * It only reads: no comment, no revision request, nothing sent to the
- * server but the read. Comments on a paragraph are screen 12. The lines are
- * facts in words, with no percentage, score or order (PRODUCT §5 rule 2),
- * and the summary is the student's own component (rule 5).
+ * It reads the work and separate revision request records. The summary is
+ * the student's own component (PRODUCT §5 rule 5).
  *
  * Written with `createElement`, not JSX, so the unit tests can render it.
  */
-export type FastPathProps = { readonly load: FastPathLoad; readonly signInHref?: string };
+type RevisionAccess = { current: () => boolean; onSignedOut: () => void };
+export type FastPathProps = {
+  readonly load: FastPathLoad;
+  readonly signInHref?: string;
+  readonly revisions?: RevisionAccess;
+};
 
-export function FastPath({ load, signInHref = "/api/auth/login" }: FastPathProps) {
+export function FastPath({ load, signInHref = loginHref(), revisions }: FastPathProps) {
   if (load.state === "loading") return h("p", { className: styles.state, role: "status" }, t.loading);
   if (load.state === "unavailable") return h("p", { className: styles.state, role: "alert" }, t.unavailable);
   if (load.state === "signedOut") {
@@ -57,7 +67,7 @@ export function FastPath({ load, signInHref = "/api/auth/login" }: FastPathProps
     // A foreign, a missing and an empty assignment look the same (#757 invariant 4).
     load.students.length === 0
       ? h("p", { className: styles.state }, t.empty)
-      : h(Roster, { students: bySurname(load.students) }),
+      : h(Roster, { students: bySurname(load.students), revisions }),
   );
 }
 
@@ -66,42 +76,68 @@ export function FastPath({ load, signInHref = "/api/auth/login" }: FastPathProps
  * P-03. Once the session of the page ends in this browser, nothing more is
  * sent and the names and texts leave the screen (F-093, D-118).
  */
-export function FastPathLive({ assignmentId, session, signInHref }: {
-  readonly assignmentId: string; readonly session: SessionMark | null; readonly signInHref: string;
+export function FastPathLive({ assignmentId }: { readonly assignmentId: string | null }) {
+  return assignmentId === null ? h(FastPath, { load: { state: "pickAssignment" } })
+    : h(FastPathSession, { key: assignmentId, assignmentId });
+}
+
+function FastPathSession({ assignmentId }: { readonly assignmentId: string }) {
+  const [session, setSession] = useState<SessionMark | null | undefined>(undefined);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let active = true;
+    void readSessionMark().then((mark) => { if (active) setSession(mark); });
+    return () => { active = false; };
+  }, [attempt]);
+  if (session === undefined) return h(FastPath, { load: { state: "loading" } });
+  if (session === null) {
+    const retry = () => { setSession(undefined); setAttempt((n) => n + 1); };
+    return h("div", null, h(FastPath, { load: { state: "unavailable" } }), h(Button, { onClick: retry }, t.retry));
+  }
+  return h(AssignmentFastPath, { assignmentId, session });
+}
+
+function AssignmentFastPath({ assignmentId, session }: {
+  readonly assignmentId: string; readonly session: SessionMark;
 }) {
   const [load, setLoad] = useState<FastPathLoad>({ state: "loading" });
   const [ended, setEnded] = useState(false);
   const watchRef = useRef<SessionWatch | null>(null);
-  const tag = session?.tag ?? null;
-  const at = session?.at ?? 0;
+  const { tag, at } = session;
+  const end = useCallback(() => setEnded(true), []);
   useLayoutEffect(() => {
-    const watch = watchSessionEnd(tag === null ? null : { tag, at }, () => setEnded(true));
+    const watch = watchSessionEnd({ tag, at }, end);
     watchRef.current = watch;
     return () => {
       watch.close();
       if (watchRef.current === watch) watchRef.current = null;
     };
-  }, [tag, at]);
-  const current = useCallback(() => !(watchRef.current?.ended() ?? false), []);
-  // Another assignment starts from "loading" in the render that first sees it,
-  // never with the students of the one before.
-  const [readFor, setReadFor] = useState(assignmentId);
-  if (readFor !== assignmentId) {
-    setReadFor(assignmentId);
-    setLoad({ state: "loading" });
-  }
+  }, [tag, at, end]);
+  const current = useCallback(() => !ended && watchRef.current?.ended() === false, [ended]);
   useEffect(() => {
     if (ended) return;
-    return startFastPathReader({ assignmentId, onChange: setLoad, current });
-  }, [assignmentId, current, ended]);
-  return h(FastPath, { load: ended ? { state: "signedOut" } : load, signInHref });
+    return startFastPathReader({ assignmentId, onChange: (next) => {
+      if (next.state === "signedOut") end();
+      else setLoad(next);
+    }, current });
+  }, [assignmentId, current, end, ended]);
+  return h(FastPath, {
+    load: ended ? { state: "signedOut" } : load,
+    signInHref: loginHref(`/nastavnik/brz-put?zadatak=${encodeURIComponent(assignmentId)}`),
+    revisions: { current, onSignedOut: end },
+  });
 }
 
-function Roster({ students }: { readonly students: readonly FastPathStudent[] }) {
+function Roster({ students, revisions }: { readonly students: readonly FastPathStudent[]; revisions?: RevisionAccess }) {
   const [selectedId, setSelectedId] = useState(students[0]!.id);
-  const [view, setView] = useState<"text" | "summary">("text");
   // The chosen student stays chosen through a refresh while still on the list.
-  const current = students.find((s) => s.id === selectedId) ?? students[0]!;
+  const index = Math.max(0, students.findIndex((s) => s.id === selectedId));
+  const current = students[index]!;
+  const href = liveWorkHref(current.documentId);
+  const step = (student: FastPathStudent | undefined, label: string) => h(Button, {
+    tone: "quiet", disabled: student === undefined,
+    onClick: () => { if (student) setSelectedId(student.id); },
+  }, label);
 
   return h(
     "div",
@@ -118,9 +154,9 @@ function Roster({ students }: { readonly students: readonly FastPathStudent[] })
             "li",
             { key: s.id },
             h(
-              "button",
+              Button,
               {
-                type: "button",
+                tone: "quiet",
                 className: styles.student,
                 "aria-current": s.id === current.id ? "true" : undefined,
                 onClick: () => setSelectedId(s.id),
@@ -142,24 +178,19 @@ function Roster({ students }: { readonly students: readonly FastPathStudent[] })
         { className: styles.head },
         h("h2", { id: "brz-put-student", className: styles.studentName }, fullName(current)),
         workState(current.work),
-        current.record
-          ? h(
-              "div",
-              { className: styles.toggle, role: "group", "aria-label": t.viewLabel },
-              (["text", "summary"] as const).map((v) =>
-                h(
-                  "button",
-                  { key: v, type: "button", "aria-pressed": view === v, onClick: () => setView(v) },
-                  t.views[v],
-                ),
-              ),
-            )
-          : null,
       ),
       current.record
-        ? h(Record, { student: current, record: current.record, view })
+        ? h(Record, { student: current, record: current.record, href })
         : h("p", { className: styles.state }, t.noRecordYet),
-      h("p", { className: styles.open }, t.openWork, " ", h("span", { className: "soon" }, t.soon)),
+      h("div", { className: controls.actions },
+        step(students[index - 1], t.previous),
+        step(students[index + 1], t.next),
+        href && h(Link, { href, prefetch: false }, t.openWork),
+      ),
+      revisions && href && current.documentId && current.record && h(RevisionPreview, {
+        key: current.documentId, documentId: current.documentId, record: current.record,
+        current: revisions.current, onSignedOut: revisions.onSignedOut,
+      }),
     ),
   );
 }
@@ -177,11 +208,21 @@ function workState(work: WorkState) {
 type RecordProps = {
   readonly student: FastPathStudent;
   readonly record: FastPathRecord;
-  readonly view: "text" | "summary";
+  readonly href: string | null;
 };
 
-function Record({ student, record, view }: RecordProps) {
+function Record({ student, record, href }: RecordProps) {
   const lines = fastPathLines(student, record);
+  const text = h(
+    "article",
+    { className: styles.text, "aria-label": t.textLabel },
+    textRuns(record.blocks).map((run, i): ReactNode => {
+      if (run.kind === "heading") return h("h3", { key: i, className: styles.blockHeading }, run.texts[0]);
+      const paragraphs = run.texts.map((text, j) => h(run.kind === "bulletItem" ? "li" : "p", { key: j }, text));
+      const body = run.kind === "bulletItem" ? h("ul", null, paragraphs) : run.kind === "quote" ? h("blockquote", null, paragraphs) : paragraphs;
+      return h("div", { key: i, className: styles.block }, body);
+    }),
+  );
   return h(
     "div",
     { className: styles.record },
@@ -193,17 +234,35 @@ function Record({ student, record, view }: RecordProps) {
         h("dd", { key: `${line.key}-v`, "data-line": line.key }, line.value),
       ]),
     ),
-    view === "summary"
-      ? h(ProcessSummaryView, { summary: record.summary })
-      : h(
-          "article",
-          { className: styles.text, "aria-label": t.textLabel },
-          textRuns(record.blocks).map((run, i): ReactNode => {
-            if (run.kind === "heading") return h("h3", { key: i, className: styles.blockHeading }, run.texts[0]);
-            const lines = run.texts.map((text, j) => h(run.kind === "bulletItem" ? "li" : "p", { key: j }, text));
-            const body = run.kind === "bulletItem" ? h("ul", null, lines) : run.kind === "quote" ? h("blockquote", null, lines) : lines;
-            return h("div", { key: i, className: styles.block }, body);
-          }),
-        ),
+    h(PanelTabs, { label: t.viewLabel, tabs: [
+      { id: "text", label: t.views.text, content: text },
+      { id: "summary", label: t.views.summary, content: h("div", null,
+        h(ProcessSummaryView, { summary: record.summary }),
+        href && h(Link, { href: `${href}#${SUMMARY_ANCHOR}`, prefetch: false }, t.openSummary),
+      ) },
+    ] }),
+  );
+}
+
+function RevisionPreview({ documentId, record, current, onSignedOut }: RevisionAccess & {
+  documentId: string; record: FastPathRecord;
+}) {
+  const [outcome, setOutcome] = useState<RevisionRead | null>(null);
+  useEffect(() => {
+    let active = true;
+    const reading = () => active && current();
+    void readRevisionPreview(documentId, reading).then((result) => {
+      if (!reading()) return;
+      if (result.kind === "signedOut") onSignedOut();
+      else setOutcome(result);
+    });
+    return () => { active = false; };
+  }, [documentId, record, current, onSignedOut]);
+
+  if (outcome === null) return h("p", { role: "status" }, t.revisionsLoading);
+  if (outcome.kind !== "ok") return h("p", { role: "status" }, t.revisionsUnavailable);
+  return h("div", null,
+    outcome.awaiting && h("p", { className: controls.round, role: "status" }, t.revisionReady),
+    h(RevisionLog, { entries: outcome.entries }),
   );
 }

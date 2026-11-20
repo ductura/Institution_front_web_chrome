@@ -63,6 +63,9 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/submission-package/SubmissionPackage.tsx", // WEB-9E: awaits the toolbar integration.
   "editor/sources/panel/SourceList.tsx",
   "editor/sources/quick-source/QuickSource.tsx",
+  "editor/rich/table-image/CropDialog.tsx", // WEB-10A: awaits the Tiptap node views of table and image.
+  "editor/rich/table-image/ImageBar.tsx", // WEB-10A
+  "editor/rich/table-image/TableBar.tsx", // WEB-10A
   "editor/triggers/TriggerPopover.tsx",
   "editor/triggers/browser/fixture.tsx",
   "how-it-works/HowItWorks.tsx",

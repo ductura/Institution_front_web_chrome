@@ -71,7 +71,7 @@ export const FIXTURE_V4: CanonicalDocumentV4 = {
       align: "center",
       attachmentId: "ffffffff-ffff-4fff-8fff-ffffffffffff",
       attachmentSha256: "0".repeat(64),
-      crop: { bottom: 0, left: 10, right: 5, top: 0 },
+      crop: { top: 0, bottom: 0, left: 10, right: 5 },
       landscape: false,
       widthPercent: 60,
       title: "Kompostište u dvorištu",

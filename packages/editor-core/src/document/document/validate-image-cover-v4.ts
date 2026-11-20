@@ -97,7 +97,7 @@ function validateCrop(
     errors.push({ path, code: "IMAGE_CROP_INVALID" });
     return undefined;
   }
-  return { left: raw.left as number, right: raw.right as number, top: raw.top as number, bottom: raw.bottom as number };
+  return { top: raw.top as number, left: raw.left as number, right: raw.right as number, bottom: raw.bottom as number };
 }
 
 /** §7. At least one field; each tidy text within its limit. */
