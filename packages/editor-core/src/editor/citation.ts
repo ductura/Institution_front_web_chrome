@@ -55,6 +55,14 @@ import { isSourceId, MAX_CITATION_LOCATOR_CODE_POINTS } from "../document/docume
 
 export const CITATION = "citation";
 
+/**
+ * The inline atoms of every schema version. The guard below treats them alike
+ * (document-schema-v3 §3.1 and §5.5): none takes a mark, none goes into a
+ * heading. A version whose schema lacks a name never meets it.
+ */
+const ATOM_NAMES: ReadonlySet<string> = new Set([CITATION, "footnote", "crossReference"]);
+const isAtom = (node: PmNode) => ATOM_NAMES.has(node.type.name);
+
 /** Meta of the guard's own transaction, which takes marks off citations. */
 export const CITATION_UNMARK_META = "citationUnmark";
 
@@ -63,7 +71,7 @@ export const CITATION_SOURCE_HTML_ATTRIBUTE = "data-source-id";
 export const CITATION_LOCATOR_HTML_ATTRIBUTE = "data-locator";
 
 /** Attributes of a pasted citation span, or false when they are not valid. */
-function citationAttrs(element: HTMLElement): { sourceId: string; locator: string | null } | false {
+export function citationAttrs(element: HTMLElement): { sourceId: string; locator: string | null } | false {
   const sourceId = element.getAttribute(CITATION_SOURCE_HTML_ATTRIBUTE);
   if (!isSourceId(sourceId)) return false;
   const locator = element.getAttribute(CITATION_LOCATOR_HTML_ATTRIBUTE);
@@ -74,7 +82,7 @@ function citationAttrs(element: HTMLElement): { sourceId: string; locator: strin
 function holdsMarkedCitation(node: Fragment): boolean {
   let marked = false;
   node.descendants((child) => {
-    marked ||= child.type.name === CITATION && child.marks.length > 0;
+    marked ||= isAtom(child) && child.marks.length > 0;
     return !marked;
   });
   return marked;
@@ -99,7 +107,7 @@ const isMarkStep = (step: Step) =>
 function markedCitations(doc: PmNode): number[] {
   const positions: number[] = [];
   doc.descendants((node, pos) => {
-    if (node.type.name === CITATION && node.marks.length > 0) positions.push(pos);
+    if (isAtom(node) && node.marks.length > 0) positions.push(pos);
     return node.isBlock;
   });
   return positions;
@@ -115,7 +123,7 @@ function unmarked(doc: PmNode): PmNode {
   const blocks: PmNode[] = [];
   doc.forEach((block) => {
     const children: PmNode[] = [];
-    block.forEach((child) => children.push(child.type.name === CITATION ? child.mark([]) : child));
+    block.forEach((child) => children.push(isAtom(child) ? child.mark([]) : child));
     blocks.push(block.copy(Fragment.from(children)));
   });
   return doc.copy(Fragment.from(blocks));
@@ -166,7 +174,7 @@ function headingTakesCitation(tr: Transaction): boolean {
     const to = Math.max(from, Math.min(size, back.map(range.to, 1)));
     let found = false;
     tr.before.nodesBetween(from, to, (node) => {
-      found ||= node.type.name === CITATION;
+      found ||= isAtom(node);
       return !found;
     });
     return found;
