@@ -40,3 +40,4 @@ export { SearchableList, type SearchableListProps } from "./components/searchabl
 export { type SearchableListItem } from "./components/searchable-list/search";
 export { CommentThread, replyKeyAction, replyText, visibleEntries, type CommentEntry, type CommentThreadData, type CommentThreadLabels, type CommentThreadProps } from "./components/comment-thread";
 export { DatePicker, addDays, addMonths, formatHrDate, gridKeyTarget, inRange, isValidIso, monthGrid, parseHrDate, type DatePickerLabels, type DatePickerProps } from "./components/date-picker";
+export { CheckActionList, orderFindings, selectionOf, type CheckAction, type CheckActionListLabels, type CheckActionListProps, type CheckFinding, type CheckSelection, type CheckSeverity } from "./components/check-action-list";
