@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./assistant-thread": "./src/components/assistant-thread/AssistantThread.tsx",
     "./tokens.css": "./src/tokens/globals.css",
     "./fonts.css": "./src/fonts/faces.css"
   },
