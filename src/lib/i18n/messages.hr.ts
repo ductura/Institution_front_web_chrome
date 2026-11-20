@@ -2303,6 +2303,8 @@ export const courseStudentsHr = {
 } as const;
 
 export const editorHelpHr = {
+  view: "Prikaz",
+  writing: "Pomoć u tekstu",
   settingsTitle: "Što Ductura podcrtava dok pišete",
   settingsIntro: "Podcrtano je mjesto za pogledati. Kliknite podcrtani tekst za objašnjenje.",
   levels: { calm: "Mirno", basic: "Osnovno", all: "Sve", custom: "Vlastito" },
