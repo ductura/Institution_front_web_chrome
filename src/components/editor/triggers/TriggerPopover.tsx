@@ -38,8 +38,10 @@ export function TriggerPopover({ editor, sources = emptySources, actions = noAct
   };
   const placeAnchor = () => {
     if (!editor || editor.isDestroyed || !anchor.current || !latest.current) return;
-    const { left, top, bottom } = editor.view.coordsAtPos(latest.current.trigger.to);
-    Object.assign(anchor.current.style, { left: `${left}px`, top: `${top}px`, height: `${bottom - top}px` });
+    const caret = editor.view.coordsAtPos(latest.current.trigger.to);
+    Object.assign(anchor.current.style, {
+      left: `${caret.left}px`, insetBlockStart: `${caret.top}px`, height: `${caret.bottom - caret.top}px`,
+    });
   };
 
   const refresh = () => {

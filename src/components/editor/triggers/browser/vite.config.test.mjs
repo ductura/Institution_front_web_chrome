@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 
+// This loopback server is used only by the Playwright editor fixture.
 export default {
   root: fileURLToPath(new URL("./", import.meta.url)),
   oxc: { jsx: { runtime: "automatic" } },
