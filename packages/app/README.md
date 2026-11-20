@@ -31,6 +31,7 @@ Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za 
 | `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx` | Greška stranice, greška korijenskog layouta i nepostojeća stranica, na hrvatskom. |
 | `app/[base]/[[...path]]/` | `/` pod bazom (domaćin vodi na početni ekran uloge) i putanje bez stranice („Stranica ne postoji” u ljusci). |
 | `src/routes.ts` | Čiste funkcije: baza, putanja, stranica po ulozi (rute iz `src/components/shell/nav.ts` i stranice Ductusa s dinamičkim segmentom, npr. `/zadatak/[id]`), preusmjeravanje na početni ekran uloge. |
+| `tsconfig.json` | Uz stroge opcije i Ductusov alias `@/` iz `src/components/tsconfig.json`, da domaćin montira ekrane kopirane iz Ductusa (HOST). |
 | `vitest.config.ts` | Jedinični testovi čistih dijelova (`src/**/*.test.ts`). |
 | `src/text.ts` | Nekoliko tekstova samog domaćina. `text.test.ts` ih provjerava skenerom zabranjenih izraza. |
 | `e2e/session.spec.ts` | Lažni `/api/v1` (`page.route`): 401 vodi na prijavu s `returnTo`, 200 otvara ekran uloge, odjava, nedostupan poslužitelj, nastavnička čitanja (200, 401, 403, 503). Uz to provjerava konzolu i axe. Poslužitelj je `next build && next start`. Tijela nastavničkih odgovora u `e2e/fixtures/teacher.json` su vektori iz `@ductura/test-fakes` 3.0.1. |
@@ -38,6 +39,7 @@ Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za 
 Spojeni ekrani:
 
 - student: S01 i S02 (`student.assignments.get`);
+- student: upis kodom na `upis/` i korak do obavijesti na `upis/kolegij/[courseId]/` (`student.enrollments.post`, `student.assignments.get`; HOST-S3);
 - nastavnik: „Moji kolegiji” (`teacher.courses.get`) i „Radovi uz mentora” (`teacher.mentorships.get`). Na 401 vodi na prijavu, na 403 traži nastavnički račun, a na ostalo javlja grešku i nudi „Pokušaj ponovno”.
 
 Ostale stranice zasad imaju naslov i napomenu da prikaz još nije spojen na poslužitelj ustanove. Ductusove API rute (`src/app/api/**`) ne prenose se ovamo: `/api/v1` je Institution_server. Ductusova početna `/` je ovdje preloader. Ekrani administratora ustanove imaju vlastite rute, ali čekaju rute za čitanje u ugovoru; `@ductura/contracts` 2.8.0 za `/api/v1/institution` ima samo POST.

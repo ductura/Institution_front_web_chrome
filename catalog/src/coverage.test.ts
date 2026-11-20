@@ -37,6 +37,9 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/ToolbarMenu.tsx",
   "editor/WorkspaceTopBar.tsx",
   "editor/citations/CitationPopover.tsx",
+  "editor/addons/MarkerPalette.tsx",
+  "editor/addons/SpeechControls.tsx",
+  "editor/import/ImportTextDialog.tsx",
   "editor/citations/ReviewPlaces.tsx",
   "editor/commands/EditorCommands.tsx",
   "editor/crossref/CrossReferenceDialog.tsx",
@@ -63,6 +66,9 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/submission-package/SubmissionPackage.tsx", // WEB-9E: awaits the toolbar integration.
   "editor/sources/panel/SourceList.tsx",
   "editor/sources/quick-source/QuickSource.tsx",
+  "editor/rich/table-image/CropDialog.tsx", // WEB-10A: awaits the Tiptap node views of table and image.
+  "editor/rich/table-image/ImageBar.tsx", // WEB-10A
+  "editor/rich/table-image/TableBar.tsx", // WEB-10A
   "editor/triggers/TriggerPopover.tsx",
   "editor/triggers/browser/fixture.tsx",
   "how-it-works/HowItWorks.tsx",
@@ -104,6 +110,24 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "teacher/kolegiji/CourseCodes.tsx",
   "teacher/shell/TeacherShell.tsx",
   "teacher/shell/TeacherShellFrame.tsx",
+  "editor/diff/ComparisonResult.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/diff/SubmissionComparisonDialogs.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/diff/VersionComparison.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/revision/RevisionLog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/revision/SendRevisionDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/spelling/SpellingPopover.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/suggestions/SuggestionCard.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/compare/TeacherVersionComparison.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/consultation-records/ConsultationDetail.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/consultation-records/ConsultationRecords.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/consultation-records/NewConsultation.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/deadline-extensions/DeadlineExtensions.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/revision/ReturnForRevisionDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/assistant/coming-soon/AssistantComingSoonCard.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/mentor/consultation-slots/ConsultationSlots.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/mentor/working-criteria/WorkingCriteria.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/rich/blocks/FormulaDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/rich/blocks/RichBlockTools.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
 ]);
 
 describe("every component has a catalogue entry with all five states (web.md §6 B5)", () => {

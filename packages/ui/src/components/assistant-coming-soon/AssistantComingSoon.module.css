@@ -1,0 +1,8 @@
+/* Assistant "coming soon" card: quiet, static, nothing here looks clickable. */
+.card { padding: 12px; background: var(--well); color: var(--ink); border: 1px solid var(--rule-2); border-radius: var(--radius-control); }
+.head { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.title { font-size: 14px; }
+.body { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-3); overflow-wrap: anywhere; }
+.sub { margin: 12px 0 6px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.purposes { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.purpose { padding: 2px 8px; font-size: 12.5px; color: var(--ink-3); border: 1px solid var(--rule-2); border-radius: var(--radius-control); }

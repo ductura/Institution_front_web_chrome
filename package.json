@@ -12,6 +12,7 @@
     "test": "npm run test:helpers && npm run test:functional && npm run test:editor6e && npm run test:editor10e && npm run test:editor11e",
     "test:helpers": "node --test \"test/unit/*.test.js\"",
     "test:functional": "playwright test",
+    "test:sistem": "playwright test --config playwright.sistem.config.ts",
     "test:editor6e": "playwright test --config src/components/editor/triggers/browser/playwright.config.test.cjs",
     "test:editor10e": "playwright test --config src/components/editor/print-export/browser/playwright.config.test.cjs",
     "test:editor11e": "playwright test --config src/components/editor/submission-rehearsal/browser/playwright.config.test.cjs",

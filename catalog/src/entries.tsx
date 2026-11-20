@@ -1,8 +1,8 @@
 import {
-  Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  Icon, ICON_NAMES, KeyValueList, PanelTabs, Popover, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
+  AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
+  Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
   Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
-  type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
+  type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
 
@@ -22,6 +22,11 @@ import {
 } from "../../src/components/index.ts";
 
 import { DiffView, Timeline } from "@ductura/ui";
+import { ProofDialog, SourceProofsPanel } from "../../src/components/index.ts";
+import { proofsPath, type ProofsRead, type SourceProof } from "../../src/client/source-proofs.ts";
+import type { ProofPicture } from "../../src/components/editor/sources/proofs/crop.ts";
+import { startCapture, type Capture } from "../../src/components/editor/sources/proofs/proof-draft.ts";
+import type { ProofsDeps } from "../../src/components/editor/sources/proofs/proofs-deps.ts";
 import type { CatalogEntries, CatalogState } from "./coverage";
 
 type Entry = Record<CatalogState, () => React.ReactNode>;
@@ -83,6 +88,21 @@ const sourcePreview = (state: CatalogState) => <SourceForm open floating={false}
   initial={{ type: "book", authors: [{ kind: "organization", name: "Izmišljeni nakladnički ured" }],
     title: "Izmišljeni priručnik", year: 2026, place: "Izmišljeni grad", publisher: "Izmišljeni nakladnik" }}
   onSubmit={nothing} onClose={nothing} />;
+
+const TOOLBAR_ACTIONS = [
+  { id: "preview", label: "Pregled", onSelect: () => undefined },
+  { id: "remove", label: "Ukloni", onSelect: () => undefined },
+];
+const toolbarPreview = (actions: typeof TOOLBAR_ACTIONS) => <ObjectToolbar open floating={false} anchor={{ current: null }} actions={actions} onClose={() => undefined} />;
+function PreviewDialogExample() {
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button onClick={() => setOpen(true)}>Pregled slike</Button>
+    <PreviewDialog open={open} kind="image" caption="Izmišljeni primjer" onClose={() => setOpen(false)}>
+      <svg role="img" aria-label="Izmišljeni dijagram kompostiranja" width="160" height="80" viewBox="0 0 160 80"><rect x="4" y="4" width="152" height="72" fill="none" stroke="currentColor" /></svg>
+    </PreviewDialog>
+  </>;
+}
 
 const REPLAY_TEXT = ["", "Izmišljeni vrt.", "Izmišljeni školski vrt.", "Izmišljeni školski vrt raste."];
 
@@ -182,7 +202,44 @@ function FindBarExample({ total, hint }: { total: number; hint?: string }) {
     onClose={nothing} labels={FIND_LABELS} />;
 }
 
+const CHECK_LABELS = { list: "Provjere prije predaje", empty: "Nema nalaza.", required: "Obavezno", advisory: "Savjet" };
+const CHECK_FINDINGS = [
+  { id: "f1", severity: "required" as const, title: "Izmišljeni izvor nema godinu", detail: "Dodajte godinu izdanja.", actions: [{ id: "fix", label: "Uredi izvor" }] },
+  { id: "f2", severity: "advisory" as const, title: "Izmišljeni odlomak je dug", actions: [{ id: "view", label: "Prikaži" }] },
+];
+const ASSISTANT_LABELS = { title: "Pomoćnik", badge: "Uskoro", body: "Pomoćnik još nije dostupan u pilotu.", purposesTitle: "Za što će služiti", purposesList: "Namjene pomoćnika" };
+
 export const ENTRIES = {
+  CheckActionList: {
+    prazno: () => <CheckActionList findings={[]} labels={CHECK_LABELS} onAction={nothing} />,
+    učitavanje: () => <RouteLoading label="Učitavanje provjera…" />,
+    greška: () => <p role="alert">Provjere se nisu učitale.</p>,
+    puno: () => <CheckActionList findings={CHECK_FINDINGS} labels={CHECK_LABELS} onAction={nothing} />,
+    onemogućeno: () => <p>Provjere trenutačno nisu dostupne.</p>,
+  },
+  AssistantComingSoon: {
+    prazno: () => <AssistantComingSoon labels={ASSISTANT_LABELS} purposes={[]} />,
+    učitavanje: () => <RouteLoading label="Učitavanje pomoćnika…" />,
+    greška: () => <p role="alert">Pomoćnik se nije učitao.</p>,
+    puno: () => <AssistantComingSoon labels={ASSISTANT_LABELS} purposes={["Izmišljeni prijedlog 1", "Izmišljeni prijedlog 2"]} />,
+    onemogućeno: () => <p>Pomoćnik trenutačno nije dostupan.</p>,
+  },
+  ObjectToolbar: {
+    prazno: () => <p>Traka se pokazuje tek kad je odabrana tablica ili slika.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje objekta…" />,
+    greška: () => <p role="alert">Objekt se nije učitao.</p>,
+    puno: () => toolbarPreview(TOOLBAR_ACTIONS),
+    onemogućeno: () => <p>Radnje nad objektom trenutačno nisu dostupne.</p>,
+  },
+  PreviewDialog: {
+    prazno: () => <PreviewDialogExample />,
+    učitavanje: () => <RouteLoading label="Učitavanje pregleda…" />,
+    greška: () => <p role="alert">Pregled se nije učitao.</p>,
+    puno: () => <PreviewDialog open modal={false} kind="table" onClose={() => undefined}>
+      <table><caption>Izmišljena tablica</caption><tbody><tr><th scope="row">Kompost</th><td>12 kg</td></tr></tbody></table>
+    </PreviewDialog>,
+    onemogućeno: () => <p>Pregled trenutačno nije dostupan.</p>,
+  },
   Timeline: {
     prazno: () => <Timeline total={0} value={0} onChange={nothing} />,
     učitavanje: () => <RouteLoading label="Učitavanje koraka…" />,
@@ -438,7 +495,30 @@ export const ENTRIES = {
     puno: () => <DatePickerExample value="2026-11-05" />,
     onemogućeno: () => <DatePickerExample value="2026-11-05" disabled />,
   },
+  AppointmentCalendar: {
+    prazno: () => <AppointmentCalendarExample value="" appointments={[]} />,
+    učitavanje: () => <p>Termini se učitavaju…</p>,
+    greška: () => <p role="alert">Termini se nisu učitali.</p>,
+    puno: () => <AppointmentCalendarExample value="2026-11-20T12:00" appointments={APPOINTMENTS} />,
+    onemogućeno: () => <AppointmentCalendarExample value="2026-11-20T12:00" appointments={APPOINTMENTS} disabled />,
+  },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
+
+// WEB-1107: appointment calendar (invented moments only).
+const APPOINTMENT_LABELS: AppointmentCalendarLabels = {
+  calendar: "Kalendar termina", previousMonth: "Prethodni mjesec", nextMonth: "Sljedeći mjesec",
+  months: ["siječanj", "veljača", "ožujak", "travanj", "svibanj", "lipanj", "srpanj", "kolovoz", "rujan", "listopad", "studeni", "prosinac"],
+  weekdays: ["pon", "uto", "sri", "čet", "pet", "sub", "ned"], times: "Vrijeme", proposed: "predloženo", confirmed: "potvrđeno",
+  chooseDay: "Odaberite dan", selected: (date, time) => `Odabrano: ${date} u ${time}`,
+};
+const APPOINTMENTS: Appointment[] = [
+  { id: "t1", at: "2026-11-20T12:00", status: "proposed" },
+  { id: "t2", at: "2026-11-20T14:00", status: "confirmed" },
+];
+function AppointmentCalendarExample({ value: initial, appointments, disabled }: { value: string; appointments: Appointment[]; disabled?: boolean }) {
+  const [value, setValue] = useState(initial);
+  return <AppointmentCalendar appointments={appointments} value={value} onSelect={setValue} labels={APPOINTMENT_LABELS} today="2026-11-20" disabled={disabled} />;
+}
 
 // UI-8A: comment thread and date picker (invented text only).
 const THREAD_LABELS: CommentThreadLabels = {
@@ -696,6 +776,48 @@ const receiptPanel = (read: ReceiptRead) => (
 );
 const verificationCode = { receiptId: signedReceipt.payload.submissionId, fingerprint: signedReceipt.payload.artifactSha256 };
 
+// WEB-1106: proofs from a source. Invented sources; the page is drawn here, nothing is read or sent.
+const PROOF_WORK = "11111111-1111-4111-8111-111111111111";
+const PROOF_S1 = "22222222-2222-4222-8222-222222222222";
+const PROOF_S2 = "44444444-4444-4444-8444-444444444444";
+const proofPage: ProofPicture = {
+  width: 600, height: 400,
+  draw: (ctx, from, to) => {
+    const sx = to.width / from.width;
+    const sy = to.height / from.height;
+    ctx.save();
+    ctx.setTransform(sx, 0, 0, sy, to.x - from.x * sx, to.y - from.y * sy);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 600, 400);
+    ctx.fillStyle = "#8c887f";
+    for (let y = 40; y < 380; y += 26) ctx.fillRect(40, y, y % 4 === 0 ? 420 : 520, 8);
+    ctx.restore();
+  },
+};
+const sampleProof = (id: string, sourceId: string, page: string, note: string | null = null): SourceProof => ({
+  id, sourceId, page, note, createdAt: "2026-11-20T10:15:00.000Z", size: 24000,
+  imagePath: `${proofsPath(PROOF_WORK, sourceId) ?? ""}/${id}/image`,
+});
+const proofSources = [{ id: PROOF_S1, label: "Izmišljenić (2020)" }, { id: PROOF_S2, label: "Primjerić i Uzorak (2019)" }];
+const proofCitations = [{ sourceId: PROOF_S1, page: "14" }, { sourceId: PROOF_S1, page: "20" }, { sourceId: PROOF_S2, page: null }];
+const proofLists: Record<string, ProofsRead> = {
+  [PROOF_S1]: { kind: "ok", proofs: [sampleProof("55555555-5555-4555-8555-555555555555", PROOF_S1, "14", "Uvodni odlomak")] },
+  [PROOF_S2]: { kind: "ok", proofs: [] },
+};
+const proofDeps = (list: (sourceId: string) => Promise<ProofsRead>): ProofsDeps => ({
+  assignmentId: PROOF_WORK, list,
+  upload: async () => ({ kind: "nepoznato" }),
+  picture: async () => proofPage,
+  openPdf: async () => { throw new Error("katalog ne otvara PDF"); },
+});
+const proofsPanel = (editable: boolean, list: (sourceId: string) => Promise<ProofsRead>, sources = proofSources) =>
+  <SourceProofsPanel sources={sources} citations={sources.length ? proofCitations : []} editable={editable} deps={proofDeps(list)} />;
+const proofCapture = (over: Partial<Capture>): Capture => ({
+  ...startCapture(PROOF_S1, "Izmišljenić (2020)"), picture: proofPage, ...over,
+});
+const proofDialog = (state: Capture) => <ProofDialog state={state} dispatch={nothing} onSave={nothing} onCancel={nothing} modal={false} />;
+const proofFrame = { x: 40, y: 60, width: 420, height: 110 };
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -862,5 +984,22 @@ export const SCREEN_ENTRIES = {
       keyId: "izmisljeni-kljuc-potvrde",
     }} onChange={nothing} onVerify={nothing} />,
     onemogućeno: () => <VerificationForm code={verificationCode} state={{ kind: "rateLimited" }} />,
+  },
+  SourceProofsPanel: {
+    prazno: () => proofsPanel(true, async () => ({ kind: "ok", proofs: [] }), []),
+    učitavanje: () => proofsPanel(true, () => new Promise(() => undefined)),
+    greška: () => proofsPanel(true, async () => ({ kind: "nepoznato" })),
+    puno: () => proofsPanel(true, async (sourceId) => proofLists[sourceId] ?? { kind: "nepoznato" }),
+    onemogućeno: () => proofsPanel(false, async (sourceId) => proofLists[sourceId] ?? { kind: "nepoznato" }),
+  },
+  ProofDialog: {
+    prazno: () => proofDialog(proofCapture({})),
+    učitavanje: () => proofDialog(proofCapture({ selection: proofFrame, page: "14", status: "sending", tried: true })),
+    greška: () => proofDialog(proofCapture({ selection: proofFrame, page: "14", note: "Uvodni odlomak", status: "failed", tried: true })),
+    puno: () => proofDialog(proofCapture({
+      selection: proofFrame, page: "14", note: "Uvodni odlomak", quote: "kućno kompostiranje znatno smanjuje otpad",
+      pdf: { page: 3, count: 12, loading: false }, notice: { kind: "differs", near: "kućno kompostiranje smanjuje otpad", missing: ["znatno"] },
+    })),
+    onemogućeno: () => proofDialog(proofCapture({ pdf: { page: 1, count: 12, loading: true }, notice: { kind: "pdfOpening" } })),
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
