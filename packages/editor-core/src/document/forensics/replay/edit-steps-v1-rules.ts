@@ -6,8 +6,10 @@ import { validateDocument } from "../../document";
 import {
   EDIT_STEP_FORMAT_V1,
   parseEditSteps,
-  type EditStepBlock,
+  type EditStepBlockOf,
+  type EditStepInlineV3,
   type EditStepV1,
+  type EditStepV3,
 } from "../../document/edit-step";
 import { isMark, isPlainBlockType } from "../../document/schema";
 import { EvidenceContentNotSupportedV2 } from "../evidence-replay-v2";
@@ -107,13 +109,10 @@ function at(document: PmNode, pos: number): ResolvedPos {
     refuse("position_outside_document");
   }
   const resolved = document.resolve(pos);
-  if (resolved.parent.isTextblock) {
-    // F1 blocks hold text only, so the offset in the block is the offset in its text.
-    const text = resolved.parent.textContent;
-    const offset = resolved.parentOffset;
-    if (isHigh(text.charCodeAt(offset - 1)) && isLow(text.charCodeAt(offset))) {
-      refuse("position_splits_surrogate_pair");
-    }
+  const left = resolved.nodeBefore?.text;
+  const right = resolved.nodeAfter?.text;
+  if (left && right && isHigh(left.charCodeAt(left.length - 1)) && isLow(right.charCodeAt(0))) {
+    refuse("position_splits_surrogate_pair");
   }
   return resolved;
 }
@@ -131,7 +130,10 @@ function sliceItem<T>(content: readonly T[], index: number): T {
 }
 
 /** Type, level and id: what a block of a slice must repeat to continue a block. */
-function sameBlock(written: EditStepBlock, block: PmNode): boolean {
+type ContentStep = Exclude<EditStepV3, { stepType: "sourceSet" | "sourceRemove" }>;
+type StepBlock = EditStepBlockOf<EditStepInlineV3>;
+
+function sameBlock(written: StepBlock, block: PmNode): boolean {
   const level = written.type === "heading" ? written.attrs.level : undefined;
   return (
     written.type === block.type.name &&
@@ -140,9 +142,9 @@ function sameBlock(written: EditStepBlock, block: PmNode): boolean {
   );
 }
 
-/** Whether `from..to` holds a character or both ends of one block (QA VAŽNO 1). */
-function removesContent(document: PmNode, from: number, to: number): boolean {
-  if (document.textBetween(from, to).length > 0) {
+/** Whether the range holds text, an inline atom or a whole block. */
+export function removesContent(document: PmNode, from: number, to: number): boolean {
+  if (document.textBetween(from, to, undefined, "\ufffc").length > 0) {
     return true;
   }
   let wholeBlock = false;
@@ -154,7 +156,7 @@ function removesContent(document: PmNode, from: number, to: number): boolean {
 
 function* checkReplace(
   document: PmNode,
-  step: Extract<EditStepV1, { stepType: "replace" }>,
+  step: Extract<ContentStep, { stepType: "replace" }>,
 ): Generator<RemovedRangeClaim, void, void> {
   const $from = at(document, step.from);
   const $to = at(document, step.to);
@@ -168,10 +170,11 @@ function* checkReplace(
     }
   }
   const slice = step.slice;
-  if (!slice || sliceItem<{ type: string }>(slice.content, 0).type === "text") {
+  const firstType = slice?.content[0]?.type;
+  if (!slice || document.type.schema.nodes[firstType ?? ""]?.isInline) {
     return;
   }
-  const blocks = slice.content as EditStepBlock[];
+  const blocks = slice.content as StepBlock[];
   if ("openStart" in slice && ($from.depth !== 1 || !sameBlock(sliceItem(blocks, 0), $from.parent))) {
     refuse("open_start_block");
   }
@@ -189,7 +192,7 @@ function* checkReplace(
 
 function checkReplaceAround(
   document: PmNode,
-  step: Extract<EditStepV1, { stepType: "replaceAround" }>,
+  step: Extract<ContentStep, { stepType: "replaceAround" }>,
 ): void {
   const $from = at(document, step.from);
   at(document, step.to);
@@ -197,7 +200,7 @@ function checkReplaceAround(
   if (!block || step.from + block.nodeSize !== step.to) {
     refuse("replace_around_range");
   }
-  const wrapper = step.slice.content[0] as EditStepBlock;
+  const wrapper = step.slice.content[0] as StepBlock;
   if (wrapper.attrs.nodeId !== block.attrs.nodeId) {
     refuse("replace_around_identity");
   }
@@ -207,7 +210,7 @@ function checkReplaceAround(
   }
 }
 
-function* checkStep(document: PmNode, step: EditStepV1): Generator<RemovedRangeClaim, void, void> {
+export function* checkContentStep(document: PmNode, step: ContentStep): Generator<RemovedRangeClaim, void, void> {
   switch (step.stepType) {
     case "replace":
       return yield* checkReplace(document, step);
@@ -229,11 +232,17 @@ function* checkStep(document: PmNode, step: EditStepV1): Generator<RemovedRangeC
 }
 
 function* applyStep(document: PmNode, step: EditStepV1): Generator<RemovedRangeClaim, PmNode, void> {
-  yield* checkStep(document, step);
+  yield* checkContentStep(document, step);
   // ProseMirror does not know `removedSha256`; the rest is its own JSON.
   const pmJson: Record<string, unknown> = { ...step };
   delete pmJson.removedSha256;
-  const pmStep = Step.fromJSON(schema(), pmJson);
+  const next = applyPmStep(document, pmJson);
+  next.check();
+  return next;
+}
+
+export function applyPmStep(document: PmNode, pmJson: Record<string, unknown>): PmNode {
+  const pmStep = Step.fromJSON(document.type.schema, pmJson);
   if (canonicalizeJcs(pmStep.toJSON()) !== canonicalizeJcs(pmJson)) {
     refuse("step_reads_back_differently");
   }
@@ -244,7 +253,6 @@ function* applyStep(document: PmNode, step: EditStepV1): Generator<RemovedRangeC
   if (result.doc.eq(document)) {
     refuse("step_changes_nothing");
   }
-  result.doc.check();
   return result.doc;
 }
 
@@ -267,7 +275,7 @@ const TYPE_NAME = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
  * place, a type that is not an identifier string (Q3) and an unknown attribute
  * stay a refused step. Own data properties only; nothing is called or written.
  */
-function namesUnknownType(steps: unknown): boolean {
+export function namesUnknownType(steps: unknown, schema?: Schema): boolean {
   const pending: unknown[] = [steps];
   while (pending.length > 0) {
     const value = pending.pop();
@@ -276,8 +284,10 @@ function namesUnknownType(steps: unknown): boolean {
       const own = Object.getOwnPropertyDescriptor(value, key);
       // `attrs` and an attr step's `value` hold attribute values, never a type.
       if (key === "attrs" || key === "value" || own === undefined || !("value" in own)) continue;
+      if (key === "source" && schema) continue;
       if (key !== "type") pending.push(own.value);
-      else if (typeof own.value === "string" && TYPE_NAME.test(own.value) && !isKnownType(own.value)) return true;
+      else if (typeof own.value === "string" && TYPE_NAME.test(own.value) &&
+        !isKnownType(own.value) && !Object.hasOwn(schema?.nodes ?? {}, own.value)) return true;
     }
   }
   return false;
