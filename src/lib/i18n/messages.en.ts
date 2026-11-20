@@ -2056,6 +2056,15 @@ const en = {
     toDeclaration: "Back to the declaration",
     back: "Back",
   },
+  submit: {
+    revision: "version on the server",
+    submit: "Submit work",
+    dialogTitle: "Submit the work?",
+    dialogText: "The text you see on this page is submitted and does not change after submission.",
+    dialogLate: "The deadline has passed, so the receipt will state that the work was submitted after the deadline.",
+    cancel: "Cancel",
+    sending: "Sending…",
+  },
 } as const satisfies Messages;
 
 export const messagesEn: Messages = en;
