@@ -46,16 +46,16 @@ export type Answer = SubmitOutcome | { readonly kind: "check"; readonly state: S
 
 export type Next =
   | { readonly go: "receipt" | "notice" | "signIn" }
-  /** `retry`: the button may send again; `action`: what the line offers. */
-  | { readonly go: null; readonly text: string; readonly action?: "check" | "reload"; readonly retry: boolean };
+  /** `retry`: the button may send again; `offer`: what the line offers. */
+  | { readonly go: null; readonly text: string; readonly offer?: "check" | "reload"; readonly retry: boolean };
 
-const UNKNOWN: Next = { go: null, text: t.unknown, action: "check", retry: false };
+const UNKNOWN: Next = { go: null, text: t.unknown, offer: "check", retry: false };
 
 function fromState(state: SubmissionRead): Next {
   switch (state.kind) {
     case "potvrdeno": return { go: "receipt" };
     // Recorded, the receipt not signed yet: never "predano" (P-9: checked by hand only).
-    case "ceka": return { go: null, text: t.waiting, action: "check", retry: false };
+    case "ceka": return { go: null, text: t.waiting, offer: "check", retry: false };
     case "none": return { go: null, text: t.notRecorded, retry: true };
     case "session-expired": return { go: "signIn" };
     case "greska": return state.code === "not_found" ? { go: null, text: t.errors.not_found, retry: false } : UNKNOWN;
@@ -74,7 +74,7 @@ export function nextOf(answer: Answer): Next {
     case "check": return fromState(answer.state);
     case "greska":
       if (answer.code === "not_acknowledged") return { go: "notice" };
-      if (answer.code === "stale_revision") return { go: null, text: t.errors.stale_revision, action: "reload", retry: false };
+      if (answer.code === "stale_revision") return { go: null, text: t.errors.stale_revision, offer: "reload", retry: false };
       return { go: null, text: Object.hasOwn(t.errors, answer.code) ? t.errors[answer.code as keyof typeof t.errors] : t.errors.other, retry: true };
     default: return UNKNOWN;
   }
@@ -157,8 +157,8 @@ export function SubmissionView(props: SubmissionViewProps) {
         </Card>
       )}
       {next !== null && <p id={OUTCOME_ID} tabIndex={-1} role="alert">{next.text}</p>}
-      {next?.action === "check" && <p><Button tone="quiet" busy={checking} onClick={props.onCheck}>{checking ? t.checking : t.check}</Button></p>}
-      {(work.kind === "unavailable" || next?.action === "reload") && <p><Button tone="quiet" onClick={props.onReload}>{t.reload}</Button></p>}
+      {next?.offer === "check" && <p><Button tone="quiet" busy={checking} onClick={props.onCheck}>{checking ? t.checking : t.check}</Button></p>}
+      {(work.kind === "unavailable" || next?.offer === "reload") && <p><Button tone="quiet" onClick={props.onReload}>{t.reload}</Button></p>}
       <p>
         {confirmed
           ? <Button disabled={!canSend} aria-describedby={why ? hint : undefined} onClick={props.onOpen}>{t.submit}</Button>

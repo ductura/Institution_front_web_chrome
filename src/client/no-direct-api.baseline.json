@@ -84,10 +84,6 @@
  "src/components/student/StudentWorkspace.tsx": [
   "API URL"
  ],
- "src/components/student/Submission.tsx": [
-  "import loading",
-  "navigation"
- ],
  "src/components/student/access-log-read.ts": [
   "API URL"
  ],

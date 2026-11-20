@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Step 4 of the submission (WEB-26, S: E-10, PD-3), through /api/v1 only.
+ * Step 4 of the submission (WEB-26, S: E-10, PD-3), through the v1 client only.
  * evidence.open.post gives the work; the page shows exactly the text of its
  * revision on the server and submission.submit.post sends that revision and
  * nothing else. One request at a time: a second click while one is on its
@@ -89,6 +89,16 @@ export function oneAtATime<A, T>(send: (input: A) => Promise<T>): (input: A) => 
   };
 }
 
+/**
+ * Follows an answer only while the page that asked is still shown. After Back
+ * or any other way out, a late answer neither navigates nor draws anything.
+ */
+export function whileShown<A>(shown: { readonly current: boolean }, follow: (answer: A) => void): (answer: A | null) => void {
+  return (answer) => {
+    if (answer !== null && shown.current) follow(answer);
+  };
+}
+
 export type SubmissionProps = {
   readonly assignmentId: string;
   readonly stage: Stage;
@@ -115,6 +125,8 @@ function AssignmentSubmission({ assignmentId, stage, local }: SubmissionProps) {
   const send = useRef(oneAtATime((input: SubmitInput) => submitWork(input, { local }))).current;
   // Only the last read started counts: an older answer arriving later never replaces a newer one.
   const ticket = useRef(0);
+  // Set on every mount (StrictMode mounts twice), cleared when the page goes.
+  const shown = useRef(false);
 
   const follow = useCallback((answer: Answer) => {
     const step = nextOf(answer);
@@ -141,6 +153,10 @@ function AssignmentSubmission({ assignmentId, stage, local }: SubmissionProps) {
   // Read after the first render, so the server's markup (unconfirmed, loading) matches.
   useEffect(() => setConfirmed(readConfirmed(confirmationKey(assignmentId))), [assignmentId]);
   useEffect(() => {
+    shown.current = true;
+    return () => { shown.current = false; };
+  }, []);
+  useEffect(() => {
     void load();
     return () => { ticket.current += 1; };
   }, [load]);
@@ -149,18 +165,21 @@ function AssignmentSubmission({ assignmentId, stage, local }: SubmissionProps) {
     if (work.kind !== "ready" || !online) return;
     setSending(true);
     const outcome: SubmitOutcome | null = await send({ assignmentId, documentId: work.documentId, revision: work.revision });
-    if (outcome === null) return;
-    setSending(false);
-    setDialog(false);
-    follow(outcome);
+    whileShown(shown, (answer: SubmitOutcome) => {
+      setSending(false);
+      setDialog(false);
+      follow(answer);
+    })(outcome);
   };
 
   const check = async () => {
     if (checking) return;
     setChecking(true);
     const state = local === undefined ? { kind: "nepoznato" as const } : await readSubmissionState(local, assignmentId);
-    setChecking(false);
-    follow({ kind: "check", state });
+    whileShown(shown, (answer: Answer) => {
+      setChecking(false);
+      follow(answer);
+    })({ kind: "check", state });
   };
 
   return (
