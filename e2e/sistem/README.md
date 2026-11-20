@@ -1,4 +1,4 @@
-# Sistemski testovi (INT-02, INT-03 i INT-04)
+# Sistemski testovi (INT-02 do INT-05)
 
 Pokreni `pnpm stog:gore` u repou `Institution_server` prema njegovu `docs/lokalno/STOG.md` (INT-01). Pokretač treba otvoriti ovaj checkout weba. Ako web klon nije u zadanoj susjednoj mapi, postavi `STOG_FRONT_DIR` pri pokretanju stoga.
 
@@ -9,6 +9,7 @@ Ispis sadrži pune Git SHA-ove oba checkouta. Poslužitelj se zadano traži u `.
 - INT-02 (VS-1) se prijavi kao `demo-student`, otvori rad o kućnom kompostiranju, doda jedinstvenu izmišljenu rečenicu i pričeka potvrdu spremanja na poslužitelju. Zatim osvježi stranicu i provjeri da je rečenica i dalje u radu. Za samostalno pokretanje koristi `pnpm test:sistem vs1-prijava-spremi-osvjezi`.
 - INT-03 dodaje dva odlomka i pričeka da poslužitelj potvrdi njihovu snimku s oba odlomka. Potvrdi Izjavu i preda pregledanu reviziju. Test uspoređuje SHA-256 snimke i zadnji otisak evidencije sa sadržajem potpisane potvrde te provjerava Ed25519 potpis javnim ključem iz `/api/v1/evidence/open`. Očekuje isti otisak na zaslonu potvrde prije i nakon osvježavanja, istu potvrdu iz API-ja i zaključan rad pri ponovnom otvaranju. Za samostalno pokretanje koristi `pnpm test:sistem zavrsna-predaja-studenta`.
 - INT-04 čita spremljenu potvrdu iz INT-03. Kao `demo-teacher` otvara kolegij i odabire „Brz put”. Uz studenticu vidi „Predano”, otvara točan rad i provjerava da SHA-256 predanog teksta odgovara otisku s potvrde. U radu provjerava učitani „Sažetak procesa”. Komentar uz odlomak šalje i ponovno čita kroz stvarni `/api/v1/comments` iz iste pregledničke sesije. Drugi nastavnik iz iste ustanove u zasebnoj sesiji vidi samo svoj kolegij i nema pristup ciljnoj predaji, njezinu sažetku ni komentarima.
+- INT-05 (`administrator-ustanove`): `demo-admin` na `/ustanova/kolegiji` izrađuje kolegij s nositeljem `demo-teacher-2` (suradnik seedanog kolegija; identifikator se čita kao `demo-student`), isti naziv daje 409. `demo-teacher-2` kolegij vidi na `/nastavnik`, objavljuje zadatak s konfiguracijom provjera (AI pravilo, svrhe, profil dokaza, raspon riječi), a `demo-teacher` nema pristup ruti ni izradi kolegija (404 i 403). Za samostalno pokretanje koristi `pnpm test:sistem administrator-ustanove`; ne treba `seed-int04.sql`.
 
 Za INT-04 nakon redovnog seeda učitaj `e2e/sistem/seed-int04.sql` u lokalnu ili CI bazu preko PostgreSQL socketa, istom administratorskom ulogom kao redovni seed. Za zadani Compose stog iz korijena web repoa na Linuxu ili u CI-ju pokreni:
 
