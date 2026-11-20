@@ -152,7 +152,7 @@ function AssignmentSubmission({ assignmentId, stage, local }: SubmissionProps) {
   }, [assignmentId, here, router]);
 
   // Read after the first render, so the server's markup (unconfirmed, loading) matches.
-  // The confirmation is kept per sign-in (WEB-24, flow.ts), so it is read for the session signed in now.
+  // The confirmation counts only for the sign-in that made it (WEB-24, flow.ts).
   const tag = useSessionTag();
   useEffect(() => setConfirmed(tag !== null && readConfirmed(confirmationKey(tag, assignmentId))), [tag, assignmentId]);
   useEffect(() => {

@@ -1,3 +1,5 @@
+export { default as AssignmentOverview, OVERVIEW_COLUMNS, type AssignmentOverviewProps } from "./AssignmentOverview";
+export { chooseAssignment, type OverviewChoice } from "./assignment-overview-choice";
 export { default as LiveWorkFrame, type LiveWorkFrameData, type RecordState } from "./LiveWorkFrame";
 export { default as MentoredWorks } from "./MentoredWorks";
 export { byFamilyName, liveHref, stateText, studentName, workTypeText } from "./mentored-works-view";
