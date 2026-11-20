@@ -1635,7 +1635,6 @@ const en = {
     gaps: "The record of this work has gaps.",
     gapsLink: "See the process summary",
     notSubmitted: "The work has not been submitted yet.",
-    textPending: "The live text is not available on this page yet.",
   },
   // WEB-18 (N-01, dk-h): the teacher's courses and their enrolment codes.
   teacherCourseCodes: {

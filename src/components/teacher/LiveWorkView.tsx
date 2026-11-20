@@ -1,83 +1,97 @@
 "use client";
 
 /**
- * The teacher's live view of one work (DAN-86 steps 2b and 2c, D-142; route
- * GET /api/live/<id>, BACKEND 4.12). The text is the last state the student
- * published, read through one `startLiveReader`, which shows only the exact
- * document its ETag names. It is rendered as React text, read-only: nothing
- * here writes to the document (D-34). The connection line speaks about this
- * page's own requests, never about the student (4.12 t. 8). The teacher marks
- * a passage to comment on it (B-10); a comment is shown as a mark over the
- * text, never inside the document. Beside the text stands what the record
- * cannot show (K-3, D-80 point 3). The text itself is drawn only by
- * `LiveText`, which the student's "Kako vidi nastavnik" view shares.
+ * N-06, the teacher's live view of one work, read-only (WEB-34 3/3; DAN-86,
+ * D-142). The text is the last state the student published, read through one
+ * `startLiveReader` (live.document.get) and drawn only by `LiveText`, which
+ * the student's "Kako vidi nastavnik" view shares (PRODUCT §5 rule 5). The
+ * summary is read once through `useProcessSummary` (every read is logged,
+ * rule 17) and drawn by `SummaryCardBody`; its `recordState` also drives the
+ * gap bar of `LiveWorkFrame` (C-18), so the page reads the summary once.
+ *
+ * Nothing here writes to the work (D-34): no comment panel and no "Zatraži
+ * doradu" (wave 8). The session mark (D-118) comes from `sessionTag` of the
+ * session route; once that session ends in this browser the text is dropped.
+ * Until it is read the view shows the loading line, never a text.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
+import { browserTransport, SESSION_PATH } from "@/client/api";
 import type { SessionMark } from "@/client/session-marks";
-import type { TextAnchor } from "@/domain/collaboration";
+import { sessionTagOf } from "@/components/editor/EditorPage.scope";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { anchorForSelection, placeThreads, type TextRange } from "./comment-place";
-import LiveText, { liveStopped, openMarks, useLiveView } from "./LiveText";
-import styles from "./LiveWorkView.module.css";
+import LiveText, { liveStopped, useLiveView } from "./LiveText";
+import LiveWorkFrame, { type LiveWorkFrameData } from "./LiveWorkFrame";
 import RecordLimits from "./RecordLimits";
-import { selectedRange, selectInBlock } from "./selection";
-import SummaryCard from "./SummaryCard";
-import TeacherComments, { useComments, type PlacedThread } from "./TeacherComments";
+import { SummaryCardBody, useProcessSummary } from "./SummaryCard";
 
 const t = messagesHr.liveView;
 
-export default function LiveWorkView({ documentId, session, canComment }: {
-  documentId: string; session: SessionMark | null;
-  /** Only a teacher gets the comment panel; the server refuses anyone else anyway (`collaboration.actor_role`). */
-  canComment: boolean;
+/** The mark of this page's sign-in: a valid `sessionTag` of a 200, else null. Never throws. */
+export async function readSessionMark(
+  transport: typeof browserTransport = browserTransport,
+  baseUrl: string = globalThis.location.origin,
+  now: () => number = Date.now,
+): Promise<SessionMark | null> {
+  try {
+    const res = await transport(new URL(SESSION_PATH, baseUrl), {
+      method: "GET", credentials: "include", redirect: "manual", headers: { accept: "application/json" },
+    });
+    if (res.status !== 200 || !res.headers.get("content-type")?.startsWith("application/json")) return null;
+    const tag = sessionTagOf(await res.json());
+    return tag === null ? null : { tag, at: now() };
+  } catch {
+    return null;
+  }
+}
+
+function LiveBody({ documentId, session, frame }: {
+  documentId: string; session: SessionMark | null; frame: LiveWorkFrameData | null;
 }) {
   const { view, current } = useLiveView(documentId, session);
   const stopped = liveStopped(view);
-  const comments = useComments(documentId, current, !stopped && canComment);
-  const [draft, setDraft] = useState<TextAnchor | null>(null);
-  const textRef = useRef<HTMLDivElement>(null);
-
-  const threads = !stopped && comments.outcome?.kind === "ok" ? comments.outcome.threads : [];
-  // Placed again against every new state of the text: an edited paragraph never keeps a stale place.
-  const placed: PlacedThread[] = placeThreads(view.document, threads);
-  const marks = openMarks(placed);
-
-  // The anchor is made from the text on screen, so it never carries text the teacher has not seen (attack 8).
-  const takeSelection = () => {
-    const root = textRef.current;
-    if (!root || !view.document) return;
-    const range = selectedRange(root, window.getSelection());
-    const anchor = range && anchorForSelection(view.document, range.nodeId, range.start, range.end);
-    if (anchor) setDraft(anchor);
-  };
-  const show = (range: TextRange) => {
-    if (textRef.current) selectInBlock(textRef.current, range.nodeId, range.start, range.end);
-  };
-
+  const summary = useProcessSummary(documentId, current, !stopped);
+  const recordState = summary.outcome?.kind === "ok" ? summary.outcome.summary.recordState : null;
   return (
-    <div className={styles.layout}>
-      <div className={styles.main}>
-        <LiveText view={view} marks={marks} textRef={textRef} onSelect={takeSelection} />
-      </div>
-      <aside className={styles.aside} aria-label={t.sidePanel}>
-        {stopped || !canComment ? null : (
-          <TeacherComments
-            documentId={documentId}
-            outcome={comments.outcome}
-            placed={placed}
-            draft={draft}
-            current={current}
-            onReload={() => void comments.load()}
-            onDraftDone={() => setDraft(null)}
-            onShow={show}
-          />
-        )}
-        {stopped ? null : <SummaryCard documentId={documentId} current={current} />}
-        <RecordLimits />
-      </aside>
-    </div>
+    <LiveWorkFrame
+      documentId={documentId}
+      frame={stopped ? null : frame}
+      recordState={recordState}
+      text={<LiveText view={view} marks={[]} />}
+      aside={
+        <>
+          {stopped ? null : <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />}
+          <RecordLimits />
+        </>
+      }
+    />
   );
+}
+
+export default function LiveWorkView({ documentId, frame }: {
+  documentId: string;
+  /** TODO(ugovor) teacher.work.get: null until the route is in the contract. */
+  frame: LiveWorkFrameData | null;
+}) {
+  // undefined while the session route is read; the live reader starts only after.
+  const [session, setSession] = useState<SessionMark | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    void readSessionMark().then((mark) => { if (live) setSession(mark); });
+    return () => { live = false; };
+  }, []);
+  if (session === undefined) {
+    return (
+      <LiveWorkFrame
+        documentId={documentId}
+        frame={null}
+        recordState={null}
+        text={<p role="status" className="manuscript__placeholder">{t.loading}</p>}
+        aside={<RecordLimits />}
+      />
+    );
+  }
+  return <LiveBody documentId={documentId} session={session} frame={frame} />;
 }

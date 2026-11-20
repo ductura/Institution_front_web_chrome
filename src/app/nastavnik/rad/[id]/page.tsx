@@ -1,8 +1,6 @@
-import LiveWorkFrame, { isWorkId } from "../../../../components/teacher/LiveWorkFrame";
-import RecordLimits from "../../../../components/teacher/RecordLimits";
+import { isWorkId } from "../../../../components/teacher/LiveWorkFrame";
+import LiveWorkView from "../../../../components/teacher/LiveWorkView";
 import { messagesHr } from "../../../../lib/i18n/messages.hr";
-
-const t = messagesHr.teacherLiveWork;
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: `${messagesHr.liveView.context} · ${messagesHr.app.name}` };
@@ -14,10 +12,10 @@ export const metadata = { title: `${messagesHr.liveView.context} · ${messagesHr
  * (BACKEND 4.12 t. 4), so this page renders no text of the work on the
  * server. Replaces the parked page that read the database through withActor.
  *
- * TODO(ugovor): the live text (`LiveText` over live.document.get), the
- * summary (`SummaryCard`, `recordState`) and the frame are mounted once their
- * readers are in src/client (Ductus#2028, wweb34 PITANJE); until then the
- * frame is `null` and the text slot says the live text is not available.
+ * The live text and the process summary are read in the browser by
+ * `LiveWorkView` (live.document.get, projection.process-summary.post).
+ * TODO(ugovor) teacher.work.get: the heading and the neighbours come with that
+ * route (Ductus#2028 c.7024185874); until then the frame is `null`.
  */
 export default async function LiveWorkPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,13 +29,7 @@ export default async function LiveWorkPage({ params }: { params: Promise<{ id: s
   }
   return (
     <div className="page">
-      <LiveWorkFrame
-        documentId={id}
-        frame={null}
-        recordState={null}
-        text={<p role="status" className="manuscript__placeholder">{t.textPending}</p>}
-        aside={<RecordLimits />}
-      />
+      <LiveWorkView documentId={id} frame={null} />
     </div>
   );
 }
