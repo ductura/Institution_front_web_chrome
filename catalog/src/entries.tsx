@@ -104,22 +104,6 @@ function PreviewDialogExample() {
   </>;
 }
 
-export const ENTRIES = {
-  ObjectToolbar: {
-    prazno: () => <p>Traka se pokazuje tek kad je odabrana tablica ili slika.</p>,
-    učitavanje: () => <RouteLoading label="Učitavanje objekta…" />,
-    greška: () => <p role="alert">Objekt se nije učitao.</p>,
-    puno: () => toolbarPreview(TOOLBAR_ACTIONS),
-    onemogućeno: () => <p>Radnje nad objektom trenutačno nisu dostupne.</p>,
-  },
-  PreviewDialog: {
-    prazno: () => <PreviewDialogExample />,
-    učitavanje: () => <RouteLoading label="Učitavanje pregleda…" />,
-    greška: () => <p role="alert">Pregled se nije učitao.</p>,
-    puno: () => <PreviewDialog open modal={false} kind="table" onClose={() => undefined}>
-      <table><caption>Izmišljena tablica</caption><tbody><tr><th scope="row">Kompost</th><td>12 kg</td></tr></tbody></table>
-    </PreviewDialog>,
-    onemogućeno: () => <p>Pregled trenutačno nije dostupan.</p>,
 const REPLAY_TEXT = ["", "Izmišljeni vrt.", "Izmišljeni školski vrt.", "Izmišljeni školski vrt raste."];
 
 function TimelineExample() {
@@ -219,6 +203,22 @@ function FindBarExample({ total, hint }: { total: number; hint?: string }) {
 }
 
 export const ENTRIES = {
+  ObjectToolbar: {
+    prazno: () => <p>Traka se pokazuje tek kad je odabrana tablica ili slika.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje objekta…" />,
+    greška: () => <p role="alert">Objekt se nije učitao.</p>,
+    puno: () => toolbarPreview(TOOLBAR_ACTIONS),
+    onemogućeno: () => <p>Radnje nad objektom trenutačno nisu dostupne.</p>,
+  },
+  PreviewDialog: {
+    prazno: () => <PreviewDialogExample />,
+    učitavanje: () => <RouteLoading label="Učitavanje pregleda…" />,
+    greška: () => <p role="alert">Pregled se nije učitao.</p>,
+    puno: () => <PreviewDialog open modal={false} kind="table" onClose={() => undefined}>
+      <table><caption>Izmišljena tablica</caption><tbody><tr><th scope="row">Kompost</th><td>12 kg</td></tr></tbody></table>
+    </PreviewDialog>,
+    onemogućeno: () => <p>Pregled trenutačno nije dostupan.</p>,
+  },
   Timeline: {
     prazno: () => <Timeline total={0} value={0} onChange={nothing} />,
     učitavanje: () => <RouteLoading label="Učitavanje koraka…" />,
