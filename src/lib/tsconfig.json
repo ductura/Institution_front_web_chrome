@@ -1,6 +1,6 @@
 {
   "extends": "../components/tsconfig.json",
   // src/lib (i18n, ui, status) copied from Ductus 0cdb0f1f.
-  "include": ["."],
+  "include": [".", "../../packages/ui/src/css-modules.d.ts"],
   "exclude": ["node_modules"]
 }
