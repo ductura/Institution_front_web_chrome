@@ -616,6 +616,12 @@ export const hr = {
   // the route's (year, name; assignments by due time) and nothing reorders it.
   // DAN-313 (A-01): counts only, for the administrator's own institution;
   // never a person, a course name or an activity time.
+  institutionHost: {
+    overview: "Pregled ustanove trenutačno nije dostupan.",
+    users: "Popis korisnika i uloga trenutačno nije dostupan.",
+    courses: "Popis kolegija i akademskih godina trenutačno nije dostupan.",
+    rules: "Prikaz pravila fakulteta trenutačno nije dostupan.",
+  },
   institutionOverview: {
     title: "Pregled ustanove",
     lead: "Brojke vrijede samo za vašu ustanovu i računaju se pri otvaranju stranice. Pojedine osobe i kolegiji ovdje se ne prikazuju.",
@@ -1831,7 +1837,7 @@ export const hr = {
       academicYear: "Akademska godina",
       aiPolicy: "AI pomoć",
       holder: "Identifikator nositelja",
-      holderHint: "Identifikator nastavnika s potvrđenom ulogom, kako je naveden u „Korisnici i uloge”.",
+      holderHint: "Upišite identifikator nastavnika s potvrđenom ulogom u svojoj ustanovi.",
       groups: "Seminarske grupe",
       groupsHint: "Jedna grupa po retku, najviše 20. Može ostati prazno.",
       submit: "Izradi kolegij",
