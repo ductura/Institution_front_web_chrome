@@ -1,6 +1,6 @@
 import {
   AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  Icon, ICON_NAMES, KeyValueList, PanelTabs, Popover, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
+  Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
   Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
 } from "@ductura/ui";
@@ -89,6 +89,37 @@ const sourcePreview = (state: CatalogState) => <SourceForm open floating={false}
     title: "Izmišljeni priručnik", year: 2026, place: "Izmišljeni grad", publisher: "Izmišljeni nakladnik" }}
   onSubmit={nothing} onClose={nothing} />;
 
+const TOOLBAR_ACTIONS = [
+  { id: "preview", label: "Pregled", onSelect: () => undefined },
+  { id: "remove", label: "Ukloni", onSelect: () => undefined },
+];
+const toolbarPreview = (actions: typeof TOOLBAR_ACTIONS) => <ObjectToolbar open floating={false} anchor={{ current: null }} actions={actions} onClose={() => undefined} />;
+function PreviewDialogExample() {
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button onClick={() => setOpen(true)}>Pregled slike</Button>
+    <PreviewDialog open={open} kind="image" caption="Izmišljeni primjer" onClose={() => setOpen(false)}>
+      <svg role="img" aria-label="Izmišljeni dijagram kompostiranja" width="160" height="80" viewBox="0 0 160 80"><rect x="4" y="4" width="152" height="72" fill="none" stroke="currentColor" /></svg>
+    </PreviewDialog>
+  </>;
+}
+
+export const ENTRIES = {
+  ObjectToolbar: {
+    prazno: () => <p>Traka se pokazuje tek kad je odabrana tablica ili slika.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje objekta…" />,
+    greška: () => <p role="alert">Objekt se nije učitao.</p>,
+    puno: () => toolbarPreview(TOOLBAR_ACTIONS),
+    onemogućeno: () => <p>Radnje nad objektom trenutačno nisu dostupne.</p>,
+  },
+  PreviewDialog: {
+    prazno: () => <PreviewDialogExample />,
+    učitavanje: () => <RouteLoading label="Učitavanje pregleda…" />,
+    greška: () => <p role="alert">Pregled se nije učitao.</p>,
+    puno: () => <PreviewDialog open modal={false} kind="table" onClose={() => undefined}>
+      <table><caption>Izmišljena tablica</caption><tbody><tr><th scope="row">Kompost</th><td>12 kg</td></tr></tbody></table>
+    </PreviewDialog>,
+    onemogućeno: () => <p>Pregled trenutačno nije dostupan.</p>,
 const REPLAY_TEXT = ["", "Izmišljeni vrt.", "Izmišljeni školski vrt.", "Izmišljeni školski vrt raste."];
 
 function TimelineExample() {
