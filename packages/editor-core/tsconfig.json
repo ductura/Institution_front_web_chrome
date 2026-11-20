@@ -13,5 +13,9 @@
     }
   },
   "include": ["src", "vitest.config.ts"],
-  "exclude": ["node_modules"]
+  // Testovi koji uvoze neportirani kod (@/adapters, @/components/editor/sources, server/auth/principal); do PR-a koji ga vrati (ZEL-W1, c.7027096433).
+  "exclude": ["node_modules",
+    "src/editor/source.property.test.ts",
+    "src/editor/source.test.ts",
+    "src/journal/sign-out.test.ts"]
 }

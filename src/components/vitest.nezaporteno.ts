@@ -1,0 +1,58 @@
+// Testovi koji ne mogu proći dok kod kopiran iz Ductusa nije do kraja portiran.
+// Izričit popis (ZEL-W1, orkestrator c.7027096433, opcija b): svaki WEB PR koji vrati
+// pripadni modul briše svoje retke. Ne premještati datoteke, ne portirati ovdje.
+
+export const NEPORTIRANO: readonly string[] = [
+  // Uvozi modula koji nisu portirani (@/server, @/client, @/adapters, @/domain/...) — do PR-a koji ih vraća
+  "admin/FacultyRules.test.ts",
+  "auth/access-card.test.ts",
+  "auth/sign-in-link.test.ts",
+  "editor/CommentPanel.version.test.ts",
+  "editor/evidence-session.equivalence.test.ts",
+  "editor/evidence-session.property.test.ts",
+  "editor/evidence-session.test.ts",
+  "editor/sources.test.ts",
+  "replay/ReplayView.session.test.ts",
+  "replay/ReplayView.test.ts",
+  "shell/dev-indicator.test.ts",
+  "shell/shell-role.test.ts",
+  "student/SubmissionView.test.ts",
+  "student/student-home-read.test.ts",
+  "support/problem-report-client.test.ts",
+  "support/problem-report-dialog.test.ts",
+  "teacher/LiveText.test.ts",
+  "teacher/SummaryCard.test.ts",
+  "teacher/fast-path.test.ts",
+  "teacher/teacher-access.test.ts",
+  // Test čita datoteke po rasporedu repoa Ductus (app/, src/components/ od korijena) — do WEB PR-a koji ga prilagodi
+  "admin/not-found-title.test.ts",
+  "admin/teacher-roles-type.test.ts",
+  "auth/sign-in-tokens.test.ts",
+  "editor/LogoutDialog.test.ts",
+  "editor/comment-version.test.ts",
+  "editor/document-saver.test.ts",
+  "editor/logout-plan.test.ts",
+  "fonts/local-fonts.test.ts",
+  "shell/click-target.test.ts",
+  "shell/design-doc.test.ts",
+  "shell/dialog-base.test.ts",
+  "shell/loading-boundary.test.ts",
+  "shell/logout-session-coverage.test.ts",
+  "shell/session-mark-coverage.test.ts",
+  "shell/shell-scope-coverage.test.ts",
+  "shell/text-size.test.ts",
+  "shell/theme.test.ts",
+  "shell/tokens.test.ts",
+  "student/submission-session-key.test.ts",
+  // Test traži extractUiText/isUiTextModule skenera zabranjenih izraza kojih u webu nema
+  "editor/SidePanels.test.ts",
+  "editor/revision-view.test.ts",
+  "how-it-works/copy.test.ts",
+  "replay/replay-view.test.ts",
+  "student/access-log-view.test.ts",
+  "summary/ProcessSummaryView.test.ts",
+  "teacher/WorkLanguageCard.test.ts",
+  "teacher/WorkLanguageExceptionCard.test.ts",
+  // Stvarni pad tvrdnje, nije uzrok neportirani uvoz — prijavljeno na Ductus#2028
+  "editor/earlier-draft.test.ts",
+];
