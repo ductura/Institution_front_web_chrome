@@ -123,12 +123,14 @@ for (const theme of THEMES) {
     for (const width of WIDTHS) {
       test(`matches its baselines at ${width} px`, async ({ page }) => {
         await open(page, theme, width);
+        // Keep preceding entries from shifting the region's fractional pixel origin.
+        await page.addStyleTag({ content: "#root > main > section:not([data-catalog-snapshot]) { display: none; }" });
         for (const name of [...VISUAL_COMPONENTS, ...SCREENS]) {
-          // Keep preceding entries from shifting the region's fractional pixel origin.
-          await expect.soft(page.getByRole("region", { name, exact: true })).toHaveScreenshot(
-            `${name}-${theme}-${width}.png`,
-            { style: `#root > main > section:not(#${name}) { display: none; }` },
-          );
+          await page.locator(`#${name}`).evaluate((section) => {
+            section.parentElement!.querySelector("[data-catalog-snapshot]")?.removeAttribute("data-catalog-snapshot");
+            section.setAttribute("data-catalog-snapshot", "");
+          });
+          await expect.soft(page.getByRole("region", { name, exact: true })).toHaveScreenshot(`${name}-${theme}-${width}.png`);
         }
       });
     }
