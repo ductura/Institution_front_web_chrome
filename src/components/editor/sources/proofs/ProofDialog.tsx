@@ -75,9 +75,10 @@ export function ProofDialog({ state, dispatch, onSave, onCancel, onPdfPage, onFi
   const errors = state.tried ? fieldErrors(state) : {};
   const bounds = picture ?? { width: 1, height: 1 };
 
-  // Pointer position in the picture's own pixels.
+  // Pointer position in the picture's own pixels, measured on the drawn canvas
+  // (its on-screen box already moves with the stage's scroll).
   const at = (event: PointerEvent<HTMLElement>): Point => {
-    const box = event.currentTarget.getBoundingClientRect();
+    const box = (canvasRef.current ?? event.currentTarget).getBoundingClientRect();
     return {
       x: ((event.clientX - box.left) / Math.max(1, box.width)) * bounds.width,
       y: ((event.clientY - box.top) / Math.max(1, box.height)) * bounds.height,
@@ -146,16 +147,17 @@ export function ProofDialog({ state, dispatch, onSave, onCancel, onPdfPage, onFi
       {state.notice && (
         <p className={styles.notice} role="status" data-notice={state.notice.kind}>{noticeText(state.notice)}</p>
       )}
-      <div
-        className={styles.stage} tabIndex={0} role="group" aria-label={t.canvasLabel}
-        onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => { drag.current = null; }} onKeyDown={key}
-      >
-        <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
-        {sel && picture && (
-          <div className={styles.frame} aria-hidden="true" style={{
-            insetInlineStart: pct(sel.x, bounds.width), insetBlockStart: pct(sel.y, bounds.height), width: pct(sel.width, bounds.width), height: pct(sel.height, bounds.height),
-          }} />
-        )}
+      <div className={styles.stage} tabIndex={0} role="group" aria-label={t.canvasLabel} onKeyDown={key}>
+        {/* The sheet is exactly the drawn canvas: the pointer and the frame are measured on it, not on the scrolled stage. */}
+        <div className={styles.sheet}
+          onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => { drag.current = null; }}>
+          <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
+          {sel && picture && (
+            <div className={styles.frame} aria-hidden="true" style={{
+              insetInlineStart: pct(sel.x, bounds.width), insetBlockStart: pct(sel.y, bounds.height), width: pct(sel.width, bounds.width), height: pct(sel.height, bounds.height),
+            }} />
+          )}
+        </div>
       </div>
       <p className={styles.muted} aria-live="polite">{sel ? t.selection : t.noSelection}</p>
       <div className={styles.fields}>

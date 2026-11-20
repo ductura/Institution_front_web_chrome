@@ -219,7 +219,7 @@ export function SourceProofsPanel({ sources, citations, editable, deps }: Source
         onChange={(event) => { picked(event.target.files?.[0]); event.target.value = ""; }} />
       <ProofDialog state={capture} dispatch={dispatch} onSave={() => void save()} onCancel={cancel}
         onPdfPage={(n) => void showPdfPage(n)} onFind={() => void find()} />
-      {view && <ProofView {...view} onClose={() => setView(null)} />}
+      {view && <ProofView {...view} deps={deps} onClose={() => setView(null)} />}
     </section>
   );
 }
@@ -296,14 +296,25 @@ function ProofThumb({ proof, deps, onOpen }: { proof: SourceProof; deps: ProofsD
   );
 }
 
-function ProofView({ proof, picture, label, onClose }: { proof: SourceProof; picture: ProofPicture | null; label: string; onClose: () => void }) {
+function ProofView({ proof, picture: shown, label, deps, onClose }: {
+  proof: SourceProof; picture: ProofPicture | null; label: string; deps: ProofsDeps; onClose: () => void;
+}) {
   const when = zagrebParts(proof.createdAt);
+  // Opened before its thumbnail finished: the viewer reads the image itself (undefined while loading).
+  const [picture, setPicture] = useState<ProofPicture | null | undefined>(shown ?? undefined);
+  useEffect(() => {
+    if (shown) return;
+    let live = true;
+    void deps.picture(proof).then((p) => { if (live) setPicture(p); }, () => { if (live) setPicture(null); });
+    return () => { live = false; };
+  }, [deps, proof, shown]);
   return (
     <Dialog open title={t.viewTitle} onClose={onClose} actions={<Button onClick={onClose}>{t.close}</Button>}>
       <p>{label}</p>
       <p className={styles.muted}>{t.viewMeta.replace("{page}", proof.page).replace("{when}", when ? `${when.date} ${when.time}` : proof.createdAt)}</p>
       {proof.note && <p>{t.viewNote.replace("{note}", proof.note)}</p>}
       {picture ? <PictureCanvas picture={picture} className={styles.view} label={t.viewAlt.replace("{page}", proof.page)} />
+        : picture === undefined ? <p className={styles.muted} role="status">{t.loading}</p>
         : <p className={styles.error}>{t.imageMissing}</p>}
       <p className={styles.muted}>{t.viewDisclaimer}</p>
     </Dialog>
