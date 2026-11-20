@@ -13,15 +13,12 @@ import {
 import { formatDateTimeHr } from "../../../lib/i18n/hr.ts";
 import { messagesHr } from "../../../lib/i18n/messages.hr.ts";
 import { zagrebInstant } from "../../../lib/i18n/zagreb.ts";
+import { extensionsHref } from "../links.ts";
 
 import styles from "./DeadlineExtensions.module.css";
 
 const t = messagesHr.deadlineExtensions;
 
-/** The page of N-13 for an assignment. */
-export function extensionsHref(assignmentId: string): string {
-  return `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}/produljenje`;
-}
 
 /** The extensions as the page read them; anything but a list is "unavailable", never "none". */
 export type ExtensionsRead = { kind: "ready"; extensions: readonly DeadlineExtension[] } | { kind: "unavailable" };
