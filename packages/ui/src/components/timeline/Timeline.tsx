@@ -3,6 +3,7 @@
 import { useEffect, useEffectEvent, useState } from "react";
 
 import { Button } from "../Button";
+import { Select } from "../Select";
 import { timelineMessages as t } from "./messages.hr";
 import styles from "./Timeline.module.css";
 
@@ -14,13 +15,15 @@ export type TimelineProps = {
   disabled?: boolean;
 };
 
-const playbackIntervalMs = 700;
+const speedOptions = [1, 2, 4].map((speed) => ({ value: String(speed), label: `${speed}×` }));
 
 export function Timeline({ total, value, onChange, disabled = false }: TimelineProps) {
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState("1");
   const current = Math.max(0, Math.min(value, total));
   const active = playing && !disabled && current < total;
   const advance = useEffectEvent(() => {
+    if (!active) return;
     const next = current + 1;
     if (next >= total) setPlaying(false);
     onChange(next);
@@ -31,9 +34,9 @@ export function Timeline({ total, value, onChange, disabled = false }: TimelineP
       setPlaying(false);
       return;
     }
-    const timer = setTimeout(advance, playbackIntervalMs);
+    const timer = setTimeout(advance, 900 / Number(speed));
     return () => clearTimeout(timer);
-  }, [active, current, total]);
+  }, [active, current, speed, total]);
 
   function seek(next: number) {
     setPlaying(false);
@@ -65,6 +68,8 @@ export function Timeline({ total, value, onChange, disabled = false }: TimelineP
         <Button tone="quiet" disabled={disabled || current === total} onClick={() => seek(current + 1)}>{t.next}</Button>
         <span>{t.step(current, total)}</span>
       </div>
+      <Select label={t.speed} options={speedOptions} value={speed} disabled={disabled}
+        onChange={(event) => setSpeed(event.currentTarget.value)} />
     </div>
   );
 }
