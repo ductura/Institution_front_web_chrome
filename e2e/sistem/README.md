@@ -13,10 +13,10 @@ Ispis sadrži pune Git SHA-ove oba checkouta. Poslužitelj se zadano traži u `.
 Za INT-04 nakon redovnog seeda učitaj `e2e/sistem/seed-int04.sql` u lokalnu ili CI bazu preko PostgreSQL socketa, istom administratorskom ulogom kao redovni seed. Za zadani Compose stog iz korijena web repoa na Linuxu ili u CI-ju pokreni:
 
 ```sh
-docker compose -f ../Institution_server/compose.yaml exec -T postgres-main psql -U postgres -d ductus < e2e/sistem/seed-int04.sql
+docker compose -f ../Institution_server/compose.yaml exec -T postgres-main psql -U ductus -d ductus < e2e/sistem/seed-int04.sql
 ```
 
-Svi testovi koriste isti demo rad. U punom paketu VS-1 ide prvi, zatim slijedi nepovratna predaja u INT-03 pa nastavnički pregled u INT-04. Za zaseban INT-04 koristi `pnpm test:sistem zbirni-pregled-predaje` nakon predaje iz INT-03 na istoj bazi. Za sljedeći puni prolaz pripremi svježu demo bazu i ponovno učitaj fixture jer ponovno pokretanje stoga zadržava predani rad.
+Svi testovi koriste isti demo rad. U punom paketu VS-1 ide prvi, zatim slijedi nepovratna predaja u INT-03 pa nastavnički pregled u INT-04. Za zaseban INT-04 koristi `pnpm test:sistem zavrsni-pregled-nastavnika` nakon predaje iz INT-03 na istoj bazi. Za sljedeći puni prolaz pripremi svježu demo bazu i ponovno učitaj fixture jer ponovno pokretanje stoga zadržava predani rad.
 
 INT-04 koristi nastavničke ekrane na Next.js frontu iz `pnpm stog:gore`. Komentar provjerava kroz API jer taj front na prikazu rada još nema obrazac za komentiranje.
 

@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 
 import { createTextAnchor } from '../../packages/editor-core/src/document/collaboration/anchor';
+import { isNodeId } from '../../packages/editor-core/src/document/document/schema';
 import { messagesHr as t } from '../../src/lib/i18n/messages.hr';
 import { oidcOrigin, webOrigin } from './stog';
 import { openDemoWork, signInDemoStudent } from './student';
@@ -85,7 +86,7 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       await expect(paragraph).toBeVisible();
       const quote = await paragraph.innerText();
       const nodeId = await paragraph.getAttribute('data-node-id');
-      if (!nodeId) throw new Error('U predanom odlomku nedostaje identifikator za sidro komentara.');
+      if (!isNodeId(nodeId)) throw new Error('U predanom odlomku nema valjanog identifikatora za sidro komentara.');
       return { quote, nodeId };
     });
 
