@@ -2,7 +2,7 @@ import { createElement as h, type ReactNode } from "react";
 
 import { Details, KeyValueList } from "@ductura/ui";
 
-import type { ProcessSummaryV1 } from "../../client/process-summary";
+import type { ApiResult } from "../../client/api";
 import { countHr } from "../../lib/i18n/hr";
 import { messagesHr } from "../../lib/i18n/messages.hr";
 import { zagrebEpochMs } from "../../lib/i18n/zagreb";
@@ -13,7 +13,7 @@ import { zagrebParts } from "./zagreb-time";
 
 const t = messagesHr.summary;
 
-export type { ProcessSummaryV1 } from "../../client/process-summary";
+export type ProcessSummaryV1 = Extract<ApiResult<"projection.process-summary.post">, { ok: true }>["body"];
 type MinuteSpan = ProcessSummaryV1["sessions"]["items"][number];
 type Gap = ProcessSummaryV1["gaps"]["items"][number];
 
