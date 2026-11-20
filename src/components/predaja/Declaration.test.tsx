@@ -2,9 +2,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  confirmationKey, DeclarationView, readConfirmed, recordedRows, writeConfirmed,
+  DeclarationView, readConfirmed, recordedRows, writeConfirmed,
   type RecordedRead, type RecordedSummary,
 } from "./Declaration";
+import { confirmationKey } from "./flow";
 
 // Invented summary of an invented work (no real student data).
 const FULL: RecordedSummary = {
@@ -107,13 +108,15 @@ describe("the confirmation lives only in this tab (P-7)", () => {
     return store;
   }
 
-  it("is kept per assignment when the student comes back from step 3", () => {
+  it("is kept per sign-in and per assignment when the student comes back from step 3", () => {
     const store = withStorage();
-    const key = confirmationKey("a1b2c3d4-0000-4000-8000-000000000001");
+    const key = confirmationKey("sim-session-tag-aaaa", "a1b2c3d4-0000-4000-8000-000000000001");
     expect(readConfirmed(key)).toBe(false);
     writeConfirmed(key, true);
     expect(readConfirmed(key)).toBe(true);
-    expect(readConfirmed(confirmationKey("a1b2c3d4-0000-4000-8000-000000000002"))).toBe(false);
+    expect(readConfirmed(confirmationKey("sim-session-tag-aaaa", "a1b2c3d4-0000-4000-8000-000000000002"))).toBe(false);
+    // The next person signed in at the same tab has another sessionTag: nothing is inherited.
+    expect(readConfirmed(confirmationKey("sim-session-tag-bbbb", "a1b2c3d4-0000-4000-8000-000000000001"))).toBe(false);
     writeConfirmed(key, false);
     expect(store.size).toBe(0);
   });

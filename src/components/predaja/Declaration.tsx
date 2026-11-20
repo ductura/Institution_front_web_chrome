@@ -6,6 +6,8 @@ import { useEffect, useId, useState } from "react";
 
 import { countHr } from "../../lib/i18n/hr";
 import { messagesHr } from "../../lib/i18n/messages.hr";
+import { readJournalScope } from "../editor/EditorPage.scope";
+import { confirmationKey, stepHref } from "./flow";
 
 const t = messagesHr.declaration;
 const s = messagesHr.summary;
@@ -32,11 +34,6 @@ export type RecordedRead =
   | { readonly kind: "ready"; readonly summary: RecordedSummary }
   | { readonly kind: "loading" }
   | { readonly kind: "error" };
-
-/** Where the flow keeps the confirmation: this tab only, never the server (P-7). */
-export function confirmationKey(assignmentId: string): string {
-  return `ductura.predaja.izjava.${assignmentId}`;
-}
 
 function isEmpty(summary: RecordedSummary): boolean {
   return summary.sessions.count === 0 && summary.pastes.listed.length === 0
@@ -134,24 +131,42 @@ export function writeConfirmed(key: string, confirmed: boolean): void {
   }
 }
 
-/** The step with its state: never ticked in advance, kept when the student comes back from step 3. */
+/**
+ * The sign-in this tab is under: the `sessionTag` of the session route
+ * (WEB-14c), new at every sign-in. Null while it is read or when it cannot be.
+ */
+export function useSessionTag(): string | null {
+  const [tag, setTag] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void readJournalScope().then((read) => { if (live && read.kind === "scope") setTag(read.session.tag); });
+    return () => { live = false; };
+  }, []);
+  return tag;
+}
+
+/**
+ * The step with its state: never ticked in advance, kept for this sign-in
+ * when the student comes back from step 3, and handed to step 3 in the
+ * address so that refused storage does not lose it.
+ */
 export default function Declaration({ assignmentId, recorded }: DeclarationProps) {
   const router = useRouter();
-  const key = confirmationKey(assignmentId);
+  const tag = useSessionTag();
+  const key = tag === null ? null : confirmationKey(tag, assignmentId);
   const [confirmed, setConfirmed] = useState(false);
   // Read after the first render, so the server's markup (unticked) matches.
-  useEffect(() => setConfirmed(readConfirmed(key)), [key]);
-  const base = `/rad/${encodeURIComponent(assignmentId)}`;
+  useEffect(() => { if (key !== null && readConfirmed(key)) setConfirmed(true); }, [key]);
   return (
     <DeclarationView
       recorded={recorded}
       confirmed={confirmed}
       onConfirm={(next) => {
         setConfirmed(next);
-        writeConfirmed(key, next);
+        if (key !== null) writeConfirmed(key, next);
       }}
-      onNext={() => router.push(`${base}/predaja/pregled`)}
-      onBack={() => router.push(base)}
+      onNext={() => router.push(stepHref(assignmentId, "pregled", tag ?? undefined))}
+      onBack={() => router.push(stepHref(assignmentId, "tekst"))}
       onRetry={() => router.refresh()}
     />
   );
