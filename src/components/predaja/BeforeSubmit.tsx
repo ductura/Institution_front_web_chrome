@@ -13,7 +13,7 @@ import { ProcessSummaryView, type ProcessSummaryV1 } from "../summary/ProcessSum
 import { zagrebParts } from "../summary/zagreb-time";
 import styles from "./BeforeSubmit.module.css";
 import { readConfirmed, useSessionTag } from "./Declaration";
-import { confirmationKey, isDeclared, stepHref } from "./flow";
+import { confirmationKey, isDeclared, samePath, stepHref } from "./flow";
 import { NoteDialog, type NoteAdded } from "./NoteDialog";
 import type { Stage } from "./stage";
 
@@ -158,10 +158,12 @@ export type BeforeSubmitProps = {
   readonly local?: LocalCall;
   /** The `?izjava=` step 2 handed over (flow.ts); taken only for the session signed in now. */
   readonly declaredFor?: string;
+  /** Where a path of the flow (written without a host's base) is opened; the host adds its base. */
+  readonly hrefOf?: (path: string) => string;
 };
 
 /** The step with its state: the declaration as step 2 left it in this tab, the notes from the server. */
-export default function BeforeSubmit({ assignmentId, summary, stage, local, declaredFor }: BeforeSubmitProps) {
+export default function BeforeSubmit({ assignmentId, summary, stage, local, declaredFor, hrefOf = samePath }: BeforeSubmitProps) {
   const router = useRouter();
   const online = useOnline();
   const tag = useSessionTag();
@@ -184,10 +186,10 @@ export default function BeforeSubmit({ assignmentId, summary, stage, local, decl
         stage={stage}
         confirmed={confirmed}
         online={online}
-        onNext={() => router.push(stepHref(assignmentId, "slanje"))}
-        onDeclaration={() => router.push(stepHref(assignmentId, "izjava"))}
-        onBack={() => router.push(stepHref(assignmentId, "izjava"))}
-        onReceipt={() => router.push(stepHref(assignmentId, "potvrda"))}
+        onNext={() => router.push(hrefOf(stepHref(assignmentId, "slanje")))}
+        onDeclaration={() => router.push(hrefOf(stepHref(assignmentId, "izjava")))}
+        onBack={() => router.push(hrefOf(stepHref(assignmentId, "izjava")))}
+        onReceipt={() => router.push(hrefOf(stepHref(assignmentId, "potvrda")))}
         onRetry={() => router.refresh()}
         onOpenNote={() => setNoteOpen(true)}
       />
