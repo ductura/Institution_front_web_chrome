@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import "@ductura/ui/tokens.css";
 
 import { createEditorExtensionsV2 } from "@/editor/schema";
-import type { LocalCall } from "@/client/submission";
 import sample from "../../../../../docs/prototip/editor/samples/primjer-izmisljeni.json";
 import { confirmationKey } from "../../../predaja/flow";
 import { SubmissionRehearsal } from "../SubmissionRehearsal";
@@ -25,17 +24,9 @@ const editor = new Editor({
   },
 });
 
-const requirementsCall: LocalCall = async (id, input) => {
-  if (id !== "student.assignment-requirements.get" || input.body !== undefined) throw new Error("Unexpected call");
-  const response = await fetch(`/api/v1/student/assignments/${input.params.assignmentId}/requirements`, { method: "GET" });
-  return response.ok
-    ? { ok: true, status: response.status, body: await response.json() }
-    : { ok: false, status: response.status, code: "unavailable" };
-};
-
 sessionStorage.setItem(confirmationKey(sessionTag, assignmentId), "1");
 createRoot(document.getElementById("app")!).render(<>
   <SubmissionRehearsal editor={editor} assignmentId={assignmentId} sessionTag={sessionTag}
-    requirementsCall={requirementsCall} enabledChecks={["fix"]} approval="pending" comments={[]} />
+    enabledChecks={["fix"]} approval="pending" comments={[]} />
   <EditorContent editor={editor} />
 </>);

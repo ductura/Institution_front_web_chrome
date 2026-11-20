@@ -6,7 +6,6 @@ import { Button, CheckActionList, Dialog } from "@ductura/ui";
 import { useEditorState, type Editor } from "@tiptap/react";
 
 import type { CommentThread } from "@/client/comments";
-import type { LocalCall } from "@/client/submission";
 import { countTextWords } from "@/lib/i18n/length-line";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -26,8 +25,6 @@ export type SubmissionRehearsalProps = {
   editor: Editor | null;
   assignmentId: string;
   sessionTag: string | null;
-  /** Existing assignment requirements transport, limited here to the read. */
-  requirementsCall?: LocalCall;
   enabledChecks?: readonly string[] | null;
   comments?: readonly CommentThread[];
   approval?: PackageInput["approval"];
@@ -63,7 +60,7 @@ function Rehearsal(props: SubmissionRehearsalProps) {
 }
 
 function RehearsalDialog({
-  editor, assignmentId, sessionTag, requirementsCall, enabledChecks = null, comments, approval,
+  editor, assignmentId, sessionTag, enabledChecks = null, comments, approval,
   supplements, onComments, onPrintPreview, onPackagePreview, close,
 }: Omit<SubmissionRehearsalProps, "editor"> & { editor: Editor; close: () => void }) {
   const intro = useRef<HTMLParagraphElement>(null);
@@ -73,9 +70,9 @@ function RehearsalDialog({
   const declared = readConfirmed(sessionTag === null ? null : confirmationKey(sessionTag, assignmentId));
   useEffect(() => {
     let active = true;
-    void loadRequirements(assignmentId, requirementsCall).then((result) => { if (active) setRequirements(result); });
+    void loadRequirements(assignmentId).then((result) => { if (active) setRequirements(result); });
     return () => { active = false; };
-  }, [assignmentId, requirementsCall]);
+  }, [assignmentId]);
 
   function leaveFor(action: () => void) {
     // The shared dialog must release focus before the editor or the next preview takes it.
