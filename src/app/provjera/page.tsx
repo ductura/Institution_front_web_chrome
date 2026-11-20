@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { publicVerificationHr } from "@/components/public-verification/messages.hr";
-import { VerificationForm } from "@/components/public-verification/VerificationForm";
+import { PublicVerification } from "@/components/public-verification/VerificationForm";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 export const metadata: Metadata = {
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function PublicVerificationPage() {
-  return <VerificationForm />;
+  return <PublicVerification />;
 }

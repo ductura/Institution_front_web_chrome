@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, TextField } from "@ductura/ui";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { zagrebParts } from "@/components/summary/zagreb-time";
 
@@ -10,7 +10,7 @@ import { publicVerificationHr as t } from "./messages.hr";
 import { verifyReceipt, type VerificationResult } from "./verify-receipt";
 import styles from "./verification.module.css";
 
-type State = VerificationResult | { kind: "idle" | "invalid" | "pending" };
+export type VerificationState = VerificationResult | { kind: "idle" | "invalid" | "pending" };
 const emptyCode: VerificationCode = { receiptId: "", fingerprint: "" };
 
 function ReceiptTime({ iso }: { iso: string }) {
@@ -18,7 +18,7 @@ function ReceiptTime({ iso }: { iso: string }) {
   return <time dateTime={iso}>{local ? `${local.date} ${local.time}` : iso}</time>;
 }
 
-export function VerificationFeedback({ state }: { state: State }) {
+export function VerificationFeedback({ state }: { state: VerificationState }) {
   return (
     <div role="status">
       {state.kind !== "idle" && (
@@ -40,12 +40,11 @@ export function VerificationFeedback({ state }: { state: State }) {
   );
 }
 
-export function VerificationForm() {
+export function PublicVerification() {
   const [code, setCode] = useState(emptyCode);
-  const [state, setState] = useState<State>({ kind: "idle" });
+  const [state, setState] = useState<VerificationState>({ kind: "idle" });
   const request = useRef(0);
   const lastFragment = useRef("");
-  const pending = state.kind === "pending";
 
   const check = useCallback(async (parsed: VerificationCode | null) => {
     const current = ++request.current;
@@ -75,36 +74,57 @@ export function VerificationForm() {
 
   return (
     <main id="sadrzaj" tabIndex={-1} className={styles.page}>
-      <section className={styles.panel} aria-labelledby="provjera-naslov">
-        <h1 id="provjera-naslov">{t.title}</h1>
-        <p className={styles.intro}>{t.intro}</p>
-        <form className={styles.form} onSubmit={(event) => {
-          event.preventDefault();
-          if (pending) return;
-          const parsed = code.fingerprint.trim() === ""
+      <VerificationForm
+        code={code}
+        state={state}
+        onChange={(nextCode) => {
+          setCode(nextCode);
+          setState({ kind: "idle" });
+        }}
+        onVerify={() => {
+          void check(code.fingerprint.trim() === ""
             ? parseVerificationCode(code.receiptId)
-            : readVerificationFields(code);
-          void check(parsed);
-        }}>
-          {(["receiptId", "fingerprint"] as const).map((field) => (
-            <TextField
-              key={field}
-              label={t[field]}
-              value={code[field]}
-              onChange={(event) => {
-                setCode({ ...code, [field]: event.target.value });
-                setState({ kind: "idle" });
-              }}
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              busy={pending}
-            />
-          ))}
-          <Button type="submit" busy={pending}>{t.submit}</Button>
-        </form>
-        <VerificationFeedback state={state} />
-      </section>
+            : readVerificationFields(code));
+        }}
+      />
     </main>
+  );
+}
+
+type VerificationFormProps = {
+  code?: VerificationCode;
+  state: VerificationState;
+  onChange?: (code: VerificationCode) => void;
+  onVerify?: () => void;
+};
+
+export function VerificationForm({ code = emptyCode, state, onChange, onVerify }: VerificationFormProps) {
+  const title = useId();
+  const pending = state.kind === "pending";
+  return (
+    <section className={styles.panel} aria-labelledby={title}>
+      <h1 id={title}>{t.title}</h1>
+      <p className={styles.intro}>{t.intro}</p>
+      <form className={styles.form} onSubmit={(event) => {
+        event.preventDefault();
+        if (!pending) onVerify?.();
+      }}>
+        {(["receiptId", "fingerprint"] as const).map((field) => (
+          <TextField
+            key={field}
+            label={t[field]}
+            value={code[field]}
+            onChange={(event) => onChange?.({ ...code, [field]: event.target.value })}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            busy={pending}
+            readOnly={onChange === undefined}
+          />
+        ))}
+        <Button type="submit" busy={pending} disabled={onVerify === undefined}>{t.submit}</Button>
+      </form>
+      <VerificationFeedback state={state} />
+    </section>
   );
 }
