@@ -1,4 +1,4 @@
-import { useId, type TextareaHTMLAttributes } from "react";
+import { useId, type Ref, type TextareaHTMLAttributes } from "react";
 
 import styles from "./Forms.module.css";
 
@@ -7,6 +7,7 @@ export type TextAreaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "i
   hint?: string;
   error?: string;
   busy?: boolean;
+  ref?: Ref<HTMLTextAreaElement>;
 };
 
 /** A multi-line field (WEB-05), the same rules as TextField. */

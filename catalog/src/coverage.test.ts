@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import { basename } from "node:path";
 
 import * as ui from "@ductura/ui";
+import { AssistantThread } from "@ductura/ui/assistant-thread";
 import { describe, expect, it } from "vitest";
 
 import { CATALOG_STATES, catalogGaps, componentNames } from "./coverage";
@@ -139,7 +140,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
 
 describe("every component has a catalogue entry with all five states (web.md §6 B5)", () => {
   it("the catalogue covers every component @ductura/ui exports", () => {
-    expect(catalogGaps(ui, ENTRIES)).toEqual([]);
+    expect(catalogGaps({ ...ui, AssistantThread }, ENTRIES)).toEqual([]);
   });
 
   it("the catalogue covers every component src/components exports (DAN-753)", () => {
