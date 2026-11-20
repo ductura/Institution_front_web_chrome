@@ -6,8 +6,10 @@ export { fold, visibleCommands, type Command } from "./components/command-palett
 export { DEFAULT_SHORTCUT_GROUPS, ShortcutsDialog, type Shortcut, type ShortcutGroup, type ShortcutsDialogProps } from "./components/shortcuts-dialog/ShortcutsDialog";
 export { Details, type DetailsProps } from "./components/Details";
 export { Dialog, type DialogProps } from "./components/Dialog";
+export { Drawer, type DrawerProps, type DrawerSide } from "./components/drawer";
 export { ErrorScreen, type ErrorScreenProps } from "./components/ErrorScreen";
 export { PanelTabs, type PanelTab, type PanelTabsProps } from "./components/PanelTabs";
+export { Popover, type PopoverProps } from "./components/popover";
 export { RouteLoading } from "./components/RouteLoading";
 export { SaveState, type SaveStateProps } from "./components/SaveState";
 export { BLOCKED_TEXT, SAVE_STATES, saveStateContent, type SaveStateName, type SaveTone } from "./components/save-state";
