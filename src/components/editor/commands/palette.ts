@@ -5,11 +5,11 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { BLOCK_STYLES, stateOf, TOOLS } from "../EditorToolbarFor";
 import { convertBlock, copyText, insertHole } from "../toolbar-menu";
+import { editorCommandsHr as text } from "./messages.hr";
 
 type Action = Command & { run?: () => void };
 
 export function paletteActions(editor: Editor, showShortcuts: () => void, openFind?: () => void): Action[] {
-  const text = t.editorCommands;
   const state = stateOf(editor);
   const action = (id: string, label: string, run?: () => void, hint?: string, disabled = !run): Action => ({
     id, label, run, hint, disabled, group: text.palette,
@@ -19,7 +19,7 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
   };
   return [
     action("shortcuts", text.shortcuts, showShortcuts, "Ctrl+/"),
-    action("find", openFind ? text.chapterSearch : text.find, openFind, "Ctrl+F"),
+    action("find", text.findAndReplace, openFind, "Ctrl+F"),
     ...TOOLS.filter(({ key }) => key !== "blockStyle").map((tool) => action(
       tool.key, tool.label, edit(() => tool.run(editor)), tool.keys,
       !state.editable || !(tool.enabled?.(state) ?? true),
