@@ -1,7 +1,8 @@
 import {
-  Button, Card, Checkbox, DataTable, Details, Dialog, DiffView, ErrorScreen, Fingerprint, Icon, ICON_NAMES, KeyValueList, PanelTabs,
-  RouteLoading, SaveState, SearchableList, Select, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag,
-  TextArea, TextField, Timeline, ToastRegion, type DataTableColumn, type IconName,
+  Button, Card, Checkbox, CommandPalette, ContextMenu, DataTable, Details, Dialog, DiffView, Drawer, ErrorScreen, FindBar, Fingerprint,
+  Icon, ICON_NAMES, KeyValueList, PanelTabs, Popover, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
+  Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, Timeline, ToastRegion,
+  type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
 
@@ -90,6 +91,94 @@ function TimelineExample() {
     <Timeline total={REPLAY_TEXT.length - 1} value={value} onChange={setValue} />
     <p>{REPLAY_TEXT[value]}</p>
   </>;
+}
+
+const nothing = () => undefined;
+
+// WEB-6A components (invented example text only). Drawer, Popover, FindBar and ContextMenu
+// show in the page flow; the palette and the shortcuts dialog are modal, so each state
+// opens from its own button, as SourceForm does.
+const SAMPLE_COMMANDS: Command[] = [
+  { id: "bold", label: "Podebljano", hint: "Ctrl+B", group: "Oblikovanje" },
+  { id: "italic", label: "Kurziv", hint: "Ctrl+I", group: "Oblikovanje" },
+  { id: "find", label: "Traži u radu", hint: "Ctrl+F", group: "Rad" },
+  { id: "locked", label: "Dodaj izvor", group: "Rad", disabled: true },
+];
+const SAMPLE_SHORTCUTS: ShortcutGroup[] = [
+  { title: "Oblikovanje", items: [{ keys: "Ctrl+B", label: "Podebljano" }, { keys: "Ctrl+I", label: "Kurziv" }] },
+  { title: "Rad", items: [{ keys: "Ctrl+F", label: "Traži u radu" }, { keys: "Ctrl+K", label: "Naredbe" }] },
+];
+const SAMPLE_MENU: MenuEntry[] = [
+  { kind: "heading", label: "Odlomak" },
+  { kind: "item", id: "copy", label: "Kopiraj", hint: "Ctrl+C" },
+  { kind: "item", id: "comment", label: "Dodaj komentar" },
+  { kind: "item", id: "paste", label: "Zalijepi", disabled: true },
+];
+const FIND_LABELS: FindBarLabels = {
+  search: "Traži u radu", next: "Sljedeća pojava", previous: "Prethodna pojava", close: "Zatvori traženje",
+  none: "Nema pojava.", count: (position, total) => `${position} od ${total}`,
+};
+
+function PaletteExample({ commands, label }: { commands: Command[]; label: string }) {
+  const [open, setOpen] = useState(false);
+  const [ran, setRan] = useState("");
+  return <>
+    <Button aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>{label}</Button>
+    <CommandPalette open={open} commands={commands} onRun={(id) => setRan(id)} onClose={() => setOpen(false)} />
+    <p role="status">{ran === "" ? "" : `Pokrenuto: ${ran}`}</p>
+  </>;
+}
+
+function ShortcutsExample({ groups, label }: { groups: ShortcutGroup[]; label: string }) {
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>{label}</Button>
+    <ShortcutsDialog open={open} groups={groups} onClose={() => setOpen(false)} />
+  </>;
+}
+
+function DrawerExample({ side }: { side: "left" | "right" }) {
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>Otvori ladicu</Button>
+    <Drawer open={open} side={side} title="Struktura rada" onClose={() => setOpen(false)}>
+      <p>Uvod, Metoda, Zaključak.</p>
+    </Drawer>
+  </>;
+}
+
+function PopoverExample() {
+  const anchor = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button ref={anchor} tone="quiet" aria-expanded={open} onClick={() => setOpen(!open)}>Pojedinosti izvora</Button>
+    <Popover open={open} anchor={anchor} label="Pojedinosti izvora" onClose={() => setOpen(false)}>
+      <p>Izmišljeni županijski zbornik, 2026.</p>
+    </Popover>
+  </>;
+}
+
+function ContextMenuExample({ entries }: { entries: MenuEntry[] }) {
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [picked, setPicked] = useState("");
+  return <>
+    <Button aria-haspopup="menu" aria-expanded={anchor !== null} onClick={(event) => {
+      const box = event.currentTarget.getBoundingClientRect();
+      setAnchor({ x: box.left, y: box.bottom });
+    }}>Izbornik odlomka</Button>
+    <ContextMenu anchor={anchor} entries={entries} label="Izbornik odlomka"
+      onSelect={(id) => { setPicked(id); setAnchor(null); }} onClose={() => setAnchor(null)} />
+    <p role="status">{picked === "" ? "" : `Odabrano: ${picked}`}</p>
+  </>;
+}
+
+function FindBarExample({ total, hint }: { total: number; hint?: string }) {
+  const [query, setQuery] = useState(total === 0 && hint === undefined ? "" : "izmišljen");
+  const [current, setCurrent] = useState(0);
+  return <FindBar query={query} onQueryChange={setQuery} current={current} total={total} autoFocus={false}
+    onNext={() => setCurrent((current + 1) % Math.max(total, 1))}
+    onPrevious={() => setCurrent((current + Math.max(total, 1) - 1) % Math.max(total, 1))}
+    onClose={nothing} labels={FIND_LABELS} />;
 }
 
 export const ENTRIES = {
@@ -292,6 +381,48 @@ export const ENTRIES = {
     ]} />,
     onemogućeno: () => <PanelTabs label="Ploče" tabs={[{ id: "pravila", label: "Pravila", content: <p>Zadatak je zatvoren.</p> }]} />,
   },
+  Drawer: {
+    prazno: () => <DrawerExample side="left" />,
+    učitavanje: () => <Drawer open modal={false} side="left" title="Struktura rada" onClose={nothing}><p>Učitavanje…</p></Drawer>,
+    greška: () => <Drawer open modal={false} side="right" title="Komentari" onClose={nothing}><p role="alert">Komentari se nisu učitali.</p></Drawer>,
+    puno: () => <Drawer open modal={false} side="right" title="Struktura rada" onClose={nothing}><p>Uvod, Metoda, Zaključak.</p></Drawer>,
+    onemogućeno: () => <Drawer open modal={false} side="left" title="Struktura rada" onClose={nothing}><p>Ladica trenutačno nije dostupna.</p></Drawer>,
+  },
+  Popover: {
+    prazno: () => <PopoverExample />,
+    učitavanje: () => <Popover open floating={false} anchor={{ current: null }} label="Pojedinosti izvora" onClose={nothing}><p>Učitavanje…</p></Popover>,
+    greška: () => <Popover open floating={false} anchor={{ current: null }} label="Pojedinosti izvora" onClose={nothing}><p role="alert">Pojedinosti se nisu učitale.</p></Popover>,
+    puno: () => <Popover open floating={false} anchor={{ current: null }} label="Pojedinosti izvora" onClose={nothing}><p>Izmišljeni županijski zbornik, 2026.</p></Popover>,
+    onemogućeno: () => <Popover open floating={false} anchor={{ current: null }} label="Pojedinosti izvora" onClose={nothing}><p>Pojedinosti trenutačno nisu dostupne.</p></Popover>,
+  },
+  CommandPalette: {
+    prazno: () => <PaletteExample commands={[]} label="Otvori naredbe (bez naredbi)" />,
+    učitavanje: () => <PaletteExample commands={[{ id: "wait", label: "Učitavanje naredbi…", group: "Rad", disabled: true }]} label="Otvori naredbe (učitavanje)" />,
+    greška: () => <><PaletteExample commands={[]} label="Otvori naredbe (neuspjelo)" /><p role="alert">Naredbe se nisu učitale.</p></>,
+    puno: () => <PaletteExample commands={SAMPLE_COMMANDS} label="Otvori naredbe" />,
+    onemogućeno: () => <PaletteExample commands={SAMPLE_COMMANDS.map((c) => ({ ...c, disabled: true }))} label="Otvori naredbe (isključene)" />,
+  },
+  ShortcutsDialog: {
+    prazno: () => <ShortcutsExample groups={[]} label="Prikaži prečace (bez prečaca)" />,
+    učitavanje: () => <><ShortcutsExample groups={[]} label="Prikaži prečace (učitavanje)" /><p>Učitavanje prečaca…</p></>,
+    greška: () => <><ShortcutsExample groups={[]} label="Prikaži prečace (neuspjelo)" /><p role="alert">Prečaci se nisu učitali.</p></>,
+    puno: () => <ShortcutsExample groups={SAMPLE_SHORTCUTS} label="Prikaži prečace" />,
+    onemogućeno: () => <Button disabled>Prikaži prečace</Button>,
+  },
+  FindBar: {
+    prazno: () => <FindBarExample total={0} />,
+    učitavanje: () => <><FindBarExample total={0} hint="traži" /><p>Traženje u tijeku…</p></>,
+    greška: () => <FindBarExample total={0} hint="nema" />,
+    puno: () => <FindBarExample total={3} />,
+    onemogućeno: () => <p>Traženje trenutačno nije dostupno.</p>,
+  },
+  ContextMenu: {
+    prazno: () => <ContextMenuExample entries={SAMPLE_MENU} />,
+    učitavanje: () => <p>Izbornik se učitava…</p>,
+    greška: () => <p role="alert">Izbornik se nije učitao.</p>,
+    puno: () => <ContextMenuExample entries={SAMPLE_MENU} />,
+    onemogućeno: () => <ContextMenuExample entries={SAMPLE_MENU.map((e) => e.kind === "item" ? { ...e, disabled: true } : e)} />,
+  },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
 
 // The web's own components (src/components, DAN-753), texts from locales/ only.
@@ -419,7 +550,6 @@ const summaryEmpty: ProcessSummaryV1 = {
 };
 const recorded = (summary: ProcessSummaryV1): RecordedSummary => summary;
 const invented: SubmissionNote = { id: "izmisljena-napomena-1", text: "Izmišljena napomena uz predaju.", createdAt: "2026-11-10T10:05:00.000000Z" };
-const nothing = () => undefined;
 const declaration = (over: Partial<DeclarationViewProps>) => (
   <DeclarationView recorded={{ kind: "ready", summary: recorded(summaryWithGap) }} confirmed
     onConfirm={nothing} onNext={nothing} onBack={nothing} onRetry={nothing} {...over} />
