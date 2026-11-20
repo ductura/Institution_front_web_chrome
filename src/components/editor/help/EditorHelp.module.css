@@ -1,0 +1,42 @@
+.quiet, .recording dd {
+  color: var(--ink-3);
+}
+
+.levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius);
+  background: var(--well);
+}
+
+.levels button[aria-pressed="true"] {
+  background: var(--selected);
+  border-color: var(--accent);
+}
+
+.assignment {
+  padding: 10px 12px;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  background: var(--well);
+}
+
+.recording, .recording dd {
+  margin: 0;
+}
+
+.recording > div {
+  padding: 8px 0;
+  border-block-end: 1px solid var(--rule-2);
+}
+
+.recording dt {
+  font-weight: 600;
+}
+
+.step h3 {
+  margin: 6px 0;
+  font-size: 14px;
+}
