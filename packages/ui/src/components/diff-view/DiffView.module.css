@@ -10,12 +10,12 @@
 }
 
 .added {
-  background: color-mix(in srgb, var(--ok) 20%, transparent);
+  background: var(--accent-soft);
   text-decoration: underline;
 }
 
 .removed {
-  background: color-mix(in srgb, var(--warn) 20%, transparent);
+  background: var(--error-soft);
   text-decoration: line-through;
 }
 
