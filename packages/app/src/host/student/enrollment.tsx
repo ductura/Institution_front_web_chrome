@@ -14,13 +14,14 @@ import { createApi, leaveFor, signInHref } from "../../../../../src/client/api.t
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 
 import { hostText } from "../../text";
+import { nextPath } from "../../bases";
 import { useHost } from "../context";
 
 /** A navigation of a screen (written without the base) under the host's base. */
 function useGo() {
   const { base } = useHost();
   const router = useRouter();
-  return (href: string, replace = false) => (replace ? router.replace(appHref(base, href)) : router.push(appHref(base, href)));
+  return (href: string, replace = false) => (replace ? router.replace(nextPath(base, href)) : router.push(nextPath(base, href)));
 }
 
 /** "Upis u kolegij": the code form; after enrolment the next screen is the course's notice (PRODUCT §5 rule 6). */
