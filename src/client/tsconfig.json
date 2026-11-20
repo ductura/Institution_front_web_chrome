@@ -10,9 +10,41 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    // Bridge for the code ported from Ductus 0cdb0f1, which imports through the
+    // Ductus "@/" alias: the same "paths" as src/components/tsconfig.json
+    // (runtime twin: src/components/vitest.alias.ts, used by vitest.config.ts).
+    // Editor and domain paths point at their new place in @ductura/editor-core;
+    // the rest resolves under src/.
+    "paths": {
+      "@/editor": ["../../packages/editor-core/src/editor"],
+      "@/editor/*": ["../../packages/editor-core/src/editor/*"],
+      "@/domain/json": ["../../packages/editor-core/src/document/json"],
+      "@/domain/forensics/*": ["../../packages/editor-core/src/document/forensics/*"],
+      "@/domain/document": ["../../packages/editor-core/src/document/document"],
+      "@/domain/document/*": ["../../packages/editor-core/src/document/document/*"],
+      "@/domain/citation": ["../../packages/editor-core/src/document/citation"],
+      "@/domain/citation/*": ["../../packages/editor-core/src/document/citation/*"],
+      "@/domain/collaboration": ["../../packages/editor-core/src/document/collaboration"],
+      "@/domain/collaboration/*": ["../../packages/editor-core/src/document/collaboration/*"],
+      "@/domain/diff": ["../../packages/editor-core/src/document/diff"],
+      "@/domain/diff/*": ["../../packages/editor-core/src/document/diff/*"],
+      "@/domain/text/*": ["../../packages/editor-core/src/document/text/*"],
+      "@/domain/sync": ["../../packages/editor-core/src/sync"],
+      "@/domain/sync/*": ["../../packages/editor-core/src/sync/*"],
+      "@/domain/serverSync/*": ["../../packages/editor-core/src/serverSync/*"],
+      "@/lib/journal/*": ["../../packages/editor-core/src/journal/*"],
+      "@/lib/sync/*": ["../../packages/editor-core/src/sync/runner/*"],
+      "@/*": ["../*"]
+    }
   },
   "include": ["*.ts"],
   // Ported from Ductus 0cdb0f1 and checked by tsconfig.ductus.json instead.
-  "exclude": ["comments.ts", "comments.test.ts", "revision-requests.ts", "revision-requests.test.ts"]
+  "exclude": [
+    "comments.ts", "comments.test.ts", "revision-requests.ts", "revision-requests.test.ts",
+    "evidence-ingest.ts", "evidence-ingest.test.ts", "evidence-session-deps.ts", "evidence-session-deps.test.ts",
+    "evidence-session-deps.integration.test.ts",
+    "live-publisher.ts", "live-publisher.test.ts", "logout-hold.ts", "logout-hold.test.ts",
+    "logout-request.ts", "logout-request.test.ts"
+  ]
 }

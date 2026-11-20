@@ -16,6 +16,18 @@ const K = new Uint32Array([
 
 const rotr = (x: number, n: number): number => (x >>> n) | (x << (32 - n));
 
+/**
+ * A word of a fixed-size table. Every index below is within the table's bounds
+ * (FIPS 180-4 fixes them); a wrong bound throws rather than hashing `undefined`.
+ */
+function word(table: Uint32Array, index: number): number {
+  const value = table[index];
+  if (value === undefined) {
+    throw new RangeError(`snapshotHash: word ${index} is outside the table`);
+  }
+  return value;
+}
+
 export function snapshotHash(text: string): string {
   const bytes = new TextEncoder().encode(text);
   const padded = new Uint8Array(Math.ceil((bytes.length + 9) / 64) * 64);
@@ -33,13 +45,22 @@ export function snapshotHash(text: string): string {
   for (let offset = 0; offset < padded.length; offset += 64) {
     for (let t = 0; t < 16; t++) w[t] = view.getUint32(offset + t * 4);
     for (let t = 16; t < 64; t++) {
-      const s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
-      const s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
-      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) >>> 0;
+      const w15 = word(w, t - 15);
+      const w2 = word(w, t - 2);
+      const s0 = rotr(w15, 7) ^ rotr(w15, 18) ^ (w15 >>> 3);
+      const s1 = rotr(w2, 17) ^ rotr(w2, 19) ^ (w2 >>> 10);
+      w[t] = (word(w, t - 16) + s0 + word(w, t - 7) + s1) >>> 0;
     }
-    let [a, b, c, d, e, f, g, k] = h;
+    let a = word(h, 0);
+    let b = word(h, 1);
+    let c = word(h, 2);
+    let d = word(h, 3);
+    let e = word(h, 4);
+    let f = word(h, 5);
+    let g = word(h, 6);
+    let k = word(h, 7);
     for (let t = 0; t < 64; t++) {
-      const t1 = (k + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[t] + w[t]) >>> 0;
+      const t1 = (k + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + word(K, t) + word(w, t)) >>> 0;
       const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
       k = g;
       g = f;
@@ -50,14 +71,15 @@ export function snapshotHash(text: string): string {
       b = a;
       a = (t1 + t2) >>> 0;
     }
-    h[0] += a;
-    h[1] += b;
-    h[2] += c;
-    h[3] += d;
-    h[4] += e;
-    h[5] += f;
-    h[6] += g;
-    h[7] += k;
+    // Assigning into the Uint32Array wraps modulo 2^32, as `+=` did.
+    h[0] = word(h, 0) + a;
+    h[1] = word(h, 1) + b;
+    h[2] = word(h, 2) + c;
+    h[3] = word(h, 3) + d;
+    h[4] = word(h, 4) + e;
+    h[5] = word(h, 5) + f;
+    h[6] = word(h, 6) + g;
+    h[7] = word(h, 7) + k;
   }
   return Array.from(h, (x) => x.toString(16).padStart(8, "0")).join("");
 }

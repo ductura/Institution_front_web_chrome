@@ -5,7 +5,17 @@
   // packages/editor-core and src/domain (DAN-990). Everything else in
   // src/client stays under tsconfig.json.
   "extends": "./tsconfig.json",
-  "compilerOptions": { "noUncheckedIndexedAccess": false },
-  "include": ["comments.ts", "comments.test.ts", "revision-requests.ts", "revision-requests.test.ts"],
+  "compilerOptions": {
+    // The "paths" of tsconfig.json bridge the Ductus "@/" alias here too
+    // (editor-core's "@/lib/i18n/hr", the editor's "@/domain/...").
+    "noUncheckedIndexedAccess": false
+  },
+  "include": [
+    "comments.ts", "comments.test.ts", "revision-requests.ts", "revision-requests.test.ts",
+    "evidence-ingest.ts", "evidence-ingest.test.ts", "evidence-session-deps.ts", "evidence-session-deps.test.ts",
+    "evidence-session-deps.integration.test.ts",
+    "live-publisher.ts", "live-publisher.test.ts", "logout-hold.ts", "logout-hold.test.ts",
+    "logout-request.ts", "logout-request.test.ts"
+  ],
   "exclude": []
 }

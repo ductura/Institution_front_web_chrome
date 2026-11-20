@@ -41,6 +41,8 @@ const en = {
       fastPath: "Quick path",
       // DAN-492 (N-16): the works a teacher mentors, outside any course.
       mentoredWorks: "Mentored works",
+      // WEB-17 (A-9): the course summary (N-17), the teacher's fourth place.
+      summary: "Course summary",
       workspace: "Workspace",
       enroll: "Join a course",
       institution: "Institution overview",
@@ -881,8 +883,8 @@ const en = {
     // #711 F1b (contract §4): the earlier draft of this device, offered only to read and copy.
     earlierDraftSummary: "This device keeps an earlier text of yours that is not in this work.",
     // Owner (#711, O3 and amendment c): since 3d-2c2b a paste is an evidence step of the work, so the sentence that says so is back.
-    earlierDraftExplain: "The text stays where it is and is not deleted. If you want it in this work, copy it and paste it in; the record of the work then logs that as a paste.",
-    earlierDraftCopy: "Copy text",
+    earlierDraftExplain: "The text stays in the earlier draft. To use it in this work, put it on the clipboard and paste it here. The work record logs it as a paste.",
+    earlierDraftCopy: "Put text on the clipboard",
     // Owner accepted (#711 c.6396392080, b): the contract text "Kopirano u međuspremnik." fails the stem list of messages.test.ts (kopiran).
     earlierDraftCopied: "The text is on the clipboard.",
     // Owner accepted (#711 c.6396392080, a): the contract text "Tekst nije moguće kopirati." is a forbidden term (kopir-, PRODUCT §5).
@@ -1019,9 +1021,9 @@ const en = {
     unconfirmedNote:
       "You can answer once the server has received every change to the text. If an error or a conflict is reported with the text, follow that notice first; the explanation you typed stays here.",
     keptLabel: "Unsent explanation",
-    keptHint: "This explanation was not sent because the request can no longer be answered. Copy it if you want to keep it.",
+    keptHint: "This explanation was not sent because the request can no longer be answered. Use the clipboard to keep it elsewhere.",
     keptForLabel: "Unsent explanation for revision request {n}",
-    keptUnloadedHint: "This explanation was not sent, and the requests cannot be loaded right now. Copy it if you want to keep it.",
+    keptUnloadedHint: "This explanation was not sent, and the requests cannot be loaded right now. Use the clipboard to keep it elsewhere.",
     errors: {
       signedOut: "Your sign-in has expired. Sign in again.",
       forbidden: "This account cannot answer this request.",
@@ -1192,6 +1194,7 @@ const en = {
         inProgress: "Work started, not submitted",
         submitted: "Submitted {time}",
         afterDeadline: "Submitted {time}, after the deadline",
+        submittedNoTime: "Submitted",
       },
       readNotice: "Read the instructions",
       start: "Open assignment",
@@ -1212,6 +1215,12 @@ const en = {
       due: "Deadline: {time}",
       open: "Open assignment",
       readNotice: "Read the instructions",
+      // WEB-09 (A-3): the course's teachers and an extended deadline, as student.assignments.get returns them.
+      teachers: "Teachers",
+      teacherRole: { holder: "course holder", collaborator: "collaborator" },
+      extendedDue: "Extended deadline: {time}",
+      // Until /upis moves over (WEB-11), the empty state leads there instead of holding the form.
+      enrollLink: "Enrol with a course code",
       unavailableHeading: "This view is not available right now.",
       unavailableBody: "The data could not be loaded. This does not mean there are no courses or works.",
       // S01_prazna: the first arrival, verbatim from the package's PNG.
@@ -1247,6 +1256,23 @@ const en = {
         invalid: "The enrolment was not accepted. Reload the page.",
         unavailable: "Enrolment is not possible right now. Try again.",
         offline: "No connection to the server. Check your network and try again.",
+      },
+      codeErrors: {
+        invalidCode: "This code does not exist. Check it with your teacher and enter it again.",
+        expiredCode: "This code has expired. Ask your teacher for a new code.",
+        signedOut: "Your sign-in has expired. Sign in again, then enter the code.",
+      },
+      already: {
+        title: "You are already enrolled",
+        body: "You are already enrolled in this course. There is no need to enter the code again.",
+        open: "Open the course",
+        close: "Enter another code",
+      },
+      empty: {
+        title: "You are enrolled in the course",
+        body: "The course has no published assignment yet. When your teacher publishes one, you will see it among your assignments.",
+        assignments: "My assignments",
+        close: "Close",
       },
       course: {
         none: "You are enrolled in the course, but it has no open assignment yet. When your teacher publishes one, come back to this page.",
@@ -1391,13 +1417,13 @@ const en = {
       "The record stays linked to you on this device, and you continue it when you sign in again. Anyone who signs in on this device after you does not see your work.",
     // 3d-2c, P3 and P4 (a): a copy kept outside the work stays on sign-out.
     logoutCopy: {
-      one: "This device keeps {n} copy of text that is not in the work.",
-      few: "This device keeps {n} copies of text that are not in the work.",
-      many: "This device keeps {n} copies of text that are not in the work.",
+      one: "This device keeps {n} version of the text outside the work.",
+      few: "This device keeps {n} versions of the text outside the work.",
+      many: "This device keeps {n} versions of the text outside the work.",
     },
     logoutCopyKept:
-      "Signing out does not delete the copy. It stays linked to you on this device, and you see it again when you sign in.",
-    copyTitle: "Copy of the text",
+      "The text stays linked to you on this device. You can see it again when you sign in.",
+    copyTitle: "Text kept outside the work",
     // F-154 (owner decision 1.3): text written after the submission stays on
     // sign-out (D-118) and goes only on the author's second click.
     afterSubmissionTitle: "Changes after the submission",
@@ -1406,13 +1432,13 @@ const en = {
     afterSubmissionDiscardConfirm: "Yes, delete the changes",
     afterSubmissionKeep: "Keep the changes",
     afterSubmissionDiscardFailed: "The changes were not deleted and stay on this device. Try again.",
-    copyNewestOnly: "The actions apply to the newest copy.",
+    copyNewestOnly: "The actions apply to the newest version.",
     copyRestore: "Return the text to the work",
-    copyDiscard: "Discard the copy",
-    copyDiscardAsk: "A discarded copy cannot be restored. Discard it?",
-    copyDiscardConfirm: "Yes, discard the copy",
-    copyKeep: "Keep the copy",
-    copyDiscardFailed: "The copy was not discarded and stays on this device. Try again.",
+    copyDiscard: "Discard this version",
+    copyDiscardAsk: "A discarded version cannot be restored. Discard it?",
+    copyDiscardConfirm: "Yes, discard this version",
+    copyKeep: "Keep this version",
+    copyDiscardFailed: "This version remains on the device. Try again.",
     // #1330, #1444: ended here; nothing calls the server again.
     logoutDevice:
       "Sign-out on this device is complete. The server is not responding right now, so the sign-in there ends at the next sign-in or when it expires.",
@@ -1499,6 +1525,46 @@ const en = {
     noRoleNext: "Ask your faculty's administrator to give you a role, then sign in again.",
     logoutBody: "You will be signed out of Ductura and of AAI@EduHr in this browser, then return to the front page.",
   },
+  // WEB-17 (A-9, N-17): the teacher's course summary; empty until its read arrives.
+  teacherSummary: {
+    title: "Course summary",
+    lead: "A summary of a course without student names, only for a course with at least five students.",
+    emptyTitle: "The course summary has no data yet",
+    emptyBody: "Once the course summary is available, you will see summary figures for your courses here. Individual students are not shown here.",
+  },
+  // WEB-18 (N-01, dk-h): the teacher's courses and their enrolment codes.
+  teacherCourseCodes: {
+    title: "Courses and enrolment codes",
+    lead: "The courses you teach. Students enrol with a code you issue here.",
+    emptyTitle: "You have no courses yet",
+    emptyBody: "A course is created by the faculty administrator, who assigns it to its holder. Once you are added to a course, it appears here.",
+    emptyNext: "If you need a new course, contact your faculty administrator.",
+    unavailable: "Courses are currently unavailable. Please try again.",
+    retry: "Try again",
+    yearHeading: "Academic year {year}",
+    assignments: { none: "No assignments yet", one: "assignment", few: "assignments", many: "assignments" },
+    codeButton: "Enrolment code",
+    issuedNote: "A code was issued and is valid until {until}.",
+    revokedNote: "The code was revoked.",
+    nothingRevokedNote: "The course had no valid code.",
+    unknownNote: "It is not known whether the last code request went through. Issue a new code before sharing one.",
+    dialogTitle: "Enrolment code: {course}",
+    dialogLead: "A new code replaces the previous one; the old code stops working.",
+    validUntil: "Valid until (Zagreb time)",
+    validUntilInvalid: "Enter a date and time that exist.",
+    issue: "Issue a new code",
+    issuing: "Issuing…",
+    revoke: "Revoke code",
+    revoking: "Revoking…",
+    close: "Close",
+    shownOnce: "The code is shown only now. Write it down or pass it to the students before closing.",
+    codeLabel: "Enrolment code",
+    errors: {
+      invalid: "The server did not accept that date. Choose another.",
+      forbidden: "You do not teach this course, so you cannot issue or revoke its code.",
+      unavailable: "It is not known whether the request went through. The code shown may no longer work; issue a new code.",
+    },
+  },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,
   // read only, as docs/design/ductura/m2-reference/a03-kolegiji-tim-i-grupe.html
   // writes them. Students are only counted, never named.
@@ -1522,6 +1588,34 @@ const en = {
     emptyNote: "A course is created by a teacher with a confirmed role; confirmation is under “Users and roles”.",
     unavailable: "Courses are not available right now. Try again.",
     retry: "Try again",
+    newCourse: {
+      title: "New course",
+      lead: "A course is created by the institution administrator. The holder then sees it among their courses.",
+      name: "Course name",
+      academicYear: "Academic year",
+      aiPolicy: "AI assistance",
+      holder: "Holder identifier",
+      holderHint: "The identifier of a teacher with a confirmed role, as shown under “Users and roles”.",
+      groups: "Seminar groups",
+      groupsHint: "One group per line, at most 20. May stay empty.",
+      submit: "Create course",
+      busy: "Creating…",
+      nameRequired: "Enter the course name.",
+      nameTooLong: "The name can have at most 160 characters.",
+      holderInvalid: "Enter the holder identifier in the form of 8-4-4-4-12 characters.",
+      groupsTooMany: "At most 20 groups.",
+      groupTooLong: "A group name can have at most 80 characters.",
+      groupDuplicate: "Two groups have the same name.",
+      created: "The course “{name}” has been created.",
+      createdGroups: "Seminar groups",
+      createdNoGroups: "The course has no seminar groups.",
+      another: "Create another course",
+      conflict: "A course with this name already exists in this academic year.",
+      invalid: "The server did not accept the data. Check the holder: they must be a teacher of this institution with a confirmed role.",
+      forbidden: "Only the institution administrator can create a course.",
+      signedOut: "The session has ended. Sign in again, then create the course.",
+      unavailable: "The course cannot be created right now. Try again.",
+    },
   },
   // DAN-590 (M2.12-P03, A-04): the faculty rule versions of DAN-315, read
   // only. The package of form rules (facultyRules below, M4) has no data yet
@@ -1865,6 +1959,14 @@ const en = {
     detailsSummary: "Assignment rules",
     detailsBody: "The work is written in Ductura. The teacher sees it as it is written.",
     blocked: "Another tab",
+    table: "Table and state tags",
+    tableCaption: "Assignment submissions (invented data)",
+    tableEmptyCaption: "Empty table",
+    tableLoadingCaption: "Table while loading",
+    tableEmpty: "No submissions yet.",
+    student: "Student",
+    state: "State",
+    submittedAt: "Submitted at",
   },
   statusPage: {
     pageTitle: "System status",

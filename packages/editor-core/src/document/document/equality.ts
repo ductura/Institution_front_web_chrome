@@ -35,7 +35,10 @@ function childrenEqual(
   a: readonly InlineNodeV2[],
   b: readonly InlineNodeV2[],
 ): boolean {
-  return a.length === b.length && a.every((child, i) => inlineEqual(child, b[i]));
+  return a.length === b.length && a.every((child, i) => {
+    const other = b[i];
+    return other !== undefined && inlineEqual(child, other);
+  });
 }
 
 function shapeEqual(a: DocumentNodeV2, b: DocumentNodeV2): boolean {
@@ -89,9 +92,11 @@ export function documentsEqual(
     return false;
   }
   const other = b.nodes as readonly DocumentNodeV2[];
-  return (a.nodes as readonly DocumentNodeV2[]).every(
-    (node, i) => node.id === other[i].id && shapeEqual(node, other[i]),
-  );
+  // sameFrame checked that both have as many nodes, so other[i] is present.
+  return (a.nodes as readonly DocumentNodeV2[]).every((node, i) => {
+    const twin = other[i];
+    return twin !== undefined && node.id === twin.id && shapeEqual(node, twin);
+  });
 }
 
 /**
@@ -109,5 +114,8 @@ export function contentEqual(
     return false;
   }
   const other = b.nodes as readonly DocumentNodeV2[];
-  return (a.nodes as readonly DocumentNodeV2[]).every((node, i) => shapeEqual(node, other[i]));
+  return (a.nodes as readonly DocumentNodeV2[]).every((node, i) => {
+    const twin = other[i];
+    return twin !== undefined && shapeEqual(node, twin);
+  });
 }

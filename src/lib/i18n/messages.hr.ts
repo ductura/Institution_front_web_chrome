@@ -42,6 +42,8 @@ export const hr = {
       fastPath: "Brz put",
       // DAN-492 (N-16): the works a teacher mentors, outside any course.
       mentoredWorks: "Radovi uz mentora",
+      // WEB-17 (A-9): the course summary (N-17), the teacher's fourth place.
+      summary: "Zbirni pregled",
       workspace: "Radni prostor",
       enroll: "Upis u kolegij",
       institution: "Pregled ustanove",
@@ -1204,6 +1206,8 @@ export const hr = {
         inProgress: "Rad je započet, nije predan",
         submitted: "Predano {time}",
         afterDeadline: "Predano {time}, nakon roka",
+        // WEB-10: student.assignment-work.get gives the state without its time.
+        submittedNoTime: "Predano",
       },
       readNotice: "Pročitaj upute",
       start: "Otvori zadatak",
@@ -1224,6 +1228,12 @@ export const hr = {
       due: "Rok: {time}",
       open: "Otvori zadatak",
       readNotice: "Pročitaj upute",
+      // WEB-09 (A-3): the course's teachers and an extended deadline, as student.assignments.get returns them.
+      teachers: "Nastavnici",
+      teacherRole: { holder: "nositelj", collaborator: "suradnik" },
+      extendedDue: "Produljeni rok: {time}",
+      // Until /upis moves over (WEB-11), the empty state leads there instead of holding the form.
+      enrollLink: "Upiši kolegij kodom",
       unavailableHeading: "Prikaz trenutačno nije dostupan.",
       unavailableBody: "Podatke nije bilo moguće učitati. To ne znači da nema kolegija ili radova.",
       // S01_prazna: the first arrival, verbatim from the package's PNG.
@@ -1259,6 +1269,26 @@ export const hr = {
         invalid: "Upis nije prihvaćen. Ponovno učitajte stranicu.",
         unavailable: "Upis trenutačno nije moguć. Pokušajte ponovno.",
         offline: "Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.",
+      },
+      // WEB-11 (A-2): the server's own refusals over student.enrollments.post.
+      codeErrors: {
+        invalidCode: "Ovaj kod ne postoji. Provjerite ga s nastavnikom i upišite ponovno.",
+        expiredCode: "Ovaj kod je istekao. Zatražite novi kod od nastavnika.",
+        signedOut: "Prijava je istekla. Prijavite se ponovno pa upišite kod.",
+      },
+      // PD-5: the code belongs to a course the student is already in.
+      already: {
+        title: "Već ste upisani",
+        body: "Već ste upisani u ovaj kolegij. Kod nije potrebno ponovno upisivati.",
+        open: "Otvori kolegij",
+        close: "Upiši drugi kod",
+      },
+      // PD-6: enrolled, but the course has no published assignment yet.
+      empty: {
+        title: "Upisani ste u kolegij",
+        body: "U kolegiju zasad nema objavljenog zadatka. Kad ga nastavnik objavi, vidjet ćete ga među svojim zadacima.",
+        assignments: "Moji zadaci",
+        close: "Zatvori",
       },
       course: {
         none: "Upisani ste u kolegij, ali u njemu zasad nema otvorenog zadatka. Kad ga nastavnik objavi, vratite se na ovu stranicu.",
@@ -1514,6 +1544,51 @@ export const hr = {
     noRoleNext: "Javite se administratoru svojeg fakulteta da Vam dodijeli ulogu, pa se ponovno prijavite.",
     logoutBody: "Odjavit ćete se iz Ducture i iz sustava AAI@EduHr u ovom pregledniku, a zatim se vraćate na početnu stranicu.",
   },
+  // WEB-17 (A-9, N-17): the teacher's "Zbirni pregled" in the side bar. Until
+  // the summary's read arrives it shows only its empty state; when it does,
+  // it is a course with at least five students, without names and without a
+  // ranking (D-242, PRODUCT §5 rule 2).
+  teacherSummary: {
+    title: "Zbirni pregled",
+    lead: "Zbirni pregled kolegija bez imena studenata, samo za kolegij s najmanje pet studenata.",
+    emptyTitle: "Zbirni pregled još nema podataka",
+    emptyBody: "Kad zbirni pregled bude dostupan, ovdje ćete vidjeti zbirne brojke za svoje kolegije. Pojedinačni studenti se ovdje ne prikazuju.",
+  },
+  // WEB-18 (N-01, dk-h, A-7, A-8): the teacher's courses and their enrolment
+  // codes. The server keeps only a hash: the code is shown once, in the dialog
+  // that issued it; afterwards the page only says that one was issued.
+  teacherCourseCodes: {
+    title: "Kolegiji i kodovi za upis",
+    lead: "Kolegiji u kojima predajete. Studenti se upisuju kodom koji ovdje izdajete.",
+    emptyTitle: "Još nemate kolegija",
+    emptyBody: "Kolegij izrađuje administrator fakulteta i dodjeljuje ga nositelju. Kad Vas doda u kolegij, on se pojavljuje ovdje.",
+    emptyNext: "Treba li Vam novi kolegij, javite se administratoru svojeg fakulteta.",
+    unavailable: "Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.",
+    retry: "Pokušaj ponovno",
+    yearHeading: "Akademska godina {year}",
+    assignments: { none: "Još nema zadataka", one: "zadatak", few: "zadatka", many: "zadataka" },
+    codeButton: "Kod za upis",
+    issuedNote: "Kod je izdan i vrijedi do {until}.",
+    revokedNote: "Kod je opozvan.",
+    nothingRevokedNote: "Kolegij nije imao važeći kod.",
+    unknownNote: "Nije poznato je li zadnji zahtjev za kod proveden. Prije dijeljenja izdajte novi kod.",
+    dialogTitle: "Kod za upis: {course}",
+    dialogLead: "Novi kod zamjenjuje prethodni; stari kod od tada više ne vrijedi.",
+    validUntil: "Vrijedi do (po zagrebačkom vremenu)",
+    validUntilInvalid: "Upišite postojeći datum i vrijeme.",
+    issue: "Izdaj novi kod",
+    issuing: "Izdajem…",
+    revoke: "Opozovi kod",
+    revoking: "Opozivam…",
+    close: "Zatvori",
+    shownOnce: "Kod se prikazuje samo sada. Zapišite ga ili ga prenesite studentima prije zatvaranja.",
+    codeLabel: "Kod za upis",
+    errors: {
+      invalid: "Poslužitelj nije prihvatio taj datum. Odaberite drugi.",
+      forbidden: "Ne predajete na ovom kolegiju pa ne možete izdati ni opozvati njegov kod.",
+      unavailable: "Nije poznato je li zahtjev proveden. Prikazani kod možda više ne vrijedi; izdajte novi kod.",
+    },
+  },
   // DAN-591 (M2.11-P03, A-03): the institution's courses by academic year,
   // read only, as docs/design/ductura/m2-reference/a03-kolegiji-tim-i-grupe.html
   // writes them. Students are only counted, never named.
@@ -1537,6 +1612,35 @@ export const hr = {
     emptyNote: "Kolegij stvara nastavnik s potvrđenom ulogom; potvrda je u „Korisnici i uloge”.",
     unavailable: "Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
+    // WEB-20 (Ductus#2028): the administrator creates a course with its holder and groups.
+    newCourse: {
+      title: "Novi kolegij",
+      lead: "Kolegij izrađuje administrator ustanove. Nositelj ga zatim vidi među svojim kolegijima.",
+      name: "Naziv kolegija",
+      academicYear: "Akademska godina",
+      aiPolicy: "AI pomoć",
+      holder: "Identifikator nositelja",
+      holderHint: "Identifikator nastavnika s potvrđenom ulogom, kako je naveden u „Korisnici i uloge”.",
+      groups: "Seminarske grupe",
+      groupsHint: "Jedna grupa po retku, najviše 20. Može ostati prazno.",
+      submit: "Izradi kolegij",
+      busy: "Izrađuje se…",
+      nameRequired: "Upišite naziv kolegija.",
+      nameTooLong: "Naziv može imati najviše 160 znakova.",
+      holderInvalid: "Upišite identifikator nositelja u obliku 8-4-4-4-12 znakova.",
+      groupsTooMany: "Najviše 20 grupa.",
+      groupTooLong: "Naziv grupe može imati najviše 80 znakova.",
+      groupDuplicate: "Dvije grupe imaju isti naziv.",
+      created: "Kolegij „{name}” je izrađen.",
+      createdGroups: "Seminarske grupe",
+      createdNoGroups: "Kolegij nema seminarskih grupa.",
+      another: "Izradi još jedan kolegij",
+      conflict: "Kolegij s tim nazivom u toj akademskoj godini već postoji.",
+      invalid: "Server nije prihvatio podatke. Provjerite nositelja: mora biti nastavnik ove ustanove s potvrđenom ulogom.",
+      forbidden: "Kolegij može izraditi samo administrator ustanove.",
+      signedOut: "Sesija je završila. Prijavite se ponovno pa izradite kolegij.",
+      unavailable: "Kolegij trenutačno nije moguće izraditi. Pokušajte ponovno.",
+    },
   },
   // DAN-590 (M2.12-P03, A-04): the faculty rule versions of DAN-315, read
   // only. The package of form rules (facultyRules below, M4) has no data yet
@@ -1886,6 +1990,14 @@ export const hr = {
     detailsSummary: "Pravila zadatka",
     detailsBody: "Rad se piše u Ducturi. Nastavnik vidi rad dok nastaje.",
     blocked: "Druga kartica",
+    table: "Tablica i oznake stanja",
+    tableCaption: "Predaje zadatka (izmišljeni podaci)",
+    tableEmptyCaption: "Prazna tablica",
+    tableLoadingCaption: "Tablica koja se učitava",
+    tableEmpty: "Još nema predaja.",
+    student: "Student",
+    state: "Stanje",
+    submittedAt: "Vrijeme predaje",
   },
   statusPage: {
     pageTitle: "Stanje sustava",
