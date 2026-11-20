@@ -99,6 +99,24 @@ describe("src/client/api answers", () => {
     expect(await api("platform.health.get", NONE)).toEqual({ ok: false, status: 0, code: "unexpected" });
   });
 
+  // WEB-ER (Ductus#2028 c.7020060555): only a 5xx keeps its status, so a caller can send the same request again.
+  it.each([
+    [500, 500], [502, 502], [503, 503], [599, 599], [201, 0], [400, 0], [401, 0], [409, 0], [499, 0],
+  ])("an unreadable JSON body under HTTP %i is status %i", async (http, status) => {
+    expect(await answering(http, "{not json").api("platform.health.get", NONE)).toEqual({ ok: false, status, code: "unexpected" });
+    expect(await answering(http, "{not json").api("profile.me.get", NONE)).toEqual({ ok: false, status, code: "unexpected" });
+  });
+
+  it("an unreadable 5xx of a protocol route keeps no body", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response("{", { status: 503, headers: { "content-type": "application/json" } }));
+    const api = createApi({ baseUrl: "https://ductura.example.invalid", fetchImpl, protocol: "2" });
+    const input = vectorInput("evidence.commit.post", VECTORS.find((v) => v.route === "evidence.commit.post")!.name);
+    const result = await api("evidence.commit.post", input);
+    expect(result).toEqual({ ok: false, status: 503, code: "unexpected" });
+    expect(Object.hasOwn(result, "body")).toBe(false);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it("reads a contracted 409 answer and refuses one that breaks its schema", async () => {
     const input = vectorInput("live.document.put", "conflict");
     const token = "1b2c3d4e-5f60-4718-8293-a4b5c6d7e8fa";

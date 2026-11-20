@@ -2,9 +2,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  confirmationKey, DeclarationView, readConfirmed, recordedRows, writeConfirmed,
+  DeclarationView, readConfirmed, recordedRows, writeConfirmed,
   type RecordedRead, type RecordedSummary,
 } from "./Declaration";
+import { confirmationKey } from "./flow";
+import { clearSubmissionStorage, submissionKey } from "./storage";
 
 // Invented summary of an invented work (no real student data).
 const FULL: RecordedSummary = {
@@ -56,6 +58,7 @@ describe("DeclarationView (WEB-24, S: E-9)", () => {
     const markup = text(render({ kind: "ready", summary: FULL }));
     expect(markup).toContain("Zabilježeno u Ducturi zabilježeno");
     expect(markup).toContain("Vaša izjava izjavljeno");
+    expect(markup).toContain("pregledali što je zabilježeno u Ducturi");
   });
 
   it("puts each number next to its threshold (full)", () => {
@@ -84,6 +87,9 @@ describe("DeclarationView (WEB-24, S: E-9)", () => {
   it("offers a retry on error and still lets the student go on (§5 rule 11)", () => {
     const markup = render({ kind: "error" }, true);
     expect(markup).toContain("Zabilježene stavke trenutačno nije moguće učitati.");
+    // Nothing asks the student to confirm a review of what the page could not show.
+    expect(markup).not.toContain("pregledali");
+    expect(markup).toContain("Potvrdom potvrđujete samo svoju izjavu.");
     expect(button(markup, "Pokušaj ponovno")).not.toBe("");
     expect(button(markup, "Dalje")).not.toContain("disabled");
   });
@@ -102,20 +108,49 @@ describe("the confirmation lives only in this tab (P-7)", () => {
         getItem: (k: string) => store.get(k) ?? null,
         setItem: (k: string, v: string) => void store.set(k, v),
         removeItem: (k: string) => void store.delete(k),
+        key: (i: number) => [...store.keys()][i] ?? null,
+        get length() {
+          return store.size;
+        },
       },
     };
     return store;
   }
 
-  it("is kept per assignment when the student comes back from step 3", () => {
+  const ASSIGNMENT = "a1b2c3d4-0000-4000-8000-000000000001";
+
+  it("is kept per session and assignment when the student comes back from step 3", () => {
     const store = withStorage();
-    const key = confirmationKey("a1b2c3d4-0000-4000-8000-000000000001");
+    const key = confirmationKey("sim-session-a", ASSIGNMENT);
     expect(readConfirmed(key)).toBe(false);
     writeConfirmed(key, true);
-    expect(readConfirmed(key)).toBe(true);
-    expect(readConfirmed(confirmationKey("a1b2c3d4-0000-4000-8000-000000000002"))).toBe(false);
+    expect(readConfirmed(confirmationKey("sim-session-a", ASSIGNMENT))).toBe(true);
+    expect(readConfirmed(confirmationKey("sim-session-a", "a1b2c3d4-0000-4000-8000-000000000002"))).toBe(false);
     writeConfirmed(key, false);
     expect(store.size).toBe(0);
+  });
+
+  it("is not found by the next person signed in in the same tab (another session)", () => {
+    withStorage();
+    writeConfirmed(confirmationKey("sim-session-a", ASSIGNMENT), true);
+    expect(readConfirmed(confirmationKey("sim-session-b", ASSIGNMENT))).toBe(false);
+  });
+
+  it("is removed by a sign-out together with every other ductura.predaja.* key, and only those", () => {
+    const store = withStorage();
+    writeConfirmed(confirmationKey("sim-session-a", ASSIGNMENT), true);
+    store.set(submissionKey("sim-session-a", ASSIGNMENT, "pregled") ?? "", "1");
+    store.set("ductura.other", "keep");
+    clearSubmissionStorage();
+    expect([...store.keys()]).toEqual(["ductura.other"]);
+    expect(readConfirmed(confirmationKey("sim-session-a", ASSIGNMENT))).toBe(false);
+  });
+
+  it("keeps nothing without a known session", () => {
+    const store = withStorage();
+    writeConfirmed(null, true);
+    expect(store.size).toBe(0);
+    expect(readConfirmed(null)).toBe(false);
   });
 
   it("reads as not confirmed when storage is refused", () => {

@@ -85,8 +85,9 @@ export function compareMarks(a: Mark, b: Mark): number {
 
 /** True when `marks` is deduplicated and in canonical order. */
 export function marksAreCanonical(marks: readonly Mark[]): boolean {
-  for (let i = 1; i < marks.length; i += 1) {
-    if (compareMarks(marks[i - 1], marks[i]) >= 0) {
+  for (const [i, mark] of marks.entries()) {
+    const previous = marks[i - 1];
+    if (previous !== undefined && compareMarks(previous, mark) >= 0) {
       return false;
     }
   }

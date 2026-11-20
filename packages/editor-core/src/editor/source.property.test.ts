@@ -3,9 +3,9 @@ import { Editor } from "@tiptap/core";
 import { isHistoryTransaction } from "@tiptap/pm/history";
 import { Fragment, Slice, type Node as PmNode } from "@tiptap/pm/model";
 import { TextSelection, type Transaction } from "@tiptap/pm/state";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createEditStepsV1Replayer } from "@/adapters/evidence/edit-steps-v1-replayer";
+import { createEditStepsV1Replayer } from "../document/forensics/replay/edit-steps-v1-replayer";
 import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
 import { replayEvidenceSegmentsV2 } from "../document/forensics/evidence-replay-v2";
 import type { EvidenceEvent, EvidenceSegment } from "../document/forensics/evidence-segment-v2";
@@ -56,7 +56,9 @@ function random(seed: number) {
   return { next, int: (n: number) => Math.floor(next() * n), pick: <T,>(list: readonly T[]) => list[Math.floor(next() * list.length)]! };
 }
 
-const endTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+// Flush the observer's task-end timeout between actions, regardless of the
+// host's timer resolution. The focused source tests exercise real timers.
+const endTask = () => vi.runOnlyPendingTimers();
 
 function keyEvent(name: string, ctrl: boolean, shift: boolean, trusted: boolean) {
   const code = [...name].length === 1 ? name.toUpperCase().charCodeAt(0) : { Enter: 13, Backspace: 8 }[name] ?? 0;
@@ -201,7 +203,7 @@ async function run(seed: number): Promise<Outcome> {
     at += r.pick([0, 30, 120, 450, 900, 2_000]);
     try {
       act();
-      await endTask();
+      endTask();
       if (r.next() < 0.3) await drain();
     } catch (error) {
       if (!(error instanceof CaptureError)) throw error;
@@ -214,11 +216,18 @@ async function run(seed: number): Promise<Outcome> {
     if (!(error instanceof CaptureError)) throw error;
     stop ??= `seed ${seed}, ${action}: ${error.code}`;
   }
-  return { segments, initial, stop, final: canonical(editor), standaloneChanges };
+  const final = canonical(editor);
+  editor.destroy();
+  return { segments, initial, stop, final, standaloneChanges };
 }
 
 describe("F-8 3d-1c: random edits with the observer", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it(`${SEEDS} seeds of ${ACTIONS} actions`, async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const stops: string[] = [];
     let standalone = 0;
     for (let seed = 1; seed <= SEEDS; seed += 1) {

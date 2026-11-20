@@ -11,15 +11,14 @@ import Dexie from "dexie";
 import { indexedDB, IDBKeyRange } from "fake-indexeddb";
 
 import { documentsEqual, newNodeId, paragraphNode, textNode, type CanonicalDocument } from "../document/document";
-import { principalScope } from "../../server/auth/principal";
 import { AtomicDexieJournal, JournalError } from "./atomic-dexie-journal";
 import { LocalDocumentSaver } from "./local-document-saver";
 
 const DOC = "local-demo-document";
 const P1 = newNodeId(() => "bbbbbbbb-0000-4000-8000-000000000001");
-const INSTITUTION = "00000000-0000-4000-8000-0000000000f1";
-const SCOPE_A = principalScope("00000000-0000-4000-8000-00000000000a", INSTITUTION);
-const SCOPE_B = principalScope("00000000-0000-4000-8000-00000000000b", INSTITUTION);
+// The frontend receives journalScope as an opaque value from /api/v1/me.
+const SCOPE_A = "a".repeat(64);
+const SCOPE_B = "b".repeat(64);
 const idb = { indexedDB, IDBKeyRange };
 const opened: AtomicDexieJournal[] = [];
 

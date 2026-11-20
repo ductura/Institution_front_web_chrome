@@ -11,7 +11,10 @@
  *   which is `nedovrseno`;
  * - 408, 503, a broken connection and any shape outside the contract are
  *   `nepoznato`: the work may be submitted, so the page never says it is not;
- * - 409 `already_requested` reads the state of the submission (`stanje`);
+ * - 409 `already_requested` reads the state of the submission: `stanje` only
+ *   when it is `ceka` or `potvrdeno` for the revision the 409 names (and, for a
+ *   receipt, the document sent); `none` or any other revision or document is
+ *   `nepoznato`, so the page never says the work is not submitted;
  * - 401 is `session-expired`, the shell's flow for an ended session;
  * - the declared refusals the inventory does not map (`stale_revision`,
  *   `not_acknowledged`, `not_open`, 404, 413, 426 and the refusals of the
@@ -28,7 +31,7 @@
  * the contract's.
  */
 
-import { createApi, errorBody, RESPONSES, type ApiOptions, type ApiResult } from "./api";
+import { browserTransport, createApi, errorBody, RESPONSES, type ApiOptions, type ApiResult } from "./api";
 import { matchesSchema, type Schema } from "./schema-check";
 
 type SubmitSuccess = Extract<ApiResult<"submission.submit.post">, { ok: true }>;
@@ -61,8 +64,8 @@ export type SubmitOutcome =
   | { readonly kind: "nepoznato" }
   | { readonly kind: "greska"; readonly code: SubmitError; readonly currentRevision?: number }
   | { readonly kind: "session-expired" }
-  /** 409 already_requested: the server holds `revision`; `state` is what the read gave. */
-  | { readonly kind: "stanje"; readonly revision: number; readonly state: SubmissionRead };
+  /** 409 already_requested: the server holds `revision`, and the read agrees. */
+  | { readonly kind: "stanje"; readonly revision: number; readonly state: Exclude<SubmissionState, { kind: "none" }> };
 
 export type SubmitInput = { readonly assignmentId: string; readonly documentId: string; readonly revision: number };
 
@@ -84,7 +87,8 @@ function schemaAt(id: string, status: string): Schema {
 const SUBMITTED = schemaAt("submission.submit.post", "200");
 // The one receipt shape (SignedSubmissionReceiptV2), read from the contract, never written here.
 const RECEIPT = ((SUBMITTED as { properties?: Record<string, Schema> }).properties?.receipt ?? false);
-const TIME = { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$" } as const;
+// The receipt's time shape, and a real calendar date and time (schema-check's date-time).
+const TIME = { type: "string", format: "date-time", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$" } as const;
 const REVISION = { type: "integer", minimum: 1, maximum: Number.MAX_SAFE_INTEGER } as const;
 const closed = (properties: Record<string, Schema>): Schema =>
   ({ type: "object", additionalProperties: false, required: Object.keys(properties), properties });
@@ -119,6 +123,8 @@ const EXPIRED = { kind: "session-expired" } as const;
 function receiptFor(receipt: unknown, match: { assignmentId: string; documentId?: string; revision?: number }): receipt is SubmissionReceipt {
   if (!matchesSchema(RECEIPT, receipt)) return false;
   const p = (receipt as SubmissionReceipt).payload;
+  // The contract checks only the digits' layout; a receipt dated on no real day is no receipt.
+  if (![p.requestedAt, p.dueAt, p.signedAt].every((time) => matchesSchema(TIME, time))) return false;
   return p.assignmentId === match.assignmentId.toLowerCase()
     && (match.documentId === undefined || p.documentId === match.documentId)
     && (match.revision === undefined || p.revision === match.revision);
@@ -149,9 +155,11 @@ export function submitOutcomeFrom(
     if (kept.status === "already_requested" && typeof kept.revision === "number") {
       return { kind: "already_requested", revision: kept.revision };
     }
-    if (kept.status === "stale_revision" && typeof kept.currentRevision === "number") {
-      return { kind: "greska", code: "stale_revision", currentRevision: kept.currentRevision };
+    if (kept.status === "stale_revision") {
+      return typeof kept.currentRevision === "number" ? { kind: "greska", code: "stale_revision", currentRevision: kept.currentRevision } : UNKNOWN;
     }
+    // A 409 is read from its kept body only, never from the status code alone.
+    return kept.status === "not_acknowledged" || kept.status === "not_open" ? { kind: "greska", code: kept.status } : UNKNOWN;
   }
   const code = result.code === undefined || !Object.hasOwn(REFUSALS, result.code) ? undefined : REFUSALS[result.code];
   // 408 timeout, 503 unavailable, 429, 500, "unexpected": the work may have been submitted.
@@ -161,7 +169,7 @@ export function submitOutcomeFrom(
 export type SubmitDeps = {
   /** False once the session has ended in this browser: nothing is sent (D-118). */
   readonly current?: () => boolean;
-  /** TODO(ugovor): student.submission.get; without it already_requested reads as `nepoznato`. */
+  /** TODO(ugovor): student.submission.get; without it already_requested is `nepoznato`. */
   readonly local?: LocalCall;
   readonly api?: ApiOptions;
 };
@@ -170,18 +178,37 @@ export type SubmitDeps = {
 export async function submitWork(input: SubmitInput, deps: SubmitDeps = {}): Promise<SubmitOutcome> {
   if (deps.current !== undefined && !deps.current()) return EXPIRED;
   let outcome: ReturnType<typeof submitOutcomeFrom>;
+  let sent: SubmitInput;
+  let answered = 0;
   try {
-    const api = createApi({ ...deps.api, protocol: "1" });
+    // One copy, read once: what is sent is what the answer is checked against, whatever the caller changes meanwhile.
+    sent = { assignmentId: String(input.assignmentId), documentId: String(input.documentId), revision: Number(input.revision) };
+    const transport = deps.api?.fetchImpl ?? browserTransport;
+    const measured: NonNullable<ApiOptions["fetchImpl"]> = async (url, init) => {
+      const response = await transport(url, init);
+      answered = response.status;
+      return response;
+    };
+    const api = createApi({ ...deps.api, fetchImpl: measured, protocol: "1" });
     const result = await api("submission.submit.post", {
-      params: undefined, query: undefined, body: { documentId: input.documentId, revision: input.revision },
+      params: undefined, query: undefined, body: { documentId: sent.documentId, revision: sent.revision },
     });
-    outcome = submitOutcomeFrom(result, errorBody(result), input);
+    // A 401 whose body is not JSON reaches here as status 0: it is still the end of the session.
+    if (!result.ok && result.status === 0 && answered === 401) return EXPIRED;
+    outcome = submitOutcomeFrom(result, errorBody(result), sent);
   } catch {
-    return UNKNOWN;
+    // A 401 whose body broke off after the headers is still the end of the session; anything else may be submitted.
+    return answered === 401 ? EXPIRED : UNKNOWN;
   }
   if (outcome.kind !== "already_requested") return outcome;
-  const state = deps.local === undefined ? UNKNOWN : await readSubmissionState(deps.local, input.assignmentId);
-  return { kind: "stanje", revision: outcome.revision, state };
+  if (deps.local === undefined) return UNKNOWN;
+  // The session may have ended while the submission was on its way: no second request then.
+  if (deps.current !== undefined && !deps.current()) return EXPIRED;
+  const state = await readSubmissionState(deps.local, sent.assignmentId);
+  if (state.kind === "session-expired") return EXPIRED;
+  const agrees = (state.kind === "ceka" && state.revision === outcome.revision)
+    || (state.kind === "potvrdeno" && receiptFor(state.receipt, { ...sent, revision: outcome.revision }));
+  return agrees ? { kind: "stanje", revision: outcome.revision, state } : UNKNOWN;
 }
 
 async function readLocal<T>(

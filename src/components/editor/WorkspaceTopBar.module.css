@@ -1,0 +1,26 @@
+/* WEB-23 (S: E-7): the workspace's top bar, in the shell's chrome. */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--chrome);
+  color: var(--ink);
+  font-family: var(--ff-ui);
+  font-size: 14px;
+}
+.back { color: var(--ink-2); }
+.title {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.themes { display: inline-flex; gap: 4px; }
+.submit { display: inline-flex; align-items: center; gap: 8px; }
+.note { color: var(--ink-2); font-size: 13px; }

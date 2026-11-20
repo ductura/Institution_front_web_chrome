@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { messagesHr as t } from "../../locales/hr.ts";
 import { OUTLINE_HR } from "../../src/components/i18n/hr.ts";
+import { messagesHr as lib } from "../../src/lib/i18n/messages.hr.ts";
 import { CATALOG_STATES, type CatalogState } from "../src/coverage";
 
 // web 2.c2 (DAN-751): every catalogue component, in every state, on both
@@ -13,7 +14,7 @@ const WIDTHS = [1440, 1024, 768, 390, 360];
 const THEMES = ["dark", "light"] as const;
 const SURFACES = ["Ljuska", "Bijeli list"] as const;
 // The screens of src/components (DAN-753) show only on the shell (catalog/src/main.tsx).
-const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"] as const;
+const SCREENS = ["AppShell", "ErrorScreen", "RouteLoading", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks", "AssignmentOverview"] as const;
 type Screen = (typeof SCREENS)[number];
 
 async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
@@ -388,6 +389,36 @@ const SCREEN_SEMANTICS: Record<Screen, Record<CatalogState, (c: Locator) => Prom
       await expect(c.getByRole("link")).toHaveCount(0);
     },
   },
+  // WEB-33 (N-17): one assignment's submissions as a table; texts from src/lib/i18n only.
+  AssignmentOverview: {
+    prazno: async (c) => {
+      await expect(c.locator("caption")).toHaveText("Predaje zadatka Izmišljeni seminar");
+      await expect(c.getByRole("cell", { name: lib.teacherSummary.noStudents })).toBeVisible();
+    },
+    učitavanje: async (c) => {
+      await expect(c.getByRole("table")).toHaveAttribute("aria-busy", "true");
+      await expect(c.locator("tbody tr")).toHaveCount(1);
+    },
+    greška: async (c) => {
+      await expect(c.getByRole("alert")).toHaveText(lib.teacherSummary.unavailable);
+      await expect(c.getByRole("table")).toHaveCount(0);
+      await expect(c.getByRole("link", { name: lib.teacherSummary.retry })).toHaveAttribute("href", "/nastavnik/zbirni");
+    },
+    puno: async (c) => {
+      await expect(c.getByRole("columnheader")).toHaveText(Object.values(lib.teacherSummary.columns).map((h) => new RegExp(`^${h}`)));
+      await expect(c.getByRole("rowheader")).toHaveText([/Osoba 1/, /Osoba 2/, /Osoba 3/, /Osoba 4/]);
+      // Each state tag carries its text beside the colour (WEB-29).
+      for (const [state, count, text] of [["submitted", 3, "Predano"], ["not_submitted", 1, "Nije predano"], ["late", 1, "Nakon roka"],
+        ["gap", 1, "Praznina u zapisu"], ["pending", 1, "Čeka potvrdu"]] as const) {
+        await expect(c.locator(`[data-state=${state}]`)).toHaveCount(count);
+        await expect(c.locator(`[data-state=${state}]`).first()).toContainText(text);
+      }
+    },
+    onemogućeno: async (c) => {
+      await expect(c.getByRole("rowheader")).toHaveText(`${lib.teacherSummary.noName} · ${lib.teacherSummary.noGroup}`);
+      await expect(c.getByRole("link")).toHaveCount(0);
+    },
+  },
   RouteLoading: {
     prazno: loading(t.workspace.panelLoading),
     učitavanje: loading(t.fastPath.loading),
@@ -691,3 +722,21 @@ for (const theme of THEMES) {
     });
   }
 }
+
+// WEB-33 (N-17): sorting by submission time from the keyboard; rows without a time stay last.
+test("the assignment overview sorts by submission time with Enter and Space", async ({ page }) => {
+  await open(page, "dark", 390);
+  const c = cell(page, "AssignmentOverview", "Ljuska", "puno");
+  const header = c.getByRole("columnheader", { name: /Vrijeme predaje/ });
+  const button = header.getByRole("button");
+  const names = c.getByRole("rowheader");
+  await button.focus();
+  await button.press("Enter");
+  await expect(header).toHaveAttribute("aria-sort", "ascending");
+  await expect(names).toHaveText([/Osoba 3/, /Osoba 4/, /Osoba 1/, /Osoba 2/]);
+  await expect(c.getByRole("status")).toHaveText("Poredano po stupcu Vrijeme predaje, uzlazno.");
+  await button.press("Space");
+  await expect(header).toHaveAttribute("aria-sort", "descending");
+  await expect(names).toHaveText([/Osoba 1/, /Osoba 4/, /Osoba 3/, /Osoba 2/]);
+  await expect(button).toBeFocused();
+});
