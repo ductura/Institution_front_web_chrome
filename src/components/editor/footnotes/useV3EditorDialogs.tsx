@@ -31,7 +31,7 @@ export function useV3EditorDialogs(editor: Editor | null, confirmedWorkSchemaVer
       return true;
     };
     const click = (event: MouseEvent) => {
-      const hit = view.posAtCoords({ left: event.clientX, top: event.clientY });
+      const hit = view.posAtCoords(new DOMRect(event.clientX, event.clientY));
       if (hit && hit.inside >= 0 && inspect(hit.inside)) event.preventDefault();
     };
     const key = (event: KeyboardEvent) => {
