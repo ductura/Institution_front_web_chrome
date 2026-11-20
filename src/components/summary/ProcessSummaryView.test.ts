@@ -117,7 +117,7 @@ describe("ProcessSummaryView: one view for every reader", () => {
     const plain = render(summaryWith());
     expect(render(summaryWith(), { role: "teacher" })).toBe(plain);
     expect(render(summaryWith(), { role: "student", viewer: "mentor" })).toBe(plain);
-    // @ts-expect-error the props are the summary alone
+    // @ts-expect-error the props describe the record, not the reader
     createElement(ProcessSummaryView, { summary: summaryWith(), role: "teacher" });
   });
 
@@ -140,11 +140,14 @@ describe("ProcessSummaryView: one view for every reader", () => {
 describe("ProcessSummaryView: Europe/Zagreb times", () => {
   it("shows the recorded date range and sums session durations without adding time between sessions", () => {
     const summary = summaryWith();
-    const view = tree({
+    const reversed = {
       ...summary,
       sessions: { ...summary.sessions, items: [...summary.sessions.items].reverse() },
-    });
-    expect(textOf(view)).toContain("14. listopada 2026. – 26. listopada 2026.");
+    };
+    const markup = render(reversed);
+    expect(markup).toContain(`<dt>${overview.workPeriod.first}</dt><dd>14. listopada 2026. u 20:02</dd>`);
+    expect(markup).toContain(`<dt>${overview.workPeriod.last}</dt><dd>26. listopada 2026. u 01:15</dd>`);
+    const view = tree(reversed);
     expect(numbered(view, "editing-duration")[0]).toContain("2 h 43 min");
     expect(numbered(view, "editing-duration")[0]).toContain(`${t.sessions.threshold} 30 minuta`);
     expect(textOf(view)).toContain(overview.editingDuration.note);
@@ -162,6 +165,23 @@ describe("ProcessSummaryView: Europe/Zagreb times", () => {
     }));
     expect(numbered(view, "editing-duration")[0]).toContain("2 h 23 min");
     expect(textOf(view)).toContain(overview.editingDuration.gapNote);
+  });
+
+  it("uses the supplied editing minutes and shows only observed assistant transfers in that section", () => {
+    const markup = render(summaryWith(), {
+      details: {
+        activeEditingMinutes: 0,
+        keyEvents: [
+          { kind: "import", at: { from: "2026-10-14T09:00:00.000Z", to: "2026-10-14T09:00:00.000Z" } },
+          { kind: "ai-transfer", at: { from: "2026-10-14T16:00:00.000Z", to: "2026-10-14T16:01:00.000Z" } },
+        ],
+      },
+    });
+    expect(markup).toContain("0 min");
+    expect(markup).toContain(`${overview.assistant.transfer} · 14. listopada 2026. od 18:00 do 18:01`);
+    expect(markup).not.toContain("11:00");
+    expect(render(EMPTY, { details: { activeEditingMinutes: 0, keyEvents: [] } })).toContain(overview.assistant.none);
+    expect(render(EMPTY)).not.toContain(overview.assistant.none);
   });
 
   it("makes recorded sessions expandable and shows explicit empty messages when there are none", () => {

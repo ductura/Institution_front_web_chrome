@@ -1,7 +1,14 @@
 export const overviewHr = {
   workPeriod: {
     heading: "Razdoblje rada",
+    first: "Prvi zabilježeni događaj",
+    last: "Posljednji zabilježeni događaj",
     unavailable: "Razdoblje rada nije dostupno.",
+  },
+  assistant: {
+    heading: "AI pomoćnik",
+    transfer: "Prijenos iz AI pomoćnika",
+    none: "Nema zabilježenih prijenosa.",
   },
   sessionList: "Popis sesija",
   editingDuration: {

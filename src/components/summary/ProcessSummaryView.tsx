@@ -1,6 +1,6 @@
 import { createElement as h, type ReactNode } from "react";
 
-import { Details } from "@ductura/ui";
+import { Details, KeyValueList } from "@ductura/ui";
 
 import type { ProcessSummaryV1 } from "../../client/process-summary";
 import { countHr } from "../../lib/i18n/hr";
@@ -17,14 +17,18 @@ export type { ProcessSummaryV1 } from "../../client/process-summary";
 type MinuteSpan = ProcessSummaryV1["sessions"]["items"][number];
 type Gap = ProcessSummaryV1["gaps"]["items"][number];
 
+export type ProcessSummaryDetails = {
+  readonly activeEditingMinutes: number;
+  readonly keyEvents: readonly { readonly kind: "import" | "ai-transfer"; readonly at: MinuteSpan }[];
+};
+
 /**
  * The process summary (F-10, PRODUCT §7), drawn the same way for everyone who
  * may read it (PRODUCT §5 rule 5, D-80 point 6).
  *
- * Pure: the only input is the summary the server returned. There is no input
- * about who reads it, no hook, no generated id and no host clock, time zone or
- * language, so the same summary gives the same markup for the student and the
- * teacher. Times are Europe/Zagreb (`zagreb-time.ts`).
+ * Pure: only the server's summary and optional detail fields are input. The
+ * same record gives identical markup for student and teacher, independent of
+ * the host clock and locale. Times are Europe/Zagreb (`zagreb-time.ts`).
  *
  * Each number stands next to the threshold that decides it (rule 12).
  * Lists keep the server's order. Paste sizes are never added together or
@@ -37,6 +41,7 @@ type Gap = ProcessSummaryV1["gaps"]["items"][number];
  */
 export type ProcessSummaryViewProps = {
   readonly summary: ProcessSummaryV1;
+  readonly details?: ProcessSummaryDetails;
 };
 
 type Forms = { readonly one: string; readonly few: string; readonly many: string };
@@ -58,7 +63,12 @@ function minuteSpanText(span: MinuteSpan): string {
   return spanText(span.from, span.to);
 }
 
-function workPeriod(items: readonly MinuteSpan[]): string | null {
+function instantText(iso: string): string {
+  const parts = zagrebParts(iso);
+  return parts ? `${parts.date} ${t.at} ${parts.time}` : iso;
+}
+
+function workPeriod(items: readonly MinuteSpan[]): MinuteSpan | null {
   const first = items[0];
   if (!first) return null;
   let start = first.from;
@@ -67,13 +77,10 @@ function workPeriod(items: readonly MinuteSpan[]): string | null {
     if (span.from < start) start = span.from;
     if (span.to > end) end = span.to;
   }
-  const from = zagrebParts(start)?.date;
-  const to = zagrebParts(end)?.date;
-  if (!from || !to) return null;
-  return from === to ? from : `${from} – ${to}`;
+  return { from: start, to: end };
 }
 
-function editingDuration(items: readonly MinuteSpan[], gaps: readonly Gap[]): string | null {
+function editingMinutes(items: readonly MinuteSpan[], gaps: readonly Gap[]): number | null {
   if (items.length === 0) return null;
   const boundaries: { time: number; sessions: number; gaps: number }[] = [];
   for (const item of items) {
@@ -101,7 +108,10 @@ function editingDuration(items: readonly MinuteSpan[], gaps: readonly Gap[]): st
     activeSessions += boundary.sessions;
     activeGaps += boundary.gaps;
   }
-  const minutes = Math.round(totalMs / 60_000);
+  return Math.round(totalMs / 60_000);
+}
+
+function durationText(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   return hours === 0
     ? `${minutes} ${overview.minuteShort}`
@@ -137,10 +147,11 @@ function part(name: string, heading: string, ...children: ReactNode[]): ReactNod
   );
 }
 
-export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
+export function ProcessSummaryView({ summary, details }: ProcessSummaryViewProps) {
   const { sessions, pastes, gaps } = summary;
   const period = workPeriod(sessions.items);
-  const duration = editingDuration(sessions.items, gaps.items);
+  const minutes = details?.activeEditingMinutes ?? editingMinutes(sessions.items, gaps.items);
+  const transfers = details?.keyEvents.filter(({ kind }) => kind === "ai-transfer");
   const sessionThreshold = `${t.sessions.threshold} ${count(sessions.breakAboveMinutes, t.units.minutesGenitive)}`;
   const listedAbove = `${t.pastes.listedThreshold} ${count(pastes.listedAboveCharacters, t.units.charactersGenitive)}`;
 
@@ -158,7 +169,13 @@ export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
       overview.workPeriod.heading,
       period === null
         ? h("p", { className: styles.empty }, overview.workPeriod.unavailable)
-        : h("p", { className: styles.fact }, period, " · ", evidenceKind(sessions.evidenceKind)),
+        : h(KeyValueList, {
+            items: [
+              { id: "first", label: overview.workPeriod.first, value: instantText(period.from) },
+              { id: "last", label: overview.workPeriod.last, value: instantText(period.to) },
+              { id: "kind", label: t.evidenceKind, value: t.evidenceKinds[sessions.evidenceKind] },
+            ],
+          }),
     ),
     part(
       "sessions",
@@ -183,18 +200,18 @@ export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
     part(
       "editing-duration",
       overview.editingDuration.heading,
-      duration === null
+      minutes === null
         ? h("p", { className: styles.empty }, overview.editingDuration.unavailable)
         : h(
             "p",
             { className: styles.fact, "data-number": "editing-duration" },
             label(overview.editingDuration.method),
-            ` ${duration} `,
+            ` ${durationText(minutes)} `,
             threshold(sessionThreshold),
             " ",
             evidenceKind(sessions.evidenceKind),
           ),
-      duration !== null && gaps.items.length > 0
+      minutes !== null && gaps.items.length > 0
         ? h("p", { className: styles.explain }, overview.editingDuration.gapNote)
         : null,
       h("p", { className: styles.explain }, overview.editingDuration.note),
@@ -222,6 +239,16 @@ export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
         " ",
         evidenceKind(pastes.evidenceKind),
       ),
+    ),
+    transfers === undefined ? null : part(
+      "assistant",
+      overview.assistant.heading,
+      transfers.length === 0
+        ? h("p", { className: styles.empty }, overview.assistant.none)
+        : list(transfers.map(({ at }) => [
+            `${overview.assistant.transfer} · ${minuteSpanText(at)} `,
+            evidenceKind("observed"),
+          ])),
     ),
     part(
       "gaps",
