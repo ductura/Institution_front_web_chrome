@@ -5,7 +5,7 @@ import { createEditorExtensionsV4 } from "@/editor";
 
 import { reviewDocOf } from "../review/model";
 import { runChecks } from "../review";
-import { applyAllFixes, applyFix, nextFix, scanFixes } from "./fixes";
+import { MAX_BATCH_EDITS, applyAllFixes, applyFix, nextFix, scanFixes } from "./fixes";
 import { fixFor, stepAfter } from "./steps";
 
 const id = (n: number) => `${String(n).repeat(8)}-0000-4000-8000-${String(n).repeat(12)}`;
@@ -31,7 +31,7 @@ describe("scanFixes", () => {
   it("finds each kind of slip", () => {
     const e = make([block(1, ["Dva  razmaka , zarez,bez razmaka i \"navodnici\" kraj!!"])]);
     const kinds = scanFixes(e.state.doc).fixes.map((f) => f.kind).sort();
-    expect(kinds).toEqual(["after", "before", "double", "quotes", "quotes", "spaces"]);
+    expect(kinds).toEqual(["after", "before", "double", "quotes", "spaces"]);
   });
 
   it("leaves an ellipsis, numbers and clean text alone", () => {
@@ -144,5 +144,31 @@ describe("walking", () => {
     expect(fixFor(f, fixes)?.kind).toBe("spaces");
     expect(fixFor({ ...f, kind: "long" }, fixes)).toBeNull();
     expect(fixFor({ ...f, blockId: null }, fixes)).toBeNull();
+  });
+});
+
+describe("review findings (Codex)", () => {
+  it("a pair of quotes is one fix, applied whole", () => {
+    const e = make([block(1, ["Rekao je \"da\" i otišao."])]);
+    const scan = scanFixes(e.state.doc);
+    expect(scan.fixes.map((f) => f.kind)).toEqual(["quotes"]);
+    const out = applyFix(e.state, scan, scan.fixes[0]!.id);
+    if (!out.ok) throw new Error("fix");
+    e.view.dispatch(out.tr);
+    expect(texts(e)).toEqual(["Rekao je „da” i otišao."]);
+    expect(scanFixes(e.state.doc).fixes).toEqual([]);
+  });
+
+  it("a batch is bounded and a rescan offers the rest", () => {
+    const e = make([block(1, [Array.from({ length: 1_200 }, () => "a  b").join(" ")])]);
+    const scan = scanFixes(e.state.doc);
+    expect(scan.fixes.length).toBe(1_200);
+    const out = applyAllFixes(e.state, scan);
+    if (!out.ok) throw new Error("fix");
+    expect(out.count).toBe(MAX_BATCH_EDITS);
+    e.view.dispatch(out.tr);
+    expect(scanFixes(e.state.doc).fixes.length).toBe(200);
+    e.commands.undo();
+    expect(scanFixes(e.state.doc).fixes.length).toBe(1_200);
   });
 });

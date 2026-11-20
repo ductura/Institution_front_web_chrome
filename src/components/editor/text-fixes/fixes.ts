@@ -25,14 +25,18 @@ import { FIND_REPLACE_META } from "@/editor";
 export const FIX_KINDS = ["spaces", "before", "after", "double", "quotes"] as const;
 export type FixKind = (typeof FIX_KINDS)[number];
 
+/** Most edits one batch makes; like "replace all", it keeps one evidence event well under the segment limit. */
+export const MAX_BATCH_EDITS = 1_000;
+
+export type FixEdit = { readonly from: number; readonly to: number; readonly replacement: string };
+
 export type TextFix = {
   /** Stable for one document: kind, block position and offset in the block. */
   readonly id: string;
   readonly kind: FixKind;
   readonly blockId: string | null;
-  readonly from: number;
-  readonly to: number;
-  readonly replacement: string;
+  /** One edit, or both marks of a pair of quotation marks: a fix is always applied whole. */
+  readonly edits: readonly FixEdit[];
   /** The words around the slip, shortened, for the list. */
   readonly excerpt: string;
 };
@@ -80,7 +84,7 @@ function flatten(block: PmNode): { text: string; flags: boolean[] } {
   return { text, flags };
 }
 
-type Raw = { kind: FixKind; from: number; to: number; replacement: string };
+type Raw = { kind: FixKind; edits: FixEdit[] };
 
 function rawFixes(text: string): Raw[] {
   const out: Raw[] = [];
@@ -88,18 +92,21 @@ function rawFixes(text: string): Raw[] {
     for (const m of text.matchAll(pattern)) {
       const from = m.index!;
       const to = from + m[0].length;
-      if (kind === "spaces") out.push({ kind, from, to, replacement: " " });
-      else if (kind === "before") out.push({ kind, from, to, replacement: "" });
-      else if (kind === "after") out.push({ kind, from, to, replacement: " " });
-      else out.push({ kind, from, to, replacement: m[0][0]! });
+      const replacement = kind === "spaces" || kind === "after" ? " " : kind === "before" ? "" : m[0][0]!;
+      out.push({ kind, edits: [{ from, to, replacement }] });
     }
   }
   // Straight quotes are paired in order inside the block; an odd number is ambiguous and left alone.
   const quotes = [...text.matchAll(/"/gu)].map((m) => m.index!);
   if (quotes.length > 0 && quotes.length % 2 === 0) {
-    quotes.forEach((at, i) => out.push({ kind: "quotes", from: at, to: at + 1, replacement: i % 2 === 0 ? "„" : "”" }));
+    for (let i = 0; i < quotes.length; i += 2) {
+      out.push({ kind: "quotes", edits: [
+        { from: quotes[i]!, to: quotes[i]! + 1, replacement: "„" },
+        { from: quotes[i + 1]!, to: quotes[i + 1]! + 1, replacement: "”" },
+      ] });
+    }
   }
-  return out.sort((a, b) => a.from - b.from || a.to - b.to);
+  return out.sort((a, b) => a.edits[0]!.from - b.edits[0]!.from);
 }
 
 /** Every fix of the document, in document order. */
@@ -114,20 +121,17 @@ export function scanFixes(doc: PmNode): FixScan {
     let lastTo = -1;
     for (const raw of rawFixes(text)) {
       // A fix reaching into pasted or imported text, or an atom, is not ours to make. An insertion looks at both neighbours.
-      const lo = raw.from === raw.to ? Math.max(0, raw.from - 1) : raw.from;
-      const hi = raw.from === raw.to ? Math.min(flags.length, raw.to + 1) : raw.to;
-      const touched = flags.slice(lo, hi);
-      if (touched.some(Boolean)) {
-        if (text.slice(lo, hi).includes(LEAF)) continue;
-        skippedProvenance += 1;
-        continue;
-      }
-      if (raw.from < lastTo) continue; // overlapping slips: the next scan finds what is left
-      lastTo = raw.to;
+      const spans = raw.edits.map((e) => (e.from === e.to ? [Math.max(0, e.from - 1), Math.min(flags.length, e.to + 1)] : [e.from, e.to]) as [number, number]);
+      if (spans.some(([lo, hi]) => text.slice(lo, hi).includes(LEAF))) continue;
+      if (spans.some(([lo, hi]) => flags.slice(lo, hi).some(Boolean))) { skippedProvenance += 1; continue; }
+      const first = raw.edits[0]!;
+      const last = raw.edits[raw.edits.length - 1]!;
+      if (first.from < lastTo) continue; // overlapping slips: the next scan finds what is left
+      lastTo = last.to;
       fixes.push({
-        id: `${raw.kind}:${blockPos}:${raw.from}`, kind: raw.kind, blockId,
-        from: blockPos + 1 + raw.from, to: blockPos + 1 + raw.to, replacement: raw.replacement,
-        excerpt: shorten(text, raw.from, raw.to),
+        id: `${raw.kind}:${blockPos}:${first.from}`, kind: raw.kind, blockId,
+        edits: raw.edits.map((e) => ({ from: blockPos + 1 + e.from, to: blockPos + 1 + e.to, replacement: e.replacement })),
+        excerpt: shorten(text, first.from, last.to),
       });
     }
   });
@@ -139,17 +143,25 @@ export type ApplyOutcome =
   | { readonly ok: true; readonly tr: Transaction; readonly count: number }
   | { readonly ok: false; readonly reason: ApplyRefusal };
 
-function build(state: EditorState, scan: FixScan, chosen: readonly TextFix[]): ApplyOutcome {
+function build(state: EditorState, scan: FixScan, wanted: readonly TextFix[]): ApplyOutcome {
   if (state.doc !== scan.doc) return { ok: false, reason: "stale" };
+  // Whole fixes only, and no more edits than one evidence event safely holds.
+  const chosen: TextFix[] = [];
+  let edits = 0;
+  for (const fix of wanted) {
+    if (edits + fix.edits.length > MAX_BATCH_EDITS) break;
+    chosen.push(fix);
+    edits += fix.edits.length;
+  }
   if (chosen.length === 0) return { ok: false, reason: "none" };
   const { schema } = state;
   const tr = state.tr;
-  for (const fix of [...chosen].reverse()) {
-    if (fix.replacement === "") tr.delete(fix.from, fix.to);
+  for (const edit of chosen.flatMap((fix) => fix.edits).sort((a, b) => b.from - a.from)) {
+    if (edit.replacement === "") tr.delete(edit.from, edit.to);
     else {
-      const marks = (state.doc.nodeAt(fix.from) ?? state.doc.nodeAt(fix.from - 1))?.marks ?? [];
-      if (fix.from === fix.to) tr.insert(fix.from, schema.text(fix.replacement, marks));
-      else tr.replaceWith(fix.from, fix.to, schema.text(fix.replacement, marks));
+      const marks = (state.doc.nodeAt(edit.from) ?? state.doc.nodeAt(edit.from - 1))?.marks ?? [];
+      if (edit.from === edit.to) tr.insert(edit.from, schema.text(edit.replacement, marks));
+      else tr.replaceWith(edit.from, edit.to, schema.text(edit.replacement, marks));
     }
   }
   if (!tr.docChanged) return { ok: false, reason: "none" };
@@ -163,7 +175,7 @@ export function applyFix(state: EditorState, scan: FixScan, id: string): ApplyOu
   return build(state, scan, scan.fixes.filter((fix) => fix.id === id));
 }
 
-/** One transaction for every fix of `scan` (or of the ones `only` names): one undo step. */
+/** One transaction for the fixes of `scan` (or the ones `only` names), at most `MAX_BATCH_EDITS` edits: one undo step. A rescan offers the rest. */
 export function applyAllFixes(state: EditorState, scan: FixScan, only?: (fix: TextFix) => boolean): ApplyOutcome {
   return build(state, scan, only ? scan.fixes.filter(only) : scan.fixes);
 }

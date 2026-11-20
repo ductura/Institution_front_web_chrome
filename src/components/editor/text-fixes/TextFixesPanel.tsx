@@ -32,24 +32,26 @@ export function TextFixesPanel({ editor, documentId, enabledCheckIds }: TextFixe
   const doc = useEditorState({ editor, selector: ({ editor: e }) => (e && !e.isDestroyed ? e.state.doc : null), equalityFn: (a, b) => a === b });
   const scan = useMemo(() => (doc ? scanFixes(doc) : null), [doc]);
   const findings = useMemo(() => (doc ? runChecks(readReviewDoc(doc), enabledCheckIds) : []), [doc, enabledCheckIds]);
-  const [marked, setMarked] = useState<string[]>(() => readIgnored(storage(), documentId));
   const [walking, setWalking] = useState(false);
-  const [lastId, setLastId] = useState<string | null>(null);
+  const [cur, setCur] = useState<string | null>(null);
   const [seen, setSeen] = useState<string[]>([]);
   const [note, setNote] = useState<string | null>(null);
   if (!editor || editor.isDestroyed || !scan) return null;
 
-  const open = splitIgnored(findings, marked).open;
+  // Read at each render and merged at each write: the Pregled card keeps its marks under the same key.
+  const open = splitIgnored(findings, readIgnored(storage(), documentId)).open;
   const run = (outcome: ApplyOutcome, done: string) => {
     if (!outcome.ok) { setNote(outcome.reason === "stale" ? t.stale : t.empty); return; }
     editor.view.dispatch(outcome.tr);
     setNote(done.replace("{n}", String(outcome.count)));
   };
-  const step = walking ? stepAfter(open, lastId, seen) : null;
+  const atCur = cur === null ? -1 : open.findIndex((f) => f.id === cur);
+  // The finding shown stays until it is solved or marked; then the walk continues with the one after it.
+  const step = !walking ? null : atCur >= 0 ? { finding: open[atCur]!, index: atCur, total: open.length } : stepAfter(open, cur, seen);
   const go = (afterId: string | null) => {
-    const next = stepAfter(open, afterId, seen);
-    setLastId(next ? next.finding.id : afterId);
+    const next = stepAfter(open, afterId, open.map((f) => f.id));
     setSeen(open.map((f) => f.id));
+    setCur(next ? next.finding.id : null);
     if (next) jumpTo(editor, next.finding);
     else setWalking(false);
     setNote(next ? null : t.step.done);
@@ -74,14 +76,14 @@ export function TextFixesPanel({ editor, documentId, enabledCheckIds }: TextFixe
       {scan.skippedProvenance > 0 && <p role="status">{fill(t.skipped, scan.skippedProvenance)}</p>}
 
       <h3>{t.step.title}</h3>
-      {!walking && <Button tone="quiet" disabled={open.length === 0} onClick={() => { setWalking(true); go(null); }}>{open.length === 0 ? t.step.none : t.step.start}</Button>}
+      {!step && <Button tone="quiet" disabled={open.length === 0} onClick={() => { setWalking(true); go(null); }}>{open.length === 0 ? t.step.none : t.step.start}</Button>}
       {walking && step && (
         <div role="group" aria-label={t.step.title}>
           <p role="status">{fill(t.step.position, step.index + 1, step.total)}: {step.finding.excerpt}</p>
           {stepFix ? (
             <Button onClick={() => { run(applyFix(editor.state, scan, stepFix.id), t.fixedOne); }}>{t.fixOne}</Button>
           ) : <p>{t.step.noFix}</p>}
-          <Button tone="quiet" onClick={() => { const next = ignore(marked, step.finding.key); setMarked(next); writeIgnored(storage(), documentId, next); go(step.finding.id); }}>{t.step.notAnError}</Button>
+          <Button tone="quiet" onClick={() => { writeIgnored(storage(), documentId, ignore(readIgnored(storage(), documentId), step.finding.key)); go(step.finding.id); }}>{t.step.notAnError}</Button>
           <Button tone="quiet" onClick={() => go(step.finding.id)}>{t.step.next}</Button>
           <Button tone="quiet" onClick={() => setWalking(false)}>{t.step.stop}</Button>
         </div>
