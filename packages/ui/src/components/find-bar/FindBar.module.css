@@ -1,0 +1,19 @@
+/* The find bar (prototype .find): a strip under the toolbar, on --chrome. */
+.bar {
+  flex: none; display: flex; align-items: center; gap: 6px; padding: 6px 10px;
+  background: var(--chrome); border-bottom: 1px solid var(--rule-2); overflow-x: auto; color: var(--ink);
+}
+.input {
+  flex: none; width: 170px; min-height: 32px; padding: 0 8px; font: inherit; color: var(--ink);
+  background: var(--field); border: 1px solid var(--field-rule); border-radius: var(--radius-control);
+}
+.input::placeholder { color: var(--field-placeholder); opacity: 1; }
+.button {
+  flex: none; min-width: 32px; min-height: 32px; padding: 0 10px; font: inherit; color: var(--ink);
+  background: transparent; border: 1px solid var(--field-rule); border-radius: var(--radius-control); cursor: pointer;
+}
+.button:hover:not(:disabled) { background: var(--hover); }
+.button:disabled { cursor: not-allowed; color: var(--ink-3); border-color: var(--well); }
+.count { flex: none; color: var(--ink-3); font-size: 13px; white-space: nowrap; }
+.grow { flex: 1; }
+@media (max-width: 640px) { .input { width: 130px; min-height: 40px; } .button { min-height: 40px; min-width: 40px; } }
