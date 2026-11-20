@@ -55,6 +55,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/parts/EditorCitationSettings.tsx",
   "editor/parts/EditorWorkParts.tsx",
   "editor/parts/WorkPartsDialog.tsx",
+  "editor/print-export/PrintExportDialog.tsx", // WEB-10E: awaits the export client and toolbar integration.
   "editor/sources/panel/SourceList.tsx",
   "editor/sources/quick-source/QuickSource.tsx",
   "editor/triggers/TriggerPopover.tsx",

@@ -6,33 +6,21 @@ import { Button, Dialog } from "@ductura/ui";
 import styles from "./PrintExportDialog.module.css";
 import { printExportMessages as t } from "./messages.hr";
 
-export type LoadWorkExport = (
-  format: "pdf" | "docx",
-  signal: AbortSignal,
-) => Promise<{ file: Blob; filename?: string }>;
+export type WorkPrintPreview = { url: string; release: () => void };
+export type LoadWorkPreview = (signal: AbortSignal) => Promise<WorkPrintPreview>;
+export type DownloadWorkDocx = (signal: AbortSignal) => Promise<void>;
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  /** Stable loader bound to the work and revision being exported. */
-  loadExport: LoadWorkExport;
+  /** Stable client functions bound to the work and revision being exported. */
+  loadPreview: LoadWorkPreview;
+  downloadDocx: DownloadWorkDocx;
 };
 
 type Preview = { state: "loading" | "failed" } | { state: "ready"; url: string };
 
-function download(file: Blob, filename: string) {
-  const url = URL.createObjectURL(file);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  // Let Chrome start reading the file before releasing the URL.
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
-
-function PrintExportContent({ onClose, loadExport }: Omit<Props, "open">) {
+function PrintExportContent({ onClose, loadPreview, downloadDocx }: Omit<Props, "open">) {
   const closeButton = useRef<HTMLButtonElement>(null);
   const docxRequest = useRef<AbortController | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -41,28 +29,27 @@ function PrintExportContent({ onClose, loadExport }: Omit<Props, "open">) {
 
   useEffect(() => {
     const controller = new AbortController();
-    let url: string | undefined;
-    async function loadPreview() {
+    let resource: WorkPrintPreview | undefined;
+    async function requestPreview() {
       try {
-        const { file } = await loadExport("pdf", controller.signal);
-        if (controller.signal.aborted) return;
-        if (file.type !== "application/pdf" || file.size === 0) {
-          setPreview({ state: "failed" });
+        const result = await loadPreview(controller.signal);
+        if (controller.signal.aborted) {
+          result.release();
           return;
         }
-        url = URL.createObjectURL(file);
-        setPreview({ state: "ready", url });
+        resource = result;
+        setPreview({ state: "ready", url: result.url });
       } catch {
         if (!controller.signal.aborted) setPreview({ state: "failed" });
       }
     }
     setPreview({ state: "loading" });
-    void loadPreview();
+    void requestPreview();
     return () => {
       controller.abort();
-      if (url) URL.revokeObjectURL(url);
+      resource?.release();
     };
-  }, [attempt, loadExport]);
+  }, [attempt, loadPreview]);
 
   useEffect(() => {
     setWord("idle");
@@ -70,7 +57,7 @@ function PrintExportContent({ onClose, loadExport }: Omit<Props, "open">) {
       docxRequest.current?.abort();
       docxRequest.current = null;
     };
-  }, [loadExport]);
+  }, [downloadDocx]);
 
   async function downloadWord() {
     if (docxRequest.current) return;
@@ -78,14 +65,8 @@ function PrintExportContent({ onClose, loadExport }: Omit<Props, "open">) {
     docxRequest.current = controller;
     setWord("loading");
     try {
-      const { file, filename } = await loadExport("docx", controller.signal);
-      if (controller.signal.aborted) return;
-      if (file.type !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.size === 0) {
-        setWord("failed");
-        return;
-      }
-      download(file, filename?.toLowerCase().endsWith(".docx") ? filename : "rad.docx");
-      setWord("idle");
+      await downloadDocx(controller.signal);
+      if (!controller.signal.aborted) setWord("idle");
     } catch {
       if (!controller.signal.aborted) setWord("failed");
     } finally {

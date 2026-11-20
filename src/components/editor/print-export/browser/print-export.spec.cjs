@@ -1,8 +1,18 @@
 const { readFile } = require("node:fs/promises");
 const { expect, test } = require("@playwright/test");
 
-const fixture = "/src/components/editor/print-export/browser/index.html";
+const fixture = "/__fixture/print-export";
 const docxType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+test.beforeEach(async ({ page }) => {
+  await page.route(`**${fixture}`, (route) => route.fulfill({
+    contentType: "text/html",
+    body: `<!doctype html><html lang="hr"><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Pregled ispisa</title><div id="app"></div>
+      <script type="module" src="/src/components/editor/print-export/browser/fixture.spec.tsx"></script></html>`,
+  }));
+});
 
 function onePagePdf() {
   let pdf = "%PDF-1.4\n";
