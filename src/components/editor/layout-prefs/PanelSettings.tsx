@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Dialog } from "@ductura/ui";
-import { useState } from "react";
+import { useState, type SyntheticEvent } from "react";
 
 import { editorPanelLayoutsHr as t } from "@/lib/i18n/messages.hr";
 
@@ -21,7 +21,7 @@ export function PanelSettings({ side, value, onChange }: {
     <Button tone="quiet" aria-haspopup="dialog" aria-label={title} onClick={() => setOpen(true)}>
       {side === "left" ? title : <span aria-hidden="true">⚙</span>}
     </Button>
-    {open && <div onCancel={(event) => event.stopPropagation()}
+    {open && <div {...{ onCancel: (event: SyntheticEvent) => event.stopPropagation() }}
       onKeyDown={(event) => { if (event.defaultPrevented) event.stopPropagation(); }}>
       <Dialog open title={title} onClose={() => setOpen(false)} actions={<>
         <Button tone="quiet" onClick={() => onChange(DEFAULT_PREFERENCES[side])}>{t.reset}</Button>
