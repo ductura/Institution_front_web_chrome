@@ -902,6 +902,15 @@ export const hr = {
     wordMinimum: "najmanje {words}",
     wordMaximum: "najviše {words}",
     pagesApprox: "≈ {pages} str.",
+    // WEB-23 (S: E-7): the frame around the editor, top bar and status bar.
+    backToAssignments: "← Moji zadaci",
+    submitWork: "Predaja rada",
+    submitOffline: "Predaja rada traži vezu s mrežom.",
+    scopeRange: "opseg {min} do {max}",
+    scopeMin: "opseg najmanje {min}",
+    scopeMax: "opseg najviše {max}",
+    scopePrivate: "vidite samo Vi",
+    readOnly: "Samo za čitanje",
   },
   editor: {
     placeholder: "Počnite pisati…",
