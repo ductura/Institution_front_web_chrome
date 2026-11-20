@@ -86,6 +86,25 @@ describe("ObjectToolbar", () => {
     object.remove();
   });
 
+  it("keeps one tab stop when the actions shrink", () => {
+    const anchor = createRef<HTMLElement>();
+    const el = mount(<ObjectToolbar open floating={false} anchor={anchor} actions={actions()} onClose={() => undefined} />);
+    act(() => el.querySelectorAll("button")[2]!.focus());
+    act(() => root!.render(<ObjectToolbar open floating={false} anchor={anchor} actions={actions().slice(0, 2)} onClose={() => undefined} />));
+    expect([...el.querySelectorAll("button")].map((b) => b.tabIndex)).toEqual([-1, 0]);
+  });
+
+  it("leaves Escape inside an open modal to that modal", () => {
+    const onClose = vi.fn();
+    mount(<ObjectToolbar open floating={false} anchor={createRef()} actions={actions()} onClose={onClose} />);
+    const modal = document.createElement("dialog");
+    modal.setAttribute("open", "");
+    document.body.append(modal);
+    key(modal, "Escape");
+    modal.remove();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("renders nothing while closed", () => {
     const el = mount(<ObjectToolbar open={false} anchor={createRef()} actions={actions()} onClose={() => undefined} />);
     expect(el.innerHTML).toBe("");

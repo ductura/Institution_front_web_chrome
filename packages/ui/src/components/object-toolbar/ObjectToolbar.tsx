@@ -58,6 +58,8 @@ export function ObjectToolbar({ open, anchor, actions, onClose, label = objectTo
     };
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      // An open modal (e.g. the preview) dismisses itself first: its native cancel needs the key's default action.
+      if ((event.target as Element | null)?.closest?.("dialog[open]")) return;
       event.preventDefault();
       returnTarget(anchor.current, (el) => el.isConnected)?.focus();
       onClose();
@@ -70,8 +72,11 @@ export function ObjectToolbar({ open, anchor, actions, onClose, label = objectTo
     };
   }, [open, anchor, onClose]);
 
+  // Actions may shrink while a later one was active: one button always stays tabbable.
+  const tabStop = Math.min(active, Math.max(0, actions.length - 1));
+
   const onToolbarKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const next = toolbarIndex(active, actions.length, event.key);
+    const next = toolbarIndex(tabStop, actions.length, event.key);
     if (next === null) return;
     event.preventDefault();
     setActive(next);
@@ -84,7 +89,7 @@ export function ObjectToolbar({ open, anchor, actions, onClose, label = objectTo
     <div ref={ref} role="toolbar" aria-label={label} aria-orientation="horizontal" style={style}
       className={floating ? styles.toolbar : `${styles.toolbar} ${styles.inline}`} onKeyDown={onToolbarKeyDown}>
       {actions.map((a, i) => (
-        <button key={a.id} type="button" className={styles.action} tabIndex={i === active ? 0 : -1}
+        <button key={a.id} type="button" className={styles.action} tabIndex={i === tabStop ? 0 : -1}
           aria-pressed={a.pressed} onFocus={() => setActive(i)} onClick={a.onSelect}>
           {a.label}
         </button>

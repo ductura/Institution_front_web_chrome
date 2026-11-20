@@ -31,7 +31,7 @@
 
 .action:hover,
 .action[aria-pressed="true"] {
-  background: var(--raised-rule);
+  background: var(--well);
 }
 
 .action:focus-visible {
