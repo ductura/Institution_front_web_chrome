@@ -11,7 +11,7 @@ import { ImageBar } from "./ImageBar";
 import { clampWidth, clearCrop, cropInset, normalizeCrop, setCrop, stepWidth, type ImageState } from "./image-ops";
 import { TableBar } from "./TableBar";
 import {
-  addColumnAfter, addRowAfter, deleteColumn, deleteRow, mergeCells, setCellFill, setCellText,
+  addColumnAfter, addRowAfter, canMergeText, deleteColumn, deleteRow, mergeCells, setCellFill, setCellText,
   setHeader, setHeaderFill, tidyCell, unmergeCell, type TableState,
 } from "./table-ops";
 
@@ -63,6 +63,27 @@ it("merging keeps the text and the header fill goes with the header", () => {
   expect(setHeader(setHeaderFill(base(), "#112233"), false).headerFill).toBeUndefined();
   expect(setHeaderFill(setHeader(base(), false), "#112233").headerFill).toBeUndefined();
   expect(setCellFill(t, { row: 1, column: 1 }, "#112233")).toBe(t);
+});
+
+it("deleting a merge's anchor line moves its text and fill to the new anchor", () => {
+  let t = base();
+  t = setCellFill(setCellText(t, { row: 1, column: 0 }, "x"), { row: 1, column: 0 }, "#112233");
+  t = mergeCells(t, { row: 1, column: 0, rowSpan: 2, columnSpan: 1 });
+  const gone = deleteRow(t, 1);
+  expect(gone.rows[1]![0]).toBe(t.rows[1]![0]);
+  expect(gone.cellFills).toEqual([{ row: 1, column: 0, color: "#112233" }]);
+  expect(gone.merges).toBeUndefined();
+  expect(valid(gone).errors).toEqual([]);
+  const wide = mergeCells(setCellText(base(), { row: 1, column: 0 }, "p"), { row: 1, column: 0, rowSpan: 1, columnSpan: 2 });
+  expect(deleteColumn(wide, 0).rows[1]![0]).toBe(wide.rows[1]![0]);
+  expect(valid(deleteColumn(wide, 0)).errors).toEqual([]);
+});
+
+it("refuses a merge that would cut text", () => {
+  const long = "я".repeat(600);
+  let t = setCellText(setCellText(base(), { row: 1, column: 0 }, long), { row: 1, column: 1 }, long);
+  expect(mergeCells(t, { row: 1, column: 0, rowSpan: 1, columnSpan: 2 })).toBe(t);
+  expect(canMergeText(t, { row: 1, column: 0, rowSpan: 1, columnSpan: 2 })).toBe(false);
 });
 
 it("tidies cell text", () => {

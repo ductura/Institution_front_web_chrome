@@ -81,19 +81,31 @@ function insertAt(t: TableState, axis: Axis, at: number): TableState {
 
 function removeAt(t: TableState, axis: Axis, at: number): TableState {
   const spanKey = span(axis);
+  // A merge whose anchor line goes but which survives: its text and fill move to the next cell, the new anchor.
+  const rows = t.rows.map((r) => r.slice());
+  let fills = (t.cellFills ?? []).map((f) => ({ ...f }));
+  for (const m of t.merges ?? []) {
+    if (m[axis] !== at || m[spanKey] < 2) continue;
+    const from = axis === "row" ? { row: at, column: m.column } : { row: m.row, column: at };
+    const to = axis === "row" ? { row: at + 1, column: m.column } : { row: m.row, column: at + 1 };
+    rows[to.row]![to.column] = rows[from.row]![from.column]!;
+    const fill = fills.find((f) => f.row === from.row && f.column === from.column);
+    fills = fills.filter((f) => f !== fill);
+    if (fill) fills.push({ ...fill, row: to.row, column: to.column });
+  }
   const merges: TableMerge[] = [];
   for (const m of t.merges ?? []) {
     let next = m;
     if (at < m[axis]) next = { ...m, [axis]: m[axis] - 1 };
-    else if (at < m[axis] + m[spanKey]) next = { ...m, [spanKey]: m[spanKey] - 1 }; // the next cell inherits the anchor
+    else if (at < m[axis] + m[spanKey]) next = { ...m, [spanKey]: m[spanKey] - 1 };
     if (next.rowSpan * next.columnSpan > 1) merges.push(next);
   }
-  const fills = (t.cellFills ?? [])
+  const keptFills = fills
     .filter((f) => f[axis] !== at)
     .map((f) => (f[axis] > at ? { ...f, [axis]: f[axis] - 1 } : f));
-  const rows =
-    axis === "row" ? t.rows.filter((_, i) => i !== at) : t.rows.map((r) => r.filter((_, i) => i !== at));
-  return tidied({ ...t, rows }, merges, fills);
+  const next =
+    axis === "row" ? rows.filter((_, i) => i !== at) : rows.map((r) => r.filter((_, i) => i !== at));
+  return tidied({ ...t, rows: next }, merges, keptFills);
 }
 
 const clamp = (n: number, max: number) => Math.max(0, Math.min(n, max));
@@ -137,6 +149,18 @@ export function setCellFill(t: TableState, cell: Cell, color: string | null): Ta
 const overlaps = (a: Rect, b: Rect) =>
   a.row < b.row + b.rowSpan && b.row < a.row + a.rowSpan && a.column < b.column + b.columnSpan && b.column < a.column + a.columnSpan;
 
+/** False when the joined text of the rectangle would pass 1000 code points: nothing may be cut silently. */
+export function canMergeText(t: TableState, rect: Rect): boolean {
+  const texts: string[] = [];
+  for (let r = rect.row; r < rect.row + rect.rowSpan; r += 1) {
+    for (let c = rect.column; c < rect.column + rect.columnSpan; c += 1) {
+      const text = t.rows[r]?.[c]?.trim();
+      if (text) texts.push(text);
+    }
+  }
+  return Array.from(texts.join(" ")).length <= MAX_CELL_CODE_POINTS;
+}
+
 /**
  * Merges a rectangle into its top left cell. The text of the other cells is
  * appended to the first (space-separated, empty ones skipped) so nothing the
@@ -152,6 +176,7 @@ export function mergeCells(t: TableState, rect: Rect): TableState {
   if ((t.merges ?? []).some((m) => overlaps(m, rect))) return t;
   const texts: string[] = [];
   const rows = t.rows.map((r) => r.slice());
+  if (!canMergeText(t, rect)) return t;
   for (let r = row; r < row + rowSpan; r += 1) {
     for (let c = column; c < column + columnSpan; c += 1) {
       const text = rows[r]![c]!.trim();
@@ -159,7 +184,7 @@ export function mergeCells(t: TableState, rect: Rect): TableState {
       if (r !== row || c !== column) rows[r]![c] = "";
     }
   }
-  rows[row]![column] = Array.from(texts.join(" ")).slice(0, MAX_CELL_CODE_POINTS).join("");
+  rows[row]![column] = texts.join(" ");
   const fills = (t.cellFills ?? []).filter(
     (f) => !(f.row >= row && f.row < row + rowSpan && f.column >= column && f.column < column + columnSpan && (f.row !== row || f.column !== column)),
   );
