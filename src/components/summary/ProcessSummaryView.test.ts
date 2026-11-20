@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
 import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
@@ -8,8 +5,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { ProcessSummaryV1 } from "./ProcessSummaryView";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { extractUiText, isUiTextModule } from "../../../scripts/forbidden-terms/scan";
+import { unreadableCharacters } from "../../../scripts/forbidden-terms/characters";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
+import { overviewHr as overview } from "./ProcessSummaryView.messages.hr";
 import { ProcessSummaryView } from "./ProcessSummaryView";
 import { zagrebParts } from "./zagreb-time";
 
@@ -60,11 +58,10 @@ function render(summary: ProcessSummaryV1, extra: Record<string, unknown> = {}):
 }
 
 /*
- * Text is read from the element tree the component returns, not by parsing
- * HTML: the view is made of host elements only, so the tree is exactly what
- * React renders, and no markup has to be taken apart with patterns.
+ * Inspect the returned element tree for fact and list content. Check the
+ * disclosure itself in the HTML rendered by the shared UI component.
  */
-type Element = ReactElement<{ children?: ReactNode; "data-number"?: string }>;
+type Element = ReactElement<{ children?: ReactNode; "data-number"?: string; "data-part"?: string }>;
 
 function tree(summary: ProcessSummaryV1): Element {
   return ProcessSummaryView({ summary }) as Element;
@@ -120,7 +117,7 @@ describe("ProcessSummaryView: one view for every reader", () => {
     const plain = render(summaryWith());
     expect(render(summaryWith(), { role: "teacher" })).toBe(plain);
     expect(render(summaryWith(), { role: "student", viewer: "mentor" })).toBe(plain);
-    // @ts-expect-error the props are the summary alone
+    // @ts-expect-error the props describe the record, not the reader
     createElement(ProcessSummaryView, { summary: summaryWith(), role: "teacher" });
   });
 
@@ -141,6 +138,60 @@ describe("ProcessSummaryView: one view for every reader", () => {
 });
 
 describe("ProcessSummaryView: Europe/Zagreb times", () => {
+  it("shows the recorded date range and sums session durations without adding time between sessions", () => {
+    const summary = summaryWith();
+    const reversed = {
+      ...summary,
+      sessions: { ...summary.sessions, items: [...summary.sessions.items].reverse() },
+    };
+    const markup = render(reversed);
+    expect(markup).toContain(`<dt>${overview.workPeriod.first}</dt><dd>14. listopada 2026. u 20:02</dd>`);
+    expect(markup).toContain(`<dt>${overview.workPeriod.last}</dt><dd>26. listopada 2026. u 01:15</dd>`);
+    const view = tree(reversed);
+    expect(numbered(view, "editing-duration")[0]).toContain("2 h 43 min");
+    expect(numbered(view, "editing-duration")[0]).toContain(`${t.sessions.threshold} 30 minuta`);
+    expect(textOf(view)).toContain(overview.editingDuration.note);
+  });
+
+  it("deducts overlapping gaps inside a session only once", () => {
+    const view = tree(summaryWith({
+      gaps: {
+        evidenceKind: "observed",
+        items: [
+          { previousEndedAt: "2026-10-14T18:10:00.000Z", nextStartedAt: "2026-10-14T18:25:00.000Z" },
+          { previousEndedAt: "2026-10-14T18:20:00.000Z", nextStartedAt: "2026-10-14T18:30:00.000Z" },
+        ],
+      },
+    }));
+    expect(numbered(view, "editing-duration")[0]).toContain("2 h 23 min");
+    expect(textOf(view)).toContain(overview.editingDuration.gapNote);
+  });
+
+  it("uses the supplied editing minutes and shows observed assistant transfers by time", () => {
+    const markup = render(summaryWith(), {
+      details: {
+        activeEditingMinutes: 0,
+        assistantTransfers: [
+          { from: "2026-10-14T16:00:00.000Z", to: "2026-10-14T16:01:00.000Z" },
+        ],
+      },
+    });
+    expect(markup).toContain("0 min");
+    expect(markup).toContain(`${overview.assistant.transfer} · 14. listopada 2026. od 18:00 do 18:01`);
+    const empty = render(EMPTY, { details: { activeEditingMinutes: 0, assistantTransfers: [] } });
+    expect(empty).toContain(overview.assistant.none);
+    expect(empty).toContain(overview.editingDuration.unavailable);
+    expect(render(EMPTY)).not.toContain(overview.assistant.none);
+  });
+
+  it("makes recorded sessions expandable and shows explicit empty messages when there are none", () => {
+    expect(render(summaryWith())).toMatch(/<details[^>]*><summary[^>]*>Popis sesija<\/summary>/);
+    const empty = render(EMPTY);
+    expect(empty).not.toContain("<details");
+    expect(empty).toContain(overview.workPeriod.unavailable);
+    expect(empty).toContain(overview.editingDuration.unavailable);
+  });
+
   it("writes summer and winter times in Zagreb, across the October change", () => {
     const text = textOf(tree(summaryWith()));
     // 18:02 UTC on 14 Oct is 20:02 in summer time.
@@ -243,7 +294,7 @@ describe("ProcessSummaryView: thresholds, pastes, gaps and evidence kind", () =>
     const pastes = numbered(view, "paste");
     expect(pastes.map((paste) => paste.match(/Veličina: (\d+)/)?.[1])).toEqual(["412", "201", "9001"]);
     for (const paste of pastes) expect(paste).toContain(t.pastes.origins.not_observed);
-    const text = textOf(view);
+    const text = textOf(findAll(view, (element) => element.props["data-part"] === "pastes"));
     expect(text).not.toContain(String(412 + 201 + 9001));
     expect(text).not.toMatch(/%|udio|ukupno|zbroj/i);
   });
@@ -278,19 +329,23 @@ describe("ProcessSummaryView: interface vocabulary", () => {
       const text = textOf(tree(summary));
       expect(findForbiddenTerms(text)).toEqual([]);
     }
-    for (const text of Object.values(t).flatMap(function leaves(value: unknown): string[] {
+    for (const text of [t, overview].flatMap(function leaves(value: unknown): string[] {
       return typeof value === "string" ? [value] : Object.values(value as object).flatMap(leaves);
     })) {
       expect(findForbiddenTerms(text), text).toEqual([]);
     }
   });
 
-  it("keeps its text where the forbidden-terms scan reads it", () => {
-    const catalogue = "src/lib/i18n/messages.hr.ts";
-    expect(isUiTextModule(catalogue)).toBe(true);
-    const read = extractUiText(catalogue, readFileSync(path.resolve(catalogue), "utf8"), "catalogue").map((piece) => piece.text);
-    for (const text of [t.title, t.sameForEveryone, t.gaps.explanation, t.pastes.origins.not_observed, t.recordState.has_gaps]) {
-      expect(read).toContain(text);
+  it("renders the checked Croatian catalogue text, including the disclosure label", () => {
+    const markup = render(summaryWith());
+    const fragments = [
+      t.title, t.sameForEveryone, t.gaps.explanation, t.pastes.origins.not_observed,
+      t.recordState.has_gaps, overview.sessionList, overview.editingDuration.note,
+    ];
+    for (const text of fragments) {
+      expect(markup).toContain(text);
+      expect(unreadableCharacters(text)).toEqual([]);
+      expect(findForbiddenTerms(text)).toEqual([]);
     }
   });
 });
