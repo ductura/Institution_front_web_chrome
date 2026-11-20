@@ -49,6 +49,7 @@ import {
   browserMarkStore, currentSession, endAfterLogout, hasEnded, SESSION_END_CHANNEL, type SessionMark,
 } from "@/client/session-marks";
 import { localChip, type LocalChip } from "@/domain/sync/labels";
+import type { SyncState } from "@/domain/sync/states";
 import {
   countWords, NODE_ID_ATTRIBUTE, tiptapToCanonical, startFreshHistory, replaceWithStoredDocument,
   createEditorExtensions, ArrowCollapse, ChapterNumbers, StorableInput, storableDocument, SourceObserver,
@@ -56,7 +57,7 @@ import {
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { createLivePublisher, type LivePublisher } from "@/client/live-publisher";
 import { followLogoutNatively, postLogout } from "@/client/logout-request";
-import { signInHref, signInTarget, SIGN_IN_DEFAULT_TARGET } from "@/components/auth/sign-in-link";
+import { signInHref } from "@/client/api";
 import {
   editorSignOutPlan, planAfterDiscard, readLogoutHold, unsavedAfterSettle, untilLoaded, withinHoldLimit, type HoldRead,
 } from "@/client/logout-hold";
@@ -802,11 +803,11 @@ export function LocalEditor({ lang = null }: { lang?: WorkLanguage | null } = {}
  */
 function SignInAgain() {
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    event.currentTarget.href = signInHref(signInTarget(window.location.pathname + window.location.search));
+    event.currentTarget.href = signInHref(window.location.pathname + window.location.search);
   };
   return (
     <p>
-      <a className="btn" href={signInHref(SIGN_IN_DEFAULT_TARGET)} onClick={onClick}>{t.auth.signInAgain}</a>
+      <a className="btn" href={signInHref("/")} onClick={onClick}>{t.auth.signInAgain}</a>
     </p>
   );
 }
@@ -854,6 +855,17 @@ export function LocalSaveChip() {
       </span>
     </>
   );
+}
+
+/**
+ * WEB-14b: what the page's status bar reads (StatusBar `statusSaveOf`): the
+ * provider's phase and the very state `LocalSaveChip` would show, never the
+ * stored state on its own.
+ */
+export function useLocalSaveRead(): { phase: Phase; state: SyncState | null } {
+  const value = useLocalDocument();
+  const chip = chipOf(value);
+  return { phase: value.phase, state: chip === null || chip.state === "blocked" ? null : chip.state };
 }
 
 /** States in which this tab is putting the text on the device. */
