@@ -2,13 +2,15 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { signInHref } from "@/client/api";
 import { DEMO_FAST_PATH } from "@/lib/i18n/demo-fast-path.hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { isUiTextModule } from "../../../scripts/forbidden-terms/scan";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
 import { FastPath } from "./FastPath";
 import { bySurname, compareHr, fastPathLines, fullName, textRuns, type FastPathStudent } from "./fast-path";
+import { fastPathControlsHr } from "./fast-path/messages.hr";
+import { liveWorkHref, SUMMARY_ANCHOR } from "./LiveWorkFrame";
 
 const t = messagesHr.fastPath;
 
@@ -98,7 +100,7 @@ describe("FastPath states", () => {
       expect(html).not.toContain("<nav");
       for (const s of SAMPLE) expect(html).not.toContain(s.surname!);
     }
-    expect(render({ state: "signedOut" })).toContain('href="/api/auth/login"');
+    expect(render({ state: "signedOut" })).toContain(`href="${signInHref()}"`);
     expect(render({ state: "pickAssignment" })).toContain('href="/nastavnik"');
   });
 
@@ -118,7 +120,13 @@ describe("FastPath states", () => {
       expect(order).toEqual([...order].sort((a, b) => a - b));
       expect(html.match(/aria-current="true"/g)).toHaveLength(1);
       expect(html).toContain(t.views.text);
-      expect(html).toContain(t.soon);
+      expect(html).toContain('role="tablist"');
+      const href = liveWorkHref(bySurname(SAMPLE)[0]!.documentId);
+      expect(href).not.toBeNull();
+      expect(html).toContain(`href="${href}"`);
+      expect(html).toContain(`href="${href}#${SUMMARY_ANCHOR}"`);
+      expect(html).toMatch(new RegExp(`<button[^>]*disabled[^>]*>${fastPathControlsHr.previous}</button>`));
+      expect(html).toContain(fastPathControlsHr.next);
     }
   });
 
@@ -141,7 +149,9 @@ describe("FastPath states", () => {
     const html = render({ state: "ready", students: [pending], stale: false });
     expect(html).toContain(t.noRecordYet);
     expect(html).not.toContain("<dl");
-    expect(html).not.toContain("aria-pressed");
+    expect(html).not.toContain('role="tablist"');
+    expect(html).not.toContain(t.openWork);
+    expect(html).toMatch(new RegExp(`<button[^>]*disabled[^>]*>${fastPathControlsHr.next}</button>`));
   });
 
   it("offers no control that sorts or writes (I1, I3)", () => {
@@ -203,13 +213,9 @@ describe("block kinds (F-150 point 1, E1)", () => {
 });
 
 describe("text coverage", () => {
-  it("the forbidden-terms scan reads the demo data and the messages", () => {
-    expect(isUiTextModule("src/lib/i18n/demo-fast-path.hr.ts")).toBe(true);
-    expect(isUiTextModule("src/lib/i18n/messages.hr.ts")).toBe(true);
-  });
-
-  it("no demo text holds a forbidden word", () => {
+  it("scans the demo data and both message catalogs for forbidden terms", () => {
     expect(findForbiddenTerms(JSON.stringify(DEMO_FAST_PATH))).toEqual([]);
     expect(findForbiddenTerms(JSON.stringify(t))).toEqual([]);
+    expect(findForbiddenTerms(JSON.stringify(fastPathControlsHr))).toEqual([]);
   });
 });
