@@ -24,7 +24,8 @@ Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za 
 | `src/host/Host.tsx` | Jedno čitanje sesije. Na 401 preusmjerava na prijavu, a na grešku pokazuje ekran s „Pokušaj ponovno”. Ljuska prikazuje ulogu, ime ustanove i „Odjava” (`SignOut.tsx`). Stranicu druge uloge i `/` vodi na početni ekran uloge. Poveznice aplikacije otvara Next router, bez ponovnog učitavanja. |
 | `app/[base]/zadaci/`, `zadaci/kolegiji/`, `nastavnik/`, `nastavnik/mentorstva/` | Spojeni ekrani (`src/host/pages.tsx`). |
 | `app/[base]/zadaci/radovi/`, `rad/`, `rad/[assignmentId]/{predaja,dnevnik-pristupa,reprodukcija}/`, `upis/`, `upis/kolegij/[courseId]/`, `zadatak/[id]/` | Studentske stranice Ductusa na svojim adresama, iza oznake `TREBA API` (u datoteci piše koja operacija `/api/v1` nedostaje u `src/client`). Do tada pokazuju naslov i napomenu da prikaz još nije spojen. |
-| `app/[base]/nastavnik/{brz-put,rad/[id],rad/[id]/reprodukcija,zadatak/novi,zadatak/[assignmentId]/uredi,zadatak/[assignmentId]/rad/[documentId]/jezik}/` | Nastavničke stranice Ductusa, iza oznake `TREBA API` kao i studentske. `nastavnik/kolegiji/` samo preusmjerava na `nastavnik/` pod istom bazom, kao u Ductusu. |
+| `app/[base]/nastavnik/{brz-put,rad/[id],rad/[id]/reprodukcija}/` | Nastavničke stranice Ductusa iza oznake `TREBA API`. `nastavnik/kolegiji/` preusmjerava na `nastavnik/` pod istom bazom. |
+| `app/[base]/nastavnik/zadatak/{novi,[assignmentId]/uredi,[assignmentId]/rad/[documentId]/jezik}/` | HOST-T2: odabir kolegija i objava zadatka, učitavanje i objava nove verzije te jezik pojedinačnog rada (`src/host/teacher/assignment/`). Čitanje jezika pojedinačnog rada čeka serversku rutu. |
 | `app/[base]/ustanova/{,korisnici,kolegiji,pravila}/` | Stranice administratora ustanove (A-01 do A-04), iza oznake `TREBA API`: ugovor za njih još nema čitanje. |
 | `app/[base]/kako-radi/` | „Kako Ductura radi” za svaku prijavljenu ulogu. Čeka prijenos `src/components/how-it-works`, koji još uvozi Ductusov `@/lib/i18n/messages.hr`. |
 | `app/[base]/stanje/`, `app/[base]/prijava/` | Javne stranice: domaćin ne čita sesiju i ne stavlja ljusku (`public` u `src/routes.ts`). „Stanje sustava” je iza oznake `TREBA API` (`platform.status.get`). „Prijava” vodi ravno na prijavu preko AAI@EduHr (D-09) i vraća na traženu stranicu pod istom bazom. |
@@ -35,6 +36,7 @@ Adrese: `basePath` je `/app`, a segment `app/[base]/` je `web` ili `chrome`; za 
 | `vitest.config.ts` | Jedinični testovi čistih dijelova (`src/**/*.test.ts`). |
 | `src/text.ts` | Nekoliko tekstova samog domaćina. `text.test.ts` ih provjerava skenerom zabranjenih izraza. |
 | `e2e/session.spec.ts` | Lažni `/api/v1` (`page.route`): 401 vodi na prijavu s `returnTo`, 200 otvara ekran uloge, odjava, nedostupan poslužitelj, nastavnička čitanja (200, 401, 403, 503). Uz to provjerava konzolu i axe. Poslužitelj je `next build && next start`. Tijela nastavničkih odgovora u `e2e/fixtures/teacher.json` su vektori iz `@ductura/test-fakes` 3.0.1. |
+| `e2e/teacher-assignment.spec.ts` | HOST-T2 preko `page.route`: uspješna čitanja, 401, 503, ponovno čitanje nakon sukoba verzija i prikaz uspjeha nakon odgovora na upis. |
 
 Spojeni ekrani:
 
