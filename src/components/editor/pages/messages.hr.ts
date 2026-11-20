@@ -17,7 +17,7 @@ export const pagesMessages = {
   numberIntro: "od prve stranice teksta; naslovnica i sadržaj bez broja",
   left: "lijevo",
   right: "desno",
-  top: "gore",
+  above: "gore",
   bottom: "dolje",
   coverTitle: "Podaci za naslovnicu",
   coverNote: "Naslov i vrsta rada dolaze iz rada, a fakultet iz profila pravila. Ime studenta i mentora dolaze iz prijave i zadatka.",
