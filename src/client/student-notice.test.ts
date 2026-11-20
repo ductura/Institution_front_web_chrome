@@ -28,8 +28,14 @@ it("reads the current notice and its read and acknowledgment status from the ser
 
 it.each([
   [401, "signedOut"], [403, "notFound"], [404, "notFound"], [503, "unavailable"],
-])("reports HTTP %s as %s", async (status, kind) => {
+] as const)("reports HTTP %s as %s", async (status, kind) => {
   expect(await readStudentNotice(assignmentId, client({}, status).api)).toEqual({ kind });
+});
+
+it("treats an invalid assignment id as not found before issuing the request", async () => {
+  const { api, fetchImpl } = client(body);
+  expect(await readStudentNotice("izmisljeni-nevaljani-id", api)).toEqual({ kind: "notFound" });
+  expect(fetchImpl).not.toHaveBeenCalled();
 });
 
 it.each([

@@ -6,6 +6,8 @@ export type StudentNoticeRead =
   | { kind: "available"; view: NoticeView; readAt: string | null }
   | { kind: "signedOut" | "notFound" | "unavailable" };
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function isInstant(value: string | null): boolean {
   if (value === null) return true;
   const ms = Date.parse(value);
@@ -15,6 +17,7 @@ function isInstant(value: string | null): boolean {
 export async function readStudentNotice(
   assignmentId: string, api = createApi(),
 ): Promise<StudentNoticeRead> {
+  if (!UUID.test(assignmentId)) return { kind: "notFound" };
   try {
     const result = await api("student.notice.get", { params: { assignmentId }, query: undefined, body: undefined });
     if (!result.ok) {
