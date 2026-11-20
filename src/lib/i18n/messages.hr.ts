@@ -45,6 +45,19 @@ export const editorPanelLayoutsHr = {
   allChapters: "‹ Sva poglavlja",
   subchapters: "Potpoglavlja",
   noSubchapters: "Poglavlje nema potpoglavlja.",
+  groups: { sources: "Izvori", comments: "Komentari", review: "Pregled", work: "Mentor", assistant: "Asistent" },
+  workFull: "Mentor i predaja",
+  emptyGroup: "Ovdje još nema sadržaja.",
+  wholeWork: "Cijeli rad",
+  writingIn: "Pišete u poglavlju",
+  noChapter: "Kursor nije u poglavlju",
+  commentsHere: "Komentari ovdje",
+  sourcesHere: "Izvori ovdje",
+  allSources: "Svi izvori i traženje",
+  notesHere: "Za pogledati u tekstu",
+  chapterOutline: "Nacrt poglavlja",
+  noParagraphs: "Poglavlje još nema odlomaka.",
+  backToContext: "‹ Uz tekst",
 } as const;
 
 /** The product name on screen (D-124): one value, read through `app.name`. */
