@@ -22,6 +22,11 @@ import {
 } from "../../src/components/index.ts";
 
 import { DiffView, Timeline } from "@ductura/ui";
+import { ProofDialog, SourceProofsPanel } from "../../src/components/index.ts";
+import { proofsPath, type ProofsRead, type SourceProof } from "../../src/client/source-proofs.ts";
+import type { ProofPicture } from "../../src/components/editor/sources/proofs/crop.ts";
+import { startCapture, type Capture } from "../../src/components/editor/sources/proofs/proof-draft.ts";
+import type { ProofsDeps } from "../../src/components/editor/sources/proofs/proofs-deps.ts";
 import type { CatalogEntries, CatalogState } from "./coverage";
 
 type Entry = Record<CatalogState, () => React.ReactNode>;
@@ -719,6 +724,48 @@ const receiptPanel = (read: ReceiptRead) => (
 );
 const verificationCode = { receiptId: signedReceipt.payload.submissionId, fingerprint: signedReceipt.payload.artifactSha256 };
 
+// WEB-1106: proofs from a source. Invented sources; the page is drawn here, nothing is read or sent.
+const PROOF_WORK = "11111111-1111-4111-8111-111111111111";
+const PROOF_S1 = "22222222-2222-4222-8222-222222222222";
+const PROOF_S2 = "44444444-4444-4444-8444-444444444444";
+const proofPage: ProofPicture = {
+  width: 600, height: 400,
+  draw: (ctx, from, to) => {
+    const sx = to.width / from.width;
+    const sy = to.height / from.height;
+    ctx.save();
+    ctx.setTransform(sx, 0, 0, sy, to.x - from.x * sx, to.y - from.y * sy);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 600, 400);
+    ctx.fillStyle = "#8c887f";
+    for (let y = 40; y < 380; y += 26) ctx.fillRect(40, y, y % 4 === 0 ? 420 : 520, 8);
+    ctx.restore();
+  },
+};
+const sampleProof = (id: string, sourceId: string, page: string, note: string | null = null): SourceProof => ({
+  id, sourceId, page, note, createdAt: "2026-11-20T10:15:00.000Z", size: 24000,
+  imagePath: `${proofsPath(PROOF_WORK, sourceId) ?? ""}/${id}/image`,
+});
+const proofSources = [{ id: PROOF_S1, label: "Izmišljenić (2020)" }, { id: PROOF_S2, label: "Primjerić i Uzorak (2019)" }];
+const proofCitations = [{ sourceId: PROOF_S1, page: "14" }, { sourceId: PROOF_S1, page: "20" }, { sourceId: PROOF_S2, page: null }];
+const proofLists: Record<string, ProofsRead> = {
+  [PROOF_S1]: { kind: "ok", proofs: [sampleProof("55555555-5555-4555-8555-555555555555", PROOF_S1, "14", "Uvodni odlomak")] },
+  [PROOF_S2]: { kind: "ok", proofs: [] },
+};
+const proofDeps = (list: (sourceId: string) => Promise<ProofsRead>): ProofsDeps => ({
+  assignmentId: PROOF_WORK, list,
+  upload: async () => ({ kind: "nepoznato" }),
+  picture: async () => proofPage,
+  openPdf: async () => { throw new Error("katalog ne otvara PDF"); },
+});
+const proofsPanel = (editable: boolean, list: (sourceId: string) => Promise<ProofsRead>, sources = proofSources) =>
+  <SourceProofsPanel sources={sources} citations={sources.length ? proofCitations : []} editable={editable} deps={proofDeps(list)} />;
+const proofCapture = (over: Partial<Capture>): Capture => ({
+  ...startCapture(PROOF_S1, "Izmišljenić (2020)"), picture: proofPage, ...over,
+});
+const proofDialog = (state: Capture) => <ProofDialog state={state} dispatch={nothing} onSave={nothing} onCancel={nothing} modal={false} />;
+const proofFrame = { x: 40, y: 60, width: 420, height: 110 };
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -885,5 +932,22 @@ export const SCREEN_ENTRIES = {
       keyId: "izmisljeni-kljuc-potvrde",
     }} onChange={nothing} onVerify={nothing} />,
     onemogućeno: () => <VerificationForm code={verificationCode} state={{ kind: "rateLimited" }} />,
+  },
+  SourceProofsPanel: {
+    prazno: () => proofsPanel(true, async () => ({ kind: "ok", proofs: [] }), []),
+    učitavanje: () => proofsPanel(true, () => new Promise(() => undefined)),
+    greška: () => proofsPanel(true, async () => ({ kind: "nepoznato" })),
+    puno: () => proofsPanel(true, async (sourceId) => proofLists[sourceId] ?? { kind: "nepoznato" }),
+    onemogućeno: () => proofsPanel(false, async (sourceId) => proofLists[sourceId] ?? { kind: "nepoznato" }),
+  },
+  ProofDialog: {
+    prazno: () => proofDialog(proofCapture({})),
+    učitavanje: () => proofDialog(proofCapture({ selection: proofFrame, page: "14", status: "sending", tried: true })),
+    greška: () => proofDialog(proofCapture({ selection: proofFrame, page: "14", note: "Uvodni odlomak", status: "failed", tried: true })),
+    puno: () => proofDialog(proofCapture({
+      selection: proofFrame, page: "14", note: "Uvodni odlomak", quote: "kućno kompostiranje znatno smanjuje otpad",
+      pdf: { page: 3, count: 12, loading: false }, notice: { kind: "differs", near: "kućno kompostiranje smanjuje otpad", missing: ["znatno"] },
+    })),
+    onemogućeno: () => proofDialog(proofCapture({ pdf: { page: 1, count: 12, loading: true }, notice: { kind: "pdfOpening" } })),
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
