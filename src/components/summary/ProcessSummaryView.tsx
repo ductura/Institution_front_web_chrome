@@ -1,21 +1,18 @@
 import { createElement as h, type ReactNode } from "react";
 
-import type { ApiResult } from "../../client/api";
+import { Details } from "@ductura/ui";
+
+import type { ProcessSummaryV1 } from "../../client/process-summary";
 import { countHr } from "../../lib/i18n/hr";
 import { messagesHr } from "../../lib/i18n/messages.hr";
+import { zagrebEpochMs } from "../../lib/i18n/zagreb";
 
 import styles from "./ProcessSummaryView.module.css";
 import { zagrebParts } from "./zagreb-time";
 
 const t = messagesHr.summary;
 
-/**
- * The summary exactly as the contract gives it (projection.process-summary.post,
- * @ductura/contracts): the Ductus module `@/domain/projection/process-summary`
- * was not carried over, and a second hand-written copy could drift from the
- * server's shape.
- */
-export type ProcessSummaryV1 = Extract<ApiResult<"projection.process-summary.post">, { ok: true }>["body"];
+export type { ProcessSummaryV1 } from "../../client/process-summary";
 type MinuteSpan = ProcessSummaryV1["sessions"]["items"][number];
 
 /**
@@ -27,9 +24,9 @@ type MinuteSpan = ProcessSummaryV1["sessions"]["items"][number];
  * language, so the same summary gives the same markup for the student and the
  * teacher. Times are Europe/Zagreb (`zagreb-time.ts`).
  *
- * Each number stands next to the threshold that decides it (rule 12). Lists
- * keep the server's order, the order of the record; nothing is sorted by
- * size, summed or set against the length of the work (§7 "Zabranjeno").
+ * Each number stands next to the threshold that decides it (rule 12).
+ * Lists keep the server's order. Paste sizes are never added together or
+ * compared with the length of the work (§7 "Zabranjeno").
  *
  * Written with `createElement`, not JSX: the unit tests render it with
  * `renderToStaticMarkup`, and the test transform keeps JSX as written
@@ -57,6 +54,37 @@ function spanText(fromIso: string, toIso: string): string {
 
 function minuteSpanText(span: MinuteSpan): string {
   return spanText(span.from, span.to);
+}
+
+function workPeriod(items: readonly MinuteSpan[]): string | null {
+  const first = items[0];
+  if (!first) return null;
+  let start = first.from;
+  let end = first.to;
+  for (const span of items) {
+    if (span.from < start) start = span.from;
+    if (span.to > end) end = span.to;
+  }
+  const from = zagrebParts(start)?.date;
+  const to = zagrebParts(end)?.date;
+  if (!from || !to) return null;
+  return from === to ? from : `${from} – ${to}`;
+}
+
+function editingDuration(items: readonly MinuteSpan[]): string | null {
+  if (items.length === 0) return null;
+  let totalMs = 0;
+  for (const { from, to } of items) {
+    const start = zagrebEpochMs(from);
+    const end = zagrebEpochMs(to);
+    if (start === null || end === null || end < start) return null;
+    totalMs += end - start;
+  }
+  const minutes = Math.round(totalMs / 60_000);
+  const hours = Math.floor(minutes / 60);
+  return hours === 0
+    ? `${minutes} ${t.units.minuteShort}`
+    : `${hours} ${t.units.hourShort} ${minutes % 60} ${t.units.minuteShort}`;
 }
 
 function evidenceKind(kind: keyof typeof t.evidenceKinds): ReactNode {
@@ -90,6 +118,9 @@ function part(name: string, heading: string, ...children: ReactNode[]): ReactNod
 
 export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
   const { sessions, pastes, gaps } = summary;
+  const period = workPeriod(sessions.items);
+  const duration = editingDuration(sessions.items);
+  const sessionThreshold = `${t.sessions.threshold} ${count(sessions.breakAboveMinutes, t.units.minutesGenitive)}`;
   const listedAbove = `${t.pastes.listedThreshold} ${count(pastes.listedAboveCharacters, t.units.charactersGenitive)}`;
 
   return h(
@@ -101,11 +132,12 @@ export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
       h("h2", { className: styles.title }, t.title),
       h("p", { className: styles.note }, t.sameForEveryone),
     ),
-    h(
-      "p",
-      { className: styles.state, "data-record-state": summary.recordState },
-      label(t.recordState.label),
-      ` ${t.recordState[summary.recordState]}`,
+    part(
+      "work-period",
+      t.workPeriod.heading,
+      period === null
+        ? h("p", { className: styles.empty }, t.workPeriod.unavailable)
+        : h("p", { className: styles.fact }, period, " · ", evidenceKind(sessions.evidenceKind)),
     ),
     part(
       "sessions",
@@ -115,13 +147,33 @@ export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
         { className: styles.fact, "data-number": "sessions" },
         label(t.sessions.count),
         ` ${sessions.count} `,
-        threshold(`${t.sessions.threshold} ${count(sessions.breakAboveMinutes, t.units.minutesGenitive)}`),
+        threshold(sessionThreshold),
         " ",
         evidenceKind(sessions.evidenceKind),
       ),
       sessions.items.length === 0
         ? h("p", { className: styles.empty }, t.sessions.none)
-        : list(sessions.items.map((span) => [`${minuteSpanText(span)} `, evidenceKind(sessions.evidenceKind)])),
+        : h(Details, {
+            summary: t.sessions.list,
+            className: styles.sessionList,
+            children: list(sessions.items.map((span) => [`${minuteSpanText(span)} `, evidenceKind(sessions.evidenceKind)])),
+          }),
+    ),
+    part(
+      "editing-duration",
+      t.editingDuration.heading,
+      duration === null
+        ? h("p", { className: styles.empty }, t.editingDuration.unavailable)
+        : h(
+            "p",
+            { className: styles.fact, "data-number": "editing-duration" },
+            label(t.editingDuration.method),
+            ` ${duration} `,
+            threshold(sessionThreshold),
+            " ",
+            evidenceKind(sessions.evidenceKind),
+          ),
+      h("p", { className: styles.explain }, t.editingDuration.note),
     ),
     part(
       "pastes",
@@ -159,6 +211,12 @@ export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
               evidenceKind(gaps.evidenceKind),
             ]),
           ),
+    ),
+    h(
+      "p",
+      { className: styles.state, "data-record-state": summary.recordState },
+      label(t.recordState.label),
+      ` ${t.recordState[summary.recordState]}`,
     ),
     h("p", { className: styles.note }, t.timeNote),
   );

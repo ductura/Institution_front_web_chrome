@@ -60,11 +60,10 @@ function render(summary: ProcessSummaryV1, extra: Record<string, unknown> = {}):
 }
 
 /*
- * Text is read from the element tree the component returns, not by parsing
- * HTML: the view is made of host elements only, so the tree is exactly what
- * React renders, and no markup has to be taken apart with patterns.
+ * Inspect the returned element tree for fact and list content. Check the
+ * disclosure itself in the HTML rendered by the shared UI component.
  */
-type Element = ReactElement<{ children?: ReactNode; "data-number"?: string }>;
+type Element = ReactElement<{ children?: ReactNode; "data-number"?: string; "data-part"?: string }>;
 
 function tree(summary: ProcessSummaryV1): Element {
   return ProcessSummaryView({ summary }) as Element;
@@ -141,6 +140,26 @@ describe("ProcessSummaryView: one view for every reader", () => {
 });
 
 describe("ProcessSummaryView: Europe/Zagreb times", () => {
+  it("shows the recorded date range and sums session durations without adding time between sessions", () => {
+    const summary = summaryWith();
+    const view = tree({
+      ...summary,
+      sessions: { ...summary.sessions, items: [...summary.sessions.items].reverse() },
+    });
+    expect(textOf(view)).toContain("14. listopada 2026. – 26. listopada 2026.");
+    expect(numbered(view, "editing-duration")[0]).toContain("2 h 43 min");
+    expect(numbered(view, "editing-duration")[0]).toContain(`${t.sessions.threshold} 30 minuta`);
+    expect(textOf(view)).toContain(t.editingDuration.note);
+  });
+
+  it("makes recorded sessions expandable and shows explicit empty messages when there are none", () => {
+    expect(render(summaryWith())).toMatch(/<details[^>]*><summary[^>]*>Popis sesija<\/summary>/);
+    const empty = render(EMPTY);
+    expect(empty).not.toContain("<details");
+    expect(empty).toContain(t.workPeriod.unavailable);
+    expect(empty).toContain(t.editingDuration.unavailable);
+  });
+
   it("writes summer and winter times in Zagreb, across the October change", () => {
     const text = textOf(tree(summaryWith()));
     // 18:02 UTC on 14 Oct is 20:02 in summer time.
@@ -243,7 +262,7 @@ describe("ProcessSummaryView: thresholds, pastes, gaps and evidence kind", () =>
     const pastes = numbered(view, "paste");
     expect(pastes.map((paste) => paste.match(/Veličina: (\d+)/)?.[1])).toEqual(["412", "201", "9001"]);
     for (const paste of pastes) expect(paste).toContain(t.pastes.origins.not_observed);
-    const text = textOf(view);
+    const text = textOf(findAll(view, (element) => element.props["data-part"] === "pastes"));
     expect(text).not.toContain(String(412 + 201 + 9001));
     expect(text).not.toMatch(/%|udio|ukupno|zbroj/i);
   });
