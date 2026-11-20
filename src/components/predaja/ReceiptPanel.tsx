@@ -13,10 +13,11 @@
 
 import { Details, Fingerprint, KeyValueList, StateTag, type KeyValueItem } from "@ductura/ui";
 
-import type { SubmissionRead, SubmissionReceipt } from "@/client/submission";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import type { SubmissionRead, SubmissionReceipt } from "../../client/submission";
+import { messagesHr } from "../../lib/i18n/messages.hr";
 
 import { zagrebParts } from "../summary/zagreb-time";
+import styles from "./ReceiptPanel.module.css";
 
 const t = messagesHr.receipt;
 
@@ -72,7 +73,7 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
     return (
       <div className="receipt">
         <p role="alert">{t.error}</p>
-        <p><a href={retryHref}>{t.retry}</a></p>
+        <p><a className={styles.link} href={retryHref}>{t.retry}</a></p>
       </div>
     );
   }
@@ -80,7 +81,7 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
     return (
       <div className="receipt">
         <p role="status">{t.empty}</p>
-        {submitHref !== undefined && <p><a href={submitHref}>{t.toSubmit}</a></p>}
+        {submitHref !== undefined && <p><a className={styles.link} href={submitHref}>{t.toSubmit}</a></p>}
       </div>
     );
   }
@@ -95,7 +96,7 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
           { id: "revision", label: t.revision, value: String(read.revision) },
         ]} />
         <UtcDetails rows={[[t.submittedAt, read.requestedAt]]} />
-        <p><a href={retryHref}>{t.check}</a></p>
+        <p><a className={styles.link} href={retryHref}>{t.check}</a></p>
       </div>
     );
   }
@@ -123,7 +124,7 @@ export function ReceiptPanel({ read, retryHref, summaryHref, submitHref }: Recei
       {p.afterDeadline && <p role="note">{t.late}</p>}
       <KeyValueList items={items} />
       <UtcDetails rows={[[t.submittedAt, p.requestedAt], [t.dueAt, p.dueAt], [t.signingStarted, p.signedAt]]} />
-      {summaryHref !== undefined && <p><a href={summaryHref}>{t.summary}</a></p>}
+      {summaryHref !== undefined && <p><a className={styles.link} href={summaryHref}>{t.summary}</a></p>}
       <p>{t.signatureNote}</p>
     </div>
   );

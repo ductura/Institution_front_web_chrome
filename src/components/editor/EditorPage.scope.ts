@@ -6,8 +6,8 @@
 // sign-in that lets the editor stop once the session ends in another tab.
 // Fail closed: without a valid scope and tag the editor is not opened at all.
 
-import { browserTransport, SESSION_PATH } from "@/client/api";
-import type { SessionMark } from "@/client/session-marks";
+import { browserTransport, SESSION_PATH } from "../../client/api";
+import type { SessionMark } from "../../client/session-marks";
 
 // TODO(ugovor): SRV-JS adds `journalScope` to `profile.me.get` in
 // @ductura/contracts. Until the bumped contract reaches src/client, this local

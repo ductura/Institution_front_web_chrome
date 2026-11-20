@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { Editor, type JSONContent } from "@tiptap/core";
+import { describe, expect, it, vi } from "vitest";
+
+import { createEditorExtensionsV2 } from "@/editor/schema";
+import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import {
-  COLLAPSE_ORDER, MAX_COLLAPSED, menuKey, openerKey, rovingIndex, splitTools,
+  COLLAPSE_ORDER, convertBlock, copyText, glyphOf, insertChar, insertHole, MAX_COLLAPSED, menuKey, openerKey,
+  pushRecent, readRecent, rovingIndex, SPECIAL_CHARS, splitTools, writeRecent,
 } from "./toolbar-menu";
 
 const TOOLS = ["undo", "redo", "blockStyle", "bold", "italic", "bulletItem", "quote"]
@@ -81,5 +86,91 @@ describe("tools that do not fit", () => {
     }
     expect(splitTools(TOOLS, -1).more).toEqual([]);
     expect(keys(splitTools(TOOLS, 99).more)).toEqual(["redo", "bulletItem", "quote"]);
+  });
+});
+
+describe("WEB-6C menus (E§3.3, E§3.6)", () => {
+  const sheet = (content: JSONContent[] = [{ type: "paragraph", content: [{ type: "text", text: "Izmišljena rečenica." }] }]) => {
+    const editor = new Editor({ element: null, extensions: createEditorExtensionsV2(), content: { type: "doc", content } });
+    // Unmounted, the state has no plugins; as in EditorToolbar.test.ts.
+    editor.view.updateState(editor.state.reconfigure({ plugins: editor.extensionManager.plugins }));
+    // And the editor says it is not editable; read it as a writable one.
+    Object.defineProperty(editor, "isEditable", { get: () => true, configurable: true });
+    Object.defineProperty(editor, "isDestroyed", { get: () => false, configurable: true });
+    return editor;
+  };
+  const blocks = (e: Editor) => (e.getJSON().content ?? []).map((n) => n.type);
+
+  it("keeps 28 distinct special characters, every one described in the catalogue", () => {
+    expect(SPECIAL_CHARS).toHaveLength(28);
+    expect(new Set(SPECIAL_CHARS).size).toBe(28);
+    for (const ch of SPECIAL_CHARS) expect(t.toolbar.specialChars[ch]).toBeTruthy();
+  });
+
+  it("puts the newest character first, without a repeat, at most seven", () => {
+    expect(pushRecent(["a", "b"], "b")).toEqual(["b", "a"]);
+    expect(pushRecent(["1", "2", "3", "4", "5", "6", "7"], "x")).toEqual(["x", "1", "2", "3", "4", "5", "6"]);
+    expect(glyphOf(" ")).toBe("⎵");
+  });
+
+  it("works without storage: nothing is read, nothing throws", () => {
+    expect(readRecent()).toEqual([]);
+    expect(() => writeRecent(["„"])).not.toThrow();
+  });
+
+  it("inserts a listed character at the caret and refuses any other", () => {
+    const editor = sheet();
+    editor.commands.setTextSelection(1);
+    expect(insertChar(editor, "§")).toBe(true);
+    expect(editor.getText()).toBe("§Izmišljena rečenica.");
+    expect(insertChar(editor, "x")).toBe(false);
+    expect(insertChar(null, "§")).toBe(false);
+  });
+
+  it("marks a place to come back to with [?]", () => {
+    const editor = sheet();
+    editor.commands.setTextSelection(1);
+    expect(insertHole(editor)).toBe(true);
+    expect(editor.getText().startsWith("[?] ")).toBe(true);
+  });
+
+  it("turns a paragraph into a quote and back, and does nothing when it is already so", () => {
+    const editor = sheet();
+    editor.commands.setTextSelection(1);
+    expect(convertBlock(editor, "paragraph")).toBe(false);
+    expect(convertBlock(editor, "quote")).toBe(true);
+    expect(blocks(editor)).toEqual(["quote"]);
+    expect(convertBlock(editor, "quote")).toBe(false);
+    expect(convertBlock(editor, "paragraph")).toBe(true);
+    expect(blocks(editor)).toEqual(["paragraph"]);
+  });
+
+  it("turns only the selected part of a paragraph into a quote of its own", () => {
+    const editor = sheet();
+    editor.commands.setTextSelection({ from: 12, to: 20 }); // "rečenica"
+    expect(convertBlock(editor, "quote")).toBe(true);
+    const doc = editor.getJSON().content ?? [];
+    expect(doc.map((n) => n.type)).toEqual(["paragraph", "quote", "paragraph"]);
+    expect(editor.getText({ blockSeparator: "|" })).toBe("Izmišljena |rečenica|.");
+  });
+
+  it("writes nothing into an editor that may not be written in", () => {
+    const editor = sheet();
+    Object.defineProperty(editor, "isEditable", { get: () => false, configurable: true });
+    const locked = editor;
+    expect(insertChar(locked, "§")).toBe(false);
+    expect(insertHole(locked)).toBe(false);
+    expect(convertBlock(locked, "quote")).toBe(false);
+  });
+
+  it("copies the plain text of the sheet, and says so when the browser refuses", async () => {
+    const editor = sheet();
+    let copied = "";
+    vi.stubGlobal("navigator", { clipboard: { writeText: async (text: string) => { copied = text; } } });
+    expect(await copyText(editor)).toBe(true);
+    expect(copied).toBe("Izmišljena rečenica.");
+    vi.stubGlobal("navigator", { clipboard: { writeText: async () => { throw new Error("denied"); } } });
+    expect(await copyText(editor)).toBe(false);
+    vi.unstubAllGlobals();
   });
 });

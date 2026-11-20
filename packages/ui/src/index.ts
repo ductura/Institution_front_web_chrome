@@ -1,6 +1,9 @@
 export { Button, type ButtonProps } from "./components/Button";
 export { Card, type CardProps } from "./components/Card";
 export { Checkbox, type CheckboxProps } from "./components/Checkbox";
+export { CommandPalette, usePaletteShortcut, type CommandPaletteProps } from "./components/command-palette/CommandPalette";
+export { fold, visibleCommands, type Command } from "./components/command-palette/palette-logic";
+export { DEFAULT_SHORTCUT_GROUPS, ShortcutsDialog, type Shortcut, type ShortcutGroup, type ShortcutsDialogProps } from "./components/shortcuts-dialog/ShortcutsDialog";
 export { Details, type DetailsProps } from "./components/Details";
 export { Dialog, type DialogProps } from "./components/Dialog";
 export { Drawer, type DrawerProps, type DrawerSide } from "./components/drawer";

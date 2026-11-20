@@ -1,8 +1,8 @@
 import { createElement as h, type ReactNode } from "react";
 
-import type { ApiResult } from "@/client/api";
-import { countHr } from "@/lib/i18n/hr";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import type { ApiResult } from "../../client/api";
+import { countHr } from "../../lib/i18n/hr";
+import { messagesHr } from "../../lib/i18n/messages.hr";
 
 import styles from "./ProcessSummaryView.module.css";
 import { zagrebParts } from "./zagreb-time";

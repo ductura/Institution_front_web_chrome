@@ -3,7 +3,14 @@ export { accountPlace, appHref, HOW_IT_WORKS_HREF, homeHref, navFor, type Accoun
 export { default as EmptyHome } from "./student/EmptyHome";
 export { default as MyAssignments } from "./student/MyAssignments";
 export { default as StudentHome, type StudentView } from "./student/StudentHome";
+export { SubmissionView, type SubmissionViewProps } from "./student/SubmissionView";
 export type { MyAssignment, MyAssignmentsRead, MyCourse } from "./student/my-assignments-read";
 export * from "./support/index";
 export * from "./outline/index";
 export * from "./teacher/index";
+export { default as WorkspaceTopBar, type WorkspaceTopBarProps } from "./editor/WorkspaceTopBar";
+export { default as BeforeSubmit } from "./predaja/BeforeSubmit";
+export { default as Declaration } from "./predaja/Declaration";
+export { NoteDialog } from "./predaja/NoteDialog";
+export { ReceiptPanel, type ReceiptPanelProps, type ReceiptRead } from "./predaja/ReceiptPanel";
+export { SubmitDialog } from "./predaja/SubmitDialog";
