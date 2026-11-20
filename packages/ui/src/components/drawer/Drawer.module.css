@@ -1,0 +1,95 @@
+/*
+ * The drawer (UI-6A): measures of the editor prototype's rail and panel drawers
+ * (docs/prototip/INVENTAR-editor.md: rail min(320px,88vw), panel min(380px,100vw),
+ * .15s slide, --lift shadow, --scrim behind) on the tokens of this package.
+ */
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0;
+  height: 100dvh;
+  max-height: none;
+  border: 0;
+  background: var(--chrome);
+  color: var(--ink);
+  box-shadow: var(--lift);
+  overflow: auto;
+}
+
+.left {
+  left: 0;
+  right: auto;
+  width: min(320px, 88vw);
+  border-right: 1px solid var(--rule);
+  animation: slide-left 0.15s ease-out;
+}
+
+.right {
+  right: 0;
+  left: auto;
+  width: min(380px, 100vw);
+  border-left: 1px solid var(--rule);
+  animation: slide-right 0.15s ease-out;
+}
+
+.drawer::backdrop {
+  background: var(--scrim);
+}
+
+.inline {
+  position: static;
+  width: auto;
+  height: auto;
+  animation: none;
+  box-shadow: none;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.close {
+  min-width: 34px;
+  min-height: 34px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--hover);
+}
+
+.body {
+  padding: 12px;
+}
+
+@keyframes slide-left {
+  from { transform: translateX(-102%); }
+  to { transform: none; }
+}
+
+@keyframes slide-right {
+  from { transform: translateX(102%); }
+  to { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .left, .right { animation: none; }
+}
