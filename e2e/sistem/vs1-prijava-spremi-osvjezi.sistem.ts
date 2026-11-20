@@ -2,27 +2,19 @@ import { randomUUID } from 'node:crypto';
 
 import { expect, test } from '@playwright/test';
 
-import { oidcOrigin } from './stog';
+import { openDemoWork, signInDemoStudent } from './student';
+import { webOrigin } from './stog';
 
-test('VS-1: student se prijavi, spremi rečenicu i vidi je nakon osvježavanja', async ({ page, baseURL }) => {
+test('VS-1: student se prijavi, spremi rečenicu i vidi je nakon osvježavanja', async ({ page }) => {
   const sentence = `U izmišljenom vrtu nastaje kompost (VS-1 ${randomUUID()}).`;
   const editor = page.getByRole('textbox', { name: 'Tekst rada', exact: true });
 
   await test.step('Prijava kao demo-student preko simulatora AAI@EduHr', async () => {
-    await page.goto('/prijava?returnTo=%2Fzadaci');
-    await page.getByRole('link', { name: 'Prijava sustavom AAI@EduHr', exact: true }).click();
-    await expect(page).toHaveURL((url) => url.origin === oidcOrigin);
-    await page.locator('button[name="account"][value="demo-student"]').click();
-    await expect(page).toHaveURL(`${baseURL}/zadaci`);
-
-    const me = await page.request.get('/api/v1/me');
-    await expect(me).toBeOK();
-    expect(await me.json()).toMatchObject({ role: 'student' });
+    await signInDemoStudent(page);
   });
 
   await test.step('Otvori rad iz lokalnog seeda', async () => {
-    await page.getByRole('link', { name: /Seminarski rad: kućno kompostiranje/ }).click();
-    await expect(page).toHaveURL((url) => url.origin === baseURL && /^\/rad\/[^/]+$/.test(url.pathname));
+    await openDemoWork(page);
     await expect(editor).toBeEditable();
   });
 
@@ -32,7 +24,7 @@ test('VS-1: student se prijavi, spremi rečenicu i vidi je nakon osvježavanja',
     await page.keyboard.press('Enter');
     const [commit] = await Promise.all([
       page.waitForResponse((response) => {
-        if (response.url() !== `${baseURL}/api/v1/evidence/commit` || response.request().method() !== 'POST') {
+        if (response.url() !== `${webOrigin}/api/v1/evidence/commit` || response.request().method() !== 'POST') {
           return false;
         }
         // Prihvati odgovor za snimku s ovom rečenicom, nakon moguće promjene protokola.

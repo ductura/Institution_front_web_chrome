@@ -22,6 +22,7 @@ export default function EditorPage({
   status,
   toolbar = null,
   topBar = null,
+  aside,
   children,
 }: {
   course: string | null;
@@ -29,6 +30,7 @@ export default function EditorPage({
   status: ReactNode;
   toolbar?: ReactNode;
   topBar?: ReactNode;
+  aside?: ReactNode;
   children: ReactNode;
 }) {
   const theme = useSheetTheme();
@@ -44,6 +46,7 @@ export default function EditorPage({
           <h1 className={styles.title}>{title ?? t.workspace.documentUntitled}</h1>
           {children}
         </article>
+        {aside}
       </main>
       {status}
     </div>

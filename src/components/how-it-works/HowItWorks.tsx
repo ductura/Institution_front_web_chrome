@@ -1,4 +1,4 @@
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { messagesHr } from "../../../locales/hr.ts";
 
 import styles from "./HowItWorks.module.css";
 

@@ -8,6 +8,7 @@ const COMPONENTS = [
   "ErrorScreen", "RouteLoading",
 ];
 const ADDITIONAL_COMPONENTS = ["DataTable", "Fingerprint", "KeyValueList", "StateTag", "Steps"];
+const VISUAL_COMPONENTS = [...COMPONENTS, "ObjectToolbar", "PreviewDialog", "AppointmentCalendar"];
 // The screens of src/components (DAN-753): on the shell only, one under another.
 // PanelTabs (WEB-06) is a part of the shell's panel: on the shell only, like the screens.
 const SCREENS = ["AppShell", "PanelTabs", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"];
@@ -84,6 +85,30 @@ for (const theme of THEMES) {
       expect(foreign).toEqual([]);
     });
 
+    test("appointment calendars fit at 360 px and keep full-size day buttons", async ({ page }) => {
+      await open(page, theme, 360);
+      const section = page.getByRole("region", { name: "AppointmentCalendar", exact: true });
+      const calendars = section.getByRole("group", { name: "Kalendar termina", exact: true });
+      await expect(calendars).toHaveCount(6);
+      for (const calendar of await calendars.all()) {
+        const { frame, grid, day } = await calendar.evaluate((root) => ({
+          frame: root.getBoundingClientRect().toJSON(),
+          grid: root.querySelector("[role=grid]")!.getBoundingClientRect().toJSON(),
+          day: root.querySelector("button[data-day]")!.getBoundingClientRect().toJSON(),
+        }));
+        expect(frame.right).toBeLessThanOrEqual(360);
+        expect(grid.right).toBeLessThanOrEqual(frame.right);
+        expect(day.width).toBeGreaterThanOrEqual(44);
+        expect(day.height).toBeGreaterThanOrEqual(44);
+      }
+
+      const sheet = section.locator(".sheet");
+      const confirmed = sheet.getByRole("button", { name: "14:00, potvrđeno", exact: true }).and(sheet.locator(":enabled"));
+      await confirmed.click();
+      await expect(confirmed).toHaveAttribute("aria-pressed", "true");
+      await expect(sheet.getByText("Odabrano: 20. 11. 2026. u 14:00")).toBeVisible();
+    });
+
     // 400 px is the width of the left panel's acceptance (DAN-977); the page is checked whole.
     for (const width of [1440, 400, 360]) {
       test(`has no WCAG 2.2 AA violations at ${width} px (axe)`, async ({ page }) => {
@@ -98,7 +123,13 @@ for (const theme of THEMES) {
     for (const width of WIDTHS) {
       test(`matches its baselines at ${width} px`, async ({ page }) => {
         await open(page, theme, width);
-        for (const name of [...COMPONENTS, ...SCREENS]) {
+        // Keep preceding entries from shifting the region's fractional pixel origin.
+        await page.addStyleTag({ content: "#root > main > section:not([data-catalog-snapshot]) { display: none; }" });
+        for (const name of [...VISUAL_COMPONENTS, ...SCREENS]) {
+          await page.locator(`#${name}`).evaluate((section) => {
+            section.parentElement!.querySelector("[data-catalog-snapshot]")?.removeAttribute("data-catalog-snapshot");
+            section.setAttribute("data-catalog-snapshot", "");
+          });
           await expect.soft(page.getByRole("region", { name, exact: true })).toHaveScreenshot(`${name}-${theme}-${width}.png`);
         }
       });

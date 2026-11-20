@@ -214,7 +214,7 @@ async function answerOnTheWay() {
   await answer(ok);
   const [textarea] = all(body, "textarea");
   await act(async () => { propsOf(textarea!).onChange!({ target: { value: TYPED } }); });
-  const [done] = all(body, "button");
+  const done = button(t.done);
   await act(async () => { propsOf(done!).onClick!(); });
   expect(respond.calls).toBe(1);
 }
