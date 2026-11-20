@@ -50,13 +50,21 @@ test("shows the empty timeline for an ongoing work", async ({ page }) => {
 });
 
 test("shows the roster with groups and per-assignment state only when a course is available", async ({ page }) => {
+  const noCourses = page.waitForResponse("**/api/v1/teacher/courses");
   await mount(page, { role: "teacher" });
+  await noCourses;
   await expect(page.getByRole("region", { name: "Stanje rada" })).toContainText("Rad je u tijeku");
   await expect(page.getByRole("button", { name: "Moji studenti" })).toHaveCount(0);
   await page.unrouteAll({ behavior: "wait" });
   await mount(page, {
     role: "teacher",
-    courses: [{ id: courseId, name: "Izmišljeni seminar", academicYear: "2026./2027.", aiPolicy: "prohibited", assignments: [] }],
+    courses: [{
+      id: courseId, name: "Izmišljeni kolegij", academicYear: "2026/2027", aiPolicy: "prohibited",
+      assignments: [{
+        id: assignmentId, title: "Izmišljeni seminar", workType: "seminar_paper", currentVersion: 1, enrolledStudents: 1,
+        opensAt: "2026-11-19T08:00:00.000Z", dueAt: "2026-12-01T10:00:00.000Z",
+      }],
+    }],
     students: [{
       studentId: "00000000-0000-4000-8000-0000000000e1", givenName: "Demo", familyName: "Kompost", groupName: "Grupa A",
       assignments: [{ assignmentId, documentId: "demo-work", workState: "submitted" }],
@@ -64,5 +72,5 @@ test("shows the roster with groups and per-assignment state only when a course i
   });
   await page.getByRole("button", { name: "Moji studenti" }).click();
   await expect(page.getByRole("dialog", { name: "Moji studenti" })).toContainText("Demo Kompost · Grupa A");
-  await expect(page.getByRole("dialog", { name: "Moji studenti" })).toContainText("Zadatak · Rad je predan");
+  await expect(page.getByRole("dialog", { name: "Moji studenti" })).toContainText("Izmišljeni seminar · Rad je predan");
 });
