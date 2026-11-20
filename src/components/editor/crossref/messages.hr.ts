@@ -1,0 +1,16 @@
+export const crossReferenceMessages = {
+  title: "Unakrsna poveznica",
+  target: "Cilj poveznice",
+  choose: "Odaberite poglavlje, tablicu ili sliku",
+  empty: "Još nema poglavlja, tablica ni slika za povezivanje.",
+  missing: "Cilj poveznice više nije u radu.",
+  hint: "Broj se sam mijenja kad premjestite poglavlje, tablicu ili sliku.",
+  heading: "Poglavlje",
+  table: "Tablica",
+  figure: "Slika",
+  insert: "Umetni",
+  follow: "Idi na cilj",
+  remove: "Ukloni",
+  close: "Zatvori",
+  unavailable: "Poveznicu sada nije moguće promijeniti.",
+} as const;
