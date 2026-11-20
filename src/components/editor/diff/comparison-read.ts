@@ -36,21 +36,21 @@ function failed(status: number): Failed {
 }
 
 export async function readSubmittedVersions(
-  api: ComparisonApi, documentId: string, signal?: AbortSignal, limit = Infinity,
+  client: ComparisonApi, documentId: string, signal?: AbortSignal, limit = Infinity,
 ): Promise<Read<Version[]>> {
   const submitted = new Map<number, Version>();
   let beforeRevision: number | null = null;
   try {
     do {
       signal?.throwIfAborted();
-      const page: Result<VersionsPage> = await api("work.versions.get", {
+      const page: Result<VersionsPage> = await client("work.versions.get", {
         params: { documentId }, query: beforeRevision === null ? {} : { beforeRevision: String(beforeRevision) }, body: undefined,
       });
       if (!page.ok) return failed(page.status);
       for (const version of page.body.versions) {
         if (version.kind === "submission") submitted.set(version.revision, version);
       }
-      const next = page.body.nextBeforeRevision;
+      const next: number | null = page.body.nextBeforeRevision;
       if (next !== null && beforeRevision !== null && next >= beforeRevision) return failed(0);
       beforeRevision = next;
     } while (beforeRevision !== null && submitted.size < limit);
@@ -61,11 +61,11 @@ export async function readSubmittedVersions(
 }
 
 export async function readComparison(
-  api: ComparisonApi, documentId: string, from: number, to: number,
+  client: ComparisonApi, documentId: string, from: number, to: number,
 ): Promise<Read<Comparison>> {
   if (from === to) return failed(0);
   try {
-    const result = await api("work.compare.get", {
+    const result = await client("work.compare.get", {
       params: { documentId }, query: { from: String(from), to: String(to) }, body: undefined,
     });
     if (!result.ok) return failed(result.status);

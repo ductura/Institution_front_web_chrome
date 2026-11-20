@@ -7,23 +7,23 @@ import { ComparisonResult } from "./ComparisonResult";
 import { readComparison, readSubmittedVersions, type Comparison, type ComparisonApi, type Read } from "./comparison-read";
 import { comparisonHr as t } from "./messages.hr";
 
-export type VersionComparisonProps = { api: ComparisonApi; documentId: string; replayHref: string };
+export type VersionComparisonProps = { client: ComparisonApi; documentId: string; replayHref: string };
 type Mode = "page" | "submissions" | "round";
 
 function ReadFailure({ message, retry }: { message: string; retry: () => void }) {
   return <div><p role="alert">{message}</p><Button tone="quiet" onClick={retry}>{t.retry}</Button></div>;
 }
 
-function SelectedComparison({ api, documentId, from, to, onlyChanges }: Pick<VersionComparisonProps, "api" | "documentId"> & {
+function SelectedComparison({ client, documentId, from, to, onlyChanges }: Pick<VersionComparisonProps, "client" | "documentId"> & {
   from: number; to: number; onlyChanges: boolean;
 }) {
   const [read, setRead] = useState<Read<Comparison>>();
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let current = true;
-    void readComparison(api, documentId, from, to).then((result) => { if (current) setRead(result); });
+    void readComparison(client, documentId, from, to).then((result) => { if (current) setRead(result); });
     return () => { current = false; };
-  }, [api, documentId, from, to, attempt]);
+  }, [client, documentId, from, to, attempt]);
 
   if (!read) return <p role="status">{t.loadingComparison}</p>;
   if (read.kind !== "ready") return <ReadFailure message={read.kind === "not-found" ? t.notFound : t.compareError}
@@ -33,7 +33,7 @@ function SelectedComparison({ api, documentId, from, to, onlyChanges }: Pick<Ver
 
 type Versions = Extract<Awaited<ReturnType<typeof readSubmittedVersions>>, { kind: "ready" }>["value"];
 
-function VersionPicker({ api, documentId, versions, mode }: Pick<VersionComparisonProps, "api" | "documentId"> & {
+function VersionPicker({ client, documentId, versions, mode }: Pick<VersionComparisonProps, "client" | "documentId"> & {
   versions: Versions; mode: Mode;
 }) {
   const [newest, previous] = versions;
@@ -52,29 +52,29 @@ function VersionPicker({ api, documentId, versions, mode }: Pick<VersionComparis
         <Select label={t.to} options={options} value={to} onChange={(event) => setTo(Number(event.currentTarget.value))} />
       </>}
       <Checkbox label={t.onlyChanges} checked={onlyChanges} onChange={(event) => setOnlyChanges(event.currentTarget.checked)} />
-      {from === to ? <p role="status">{t.samePoint}</p> : <SelectedComparison key={`${from}:${to}`} api={api}
+      {from === to ? <p role="status">{t.samePoint}</p> : <SelectedComparison key={`${from}:${to}`} client={client}
         documentId={documentId} from={from} to={to} onlyChanges={onlyChanges} />}
     </>
   );
 }
 
-function VersionsRead({ api, documentId, replayHref, mode }: VersionComparisonProps & { mode: Mode }) {
+function VersionsRead({ client, documentId, replayHref, mode }: VersionComparisonProps & { mode: Mode }) {
   const [read, setRead] = useState<Read<Versions>>();
   const [attempt, setAttempt] = useState(0);
   const limit = mode === "page" ? Infinity : 8;
   useEffect(() => {
     const controller = new AbortController();
-    void readSubmittedVersions(api, documentId, controller.signal, limit).then((result) => {
+    void readSubmittedVersions(client, documentId, controller.signal, limit).then((result) => {
       if (!controller.signal.aborted) setRead(result);
     });
     return () => controller.abort();
-  }, [api, documentId, attempt, limit]);
+  }, [client, documentId, attempt, limit]);
 
   if (!read) return <p role="status">{t.loadingVersions}</p>;
   if (read.kind !== "ready") return <ReadFailure message={read.kind === "not-found" ? t.notFound : t.versionsError}
     retry={() => { setRead(undefined); setAttempt((n) => n + 1); }} />;
   if (read.value.length < 2) return <><p role="status">{t.empty}</p><a href={replayHref}>{t.replay}</a></>;
-  return <VersionPicker key={mode} api={api} documentId={documentId} versions={read.value} mode={mode} />;
+  return <VersionPicker key={mode} client={client} documentId={documentId} versions={read.value} mode={mode} />;
 }
 
 export function VersionComparison({ mode = "page", ...props }: VersionComparisonProps & { mode?: Mode }) {

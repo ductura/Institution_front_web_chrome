@@ -1,6 +1,8 @@
 const formatMinute = new Intl.DateTimeFormat("hr-HR", {
   dateStyle: "short", timeStyle: "short", timeZone: "Europe/Zagreb",
 });
+const plural = new Intl.PluralRules("hr-HR");
+const wordCount = (n: number) => `${n} ${plural.select(n) === "one" ? "riječ" : "riječi"}`;
 
 export const comparisonHr = {
   title: "Usporedba verzija",
@@ -28,6 +30,6 @@ export const comparisonHr = {
   openReview: "Otvori Pregled",
   version: (revision: number, minute: string) =>
     `Predaja · ${formatMinute.format(new Date(minute))} · verzija ${revision}`,
-  added: (n: number) => `Dodano ${n} ${n === 1 ? "riječ" : "riječi"}`,
-  removed: (n: number) => `Uklonjeno ${n} ${n === 1 ? "riječ" : "riječi"}`,
+  added: (n: number) => `Dodano ${wordCount(n)}`,
+  removed: (n: number) => `Uklonjeno ${wordCount(n)}`,
 };
