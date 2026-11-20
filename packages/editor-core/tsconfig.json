@@ -1,11 +1,19 @@
 {
   "extends": "../ui/tsconfig.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     // Ported verbatim from Ductus, whose tsconfig has no noUncheckedIndexedAccess
     // (same choice as src/domain/tsconfig.json, DAN-990).
     "noUncheckedIndexedAccess": false,
     // Tests read JSON vectors and the faculty citation style, as in Ductus.
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    // The citation integration test reaches the web's sources.ts, which still
+    // uses the Ductus aliases. The Croatian catalogue lives in src/lib/i18n.
+    "paths": {
+      "@/editor": ["./src/editor/index.ts"],
+      "@/domain/citation": ["./src/document/citation/index.ts"],
+      "@/lib/i18n/*": ["../../src/lib/i18n/*"]
+    }
   },
   "include": ["src", "vitest.config.ts"],
   "exclude": ["node_modules"]

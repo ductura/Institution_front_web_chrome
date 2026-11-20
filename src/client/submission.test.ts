@@ -5,7 +5,7 @@
 import { answerFake, FAKE_VECTOR_HEADER, VECTORS, type FakeVector } from "@ductura/test-fakes/fake-server";
 import { describe, expect, it } from "vitest";
 import {
-  addNote, NOTE_MAX, readNotes, readRequirements, readSubmissionState, submitWork,
+  addNote, NOTE_MAX, readNotes, readRequirements, readSubmissionState, submitOutcomeFrom, submitWork,
   type LocalCall, type SubmissionReceipt, type SubmitInput,
 } from "./submission";
 
@@ -43,7 +43,9 @@ function local(status: number, body: unknown, calls: Parameters<LocalCall>[] = [
   };
 }
 
-const NONE = local(200, { state: "none" });
+// The state read that agrees with the already-requested vector (409 revision 6).
+const REQUESTED_AT = "2026-12-20T21:14:05.123456Z";
+const WAITING = local(200, { state: "ceka", revision: 6, requestedAt: REQUESTED_AT });
 const EXPECTED: Readonly<Record<string, object>> = {
   "submitted": { kind: "predano" },
   "submitted-after-deadline": { kind: "predano" },
@@ -62,7 +64,7 @@ const EXPECTED: Readonly<Record<string, object>> = {
   "blocked-no-evidence": { kind: "odbijeno", reason: "no_evidence" },
   "blocked-record-mismatch": { kind: "nedovrseno" },
   "stale-revision": { kind: "greska", code: "stale_revision", currentRevision: 9 },
-  "already-requested": { kind: "stanje", revision: 6, state: { kind: "none" } },
+  "already-requested": { kind: "stanje", revision: 6, state: { kind: "ceka", revision: 6, requestedAt: REQUESTED_AT } },
   "not-acknowledged": { kind: "greska", code: "not_acknowledged" },
   "not-open": { kind: "greska", code: "not_open" },
   "unavailable-signing": { kind: "nepoznato" },
@@ -76,7 +78,7 @@ describe("submitWork over the contract's vectors", () => {
 
   it.each(SUBMIT.map((v) => [v.name, v] as const))("%s", async (name, vector) => {
     const sent: Sent[] = [];
-    const outcome = await submitWork(SENT, { local: NONE, api: { baseUrl: BASE, fetchImpl: fakeOf(vector, sent) } });
+    const outcome = await submitWork(SENT, { local: WAITING, api: { baseUrl: BASE, fetchImpl: fakeOf(vector, sent) } });
     expect(outcome).toMatchObject(EXPECTED[name] ?? { kind: "missing" });
     if (outcome.kind === "predano") expect(outcome.receipt).toEqual((vector.response.body as { receipt: unknown }).receipt);
     expect(sent).toHaveLength(1);
@@ -125,6 +127,8 @@ describe("submitWork", () => {
     ["another document", submitted({ ...RECEIPT, payload: { ...RECEIPT.payload, documentId: "izmisljeni-rad-0002" } })],
     ["another assignment", submitted({ ...RECEIPT, payload: { ...RECEIPT.payload, assignmentId: "00000000-0000-4000-8000-0000000000a2" } })],
     ["no receipt", { status: "submitted" }],
+    ["a signing time on no real day", submitted({ ...RECEIPT, payload: { ...RECEIPT.payload, signedAt: "2026-13-40T25:61:61.123456Z" } })],
+    ["a deadline on 31 November", submitted({ ...RECEIPT, payload: { ...RECEIPT.payload, dueAt: "2026-11-31T22:59:00.000000Z" } })],
   ])("a 200 with %s is nepoznato, never predano", async (_, body) => {
     expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(200, body) } })).toEqual({ kind: "nepoznato" });
   });
@@ -148,14 +152,114 @@ describe("submitWork", () => {
     expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(status, body, type) } })).toEqual({ kind: "nepoznato" });
   });
 
-  it("reads the state on already_requested, and nepoznato without a reader", async () => {
+  describe("on already_requested (409 revision 6)", () => {
     const vector = SUBMIT.find((v) => v.name === "already-requested") as FakeVector;
-    const calls: Parameters<LocalCall>[] = [];
     const api = { baseUrl: BASE, fetchImpl: fakeOf(vector, []) };
-    expect(await submitWork(SENT, { api, local: local(200, { state: "potvrdeno", receipt: RECEIPT }, calls) }))
-      .toEqual({ kind: "stanje", revision: 6, state: { kind: "potvrdeno", receipt: RECEIPT } });
-    expect(calls).toEqual([["student.submission.get", { params: { assignmentId: ASSIGNMENT } }]]);
-    expect(await submitWork(SENT, { api })).toEqual({ kind: "stanje", revision: 6, state: { kind: "nepoznato" } });
+    const six = { ...RECEIPT, payload: { ...RECEIPT.payload, revision: 6 } };
+
+    it("reads the state of this assignment and keeps a receipt for revision 6 of the document sent", async () => {
+      const calls: Parameters<LocalCall>[] = [];
+      expect(await submitWork(SENT, { api, local: local(200, { state: "potvrdeno", receipt: six }, calls) }))
+        .toEqual({ kind: "stanje", revision: 6, state: { kind: "potvrdeno", receipt: six } });
+      expect(calls).toEqual([["student.submission.get", { params: { assignmentId: ASSIGNMENT } }]]);
+    });
+
+    it.each([
+      ["none", { state: "none" }],
+      ["ceka for revision 4", { state: "ceka", revision: 4, requestedAt: REQUESTED_AT }],
+      ["ceka for revision 7", { state: "ceka", revision: 7, requestedAt: REQUESTED_AT }],
+      ["potvrdeno for revision 4", { state: "potvrdeno", receipt: { ...RECEIPT, payload: { ...RECEIPT.payload, revision: 4 } } }],
+      ["potvrdeno for the revision sent, not the one held", { state: "potvrdeno", receipt: RECEIPT }],
+      ["potvrdeno for another document", { state: "potvrdeno", receipt: { ...six, payload: { ...six.payload, documentId: "izmisljeni-rad-0002" } } }],
+      ["an answer out of shape", { state: "ceka", revision: 6 }],
+      ["ceka at a time that is no date", { state: "ceka", revision: 6, requestedAt: "2026-13-40T25:61:61.123456Z" }],
+      ["ceka on 30 February", { state: "ceka", revision: 6, requestedAt: "2026-02-30T10:00:00.000000Z" }],
+    ])("is nepoznato, never not submitted, when the read gives %s", async (_, body) => {
+      expect(await submitWork(SENT, { api, local: local(200, body) })).toEqual({ kind: "nepoznato" });
+    });
+
+    it.each([[404, { kind: "nepoznato" }], [503, { kind: "nepoznato" }], [401, { kind: "session-expired" }]])(
+      "a read answered %i is %j", async (status, outcome) => {
+        expect(await submitWork(SENT, { api, local: local(status, null) })).toEqual(outcome);
+      },
+    );
+
+    it("sends no read once the session ended while the submission was on its way", async () => {
+      const calls: Parameters<LocalCall>[] = [];
+      let live = true;
+      const ending: typeof fetch = async (url, init) => {
+        const answer = await fakeOf(vector, [])(url, init);
+        live = false;
+        return answer;
+      };
+      const outcome = await submitWork(SENT, {
+        current: () => live, api: { baseUrl: BASE, fetchImpl: ending }, local: local(200, { state: "ceka", revision: 6, requestedAt: REQUESTED_AT }, calls),
+      });
+      expect(outcome).toEqual({ kind: "session-expired" });
+      expect(calls).toHaveLength(0);
+    });
+
+    it("is nepoznato without a reader", async () => {
+      expect(await submitWork(SENT, { api })).toEqual({ kind: "nepoznato" });
+    });
+  });
+
+  it.each([
+    [{ status: "stale_revision" }],
+    [{ status: "stale_revision", currentRevision: "9" }],
+    [{ status: "not_open", extra: 1 }],
+  ])("a 409 %j out of the contract's shape is nepoznato, never a known refusal", async (body) => {
+    expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(409, body) } })).toEqual({ kind: "nepoznato" });
+  });
+
+  it("reads a 409 from its kept body, never from the code alone", () => {
+    const result = { ok: false, status: 409, code: "stale_revision" };
+    expect(submitOutcomeFrom(result, { status: "stale_revision" }, SENT)).toEqual({ kind: "nepoznato" });
+    expect(submitOutcomeFrom(result, undefined, SENT)).toEqual({ kind: "nepoznato" });
+    expect(submitOutcomeFrom({ ...result, code: "not_open" }, { status: "not_open" }, SENT)).toEqual({ kind: "greska", code: "not_open" });
+  });
+
+  it("checks the receipt against what was sent, though the caller changes its input meanwhile", async () => {
+    const input = { ...SENT };
+    let answer: (r: Response) => void = () => {};
+    const delayed: typeof fetch = () => new Promise((done) => { answer = done; });
+    const pending = submitWork(input, { api: { baseUrl: BASE, fetchImpl: delayed } });
+    await Promise.resolve();
+    input.revision = 8;
+    input.documentId = "izmisljeni-rad-0002";
+    await new Promise((done) => setTimeout(done, 0));
+    answer(new Response(JSON.stringify(submitted(RECEIPT)), { status: 200, headers: { "content-type": "application/json" } }));
+    expect(await pending).toEqual({ kind: "predano", receipt: RECEIPT });
+  });
+
+  it("does not take a receipt for the revision the input changed to", async () => {
+    const input = { ...SENT };
+    let answer: (r: Response) => void = () => {};
+    const delayed: typeof fetch = () => new Promise((done) => { answer = done; });
+    const pending = submitWork(input, { api: { baseUrl: BASE, fetchImpl: delayed } });
+    input.revision = 8;
+    await new Promise((done) => setTimeout(done, 0));
+    const eight = { ...RECEIPT, payload: { ...RECEIPT.payload, revision: 8 } };
+    answer(new Response(JSON.stringify(submitted(eight)), { status: 200, headers: { "content-type": "application/json" } }));
+    expect(await pending).toEqual({ kind: "nepoznato" });
+  });
+
+  it.each(["segment_unsigned", "record_discontinuous", "no_evidence"])("409 blocked %s is odbijeno with its reason", async (reason) => {
+    expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(409, { status: "blocked", reason }) } }))
+      .toEqual({ kind: "odbijeno", reason });
+  });
+
+  it.each([[401, { kind: "session-expired" }], [200, { kind: "nepoznato" }], [503, { kind: "nepoznato" }]])(
+    "a %i whose body breaks off after the headers is %j", async (status, outcome) => {
+      const broken: typeof fetch = async () => new Response(new ReadableStream({
+        start(controller) { controller.error(new TypeError("connection reset")); },
+      }), { status, headers: { "content-type": "application/json" } });
+      expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: broken } })).toEqual(outcome);
+    },
+  );
+
+  it("is session-expired on a 401 whose JSON body is broken", async () => {
+    expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(401, "{not json") } })).toEqual({ kind: "session-expired" });
   });
 
   it("is session-expired on a 401 session_expired", async () => {
@@ -170,6 +274,7 @@ describe("readSubmissionState (TODO(ugovor))", () => {
     [{ state: "ceka", revision: 7, requestedAt: "2026-12-20T21:14:05.123456Z" }, { kind: "ceka", revision: 7, requestedAt: "2026-12-20T21:14:05.123456Z" }],
     [{ state: "potvrdeno", receipt: RECEIPT }, { kind: "potvrdeno", receipt: RECEIPT }],
     [{ state: "ceka", revision: 7, requestedAt: "2026-12-20T21:14:05Z" }, { kind: "nepoznato" }],
+    [{ state: "ceka", revision: 7, requestedAt: "2026-13-40T25:61:61.123456Z" }, { kind: "nepoznato" }],
     [{ state: "ceka", revision: 0, requestedAt: "2026-12-20T21:14:05.123456Z" }, { kind: "nepoznato" }],
     [{ state: "none", receipt: RECEIPT }, { kind: "nepoznato" }],
     [{ state: "potvrdeno", receipt: { ...RECEIPT, extra: 1 } }, { kind: "nepoznato" }],

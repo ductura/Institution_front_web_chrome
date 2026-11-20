@@ -29,6 +29,7 @@
  * for the newest row, an owed refusal is never dropped, and the base never
  * goes back.
  */
+import { deepStrictEqual, ok, strictEqual } from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 
 import { emptyDocument } from "../document/document";
@@ -87,7 +88,7 @@ const DOCUMENT = emptyDocument(() => "aaaaaaaa-0000-4000-8000-000000000001");
 function garble(outcome: DrainOutcome): DrainOutcome {
   const fields = Object.entries(outcome);
   const parsed = parseCommitOutcome(Object.fromEntries(fields.slice(0, -1)));
-  expect(parsed).toEqual({ status: "invalid" });
+  deepStrictEqual(parsed, { status: "invalid" });
   return parsed as DrainOutcome;
 }
 
@@ -253,18 +254,18 @@ async function answer(
   );
   // SYNCED may only describe the newest row, and only once the server holds it.
   if (events.some((e) => e.type === "SYNC_ACK")) {
-    expect(world.queue.at(-1)).toBe(sent);
-    expect(landed.get(key)).toBe(ackedRevision(outcome));
+    strictEqual(world.queue.at(-1), sent, "SYNC_ACK must describe the newest row");
+    strictEqual(landed.get(key), ackedRevision(outcome), "SYNC_ACK must describe a landed revision");
   }
   // A refusal of a row that is still owed always reaches the state.
   const owed = world.queue.includes(sent);
   if (owed && (outcome.status === "stale_base" || outcome.status === "txid_reused")) {
-    expect(events).not.toEqual([]);
+    ok(events.length > 0, "a refusal of an owed row must reach the state");
   }
   const acked = ackedRevision(outcome);
   // The base never goes back.
   if (acked !== null) {
-    expect(acked).toBeGreaterThanOrEqual(world.base);
+    ok(acked >= world.base, "the base revision must not go back");
   }
   return { events, acked };
 }
@@ -292,7 +293,7 @@ async function lateAnswer(world: World): Promise<World> {
 /** SYNCED never stands next to an owed row. */
 function expectSyncedHonest(world: World): void {
   if (world.state === "SYNCED") {
-    expect(world.queue).toEqual([]);
+    strictEqual(world.queue.length, 0, "SYNCED requires an empty queue");
   }
 }
 
@@ -302,11 +303,12 @@ function expectNoOrphanMarker(world: World): void {
     return;
   }
   const held = world.awaiting;
-  expect(
+  ok(
     world.queue.some(
       (r) => r.localSeq === held.localSeq && r.tx.clientTransactionId === held.clientTransactionId,
     ),
-  ).toBe(true);
+    "the receipt hold must name a queued row",
+  );
 }
 
 function fingerprint(world: World): string {

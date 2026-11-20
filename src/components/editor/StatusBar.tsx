@@ -1,6 +1,7 @@
 import { SaveState, type SaveStateName } from "@ductura/ui";
 import type { ReactNode } from "react";
 
+import { pluralHr } from "../../lib/i18n/hr";
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
 
 import styles from "./StatusBar.module.css";
@@ -56,19 +57,57 @@ export function statusSaveOf(read: SaveRead): StatusSave | null {
   return { state: read.state, receiptSigned: read.receiptVerifiedHere && read.state === "SYNCED", blocked: false };
 }
 
+/** The assignment's word limits as student.assignment-requirements.get gives them (WEB-22). */
+export type ScopeRange = { readonly min: number; readonly max: number } | null;
+
+/** "1.200": thousands grouped with a dot, as E-7 writes the range. */
+export const groupDot = (n: number): string => String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+/**
+ * The length part of the bar (WEB-23, S: E-7): "340 riječi · opseg 1.200 do
+ * 1.600 · vidite samo Vi". `words` counts the text of the work only (notes are
+ * not counted) and is null while no editor counts it; `range` is null while
+ * the assignment's range is not known. Null when there is nothing to say.
+ */
+export function scopeLine(words: number | null, range: ScopeRange): string | null {
+  const parts: string[] = [];
+  if (words !== null) parts.push(`${groupDot(words)} ${pluralHr(words, "riječ", "riječi", "riječi")}`);
+  if (range !== null) {
+    parts.push(t.workspace.scopeRange.replace("{min}", groupDot(range.min)).replace("{max}", groupDot(range.max)));
+  }
+  if (parts.length === 0) return null;
+  parts.push(t.workspace.scopePrivate);
+  return parts.join(" · ");
+}
+
 /**
  * The 30 px status bar under the sheet. `save` is null while no journal is
  * open on this page: the bar then says that nothing is saved here, never a
- * save state. `children` takes the rest of the bar (length, network).
+ * save state. A submitted work (`readOnly`) says it is read only instead.
+ * `length` is the scope line (WEB-23); `children` takes the rest of the bar.
  */
-export default function StatusBar({ save, children }: { save: StatusSave | null; children?: ReactNode }) {
+export default function StatusBar({
+  save,
+  readOnly = false,
+  length,
+  children,
+}: {
+  save: StatusSave | null;
+  readOnly?: boolean;
+  length?: { readonly words: number | null; readonly range: ScopeRange };
+  children?: ReactNode;
+}) {
+  const scope = length === undefined ? null : scopeLine(length.words, length.range);
   return (
     <footer className={styles.bar} aria-label={t.workspace.status}>
-      {save === null ? (
+      {readOnly ? (
+        <span>{t.workspace.readOnly}</span>
+      ) : save === null ? (
         <span>{t.workspace.statusNoJournal}</span>
       ) : (
         <SaveState state={shownSaveState(save)} blocked={save.blocked} />
       )}
+      {scope === null ? null : <span>{scope}</span>}
       {children}
     </footer>
   );
