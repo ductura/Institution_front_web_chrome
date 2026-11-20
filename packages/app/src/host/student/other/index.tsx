@@ -27,6 +27,7 @@ import { browserTransport, createApi, goToSignIn, signInHref } from "../../../..
 import type { SessionMark } from "../../../../../../src/client/session-marks.ts";
 import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
 
+import { nextPath } from "../../../bases";
 import { hostText } from "../../../text";
 import { useHost } from "../../context";
 
@@ -89,7 +90,7 @@ function useWorkDocument(raw: string, suffix: string): WorkDocument | null {
       if (!live) return;
       const read = editorWorkRead(assignmentId, assignments as never, work as never);
       if (read.kind === "signedOut") return goToSignIn(here);
-      if (read.kind === "noticeFirst") return router.replace(appHref(base, `/zadatak/${assignmentId}`));
+      if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind !== "ready") return setShown({ kind: read.kind });
       if (read.workState === "not_started") return setShown({ kind: "notStarted" });
       if (read.workState !== "submitted") return setShown({ kind: "unavailable" });
