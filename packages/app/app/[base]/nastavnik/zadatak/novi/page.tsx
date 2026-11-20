@@ -1,8 +1,8 @@
-import { PendingPage } from "../../../../../src/host/pages";
+import NewAssignmentPage from "../../../../../src/host/teacher/assignment/new-assignment";
 
-// TREBA API: teacher.courses.get with institution.courses.post and institution.assignment-versions.post; src/client has no module for creating them yet.
-// Source: Ductus src/app/nastavnik/zadatak/novi/page.tsx, copied to src/app/nastavnik/zadatak/novi/.
-/** "Novi kolegij i zadatak". */
-export default function Page() {
-  return <PendingPage />;
+export default async function Page({ searchParams }: {
+  searchParams: Promise<{ kolegij?: string | string[] }>;
+}) {
+  const { kolegij } = await searchParams;
+  return <NewAssignmentPage courseId={kolegij} />;
 }
