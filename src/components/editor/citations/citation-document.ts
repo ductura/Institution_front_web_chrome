@@ -21,8 +21,10 @@ export function insertCitation(state: EditorState, saved: NonNullable<ReturnType
   sourceId: string, page: string) {
   const range = citationRange(state);
   const type = state.schema.nodes[CITATION];
+  const sources: unknown = state.doc.attrs.sources;
   if (!range || !type || range.doc !== saved.doc || range.from !== saved.from || range.to !== saved.to ||
-      !isSourceId(sourceId) || !validCitationPage(page)) return null;
+      !isSourceId(sourceId) || !validCitationPage(page) ||
+      !Array.isArray(sources) || !sources.some((source) => source?.id === sourceId)) return null;
 
   const citation = type.create({ sourceId, locator: page === "" ? null : page });
   const tr = state.tr.replaceWith(range.from, range.to, Fragment.fromArray([citation, state.schema.text(" ")]));
