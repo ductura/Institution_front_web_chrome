@@ -6,8 +6,8 @@
  */
 
 import type { DocumentNode } from "@/domain/document";
-import type { ParagraphHistoryEntry, ReplayGap } from "@/domain/projection/replay-player";
-import type { ReplayChangeKind } from "@/domain/projection/replay-timeline";
+import type { ParagraphHistoryEntry, ReplayGap } from "@/client/replay-record/replay-player";
+import type { ReplayChangeKind } from "@/client/replay-record/replay-timeline";
 import type { EvidenceSourceV2 } from "@/domain/forensics/evidence-segment-v2";
 import { tiptapToCanonical } from "@/editor";
 import { pluralHr } from "@/lib/i18n/hr";

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import fc from "fast-check";
 import type { Node as PmNode } from "@tiptap/pm/model";
 import { describe, expect, it } from "vitest";
@@ -20,7 +22,7 @@ import {
   startNode as start,
   type BuiltRecord,
   type RecordSegmentPlan,
-} from "./replay-record.fixture.test";
+} from "./replay-record.fixture";
 
 const steps = createBrowserReplayStepsV1();
 const recordOf = (r: BuiltRecord, over: Partial<ReplayRecord> = {}): ReplayRecord => ({
@@ -44,6 +46,14 @@ const nowhere = server.load({
   nodes: [{ type: "paragraph", id: A, children: [{ type: "text", text: "Treći tekst.", marks: [] }] }],
 } as JcsJsonValue);
 const typeAt = (pos: number, value: string) => ({ edit: (tr: Parameters<RecordSegmentPlan["events"][0]["edit"]>[0]) => tr.insert(pos, schema.text(value)) });
+
+describe("the fixture's sha", () => {
+  it("is SHA-256 of the UTF-8 text, as node computes it", () => {
+    for (const text of ["", "abc", "Odlomak č ć š 👍", "x".repeat(55), "y".repeat(56), "z".repeat(64), "w".repeat(1000)]) {
+      expect(sha(text)).toBe(createHash("sha256").update(text, "utf8").digest("hex"));
+    }
+  });
+});
 
 describe("buildReplayPlayer (DAN-537, rb 261)", () => {
   it("lists the changes in chain order as change n of N, with no time", async () => {

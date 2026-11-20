@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
-import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { findForbiddenTermsInMarkup } from "../../../scripts/forbidden-terms/terms";
-import { createBrowserReplayStepsV1 } from "@/adapters/evidence/edit-steps-v1-replay-steps";
-import { buildReplayPlayer, type ReplayRecord } from "@/domain/projection/replay-player";
+import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
+import { createBrowserReplayStepsV1 } from "@/client/replay-record/replay-steps";
+import { buildReplayPlayer, type ReplayRecord } from "@/client/replay-record/replay-player";
 import {
   BLOCK_A as A,
   BLOCK_C as C,
@@ -20,7 +20,7 @@ import {
   startNode as start,
   type BuiltRecord,
   type RecordEdit,
-} from "@/domain/projection/replay-record.fixture";
+} from "@/client/replay-record/replay-record.fixture";
 import type { JcsJsonValue } from "@/domain/forensics/jcs";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -71,7 +71,7 @@ describe("ReplayPlayerView (DAN-537)", () => {
     const markup = renderToStaticMarkup(h(ReplayPlayerView, { player }));
     const shown = text(markup);
 
-    expect(shown).toContain("Promjena 3 od 3");
+    expect(shown).toContain("Korak 3 od 3");
     expect(shown).toContain("Promjena 3: obrisan 1 znak u odlomku 2.");
     // The record starts after the work began: said once on the sheet and listed with a way to it.
     expect(shown).toContain(t.gapStartsLater);
@@ -82,10 +82,10 @@ describe("ReplayPlayerView (DAN-537)", () => {
     // The source of the shown change, and a native slider over every position.
     expect(shown).toContain("utipkano");
     expect(markup).toMatch(/<input[^>]*type="range"[^>]*min="0"[^>]*max="3"/);
-    expect(markup).toContain('aria-valuetext="Promjena 3 od 3"');
+    expect(markup).toContain('aria-valuetext="Korak 3 od 3"');
     // The next change does not exist yet; the previous one does.
-    expect(markup).toMatch(/<button[^>]*disabled=""[^>]*>Sljedeća promjena/);
-    expect(markup).not.toMatch(/<button[^>]*disabled=""[^>]*>Prethodna promjena/);
+    expect(markup).toMatch(/<button[^>]*disabled=""[^>]*>Sljedeći korak/);
+    expect(markup).not.toMatch(/<button[^>]*disabled=""[^>]*>Prethodni korak/);
     // The touched paragraph is marked, the others are not.
     expect(markup.match(/data-node-id="[^"]+" class="[^"]*touched/g)?.length).toBe(1);
   });
@@ -98,7 +98,7 @@ describe("ReplayPlayerView (DAN-537)", () => {
     expect(shown).toContain("Promjena 1: umetnuto 7 znakova u odlomku 1.");
     // D-143, D-239: the record's times never reach the page.
     expect(shown).not.toMatch(/09:41|2026|\d:\d/);
-    expect(findForbiddenTermsInMarkup(shown, shown)).toEqual([]);
+    expect(findForbiddenTerms(shown)).toEqual([]);
   });
 
   it("says where the record stopped and replays nothing after it", async () => {
@@ -110,7 +110,7 @@ describe("ReplayPlayerView (DAN-537)", () => {
     const player = await playerOf(r);
     const shown = text(renderToStaticMarkup(h(ReplayPlayerView, { player })));
     expect(player.total).toBe(1);
-    expect(shown).toContain("Promjena 1 od 1");
+    expect(shown).toContain("Korak 1 od 1");
     expect(shown).toContain(fill(t.gapStopped, { a: 1 }));
     expect(shown).toContain(t.gapStoppedNote);
     expect(shown).not.toContain("Promjena 2");
@@ -123,7 +123,7 @@ describe("ReplayPlayerView (DAN-537)", () => {
     ]);
     const player = await playerOf(r, { resumeDocuments: { [sha(jcsOf(elsewhere))]: jcsOf(elsewhere) } });
     const shown = text(renderToStaticMarkup(h(ReplayPlayerView, { player })));
-    expect(shown).toContain("Promjena 2 od 2");
+    expect(shown).toContain("Korak 2 od 2");
     expect(shown).toContain(fill(t.gapBetween, { a: 1, b: 2 }));
     expect(shown).toContain("Idi na promjenu 2");
   });
@@ -164,7 +164,7 @@ describe("ReplayPlayerView (DAN-537)", () => {
     expect(shown).toContain("Promjena 2: obrisano 18 znakova u obrisanom odlomku.");
     expect(shown).not.toContain("odlomku 0");
     expect(shown).toContain(verified);
-    expect(findForbiddenTermsInMarkup(shown, shown)).toEqual([]);
+    expect(findForbiddenTerms(shown)).toEqual([]);
   });
 
   it("keeps repeated spaces of the replayed text, in the markup and on the page", async () => {
@@ -172,7 +172,7 @@ describe("ReplayPlayerView (DAN-537)", () => {
     const markup = renderToStaticMarkup(h(ReplayPlayerView, { player }));
     expect(markup).toContain("Dva  razmaka");
     // Without pre-wrap the browser folds the two spaces into one and the change is not seen.
-    const css = readFileSync(path.resolve("src/components/replay/ReplayView.module.css"), "utf8");
+    const css = readFileSync(fileURLToPath(new URL("./ReplayView.module.css", import.meta.url)), "utf8");
     expect(css).toMatch(/\.text,\s*\.table td\s*\{[^}]*white-space:\s*pre-wrap/);
   });
 

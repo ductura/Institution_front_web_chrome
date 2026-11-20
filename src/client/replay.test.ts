@@ -10,7 +10,7 @@ import {
   sha,
   startNode as start,
   type BuiltRecord,
-} from "./replay-record/replay-record.fixture.test";
+} from "./replay-record/replay-record.fixture";
 
 import {
   fetchReplayRecord,

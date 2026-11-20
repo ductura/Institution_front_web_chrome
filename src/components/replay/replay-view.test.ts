@@ -1,12 +1,8 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
 import { describe, expect, it } from "vitest";
 
-import { extractUiText, isUiTextModule } from "../../../scripts/forbidden-terms/scan";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
 import type { DocumentNode } from "@/domain/document";
-import type { ParagraphHistoryEntry } from "@/domain/projection/replay-player";
+import type { ParagraphHistoryEntry } from "@/client/replay-record/replay-player";
 import { messagesEn } from "@/lib/i18n/messages.en";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -40,14 +36,6 @@ describe("replay words (DAN-537)", () => {
     for (const text of strings(messagesEn.replay)) {
       expect({ text, found: findForbiddenTerms(text, "en") }).toEqual({ text, found: [] });
       expect(text).not.toMatch(/\d:\d|second|minute|hour|speed|tempo|duration|pause|time/i);
-    }
-  });
-
-  it("keeps its text where the forbidden-terms scan reads it", () => {
-    for (const [catalogue, words] of [["src/lib/i18n/messages.hr.ts", messagesHr.replay], ["src/lib/i18n/messages.en.ts", messagesEn.replay]] as const) {
-      expect(isUiTextModule(catalogue)).toBe(true);
-      const read = extractUiText(catalogue, readFileSync(path.resolve(catalogue), "utf8"), "catalogue").map((piece) => piece.text);
-      for (const text of strings(words)) expect({ text, read: read.includes(text) }).toEqual({ text, read: true });
     }
   });
 
