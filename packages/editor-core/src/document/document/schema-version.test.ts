@@ -21,30 +21,56 @@ import { validateDocument } from "./validate";
 type DocumentVector = { name: string; value: unknown; utf8Hex: string; sha256: string };
 
 function documentVectors(): DocumentVector[] {
-  const bytes = readFileSync(new URL("../forensics/golden-vectors/format-reservation.json", import.meta.url));
-  if (bytes.some((byte) => byte > 0x7e || byte === 0x0d)) throw new Error("vectors must be ASCII with LF");
+  const bytes = readFileSync(
+    new URL("../forensics/golden-vectors/format-reservation.json", import.meta.url),
+  );
+  if (bytes.some((byte) => byte > 0x7e || byte === 0x0d))
+    throw new Error("vectors must be ASCII with LF");
   return (JSON.parse(bytes.toString("latin1")) as { documentsV1: DocumentVector[] }).documentsV1;
 }
 
 const VECTORS = documentVectors();
 const vector = (name: string) => VECTORS.find((entry) => entry.name === name)!;
-const V1 = vector("v1-every-block-type").value as { schemaVersion: number; nodes: Record<string, unknown>[] };
+const V1 = vector("v1-every-block-type").value as {
+  schemaVersion: number;
+  nodes: Record<string, unknown>[];
+};
 const codes = (doc: unknown) => {
   const outcome = validateDocument(doc);
   return outcome.ok ? [] : outcome.errors.map((error) => error.code);
 };
 
 describe("document schema versions", () => {
-  it("A5: the version list holds 1 and 2, with the same block types; validateDocument stays v1 only", () => {
+  it("A5: the version list holds 1, 2 and 3, with the same block types; validateDocument stays v1 only", () => {
     // DAN-619 (contract document-schema-v2 §1, #1711 V1): v2 is accepted, with
     // the block types of v1, and the Map stays the only list of versions.
+    // SRV-7A (contract document-schema-v3 §1) adds v3 the same way.
     expect(DOCUMENT_SCHEMA_VERSION).toBe(1);
     expect(DOCUMENT_SCHEMA_VERSION_V2).toBe(2);
-    expect([...DOCUMENT_BLOCK_TYPES_BY_VERSION.keys()]).toEqual([1, 2]);
-    expect([...DOCUMENT_BLOCK_TYPES_BY_VERSION.get(2)!]).toEqual([...DOCUMENT_BLOCK_TYPES_BY_VERSION.get(1)!]);
+    expect([...DOCUMENT_BLOCK_TYPES_BY_VERSION.keys()]).toEqual([1, 2, 3]);
+    for (const version of [2, 3]) {
+      expect([...DOCUMENT_BLOCK_TYPES_BY_VERSION.get(version)!]).toEqual([
+        ...DOCUMENT_BLOCK_TYPES_BY_VERSION.get(1)!,
+      ]);
+    }
     expect(isAcceptedDocumentSchemaVersion(1)).toBe(true);
     expect(isAcceptedDocumentSchemaVersion(2)).toBe(true);
-    for (const value of [3, 0, -1, 1.5, "1", "2", "2.0", null, undefined, true, [1], { v: 1 }]) {
+    expect(isAcceptedDocumentSchemaVersion(3)).toBe(true);
+    for (const value of [
+      4,
+      0,
+      "3",
+      -1,
+      1.5,
+      "1",
+      "2",
+      "2.0",
+      null,
+      undefined,
+      true,
+      [1],
+      { v: 1 },
+    ]) {
       expect(isAcceptedDocumentSchemaVersion(value), JSON.stringify(value)).toBe(false);
     }
     // The v1 view reads a v2 document as v1, so `sources` is a field of no v1.
@@ -71,15 +97,17 @@ describe("document schema versions", () => {
       "NODE_TYPE_INVALID",
     ]);
     for (const type of ["table", "video", "text", "doc", "constructor", "__proto__", "toString"]) {
-      expect(codes({ schemaVersion: 1, nodes: [{ ...video, type }] }), type).toEqual(["NODE_TYPE_INVALID"]);
+      expect(codes({ schemaVersion: 1, nodes: [{ ...video, type }] }), type).toEqual([
+        "NODE_TYPE_INVALID",
+      ]);
     }
   });
 
   it("A5: a field of no version is refused, not dropped", () => {
     expect(codes({ ...V1, extra: true })).toEqual(["UNKNOWN_FIELD"]);
-    expect(codes({ ...V1, nodes: [{ ...V1.nodes[0], variantId: "x" }, ...V1.nodes.slice(1)] })).toEqual([
-      "UNKNOWN_FIELD",
-    ]);
+    expect(
+      codes({ ...V1, nodes: [{ ...V1.nodes[0], variantId: "x" }, ...V1.nodes.slice(1)] }),
+    ).toEqual(["UNKNOWN_FIELD"]);
   });
 
   it("A5: the snapshot ingest refuses the JCS bytes of a v2 document", async () => {
@@ -89,7 +117,7 @@ describe("document schema versions", () => {
 
   it.each(VECTORS.map((entry) => [entry.name, entry] as const))(
     "A6: %s keeps its bytes and its hash through validation and the snapshot ingest",
-    async (_name, entry) => {
+    async (unusedName, entry) => {
       const bytes = Buffer.from(entry.utf8Hex, "hex");
       expect(createHash("sha256").update(bytes).digest("hex")).toBe(entry.sha256);
       expect(bytes.toString("utf8")).toBe(canonicalizeJcs(entry.value as never));
