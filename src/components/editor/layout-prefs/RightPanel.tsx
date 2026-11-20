@@ -12,7 +12,13 @@ import styles from "../SidePanels.module.css";
 import type { PanelLayout } from "./preferences";
 
 const groups = ["sources", "comments", "review", "work", "assistant"] as const;
-const symbols = { sources: "▤", comments: "▱", review: "≡", work: "➤", assistant: "✧" };
+const icons = {
+  sources: "M5 4h9a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h9",
+  comments: "M4 5h16v11H10l-4 4v-4H4z",
+  review: "M5 6h14M5 12h14M5 18h9",
+  work: "M4 12l16-7-6 16-3-6z",
+  assistant: "M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8zM18.5 15.5v3M17 17h3",
+};
 export type PanelGroup = (typeof groups)[number];
 export type RightSections = Partial<Record<PanelGroup, ReactNode>>;
 
@@ -83,7 +89,9 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
       <div className={styles.iconStrip} role="group" aria-label={messagesHr.workspace.panelTabs}>
         {groups.map((group) => <Button key={group} tone="quiet" aria-pressed={shown === group}
           onClick={() => onSelect(!drawer && shown === group ? null : group)}>
-          <span aria-hidden="true">{symbols[group]}</span>{t.groups[group]}
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={icons[group]} /></svg>
+          {t.groups[group]}
         </Button>)}
       </div>
       {shown && view(shown)}

@@ -112,14 +112,24 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
   return <EditorShellFrame className={styles.workspace} focus={focus} style={vars}
     header={<>
       <Button tone="quiet" aria-label={w.structureLabel} aria-expanded={narrowRail ? drawer === "left" : railVisible}
-        onClick={() => narrowRail ? setDrawer("left") : setRailVisible(!railVisible)}>≡</Button>
+        onClick={() => narrowRail ? setDrawer("left") : setRailVisible(!railVisible)}>
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path d="M3 4.5h12M3 9h8M3 13.5h10" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+        </svg>
+      </Button>
       {header}
       <span className={shell.grow} />
+      {narrowPanel && <Button tone="quiet" aria-label={w.panelTabs} aria-expanded={drawer === "right"}
+        onClick={() => setDrawer("right")}>
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" stroke="currentColor" strokeWidth="1.5" fill="none">
+          <rect x="2.5" y="3.5" width="13" height="11" rx="1.5" /><path d="M11 3.5v11" />
+        </svg>
+      </Button>}
+    </>} tools={<>
+      {tools}
       <Button ref={enter} tone="quiet" aria-label={t.focus} aria-keyshortcuts="Control+. Meta+."
         onClick={() => { moveFocus.current = true; setFocus(true); }}>◎</Button>
-      {narrowPanel && <Button tone="quiet" aria-label={w.panelTabs} aria-expanded={drawer === "right"}
-        onClick={() => setDrawer("right")}>▥</Button>}
-    </>} tools={tools} status={status}
+    </>} status={status}
     rail={!narrowRail && railVisible && <aside className={`${shell.rail} ${styles.workspaceSide}`} aria-label={w.structureLabel}>{left}</aside>}
     panel={!narrowPanel && <aside className={`${shell.panel} ${styles.workspaceSide} ${rightLayout === "c" && selection === null ? styles.collapsedPanel : ""}`}
       aria-label={w.panelTabs}>{right}</aside>}

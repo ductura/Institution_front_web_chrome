@@ -142,8 +142,7 @@
 .workGroups { display: grid; }
 .workGroups button { justify-content: start; border-bottom: 1px solid var(--rule-2); border-radius: 0; }
 .iconStrip { display: flex; flex-direction: column; width: 66px; flex: none; gap: 4px; padding: 8px 4px; border-left: 1px solid var(--rule-2); }
-.iconStrip button { display: grid; gap: 3px; font-size: 10.5px; padding: 6px 0; }
-.iconStrip button span { font-size: 16px; }
+.iconStrip button { display: grid; justify-items: center; gap: 3px; font-size: 10.5px; padding: 6px 0; }
 .iconStrip button[aria-pressed="true"] { background: var(--selected); }
 @media (min-width: 1051px) {
   .rightLayout[data-layout="c"] { display: grid; grid-template: auto 1fr / minmax(0, 1fr) 66px; }

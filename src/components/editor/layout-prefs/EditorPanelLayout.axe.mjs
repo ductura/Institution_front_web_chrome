@@ -47,11 +47,17 @@ try {
   };
 
   await expect(page.getByRole("complementary", { name: "Struktura rada" })).toBeVisible();
+  await toggleRail.click();
+  await expect(page.getByRole("complementary", { name: "Struktura rada" })).toHaveCount(0);
+  await toggleRail.click();
   await choose(customizeLeft, /^Kartice/);
   await page.getByRole("tab", { name: "Napredak" }).click();
   await expect(page.getByRole("tabpanel", { name: "Napredak" })).toBeVisible();
   await choose(customizeRight, /^Uz tekst/);
   await expect(page.getByRole("heading", { name: "Komentari ovdje" })).toBeVisible();
+  await page.getByRole("tab", { name: "Struktura", exact: true }).click();
+  await page.getByRole("button", { name: /Teorijski okvir/ }).click();
+  await expect(page.getByRole("complementary", { name: "Bočni panel" }).getByText(/Teorijski okvir/)).toBeVisible();
   await choose(customizeRight, /^Ikone uz rub/);
   await page.getByRole("button", { name: "Izvori", exact: true }).click();
   await expect(page.getByRole("complementary", { name: "Bočni panel" })).toHaveCSS("width", "66px");
