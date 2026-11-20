@@ -1,0 +1,2 @@
+/* The table scrolls inside its own region (DataTable); its width never widens the page or a grid around it. */
+.overview { contain: inline-size; min-inline-size: 0; }
