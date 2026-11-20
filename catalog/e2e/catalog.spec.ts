@@ -127,7 +127,7 @@ for (const theme of THEMES) {
           // Keep preceding entries from shifting the region's fractional pixel origin.
           await expect.soft(page.getByRole("region", { name, exact: true })).toHaveScreenshot(
             `${name}-${theme}-${width}.png`,
-            { style: `main > section:not(#${name}) { display: none; }` },
+            { style: `#root > main > section:not(#${name}) { display: none; }` },
           );
         }
       });
