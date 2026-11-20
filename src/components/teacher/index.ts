@@ -1,4 +1,5 @@
-export { default as AssignmentOverview, chooseAssignment, OVERVIEW_COLUMNS, type AssignmentOverviewProps, type OverviewChoice } from "./AssignmentOverview";
+export { default as AssignmentOverview, OVERVIEW_COLUMNS, type AssignmentOverviewProps } from "./AssignmentOverview";
+export { chooseAssignment, type OverviewChoice } from "./assignment-overview-choice";
 export { default as MentoredWorks } from "./MentoredWorks";
 export { byFamilyName, liveHref, stateText, studentName, workTypeText } from "./mentored-works-view";
 export { readMentoredWorks, type MentoredWork, type MentoredWorksCall, type MentoredWorksRead, type MentoredWorkState, type MentoredWorkType } from "./mentored-works-read";

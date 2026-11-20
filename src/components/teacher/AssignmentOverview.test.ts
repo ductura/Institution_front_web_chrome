@@ -8,7 +8,10 @@ import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
 import type { OverviewRow } from "@/client/teacher-reads";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import AssignmentOverview, { chooseAssignment, OVERVIEW_COLUMNS, submissionHref } from "./AssignmentOverview";
+import { readFileSync } from "node:fs";
+
+import AssignmentOverview, { OVERVIEW_COLUMNS, submissionHref } from "./AssignmentOverview";
+import { chooseAssignment } from "./assignment-overview-choice";
 
 const t = messagesHr.teacherSummary;
 const A = "00000000-0000-4000-8000-0000000000a1";
@@ -72,6 +75,13 @@ describe("AssignmentOverview (N-17)", () => {
     const html = render(null, { loading: true });
     expect(html).toContain('aria-busy="true"');
     expect(html).not.toContain('scope="row"');
+  });
+
+  it("keeps the page's choice of assignment out of the client module, so the server page can call it", () => {
+    const source = readFileSync(new URL("./assignment-overview-choice.ts", import.meta.url), "utf8");
+    expect(source).not.toMatch(/^\s*["']use client["']/m);
+    expect(readFileSync(new URL("../../app/nastavnik/zbirni/page.tsx", import.meta.url), "utf8"))
+      .not.toMatch(/import[^;]*chooseAssignment[^;]*from "[^"]*\/AssignmentOverview"/);
   });
 
   it("chooses the asked assignment only when it is the teacher's, else the first", () => {

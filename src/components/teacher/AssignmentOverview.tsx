@@ -10,17 +10,6 @@ import styles from "./AssignmentOverview.module.css";
 
 const t = messagesHr.teacherSummary;
 
-export type OverviewChoice = { readonly id: string; readonly title: string; readonly label: string };
-
-/**
- * The assignment the page shows: the one asked for when it is one of the
- * teacher's, else the first; null when the teacher has none. An id that is not
- * the teacher's is never read.
- */
-export function chooseAssignment(choices: readonly OverviewChoice[], asked: string | readonly string[] | undefined): OverviewChoice | null {
-  return choices.find((choice) => choice.id === asked) ?? choices[0] ?? null;
-}
-
 /** The UTC minute of the overview (`YYYY-MM-DDTHH:MMZ`) as an instant, or null. */
 function instant(minute: string | null): Date | null {
   if (minute === null) return null;

@@ -6,7 +6,8 @@ import { Button, Select } from "@ductura/ui";
 import { signInHref } from "../../../client/api";
 import { serverApi } from "../../../client/server";
 import { readAssignmentOverview, type TeacherCall } from "../../../client/teacher-reads";
-import AssignmentOverview, { chooseAssignment, type OverviewChoice } from "../../../components/teacher/AssignmentOverview";
+import AssignmentOverview from "../../../components/teacher/AssignmentOverview";
+import { chooseAssignment, type OverviewChoice } from "../../../components/teacher/assignment-overview-choice";
 import { readTeacherCourses } from "../../../components/teacher/teacher-courses-read";
 import { messagesHr } from "../../../lib/i18n/messages.hr";
 
