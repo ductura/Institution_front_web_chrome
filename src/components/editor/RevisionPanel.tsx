@@ -26,6 +26,7 @@ import { formatDateHr } from "@/lib/i18n/hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import RevisionLog from "./revision/RevisionLog";
+import { MentorWorkState } from "./mentor/work-state/MentorWorkState";
 import { revisionLog } from "./revision/revision-log";
 import { useLocalSignedOut, useLocalSubmitted, useLocalUnconfirmed } from "./LocalDocument";
 import {
@@ -158,6 +159,8 @@ function SessionRevisionPanel({ documentId, assignmentId, session }: {
 
   return (
     <>
+    {!stopped && <MentorWorkState key={documentId} documentId={documentId} role="student" submitted={submitted}
+      receiptHref={`/rad/${encodeURIComponent(assignmentId)}/predaja/potvrda`} />}
     <RevisionList
       t={t} formatDate={formatDateHr} status={status} requests={requests} submitted={submitted} unconfirmed={unconfirmed}
       drafts={drafts} numbers={numbers} sending={sending} errors={errors} live={live}

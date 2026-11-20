@@ -19,6 +19,7 @@ import { createElement as h, type ReactNode } from "react";
 
 import { messagesHr } from "../../lib/i18n/messages.hr";
 
+import { ReadOnlyMentor } from "../editor/mentor/work-state/ReadOnlyMentor";
 import styles from "./LiveWorkView.module.css";
 
 const t = messagesHr.teacherLiveWork;
@@ -120,7 +121,10 @@ export default function LiveWorkFrame({ documentId, frame, recordState, text, as
       "div",
       { className: styles.layout },
       h("div", { className: styles.main }, text),
-      h("aside", { className: styles.aside, "aria-label": t.sidePanel, id: SUMMARY_ANCHOR }, aside),
+      h("aside", { className: styles.aside, "aria-label": t.sidePanel, id: SUMMARY_ANCHOR },
+        h(ReadOnlyMentor, { key: documentId, documentId, role: "teacher", submitted: frame?.submitted,
+          receiptHref: submissionHref(documentId) ?? undefined }),
+        aside),
     ),
   );
 }

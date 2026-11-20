@@ -63,7 +63,7 @@ async function readProjection<K extends string, T>(
     });
     if (response.status !== 200 || !/^application\/json(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "")) return null;
     const body: unknown = await response.json();
-    return matchesSchema(body, closed({ [key]: schema })) ? (body as Record<K, T[]>)[key] : null;
+    return matchesSchema(closed({ [key]: schema }), body) ? (body as Record<K, T[]>)[key] : null;
   } catch {
     return null;
   }
