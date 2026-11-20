@@ -234,6 +234,77 @@
     }
   },
   {
+    "route": "public.verification.post",
+    "name": "match",
+    "request": {
+      "body": {
+        "submissionId": "00000000-0000-4000-8000-00000000c0de",
+        "artifactSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "match": true,
+        "submittedAt": "2026-11-20T10:15:30.123456Z",
+        "signedAt": "2026-11-20T10:15:31.654321Z",
+        "keyId": "izmisljeni-kljuc-potvrde-1"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "public.verification.post",
+    "name": "no-match",
+    "request": {
+      "body": {
+        "submissionId": "00000000-0000-4000-8000-00000000c0de",
+        "artifactSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "match": false
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "public.verification.post",
+    "name": "too-many-requests",
+    "request": {
+      "body": {
+        "submissionId": "00000000-0000-4000-8000-00000000c0de",
+        "artifactSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    },
+    "response": {
+      "status": 429,
+      "body": {
+        "error": "too_many_requests"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "public.verification.post",
+    "name": "unavailable",
+    "request": {
+      "body": {
+        "submissionId": "00000000-0000-4000-8000-00000000c0de",
+        "artifactSha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
     "route": "student.assignments.get",
     "name": "ready",
     "request": {},

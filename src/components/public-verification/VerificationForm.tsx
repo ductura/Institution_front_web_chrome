@@ -53,7 +53,7 @@ export function PublicVerification() {
       return;
     }
     setState({ kind: "pending" });
-    const result = await verifyReceipt(parsed).catch(() => ({ kind: "unavailable" } as const));
+    const result = await verifyReceipt(parsed);
     if (current === request.current) setState(result);
   }, []);
 
