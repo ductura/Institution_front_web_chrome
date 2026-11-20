@@ -1712,7 +1712,8 @@ export const hr = {
     gaps: "U zapisu ovog rada postoje praznine.",
     gapsLink: "Pogledaj sažetak procesa",
     notSubmitted: "Rad još nije predan.",
-    textPending: "Prikaz teksta uživo još nije dostupan na ovoj stranici.",
+    sessionUnavailable: "Prijavu trenutačno nije moguće provjeriti, pa se rad ne prikazuje.",
+    retry: "Pokušaj ponovno",
   },
   // WEB-18 (N-01, dk-h, A-7, A-8): the teacher's courses and their enrolment
   // codes. The server keeps only a hash: the code is shown once, in the dialog
