@@ -6,6 +6,7 @@ import {
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
+import type { OverviewRow } from "../../src/client/teacher-reads";
 import { BeforeSubmitView, type BeforeSubmitViewProps } from "../../src/components/predaja/BeforeSubmit.tsx";
 import { DeclarationView, type DeclarationViewProps, type RecordedSummary } from "../../src/components/predaja/Declaration.tsx";
 import type { SubmissionNote } from "../../src/client/submission.ts";
@@ -13,8 +14,10 @@ import { WorkspaceTopBarView } from "../../src/components/editor/WorkspaceTopBar
 import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipRequests.tsx";
 import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
-  AppShell, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments, NoteDialog, OutlinePanel, StudentHome, TeacherCourses,
-  type AssignmentSubmission, type LiveWorkFrameData, type RequestsRead, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
+  AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments,
+  NoteDialog, OutlinePanel, StudentHome, TeacherCourses,
+  type AssignmentSubmission, type LiveWorkFrameData, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
+  type TeacherCourse,
 } from "../../src/components/index.ts";
 
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -300,6 +303,19 @@ const mentoredWorks = [
   mentored(4, { givenName: "Ana", familyName: "Izmišljenić" }, { documentId: null, workState: "not_started" }),
 ];
 
+// Invented overview rows (as in AssignmentOverview.test.ts, WEB-33): submitted,
+// after the deadline with a record gap, waiting for its receipt, and not submitted.
+const overviewRow = (n: number, over: Partial<OverviewRow> = {}): OverviewRow => ({
+  studentId: `70000000-0000-4000-8000-0000000000${n}1`, name: `Izmišljena Osoba ${n}`, group: "A",
+  submitted: false, requestedMinute: null, afterDeadline: false, evidenceRecord: null, ...over,
+});
+const overviewRows = [
+  overviewRow(1, { submitted: true, requestedMinute: "2026-11-20T09:05Z", afterDeadline: true, evidenceRecord: "with_gaps" }),
+  overviewRow(2),
+  overviewRow(3, { group: "B", submitted: true, requestedMinute: "2026-11-02T13:32Z", evidenceRecord: "continuous" }),
+  overviewRow(4, { submitted: true, requestedMinute: "2026-11-14T08:00Z" }),
+];
+
 // Invented live work frame (as in LiveWorkFrame.test.ts, WEB-34); the text slot holds an invented sentence.
 const liveFrame = (over: Partial<LiveWorkFrameData> = {}): LiveWorkFrameData => ({
   studentName: "Vesna Žbunić", assignmentTitle: "Izmišljeni seminar: javne politike", submitted: false,
@@ -440,6 +456,14 @@ export const SCREEN_ENTRIES = {
       />
     ),
     onemogućeno: () => <TeacherCourses courses={teacherCourses(5)} works={teacherWorks(5, [submission(1, null)])} />,
+  },
+  AssignmentOverview: {
+    prazno: () => <AssignmentOverview assignmentTitle="Izmišljeni seminar" rows={[]} />,
+    učitavanje: () => <AssignmentOverview assignmentTitle="Izmišljeni seminar" rows={null} loading />,
+    greška: () => <AssignmentOverview assignmentTitle="Izmišljeni seminar" rows={null} retryHref="/nastavnik/zbirni" />,
+    puno: () => <AssignmentOverview assignmentTitle="Izmišljeni seminar" rows={overviewRows} />,
+    // Names the server does not have: shown as missing, never as a stand-in.
+    onemogućeno: () => <AssignmentOverview assignmentTitle="Izmišljeni esej" rows={[overviewRow(5, { name: null, group: null })]} />,
   },
   MentoredWorks: {
     prazno: () => <MentoredWorks works={[]} />,
