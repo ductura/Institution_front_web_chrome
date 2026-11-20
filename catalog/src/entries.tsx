@@ -1,5 +1,5 @@
 import {
-  AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
+  AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
   Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
   Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
@@ -202,7 +202,28 @@ function FindBarExample({ total, hint }: { total: number; hint?: string }) {
     onClose={nothing} labels={FIND_LABELS} />;
 }
 
+const CHECK_LABELS = { list: "Provjere prije predaje", empty: "Nema nalaza.", required: "Obavezno", advisory: "Savjet" };
+const CHECK_FINDINGS = [
+  { id: "f1", severity: "required" as const, title: "Izmišljeni izvor nema godinu", detail: "Dodajte godinu izdanja.", actions: [{ id: "fix", label: "Uredi izvor" }] },
+  { id: "f2", severity: "advisory" as const, title: "Izmišljeni odlomak je dug", actions: [{ id: "view", label: "Prikaži" }] },
+];
+const ASSISTANT_LABELS = { title: "Pomoćnik", badge: "Uskoro", body: "Pomoćnik još nije dostupan u pilotu.", purposesTitle: "Za što će služiti", purposesList: "Namjene pomoćnika" };
+
 export const ENTRIES = {
+  CheckActionList: {
+    prazno: () => <CheckActionList findings={[]} labels={CHECK_LABELS} onAction={nothing} />,
+    učitavanje: () => <RouteLoading label="Učitavanje provjera…" />,
+    greška: () => <p role="alert">Provjere se nisu učitale.</p>,
+    puno: () => <CheckActionList findings={CHECK_FINDINGS} labels={CHECK_LABELS} onAction={nothing} />,
+    onemogućeno: () => <p>Provjere trenutačno nisu dostupne.</p>,
+  },
+  AssistantComingSoon: {
+    prazno: () => <AssistantComingSoon labels={ASSISTANT_LABELS} purposes={[]} />,
+    učitavanje: () => <RouteLoading label="Učitavanje pomoćnika…" />,
+    greška: () => <p role="alert">Pomoćnik se nije učitao.</p>,
+    puno: () => <AssistantComingSoon labels={ASSISTANT_LABELS} purposes={["Izmišljeni prijedlog 1", "Izmišljeni prijedlog 2"]} />,
+    onemogućeno: () => <p>Pomoćnik trenutačno nije dostupan.</p>,
+  },
   ObjectToolbar: {
     prazno: () => <p>Traka se pokazuje tek kad je odabrana tablica ili slika.</p>,
     učitavanje: () => <RouteLoading label="Učitavanje objekta…" />,
