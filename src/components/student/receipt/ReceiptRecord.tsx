@@ -10,14 +10,14 @@
 import { useState } from "react";
 import { Button } from "@ductura/ui";
 
-import { fetchReceiptPdf, runReceiptPdfDownload, saveBlobAs, type PdfDownloadState } from "./receipt-pdf";
+import { runReceiptPdfDownload, type PdfDownloadState, type ReceiptPdfOutcome } from "./receipt-pdf";
 import { receiptRecordMessages as t } from "./messages.hr";
 
 export type ReceiptRecordProps = {
   readonly assignmentId: string;
-  /** Injected for tests; the page uses the browser's. */
-  readonly fetchPdf?: (assignmentId: string) => ReturnType<typeof fetchReceiptPdf>;
-  readonly save?: (blob: Blob) => void;
+  /** The client call of student.receipt-pdf.get and the saving of its file, both injected by the page. */
+  readonly loadPdf: (assignmentId: string) => Promise<ReceiptPdfOutcome>;
+  readonly save: (blob: Blob) => void;
   readonly homeHref?: string;
 };
 
@@ -25,16 +25,13 @@ const PROBLEM: Record<Exclude<PdfDownloadState, "idle" | "loading">, string> = {
   notFound: t.pdfNotFound, signedOut: t.pdfSignedOut, failed: t.pdfFailed,
 };
 
-export function ReceiptRecord({ assignmentId, fetchPdf = fetchReceiptPdf, save, homeHref }: ReceiptRecordProps) {
+export function ReceiptRecord({ assignmentId, loadPdf, save, homeHref }: ReceiptRecordProps) {
   const [state, setState] = useState<PdfDownloadState>("idle");
 
   async function download() {
     if (state === "loading") return;
     setState("loading");
-    setState(await runReceiptPdfDownload(
-      () => fetchPdf(assignmentId),
-      save ?? ((blob) => saveBlobAs(blob, "zapis-predaje.pdf")),
-    ));
+    setState(await runReceiptPdfDownload(() => loadPdf(assignmentId), save));
   }
 
   return (
