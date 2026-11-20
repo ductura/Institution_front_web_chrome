@@ -9,5 +9,6 @@ export const editorCommandsHr = {
   outline: "Struktura rada",
   comment: "Komentar ili pitanje mentoru",
   selectedText: "označeni tekst",
+  copyWork: "Tekst rada u međuspremnik",
   toolbarKeys: "Na alatnu traku",
 } as const;

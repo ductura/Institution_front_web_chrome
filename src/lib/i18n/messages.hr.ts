@@ -15,6 +15,38 @@
  *     to the state machine it describes.
  */
 
+export const editorPanelLayoutsHr = {
+  customize: { left: "Prilagodi panel", right: "Prilagodi desni panel" },
+  layout: "Raspored",
+  mobile: "Na mobitelu",
+  same: "Kao na računalu",
+  reset: "Vrati zadano",
+  done: "Gotovo",
+  variants: {
+    left: { a: "Popis", b: "Kartice", c: "Dvije razine" },
+    right: { a: "Kartice", b: "Uz tekst", c: "Ikone uz rub" },
+  },
+  descriptions: {
+    left: {
+      a: "Sva poglavlja i potpoglavlja u jednom popisu.",
+      b: "Struktura i odjeljci kao kartice.",
+      c: "Prvo samo poglavlja. Odaberite poglavlje za prikaz potpoglavlja.",
+    },
+    right: {
+      a: "Kartice u jednom redu.",
+      b: "Panel prati poglavlje u kojem pišete.",
+      c: "Odaberite ikonu uz rub da otvorite ili sklopite panel.",
+    },
+  },
+  leftSections: {
+    requirements: "Zahtjevi", figures: "Prikazi i fusnote", stash: "Odloženo",
+    progress: "Napredak", deadlines: "Rokovi", thread: "Nit rada",
+  },
+  allChapters: "‹ Sva poglavlja",
+  subchapters: "Potpoglavlja",
+  noSubchapters: "Poglavlje nema potpoglavlja.",
+} as const;
+
 /** The product name on screen (D-124): one value, read through `app.name`. */
 const APP_NAME = "Ductura";
 const NOTICE_STEP_COUNT = "1 od 2";
@@ -2300,4 +2332,49 @@ export const courseStudentsHr = {
   retry: "Pokušaj ponovno",
   empty: "Još se nitko nije upisao.",
   backToCourses: "Natrag na kolegije",
+} as const;
+
+export const editorHelpHr = {
+  view: "Prikaz",
+  writing: "Pomoć u tekstu",
+  settingsTitle: "Što Ductura podcrtava dok pišete",
+  settingsIntro: "Podcrtano je mjesto za pogledati. Kliknite podcrtani tekst za objašnjenje.",
+  levels: { calm: "Mirno", basic: "Osnovno", all: "Sve", custom: "Vlastito" },
+  warnings: {
+    paste: ["Podrijetlo teksta", "Zalijepljeni tekst dok ga ne parafrazirate ili citirate. Vidi ga i nastavnik."],
+    claim: ["Tvrdnje bez izvora", "Rečenice o istraživanjima i literaturi bez navoda."],
+    term: ["Pojmovi", "Pojam prije definicije ili pod drugim nazivom."],
+    abbr: ["Kratice", "Kratica bez punog naziva kod prve uporabe."],
+    long: ["Duge rečenice", "Više od 40 riječi."],
+    colloq: ["Razgovorni izrazi", "Riječi poput jako, puno, stvarno."],
+    absolute: ["Preapsolutne tvrdnje", "Riječi poput dokazuje, uvijek, svi."],
+    first: ["Prvo lice", "Upute FPZG-a traže treće lice."],
+    passive: ["Pasiv u nizu", "Tri ili više rečenica zaredom u pasivu."],
+    trans: ["Prijelazi", "Odlomak bez vidljive veze s prethodnim."],
+    short: ["Kratke rečenice u nizu", "Dvije kratke rečenice s istim početkom."],
+    cmt: ["Komentari u tekstu", "Kad su isključeni, ostaju u kartici Komentari."],
+  },
+  inText: "u tekstu: {count}",
+  onboarding: "Prvi koraci",
+  onboardingStep: "{step} od {total}",
+  onboardingHint: "Prvi koraci su u izborniku Prikaz, ako ih želite pogledati.",
+  steps: [
+    ["Navod s @", "Upišite @ i početak prezimena autora. Ductura ponudi izvore iz literature, a Enter umeće navod."],
+    ["Naredbe s /", "Upišite / za tablicu, sliku, fusnotu, frazu ili oznaku Za provjeru na mjestu kojem ćete se vratiti."],
+    ["Pomoć u tekstu", "U izborniku Prikaz birate koliko Vam Ductura pomaže u tekstu, tamni ili bijeli list i stil citiranja."],
+  ],
+  firstSentence: "Prije prve rečenice",
+  due: "Rok {date}",
+  length: "opseg {min} do {max} riječi",
+  recorded: "Što se bilježi",
+  recording: [
+    ["Koraci spremanja", "Uz korake spremanja bilježe se promjene teksta, vrijeme zaokruženo na minutu i digitalni otisak."],
+    ["Podrijetlo teksta", "Bilježi se način unosa teksta, primjerice pisanje ili lijepljenje, te verzije i predaja rada."],
+    ["Što vidi nastavnik", "Nastavnik zadatka vidi tekst spremljen na poslužitelju, komentare, povijest verzija i isti sažetak procesa koji vidite i Vi."],
+    ["Što se ne bilježi", "Pojedinačni pritisci tipki i ritam pisanja."],
+  ],
+  skip: "Preskoči",
+  next: "Dalje",
+  start: "Počni pisati",
+  close: "Zatvori",
 } as const;
