@@ -32,3 +32,5 @@ export { findKeyAction, findStatus, stepHit, type FindKeyAction, type FindStatus
 export { ContextMenu, type ContextMenuProps } from "./components/context-menu/ContextMenu";
 export { useContextMenu } from "./components/context-menu/useContextMenu";
 export { type MenuEntry, type Point as MenuPoint } from "./components/context-menu/menu-logic";
+export { SearchableList, type SearchableListProps } from "./components/searchable-list/SearchableList";
+export { type SearchableListItem } from "./components/searchable-list/search";
