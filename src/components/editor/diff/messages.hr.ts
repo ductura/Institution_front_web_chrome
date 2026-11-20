@@ -24,10 +24,10 @@ export const comparisonHr = {
   replay: "Otvori reprodukciju",
   retry: "Pokušaj ponovno",
   close: "Zatvori",
-  comments: "Vaši komentari",
   openComments: "Otvori komentare",
   openReview: "Otvori Pregled",
-  version: (revision: number, minute: string) => `Predaja · ${formatMinute.format(new Date(minute))} · verzija ${revision}`,
-  added: (n: number) => `Dodano riječi: ${n}`,
-  removed: (n: number) => `Uklonjeno riječi: ${n}`,
+  version: (revision: number, minute: string) =>
+    `Predaja · ${formatMinute.format(new Date(minute))} · verzija ${revision}`,
+  added: (n: number) => `Dodano ${n} ${n === 1 ? "riječ" : "riječi"}`,
+  removed: (n: number) => `Uklonjeno ${n} ${n === 1 ? "riječ" : "riječi"}`,
 };
