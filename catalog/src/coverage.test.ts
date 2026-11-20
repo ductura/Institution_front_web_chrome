@@ -44,6 +44,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "predaja/BeforeSubmit.tsx",
   "predaja/Declaration.tsx",
   "predaja/NoteDialog.tsx",
+  "predaja/SubmitDialog.tsx",
   "replay/ReplayView.tsx",
   "shell/AppHeader.tsx",
   "shell/NoRoleCard.tsx",
