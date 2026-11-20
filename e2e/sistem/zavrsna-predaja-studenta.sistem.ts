@@ -28,7 +28,7 @@ async function expectHttp200(response: Response, operation: string) {
   expect(response.status(), `${operation}: HTTP ${response.status()}${detail ? ` (${detail})` : ''}`).toBe(200);
 }
 
-test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async ({ page, baseURL = webOrigin }) => {
+test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async ({ page }) => {
   const runId = randomUUID();
   const paragraphs = [
     `U izmišljenom vrtu kompostiramo lišće (${runId}).`,
@@ -38,8 +38,8 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
   const statusBar = page.locator('footer[aria-label="Stanje rada"]');
 
   const workPath = await test.step('Prijava preko AAI@EduHr i otvaranje rada iz seeda', async () => {
-    await signInDemoStudent(page, baseURL);
-    const path = await openDemoWork(page, baseURL);
+    await signInDemoStudent(page);
+    const path = await openDemoWork(page);
     await expect(editor, 'Za predaju treba uređiv rad iz svježeg lokalnog seeda.').toBeEditable();
     return path;
   });
@@ -51,7 +51,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End');
     const [commit] = await Promise.all([
       page.waitForResponse((response) => {
-        if (!isPost(response, `${baseURL}/api/v1/evidence/commit`) || [202, 426].includes(response.status())) {
+        if (!isPost(response, `${webOrigin}/api/v1/evidence/commit`) || [202, 426].includes(response.status())) {
           return false;
         }
         const document = response.request().postDataJSON()?.document;
@@ -87,7 +87,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     await expect(page.getByText('Potvrđena.', { exact: true })).toBeVisible();
 
     const [opened] = await Promise.all([
-      page.waitForResponse((response) => isPost(response, `${baseURL}/api/v1/evidence/open`)
+      page.waitForResponse((response) => isPost(response, `${webOrigin}/api/v1/evidence/open`)
         && response.request().postDataJSON()?.assignmentId === assignmentId),
       page.getByRole('button', { name: 'Dalje na predaju', exact: true }).click(),
     ]);
@@ -106,7 +106,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     await page.getByRole('button', { name: 'Predaj rad', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Predati rad?', exact: true });
     const [submitted] = await Promise.all([
-      page.waitForResponse((response) => isPost(response, `${baseURL}/api/v1/submission`)),
+      page.waitForResponse((response) => isPost(response, `${webOrigin}/api/v1/submission`)),
       dialog.getByRole('button', { name: 'Predaj rad', exact: true }).click(),
     ]);
     await expectHttp200(submitted, 'Predaja rada');

@@ -5,16 +5,16 @@ import { expect, test } from '@playwright/test';
 import { openDemoWork, signInDemoStudent } from './student';
 import { webOrigin } from './stog';
 
-test('VS-1: student se prijavi, spremi rečenicu i vidi je nakon osvježavanja', async ({ page, baseURL = webOrigin }) => {
+test('VS-1: student se prijavi, spremi rečenicu i vidi je nakon osvježavanja', async ({ page }) => {
   const sentence = `U izmišljenom vrtu nastaje kompost (VS-1 ${randomUUID()}).`;
   const editor = page.getByRole('textbox', { name: 'Tekst rada', exact: true });
 
   await test.step('Prijava kao demo-student preko simulatora AAI@EduHr', async () => {
-    await signInDemoStudent(page, baseURL);
+    await signInDemoStudent(page);
   });
 
   await test.step('Otvori rad iz lokalnog seeda', async () => {
-    await openDemoWork(page, baseURL);
+    await openDemoWork(page);
     await expect(editor).toBeEditable();
   });
 
@@ -24,7 +24,7 @@ test('VS-1: student se prijavi, spremi rečenicu i vidi je nakon osvježavanja',
     await page.keyboard.press('Enter');
     const [commit] = await Promise.all([
       page.waitForResponse((response) => {
-        if (response.url() !== `${baseURL}/api/v1/evidence/commit` || response.request().method() !== 'POST') {
+        if (response.url() !== `${webOrigin}/api/v1/evidence/commit` || response.request().method() !== 'POST') {
           return false;
         }
         // Prihvati odgovor za snimku s ovom rečenicom, nakon moguće promjene protokola.
