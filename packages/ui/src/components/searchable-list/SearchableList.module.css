@@ -1,0 +1,8 @@
+.search { display: grid; gap: 6px; min-inline-size: 0; padding: 6px; }
+.search > p { margin: 0; }
+.list { margin: 0; padding: 4px; list-style: none; max-block-size: 16rem; overflow: auto; }
+.list li { min-block-size: 44px; padding: 8px 10px; border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.list li small { display: block; color: var(--ink-3); }
+.list:not([aria-disabled="true"]) li { cursor: pointer; }
+.list:not([aria-disabled="true"]) li:hover, .list li[aria-selected="true"] { background: var(--well); }
+.list li[aria-selected="true"] { outline: var(--focus-width) solid var(--accent); outline-offset: -2px; }
