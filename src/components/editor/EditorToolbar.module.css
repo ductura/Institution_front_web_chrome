@@ -16,3 +16,9 @@
   min-width: 9.5em;
   justify-content: space-between;
 }
+
+/* WEB-6C: "Izvezi" is the last menu, at the right edge; its list opens leftward. */
+.last :global(.editor-menu__list) {
+  left: auto;
+  right: 0;
+}
