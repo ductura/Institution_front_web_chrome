@@ -1,8 +1,6 @@
-import { PendingPage } from "../../../src/host/pages";
+import InstitutionPage from "../../../src/host/institution/InstitutionPage";
 
-// TREBA API: a read of the institution overview (Ductus readInstitutionOverview); @ductura/contracts 2.8.0 has only POST routes for the institution.
-// Source: Ductus src/app/ustanova/page.tsx, copied to src/app/ustanova/.
 /** A-01 the administrator's overview of their own institution. */
 export default function Page() {
-  return <PendingPage />;
+  return <InstitutionPage view="overview" />;
 }

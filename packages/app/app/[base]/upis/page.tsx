@@ -1,8 +1,6 @@
-import { PendingPage } from "../../../src/host/pages";
+import { EnrollPage } from "../../../src/host/student/enrollment";
 
-// TREBA API: institution.enrollments.post; src/client has no module for enrolment yet.
-// Source: Ductus src/app/upis/page.tsx, copied to src/app/upis/.
-/** "Upis u kolegij" with the enrolment code. */
+/** "Upis u kolegij" with the enrolment code (student.enrollments.post); HOST-S3. */
 export default function Page() {
-  return <PendingPage />;
+  return <EnrollPage />;
 }

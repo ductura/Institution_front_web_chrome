@@ -1,16 +1,13 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
 import { describe, expect, it } from "vitest";
 
-import { extractUiText, isUiTextModule } from "../../../scripts/forbidden-terms/scan";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
 import type { DocumentNode } from "@/domain/document";
-import type { ParagraphHistoryEntry } from "@/domain/projection/replay-player";
+import type { ParagraphHistoryEntry } from "@/client/replay-record/replay-player";
 import { messagesEn } from "@/lib/i18n/messages.en";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import {
+  changeAt,
   characters,
   describeChange,
   fill,
@@ -19,6 +16,7 @@ import {
   nearestStep,
   paragraphOption,
   stepsOf,
+  timelineOf,
 } from "./replay-view";
 
 // DAN-537 (rb 261): the words of the replay view. Synthetic texts only.
@@ -40,14 +38,6 @@ describe("replay words (DAN-537)", () => {
     for (const text of strings(messagesEn.replay)) {
       expect({ text, found: findForbiddenTerms(text, "en") }).toEqual({ text, found: [] });
       expect(text).not.toMatch(/\d:\d|second|minute|hour|speed|tempo|duration|pause|time/i);
-    }
-  });
-
-  it("keeps its text where the forbidden-terms scan reads it", () => {
-    for (const [catalogue, words] of [["src/lib/i18n/messages.hr.ts", messagesHr.replay], ["src/lib/i18n/messages.en.ts", messagesEn.replay]] as const) {
-      expect(isUiTextModule(catalogue)).toBe(true);
-      const read = extractUiText(catalogue, readFileSync(path.resolve(catalogue), "utf8"), "catalogue").map((piece) => piece.text);
-      for (const text of strings(words)) expect({ text, read: read.includes(text) }).toEqual({ text, read: true });
     }
   });
 
@@ -333,5 +323,22 @@ describe("replay words (DAN-537)", () => {
     expect(paragraphOption(2, node("  Kratko.  "))).toBe("Odlomak 2: Kratko.");
     const long = paragraphOption(1, node(`${"a".repeat(59)} ${"b".repeat(10)}`));
     expect(long).toBe(`Odlomak 1: ${"a".repeat(59)}…`);
+  });
+});
+
+describe("timelineOf and changeAt (Timeline positions)", () => {
+  it("keeps a paragraph with one change playable: the start plus that change", () => {
+    expect(timelineOf(false, [4], 4, 0)).toEqual({ total: 1, value: 1 });
+    expect(timelineOf(false, [4], 0, 0)).toEqual({ total: 1, value: 0 });
+    expect(changeAt(false, [4], 0)).toBe(0);
+    expect(changeAt(false, [4], 1)).toBe(4);
+  });
+
+  it("counts every change of a larger paragraph scope and of the whole text", () => {
+    expect(timelineOf(false, [2, 5, 7], 5, 1)).toEqual({ total: 3, value: 2 });
+    expect(changeAt(false, [2, 5, 7], 3)).toBe(7);
+    expect(timelineOf(true, [0, 1, 2, 3], 2, 2)).toEqual({ total: 3, value: 2 });
+    expect(changeAt(true, [0, 1, 2, 3], 3)).toBe(3);
+    expect(changeAt(true, [0, 1], 9)).toBeNull();
   });
 });

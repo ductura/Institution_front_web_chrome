@@ -2,11 +2,11 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createBrowserReplayStepsV1 } from "@/adapters/evidence/edit-steps-v1-replay-steps";
+import { createBrowserReplayStepsV1 } from "@/client/replay-record/replay-steps";
 import type { ReplayOutcome } from "@/client/replay";
 import { browserCookieJar, endSessionsInCookie } from "@/client/session-marks";
-import { buildReplayPlayer } from "@/domain/projection/replay-player";
-import { buildRecord, jcsOf, recordSchema as schema, startNode as start } from "@/domain/projection/replay-record.fixture";
+import { buildReplayPlayer } from "@/client/replay-record/replay-player";
+import { buildRecord, jcsOf, recordSchema as schema, startNode as start } from "@/client/replay-record/replay-record.fixture";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 /**
