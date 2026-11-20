@@ -84,10 +84,18 @@ const OVERVIEW = list("rows", closed({
 /** A row is consistent: a time and a record only when submitted, after the deadline only when submitted. */
 function consistent(row: OverviewRow): boolean {
   if (!row.submitted) return row.requestedMinute === null && row.evidenceRecord === null && !row.afterDeadline;
-  return row.requestedMinute !== null;
+  return row.requestedMinute !== null && realMinute(row.requestedMinute);
 }
 
 const unique = (ids: readonly string[]) => new Set(ids).size === ids.length;
+
+/** A real UTC minute: the calendar date exists and the hour and minute are in range. */
+function realMinute(minute: string): boolean {
+  const [date, time] = minute.slice(0, -1).split("T") as [string, string];
+  const [y, m, d] = date.split("-").map(Number) as [number, number, number];
+  const [h, min] = time.split(":").map(Number) as [number, number];
+  return m >= 1 && m <= 12 && d >= 1 && d <= new Date(Date.UTC(y, m, 0)).getUTCDate() && h <= 23 && min <= 59;
+}
 
 async function read<T>(
   call: TeacherCall, id: TeacherRoute, params: Record<string, string>, schema: Schema, take: (body: unknown) => Read<T>,
@@ -101,11 +109,12 @@ async function read<T>(
   }
 }
 
-/** teacher.course-students.get (TODO(ugovor), N-04). */
+/** teacher.course-students.get (TODO(ugovor), N-04): a student or an assignment of one student twice is `nepoznato`. */
 export function readCourseStudents(call: TeacherCall, courseId: string): Promise<Read<{ kind: "ready"; students: CourseStudent[] }>> {
   return read(call, "teacher.course-students.get", { courseId }, STUDENTS, (body) => {
     const { students } = body as { students: CourseStudent[] };
-    return unique(students.map((s) => s.studentId)) ? { kind: "ready", students } : UNKNOWN;
+    const once = unique(students.map((s) => s.studentId)) && students.every((s) => unique(s.works.map((w) => w.assignmentId)));
+    return once ? { kind: "ready", students } : UNKNOWN;
   });
 }
 
