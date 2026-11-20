@@ -145,7 +145,8 @@
   "Reflect",
   "import );\n  const to = position(own.to, ",
   "import );\n  }\n  if (\n    (kind === ",
-  "import );\n  }\n  return { from, mark: mark(own.mark, "
+  "import );\n  const parsed = ",
+  "import );\n  }\n  if (version === 4) {\n    const parsedMark = markV4(own.mark, "
  ],
  "packages/editor-core/src/document/forensics/evidence-segment-v2.ts": [
   "import  ||\n    event.source === ",
