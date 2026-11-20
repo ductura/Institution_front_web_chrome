@@ -8,6 +8,7 @@ import { serverApi } from "../../../client/server";
 import { readAssignmentOverview, type TeacherCall } from "../../../client/teacher-reads";
 import AssignmentOverview from "../../../components/teacher/AssignmentOverview";
 import { chooseAssignment, type OverviewChoice } from "../../../components/teacher/assignment-overview-choice";
+import { extensionsHref } from "../../../components/teacher/links";
 import { readTeacherCourses } from "../../../components/teacher/teacher-courses-read";
 import { messagesHr } from "../../../lib/i18n/messages.hr";
 
@@ -69,6 +70,7 @@ export default async function TeacherSummaryPage({ searchParams }: { searchParam
               options={choices.map((choice) => ({ value: choice.id, label: choice.label }))} />
             <Button type="submit">{t.pickSubmit}</Button>
           </form>
+          <p><a href={extensionsHref(chosen.id)}>{t.extendDeadline}</a></p>
           <AssignmentOverview assignmentTitle={chosen.title} retryHref={hrefFor(chosen.id)}
             rows={overview.kind === "ready" ? overview.rows : null} />
         </>

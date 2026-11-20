@@ -35,6 +35,24 @@ import { blockMarkerRule, markerRemoval } from "./block-marker";
 import { BulletItem } from "./bullet-item";
 import { Citation } from "./citation";
 import { CitationV3, CrossReference, Footnote } from "./atoms-v3";
+import {
+  BlockAtomCommands,
+  Box,
+  CodeBlock,
+  Formula,
+  Highlight,
+  Image,
+  Imported,
+  InlineFormula,
+  Lang,
+  Link,
+  PageBreak,
+  ParagraphV4,
+  Paste,
+  Sub,
+  Sup,
+  Table,
+} from "./extensions-v4";
 import { FindReplaceHistory } from "./find-replace";
 import { Quote } from "./quote";
 import { createNodeIdentityPlugin, mintMissingIds, repeatedNodeIds, type NodeIdMinter } from "./identity";
@@ -47,6 +65,20 @@ export const NODE_ID_HTML_ATTRIBUTE = "data-node-id";
 
 /** Block node types that carry a canonical id. */
 export const ID_CARRYING_TYPES = ["paragraph", "heading", "bulletItem", "quote"] as const;
+
+/**
+ * Block node types of document v4 that carry a canonical id: every block,
+ * the box, its paragraphs and the atom blocks included (contract v4 §2).
+ */
+export const ID_CARRYING_TYPES_V4 = [
+  ...ID_CARRYING_TYPES,
+  "codeBlock",
+  "box",
+  "table",
+  "image",
+  "formula",
+  "pageBreak",
+] as const;
 
 /** Heading levels allowed in F1. Mirrors `HeadingLevel` in the domain. */
 export const F1_HEADING_LEVELS = [1, 2, 3] as const;
@@ -71,6 +103,8 @@ export const DEFAULT_PLACEHOLDER = "Počni pisati…";
  */
 export type NodeIdentityOptions = {
   mint?: NodeIdMinter;
+  /** The node types that carry the id; `ID_CARRYING_TYPES` when not given. */
+  types?: readonly string[];
   /**
    * Told which ids the initial content held more than once, before they are
    * repaired. The default writes a console warning.
@@ -119,7 +153,7 @@ export const NodeIdentity = Extension.create<NodeIdentityOptions>({
   addGlobalAttributes() {
     return [
       {
-        types: [...ID_CARRYING_TYPES],
+        types: [...(this.options.types ?? ID_CARRYING_TYPES)],
         attributes: {
           [NODE_ID_ATTRIBUTE]: {
             default: null,
@@ -276,4 +310,78 @@ export function createEditorExtensionsV3(placeholder: string = DEFAULT_PLACEHOLD
   return createEditorExtensionsV2(placeholder).flatMap((extension) =>
     extension === Citation ? [CitationV3, Footnote, CrossReference] : [extension],
   );
+}
+
+/**
+ * The document node of v4: the sources as in v2 and the cover (contract v4
+ * §7), neither rendered. An absent cover is `null`.
+ */
+export const DocumentV4 = DocumentV2.extend({
+  addAttributes() {
+    return { ...this.parent?.(), cover: { default: null, rendered: false } };
+  },
+});
+
+/** Every extension name registered by `createEditorExtensionsV4`. */
+export const V4_EXTENSION_NAMES = [
+  ...V3_EXTENSION_NAMES,
+  "sup",
+  "sub",
+  "highlight",
+  "lang",
+  "link",
+  "paste",
+  "imported",
+  "codeBlock",
+  "box",
+  "table",
+  "image",
+  "formula",
+  "pageBreak",
+  "inlineFormula",
+  "blockAtomCommands",
+] as const;
+
+/**
+ * The extensions of the v4 editor (document-schema-v4, WEB-10C): the v3 set
+ * with the paragraph's `variantGroup`, the code block, the box, the atom
+ * blocks, the inline formula and the marks of §3. A heading holds text only.
+ * Every block carries its id, a box's paragraphs too. The atoms come last of
+ * the nodes, as in the replayer's schema. Nothing mounts it until a work is
+ * v4 (contract §10).
+ */
+export function createEditorExtensionsV4(placeholder: string = DEFAULT_PLACEHOLDER): Extensions {
+  return [
+    DocumentV4,
+    ParagraphV4,
+    MarkedHeading.extend({ content: "text*" }).configure({ levels: [...F1_HEADING_LEVELS] }),
+    BulletItem,
+    Text,
+    Bold,
+    Italic,
+    Sup,
+    Sub,
+    Highlight,
+    Lang,
+    Link,
+    Paste,
+    Imported,
+    // After Bold, as in v1 (createEditorExtensions).
+    Quote,
+    CodeBlock,
+    Box,
+    Table,
+    Image,
+    Formula,
+    PageBreak,
+    CitationV3,
+    Footnote,
+    CrossReference,
+    InlineFormula,
+    BlockAtomCommands,
+    History,
+    Placeholder.configure({ placeholder }),
+    NodeIdentity.configure({ types: ID_CARRYING_TYPES_V4 }),
+    FindReplaceHistory,
+  ];
 }

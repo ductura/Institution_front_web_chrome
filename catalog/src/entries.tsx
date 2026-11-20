@@ -1,7 +1,8 @@
 import {
-  Button, Card, Checkbox, DataTable, Details, Dialog, ErrorScreen, Fingerprint, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, PreviewDialog,
-  RouteLoading, SaveState, SearchableList, Select, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag,
-  TextArea, TextField, ToastRegion, type DataTableColumn, type IconName,
+  AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
+  Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
+  Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
+  type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
 
@@ -15,11 +16,17 @@ import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipR
 import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
   AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments,
-  NoteDialog, OutlinePanel, ReceiptPanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses,
+  NoteDialog, OutlinePanel, ReceiptPanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses, VerificationForm,
   type AssignmentSubmission, type LiveWorkFrameData, type ReceiptRead, type SubmissionViewProps, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
   type TeacherCourse,
 } from "../../src/components/index.ts";
 
+import { DiffView, Timeline } from "@ductura/ui";
+import { ProofDialog, SourceProofsPanel } from "../../src/components/index.ts";
+import { proofsPath, type ProofsRead, type SourceProof } from "../../src/client/source-proofs.ts";
+import type { ProofPicture } from "../../src/components/editor/sources/proofs/crop.ts";
+import { startCapture, type Capture } from "../../src/components/editor/sources/proofs/proof-draft.ts";
+import type { ProofsDeps } from "../../src/components/editor/sources/proofs/proofs-deps.ts";
 import type { CatalogEntries, CatalogState } from "./coverage";
 
 type Entry = Record<CatalogState, () => React.ReactNode>;
@@ -113,6 +120,123 @@ export const ENTRIES = {
       <table><caption>Izmišljena tablica</caption><tbody><tr><th scope="row">Kompost</th><td>12 kg</td></tr></tbody></table>
     </PreviewDialog>,
     onemogućeno: () => <p>Pregled trenutačno nije dostupan.</p>,
+const REPLAY_TEXT = ["", "Izmišljeni vrt.", "Izmišljeni školski vrt.", "Izmišljeni školski vrt raste."];
+
+function TimelineExample() {
+  const [value, setValue] = useState(0);
+  return <>
+    <Timeline total={REPLAY_TEXT.length - 1} value={value} onChange={setValue} />
+    <p>{REPLAY_TEXT[value]}</p>
+  </>;
+}
+
+const nothing = () => undefined;
+
+// WEB-6A components (invented example text only). Drawer, Popover, FindBar and ContextMenu
+// show in the page flow; the palette and the shortcuts dialog are modal, so each state
+// opens from its own button, as SourceForm does.
+const SAMPLE_COMMANDS: Command[] = [
+  { id: "bold", label: "Podebljano", hint: "Ctrl+B", group: "Oblikovanje" },
+  { id: "italic", label: "Kurziv", hint: "Ctrl+I", group: "Oblikovanje" },
+  { id: "find", label: "Traži u radu", hint: "Ctrl+F", group: "Rad" },
+  { id: "locked", label: "Dodaj izvor", group: "Rad", disabled: true },
+];
+const SAMPLE_SHORTCUTS: ShortcutGroup[] = [
+  { title: "Oblikovanje", items: [{ keys: "Ctrl+B", label: "Podebljano" }, { keys: "Ctrl+I", label: "Kurziv" }] },
+  { title: "Rad", items: [{ keys: "Ctrl+F", label: "Traži u radu" }, { keys: "Ctrl+K", label: "Naredbe" }] },
+];
+const SAMPLE_MENU: MenuEntry[] = [
+  { kind: "heading", label: "Odlomak" },
+  { kind: "item", id: "copy", label: "Kopiraj", hint: "Ctrl+C" },
+  { kind: "item", id: "comment", label: "Dodaj komentar" },
+  { kind: "item", id: "paste", label: "Zalijepi", disabled: true },
+];
+const FIND_LABELS: FindBarLabels = {
+  search: "Traži u radu", next: "Sljedeća pojava", previous: "Prethodna pojava", close: "Zatvori traženje",
+  none: "Nema pojava.", count: (position, total) => `${position} od ${total}`,
+};
+
+function PaletteExample({ commands, label }: { commands: Command[]; label: string }) {
+  const [open, setOpen] = useState(false);
+  const [ran, setRan] = useState("");
+  return <>
+    <Button aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>{label}</Button>
+    <CommandPalette open={open} commands={commands} onRun={(id) => setRan(id)} onClose={() => setOpen(false)} />
+    <p role="status">{ran === "" ? "" : `Pokrenuto: ${ran}`}</p>
+  </>;
+}
+
+function ShortcutsExample({ groups, label }: { groups: ShortcutGroup[]; label: string }) {
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>{label}</Button>
+    <ShortcutsDialog open={open} groups={groups} onClose={() => setOpen(false)} />
+  </>;
+}
+
+function DrawerExample({ side }: { side: "left" | "right" }) {
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>Otvori ladicu</Button>
+    <Drawer open={open} side={side} title="Struktura rada" onClose={() => setOpen(false)}>
+      <p>Uvod, Metoda, Zaključak.</p>
+    </Drawer>
+  </>;
+}
+
+function PopoverExample() {
+  const anchor = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button ref={anchor} tone="quiet" aria-expanded={open} onClick={() => setOpen(!open)}>Pojedinosti izvora</Button>
+    <Popover open={open} anchor={anchor} label="Pojedinosti izvora" onClose={() => setOpen(false)}>
+      <p>Izmišljeni županijski zbornik, 2026.</p>
+    </Popover>
+  </>;
+}
+
+function ContextMenuExample({ entries }: { entries: MenuEntry[] }) {
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [picked, setPicked] = useState("");
+  return <>
+    <Button aria-haspopup="menu" aria-expanded={anchor !== null} onClick={(event) => {
+      const box = event.currentTarget.getBoundingClientRect();
+      setAnchor({ x: box.left, y: box.bottom });
+    }}>Izbornik odlomka</Button>
+    <ContextMenu anchor={anchor} entries={entries} label="Izbornik odlomka"
+      onSelect={(id) => { setPicked(id); setAnchor(null); }} onClose={() => setAnchor(null)} />
+    <p role="status">{picked === "" ? "" : `Odabrano: ${picked}`}</p>
+  </>;
+}
+
+function FindBarExample({ total, hint }: { total: number; hint?: string }) {
+  const [query, setQuery] = useState(total === 0 && hint === undefined ? "" : "izmišljen");
+  const [current, setCurrent] = useState(0);
+  return <FindBar query={query} onQueryChange={setQuery} current={current} total={total} autoFocus={false}
+    onNext={() => setCurrent((current + 1) % Math.max(total, 1))}
+    onPrevious={() => setCurrent((current + Math.max(total, 1) - 1) % Math.max(total, 1))}
+    onClose={nothing} labels={FIND_LABELS} />;
+}
+
+export const ENTRIES = {
+  Timeline: {
+    prazno: () => <Timeline total={0} value={0} onChange={nothing} />,
+    učitavanje: () => <RouteLoading label="Učitavanje koraka…" />,
+    greška: () => <p role="alert">Koraci se nisu učitali.</p>,
+    puno: () => <TimelineExample />,
+    onemogućeno: () => <Timeline total={3} value={1} onChange={nothing} disabled />,
+  },
+  DiffView: {
+    prazno: () => <DiffView parts={[]} />,
+    učitavanje: () => <RouteLoading label="Učitavanje razlika…" />,
+    greška: () => <p role="alert">Razlike se nisu učitale.</p>,
+    puno: () => <DiffView parts={[
+      { kind: "same", text: "Izmišljeni " },
+      { kind: "removed", text: "mali " },
+      { kind: "added", text: "školski " },
+      { kind: "same", text: "vrt." },
+    ]} />,
+    onemogućeno: () => <p>Usporedba trenutačno nije dostupna.</p>,
   },
   SourceForm: {
     prazno: () => <SourceFormExample />,
@@ -294,7 +418,115 @@ export const ENTRIES = {
     ]} />,
     onemogućeno: () => <PanelTabs label="Ploče" tabs={[{ id: "pravila", label: "Pravila", content: <p>Zadatak je zatvoren.</p> }]} />,
   },
+  Drawer: {
+    prazno: () => <DrawerExample side="left" />,
+    učitavanje: () => <Drawer open modal={false} side="left" title="Struktura rada" onClose={nothing}><p>Učitavanje…</p></Drawer>,
+    greška: () => <Drawer open modal={false} side="right" title="Komentari" onClose={nothing}><p role="alert">Komentari se nisu učitali.</p></Drawer>,
+    puno: () => <Drawer open modal={false} side="right" title="Struktura rada" onClose={nothing}><p>Uvod, Metoda, Zaključak.</p></Drawer>,
+    onemogućeno: () => <Drawer open modal={false} side="left" title="Struktura rada" onClose={nothing}><p>Ladica trenutačno nije dostupna.</p></Drawer>,
+  },
+  Popover: {
+    prazno: () => <PopoverExample />,
+    učitavanje: () => <Popover open floating={false} anchor={{ current: null }} label="Pojedinosti izvora" onClose={nothing}><p>Učitavanje…</p></Popover>,
+    greška: () => <Popover open floating={false} anchor={{ current: null }} label="Pojedinosti izvora" onClose={nothing}><p role="alert">Pojedinosti se nisu učitale.</p></Popover>,
+    puno: () => <Popover open floating={false} anchor={{ current: null }} label="Pojedinosti izvora" onClose={nothing}><p>Izmišljeni županijski zbornik, 2026.</p></Popover>,
+    onemogućeno: () => <Popover open floating={false} anchor={{ current: null }} label="Pojedinosti izvora" onClose={nothing}><p>Pojedinosti trenutačno nisu dostupne.</p></Popover>,
+  },
+  CommandPalette: {
+    prazno: () => <PaletteExample commands={[]} label="Otvori naredbe (bez naredbi)" />,
+    učitavanje: () => <PaletteExample commands={[{ id: "wait", label: "Učitavanje naredbi…", group: "Rad", disabled: true }]} label="Otvori naredbe (učitavanje)" />,
+    greška: () => <><PaletteExample commands={[]} label="Otvori naredbe (neuspjelo)" /><p role="alert">Naredbe se nisu učitale.</p></>,
+    puno: () => <PaletteExample commands={SAMPLE_COMMANDS} label="Otvori naredbe" />,
+    onemogućeno: () => <PaletteExample commands={SAMPLE_COMMANDS.map((c) => ({ ...c, disabled: true }))} label="Otvori naredbe (isključene)" />,
+  },
+  ShortcutsDialog: {
+    prazno: () => <ShortcutsExample groups={[]} label="Prikaži prečace (bez prečaca)" />,
+    učitavanje: () => <><ShortcutsExample groups={[]} label="Prikaži prečace (učitavanje)" /><p>Učitavanje prečaca…</p></>,
+    greška: () => <><ShortcutsExample groups={[]} label="Prikaži prečace (neuspjelo)" /><p role="alert">Prečaci se nisu učitali.</p></>,
+    puno: () => <ShortcutsExample groups={SAMPLE_SHORTCUTS} label="Prikaži prečace" />,
+    onemogućeno: () => <Button disabled>Prikaži prečace</Button>,
+  },
+  FindBar: {
+    prazno: () => <FindBarExample total={0} />,
+    učitavanje: () => <><FindBarExample total={0} hint="traži" /><p>Traženje u tijeku…</p></>,
+    greška: () => <FindBarExample total={0} hint="nema" />,
+    puno: () => <FindBarExample total={3} />,
+    onemogućeno: () => <p>Traženje trenutačno nije dostupno.</p>,
+  },
+  ContextMenu: {
+    prazno: () => <ContextMenuExample entries={SAMPLE_MENU} />,
+    učitavanje: () => <p>Izbornik se učitava…</p>,
+    greška: () => <p role="alert">Izbornik se nije učitao.</p>,
+    puno: () => <ContextMenuExample entries={SAMPLE_MENU} />,
+    onemogućeno: () => <ContextMenuExample entries={SAMPLE_MENU.map((e) => e.kind === "item" ? { ...e, disabled: true } : e)} />,
+  },
+  CommentThread: {
+    prazno: () => <CommentThreadExample thread={{ id: "t0", resolved: false, entries: [] }} />,
+    učitavanje: () => <p>Komentari se učitavaju…</p>,
+    greška: () => <p role="alert">Komentari se nisu učitali.</p>,
+    puno: () => <CommentThreadExample thread={SAMPLE_THREAD} />,
+    onemogućeno: () => <CommentThreadExample thread={SAMPLE_THREAD} readOnly />,
+  },
+  DatePicker: {
+    prazno: () => <DatePickerExample value="" />,
+    učitavanje: () => <p>Rok se učitava…</p>,
+    greška: () => <p role="alert">Rok se nije spremio.</p>,
+    puno: () => <DatePickerExample value="2026-11-05" />,
+    onemogućeno: () => <DatePickerExample value="2026-11-05" disabled />,
+  },
+  AppointmentCalendar: {
+    prazno: () => <AppointmentCalendarExample value="" appointments={[]} />,
+    učitavanje: () => <p>Termini se učitavaju…</p>,
+    greška: () => <p role="alert">Termini se nisu učitali.</p>,
+    puno: () => <AppointmentCalendarExample value="2026-11-20T12:00" appointments={APPOINTMENTS} />,
+    onemogućeno: () => <AppointmentCalendarExample value="2026-11-20T12:00" appointments={APPOINTMENTS} disabled />,
+  },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
+
+// WEB-1107: appointment calendar (invented moments only).
+const APPOINTMENT_LABELS: AppointmentCalendarLabels = {
+  calendar: "Kalendar termina", previousMonth: "Prethodni mjesec", nextMonth: "Sljedeći mjesec",
+  months: ["siječanj", "veljača", "ožujak", "travanj", "svibanj", "lipanj", "srpanj", "kolovoz", "rujan", "listopad", "studeni", "prosinac"],
+  weekdays: ["pon", "uto", "sri", "čet", "pet", "sub", "ned"], times: "Vrijeme", proposed: "predloženo", confirmed: "potvrđeno",
+  chooseDay: "Odaberite dan", selected: (date, time) => `Odabrano: ${date} u ${time}`,
+};
+const APPOINTMENTS: Appointment[] = [
+  { id: "t1", at: "2026-11-20T12:00", status: "proposed" },
+  { id: "t2", at: "2026-11-20T14:00", status: "confirmed" },
+];
+function AppointmentCalendarExample({ value: initial, appointments, disabled }: { value: string; appointments: Appointment[]; disabled?: boolean }) {
+  const [value, setValue] = useState(initial);
+  return <AppointmentCalendar appointments={appointments} value={value} onSelect={setValue} labels={APPOINTMENT_LABELS} today="2026-11-20" disabled={disabled} />;
+}
+
+// UI-8A: comment thread and date picker (invented text only).
+const THREAD_LABELS: CommentThreadLabels = {
+  thread: "Komentar uz odlomak", reply: "Odgovor na komentar…", replyField: "Vaš odgovor", send: "Odgovori",
+  resolve: "Označi kao riješeno", reopen: "Ponovno otvori", resolved: "Riješeno", open: "Otvoreno",
+  showAll: (n) => `Prikaži sve unose (${n})`, collapse: "Sažmi",
+};
+const SAMPLE_THREAD: CommentThreadData = {
+  id: "t1", anchor: "kućno kompostiranje", resolved: false,
+  entries: [
+    { id: "e1", author: "Izmišljena Mentorica", at: "12. 11. 2026.", text: "Navedi izvor za ovu tvrdnju.", mentor: true },
+    { id: "e2", author: "Izmišljeni Student", at: "13. 11. 2026.", text: "Izvor je dodan u popis literature." },
+  ],
+};
+function CommentThreadExample({ thread, readOnly }: { thread: CommentThreadData; readOnly?: boolean }) {
+  const [t, setT] = useState(thread);
+  return <CommentThread thread={t} labels={THREAD_LABELS} readOnly={readOnly}
+    onReply={(text) => setT({ ...t, entries: [...t.entries, { id: `n${t.entries.length}`, author: "Izmišljeni Student", at: "20. 11. 2026.", text }] })}
+    onResolve={() => setT({ ...t, resolved: true })} onReopen={() => setT({ ...t, resolved: false })} />;
+}
+const DATE_LABELS: DatePickerLabels = {
+  field: "Rok za doradu", choose: "Odaberi datum", previousMonth: "Prethodni mjesec", nextMonth: "Sljedeći mjesec", invalid: "Upišite datum kao d. M. gggg.",
+  months: ["siječanj", "veljača", "ožujak", "travanj", "svibanj", "lipanj", "srpanj", "kolovoz", "rujan", "listopad", "studeni", "prosinac"],
+  weekdays: ["pon", "uto", "sri", "čet", "pet", "sub", "ned"],
+};
+function DatePickerExample({ value: initial, disabled }: { value: string; disabled?: boolean }) {
+  const [value, setValue] = useState(initial);
+  return <DatePicker value={value} onChange={setValue} labels={DATE_LABELS} today="2026-11-20" disabled={disabled} />;
+}
 
 // The web's own components (src/components, DAN-753), texts from locales/ only.
 const SCOPE = "c2NvcGUtb2YtYW4taW52ZW50ZWQtcGVyc29u";
@@ -421,7 +653,6 @@ const summaryEmpty: ProcessSummaryV1 = {
 };
 const recorded = (summary: ProcessSummaryV1): RecordedSummary => summary;
 const invented: SubmissionNote = { id: "izmisljena-napomena-1", text: "Izmišljena napomena uz predaju.", createdAt: "2026-11-10T10:05:00.000000Z" };
-const nothing = () => undefined;
 const declaration = (over: Partial<DeclarationViewProps>) => (
   <DeclarationView recorded={{ kind: "ready", summary: recorded(summaryWithGap) }} confirmed
     onConfirm={nothing} onNext={nothing} onBack={nothing} onRetry={nothing} {...over} />
@@ -522,6 +753,49 @@ const receiptPanel = (read: ReceiptRead) => (
   <ReceiptPanel read={read} retryHref="/rad/izmisljeni/predaja/potvrda" summaryHref="/rad/izmisljeni/predaja/pregled"
     submitHref="/rad/izmisljeni/predaja" />
 );
+const verificationCode = { receiptId: signedReceipt.payload.submissionId, fingerprint: signedReceipt.payload.artifactSha256 };
+
+// WEB-1106: proofs from a source. Invented sources; the page is drawn here, nothing is read or sent.
+const PROOF_WORK = "11111111-1111-4111-8111-111111111111";
+const PROOF_S1 = "22222222-2222-4222-8222-222222222222";
+const PROOF_S2 = "44444444-4444-4444-8444-444444444444";
+const proofPage: ProofPicture = {
+  width: 600, height: 400,
+  draw: (ctx, from, to) => {
+    const sx = to.width / from.width;
+    const sy = to.height / from.height;
+    ctx.save();
+    ctx.setTransform(sx, 0, 0, sy, to.x - from.x * sx, to.y - from.y * sy);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 600, 400);
+    ctx.fillStyle = "#8c887f";
+    for (let y = 40; y < 380; y += 26) ctx.fillRect(40, y, y % 4 === 0 ? 420 : 520, 8);
+    ctx.restore();
+  },
+};
+const sampleProof = (id: string, sourceId: string, page: string, note: string | null = null): SourceProof => ({
+  id, sourceId, page, note, createdAt: "2026-11-20T10:15:00.000Z", size: 24000,
+  imagePath: `${proofsPath(PROOF_WORK, sourceId) ?? ""}/${id}/image`,
+});
+const proofSources = [{ id: PROOF_S1, label: "Izmišljenić (2020)" }, { id: PROOF_S2, label: "Primjerić i Uzorak (2019)" }];
+const proofCitations = [{ sourceId: PROOF_S1, page: "14" }, { sourceId: PROOF_S1, page: "20" }, { sourceId: PROOF_S2, page: null }];
+const proofLists: Record<string, ProofsRead> = {
+  [PROOF_S1]: { kind: "ok", proofs: [sampleProof("55555555-5555-4555-8555-555555555555", PROOF_S1, "14", "Uvodni odlomak")] },
+  [PROOF_S2]: { kind: "ok", proofs: [] },
+};
+const proofDeps = (list: (sourceId: string) => Promise<ProofsRead>): ProofsDeps => ({
+  assignmentId: PROOF_WORK, list,
+  upload: async () => ({ kind: "nepoznato" }),
+  picture: async () => proofPage,
+  openPdf: async () => { throw new Error("katalog ne otvara PDF"); },
+});
+const proofsPanel = (editable: boolean, list: (sourceId: string) => Promise<ProofsRead>, sources = proofSources) =>
+  <SourceProofsPanel sources={sources} citations={sources.length ? proofCitations : []} editable={editable} deps={proofDeps(list)} />;
+const proofCapture = (over: Partial<Capture>): Capture => ({
+  ...startCapture(PROOF_S1, "Izmišljenić (2020)"), picture: proofPage, ...over,
+});
+const proofDialog = (state: Capture) => <ProofDialog state={state} dispatch={nothing} onSave={nothing} onCancel={nothing} modal={false} />;
+const proofFrame = { x: 40, y: 60, width: 420, height: 110 };
 
 export const SCREEN_ENTRIES = {
   AppShell: {
@@ -677,5 +951,34 @@ export const SCREEN_ENTRIES = {
     greška: () => receiptPanel({ kind: "error" }),
     puno: () => receiptPanel({ kind: "potvrdeno", receipt: signedReceipt }),
     onemogućeno: () => receiptPanel({ kind: "ceka", revision: 7, requestedAt: "2026-11-19T13:05:00.000000Z" }),
+  },
+  VerificationForm: {
+    prazno: () => <VerificationForm state={{ kind: "idle" }} onChange={nothing} onVerify={nothing} />,
+    učitavanje: () => <VerificationForm code={verificationCode} state={{ kind: "pending" }} onVerify={nothing} />,
+    greška: () => <VerificationForm code={verificationCode} state={{ kind: "unavailable" }} onChange={nothing} onVerify={nothing} />,
+    puno: () => <VerificationForm code={verificationCode} state={{
+      kind: "matched",
+      submittedAt: "2026-11-20T10:15:30.123456Z",
+      signedAt: "2026-11-20T10:15:31.654321Z",
+      keyId: "izmisljeni-kljuc-potvrde",
+    }} onChange={nothing} onVerify={nothing} />,
+    onemogućeno: () => <VerificationForm code={verificationCode} state={{ kind: "rateLimited" }} />,
+  },
+  SourceProofsPanel: {
+    prazno: () => proofsPanel(true, async () => ({ kind: "ok", proofs: [] }), []),
+    učitavanje: () => proofsPanel(true, () => new Promise(() => undefined)),
+    greška: () => proofsPanel(true, async () => ({ kind: "nepoznato" })),
+    puno: () => proofsPanel(true, async (sourceId) => proofLists[sourceId] ?? { kind: "nepoznato" }),
+    onemogućeno: () => proofsPanel(false, async (sourceId) => proofLists[sourceId] ?? { kind: "nepoznato" }),
+  },
+  ProofDialog: {
+    prazno: () => proofDialog(proofCapture({})),
+    učitavanje: () => proofDialog(proofCapture({ selection: proofFrame, page: "14", status: "sending", tried: true })),
+    greška: () => proofDialog(proofCapture({ selection: proofFrame, page: "14", note: "Uvodni odlomak", status: "failed", tried: true })),
+    puno: () => proofDialog(proofCapture({
+      selection: proofFrame, page: "14", note: "Uvodni odlomak", quote: "kućno kompostiranje znatno smanjuje otpad",
+      pdf: { page: 3, count: 12, loading: false }, notice: { kind: "differs", near: "kućno kompostiranje smanjuje otpad", missing: ["znatno"] },
+    })),
+    onemogućeno: () => proofDialog(proofCapture({ pdf: { page: 1, count: 12, loading: true }, notice: { kind: "pdfOpening" } })),
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;

@@ -12,6 +12,7 @@
  * `LiveText`, so the unit test renders it.
  */
 
+import { Timeline } from "@ductura/ui";
 import {
   createElement as h, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode,
 } from "react";
@@ -22,12 +23,12 @@ import type { SessionMark } from "@/client/session-marks";
 import { blockRuns } from "@/components/shell/manuscript-blocks";
 import SheetFrame from "@/components/shell/SheetFrame";
 import type { DocumentNode } from "@/domain/document";
-import type { ReplayPlayer } from "@/domain/projection/replay-player";
+import type { ReplayPlayer } from "@/client/replay-record/replay-player";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import {
-  deletedOption, deletedParagraphs, describeChange, fill, gapWords, historyRows, nearestStep, nodeText, paragraphOption, replayBlocks,
-  sourceLabel, stepsOf,
+  changeAt, deletedOption, deletedParagraphs, describeChange, fill, gapWords, historyRows, nearestStep, nodeText, paragraphOption, replayBlocks,
+  sourceLabel, stepsOf, timelineOf,
   type ChangePart,
 } from "./replay-view";
 import styles from "./ReplayView.module.css";
@@ -214,24 +215,12 @@ export function ReplayPlayerView({ player }: { player: Player }) {
     h(
       "div",
       { className: styles.controls, role: "group", "aria-label": t.controls },
-      steps.length === 0 ? h("p", { className: styles.meta }, t.scopeNone) : h(
-        "div",
-        { className: styles.slider },
-        h("label", { className: styles.sliderLabel, htmlFor: "replay-slider" }, h("span", null, position)),
-        h("input", {
-          id: "replay-slider",
-          type: "range",
-          min: 0,
-          max: steps.length - 1,
-          step: 1,
-          value: place,
-          "aria-valuetext": position,
-          onChange: (event: { target: { value: string } }) => go(steps[Number(event.target.value)] ?? n),
-        }),
-      ),
-      h("div", { className: styles.row },
-        h("button", { type: "button", className: `btn ${styles.secondary}`, disabled: place <= 0, onClick: () => go(steps[place - 1] ?? n) }, t.previous),
-        h("button", { type: "button", className: `btn ${styles.secondary}`, disabled: place < 0 || place >= steps.length - 1, onClick: () => go(steps[place + 1] ?? n) }, t.next)),
+      // The player of @ductura/ui over the positions of the chosen scope: the whole text is every
+      // change, one paragraph only the changes that touched it (index 0 is the start of the record).
+      steps.length === 0 ? h("p", { className: styles.meta }, t.scopeNone) : h(Timeline, {
+        ...timelineOf(scoped === null, steps, n, place),
+        onChange: (to: number) => go(changeAt(scoped === null, steps, to) ?? n),
+      }),
       h("p", { className: styles.live, role: "status", "aria-live": "polite" }, live),
       h("p", { className: styles.meta }, t.stepNote),
     ),

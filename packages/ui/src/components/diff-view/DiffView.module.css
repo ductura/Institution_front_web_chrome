@@ -1,0 +1,29 @@
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.added {
+  background: var(--accent-soft);
+  text-decoration: underline;
+}
+
+.removed {
+  background: var(--error-soft);
+  text-decoration: line-through;
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

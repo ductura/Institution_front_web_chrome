@@ -85,4 +85,10 @@ describe("v3 atoms and interop", () => {
     json.content[1]!.content![2] = { type: "footnote", attrs: { text: "" } };
     expect(tiptapToCanonicalV3(json)).toMatchObject({ ok: false });
   });
+
+  it("refuses an inherited name such as toString without throwing", () => {
+    const json = canonicalToTiptapV3(DOC) as { content: { content?: unknown[] }[] };
+    json.content[1]!.content![2] = { type: "toString", attrs: { text: "x" } };
+    expect(tiptapToCanonicalV3(json)).toMatchObject({ ok: false });
+  });
 });

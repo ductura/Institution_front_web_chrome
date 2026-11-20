@@ -1,0 +1,28 @@
+/** Interface text of the teacher's "Vrati na doradu" dialog (WEB-8C, dd-h). Invented examples only. */
+export const returnForRevisionHr = {
+  open: "Vrati na doradu",
+  title: "Vrati rad na doradu",
+  instructionLabel: "Što treba doraditi",
+  instructionHint: "Napišite jasno i konkretno, do 2000 znakova. Student ovo vidi uz rad.",
+  dueLabel: "Rok dorade",
+  dueHint: "Neobavezno. Bez roka rad ostaje na doradi dok ga student ne pošalje.",
+  noDue: "bez roka",
+  send: "Vrati na doradu",
+  sending: "Slanje…",
+  cancel: "Odustani",
+  sent: "Rad je vraćen na doradu.",
+  note: "Vaš zahtjev je zaseban zapis uz rad. Tekst rada se njime ne mijenja.",
+  invalidDate: "Upišite datum u obliku 30. 11. 2026. ili ga odaberite u kalendaru.",
+  dateChoose: "Odaberi datum",
+  datePrevious: "Prethodni mjesec",
+  dateNext: "Sljedeći mjesec",
+  errors: {
+    empty: "Upišite što treba doraditi.",
+    tooLong: "Zahtjev je predug. Dopušteno je najviše 2000 znakova.",
+    pastDue: "Rok ne može biti u prošlosti.",
+    signedOut: "Prijava je istekla. Prijavite se ponovno.",
+    forbidden: "Rad nije moguće vratiti na doradu.",
+    conflict: "Rad je u međuvremenu promijenio stanje. Osvježite prikaz.",
+    unavailable: "Zahtjev trenutačno nije moguće poslati. Pokušajte ponovno.",
+  },
+} as const;

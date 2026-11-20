@@ -1,0 +1,22 @@
+:global(dialog):has(.preview) {
+  width: min(960px, calc(100vw - 32px));
+  margin-block-start: clamp(16px, 5vh, 64px);
+  max-height: 90dvh;
+}
+
+.preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: 8px;
+}
+
+.pdf {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 65dvh;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius-control);
+  background: white;
+}

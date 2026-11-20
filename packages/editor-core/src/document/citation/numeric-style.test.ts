@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import fpzgConfig from "../../../../../config/faculties/fpzg/citation.json";
 import type { CanonicalDocumentV3, DocumentSource, NodeId, SourceId } from "../document/schema";
 import { validateVersionedDocument } from "../document/validate";
-import { CitationStyleError, deriveBibliography, formatCitation, parseCitationStyle } from "./index";
+import { formatNumericCitation, CitationStyleError, deriveBibliography, formatCitation, parseCitationStyle } from "./index";
 
 // Synthetic data only. The numeric catalog entry is a test input: the real
 // shape comes from the institution catalog (settings.values.get citation.style).
@@ -70,5 +70,10 @@ describe("numeric citation styles", () => {
   it("uses the dot list marker when the style says so", () => {
     const style = parseCitationStyle(numericConfig("dot"));
     expect(deriveBibliography(doc(), style).entries[1]!.text.startsWith("2. ")).toBe(true);
+  });
+
+  it("shows a whitespace-only locator as stored instead of throwing", () => {
+    const style = parseCitationStyle(numericConfig("bracket"));
+    expect(formatNumericCitation(1, style, " ")).toBe("[1, str.  ]");
   });
 });

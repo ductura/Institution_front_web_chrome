@@ -416,7 +416,9 @@ class SetNodeIds extends Step {
         let out = node;
         if (ids.has(pos) && carriesId(node)) {
           found += 1;
-          out = node.type.create({ ...node.attrs, [NODE_ID_ATTRIBUTE]: ids.get(pos) }, node.content, node.marks);
+          // A block that holds blocks (the box of v4) may have fixes inside it too.
+          const content = node.isTextblock || node.isLeaf ? node.content : rewrite(node.content, pos + 1);
+          out = node.type.create({ ...node.attrs, [NODE_ID_ATTRIBUTE]: ids.get(pos) }, content, node.marks);
         } else if (!node.isTextblock && !node.isLeaf) {
           out = node.copy(rewrite(node.content, pos + 1));
         }
