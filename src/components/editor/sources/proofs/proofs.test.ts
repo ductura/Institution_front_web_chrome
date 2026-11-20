@@ -200,6 +200,15 @@ describe("the draft and its send", () => {
     expect(calls).toBe(0);
   });
 
+  it("sends nothing while a PDF page is still loading (the picture is the previous page's)", async () => {
+    let calls = 0;
+    const loading = captureReducer(ready(), { type: "pdfLoading", page: 2, count: 5 });
+    expect(loading.picture).toBe(picture);
+    const result = await saveCapture(loading, { assignmentId: A, encoder, upload: async () => { calls += 1; return { kind: "nepoznato" }; } });
+    expect(result.status).toBe("invalid");
+    expect(calls).toBe(0);
+  });
+
   it("judges the quote only on a PDF page", () => {
     const runs = [{ str: "Kućno kompostiranje smanjuje otpad u gradu.", x: 0, y: 0, width: 1, height: 1 }];
     expect(quoteNotice({ quote: "kompostiranje bitno smanjuje otpad u gradu", runs, pdf: { page: 1, count: 1, loading: false } })?.kind).toBe("differs");
