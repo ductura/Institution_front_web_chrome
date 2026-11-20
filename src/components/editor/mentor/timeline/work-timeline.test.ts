@@ -4,7 +4,7 @@ import { readMilestones, readRoster, readSlots, timelineEvents, workStatus } fro
 const date = "2026-11-20";
 const checkpoint = { kind: "checkpoint", revision: 3, savedMinute: date + "T09:00:00Z" } as const;
 const submission = { kind: "submission", revision: 3, savedMinute: date + "T09:10:00Z", afterDeadline: false } as const;
-const step = { id: "demo-etapa", title: "Nacrt", description: "", state: "approved", dueAt: date + "T10:00:00+02:00" } as const;
+const step = { id: "00000000-0000-4000-8000-000000000001", title: "Nacrt", description: "", state: "approved", dueAt: date + "T10:00:00+02:00" } as const;
 const slot = { id: "demo-termin", state: "confirmed", proposedAt: date + "T08:30:00Z", startsAt: date + "T10:00:00Z" } as const;
 
 describe("WEB-1111 timeline", () => {

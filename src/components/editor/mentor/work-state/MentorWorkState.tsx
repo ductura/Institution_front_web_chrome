@@ -3,9 +3,10 @@
 import { Button, Details } from "@ductura/ui";
 import { useEffect, useState } from "react";
 import { readConsultationVersions, type VersionsPage } from "../../../../client/consultation-records";
+import type { WorkMilestone } from "../../../../client/work-milestones";
 import { MentoredStudents } from "../../../teacher/mentored-students/MentoredStudents";
 import { MentorTime, WorkTimeline } from "../timeline/WorkTimeline";
-import { readMilestones, workStatus, type Milestone } from "../timeline/work-timeline";
+import { readMilestones, workStatus } from "../timeline/work-timeline";
 import { mentorWorkHr as t } from "./messages.hr";
 import styles from "./MentorWorkState.module.css";
 
@@ -17,7 +18,7 @@ export function MentorWorkState({ documentId, role, submitted, submittedAt, rece
   receiptHref?: string;
 }) {
   const [versions, setVersions] = useState<VersionsPage | null>();
-  const [milestones, setMilestones] = useState<Milestone[] | null>();
+  const [milestones, setMilestones] = useState<WorkMilestone[] | null>();
   const [showTimeline, setShowTimeline] = useState(false);
   useEffect(() => {
     if (!documentId) return;

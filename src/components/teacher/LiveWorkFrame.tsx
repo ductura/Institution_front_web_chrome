@@ -81,9 +81,11 @@ export type LiveWorkFrameProps = {
   text: ReactNode;
   /** The summary and the limits of the record. */
   aside?: ReactNode;
+  /** Standalone work view already has a Mentor section in its aside. */
+  mentorInAside?: boolean;
 };
 
-export default function LiveWorkFrame({ documentId, frame, recordState, text, aside }: LiveWorkFrameProps) {
+export default function LiveWorkFrame({ documentId, frame, recordState, text, aside, mentorInAside }: LiveWorkFrameProps) {
   const title = frame?.studentName ?? t.untitled;
   const nav = frame === null ? [] : [
     neighbour(frame.previousId, t.previous, "prev"),
@@ -122,7 +124,7 @@ export default function LiveWorkFrame({ documentId, frame, recordState, text, as
       { className: styles.layout },
       h("div", { className: styles.main }, text),
       h("aside", { className: styles.aside, "aria-label": t.sidePanel, id: SUMMARY_ANCHOR },
-        h(ReadOnlyMentor, { key: documentId, documentId, role: "teacher", submitted: frame?.submitted,
+        !mentorInAside && h(ReadOnlyMentor, { key: documentId, documentId, role: "teacher", submitted: frame?.submitted,
           receiptHref: submissionHref(documentId) ?? undefined }),
         aside),
     ),

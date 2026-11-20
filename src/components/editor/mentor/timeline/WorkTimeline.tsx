@@ -3,8 +3,9 @@
 import { Button, Dialog } from "@ductura/ui";
 import { useEffect, useState } from "react";
 import { readConsultationVersions, type VersionsPage } from "../../../../client/consultation-records";
+import type { WorkMilestone } from "../../../../client/work-milestones";
 import { mentorWorkHr as t } from "../work-state/messages.hr";
-import { readMilestones, readSlots, timelineEvents, type Milestone, type Slot, type TimelineEvent } from "./work-timeline";
+import { readSlots, timelineEvents, type Slot, type TimelineEvent } from "./work-timeline";
 
 const date = new Intl.DateTimeFormat("hr-HR", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Zagreb" });
 
@@ -20,7 +21,7 @@ function eventLabel(event: TimelineEvent) {
 
 export function WorkTimeline({ documentId, milestones, firstPage, onClose }: {
   documentId: string;
-  milestones: Milestone[] | null | undefined;
+  milestones: WorkMilestone[] | null | undefined;
   firstPage: VersionsPage | null | undefined;
   onClose: () => void;
 }) {
