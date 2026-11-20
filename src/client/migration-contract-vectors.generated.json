@@ -1406,5 +1406,148 @@
       },
       "contentType": "application/json"
     }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "unread",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60",
+        "versionNo": 2,
+        "templateVersion": 1,
+        "title": "Seminarski rad: kućno kompostiranje",
+        "instructions": "Izmišljena uputa: opiši jedan izmišljeni pokus kompostiranja u stanu.",
+        "workType": "seminar_paper",
+        "opensAt": "2026-11-02T08:00:00.000Z",
+        "dueAt": "2026-12-15T22:59:00.000Z",
+        "aiPolicy": "partially_allowed",
+        "aiPurposes": [
+          "proofreading",
+          "literature_search"
+        ],
+        "evidenceProfile": "basic",
+        "wordMin": 1500,
+        "wordMax": 3000,
+        "readAt": null,
+        "acknowledgedAt": null
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "read-and-acknowledged",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60",
+        "versionNo": 2,
+        "templateVersion": 1,
+        "title": "Seminarski rad: kućno kompostiranje",
+        "instructions": "Izmišljena uputa: opiši jedan izmišljeni pokus kompostiranja u stanu.",
+        "workType": "seminar_paper",
+        "opensAt": "2026-11-02T08:00:00.000Z",
+        "dueAt": "2026-12-15T22:59:00.000Z",
+        "aiPolicy": "prohibited",
+        "aiPurposes": [],
+        "evidenceProfile": "extended",
+        "wordMin": null,
+        "wordMax": null,
+        "readAt": "2026-11-03T09:14:00.000Z",
+        "acknowledgedAt": "2026-11-03T09:20:00.000Z"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000002001"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "forbidden",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000002004"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "not_found",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-000000002002"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000002003"
+      },
+      "contentType": "application/json"
+    }
   }
 ]
