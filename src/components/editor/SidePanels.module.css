@@ -157,6 +157,8 @@
 }
 
 .workspaceSide.collapsedPanel { width: 66px; }
+.workspace > [data-editor-chrome] > header { flex: 1; min-width: 0; flex-wrap: nowrap; overflow-x: auto; }
+.workspace > [data-editor-chrome] > button { flex: none; }
 .workspace[data-focus="true"] > [data-editor-chrome],
 .workspace[data-focus="true"] .workspaceSide { display: none; }
 .workspace[data-focus="true"] main { padding-top: 48px; }
