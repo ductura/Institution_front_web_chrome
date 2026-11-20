@@ -52,6 +52,8 @@ export type OverviewRow = {
   readonly afterDeadline: boolean;
   /** From the receipt; null while the receipt is not bound (`ceka`) or nothing is submitted. */
   readonly evidenceRecord: EvidenceRecord | null;
+  /** TODO(ugovor): optional until SRV-27 (3.2.0) makes it part of the contract; links the row to N-07. */
+  readonly documentId?: string;
 };
 
 const UNKNOWN = { kind: "nepoznato" } as const;
@@ -71,15 +73,21 @@ const STUDENTS = list("students", closed({
   works: { type: "array", items: closed({ assignmentId: UUID, state: { anyOf: ["predano", "nije_predano", "nakon_roka", "ceka"].map((c) => ({ const: c })) } }) },
 }));
 const MINUTE = { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}Z$" } as const;
-const OVERVIEW = list("rows", closed({
-  studentId: UUID,
-  name: OR_NULL(TEXT),
-  group: OR_NULL(TEXT),
-  submitted: { type: "boolean" },
-  requestedMinute: OR_NULL(MINUTE),
-  afterDeadline: { type: "boolean" },
-  evidenceRecord: { anyOf: [{ type: "null" }, { const: "continuous" }, { const: "with_gaps" }] },
-}));
+const overviewRow = (): Schema => {
+  const row = closed({
+    studentId: UUID,
+    name: OR_NULL(TEXT),
+    group: OR_NULL(TEXT),
+    submitted: { type: "boolean" },
+    requestedMinute: OR_NULL(MINUTE),
+    afterDeadline: { type: "boolean" },
+    evidenceRecord: { anyOf: [{ type: "null" }, { const: "continuous" }, { const: "with_gaps" }] },
+    documentId: TEXT,
+  }) as { required: string[] };
+  row.required = row.required.filter((k) => k !== "documentId");
+  return row as Schema;
+};
+const OVERVIEW = list("rows", overviewRow());
 
 /** A row is consistent: a time and a record only when submitted, after the deadline only when submitted. */
 function consistent(row: OverviewRow): boolean {

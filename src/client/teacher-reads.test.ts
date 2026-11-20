@@ -122,6 +122,13 @@ describe("WEB-30 teacher reads (TODO(ugovor))", () => {
     expect(await readAssignmentOverview(answer(200, { rows: [ceka] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [ceka] });
   });
 
+  it("overview accepts an optional documentId and still works without it", async () => {
+    const withId = { ...row, documentId: "izmisljeni-rad-0001" };
+    expect(await readAssignmentOverview(answer(200, { rows: [withId] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [withId] });
+    expect(await readAssignmentOverview(answer(200, { rows: [row] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [row] });
+    expect(await readAssignmentOverview(answer(200, { rows: [{ ...row, documentId: "" }] }), ASSIGNMENT)).toEqual({ kind: "nepoznato" });
+  });
+
   const nepoznato = { kind: "nepoznato" };
   it.each([
     ["an unknown field on the list", { students: [student], extra: 1 }],
