@@ -8,7 +8,7 @@ import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
 import type { OverviewRow } from "@/client/teacher-reads";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import AssignmentOverview, { chooseAssignment, OVERVIEW_COLUMNS } from "./AssignmentOverview";
+import AssignmentOverview, { chooseAssignment, OVERVIEW_COLUMNS, submissionHref } from "./AssignmentOverview";
 
 const t = messagesHr.teacherSummary;
 const A = "00000000-0000-4000-8000-0000000000a1";
@@ -100,5 +100,26 @@ describe("AssignmentOverview (N-17)", () => {
   it("uses no forbidden term", () => {
     expect(findForbiddenTerms(JSON.stringify(t))).toEqual([]);
     expect(findForbiddenTerms(text(render(ROWS)))).toEqual([]);
+  });
+});
+
+describe("row link to N-07 (TODO(ugovor): documentId)", () => {
+  const DOC = "doc-izmisljeni-1";
+  it("builds /nastavnik/rad/{documentId}/predaja and encodes the id", () => {
+    expect(submissionHref({ ...row(2), documentId: DOC })).toBe(`/nastavnik/rad/${DOC}/predaja`);
+    expect(submissionHref({ ...row(2), documentId: "a/b" })).toBe("/nastavnik/rad/a%2Fb/predaja");
+  });
+  it("gives no link without a usable document id", () => {
+    expect(submissionHref(row(2))).toBeNull();
+    expect(submissionHref({ ...row(2), documentId: ".." })).toBeNull();
+    expect(submissionHref({ ...row(2), documentId: " x" })).toBeNull();
+  });
+  it("links only a submitted row", () => {
+    const html = render([
+      row(2, { submitted: true, requestedMinute: "2026-11-02T13:32Z", evidenceRecord: "continuous" }) as OverviewRow,
+      row(1),
+    ].map((r, i) => ({ ...r, documentId: `doc-${i}` })));
+    expect(html).toContain('href="/nastavnik/rad/doc-0/predaja"');
+    expect(html).not.toContain("doc-1");
   });
 });

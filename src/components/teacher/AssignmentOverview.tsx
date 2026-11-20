@@ -42,17 +42,28 @@ function record(row: OverviewRow) {
 }
 
 /**
- * The student and the group. TODO(N-07): the row leads to the submission
- * receipt once WEB-35 mounts its teacher route (Ductus#2028, PITANJE); the
- * overview has no document or submission id (SRV-27), so until then there is
- * no link rather than a link to a page that does not exist.
+ * TODO(ugovor): SRV-27 will give every row a `documentId` (orchestrator,
+ * Ductus#2028); OverviewRow in src/client (W-A) does not carry it yet, so it is
+ * optional here and a row without it has no link.
  */
-function student(row: OverviewRow) {
-  const group = row.group === null ? t.noGroup : t.group.replace("{group}", row.group);
-  return `${row.name ?? t.noName} · ${group}`;
+export type OverviewRowWork = OverviewRow & { readonly documentId?: string };
+
+/** N-07 (WEB-35): the teacher's page for one submitted work; null without a document id. */
+export function submissionHref(row: OverviewRowWork): string | null {
+  const id = row.documentId;
+  if (id === undefined || id === "" || id === "." || id === ".." || id.trim() !== id || /\p{Cc}/u.test(id)) return null;
+  return `/nastavnik/rad/${encodeURIComponent(id)}/predaja`;
 }
 
-export const OVERVIEW_COLUMNS: readonly DataTableColumn<OverviewRow>[] = [
+/** The student and the group; a submitted row with a document id leads to N-07. */
+function student(row: OverviewRowWork) {
+  const group = row.group === null ? t.noGroup : t.group.replace("{group}", row.group);
+  const label = `${row.name ?? t.noName} · ${group}`;
+  const href = row.submitted ? submissionHref(row) : null;
+  return href === null ? label : <a href={href}>{label}</a>;
+}
+
+export const OVERVIEW_COLUMNS: readonly DataTableColumn<OverviewRowWork>[] = [
   // A missing name sorts last instead of as its stand-in text.
   { id: "student", header: t.columns.student, rowHeader: true, cell: student, sortValue: (row) => row.name },
   { id: "state", header: t.columns.state, cell: state },
@@ -75,7 +86,7 @@ export const OVERVIEW_COLUMNS: readonly DataTableColumn<OverviewRow>[] = [
 export type AssignmentOverviewProps = {
   assignmentTitle: string;
   /** The rows of teacher.assignment-overview.get; null when the read failed. */
-  rows: readonly OverviewRow[] | null;
+  rows: readonly OverviewRowWork[] | null;
   loading?: boolean;
   /** Where "Pokušaj ponovno" leads when the read failed. */
   retryHref?: string;
