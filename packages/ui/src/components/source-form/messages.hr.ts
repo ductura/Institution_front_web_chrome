@@ -1,0 +1,15 @@
+export const sourceFormHr = {
+  add: "Dodaj izvor", edit: "Uredi izvor", save: "Spremi izmjene", cite: "Dodaj i citiraj", cancel: "Odustani",
+  library: "Samo u literaturu",
+  type: "Vrsta izvora", book: "Knjiga", article: "Članak", chapter: "Poglavlje u knjizi", web: "Mrežni izvor",
+  authors: "Autori", editors: "Urednici", addAuthor: "Dodaj autora", addEditor: "Dodaj urednika",
+  contributorType: "Vrsta autora", person: "Osoba", organization: "Ustanova ili organizacija",
+  family: "Prezime", given: "Ime", name: "Naziv organizacije", acronym: "Kratica",
+  remove: "Ukloni", author: "Autor", editor: "Urednik",
+  title: "Naslov", year: "Godina izdanja", place: "Mjesto izdanja", publisher: "Nakladnik",
+  journal: "Časopis", volume: "Svezak", issue: "Broj", pages: "Stranice", bookTitle: "Naslov knjige",
+  url: "Mrežna adresa", accessed: "Datum pristupa", dateHint: "GGGG-MM-DD",
+  required: "Ispunite ovo polje.", invalidText: "Provjerite znakove i duljinu unosa.",
+  invalidYear: "Upišite godinu od 1000 do 9999.", invalidDate: "Upišite valjan datum u obliku GGGG-MM-DD.",
+  invalidUrl: "Upišite valjanu mrežnu adresu koja počinje s https:// ili http://.",
+} as const;

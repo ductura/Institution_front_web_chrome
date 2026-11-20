@@ -10,6 +10,8 @@ export { Drawer, type DrawerProps, type DrawerSide } from "./components/drawer";
 export { ErrorScreen, type ErrorScreenProps } from "./components/ErrorScreen";
 export { PanelTabs, type PanelTab, type PanelTabsProps } from "./components/PanelTabs";
 export { Popover, type PopoverProps } from "./components/popover";
+export { SourceForm, type SourceFormAction, type SourceFormProps } from "./components/source-form/SourceForm";
+export { type SourceAuthor, type SourceDraft, type SourcePerson, type SourceType } from "./components/source-form/source-fields";
 export { RouteLoading } from "./components/RouteLoading";
 export { SaveState, type SaveStateProps } from "./components/SaveState";
 export { BLOCKED_TEXT, SAVE_STATES, saveStateContent, type SaveStateName, type SaveTone } from "./components/save-state";
