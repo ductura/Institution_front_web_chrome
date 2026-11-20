@@ -6,6 +6,7 @@ import { useEffect, useId, useState } from "react";
 
 import { countHr } from "../../lib/i18n/hr";
 import { messagesHr } from "../../lib/i18n/messages.hr";
+import { submissionKey } from "./storage";
 
 const t = messagesHr.declaration;
 const s = messagesHr.summary;
@@ -40,7 +41,7 @@ export type RecordedRead =
  * nothing ticked. Without a known session nothing is kept.
  */
 export function confirmationKey(session: string | null, assignmentId: string): string | null {
-  return session === null ? null : `ductura.predaja.izjava.${session}.${assignmentId}`;
+  return submissionKey(session, assignmentId, "izjava");
 }
 
 function isEmpty(summary: RecordedSummary): boolean {

@@ -5,6 +5,7 @@ import {
   confirmationKey, DeclarationView, readConfirmed, recordedRows, writeConfirmed,
   type RecordedRead, type RecordedSummary,
 } from "./Declaration";
+import { clearSubmissionStorage, submissionKey } from "./storage";
 
 // Invented summary of an invented work (no real student data).
 const FULL: RecordedSummary = {
@@ -106,6 +107,10 @@ describe("the confirmation lives only in this tab (P-7)", () => {
         getItem: (k: string) => store.get(k) ?? null,
         setItem: (k: string, v: string) => void store.set(k, v),
         removeItem: (k: string) => void store.delete(k),
+        key: (i: number) => [...store.keys()][i] ?? null,
+        get length() {
+          return store.size;
+        },
       },
     };
     return store;
@@ -128,6 +133,20 @@ describe("the confirmation lives only in this tab (P-7)", () => {
     withStorage();
     writeConfirmed(confirmationKey("sim-session-a", ASSIGNMENT), true);
     expect(readConfirmed(confirmationKey("sim-session-b", ASSIGNMENT))).toBe(false);
+  });
+
+  it("builds ductura.predaja.<session>.<assignmentId>.izjava", () => {
+    expect(confirmationKey("sim-session-a", ASSIGNMENT)).toBe(`ductura.predaja.sim-session-a.${ASSIGNMENT}.izjava`);
+  });
+
+  it("is removed by a sign-out together with every other ductura.predaja.* key, and only those", () => {
+    const store = withStorage();
+    writeConfirmed(confirmationKey("sim-session-a", ASSIGNMENT), true);
+    store.set(submissionKey("sim-session-a", ASSIGNMENT, "pregled") ?? "", "1");
+    store.set("ductura.other", "keep");
+    clearSubmissionStorage();
+    expect([...store.keys()]).toEqual(["ductura.other"]);
+    expect(readConfirmed(confirmationKey("sim-session-a", ASSIGNMENT))).toBe(false);
   });
 
   it("keeps nothing without a known session", () => {
