@@ -1,8 +1,9 @@
 // @vitest-environment node
 import { createHash, generateKeyPairSync, sign as nodeSign } from "node:crypto";
 
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { emptyDocument } from "../../packages/editor-core/src/document/document";
 import { MAX_DOCUMENT_SNAPSHOT_BYTES } from "../../packages/editor-core/src/document/document/snapshot";
 import { MAX_EVIDENCE_SEGMENT_BYTES } from "../../packages/editor-core/src/document/forensics/evidence-chain-v2";
 import type { EvidenceReceiptPayloadV2, SignedEvidenceReceiptV2 } from "../../packages/editor-core/src/document/forensics/evidence-receipt";
@@ -10,6 +11,8 @@ import type { EvidenceDomainKey } from "../../packages/editor-core/src/document/
 import { loadGoldenVectors } from "../../packages/editor-core/src/document/forensics/golden-vectors/load";
 import { canonicalizeJcs } from "../../packages/editor-core/src/document/forensics/jcs";
 import { ackedRevision, isRetryable } from "../../packages/editor-core/src/sync/drain";
+import { createDrainRunner } from "../../packages/editor-core/src/sync/runner/drain-runner";
+import { journalKit } from "../../packages/editor-core/src/sync/runner/evidence-test-kit";
 
 import {
   commitEvidence,
@@ -98,6 +101,7 @@ function scripted(...answers: (Response | Error)[]) {
 }
 
 const json = (status: number, body: unknown) => Response.json(body, { status });
+const unreadableJson = (status: number) => new Response("{", { status, headers: { "content-type": "application/json" } });
 const committed = (status: "committed" | "duplicate", revision: number, signedReceipt: unknown) =>
   json(200, { status, revision, receipt: { status: "signed", signedReceipt } });
 /** The answer of protocol 2 while the worker has not signed yet (4.13 t. 9, #1758). */
@@ -475,8 +479,7 @@ describe("WEB-38: both routes through createApi and the contract", () => {
 
   it("an answer declared JSON that is not JSON holds the row and settles nothing", async () => {
     const protocol = createCommitProtocol();
-    const broken = new Response("{", { status: 200, headers: { "content-type": "application/json" } });
-    const { calls, fetchImpl } = scripted(broken, pending("committed", BASE.revision));
+    const { calls, fetchImpl } = scripted(unreadableJson(200), pending("committed", BASE.revision));
     expect(await commitEvidence(INPUT, fetchImpl, protocol)).toEqual({ status: "invalid" });
     expect(protocol).toMatchObject({ version: "2", agreed: false });
     expect(await commitEvidence(INPUT, fetchImpl, protocol)).toMatchObject({ receipt: { status: "pending_signature" } });
@@ -484,35 +487,14 @@ describe("WEB-38: both routes through createApi and the contract", () => {
     expect(protocolsOf(calls)).toEqual(["2", "2"]);
   });
 
-  // WEB-ER (Ductus#2028 c.7020060555): a 5xx stays a 5xx when its JSON cannot be read.
-  it("a 5xx declared JSON that is not JSON holds the row and the same key goes out again", async () => {
-    const protocol = createCommitProtocol();
-    const broken = (status: number) => new Response("{", { status, headers: { "content-type": "application/json" } });
-    const { calls, fetchImpl } = scripted(broken(500), broken(503), committed("committed", BASE.revision, trusted.sign({})));
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      const outcome = await commitEvidence(INPUT, fetchImpl, protocol);
-      expect(outcome).toEqual({ status: "transport_error" });
-      expect(isRetryable(outcome)).toBe(true);
-      expect(ackedRevision(outcome)).toBeNull();
-      expect(protocol).toMatchObject({ version: "2", agreed: false, probe: null });
-    }
-    expect(await commitEvidence(INPUT, fetchImpl, protocol)).toMatchObject({ status: "committed", revision: BASE.revision });
-    expect(protocolsOf(calls)).toEqual(["2", "2", "2"]);
-    const keys = calls.map(({ init }) => JSON.parse(init.body as string).clientTransactionId);
-    expect(keys).toEqual([INPUT.clientTransactionId, INPUT.clientTransactionId, INPUT.clientTransactionId]);
-    expect(calls[1]!.init.body).toBe(calls[0]!.init.body);
-    expect(calls[2]!.init.body).toBe(calls[0]!.init.body);
-  });
-
   it("an unreadable success still confirms nothing, and an unreadable 4xx is not retried by itself", async () => {
-    const broken = (status: number) => new Response("{", { status, headers: { "content-type": "application/json" } });
     for (const status of [200, 202, 409, 422]) {
-      const outcome = await commitEvidence(INPUT, scripted(broken(status)).fetchImpl);
+      const outcome = await commitEvidence(INPUT, scripted(unreadableJson(status)).fetchImpl);
       expect(outcome).toEqual({ status: "invalid" });
       expect(isRetryable(outcome)).toBe(false);
       expect(ackedRevision(outcome)).toBeNull();
     }
-    expect(await openWork(ASSIGNMENT, scripted(broken(503)).fetchImpl)).toEqual({ status: "unavailable" });
+    expect(await openWork(ASSIGNMENT, scripted(unreadableJson(503)).fetchImpl)).toEqual({ status: "unavailable" });
   });
 
   it("without a transport of its own goes out through the browser's, under the same rules", async () => {
@@ -526,5 +508,56 @@ describe("WEB-38: both routes through createApi and the contract", () => {
       vi.unstubAllGlobals();
       vi.stubGlobal("location", { origin: ORIGIN });
     }
+  });
+});
+
+describe("WEB-ER: unreadable commit responses through the drain runner", () => {
+  const { open: openJournal, cleanup } = journalKit("e");
+  afterEach(cleanup);
+
+  async function queued(...responses: Response[]) {
+    const journal = openJournal();
+    const createdAt = "2026-10-09T12:00:00.000Z";
+    await journal.saveLocal(DOC, {
+      kind: "REPLACE_DOCUMENT", clientTransactionId: INPUT.clientTransactionId, baseRevision: BASE.revision - 1,
+      document: emptyDocument(() => "aaaaaaaa-0000-4000-8000-000000000001"), createdAt,
+    }, createdAt, 0);
+    const { calls, fetchImpl } = scripted(...responses);
+    const protocol = createCommitProtocol();
+    let clock = 0;
+    const runner = createDrainRunner({
+      journal,
+      transport: (documentId, row) =>
+        commitEvidence({ ...INPUT, documentId, clientTransactionId: row.clientTransactionId, baseRevision: row.baseRevision }, fetchImpl, protocol),
+      verify: createReceiptVerifier({ evidenceDomainId: DOMAIN, receiptKeys: [trusted.key] }, () => SEGMENT_HASH),
+      now: () => (clock += 60_000),
+      jitter: () => 0.5,
+    });
+    return { journal, runner, calls, protocol };
+  }
+
+  it("holds the row after each unreadable 5xx and retries the same key until a receipt verifies", async () => {
+    const { journal, runner, calls, protocol } = await queued(
+      unreadableJson(500), unreadableJson(503), committed("duplicate", BASE.revision, trusted.sign({})),
+    );
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      expect(await runner.step(DOC)).toEqual({ kind: "sent", state: "ERROR", ackedRevision: null });
+      expect((await journal.read(DOC)).pending).toMatchObject([{ tx: { clientTransactionId: INPUT.clientTransactionId } }]);
+      expect(protocol).toMatchObject({ version: "2", agreed: false, probe: null });
+    }
+    expect(await runner.step(DOC)).toEqual({ kind: "sent", state: "SYNCED", ackedRevision: BASE.revision });
+    expect((await journal.read(DOC)).pending).toEqual([]);
+    expect(protocolsOf(calls)).toEqual(["2", "2", "2"]);
+    const bodies = calls.map(({ init }) => init.body as string);
+    expect(JSON.parse(bodies[0]!).clientTransactionId).toBe(INPUT.clientTransactionId);
+    expect(bodies).toEqual([bodies[0], bodies[0], bodies[0]]);
+  });
+
+  it("holds the row after unreadable HTTP 200 without acknowledging or replaying it automatically", async () => {
+    const { journal, runner, calls } = await queued(unreadableJson(200));
+    expect(await runner.step(DOC)).toEqual({ kind: "sent", state: "ERROR", ackedRevision: null });
+    expect((await journal.read(DOC)).pending).toMatchObject([{ tx: { clientTransactionId: INPUT.clientTransactionId } }]);
+    expect(await runner.step(DOC)).toEqual({ kind: "needs_retry", state: "ERROR" });
+    expect(calls).toHaveLength(1);
   });
 });
