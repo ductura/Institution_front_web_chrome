@@ -4,10 +4,10 @@ import { Button, Card, Steps } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 
-import { useOnline } from "@/client/online-status";
-import { addNote, readNotes, type LocalCall, type Read, type SubmissionNote } from "@/client/submission";
-import { countHr } from "@/lib/i18n/hr";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { useOnline } from "../../client/online-status";
+import { addNote, readNotes, type LocalCall, type Read, type SubmissionNote } from "../../client/submission";
+import { countHr } from "../../lib/i18n/hr";
+import { messagesHr } from "../../lib/i18n/messages.hr";
 
 import { ProcessSummaryView, type ProcessSummaryV1 } from "../summary/ProcessSummaryView";
 import { zagrebParts } from "../summary/zagreb-time";

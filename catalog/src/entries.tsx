@@ -6,8 +6,13 @@ import {
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
+import { BeforeSubmitView, type BeforeSubmitViewProps } from "../../src/components/predaja/BeforeSubmit.tsx";
+import { DeclarationView, type DeclarationViewProps, type RecordedSummary } from "../../src/components/predaja/Declaration.tsx";
+import type { SubmissionNote } from "../../src/client/submission.ts";
+import { WorkspaceTopBarView } from "../../src/components/editor/WorkspaceTopBar.tsx";
+import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
-  AppShell, EmptyHome, LiveWorkFrame, MentoredWorks, MyAssignments, OutlinePanel, StudentHome, TeacherCourses,
+  AppShell, EmptyHome, LiveWorkFrame, MentoredWorks, MyAssignments, NoteDialog, OutlinePanel, StudentHome, TeacherCourses,
   type AssignmentSubmission, type LiveWorkFrameData, type MentoredWork, type MyCourse, type OutlineRow, type TeacherCourse,
 } from "../../src/components/index.ts";
 
@@ -301,6 +306,62 @@ const liveFrame = (over: Partial<LiveWorkFrameData> = {}): LiveWorkFrameData => 
 });
 const liveText = <p>Izmišljena rečenica rada koja stoji umjesto teksta uživo.</p>;
 
+// Invented process summaries and note (as in BeforeSubmit.test.tsx, WEB-25); no real student data.
+const summaryWithGap: ProcessSummaryV1 = {
+  summaryFormat: "ductus-process-summary-v1",
+  sessions: { evidenceKind: "observed", breakAboveMinutes: 30, count: 1,
+    items: [{ from: "2026-11-10T09:00:00.000Z", to: "2026-11-10T10:00:00.000Z" }] },
+  pastes: { evidenceKind: "observed", listedAboveCharacters: 200,
+    listed: [{ at: { from: "2026-11-10T09:20:00.000Z", to: "2026-11-10T09:21:00.000Z" }, characters: 340, origin: "not_observed" }],
+    smallerCount: 2 },
+  gaps: { evidenceKind: "observed", items: [{ previousEndedAt: "2026-11-10T09:30:00.000Z", nextStartedAt: "2026-11-10T09:45:00.000Z" }] },
+  recordState: "has_gaps",
+};
+const summaryEmpty: ProcessSummaryV1 = {
+  summaryFormat: "ductus-process-summary-v1",
+  sessions: { evidenceKind: "observed", breakAboveMinutes: 30, count: 0, items: [] },
+  pastes: { evidenceKind: "observed", listedAboveCharacters: 200, listed: [], smallerCount: 0 },
+  gaps: { evidenceKind: "observed", items: [] },
+  recordState: "complete",
+};
+const recorded = (summary: ProcessSummaryV1): RecordedSummary => summary;
+const invented: SubmissionNote = { id: "izmisljena-napomena-1", text: "Izmišljena napomena uz predaju.", createdAt: "2026-11-10T10:05:00.000000Z" };
+const nothing = () => undefined;
+const declaration = (over: Partial<DeclarationViewProps>) => (
+  <DeclarationView recorded={{ kind: "ready", summary: recorded(summaryWithGap) }} confirmed
+    onConfirm={nothing} onNext={nothing} onBack={nothing} onRetry={nothing} {...over} />
+);
+const beforeSubmit = (over: Partial<BeforeSubmitViewProps>) => (
+  <BeforeSubmitView summary={{ kind: "ready", summary: summaryWithGap }} notes={{ kind: "ready", notes: [invented] }}
+    stage={{ kind: "open" }} confirmed online onNext={nothing} onDeclaration={nothing} onBack={nothing}
+    onReceipt={nothing} onRetry={nothing} onOpenNote={nothing} {...over} />
+);
+const topBar = (title: string | null, online: boolean) => (
+  <WorkspaceTopBarView assignmentId="izmisljeni-zadatak-1" title={title} online={online} theme="light" onTheme={nothing} />
+);
+
+/** The note dialog after the given presses: its states live inside it (PD-4), so the catalogue presses its own buttons. */
+function NoteProbe({ text = "", press = false, pending = false }: { text?: string; press?: boolean; pending?: boolean }) {
+  const ref = (box: HTMLDivElement | null) => {
+    if (box === null || box.dataset.pressed === "yes") return;
+    box.dataset.pressed = "yes";
+    const field = box.querySelector("textarea");
+    if (field !== null && text !== "") {
+      // Typed as a person would, so React sees the change (a plain value assignment it would not).
+      field.focus({ preventScroll: true });
+      document.execCommand("insertText", false, text);
+      field.blur();
+    }
+    if (press) queueMicrotask(() => box.querySelector("button")?.click());
+  };
+  return (
+    <div ref={ref}>
+      <NoteDialog open modal={false} onClose={nothing} onAdded={nothing}
+        onAdd={() => (pending ? new Promise(() => undefined) : Promise.resolve({ kind: "added" as const, note: invented }))} />
+    </div>
+  );
+}
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -365,5 +426,37 @@ export const SCREEN_ENTRIES = {
     greška: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={null} recordState={null} text={<p role="alert">{t.errorPage.errorBody}</p>} />,
     puno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={liveFrame()} recordState="has_gaps" text={liveText} />,
     onemogućeno: () => <LiveWorkFrame documentId="izmisljeni-rad-2" frame={liveFrame({ submitted: true, previousId: null, nextId: null })} recordState="complete" text={liveText} />,
+  },
+  // WEB-23 (S: E-7): the bar has no error of its own; a title the read could not give shows the generic one.
+  WorkspaceTopBar: {
+    prazno: () => topBar(null, true),
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <div>{topBar(null, true)}<p role="alert">{t.errorPage.errorBody}</p></div>,
+    puno: () => topBar("Izmišljeni seminar: javne politike", true),
+    onemogućeno: () => topBar("Izmišljeni seminar: javne politike", false),
+  },
+  // WEB-24 (S: E-9): the declaration step as DeclarationView draws it; the page adds only the router.
+  Declaration: {
+    prazno: () => declaration({ recorded: { kind: "ready", summary: recorded(summaryEmpty) }, confirmed: false }),
+    učitavanje: () => declaration({ recorded: { kind: "loading" }, confirmed: false }),
+    greška: () => declaration({ recorded: { kind: "error" }, confirmed: false }),
+    puno: () => declaration({}),
+    onemogućeno: () => declaration({ confirmed: false }),
+  },
+  // WEB-25 (S: E-8): the step before submitting as BeforeSubmitView draws it.
+  BeforeSubmit: {
+    prazno: () => beforeSubmit({ summary: { kind: "ready", summary: summaryEmpty }, notes: { kind: "ready", notes: [] } }),
+    učitavanje: () => beforeSubmit({ summary: { kind: "loading" }, notes: { kind: "loading" } }),
+    greška: () => beforeSubmit({ summary: { kind: "error" }, notes: { kind: "unavailable" } }),
+    puno: () => beforeSubmit({}),
+    onemogućeno: () => beforeSubmit({ online: false }),
+  },
+  // PD-4: empty, a press on "Dodaj" with nothing written, a written note, and a note on its way (nothing answers).
+  NoteDialog: {
+    prazno: () => <NoteProbe />,
+    učitavanje: () => <RouteLoading label={t.workspace.panelLoading} />,
+    greška: () => <NoteProbe press />,
+    puno: () => <NoteProbe text="Izmišljena napomena uz predaju." />,
+    onemogućeno: () => <NoteProbe text="Izmišljena napomena uz predaju." press pending />,
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;

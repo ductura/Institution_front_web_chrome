@@ -7,3 +7,7 @@ export type { MyAssignment, MyAssignmentsRead, MyCourse } from "./student/my-ass
 export * from "./support/index";
 export * from "./outline/index";
 export * from "./teacher/index";
+export { default as WorkspaceTopBar, type WorkspaceTopBarProps } from "./editor/WorkspaceTopBar";
+export { default as BeforeSubmit } from "./predaja/BeforeSubmit";
+export { default as Declaration } from "./predaja/Declaration";
+export { NoteDialog } from "./predaja/NoteDialog";
