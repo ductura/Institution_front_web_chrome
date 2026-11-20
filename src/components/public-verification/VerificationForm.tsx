@@ -3,7 +3,7 @@
 import { Button, TextField } from "@ductura/ui";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import { zagrebParts } from "@/components/summary/zagreb-time";
+import { zagrebParts } from "../summary/zagreb-time";
 
 import { parseVerificationCode, readVerificationFields, type VerificationCode } from "./code";
 import { publicVerificationHr as t } from "./messages.hr";
