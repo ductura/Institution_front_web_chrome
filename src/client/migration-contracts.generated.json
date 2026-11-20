@@ -3790,7 +3790,7 @@
       ],
       "properties": {
         "documentId": {
-          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\^@-\\^_\\u007f-\\^_\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
           "type": "string"
         }
       }
@@ -3911,7 +3911,7 @@
       ],
       "properties": {
         "documentId": {
-          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\^@-\\^_\\u007f-\\^_\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
           "type": "string"
         },
         "milestoneId": {
@@ -4036,7 +4036,7 @@
       ],
       "properties": {
         "documentId": {
-          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\^@-\\^_\\u007f-\\^_\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
           "type": "string"
         }
       }
@@ -4134,7 +4134,7 @@
       ],
       "properties": {
         "documentId": {
-          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\^@-\\^_\\u007f-\\^_\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
           "type": "string"
         }
       }

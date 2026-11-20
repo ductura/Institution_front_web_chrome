@@ -125,6 +125,9 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "teacher/revision/ReturnForRevisionDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/assistant/coming-soon/AssistantComingSoonCard.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/mentor/consultation-slots/ConsultationSlots.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/mentor/messages/WorkMessages.tsx", // WEB-1110: exercised in the Mentor card.
+  "editor/mentor/milestones/WorkMentorSections.tsx", // WEB-1110: exercised in the Mentor card.
+  "editor/mentor/milestones/WorkMilestones.tsx", // WEB-1110: exercised in the Mentor card.
   "editor/mentor/working-criteria/WorkingCriteria.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/rich/blocks/FormulaDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/rich/blocks/RichBlockTools.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
