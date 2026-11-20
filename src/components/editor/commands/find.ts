@@ -7,6 +7,21 @@ import { MAX_REPLACE_ALL, searchDocument, type SearchMatch } from "@/editor";
 
 type EditorDoc = Editor["state"]["doc"];
 export type FindScope = "all" | "chapter" | "quote";
+const scopeKey = "ductura-editor-find-scope";
+
+export function findScopeOf(value: string | null): FindScope {
+  return value === "chapter" || value === "quote" ? value : "all";
+}
+
+export function readFindScope(): FindScope {
+  try { return findScopeOf(globalThis.localStorage.getItem(scopeKey)); }
+  catch { return "all"; }
+}
+
+export function saveFindScope(scope: FindScope) {
+  try { globalThis.localStorage.setItem(scopeKey, scope); }
+  catch { /* The current search still works without storage. */ }
+}
 
 export const findHighlights = new PluginKey<DecorationSet>("editorFindHighlights");
 

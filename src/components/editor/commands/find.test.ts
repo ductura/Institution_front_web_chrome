@@ -1,11 +1,14 @@
 import { Editor } from "@tiptap/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createEditorExtensions, replaceAllTransaction } from "@/editor";
-import { searchWork } from "./find";
+import { readFindScope, saveFindScope, searchWork } from "./find";
 
 let editor: Editor | undefined;
-afterEach(() => { editor?.destroy(); });
+afterEach(() => {
+  editor?.destroy();
+  vi.unstubAllGlobals();
+});
 
 function example() {
   editor = new Editor({ element: null, extensions: createEditorExtensions(), content: {
@@ -20,6 +23,19 @@ function example() {
 }
 
 describe("editor search", () => {
+  it("stores only the scope and still works if the browser blocks storage", () => {
+    let value: string | null = null;
+    vi.stubGlobal("localStorage", {
+      getItem: () => value,
+      setItem: (_key: string, scope: string) => { value = scope; },
+    });
+    saveFindScope("quote");
+    expect(readFindScope()).toBe("quote");
+    vi.stubGlobal("localStorage", undefined);
+    expect(readFindScope()).toBe("all");
+    expect(() => saveFindScope("chapter")).not.toThrow();
+  });
+
   it("maps chapter matches back to the original document", () => {
     const { doc } = example().state;
     const all = searchWork(doc, "maslina", "all", 1);

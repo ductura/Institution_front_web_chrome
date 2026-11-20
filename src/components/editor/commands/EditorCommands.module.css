@@ -12,7 +12,7 @@
 .find { color: var(--ink); background: var(--chrome); min-width: 0; }
 
 .hit { background: color-mix(in srgb, var(--accent) 28%, transparent); }
-.current { background: color-mix(in srgb, var(--accent) 60%, transparent); }
+.current { background: var(--accent); color: var(--accent-ink); }
 
 .context [role="menu"] > [role="presentation"]:last-child {
   border-top: 1px solid var(--rule-2);

@@ -6,7 +6,7 @@ import { FindBar, stepHit } from "@ductura/ui";
 
 import { replaceAllTransaction, replaceMatchTransaction } from "@/editor";
 import { isSearchableText, MAX_SEARCH_TEXT_LENGTH } from "@/domain/text/find-literal";
-import { findHighlights, highlightHits, highlightPlugin, rangeOf, searchWork, type FindScope } from "./find";
+import { findHighlights, findScopeOf, highlightHits, highlightPlugin, rangeOf, readFindScope, saveFindScope, searchWork } from "./find";
 import { editorCommandsHr as t } from "./messages.hr";
 import styles from "./EditorCommands.module.css";
 
@@ -17,7 +17,7 @@ const scopes = Object.entries(t.findScopes).map(([value, label]) => ({ value, la
 export function EditorFind({ editor, onClose, openCount }: { editor: Editor; onClose: () => void; openCount: number }) {
   const [query, setQuery] = useState("");
   const [replacement, setReplacement] = useState("");
-  const [scope, setScope] = useState<FindScope>("all");
+  const [scope, setScope] = useState(readFindScope);
   const [index, setIndex] = useState(0);
   const [count, setCount] = useState<number | null>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -70,7 +70,9 @@ export function EditorFind({ editor, onClose, openCount }: { editor: Editor; onC
       <FindBar query={query} onQueryChange={(value) => { setQuery(value); setIndex(0); setCount(null); }}
         current={current} total={total} onNext={() => step(1)} onPrevious={() => step(-1)} onClose={onClose} labels={labels}
         scope={{ label: t.findScope, options: scopes, value: scope, onChange: (value) => {
-          setScope(value as FindScope); setIndex(0); setCount(null);
+          const next = findScopeOf(value);
+          setScope(next); setIndex(0); setCount(null);
+          saveFindScope(next);
         } }}
         replacement={state.editable ? {
           value: replacement, label: t.replacement, placeholder: `${t.replace}…`, maxLength: MAX_SEARCH_TEXT_LENGTH,
