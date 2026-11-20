@@ -974,19 +974,6 @@ export const hr = {
     offlineSaving: "Bez mreže. Tekst se i dalje sprema na ovom uređaju.",
     offlineNotSaving: "Bez mreže.",
   },
-  editorCommands: {
-    palette: "Naredbe",
-    chapters: "Poglavlja",
-    goTo: "Idi na",
-    shortcuts: "Prečaci",
-    find: "Traži",
-    chapterSearch: "Traži u radu",
-    focus: "Način fokusa",
-    outline: "Struktura rada",
-    comment: "Komentar ili pitanje mentoru",
-    selectedText: "označeni tekst",
-    toolbarKeys: "Na alatnu traku",
-  },
   toolbar: {
     label: "Oblikovanje teksta",
     // WEB-15 (E§3.6 toolbar2): the block style, as the prototype names it.

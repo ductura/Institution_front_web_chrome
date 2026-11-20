@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useEditorState } from "@tiptap/react";
 import { Button, CommandPalette, ShortcutsDialog } from "@ductura/ui";
-import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { useLocalEditor, useLocalSignedOut } from "../LocalDocument";
+import { editorCommandsHr as t } from "./messages.hr";
 import { paletteActions } from "./palette";
 import { editorShortcut, shortcutGroups } from "./shortcuts";
 import styles from "./EditorCommands.module.css";
@@ -51,8 +51,8 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
       }}>
         <div className={styles.tools}>{children}</div>
         {editor ? <Button tone="quiet" data-command-trigger="" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K"
-          title={`${t.editorCommands.palette} (Ctrl+K)`} onClick={() => setDialog("palette")}>
-          {t.editorCommands.palette}
+          title={`${t.palette} (Ctrl+K)`} onClick={() => setDialog("palette")}>
+          {t.palette}
         </Button> : null}
       </div>
       <CommandPalette open={!!editor && dialog === "palette"} commands={actions} onClose={close}
