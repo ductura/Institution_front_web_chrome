@@ -26,6 +26,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import EditorPage, { SheetNote } from "./EditorPage";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
+import EditorCommands from "./commands/EditorCommands";
 import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalSaveRead, useLocalSavingOnDevice } from "./LocalDocument";
 import { EditorHelpDialogs, useEditorHelp, type EditorHelpView } from "./help/EditorHelp";
 import { EditorHelpMenu } from "./help/EditorHelpMenu";
@@ -146,7 +147,7 @@ function WorkSurface({ course, title, topBar, length }: {
   const [view, setView] = useState<EditorHelpView | null>(null);
   return (
     <EditorPage course={course} title={title} topBar={topBar}
-      toolbar={<div className={helpStyles.toolbar}><EditorToolbar /><EditorHelpMenu onSelect={setView} /></div>}
+      toolbar={<EditorCommands><div className={helpStyles.toolbar}><EditorToolbar /><EditorHelpMenu onSelect={setView} /></div></EditorCommands>}
       status={<StatusBarLive evidence length={length} />}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
