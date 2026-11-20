@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
-import StatusBar, { shownSaveState, statusSaveOf, type DocumentPhase, type StatusSave } from "./StatusBar";
+import StatusBar, { scopeLine, shownSaveState, statusSaveOf, type DocumentPhase, type StatusSave } from "./StatusBar";
 
 // WEB-14: the status bar claims "on the server" only with a signed receipt (B-6),
 // shows the other tab's block instead of any state (A-12), and claims nothing
@@ -108,3 +108,35 @@ describe("statusSaveOf", () => {
       .toEqual([null, "LOCAL_DURABLE", "SYNCING", "RECOVERY_REQUIRED", null, null]);
   });
 });
+
+// WEB-23 (S: E-7): the scope line beside the save state, and the read-only bar.
+describe("scopeLine", () => {
+  it("writes the count and the range as E-7 does", () => {
+    expect(scopeLine(340, { min: 1200, max: 1600 })).toBe("340 riječi · opseg 1.200 do 1.600 · vidite samo Vi");
+    expect(scopeLine(1, null)).toBe("1 riječ · vidite samo Vi");
+    expect(scopeLine(12500, null)).toBe("12.500 riječi · vidite samo Vi");
+  });
+
+  it("shows the range alone while no editor counts", () => {
+    expect(scopeLine(null, { min: 1200, max: 1600 })).toBe("opseg 1.200 do 1.600 · vidite samo Vi");
+  });
+
+  it("says nothing without a count or a range", () => {
+    expect(scopeLine(null, null)).toBeNull();
+  });
+
+  it("grows with the count the bar is given", () => {
+    const range = { min: 1200, max: 1600 };
+    expect(render2({ words: 0, range })).toContain("0 riječi · opseg 1.200 do 1.600");
+    expect(render2({ words: 1201, range })).toContain("1.201 riječ · opseg 1.200 do 1.600");
+  });
+
+  it("says read only for a submitted work, never a save state", () => {
+    const html = renderToStaticMarkup(createElement(StatusBar, { save: { state: "SYNCED", receiptSigned: true, blocked: false }, readOnly: true }));
+    expect(html).toContain(t.workspace.readOnly);
+    for (const state of STATES) expect(html).not.toContain(SAVE_STATES[state].label);
+  });
+});
+
+const render2 = (length: { words: number | null; range: { min: number; max: number } | null }) =>
+  renderToStaticMarkup(createElement(StatusBar, { save: null, length }));

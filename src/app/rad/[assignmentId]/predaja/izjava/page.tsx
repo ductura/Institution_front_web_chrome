@@ -28,7 +28,9 @@ const RECORDED: RecordedRead = { kind: "error" };
  * (WEB-24, S: E-9). The assignment is checked as on `/rad/<id>` through
  * src/client (student.assignments.get, student.assignment-work.get) with the
  * request's session cookie: signed out → AAI@EduHr sign-in back here, notice
- * not acknowledged → the notice, anyone else's or unknown → 404.
+ * not acknowledged → the notice, anyone else's or unknown → 404. When the
+ * reads do not answer, the step is not shown: the notice may not be
+ * acknowledged yet (PRODUCT §5 rule 6).
  */
 export default async function DeclarationPage({ params }: { params: Promise<{ assignmentId: string }> }) {
   const { assignmentId: raw } = await params;
@@ -46,9 +48,18 @@ export default async function DeclarationPage({ params }: { params: Promise<{ as
   if (read.kind === "signedOut") redirect(signInHref(here));
   if (read.kind === "noticeFirst") redirect(`/zadatak/${assignmentId}`);
   if (read.kind === "notFound") notFound();
-  const crumbs = read.kind === "ready" ? [read.title, t.declaration.title] : [t.declaration.title];
+  if (read.kind !== "ready") {
+    return (
+      <RoleShell here={here} crumbs={[t.declaration.title]}>
+        <div className="page declaration">
+          <h1>{t.declaration.title}</h1>
+          <p role="status">{t.student.unavailable}</p>
+        </div>
+      </RoleShell>
+    );
+  }
   return (
-    <RoleShell here={here} crumbs={crumbs}>
+    <RoleShell here={here} crumbs={[read.title, t.declaration.title]}>
       <Declaration assignmentId={assignmentId} recorded={RECORDED} />
     </RoleShell>
   );
