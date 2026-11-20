@@ -26,6 +26,9 @@ const PUBLIC_NAMES = [
     "startFreshHistory", "storableDocument", "storableSlice", "storableText", "textBlockBackspace",
     "textBlockEnter", "tiptapToCanonical", "tiptapToCanonicalV2", "unmarkCitations", "withoutNodeIds",
     "writtenSteps",
+    // v3 (WEB-7F)
+    "CROSS_REFERENCE", "CitationV3", "CrossReference", "FOOTNOTE", "Footnote", "V3_EXTENSION_NAMES",
+    "canonicalToTiptapV3", "citationAttrs", "createEditorExtensionsV3", "tiptapToCanonicalV3",
 ];
 
 describe("editor-core entry @/editor", () => {
