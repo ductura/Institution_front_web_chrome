@@ -1,0 +1,42 @@
+/*
+ * Step 3 (S: E-8): the checks on the left, the process summary (PD-1) on the
+ * right; one column on a narrow screen. Neutral ink only (PRODUCT §7).
+ */
+:global(.page) > .layout {
+  max-width: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+  gap: 24px;
+  align-items: start;
+}
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rows {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: 8px 16px;
+}
+
+.rows dt {
+  font-weight: 600;
+}
+
+.rows dd {
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  :global(.page) > .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
