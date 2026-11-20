@@ -25,6 +25,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import EditorPage, { SheetNote } from "./EditorPage";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
+import EditorCommands from "./commands/EditorCommands";
 import { LocalDocumentProvider, LocalEditor } from "./LocalDocument";
 import StatusBar from "./StatusBar";
 import StatusBarLive from "./StatusBarLive";
@@ -124,7 +125,7 @@ export default function EditorPageWork({
           course={course}
           title={title}
           topBar={topBar}
-          toolbar={<EditorToolbar />}
+          toolbar={<EditorCommands><EditorToolbar /></EditorCommands>}
           status={<StatusBarLive evidence length={length} />}
         >
           <LocalEditor />
