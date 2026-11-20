@@ -493,12 +493,30 @@ export type DocumentNodeV4 =
   | BoxNode
   | FormulaNode
   | PageBreakNode
-  | TableNode;
+  | TableNode
+  | ImageNode;
+
+/** Document v4, the image (contract v4 §5.2) and the cover (§7). */
+export type ImageCrop = { bottom: number; left: number; right: number; top: number };
+export type ImageNode = {
+  type: "image";
+  id: NodeId;
+  widthPercent: number;
+  align: "left" | "center" | "right";
+  landscape: boolean;
+  attachmentId?: string;
+  attachmentSha256?: string;
+  crop?: ImageCrop;
+  title?: string;
+  source?: string;
+};
+export type CoverV4 = { study?: string; place?: string; date?: string };
 
 export type CanonicalDocumentV4 = {
   schemaVersion: typeof DOCUMENT_SCHEMA_VERSION_V4;
   nodes: DocumentNodeV4[];
   sources: DocumentSource[];
+  cover?: CoverV4;
 };
 
 // Document v4, the table (contract v4 §5.1).
