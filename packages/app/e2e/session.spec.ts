@@ -328,11 +328,11 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   expect(errors).toEqual([]);
 
   await page.goto("/app/chrome/prijava?returnTo=%2Fzadaci%2Fkolegiji");
-  await expect(page.getByText("Lažni AAI@EduHr")).toBeVisible();
+  await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(1);
   expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/zadaci/kolegiji");
   await page.goto("/app/web/prijava?returnTo=https%3A%2F%2Fexample.org%2F");
-  await expect(page.getByText("Lažni AAI@EduHr")).toBeVisible();
+  await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(2);
   expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/app/web/");
   expect(seen.me).toBe(0);
