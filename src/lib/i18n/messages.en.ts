@@ -763,6 +763,7 @@ const en = {
     title: "Export for Merlin",
     lead: "One package (.zip) per assignment: the PDF and .docx of every submitted work and the CSV roster. The grade is entered in Merlin.",
     rosterTitle: "Roster (CSV)",
+    rosterCaption: "Students of the assignment by surname",
     rosterNote: "All students of the assignment, by surname; students without a submission have \"submitted: no\". File names and fingerprints are the same in the CSV and in the package; students without a submission have nothing in those columns.",
     columns: {
       familyName: "Surname",

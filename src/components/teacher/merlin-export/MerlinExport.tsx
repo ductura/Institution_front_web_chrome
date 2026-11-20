@@ -180,7 +180,8 @@ export default function MerlinExport({
   const position = new Map(roster.rows.map((row, i) => [row, i] as const));
   const said = statusLines(status);
   const preparing = busy || (status.kind === "view" && status.view.kind === "priprema") || status.kind === "pending";
-  const ended = status.kind === "view" && (status.view.kind === "istekao" || status.view.kind === "neuspjeh");
+  // Once a package exists (ready, expired or failed), preparing again makes a new one under a new key.
+  const ended = status.kind === "view" && status.view.kind !== "priprema";
 
   return (
     <>
@@ -206,7 +207,7 @@ export default function MerlinExport({
       ) : null}
       <Card title={t.rosterTitle}>
         <DataTable
-          caption={t.rosterTitle}
+          caption={t.rosterCaption}
           columns={rosterColumns()}
           rows={roster.rows}
           rowKey={(r) => String(position.get(r))}

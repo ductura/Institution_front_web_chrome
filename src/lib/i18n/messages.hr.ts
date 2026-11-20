@@ -817,6 +817,7 @@ export const hr = {
     title: "Izvoz za Merlin",
     lead: "Jedan paket (.zip) po zadatku: PDF i .docx svakog predanog rada i CSV popis. Ocjena se upisuje u Merlinu.",
     rosterTitle: "Popis (CSV)",
+    rosterCaption: "Studenti zadatka po prezimenu",
     rosterNote: "Svi studenti zadatka, po prezimenu; studenti bez predaje imaju „predano: ne”. Nazivi datoteka i otisci isti su u CSV-u i u paketu; studenti bez predaje u tim stupcima nemaju ništa.",
     columns: {
       familyName: "Prezime",
