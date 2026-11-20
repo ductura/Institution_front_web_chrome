@@ -275,6 +275,9 @@ importers:
       fake-indexeddb:
         specifier: 6.2.8
         version: 6.2.8
+      fast-check:
+        specifier: 4.10.2
+        version: 4.10.2
       typescript:
         specifier: 5.9.3
         version: 5.9.3

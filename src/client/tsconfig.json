@@ -46,6 +46,6 @@
     "evidence-session-deps.integration.test.ts",
     "live-publisher.ts", "live-publisher.test.ts", "logout-hold.ts", "logout-hold.test.ts",
     "logout-request.ts", "logout-request.test.ts",
-    "replay-record/*.ts"
+    "replay-record/*.ts", "replay.ts", "replay.test.ts"
   ]
 }
