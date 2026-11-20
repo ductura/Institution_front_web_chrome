@@ -27,6 +27,11 @@ export function stepHref(assignmentId: string, step: Step, declaredFor?: string)
   return declaredFor === undefined ? href : `${href}?${DECLARED_PARAM}=${encodeURIComponent(declaredFor)}`;
 }
 
+/** A path as it is, for pages served without a host's base. */
+export function samePath(path: string): string {
+  return path;
+}
+
 /** Where the confirmation is kept: per sign-in and per assignment. */
 export function confirmationKey(sessionTag: string, assignmentId: string): string {
   return `ductura.predaja.izjava.${encodeURIComponent(sessionTag)}.${assignmentId}`;
