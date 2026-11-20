@@ -20,7 +20,7 @@ import { readSubmittedWork } from "../../../../../src/components/editor/mentor/w
 import StatusBar from "../../../../../src/components/editor/StatusBar.tsx";
 import WorkspaceTopBar from "../../../../../src/components/editor/WorkspaceTopBar.tsx";
 import { workspaceFrame, type WorkspaceVariant } from "../../../../../src/components/editor/workspace-variant.ts";
-import { browserTransport, createApi, signInHref } from "../../../../../src/client/api.ts";
+import { browserTransport, createApi, goToSignIn } from "../../../../../src/client/api.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 
 import { hostText } from "../../text";
@@ -58,7 +58,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       ]);
       if (!live) return;
       const read = editorWorkRead(assignmentId, assignments as never, work as never);
-      if (read.kind === "signedOut") return window.location.assign(signInHref(here));
+      if (read.kind === "signedOut") return goToSignIn(here);
       if (read.kind === "noticeFirst") return router.replace(appHref(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const frame = workspaceFrame(read);
@@ -75,7 +75,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         ? await readSubmittedWork(assignmentId, { baseUrl: window.location.origin, fetchImpl: browserTransport })
         : null;
       if (!live) return;
-      if (submission?.kind === "session-expired") return window.location.assign(signInHref(here));
+      if (submission?.kind === "session-expired") return goToSignIn(here);
       const receipt = submission?.kind === "potvrdeno" ? submission.receipt.payload : undefined;
       setShown({
         kind: "page",
