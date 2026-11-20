@@ -435,7 +435,7 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
         items={exportItems}
         onSelect={(key) => {
           if (key === "copy") void copyText(editor);
-          return key === "copy" ? "close" : "keep";
+          return key === "copy" ? "close-return" : "keep";
         }}
         {...menuProps("export")}
       />

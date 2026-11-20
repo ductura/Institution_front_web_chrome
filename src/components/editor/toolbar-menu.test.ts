@@ -145,6 +145,15 @@ describe("WEB-6C menus (E§3.3, E§3.6)", () => {
     expect(blocks(editor)).toEqual(["paragraph"]);
   });
 
+  it("turns only the selected part of a paragraph into a quote of its own", () => {
+    const editor = sheet();
+    editor.commands.setTextSelection({ from: 12, to: 20 }); // "rečenica"
+    expect(convertBlock(editor, "quote")).toBe(true);
+    const doc = editor.getJSON().content ?? [];
+    expect(doc.map((n) => n.type)).toEqual(["paragraph", "quote", "paragraph"]);
+    expect(editor.getText({ blockSeparator: "|" })).toBe("Izmišljena |rečenica|.");
+  });
+
   it("writes nothing into an editor that may not be written in", () => {
     const editor = sheet();
     Object.defineProperty(editor, "isEditable", { get: () => false, configurable: true });
