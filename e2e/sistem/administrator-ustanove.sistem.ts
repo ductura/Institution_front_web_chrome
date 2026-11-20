@@ -53,7 +53,7 @@ test('INT-05: administrator izrađuje kolegij, nositelj ga vidi i postavlja konf
   const teacher = await session(browser);
 
   try {
-    await test.step('Administrator ustanove izrađuje kolegij s nositeljem', async () => {
+    const courseId = await test.step('Administrator ustanove izrađuje kolegij s nositeljem', async () => {
       await signIn(admin.page, 'demo-admin', '/ustanova/kolegiji', 'institution_admin');
       await admin.page.getByLabel(t.name).fill(courseName);
       await admin.page.getByLabel(t.aiPolicy).selectOption('partially_allowed');
@@ -64,6 +64,7 @@ test('INT-05: administrator izrađuje kolegij, nositelj ga vidi i postavlja konf
         admin.page.getByRole('button', { name: t.submit, exact: true }).click(),
       ]);
       expect(created.status()).toBe(200);
+      const { id } = await created.json() as { id: string };
       await expect(admin.page.getByRole('status').filter({ hasText: courseName })).toBeVisible();
       // Isti naziv u istoj godini je sukob.
       const again = await postFromBrowser(admin.page, '/api/v1/institution/admin/courses', {
@@ -71,25 +72,17 @@ test('INT-05: administrator izrađuje kolegij, nositelj ga vidi i postavlja konf
         aiPolicy: 'partially_allowed', holderId, groups: [],
       });
       expect(again.status).toBe(409);
+      return id;
     });
 
-    const courseId = await test.step('Nositelj vidi novi kolegij među svojima', async () => {
+    await test.step('Nositelj vidi novi kolegij među svojima', async () => {
       await signIn(holder.page, 'demo-teacher-2', '/nastavnik', 'teacher');
       await expect(holder.page.getByRole('heading', { name: courseName, exact: true })).toBeVisible();
-      const link = holder.page.getByRole('link', { name: new RegExp(courseName) }).first();
-      const href = await link.getAttribute('href').catch(() => null);
-      return href?.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0] ?? null;
     });
 
     await test.step('Nositelj postavlja konfiguraciju provjera zadatka i vidi ga na popisu', async () => {
-      const id = courseId ?? (await (async () => {
-        const listed = await holder.page.request.get('/api/v1/teacher/courses');
-        const body = await listed.json() as { courses: { id: string; name: string }[] };
-        return body.courses.find((course) => course.name === courseName)?.id;
-      })());
-      expect(id, 'Identifikator novog kolegija.').toBeDefined();
       const now = Date.now();
-      const created = await postFromBrowser(holder.page, `/api/v1/institution/courses/${id}/assignments`, {
+      const created = await postFromBrowser(holder.page, `/api/v1/institution/courses/${courseId}/assignments`, {
         requestKey: randomUUID(), title: assignmentTitle, instructions: 'Izmišljene upute za provjeru toka INT-05.',
         workType: 'seminar_paper', opensAt: new Date(now).toISOString(), dueAt: new Date(now + 30 * 864e5).toISOString(),
         aiPolicy: 'partially_allowed', aiPurposes: ['proofreading'], evidenceProfile: 'basic', importAllowed: false,
