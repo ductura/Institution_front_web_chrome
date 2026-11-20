@@ -72,11 +72,41 @@ export type MigrationOperations = {
     success: { status: 200; body: { "readAt": string }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_assignment_id" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "conflict" | "unavailable";
   };
+  // SRV-27 / SRV-1108 (Institution_server API 1.35.0), added for WEB-1113.
+  "teacher.assignment-overview.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "students": ({ "studentId": string; "givenName": string | null; "familyName": string | null; "groupName": string | null; "submitted": boolean; "requestedMinute": string | null; "afterDeadline": boolean | null; "evidenceRecord": "continuous" | "with_gaps" | null })[] }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "unavailable";
+  };
+  "teacher.deadline-extensions.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "extensions": ({ "id": string; "scope": "one" | "all"; "studentId": string | null; "previousDueAt": string; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" | null; "createdBy": string; "createdAt": string })[] }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.deadline-extension.post": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: { "scope": "one"; "studentId": string; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" } | { "scope": "all"; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" };
+    success: { status: 201; body: { "extension": { "id": string; "scope": "one" | "all"; "studentId": string | null; "previousDueAt": string; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" | null; "createdBy": string; "createdAt": string }; "existingSubmissionsUnchanged": boolean }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
+  };
   "student.text-check-config.get": {
     params: { "assignmentId": string };
     query: undefined;
     body: undefined;
     success: { status: 200; body: { "enabledCheckIds": (string)[]; "lektaProfileId": string | null }; headers: {  } };
     errorCode: "invalid_assignment_id" | "unauthorized" | "not_found" | "unavailable";
+  };
+  // SRV-22 (Institution_server d1a30f2, API 1.37.0).
+  "student.assignment-requirements.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "wordRange": { "min": number; "max": number | null } | { "min": null; "max": number } | null }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
   };
 };

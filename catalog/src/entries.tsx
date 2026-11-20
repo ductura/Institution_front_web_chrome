@@ -1,8 +1,8 @@
 import {
-  Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
+  AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
   Icon, ICON_NAMES, KeyValueList, PanelTabs, Popover, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
   Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
-  type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
+  type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
 
@@ -438,7 +438,30 @@ export const ENTRIES = {
     puno: () => <DatePickerExample value="2026-11-05" />,
     onemogućeno: () => <DatePickerExample value="2026-11-05" disabled />,
   },
+  AppointmentCalendar: {
+    prazno: () => <AppointmentCalendarExample value="" appointments={[]} />,
+    učitavanje: () => <p>Termini se učitavaju…</p>,
+    greška: () => <p role="alert">Termini se nisu učitali.</p>,
+    puno: () => <AppointmentCalendarExample value="2026-11-20T12:00" appointments={APPOINTMENTS} />,
+    onemogućeno: () => <AppointmentCalendarExample value="2026-11-20T12:00" appointments={APPOINTMENTS} disabled />,
+  },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
+
+// WEB-1107: appointment calendar (invented moments only).
+const APPOINTMENT_LABELS: AppointmentCalendarLabels = {
+  calendar: "Kalendar termina", previousMonth: "Prethodni mjesec", nextMonth: "Sljedeći mjesec",
+  months: ["siječanj", "veljača", "ožujak", "travanj", "svibanj", "lipanj", "srpanj", "kolovoz", "rujan", "listopad", "studeni", "prosinac"],
+  weekdays: ["pon", "uto", "sri", "čet", "pet", "sub", "ned"], times: "Vrijeme", proposed: "predloženo", confirmed: "potvrđeno",
+  chooseDay: "Odaberite dan", selected: (date, time) => `Odabrano: ${date} u ${time}`,
+};
+const APPOINTMENTS: Appointment[] = [
+  { id: "t1", at: "2026-11-20T12:00", status: "proposed" },
+  { id: "t2", at: "2026-11-20T14:00", status: "confirmed" },
+];
+function AppointmentCalendarExample({ value: initial, appointments, disabled }: { value: string; appointments: Appointment[]; disabled?: boolean }) {
+  const [value, setValue] = useState(initial);
+  return <AppointmentCalendar appointments={appointments} value={value} onSelect={setValue} labels={APPOINTMENT_LABELS} today="2026-11-20" disabled={disabled} />;
+}
 
 // UI-8A: comment thread and date picker (invented text only).
 const THREAD_LABELS: CommentThreadLabels = {
