@@ -248,9 +248,10 @@ test("course creation reports a failed write and confirms only after the API res
   await expect(confirmed).toHaveCount(0);
   await page.unroute(ADMIN_COURSES);
 
-  const respond = Promise.withResolvers<void>();
+  let releaseResponse!: () => void;
+  const responseGate = new Promise<void>((resolve) => { releaseResponse = resolve; });
   await page.route(ADMIN_COURSES, async (route) => {
-    await respond.promise;
+    await responseGate;
     await route.fulfill({ status: 200, json: {
       id: "00000000-0000-4000-8000-000000000002",
       groups: [],
@@ -268,7 +269,7 @@ test("course creation reports a failed write and confirms only after the API res
     await expect(page.getByRole("button", { name: "Izrađuje se…" })).toBeDisabled();
     await expect(confirmed).toHaveCount(0);
   } finally {
-    respond.resolve();
+    releaseResponse();
   }
   await expect(confirmed).toBeVisible();
   await expect(page.getByText("Kolegij nema seminarskih grupa.", { exact: true })).toBeVisible();
