@@ -18,6 +18,7 @@ import { useEffect, useState, type ComponentProps, type ReactNode } from "react"
 
 import { signInHref } from "@/client/api";
 import { openWork, type OpenOutcome } from "@/client/evidence-ingest";
+import { useOnline } from "@/client/online-status";
 import type { SessionMark } from "@/client/session-marks";
 import SessionObserver from "@/components/shell/SessionObserver";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
@@ -25,11 +26,16 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import EditorPage, { SheetNote } from "./EditorPage";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
-import { LocalDocumentProvider, LocalEditor } from "./LocalDocument";
-import RevisionPanel from "./RevisionPanel";
-import { EditorPanelLayout } from "./SidePanels";
+import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalSaveRead, useLocalSavingOnDevice } from "./LocalDocument";
+import { EditorHelpDialogs, useEditorHelp, type EditorHelpView } from "./help/EditorHelp";
+import { EditorHelpMenu } from "./help/EditorHelpMenu";
+import { EditorNotices } from "./help/EditorNotices";
+import helpStyles from "./help/EditorHelp.module.css";
 import StatusBar from "./StatusBar";
 import StatusBarLive from "./StatusBarLive";
+import RevisionPanel from "./RevisionPanel";
+import { EditorPanelLayout } from "./SidePanels";
+import { TriggerPopover } from "./triggers/TriggerPopover";
 
 export type OpenRead =
   | { readonly kind: "opening" }
@@ -122,18 +128,39 @@ export default function EditorPageWork({
     <>
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
-        <EditorPanelLayout
-          title={title}
-          header={topBar ?? <p>{course} / {title}</p>}
-          tools={<EditorToolbar />}
-          status={<StatusBarLive evidence length={length} />}
-          rightSections={{
-            work: <RevisionPanel documentId={read.documentId} assignmentId={assignmentId} session={read.session} />,
-          }}
-        >
-          <LocalEditor />
-        </EditorPanelLayout>
+        <WorkSurface course={course} title={title} topBar={topBar} length={length}
+          assignmentId={assignmentId} documentId={read.documentId} session={read.session} />
       </LocalDocumentProvider>
     </>
+  );
+}
+
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, session }: {
+  course: string;
+  title: string;
+  topBar?: ReactNode;
+  length?: ComponentProps<typeof StatusBar>["length"];
+  assignmentId: string;
+  documentId: string;
+  session: SessionMark;
+}) {
+  const editor = useLocalEditor();
+  const { phase } = useLocalSaveRead();
+  const savingLocally = useLocalSavingOnDevice();
+  const online = useOnline();
+  const help = useEditorHelp();
+  const [view, setView] = useState<EditorHelpView | null>(null);
+  return (
+    <EditorPanelLayout title={title} header={topBar ?? <p>{course} / {title}</p>}
+      tools={<div className={helpStyles.toolbar}><EditorToolbar /><EditorHelpMenu onSelect={setView} /></div>}
+      status={<StatusBarLive evidence length={length} />}
+      rightSections={{ work: <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} /> }}>
+      <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
+      <LocalEditor />
+      <TriggerPopover editor={editor} />
+      <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help}
+        fresh={phase === "ready" && editor?.isEmpty}
+        notice={{ course, title, length: length?.range ?? undefined, instructions: null }} />
+    </EditorPanelLayout>
   );
 }

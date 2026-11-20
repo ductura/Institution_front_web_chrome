@@ -113,6 +113,7 @@ type Writable = {
   isDestroyed: boolean;
   isEditable: boolean;
   isActive: (name: string) => boolean;
+  state: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   getText: () => string;
   chain: () => any; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
@@ -143,7 +144,26 @@ export function insertHole(editor: Writable | null): boolean {
 /** Selection into a quote, or the quote back into a paragraph; false when already so. */
 export function convertBlock(editor: Writable | null, to: "quote" | "paragraph"): boolean {
   if (!writable(editor) || editor.isActive("quote") === (to === "quote")) return false;
-  editor.chain().focus().toggleNode("quote", "paragraph").run();
+  // E§3.3 toQuote: a part of a paragraph becomes a quote of its own; the prose around it stays.
+  const { $from, $to, empty } = editor.state.selection;
+  const { paragraph, quote } = editor.state.schema.nodes;
+  const partial = to === "quote" && !empty && $from.sameParent($to) && $from.parent.type === paragraph
+    && ($from.parentOffset > 0 || $to.parentOffset < $from.parent.content.size);
+  if (!partial) {
+    editor.chain().focus().toggleNode("quote", "paragraph").run();
+    return true;
+  }
+  editor.chain().focus().command(({ tr }: { tr: any }) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    const parent = $from.parent;
+    const at = $from.before();
+    const part = (from: number, end: number, type: any) => (end > from ? [type.create(parent.attrs, parent.content.cut(from, end))] : []); // eslint-disable-line @typescript-eslint/no-explicit-any
+    tr.replaceWith(at, $from.after(), [
+      ...part(0, $from.parentOffset, paragraph),
+      quote.create(null, parent.content.cut($from.parentOffset, $to.parentOffset)),
+      ...part($to.parentOffset, parent.content.size, paragraph),
+    ]);
+    return true;
+  }).run();
   return true;
 }
 
