@@ -75,7 +75,7 @@ test("teacher opens the live text, replay, signed receipt and consultations unde
   await page.getByRole("link", { name: t.receipt.title }).click();
   await expect(page).toHaveURL(`${work}/predaja`);
   await expect(page.getByText("Iva Izmišljena")).toBeVisible();
-  await expect(page.getByText("Predano", { exact: true })).toBeVisible();
+  await expect(page.getByText(/\bPredano\b/)).toBeVisible();
   await page.getByRole("link", { name: t.receipt.summary }).click();
   await expect(page).toHaveURL(`${work}#sazetak-procesa`);
   await page.getByRole("link", { name: consultationMessages.title, exact: true }).click();
@@ -104,14 +104,14 @@ test("access and receipt errors show a retry and recover after a fresh read", as
     ? route.fulfill({ status: 503, json: { error: "unavailable" } }) : route.fallback());
   await page.goto(`${work}/predaja`);
   await expect(page.getByRole("main").getByRole("alert")).toHaveText("Pristup radu trenutačno nije moguće provjeriti.");
-  await expect(page.getByText("Predano", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/\bPredano\b/)).toHaveCount(0);
   allow();
   await page.getByRole("button", { name: t.teacherLiveWork.retry }).click();
 
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(t.receipt.error);
   failReceipt = false;
   await page.getByRole("link", { name: t.receipt.retry }).click();
-  await expect(page.getByText("Predano", { exact: true })).toBeVisible();
+  await expect(page.getByText(/\bPredano\b/)).toBeVisible();
 });
 
 test("the anchored comment is shown after the server confirms and returns it", async ({ page }) => {
