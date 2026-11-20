@@ -81,7 +81,6 @@ function workPeriod(items: readonly MinuteSpan[]): MinuteSpan | null {
 }
 
 function editingMinutes(items: readonly MinuteSpan[], gaps: readonly Gap[]): number | null {
-  if (items.length === 0) return null;
   const boundaries: { time: number; sessions: number; gaps: number }[] = [];
   for (const item of items) {
     const start = zagrebEpochMs(item.from);
@@ -150,7 +149,7 @@ function part(name: string, heading: string, ...children: ReactNode[]): ReactNod
 export function ProcessSummaryView({ summary, details }: ProcessSummaryViewProps) {
   const { sessions, pastes, gaps } = summary;
   const period = workPeriod(sessions.items);
-  const minutes = details?.activeEditingMinutes ?? editingMinutes(sessions.items, gaps.items);
+  const minutes = period === null ? null : details?.activeEditingMinutes ?? editingMinutes(sessions.items, gaps.items);
   const transfers = details?.keyEvents.filter(({ kind }) => kind === "ai-transfer");
   const sessionThreshold = `${t.sessions.threshold} ${count(sessions.breakAboveMinutes, t.units.minutesGenitive)}`;
   const listedAbove = `${t.pastes.listedThreshold} ${count(pastes.listedAboveCharacters, t.units.charactersGenitive)}`;

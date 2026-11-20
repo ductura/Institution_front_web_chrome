@@ -180,7 +180,9 @@ describe("ProcessSummaryView: Europe/Zagreb times", () => {
     expect(markup).toContain("0 min");
     expect(markup).toContain(`${overview.assistant.transfer} · 14. listopada 2026. od 18:00 do 18:01`);
     expect(markup).not.toContain("11:00");
-    expect(render(EMPTY, { details: { activeEditingMinutes: 0, keyEvents: [] } })).toContain(overview.assistant.none);
+    const empty = render(EMPTY, { details: { activeEditingMinutes: 0, keyEvents: [] } });
+    expect(empty).toContain(overview.assistant.none);
+    expect(empty).toContain(overview.editingDuration.unavailable);
     expect(render(EMPTY)).not.toContain(overview.assistant.none);
   });
 
