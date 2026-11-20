@@ -7,6 +7,7 @@ const COMPONENTS = [
   "Button", "TextField", "SaveState", "Card", "Icon", "Dialog", "ToastRegion", "Checkbox", "Select", "TextArea", "Tag", "Skeleton", "Details",
   "ErrorScreen", "RouteLoading",
 ];
+const ADDITIONAL_COMPONENTS = ["DataTable", "Fingerprint", "KeyValueList", "StateTag", "Steps"];
 // The screens of src/components (DAN-753): on the shell only, one under another.
 // PanelTabs (WEB-06) is a part of the shell's panel: on the shell only, like the screens.
 const SCREENS = ["AppShell", "PanelTabs", "StudentHome", "MyAssignments", "EmptyHome", "OutlinePanel", "TeacherCourses", "MentoredWorks"];
@@ -69,35 +70,36 @@ for (const theme of THEMES) {
     test("shows every component in all five states, on the shell and on the white sheet", async ({ page }) => {
       const foreign = await open(page, theme, 1440);
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-      for (const name of COMPONENTS) {
-        const section = page.getByRole("region", { name });
+      for (const name of [...COMPONENTS, ...ADDITIONAL_COMPONENTS]) {
+        const section = page.getByRole("region", { name, exact: true });
         await expect(section.locator(".sheet[data-sheet-theme=light]")).toHaveCount(1);
-        for (const state of CATALOG_STATES) await expect(section.getByText(state, { exact: true })).toHaveCount(2);
+        await expect(section.locator(":scope > div > dl > div > dt")).toHaveText([...CATALOG_STATES, ...CATALOG_STATES]);
       }
       for (const name of SCREENS) {
-        const section = page.getByRole("region", { name });
+        const section = page.getByRole("region", { name, exact: true });
         await expect(section.locator(".sheet")).toHaveCount(0);
-        for (const state of CATALOG_STATES) await expect(section.getByText(state, { exact: true })).toHaveCount(1);
+        await expect(section.locator(":scope > div > dl > div > dt")).toHaveText([...CATALOG_STATES]);
       }
       await expect(page.getByText(/^Spremljeno$/)).toHaveCount(0);
       expect(foreign).toEqual([]);
     });
 
-    test("has no WCAG 2.2 AA violations (axe)", async ({ page }) => {
-      // 400 px is the width of the left panel's acceptance (DAN-977); the page is checked whole.
-      for (const width of [1440, 400, 360]) {
+    // 400 px is the width of the left panel's acceptance (DAN-977); the page is checked whole.
+    for (const width of [1440, 400, 360]) {
+      test(`has no WCAG 2.2 AA violations at ${width} px (axe)`, async ({ page }) => {
+        test.setTimeout(60_000);
         await open(page, theme, width);
         const result = await new AxeBuilder({ page })
           .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
         expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
-      }
-    });
+      });
+    }
 
     for (const width of WIDTHS) {
       test(`matches its baselines at ${width} px`, async ({ page }) => {
         await open(page, theme, width);
         for (const name of [...COMPONENTS, ...SCREENS]) {
-          await expect.soft(page.getByRole("region", { name })).toHaveScreenshot(`${name}-${theme}-${width}.png`);
+          await expect.soft(page.getByRole("region", { name, exact: true })).toHaveScreenshot(`${name}-${theme}-${width}.png`);
         }
       });
     }

@@ -14,7 +14,7 @@
  * Nothing here sends text by itself.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 
 import { signInHref } from "@/client/api";
 import { openWork, type OpenOutcome } from "@/client/evidence-ingest";
@@ -87,7 +87,19 @@ function Note({ read, here }: { read: Exclude<OpenRead, { kind: "ready" }>; here
   return <SheetNote>{t.workspace.openError}</SheetNote>;
 }
 
-export default function EditorPageWork({ assignmentId, course, title }: { assignmentId: string; course: string; title: string }) {
+export default function EditorPageWork({
+  assignmentId,
+  course,
+  title,
+  topBar,
+  length,
+}: {
+  assignmentId: string;
+  course: string;
+  title: string;
+  topBar?: ReactNode;
+  length?: ComponentProps<typeof StatusBar>["length"];
+}) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
     let live = true;
@@ -99,7 +111,7 @@ export default function EditorPageWork({ assignmentId, course, title }: { assign
 
   if (read.kind !== "ready") {
     return (
-      <EditorPage course={course} title={title} status={<StatusBar save={null} />}>
+      <EditorPage course={course} title={title} topBar={topBar} status={<StatusBar save={null} length={length} />}>
         <Note read={read} here={`/rad/${assignmentId}`} />
       </EditorPage>
     );
@@ -108,7 +120,13 @@ export default function EditorPageWork({ assignmentId, course, title }: { assign
     <>
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
-        <EditorPage course={course} title={title} toolbar={<EditorToolbar />} status={<StatusBarLive evidence />}>
+        <EditorPage
+          course={course}
+          title={title}
+          topBar={topBar}
+          toolbar={<EditorToolbar />}
+          status={<StatusBarLive evidence length={length} />}
+        >
           <LocalEditor />
         </EditorPage>
       </LocalDocumentProvider>

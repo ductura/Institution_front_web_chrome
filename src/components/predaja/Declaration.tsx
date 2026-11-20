@@ -96,7 +96,7 @@ export function DeclarationView({ recorded, confirmed, onConfirm, onNext, onBack
       {recorded.kind === "error" && <Button tone="quiet" onClick={onRetry}>{t.retry}</Button>}
       <Card title={t.declared}>
         <Tag>{t.declaredTag}</Tag>
-        <p>{t.statement}</p>
+        <p>{recorded.kind === "ready" ? t.statement : t.statementWithoutRecord}</p>
         <Checkbox label={t.confirm} hint={t.keptHere} checked={confirmed}
           onChange={(event) => onConfirm(event.currentTarget.checked)} />
       </Card>
@@ -114,7 +114,8 @@ export type DeclarationProps = {
   readonly recorded: RecordedRead;
 };
 
-export function readConfirmed(key: string): boolean {
+export function readConfirmed(key: string | null): boolean {
+  if (key === null) return false;
   try {
     return window.sessionStorage.getItem(key) === "1";
   } catch {
@@ -122,7 +123,8 @@ export function readConfirmed(key: string): boolean {
   }
 }
 
-export function writeConfirmed(key: string, confirmed: boolean): void {
+export function writeConfirmed(key: string | null, confirmed: boolean): void {
+  if (key === null) return;
   try {
     if (confirmed) window.sessionStorage.setItem(key, "1");
     else window.sessionStorage.removeItem(key);
@@ -131,10 +133,7 @@ export function writeConfirmed(key: string, confirmed: boolean): void {
   }
 }
 
-/**
- * The sign-in this tab is under: the `sessionTag` of the session route
- * (WEB-14c), new at every sign-in. Null while it is read or when it cannot be.
- */
+/** The current sign-in's session tag, shared by steps 2 and 3. */
 export function useSessionTag(): string | null {
   const [tag, setTag] = useState<string | null>(null);
   useEffect(() => {
@@ -145,27 +144,23 @@ export function useSessionTag(): string | null {
   return tag;
 }
 
-/**
- * The step with its state: never ticked in advance, kept for this sign-in
- * when the student comes back from step 3, and handed to step 3 in the
- * address so that refused storage does not lose it.
- */
+/** Keep the confirmation for this sign-in and hand it to step 3 even when storage is refused. */
 export default function Declaration({ assignmentId, recorded }: DeclarationProps) {
   const router = useRouter();
   const tag = useSessionTag();
   const key = tag === null ? null : confirmationKey(tag, assignmentId);
   const [confirmed, setConfirmed] = useState(false);
   // Read after the first render, so the server's markup (unticked) matches.
-  useEffect(() => { if (key !== null && readConfirmed(key)) setConfirmed(true); }, [key]);
+  useEffect(() => setConfirmed(readConfirmed(key)), [key]);
   return (
     <DeclarationView
       recorded={recorded}
       confirmed={confirmed}
       onConfirm={(next) => {
         setConfirmed(next);
-        if (key !== null) writeConfirmed(key, next);
+        writeConfirmed(key, next);
       }}
-      onNext={() => router.push(stepHref(assignmentId, "pregled", tag ?? undefined))}
+      onNext={() => router.push(stepHref(assignmentId, "pregled", confirmed ? tag ?? undefined : undefined))}
       onBack={() => router.push(stepHref(assignmentId, "tekst"))}
       onRetry={() => router.refresh()}
     />
