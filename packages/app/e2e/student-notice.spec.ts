@@ -80,8 +80,12 @@ test("renders the notice, waits for both writes and restores the confirmation on
 test("a 401 from the notice sends the student to AAI@EduHr with the current base", async ({ page }) => {
   await studentSession(page);
   await page.route(API, (route) => route.fulfill({ status: 401, json: { code: "unauthorized" } }));
-  await page.route("**/api/v1/auth/login**", (route) => route.fulfill({ body: "Lažni AAI@EduHr" }));
+  await page.route("**/api/v1/auth/login**", (route) => route.fulfill({
+    contentType: "text/html; charset=utf-8",
+    body: '<!doctype html><html lang="hr"><title>AAI@EduHr</title><p>Lažni AAI@EduHr</p></html>',
+  }));
   await page.goto(`/app/chrome${PATH}`);
+  await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
   await expect(page.getByText("Lažni AAI@EduHr")).toBeVisible();
   expect(new URL(page.url()).searchParams.get("returnTo")).toBe(`/app/chrome${PATH}`);
 });
