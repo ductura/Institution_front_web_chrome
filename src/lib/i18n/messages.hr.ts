@@ -58,6 +58,11 @@ export const editorPanelLayoutsHr = {
   chapterOutline: "Nacrt poglavlja",
   noParagraphs: "Poglavlje još nema odlomaka.",
   backToContext: "‹ Uz tekst",
+  focus: "Način fokusa",
+  exitFocus: "Izađi iz načina fokusa",
+  focusNotice: "Način fokusa. Esc ili Ctrl+. za izlaz.",
+  notices: "Obavijesti",
+  close: "Zatvori",
 } as const;
 
 /** The product name on screen (D-124): one value, read through `app.name`. */

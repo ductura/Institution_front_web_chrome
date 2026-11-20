@@ -19,7 +19,10 @@ export function PanelSettings({ side, value, onChange }: {
 
   return <>
     <Button tone="quiet" aria-haspopup="dialog" aria-label={title} onClick={() => setOpen(true)}>
-      {side === "left" ? title : <span aria-hidden="true">⚙</span>}
+      {side === "left" ? title : <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+        <path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" />
+      </svg>}
     </Button>
     {open && <div {...{ onCancel: (event: SyntheticEvent) => event.stopPropagation() }}
       onKeyDown={(event) => { if (event.defaultPrevented) event.stopPropagation(); }}>

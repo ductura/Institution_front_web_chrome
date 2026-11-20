@@ -28,7 +28,8 @@ function ChapterCards({ outline, go }: { outline: Outline; go: (heading: Numbere
   const chapterIndex = headings.findIndex((heading) => headingKey(heading) === open);
   const chapter = headings[chapterIndex];
   const firstChapter = headings.findIndex(({ level }) => level === 2);
-  const active = outline.current && (headings.findLast(({ level, pos }) => level === 2 && pos <= outline.current!.pos) ?? outline.current);
+  const { current } = outline;
+  const active = current && (headings.findLast(({ level, pos }) => level === 2 && pos <= current.pos) ?? current);
 
   useLayoutEffect(() => {
     if (open !== null) back.current?.focus();
@@ -83,10 +84,9 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
     onJump();
     requestAnimationFrame(() => { if (!editor.isDestroyed) editor.view.focus(); });
   };
-  const content = Object.entries(t.leftSections).flatMap(([key, label]) => {
-    const section = sections[key as keyof LeftSections];
-    return section == null ? [] : [{ id: key, label, content: section }];
-  });
+  const content = Object.entries(t.leftSections).map(([key, label]) => ({
+    id: key, label, content: sections[key as keyof LeftSections] ?? <p className="rail-empty">{t.emptyGroup}</p>,
+  }));
   const outline = data.headings.length ? <nav aria-label={messagesHr.outline.label}>
     <ol className="outline">
       {data.headings.map((heading) => <li key={headingKey(heading)} data-level={heading.level} className="outline__item">
