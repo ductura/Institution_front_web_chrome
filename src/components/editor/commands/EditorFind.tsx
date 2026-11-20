@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEditorState, type Editor } from "@tiptap/react";
-import { Button, FindBar, Select, TextField, stepHit } from "@ductura/ui";
+import { FindBar, stepHit } from "@ductura/ui";
 
 import { replaceAllTransaction, replaceMatchTransaction } from "@/editor";
 import { isSearchableText, MAX_SEARCH_TEXT_LENGTH } from "@/domain/text/find-literal";
@@ -72,21 +72,17 @@ export function EditorFind({ editor, onClose, openCount }: { editor: Editor; onC
   return (
     <div ref={root} className={styles.find}>
       <FindBar query={query} onQueryChange={(value) => { setQuery(value); setIndex(0); setCount(null); }}
-        current={current} total={total} onNext={() => step(1)} onPrevious={() => step(-1)} onClose={onClose} labels={labels} />
-      <div className={styles.findOptions}>
-        <Select label={t.findScope} options={scopes} value={scope} onChange={(event) => {
-          setScope(event.target.value as FindScope);
-          setIndex(0);
-          setCount(null);
-        }} />
-        {state.editable ? <>
-          <TextField label={t.replacement} value={replacement} maxLength={MAX_SEARCH_TEXT_LENGTH}
-            onChange={(event) => { setReplacement(event.target.value); setCount(null); }} />
-          <Button tone="quiet" disabled={!canReplace} onClick={() => replace(false)}>{t.replace}</Button>
-          <Button tone="quiet" disabled={!canReplace || result?.overLimit} onClick={() => replace(true)}>{t.replaceAll}</Button>
-        </> : null}
-        <span role="status">{result?.overLimit ? t.tooManyMatches : count === null ? "" : t.replaced(count)}</span>
-      </div>
+        current={current} total={total} onNext={() => step(1)} onPrevious={() => step(-1)} onClose={onClose} labels={labels}
+        scope={{ label: t.findScope, options: scopes, value: scope, onChange: (value) => {
+          setScope(value as FindScope); setIndex(0); setCount(null);
+        } }}
+        replacement={state.editable ? {
+          value: replacement, label: t.replacement, placeholder: `${t.replace}…`, maxLength: MAX_SEARCH_TEXT_LENGTH,
+          replace: t.replace, all: t.replaceAll, disabled: !canReplace, allDisabled: result?.overLimit,
+          onChange: (value) => { setReplacement(value); setCount(null); },
+          onReplace: () => replace(false), onReplaceAll: () => replace(true),
+        } : undefined}
+        message={result?.overLimit ? t.tooManyMatches : count === null ? "" : t.replaced(count)} />
     </div>
   );
 }

@@ -29,6 +29,26 @@ export type FindBarProps = {
   labels: FindBarLabels;
   /** The field takes the focus when the bar mounts (Ctrl+F). */
   autoFocus?: boolean;
+  scope?: {
+    label: string;
+    value: string;
+    options: readonly { value: string; label: string }[];
+    onChange: (value: string) => void;
+  };
+  replacement?: {
+    value: string;
+    label: string;
+    placeholder: string;
+    maxLength?: number;
+    replace: string;
+    all: string;
+    disabled?: boolean;
+    allDisabled?: boolean;
+    onChange: (value: string) => void;
+    onReplace: () => void;
+    onReplaceAll: () => void;
+  };
+  message?: string;
 };
 
 /**
@@ -36,7 +56,8 @@ export type FindBarProps = {
  * The page owns the document: it searches, moves the hit and shows it; the bar only asks.
  * Enter = next, Shift+Enter = previous (in the field), Escape = close (anywhere in the bar).
  */
-export function FindBar({ query, onQueryChange, current, total, onNext, onPrevious, onClose, labels, autoFocus = true }: FindBarProps) {
+export function FindBar({ query, onQueryChange, current, total, onNext, onPrevious, onClose, labels,
+  autoFocus = true, scope, replacement, message }: FindBarProps) {
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (autoFocus) input.current?.select();
@@ -68,9 +89,22 @@ export function FindBar({ query, onQueryChange, current, total, onNext, onPrevio
         spellCheck={false}
         onChange={(event: ChangeEvent<HTMLInputElement>) => onQueryChange(event.target.value)}
       />
+      {replacement ? <input type="text" className={styles.input} aria-label={replacement.label}
+        placeholder={replacement.placeholder} maxLength={replacement.maxLength} value={replacement.value}
+        onChange={(event) => replacement.onChange(event.target.value)} /> : null}
+      {scope ? <select className={styles.scope} aria-label={scope.label} value={scope.value}
+        onChange={(event) => scope.onChange(event.target.value)}>
+        {scope.options.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+      </select> : null}
       <button type="button" className={styles.button} onClick={onPrevious} disabled={total <= 0} aria-label={labels.previous} title={labels.previous}>↑</button>
       <button type="button" className={styles.button} onClick={onNext} disabled={total <= 0} aria-label={labels.next} title={labels.next}>↓</button>
+      {replacement ? <>
+        <button type="button" className={styles.action} onClick={replacement.onReplace} disabled={replacement.disabled}>{replacement.replace}</button>
+        <button type="button" className={styles.action} onClick={replacement.onReplaceAll}
+          disabled={replacement.disabled || replacement.allDisabled}>{replacement.all}</button>
+      </> : null}
       <span className={styles.count} role="status" aria-live="polite">{text}</span>
+      {message !== undefined ? <span className={styles.message} role="status">{message}</span> : null}
       <span className={styles.grow} />
       <button type="button" className={styles.button} onClick={onClose} aria-label={labels.close} title={labels.close}>✕</button>
     </div>
