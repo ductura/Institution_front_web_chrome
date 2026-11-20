@@ -8,12 +8,14 @@ import { messagesHr } from "../../lib/i18n/messages.hr";
 import { zagrebEpochMs } from "../../lib/i18n/zagreb";
 
 import styles from "./ProcessSummaryView.module.css";
+import { overviewHr as overview } from "./ProcessSummaryView.messages.hr";
 import { zagrebParts } from "./zagreb-time";
 
 const t = messagesHr.summary;
 
 export type { ProcessSummaryV1 } from "../../client/process-summary";
 type MinuteSpan = ProcessSummaryV1["sessions"]["items"][number];
+type Gap = ProcessSummaryV1["gaps"]["items"][number];
 
 /**
  * The process summary (F-10, PRODUCT §7), drawn the same way for everyone who
@@ -30,8 +32,8 @@ type MinuteSpan = ProcessSummaryV1["sessions"]["items"][number];
  *
  * Written with `createElement`, not JSX: the unit tests render it with
  * `renderToStaticMarkup`, and the test transform keeps JSX as written
- * (`tsconfig.json` has `jsx: preserve` for Next.js). All text comes from
- * `messages.hr.ts`, which the forbidden-terms scan reads.
+ * (`tsconfig.json` has `jsx: preserve` for Next.js). Text comes from the
+ * Croatian catalogues and is checked with the forbidden-terms dictionary.
  */
 export type ProcessSummaryViewProps = {
   readonly summary: ProcessSummaryV1;
@@ -71,20 +73,39 @@ function workPeriod(items: readonly MinuteSpan[]): string | null {
   return from === to ? from : `${from} – ${to}`;
 }
 
-function editingDuration(items: readonly MinuteSpan[]): string | null {
+function editingDuration(items: readonly MinuteSpan[], gaps: readonly Gap[]): string | null {
   if (items.length === 0) return null;
-  let totalMs = 0;
-  for (const { from, to } of items) {
-    const start = zagrebEpochMs(from);
-    const end = zagrebEpochMs(to);
+  const boundaries: { time: number; sessions: number; gaps: number }[] = [];
+  for (const item of items) {
+    const start = zagrebEpochMs(item.from);
+    const end = zagrebEpochMs(item.to);
     if (start === null || end === null || end < start) return null;
-    totalMs += end - start;
+    boundaries.push({ time: start, sessions: 1, gaps: 0 }, { time: end, sessions: -1, gaps: 0 });
+  }
+  for (const gap of gaps) {
+    const start = zagrebEpochMs(gap.previousEndedAt);
+    const end = zagrebEpochMs(gap.nextStartedAt);
+    if (start === null || end === null || end < start) return null;
+    boundaries.push({ time: start, sessions: 0, gaps: 1 }, { time: end, sessions: 0, gaps: -1 });
+  }
+
+  // An overlap with any recorded gap contributes no time, even if a gap is
+  // inside a single session or overlaps another gap.
+  let previous = boundaries[0]?.time ?? 0;
+  let totalMs = 0;
+  let activeSessions = 0;
+  let activeGaps = 0;
+  for (const boundary of boundaries.sort((a, b) => a.time - b.time)) {
+    if (activeGaps === 0) totalMs += activeSessions * (boundary.time - previous);
+    previous = boundary.time;
+    activeSessions += boundary.sessions;
+    activeGaps += boundary.gaps;
   }
   const minutes = Math.round(totalMs / 60_000);
   const hours = Math.floor(minutes / 60);
   return hours === 0
-    ? `${minutes} ${t.units.minuteShort}`
-    : `${hours} ${t.units.hourShort} ${minutes % 60} ${t.units.minuteShort}`;
+    ? `${minutes} ${overview.minuteShort}`
+    : `${hours} ${overview.hourShort} ${minutes % 60} ${overview.minuteShort}`;
 }
 
 function evidenceKind(kind: keyof typeof t.evidenceKinds): ReactNode {
@@ -119,7 +140,7 @@ function part(name: string, heading: string, ...children: ReactNode[]): ReactNod
 export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
   const { sessions, pastes, gaps } = summary;
   const period = workPeriod(sessions.items);
-  const duration = editingDuration(sessions.items);
+  const duration = editingDuration(sessions.items, gaps.items);
   const sessionThreshold = `${t.sessions.threshold} ${count(sessions.breakAboveMinutes, t.units.minutesGenitive)}`;
   const listedAbove = `${t.pastes.listedThreshold} ${count(pastes.listedAboveCharacters, t.units.charactersGenitive)}`;
 
@@ -134,9 +155,9 @@ export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
     ),
     part(
       "work-period",
-      t.workPeriod.heading,
+      overview.workPeriod.heading,
       period === null
-        ? h("p", { className: styles.empty }, t.workPeriod.unavailable)
+        ? h("p", { className: styles.empty }, overview.workPeriod.unavailable)
         : h("p", { className: styles.fact }, period, " · ", evidenceKind(sessions.evidenceKind)),
     ),
     part(
@@ -154,26 +175,29 @@ export function ProcessSummaryView({ summary }: ProcessSummaryViewProps) {
       sessions.items.length === 0
         ? h("p", { className: styles.empty }, t.sessions.none)
         : h(Details, {
-            summary: t.sessions.list,
+            summary: overview.sessionList,
             className: styles.sessionList,
             children: list(sessions.items.map((span) => [`${minuteSpanText(span)} `, evidenceKind(sessions.evidenceKind)])),
           }),
     ),
     part(
       "editing-duration",
-      t.editingDuration.heading,
+      overview.editingDuration.heading,
       duration === null
-        ? h("p", { className: styles.empty }, t.editingDuration.unavailable)
+        ? h("p", { className: styles.empty }, overview.editingDuration.unavailable)
         : h(
             "p",
             { className: styles.fact, "data-number": "editing-duration" },
-            label(t.editingDuration.method),
+            label(overview.editingDuration.method),
             ` ${duration} `,
             threshold(sessionThreshold),
             " ",
             evidenceKind(sessions.evidenceKind),
           ),
-      h("p", { className: styles.explain }, t.editingDuration.note),
+      duration !== null && gaps.items.length > 0
+        ? h("p", { className: styles.explain }, overview.editingDuration.gapNote)
+        : null,
+      h("p", { className: styles.explain }, overview.editingDuration.note),
     ),
     part(
       "pastes",

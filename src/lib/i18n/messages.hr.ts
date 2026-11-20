@@ -1505,22 +1505,11 @@ export const hr = {
       complete: "Zapis je cjelovit",
       has_gaps: "Zapis ima praznine (vidi popis)",
     },
-    workPeriod: {
-      heading: "Razdoblje rada",
-      unavailable: "Razdoblje rada nije dostupno.",
-    },
     sessions: {
       heading: "Sesije pisanja",
       count: "Broj sesija",
       threshold: "prag: nova sesija počinje nakon stanke dulje od",
       none: "Nema zabilježenih sesija.",
-      list: "Popis sesija",
-    },
-    editingDuration: {
-      heading: "Aktivno vrijeme uređivanja",
-      method: "Zbroj trajanja sesija prema prikazanim vremenima",
-      unavailable: "Trajanje uređivanja nije dostupno.",
-      note: "Vrijeme uređivanja nije mjera truda ni vremena razmišljanja.",
     },
     pastes: {
       heading: "Lijepljenja",
@@ -1540,8 +1529,6 @@ export const hr = {
     },
     // Forms after a number: nominative, and genitive after "od".
     units: {
-      hourShort: "h",
-      minuteShort: "min",
       minutesGenitive: { one: "minute", few: "minute", many: "minuta" },
       characters: { one: "znak", few: "znaka", many: "znakova" },
       charactersGenitive: { one: "znaka", few: "znaka", many: "znakova" },

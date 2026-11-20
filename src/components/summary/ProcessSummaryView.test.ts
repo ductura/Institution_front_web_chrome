@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
 import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
@@ -8,8 +5,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { ProcessSummaryV1 } from "./ProcessSummaryView";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { extractUiText, isUiTextModule } from "../../../scripts/forbidden-terms/scan";
+import { unreadableCharacters } from "../../../scripts/forbidden-terms/characters";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
+import { overviewHr as overview } from "./ProcessSummaryView.messages.hr";
 import { ProcessSummaryView } from "./ProcessSummaryView";
 import { zagrebParts } from "./zagreb-time";
 
@@ -149,15 +147,29 @@ describe("ProcessSummaryView: Europe/Zagreb times", () => {
     expect(textOf(view)).toContain("14. listopada 2026. – 26. listopada 2026.");
     expect(numbered(view, "editing-duration")[0]).toContain("2 h 43 min");
     expect(numbered(view, "editing-duration")[0]).toContain(`${t.sessions.threshold} 30 minuta`);
-    expect(textOf(view)).toContain(t.editingDuration.note);
+    expect(textOf(view)).toContain(overview.editingDuration.note);
+  });
+
+  it("deducts overlapping gaps inside a session only once", () => {
+    const view = tree(summaryWith({
+      gaps: {
+        evidenceKind: "observed",
+        items: [
+          { previousEndedAt: "2026-10-14T18:10:00.000Z", nextStartedAt: "2026-10-14T18:25:00.000Z" },
+          { previousEndedAt: "2026-10-14T18:20:00.000Z", nextStartedAt: "2026-10-14T18:30:00.000Z" },
+        ],
+      },
+    }));
+    expect(numbered(view, "editing-duration")[0]).toContain("2 h 23 min");
+    expect(textOf(view)).toContain(overview.editingDuration.gapNote);
   });
 
   it("makes recorded sessions expandable and shows explicit empty messages when there are none", () => {
     expect(render(summaryWith())).toMatch(/<details[^>]*><summary[^>]*>Popis sesija<\/summary>/);
     const empty = render(EMPTY);
     expect(empty).not.toContain("<details");
-    expect(empty).toContain(t.workPeriod.unavailable);
-    expect(empty).toContain(t.editingDuration.unavailable);
+    expect(empty).toContain(overview.workPeriod.unavailable);
+    expect(empty).toContain(overview.editingDuration.unavailable);
   });
 
   it("writes summer and winter times in Zagreb, across the October change", () => {
@@ -297,19 +309,23 @@ describe("ProcessSummaryView: interface vocabulary", () => {
       const text = textOf(tree(summary));
       expect(findForbiddenTerms(text)).toEqual([]);
     }
-    for (const text of Object.values(t).flatMap(function leaves(value: unknown): string[] {
+    for (const text of [t, overview].flatMap(function leaves(value: unknown): string[] {
       return typeof value === "string" ? [value] : Object.values(value as object).flatMap(leaves);
     })) {
       expect(findForbiddenTerms(text), text).toEqual([]);
     }
   });
 
-  it("keeps its text where the forbidden-terms scan reads it", () => {
-    const catalogue = "src/lib/i18n/messages.hr.ts";
-    expect(isUiTextModule(catalogue)).toBe(true);
-    const read = extractUiText(catalogue, readFileSync(path.resolve(catalogue), "utf8"), "catalogue").map((piece) => piece.text);
-    for (const text of [t.title, t.sameForEveryone, t.gaps.explanation, t.pastes.origins.not_observed, t.recordState.has_gaps]) {
-      expect(read).toContain(text);
+  it("renders the checked Croatian catalogue text, including the disclosure label", () => {
+    const markup = render(summaryWith());
+    const fragments = [
+      t.title, t.sameForEveryone, t.gaps.explanation, t.pastes.origins.not_observed,
+      t.recordState.has_gaps, overview.sessionList, overview.editingDuration.note,
+    ];
+    for (const text of fragments) {
+      expect(markup).toContain(text);
+      expect(unreadableCharacters(text)).toEqual([]);
+      expect(findForbiddenTerms(text)).toEqual([]);
     }
   });
 });
