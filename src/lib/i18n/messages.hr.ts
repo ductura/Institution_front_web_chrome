@@ -616,12 +616,6 @@ export const hr = {
   // the route's (year, name; assignments by due time) and nothing reorders it.
   // DAN-313 (A-01): counts only, for the administrator's own institution;
   // never a person, a course name or an activity time.
-  institutionHost: {
-    overview: "Pregled ustanove trenutačno nije dostupan.",
-    users: "Popis korisnika i uloga trenutačno nije dostupan.",
-    courses: "Popis kolegija i akademskih godina trenutačno nije dostupan.",
-    rules: "Prikaz pravila fakulteta trenutačno nije dostupan.",
-  },
   institutionOverview: {
     title: "Pregled ustanove",
     lead: "Brojke vrijede samo za vašu ustanovu i računaju se pri otvaranju stranice. Pojedine osobe i kolegiji ovdje se ne prikazuju.",
@@ -1839,7 +1833,7 @@ export const hr = {
       holder: "Identifikator nositelja",
       holderHint: "Upišite identifikator nastavnika s potvrđenom ulogom u svojoj ustanovi.",
       groups: "Seminarske grupe",
-      groupsHint: "Jedna grupa po retku, najviše 20. Može ostati prazno.",
+      groupsHint: "Pri izradi kolegija ostavite ovo polje prazno. Nositelj može dodati grupe naknadno.",
       submit: "Izradi kolegij",
       busy: "Izrađuje se…",
       nameRequired: "Upišite naziv kolegija.",
@@ -1853,7 +1847,7 @@ export const hr = {
       createdNoGroups: "Kolegij nema seminarskih grupa.",
       another: "Izradi još jedan kolegij",
       conflict: "Kolegij s tim nazivom u toj akademskoj godini već postoji.",
-      invalid: "Server nije prihvatio podatke. Provjerite nositelja: mora biti nastavnik ove ustanove s potvrđenom ulogom.",
+      invalid: "Poslužitelj nije prihvatio podatke. Provjerite ima li nositelj potvrđenu nastavničku ulogu u vašoj ustanovi i ostavite grupe praznima.",
       forbidden: "Kolegij može izraditi samo administrator ustanove.",
       signedOut: "Sesija je završila. Prijavite se ponovno pa izradite kolegij.",
       unavailable: "Kolegij trenutačno nije moguće izraditi. Pokušajte ponovno.",

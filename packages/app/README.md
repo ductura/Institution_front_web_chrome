@@ -41,8 +41,8 @@ Spojeni ekrani:
 - student: S01 i S02 (`student.assignments.get`);
 - student: upis kodom na `upis/` i korak do obavijesti na `upis/kolegij/[courseId]/` (`student.enrollments.post`, `student.assignments.get`; HOST-S3);
 - nastavnik: „Moji kolegiji” (`teacher.courses.get`) i „Radovi uz mentora” (`teacher.mentorships.get`). Na 401 vodi na prijavu, na 403 traži nastavnički račun, a na ostalo javlja grešku i nudi „Pokušaj ponovno”.
-- administrator: „Novi kolegij” na `ustanova/kolegiji/` (HOST-A1, obrazac iz WEB-20). Potvrda izrade prikazuje se nakon uspješnog odgovora API-ja.
+- administrator: „Novi kolegij” na `ustanova/kolegiji/` (HOST-A1, obrazac iz WEB-20). Poslužitelj prima izradu s potvrđenim nositeljem i praznim popisom grupa. Potvrda izrade prikazuje se nakon uspješnog odgovora API-ja.
 
 Ostale stranice zasad imaju naslov i napomenu da prikaz još nije spojen na poslužitelj ustanove. Ductusove API rute (`src/app/api/**`) ne prenose se ovamo: `/api/v1` je Institution_server. Ductusova početna `/` je ovdje preloader.
 
-SRV nastavak za HOST-A1 treba izložiti čitanja nad postojećim `readInstitutionOverview`, `readTeacherRoles`, `readAcademicYears` i `readInstitutionCourses` te `readFacultyRules`. `institution.course-groups.get` traži identifikator pojedinog kolegija. Za A-03 treba čitanje akademskih godina i popisa kolegija ustanove s nastavnim timovima, grupama i brojem upisanih. A-02 treba popis kandidata, potvrđenih nastavnika i nastavnika za pregled prije spajanja potvrde i opoziva uloga.
+SRV treba izložiti čitanja nad postojećim `readInstitutionOverview`, `readTeacherRoles`, `readAcademicYears` i `readInstitutionCourses` te `readFacultyRules`. `institution.course-groups.get` traži identifikator pojedinog kolegija. Za A-03 treba čitanje akademskih godina i popisa kolegija ustanove s nastavnim timovima, grupama i brojem upisanih. A-02 treba popis kandidata, potvrđenih nastavnika i nastavnika za pregled prije spajanja potvrde i opoziva uloga. [SRV zadatak za HOST-A1](https://github.com/danielrisavi77-create/Ductus/issues/2051#issuecomment-7050231059)
