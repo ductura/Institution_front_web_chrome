@@ -141,6 +141,14 @@ describe("the summary follows the text", () => {
     expect(before.conclusion).toBe("Analiza je pokazala da H1 vrijedi. Druga rečenica je ovdje.");
   });
 
+  it("counts each block in one row only, so rows add up to the work", () => {
+    const doc = reviewDocOf([h("Rad"), p("Dvije riječi.", "a", 0), h("Dio", 2), p("Dvije riječi.", "b", 1)]);
+    const digest = digestOf(doc, []);
+    expect(digest.rows.map((r) => [r.words, r.citations])).toEqual([[2, 0], [2, 1]]);
+    expect(digest.rows.reduce((n, r) => n + r.words, 0)).toBe(digest.words);
+    expect(digest.rows.reduce((n, r) => n + r.citations, 0)).toBe(digest.citations);
+  });
+
   it("changes when the text changes", () => {
     const edited = reviewDocOf([h("Uvod"), p("Kratko.", "u1"), h("Zaključak"), p("Nema više.", "z1")]);
     const after = digestOf(edited, runChecks(edited, null));

@@ -29,8 +29,9 @@ const HYPOTHESIS = /(?<![\p{L}\d])H\d(?![\p{L}\d])/gu;
 const CONCLUSION = /^zaklju[čc]ak|zaklju[čc]n[aeio]/iu;
 
 export function digestOf(doc: ReviewDoc, open: readonly Finding[]): Digest {
-  const rows: DigestRow[] = doc.chapters.map((chapter) => {
-    const own = doc.blocks.slice(chapter.block + 1, chapter.end);
+  const rows: DigestRow[] = doc.chapters.map((chapter, i) => {
+    // Only the blocks up to the next heading of any level: subchapters have rows of their own.
+    const own = doc.blocks.slice(chapter.block + 1, doc.chapters[i + 1]?.block ?? doc.blocks.length);
     return {
       number: chapter.number, title: chapter.title,
       words: own.reduce((sum, block) => sum + wordCount(block.text), 0),
