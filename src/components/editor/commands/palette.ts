@@ -29,7 +29,7 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
       !state.editable || editor.state.selection.empty),
     action("hole", t.toolbar.insertItems.hole, edit(() => insertHole(editor)), undefined, !state.editable),
     action("chars", t.toolbar.specialChar, openChars, "„ ” … ° ×", !state.editable || !openChars),
-    action("copy", t.toolbar.exportItems.copy, () => { void copyText(editor); }),
+    action("copy", text.copyWork, () => { void copyText(editor); }),
     ...(["cite", "newSource", "table", "image", "footnote", "xref", "phrase"] as const)
       .map((key) => action(key, t.toolbar.insertItems[key])),
     action("comment", text.comment),

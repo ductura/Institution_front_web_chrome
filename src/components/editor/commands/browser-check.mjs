@@ -39,9 +39,10 @@ try {
   page.on("console", (message) => {
     if (message.type() === "error") process.stderr.write(`${message.text()}\n`);
   });
-  const checkAxe = async () => {
+  const violations = [];
+  const checkAxe = async (surface) => {
     const report = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-    expect(report.violations.map(({ id, nodes }) => ({ id, targets: nodes.map(({ target }) => target) }))).toEqual([]);
+    violations.push(...report.violations.map(({ id, nodes }) => ({ surface, id, targets: nodes.map(({ target }) => target) })));
   };
   await page.goto(new URL("/commands-test", server.resolvedUrls.local[0]).href);
   const editor = page.getByRole("textbox", { name: "Tekst rada" });
@@ -52,21 +53,21 @@ try {
   await page.keyboard.press("Control+k");
   const palette = page.getByRole("dialog", { name: "Naredbe" });
   await expect(palette).toBeVisible();
-  await checkAxe();
+  await checkAxe("paleta");
   await palette.getByRole("combobox").fill("Podebljano");
   await page.keyboard.press("Enter");
   await expect(editor.locator("strong")).toHaveText("Maslina i maslina");
 
   await page.keyboard.press("Control+/");
   await expect(page.getByRole("dialog", { name: "Prečaci" })).toBeVisible();
-  await checkAxe();
+  await checkAxe("prečaci");
   await page.keyboard.press("Escape");
   await expect(editor).toBeFocused();
 
   await page.keyboard.press("Shift+F10");
   const menu = page.getByRole("menu", { name: "Izbornik teksta" });
   await expect(menu.getByRole("menuitem", { name: /Podebljano/ })).toBeFocused();
-  await checkAxe();
+  await checkAxe("izbornik teksta");
   await page.keyboard.press("Escape");
   await expect(editor).toBeFocused();
 
@@ -77,7 +78,7 @@ try {
   await expect(page.getByText("1 od 2")).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(page.getByText("2 od 2")).toBeVisible();
-  await checkAxe();
+  await checkAxe("traka za traženje");
   await page.getByRole("textbox", { name: "Zamijeni s" }).fill("smokva");
   await page.getByRole("button", { name: "Sve", exact: true }).click();
   await expect(editor).toContainText("smokva i smokva");
@@ -85,6 +86,7 @@ try {
   await expect(editor).toBeFocused();
   await page.keyboard.press("Control+z");
   await expect(editor).toContainText("Maslina i maslina");
+  expect(violations).toEqual([]);
   process.stdout.write("Editor commands: Chromium and axe passed.\n");
 } finally {
   await browser?.close();
