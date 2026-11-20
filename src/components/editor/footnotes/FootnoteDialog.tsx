@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Dialog, TextArea } from "@ductura/ui";
 
+import { footnoteText } from "./footnote-text";
 import { footnoteMessages as t } from "./messages.hr";
 
 type Footnote = { readonly number: number; readonly text: string };
@@ -23,6 +24,7 @@ export function FootnoteDialog(props: FootnoteDialogProps) {
   const [error, setError] = useState<string>();
   const canWrite = props.mode !== "read";
   const showField = canWrite && editing;
+  const prepared = showField ? footnoteText(text) : null;
 
   function finish(applied: boolean) {
     if (applied) props.onClose();
@@ -34,8 +36,13 @@ export function FootnoteDialog(props: FootnoteDialogProps) {
       actions={<>
         <Button tone="quiet" onClick={props.onClose}>{showField ? t.cancel : t.close}</Button>
         {showField &&
-          <Button disabled={!text.trim()} onClick={() => finish(props.onSave(text.trim()))}>
-            {props.mode === "insert" ? t.insert : t.save}
+          <Button disabled={prepared === null || (props.mode === "insert" && prepared === "")}
+            onClick={() => {
+              if (prepared === null) return;
+              if (prepared !== "") finish(props.onSave(prepared));
+              else if (props.mode === "edit") finish(props.onRemove());
+            }}>
+            {props.mode === "insert" ? t.insert : prepared === "" ? t.remove : t.save}
           </Button>}
         {props.mode === "edit" && !showField && <>
           <Button tone="quiet" onClick={() => finish(props.onRemove())}>{t.remove}</Button>
@@ -43,7 +50,7 @@ export function FootnoteDialog(props: FootnoteDialogProps) {
         </>}
       </>}>
       {showField
-        ? <TextArea autoFocus label={t.text} hint={t.hint} value={text}
+        ? <TextArea autoFocus label={t.text} hint={t.hint} error={prepared === null ? t.invalidText : undefined} value={text}
             onChange={(event) => { setText(event.target.value); setError(undefined); }} />
         : <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{note?.text || t.empty}</p>}
     </Dialog>

@@ -2,36 +2,34 @@
 
 import { useState } from "react";
 import { Button, Dialog, Select } from "@ductura/ui";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 
+import { numberedHeadings, type NumberedHeading } from "@/editor/chapter-numbers";
 import { crossReferenceMessages as t } from "./messages.hr";
 
-type TargetKind = "heading" | "table" | "figure";
-export type CrossReference = { readonly kind: TargetKind; readonly id: string };
-export type CrossReferenceTarget = CrossReference & { readonly number: string; readonly title: string };
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 type CrossReferenceDialogProps = {
-  /** Targets projected from the current document, in reading order. */
-  targets: readonly CrossReferenceTarget[];
+  document: ProseMirrorNode;
   onClose: () => void;
 } & (
-  | { mode: "insert"; onInsert: (reference: CrossReference) => boolean }
-  | { mode: "read"; reference: CrossReference; onFollow: (reference: CrossReference) => void; onRemove?: () => boolean }
+  | { mode: "insert"; onInsert: (targetId: string) => boolean }
+  | { mode: "read"; targetId: string; onFollow: (targetId: string) => void; onRemove?: () => boolean }
 );
 
-function keyOf({ kind, id }: CrossReference): string {
-  return `${kind}:${id}`;
+function labelOf(target: NumberedHeading): string {
+  return `${t.heading} ${target.number} ${target.title}`.trimEnd();
 }
 
-function labelOf(target: CrossReferenceTarget): string {
-  return `${t[target.kind]} ${target.number} ${target.title}`.trimEnd();
-}
-
-/** Uses the current target list, so moving a target changes its label, not its identity. */
+/** Uses the current headings to resolve the target id and the displayed number. */
 export function CrossReferenceDialog(props: CrossReferenceDialogProps) {
   const [selection, setSelection] = useState("");
   const [error, setError] = useState<string>();
-  const selectedKey = props.mode === "insert" ? selection : keyOf(props.reference);
-  const target = props.targets.find((candidate) => keyOf(candidate) === selectedKey);
+  const selectedId = props.mode === "insert" ? selection : props.targetId;
+  const targets = numberedHeadings(props.document).filter(
+    (heading): heading is NumberedHeading & { id: string } => heading.id !== null && UUID_V4.test(heading.id),
+  );
+  const target = targets.find((candidate) => candidate.id === selectedId);
   const remove = props.mode === "read" ? props.onRemove : undefined;
 
   function finish(applied: boolean) {
@@ -44,19 +42,19 @@ export function CrossReferenceDialog(props: CrossReferenceDialogProps) {
       <Button tone="quiet" onClick={props.onClose}>{t.close}</Button>
       {props.mode === "insert"
         ? <Button disabled={!target} onClick={() => {
-            if (target) finish(props.onInsert({ kind: target.kind, id: target.id }));
+            if (target) finish(props.onInsert(target.id));
           }}>{t.insert}</Button>
         : <>
             {remove && <Button tone="quiet" onClick={() => finish(remove())}>{t.remove}</Button>}
-            {target && <Button onClick={() => props.onFollow(props.reference)}>{t.follow}</Button>}
+            {target && <Button onClick={() => props.onFollow(target.id)}>{t.follow}</Button>}
           </>}
     </>}>
       {props.mode === "read"
         ? <p>{target ? labelOf(target) : t.missing}</p>
-        : props.targets.length === 0
+        : targets.length === 0
           ? <p>{t.empty}</p>
-          : <Select label={t.target} placeholder={t.choose} hint={t.hint} value={target ? selectedKey : ""}
-              options={props.targets.map((candidate) => ({ value: keyOf(candidate), label: labelOf(candidate) }))}
+          : <Select label={t.target} placeholder={t.choose} hint={t.hint} value={target ? selectedId : ""}
+              options={targets.map((candidate) => ({ value: candidate.id, label: labelOf(candidate) }))}
               onChange={(event) => { setSelection(event.target.value); setError(undefined); }} />}
     </Dialog>
   );
