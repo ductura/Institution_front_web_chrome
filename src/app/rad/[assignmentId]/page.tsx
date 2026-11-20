@@ -4,9 +4,11 @@ import { notFound, redirect } from "next/navigation";
 import { signInHref } from "../../../client/api";
 import { serverApi } from "../../../client/server";
 import EditorPage, { SheetNote } from "../../../components/editor/EditorPage";
+import { assignmentIdOf, editorWorkRead } from "../../../components/editor/EditorPage.read";
 import EditorPageWork from "../../../components/editor/EditorPageWork";
-import { assignmentIdOf, editorWorkRead, type EditorWorkRead } from "../../../components/editor/EditorPage.read";
 import StatusBar from "../../../components/editor/StatusBar";
+import WorkspaceTopBar from "../../../components/editor/WorkspaceTopBar";
+import { workspaceFrame, type WorkspaceVariant } from "../../../components/editor/workspace-variant";
 import { messagesHr as t } from "../../../lib/i18n/messages.hr";
 
 export const metadata = {
@@ -20,12 +22,12 @@ const UNREACHED = { ok: false, status: 0 } as const;
 // The session cookie is read per request: nothing of a student's work is built in.
 export const dynamic = "force-dynamic";
 
-/** What the sheet holds where no editor is mounted: no answer, a submitted or a not yet started work. */
-function sheetBody(read: Extract<EditorWorkRead, { kind: "ready" | "unavailable" }>) {
+/** What the sheet holds when no editor is mounted. */
+function sheetBody(variant: WorkspaceVariant) {
   // The server could not answer: say so, never that the assignment is not this account's.
-  if (read.kind === "unavailable") return <SheetNote>{t.student.unavailable}</SheetNote>;
-  if (read.workState === "submitted") return <SheetNote>{t.editor.submittedReadOnly}</SheetNote>;
-  if (read.workState === "not_started") return <SheetNote>{t.workspace.notStarted}</SheetNote>;
+  if (variant === "greska") return <SheetNote>{t.student.unavailable}</SheetNote>;
+  if (variant === "predano") return <SheetNote>{t.editor.submittedReadOnly}</SheetNote>;
+  if (variant === "prazno") return <SheetNote>{t.workspace.notStarted}</SheetNote>;
   return (
     <SheetNote>
       {t.workspace.documentNotEditable} <span className="soon">{t.workspace.soon}</span>
@@ -39,8 +41,14 @@ function sheetBody(read: Extract<EditorWorkRead, { kind: "ready" | "unavailable"
  * (student.assignments.get, student.assignment-work.get), with the request's
  * session cookie. Signed out → AAI@EduHr sign-in, back here; a notice not yet
  * acknowledged → the notice first; anyone else's or an unknown assignment →
- * 404. A work in progress mounts the editor (EditorPageWork); elsewhere no
- * journal is open and no save state is claimed.
+ * 404. A work in progress mounts EditorPageWork. No save state is claimed
+ * while no journal is open.
+ *
+ * WEB-23 (S: E-7) frames the sheet: the top bar with "Predaja rada" and the
+ * sheet switch, and the status bar with the scope line. A submitted work is
+ * read only. TODO(ugovor): student.submission.get and
+ * student.assignment-requirements.get are not published yet (SRV-19, SRV-22),
+ * so the frame comes from the work state alone and the range is not shown.
  */
 export default async function WorkPage({ params }: { params: Promise<{ assignmentId: string }> }) {
   const { assignmentId: raw } = await params;
@@ -59,18 +67,22 @@ export default async function WorkPage({ params }: { params: Promise<{ assignmen
   if (read.kind === "signedOut") redirect(signInHref(here));
   if (read.kind === "noticeFirst") redirect(`/zadatak/${assignmentId}`);
   if (read.kind === "notFound") notFound();
-  // A work in progress gets the editor (WEB-14b); "not_started" waits for the
-  // read of work-document-plan over /api/v1 (Ductus#2028 c.7019668458 t. 4).
-  if (read.kind === "ready" && read.workState === "in_progress") {
-    return <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} />;
+  const frame = workspaceFrame(read);
+  const title = read.kind === "ready" ? read.title : null;
+  const topBar = <WorkspaceTopBar assignmentId={assignmentId} title={title} />;
+  const length = { words: null, range: frame.range };
+  // "not_started" waits for the read of work-document-plan over /api/v1.
+  if (read.kind === "ready" && frame.variant === "puno") {
+    return <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length} />;
   }
   return (
     <EditorPage
       course={read.kind === "ready" ? read.course : null}
-      title={read.kind === "ready" ? read.title : null}
-      status={<StatusBar save={null} />}
+      title={title}
+      topBar={topBar}
+      status={<StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
     >
-      {sheetBody(read)}
+      {sheetBody(frame.variant)}
     </EditorPage>
   );
 }
