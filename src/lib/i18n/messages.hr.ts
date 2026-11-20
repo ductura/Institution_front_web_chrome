@@ -1475,12 +1475,6 @@ export const hr = {
     unavailable: "Zadatak trenutačno nije moguće učitati. Pokušajte ponovno.",
     // FE-D8 (#476 row 05): the states around the notice; the notice text itself is unchanged.
     loading: "Učitavanje zadatka…",
-    noticeRead: {
-      sending: "Bilježi se da je obavijest otvorena…",
-      read: "Na poslužitelju je zabilježeno da je obavijest otvorena.",
-      failed: "Poslužitelj nije potvrdio da je otvaranje obavijesti zabilježeno.",
-      stale: "Objavljena je nova verzija zadatka. Učitajte je i pročitajte novu obavijest.",
-    },
     notOpen: "Zadatak se otvara {time}. Obavijest potvrđujete kad se zadatak otvori.",
     pastDue: "Rok zadatka je prošao {time}.",
     // DAN-344 (Archivum S03-a, #923 c.6545848868): the header verbatim from
