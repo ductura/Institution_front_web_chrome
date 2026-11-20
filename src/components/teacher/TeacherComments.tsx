@@ -26,6 +26,7 @@ import { messagesHr } from "@/lib/i18n/messages.hr";
 import type { TextRange } from "./comment-place";
 import { consultationEntries, consultationText, printConsultation } from "./comments/consultation";
 import printStyles from "./comments/consultation.module.css";
+import { consultationHr as tp } from "./comments/messages.hr";
 import styles from "./LiveWorkView.module.css";
 
 const t = messagesHr.comments;
@@ -169,7 +170,6 @@ function ConsultationPrint({ placed, nodeOrder, current }: {
   const [error, setError] = useState<string>();
   const [status, setStatus] = useState("");
   const frameRef = useRef<HTMLIFrameElement>(null);
-  const tp = tt.consultation;
   const entries = open ? consultationEntries(placed, nodeOrder) : [];
   const copy = async () => {
     if (!current()) return;
@@ -248,7 +248,7 @@ export default function TeacherComments({
   return (
     <section className={styles.comments} aria-labelledby={titleId}>
       <h2 id={titleId}>{t.title}</h2>
-      {!readOnly && (draft ? (
+      {!readOnly && outcome?.kind === "ok" && (draft ? (
         <NewComment key={`${documentId}:${draft.nodeId}:${draft.startHint}:${draft.endHint}:${draft.quote}`}
           documentId={documentId} anchor={draft} current={current}
           onDone={(created) => { onDraftDone(); if (created) onReload(); }} />

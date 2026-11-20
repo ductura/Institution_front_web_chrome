@@ -1274,16 +1274,6 @@ export const hr = {
     cancel: "Odustani",
     resolve: "Označi riješenim",
     reopen: "Ponovno otvori",
-    consultation: {
-      title: "Ispis za konzultacije",
-      empty: "Nema otvorenih komentara koje je moguće smjestiti u tekst.",
-      copy: "Kopiraj",
-      print: "Ispiši",
-      close: "Zatvori",
-      copied: "Komentari su kopirani.",
-      copyError: "Kopiranje nije uspjelo. Pokušajte ponovno.",
-      printError: "Ispis nije dostupan. Komentare možete kopirati.",
-    },
     errors: {
       signedOut: "Prijava je istekla. Prijavite se ponovno.",
       forbidden: "Ovaj račun ne može komentirati ovaj rad.",

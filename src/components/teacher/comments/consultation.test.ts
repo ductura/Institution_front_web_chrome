@@ -2,15 +2,18 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import type { NodeId } from "@/domain/document";
+
 import TeacherComments, { type PlacedThread } from "../TeacherComments";
 import { consultationEntries, consultationText } from "./consultation";
 
-const first = "acb5f2bb-8cb1-4f10-8fd0-471cf555ecc5";
-const second = "f56539c2-03f9-4efb-b3dd-ce209c68d06c";
+const first = "acb5f2bb-8cb1-4f10-8fd0-471cf555ecc5" as NodeId;
+const second = "f56539c2-03f9-4efb-b3dd-ce209c68d06c" as NodeId;
+const outside = "de41af9e-ced6-46ce-8de0-adfba7af03db" as NodeId;
 const nodeOrder = [{ id: first }, { id: second }];
 
 function placed(
-  number: number, nodeId: string, start: number, state: PlacedThread["thread"]["state"] = "open",
+  number: number, nodeId: NodeId, start: number, state: PlacedThread["thread"]["state"] = "open",
 ): PlacedThread {
   const quote = "Kućno kompostiranje";
   const end = start + quote.length;
@@ -32,7 +35,7 @@ describe("Ispis za konzultacije", () => {
     const withoutPlace = { ...placed(6, first, 0), range: null };
     const entries = consultationEntries([
       placed(1, second, 0), placed(2, first, 29), placed(3, first, 0, "answered"),
-      placed(4, first, 0, "resolved"), placed(5, "izvan-prikaza", 0), withoutPlace,
+      placed(4, first, 0, "resolved"), placed(5, outside, 0), withoutPlace,
     ], nodeOrder);
     expect(entries.map(({ id }) => id)).toEqual(["nit-3", "nit-2", "nit-1"]);
   });

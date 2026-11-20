@@ -1,9 +1,9 @@
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import type { PlacedThread } from "../TeacherComments";
+import { consultationHr as tp } from "./messages.hr";
 
 const t = messagesHr.comments;
-const tp = messagesHr.teacherComments.consultation;
 
 /** The print input consists only of shared, open threads with a place in the shown work. */
 export function consultationEntries(placed: readonly PlacedThread[], nodeOrder: readonly { id: string }[]) {
