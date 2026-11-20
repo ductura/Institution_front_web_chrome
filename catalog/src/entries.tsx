@@ -92,7 +92,7 @@ function PreviewDialogExample() {
   return <>
     <Button onClick={() => setOpen(true)}>Pregled slike</Button>
     <PreviewDialog open={open} kind="image" caption="Izmišljeni primjer" onClose={() => setOpen(false)}>
-      <img src="data:," alt="Izmišljeni dijagram kompostiranja" />
+      <svg role="img" aria-label="Izmišljeni dijagram kompostiranja" width="160" height="80" viewBox="0 0 160 80"><rect x="4" y="4" width="152" height="72" fill="none" stroke="currentColor" /></svg>
     </PreviewDialog>
   </>;
 }
