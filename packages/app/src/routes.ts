@@ -82,7 +82,7 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/novi", label: t.teacher.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/zadatak/[assignmentId]/uredi", label: t.teacher.newVersion.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik", label: t.teacher.workLanguageException.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
-  // HOST-T3: N-13 "Produljenje roka" (WEB-1113), reached from "Zbirni".
+  // HOST-T3: N-13 "Produljenje roka" (WEB-1113), reached from the overview page (N-17).
   { path: "/nastavnik/zadatak/[assignmentId]/produljenje", label: hostText.deadlineExtensions, kind: "pending", roles: ["teacher"], current: "/nastavnik/zbirni" },
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
