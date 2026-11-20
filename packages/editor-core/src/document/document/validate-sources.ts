@@ -101,8 +101,11 @@ function isAccessedDate(value: unknown): value is string {
   if (typeof value !== "string") return false;
   const match = ACCESSED_PATTERN.exec(value);
   if (!match) return false;
-  const date = new Date(Date.UTC(+match[1], +match[2] - 1, +match[3]));
-  return date.getUTCMonth() === +match[2] - 1 && date.getUTCDate() === +match[3];
+  // The pattern always captures all three groups.
+  const [, year, month, day] = match;
+  if (year === undefined || month === undefined || day === undefined) return false;
+  const date = new Date(Date.UTC(+year, +month - 1, +day));
+  return date.getUTCMonth() === +month - 1 && date.getUTCDate() === +day;
 }
 
 /**
