@@ -1,6 +1,6 @@
 // Types only: the process summary as the fast path record and the summary view
 // read it (Ductus ProcessSummaryV1). The projection that builds it stays on the
-// server; the web reads it over /api/v1. Shape taken from the readers
+// server; the web reads it through the generated client. Shape taken from the readers
 // (ProcessSummaryView, fast-path) and the demo catalogue.
 export type EvidenceKind = "observed" | "imported" | "declared";
 

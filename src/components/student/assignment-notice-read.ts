@@ -1,6 +1,6 @@
 // The server database module is not part of the web: the one thing read from
 // it is the shape of a transaction, so it is declared here until the notice is
-// read over /api/v1 (WEB-12).
+// read through the generated client (WEB-12).
 export interface ActorTransaction {
   query<R>(text: string, values?: readonly unknown[]): Promise<{ readonly rows: R[] }>;
 }
