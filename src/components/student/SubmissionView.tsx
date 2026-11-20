@@ -11,8 +11,8 @@
 import { Button, Card, Steps } from "@ductura/ui";
 import { useId, type ReactNode } from "react";
 
-import type { SubmissionRead, SubmitOutcome } from "@/client/submission";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import type { SubmissionRead, SubmitOutcome } from "../../client/submission";
+import { messagesHr } from "../../lib/i18n/messages.hr";
 
 import type { Stage } from "../predaja/stage";
 import { zagrebParts } from "../summary/zagreb-time";

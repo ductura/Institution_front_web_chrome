@@ -3,6 +3,7 @@ export { accountPlace, appHref, HOW_IT_WORKS_HREF, homeHref, navFor, type Accoun
 export { default as EmptyHome } from "./student/EmptyHome";
 export { default as MyAssignments } from "./student/MyAssignments";
 export { default as StudentHome, type StudentView } from "./student/StudentHome";
+export { SubmissionView, type SubmissionViewProps } from "./student/SubmissionView";
 export type { MyAssignment, MyAssignmentsRead, MyCourse } from "./student/my-assignments-read";
 export * from "./support/index";
 export * from "./outline/index";

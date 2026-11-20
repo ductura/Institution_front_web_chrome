@@ -15,8 +15,8 @@ import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipR
 import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
   AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments,
-  NoteDialog, OutlinePanel, StudentHome, SubmitDialog, TeacherCourses,
-  type AssignmentSubmission, type LiveWorkFrameData, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
+  NoteDialog, OutlinePanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses,
+  type AssignmentSubmission, type LiveWorkFrameData, type SubmissionViewProps, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
   type TeacherCourse,
 } from "../../src/components/index.ts";
 
@@ -406,6 +406,17 @@ const pressFirst = (box: HTMLDivElement | null) => {
   queueMicrotask(() => box.querySelector("button")?.click());
 };
 
+// Invented work on the server (WEB-26, step 4); no real student text.
+const submissionStep = (over: Partial<SubmissionViewProps>) => (
+  <SubmissionView work={{ kind: "ready", documentId: "70000000-0000-4000-8000-000000000021", revision: 4, nodes: [
+    { type: "heading", level: 1, children: [{ text: "Uvod", marks: [] }] },
+    { type: "paragraph", children: [{ text: "Izmišljena rečenica rada, ", marks: [] }, { text: "s naglaskom", marks: ["italic"] }, { text: ".", marks: [] }] },
+    { type: "bulletItem", children: [{ text: "Izmišljena prva točka", marks: [] }] },
+    { type: "bulletItem", children: [{ text: "Izmišljena druga točka", marks: [] }] },
+  ] }} stage={{ kind: "open" }} confirmed online sending={false} checking={false} next={null}
+    onOpen={nothing} onCheck={nothing} onReload={nothing} onDeclaration={nothing} onBack={nothing} {...over} />
+);
+
 export const SCREEN_ENTRIES = {
   AppShell: {
     prazno: () => <AppShell navId="bocna-navigacija-1" role={null} scope={null} crumbs={[]} ownMain>{page}</AppShell>,
@@ -544,5 +555,13 @@ export const SCREEN_ENTRIES = {
     ),
     puno: () => <SubmitDialog open modal={false} revision={4} late sending={false} onSubmit={nothing} onClose={nothing} />,
     onemogućeno: () => <SubmitDialog open modal={false} revision={4} late={false} sending onSubmit={nothing} onClose={nothing} />,
+  },
+  // WEB-26 (step 4): the work as the server holds it, sent only from here.
+  SubmissionView: {
+    prazno: () => submissionStep({ work: { kind: "empty" } }),
+    učitavanje: () => submissionStep({ work: { kind: "loading" } }),
+    greška: () => submissionStep({ work: { kind: "unavailable" } }),
+    puno: () => submissionStep({}),
+    onemogućeno: () => submissionStep({ online: false }),
   },
 } satisfies Record<string, Entry> satisfies CatalogEntries;
