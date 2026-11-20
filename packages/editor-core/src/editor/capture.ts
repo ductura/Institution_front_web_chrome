@@ -42,6 +42,7 @@ import {
 import { canonicalizeJcs, type JcsJsonValue } from "../document/forensics/jcs";
 import { sha256WebCrypto } from "../document/forensics/crypto";
 import { removesContent } from "../document/forensics/replay/edit-steps-v1-rules";
+import { removesContentV4 } from "../document/forensics/replay/edit-steps-v4-rules";
 import { academicStepFormat, mapStepAtoms, unmarkInlineAtoms, type AcademicSchemaVersion } from "../document/forensics/replay/edit-steps-versioned-browser-replayer";
 
 import { writtenSteps } from "./capture-rewrite";
@@ -49,6 +50,7 @@ import { nodeIdFixesOf } from "./identity";
 import { tiptapToCanonical } from "./interop";
 import { tiptapToCanonicalV2 } from "./interop-v2";
 import { tiptapToCanonicalV3 } from "./interop-v3";
+import { tiptapToCanonicalV4 } from "./interop-v4";
 
 /** Quiet time that closes an event, the same as the local save debounce. */
 export const EVENT_QUIET_MS = 400;
@@ -169,6 +171,22 @@ async function sourceSteps(before: readonly DocumentSource[], after: readonly Do
 }
 
 /**
+ * The cover is a document attribute, so a change of it is a `docAttr` step;
+ * the format writes it whole, with the hash of the old one (contract v4 §9,
+ * point 7). The editor holds `null` for no cover.
+ */
+async function coverStep(before: unknown, after: unknown): Promise<JcsJsonValue> {
+  const old = before === null || before === undefined ? null : canonicalizeJcs(before as JcsJsonValue);
+  const next = after === null || after === undefined ? null : canonicalizeJcs(after as JcsJsonValue);
+  if (old === next) throw new CaptureError("unsupported_step");
+  return {
+    stepType: "coverSet",
+    ...(next === null ? {} : { cover: after as JcsJsonValue }),
+    ...(old === null ? {} : { removedSha256: await sha256WebCrypto(old) }),
+  };
+}
+
+/**
  * Every step of one change as the format writes it (`writtenSteps`), applied
  * as written to the document the server's replayer will hold, which must end
  * as the editor's: otherwise the change is refused here, never sent as a
@@ -208,6 +226,13 @@ async function changeSteps(change: CapturedChange, version: CaptureVersion): Pro
   for (const step of change.steps) {
     if (nodeIdFixesOf(step) !== null) continue;
     const json = step.toJSON() as Record<string, unknown>;
+    if (version === 4 && json.stepType === "docAttr" && json.attr === "cover") {
+      steps.push(await coverStep(doc.attrs.cover, json.value));
+      const next = step.apply(doc).doc;
+      if (!next) throw new CaptureError("unsupported_step");
+      doc = next;
+      continue;
+    }
     if (version !== 1 && json.stepType === "docAttr" && json.attr === "sources" && Array.isArray(json.value)) {
       steps.push(...await sourceSteps(doc.attrs.sources as DocumentSource[], json.value as DocumentSource[]));
       const next = step.apply(doc).doc;
@@ -224,27 +249,37 @@ async function changeSteps(change: CapturedChange, version: CaptureVersion): Pro
     for (const json of written) {
       const { stepType, from, to, structure } = json;
       if (stepType === "replace" && typeof from === "number" && typeof to === "number" && from < to && structure !== true) {
-        if (removesContent(doc, from, to)) json.removedSha256 = await removedSliceSha256(doc, from, to);
+        if ((version === 4 ? removesContentV4 : removesContent)(doc, from, to)) json.removedSha256 = await removedSliceSha256(doc, from, to);
         else json.structure = true;
       }
       apply(json);
     }
   }
   if (doc.childCount !== change.after.childCount) throw new CaptureError("unsupported_step");
-  change.after.forEach((block, pos) => {
-    const id: unknown = block.attrs.nodeId;
-    const held: unknown = doc.nodeAt(pos)?.attrs.nodeId;
-    if (held === id) return;
+  // v4 holds ids on blocks at any depth (a paragraph in a box, an atom block).
+  const fixes: { pos: number; id: unknown; held: unknown }[] = [];
+  const collect = (block: PmNode, pos: number): boolean => {
+    if (block.isInline) return false;
+    const peer = doc.nodeAt(pos);
+    if (!peer || peer.type !== block.type) throw new CaptureError("unsupported_step");
+    fixes.push({ pos, id: block.attrs.nodeId, held: peer.attrs.nodeId });
+    return version === 4;
+  };
+  if (version === 4) change.after.descendants(collect);
+  else change.after.forEach((block, pos) => void collect(block, pos));
+  for (const { pos, id, held } of fixes) {
+    if (held === id) continue;
     if (held !== null || typeof id !== "string") throw new CaptureError("unsupported_step");
     apply({ stepType: "attr", pos, attr: "nodeId", value: id });
-  });
+  }
   if (!doc.eq(change.after)) throw new CaptureError("unsupported_step");
   return steps;
 }
 
 /** Hash of the canonical form of a document; a block without its own id is refused, never given one. */
 async function documentDigest(document: PmNode, version: CaptureVersion): Promise<{ canonical: string; sha256: string }> {
-  const project = version === 1 ? tiptapToCanonical : version === 2 ? tiptapToCanonicalV2 : tiptapToCanonicalV3;
+  const project =
+    version === 1 ? tiptapToCanonical : version === 2 ? tiptapToCanonicalV2 : version === 3 ? tiptapToCanonicalV3 : tiptapToCanonicalV4;
   const candidate = project(document.toJSON(), () => {
     throw new CaptureError("block_identity");
   });
