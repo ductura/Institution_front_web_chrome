@@ -166,8 +166,8 @@ test("a teacher's read answering 401 sends the browser to sign-in", async ({ pag
 test("a student's Ductus pages open at their addresses, marked as not connected yet", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
-  await page.goto("/app/chrome/rad/izm-zadatak-1/predaja");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Predaja rada");
+  await page.goto("/app/chrome/rad");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radni prostor");
   await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
   await axe(page);
 

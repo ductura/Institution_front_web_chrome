@@ -24,6 +24,7 @@ import { browserTransport, createApi, goToSignIn } from "../../../../../src/clie
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 
 import { hostText } from "../../text";
+import { nextPath } from "../../bases";
 import { useHost } from "../context";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -59,7 +60,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       if (!live) return;
       const read = editorWorkRead(assignmentId, assignments as never, work as never);
       if (read.kind === "signedOut") return goToSignIn(here);
-      if (read.kind === "noticeFirst") return router.replace(appHref(base, `/zadatak/${assignmentId}`));
+      if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const frame = workspaceFrame(read);
       const title = read.kind === "ready" ? read.title : null;
