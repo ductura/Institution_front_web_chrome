@@ -10,7 +10,7 @@ import { appHref } from "../../../../../src/components/index.ts";
 import EnrollForm from "../../../../../src/components/student/upis/EnrollForm.tsx";
 import styles from "../../../../../src/components/student/upis/Enroll.module.css";
 import { courseHref, noticeHref, readCourse, type CourseRead } from "../../../../../src/components/student/upis/course-read.ts";
-import { createApi, signInHref } from "../../../../../src/client/api.ts";
+import { createApi, leaveFor, signInHref } from "../../../../../src/client/api.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 
 import { hostText } from "../../text";
@@ -61,7 +61,7 @@ export function EnrolledCoursePage({ courseId }: { courseId: string }) {
   }, [courseId, attempt]);
   useEffect(() => {
     if (read?.kind === "assignment") go(noticeHref(read.assignmentId), true);
-    if (read?.kind === "signedOut") window.location.assign(signInHref(appHref(base, courseHref(courseId))));
+    if (read?.kind === "signedOut") leaveFor(signInHref(appHref(base, courseHref(courseId))));
     // go and base are stable for this page; the read is what moves on.
   }, [read]);
   if (read === null || read.kind === "assignment" || read.kind === "signedOut") return <p role="status">{hostText.loading}</p>;
