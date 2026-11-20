@@ -685,7 +685,7 @@ export const hr = {
   // DAN-492 (M2.6-P02, N-16), design pregled-radova-v2: only what the read gives (D-202).
   mentoredWorks: {
     title: "Radovi uz mentora",
-    lead: "Završni, diplomski i drugi radovi kojima ste mentor. Prikaz samo čita; ništa ne mijenja.",
+    lead: "Završni, diplomski i drugi radovi kojima ste mentor. Ovdje odobravate ili odbijate i zahtjeve studenata za mentorstvo.",
     listTitle: "Radovi · abecedno",
     orderNote: "Popis se ne može poredati po brojevima.",
     empty: "Nemate otvorenih mentorstava.",
@@ -699,6 +699,31 @@ export const hr = {
       in_progress: "U pisanju",
       submitted: "Predano",
     },
+  },
+  // WEB-32 (N-16): the card of mentorship requests; a note only after the server's answer (B-6).
+  mentorshipRequests: {
+    title: "Zahtjevi za mentorstvo",
+    empty: "Nema novih zahtjeva za mentorstvo.",
+    unavailable: "Zahtjevi za mentorstvo trenutačno nisu dostupni. Pokušajte ponovno.",
+    retry: "Pokušaj ponovno",
+    unnamed: "Ime nije dostupno",
+    sentOn: "Zahtjev poslan {date}",
+    approve: "Odobri",
+    approving: "Odobrava se…",
+    decline: "Odbij",
+    dialogTitle: "Odbiti zahtjev za mentorstvo?",
+    dialogLead: "Zahtjev studenta {name} nestat će s popisa.",
+    reason: "Razlog (neobvezno)",
+    reasonHint: "Najviše {max} znakova. Razlog se ne prikazuje studentu.",
+    cancel: "Odustani",
+    confirmDecline: "Odbij zahtjev",
+    declining: "Odbija se…",
+    approved: "Zahtjev je odobren. Rad je u popisu radova uz mentora.",
+    declined: "Zahtjev je odbijen.",
+    alreadyDecided: "O ovom je zahtjevu već odlučeno ili ga je student povukao.",
+    notFound: "Zahtjev više nije dostupan.",
+    invalid: "Razlog nije valjan. Skratite ga i pokušajte ponovno.",
+    unknown: "Nije poznato je li odluka zabilježena. Osvježite stranicu prije novog pokušaja.",
   },
   fastPath: {
     title: "Brz put",
@@ -2197,3 +2222,20 @@ type Widen<T> = { readonly [K in keyof T]: T[K] extends string ? string : Widen<
 export type Messages = Widen<typeof hr>;
 
 export const messagesHr: Messages = hr;
+
+/** N-04 lives in the Croatian teacher shell. */
+export const courseStudentsHr = {
+  title: "Popis studenata",
+  courseTitle: "{course}: studenti",
+  filter: "Prikaz",
+  allGroups: "Svi",
+  noName: "Ime nije dostupno",
+  noWorks: "Nema zadataka.",
+  noAssignmentTitle: "Naziv zadatka nije dostupan",
+  openSeminar: "Otvori seminarski rad",
+  loading: "Učitavanje popisa studenata…",
+  unavailable: "Popis studenata trenutačno nije dostupan.",
+  retry: "Pokušaj ponovno",
+  empty: "Još se nitko nije upisao.",
+  backToCourses: "Natrag na kolegije",
+} as const;
