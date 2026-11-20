@@ -1,0 +1,40 @@
+/* The floating object toolbar (UI-10A): a small raised bar beside a table or an image, on the tokens of this package. */
+.toolbar {
+  position: fixed;
+  z-index: 55;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--raised-rule);
+  border-radius: var(--radius);
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow: var(--lift);
+  font-size: 13px;
+}
+
+.inline {
+  position: static;
+  box-shadow: none;
+}
+
+.action {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.action:hover,
+.action[aria-pressed="true"] {
+  background: var(--raised-rule);
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}

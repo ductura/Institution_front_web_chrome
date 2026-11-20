@@ -36,3 +36,5 @@ export { useContextMenu } from "./components/context-menu/useContextMenu";
 export { type MenuEntry, type Point as MenuPoint } from "./components/context-menu/menu-logic";
 export { SearchableList, type SearchableListProps } from "./components/searchable-list/SearchableList";
 export { type SearchableListItem } from "./components/searchable-list/search";
+export { ObjectToolbar, type ObjectToolbarAction, type ObjectToolbarProps } from "./components/object-toolbar";
+export { PreviewDialog, type PreviewDialogProps, type PreviewKind } from "./components/preview-dialog";
