@@ -24,8 +24,13 @@ export function enrollError(result: EnrollResult | null): string | null {
  * that does not exist, an expired code, already enrolled (PD-5), a course
  * without an assignment (PD-6) and the enrollment, which opens the notice.
  */
-export default function EnrollForm({ signInHref }: { signInHref: string }) {
+export default function EnrollForm({ signInHref, navigate }: {
+  signInHref: string;
+  /** Where the form goes next; by default the Next router (the app host passes one that adds its base). */
+  navigate?: (href: string, replace?: boolean) => void;
+}) {
   const router = useRouter();
+  const go = navigate ?? ((href: string, replace = false) => (replace ? router.replace(href) : router.push(href)));
   const [code, setCode] = useState("");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<EnrollResult | null>(null);
@@ -40,7 +45,7 @@ export default function EnrollForm({ signInHref }: { signInHref: string }) {
     setResult(next);
     // PRODUCT §5 rule 6: the next screen is the notice of the open assignment.
     if (next.kind === "enrolled") {
-      router.replace(courseHref(next.courseId));
+      go(courseHref(next.courseId), true);
       return;
     }
     busy.current = false;
@@ -80,7 +85,7 @@ export default function EnrollForm({ signInHref }: { signInHref: string }) {
         actions={
           <>
             <Button tone="quiet" onClick={again}>{e.already.close}</Button>
-            <Button onClick={() => result && "courseId" in result && router.push(courseHref(result.courseId))}>
+            <Button onClick={() => result && "courseId" in result && go(courseHref(result.courseId))}>
               {e.already.open}
             </Button>
           </>
@@ -95,7 +100,7 @@ export default function EnrollForm({ signInHref }: { signInHref: string }) {
         actions={
           <>
             <Button tone="quiet" onClick={again}>{e.empty.close}</Button>
-            <Button onClick={() => router.push("/zadaci")}>{e.empty.assignments}</Button>
+            <Button onClick={() => go("/zadaci")}>{e.empty.assignments}</Button>
           </>
         }
       >
