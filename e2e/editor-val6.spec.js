@@ -173,7 +173,7 @@ if (process.env.DUCTURA_STOG === '1') {
       await page.keyboard.insertText(`${term} i ${term}`);
       await expect(editor).toContainText(term);
       await page.keyboard.press('Control+f');
-      const search = page.getByRole('searchbox', { name: 'Traži', exact: true });
+      const search = page.getByRole('searchbox', { name: 'Traži…', exact: true });
       await expect(search).toBeFocused();
       await search.fill(term);
       await expect(page.getByText('1 od 2', { exact: true })).toBeVisible();
@@ -182,6 +182,8 @@ if (process.env.DUCTURA_STOG === '1') {
       await search.press('Escape');
       await expect(search).toBeHidden();
       await expect(editor).toBeFocused();
+      await editor.press('Control+z');
+      await expect(editor).not.toContainText(term);
     });
 
     test('3. Naredbe, prečaci i kontekstni izbornik mišem i tipkovnicom', async ({ page, workUrl }) => {
@@ -195,17 +197,18 @@ if (process.env.DUCTURA_STOG === '1') {
       const query = palette.getByRole('combobox');
       await expect(query).toBeFocused();
       await query.fill('Prečaci');
-      await expect(palette.getByRole('option', { name: /^Prečaci/ })).toBeVisible();
+      await expect(palette.getByRole('option', { name: /^Prečaci/, selected: true })).toBeVisible();
       await query.press('Enter');
       await expect(palette).toBeHidden();
       await expect(shortcuts).toBeVisible();
       await page.keyboard.press('Escape');
-      await expect(editor).toBeFocused();
+      await expect(shortcuts).toBeHidden();
 
       await editor.press('Control+/');
       await expect(shortcuts.getByText('Shift+F10', { exact: true })).toBeVisible();
       await page.keyboard.press('Escape');
       await expect(shortcuts).toBeHidden();
+      await expect(editor).toBeFocused();
 
       await editor.press('Shift+F10');
       const item = context.getByRole('menuitem', { name: /^Posebni znak/ });
