@@ -62,7 +62,7 @@ export function PublicVerification() {
       const fragment = globalThis.location.hash;
       if (fragment === lastFragment.current) return;
       lastFragment.current = fragment;
-      if (!fragment) return;
+      if (!fragment || fragment === "#sadrzaj") return;
       const parsed = parseVerificationCode(fragment);
       setCode(parsed ?? emptyCode);
       void check(parsed);
