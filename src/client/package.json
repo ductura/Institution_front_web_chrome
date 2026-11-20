@@ -15,6 +15,7 @@
   "devDependencies": {
     "@ductura/test-fakes": "https://github.com/ductura/Institution_server/releases/download/test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz",
     "@types/node": "26.6.4",
+    "@tiptap/pm": "3.33.0",
     "@types/react": "19.3.0",
     "dexie": "4.4.7",
     "fake-indexeddb": "6.2.8",

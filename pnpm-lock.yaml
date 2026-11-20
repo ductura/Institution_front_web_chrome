@@ -260,6 +260,9 @@ importers:
       '@ductura/test-fakes':
         specifier: https://github.com/ductura/Institution_server/releases/download/test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz
         version: https://github.com/ductura/Institution_server/releases/download/test-fakes-v3.0.1/ductura-test-fakes-3.0.1.tgz
+      '@tiptap/pm':
+        specifier: 3.33.0
+        version: 3.33.0
       '@types/node':
         specifier: 26.6.4
         version: 26.6.4
