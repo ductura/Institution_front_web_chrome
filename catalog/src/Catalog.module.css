@@ -9,7 +9,14 @@
 .states.screens { grid-template-columns: minmax(0, 1fr); }
 /* The shell's fixed side bar stays inside its own cell, not the catalogue window. */
 .states.screens dd { display: block; contain: layout; border: 1px solid var(--rule); }
-.state { display: grid; gap: 8px; align-content: start; }
+.state { display: grid; gap: 8px; align-content: start; min-width: 0; }
 .state dt { color: var(--ink-3); }
-.state dd { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 0; }
+.state dd { min-width: 0; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 0; }
 .state p { margin: 0; }
+/* A flex:none strip (the find bar) may not outgrow its cell; a wide one takes a full row. */
+.state dd > * { max-width: 100%; }
+.state:has(> dd > [role=search]) { grid-column: 1 / -1; }
+/* On the white sheet the ink is dark, so shell surfaces drawn there (dialog, popover, find bar)
+   sit on the paper and its well, not on the dark --raised / --chrome of the shell (D-188). */
+.sheet dialog, .sheet [role=dialog], .sheet [role=search] { background: var(--sheet); }
+.sheet [role=search] { border-bottom-color: var(--rule); }
