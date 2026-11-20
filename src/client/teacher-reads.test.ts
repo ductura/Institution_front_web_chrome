@@ -118,6 +118,8 @@ describe("WEB-30 teacher reads (TODO(ugovor))", () => {
     expect(await readAssignmentOverview(answer(200, { rows: [row, late] }, calls), ASSIGNMENT)).toEqual({ kind: "ready", rows: [row, late] });
     expect(calls).toEqual([["teacher.assignment-overview.get", { params: { assignmentId: ASSIGNMENT } }]]);
     expect(await readAssignmentOverview(answer(200, { rows: [row, notSubmitted] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [row, notSubmitted] });
+    const leap = { ...row, requestedMinute: "2028-02-29T23:59Z" };
+    expect(await readAssignmentOverview(answer(200, { rows: [leap] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [leap] });
     const ceka = { ...row, evidenceRecord: null };
     expect(await readAssignmentOverview(answer(200, { rows: [ceka] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [ceka] });
   });
@@ -129,6 +131,9 @@ describe("WEB-30 teacher reads (TODO(ugovor))", () => {
     ["an unknown work state", { students: [{ ...student, works: [{ assignmentId: ASSIGNMENT, state: "spremljeno" }] }] }],
     ["an empty name instead of null", { students: [{ ...student, name: "" }] }],
     ["the same student twice", { students: [student, student] }],
+    ["one assignment twice with two states", {
+      students: [{ ...student, works: [{ assignmentId: ASSIGNMENT, state: "predano" }, { assignmentId: ASSIGNMENT, state: "nije_predano" }] }],
+    }],
   ])("course students with %s is nepoznato, never shown", async (_name, body) => {
     expect(await readCourseStudents(answer(200, body), "c-1")).toEqual(nepoznato);
   });
@@ -138,6 +143,11 @@ describe("WEB-30 teacher reads (TODO(ugovor))", () => {
     ["a submission id", { rows: [{ ...row, submissionId: STUDENT }] }],
     ["the text", { rows: [{ ...row, text: "izmišljeni tekst" }] }],
     ["a time with seconds", { rows: [{ ...row, requestedMinute: "2026-11-02T09:15:00Z" }] }],
+    ["a date that does not exist", { rows: [{ ...row, requestedMinute: "2026-11-31T09:15Z" }] }],
+    ["29 February of a common year", { rows: [{ ...row, requestedMinute: "2026-02-29T09:15Z" }] }],
+    ["month 13", { rows: [{ ...row, requestedMinute: "2026-13-01T09:15Z" }] }],
+    ["hour 24", { rows: [{ ...row, requestedMinute: "2026-11-02T24:00Z" }] }],
+    ["minute 60", { rows: [{ ...row, requestedMinute: "2026-11-02T09:60Z" }] }],
     ["a time on a work not submitted", { rows: [{ ...notSubmitted, requestedMinute: "2026-11-02T09:15Z" }] }],
     ["a record on a work not submitted", { rows: [{ ...notSubmitted, evidenceRecord: "continuous" }] }],
     ["after the deadline but not submitted", { rows: [{ ...notSubmitted, afterDeadline: true }] }],

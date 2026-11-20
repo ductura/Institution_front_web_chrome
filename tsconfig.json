@@ -7,6 +7,10 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
+    // WEB-41 (Ductus#2028): stated here, not only inherited from packages/ui,
+    // because pages reach the source of @ductura/editor-core, which passes it.
+    // No temporary exception (WEB-14b) may turn it off again.
+    "noUncheckedIndexedAccess": true,
     "plugins": [{ "name": "next" }],
     // Same bridge as src/components/tsconfig.json: "@/" of the code copied
     // from Ductus, editor and domain paths in @ductura/editor-core.

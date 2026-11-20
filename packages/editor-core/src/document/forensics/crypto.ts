@@ -14,7 +14,10 @@ export async function merkleRoot(leaves:readonly string[],hash:HashFn):Promise<s
  if(leaves.length===0)return hash(canonicalize({kind:"empty-merkle"}));
  let level=[...leaves];
  while(level.length>1){const next:string[]=[];for(let i=0;i<level.length;i+=2){const left=level[i],right=level[i+1]??left;next.push(await hash(canonicalize({left,right})));}level=next;}
- return level[0];
+ const [root]=level;
+ // The loop leaves exactly one node of a non-empty list of leaves.
+ if(root===undefined)throw new TypeError("merkleRoot: no root");
+ return root;
 }
 export type ProvenanceRoots={chunkRoots:readonly string[];sessionRoot:string;revisionRoot:string;projectRoot:string};
 /** @deprecated Built on the deprecated {@link merkleRoot}; no caller (DAN-302). */
