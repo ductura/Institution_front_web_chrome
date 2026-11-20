@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { Drawer } from "../drawer";
+import { isBackdropClick } from "../drawer/drawer-click";
 import { isOutside, placePopover } from "./popover-position";
 import { Popover } from "./index";
 
@@ -37,6 +38,14 @@ describe("isOutside (UI-6A)", () => {
     expect(isOutside(opener, popover, anchor)).toBe(false);
     expect(isOutside({} as Node, popover, anchor)).toBe(true);
     expect(isOutside(null, popover, anchor)).toBe(true);
+  });
+});
+
+describe("isBackdropClick (UI-6A)", () => {
+  const box = { left: 0, right: 320, top: 0, bottom: 700 };
+  it("is true on the scrim and false on the drawer's empty space", () => {
+    expect(isBackdropClick(500, 300, box)).toBe(true);
+    expect(isBackdropClick(100, 650, box)).toBe(false);
   });
 });
 

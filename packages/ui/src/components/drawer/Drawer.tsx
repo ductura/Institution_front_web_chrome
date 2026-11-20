@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, type KeyboardEvent, type MouseEvent, type Rea
 
 import { FOCUSABLE, returnTarget, trappedIndex } from "../dialog-focus";
 import styles from "./Drawer.module.css";
+import { isBackdropClick } from "./drawer-click";
 
 export type DrawerSide = "left" | "right";
 
@@ -70,8 +71,9 @@ export function Drawer({
   };
 
   // The scrim is the dialog's own backdrop: a click whose target is the dialog itself, not its content.
+  // The dialog fills the viewport's height, so its own empty space is told from the scrim by the click's coordinates.
   const onClick = (event: MouseEvent<HTMLDialogElement>) => {
-    if (modal && event.target === event.currentTarget) onClose();
+    if (modal && event.target === event.currentTarget && isBackdropClick(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect())) onClose();
   };
 
   if (!open) return null;

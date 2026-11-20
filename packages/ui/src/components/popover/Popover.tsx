@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { returnTarget } from "../dialog-focus";
 import { isOutside, placePopover } from "./popover-position";
@@ -44,23 +44,27 @@ export function Popover({ open, anchor, label, children, onClose, floating = tru
     const onPointerDown = (event: PointerEvent) => {
       if (isOutside(event.target as Node | null, ref.current, anchor.current)) onClose();
     };
+    // Escape is read on the document: opening does not move the focus in, so it may still be on the anchor.
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      returnTarget(anchor.current, (el) => el.isConnected)?.focus();
+      onClose();
+    };
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
   }, [open, anchor, onClose]);
-
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    event.stopPropagation();
-    returnTarget(anchor.current, (el) => el.isConnected)?.focus();
-    onClose();
-  };
 
   if (!open) return null;
   const style = floating ? { left: position?.x ?? 0, insetBlockStart: position?.y ?? 0, visibility: position ? undefined : ("hidden" as const) } : undefined;
   return (
     <div ref={ref} role="dialog" aria-label={label} className={floating ? styles.popover : `${styles.popover} ${styles.inline}`}
-      style={style} onKeyDown={onKeyDown}>
+      style={style}>
       {children}
     </div>
   );
