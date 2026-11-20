@@ -1,3 +1,4 @@
+.scope { --raised: var(--field); --hover: var(--well); }
 .form, .fields, .group { display: grid; gap: 10px; min-inline-size: 0; }
 .form { padding: 8px; }
 .fields { border: 0; padding: 0; margin: 0; }

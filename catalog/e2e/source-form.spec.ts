@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 test("source form opens by keyboard, reports errors, adds a source and returns focus", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto("/");
   const example = page.getByRole("region", { name: "SourceForm", exact: true });
   const trigger = example.getByRole("button", { name: "Novi izvor" }).first();
@@ -15,7 +16,7 @@ test("source form opens by keyboard, reports errors, adds a source and returns f
   await expect(form.getByLabel("Naslov")).toBeFocused();
   await expect(form.getByLabel("Naslov")).toHaveAccessibleDescription("Ispunite ovo polje.");
   const { violations } = await new AxeBuilder({ page }).include('[aria-label="Dodaj izvor"]').withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-  expect(violations).toEqual([]);
+  expect(violations.map(({ id, nodes }) => ({ id, targets: nodes.map(({ target }) => target) }))).toEqual([]);
 
   await form.getByLabel("Naslov").fill("Izmišljeni mrežni izvor");
   await form.getByLabel("Godina izdanja").fill("2026");

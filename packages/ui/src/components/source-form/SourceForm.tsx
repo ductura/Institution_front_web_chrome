@@ -119,9 +119,12 @@ function SourceFields({ anchor, floating, initial, editing, allowCite, pending, 
 }
 
 export function SourceForm({ floating = true, ...props }: SourceFormProps) {
+  if (!props.open) return null;
   return (
-    <Popover open={props.open} anchor={props.anchor} label={props.editing ? t.edit : t.add} onClose={props.onClose} floating={floating}>
-      <SourceFields {...props} floating={floating} />
-    </Popover>
+    <div className={styles.scope}>
+      <Popover open={props.open} anchor={props.anchor} label={props.editing ? t.edit : t.add} onClose={props.onClose} floating={floating}>
+        <SourceFields {...props} floating={floating} />
+      </Popover>
+    </div>
   );
 }
