@@ -6,6 +6,7 @@ import { expect, test, type Page } from "@playwright/test";
 import type ContractVectors from "../../../src/client/migration-contract-vectors.generated.json";
 import { canonicalizeJcs } from "../../editor-core/src/document/forensics/jcs";
 import { REVISION_ZERO_JCS } from "../../editor-core/src/document/document/revision-zero";
+import { mentorWorkHr } from "../../../src/components/editor/mentor/work-state/messages.hr";
 import { consultationMessages } from "../../../src/components/teacher/consultation-records/messages.hr";
 import { messagesHr as t } from "../../../src/lib/i18n/messages.hr";
 
@@ -18,6 +19,7 @@ const signed = vectors.find((v) => v.route === "teacher.submission-receipt.get"
   && "state" in v.response.body && v.response.body.state === "potvrdeno")!.response.body;
 if (!("receipt" in signed) || !signed.receipt) throw new Error("Missing signed receipt vector");
 const documentId = signed.receipt.payload.documentId;
+const workBody = vectors.find((v) => v.route === "teacher.work.get" && v.name === "submitted-work")!.response.body;
 const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "teacher-without-name")!.response.body;
 const profileBody = { ...profile, roles: ["teacher"] };
 const path = `/nastavnik/rad/${encodeURIComponent(documentId)}`;
@@ -41,6 +43,7 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
       case "/api/v1/teacher/access": return route.fulfill({ status: access,
         json: access === 200 ? { access: "allowed", scope: "a".repeat(64) }
           : { error: access === 401 ? "unauthorized" : "unavailable" } });
+      case "/api/v1/teacher/courses": return route.fulfill({ json: { courses: [] } });
       case "/api/v1/auth/login": return route.fulfill({ contentType: "text/html", body: "<p>Lažni AAI@EduHr</p>" });
       case `/api/v1/live/${documentId}`: return route.fulfill({
         contentType: "application/json", body: snapshot, headers: { etag },
@@ -51,12 +54,14 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
         replayFormat: "ductus-evidence-replay-v1", segmentCount: 0, head: null,
         from: 0, next: null, startDocument: null, segments: [], resumeDocuments: {},
       } });
-      case `/api/v1/teacher/works/${documentId}`: return route.fulfill({ json: {
-        documentId, assignmentId, studentId, studentName: "Iva Izmišljena", state: "predano", prevDocumentId: null, nextDocumentId: null,
-      } });
+      case `/api/v1/teacher/works/${documentId}`: return route.fulfill({ json: workBody });
       case receiptPath: return route.fulfill({ json: signed });
       case consultationPath: return route.fulfill({ json: { records: [] } });
-      case `/api/v1/works/${documentId}/versions`: return route.fulfill({ json: { versions: [], nextBeforeRevision: null } });
+      case `/api/v1/works/${documentId}/milestones`: return route.fulfill({ json: { milestones: [] } });
+      case `/api/v1/works/${documentId}/versions`: return route.fulfill({ json: {
+        versions: [{ kind: "submission", revision: 1, savedMinute: "2026-11-20T12:00:00.000Z", afterDeadline: false }],
+        nextBeforeRevision: null,
+      } });
       default: throw new Error(`Unexpected fake API request ${url.pathname}`);
     }
   });
@@ -68,6 +73,8 @@ test("teacher opens the live text, replay, signed receipt and consultations unde
   await page.goto(work);
   await expect(page.getByText(text)).toBeVisible();
   await expect(page.getByRole("heading", { name: t.comments.title })).toBeVisible();
+  await page.getByText(mentorWorkHr.mentor, { exact: true }).click();
+  await expect(page.getByRole("link", { name: mentorWorkHr.receipt, exact: true })).toHaveAttribute("href", `${work}/predaja`);
   await page.getByRole("link", { name: t.replay.titleTeacher }).click();
   await expect(page).toHaveURL(`${work}/reprodukcija`);
   await expect(page.getByText(t.replay.empty)).toBeVisible();

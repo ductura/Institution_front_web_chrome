@@ -7,6 +7,7 @@ import { goToSignIn } from "@/client/api";
 import { watchSessionEnd } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
 import { readTeacherWorkAccess, readTeacherWorkReceipt } from "@/client/teacher-work";
+import { ReadOnlyMentor } from "@/components/editor/mentor/work-state/ReadOnlyMentor";
 import { ReceiptPanel, studentReceiptRead, type ReceiptRead } from "@/components/predaja/ReceiptPanel";
 import ReplayView from "@/components/replay/ReplayView";
 import { appHref } from "@/components/shell/nav";
@@ -108,6 +109,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   const [draft, setDraft] = useState<TextAnchor | null>(null);
   const placed = stopped || comments.outcome?.kind !== "ok" ? [] : placeThreads(view.document, comments.outcome.threads);
   const recordState = summary.outcome?.kind === "ok" ? summary.outcome.summary.recordState : null;
+  const receiptHref = `${workHref}${VIEWS.receipt.suffix}`;
   const select = () => {
     const root = textRef.current;
     const range = root && selectedRange(root, window.getSelection());
@@ -116,18 +118,19 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
 
   return (
     <div className="page">
-      <LiveWorkFrame documentId={documentId} frame={null} recordState={stopped ? null : recordState}
+      <LiveWorkFrame documentId={documentId} frame={null} recordState={stopped ? null : recordState} mentorInAside
         text={<>
           {view.connection === "retrying" && view.document === null && <p role="alert">{workText.liveUnavailable}</p>}
           <LiveText view={view} marks={openMarks(placed)} textRef={textRef} onSelect={select} />
           {!stopped && <ul>
-            <li><a href={`${workHref}${VIEWS.receipt.suffix}`}>{VIEWS.receipt.title}</a></li>
+            <li><a href={receiptHref}>{VIEWS.receipt.title}</a></li>
             <li><a href={`${workHref}${VIEWS.replay.suffix}`}>{VIEWS.replay.title}</a></li>
             <li><a href={`${workHref}${VIEWS.consultations.suffix}`}>{VIEWS.consultations.title}</a></li>
           </ul>}
         </>}
         aside={<>
           {!stopped && <>
+            <ReadOnlyMentor documentId={documentId} role="teacher" receiptHref={receiptHref} />
             <TeacherComments documentId={documentId} outcome={comments.outcome} placed={placed}
               nodeOrder={view.document?.nodes ?? []} current={current} readOnly={view.document === null}
               draft={placeAnchor(view.document, draft) ? draft : null} onDraftDone={() => setDraft(null)}
