@@ -112,7 +112,8 @@ export type SaveResult = { readonly status: "saved"; readonly proof: SourceProof
  */
 export async function saveCapture(state: Capture, deps: SaveDeps): Promise<SaveResult> {
   const errors = fieldErrors(state);
-  if (state.picture === null || errors.page !== undefined || errors.note !== undefined) return { status: "invalid" };
+  // A PDF page still loading: the picture is the previous page's, so nothing is cut.
+  if (state.picture === null || state.pdf?.loading === true || errors.page !== undefined || errors.note !== undefined) return { status: "invalid" };
   const image = await encodeCut(state.picture, state.selection, deps.encoder);
   if (image === null) return { status: "tooLarge" };
   const note = state.note.trim();

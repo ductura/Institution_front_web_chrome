@@ -126,7 +126,7 @@ export function ProofDialog({ state, dispatch, onSave, onCancel, onPdfPage, onFi
       actions={<>
         <Button tone="quiet" onClick={() => dispatch({ type: "select", selection: null })} aria-disabled={sending || sel === null || undefined}>{t.whole}</Button>
         <Button tone="quiet" onClick={onCancel} aria-disabled={sending || undefined}>{t.cancel}</Button>
-        <Button onClick={onSave} busy={sending}>{sending ? t.saving : t.save}</Button>
+        <Button onClick={onSave} busy={sending || pdf?.loading === true}>{sending ? t.saving : t.save}</Button>
       </>}
     >
       <p className={styles.muted}>{state.sourceLabel === "" ? t.dialogIntro : `${state.sourceLabel}. ${t.dialogIntro}`}</p>

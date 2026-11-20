@@ -71,7 +71,11 @@ export function SourceProofsPanel({ sources, citations, editable, deps }: Source
     for (const id of ids === "" ? [] : ids.split(",")) if (loads[id] === undefined) load(id);
   }, [ids, load, loads]);
 
+  // Every cancel, save or new opening starts a new generation: a PDF or picture
+  // that finishes opening for an older one is closed and never reaches the dialog.
+  const genRef = useRef(0);
   const closePdf = () => {
+    genRef.current += 1;
     const pdf = pdfRef.current;
     pdfRef.current = null;
     void pdf?.close().catch(() => undefined);
@@ -85,7 +89,8 @@ export function SourceProofsPanel({ sources, citations, editable, deps }: Source
     dispatch({ type: "pdfLoading", page, count: pdf.count });
     try {
       const shown = await pdf.page(page);
-      if (pdfRef.current !== pdf) return;
+      // A later page asked for meanwhile wins.
+      if (pdfRef.current !== pdf || captureRef.current?.pdf?.page !== page) return;
       const quote = captureRef.current?.quote ?? "";
       const selection = quote.trim() === "" ? null : quoteRect(shown.runs, quote, shown.picture);
       dispatch({ type: "picture", picture: shown.picture, runs: shown.runs, pdf: { page, count: pdf.count, loading: false }, selection });
@@ -93,26 +98,29 @@ export function SourceProofsPanel({ sources, citations, editable, deps }: Source
       const scan = shown.runs.map((r) => r.str).join("").trim().length < 20;
       dispatch({ type: "notice", notice: scan ? { kind: "scan" } : judged });
     } catch {
-      dispatch({ type: "notice", notice: { kind: "pdfFailed" } });
+      if (pdfRef.current === pdf) dispatch({ type: "notice", notice: { kind: "pdfFailed" } });
     }
   }, [dispatch]);
 
   const openFile = async (pick: Choice, file: File) => {
     setPanelError("");
     closePdf();
+    const gen = genRef.current;
     if (pick.kind === "pdf") {
       if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) { setPanelError(t.pdfFailed); return; }
       setCapture({ ...startCapture(pick.sourceId, pick.label), notice: { kind: "pdfOpening" } });
       try {
         const pdf = await deps.openPdf(await file.arrayBuffer());
+        if (genRef.current !== gen) { void pdf.close().catch(() => undefined); return; }
         pdfRef.current = pdf;
         await showPdfPage(1);
       } catch {
-        dispatch({ type: "notice", notice: { kind: "pdfFailed" } });
+        if (genRef.current === gen) dispatch({ type: "notice", notice: { kind: "pdfFailed" } });
       }
       return;
     }
     const picture = await pictureFromFile(file);
+    if (genRef.current !== gen) return;
     if (picture === null) { setPanelError(t.readFailed); return; }
     const open = captureRef.current;
     if (open !== null && open.sourceId === pick.sourceId) dispatch({ type: "picture", picture });
@@ -147,7 +155,8 @@ export function SourceProofsPanel({ sources, citations, editable, deps }: Source
 
   const save = async () => {
     const draft = captureRef.current;
-    if (draft === null || draft.status === "sending") return;
+    // While a PDF page is loading the shown picture is still the previous page's.
+    if (draft === null || draft.status === "sending" || draft.pdf?.loading) return;
     dispatch({ type: "tried" });
     dispatch({ type: "status", status: "sending" });
     const result = await saveCapture(draft, { assignmentId: deps.assignmentId, upload: (_a, sourceId, d) => deps.upload(sourceId, d) });
