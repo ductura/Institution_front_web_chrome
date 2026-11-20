@@ -9,7 +9,7 @@ import { openDemoWork, signInDemoStudent } from './student';
 
 const title = 'Seminarski rad: kućno kompostiranje';
 const otherCourse = 'Izmišljeni seminar o gradskim krovovima';
-const studentName = /Lucija.*Đaković|Đaković.*Lucija/;
+const studentName = /Lucija Đaković/;
 
 async function signInTeacher(page: Page, courseTeacher: boolean) {
   await page.goto('/prijava?returnTo=%2Fnastavnik');
@@ -23,7 +23,7 @@ async function signInTeacher(page: Page, courseTeacher: boolean) {
     await page.getByLabel('Korisničko ime (neobavezno)').fill('demo-int04-nastavnik');
     await page.getByRole('button', { name: 'Prijavi se', exact: true }).click();
   }
-  await expect(page, 'Za drugog nastavnika potrebno je učitati seed-int04.sql.').toHaveURL(`${webOrigin}/nastavnik`);
+  await expect(page, courseTeacher ? 'Prijava nastavnika kolegija.' : 'Za drugog nastavnika učitaj seed-int04.sql.').toHaveURL(`${webOrigin}/nastavnik`);
   const access = await page.request.get('/api/v1/teacher/access');
   await expect(access).toBeOK();
   expect(await access.json()).toMatchObject({ access: 'allowed' });
@@ -103,7 +103,7 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       const listed = await postFromBrowser(teacherPage, '/api/v1/comments/list', { documentId });
       expect(listed.status).toBe(200);
       expect(listed.body.comments).toEqual(expect.arrayContaining([
-        expect.objectContaining({ commentId: created.body.id, authorRole: 'teacher', isOwn: true, body: comment, anchor }),
+        expect.objectContaining({ threadId: created.body.id, position: 1, authorRole: 'teacher', isOwn: true, body: comment, anchor }),
       ]));
     });
 
@@ -112,7 +112,13 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       await signInTeacher(otherPage, false);
       await expect(otherPage.getByRole('heading', { name: otherCourse, exact: true })).toBeVisible();
       await expect(otherPage.getByText(title, { exact: true })).toHaveCount(0);
-      await otherPage.goto(fastPath);
+      const [foreignList] = await Promise.all([
+        otherPage.waitForResponse((response) => response.url() === `${webOrigin}/api/v1/teacher/fast-path`
+          && response.request().method() === 'POST' && response.request().postDataJSON()?.assignmentId === assignmentId),
+        otherPage.goto(fastPath),
+      ]);
+      expect(foreignList.status()).toBe(200);
+      expect(await foreignList.json()).toEqual({ kind: 'ok', students: [] });
       await expect(otherPage.getByText(t.fastPath.empty, { exact: true })).toBeVisible();
       await expect(otherPage.getByRole('link', { name: t.fastPath.openWork, exact: true })).toHaveCount(0);
 
@@ -126,6 +132,7 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       expect(summary.status).toBe(404);
       const comments = await postFromBrowser(otherPage, '/api/v1/comments/list', { documentId });
       expect(comments.status).toBe(403);
+      expect(comments.body).toMatchObject({ code: 'forbidden' });
     });
   } finally {
     await Promise.all([teacher.close(), other.close()]);
