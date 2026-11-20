@@ -38,6 +38,8 @@ import type { SheetTheme } from "@/lib/ui/sheet-theme";
 
 import styles from "./EditorToolbar.module.css";
 import ToolbarMenu from "./ToolbarMenu";
+import { crossReferenceMessages } from "./crossref/messages.hr";
+import type { AcademicAtom } from "./footnotes/inline-atoms";
 import { workPartsMessages } from "./parts/messages.hr";
 import {
   convertBlock, copyText, glyphOf, insertChar, insertHole, MAX_COLLAPSED, pushRecent, readRecent, rovingIndex,
@@ -169,9 +171,11 @@ const THEMES: readonly { key: SheetTheme; label: string }[] = [
  * The same toolbar for any editor, e.g. the public sandbox (DAN-354), which
  * has no local document: it only runs that editor's own commands.
  */
-export default function EditorToolbarFor({ editor, onOpenWorkParts }: {
+export default function EditorToolbarFor({ editor, onOpenWorkParts, onOpenCitationSettings, onOpenAcademicAtom }: {
   editor: Editor | null;
   onOpenWorkParts?: () => void;
+  onOpenCitationSettings?: () => void;
+  onOpenAcademicAtom?: (kind: AcademicAtom) => boolean;
 }) {
   const state = useEditorState({ editor, selector: ({ editor: e }) => stateOf(e) }) ?? IDLE;
   const theme = useSheetTheme();
@@ -244,8 +248,18 @@ export default function EditorToolbarFor({ editor, onOpenWorkParts }: {
       setOpenMenu(open ? menu : null);
     },
   });
-  const insertItems = Object.entries(t.toolbar.insertItems).map(([key, label]) => item(key, label, key === "hole" && writeOk));
+  const insertItems = Object.entries(t.toolbar.insertItems).map(([key, label]) => {
+    const atom = key === "footnote" || key === "xref";
+    return item(key, key === "xref" ? crossReferenceMessages.title : label,
+      writeOk && (key === "hole" || (atom && !!onOpenAcademicAtom)));
+  });
   if (onOpenWorkParts) insertItems.push(item("workParts", workPartsMessages.title, writeOk));
+  const viewItems = THEMES.map(({ key, label }) => ({
+    key, label, role: "menuitemradio" as const, checked: theme === key,
+  }));
+  const viewActions = onOpenCitationSettings
+    ? [...viewItems, item("citationSettings", workPartsMessages.citationTitle, true)]
+    : viewItems;
   const convertItems = [
     item("toQuote", t.toolbar.convertItems.toQuote, writeOk && !state.quote),
     item("fromQuote", t.toolbar.convertItems.fromQuote, writeOk && state.quote),
@@ -361,6 +375,9 @@ export default function EditorToolbarFor({ editor, onOpenWorkParts }: {
         menuLabel={t.toolbar.insertMenu}
         items={insertItems}
         onSelect={(key) => {
+          if (key === "footnote" || key === "xref") {
+            return onOpenAcademicAtom?.(key === "footnote" ? "footnote" : "crossReference") ? "close-return" : "keep";
+          }
           if (key === "workParts" && onOpenWorkParts && editor?.isEditable && !editor.isDestroyed) {
             onOpenWorkParts();
             return "close-return";
@@ -423,7 +440,7 @@ export default function EditorToolbarFor({ editor, onOpenWorkParts }: {
         className="editor-menu--end"
         label={t.toolbar.view}
         menuLabel={t.toolbar.viewMenu}
-        groupLabel={t.toolbar.sheet}
+        groupLabel={onOpenCitationSettings ? undefined : t.toolbar.sheet}
         roving="view"
         tabIndex={stop === "view" ? 0 : -1}
         open={openMenu === "view"}
@@ -431,10 +448,12 @@ export default function EditorToolbarFor({ editor, onOpenWorkParts }: {
           setFocusKey("view");
           setOpenMenu(open ? "view" : null);
         }}
-        items={THEMES.map(({ key, label }) => ({
-          key, label, role: "menuitemradio", checked: theme === key,
-        }))}
+        items={viewActions}
         onSelect={(key) => {
+          if (key === "citationSettings") {
+            onOpenCitationSettings?.();
+            return "close-return";
+          }
           setSheetTheme(key === "light" ? "light" : "dark");
           return "close-return";
         }}

@@ -21,7 +21,7 @@
  * server mints revisions on ACK (F1-4a) and nothing here may pretend otherwise.
  */
 
-import type { CanonicalDocument, DocumentTransaction } from "../document/document";
+import type { CanonicalDocument, DocumentTransaction, VersionedDocument } from "../document/document";
 import type { AwaitingReceipt } from "./drain";
 import type { LocalSaveFailureReason, SyncState } from "./states";
 
@@ -30,14 +30,14 @@ import type { LocalSaveFailureReason, SyncState } from "./states";
  * One row per document: the journal keeps the latest snapshot, while the
  * `pending` rows carry the history that still owes the server.
  */
-export type JournalSnapshot = {
+export type JournalSnapshot<TDocument extends VersionedDocument = CanonicalDocument> = {
   documentId: string;
   /**
    * The canonical server revision this candidate was based on — NOT a
    * revision of `document` itself. Advances only when the server ACKs.
    */
   revision: number;
-  document: CanonicalDocument;
+  document: TDocument;
   /** ISO-8601 instant of the local write. */
   savedAt: string;
 };
@@ -119,10 +119,10 @@ export type EvidenceStop = "gap" | "unsupported_step" | "block_identity" | "too_
  * until the author lets it go; it blocks logout until then (owner decision
  * #476 c.6385940910).
  */
-export type SalvageCopy = {
+export type SalvageCopy<TDocument extends VersionedDocument = CanonicalDocument> = {
   id: number;
   documentId: string;
-  document: CanonicalDocument;
+  document: TDocument;
   /** The state the author left, or the stop of the recorder once nothing was owed. */
   cause: "CONFLICT" | "RECOVERY_REQUIRED" | "EVIDENCE_STOPPED";
   /** Set when the text was saved after the recorder had stopped. */
@@ -191,8 +191,8 @@ export type SyncMeta = {
  * is the kind of row the reader's documents hold: the journal keeps one kind
  * per document, and a document with evidence (`evidenceHead`) only segments.
  */
-export type JournalContents<T extends QueuedTransaction = DocumentTransaction> = {
-  snapshot: JournalSnapshot | null;
+export type JournalContents<T extends QueuedTransaction = DocumentTransaction, TDocument extends VersionedDocument = CanonicalDocument> = {
+  snapshot: JournalSnapshot<TDocument> | null;
   /** Ascending by `localSeq`. */
   pending: PendingTransaction<T>[];
   meta: SyncMeta | null;

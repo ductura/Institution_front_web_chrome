@@ -1,4 +1,5 @@
 import {
+  type EvidenceStepFormat,
   canonicalEvidenceSegment,
   isEvidenceSegment,
   type EvidenceSegment,
@@ -78,6 +79,7 @@ export type EvidencePayloadVerificationV2 =
  */
 export async function verifyCanonicalEvidencePayloadV2(
   payload: unknown,
+  format?: EvidenceStepFormat,
 ): Promise<EvidencePayloadVerificationV2> {
   let received: Uint8Array<ArrayBuffer>;
   let text: string | null;
@@ -114,10 +116,10 @@ export async function verifyCanonicalEvidencePayloadV2(
   } catch {
     return { ok: false, reason: "invalid" };
   }
-  if (!isEvidenceSegment(parsed)) {
+  if (!isEvidenceSegment(parsed, format)) {
     return { ok: false, reason: "invalid" };
   }
-  const canonical = new TextEncoder().encode(canonicalEvidenceSegment(parsed));
+  const canonical = new TextEncoder().encode(canonicalEvidenceSegment(parsed, format));
   if (!sameBytes(canonical, received)) {
     return { ok: false, reason: "invalid" };
   }
@@ -242,6 +244,7 @@ function assertChainHead(
 export async function verifyEvidenceChainV2(
   payloads: readonly unknown[],
   expectedHead: EvidenceChainHeadV2 | null,
+  format?: EvidenceStepFormat,
 ): Promise<EvidenceChainVerificationV2> {
   assertChainHead(expectedHead);
   let previousHash: string | null = null;
@@ -249,7 +252,7 @@ export async function verifyEvidenceChainV2(
   const discontinuities: EvidenceChainDiscontinuityV2[] = [];
 
   for (let index = 0; index < payloads.length; index++) {
-    const verified = await verifyCanonicalEvidencePayloadV2(payloads[index]);
+    const verified = await verifyCanonicalEvidencePayloadV2(payloads[index], format);
     if (!verified.ok) {
       return {
         ok: false,
