@@ -2,6 +2,10 @@
   "extends": "../../packages/ui/tsconfig.json",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
+    // Imports reach packages/editor-core, ported verbatim from Ductus without
+    // noUncheckedIndexedAccess (see packages/editor-core/tsconfig.json), so the
+    // setting cannot differ here without changing those files.
+    "noUncheckedIndexedAccess": false,
     // Bridge for the code copied from Ductus 0cdb0f1f, which imports through
     // the Ductus "@/" alias. Editor and domain paths point at their new place
     // in @ductura/editor-core; the rest resolves under src/. Imports with no

@@ -1,4 +1,10 @@
-import type { WithActor } from "@/server/db/with-actor";
+// The server database module is not part of the web: the one thing read from
+// it is the shape of a transaction, so it is declared here until the notice is
+// read over /api/v1 (WEB-12).
+export interface ActorTransaction {
+  query<R>(text: string, values?: readonly unknown[]): Promise<{ readonly rows: R[] }>;
+}
+export type WithActor = <T>(token: string, fn: (tx: ActorTransaction) => Promise<T>) => Promise<T>;
 
 import { AI_PURPOSES, type AiPurpose } from "@/components/teacher/assignment-create";
 
