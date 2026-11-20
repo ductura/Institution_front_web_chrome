@@ -1549,5 +1549,181 @@
       },
       "contentType": "application/json"
     }
+  },
+  {
+    "route": "work.milestones.get",
+    "name": "empty",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-a"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-etape-000000000000000000000000"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "milestones": []
+      }
+    }
+  },
+  {
+    "route": "work.milestones.get",
+    "name": "configured",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-a"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-etape-000000000000000000000000"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "milestones": [
+          {
+            "id": "00000000-0000-4000-8000-000000000103",
+            "title": "Nacrt",
+            "description": "Pošaljite nacrt na pregled.",
+            "dueAt": "2026-12-04T12:00:00.000Z",
+            "state": "open"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000104",
+            "title": "Završna inačica",
+            "description": "",
+            "dueAt": null,
+            "state": "open"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "work.milestones.patch",
+    "name": "updated",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-a",
+        "milestoneId": "00000000-0000-4000-8000-000000000103"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-etape-000000000000000000000000",
+        "content-type": "application/json",
+        "origin": "https://ductura.example.invalid"
+      },
+      "body": {
+        "dueAt": "2026-12-04T12:00:00.000Z"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "id": "00000000-0000-4000-8000-000000000103",
+        "title": "Nacrt",
+        "description": "Pošaljite nacrt na pregled.",
+        "dueAt": "2026-12-04T12:00:00.000Z",
+        "state": "open"
+      }
+    }
+  },
+  {
+    "route": "work.messages.get",
+    "name": "empty",
+    "request": {
+      "params": {
+        "documentId": "izmisljeni-rad-0001"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-poruka-00000000000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "messages": []
+      }
+    }
+  },
+  {
+    "route": "work.messages.get",
+    "name": "conversation",
+    "request": {
+      "params": {
+        "documentId": "izmisljeni-rad-0001"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-poruka-00000000000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "messages": [
+          {
+            "id": "7b6c5d4e-3f2a-4b1c-8d9e-0a1b2c3d4e01",
+            "senderRole": "student",
+            "text": "Izmišljena poruka studenta.",
+            "createdAt": "2026-11-21T09:00:00.000Z"
+          },
+          {
+            "id": "7b6c5d4e-3f2a-4b1c-8d9e-0a1b2c3d4e02",
+            "senderRole": "teacher",
+            "text": "Izmišljen odgovor nastavnika.",
+            "createdAt": "2026-11-21T09:05:00.000Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "work.messages.post",
+    "name": "created",
+    "request": {
+      "params": {
+        "documentId": "izmisljeni-rad-0001"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-poruka-00000000000000000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "text": "Izmišljena poruka studenta."
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "body": {
+        "id": "7b6c5d4e-3f2a-4b1c-8d9e-0a1b2c3d4e01",
+        "senderRole": "student",
+        "text": "Izmišljena poruka studenta.",
+        "createdAt": "2026-11-21T09:00:00.000Z"
+      }
+    }
   }
 ]

@@ -15,7 +15,7 @@
  * answer that lands after it, with every typed explanation.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { openWork } from "@/client/evidence-ingest";
 import { listRevisionRequests, respondRevisionRequest, type RevisionListOutcome } from "@/client/revision-requests";
@@ -25,6 +25,7 @@ import type { RevisionKind } from "@/domain/collaboration/revision-input";
 import { formatDateHr } from "@/lib/i18n/hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
+import { WorkMentorSections } from "./mentor/milestones/WorkMentorSections";
 import RevisionLog from "./revision/RevisionLog";
 import { MentorWorkState } from "./mentor/work-state/MentorWorkState";
 import { revisionLog } from "./revision/revision-log";
@@ -75,7 +76,7 @@ function SessionRevisionPanel({ documentId, assignmentId, session }: {
   const mountedRef = useRef(false);
   const tag = session?.tag ?? null;
   const at = session?.at ?? 0;
-  useEffect(() => {
+  useLayoutEffect(() => {
     const watch = watchSessionEnd(tag === null ? null : { tag, at }, () => setSessionEnded(true));
     watchRef.current = watch;
     return () => {
@@ -84,7 +85,7 @@ function SessionRevisionPanel({ documentId, assignmentId, session }: {
     };
   }, [tag, at]);
   // Before the load: an unmounted panel answers nothing, and what was on its way is dropped.
-  useEffect(() => {
+  useLayoutEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
@@ -169,6 +170,7 @@ function SessionRevisionPanel({ documentId, assignmentId, session }: {
       onRetry={() => void load()}
     />
     {requests.length > 0 && <RevisionLog entries={revisionLog(requests)} />}
+    {!stopped && session && <WorkMentorSections documentId={documentId} role="student" current={current} />}
     </>
   );
 }

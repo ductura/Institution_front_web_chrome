@@ -1,0 +1,17 @@
+export const workMessagesHr = {
+  heading: "Poruke",
+  count: "Poruke ({total})",
+  shown: "Prikazano zadnjih {shown} od {total} poruka.",
+  loading: "Učitavam poruke…",
+  unavailable: "Poruke trenutačno nisu dostupne.",
+  empty: "Uz ovaj rad još nema poruka.",
+  retry: "Pokušaj ponovno",
+  send: "Pošalji",
+  sending: "Šaljem…",
+  label: { student: "Poruka mentoru", teacher: "Poruka studentu" },
+  sender: { student: "Student", teacher: "Nastavnik" },
+  blank: "Upišite poruku.",
+  tooLong: "Skratite poruku na najviše 2000 znakova.",
+  rejected: "Poslužitelj je odbio poruku. Provjerite tekst.",
+  failed: "Poruka nije potvrđena. Prije ponovnog slanja osvježite rad.",
+} as const;

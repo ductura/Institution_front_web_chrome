@@ -23,7 +23,8 @@ import { useEffect, useState } from "react";
 import { browserTransport, SESSION_PATH } from "@/client/api";
 import type { SessionMark } from "@/client/session-marks";
 import { sessionTagOf } from "@/components/editor/EditorPage.scope";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { WorkMentorSections } from "@/components/editor/mentor/milestones/WorkMentorSections";
+import { editorPanelLayoutsHr, messagesHr } from "@/lib/i18n/messages.hr";
 
 import LiveText, { liveStopped, useLiveView } from "./LiveText";
 import LiveWorkFrame, { type LiveWorkFrameData } from "./LiveWorkFrame";
@@ -67,6 +68,11 @@ function LiveBody({ documentId, session, frame }: {
       aside={
         <>
           {stopped ? null : <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />}
+          {!stopped && <section aria-label={editorPanelLayoutsHr.groups.work}>
+            <h2>{editorPanelLayoutsHr.groups.work}</h2>
+            <WorkMentorSections documentId={documentId} role="teacher" current={current}
+              mayEditDue={!view.submitted && (view.document !== null || view.empty)} />
+          </section>}
           <RecordLimits />
         </>
       }
