@@ -834,48 +834,6 @@
   },
   {
     "route": "work.consultation-additions.post",
-    "name": "body-too-large",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001",
-        "recordId": "6a5b4c3d-2e1f-4a0b-9c8d-7e6f5a4b3c11"
-      }
-    },
-    "response": {
-      "status": 413,
-      "body": {
-        "error": "body_too_large",
-        "code": "body_too_large",
-        "messageKey": "errors.bodyTooLarge",
-        "status": 413,
-        "requestId": "00000000-0000-4000-8000-000000000045"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-additions.post",
-    "name": "body-timeout",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001",
-        "recordId": "6a5b4c3d-2e1f-4a0b-9c8d-7e6f5a4b3c11"
-      }
-    },
-    "response": {
-      "status": 408,
-      "body": {
-        "error": "body_timeout",
-        "code": "body_timeout",
-        "messageKey": "errors.bodyTimeout",
-        "status": 408,
-        "requestId": "00000000-0000-4000-8000-000000000046"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-additions.post",
     "name": "content-length-invalid",
     "request": {
       "params": {
@@ -918,72 +876,6 @@
         "messageKey": "errors.contentLengthMismatch",
         "status": 400,
         "requestId": "00000000-0000-4000-8000-000000000048"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-additions.post",
-    "name": "body-stream-error",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001",
-        "recordId": "6a5b4c3d-2e1f-4a0b-9c8d-7e6f5a4b3c11"
-      }
-    },
-    "response": {
-      "status": 400,
-      "body": {
-        "error": "body_stream_error",
-        "code": "body_stream_error",
-        "messageKey": "errors.bodyStreamError",
-        "status": 400,
-        "requestId": "00000000-0000-4000-8000-000000000049"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-additions.post",
-    "name": "invalid-json",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001",
-        "recordId": "6a5b4c3d-2e1f-4a0b-9c8d-7e6f5a4b3c11"
-      }
-    },
-    "response": {
-      "status": 400,
-      "body": {
-        "error": "invalid_json",
-        "code": "invalid_json",
-        "messageKey": "errors.invalidJson",
-        "status": 400,
-        "requestId": "00000000-0000-4000-8000-000000000050"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-additions.post",
-    "name": "invalid-input",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001",
-        "recordId": "6a5b4c3d-2e1f-4a0b-9c8d-7e6f5a4b3c11"
-      },
-      "body": {
-        "text": "   "
-      }
-    },
-    "response": {
-      "status": 422,
-      "body": {
-        "error": "invalid_input",
-        "code": "invalid_input",
-        "messageKey": "errors.invalidInput",
-        "status": 422,
-        "requestId": "00000000-0000-4000-8000-000000002002"
       },
       "contentType": "application/json"
     }
@@ -1302,46 +1194,6 @@
   },
   {
     "route": "work.consultation-records.post",
-    "name": "body-too-large",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001"
-      }
-    },
-    "response": {
-      "status": 413,
-      "body": {
-        "error": "body_too_large",
-        "code": "body_too_large",
-        "messageKey": "errors.bodyTooLarge",
-        "status": 413,
-        "requestId": "00000000-0000-4000-8000-000000000045"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-records.post",
-    "name": "body-timeout",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001"
-      }
-    },
-    "response": {
-      "status": 408,
-      "body": {
-        "error": "body_timeout",
-        "code": "body_timeout",
-        "messageKey": "errors.bodyTimeout",
-        "status": 408,
-        "requestId": "00000000-0000-4000-8000-000000000046"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-records.post",
     "name": "content-length-invalid",
     "request": {
       "params": {
@@ -1388,72 +1240,6 @@
         "messageKey": "errors.contentLengthMismatch",
         "status": 400,
         "requestId": "00000000-0000-4000-8000-000000000048"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-records.post",
-    "name": "body-stream-error",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001"
-      }
-    },
-    "response": {
-      "status": 400,
-      "body": {
-        "error": "body_stream_error",
-        "code": "body_stream_error",
-        "messageKey": "errors.bodyStreamError",
-        "status": 400,
-        "requestId": "00000000-0000-4000-8000-000000000049"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-records.post",
-    "name": "invalid-json",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001"
-      }
-    },
-    "response": {
-      "status": 400,
-      "body": {
-        "error": "invalid_json",
-        "code": "invalid_json",
-        "messageKey": "errors.invalidJson",
-        "status": 400,
-        "requestId": "00000000-0000-4000-8000-000000000050"
-      },
-      "contentType": "application/json"
-    }
-  },
-  {
-    "route": "work.consultation-records.post",
-    "name": "invalid-input",
-    "request": {
-      "params": {
-        "documentId": "izmisljeni-rad-0001"
-      },
-      "body": {
-        "heldOn": "2026-11-18",
-        "revision": 3,
-        "topic": "   ",
-        "agreement": "Dodati zaključak do petka."
-      }
-    },
-    "response": {
-      "status": 422,
-      "body": {
-        "error": "invalid_input",
-        "code": "invalid_input",
-        "messageKey": "errors.invalidInput",
-        "status": 422,
-        "requestId": "00000000-0000-4000-8000-000000002002"
       },
       "contentType": "application/json"
     }
