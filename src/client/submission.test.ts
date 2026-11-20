@@ -244,6 +244,20 @@ describe("submitWork", () => {
     expect(await pending).toEqual({ kind: "nepoznato" });
   });
 
+  it.each(["segment_unsigned", "record_discontinuous", "no_evidence"])("409 blocked %s is odbijeno with its reason", async (reason) => {
+    expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(409, { status: "blocked", reason }) } }))
+      .toEqual({ kind: "odbijeno", reason });
+  });
+
+  it.each([[401, { kind: "session-expired" }], [200, { kind: "nepoznato" }], [503, { kind: "nepoznato" }]])(
+    "a %i whose body breaks off after the headers is %j", async (status, outcome) => {
+      const broken: typeof fetch = async () => new Response(new ReadableStream({
+        start(controller) { controller.error(new TypeError("connection reset")); },
+      }), { status, headers: { "content-type": "application/json" } });
+      expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: broken } })).toEqual(outcome);
+    },
+  );
+
   it("is session-expired on a 401 whose JSON body is broken", async () => {
     expect(await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: reply(401, "{not json") } })).toEqual({ kind: "session-expired" });
   });

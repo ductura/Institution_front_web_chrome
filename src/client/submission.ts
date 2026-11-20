@@ -179,11 +179,11 @@ export async function submitWork(input: SubmitInput, deps: SubmitDeps = {}): Pro
   if (deps.current !== undefined && !deps.current()) return EXPIRED;
   let outcome: ReturnType<typeof submitOutcomeFrom>;
   let sent: SubmitInput;
+  let answered = 0;
   try {
     // One copy, read once: what is sent is what the answer is checked against, whatever the caller changes meanwhile.
     sent = { assignmentId: String(input.assignmentId), documentId: String(input.documentId), revision: Number(input.revision) };
     const transport = deps.api?.fetchImpl ?? browserTransport;
-    let answered = 0;
     const measured: typeof fetch = async (url, init) => {
       const response = await transport(url, init);
       answered = response.status;
@@ -197,7 +197,8 @@ export async function submitWork(input: SubmitInput, deps: SubmitDeps = {}): Pro
     if (!result.ok && result.status === 0 && answered === 401) return EXPIRED;
     outcome = submitOutcomeFrom(result, errorBody(result), sent);
   } catch {
-    return UNKNOWN;
+    // A 401 whose body broke off after the headers is still the end of the session; anything else may be submitted.
+    return answered === 401 ? EXPIRED : UNKNOWN;
   }
   if (outcome.kind !== "already_requested") return outcome;
   if (deps.local === undefined) return UNKNOWN;
