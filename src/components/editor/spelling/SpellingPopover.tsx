@@ -36,7 +36,7 @@ export function SpellingPopover({ editor, controller, onMessage }: Props) {
   useEffect(() => {
     const a = anchor.current;
     if (!a || !open) return;
-    Object.assign(a.style, { left: `${open.rect.left}px`, top: `${open.rect.top}px`, width: `${open.rect.width}px`, height: `${open.rect.height}px` });
+    Object.assign(a.style, { left: `${open.rect.left}px`, insetBlockStart: `${open.rect.top}px`, width: `${open.rect.width}px`, height: `${open.rect.height}px` });
   }, [open]);
 
   const close = () => { setOpen(null); editor?.view.focus(); };
