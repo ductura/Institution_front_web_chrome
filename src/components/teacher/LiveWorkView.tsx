@@ -12,9 +12,12 @@
  * Nothing here writes to the work (D-34): no comment panel and no "Zatraži
  * doradu" (wave 8). The session mark (D-118) comes from `sessionTag` of the
  * session route; once that session ends in this browser the text is dropped.
- * Until it is read the view shows the loading line, never a text.
+ * Fail closed: until a valid mark is read the readers are not mounted, and
+ * without one the view offers a retry, never a text the session guard could
+ * not take away again.
  */
 
+import { Button } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
 import { browserTransport, SESSION_PATH } from "@/client/api";
@@ -28,6 +31,7 @@ import RecordLimits from "./RecordLimits";
 import { SummaryCardBody, useProcessSummary } from "./SummaryCard";
 
 const t = messagesHr.liveView;
+const tw = messagesHr.teacherLiveWork;
 
 /** The mark of this page's sign-in: a valid `sessionTag` of a 200, else null. Never throws. */
 export async function readSessionMark(
@@ -75,23 +79,23 @@ export default function LiveWorkView({ documentId, frame }: {
   /** TODO(ugovor) teacher.work.get: null until the route is in the contract. */
   frame: LiveWorkFrameData | null;
 }) {
-  // undefined while the session route is read; the live reader starts only after.
+  // undefined while the session route is read, null without a valid mark.
   const [session, setSession] = useState<SessionMark | null | undefined>(undefined);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let live = true;
     void readSessionMark().then((mark) => { if (live) setSession(mark); });
     return () => { live = false; };
-  }, []);
-  if (session === undefined) {
-    return (
-      <LiveWorkFrame
-        documentId={documentId}
-        frame={null}
-        recordState={null}
-        text={<p role="status" className="manuscript__placeholder">{t.loading}</p>}
-        aside={<RecordLimits />}
-      />
+  }, [attempt]);
+  if (session) return <LiveBody documentId={documentId} session={session} frame={frame} />;
+  const retry = () => { setSession(undefined); setAttempt((n) => n + 1); };
+  const text = session === undefined
+    ? <p role="status" className="manuscript__placeholder">{t.loading}</p>
+    : (
+      <>
+        <p role="alert">{tw.sessionUnavailable}</p>
+        <Button tone="quiet" onClick={retry}>{tw.retry}</Button>
+      </>
     );
-  }
-  return <LiveBody documentId={documentId} session={session} frame={frame} />;
+  return <LiveWorkFrame documentId={documentId} frame={null} recordState={null} text={text} aside={<RecordLimits />} />;
 }

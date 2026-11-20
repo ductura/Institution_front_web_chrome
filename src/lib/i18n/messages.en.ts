@@ -1635,6 +1635,8 @@ const en = {
     gaps: "The record of this work has gaps.",
     gapsLink: "See the process summary",
     notSubmitted: "The work has not been submitted yet.",
+    sessionUnavailable: "The sign-in cannot be checked right now, so the work is not shown.",
+    retry: "Try again",
   },
   // WEB-18 (N-01, dk-h): the teacher's courses and their enrolment codes.
   teacherCourseCodes: {
