@@ -6,6 +6,7 @@ export const workPartsMessages = {
   declaration: "Izjava o samostalnoj izradi rada",
   declarationText: "Tekst izjave o samostalnoj izradi rada",
   declarationHint: "Ako ostavite polje prazno, koristi se prikazani predložak.",
+  declarationTemplate: "Izjavljujem da je ovo moj samostalni rad.",
   acknowledgments: "Zahvala",
   acknowledgmentsText: "Tekst zahvale",
   abbreviations: "Popis kratica",
@@ -21,6 +22,8 @@ export const workPartsMessages = {
   chooseProfile: "Odaberite profil",
   settingsUnavailable: "Postavke citiranja trenutačno nisu dostupne.",
   applyError: "Promjene nije moguće primijeniti.",
+  ambiguous: "U radu postoji više naslova istog dijela. Razlikujte naslove u tekstu.",
+  close: "Zatvori",
   cancel: "Odustani",
   done: "Gotovo",
 } as const;

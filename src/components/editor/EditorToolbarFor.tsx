@@ -38,6 +38,7 @@ import type { SheetTheme } from "@/lib/ui/sheet-theme";
 
 import styles from "./EditorToolbar.module.css";
 import ToolbarMenu from "./ToolbarMenu";
+import { workPartsMessages } from "./parts/messages.hr";
 import {
   convertBlock, copyText, glyphOf, insertChar, insertHole, MAX_COLLAPSED, pushRecent, readRecent, rovingIndex,
   SPECIAL_CHARS, splitTools, writeRecent,
@@ -168,7 +169,10 @@ const THEMES: readonly { key: SheetTheme; label: string }[] = [
  * The same toolbar for any editor, e.g. the public sandbox (DAN-354), which
  * has no local document: it only runs that editor's own commands.
  */
-export default function EditorToolbarFor({ editor }: { editor: Editor | null }) {
+export default function EditorToolbarFor({ editor, onOpenWorkParts }: {
+  editor: Editor | null;
+  onOpenWorkParts?: () => void;
+}) {
   const state = useEditorState({ editor, selector: ({ editor: e }) => stateOf(e) }) ?? IDLE;
   const theme = useSheetTheme();
   const listRef = useRef<HTMLDivElement>(null);
@@ -241,6 +245,7 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
     },
   });
   const insertItems = Object.entries(t.toolbar.insertItems).map(([key, label]) => item(key, label, key === "hole" && writeOk));
+  if (onOpenWorkParts) insertItems.push(item("workParts", workPartsMessages.title, writeOk));
   const convertItems = [
     item("toQuote", t.toolbar.convertItems.toQuote, writeOk && !state.quote),
     item("fromQuote", t.toolbar.convertItems.fromQuote, writeOk && state.quote),
@@ -355,7 +360,13 @@ export default function EditorToolbarFor({ editor }: { editor: Editor | null }) 
         label={t.toolbar.insert}
         menuLabel={t.toolbar.insertMenu}
         items={insertItems}
-        onSelect={(key) => (key === "hole" && insertHole(editor) ? "close" : "keep")}
+        onSelect={(key) => {
+          if (key === "workParts" && onOpenWorkParts && editor?.isEditable && !editor.isDestroyed) {
+            onOpenWorkParts();
+            return "close-return";
+          }
+          return key === "hole" && insertHole(editor) ? "close" : "keep";
+        }}
         {...menuProps("insert")}
       />
       <ToolbarMenu
