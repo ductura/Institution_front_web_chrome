@@ -685,7 +685,7 @@ export const hr = {
   // DAN-492 (M2.6-P02, N-16), design pregled-radova-v2: only what the read gives (D-202).
   mentoredWorks: {
     title: "Radovi uz mentora",
-    lead: "Završni, diplomski i drugi radovi kojima ste mentor. Prikaz samo čita; ništa ne mijenja.",
+    lead: "Završni, diplomski i drugi radovi kojima ste mentor. Ovdje odobravate ili odbijate i zahtjeve studenata za mentorstvo.",
     listTitle: "Radovi · abecedno",
     orderNote: "Popis se ne može poredati po brojevima.",
     empty: "Nemate otvorenih mentorstava.",
@@ -699,6 +699,31 @@ export const hr = {
       in_progress: "U pisanju",
       submitted: "Predano",
     },
+  },
+  // WEB-32 (N-16): the card of mentorship requests; a note only after the server's answer (B-6).
+  mentorshipRequests: {
+    title: "Zahtjevi za mentorstvo",
+    empty: "Nema novih zahtjeva za mentorstvo.",
+    unavailable: "Zahtjevi za mentorstvo trenutačno nisu dostupni. Pokušajte ponovno.",
+    retry: "Pokušaj ponovno",
+    unnamed: "Ime nije dostupno",
+    sentOn: "Zahtjev poslan {date}",
+    approve: "Odobri",
+    approving: "Odobrava se…",
+    decline: "Odbij",
+    dialogTitle: "Odbiti zahtjev za mentorstvo?",
+    dialogLead: "Zahtjev studenta {name} nestat će s popisa.",
+    reason: "Razlog (neobvezno)",
+    reasonHint: "Najviše {max} znakova. Razlog se ne prikazuje studentu.",
+    cancel: "Odustani",
+    confirmDecline: "Odbij zahtjev",
+    declining: "Odbija se…",
+    approved: "Zahtjev je odobren. Rad je u popisu radova uz mentora.",
+    declined: "Zahtjev je odbijen.",
+    alreadyDecided: "O ovom je zahtjevu već odlučeno ili ga je student povukao.",
+    notFound: "Zahtjev više nije dostupan.",
+    invalid: "Razlog nije valjan. Skratite ga i pokušajte ponovno.",
+    unknown: "Nije poznato je li odluka zabilježena. Osvježite stranicu prije novog pokušaja.",
   },
   fastPath: {
     title: "Brz put",
@@ -1553,15 +1578,37 @@ export const hr = {
     noRoleNext: "Javite se administratoru svojeg fakulteta da Vam dodijeli ulogu, pa se ponovno prijavite.",
     logoutBody: "Odjavit ćete se iz Ducture i iz sustava AAI@EduHr u ovom pregledniku, a zatim se vraćate na početnu stranicu.",
   },
-  // WEB-17 (A-9, N-17): the teacher's "Zbirni pregled" in the side bar. Until
-  // the summary's read arrives it shows only its empty state; when it does,
-  // it is a course with at least five students, without names and without a
-  // ranking (D-242, PRODUCT §5 rule 2).
+  // WEB-17 (A-9), WEB-33 (N-17): the teacher's "Zbirni pregled" of one
+  // assignment, as in the prototype (A-9): a row per student with the state of
+  // the submission and of the record. Sorting is by column, never a ranking
+  // (PRODUCT §5 rule 2); a record gap is a fact, not a mark (rule 3). The
+  // "Dorada" column stays empty until wave 8.
   teacherSummary: {
     title: "Zbirni pregled",
-    lead: "Zbirni pregled kolegija bez imena studenata, samo za kolegij s najmanje pet studenata.",
-    emptyTitle: "Zbirni pregled još nema podataka",
-    emptyBody: "Kad zbirni pregled bude dostupan, ovdje ćete vidjeti zbirne brojke za svoje kolegije. Pojedinačni studenti se ovdje ne prikazuju.",
+    lead: "Stanje predaje za svakog studenta odabranog zadatka.",
+    emptyTitle: "Još nema zadataka",
+    emptyBody: "Zbirni pregled prikazuje predaje jednog zadatka. Kad u kolegiju objavite zadatak, ovdje ga možete odabrati.",
+    pickLabel: "Zadatak",
+    pickSubmit: "Prikaži",
+    assignmentOption: "{course} · {assignment}",
+    caption: "Predaje zadatka {assignment}",
+    noStudents: "U ovom zadatku još nema studenata.",
+    unavailable: "Zbirni pregled trenutačno nije dostupan. Pokušajte ponovno.",
+    retry: "Pokušaj ponovno",
+    columns: {
+      student: "Student",
+      state: "Stanje",
+      submittedAt: "Vrijeme predaje",
+      afterDeadline: "Nakon roka",
+      record: "Stanje zapisa",
+      revision: "Dorada",
+    },
+    noName: "Ime nije dostupno",
+    noGroup: "bez grupe",
+    group: "grupa {group}",
+    recordContinuous: "Zapis je cjelovit",
+    no: "Ne",
+    none: "–",
   },
   // WEB-34 (N-06): the frame of the teacher's read-only live view of one
   // work. No "Zatraži doradu" (wave 8) and no deadline extension (wave 11).
@@ -2071,6 +2118,50 @@ export const hr = {
     back: "Natrag",
     invalid: "Ova poveznica ne vodi do zadatka.",
   },
+  // WEB-25 (S: E-8, PD-4): step 3 of the submission. Only the unconfirmed
+  // declaration holds the flow; pastes, gaps and form never do (§5 rule 11).
+  beforeSubmit: {
+    title: "Prije predaje",
+    checks: "Provjera prije predaje",
+    declaration: "Izjava",
+    declarationConfirmed: "Potvrđena.",
+    declarationMissing: "Nije potvrđena. Predaja čeka potvrdu izjave.",
+    placeholders: "Mjesta za izvor",
+    placeholdersInfo: "Pregledajte otvorena mjesta za izvor u tekstu. Ovaj redak samo obavještava.",
+    pasted: "Zalijepljeno (izvor nije opažen)",
+    pastedCount: "Lijepljenja veća od praga",
+    pastedSmaller: "manja lijepljenja",
+    pastedInfo: "Lijepljenja ne zaustavljaju predaju.",
+    pastedUnknown: "Broj lijepljenja trenutačno nije moguće učitati. To ne zaustavlja predaju.",
+    form: "Pravila oblika",
+    formNotRun: "Provjera oblika još nije pokrenuta.",
+    notes: "Napomene uz predaju",
+    notesNone: "Nema napomena.",
+    notesUnavailable: "Napomene trenutačno nije moguće učitati.",
+    addNote: "Dodaj napomenu (nije obavezna)",
+    noteTitle: "Napomena uz predaju",
+    noteLabel: "Napomena",
+    noteHint: "Do 600 znakova. Napomenu nakon dodavanja nije moguće izmijeniti ni obrisati.",
+    noteEmpty: "Upišite napomenu ili odustanite.",
+    noteTooLong: "Napomena može imati najviše 600 znakova.",
+    noteSending: "Dodaje se…",
+    noteAdd: "Dodaj napomenu",
+    noteCancel: "Odustani",
+    noteUnknown: "Nije potvrđeno je li napomena dodana. Osvježite stranicu prije ponovnog pokušaja.",
+    noteExpired: "Sesija je istekla. Prijavite se ponovno preko AAI@EduHr.",
+    noteRefused: "Napomenu nije moguće dodati.",
+    summaryLoading: "Učitavam sažetak procesa.",
+    summaryError: "Sažetak procesa trenutačno nije moguće učitati. To ne zaustavlja predaju.",
+    retry: "Pokušaj ponovno",
+    closed: "Rok za predaju je prošao",
+    offline: "Nema mreže. Predaja i napomene čekaju da se mreža vrati.",
+    submitted: "Rad je predan. Tekst i napomene više se ne mijenjaju.",
+    receipt: "Potvrda predaje",
+    unavailable: "Podatke o zadatku trenutačno nije moguće učitati.",
+    next: "Dalje na predaju",
+    toDeclaration: "Natrag na izjavu",
+    back: "Natrag",
+  },
 } as const;
 
 type Widen<T> = { readonly [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };
@@ -2079,3 +2170,20 @@ type Widen<T> = { readonly [K in keyof T]: T[K] extends string ? string : Widen<
 export type Messages = Widen<typeof hr>;
 
 export const messagesHr: Messages = hr;
+
+/** N-04 lives in the Croatian teacher shell. */
+export const courseStudentsHr = {
+  title: "Popis studenata",
+  courseTitle: "{course}: studenti",
+  filter: "Prikaz",
+  allGroups: "Svi",
+  noName: "Ime nije dostupno",
+  noWorks: "Nema zadataka.",
+  noAssignmentTitle: "Naziv zadatka nije dostupan",
+  openSeminar: "Otvori seminarski rad",
+  loading: "Učitavanje popisa studenata…",
+  unavailable: "Popis studenata trenutačno nije dostupan.",
+  retry: "Pokušaj ponovno",
+  empty: "Još se nitko nije upisao.",
+  backToCourses: "Natrag na kolegije",
+} as const;

@@ -227,3 +227,20 @@
   margin: 0;
   font-size: 16px;
 }
+
+/* WEB-34: the previous and the next work in the N-06 frame; each link is a
+   target of at least 24 px with room between them (WCAG 2.2 target-size). */
+.neighbours ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.neighbours a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

@@ -6,7 +6,8 @@ import { useEffect, useId, useState } from "react";
 
 import { countHr } from "../../lib/i18n/hr";
 import { messagesHr } from "../../lib/i18n/messages.hr";
-import { submissionKey } from "./storage";
+import { readJournalScope } from "../editor/EditorPage.scope";
+import { confirmationKey, stepHref } from "./flow";
 
 const t = messagesHr.declaration;
 const s = messagesHr.summary;
@@ -33,16 +34,6 @@ export type RecordedRead =
   | { readonly kind: "ready"; readonly summary: RecordedSummary }
   | { readonly kind: "loading" }
   | { readonly kind: "error" };
-
-/**
- * Where the flow keeps the confirmation: this tab only, never the server
- * (P-7), under this session and assignment. A sign-out leaves the tab's
- * storage, so the next person signed in here has another session and finds
- * nothing ticked. Without a known session nothing is kept.
- */
-export function confirmationKey(session: string | null, assignmentId: string): string | null {
-  return submissionKey(session, assignmentId, "izjava");
-}
 
 function isEmpty(summary: RecordedSummary): boolean {
   return summary.sessions.count === 0 && summary.pastes.listed.length === 0
@@ -120,8 +111,6 @@ export function DeclarationView({ recorded, confirmed, onConfirm, onNext, onBack
 
 export type DeclarationProps = {
   readonly assignmentId: string;
-  /** A digest of the session cookie from the server, never the cookie; null when there is none. */
-  readonly session: string | null;
   readonly recorded: RecordedRead;
 };
 
@@ -144,14 +133,25 @@ export function writeConfirmed(key: string | null, confirmed: boolean): void {
   }
 }
 
-/** The step with its state: never ticked in advance, kept when the student comes back from step 3. */
-export default function Declaration({ assignmentId, session, recorded }: DeclarationProps) {
+/** The current sign-in's session tag, shared by steps 2 and 3. */
+export function useSessionTag(): string | null {
+  const [tag, setTag] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void readJournalScope().then((read) => { if (live && read.kind === "scope") setTag(read.session.tag); });
+    return () => { live = false; };
+  }, []);
+  return tag;
+}
+
+/** Keep the confirmation for this sign-in and hand it to step 3 even when storage is refused. */
+export default function Declaration({ assignmentId, recorded }: DeclarationProps) {
   const router = useRouter();
-  const key = confirmationKey(session, assignmentId);
+  const tag = useSessionTag();
+  const key = tag === null ? null : confirmationKey(tag, assignmentId);
   const [confirmed, setConfirmed] = useState(false);
   // Read after the first render, so the server's markup (unticked) matches.
   useEffect(() => setConfirmed(readConfirmed(key)), [key]);
-  const base = `/rad/${encodeURIComponent(assignmentId)}`;
   return (
     <DeclarationView
       recorded={recorded}
@@ -160,8 +160,8 @@ export default function Declaration({ assignmentId, session, recorded }: Declara
         setConfirmed(next);
         writeConfirmed(key, next);
       }}
-      onNext={() => router.push(`${base}/predaja/pregled`)}
-      onBack={() => router.push(base)}
+      onNext={() => router.push(stepHref(assignmentId, "pregled", confirmed ? tag ?? undefined : undefined))}
+      onBack={() => router.push(stepHref(assignmentId, "tekst"))}
       onRetry={() => router.refresh()}
     />
   );

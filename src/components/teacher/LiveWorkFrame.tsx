@@ -113,7 +113,7 @@ export default function LiveWorkFrame({ documentId, frame, recordState, text, as
       h("h1", null, title),
       frame?.assignmentTitle ? h("p", { className: styles.muted }, frame.assignmentTitle) : null,
       receipt === null ? null : h("p", null, h("a", { href: receipt, className: styles.link }, t.submission)),
-      nav.length === 0 ? null : h("nav", { "aria-label": t.neighbours }, h("ul", null, ...nav)),
+      nav.length === 0 ? null : h("nav", { "aria-label": t.neighbours, className: styles.neighbours }, h("ul", null, ...nav)),
     ),
     ...bars,
     h(

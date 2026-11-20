@@ -2,9 +2,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  confirmationKey, DeclarationView, readConfirmed, recordedRows, writeConfirmed,
+  DeclarationView, readConfirmed, recordedRows, writeConfirmed,
   type RecordedRead, type RecordedSummary,
 } from "./Declaration";
+import { confirmationKey } from "./flow";
 import { clearSubmissionStorage, submissionKey } from "./storage";
 
 // Invented summary of an invented work (no real student data).
@@ -135,10 +136,6 @@ describe("the confirmation lives only in this tab (P-7)", () => {
     expect(readConfirmed(confirmationKey("sim-session-b", ASSIGNMENT))).toBe(false);
   });
 
-  it("builds ductura.predaja.<session>.<assignmentId>.izjava", () => {
-    expect(confirmationKey("sim-session-a", ASSIGNMENT)).toBe(`ductura.predaja.sim-session-a.${ASSIGNMENT}.izjava`);
-  });
-
   it("is removed by a sign-out together with every other ductura.predaja.* key, and only those", () => {
     const store = withStorage();
     writeConfirmed(confirmationKey("sim-session-a", ASSIGNMENT), true);
@@ -151,8 +148,7 @@ describe("the confirmation lives only in this tab (P-7)", () => {
 
   it("keeps nothing without a known session", () => {
     const store = withStorage();
-    expect(confirmationKey(null, ASSIGNMENT)).toBeNull();
-    writeConfirmed(confirmationKey(null, ASSIGNMENT), true);
+    writeConfirmed(null, true);
     expect(store.size).toBe(0);
     expect(readConfirmed(null)).toBe(false);
   });

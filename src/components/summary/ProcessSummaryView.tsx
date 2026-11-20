@@ -1,6 +1,6 @@
 import { createElement as h, type ReactNode } from "react";
 
-import type { MinuteSpan, ProcessSummaryV1 } from "@/domain/projection/process-summary";
+import type { ApiResult } from "@/client/api";
 import { countHr } from "@/lib/i18n/hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -8,6 +8,15 @@ import styles from "./ProcessSummaryView.module.css";
 import { zagrebParts } from "./zagreb-time";
 
 const t = messagesHr.summary;
+
+/**
+ * The summary exactly as the contract gives it (projection.process-summary.post,
+ * @ductura/contracts): the Ductus module `@/domain/projection/process-summary`
+ * was not carried over, and a second hand-written copy could drift from the
+ * server's shape.
+ */
+export type ProcessSummaryV1 = Extract<ApiResult<"projection.process-summary.post">, { ok: true }>["body"];
+type MinuteSpan = ProcessSummaryV1["sessions"]["items"][number];
 
 /**
  * The process summary (F-10, PRODUCT §7), drawn the same way for everyone who
