@@ -123,6 +123,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "teacher/consultation-records/ConsultationRecords.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "teacher/consultation-records/NewConsultation.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "teacher/deadline-extensions/DeadlineExtensions.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/merlin-export/MerlinExport.tsx", // WEB-1114: page of N-18; catalogue entry follows with the host mount.
   "teacher/revision/ReturnForRevisionDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/assistant/coming-soon/AssistantComingSoonCard.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/mentor/consultation-slots/ConsultationSlots.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
