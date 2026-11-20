@@ -23,7 +23,7 @@ test("a work not yet submitted opens on the declaration under the same base", as
   await student(page, "in_progress");
   await page.goto(`/app/chrome${PATH}`);
   await expect(page).toHaveURL(new RegExp(`/app/chrome${PATH}/izjava$`));
-  await expect(page.getByRole("heading", { name: "Izjava" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Izjava" })).toBeVisible();
 });
 
 test("a submitted work opens on the receipt, read from the server", async ({ page }) => {
@@ -33,7 +33,7 @@ test("a submitted work opens on the receipt, read from the server", async ({ pag
   }));
   await page.goto(`/app/web${PATH}`);
   await expect(page).toHaveURL(new RegExp(`/app/web${PATH}/potvrda$`));
-  await expect(page.getByRole("heading", { name: "Potvrda predaje" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Potvrda predaje" })).toBeVisible();
 });
 
 test("a notice not yet acknowledged comes first", async ({ page }) => {
