@@ -3699,7 +3699,7 @@
                             "documentId": {
                               "minLength": 1,
                               "maxLength": 256,
-                              "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\^@-\\^_\\u007f-\\^_\\uD800-\\uDFFF])+(?<!\\s)$",
+                              "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF])+(?<!\\s)$",
                               "type": "string"
                             },
                             "evidencePackageId": {

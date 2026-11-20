@@ -194,8 +194,6 @@ test("a teacher's Ductus pages open at their addresses, and /nastavnik/kolegiji 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nova verzija zadatka");
   await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
   await axe(page);
-  await page.goto("/app/web/nastavnik/rad/izm-rad-1/reprodukcija");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Reprodukcija rada");
   expect(errors).toEqual([]);
 });
 

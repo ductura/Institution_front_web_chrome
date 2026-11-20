@@ -39,7 +39,7 @@ describe("teacher work access", () => {
 
 describe("teacher work receipt", () => {
   it("looks up the student and assignment before reading their receipt", async () => {
-    const requestedAt = "2026-11-20T12:00:00.000Z";
+    const requestedAt = "2026-11-20T12:00:00.000000Z";
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValueOnce(reply(200, work))
       .mockResolvedValueOnce(reply(200, { state: "ceka", revision: 1, requestedAt }));
     expect(await readTeacherWorkReceipt(doc, () => true, { baseUrl, fetchImpl })).toEqual({
