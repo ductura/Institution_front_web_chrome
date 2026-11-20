@@ -1,9 +1,8 @@
 import {
   Button, Card, Checkbox, DataTable, Details, Dialog, ErrorScreen, Fingerprint, Icon, ICON_NAMES, KeyValueList, PanelTabs,
   RouteLoading, SaveState, Select, Skeleton, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
-  type DataTableColumn, type IconName,
+  SearchableList, type DataTableColumn, type IconName,
 } from "@ductura/ui";
-import { SearchableList } from "@ductura/ui";
 import { useState } from "react";
 
 import { messagesHr as t } from "../../locales/hr.ts";
