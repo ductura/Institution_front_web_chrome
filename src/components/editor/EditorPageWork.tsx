@@ -152,7 +152,8 @@ function WorkSurface({ course, title, topBar, length }: {
       <LocalEditor />
       <TriggerPopover editor={editor} />
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help}
-        fresh={phase === "ready" && editor?.isEmpty} notice={{ course, title, instructions: null }} />
+        fresh={phase === "ready" && editor?.isEmpty}
+        notice={{ course, title, length: length?.range ?? undefined, instructions: null }} />
     </EditorPage>
   );
 }
