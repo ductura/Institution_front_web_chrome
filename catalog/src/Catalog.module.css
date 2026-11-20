@@ -20,3 +20,27 @@
    sit on the paper and its well, not on the dark --raised / --chrome of the shell (D-188). */
 .sheet dialog, .sheet [role=dialog], .sheet [role=search] { background: var(--sheet); }
 .sheet [role=search] { border-bottom-color: var(--rule); }
+
+/* These shell controls also appear on the white sheet in the catalogue. */
+.component:global(#ObjectToolbar) .sheet {
+  --raised: var(--sheet);
+  --raised-rule: var(--field-rule);
+}
+.component:global(#AppointmentCalendar) .sheet {
+  --chrome: var(--sheet);
+  --hover: var(--well);
+}
+
+/* Seven 44 px day buttons, table cell padding and the calendar frame need 340 px. */
+.component:global(#AppointmentCalendar) .states {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+@media (max-width: 451px) {
+  .component:global(#AppointmentCalendar) {
+    margin-inline: -20px;
+    padding-inline: 4px;
+  }
+  .component:global(#AppointmentCalendar) :is(.shell, .sheet.sheet) {
+    padding-inline: 0;
+  }
+}
