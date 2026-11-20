@@ -6,8 +6,8 @@ import { appHref } from "@/components/index";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { useHost } from "../context";
+import { messagesHr as t } from "./messages.hr";
 
-const t = messagesHr.institutionHost;
 const newCourse = messagesHr.institutionCourses.newCourse;
 
 /** The host owns the session and role check. The course form uses the existing API client. */
