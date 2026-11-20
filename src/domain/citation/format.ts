@@ -144,7 +144,9 @@ function numericOf(style: CitationStyle): NonNullable<CitationStyle["numeric"]> 
 /** `[3]` or `[3, str. 12]`: the number of the source by first citation, then the locator. */
 export function formatNumericCitation(number: number, style: CitationStyle, locator?: string): string {
   const n = numericOf(style);
-  const page = locator === undefined || locator === "" ? "" : `${n.pageSeparator}${n.pageLabel}${normalizePages(locator, style)}`;
+  // As formatCitationInText: a whitespace-only locator is valid and shown as stored.
+  const shown = locator === undefined || locator === "" ? undefined : locator.trim() === "" ? locator : normalizePages(locator, style);
+  const page = shown === undefined ? "" : `${n.pageSeparator}${n.pageLabel}${shown}`;
   return `${n.open}${number}${page}${n.close}`;
 }
 

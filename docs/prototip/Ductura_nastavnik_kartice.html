@@ -1,0 +1,880 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Ductura nastavnik kartice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ground:#242422; --sheet:#2e2e2b; --chrome:#292a28; --ink:#faf9f5; --ink-2:#dedbd3; --ink-3:#c9c5bb;
+  --rule:#8c887f; --rule-2:#5a5853; --hover:#3a3a36; --card:#33332f; --well:#3a3a36;
+  --warn:#e9c58b; --warn-soft:#3a2f22; --accent:#c8aa6e; --accent-hover:#dcc28a; --accent-ink:#242422;
+  --accent-soft:#3a3427; --link-rule:#b3aea3; --field:#2a2a27; --field-rule:#a6a196; --synced:#a2c6e5; --synced-soft:#24303a;
+  --ff-ui:"Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --ff-display:"Newsreader", Georgia, serif;
+  --ff-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --ground:#f3f2ee; --sheet:#fcfbf8; --chrome:#faf9f6; --ink:#242422; --ink-2:#55534d; --ink-3:#5c5a54;
+    --rule:#cfccc4; --rule-2:#e2e0d9; --hover:#ecebe5; --card:#fcfbf8; --well:#ecebe5;
+    --warn:#7a5420; --warn-soft:#f3e6cf; --accent:#806529; --accent-hover:#6b5420; --accent-ink:#fcfbf8;
+    --accent-soft:#efe9dc; --link-rule:#8a7550; --field:#fcfbf8; --field-rule:#85827a; --synced:#355b81; --synced-soft:#e3edf6;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"] {
+  --ground:#f3f2ee; --sheet:#fcfbf8; --chrome:#faf9f6; --ink:#242422; --ink-2:#55534d; --ink-3:#5c5a54;
+  --rule:#cfccc4; --rule-2:#e2e0d9; --hover:#ecebe5; --card:#fcfbf8; --well:#ecebe5;
+  --warn:#7a5420; --warn-soft:#f3e6cf; --accent:#806529; --accent-hover:#6b5420; --accent-ink:#fcfbf8;
+  --accent-soft:#efe9dc; --link-rule:#8a7550; --field:#fcfbf8; --field-rule:#85827a; --synced:#355b81; --synced-soft:#e3edf6;
+  color-scheme:light;
+}
+* { box-sizing:border-box; }
+html, body { margin:0; }
+body { background:var(--ground); color:var(--ink); }
+.kt {
+  background:var(--ground); color:var(--ink-2); font:15px/1.55 var(--ff-ui);
+  overflow-wrap:anywhere; min-height:100vh;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:28px 56px;
+}
+.kt-wrap { max-width:880px; margin:0 auto; }
+.kt h1, .kt h2 { font-family:var(--ff-display); font-weight:500; color:var(--ink); margin:0; letter-spacing:-0.01em; }
+.kt h1 { font-size:34px; line-height:1.15; }
+.kt h2 { font-size:24px; line-height:1.25; margin-block:40px 12px; }
+.kt h3 { font:600 12.5px/1.3 var(--ff-ui); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin-block:20px 6px; }
+.kt p, .kt li { max-width:65ch; }
+.kt p { margin-block:0 10px; }
+.kt ul, .kt ol { margin-block:0 8px; padding-left:20px; }
+.kt li { margin-block:4px; }
+.kt a { color:var(--accent); text-decoration:underline; text-decoration-color:var(--link-rule); text-underline-offset:3px; }
+.kt a:hover { color:var(--accent-hover); }
+.kt :focus-visible { outline:3px solid var(--accent); outline-offset:3px; border-radius:4px; }
+.kt strong, .kt b { color:var(--ink); }
+.lede { font-size:16.5px; margin-block:10px 18px; }
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding-inline:18px;
+  background:var(--accent); color:var(--accent-ink) !important; border:1px solid var(--accent); border-radius:5px;
+  font:600 14.5px var(--ff-ui); text-decoration:none !important; cursor:pointer;
+}
+.btn:hover { background:var(--accent-hover); border-color:var(--accent-hover); }
+.btn.sec { background:transparent; color:var(--ink) !important; border-color:var(--rule); }
+.btn.sec:hover { background:var(--hover); }
+.blok { background:var(--sheet); border:1px solid var(--rule-2); border-left:3px solid var(--accent); border-radius:8px; padding:14px 16px; margin-block:22px 0; }
+.blok p:last-child, .blok ul:last-child { margin-bottom:0; }
+.scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--rule-2); border-radius:8px; background:var(--sheet); }
+table { border-collapse:collapse; width:100%; font-size:14.5px; }
+.scroll table { min-width:620px; }
+th, td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--rule-2); vertical-align:middle; }
+th { font-weight:600; color:var(--ink-3); font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; }
+tr:last-child td { border-bottom:0; }
+td a { display:inline-flex; align-items:center; min-height:44px; }
+.tag { display:inline-block; font:600 12.5px/1 var(--ff-ui); padding:5px 8px; border-radius:4px; border:1px solid var(--rule); color:var(--ink); white-space:nowrap; }
+.tag.postoji { border-color:var(--synced); color:var(--synced); background:var(--synced-soft); }
+.tag.djelomicno { border-color:var(--rule); color:var(--ink-2); }
+.tag.nema { border-color:var(--warn); color:var(--warn); background:var(--warn-soft); }
+.tag.prijedlog { border:1px dashed var(--accent); color:var(--accent); background:var(--accent-soft); }
+.tag.plan { border-color:var(--accent); color:var(--accent); font-size:11.5px; margin-left:4px; }
+.oz { font:500 13px/1 var(--ff-mono); color:var(--ink-3); }
+.kartica { background:var(--card); border:1px solid var(--rule-2); border-radius:10px; margin-block:12px; }
+.kartica > summary {
+  list-style:none; cursor:pointer; min-height:56px; padding:12px 16px;
+  display:flex; align-items:center; gap:8px 10px; flex-wrap:wrap; border-radius:10px;
+}
+.kartica > summary::-webkit-details-marker { display:none; }
+.kartica > summary::before { content:"+"; font:500 18px/1 var(--ff-mono); color:var(--ink-3); width:14px; }
+.kartica[open] > summary::before { content:"\2212"; }
+.kartica > summary:hover { background:var(--hover); }
+.naziv { font:500 19px/1.25 var(--ff-display); color:var(--ink); flex:1 1 170px; }
+.odabrano { font-size:13px; color:var(--ink-3); flex-basis:100%; padding-left:24px; }
+.odabrano:empty { display:none; }
+.tijelo { padding:4px 16px 16px; border-top:1px solid var(--rule-2); }
+.mono { font:12.5px/1.6 var(--ff-mono); color:var(--ink-2); background:var(--well); border-radius:5px; padding:8px 10px; margin-block:6px 0; overflow-wrap:anywhere; }
+.otv li { padding-left:2px; }
+.istak { display:inline; background:var(--accent-soft); color:var(--ink); border-bottom:1px dashed var(--accent); padding:0 3px; border-radius:2px; }
+.neprov { font:600 11.5px/1 var(--ff-ui); letter-spacing:.04em; text-transform:uppercase; color:var(--warn); border:1px solid var(--warn); border-radius:3px; padding:2px 5px; margin-right:4px; white-space:nowrap; }
+.u-proto { display:inline-flex; align-items:center; min-height:44px; margin-top:12px; font-weight:600; }
+.odluceno { background:var(--accent-soft); border:1px solid var(--rule-2); border-left:3px solid var(--accent); border-radius:8px; padding:12px 14px; margin-block:14px 4px; color:var(--ink); }
+.kt .odluceno h3 { margin-block:0 6px; color:var(--ink); }
+.odluceno ul { margin:0; padding-left:18px; }
+.odluceno li:last-child { margin-bottom:0; }
+.odluka { margin-top:20px; padding-top:14px; border-top:1px dashed var(--rule-2); }
+.odluka fieldset { border:0; margin:0; padding:0; min-width:0; }
+.odluka legend { font:600 12.5px/1.3 var(--ff-ui); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); padding:0; margin-bottom:8px; }
+.izbor { display:flex; flex-wrap:wrap; gap:8px; }
+.izbor label {
+  position:relative; display:inline-flex; align-items:center; min-height:44px; padding-inline:16px;
+  border:1px solid var(--rule); border-radius:5px; cursor:pointer; color:var(--ink); font-weight:500; background:var(--field);
+}
+.izbor input { position:absolute; opacity:0; inset:0; margin:0; cursor:pointer; width:100%; height:100%; }
+.izbor label:has(input:checked) { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.izbor label:has(input:checked)::before { content:"\2713"; margin-right:6px; }
+.izbor label:has(input:focus-visible) { outline:3px solid var(--accent); outline-offset:3px; }
+.polje { display:block; margin-top:12px; }
+.polje span { display:block; font-size:13px; color:var(--ink-3); margin-bottom:4px; }
+.kt textarea {
+  width:100%; min-height:88px; padding:10px 12px; border:1px solid var(--field-rule); border-radius:5px;
+  background:var(--field); color:var(--ink); font:15px/1.5 var(--ff-ui); resize:vertical;
+}
+#sazetak-tekst { font:13px/1.6 var(--ff-mono); min-height:280px; }
+.dno { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+.sitno { font-size:13.5px; color:var(--ink-3); }
+.brojac { font-weight:600; color:var(--ink); }
+.potvrda { margin-top:12px; padding:12px 14px; border:1px solid var(--warn); background:var(--warn-soft); border-radius:8px; }
+.potvrda p { color:var(--ink); }
+.potvrda[hidden] { display:none; }
+.status { min-height:1.5em; }
+</style>
+
+<div class="kt"><div class="kt-wrap">
+
+<header>
+  <h1>Kartice nastavničkih ekrana</h1>
+  <p class="lede">Za svaki ekran nastavničkog prototipa Ducture ova stranica kaže čemu služi, što već postoji u kodu i što bi trebalo napraviti. Na dnu svake kartice Vi odlučujete: Ide, Mijenja se ili Ne ide. Svih 18 kartica odlučeno je 18. 11. 2026.; odluke su upisane na vrhu svake kartice.</p>
+  <a class="btn" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8" target="_blank" rel="noopener">Otvori prototip</a>
+
+  <div class="blok">
+    <p><strong>Glavni nalaz.</strong> O predaji nastavnik danas vidi samo „Predano”, „Predano nakon roka” ili „Nije predano”, uz oznake „Rad 1, Rad 2” umjesto imena. Student na potvrdi predaje vidi vrijeme predaje, rok, stanje zapisa, verziju i otisak teksta. Poslužitelj aplikacije nastavniku već šalje verziju i vrijeme predaje, ali ih sučelje ne prikazuje. Baza je ispred sučelja: zahtjevi za doradu i popis studenata postoje u bazi i na poslužitelju, a nastavnik ih ne vidi. Devet ekrana iz prototipa nema nikakvog koda.</p>
+  </div>
+  <p class="sitno" style="margin-top:12px">Imena u prototipu i ovdje su izmišljena: Nastavnik A, Kolegij A do D, Student A do D. Stanje koda je provjereno 18. 11. 2026. u tri izvora: aplikacija Ductus, ductura/server i ductura/web.</p>
+</header>
+
+<h2 id="pregled">Pregled</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="Pregled ekrana">
+<table>
+  <thead><tr><th scope="col">Ekran</th><th scope="col">Oznaka</th><th scope="col">Faza</th><th scope="col">Status</th><th scope="col">Ovisi o</th></tr></thead>
+  <tbody>
+    <tr><td><a href="#k-ljuska">Ljuska i navigacija</a></td><td class="oz">Z-01</td><td>M0</td><td><span class="tag postoji">postoji</span></td><td>nema otvorenih odluka</td></tr>
+    <tr><td><a href="#k-kolegiji">Moji kolegiji</a></td><td class="oz">N-01</td><td>M2</td><td><span class="tag postoji">postoji</span></td><td>nema otvorenih odluka</td></tr>
+    <tr><td><a href="#k-novi-zadatak">Novi kolegij i zadatak</a></td><td class="oz">N-02, N-03</td><td>M2</td><td><span class="tag djelomicno">djelomično</span></td><td>nema otvorenih odluka</td></tr>
+    <tr><td><a href="#k-studenti">Popis studenata</a></td><td class="oz">N-04</td><td>M2</td><td><span class="tag djelomicno">djelomično</span></td><td>nema otvorenih odluka; D-128 O-3 zatvoreno</td></tr>
+    <tr><td><a href="#k-mentorstva">Radovi uz mentora</a></td><td class="oz">N-16</td><td>M2</td><td><span class="tag postoji">postoji</span></td><td>nema otvorenih odluka; D-128 O-3 zatvoreno</td></tr>
+    <tr><td><a href="#k-brz-put">Brz put</a></td><td class="oz">N-05</td><td>M7</td><td><span class="tag postoji">postoji</span></td><td>nema otvorenih odluka; D-128 O-3, broj lijepljenja i #1782 zatvoreni</td></tr>
+    <tr><td><a href="#k-zbirni">Zbirni pregled</a></td><td class="oz">N-17</td><td>M6</td><td><span class="tag nema">nema</span></td><td>nema otvorenih odluka; EQ1 zatvoren</td></tr>
+    <tr><td><a href="#k-rad">Rad: uživo, pregled, komentari</a></td><td class="oz">N-06, N-07, N-08</td><td>M6</td><td><span class="tag djelomicno">djelomično</span></td><td>nema otvorenih odluka; EQ1, D-128 O-3 i Q-6 zatvoreni</td></tr>
+    <tr><td><a href="#k-predaja">Što je student predao</a></td><td class="oz">N-07</td><td>M6</td><td><span class="tag nema">nema</span></td><td>Q-3 (zamjenski postupak čeka FPZG), studentski korak Izjava; EQ1 zatvoren; „Zatraži istragu” se ne gradi</td></tr>
+    <tr><td><a href="#k-sazetak">Sažetak i karta podrijetla</a></td><td class="oz">N-10</td><td>M7</td><td><span class="tag djelomicno">djelomično</span></td><td>nema otvorenih odluka; D-127 O-2 i brojevi uz događaje zatvoreni</td></tr>
+    <tr><td><a href="#k-reprodukcija">Reprodukcija</a></td><td class="oz">N-09</td><td>M6</td><td><span class="tag postoji">postoji</span></td><td>D-55; Q-19 i D-68 ne koče ovaj ekran</td></tr>
+    <tr><td><a href="#k-usporedba">Usporedba verzija</a></td><td class="oz">N-11</td><td>M7</td><td><span class="tag nema">nema</span></td><td>nema otvorenih odluka; D-202 i Q-18 zatvoreni za ovaj ekran</td></tr>
+    <tr><td><a href="#k-konzultacije">Konzultacije</a></td><td class="oz">N-12</td><td>M6</td><td><span class="tag nema">nema</span></td><td>D-55, D-135: privatna bilješka se sada ne gradi; pravno mišljenje čeka</td></tr>
+    <tr><td><a href="#k-produljenje">Produljenje roka</a></td><td class="oz">N-13</td><td>M7</td><td><span class="tag nema">nema</span></td><td>Q-5 (ADR, rok 30. 11. 2026.); tko pokreće produljenje: zatvoreno</td></tr>
+    <tr><td><a href="#k-izvoz">Izvoz za Merlin</a></td><td class="oz">N-18</td><td>M8</td><td><span class="tag nema">nema</span></td><td>D-291 i D-292 (zatvara pisac), O-4, dva otiska u potvrdi (zatvara pisac); broj preuzimanja i #1782 zatvoreni; smije čekati</td></tr>
+    <tr><td><a href="#k-ai-pregled">AI pomoć u radu</a></td><td class="oz">N-AI-ATT</td><td>M9</td><td><span class="tag nema">nema</span></td><td>Q-10 (15. 12. 2026.), studentska izjava (M9), D-267 O1; odlučeno u načelu</td></tr>
+    <tr><td><a href="#k-razgovor">Priprema za razgovor</a></td><td class="oz">N-14</td><td>M7</td><td><span class="tag nema">nema</span></td><td>EQ5 (uvjetno); ne gradi se sada</td></tr>
+    <tr><td><a href="#k-etape">Etape</a></td><td class="oz">N-15</td><td>M6</td><td><span class="tag nema">nema</span></td><td>EQ5 (uvjetno); bez zasebnog ekrana; EQ1 zatvoren; rubrika, ocjena i privatna bilješka se ne grade (D-249, D-55, D-135)</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="sitno" style="margin-top:8px">Status se odnosi na aplikaciju Ductus. „Postoji” znači da ekran radi, ali ne mora biti jednak prototipu. Na ductura/server i ductura/web stanje je slabije; piše u svakoj kartici. Ekran N-19 nije u prototipu i nema korak ni u jednoj fazi. Stupac „Ovisi o” pokazuje stanje nakon odluka od 18. 11. 2026.</p>
+<p class="sitno">Procjena posla (mala, srednja, velika) je gruba procjena autora ove stranice, ne izmjereni plan. Oznaka <span class="tag plan">plan napada</span> znači da korak dira ovlasti, evidenciju ili predaju, pa prije koda treba zaseban issue s planom napada.</p>
+
+<h2 id="ekrani">Ekrani</h2>
+
+<!-- 1 LJUSKA -->
+<details class="kartica" id="k-ljuska" data-id="ljuska" data-oznaka="Z-01" data-naziv="Ljuska i navigacija" data-hash="kolegiji">
+<summary><span class="naziv">Ljuska i navigacija</span><span class="oz">Z-01</span><span class="tag postoji">postoji</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Gradi se sada, u ductura/web. U Ductusu se ništa ne popravlja; sve se radi samo u Ducturi.</li><li>Navigacija nastavnika ima tri stavke: Moji kolegiji, Brz put, Radovi uz mentora.</li><li>„Novi kolegij i zadatak” je samo gumb na Kolegijima.</li><li>Stavka „Zbirni” dodaje se kad postoji ekran N-17.</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Okvir oko svih nastavničkih ekrana: bočna traka s logom, glavna navigacija, tema i odjava.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Prijeći na Moje kolegije, Brz put i Radove uz mentora. „Novi kolegij i zadatak” je gumb na Kolegijima, a „Zbirni” se dodaje kad postoji ekran N-17.</li><li>Promijeniti svijetlu ili tamnu temu.</li><li>Na uskom zaslonu otvoriti izbornik.</li></ul>
+<h3>Stanja</h3>
+<p>U prototipu: zatvoren i otvoren izbornik na uskom zaslonu, označena trenutačna stavka, fokus tipkovnice.</p>
+<h3>Podaci koje vidi</h3>
+<p>Naziv Ductura i stavke navigacije. Nikakve podatke o studentima.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Postoji. Navigacija ima četiri stavke: „Moji kolegiji”, Novi zadatak, Brz put i Mentorstva. Stavke „Zbirni” nema, jer nema ni ekrana N-17. Nastavnička uloga čita se iz baze, a stranice bez prava pokazuju karticu pristupa. Testovi postoje (e2e i pgTAP 108).</p>
+<p class="mono">src/components/shell/nav.ts · src/components/shell/shell-role.ts · app/page.tsx · AccessCard · e2e: teacher-home, role-switch, access-screens</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: nastavnička uloga postoji samo kao dio ugovora. ductura/web: ljuska već postoji (AppShell i nav.ts); nedostaju samo rute.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Frontend (ductura/web): navigacija nastavnika s tri stavke: Moji kolegiji, Brz put, Radovi uz mentora. „Novi kolegij i zadatak” ostaje gumb na Kolegijima.</li><li>Frontend (ductura/web): rute za nastavničke ekrane; AppShell i nav.ts već postoje.</li><li>Frontend: stavka „Zbirni” u navigaciji, tek kad postoji ekran N-17.</li><li>Frontend (ductura/web): uz nove nastavničke rute provjeriti stanja učitavanja i greške i dodati ih ako ih nema.</li></ol>
+<p>Procjena: <b>mala</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li>Referenca za M2 navodi samo „Kolegiji” i „Mentorstva”, bez ikona; prototip ima pet stavki. Koji popis vrijedi, odlučujete Vi. (zatvoreno 18. 11. 2026.: tri stavke)</li><li><span class="neprov">neprovjereno</span> postoje li u Ductusu loading.tsx i error.tsx za /nastavnik. U Ductusu se to ne popravlja; stanja se rade u ductura/web.</li><li>Za studenta se dvije funkcije početne ne slažu (/zadaci prema D-180, /rad u readHome). Nastavnika to ne dira, ali ostaje otvoreno.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#kolegiji" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 2 KOLEGIJI -->
+<details class="kartica" id="k-kolegiji" data-id="kolegiji" data-oznaka="N-01" data-naziv="Moji kolegiji" data-hash="kolegiji">
+<summary><span class="naziv">Moji kolegiji</span><span class="oz">N-01</span><span class="tag postoji">postoji</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Korak A (jedan PR, samo sučelje): uz „Predano” vrijeme predaje i verzija; stanje učitavanja; „Otvorilo rad: X od Y studenata”.</li><li>Korak B: imena studenata umjesto „Rad 1”; promjena ugovora i plan napada; uz to popis studenata koji nisu otvorili rad.</li><li>Korak C: novi kod za upis na ovom ekranu. Poslužitelj radi, nedostaje gumb.</li><li>Otisak ne ide na popis (N-07).</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Početna nastavnika. Popis kolegija i zadataka, uz stanje predaje po studentu.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Otvoriti zadatak, rad ili popis studenata.</li><li>Izdati novi kod za upis. Kod se prikazuje jednom, a stari prestaje vrijediti.</li><li>Prijeći na novi kolegij ili zadatak.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno, učitavanje, greška, novi kod za upis izdan te objava zadatka prekinuta s nepoznatim ishodom.</p>
+<h3>Podaci koje vidi</h3>
+<p>Naziv kolegija, zadatke s rokom, po studentu stanje predaje, vrijeme predaje, nakon roka ili ne, verziju i stanje zapisa.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Postoji na /nastavnik. Uz svaki zadatak pokazuje samo „Predano”, „Predano nakon roka” ili „Nije predano” te „Rad 1, Rad 2” umjesto imena. Komentar u kodu kaže da se verzija i vrijeme ne prikazuju, iako ih poslužitelj šalje. Stanja: nema kolegija, „Još nema zadataka.”, „Nijedan student još nije otvorio rad.”, nedostupno i kartica pristupa. Stanja učitavanja nema. Testovi postoje.</p>
+<p class="mono">app/nastavnik/page.tsx · src/components/teacher/TeacherCourses.tsx (r. 36–47) · src/server/evidence/assignment-submissions.ts · /api/teacher/courses · /api/teacher/assignments/[assignmentId]/submissions · pgTAP 036, 086, 117</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: kolegij i upisni kod rade; popis kolegija i predaja po zadatku postoje samo kao ugovor. ductura/web: komponenta TeacherCourses s 24 testa i katalogom s pet stanja.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Korak A, Frontend (jedan PR, samo sučelje): uz „Predano” prikazati vrijeme predaje i verziju koje poslužitelj već šalje; stanje učitavanja; „Otvorilo rad: X od Y studenata”.</li><li>Korak B, Backend i Frontend: imena studenata umjesto „Rad 1, Rad 2”, uz promjenu ugovora; uz to popis studenata koji nisu otvorili rad. <span class="tag plan">plan napada</span></li><li>Korak C, Frontend: gumb za novi kod za upis na ovom ekranu. Poslužitelj već radi.</li><li>Otisak ne ide na ovaj popis; pripada ekranu „Što je student predao” (N-07).</li></ol>
+<p>Procjena: <b>srednja</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li>Otvorene odluke nisu pronađene.</li><li><span class="neprov">neprovjereno</span> izgled na širini 400 px.</li><li>Čitanje imena (assignment-names.ts) postoji, ali ga koriste samo testovi; tko smije vidjeti imena, treba potvrditi u planu napada.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#kolegiji" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 3 NOVI ZADATAK -->
+<details class="kartica" id="k-novi-zadatak" data-id="novi-zadatak" data-oznaka="N-02, N-03" data-naziv="Novi kolegij i zadatak" data-hash="novi-zadatak">
+<summary><span class="naziv">Novi kolegij i zadatak</span><span class="oz">N-02, N-03</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Kolegij i zadatak su razdvojeni: kolegij, zatim kod, zatim „Dodaj zadatak”.</li><li>Zadatak je jedan obrazac u odjeljcima, ne čarobnjak u pet koraka. To je odstupanje od slike N-03, po Vašoj odluci.</li><li>Obavezan korak „Pregled i objava”.</li><li>Stanje „objava prekinuta, ishod nije poznat”.</li><li>Poziv za stvaranje zadatka na poslužitelju, uz plan napada.</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Nastavnik stvara kolegij i objavljuje zadatak s rokom, opsegom i pravilima o alatima.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Stvoriti novi kolegij i dobiti kod za upis, zatim gumbom „Dodaj zadatak” otvoriti obrazac zadatka.</li><li>Ispuniti zadatak u jednom obrascu s odjeljcima: Osnovno, Rok i opseg, Pravila o AI pomoći i alatima, Što se bilježi.</li><li>Proći obavezan korak „Pregled i objava” prije objave.</li></ul>
+<h3>Stanja</h3>
+<p>Obrazac zadatka u odjeljcima, prazno (novi kolegij), kolegij stvoren s kodom za upis, pogreške u obrascu, „Pregled i objava”, učitavanje, greška objave te „objava prekinuta, ishod nije poznat”. Prototip još prikazuje čarobnjak u pet koraka; vrijedi jedan obrazac u odjeljcima.</p>
+<h3>Podaci koje vidi</h3>
+<p>Naslov, opis, rok, raspon riječi, pravila o alatima, popis onoga što se bilježi i kod za upis.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Djelomično. Na /nastavnik/zadatak/novi je jedan obrazac bez koraka, s poljima za AI alate. Uređivanje zadatka i jezik rada imaju svoje rute. Testovi postoje.</p>
+<p class="mono">app/nastavnik/zadatak/novi · TeacherSetup.tsx (r. 294–364) · zadatak/[id]/uredi (AssignmentVersionForm, WorkLanguageCard) · rad/[documentId]/jezik · assignment-create.test.ts · course-create.test.ts</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: stvaranje kolegija, upisni kod i opoziv rade. Stvaranje zadatka je u stanju PENDING i nije u openapi/v1.json, iako funkcija institution.create_assignment postoji u bazi. ductura/web: samo tekstovi.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Frontend: razdvojiti kolegij i zadatak: kolegij, zatim kod, zatim „Dodaj zadatak”.</li><li>Frontend: zadatak kao jedan obrazac u odjeljcima, s obaveznim korakom „Pregled i objava”. Ne čarobnjak u pet koraka.</li><li>Frontend: stanje „objava prekinuta, ishod nije poznat” s provjerom popisa zadataka.</li><li>Backend (ductura/server): poziv za stvaranje zadatka iz stanja PENDING. <span class="tag plan">plan napada</span></li></ol>
+<p>Procjena: <b>srednja</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li>Otvorene odluke nisu pronađene.</li><li><span class="neprov">neprovjereno</span> koliko se postojeći obrazac slaže s referentnom slikom za N-02.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#novi-zadatak" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 4 STUDENTI -->
+<details class="kartica" id="k-studenti" data-id="studenti" data-oznaka="N-04" data-naziv="Popis studenata" data-hash="studenti">
+<summary><span class="naziv">Popis studenata</span><span class="oz">N-04</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Popis po studentu kroz sve zadatke kolegija: ime, grupa, stanje riječima. Redoslijed je abecedni.</li><li>Filtar grupe, ako poslužitelj vraća grupe.</li><li>Uklanjanje studenta i dopuštenje povratka: zaseban korak s planom napada.</li><li>Poziv na poslužitelju, uz plan napada.</li><li>D-128 O-3: bez jantarne. „Čeka doradu” je samo tekst.</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Abecedni popis studenata na kolegiju, kroz sve zadatke kolegija, sa stanjem rada riječima. Nastavnik vidi samo svoje grupe.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Suziti popis na Grupu 2 ili Grupu 4, ako poslužitelj vraća grupe.</li><li>Otvoriti rad studenta.</li><li>Ako nitko nije upisan, izdati novi kod za upis.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno (nitko se nije upisao), učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Ime studenta, grupu i stanje svakog rada: predano s vremenom i verzijom, u pisanju ili obavijest nije potvrđena. Popis se ne može poredati po brojevima.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Ekrana nema. Na poslužitelju postoje čitanje popisa studenata i čitanje imena, ali ih koriste samo testovi. Postoje i API rute za uklanjanje studenta, dopuštenje povratka i upise. pgTAP 090.</p>
+<p class="mono">src/server/institution/course-students.ts (readCourseStudents) · src/server/evidence/assignment-names.ts · app.teacher_course_students · /api/institution/students/[studentId]/removal · /api/institution/students/[studentId]/return-permission · /api/institution/enrollments</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: samo baza (app.teacher_course_students, pgTAP 090), bez poziva preko mreže. ductura/web: nema.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Backend: API ruta za popis studenata na postojećem čitanju. <span class="tag plan">plan napada</span></li><li>Frontend: stranica popisa po studentu kroz sve zadatke kolegija, sa stanjima i s filtrom grupe ako poslužitelj vraća grupe. „Čeka doradu” je samo tekst, bez jantarne.</li><li>Uklanjanje studenta i dopuštenje povratka: zaseban korak. <span class="tag plan">plan napada</span></li></ol>
+<p>Procjena: <b>srednja</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">D-128 O-3</span>: smije li jantarna boja ostati na „Čeka doradu” u popisima. (zatvoreno 18. 11. 2026.: bez jantarne; „Čeka doradu” je samo tekst)</li><li><span class="neprov">neprovjereno</span> vraća li readCourseStudents i grupe.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#studenti" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 5 MENTORSTVA -->
+<details class="kartica" id="k-mentorstva" data-id="mentorstva" data-oznaka="N-16" data-naziv="Radovi uz mentora" data-hash="mentorstva">
+<summary><span class="naziv">Radovi uz mentora</span><span class="oz">N-16</span><span class="tag postoji">postoji</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Zahtjevi na čekanju s gumbima Odobri i Odbij: zaseban korak, plan napada.</li><li>Razlog odbijanja je neobavezan, uz preporuku da se upiše zbog studenta.</li><li>Stanje učitavanja.</li><li>Uz „Predano” vrijeme predaje i verzija.</li><li>Bez zadnje izmjene, etape i ocjene (D-202).</li><li>Student vidi razlog odbijanja ako ga mentor upiše. (dopuna 18. 11. 2026.)</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Radovi studenata kojima je nastavnik mentor, po prezimenu. Mentorstvo nastaje kad nastavnik odobri zahtjev (D-204).</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Otvoriti rad.</li><li>Odobriti ili odbiti zahtjev za mentorstvo. Razlog odbijanja je neobavezan, uz preporuku da se upiše zbog studenta. Ako ga mentor upiše, student ga vidi.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno (nemate mentorstava), učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Studenta, kolegij, naslov rada, stanje rada riječima (uz „Predano” vrijeme predaje i verziju) i zahtjeve na čekanju s temom i vremenom. Bez zadnje izmjene, etape i ocjene (D-202).</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Postoji na /nastavnik/mentorstva. Popis je po prezimenu, bez vremena zadnje izmjene, etape i ocjene (D-202). pgTAP 037, 038 i 104.</p>
+<p class="mono">app/nastavnik/mentorstva · MentoredWorks.tsx · /api/teacher/mentorships</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: samo ugovor. ductura/web: komponenta MentoredWorks s 10 testova.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Frontend: usporediti s prototipom; stanje učitavanja; uz „Predano” vrijeme predaje i verzija.</li><li>Backend i Frontend, zaseban korak: zahtjevi na čekanju s gumbima Odobri i Odbij; razlog odbijanja neobavezan, a student ga vidi ako ga mentor upiše. <span class="tag plan">plan napada</span> <span class="neprov">neprovjereno</span> postoje li ti gumbi u aplikaciji Ductus.</li></ol>
+<p>Procjena: <b>mala</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">D-128 O-3</span>: jantarna boja na „Čeka doradu”. (zatvoreno 18. 11. 2026.: bez jantarne; samo tekst)</li><li>Vrijeme zadnje izmjene se ne prikazuje prema D-202; prototip ga ne prikazuje.</li><li>Vidi li student razlog odbijanja. (zatvoreno 18. 11. 2026.: vidi ga ako ga mentor upiše)</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#mentorstva" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 6 BRZ PUT -->
+<details class="kartica" id="k-brz-put" data-id="brz-put" data-oznaka="N-05" data-naziv="Brz put" data-hash="brz-put">
+<summary><span class="naziv">Brz put</span><span class="oz">N-05</span><span class="tag postoji">postoji</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>„Otvori rad” je prava poveznica.</li><li>Prethodni i sljedeći rad.</li><li>Točka u boji se uklanja.</li><li>Broj lijepljenja bez izvora samo u pojedinostima; nikad u popisu i bez poretka.</li><li>Naziv „Predaja u obradi” je potvrđen (#1782).</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Brz prolaz kroz radove jednog zadatka, jedan za drugim, bez otvaranja svakog rada posebno.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Birati rad s popisa po prezimenu.</li><li>Prebaciti između „Tekst rada” i „Sažetak procesa”.</li><li>Ići na prethodni ili sljedeći rad i otvoriti cijeli rad.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno, učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Stanje predaje, zadnju promjenu, stanje zapisa i broj lijepljenja bez izvora. Taj je broj samo u pojedinostima; nikad u popisu i bez poretka. Točke u boji nema.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Postoji na /nastavnik/brz-put, sa stanjem učitavanja. Pojedinosti pokazuju zadnju promjenu, lijepljenja bez izvora (broj ili „nema”) i stanje zapisa. Gumb „Otvori rad” piše „uskoro” i nije poveznica, iako podatak o dokumentu postoji. Podaci se osvježavaju svakih 5 minuta. pgTAP 085.</p>
+<p class="mono">app/nastavnik/brz-put · FastPath.tsx (r. 162) · fast-path.ts (r. 57) · app.fast_path_works</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: samo ugovor. ductura/web: samo tekstovi (locales/hr.ts).</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Frontend: „Otvori rad” kao prava poveznica na /nastavnik/rad/[id].</li><li>Frontend: prekidač „Tekst rada” i „Sažetak procesa” ako ga nema.</li><li>Frontend: prethodni i sljedeći rad.</li><li>Frontend: ukloniti točku u boji.</li><li>Frontend: broj lijepljenja bez izvora samo u pojedinostima; nikad u popisu i bez poretka.</li></ol>
+<p>Procjena: <b>mala</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li>Prikazuje li se broj lijepljenja ili samo „Ima ih”. (zatvoreno 18. 11. 2026.: broj samo u pojedinostima; nikad u popisu i bez poretka)</li><li><span class="istak">Naziv „Predaja u obradi”</span> nije potvrđen (#1782). (zatvoreno 18. 11. 2026.: naziv je potvrđen)</li><li><span class="istak">D-128 O-3</span>: jantarna boja na „Čeka doradu”. (zatvoreno 18. 11. 2026.: bez jantarne; samo tekst)</li><li><span class="neprov">neprovjereno</span> ima li aplikacija prekidač tekst i sažetak.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#brz-put" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 7 ZBIRNI -->
+<details class="kartica" id="k-zbirni" data-id="zbirni" data-oznaka="N-17" data-naziv="Zbirni pregled" data-hash="zbirni">
+<summary><span class="naziv">Zbirni pregled</span><span class="oz">N-17</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Zaseban ekran Zbirni pregled se gradi.</li><li>Uz to redak zbroja riječima na Mojim kolegijima.</li><li>Stavka „Zbirni” u navigaciji kad ekran postoji (Z-01).</li><li>EQ1 je zatvoren: stari prototipi (*.dc.html) nisu odobrena referenca.</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Činjenice o predaji po zadatku, redom po prezimenu. Bez poretka po brojevima i bez ocjene.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Vidjeti sve studente jednog zadatka u tablici.</li><li>Otvoriti rad iz tablice.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno (nema objavljenih zadataka), učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Po zadatku: rok i zbroj po stanju (predano, u pisanju, obavijest nije potvrđena). Po studentu: stanje, vrijeme predaje, nakon roka da ili ne, stanje zapisa i dorada.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Nema koda.</p>
+<p class="mono">nema rute, komponente ni testova</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: nema ugovora ni baze. Najbliži je administratorski pregled ustanove, koji nije nastavnički pogled. ductura/web: nema.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Backend: čitanje predaja po zadatku za nastavnika, s pgTAP retcima. <span class="tag plan">plan napada</span></li><li>Frontend: tablica u omotaču koji se pomiče vodoravno, sa stanjima.</li><li>Frontend: redak zbroja riječima na Mojim kolegijima.</li><li>Frontend: stavka „Zbirni” u navigaciji, kad ekran postoji (Z-01).</li></ol>
+<p>Procjena: <b>velika</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">EQ1</span>: jesu li stari prototipi odobrena referenca. Za N-17 nema nove reference. (zatvoreno 18. 11. 2026.: stari prototipi, *.dc.html, nisu odobrena referenca; zaseban ekran se gradi)</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#zbirni" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 8 RAD -->
+<details class="kartica" id="k-rad" data-id="rad" data-oznaka="N-06, N-07, N-08" data-naziv="Rad: uživo, pregled, komentari" data-hash="rad">
+<summary><span class="naziv">Rad: uživo, pregled, komentari</span><span class="oz">N-06, N-07, N-08</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Isti editor, samo za čitanje, uz desni panel komentara. Grade ga pisci orkestratora.</li><li>„Zatraži doradu” s rokom, Prihvati i Ponovno otvori, uz plan napada.</li><li>Zaglavlje s činjenicama, poveznice, sljedeći i prethodni rad.</li><li>Q-6: odluka od 4. 11. vrijedi (D-133, D-134, D-266 t. 1).</li><li>Prijedlozi u tekstu se grade. Prihvaćeni prijedlog trajno nosi oznaku „prihvaćen prijedlog mentora” i ne broji se kao studentovo pisanje.</li><li>„Zatraži istragu” se ne gradi.</li><li>Mentor smije povući svoj prijedlog dok ga student nije prihvatio. Povučeni prijedlog ne mijenja tekst rada. (dopuna 18. 11. 2026.)</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Jedan rad studenta: tekst uživo dok se piše, predani tekst nakon predaje te komentari i zahtjevi za doradu.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Čitati tekst i ostaviti komentar, odgovoriti na komentar ili ga označiti riješenim.</li><li>Zatražiti doradu s rokom za doradu, prihvatiti doradu ili ponovno otvoriti.</li><li>Povući svoj prijedlog dok ga student nije prihvatio. Povučeni prijedlog ne mijenja tekst rada.</li><li>Otvoriti predaju, sažetak, reprodukciju, usporedbu i konzultacije. AI pomoć dolazi kad se izgradi (čeka Q-10 i studentsku izjavu); priprema za razgovor se sada ne gradi, a etape nemaju zaseban ekran, nego kratak slijed u zaglavlju rada.</li><li>Prijeći na sljedeći ili prethodni rad.</li></ul>
+<h3>Stanja</h3>
+<p>Predano, uživo, predano nakon roka, zapis s prazninama, nije predano, dorada koju student navodi kao provedenu, prazno, učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Tekst rada, vrijeme predaje i rok, verziju, stanje zapisa, zadnju promjenu, produljeni rok, komentare i stanje dorade.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Djelomično. /nastavnik/rad/[id] pokazuje tekst uživo s oznakom veze, komentare, sažetak i granice zapisa. Predani rad je isti pogled s oznakom „Predani rad”. Zahtjev za doradu ima API i SQL, ali klijent ima samo popis i odgovor, pa sučelje postoji samo za studenta. Prijedloga nema nigdje.</p>
+<p class="mono">app/nastavnik/rad/[id] · LiveWorkView.tsx · LiveText.tsx · TeacherComments.tsx · SummaryCard · RecordLimits · /api/live/[documentId] · /api/comments/[action] · /api/revision-requests/[action] · src/client/revision-requests.ts · pgTAP 051</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: tekst uživo, komentari i zahtjevi za doradu postoje samo kao ugovor. ductura/web: samo tekstovi (liveView, comments, revisions u locales/hr.ts).</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Frontend (grade pisci orkestratora): isti editor, samo za čitanje, uz desni panel komentara.</li><li>Frontend: nastavnički klijent i dijalog „Zatraži doradu” s rokom, na postojećem API-ju. <span class="tag plan">plan napada</span></li><li>Frontend: prihvati doradu i ponovno otvori. <span class="tag plan">plan napada</span></li><li>Frontend: zaglavlje s činjenicama; poveznice na predaju, reprodukciju i ostale ekrane rada; sljedeći i prethodni rad.</li><li>Prijedlozi u tekstu: grade se. Prihvaćeni prijedlog trajno nosi oznaku „prihvaćen prijedlog mentora” i ne broji se kao studentovo pisanje. Mentor smije povući svoj prijedlog dok ga student nije prihvatio; povučeni prijedlog ne mijenja tekst rada. Koda još nema.</li><li>Gumb „Zatraži istragu” se ne gradi.</li></ol>
+<p>Procjena: <b>velika</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">EQ1</span>: za N-06 i N-07 nema nove reference. (zatvoreno 18. 11. 2026.: stari prototipi nisu odobrena referenca)</li><li><span class="istak">D-128 O-3</span>: jantarna boja na „Čeka doradu”. (zatvoreno 18. 11. 2026.: bez jantarne; samo tekst)</li><li>Prijedlozi u tekstu nemaju odluku ni kod. (zatvoreno 18. 11. 2026.: grade se; koda i dalje nema)</li><li>Smije li mentor povući svoj prijedlog. (zatvoreno 18. 11. 2026.: smije dok ga student nije prihvatio; povučeni prijedlog ne mijenja tekst rada)</li><li>Izvori se ne slažu oko <span class="istak">Q-6</span> (zatvoreno 18. 11. 2026.: vrijedi odluka od 4. 11., D-133, D-134, D-266 t. 1): STATE.md kaže da je odlučen (D-266 t. 1), a poruka orkestratora na #2012 kaže da komentari M6 čekaju Vaš izbor (D-133, D-134). <span class="istak">DAN-857</span> mijenja ugovor komentara. <span class="neprov">neprovjereno</span> na #2012.</li><li>Prema istoj poruci orkestratora novi kod ide u ductura/web i ductura/server, ne u Ductus.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#rad" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 9 PREDAJA -->
+<details class="kartica" id="k-predaja" data-id="predaja" data-oznaka="N-07" data-naziv="Što je student predao" data-hash="predaja">
+<summary><span class="naziv">Što je student predao</span><span class="oz">N-07</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Ekran potvrde za nastavnika s istim poljima kao kod studenta: vrijeme, rok, verzija, stanje zapisa, otisak i Kopiraj.</li><li>Stanja su tekstna.</li><li>Izjava i razgovori dolaze kad nastane studentski korak Izjava.</li><li>Zamjenski postupak čeka FPZG (Q-3).</li><li>Poziv i plan napada.</li><li>Izjava i priloženi razgovori ne prikazuju se dok ne nastane studentski korak Izjava. Ostala polja potvrde ostaju: vrijeme, rok, verzija, stanje zapisa, otisak i Kopiraj. (dopuna 18. 11. 2026.)</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Nastavnik vidi isto što je student vidio kad je predao: potvrdu i korak „Prije predaje”. Izjava i priloženi razgovori ne prikazuju se dok ne nastane studentski korak Izjava.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Pročitati izjavu i priložene razgovore tek kad nastane studentski korak Izjava; dotad se ne prikazuju.</li><li>Vidjeti potvrdu i otvoriti točne UTC vrijednosti.</li><li>Prenijeti otisak gumbom „Kopiraj” i otvoriti provjeru potvrde.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, predano nakon roka, zapis je cjelovit, „Predaja u obradi”, nije dovršeno (zamjenski postupak, koji čeka FPZG, Q-3), prazno, učitavanje i greška. Stanja su tekstna.</p>
+<h3>Podaci koje vidi</h3>
+<p>Vrijeme predaje, rok, početak potpisivanja, verziju, otisak SHA-256 i stanje zapisa. Izjavu i priložene razgovore tek kad nastane studentski korak Izjava.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Zasebnog ekrana nema. Student na svojoj potvrdi vidi vrijeme, rok, stanje zapisa, verziju, otisak i „Predano nakon roka.”. Nastavnik vidi samo oznaku „Predani rad” u pogledu rada i tri riječi na N-01.</p>
+<p class="mono">student: src/components/student/Submission.tsx · SubmissionView.ts (r. 81–105) · nastavnik: TeacherCourses.tsx (r. 36–39) · src/server/evidence/assignment-submissions.ts</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: predaja po zadatku postoji samo kao ugovor. ductura/web: nema.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Backend: nastavničko čitanje potvrde predaje (vrijeme, rok, verzija, otisak, stanje zapisa). <span class="tag plan">plan napada</span></li><li>Frontend: ekran potvrde za nastavnika, s istim poljima kao kod studenta.</li><li>Izjava i priloženi razgovori ne prikazuju se dok ne nastane studentski korak Izjava.</li><li>Zamjenski postupak čeka FPZG (Q-3).</li></ol>
+<p>Procjena: <b>srednja</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">EQ1</span>: za N-07 nema nove reference. (zatvoreno 18. 11. 2026.: stari prototipi nisu odobrena referenca)</li><li><span class="istak">Istraga je PRIJEDLOG</span>: gumb „Zatraži istragu” se ne gradi. (zatvoreno 18. 11. 2026.: ne gradi se)</li><li><span class="istak">Naziv „Predaja u obradi”</span> nije potvrđen (#1782). (zatvoreno 18. 11. 2026.: naziv je potvrđen)</li><li>Studentska izjava ne postoji, pa ovaj dio nema što prikazati. (zatvoreno 18. 11. 2026.: izjava i priloženi razgovori ne prikazuju se dok ne nastane studentski korak Izjava)</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#predaja" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 10 SAZETAK -->
+<details class="kartica" id="k-sazetak" data-id="sazetak" data-oznaka="N-10" data-naziv="Sažetak i karta podrijetla" data-hash="sazetak">
+<summary><span class="naziv">Sažetak i karta podrijetla</span><span class="oz">N-10</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Sažetak u ductura/web.</li><li>Karta podrijetla s legendom (uzorak i tekst), uz plan napada.</li><li>Prekidač je zadano na „Podrijetlo teksta” (D-127 O-2 zatvoren).</li><li>Rečenica „Ductura ne zna tko je tipkao.”</li><li>Brojevi uz događaje kao činjenice, bez udjela i zbirne ocjene (pitanje D-61 zatvoreno).</li><li>Odjeljak o izjavi („Izjava o korištenju generativne umjetne inteligencije”) i rečenica o razgovorima ne prikazuju se dok ne nastane studentski korak Izjava, isto kao na potvrdi predaje (N-07). Sve ostalo u sažetku ostaje. (dopuna 18. 11. 2026.)</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Sažetak procesa pisanja i karta koja uz tekst pokazuje odakle je koji dio došao.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Čitati sažetak.</li><li>Prebaciti kartu između „Podrijetlo teksta” i „Napisano u Ducturi”. Zadano je „Podrijetlo teksta”.</li></ul>
+<h3>Stanja</h3>
+<p>Puno (zapis ima praznine), zapis je cjelovit, karta bez oznaka, prazno, učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Sažetak procesa i legendu: zalijepljeno, AI prijenos, uvoz, izmjena nastavnika, mjesto za izvor. Brojevi uz događaje su činjenice; bez udjela i zbirne ocjene. Uz „Napisano u Ducturi” uvijek stoji „Ductura ne zna tko je tipkao.” Odjeljak o izjavi i rečenica o razgovorima ne prikazuju se dok ne nastane studentski korak Izjava.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Djelomično. Sažetak procesa postoji, karte nema. pgTAP 070 i 071.</p>
+<p class="mono">ProcessSummaryView · SummaryCard.tsx · src/domain/projection/process-summary.ts (r. 10–25) · /api/process-summary</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: sažetak procesa samo kao ugovor. ductura/web: samo tekstovi (summary u locales/hr.ts).</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Frontend (ductura/web): sažetak.</li><li>Backend: podaci o podrijetlu po odlomku za kartu. <span class="tag plan">plan napada</span></li><li>Frontend: karta s legendom (uzorak i tekst) i prekidačem, zadano na „Podrijetlo teksta”; „Napisano u Ducturi” uvijek uz „Ductura ne zna tko je tipkao.” (D-127).</li></ol>
+<p>Procjena: <b>srednja</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">Brojevi uz događaje</span>: D-61 prema rječniku. (zatvoreno 18. 11. 2026.: brojevi uz događaje kao činjenice, bez udjela i zbirne ocjene)</li><li><span class="istak">D-127 O-2</span>: naziv u legendi i zadano stanje prekidača. (zatvoreno 18. 11. 2026.: zadano „Podrijetlo teksta”)</li><li>Odjeljak o izjavi i rečenica o razgovorima u sažetku prije studentskog koraka Izjava. (zatvoreno 18. 11. 2026.: ne prikazuju se dok ne nastane studentski korak Izjava, isto kao u N-07)</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#sazetak" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 11 REPRODUKCIJA -->
+<details class="kartica" id="k-reprodukcija" data-id="reprodukcija" data-oznaka="N-09" data-naziv="Reprodukcija" data-hash="reprodukcija">
+<summary><span class="naziv">Reprodukcija</span><span class="oz">N-09</span><span class="tag postoji">postoji</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Reprodukcija u ductura/web; poslužitelj je spreman.</li><li>Poveznica iz rada.</li><li>Test u pregledniku.</li><li>Praznine u zapisu su vidljive.</li><li>Nastavnik smije gledati prije predaje; student to zna iz obavijesti.</li><li>Q-19 i D-68 odnose se na povjerenstvo i ne koče.</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Nastavnik gleda kako je tekst nastajao, promjenu po promjenu. Smije gledati i prije predaje; student to zna iz obavijesti.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Pokrenuti i zaustaviti reprodukciju.</li><li>Ići na prethodnu ili sljedeću promjenu, birati brzinu 1, 2 ili 4 i skočiti na sesiju.</li><li>Pomicati klizač „Promjena n od N”.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, zapis s prazninom, prazno (nema promjena), učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Tekst u svakom koraku, vrijeme promjene, sesije i praznine u zapisu.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Postoji na /nastavnik/rad/[id]/reprodukcija, s pogledom za nastavnika. Nijedna poveznica ne vodi do te stranice. Nema e2e testa.</p>
+<p class="mono">app/nastavnik/rad/[id]/reprodukcija · ReplayView (student={false})</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: reprodukcija radi (evidence.replay). ductura/web: samo tekstovi (replay u locales/hr.ts).</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Frontend (ductura/web): reprodukcija; poslužitelj je spreman. Praznine u zapisu ostaju vidljive.</li><li>Frontend: poveznica iz pogleda rada na reprodukciju.</li><li>Test u pregledniku za nastavničku reprodukciju.</li><li>Obavijest studentu mora reći da nastavnik smije gledati reprodukciju i prije predaje.</li></ol>
+<p>Procjena: <b>mala</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">Q-19</span>: D-68 prema N-09 u valu 3. (zatvoreno 18. 11. 2026. za ovaj ekran: Q-19 i D-68 odnose se na povjerenstvo i ne koče; nastavnik smije gledati prije predaje, a student to zna iz obavijesti)</li><li><span class="istak">D-55</span>: pravna osnova za uvjetne funkcije, čeka pravno mišljenje.</li><li><span class="neprov">neprovjereno</span> koja stanja ReplayView ima.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#reprodukcija" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 12 USPOREDBA -->
+<details class="kartica" id="k-usporedba" data-id="usporedba" data-oznaka="N-11" data-naziv="Usporedba verzija" data-hash="usporedba">
+<summary><span class="naziv">Usporedba verzija</span><span class="oz">N-11</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Usporedba dviju poslanih verzija.</li><li>Podcrtano i precrtano, uz zbroj riječima; bez zelene i crvene.</li><li>Zadano: zadnja verzija prema prethodnoj.</li><li>Vrijedi u oba profila evidencije.</li><li>Poziv i plan napada.</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Usporedba dviju poslanih verzija rada.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Izabrati dvije poslane verzije i vidjeti razlike. Zadano je zadnja verzija prema prethodnoj.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno (poslana je samo jedna verzija), učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Dodano podcrtano, uklonjeno precrtano, uz zbroj riječima; bez zelene i crvene. Uspoređuju se samo poslane verzije (D-202 t. 3, D-237).</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Ekrana nema. Postoji samo usporedba teksta u domeni.</p>
+<p class="mono">src/domain/document (diff)</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: nema ugovora ni baze. ductura/web: postoji knjižnica razlika src/domain/diff/diff.ts.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Backend: čitanje poslanih verzija za nastavnika. <span class="tag plan">plan napada</span></li><li>Frontend: ekran usporedbe na postojećoj usporedbi teksta, zadano zadnja verzija prema prethodnoj, u oba profila evidencije.</li></ol>
+<p>Procjena: <b>srednja</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">D-202 i Q-18</span>: vrijedi li usporedba u oba profila evidencije. (zatvoreno 18. 11. 2026.: vrijedi u oba profila evidencije)</li><li><span class="neprov">neprovjereno</span> pojedinosti usporedbe u domeni aplikacije.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#usporedba" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 13 KONZULTACIJE -->
+<details class="kartica" id="k-konzultacije" data-id="konzultacije" data-oznaka="N-12" data-naziv="Konzultacije" data-hash="konzultacije">
+<summary><span class="naziv">Konzultacije</span><span class="oz">N-12</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Popis, zapis i obrazac: datum, tema, verzija, dogovoreno.</li><li>Student vidi isti zapis (D-47).</li><li>Zapis se ne briše ni ne prepravlja, samo se dopunjuje.</li><li>Privatna bilješka mentora ne sada (D-135, D-55, pravno mišljenje).</li><li>Nova tablica s RLS-om, RPC-om i pgTAP retcima, uz plan napada.</li><li>Zapis dopunjuje samo mentor. Student zapis i dopune vidi, ali ne dopunjuje. (dopuna 18. 11. 2026.)</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Zapis konzultacija uz rad. Isti zapis i dopune vidi i student (D-47), ali ih ne dopunjuje.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Vidjeti popis zapisa i otvoriti jedan.</li><li>Upisati novi zapis: datum, tema, verzija rada, dogovoreno.</li><li>Dopuniti postojeći zapis. Zapis dopunjuje samo mentor. Zapis se ne briše ni ne prepravlja.</li></ul>
+<h3>Stanja</h3>
+<p>Popis, jedan zapis, novi zapis, prazno, učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Datum, temu, verziju rada i dogovoreno.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Nema koda.</p>
+<p class="mono">nema rute, komponente ni testova</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: nema ugovora ni baze. ductura/web: nema ni teksta.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Backend: tablica zapisa konzultacija s RLS-om, RPC za upis i pgTAP retci. Zapis se ne briše ni ne prepravlja, samo se dopunjuje; dopunjuje ga samo mentor, a student zapis i dopune samo vidi. <span class="tag plan">plan napada</span></li><li>Frontend: popis, jedan zapis i obrazac.</li><li>Privatna bilješka mentora se sada ne gradi.</li></ol>
+<p>Procjena: <b>velika</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">D-55 i D-135</span>: privatna bilješka mentora odlučena je uvjetno i čeka pravno mišljenje. U prototipu nije izvedena. Odluka 18. 11. 2026.: sada se ne gradi; pravno mišljenje i dalje čeka.</li><li>Referentna slika je u EKRANI.md označena kao ODOBRENO.</li><li>Smije li i student dopuniti zapis. (zatvoreno 18. 11. 2026.: zapis dopunjuje samo mentor; student zapis i dopune vidi, ali ne dopunjuje)</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#konzultacije" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 14 PRODULJENJE -->
+<details class="kartica" id="k-produljenje" data-id="produljenje" data-oznaka="N-13" data-naziv="Produljenje roka" data-hash="produljenje">
+<summary><span class="naziv">Produljenje roka</span><span class="oz">N-13</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Gradnja čeka ADR, rok 30. 11. 2026. Ove odluke su oblik funkcije kao ulaz u ADR.</li><li>Produljenje jednom studentu ili svima.</li><li>Pokreće ga samo nastavnik; nema studentskog zahtjeva kroz sustav.</li><li>Razlog s kratkog popisa općih razloga, bez slobodnog teksta.</li><li>Razlog vide samo nastavnik i taj student.</li><li>Ako je student već predao, predaja se ne mijenja; produljenje je dopuna.</li><li>Trag (stari i novi rok, tko, kada) se ne briše.</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Nastavnik produljuje rok jednom studentu ili svima. Produljenje pokreće samo nastavnik; studentskog zahtjeva kroz sustav nema. Gradnja čeka ADR (rok 30. 11. 2026.).</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Izabrati jednog studenta ili sve i upisati novi rok.</li><li>Izabrati razlog s kratkog popisa općih razloga. Slobodnog teksta nema.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno, učitavanje, greška, produljenje zabilježeno, za sve studente te student je već predao. U zadnjem slučaju produljenje ne mijenja predaju i bilježi se kao dopuna uz nju.</p>
+<h3>Podaci koje vidi</h3>
+<p>Studenta, stari i novi rok, razlog s popisa i vrijeme predaje ako je student već predao. Razlog vide samo nastavnik i taj student. Trag (stari i novi rok, tko, kada) se ne briše.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Nema koda. Postoji samo komentar u jednoj migraciji.</p>
+<p class="mono">db/migrations/20261018120000_submission_request.sql (r. 6)</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: nema ugovora ni baze. ductura/web: nema ni teksta.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>ADR za Q-5 prije bilo kakvog PR-a sučelja, rok 30. 11. 2026. Odluke od 18. 11. 2026. ulaze u ADR kao oblik funkcije.</li><li>Nakon ADR-a, Backend: tablica produljenja s RLS-om, veza s rokom predaje, trag koji se ne briše i pgTAP retci. <span class="tag plan">plan napada</span></li><li>Nakon ADR-a, Frontend: obrazac s razlogom s popisa, bez slobodnog teksta, i stanja.</li></ol>
+<p>Procjena: <b>velika</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">Q-5 i ADR §8a do 8d</span>: oblik razloga produljenja. Nijedan PR sučelja za N-13 ne ide prije toga. Rok 30. 11. 2026. ADR i dalje čeka; odluka od 18. 11. 2026. daje mu ulaz: razlog s kratkog popisa općih razloga, bez slobodnog teksta.</li><li><span class="istak">Tko traži produljenje</span>: nije određeno. (zatvoreno 18. 11. 2026.: pokreće ga samo nastavnik; nema studentskog zahtjeva kroz sustav)</li><li>Razlog vide samo „Vi i ovaj student”. (zatvoreno 18. 11. 2026.: razlog vide samo nastavnik i taj student)</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#produljenje" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 15 IZVOZ -->
+<details class="kartica" id="k-izvoz" data-id="izvoz" data-oznaka="N-18" data-naziv="Izvoz za Merlin" data-hash="izvoz">
+<summary><span class="naziv">Izvoz za Merlin</span><span class="oz">N-18</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Gradi se nakon rada, potvrde predaje i Brzog puta; smije čekati, jer nije uvjet probe 22. 2. 2027.</li><li>Paket: CSV te PDF i .docx svakog rada. CSV stupci po D-286. Gumb „Preuzmi samo popis”.</li><li>Jedan paket (.zip) po zadatku, ne po kolegiju; poveznica vrijedi 24 h.</li><li>Otisci datoteka u CSV-u i u zasebnoj datoteci; na ekranu otisak paketa i Kopiraj.</li><li>Priprema i preuzimanje upisuju se u trag.</li><li>Studenti bez predaje su u CSV-u („predano: ne”).</li><li>D-291 i D-292 zatvara pisac uz plan napada.</li><li>CSV ima dva stupca otiska: „otisak PDF” i „otisak .docx”. Stupci su: prezime, ime, predano, vrijeme, nakon roka, naziv datoteke, otisak PDF, otisak .docx (dopuna D-286). (dopuna 18. 11. 2026.)</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Paket predaja za upis ocjena u Merlin: jedan paket (.zip) po zadatku, ne po kolegiju. Ocjena se upisuje u Merlinu, ne u Ducturi.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Pripremiti paket i preuzeti ga.</li><li>Preuzeti samo CSV gumbom „Preuzmi samo popis”.</li><li>Prenijeti otisak paketa gumbom „Kopiraj”.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno, učitavanje, greška, priprema i paket spreman. Poveznica vrijedi 24 sata.</p>
+<h3>Podaci koje vidi</h3>
+<p>CSV stupce: prezime, ime, predano, vrijeme, nakon roka, naziv datoteke, otisak PDF, otisak .docx (dopuna D-286). Studenti bez predaje su u CSV-u („predano: ne”) i imaju „nema” u oba stupca otiska. Otisci datoteka su u CSV-u i u zasebnoj datoteci; na ekranu je otisak paketa.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Nema koda.</p>
+<p class="mono">nema rute, komponente ni testova</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: nema ugovora ni baze. Postojeća preuzimanja služe instalacijskim paketima, ne izvozu. ductura/web: nema ni teksta.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Redoslijed: gradi se nakon rada, potvrde predaje i Brzog puta. Smije čekati, jer nije uvjet probe 22. 2. 2027.</li><li>Backend: izrada jednog paketa (.zip) po zadatku (CSV te PDF i .docx svakog rada) s otiscima i poveznicom od 24 sata; priprema i preuzimanje upisuju se u trag. <span class="tag plan">plan napada</span></li><li>Frontend: ekran s pripremom i preuzimanjem, gumb „Preuzmi samo popis”, otisak paketa i Kopiraj.</li></ol>
+<p>Procjena: <b>velika</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">D-291</span>: broj stranica PDF-a, „brojevi otvoreni”. Zatvara pisac uz plan napada.</li><li><span class="istak">D-292</span>: naziv datoteke, djelomično odlučeno. Zatvara pisac uz plan napada.</li><li>Otisak u CSV-u naspram popisa stupaca iz D-286. (zatvoreno 18. 11. 2026.: CSV ima dva stupca otiska, „otisak PDF” i „otisak .docx”; to je dopuna popisa stupaca iz D-286)</li><li><span class="istak">O-4</span>: jedno ili više preuzimanja (zatvoreno 18. 11. 2026.: jedan paket po zadatku, poveznica vrijedi 24 h); i dva otiska u potvrdi s jednim poljem. Zatvara pisac uz plan napada (odluka 18. 11. 2026.).</li><li>Naziv datoteke u CSV-u uz dva otiska. (zatvoreno 18. 11. 2026.: ostaje jedan stupac, naziv PDF-a; .docx nosi isti naziv s drugim nastavkom)</li><li><span class="istak">Naziv „Predaja u obradi”</span> nije potvrđen (#1782). (zatvoreno 18. 11. 2026.: naziv je potvrđen)</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#izvoz" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 16 AI PREGLED -->
+<details class="kartica" id="k-ai-pregled" data-id="ai-pregled" data-oznaka="N-AI-ATT" data-naziv="AI pomoć u radu" data-hash="ai-pregled">
+<summary><span class="naziv">AI pomoć u radu</span><span class="oz">N-AI-ATT</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Odlučeno u načelu. Gradnja čeka Q-10 (15. 12. 2026.) i studentsku izjavu (M9); dotad bez praznog mjesta u navigaciji.</li><li>Izjava i zabilježeno jedno uz drugo, bez zaključka i bez ikakve oznake razlike, pa ni neutralne napomene „u izjavi nije navedeno”.</li><li>Prijenosi iz AI pomoćnika kao činjenica: mjesto i broj znakova.</li><li>Nastavnik vidi samo razgovore koje je student priložio; broj nepriloženih ne vidi.</li><li>Bez udjela, zbroja i ocjene.</li><li>Vanjski alati samo iz izjave.</li><li>Prazno stanje: „AI pomoćnik nije korišten u ovom radu.”</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Studentova izjava o AI pomoći i ono što je Ductura zabilježila, jedno uz drugo, bez zaključka i bez ikakve oznake razlike.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Pročitati izjavu, zabilježene prijenose i razgovore koje je student priložio.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno („AI pomoćnik nije korišten u ovom radu.”), učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Svrhu, pružatelja i model, fazu, prijenose iz AI pomoćnika s mjestom i brojem znakova, priložene razgovore i vanjske alate, samo iz izjave. Bez udjela, zbroja i ocjene. Razgovore koje student nije priložio nastavnik ne vidi, a ne vidi ni njihov broj.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Nema koda.</p>
+<p class="mono">nema rute, komponente ni testova</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: nema ugovora ni baze. ductura/web: <span class="neprov">neprovjereno</span></p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Odlučeno u načelu 18. 11. 2026. Gradnja čeka Q-10 (15. 12. 2026.) i studentsku izjavu (M9); dotad bez praznog mjesta u navigaciji.</li><li>Zatim: Backend za izjavu i priloge, zatim Frontend. <span class="tag plan">plan napada</span></li></ol>
+<p>Procjena: <b>velika</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">Referenca N-AI-ATT je PRIJEDLOG</span> (DAN-411) i čeka Vašu potvrdu. (zatvoreno 18. 11. 2026.: odlučeno u načelu; gradnja čeka Q-10 i studentsku izjavu, M9)</li><li><span class="istak">Q-10</span>: pružatelj i model, odluka do 15. 12. 2026. Pružatelj A i model M-2 su zamjenski.</li><li><span class="istak">D-267 O1</span>: model računa za AI, PRIJEDLOG.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#ai-pregled" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 17 RAZGOVOR -->
+<details class="kartica" id="k-razgovor" data-id="razgovor" data-oznaka="N-14" data-naziv="Priprema za razgovor" data-hash="razgovor">
+<summary><span class="naziv">Priprema za razgovor</span><span class="oz">N-14</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Ne gradi se sada. Ostaje uvjetan (EQ5) i ne ulazi u prvu probu; dotad služe N-10, N-09 i N-12.</li><li>Načelo za budućnost: mjesta dodaje samo nastavnik; Ductura ne slaže popis sama.</li><li>Načelo za budućnost: student vidi pitanja prije razgovora (D-47).</li><li>Naziv bez riječi provjere; radni naziv „Bilješke za razgovor”.</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Nastavnik priprema pitanja za razgovor o radu. Činjenice iz zapisa nisu zaključak. Ekran se sada ne gradi; dotad služe sažetak (N-10), reprodukcija (N-09) i konzultacije (N-12). Radni naziv za budućnost je „Bilješke za razgovor”.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Dodati mjesta iz zapisa: lijepljenja, prijenose iz AI pomoćnika i praznine. Mjesta dodaje samo nastavnik; Ductura ne slaže popis sama.</li><li>Otvoriti mjesto u sažetku, izjavi ili reprodukciji.</li><li>Dodati svoja pitanja. Student ih vidi prije razgovora (D-47).</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno, učitavanje i greška.</p>
+<h3>Podaci koje vidi</h3>
+<p>Mjesta iz zapisa koja je nastavnik dodao, s vremenom i odlomkom, te popis „Vaša pitanja”.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Nema koda.</p>
+<p class="mono">nema rute, komponente ni testova</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: nema ugovora ni baze. ductura/web: nema.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Ništa sada. Ekran ostaje uvjetan (EQ5) i ne ulazi u prvu probu; dotad služe N-10, N-09 i N-12.</li><li>Ako uvjet EQ5 bude ispunjen: Backend za pitanja nastavnika s RLS-om. <span class="tag plan">plan napada</span></li><li>Zatim Frontend.</li></ol>
+<p>Procjena: <b>srednja</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">EQ5</span>: uvjetni ekran (paket U), crta se tek kad je uvjet ispunjen. Odluka 18. 11. 2026.: ne gradi se sada i ne ulazi u prvu probu.</li><li>Vidi li student pitanja prije razgovora, nije odlučeno. (zatvoreno 18. 11. 2026.: student vidi pitanja prije razgovora, D-47)</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#razgovor" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<!-- 18 ETAPE -->
+<details class="kartica" id="k-etape" data-id="etape" data-oznaka="N-15" data-naziv="Etape" data-hash="etape">
+<summary><span class="naziv">Etape</span><span class="oz">N-15</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<div class="odluceno"><h3>Odlučeno 18. 11. 2026.</h3><ul><li>Bez zasebnog ekrana; ostaje uvjetan (EQ5).</li><li>Umjesto njega kratak slijed u zaglavlju rada, s vremenima i činjenicama: poslano na pregled, zatražena dorada s rokom, predano i verzija.</li><li>Jedan rok po zadatku. Dorada ima svoj rok kad je nastavnik zatraži. Bez zasebnog roka za nacrt.</li><li>Rubrika i ocjena se ne grade (D-249, Merlin).</li><li>Privatna bilješka se ne gradi (D-55, D-135).</li></ul></div>
+<h3>Čemu služi</h3>
+<p>Slijed rada jednim pogledom. Zasebnog ekrana nema; umjesto njega je kratak slijed u zaglavlju rada: poslano na pregled, zatražena dorada s rokom, predano i verzija.</p>
+<h3>Što nastavnik može učiniti</h3>
+<ul><li>Vidjeti slijed s vremenima u zaglavlju rada.</li><li>Otvoriti što je student predao i izvoz za Merlin.</li></ul>
+<h3>Stanja</h3>
+<p>U prototipu: puno, prazno (zadatak bez etapa), učitavanje i greška. Zaseban ekran se ne gradi.</p>
+<h3>Podaci koje vidi</h3>
+<p>Vrijeme slanja na pregled, zatraženu doradu s rokom, vrijeme predaje i verziju. Jedan je rok po zadatku; dorada ima svoj rok kad je nastavnik zatraži; zasebnog roka za nacrt nema. Ocjena se upisuje u Merlinu; Ductura nema rubriku.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Nema koda.</p>
+<p class="mono">nema rute, komponente ni testova</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>ductura/server: nema ugovora ni baze. ductura/web: nema.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ol><li>Zaseban ekran se ne gradi; ostaje uvjetan (EQ5).</li><li>Frontend: kratak slijed u zaglavlju rada (N-06), s vremenima i činjenicama: poslano na pregled, zatražena dorada s rokom, predano i verzija.</li><li>Jedan rok po zadatku; dorada ima svoj rok kad je nastavnik zatraži; bez zasebnog roka za nacrt.</li><li>Rubrika, ocjena i privatna bilješka se ne grade (D-249, D-55, D-135).</li></ol>
+<p>Procjena: <b>velika</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul class="otv"><li><span class="istak">EQ5</span>: uvjetni ekran. Odluka 18. 11. 2026.: bez zasebnog ekrana; kratak slijed u zaglavlju rada.</li><li><span class="istak">EQ1</span>: stara referenca nije potvrđena. (zatvoreno 18. 11. 2026.: stari prototipi nisu odobrena referenca)</li><li><span class="istak">D-249</span>: rubrika se u M6 ne gradi. (zatvoreno 18. 11. 2026.: rubrika i ocjena se ne grade; ocjena ide u Merlin)</li><li><span class="istak">D-55 i D-135</span>: privatna bilješka čeka pravno mišljenje. Odluka 18. 11. 2026.: ne gradi se; pravno mišljenje i dalje čeka.</li><li>EKRANI.md vodi N-15 kao DJELOMIČNO, a koda nema.</li></ul>
+<a class="u-proto" href="https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8#etape" target="_blank" rel="noopener">Otvori u prototipu</a>
+</div>
+</details>
+
+<h2 id="sazetak-odluka">Sažetak odluka</h2>
+<p>Jedan redak po ekranu. Tekst se mijenja čim nešto odaberete ili upišete. Ekrani bez odluke su na kraju.</p>
+<p class="sitno">Odlučeno: <span class="brojac" id="brojac">0 od 18</span></p>
+<textarea id="sazetak-tekst" readonly aria-label="Sažetak odluka"></textarea>
+<div class="dno">
+  <button type="button" class="btn" id="kopiraj">Kopiraj</button>
+  <button type="button" class="btn sec" id="oznaci">Označi tekst</button>
+  <button type="button" class="btn sec" id="obrisi">Obriši odluke</button>
+</div>
+<p class="sitno status" id="status" role="status" aria-live="polite"></p>
+<div class="potvrda" id="potvrda" hidden>
+  <p><strong>Obrisati sve odluke i bilješke?</strong> To se ne može vratiti.</p>
+  <div class="dno">
+    <button type="button" class="btn" id="obrisi-da">Da, obriši</button>
+    <button type="button" class="btn sec" id="obrisi-ne">Odustani</button>
+  </div>
+</div>
+
+<h2 id="nesklad">Nesklad sa studentskim prototipom</h2>
+<ul>
+  <li>Potvrda predaje u studentskom prototipu nema redak s verzijom. Aplikacija Ductus verziju pokazuje, a nastavnički prototip također.</li>
+  <li>Korak „Prije predaje” upućuje na „3. Analiza, odlomak 2”, a rad u prototipu nema odjeljak „3. Analiza”.</li>
+  <li>Sažetak u studentskom prototipu koristi riječ s popisa zabranjenih izraza (PRODUCT.md §5). Treba je zamijeniti.</li>
+  <li>U studentskom prototipu Kolegiji B, C i D imaju Nastavnike B, C i D. U nastavničkom prototipu sve kolegije vodi Nastavnik A.</li>
+</ul>
+
+<h2 id="zastarjelo">Zastarjeli statusi u docs/design/EKRANI.md</h2>
+<p>Oznake u EKRANI.md ne slažu se s kodom aplikacije. <span class="neprov">neprovjereno</span> odnose li se oznake na kod ili na referentnu sliku.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="Zastarjeli statusi">
+<table>
+  <thead><tr><th scope="col">Oznaka</th><th scope="col">EKRANI.md kaže</th><th scope="col">Kod kaže</th></tr></thead>
+  <tbody>
+    <tr><td class="oz">N-01</td><td>NEMA</td><td>postoji (/nastavnik)</td></tr>
+    <tr><td class="oz">N-04</td><td>NEMA</td><td>čitanje na poslužitelju, bez ekrana</td></tr>
+    <tr><td class="oz">N-16</td><td>NEMA</td><td>postoji (/nastavnik/mentorstva)</td></tr>
+    <tr><td class="oz">N-06</td><td>NEMA</td><td>postoji (/nastavnik/rad/[id])</td></tr>
+    <tr><td class="oz">N-05</td><td>DJELOMIČNO</td><td>postoji, „Otvori rad” je „uskoro”</td></tr>
+    <tr><td class="oz">N-09</td><td>U PR-u</td><td>postoji, bez poveznice</td></tr>
+    <tr><td class="oz">N-11</td><td>DJELOMIČNO</td><td>nema ekrana, samo usporedba u domeni</td></tr>
+    <tr><td class="oz">N-15</td><td>DJELOMIČNO</td><td>nema koda</td></tr>
+  </tbody>
+</table>
+</div>
+<ul style="margin-top:12px">
+  <li>EKRANI.md:72 navodi samo dio referentnih mapa. Na mainu postoje još m2-nastavnik-reference, m6-reference, m7-reference-b, m8-reference-b, m9-reference-b i m11-reference.</li>
+  <li>Oznake N-xx u docs/FEATURES.md nisu iste kao u EKRANI.md. Primjer: N-05 u FEATURES.md nije Brz put.</li>
+</ul>
+
+</div></div>
+
+<script>
+(function () {
+  var KLJUC = "ductus-nastavnik-kartice-v1";
+  var PROTOTIP = "https://claude.ai/artifact/SALyxrLyhsLUAiraJXBew8";
+  var IZBORI = [
+    { v: "ide", t: "Ide" },
+    { v: "mijenja", t: "Mijenja se" },
+    { v: "ne", t: "Ne ide" }
+  ];
+  var stanje = {};
+
+  function citaj() {
+    try {
+      var t = window.localStorage.getItem(KLJUC);
+      var o = t ? JSON.parse(t) : {};
+      return o && typeof o === "object" ? o : {};
+    } catch (e) { return {}; }
+  }
+  function pisi() {
+    try { window.localStorage.setItem(KLJUC, JSON.stringify(stanje)); return true; }
+    catch (e) { return false; }
+  }
+  function brisi() {
+    try { window.localStorage.removeItem(KLJUC); } catch (e) {}
+  }
+  function tekstIzbora(v) {
+    for (var i = 0; i < IZBORI.length; i++) if (IZBORI[i].v === v) return IZBORI[i].t;
+    return "";
+  }
+
+  var kartice = Array.prototype.slice.call(document.querySelectorAll("details.kartica"));
+  var statusEl = document.getElementById("status");
+
+  kartice.forEach(function (k) {
+    var id = k.getAttribute("data-id");
+    var tijelo = k.querySelector(".tijelo");
+    var blok = document.createElement("div");
+    blok.className = "odluka";
+    var radiji = IZBORI.map(function (o) {
+      return '<label for="odluka-' + id + '-' + o.v + '"><input type="radio" id="odluka-' + id + '-' + o.v + '" name="odluka-' + id + '" value="' + o.v + '">' + o.t + '</label>';
+    }).join("");
+    blok.innerHTML =
+      '<fieldset><legend>Vaša odluka</legend><div class="izbor">' + radiji + '</div></fieldset>' +
+      '<label class="polje" for="biljeska-' + id + '"><span>Bilješka</span><textarea id="biljeska-' + id + '" class="biljeska" rows="3" autocomplete="off"></textarea></label>';
+    tijelo.appendChild(blok);
+  });
+
+  function redak(k, s) {
+    var nap = (s && s.biljeska ? s.biljeska : "").replace(/\s+/g, " ").trim();
+    var odl = s && s.odluka ? tekstIzbora(s.odluka) : "bez odluke";
+    return k.getAttribute("data-oznaka") + " · " + k.getAttribute("data-naziv") + " · " + odl + (nap ? " · bilješka: " + nap : "");
+  }
+
+  function osvjezi() {
+    var odluceni = [], ostali = [];
+    kartice.forEach(function (k) {
+      var id = k.getAttribute("data-id");
+      var s = stanje[id];
+      var oznaka = k.querySelector(".odabrano");
+      if (s && s.odluka) {
+        odluceni.push(redak(k, s));
+        if (oznaka) oznaka.textContent = "Vaša odluka: " + tekstIzbora(s.odluka);
+      } else {
+        ostali.push(redak(k, s));
+        if (oznaka) oznaka.textContent = "";
+      }
+    });
+    var t = "Odluke o nastavničkim ekranima Ducture (" + odluceni.length + " od " + kartice.length + ")\n\n" + odluceni.concat(ostali).join("\n");
+    document.getElementById("sazetak-tekst").value = t;
+    document.getElementById("brojac").textContent = odluceni.length + " od " + kartice.length;
+  }
+
+  function primijeni() {
+    kartice.forEach(function (k) {
+      var id = k.getAttribute("data-id");
+      var s = stanje[id] || {};
+      IZBORI.forEach(function (o) {
+        var r = document.getElementById("odluka-" + id + "-" + o.v);
+        if (r) r.checked = s.odluka === o.v;
+      });
+      var b = document.getElementById("biljeska-" + id);
+      if (b) b.value = s.biljeska || "";
+    });
+  }
+
+  var pocetno = citaj();
+  kartice.forEach(function (k) {
+    var id = k.getAttribute("data-id");
+    var s = pocetno[id];
+    if (!s || typeof s !== "object") return;
+    stanje[id] = {
+      odluka: tekstIzbora(s.odluka) ? s.odluka : "",
+      biljeska: typeof s.biljeska === "string" ? s.biljeska : ""
+    };
+  });
+  primijeni();
+
+  function promjena(e) {
+    var el = e.target;
+    var k = el.closest ? el.closest("details.kartica") : null;
+    if (!k) return;
+    var id = k.getAttribute("data-id");
+    var s = stanje[id] || (stanje[id] = { odluka: "", biljeska: "" });
+    if (el.type === "radio" && el.checked) s.odluka = el.value;
+    else if (el.classList && el.classList.contains("biljeska")) s.biljeska = el.value;
+    else return;
+    if (!pisi()) statusEl.textContent = "Preglednik ne dopušta pohranu. Odluke vrijede dok je stranica otvorena.";
+    osvjezi();
+  }
+  document.addEventListener("change", promjena);
+  document.addEventListener("input", promjena);
+
+  function oznaciTekst() {
+    var t = document.getElementById("sazetak-tekst");
+    t.focus();
+    t.select();
+    try { t.setSelectionRange(0, t.value.length); } catch (e) {}
+  }
+
+  document.getElementById("kopiraj").addEventListener("click", function () {
+    var tekst = document.getElementById("sazetak-tekst").value;
+    var neuspjeh = function () {
+      oznaciTekst();
+      statusEl.textContent = "Preglednik nije dopustio pristup međuspremniku. Tekst je označen; prenesite ga sami.";
+    };
+    try {
+      navigator.clipboard.writeText(tekst).then(function () {
+        statusEl.textContent = "Sažetak je u međuspremniku. Zalijepite ga u razgovor.";
+      }, neuspjeh);
+    } catch (e) { neuspjeh(); }
+  });
+
+  document.getElementById("oznaci").addEventListener("click", function () {
+    oznaciTekst();
+    statusEl.textContent = "Tekst je označen.";
+  });
+
+  var potvrda = document.getElementById("potvrda");
+  document.getElementById("obrisi").addEventListener("click", function () {
+    potvrda.hidden = false;
+    document.getElementById("obrisi-ne").focus();
+  });
+  document.getElementById("obrisi-ne").addEventListener("click", function () {
+    potvrda.hidden = true;
+    document.getElementById("obrisi").focus();
+  });
+  document.getElementById("obrisi-da").addEventListener("click", function () {
+    stanje = {};
+    brisi();
+    primijeni();
+    osvjezi();
+    potvrda.hidden = true;
+    statusEl.textContent = "Odluke i bilješke su obrisane.";
+    document.getElementById("obrisi").focus();
+  });
+
+  function otvoriCilj(id) {
+    var d = id ? document.getElementById(id) : null;
+    if (d && d.tagName === "DETAILS") d.open = true;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('a[href^="#k-"]'), function (a) {
+    a.addEventListener("click", function () { otvoriCilj(a.getAttribute("href").slice(1)); });
+  });
+  if (location.hash) otvoriCilj(location.hash.slice(1));
+
+  osvjezi();
+})();
+</script>
+
+</body></html>
