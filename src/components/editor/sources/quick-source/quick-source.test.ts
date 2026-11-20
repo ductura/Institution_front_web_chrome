@@ -1,3 +1,4 @@
+import type { SourceDraft } from "@ductura/ui";
 import { describe, expect, it } from "vitest";
 
 import { parseIdentifier } from "./identifier";
@@ -22,7 +23,7 @@ describe("parseIdentifier", () => {
 });
 
 describe("lookupSource", () => {
-  const draft = { type: "web", authors: [], title: "Izmišljeni naslov", year: 2026, url: "https://example.invalid/", accessed: "2026-11-20" } as const;
+  const draft: SourceDraft = { type: "web", authors: [], title: "Izmišljeni naslov", year: 2026, url: "https://example.invalid/", accessed: "2026-11-20" };
   it("is unavailable without a route and makes no request", async () => {
     expect(await lookupSource("10.1000/x.1")).toEqual({ state: "unavailable" });
   });
