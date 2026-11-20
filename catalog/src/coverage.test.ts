@@ -54,6 +54,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "student/NoticeCourse.tsx",
   "student/StudentWorkspace.tsx",
   "student/Submission.tsx",
+  "student/SubmissionView.tsx",
   "student/TeacherViewSheet.tsx",
   "student/WorkDocumentProvider.tsx",
   "student/radovi/MyWorks.tsx",
