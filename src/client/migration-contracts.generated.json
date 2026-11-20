@@ -644,7 +644,9 @@
               "required": [
                 "institution",
                 "roles",
-                "displayName"
+                "displayName",
+                "journalScope",
+                "sessionTag"
               ],
               "properties": {
                 "institution": {
@@ -703,6 +705,14 @@
                       "type": "null"
                     }
                   ]
+                },
+                "journalScope": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "sessionTag": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
                 }
               }
             }
@@ -4212,6 +4222,377 @@
       ],
       "422": [
         "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.submission-receipt.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/students/{studentId}/submission",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId",
+        "studentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "studentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "none",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state",
+                    "revision",
+                    "requestedAt"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "ceka",
+                      "type": "string"
+                    },
+                    "revision": {
+                      "minimum": 1,
+                      "maximum": 9007199254740991,
+                      "type": "integer"
+                    },
+                    "requestedAt": {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state",
+                    "receipt"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "potvrdeno",
+                      "type": "string"
+                    },
+                    "receipt": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "payload",
+                        "payloadDigestSha256",
+                        "signature"
+                      ],
+                      "properties": {
+                        "payload": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "receiptSchema",
+                            "submissionId",
+                            "evidenceDomainId",
+                            "principalId",
+                            "assignmentId",
+                            "assignmentVersion",
+                            "documentId",
+                            "evidencePackageId",
+                            "revision",
+                            "artifactSha256",
+                            "evidenceHeadSegmentHash",
+                            "evidenceRecord",
+                            "requestedAt",
+                            "dueAt",
+                            "afterDeadline",
+                            "signedAt"
+                          ],
+                          "properties": {
+                            "receiptSchema": {
+                              "const": "ductus-submission-receipt-v2",
+                              "type": "string"
+                            },
+                            "submissionId": {
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                              "type": "string"
+                            },
+                            "evidenceDomainId": {
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                              "type": "string"
+                            },
+                            "principalId": {
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                              "type": "string"
+                            },
+                            "assignmentId": {
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                              "type": "string"
+                            },
+                            "assignmentVersion": {
+                              "minimum": 1,
+                              "maximum": 9007199254740991,
+                              "type": "integer"
+                            },
+                            "documentId": {
+                              "minLength": 1,
+                              "maxLength": 256,
+                              "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF])+(?<!\\s)$",
+                              "type": "string"
+                            },
+                            "evidencePackageId": {
+                              "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$",
+                              "type": "string"
+                            },
+                            "revision": {
+                              "minimum": 1,
+                              "maximum": 9007199254740991,
+                              "type": "integer"
+                            },
+                            "artifactSha256": {
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string"
+                            },
+                            "evidenceHeadSegmentHash": {
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string"
+                            },
+                            "evidenceRecord": {
+                              "anyOf": [
+                                {
+                                  "const": "continuous",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "with_gaps",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "requestedAt": {
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                              "type": "string"
+                            },
+                            "dueAt": {
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                              "type": "string"
+                            },
+                            "afterDeadline": {
+                              "type": "boolean"
+                            },
+                            "signedAt": {
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "payloadDigestSha256": {
+                          "pattern": "^[0-9a-f]{64}$",
+                          "type": "string"
+                        },
+                        "signature": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "algorithm",
+                            "keyId",
+                            "keyVersion",
+                            "signatureEncoding",
+                            "signatureBase64Url"
+                          ],
+                          "properties": {
+                            "algorithm": {
+                              "const": "Ed25519",
+                              "type": "string"
+                            },
+                            "keyId": {
+                              "minLength": 1,
+                              "maxLength": 2048,
+                              "pattern": "\\S",
+                              "type": "string"
+                            },
+                            "keyVersion": {
+                              "minLength": 1,
+                              "maxLength": 256,
+                              "pattern": "\\S",
+                              "type": "string"
+                            },
+                            "signatureEncoding": {
+                              "const": "raw",
+                              "type": "string"
+                            },
+                            "signatureBase64Url": {
+                              "pattern": "^[A-Za-z0-9_-]{86}$",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.work.get": {
+    "path": "/api/v1/teacher/works/{documentId}",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "minLength": 1,
+          "maxLength": 256,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "documentId",
+                "studentId",
+                "studentName",
+                "assignmentId",
+                "state",
+                "prevDocumentId",
+                "nextDocumentId"
+              ],
+              "properties": {
+                "documentId": {
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "type": "string"
+                },
+                "studentId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "studentName": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "assignmentId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "state": {
+                  "anyOf": [
+                    {
+                      "const": "predano",
+                      "type": "string"
+                    },
+                    {
+                      "const": "nije_predano",
+                      "type": "string"
+                    },
+                    {
+                      "const": "nakon_roka",
+                      "type": "string"
+                    },
+                    {
+                      "const": "ceka",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "prevDocumentId": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "nextDocumentId": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 256,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
       ],
       "503": [
         "unavailable"
