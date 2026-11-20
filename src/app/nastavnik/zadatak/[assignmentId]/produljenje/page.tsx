@@ -4,9 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { signInHref } from "@/client/api";
 import { readDeadlineExtensions, readExtensionStudents } from "@/client/deadline-extensions";
 import { serverApi } from "@/client/server";
-import DeadlineExtensions, {
-  extensionsHref, type ExtensionsRead,
-} from "@/components/teacher/deadline-extensions/DeadlineExtensions";
+import DeadlineExtensions, { type ExtensionsRead } from "@/components/teacher/deadline-extensions/DeadlineExtensions";
+import { extensionsHref } from "@/components/teacher/links";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import styles from "../../../page.module.css";

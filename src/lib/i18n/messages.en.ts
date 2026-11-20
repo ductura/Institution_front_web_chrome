@@ -1647,6 +1647,7 @@ const en = {
   },
   // WEB-17 (A-9), WEB-33 (N-17): the teacher's summary of one assignment.
   teacherSummary: {
+    extendDeadline: "Extend the deadline",
     title: "Summary",
     lead: "The submission state of every student of the chosen assignment.",
     emptyTitle: "No assignments yet",

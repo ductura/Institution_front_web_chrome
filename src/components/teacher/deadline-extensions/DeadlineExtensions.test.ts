@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { messagesHr } from "../../../lib/i18n/messages.hr.ts";
 import { findForbiddenTerms } from "../../../../scripts/forbidden-terms/terms.ts";
 
-import { extensionNote, extensionsHref, reasonOptions } from "./DeadlineExtensions.tsx";
+import { extensionsHref } from "../links.ts";
+
+import { extensionNote, reasonOptions } from "./DeadlineExtensions.tsx";
 
 const t = messagesHr.deadlineExtensions;
 const EXT = {

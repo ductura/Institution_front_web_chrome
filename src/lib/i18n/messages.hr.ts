@@ -1723,6 +1723,7 @@ export const hr = {
   // (PRODUCT §5 rule 2); a record gap is a fact, not a mark (rule 3). The
   // "Dorada" column stays empty until wave 8.
   teacherSummary: {
+    extendDeadline: "Produlji rok",
     title: "Zbirni pregled",
     lead: "Stanje predaje za svakog studenta odabranog zadatka.",
     emptyTitle: "Još nema zadataka",
