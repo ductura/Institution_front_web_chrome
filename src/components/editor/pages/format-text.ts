@@ -4,7 +4,7 @@ import { pagesMessages as t } from "./messages.hr";
 const decimal = (value: number) => String(value).replace(".", ",");
 
 export function marginsText({ margins: m }: PageFormat) {
-  return `${t.left} ${decimal(m.left)} cm, ${t.right} ${decimal(m.right)} cm, ${t.top} ${decimal(m.top)} cm, ${t.bottom} ${decimal(m.bottom)} cm`;
+  return `${t.marginLeft} ${decimal(m.left)} cm, ${t.marginRight} ${decimal(m.right)} cm, ${t.marginTop} ${decimal(m.top)} cm, ${t.marginBottom} ${decimal(m.bottom)} cm`;
 }
 
 export function numbersText(format: PageFormat) {
