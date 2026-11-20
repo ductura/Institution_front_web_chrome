@@ -18,9 +18,9 @@ import type { ValidationError } from "./validate";
 
 type Raw = Record<string, unknown>;
 
-const STRING_MARKS = new Set(["bold", "italic", "sup", "sub", "imported"]);
+export const STRING_MARKS = new Set(["bold", "italic", "sup", "sub", "imported"]);
 /** Each mark with attributes: its required and optional attributes (§3). */
-const OBJECT_MARKS: ReadonlyMap<string, { required: string[]; optional: string[] }> = new Map([
+export const OBJECT_MARKS: ReadonlyMap<string, { required: string[]; optional: string[] }> = new Map([
   ["highlight", { required: ["color"], optional: [] }],
   ["lang", { required: ["lang"], optional: [] }],
   ["link", { required: ["href"], optional: [] }],
@@ -30,7 +30,7 @@ const COLOR = /^#[0-9a-f]{6}$/;
 const LANG = /^[a-z]{2,3}$/;
 const HREF = /^(?:https?:\/\/|mailto:)[\x21-\x7e]+$/;
 
-const ATTRIBUTE_RULES: Readonly<Record<string, (value: unknown) => boolean>> = {
+export const ATTRIBUTE_RULES: Readonly<Record<string, (value: unknown) => boolean>> = {
   color: (value) => typeof value === "string" && COLOR.test(value),
   lang: (value) => typeof value === "string" && LANG.test(value),
   href: (value) =>
