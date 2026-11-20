@@ -1,0 +1,11 @@
+.list {
+  display: grid;
+  gap: var(--space-3, 12px);
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.list p {
+  margin-block: var(--space-1, 4px);
+}

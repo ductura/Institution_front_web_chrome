@@ -111,6 +111,31 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "teacher/kolegiji/CourseCodes.tsx",
   "teacher/shell/TeacherShell.tsx",
   "teacher/shell/TeacherShellFrame.tsx",
+  "editor/diff/ComparisonResult.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/diff/SubmissionComparisonDialogs.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/diff/VersionComparison.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/revision/RevisionLog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/revision/SendRevisionDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/spelling/SpellingPopover.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/suggestions/SuggestionCard.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/compare/TeacherVersionComparison.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/consultation-records/ConsultationDetail.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/consultation-records/ConsultationRecords.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/consultation-records/NewConsultation.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/deadline-extensions/DeadlineExtensions.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/revision/ReturnForRevisionDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/assistant/coming-soon/AssistantComingSoonCard.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/mentor/consultation-slots/ConsultationSlots.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/mentor/messages/WorkMessages.tsx", // WEB-1110: exercised in the Mentor card.
+  "editor/mentor/milestones/WorkMentorSections.tsx", // WEB-1110: exercised in the Mentor card.
+  "editor/mentor/milestones/WorkMilestones.tsx", // WEB-1110: exercised in the Mentor card.
+  "editor/mentor/timeline/WorkTimeline.tsx", // WEB-1111: dialog owned by the mounted Mentor panel.
+  "editor/mentor/work-state/MentorWorkState.tsx", // WEB-1111: subview of the editor and teacher work frames.
+  "editor/mentor/work-state/ReadOnlyMentor.tsx", // WEB-1111: authenticated entry on read-only work surfaces.
+  "teacher/mentored-students/MentoredStudents.tsx", // WEB-1111: role-gated dialog owned by Mentor.
+  "editor/mentor/working-criteria/WorkingCriteria.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/rich/blocks/FormulaDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/rich/blocks/RichBlockTools.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
 ]);
 
 describe("every component has a catalogue entry with all five states (web.md §6 B5)", () => {

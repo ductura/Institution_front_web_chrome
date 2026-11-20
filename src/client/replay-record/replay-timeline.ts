@@ -164,8 +164,8 @@ export async function buildReplayTimeline<TDocument>(
 
   try {
     let current: TDocument | null = null;
-    if (segments.length > 0) {
-      const first = segments[0];
+    const first = segments[0];
+    if (first !== undefined) {
       if (input.startDocument === null) return { ok: false, reason: "document_mismatch" };
       const start = await loadExact(input.startDocument, first.initialDocumentHash);
       if (start === null) return { ok: false, reason: "document_mismatch" };
@@ -182,8 +182,8 @@ export async function buildReplayTimeline<TDocument>(
       if (segment.captureContext.transactionFormat !== replayer.transactionFormat) {
         return { ok: false, reason: "unsupported_format" };
       }
-      if (segmentIndex > 0) {
-        const previous = segments[segmentIndex - 1];
+      const previous = segments[segmentIndex - 1];
+      if (previous !== undefined) {
         const nextIndex = changes.length + 1;
         const broken =
           segment.sequenceFrom !== previous.sequenceTo + 1 ||
@@ -243,7 +243,7 @@ export async function buildReplayTimeline<TDocument>(
     if (!Number.isSafeInteger(index) || index < 0 || index >= documents.length) {
       throw new RangeError("replay: no change with that index");
     }
-    return documents[index];
+    return documents[index]!;
   };
   return {
     ok: true,
@@ -255,7 +255,8 @@ export async function buildReplayTimeline<TDocument>(
       changes
         .filter((change) => change.blockIds.includes(blockId))
         .map((change) => {
-          const prior = replayer.blockText(before[change.index - 1], blockId);
+          // Each change records its preceding document in the same iteration.
+          const prior = replayer.blockText(before[change.index - 1]!, blockId);
           const after = replayer.blockText(at(change.index), blockId);
           return { index: change.index, before: prior, after, ...difference(prior ?? "", after ?? "") };
         }),
