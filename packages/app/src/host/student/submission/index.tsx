@@ -25,6 +25,7 @@ import { browserTransport, createApi, goToSignIn } from "../../../../../../src/c
 import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
 
 import { hostText } from "../../../text";
+import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -68,7 +69,7 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
       if (!live) return;
       const read = editorWorkRead(assignmentId, assignments as never, work as never);
       if (read.kind === "signedOut") return goToSignIn(appHref(base, stepPath(assignmentId, step)));
-      if (read.kind === "noticeFirst") return router.replace(appHref(base, `/zadatak/${assignmentId}`));
+      if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const checked: Checked = read.kind === "ready"
         ? { kind: "ready", title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()) }
@@ -98,10 +99,10 @@ function useHrefOf(): (path: string) => string {
 /** `/rad/<id>/predaja`: no screen of its own, only the step the submission stands at. */
 export function SubmissionStartPage({ assignmentId }: { assignmentId: string }) {
   const router = useRouter();
-  const hrefOf = useHrefOf();
+  const { base } = useHost();
   const shown = useChecked<never>(assignmentId, "", async (checked, id) => {
     const step = checked.kind === "ready" && checked.workState === "submitted" ? "potvrda" : "izjava";
-    router.replace(hrefOf(stepPath(id, step)));
+    router.replace(nextPath(base, stepPath(id, step)));
     return null;
   });
   return <Shown shown={shown}>{() => null}</Shown>;
@@ -142,10 +143,11 @@ export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignment
 /** Step 4, "Predaja"; a submitted work goes on to step 5. */
 export function SubmitStepPage({ assignmentId }: { assignmentId: string }) {
   const router = useRouter();
+  const { base } = useHost();
   const hrefOf = useHrefOf();
   const shown = useChecked(assignmentId, "slanje", async (checked, id) => {
     if (checked.kind === "ready" && checked.stage.kind === "submitted") {
-      router.replace(hrefOf(stepPath(id, "potvrda")));
+      router.replace(nextPath(base, stepPath(id, "potvrda")));
       return null;
     }
     return { checked, id };
