@@ -8,7 +8,7 @@
  *
  * createApi already holds a 200 to the contract's closed schema. On top of
  * that a summary is shown only when it agrees with itself: the counts match
- * their lists, every span runs forward, a listed paste is above the threshold
+ * their lists, every span and every gap runs forward, a listed paste is above the threshold
  * and the record state is the one its gap list says. Anything else is
  * `unavailable` and never reaches the screen.
  */
@@ -30,6 +30,7 @@ export function summaryAgrees(summary: ProcessSummaryV1): boolean {
   return sessions.count === sessions.items.length
     && sessions.items.every(forward)
     && pastes.listed.every((paste) => forward(paste.at) && paste.characters > pastes.listedAboveCharacters)
+    && gaps.items.every((gap) => gap.previousEndedAt <= gap.nextStartedAt)
     && recordState === (gaps.items.length === 0 ? "complete" : "has_gaps");
 }
 

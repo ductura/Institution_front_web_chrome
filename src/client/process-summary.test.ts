@@ -66,6 +66,7 @@ describe("the summary shown", () => {
     ["a time that is not a whole minute", (s) => { s.sessions.items[0]!.from = "2026-10-19T08:00:30.000Z"; }],
     ["a time in another zone", (s) => { s.sessions.items[0]!.from = "2026-10-19T10:00:00.000+02:00"; }],
     ["a span that ends before it starts", (s) => { s.sessions.items[1] = { from: "2026-10-19T12:20:00.000Z", to: "2026-10-19T12:05:00.000Z" }; }],
+    ["a gap that ends before it starts", (s) => { s.gaps.items[0] = { previousEndedAt: "2026-10-19T12:05:00.000Z", nextStartedAt: "2026-10-19T08:41:00.000Z" }; }],
     ["a listed paste at or under P-02", (s) => { s.pastes.listed[0]!.characters = 200; }],
     ["a paste with an observed origin", (s) => { Object.assign(s.pastes.listed[0]!, { origin: "web" }); }],
     ["a fraction", (s) => { s.pastes.smallerCount = 1.5; }],
