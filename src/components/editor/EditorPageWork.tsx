@@ -32,6 +32,7 @@ import { EditorHelpDialogs, useEditorHelp, type EditorHelpView } from "./help/Ed
 import { EditorHelpMenu } from "./help/EditorHelpMenu";
 import { EditorNotices } from "./help/EditorNotices";
 import helpStyles from "./help/EditorHelp.module.css";
+import { AssistantComingSoonCard } from "./assistant/coming-soon/AssistantComingSoonCard";
 import StatusBar from "./StatusBar";
 import StatusBarLive from "./StatusBarLive";
 import RevisionPanel from "./RevisionPanel";
@@ -159,7 +160,8 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         <EditorHelpMenu onSelect={setView} />
       </div></EditorCommands>}
       status={<StatusBarLive evidence length={length} />}
-      rightSections={{ work: <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} /> }}>
+      rightSections={{ work: <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />,
+        assistant: <AssistantComingSoonCard /> }}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
       <TriggerPopover editor={editor} />
