@@ -13,8 +13,8 @@
  * "prazno". The server writes the access log of the read (rule 17; its
  * surface waits for P-5).
  *
- * TODO(ugovor): teacher.work.get (`GET /api/v1/teacher/works/{documentId}`,
- * Ductus#2028 c.7024185874) and teacher.submission-receipt.get (SRV-27,
+ * TODO(ugovor): teacher.work.get (read by document id, Ductus#2028
+ * c.7024185874) and teacher.submission-receipt.get (SRV-27,
  * SRV-30) are not in the published contract yet. Until then the work's shape
  * is local (below), the page passes no transport and only tests call these
  * reads, with invented answers. On the release the work read moves to
