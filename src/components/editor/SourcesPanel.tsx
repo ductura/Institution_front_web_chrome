@@ -22,6 +22,7 @@ import {
   citationText, compareEntries, EMPTY_FIELDS, entryText, FIELD_MAX, formErrors, PAGE_MAX, pageFits, sourceFromFields, storable, writeSource,
   type SourceField, type SourceFields, type SourceKind,
 } from "./sources";
+import SourceList from "./sources/panel/SourceList";
 import styles from "./SourcesPanel.module.css";
 
 const t = messagesHr.workspace.sources;
@@ -29,7 +30,7 @@ const pageTooLong = t.pageTooLong.replace("{n}", String(PAGE_MAX));
 // The page of a citation: within its limit and kept by the sheet exactly as typed (QA on #866).
 const pageValid = (page: string) => pageFits(page) && storable(page);
 
-type Added = { entry: string; source: Extract<ReturnType<typeof sourceFromFields>, { ok: true }>["source"] };
+type Added = { entry: string; cited: boolean; source: Extract<ReturnType<typeof sourceFromFields>, { ok: true }>["source"] };
 
 // Contract on #866: the form writes only on a trusted click or key; a script's click writes nothing.
 const trusted = (action: () => void) => (event: { isTrusted: boolean }) => {
@@ -80,12 +81,15 @@ function SourcesForm({ style }: { style: CitationStyle }) {
     const entry = entryText(check.source, style);
     if (!writeSource(editor, cite ? citationText(check.source, page, style) : null, entry)) return;
     const source = check.source;
-    setAdded((list) => (list.some((item) => item.entry === entry) ? list : [...list, { entry, source }].sort((a, b) => compareEntries(a.entry, b.entry))));
+    setAdded((list) => (list.some((item) => item.entry === entry) ? list : [...list, { entry, source, cited: cite }].sort((a, b) => compareEntries(a.entry, b.entry))));
     close();
   };
 
   const cite = (item: Added) => {
-    if (pageValid(listPage) && canWrite()) writeSource(editor, citationText(item.source, listPage, style), null);
+    if (!pageValid(listPage) || !canWrite()) return;
+    if (writeSource(editor, citationText(item.source, listPage, style), null)) {
+      setAdded((list) => list.map((a) => (a.entry === item.entry ? { ...a, cited: true } : a)));
+    }
   };
 
   const set = (field: keyof SourceFields) => (value: string) => setFields((f) => ({ ...f, [field]: value }));
@@ -189,22 +193,11 @@ function SourcesForm({ style }: { style: CitationStyle }) {
             {pageValid(listPage) ? null : (
               <p className={styles.errors} role="alert">{pageFits(listPage) ? t.pageUnstorable : pageTooLong}</p>
             )}
-            <ul className={styles.list}>
-              {added.map((item) => (
-                <li key={item.entry}>
-                  <p>{item.entry}</p>
-                  <button
-                    type="button"
-                    className={styles.secondary}
-                    aria-label={`${t.cite}: ${item.entry}`}
-                    aria-disabled={editable ? undefined : "true"}
-                    onClick={trusted(() => cite(item))}
-                  >
-                    {t.cite}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <SourceList
+              items={added}
+              editable={editable}
+              onCite={(listed) => { const item = added.find((a) => a.entry === listed.entry); if (item) cite(item); }}
+            />
           </>
         )}
       </section>
