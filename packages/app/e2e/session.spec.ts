@@ -340,7 +340,7 @@ test("Stanje sustava shows an API refusal without sending the reader to sign-in"
   const seen = await fakeServer(page, { status: 401 });
   await page.route(STATUS_PATH, (route) => route.fulfill({ status: 401, json: { code: "unauthenticated" } }));
   await page.goto("/app/web/stanje");
-  await expect(page.getByRole("alert")).toContainText("Rezultate provjera trenutačno nije moguće učitati.");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("Rezultate provjera trenutačno nije moguće učitati.");
   await expect(page).toHaveURL(/\/app\/web\/stanje$/);
   expect(seen.me).toBe(0);
   expect(seen.login).toEqual([]);
@@ -352,9 +352,10 @@ test("Stanje sustava shows a service failure and recovers after retry", async ({
     ? { status: 200, json: PUBLIC_STATUS }
     : { status: 503, json: { code: "unavailable" } }));
   await page.goto("/app/web/stanje");
-  await expect(page.getByRole("alert")).toContainText("Rezultate provjera trenutačno nije moguće učitati.");
+  const alert = page.getByRole("main").getByRole("alert");
+  await expect(alert).toContainText("Rezultate provjera trenutačno nije moguće učitati.");
   available = true;
   await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
   await expect(page.getByRole("status")).toHaveText("Neki dijelovi trenutačno ne rade.");
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(alert).toHaveCount(0);
 });
