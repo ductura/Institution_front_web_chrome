@@ -9,10 +9,11 @@ import { MentorWorkState } from "./MentorWorkState";
 import { mentorWorkHr as t } from "./messages.hr";
 import styles from "./MentorWorkState.module.css";
 
-export function ReadOnlyMentor({ documentId, role, submitted, receiptHref }: {
+export function ReadOnlyMentor({ documentId, role, submitted, submittedAt, receiptHref }: {
   documentId?: string;
   role: "teacher" | "student";
   submitted?: boolean;
+  submittedAt?: string;
   receiptHref?: string;
 }) {
   const [allowed, setAllowed] = useState(false);
@@ -42,6 +43,7 @@ export function ReadOnlyMentor({ documentId, role, submitted, receiptHref }: {
   if (!allowed) return null;
   return <Details className={role === "student" ? styles.readOnly : undefined} summary={t.mentor}
     onToggle={(event) => setOpened(event.currentTarget.open)}>
-    {opened && <MentorWorkState documentId={documentId} role={role} submitted={submitted} receiptHref={receiptHref} />}
+    {opened && <MentorWorkState documentId={documentId} role={role} submitted={submitted}
+      submittedAt={submittedAt} receiptHref={receiptHref} />}
   </Details>;
 }

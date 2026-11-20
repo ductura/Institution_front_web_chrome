@@ -81,6 +81,7 @@ export default async function WorkPage({ params }: { params: Promise<{ assignmen
     ? await readSubmittedWork(assignmentId, { baseUrl: institutionServerUrl(), fetchImpl: cookieTransport(cookie) })
     : null;
   if (submission?.kind === "session-expired") redirect(signInHref(here));
+  const receipt = submission?.kind === "potvrdeno" ? submission.receipt.payload : undefined;
   return (
     <EditorPage
       course={read.kind === "ready" ? read.course : null}
@@ -88,7 +89,7 @@ export default async function WorkPage({ params }: { params: Promise<{ assignmen
       topBar={topBar}
       status={<StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
       aside={frame.variant === "predano" && <ReadOnlyMentor role="student" submitted
-        documentId={submission?.kind === "potvrdeno" ? submission.receipt.payload.documentId : undefined} />}
+        documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />}
     >
       {sheetBody(frame.variant)}
     </EditorPage>

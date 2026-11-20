@@ -9,10 +9,11 @@ import { readMilestones, workStatus, type Milestone } from "../timeline/work-tim
 import { mentorWorkHr as t } from "./messages.hr";
 import styles from "./MentorWorkState.module.css";
 
-export function MentorWorkState({ documentId, role, submitted, receiptHref }: {
+export function MentorWorkState({ documentId, role, submitted, submittedAt, receiptHref }: {
   documentId?: string;
   role: "student" | "teacher";
   submitted?: boolean;
+  submittedAt?: string;
   receiptHref?: string;
 }) {
   const [versions, setVersions] = useState<VersionsPage | null>();
@@ -27,7 +28,7 @@ export function MentorWorkState({ documentId, role, submitted, receiptHref }: {
   }, [documentId, submitted]);
 
   const status = workStatus(submitted, versions);
-  const submission = versions?.versions.find((version) => version.kind === "submission");
+  const submissionTime = versions?.versions.find((version) => version.kind === "submission")?.savedMinute ?? submittedAt;
   const next = status === "inProgress" ? milestones?.find((milestone) => milestone.state !== "approved") : undefined;
   return <div className={styles.panel}>
     <section className={styles.state} aria-label={t.state}>
@@ -40,7 +41,7 @@ export function MentorWorkState({ documentId, role, submitted, receiptHref }: {
       {role === "teacher" && versions && <MentoredStudents role={role} />}
     </div>
     <Details summary={t.after} open={status === "submitted"}>
-      {status === "submitted" ? <p>{t.submitted}{submission && <> · <MentorTime at={submission.savedMinute} /></>}</p>
+      {status === "submitted" ? <p>{t.submitted}{submissionTime && <> · <MentorTime at={submissionTime} /></>}</p>
         : <p>{status === "inProgress" ? t.afterWaiting : t[status]}</p>}
       {status === "submitted" && receiptHref && <p><a href={receiptHref}>{t.receipt}</a></p>}
     </Details>
