@@ -244,6 +244,7 @@ function assertChainHead(
 export async function verifyEvidenceChainV2(
   payloads: readonly unknown[],
   expectedHead: EvidenceChainHeadV2 | null,
+  format?: EvidenceStepFormat,
 ): Promise<EvidenceChainVerificationV2> {
   assertChainHead(expectedHead);
   let previousHash: string | null = null;
@@ -251,7 +252,7 @@ export async function verifyEvidenceChainV2(
   const discontinuities: EvidenceChainDiscontinuityV2[] = [];
 
   for (let index = 0; index < payloads.length; index++) {
-    const verified = await verifyCanonicalEvidencePayloadV2(payloads[index]);
+    const verified = await verifyCanonicalEvidencePayloadV2(payloads[index], format);
     if (!verified.ok) {
       return {
         ok: false,
