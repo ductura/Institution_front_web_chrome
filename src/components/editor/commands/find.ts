@@ -1,10 +1,34 @@
 import type { Editor } from "@tiptap/react";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 import { isSearchableText } from "@/domain/text/find-literal";
 import { MAX_REPLACE_ALL, searchDocument, type SearchMatch } from "@/editor";
 
 type EditorDoc = Editor["state"]["doc"];
 export type FindScope = "all" | "chapter" | "quote";
+
+export const findHighlights = new PluginKey<DecorationSet>("editorFindHighlights");
+
+export function highlightPlugin() {
+  return new Plugin({
+    key: findHighlights,
+    state: {
+      init: () => DecorationSet.empty,
+      apply: (tr, previous) => {
+        const next: unknown = tr.getMeta(findHighlights);
+        return next instanceof DecorationSet ? next : previous.map(tr.mapping, tr.doc);
+      },
+    },
+    props: { decorations: (state) => findHighlights.getState(state) },
+  });
+}
+
+export function highlightHits(doc: EditorDoc, hits: readonly SearchMatch[], current: number, classes: readonly [string, string]) {
+  return DecorationSet.create(doc, hits.map(({ from, to }, index) =>
+    Decoration.inline(from, to, { class: classes[index === current ? 1 : 0] })),
+  );
+}
 
 export function searchWork(doc: EditorDoc, query: string, scope: FindScope, caret: number) {
   const literal = { text: query, matchCase: false };

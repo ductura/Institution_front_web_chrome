@@ -9,7 +9,7 @@ import { editorCommandsHr as text } from "./messages.hr";
 
 type Action = Command & { run?: () => void };
 
-export function paletteActions(editor: Editor, showShortcuts: () => void, openFind?: () => void): Action[] {
+export function paletteActions(editor: Editor, showShortcuts: () => void, openFind?: () => void, openChars?: () => void): Action[] {
   const state = stateOf(editor);
   const action = (id: string, label: string, run?: () => void, hint?: string, disabled = !run): Action => ({
     id, label, run, hint, disabled, group: text.palette,
@@ -28,6 +28,7 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
     action("toQuote", t.toolbar.convertItems.toQuote, edit(() => convertBlock(editor, "quote")), text.selectedText,
       !state.editable || editor.state.selection.empty),
     action("hole", t.toolbar.insertItems.hole, edit(() => insertHole(editor)), undefined, !state.editable),
+    action("chars", t.toolbar.specialChar, openChars, "„ ” … ° ×", !state.editable || !openChars),
     action("copy", t.toolbar.exportItems.copy, () => { void copyText(editor); }),
     ...(["cite", "newSource", "table", "image", "footnote", "xref", "phrase"] as const)
       .map((key) => action(key, t.toolbar.insertItems[key])),

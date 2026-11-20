@@ -6,15 +6,13 @@ import { FindBar, stepHit } from "@ductura/ui";
 
 import { replaceAllTransaction, replaceMatchTransaction } from "@/editor";
 import { isSearchableText, MAX_SEARCH_TEXT_LENGTH } from "@/domain/text/find-literal";
-import { rangeOf, searchWork, type FindScope } from "./find";
+import { findHighlights, highlightHits, highlightPlugin, rangeOf, searchWork, type FindScope } from "./find";
 import { editorCommandsHr as t } from "./messages.hr";
 import styles from "./EditorCommands.module.css";
 
 const labels = { search: t.findPlaceholder, next: t.findNext, previous: t.findPrevious,
   close: t.findClose, none: t.findNone, count: t.findCount };
 const scopes = Object.entries(t.findScopes).map(([value, label]) => ({ value, label }));
-const hitHighlight = "ductura-find-hit";
-const currentHighlight = "ductura-find-current";
 
 export function EditorFind({ editor, onClose, openCount }: { editor: Editor; onClose: () => void; openCount: number }) {
   const [query, setQuery] = useState("");
@@ -38,17 +36,15 @@ export function EditorFind({ editor, onClose, openCount }: { editor: Editor; onC
   }, [openCount]);
 
   useEffect(() => {
-    if (!hits?.length || !globalThis.CSS?.highlights || typeof Highlight === "undefined" || editor.isDestroyed) return;
-    const ranges = hits.map((hit) => rangeOf(editor, hit));
-    CSS.highlights.set(hitHighlight, new Highlight(...ranges));
-    const selected = new Highlight(ranges[current]!);
-    selected.priority = 1;
-    CSS.highlights.set(currentHighlight, selected);
-    return () => {
-      CSS.highlights.delete(hitHighlight);
-      CSS.highlights.delete(currentHighlight);
-    };
-  }, [editor, hits, current]);
+    editor.registerPlugin(highlightPlugin());
+    return () => { if (!editor.isDestroyed) editor.unregisterPlugin(findHighlights); };
+  }, [editor]);
+
+  useEffect(() => {
+    if (editor.isDestroyed || editor.state.doc !== state.doc) return;
+    const decorations = highlightHits(state.doc, hits ?? [], current, [styles.hit!, styles.current!]);
+    editor.view.dispatch(editor.state.tr.setMeta(findHighlights, decorations).setMeta("addToHistory", false));
+  }, [editor, state.doc, hits, current]);
 
   const step = (direction: -1 | 1) => {
     const next = stepHit(current, total, direction);

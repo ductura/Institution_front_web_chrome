@@ -19,7 +19,10 @@ export function shortcutGroups(editable: boolean) {
     title,
     items: [
       ...items.filter(({ keys }) => available.has(keys) && (index !== 0 || editable)),
-      ...(index === 1 ? [{ keys: "Alt+F10", label: t.toolbarKeys }] : []),
+      ...(index === 1 ? [
+        { keys: "Alt+F10", label: t.toolbarKeys },
+        ...(editable ? [{ keys: t.contextMouse, label: t.contextShortcut }, { keys: "Shift+F10", label: t.contextKeyboard }] : []),
+      ] : []),
     ],
   })).filter(({ items }) => items.length > 0);
 }

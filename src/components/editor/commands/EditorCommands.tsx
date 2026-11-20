@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useEditorState } from "@tiptap/react";
+import { useEditorState, type Editor } from "@tiptap/react";
 import { Button, CommandPalette, ShortcutsDialog } from "@ductura/ui";
 
 import { useLocalEditor, useLocalSignedOut } from "../LocalDocument";
+import { EditorContext } from "./EditorContext";
 import { editorCommandsHr as t } from "./messages.hr";
 import { EditorFind } from "./EditorFind";
 import { paletteActions } from "./palette";
@@ -16,7 +17,10 @@ type DialogName = "palette" | "shortcuts";
 export default function EditorCommands({ children }: { children: ReactNode }) {
   const localEditor = useLocalEditor();
   const signedOut = useLocalSignedOut();
-  const editor = signedOut ? null : localEditor;
+  return <EditorCommandsFor editor={signedOut ? null : localEditor}>{children}</EditorCommandsFor>;
+}
+
+export function EditorCommandsFor({ editor, children }: { editor: Editor | null; children: ReactNode }) {
   const [dialog, setDialog] = useState<DialogName | null>(null);
   const [findOpen, setFindOpen] = useState(false);
   const [openCount, setOpenCount] = useState(0);
@@ -27,13 +31,16 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
 
   const openFind = () => { setFindOpen(true); setOpenCount((count) => count + 1); };
   const closeFind = () => { setFindOpen(false); editor?.view.focus(); };
+  const openToolbarMenu = (menu: "insert" | "chars") => {
+    requestAnimationFrame(() => toolbar.current?.querySelector<HTMLButtonElement>(`[data-roving="${menu}"]`)?.click());
+  };
 
   useEffect(() => {
     if (!editor) return;
     const keyDown = (event: KeyboardEvent) => {
       const action = editorShortcut(event);
       const target = event.target as HTMLElement | null;
-      if (!event.defaultPrevented && event.key === "Escape" && findOpen && dialog === null && !target?.closest?.("dialog")) {
+      if (!event.defaultPrevented && !event.isComposing && event.key === "Escape" && findOpen && dialog === null && !target?.closest?.("dialog")) {
         event.preventDefault();
         setFindOpen(false);
         editor.view.focus();
@@ -59,7 +66,8 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", keyDown);
   }, [editor, dialog, findOpen]);
 
-  const actions = editor && dialog === "palette" ? paletteActions(editor, () => setDialog("shortcuts"), openFind) : [];
+  const actions = editor && dialog === "palette" ? paletteActions(editor, () => setDialog("shortcuts"), openFind,
+    () => openToolbarMenu("chars")) : [];
   const close = () => setDialog(null);
 
   return (
@@ -76,6 +84,7 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
         </Button> : null}
       </div>
       {editor && findOpen ? <EditorFind editor={editor} onClose={closeFind} openCount={openCount} /> : null}
+      {editor ? <EditorContext editor={editor} openMenu={openToolbarMenu} /> : null}
       <CommandPalette open={!!editor && dialog === "palette"} commands={actions} onClose={close}
         onRun={(id) => actions.find((action) => action.id === id && !action.disabled)?.run?.()} />
       <ShortcutsDialog open={!!editor && dialog === "shortcuts"} groups={shortcutGroups(snapshot?.editable ?? false)} onClose={close} />
