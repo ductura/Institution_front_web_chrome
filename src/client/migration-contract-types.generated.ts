@@ -124,6 +124,44 @@ export type MigrationOperations = {
     success: { status: 200; body: { "versions": ({ "kind": "submission"; "revision": number; "savedMinute": string; "afterDeadline": boolean } | { "kind": "checkpoint"; "revision": number; "savedMinute": string })[]; "nextBeforeRevision": number | null }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
   };
+  // Institution_server 46e4aad (SRV-NG).
+  "student.notice.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "assignmentId": string; "versionNo": number; "templateVersion": number; "title": string; "instructions": string; "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "opensAt": string; "dueAt": string; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "wordMin": number | null; "wordMax": number | null; "readAt": string | null; "acknowledgedAt": string | null }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
+  };
+  // Institution_server aab566c (SRV-1103).
+  "work.milestones.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "milestones": ({ "id": string; "title": string; "description": string; "dueAt": string | null; "state": "open" | "submitted" | "approved" | "returned" })[] }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.milestones.patch": {
+    params: { "documentId": string; "milestoneId": string };
+    query: undefined;
+    body: { "dueAt": string };
+    success: { status: 200; body: { "id": string; "title": string; "description": string; "dueAt": string | null; "state": "open" | "submitted" | "approved" | "returned" }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "invalid_json" | "forbidden" | "conflict" | "unsupported_media_type" | "invalid_input";
+  };
+  // Institution_server a56b7a5 (SRV-1106).
+  "work.messages.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "messages": ({ "id": string; "senderRole": "student" | "teacher"; "text": string; "createdAt": string })[] }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.messages.post": {
+    params: { "documentId": string };
+    query: undefined;
+    body: { "text": string };
+    success: { status: 201; body: { "id": string; "senderRole": "student" | "teacher"; "text": string; "createdAt": string }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
+  };
   // Institution_server a362c63 (SRV-30).
   "teacher.submission-receipt.get": {
     params: { "assignmentId": string; "studentId": string };

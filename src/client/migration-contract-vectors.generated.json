@@ -1457,6 +1457,325 @@
     }
   },
   {
+    "route": "student.notice.get",
+    "name": "unread",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60",
+        "versionNo": 2,
+        "templateVersion": 1,
+        "title": "Seminarski rad: kućno kompostiranje",
+        "instructions": "Izmišljena uputa: opiši jedan izmišljeni pokus kompostiranja u stanu.",
+        "workType": "seminar_paper",
+        "opensAt": "2026-11-02T08:00:00.000Z",
+        "dueAt": "2026-12-15T22:59:00.000Z",
+        "aiPolicy": "partially_allowed",
+        "aiPurposes": [
+          "proofreading",
+          "literature_search"
+        ],
+        "evidenceProfile": "basic",
+        "wordMin": 1500,
+        "wordMax": 3000,
+        "readAt": null,
+        "acknowledgedAt": null
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "read-and-acknowledged",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60",
+        "versionNo": 2,
+        "templateVersion": 1,
+        "title": "Seminarski rad: kućno kompostiranje",
+        "instructions": "Izmišljena uputa: opiši jedan izmišljeni pokus kompostiranja u stanu.",
+        "workType": "seminar_paper",
+        "opensAt": "2026-11-02T08:00:00.000Z",
+        "dueAt": "2026-12-15T22:59:00.000Z",
+        "aiPolicy": "prohibited",
+        "aiPurposes": [],
+        "evidenceProfile": "extended",
+        "wordMin": null,
+        "wordMax": null,
+        "readAt": "2026-11-03T09:14:00.000Z",
+        "acknowledgedAt": "2026-11-03T09:20:00.000Z"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000002001"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "forbidden",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000002004"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "not_found",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-000000002002"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.notice.get",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "assignmentId": "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000002003"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "work.milestones.get",
+    "name": "empty",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-a"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-etape-000000000000000000000000"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "milestones": []
+      }
+    }
+  },
+  {
+    "route": "work.milestones.get",
+    "name": "configured",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-a"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-etape-000000000000000000000000"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "milestones": [
+          {
+            "id": "00000000-0000-4000-8000-000000000103",
+            "title": "Nacrt",
+            "description": "Pošaljite nacrt na pregled.",
+            "dueAt": "2026-12-04T12:00:00.000Z",
+            "state": "open"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000104",
+            "title": "Završna inačica",
+            "description": "",
+            "dueAt": null,
+            "state": "open"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "work.milestones.patch",
+    "name": "updated",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-a",
+        "milestoneId": "00000000-0000-4000-8000-000000000103"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-etape-000000000000000000000000",
+        "content-type": "application/json",
+        "origin": "https://ductura.example.invalid"
+      },
+      "body": {
+        "dueAt": "2026-12-04T12:00:00.000Z"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "id": "00000000-0000-4000-8000-000000000103",
+        "title": "Nacrt",
+        "description": "Pošaljite nacrt na pregled.",
+        "dueAt": "2026-12-04T12:00:00.000Z",
+        "state": "open"
+      }
+    }
+  },
+  {
+    "route": "work.messages.get",
+    "name": "empty",
+    "request": {
+      "params": {
+        "documentId": "izmisljeni-rad-0001"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-poruka-00000000000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "messages": []
+      }
+    }
+  },
+  {
+    "route": "work.messages.get",
+    "name": "conversation",
+    "request": {
+      "params": {
+        "documentId": "izmisljeni-rad-0001"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-poruka-00000000000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "messages": [
+          {
+            "id": "7b6c5d4e-3f2a-4b1c-8d9e-0a1b2c3d4e01",
+            "senderRole": "student",
+            "text": "Izmišljena poruka studenta.",
+            "createdAt": "2026-11-21T09:00:00.000Z"
+          },
+          {
+            "id": "7b6c5d4e-3f2a-4b1c-8d9e-0a1b2c3d4e02",
+            "senderRole": "teacher",
+            "text": "Izmišljen odgovor nastavnika.",
+            "createdAt": "2026-11-21T09:05:00.000Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "work.messages.post",
+    "name": "created",
+    "request": {
+      "params": {
+        "documentId": "izmisljeni-rad-0001"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-poruka-00000000000000000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "text": "Izmišljena poruka studenta."
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "body": {
+        "id": "7b6c5d4e-3f2a-4b1c-8d9e-0a1b2c3d4e01",
+        "senderRole": "student",
+        "text": "Izmišljena poruka studenta.",
+        "createdAt": "2026-11-21T09:00:00.000Z"
+      }
+    }
+  },
+  {
     "route": "teacher.submission-receipt.get",
     "name": "none",
     "request": {

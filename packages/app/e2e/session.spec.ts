@@ -282,20 +282,80 @@ test("401 during course creation returns to the administrator's Chrome route aft
   expect(new URL(page.url()).searchParams.get("returnTo")).toBe("/app/chrome/ustanova/kolegiji");
 });
 
+test("Kako Ductura radi opens the explanation inside the signed-in shell", async ({ page }) => {
+  const seen = await fakeServer(page, { status: 200, body: { role: "student", institutionName: INSTITUTION } });
+  await page.goto("/app/web/zadaci");
+  await page.getByRole("link", { name: "Kako Ductura radi" }).click();
+  await expect(page).toHaveURL(/\/app\/web\/kako-radi$/);
+  await expect(page.getByRole("heading", { name: "Kako Ductura radi", level: 1 })).toBeVisible();
+  await expect(page.getByRole("table", { name: "Tko što vidi" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Kako se rad sprema" })).toBeVisible();
+  expect(seen.me).toBe(1);
+});
+
+test("Kako Ductura radi preserves the current base when sign-in is needed", async ({ page }) => {
+  const seen = await fakeServer(page, { status: 401 });
+  await page.goto("/app/chrome/kako-radi");
+  await expect(page).toHaveURL(/\/api\/v1\/auth\/login\?returnTo=/);
+  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/kako-radi");
+});
+
+const STATUS_PATH = "**/api/v1/status";
+const PUBLIC_STATUS = {
+  checkedAt: "2026-11-20T08:30:00Z",
+  components: { writing: "radi", submission: "ne_radi", mentorView: "nije_ukljuceno" },
+};
+
 test("Stanje sustava and Prijava open without reading the session", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 401 });
+  await page.route(STATUS_PATH, (route) => {
+    expect(route.request().method()).toBe("GET");
+    return route.fulfill({ status: 200, json: PUBLIC_STATUS });
+  });
   await page.goto("/app/chrome/stanje");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Stanje sustava");
-  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ductura", exact: true })).toHaveAttribute("href", "/app/chrome/");
+  await expect(page.getByRole("status")).toHaveText("Neki dijelovi trenutačno ne rade.");
+  await expect(page.getByRole("listitem").filter({ hasText: "Pisanje i slanje na poslužitelj" })).toContainText("Radi");
+  await expect(page.getByRole("listitem").filter({ hasText: "Predaja rada" })).toContainText("Ne radi");
+  await expect(page.getByRole("listitem").filter({ hasText: "Prikaz za mentora" })).toContainText("Nije uključeno");
+  await expect(page.getByText(/^Zadnja provjera:/)).toBeVisible();
+  expect(seen.login).toEqual([]);
   await axe(page);
   expect(errors).toEqual([]);
 
   await page.goto("/app/chrome/prijava?returnTo=%2Fzadaci%2Fkolegiji");
-  await expect.poll(() => seen.login.length).toBe(1);
+  await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
+  expect(seen.login).toHaveLength(1);
   expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/zadaci/kolegiji");
   await page.goto("/app/web/prijava?returnTo=https%3A%2F%2Fexample.org%2F");
-  await expect.poll(() => seen.login.length).toBe(2);
+  await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
+  expect(seen.login).toHaveLength(2);
   expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/app/web/");
   expect(seen.me).toBe(0);
+});
+
+test("Stanje sustava shows an API refusal without sending the reader to sign-in", async ({ page }) => {
+  const seen = await fakeServer(page, { status: 401 });
+  await page.route(STATUS_PATH, (route) => route.fulfill({ status: 401, json: { code: "unauthenticated" } }));
+  await page.goto("/app/web/stanje");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("Rezultate provjera trenutačno nije moguće učitati.");
+  await expect(page).toHaveURL(/\/app\/web\/stanje$/);
+  expect(seen.me).toBe(0);
+  expect(seen.login).toEqual([]);
+});
+
+test("Stanje sustava shows a service failure and recovers after retry", async ({ page }) => {
+  let available = false;
+  await page.route(STATUS_PATH, (route) => route.fulfill(available
+    ? { status: 200, json: PUBLIC_STATUS }
+    : { status: 503, json: { code: "unavailable" } }));
+  await page.goto("/app/web/stanje");
+  const alert = page.getByRole("main").getByRole("alert");
+  await expect(alert).toContainText("Rezultate provjera trenutačno nije moguće učitati.");
+  available = true;
+  await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
+  await expect(page.getByRole("status")).toHaveText("Neki dijelovi trenutačno ne rade.");
+  await expect(alert).toHaveCount(0);
 });

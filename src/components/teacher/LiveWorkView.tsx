@@ -23,10 +23,12 @@ import { useEffect, useState } from "react";
 import { browserTransport, SESSION_PATH } from "@/client/api";
 import type { SessionMark } from "@/client/session-marks";
 import { sessionTagOf } from "@/components/editor/EditorPage.scope";
-import { messagesHr } from "@/lib/i18n/messages.hr";
+import { WorkMentorSections } from "@/components/editor/mentor/milestones/WorkMentorSections";
+import { MentorWorkState } from "@/components/editor/mentor/work-state/MentorWorkState";
+import { editorPanelLayoutsHr, messagesHr } from "@/lib/i18n/messages.hr";
 
 import LiveText, { liveStopped, useLiveView } from "./LiveText";
-import LiveWorkFrame, { type LiveWorkFrameData } from "./LiveWorkFrame";
+import LiveWorkFrame, { submissionHref, type LiveWorkFrameData } from "./LiveWorkFrame";
 import RecordLimits from "./RecordLimits";
 import { SummaryCardBody, useProcessSummary } from "./SummaryCard";
 
@@ -64,9 +66,17 @@ function LiveBody({ documentId, session, frame }: {
       frame={stopped ? null : frame}
       recordState={recordState}
       text={<LiveText view={view} marks={[]} />}
+      mentorInAside
       aside={
         <>
           {stopped ? null : <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />}
+          {!stopped && <section aria-label={editorPanelLayoutsHr.groups.work}>
+            <h2>{editorPanelLayoutsHr.groups.work}</h2>
+            <MentorWorkState key={documentId} documentId={documentId} role="teacher"
+              submitted={view.submitted || frame?.submitted} receiptHref={submissionHref(documentId) ?? undefined} />
+            <WorkMentorSections documentId={documentId} role="teacher" current={current}
+              mayEditDue={!view.submitted && (view.document !== null || view.empty)} />
+          </section>}
           <RecordLimits />
         </>
       }
@@ -97,5 +107,5 @@ export default function LiveWorkView({ documentId, frame }: {
         <Button tone="quiet" onClick={retry}>{tw.retry}</Button>
       </>
     );
-  return <LiveWorkFrame documentId={documentId} frame={null} recordState={null} text={text} aside={<RecordLimits />} />;
+  return <LiveWorkFrame documentId={documentId} frame={null} recordState={null} text={text} aside={<RecordLimits />} mentorInAside />;
 }
