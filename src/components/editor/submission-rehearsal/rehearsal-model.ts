@@ -1,7 +1,7 @@
 import type { Node } from "@tiptap/pm/model";
 
-import { matchesSchema, type Schema } from "@/client/schema-check";
-import type { LocalCall, Read } from "@/client/submission";
+import { createApi, type ApiOptions } from "@/client/api";
+import type { Read } from "@/client/submission";
 import { wordsHr } from "@/lib/i18n/hr";
 import { countTextWords, groupHr, wordRangeHr, type WordRange } from "@/lib/i18n/length-line";
 
@@ -13,22 +13,15 @@ import { rehearsalMessagesHr as t } from "./messages.hr";
 type RequirementsRead = Read<{ kind: "ready"; wordRange: WordRange | null }>;
 export type Requirements = RequirementsRead | null;
 
-const BOUND: Schema = { anyOf: [{ type: "null" }, { type: "integer", minimum: 0, maximum: Number.MAX_SAFE_INTEGER }] };
-const REQUIREMENTS: Schema = {
-  type: "object", required: ["wordRange"], additionalProperties: false, properties: {
-    wordRange: { anyOf: [{ type: "null" }, {
-      type: "object", required: ["min", "max"], additionalProperties: false, properties: { min: BOUND, max: BOUND },
-    }] },
-  },
-};
-
 /** SRV-22 permits an open end of the range. Keep the two bounds as the server sent them. */
-export async function loadRequirements(assignmentId: string, call?: LocalCall): Promise<RequirementsRead> {
+export async function loadRequirements(assignmentId: string, options?: ApiOptions): Promise<RequirementsRead> {
   try {
-    const answer = await call?.("student.assignment-requirements.get", { params: { assignmentId } });
-    if (answer?.status === 401) return { kind: "session-expired" };
-    if (!answer?.ok || answer.status !== 200 || !matchesSchema(REQUIREMENTS, answer.body)) return { kind: "nepoznato" };
-    const { wordRange } = answer.body as { wordRange: WordRange | null };
+    const answer = await createApi(options)("student.assignment-requirements.get", {
+      params: { assignmentId }, query: undefined, body: undefined,
+    });
+    if (answer.status === 401) return { kind: "session-expired" };
+    if (!answer.ok || answer.status !== 200) return { kind: "nepoznato" };
+    const { wordRange } = answer.body;
     if (wordRange?.min != null && wordRange.max != null && wordRange.min > wordRange.max) return { kind: "nepoznato" };
     return { kind: "ready", wordRange };
   } catch {
