@@ -51,10 +51,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
     let live = true;
     const here = appHref(base, `/rad/${assignmentId}`);
     void (async () => {
-      const api = createApi();
+      const client = createApi();
       const [assignments, work] = await Promise.all([
-        api("student.assignments.get", NONE).catch(() => UNREACHED),
-        api("student.assignment-work.get", NONE).catch(() => UNREACHED),
+        client("student.assignments.get", NONE).catch(() => UNREACHED),
+        client("student.assignment-work.get", NONE).catch(() => UNREACHED),
       ]);
       if (!live) return;
       const read = editorWorkRead(assignmentId, assignments as never, work as never);
