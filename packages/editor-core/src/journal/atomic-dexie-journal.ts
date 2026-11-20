@@ -520,7 +520,12 @@ export class AtomicDexieJournal {
    */
   async read(documentId: string): Promise<JournalContents> {
     const contents = await this.readAny(documentId);
-    assertWorkSchema(documentId, contents.snapshot?.document);
+    // A snapshot of a schema this reader does not know is refused. One whose
+    // version is not a number at all (a BigInt, a Map in its place) is damage,
+    // not another version: it is returned as stored so the saver's own
+    // validation names it corrupt, never older or empty text (#206 17).
+    const document = contents.snapshot?.document;
+    if (typeof document?.schemaVersion === "number") assertWorkSchema(documentId, document);
     return contents as JournalContents;
   }
 
