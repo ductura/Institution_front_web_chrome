@@ -6,6 +6,7 @@ export { fold, visibleCommands, type Command } from "./components/command-palett
 export { DEFAULT_SHORTCUT_GROUPS, ShortcutsDialog, type Shortcut, type ShortcutGroup, type ShortcutsDialogProps } from "./components/shortcuts-dialog/ShortcutsDialog";
 export { Details, type DetailsProps } from "./components/Details";
 export { Dialog, type DialogProps } from "./components/Dialog";
+export { DiffView, type DiffPart, type DiffViewProps } from "./components/diff-view/DiffView";
 export { Drawer, type DrawerProps, type DrawerSide } from "./components/drawer";
 export { ErrorScreen, type ErrorScreenProps } from "./components/ErrorScreen";
 export { PanelTabs, type PanelTab, type PanelTabsProps } from "./components/PanelTabs";
@@ -20,6 +21,7 @@ export { Skeleton, type SkeletonProps } from "./components/Skeleton";
 export { Tag, type TagProps } from "./components/Tag";
 export { TextArea, type TextAreaProps } from "./components/TextArea";
 export { TextField, type TextFieldProps } from "./components/TextField";
+export { Timeline, type TimelineProps } from "./components/timeline/Timeline";
 export { ToastRegion, useToasts, type ToastRegionProps } from "./components/Toast";
 export { MAX_TOASTS, TOAST_TIMEOUT_MS, type ToastItem, type ToastTone } from "./components/toast-queue";
 export { readTheme, saveTheme, THEME_KEY, themeOf, toggleTheme, type ShellTheme } from "./theme/theme";

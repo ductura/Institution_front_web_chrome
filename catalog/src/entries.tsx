@@ -21,6 +21,7 @@ import {
   type TeacherCourse,
 } from "../../src/components/index.ts";
 
+import { DiffView, Timeline } from "@ductura/ui";
 import type { CatalogEntries, CatalogState } from "./coverage";
 
 type Entry = Record<CatalogState, () => React.ReactNode>;
@@ -82,6 +83,16 @@ const sourcePreview = (state: CatalogState) => <SourceForm open floating={false}
   initial={{ type: "book", authors: [{ kind: "organization", name: "Izmišljeni nakladnički ured" }],
     title: "Izmišljeni priručnik", year: 2026, place: "Izmišljeni grad", publisher: "Izmišljeni nakladnik" }}
   onSubmit={nothing} onClose={nothing} />;
+
+const REPLAY_TEXT = ["", "Izmišljeni vrt.", "Izmišljeni školski vrt.", "Izmišljeni školski vrt raste."];
+
+function TimelineExample() {
+  const [value, setValue] = useState(0);
+  return <>
+    <Timeline total={REPLAY_TEXT.length - 1} value={value} onChange={setValue} />
+    <p>{REPLAY_TEXT[value]}</p>
+  </>;
+}
 
 const nothing = () => undefined;
 
@@ -172,6 +183,25 @@ function FindBarExample({ total, hint }: { total: number; hint?: string }) {
 }
 
 export const ENTRIES = {
+  Timeline: {
+    prazno: () => <Timeline total={0} value={0} onChange={nothing} />,
+    učitavanje: () => <RouteLoading label="Učitavanje koraka…" />,
+    greška: () => <p role="alert">Koraci se nisu učitali.</p>,
+    puno: () => <TimelineExample />,
+    onemogućeno: () => <Timeline total={3} value={1} onChange={nothing} disabled />,
+  },
+  DiffView: {
+    prazno: () => <DiffView parts={[]} />,
+    učitavanje: () => <RouteLoading label="Učitavanje razlika…" />,
+    greška: () => <p role="alert">Razlike se nisu učitale.</p>,
+    puno: () => <DiffView parts={[
+      { kind: "same", text: "Izmišljeni " },
+      { kind: "removed", text: "mali " },
+      { kind: "added", text: "školski " },
+      { kind: "same", text: "vrt." },
+    ]} />,
+    onemogućeno: () => <p>Usporedba trenutačno nije dostupna.</p>,
+  },
   SourceForm: {
     prazno: () => <SourceFormExample />,
     učitavanje: () => sourcePreview("učitavanje"),
