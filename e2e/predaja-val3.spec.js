@@ -35,7 +35,8 @@ const SYNCED = 'Spremljeno na poslužitelju';
 const FINGERPRINT_COPIED = 'Otisak je u međuspremniku (64 znaka, bez razmaka).';
 const OFFLINE_ON_SUBMIT = 'Nema mreže. Predaja čeka da se mreža vrati.';
 const SIGNED_NOTE = 'Kod potvrđuje da se predani tekst nije mijenjao od predaje.';
-const SHA256_HEX = /^[0-9a-f]{64}$/;
+// The digest is hex; the case is the server's (Fingerprint accepts either).
+const SHA256_HEX = /^[0-9a-f]{64}$/i;
 
 /** Fails at once with what to start, instead of each test timing out. */
 async function reachable(url, what) {
