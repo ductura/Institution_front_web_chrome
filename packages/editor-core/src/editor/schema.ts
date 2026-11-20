@@ -34,6 +34,7 @@ import { PluginKey } from "@tiptap/pm/state";
 import { blockMarkerRule, markerRemoval } from "./block-marker";
 import { BulletItem } from "./bullet-item";
 import { Citation } from "./citation";
+import { CitationV3, CrossReference, Footnote } from "./atoms-v3";
 import { FindReplaceHistory } from "./find-replace";
 import { Quote } from "./quote";
 import { createNodeIdentityPlugin, mintMissingIds, repeatedNodeIds, type NodeIdMinter } from "./identity";
@@ -260,4 +261,19 @@ export function createEditorExtensionsV2(
     NodeIdentity,
     FindReplaceHistory,
   ];
+}
+
+/** Every extension name registered by `createEditorExtensionsV3`. */
+export const V3_EXTENSION_NAMES = [...V2_EXTENSION_NAMES, "footnote", "crossReference"] as const;
+
+/**
+ * The extensions of the v3 editor (document-schema-v3 §5): the v2 set with the
+ * citation's `via` and `rq`, the footnote and the cross reference. A heading
+ * holds text only. Nothing mounts it until the server confirms v3 for a work
+ * (contract §7): a work opens in the version of its revision zero.
+ */
+export function createEditorExtensionsV3(placeholder: string = DEFAULT_PLACEHOLDER): Extensions {
+  return createEditorExtensionsV2(placeholder).flatMap((extension) =>
+    extension === Citation ? [CitationV3, Footnote, CrossReference] : [extension],
+  );
 }

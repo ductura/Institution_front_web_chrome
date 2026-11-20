@@ -14,6 +14,8 @@ export * from "./history";
 export * from "./identity";
 export * from "./interop";
 export * from "./interop-v2";
+export * from "./interop-v3";
+export * from "./atoms-v3";
 export * from "./outline";
 export * from "./quote";
 export * from "./schema";

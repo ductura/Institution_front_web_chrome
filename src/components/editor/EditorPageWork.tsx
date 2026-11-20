@@ -130,19 +130,20 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} session={read.session} />
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} />
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, session }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session }: {
   course: string;
   title: string;
   topBar?: ReactNode;
   length?: ComponentProps<typeof StatusBar>["length"];
   assignmentId: string;
   documentId: string;
+  scope: string;
   session: SessionMark;
 }) {
   const editor = useLocalEditor();
@@ -153,7 +154,10 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   const [view, setView] = useState<EditorHelpView | null>(null);
   return (
     <EditorPanelLayout title={title} header={topBar ?? <p>{course} / {title}</p>}
-      tools={<EditorCommands><div className={helpStyles.toolbar}><EditorToolbar /><EditorHelpMenu onSelect={setView} /></div></EditorCommands>}
+      tools={<EditorCommands><div className={helpStyles.toolbar}>
+        <EditorToolbar workPartsKey={`ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`} />
+        <EditorHelpMenu onSelect={setView} />
+      </div></EditorCommands>}
       status={<StatusBarLive evidence length={length} />}
       rightSections={{ work: <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} /> }}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />

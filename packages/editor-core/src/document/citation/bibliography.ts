@@ -1,10 +1,23 @@
-import type { CanonicalDocumentV2, CitationNode, DocumentSource, SourceId } from "../document/schema";
-import { assignYearSuffixes, formatBibliographyEntry, formatCitationInText, sortBibliography } from "./format";
+import type { CanonicalDocumentV2, CanonicalDocumentV3, CitationNode, DocumentSource, SourceId } from "../document/schema";
+import {
+  assignYearSuffixes,
+  formatBibliographyEntry,
+  formatCitationInText,
+  formatNumberedBibliographyEntry,
+  formatNumericCitation,
+  sortBibliography,
+} from "./format";
 import type { CitationStyle } from "./style";
 import type { Source } from "./types";
 
 /** One entry: the cited source with its derived year suffix, and its text in the style. */
-export type BibliographyEntry = { sourceId: SourceId; source: Source; text: string };
+export type BibliographyEntry = {
+  sourceId: SourceId;
+  source: Source;
+  text: string;
+  /** Numeric styles only: 1, 2, ... by first citation in the document. */
+  number?: number;
+};
 
 /**
  * The bibliography of a document v2 (contract document-schema-v2 §4). It is
@@ -39,7 +52,7 @@ function withoutId(source: DocumentSource): Source {
  * first ordered by `id`, which is unique, so the result depends on neither
  * the order of citations nor that of `sources` (§10 (e)).
  */
-export function deriveBibliography(document: CanonicalDocumentV2, style: CitationStyle): Bibliography {
+export function deriveBibliography(document: CanonicalDocumentV2 | CanonicalDocumentV3, style: CitationStyle): Bibliography {
   const byId = new Map(document.sources.map((source) => [source.id, source]));
   const cited = new Map<SourceId, Keyed>();
   let orphanCitations = 0;
@@ -50,6 +63,15 @@ export function deriveBibliography(document: CanonicalDocumentV2, style: Citatio
       if (source === undefined) orphanCitations++;
       else if (!cited.has(source.id)) cited.set(source.id, { ...withoutId(source), sourceId: source.id });
     }
+  }
+  if (style.style === "numeric") {
+    // Numbers follow the first citation of each source, in document order.
+    const entries = [...cited.values()].map(({ sourceId, ...rest }, index) => {
+      const source = rest as Source;
+      const number = index + 1;
+      return { sourceId, source, number, text: formatNumberedBibliographyEntry(number, source, style) };
+    });
+    return { entries, orphanCitations };
   }
   const ordered = sortBibliography(assignYearSuffixes([...cited.values()].sort(compareIds)));
   const entries = ordered.map(({ sourceId, ...rest }) => {
@@ -66,5 +88,7 @@ export function deriveBibliography(document: CanonicalDocumentV2, style: Citatio
  */
 export function formatCitation(citation: CitationNode, bibliography: Bibliography, style: CitationStyle): string | undefined {
   const entry = bibliography.entries.find((e) => e.sourceId === citation.sourceId);
-  return entry === undefined ? undefined : formatCitationInText(entry.source, style, citation.locator);
+  if (entry === undefined) return undefined;
+  if (style.style === "numeric") return formatNumericCitation(entry.number!, style, citation.locator);
+  return formatCitationInText(entry.source, style, citation.locator);
 }

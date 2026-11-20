@@ -17,13 +17,32 @@ const SRC_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const P = "11111111-1111-4111-8111-111111111111";
 const H = "22222222-2222-4222-8222-222222222222";
 
-const person = (over: object = {}) => ({ kind: "person", family: "Prezime", given: "Ime", ...over });
+const person = (over: object = {}) => ({
+  kind: "person",
+  family: "Prezime",
+  given: "Ime",
+  ...over,
+});
 const org = (over: object = {}) => ({ kind: "organization", name: "Ustanova", ...over });
-const base = (over: object = {}) => ({ id: SRC, authors: [person()], year: 2020, title: "Izvor 1", ...over });
-const book = (over: object = {}) => base({ type: "book", place: "Zagreb", publisher: "Nakladnik", ...over });
+const base = (over: object = {}) => ({
+  id: SRC,
+  authors: [person()],
+  year: 2020,
+  title: "Izvor 1",
+  ...over,
+});
+const book = (over: object = {}) =>
+  base({ type: "book", place: "Zagreb", publisher: "Nakladnik", ...over });
 const article = (over: object = {}) => base({ type: "article", journal: "Časopis", ...over });
 const chapter = (over: object = {}) =>
-  base({ type: "chapter", editors: [person()], bookTitle: "Zbornik", place: "Zagreb", publisher: "Nakladnik", ...over });
+  base({
+    type: "chapter",
+    editors: [person()],
+    bookTitle: "Zbornik",
+    place: "Zagreb",
+    publisher: "Nakladnik",
+    ...over,
+  });
 const web = (over: object = {}) =>
   base({ type: "web", url: "https://primjer.hr/izvor", accessed: "2026-01-05", ...over });
 
@@ -61,7 +80,8 @@ function expectAccepted(input: unknown): void {
 
 /** Unique v4 ids for a long `sources` list. */
 const sourceId = (i: number) => `${i.toString(16).padStart(8, "0")}-aaaa-4aaa-8aaa-aaaaaaaaaaaa`;
-const many = (count: number) => Array.from({ length: count }, (_, i) => book({ id: sourceId(i) }));
+const many = (count: number) =>
+  Array.from({ length: count }, (unused, i) => book({ id: sourceId(i) }));
 
 describe("shared rules through the versioned validator (#1711 classes 1 to 13)", () => {
   const plain = (schemaVersion: unknown) => ({ schemaVersion, nodes: [paragraph([text("a")])] });
@@ -72,7 +92,7 @@ describe("shared rules through the versioned validator (#1711 classes 1 to 13)",
     expectAccepted(doc([book()]));
   });
 
-  it.each([3, 0, -1, 2.5, "2", true, null, [], {}, Number.MAX_SAFE_INTEGER + 1])(
+  it.each([4, 0, -1, 2.5, "2", true, null, [], {}, Number.MAX_SAFE_INTEGER + 1])(
     "refuses schemaVersion %j",
     (version) => {
       expect(errs(plain(version))).toEqual([["$.schemaVersion", "SCHEMA_VERSION_INVALID"]]);
@@ -80,17 +100,26 @@ describe("shared rules through the versioned validator (#1711 classes 1 to 13)",
   );
 
   it("refuses an absent schemaVersion and a document that is not an object", () => {
-    expect(errs({ nodes: [paragraph([text("a")])] })).toEqual([["$.schemaVersion", "SCHEMA_VERSION_INVALID"]]);
-    for (const value of [null, [], "{}", 2, undefined]) expect(errs(value)).toEqual([["$", "DOCUMENT_NOT_OBJECT"]]);
+    expect(errs({ nodes: [paragraph([text("a")])] })).toEqual([
+      ["$.schemaVersion", "SCHEMA_VERSION_INVALID"],
+    ]);
+    for (const value of [null, [], "{}", 2, undefined])
+      expect(errs(value)).toEqual([["$", "DOCUMENT_NOT_OBJECT"]]);
   });
 
   it("applies the v1 node rules to v2", () => {
     expect(errs({ ...doc([]), nodes: [{ ...paragraph([]), type: "table" }] })).toEqual([
       ["$.nodes[0].type", "NODE_TYPE_INVALID"],
     ]);
-    expect(errs(doc([], [{ type: "mention", text: "a" }]))).toEqual([["$.nodes[0].children[0].type", "INLINE_TYPE_INVALID"]]);
-    expect(errs({ ...doc([]), nodes: [{ ...paragraph([]), extra: 1 }] })).toEqual([["$.nodes[0].extra", "UNKNOWN_FIELD"]]);
-    expect(errs({ ...doc([]), nodes: [paragraph([]), paragraph([])] })).toEqual([["$.nodes[1].id", "NODE_ID_DUPLICATE"]]);
+    expect(errs(doc([], [{ type: "mention", text: "a" }]))).toEqual([
+      ["$.nodes[0].children[0].type", "INLINE_TYPE_INVALID"],
+    ]);
+    expect(errs({ ...doc([]), nodes: [{ ...paragraph([]), extra: 1 }] })).toEqual([
+      ["$.nodes[0].extra", "UNKNOWN_FIELD"],
+    ]);
+    expect(errs({ ...doc([]), nodes: [paragraph([]), paragraph([])] })).toEqual([
+      ["$.nodes[1].id", "NODE_ID_DUPLICATE"],
+    ]);
   });
 });
 
@@ -107,7 +136,10 @@ describe("snapshot path stays v1 until the v2 sync path exists", () => {
     const atLimit = v2OfSize(MAX_DOCUMENT_SNAPSHOT_BYTES);
     expect(encode(atLimit).byteLength).toBe(MAX_DOCUMENT_SNAPSHOT_BYTES);
     expect(validateVersionedDocument(atLimit).ok).toBe(true);
-    await expect(verifyDocumentSnapshot(encode(atLimit))).resolves.toEqual({ ok: false, reason: "invalid" });
+    await expect(verifyDocumentSnapshot(encode(atLimit))).resolves.toEqual({
+      ok: false,
+      reason: "invalid",
+    });
     const over = encode(v2OfSize(MAX_DOCUMENT_SNAPSHOT_BYTES + 1));
     expect(over.byteLength).toBe(MAX_DOCUMENT_SNAPSHOT_BYTES + 1);
     await expect(verifyDocumentSnapshot(over)).resolves.toEqual({ ok: false, reason: "too_large" });
@@ -117,9 +149,14 @@ describe("snapshot path stays v1 until the v2 sync path exists", () => {
     const jcs = canonicalizeJcs(doc([book()]));
     expect(jcs.startsWith('{"nodes"')).toBe(true);
     const withBom = new TextEncoder().encode(`\ufeff${jcs}`);
-    const duplicate = new TextEncoder().encode(jcs.replace('{"nodes"', '{"schemaVersion":2,"nodes"'));
+    const duplicate = new TextEncoder().encode(
+      jcs.replace('{"nodes"', '{"schemaVersion":2,"nodes"'),
+    );
     for (const bytes of [withBom, duplicate]) {
-      await expect(verifyDocumentSnapshot(bytes)).resolves.toEqual({ ok: false, reason: "invalid" });
+      await expect(verifyDocumentSnapshot(bytes)).resolves.toEqual({
+        ok: false,
+        reason: "invalid",
+      });
     }
   });
 });
@@ -166,10 +203,9 @@ describe("v2 top level (class 14, 15)", () => {
   it("keeps the order of `sources`: it is hashed, never sorted", () => {
     const input = doc([book({ id: SRC_B, title: "Izvor 2" }), book()]);
     const outcome = validateVersionedDocument(input);
-    expect(outcome.ok && outcome.doc.schemaVersion === 2 && outcome.doc.sources.map((s) => s.id)).toEqual([
-      SRC_B,
-      SRC,
-    ]);
+    expect(
+      outcome.ok && outcome.doc.schemaVersion === 2 && outcome.doc.sources.map((s) => s.id),
+    ).toEqual([SRC_B, SRC]);
   });
 
   it("refuses a hole or a non-object in `sources`", () => {
@@ -189,8 +225,10 @@ describe("source id (class 16)", () => {
     ["version 1", "aaaaaaaa-aaaa-1aaa-8aaa-aaaaaaaaaaaa"],
     ["bad variant", "aaaaaaaa-aaaa-4aaa-caaa-aaaaaaaaaaaa"],
     ["not a string", 7],
-  ])("refuses an id that is %s", (_name, id) => {
-    expect(errs(doc([book({ id })], [text("a")]))).toEqual([["$.sources[0].id", "SOURCE_ID_INVALID"]]);
+  ])("refuses an id that is %s", (unusedName, id) => {
+    expect(errs(doc([book({ id })], [text("a")]))).toEqual([
+      ["$.sources[0].id", "SOURCE_ID_INVALID"],
+    ]);
   });
 
   it("refuses a duplicate id at the second record", () => {
@@ -210,7 +248,9 @@ describe("source id (class 16)", () => {
 
 describe("source type and field set (class 17)", () => {
   it("refuses an unknown type without reporting its fields", () => {
-    expect(errs(doc([book({ type: "thesis" })]))).toEqual([["$.sources[0].type", "SOURCE_TYPE_INVALID"]]);
+    expect(errs(doc([book({ type: "thesis" })]))).toEqual([
+      ["$.sources[0].type", "SOURCE_TYPE_INVALID"],
+    ]);
     expect(errs(doc([book({ type: 3 })]))).toEqual([["$.sources[0].type", "SOURCE_TYPE_INVALID"]]);
   });
 
@@ -219,15 +259,19 @@ describe("source type and field set (class 17)", () => {
     ["a note", article({ note: "x" }), "note"],
     ["a year suffix", web({ yearSuffix: "a" }), "yearSuffix"],
     ["pages on a book", book({ pages: "1" }), "pages"],
-  ])("refuses %s as an unknown field", (_name, source, field) => {
+  ])("refuses %s as an unknown field", (unusedName, source, field) => {
     expect(errs(doc([source]))).toEqual([[`$.sources[0].${field}`, "UNKNOWN_FIELD"]]);
   });
 
   it("refuses `__proto__` from JSON on a source and on a citation", () => {
     const source = JSON.parse(`{"__proto__":{},${JSON.stringify(book()).slice(1)}`);
     expect(errs(doc([source]))).toEqual([["$.sources[0].__proto__", "UNKNOWN_FIELD"]]);
-    const citation = JSON.parse(`{"__proto__":{"locator":"x"},"type":"citation","sourceId":"${SRC}"}`);
-    expect(errs(doc([book()], [citation]))).toEqual([["$.nodes[0].children[0].__proto__", "UNKNOWN_FIELD"]]);
+    const citation = JSON.parse(
+      `{"__proto__":{"locator":"x"},"type":"citation","sourceId":"${SRC}"}`,
+    );
+    expect(errs(doc([book()], [citation]))).toEqual([
+      ["$.nodes[0].children[0].__proto__", "UNKNOWN_FIELD"],
+    ]);
   });
 });
 
@@ -241,12 +285,19 @@ describe("year and accessed date (class 18)", () => {
     expectAccepted(doc([book({ year: 9999 })]));
   });
 
-  it.each(["2026-02-30", "2026-1-5", " 2026-01-05", "2026-01-05 ", "2026-13-01", "05.01.2026.", 20260105])(
-    "refuses accessed %s",
-    (accessed) => {
-      expect(errs(doc([web({ accessed })]))).toEqual([["$.sources[0].accessed", "SOURCE_ACCESSED_INVALID"]]);
-    },
-  );
+  it.each([
+    "2026-02-30",
+    "2026-1-5",
+    " 2026-01-05",
+    "2026-01-05 ",
+    "2026-13-01",
+    "05.01.2026.",
+    20260105,
+  ])("refuses accessed %s", (accessed) => {
+    expect(errs(doc([web({ accessed })]))).toEqual([
+      ["$.sources[0].accessed", "SOURCE_ACCESSED_INVALID"],
+    ]);
+  });
 
   it("accepts a leap day", () => {
     expectAccepted(doc([web({ accessed: "2024-02-29" })]));
@@ -288,7 +339,9 @@ describe("authors and editors (class 19, 30)", () => {
     expectAccepted(doc([chapter()]));
     expectAccepted(doc([chapter({ editors: Array.from({ length: 20 }, () => person()) })]));
     for (const editors of [[], Array.from({ length: 21 }, () => person()), "Urednik"]) {
-      expect(errs(doc([chapter({ editors })]))).toEqual([["$.sources[0].editors", "EDITORS_INVALID"]]);
+      expect(errs(doc([chapter({ editors })]))).toEqual([
+        ["$.sources[0].editors", "EDITORS_INVALID"],
+      ]);
     }
   });
 
@@ -304,10 +357,16 @@ function placeField(field: keyof typeof SOURCE_TEXT_FIELD_MAX, value: unknown): 
   switch (field) {
     case "family":
     case "given":
-      return [doc([book({ authors: [person({ [field]: value })] })]), `$.sources[0].authors[0].${field}`];
+      return [
+        doc([book({ authors: [person({ [field]: value })] })]),
+        `$.sources[0].authors[0].${field}`,
+      ];
     case "name":
     case "acronym":
-      return [doc([book({ authors: [org({ [field]: value })] })]), `$.sources[0].authors[0].${field}`];
+      return [
+        doc([book({ authors: [org({ [field]: value })] })]),
+        `$.sources[0].authors[0].${field}`,
+      ];
     case "bookTitle":
       return [doc([chapter({ [field]: value })]), `$.sources[0].${field}`];
     case "place":
@@ -344,12 +403,16 @@ describe("text fields (class 20)", () => {
 describe("url (class 21)", () => {
   const prefix = "https://primjer.hr/";
 
-  it.each(["ftp://primjer.hr", "https://primjer.hr/a b", "https://primjer.hr/č", "primjer.hr", "HTTPS://primjer.hr", 1])(
-    "refuses url %s",
-    (url) => {
-      expect(errs(doc([web({ url })]))).toEqual([["$.sources[0].url", "SOURCE_URL_INVALID"]]);
-    },
-  );
+  it.each([
+    "ftp://primjer.hr",
+    "https://primjer.hr/a b",
+    "https://primjer.hr/č",
+    "primjer.hr",
+    "HTTPS://primjer.hr",
+    1,
+  ])("refuses url %s", (url) => {
+    expect(errs(doc([web({ url })]))).toEqual([["$.sources[0].url", "SOURCE_URL_INVALID"]]);
+  });
 
   it("accepts 2048 characters and refuses 2049", () => {
     expectAccepted(doc([web({ url: prefix + "a".repeat(2048 - prefix.length) })]));
@@ -368,7 +431,9 @@ describe("citation locator (class 22)", () => {
 
   it("keeps an absent locator absent", () => {
     const outcome = validateVersionedDocument(doc([book()]));
-    expect(outcome.ok && outcome.doc.nodes[0]).toEqual(paragraph([{ type: "citation", sourceId: SRC }]));
+    expect(outcome.ok && outcome.doc.nodes[0]).toEqual(
+      paragraph([{ type: "citation", sourceId: SRC }]),
+    );
   });
 
   it.each([
@@ -378,7 +443,7 @@ describe("citation locator (class 22)", () => {
     ["a single space", " "],
     ["edge spaces", " str. 12 "],
     ["U+2028 and U+2029", "a b c"],
-  ])("accepts %s", (_name, locator) => {
+  ])("accepts %s", (unusedName, locator) => {
     expectAccepted(doc([book()], [cite({ locator })]));
   });
 
@@ -390,13 +455,13 @@ describe("citation locator (class 22)", () => {
     ["a lone low surrogate", "\udc00a"],
     ["a number", 12],
     ["null", null],
-  ])("refuses %s", (_name, locator) => {
+  ])("refuses %s", (unusedName, locator) => {
     expect(errs(doc([book()], [cite({ locator })]))).toEqual([[at, "CITATION_LOCATOR_INVALID"]]);
   });
 
   const forbiddenEdges = [
-    0x0000, 0x001f, 0x007f, 0x009f, 0x00ad, 0x061c, 0x180e, 0x200b, 0x200f, 0x202a, 0x202e, 0x2060, 0x2064,
-    0x2066, 0x206f, 0xfeff,
+    0x0000, 0x001f, 0x007f, 0x009f, 0x00ad, 0x061c, 0x180e, 0x200b, 0x200f, 0x202a, 0x202e, 0x2060,
+    0x2064, 0x2066, 0x206f, 0xfeff,
   ];
   it.each(forbiddenEdges)("refuses FORBIDDEN U+%s", (codePoint) => {
     const locator = `str.${String.fromCodePoint(codePoint)}12`;
@@ -410,11 +475,17 @@ describe("citation shape and place (class 23)", () => {
     ["id", { id: P }],
     ["text", { text: "x" }],
   ])("refuses a citation with `%s`", (field, extra) => {
-    expect(errs(doc([book()], [cite(extra)]))).toEqual([[`$.nodes[0].children[0].${field}`, "UNKNOWN_FIELD"]]);
+    expect(errs(doc([book()], [cite(extra)]))).toEqual([
+      [`$.nodes[0].children[0].${field}`, "UNKNOWN_FIELD"],
+    ]);
   });
 
   it("refuses a citation in a heading", () => {
-    const input = { schemaVersion: 2, nodes: [{ type: "heading", id: H, level: 1, children: [cite()] }], sources: [] };
+    const input = {
+      schemaVersion: 2,
+      nodes: [{ type: "heading", id: H, level: 1, children: [cite()] }],
+      sources: [],
+    };
     expect(errs(input)).toEqual([["$.nodes[0].children[0]", "CITATION_NOT_ALLOWED"]]);
   });
 
@@ -470,7 +541,11 @@ describe("required fields (class 29)", () => {
   const cases: [string, () => Record<string, unknown>, string[]][] = [
     ["book", book, ["id", "authors", "year", "title", "place", "publisher"]],
     ["article", article, ["id", "authors", "year", "title", "journal"]],
-    ["chapter", chapter, ["id", "authors", "year", "title", "editors", "bookTitle", "place", "publisher"]],
+    [
+      "chapter",
+      chapter,
+      ["id", "authors", "year", "title", "editors", "bookTitle", "place", "publisher"],
+    ],
     ["web", web, ["id", "authors", "year", "title", "url", "accessed"]],
   ];
 
@@ -478,7 +553,9 @@ describe("required fields (class 29)", () => {
     it.each(required)(`${type}: refuses a record without %s`, (field) => {
       const source = make();
       delete source[field];
-      expect(errs(doc([source], [text("a")]))).toEqual([[`$.sources[0].${field}`, "SOURCE_FIELD_MISSING"]]);
+      expect(errs(doc([source], [text("a")]))).toEqual([
+        [`$.sources[0].${field}`, "SOURCE_FIELD_MISSING"],
+      ]);
     });
   }
 
@@ -501,7 +578,8 @@ describe("K4: the version is part of the hash", () => {
     if (!v1.ok || !v2.ok) return;
     expect(v1.doc.schemaVersion).toBe(1);
     expect(v2.doc.schemaVersion).toBe(2);
-    const sha = (value: unknown) => createHash("sha256").update(canonicalizeJcs(value), "utf8").digest("hex");
+    const sha = (value: unknown) =>
+      createHash("sha256").update(canonicalizeJcs(value), "utf8").digest("hex");
     expect(sha(v1.doc)).not.toBe(sha(v2.doc));
   });
 });
