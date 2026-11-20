@@ -24,11 +24,8 @@ type Point = readonly [x: bigint, y: bigint, z: bigint, t: bigint];
 const IDENTITY: Point = [0n, 1n, 1n, 0n];
 
 function littleEndian(bytes: Uint8Array): bigint {
-  let value = 0n;
-  for (let index = bytes.length - 1; index >= 0; index -= 1) {
-    value = (value << 8n) | BigInt(bytes[index]);
-  }
-  return value;
+  // From the last byte to the first, as the former index loop.
+  return bytes.reduceRight((value, byte) => (value << 8n) | BigInt(byte), 0n);
 }
 
 function mod(value: bigint): bigint {

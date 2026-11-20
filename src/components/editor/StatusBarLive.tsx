@@ -1,5 +1,7 @@
 "use client";
 
+import type { ComponentProps } from "react";
+
 import { useLocalSaveRead } from "./LocalDocument";
 import StatusBar, { statusSaveOf } from "./StatusBar";
 
@@ -14,7 +16,13 @@ import StatusBar, { statusSaveOf } from "./StatusBar";
  * the verified result, and only its SYNCED. Without `evidence` the local
  * saver never sends and nothing is verified.
  */
-export default function StatusBarLive({ evidence }: { evidence: boolean }) {
+export default function StatusBarLive({
+  evidence,
+  length,
+}: {
+  evidence: boolean;
+  length?: ComponentProps<typeof StatusBar>["length"];
+}) {
   const { phase, state } = useLocalSaveRead();
-  return <StatusBar save={statusSaveOf({ phase, state, receiptVerifiedHere: evidence && state === "SYNCED" })} />;
+  return <StatusBar save={statusSaveOf({ phase, state, receiptVerifiedHere: evidence && state === "SYNCED" })} length={length} />;
 }

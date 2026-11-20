@@ -902,6 +902,15 @@ export const hr = {
     wordMinimum: "najmanje {words}",
     wordMaximum: "najviše {words}",
     pagesApprox: "≈ {pages} str.",
+    // WEB-23 (S: E-7): the frame around the editor, top bar and status bar.
+    backToAssignments: "← Moji zadaci",
+    submitWork: "Predaja rada",
+    submitOffline: "Predaja rada traži vezu s mrežom.",
+    scopeRange: "opseg {min} do {max}",
+    scopeMin: "opseg najmanje {min}",
+    scopeMax: "opseg najviše {max}",
+    scopePrivate: "vidite samo Vi",
+    readOnly: "Samo za čitanje",
   },
   editor: {
     placeholder: "Počnite pisati…",
@@ -1554,6 +1563,20 @@ export const hr = {
     emptyTitle: "Zbirni pregled još nema podataka",
     emptyBody: "Kad zbirni pregled bude dostupan, ovdje ćete vidjeti zbirne brojke za svoje kolegije. Pojedinačni studenti se ovdje ne prikazuju.",
   },
+  // WEB-34 (N-06): the frame of the teacher's read-only live view of one
+  // work. No "Zatraži doradu" (wave 8) and no deadline extension (wave 11).
+  teacherLiveWork: {
+    untitled: "Rad uživo",
+    sidePanel: "Sažetak procesa i granice zapisa",
+    neighbours: "Drugi radovi",
+    previous: "Prethodni rad",
+    next: "Sljedeći rad",
+    submission: "Predaja rada",
+    gaps: "U zapisu ovog rada postoje praznine.",
+    gapsLink: "Pogledaj sažetak procesa",
+    notSubmitted: "Rad još nije predan.",
+    textPending: "Prikaz teksta uživo još nije dostupan na ovoj stranici.",
+  },
   // WEB-18 (N-01, dk-h, A-7, A-8): the teacher's courses and their enrolment
   // codes. The server keeps only a hash: the code is shown once, in the dialog
   // that issued it; afterwards the page only says that one was issued.
@@ -2040,6 +2063,7 @@ export const hr = {
     declared: "Vaša izjava",
     declaredTag: "izjavljeno",
     statement: "Potvrdom izjavljujete da ste pregledali što je zabilježeno u Ducturi o ovom radu.",
+    statementWithoutRecord: "Zabilježene stavke ovdje trenutačno nisu prikazane. Potvrdom potvrđujete samo svoju izjavu.",
     keptHere: "Potvrda se ne šalje poslužitelju; vrijedi samo u ovom koraku predaje u ovom pregledniku.",
     confirm: "Potvrđujem izjavu",
     next: "Dalje",

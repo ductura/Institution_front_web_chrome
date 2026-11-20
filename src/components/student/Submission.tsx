@@ -26,7 +26,8 @@ import { createApi, errorBody, goToSignIn, type ApiOptions } from "@/client/api"
 import { useOnline } from "@/client/online-status";
 import { readSubmissionState, submitWork, type LocalCall, type SubmitInput, type SubmitOutcome } from "@/client/submission";
 
-import { confirmationKey, readConfirmed } from "../predaja/Declaration";
+import { readConfirmed, useSessionTag } from "../predaja/Declaration";
+import { confirmationKey } from "../predaja/flow";
 import type { Stage } from "../predaja/stage";
 import { SubmitDialog } from "../predaja/SubmitDialog";
 import { nextOf, OUTCOME_ID, SubmissionView, type Answer, type Next, type TextNode, type WorkRead } from "./SubmissionView";
@@ -151,7 +152,9 @@ function AssignmentSubmission({ assignmentId, stage, local }: SubmissionProps) {
   }, [assignmentId, here, router]);
 
   // Read after the first render, so the server's markup (unconfirmed, loading) matches.
-  useEffect(() => setConfirmed(readConfirmed(confirmationKey(assignmentId))), [assignmentId]);
+  // The confirmation is kept per sign-in (WEB-24, flow.ts), so it is read for the session signed in now.
+  const tag = useSessionTag();
+  useEffect(() => setConfirmed(tag !== null && readConfirmed(confirmationKey(tag, assignmentId))), [tag, assignmentId]);
   useEffect(() => {
     shown.current = true;
     return () => { shown.current = false; };

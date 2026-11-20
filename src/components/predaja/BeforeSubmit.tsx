@@ -12,7 +12,8 @@ import { messagesHr } from "@/lib/i18n/messages.hr";
 import { ProcessSummaryView, type ProcessSummaryV1 } from "../summary/ProcessSummaryView";
 import { zagrebParts } from "../summary/zagreb-time";
 import styles from "./BeforeSubmit.module.css";
-import { confirmationKey, readConfirmed } from "./Declaration";
+import { readConfirmed, useSessionTag } from "./Declaration";
+import { confirmationKey, isDeclared, stepHref } from "./flow";
 import { NoteDialog, type NoteAdded } from "./NoteDialog";
 import type { Stage } from "./stage";
 
@@ -20,14 +21,15 @@ const t = messagesHr.beforeSubmit;
 const s = messagesHr.summary;
 
 /**
- * TODO(ugovor): the student's read of the process summary (SRV-23) is not in
- * the published contract yet; until then the page passes `error`, which never
- * holds the flow (§5 rule 11).
+ * The process summary as the step has it. `unavailable`: no read is wired
+ * yet (TODO(ugovor), SRV-23), so nothing offers to try again; `error`: a read
+ * failed and may be repeated. Neither holds the flow (§5 rule 11).
  */
 export type SummaryRead =
   | { readonly kind: "ready"; readonly summary: ProcessSummaryV1 }
   | { readonly kind: "loading" }
-  | { readonly kind: "error" };
+  | { readonly kind: "error" }
+  | { readonly kind: "unavailable" };
 
 export type NotesRead =
   | { readonly kind: "ready"; readonly notes: readonly SubmissionNote[] }
@@ -112,7 +114,7 @@ export function BeforeSubmitView(props: BeforeSubmitViewProps) {
         </div>
         <aside>
           {summary.kind === "ready" ? <ProcessSummaryView summary={summary.summary} />
-            : <Card title={s.title} busy={summary.kind === "loading"} error={summary.kind === "error" ? t.summaryError : undefined} />}
+            : <Card title={s.title} busy={summary.kind === "loading"} error={summary.kind === "error" || summary.kind === "unavailable" ? t.summaryError : undefined} />}
           {summary.kind === "loading" && <p role="status">{t.summaryLoading}</p>}
           {summary.kind === "error" && <Button tone="quiet" onClick={props.onRetry}>{t.retry}</Button>}
         </aside>
@@ -154,23 +156,26 @@ export type BeforeSubmitProps = {
   readonly stage: Stage;
   /** TODO(ugovor): the transport of student.submission-notes.{get,post} (SRV-24); none until 3.1.0. */
   readonly local?: LocalCall;
+  /** The `?izjava=` step 2 handed over (flow.ts); taken only for the session signed in now. */
+  readonly declaredFor?: string;
 };
 
 /** The step with its state: the declaration as step 2 left it in this tab, the notes from the server. */
-export default function BeforeSubmit({ assignmentId, summary, stage, local }: BeforeSubmitProps) {
+export default function BeforeSubmit({ assignmentId, summary, stage, local, declaredFor }: BeforeSubmitProps) {
   const router = useRouter();
   const online = useOnline();
-  const [confirmed, setConfirmed] = useState(false);
+  const tag = useSessionTag();
+  const [kept, setKept] = useState(false);
   const [notes, setNotes] = useState<NotesRead>({ kind: "loading" });
   const [noteOpen, setNoteOpen] = useState(false);
   // Read after the first render, so the server's markup (unconfirmed) matches.
-  useEffect(() => setConfirmed(readConfirmed(confirmationKey(assignmentId))), [assignmentId]);
+  useEffect(() => setKept(tag !== null && readConfirmed(confirmationKey(tag, assignmentId))), [tag, assignmentId]);
+  const confirmed = isDeclared(tag, kept, declaredFor);
   useEffect(() => {
     let live = true;
     void loadNotes(local, assignmentId).then((read) => { if (live) setNotes(read); });
     return () => { live = false; };
   }, [local, assignmentId]);
-  const base = `/rad/${encodeURIComponent(assignmentId)}`;
   return (
     <>
       <BeforeSubmitView
@@ -179,10 +184,10 @@ export default function BeforeSubmit({ assignmentId, summary, stage, local }: Be
         stage={stage}
         confirmed={confirmed}
         online={online}
-        onNext={() => router.push(`${base}/predaja/slanje`)}
-        onDeclaration={() => router.push(`${base}/predaja/izjava`)}
-        onBack={() => router.push(`${base}/predaja/izjava`)}
-        onReceipt={() => router.push(`${base}/predaja/potvrda`)}
+        onNext={() => router.push(stepHref(assignmentId, "slanje"))}
+        onDeclaration={() => router.push(stepHref(assignmentId, "izjava"))}
+        onBack={() => router.push(stepHref(assignmentId, "izjava"))}
+        onReceipt={() => router.push(stepHref(assignmentId, "potvrda"))}
         onRetry={() => router.refresh()}
         onOpenNote={() => setNoteOpen(true)}
       />

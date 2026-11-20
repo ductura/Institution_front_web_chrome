@@ -23,7 +23,7 @@ import { createEditorExtensions } from "./schema";
 type DocumentVector = { name: string; value: CanonicalDocument; utf8Hex: string; sha256: string };
 
 function v1Vector(): DocumentVector {
-  const bytes = readFileSync(new URL("../domain/forensics/golden-vectors/format-reservation.json", import.meta.url));
+  const bytes = readFileSync(new URL("../document/forensics/golden-vectors/format-reservation.json", import.meta.url));
   if (bytes.some((byte) => byte > 0x7e || byte === 0x0d)) throw new Error("vectors must be ASCII with LF");
   const vectors = (JSON.parse(bytes.toString("latin1")) as { documentsV1: DocumentVector[] }).documentsV1;
   return vectors.find((entry) => entry.name === "v1-every-block-type")!;
