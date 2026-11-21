@@ -1,7 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 
 import { signInHref } from "../../../../../client/api";
+import { screenProvenance } from "../../../../../client/provenance-fake";
 import type { TeacherCall } from "../../../../../client/teacher-reads";
+import { ProvenancePanel, readProvenance } from "../../../../../components/predaja/ProvenancePanel";
 import { ReceiptPanel } from "../../../../../components/predaja/ReceiptPanel";
 import { liveWorkHref, submissionHref, SUMMARY_ANCHOR } from "../../../../../components/teacher/LiveWorkFrame";
 import { messagesHr as t } from "../../../../../lib/i18n/messages.hr";
@@ -19,6 +21,8 @@ export const metadata = { title: `${t.receipt.title} · ${t.app.name}` };
  */
 const WORK: WorkCall | undefined = undefined;
 const RECEIPT: TeacherCall | undefined = undefined;
+/** TODO(ugovor): the same fake as the student's step 5 until SRV-1220 is approved (WEB-1220). */
+const PROVENANCE = screenProvenance;
 
 /**
  * `/nastavnik/rad/[id]/predaja` (WEB-35, N-07): the receipt of a submitted
@@ -41,7 +45,7 @@ export default async function TeacherReceiptPage({ params }: { params: Promise<{
       </div>
     );
   }
-  const view = await loadTeacherReceipt(WORK, RECEIPT, id);
+  const [view, provenance] = await Promise.all([loadTeacherReceipt(WORK, RECEIPT, id), readProvenance(PROVENANCE, id)]);
   if (view.kind === "signedOut") redirect(signInHref(here));
   if (view.kind === "notFound") notFound();
   return (
@@ -50,6 +54,7 @@ export default async function TeacherReceiptPage({ params }: { params: Promise<{
       <h1>{t.receipt.title}</h1>
       {view.work?.studentName ? <p>{view.work.studentName}</p> : null}
       <ReceiptPanel read={view.read} retryHref={here} summaryHref={`${live}#${SUMMARY_ANCHOR}`} />
+      <ProvenancePanel read={provenance} />
     </div>
   );
 }

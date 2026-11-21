@@ -13,6 +13,7 @@ export { default as BeforeSubmit } from "./predaja/BeforeSubmit";
 export { default as Declaration } from "./predaja/Declaration";
 export { NoteDialog } from "./predaja/NoteDialog";
 export { ReceiptPanel, type ReceiptPanelProps, type ReceiptRead } from "./predaja/ReceiptPanel";
+export { ProvenancePanel, readProvenance } from "./predaja/ProvenancePanel";
 export { SubmitDialog } from "./predaja/SubmitDialog";
 export { VerificationForm } from "./public-verification/VerificationForm";
 export { ProofDialog, type ProofDialogProps } from "./editor/sources/proofs/ProofDialog";
