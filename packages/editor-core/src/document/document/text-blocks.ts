@@ -1,4 +1,4 @@
-import { deriveBibliography, formatCitation, type CitationStyle } from "../citation";
+import { deriveBibliography, formatCitation, type CitationStyle } from "../citation/index";
 
 import type { CanonicalDocument, CanonicalDocumentV2, InlineNodeV2 } from "./schema";
 
@@ -27,9 +27,16 @@ export type CitationRendering = { style: CitationStyle; orphanMark: string };
  * orphan mark, with the locator as stored.
  */
 export function textBlocksOf(document: CanonicalDocument): TextBlock[];
-export function textBlocksOf(document: CanonicalDocumentV2, rendering: CitationRendering): TextBlock[];
-export function textBlocksOf(document: CanonicalDocument | CanonicalDocumentV2, rendering?: CitationRendering): TextBlock[] {
-  let text: (child: InlineNodeV2) => string = (child) => (child.type === "citation" ? "" : child.text);
+export function textBlocksOf(
+  document: CanonicalDocumentV2,
+  rendering: CitationRendering,
+): TextBlock[];
+export function textBlocksOf(
+  document: CanonicalDocument | CanonicalDocumentV2,
+  rendering?: CitationRendering,
+): TextBlock[] {
+  let text: (child: InlineNodeV2) => string = (child) =>
+    child.type === "citation" ? "" : child.text;
   if (document.schemaVersion === 2 && rendering !== undefined) {
     const bibliography = deriveBibliography(document, rendering.style);
     text = (child) =>
@@ -37,8 +44,10 @@ export function textBlocksOf(document: CanonicalDocument | CanonicalDocumentV2, 
         ? (formatCitation(child, bibliography, rendering.style) ?? rendering.orphanMark)
         : child.text;
   }
-  return (document.nodes as readonly { type: string; children: readonly InlineNodeV2[] }[]).map((node) => ({
-    kind: node.type === "heading" ? "heading" : "paragraph",
-    text: node.children.map(text).join(""),
-  }));
+  return (document.nodes as readonly { type: string; children: readonly InlineNodeV2[] }[]).map(
+    (node) => ({
+      kind: node.type === "heading" ? "heading" : "paragraph",
+      text: node.children.map(text).join(""),
+    }),
+  );
 }

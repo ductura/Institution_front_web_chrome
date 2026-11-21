@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { messagesHr } from "../../../locales/hr.ts";
 
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
+import { messagesHr as webHr } from "../../lib/i18n/messages.hr";
 import { courseMotif } from "./course-motif";
 import type { MyAssignmentsRead, MyCourse } from "./my-assignments-read";
 import StudentHome from "./StudentHome";
@@ -68,6 +69,43 @@ describe("StudentHome, Archivum S01 on /zadaci (DAN-344)", () => {
     const html = render({ kind: "ready", courses });
     expect(html).not.toMatch(/[Mm]entor/);
     expect(html).not.toMatch(/izmijenjen|predan|u tijeku/i);
+  });
+
+  it("WEB-09 (A-3): the academic year, the course's teachers with their role, and an extended deadline in place of the deadline", () => {
+    const added = webHr.student.home;
+    const html = render({
+      kind: "ready",
+      courses: [{
+        id: COURSE_A,
+        name: "Izmišljeni seminar iz ekologije grada",
+        academicYear: "2026/2027",
+        teachers: [
+          { id: "20000000-0000-4000-8000-000000000001", givenName: "Iva", familyName: "Izmišljena", role: "holder" },
+          { id: "20000000-0000-4000-8000-000000000002", givenName: "Ana", familyName: "Primjerić", role: "collaborator" },
+        ],
+        assignments: [
+          { id: "10000000-0000-4000-8000-000000000003", title: "Izmišljeni seminar", dueAt: "2026-11-30T22:59:00.000Z", noticeFirst: false, extendedDueAt: "2026-12-07T22:59:00.000Z" },
+          { id: "10000000-0000-4000-8000-000000000004", title: "Izmišljeni prikaz", dueAt: "2026-12-05T22:59:00.000Z", noticeFirst: false, extendedDueAt: null },
+        ],
+      }],
+    });
+    expect(html).toContain(`${home.courseLabel} · 2026./2027.`);
+    expect(html).toContain(`${added.teachers}: Iva Izmišljena (${added.teacherRole.holder}), Ana Primjerić (${added.teacherRole.collaborator})`);
+    expect(html).toContain("Produljeni rok: 7. prosinca 2026. u 23:59");
+    expect(html).not.toContain("Rok: 30. studenoga 2026.");
+    expect(html).toContain("Rok: 5. prosinca 2026. u 23:59");
+    expect(html).toContain('href="/rad?zadatak=10000000-0000-4000-8000-000000000003"');
+    // The Next page (WEB-09) routes a work as /rad/<id>; the Vite host keeps the default above.
+    const next = renderToStaticMarkup(createElement(StudentHome, {
+      read: { kind: "ready", courses }, enroll: ENROLL, signIn: SIGN_IN, assignmentHref: (id: string) => `/rad/${id}`,
+    }));
+    expect(next).toContain('href="/rad/10000000-0000-4000-8000-000000000001"');
+    expect(next).not.toContain("/rad?zadatak=");
+    // A course the read gives no teachers or year for shows neither.
+    const bare = render({ kind: "ready", courses });
+    expect(bare).not.toContain(`${added.teachers}:`);
+    expect(bare).not.toContain(`${home.courseLabel} · `);
+    expect(findForbiddenTerms(JSON.stringify([added.teachers, added.teacherRole, added.extendedDue, added.enrollLink]))).toEqual([]);
   });
 
   it("unavailable is its own state, not the empty list and no list at all", () => {

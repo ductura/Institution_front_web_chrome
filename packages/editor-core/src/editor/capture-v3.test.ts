@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 
-import { createEditStepsV1Replayer } from "@/adapters/evidence/edit-steps-v1-replayer";
+import { createEditStepsV1Replayer } from "../document/forensics/replay/edit-steps-v1-replayer";
 import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
 import { digestCanonicalDocumentV2, replayEvidenceSegmentsV2 } from "../document/forensics/evidence-replay-v2";
 import {

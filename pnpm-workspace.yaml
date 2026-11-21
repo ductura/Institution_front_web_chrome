@@ -10,3 +10,4 @@ packages:
   - src/domain
   - src/app
   - src/lib
+  - src/client

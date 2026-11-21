@@ -6,45 +6,41 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { HOW_IT_WORKS_HREF } from "@/components/shell/nav";
-import type { ShellAccount } from "@/components/shell/shell-role";
+import type { ShellAccess } from "@/components/shell/shell-access";
 
 import { howItWorksShell } from "./access";
 import HowItWorks from "./HowItWorks";
 
-// DAN-431 (J-02), contract (a): the four reader classes. The page is the same
-// for all of them; only the shell follows the session. Accounts are invented.
-const SCOPE = "a".repeat(43);
-
-const CASES: ReadonlyArray<{
-  name: string;
-  account: ShellAccount | null;
-  role: "teacher" | "student" | null;
-  scope: string | null;
-}> = [
-  { name: "signed out (no session)", account: { role: null, scope: null }, role: null, scope: null },
-  { name: "student", account: { role: "student", scope: SCOPE }, role: "student", scope: SCOPE },
-  { name: "teacher", account: { role: "teacher", scope: SCOPE }, role: "teacher", scope: SCOPE },
-  // readShellAccount reads an administrator's base role; the admin shell
-  // belongs to the institution screens only.
-  { name: "administrator (base role teacher)", account: { role: "teacher", scope: SCOPE }, role: "teacher", scope: SCOPE },
-  { name: "failed read", account: null, role: null, scope: null },
+// DAN-431 (J-02), WEB-13: every answer of the server session read (me). The
+// page is the same for all of them; only the shell follows the session.
+const CASES: ReadonlyArray<{ name: string; access: ShellAccess; role: "admin" | "teacher" | "student" | null; signedIn: boolean }> = [
+  { name: "signed out (no session)", access: { kind: "signedOut" }, role: null, signedIn: false },
+  { name: "server unavailable", access: { kind: "unavailable" }, role: null, signedIn: false },
+  { name: "account without a role (A-5)", access: { kind: "noRole" }, role: null, signedIn: true },
+  { name: "student", access: { kind: "signedIn", role: "student", institution: "Izmisljeni fakultet" }, role: "student", signedIn: true },
+  { name: "teacher", access: { kind: "signedIn", role: "teacher", institution: null }, role: "teacher", signedIn: true },
+  { name: "administrator", access: { kind: "signedIn", role: "admin", institution: "Izmisljeni fakultet" }, role: "admin", signedIn: true },
 ];
 
 describe("howItWorksShell", () => {
-  it.each(CASES)("$name: role $role", ({ account, role, scope }) => {
-    expect(howItWorksShell(account)).toEqual({ role, scope });
+  it.each(CASES)("$name: role $role", ({ access, role, signedIn }) => {
+    const shell = howItWorksShell(access);
+    expect(shell.role).toBe(role);
+    expect(shell.signedIn).toBe(signedIn);
   });
 
-  it("never invents a role the read did not give", () => {
-    for (const { account } of CASES) {
-      expect(howItWorksShell(account).role).toBe(account?.role ?? null);
+  it("shows the institution only of a signed-in read and never invents a role", () => {
+    for (const { access } of CASES) {
+      const shell = howItWorksShell(access);
+      expect(shell.institution).toBe(access.kind === "signedIn" ? access.institution : null);
+      if (access.kind !== "signedIn") expect(shell.role).toBeNull();
     }
   });
 });
 
 describe("/kako-radi", () => {
   it("is a route that exists", () => {
-    expect(existsSync(join(process.cwd(), "app", HOW_IT_WORKS_HREF, "page.tsx"))).toBe(true);
+    expect(existsSync(join(import.meta.dirname, "../../app", HOW_IT_WORKS_HREF, "page.tsx"))).toBe(true);
   });
 
   it("renders the same page without any reader input", () => {

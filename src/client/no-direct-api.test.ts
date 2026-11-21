@@ -13,6 +13,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, posix, relative, resolve, sep, win32 } from "node:path";
 import { describe, expect, it } from "vitest";
+import baselineJson from "./no-direct-api.baseline.json" with { type: "json" };
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const SCANNED = ["src", "public", "packages", "catalog", "app"];
@@ -20,9 +21,11 @@ const SCANNED = ["src", "public", "packages", "catalog", "app"];
 const SKIP_ANYWHERE = new Set(["node_modules", ".git"]);
 /** Skipped only directly under catalog/ or packages/<name>/ (their own e2e and build output). */
 const SKIP_TOP = new Set(["e2e", "dist", "test-results", "playwright-report"]);
+/** Skipped directly under src/: pages parked until their own PR moves them back (WEB-01), not built, not shipped. */
+const SKIP_SRC = new Set(["_cekanje"]);
 const SOURCE = /\.(?:[cm]?[jt]sx?|html?|xhtml|svg|css|svelte|vue)$/;
 const TEST = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
-const CONFIG = /^(?:catalog|packages\/[^/]+)\/(?:vite|vitest|playwright)\.config\.[cm]?[jt]s$/;
+const CONFIG = /^(?:catalog|packages\/[^/]+|src\/[^/]+)\/(?:vite|vitest|playwright)\.config\.[cm]?[jt]s$/;
 
 /** The client itself. */
 const CLIENT = "src/client/api.ts";
@@ -36,6 +39,15 @@ const CLIENT = "src/client/api.ts";
 export const EXCEPTIONS: Readonly<Record<string, { readonly fetchCalls: number }>> = {
   "public/app.js": { fetchCalls: 3 },
 };
+
+/**
+ * Known findings of the pages copied from the database front and not yet moved
+ * onto src/client (the "_cekanje" pages are skipped, these are the rest), by
+ * file. It only shrinks: a file may break no rule outside its entry, a file
+ * that no longer breaks any rule must leave the list, and a new file has no
+ * entry. Each page PR (WEB-xx) deletes its files' entries.
+ */
+export const BASELINE: Readonly<Record<string, readonly string[]>> = baselineJson;
 
 /** The path in POSIX form; "\\" is a separator only where the platform says so. */
 export function toPosix(path: string, separator: string = sep): string {
@@ -60,7 +72,11 @@ export function isPackagesDir(dir: string, separator: string = sep): boolean {
 }
 
 const BARE_IMPORTS = new Set(["react", "react-dom/client", "react/jsx-runtime", "@ductura/ui", "@ductura/ui/fonts.css",
-  "@ductura/ui/tokens.css", "@ductura/contracts/openapi/v1.json"]);
+  "@ductura/ui/tokens.css", "@ductura/ui/assistant-thread", "@ductura/ui/save-status",
+  "@ductura/contracts/openapi/v1.json"]);
+/** Bare imports that are not network libraries: the Next, editor and storage stack of the app trees (WEB-01), and the "@/" alias. */
+const BARE_PREFIXES = ["@/", "next/", "@tiptap/"];
+const BARE_PACKAGES = new Set(["next", "dexie", "react-dom"]);
 const CONFIG_IMPORTS = new Set(["vite", "vitest/config", "@playwright/test", "@vitejs/plugin-react"]);
 
 const RULES: readonly (readonly [string, RegExp])[] = [
@@ -121,7 +137,9 @@ export function directCalls(text: string, file = ""): string[] {
   const broken = RULES.filter(([name, rule]) => !(config && name === "test file import") && (rule.test(text) || rule.test(plain)))
     .map(([name]) => name);
   const allowed = config ? new Set([...BARE_IMPORTS, ...CONFIG_IMPORTS]) : BARE_IMPORTS;
-  for (const spec of bareImports(plain)) if (!allowed.has(spec)) broken.push(`import ${spec}`);
+  for (const spec of bareImports(plain)) {
+    if (!allowed.has(spec) && !BARE_PACKAGES.has(spec) && !BARE_PREFIXES.some((prefix) => spec.startsWith(prefix))) broken.push(`import ${spec}`);
+  }
   return broken;
 }
 
@@ -150,6 +168,7 @@ function sources(dir: string, top: boolean, walk: Walk): string[] {
     const path = walk.join(dir, name);
     if (walk.isDirectory(path)) {
       if (SKIP_ANYWHERE.has(name) || (top && SKIP_TOP.has(name))) return [];
+      if (SKIP_SRC.has(name) && /\/src$/.test(toPosix(dir, walk.sep))) return [];
       return sources(path, isPackagesDir(dir, walk.sep), walk);
     }
     return SOURCE.test(name) && !TEST.test(name) ? [path] : [];
@@ -167,6 +186,8 @@ export function checkedFiles(files: readonly string[], list: object = EXCEPTIONS
   return files.filter((file) => file !== CLIENT && listed(list, file) === undefined);
 }
 
+const listed_ = (file: string): readonly string[] => BASELINE[file] ?? [];
+
 describe("no API call outside src/client/api.ts", () => {
   const files = scannedFiles(ROOT);
 
@@ -178,9 +199,22 @@ describe("no API call outside src/client/api.ts", () => {
 
   it("finds no direct call in any other file", () => {
     const found = checkedFiles(files)
-      .map((file) => [file, directCalls(readFileSync(join(ROOT, file), "utf8"), file)] as const)
+      .map((file) => [file, directCalls(readFileSync(join(ROOT, file), "utf8"), file).filter((rule) => !listed_(file).includes(rule))] as const)
       .filter(([, rules]) => rules.length > 0);
     expect(found).toEqual([]);
+  });
+
+  it("the baseline lists only files that still break the rule it names", () => {
+    const stale = Object.entries(BASELINE).flatMap(([file, rules]) => {
+      if (!files.includes(file)) return [`${file}: not scanned`];
+      const now = new Set(directCalls(readFileSync(join(ROOT, file), "utf8"), file));
+      return rules.filter((rule) => !now.has(rule)).map((rule) => `${file}: ${rule}`);
+    });
+    expect(stale).toEqual([]);
+  });
+
+  it("the baseline holds no file of the client or the closed exception list", () => {
+    expect(Object.keys(BASELINE).filter((file) => file === CLIENT || listed(EXCEPTIONS, file) !== undefined)).toEqual([]);
   });
 
   it("the exception list is closed", () => {

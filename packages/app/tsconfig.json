@@ -1,5 +1,67 @@
 {
   "extends": "../ui/tsconfig.json",
-  "compilerOptions": { "types": ["node", "vite/client"], "allowImportingTsExtensions": true, "resolveJsonModule": true },
-  "include": ["app", "src", "e2e", "next.config.ts", "vite.config.ts", "playwright.config.ts", "../ui/src/css-modules.d.ts"]
+  "compilerOptions": {
+    "types": ["node"], "allowImportingTsExtensions": true, "resolveJsonModule": true,
+    // HOST (graditelj): the Ductus @/ alias of src/components/tsconfig.json, so the host mounts the screens copied from Ductus. Keep in step with that file.
+    "paths": {
+      "@/editor": [
+            "../../packages/editor-core/src/editor"
+      ],
+      "@/editor/*": [
+            "../../packages/editor-core/src/editor/*"
+      ],
+      "@/domain/json": [
+            "../../packages/editor-core/src/document/json"
+      ],
+      "@/domain/forensics/*": [
+            "../../packages/editor-core/src/document/forensics/*"
+      ],
+      "@/domain/document": [
+            "../../packages/editor-core/src/document/document"
+      ],
+      "@/domain/document/*": [
+            "../../packages/editor-core/src/document/document/*"
+      ],
+      "@/domain/citation": [
+            "../../packages/editor-core/src/document/citation"
+      ],
+      "@/domain/citation/*": [
+            "../../packages/editor-core/src/document/citation/*"
+      ],
+      "@/domain/collaboration": [
+            "../../packages/editor-core/src/document/collaboration"
+      ],
+      "@/domain/collaboration/*": [
+            "../../packages/editor-core/src/document/collaboration/*"
+      ],
+      "@/domain/diff": [
+            "../../packages/editor-core/src/document/diff"
+      ],
+      "@/domain/diff/*": [
+            "../../packages/editor-core/src/document/diff/*"
+      ],
+      "@/domain/text/*": [
+            "../../packages/editor-core/src/document/text/*"
+      ],
+      "@/domain/sync": [
+            "../../packages/editor-core/src/sync"
+      ],
+      "@/domain/sync/*": [
+            "../../packages/editor-core/src/sync/*"
+      ],
+      "@/domain/serverSync/*": [
+            "../../packages/editor-core/src/serverSync/*"
+      ],
+      "@/lib/journal/*": [
+            "../../packages/editor-core/src/journal/*"
+      ],
+      "@/lib/sync/*": [
+            "../../packages/editor-core/src/sync/runner/*"
+      ],
+      "@/*": [
+            "../../src/*"
+      ]
+    }
+  },
+  "include": ["app","src","e2e","next.config.ts","vitest.config.ts","playwright.config.ts","../ui/src/css-modules.d.ts"]
 }

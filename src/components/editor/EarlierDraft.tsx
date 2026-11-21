@@ -24,13 +24,21 @@ import { useLocalSignedOut } from "./LocalDocument";
 
 const EXPORT_FILE_NAME = "ductus-raniji-tekst.txt";
 
-function exportText(text: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+/** Saves `text` as a plain text file; the recovery offer (WEB-1501) reuses it so the download stays in one place. */
+export function exportText(text: string, fileName: string = EXPORT_FILE_NAME): void {
+  downloadBlob(new Blob([text], { type: "text/plain;charset=utf-8" }), fileName);
+}
+
+export function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = EXPORT_FILE_NAME;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  link.download = fileName;
+  try {
+    link.click();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  }
 }
 
 export default function EarlierDraft({ scope }: { scope: string }) {

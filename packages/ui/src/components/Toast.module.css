@@ -1,0 +1,62 @@
+/* Toasts (WEB-04): bottom right of the viewport, above the page, never over the sheet's text column on a phone. */
+.region {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.inline {
+  position: static;
+  width: auto;
+}
+
+.region:has(.list:empty + .list:empty) {
+  pointer-events: none;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+}
+
+.toast {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--raised-rule);
+  border-left-width: 4px;
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--lift);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* The text says it is an error; the edge only points at it. */
+.toast[data-tone="error"] {
+  border-color: var(--error);
+  background: var(--error-soft);
+}
+
+.text {
+  flex: 1;
+  margin: 0;
+}
+
+.close {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--field-rule);
+  border-radius: var(--radius-control);
+  background: transparent;
+}
+
+.close:hover {
+  background: var(--hover);
+}

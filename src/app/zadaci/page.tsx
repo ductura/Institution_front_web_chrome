@@ -1,34 +1,51 @@
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 
-import AppShell from "@/components/shell/AppShell";
-import { shellSession } from "@/components/shell/shell-session";
-import EnrollForm from "@/components/student/EnrollForm";
-import StudentHome from "@/components/student/StudentHome";
-import { readStudentHome } from "@/components/student/student-home-read";
-import { messagesHr } from "@/lib/i18n/messages.hr";
-import { pageActivity } from "@/server/auth/activity";
-import { SESSION_COOKIE_NAME } from "@/server/auth/session-token";
-import { withActor } from "@/server/db";
+import { serverApi } from "../../client/server";
+import RoleShell, { signInPage } from "../../components/shell/RoleShell";
+import { readMyAssignments } from "../../components/student/my-assignments-read";
+import StudentHome from "../../components/student/StudentHome";
+import { messagesHr as t } from "../../lib/i18n/messages.hr";
 
+// The session cookie is read per request: nothing of a student's list is built in.
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+export const metadata = { title: `${t.student.assignments.title} · ${t.app.name}` };
 
-const t = messagesHr.student.assignments;
-export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
+const HERE = "/zadaci";
 
-// #711 contract 6404612273: the student's courses and assignments, from one
-// RLS read under the session cookie. The page adds and filters nothing; /rad
-// decides each assignment. Without a session there is no read at all.
-// DAN-344: drawn as Archivum S01 by StudentHome; the first arrival
-// (S01_prazna) holds the same EnrollForm as /upis.
-export default async function MyAssignmentsPage() {
-  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
-  pageActivity(token);
-  // The session is checked before the courses are read (readStudentHome).
-  const { read, account: { role, scope } } = await readStudentHome(token, withActor);
+/** The Next route of a work (WEB-14); it sends an unacknowledged notice first. */
+const workHref = (assignmentId: string) => `/rad/${encodeURIComponent(assignmentId)}`;
+
+/**
+ * The list, read only once RoleShell has found a session with a role: signed
+ * out never reaches student.assignments.get. A 401 between the two reads is
+ * StudentHome's signed-out state, with the AAI@EduHr sign-in back here (D-09).
+ */
+async function Assignments() {
+  // The Cookie header as the browser sent it: re-serialising the cookies could alter a value.
+  const cookie = (await headers()).get("cookie") ?? "";
+  const read = await readMyAssignments(serverApi(cookie));
+  // Enrolling by code is /upis (WEB-11); the empty state leads there.
+  const enroll = (
+    <p>
+      <a className="btn" href="/upis">{t.student.home.enrollLink}</a>
+    </p>
+  );
   return (
-    <AppShell session={shellSession(token)} role={role} scope={scope} current="/zadaci" crumbs={[t.title]}>
-      <StudentHome read={read} enroll={<EnrollForm />} />
-    </AppShell>
+    <div className="page">
+      <StudentHome read={read} enroll={enroll} signIn={signInPage} assignmentHref={workHref} />
+    </div>
+  );
+}
+
+/**
+ * S: E-2 "Moji zadaci" (WEB-09, A-1): the student's courses with their
+ * assignments, deadlines and teachers, from student.assignments.get through
+ * src/client with the request's session cookie. No database access here.
+ */
+export default function MyAssignmentsPage() {
+  return (
+    <RoleShell here={HERE} current={HERE} crumbs={[t.student.assignments.title]}>
+      <Assignments />
+    </RoleShell>
   );
 }

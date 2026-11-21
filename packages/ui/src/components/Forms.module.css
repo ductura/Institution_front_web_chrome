@@ -1,0 +1,44 @@
+/* Form elements of WEB-05, on the measures of TextField.module.css. */
+/* One column that may shrink below its content, so a long option or label reflows at 320 px (WCAG 1.4.10, WEB-1805). */
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-width: 360px; }
+.label { color: var(--ink); font-weight: 600; }
+.input {
+  min-height: 44px; max-width: 100%; padding: 0 12px; font: inherit; color: var(--ink);
+  background: var(--field); border: 1px solid var(--field-rule); border-radius: var(--radius-control);
+}
+.area { padding: 10px 12px; line-height: 1.5; resize: vertical; }
+.input::placeholder { color: var(--field-placeholder); opacity: 1; }
+.input[aria-invalid="true"] { border: 2px solid var(--ink); background: var(--error-soft); }
+.input[aria-busy="true"] { cursor: progress; }
+.input:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); }
+.note { margin: 0; color: var(--ink-3); }
+.note[data-error] { color: var(--ink); font-weight: 600; }
+
+.check { display: inline-flex; gap: 10px; align-items: center; min-height: 44px; color: var(--ink); cursor: pointer; }
+.box { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.box[aria-invalid="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* The error mark above is an outline too and outranks the global :focus-visible
+   ring, so without this an invalid box looks the same focused or not (WCAG 2.4.7). */
+.box[aria-invalid="true"]:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }
+.box:disabled, .box:disabled + span { cursor: not-allowed; color: var(--ink-3); }
+
+.tag {
+  display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: var(--ink); background: var(--well); border: 1px solid var(--rule-2);
+}
+.tag[data-tone="accent"] { border-color: var(--accent); }
+.tag[data-tone="warn"] { border-color: var(--warn); }
+
+.skeleton { display: grid; gap: 8px; max-width: 360px; }
+.bar { display: block; height: 12px; border-radius: var(--radius-sm); background: var(--well); animation: pulse 1.6s ease-in-out infinite; }
+.bar:last-child:not(:first-of-type) { width: 60%; }
+@keyframes pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .bar { animation: none; } }
+.hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
+.details { max-width: 520px; border: 1px solid var(--rule-2); border-radius: var(--radius-control); }
+.summary { min-height: 44px; padding: 0 12px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.details[open] > .summary { border-bottom: 1px solid var(--rule-2); }
+.detailsBody { padding: 10px 12px; }

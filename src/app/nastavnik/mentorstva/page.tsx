@@ -1,16 +1,12 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-import AccessCard from "@/components/auth/AccessCard";
-import { accessShellScope, mentoredWorksAccess, teacherPageAccess } from "@/components/auth/access-kind";
-import AppShell from "@/components/shell/AppShell";
-import { shellSession } from "@/components/shell/shell-session";
+import { signInHref } from "@/client/api";
+import { serverApi } from "@/client/server";
 import MentoredWorks from "@/components/teacher/MentoredWorks";
-import { teacherPageRead } from "@/components/teacher/teacher-access";
+import MentorshipRequests, { type RequestsRead } from "@/components/teacher/MentorshipRequests";
+import { readMentoredWorks } from "@/components/teacher/mentored-works-read";
 import { messagesHr } from "@/lib/i18n/messages.hr";
-import { pageActivity } from "@/server/auth/activity";
-import { liveSessionToken } from "@/server/auth/ended-mark";
-import { withActor } from "@/server/db";
-import { readMentoredWorks } from "@/server/institution/mentored-works";
 
 import styles from "../page.module.css";
 
@@ -18,49 +14,42 @@ const t = messagesHr.mentoredWorks;
 const HREF = "/nastavnik/mentorstva";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 export const metadata = { title: `${t.title} · ${messagesHr.app.name}` };
 
-// DAN-492 (M2.6-P02, N-16): the works a teacher mentors, from the same read
-// as GET /api/teacher/mentorships (DAN-477), under the session cookie only;
-// the database decides whose. The role and session come from one snapshot
-// (teacherPageRead), so the access screens are those of the other teacher
-// pages (DAN-378): Z-03, "not signed in" and Z-05, none of them a work.
-export default async function MentoredWorksPage() {
-  const token = liveSessionToken(await cookies());
-  pageActivity(token);
-  const [{ access, principal }, read] = await Promise.all([
-    teacherPageRead(token, withActor),
-    readMentoredWorks(token, withActor),
-  ]);
-  const screen = teacherPageAccess(mentoredWorksAccess(access, read.kind), principal.kind, token);
-  const card = screen === "expired" || screen === "signedOut" || screen === "denied";
-  let body;
-  if (card) {
-    body = <AccessCard kind={screen} returnTo={HREF} what="mentoredWorks" />;
-  } else if (screen === "unavailable" || read.kind !== "ok") {
-    // A failed read is said as such, never as "no works".
-    body = (
-      <>
-        <p role="alert" className={styles.alert}>{t.unavailable}</p>
-        <p><a className={styles.retry} href={HREF}>{t.retry}</a></p>
-      </>
-    );
-  } else {
-    body = <MentoredWorks works={read.works} />;
-  }
+/**
+ * TODO(ugovor): teacher.mentorship-requests.get comes with @ductura/contracts
+ * 3.2.0 (SRV-27, SRV-32) and its handler with SRV-31; then the page reads it
+ * with readMentorshipRequests (src/client/mentorship-requests.ts). Until then
+ * no call is made and the card says the requests are unavailable, never "none".
+ */
+const REQUESTS: RequestsRead = { kind: "unavailable" };
 
+/**
+ * `/nastavnik/mentorstva` (WEB-32, N-16): the works the teacher mentors
+ * through teacher.mentorships.get under the request's cookie, and the card of
+ * mentorship requests. The server decides whose works; the shell (layout) has
+ * already read the session and the role. A failed read is said as such, never
+ * as "no works".
+ */
+export default async function MentoredWorksPage() {
+  const read = await readMentoredWorks(serverApi((await cookies()).toString()));
+  if (read.kind === "signedOut") redirect(signInHref(HREF));
+  const works = read.kind === "ready" ? <MentoredWorks works={read.works} /> : (
+    <>
+      <p role="alert" className={styles.alert}>{t.unavailable}</p>
+      <p><a className={styles.retry} href={HREF}>{t.retry}</a></p>
+    </>
+  );
   return (
-    <AppShell endsOnDevice session={shellSession(token)} role={screen === "allowed" ? "teacher" : null} scope={accessShellScope(screen, principal)} current={HREF} crumbs={[t.title]}>
-      <div className={`page ${styles.page}`}>
-        {card ? null : <div className={styles.head}>
-          <div className={styles.heading}>
-            <h1>{t.title}</h1>
-            <p className={styles.lead}>{t.lead}</p>
-          </div>
-        </div>}
-        {body}
+    <div className={`page ${styles.page}`}>
+      <div className={styles.head}>
+        <div className={styles.heading}>
+          <h1>{t.title}</h1>
+          <p className={styles.lead}>{t.lead}</p>
+        </div>
       </div>
-    </AppShell>
+      <MentorshipRequests read={REQUESTS} here={HREF} />
+      {works}
+    </div>
   );
 }

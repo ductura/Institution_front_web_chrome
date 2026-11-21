@@ -38,23 +38,40 @@
  */
 
 import { isPlainObject } from "../json";
-import { isAllowedText } from "./forbidden";
+import { isAllowedText, isAllowedTrimmedText } from "./forbidden";
 import {
+  BOX_KINDS,
+  CODE_LANGUAGES,
+  MARK_V4_ORDER,
+  MAX_CODE_CAPTION_CODE_POINTS,
+  MAX_FORMULA_TEX_CODE_POINTS,
+  MAX_INLINE_FORMULA_TEX_CODE_POINTS,
+  type CoverV4,
+  type MarkV4Type,
   isHeadingLevel,
   isMark,
   isPlainBlockType,
+  isCrossReferenceTarget,
+  isRequestId,
   isSourceId,
   MARK_ORDER,
   MAX_CITATION_LOCATOR_CODE_POINTS,
+  MAX_CITATION_VIA_CODE_POINTS,
+  MAX_FOOTNOTE_TEXT_CODE_POINTS,
   type DocumentSource,
   type HeadingLevel,
   type Mark,
   type NodeId,
   type PlainBlockType,
+  type RequestId,
   type SourceId,
 } from "./schema";
 import type { ValidationError } from "./validate";
 import { validateSources } from "./validate-sources";
+import { ATTRIBUTE_RULES, OBJECT_MARKS, STRING_MARKS } from "./validate-marks-v4";
+import { validateCover } from "./validate-image-cover-v4";
+import { validateImage } from "./validate-image-cover-v4";
+import { validateTable } from "./validate-table-v4";
 
 /** Value of `captureContext.transactionFormat` for this step format. */
 export const EDIT_STEP_FORMAT_V1 = "ductus-edit-steps-v1" as const;
@@ -66,6 +83,25 @@ export const EDIT_STEP_FORMAT_V1 = "ductus-edit-steps-v1" as const;
  * (§5.4); `parseEditSteps` only reads the one it is told.
  */
 export const EDIT_STEP_FORMAT_V2 = "ductus-edit-steps-v2" as const;
+
+/**
+ * Steps on a document of schema version 3 (docs/contracts/document-schema-v3.md
+ * §5): the v2 steps, whose slices may also hold a footnote, a cross reference
+ * and a citation with `via` and `rq`. A change of an atom's attributes is a
+ * `replace` of its one position; `attr` still sets only a block's `nodeId`.
+ */
+export const EDIT_STEP_FORMAT_V3 = "ductus-edit-steps-v3" as const;
+
+/**
+ * Steps on a document of schema version 4 (docs/contracts/document-schema-v4.md
+ * §9): the v3 steps, whose slices may also hold the blocks, atoms and marks of
+ * v4, plus `coverSet`. A block with fields of its own (paragraph with
+ * `variantGroup`, code block, box) is written as ProseMirror writes it, every
+ * attribute present and absent ones `null`. An atom block (table, image,
+ * formula, page break) and the inline formula are written in document form,
+ * with `nodeId` for the block's id.
+ */
+export const EDIT_STEP_FORMAT_V4 = "ductus-edit-steps-v4" as const;
 
 export const EDIT_STEP_TYPES = [
   "replace",
@@ -93,13 +129,19 @@ export type EditStepText = { marks?: EditStepMark[]; text: string; type: "text" 
  */
 export type EditStepCitation = { locator?: string; sourceId: SourceId; type: "citation" };
 export type EditStepInlineV2 = EditStepText | EditStepCitation;
+/** The atoms of `EDIT_STEP_FORMAT_V3` in their document form (contract v3 §3, §5). */
+export type EditStepCitationV3 = EditStepCitation & { rq?: RequestId; via?: string };
+export type EditStepFootnote = { text: string; type: "footnote" };
+export type EditStepCrossReference = { targetId: NodeId; type: "crossReference" };
+export type EditStepInlineV3 =
+  EditStepText | EditStepCitationV3 | EditStepFootnote | EditStepCrossReference;
 
 /**
  * `nodeId` is `null` on every block a `replace` creates. It is an id only on
  * a block that continues an existing one: on an open side of a slice, and in
  * `replaceAround`. A heading holds text only, in both formats.
  */
-export type EditStepBlockOf<I extends EditStepInlineV2> =
+export type EditStepBlockOf<I extends EditStepInlineV3> =
   | { attrs: { nodeId: NodeId | null }; content?: I[]; type: PlainBlockType }
   | {
       attrs: { level: HeadingLevel; nodeId: NodeId | null };
@@ -107,15 +149,16 @@ export type EditStepBlockOf<I extends EditStepInlineV2> =
       type: "heading";
     };
 export type EditStepBlock = EditStepBlockOf<EditStepText>;
-export type EditStepSliceOf<I extends EditStepInlineV2> = {
+export type EditStepSliceOf<I extends EditStepInlineV3> = {
   content: EditStepBlockOf<I>[] | I[];
   openEnd?: 1;
   openStart?: 1;
 };
 export type EditStepSlice = EditStepSliceOf<EditStepText>;
 export type EditStepSliceV2 = EditStepSliceOf<EditStepInlineV2>;
+export type EditStepSliceV3 = EditStepSliceOf<EditStepInlineV3>;
 
-type ContentStep<I extends EditStepInlineV2> =
+type ContentStep<I extends EditStepInlineV3> =
   | {
       from: number;
       /** Present exactly when the step removes content: `to > from`, not `structure`. */
@@ -159,6 +202,55 @@ export type EditStepSourceRemove = {
 };
 
 export type EditStepV2 = ContentStep<EditStepInlineV2> | EditStepSourceSet | EditStepSourceRemove;
+export type EditStepV3 = ContentStep<EditStepInlineV3> | EditStepSourceSet | EditStepSourceRemove;
+
+/** A mark of a step in v4: a mark with attributes is `{type, attrs}` (contract §9). */
+export type EditStepMarkV4 = { attrs?: Record<string, string | null>; type: MarkV4Type };
+export type EditStepTextV4 = { marks?: EditStepMarkV4[]; text: string; type: "text" };
+export type EditStepInlineFormula = { tex: string; type: "inlineFormula" };
+export type EditStepInlineV4 =
+  | EditStepTextV4
+  | EditStepCitationV3
+  | EditStepFootnote
+  | EditStepCrossReference
+  | EditStepInlineFormula;
+/** Atom blocks in document form: `nodeId` instead of `id`, no `children`. */
+export type EditStepAtomBlock = {
+  nodeId: NodeId | null;
+  type: "table" | "image" | "formula" | "pageBreak";
+} & Record<string, unknown>;
+export type EditStepBlockV4 =
+  | { attrs: Record<string, unknown>; content?: (EditStepInlineV4 | EditStepBlockV4)[]; type: string }
+  | EditStepAtomBlock;
+export type EditStepSliceV4 = {
+  content: EditStepBlockV4[] | EditStepInlineV4[];
+  openEnd?: 1;
+  openStart?: 1;
+};
+type ContentStepV4 =
+  | {
+      from: number;
+      removedSha256?: string;
+      slice?: EditStepSliceV4;
+      stepType: "replace";
+      structure?: true;
+      to: number;
+    }
+  | {
+      from: number;
+      gapFrom: number;
+      gapTo: number;
+      insert: 0 | 1;
+      slice?: EditStepSliceV4;
+      stepType: "replaceAround";
+      structure: true;
+      to: number;
+    }
+  | { from: number; mark: EditStepMarkV4; stepType: "addMark" | "removeMark"; to: number }
+  | { attr: "nodeId"; pos: number; stepType: "attr"; value: NodeId };
+/** Sets the whole cover, or removes it (no `cover`); contract v4 §9, point 7. */
+export type EditStepCoverSet = { cover?: CoverV4; removedSha256?: string; stepType: "coverSet" };
+export type EditStepV4 = ContentStepV4 | EditStepSourceSet | EditStepSourceRemove | EditStepCoverSet;
 
 export const EDIT_STEP_REJECTIONS = [
   "unsupported_format",
@@ -186,23 +278,29 @@ export const EDIT_STEP_REJECTIONS = [
 export type EditStepRejection = (typeof EDIT_STEP_REJECTIONS)[number];
 
 export type EditStepResult =
-  | { ok: true; step: EditStepV1 }
-  | { ok: false; code: EditStepRejection; path: string };
+  { ok: true; step: EditStepV1 } | { ok: false; code: EditStepRejection; path: string };
 
 export type EditStepsResult =
-  | { ok: true; steps: EditStepV1[] }
-  | { ok: false; code: EditStepRejection; path: string };
+  { ok: true; steps: EditStepV1[] } | { ok: false; code: EditStepRejection; path: string };
 
 export type EditStepsV2Result =
-  | { ok: true; steps: EditStepV2[] }
-  | { ok: false; code: EditStepRejection; path: string };
+  { ok: true; steps: EditStepV2[] } | { ok: false; code: EditStepRejection; path: string };
+
+export type EditStepsV3Result =
+  { ok: true; steps: EditStepV3[] } | { ok: false; code: EditStepRejection; path: string };
+
+export type EditStepsV4Result =
+  { ok: true; steps: EditStepV4[] } | { ok: false; code: EditStepRejection; path: string };
 
 class Rejected extends Error {
-  constructor(
-    readonly code: EditStepRejection,
-    readonly path: string,
-  ) {
+  // Declared fields, not parameter properties: server.ts runs under Node's
+  // type stripping, which has no parameter properties (DAN-811).
+  readonly code: EditStepRejection;
+  readonly path: string;
+  constructor(code: EditStepRejection, path: string) {
     super(code);
+    this.code = code;
+    this.path = path;
   }
 }
 
@@ -234,12 +332,15 @@ const MAX_ITEMS = MAX_EDIT_STEP_BYTES / MIN_OBJECT_BYTES;
  * oversized input is refused before it is copied or serialised. `exact` is
  * the real canonical size of what has been accepted so far; it decides.
  */
-type Budget = { floor: number; exact: number; v2: boolean };
+type Budget = { floor: number; exact: number; version: 1 | 2 | 3 | 4 };
 
-/** Steps are read in the v2 shapes; a v1 budget refuses everything v2 adds. */
-type Inline = EditStepInlineV2;
-type Block = EditStepBlockOf<Inline>;
-type Slice = EditStepSliceV2;
+/**
+ * Steps are read in the v3 shapes; a budget of an earlier version refuses
+ * everything a later one adds.
+ */
+type Inline = EditStepInlineV3 | EditStepInlineV4;
+type Block = EditStepBlockOf<EditStepInlineV3> | EditStepBlockV4;
+type Slice = { content: Block[] | Inline[]; openEnd?: 1; openStart?: 1 };
 
 function spend(budget: Budget, bytes: number, path: string): void {
   budget.floor += bytes;
@@ -304,7 +405,10 @@ function fields(
 function position(value: unknown, path: string): number {
   // -0 is refused too: it would be a second way to write position 0.
   if (
-    typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 || Object.is(value, -0)
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    value < 0 ||
+    Object.is(value, -0)
   ) {
     reject("invalid_position", path);
   }
@@ -361,13 +465,63 @@ function mark(value: unknown, path: string): EditStepMark {
   return { type: own.type };
 }
 
+/** Marks a step may add or remove, and marks that enter only with text (§3.1). */
+const PROVENANCE_MARKS = new Set(["paste", "imported"]);
+
+/**
+ * Contract v4 §3 and §9: a mark without attributes is `{type}`, one with
+ * attributes `{type, attrs}` with every attribute named, an absent optional
+ * one `null` (as ProseMirror writes it). Values follow the document's rules.
+ */
+function markV4(value: unknown, path: string): EditStepMarkV4 {
+  const own = fields(value, path, ["type"], ["attrs"]);
+  const type = own.type;
+  if (typeof type !== "string" || !(STRING_MARKS.has(type) || OBJECT_MARKS.has(type))) {
+    return reject("invalid_mark", `${path}.type`);
+  }
+  const rule = OBJECT_MARKS.get(type);
+  if (!rule) {
+    if ("attrs" in own) reject("unknown_field", `${path}.attrs`);
+    return { type: type as MarkV4Type };
+  }
+  const names = [...rule.required, ...rule.optional];
+  const attrs = fields(own.attrs, `${path}.attrs`, names);
+  const out: Record<string, string | null> = {};
+  for (const name of [...names].sort()) {
+    const given = attrs[name];
+    if (given === null && rule.optional.includes(name)) {
+      out[name] = null;
+    } else if (!ATTRIBUTE_RULES[name]!(given)) {
+      reject("invalid_value", `${path}.attrs.${name}`);
+    } else {
+      out[name] = given as string;
+    }
+  }
+  return { attrs: out, type: type as MarkV4Type };
+}
+
 /** Non-empty, without repeats, in the canonical order (bold before italic). */
-function marks(value: unknown, path: string): EditStepMark[] {
+function marks(value: unknown, path: string, version: 1 | 2 | 3 | 4 = 3): EditStepMark[] {
+  if (version === 4) return marksV4(value, path) as unknown as EditStepMark[];
   const parsed = items(value, path, "invalid_mark").map((item, i) => mark(item, `${path}[${i}]`));
   for (let i = 1; i < parsed.length; i += 1) {
-    if (MARK_ORDER.indexOf(parsed[i - 1].type) >= MARK_ORDER.indexOf(parsed[i].type)) {
+    if (MARK_ORDER.indexOf(parsed[i - 1]!.type) >= MARK_ORDER.indexOf(parsed[i]!.type)) {
       reject("invalid_mark", `${path}[${i}]`);
     }
+  }
+  return parsed;
+}
+
+/** Non-empty, one per type, in `MARK_V4_ORDER`, and `sup` never with `sub`. */
+function marksV4(value: unknown, path: string): EditStepMarkV4[] {
+  const parsed = items(value, path, "invalid_mark").map((item, i) => markV4(item, `${path}[${i}]`));
+  for (let i = 1; i < parsed.length; i += 1) {
+    if (MARK_V4_ORDER.indexOf(parsed[i - 1]!.type) >= MARK_V4_ORDER.indexOf(parsed[i]!.type)) {
+      reject("invalid_mark", `${path}[${i}]`);
+    }
+  }
+  if (parsed.some((m) => m.type === "sup") && parsed.some((m) => m.type === "sub")) {
+    reject("invalid_mark", path);
   }
   return parsed;
 }
@@ -379,47 +533,142 @@ function text(value: unknown, path: string, budget: Budget): EditStepText {
   }
   spend(budget, MIN_OBJECT_BYTES + textBytes(own.text, `${path}.text`), path);
   const parsed: EditStepText = { text: own.text as string, type: "text" };
-  return "marks" in own ? { marks: marks(own.marks, `${path}.marks`), ...parsed } : parsed;
+  return "marks" in own ? { marks: marks(own.marks, `${path}.marks`, budget.version), ...parsed } : parsed;
 }
 
-/** The longest locator in UTF-16 units: two per code point at most. */
-const MAX_LOCATOR_UNITS = 2 * MAX_CITATION_LOCATOR_CODE_POINTS;
-
-/** Contract §3.1: `sourceId`, and a locator of 1 to 100 allowed code points. */
-function citation(value: unknown, path: string, budget: Budget): EditStepCitation {
-  const own = fields(value, path, ["type", "sourceId"], ["locator"]);
-  if (!isSourceId(own.sourceId)) {
-    reject("invalid_value", `${path}.sourceId`);
+/** Text of an atom in UTF-16 units, refused unread when it cannot fit `max` code points. */
+function atomText(
+  value: unknown,
+  path: string,
+  max: number,
+  allowed: (text: unknown, max: number) => boolean,
+): string {
+  if (typeof value !== "string" || value.length > 2 * max || !allowed(value, max)) {
+    return reject("invalid_value", path);
   }
-  const parsed: EditStepCitation = { sourceId: own.sourceId, type: "citation" };
-  if ("locator" in own) {
-    const locator = own.locator;
-    if (
-      typeof locator !== "string" || locator.length > MAX_LOCATOR_UNITS ||
-      !isAllowedText(locator, MAX_CITATION_LOCATOR_CODE_POINTS)
-    ) {
-      return reject("invalid_value", `${path}.locator`);
-    }
-    spend(budget, MIN_OBJECT_BYTES + locator.length, path);
-    return { locator, ...parsed };
-  }
-  spend(budget, MIN_OBJECT_BYTES, path);
-  return parsed;
-}
-
-function isInline(value: Inline | Block): value is Inline {
-  return value.type === "text" || value.type === "citation";
+  return value;
 }
 
 /**
- * One inline node. A citation is read only under a v2 budget; under v1 it is
- * a node the format does not have.
+ * Contract v2 §3.1: `sourceId`, and a locator of 1 to 100 allowed code points;
+ * v3 §3.2 adds `via` (tidy text up to 200) and `rq` under a v3 budget only.
+ */
+function citation(value: unknown, path: string, budget: Budget): EditStepCitationV3 {
+  const v3 = budget.version === 3;
+  const own = fields(
+    value,
+    path,
+    ["type", "sourceId"],
+    v3 ? ["locator", "rq", "via"] : ["locator"],
+  );
+  if (!isSourceId(own.sourceId)) {
+    reject("invalid_value", `${path}.sourceId`);
+  }
+  const parsed: EditStepCitationV3 = { sourceId: own.sourceId, type: "citation" };
+  let bytes = MIN_OBJECT_BYTES;
+  if ("locator" in own) {
+    parsed.locator = atomText(
+      own.locator,
+      `${path}.locator`,
+      MAX_CITATION_LOCATOR_CODE_POINTS,
+      isAllowedText,
+    );
+    bytes += parsed.locator.length;
+  }
+  if ("rq" in own) {
+    if (!isRequestId(own.rq)) reject("invalid_value", `${path}.rq`);
+    parsed.rq = own.rq;
+    bytes += own.rq.length;
+  }
+  if ("via" in own) {
+    parsed.via = atomText(
+      own.via,
+      `${path}.via`,
+      MAX_CITATION_VIA_CODE_POINTS,
+      isAllowedTrimmedText,
+    );
+    bytes += parsed.via.length;
+  }
+  spend(budget, bytes, path);
+  return sortKeys(parsed);
+}
+
+/** Contract v3 §3.3: tidy plain text of 1 to 2000 code points. */
+function footnote(value: unknown, path: string, budget: Budget): EditStepFootnote {
+  const own = fields(value, path, ["type", "text"]);
+  const content = atomText(
+    own.text,
+    `${path}.text`,
+    MAX_FOOTNOTE_TEXT_CODE_POINTS,
+    isAllowedTrimmedText,
+  );
+  spend(budget, MIN_OBJECT_BYTES + content.length, path);
+  return { text: content, type: "footnote" };
+}
+
+/** Contract v3 §3.4: a block id as a step writes it. */
+function crossReference(value: unknown, path: string, budget: Budget): EditStepCrossReference {
+  const own = fields(value, path, ["type", "targetId"]);
+  if (!isCrossReferenceTarget(own.targetId)) {
+    reject("invalid_value", `${path}.targetId`);
+  }
+  spend(budget, MIN_OBJECT_BYTES, path);
+  return { targetId: own.targetId, type: "crossReference" };
+}
+
+/** Inline types besides text, and the first version of the format that has each. */
+const ATOM_SINCE: ReadonlyMap<unknown, 2 | 3 | 4> = new Map([
+  ["citation", 2],
+  ["footnote", 3],
+  ["crossReference", 3],
+  ["inlineFormula", 4],
+]);
+
+/** Contract v4 §4.1: tidy text of 1 to 1000 code points. */
+function inlineFormula(value: unknown, path: string, budget: Budget): EditStepInlineFormula {
+  const own = fields(value, path, ["type", "tex"]);
+  const tex = atomText(own.tex, `${path}.tex`, MAX_INLINE_FORMULA_TEX_CODE_POINTS, isAllowedTrimmedText);
+  spend(budget, MIN_OBJECT_BYTES + tex.length, path);
+  return { tex, type: "inlineFormula" };
+}
+
+function isInline(value: Inline | Block): value is Inline {
+  return value.type === "text" || ATOM_SINCE.has(value.type);
+}
+
+const ATOM_BLOCK_TYPES = new Set(["table", "image", "formula", "pageBreak"]);
+
+/** Block atoms stand in document form: the id is `nodeId` on the block itself. */
+function isAtomBlock(value: Inline | Block): value is EditStepAtomBlock {
+  return ATOM_BLOCK_TYPES.has(value.type);
+}
+
+/** The id a block of a slice carries, wherever its form keeps it. */
+function blockNodeId(value: Block): NodeId | null {
+  return isAtomBlock(value) ? value.nodeId : ((value as { attrs: { nodeId: NodeId | null } }).attrs.nodeId);
+}
+
+function hasContent(value: Block): boolean {
+  return "content" in value;
+}
+
+/**
+ * One inline node. An atom is read only under a budget of a version that has
+ * it; under an earlier one it is a node the format does not have.
  */
 function inline(value: unknown, path: string, budget: Budget): Inline {
-  if (isPlainObject(value) && Object.hasOwn(value, "type") && value.type === "citation") {
-    return budget.v2 ? citation(value, path, budget) : reject("invalid_node", `${path}.type`);
+  const type = isPlainObject(value) && Object.hasOwn(value, "type") ? value.type : undefined;
+  const since = ATOM_SINCE.get(type);
+  if (since === undefined) {
+    return text(value, path, budget);
   }
-  return text(value, path, budget);
+  if (budget.version < since) {
+    return reject("invalid_node", `${path}.type`);
+  }
+  if (type === "footnote") return footnote(value, path, budget);
+  if (type === "inlineFormula") return inlineFormula(value, path, budget);
+  if (type === "crossReference") return crossReference(value, path, budget);
+  return citation(value, path, budget);
 }
 
 /**
@@ -432,8 +681,9 @@ function inlines(raw: readonly unknown[], path: string, budget: Budget): Inline[
   for (let i = 1; i < parsed.length; i += 1) {
     const [before, after] = [parsed[i - 1], parsed[i]];
     if (
-      before.type === "text" && after.type === "text" &&
-      JSON.stringify(before.marks) === JSON.stringify(after.marks)
+      before!.type === "text" &&
+      after!.type === "text" &&
+      JSON.stringify(before!.marks) === JSON.stringify(after!.marks)
     ) {
       reject("not_canonical", `${path}[${i}]`);
     }
@@ -448,7 +698,121 @@ function nodeId(value: unknown, path: string): NodeId | null {
   return reject("invalid_node_id", path);
 }
 
+/** Every attribute a ProseMirror node of v4 holds, as the step writes them (§9). */
+const BLOCK_ATTRS_V4: Readonly<Record<string, readonly string[]>> = {
+  paragraph: ["nodeId", "variantGroup"],
+  heading: ["level", "nodeId"],
+  bulletItem: ["nodeId"],
+  numberedItem: ["level", "nodeId"],
+  quote: ["nodeId"],
+  codeBlock: ["caption", "language", "nodeId"],
+  box: ["kind", "nodeId"],
+};
+const ATOM_FIELDS: Readonly<Record<string, { required: string[]; optional: string[] }>> = {
+  table: {
+    required: ["rows", "header", "stripes", "landscape"],
+    optional: ["headerFill", "cellFills", "merges", "title", "source"],
+  },
+  image: {
+    required: ["widthPercent", "align", "landscape"],
+    optional: ["attachmentId", "attachmentSha256", "crop", "title", "source"],
+  },
+  formula: { required: ["tex"], optional: [] },
+  pageBreak: { required: [], optional: [] },
+};
+/** A valid id for the document validators, which only pass it through. */
+const PLACEHOLDER_ID = "00000000-0000-4000-8000-000000000000" as NodeId;
+
+/** The first fault of a document validator, as a step refusal at the field. */
+function checked<T>(run: (errors: ValidationError[]) => T | null, path: string): T {
+  const errors: ValidationError[] = [];
+  const result = run(errors);
+  if (result === null || errors.length > 0) {
+    const at = errors[0]?.path ?? path;
+    return reject("invalid_value", at.startsWith("$") ? path : at);
+  }
+  return result;
+}
+
+function atomBlock(value: Record<string, unknown>, path: string, budget: Budget): EditStepAtomBlock {
+  const type = value.type as string;
+  const rule = ATOM_FIELDS[type]!;
+  const own = fields(value, path, ["type", "nodeId", ...rule.required], rule.optional);
+  const id = nodeId(own.nodeId, `${path}.nodeId`);
+  const { nodeId: _nodeId, ...document } = own;
+  spend(budget, MIN_OBJECT_BYTES, path);
+  const withId = { ...document, id: PLACEHOLDER_ID };
+  let parsed: Record<string, unknown>;
+  if (type === "table") {
+    parsed = checked((errors) => validateTable(withId, path, PLACEHOLDER_ID, errors), path);
+  } else if (type === "image") {
+    parsed = checked((errors) => validateImage(withId, path, PLACEHOLDER_ID, errors), path);
+  } else if (type === "formula") {
+    parsed = { tex: atomText(own.tex, `${path}.tex`, MAX_FORMULA_TEX_CODE_POINTS, isAllowedTrimmedText), type };
+  } else {
+    parsed = { type };
+  }
+  delete parsed.id;
+  return sortKeys({ ...parsed, nodeId: id }) as EditStepAtomBlock;
+}
+
+/** Contract v4 §2, §4 and §9: text blocks, the code block, the box and the atom blocks. */
+function blockV4(value: unknown, path: string, budget: Budget, inBox = false): Block {
+  const type = isPlainObject(value) && Object.hasOwn(value, "type") ? value.type : undefined;
+  if (typeof type === "string" && Object.hasOwn(ATOM_FIELDS, type)) {
+    if (inBox) reject("invalid_node", `${path}.type`);
+    return atomBlock(value as Record<string, unknown>, path, budget);
+  }
+  if (typeof type !== "string" || !Object.hasOwn(BLOCK_ATTRS_V4, type) || (inBox && type !== "paragraph")) {
+    return reject("invalid_node", `${path}.type`);
+  }
+  const own = fields(value, path, ["type", "attrs"], ["content"]);
+  spend(budget, MIN_OBJECT_BYTES, path);
+  const attrs = fields(own.attrs, `${path}.attrs`, [...BLOCK_ATTRS_V4[type]!]);
+  const out: Record<string, unknown> = { nodeId: nodeId(attrs.nodeId, `${path}.attrs.nodeId`) };
+  const attrPath = (name: string) => `${path}.attrs.${name}`;
+  if (type === "heading" || type === "numberedItem") {
+    if (!isHeadingLevel(attrs.level)) reject("invalid_node", attrPath("level"));
+    out.level = attrs.level;
+  } else if (type === "paragraph") {
+    if (attrs.variantGroup !== null && !isSourceId(attrs.variantGroup)) reject("invalid_value", attrPath("variantGroup"));
+    out.variantGroup = attrs.variantGroup;
+  } else if (type === "codeBlock") {
+    if (attrs.language !== null && !(CODE_LANGUAGES as readonly unknown[]).includes(attrs.language)) {
+      reject("invalid_value", attrPath("language"));
+    }
+    if (attrs.caption !== null) {
+      out.caption = atomText(attrs.caption, attrPath("caption"), MAX_CODE_CAPTION_CODE_POINTS, isAllowedTrimmedText);
+    }
+    out.caption ??= null;
+    out.language = attrs.language;
+  } else if (type === "box") {
+    if (!(BOX_KINDS as readonly unknown[]).includes(attrs.kind)) reject("invalid_value", attrPath("kind"));
+    out.kind = attrs.kind;
+  }
+  let content: unknown[] | null = null;
+  if ("content" in own) {
+    const raw = items(own.content, `${path}.content`, "invalid_node");
+    if (type === "box") {
+      content = raw.map((item, i) => blockV4(item, `${path}.content[${i}]`, budget, true));
+    } else {
+      content = inlines(raw, `${path}.content`, budget);
+      const bad = (content as Inline[]).findIndex((item) => {
+        if (type === "heading" || type === "codeBlock") {
+          if (item.type !== "text") return true;
+          const marked = (item as EditStepTextV4).marks ?? [];
+          return type === "codeBlock" && marked.some((m) => !PROVENANCE_MARKS.has(m.type));
+        }
+        return false;
+      });
+      if (bad >= 0) reject("invalid_node", `${path}.content[${bad}]`);
+    }
+  }
+  return sortKeys({ attrs: out, ...(content ? { content } : {}), type }) as Block;
+}
+
 function block(value: unknown, path: string, budget: Budget): Block {
+  if (budget.version === 4) return blockV4(value, path, budget);
   const own = fields(value, path, ["type", "attrs"], ["content"]);
   const type = own.type;
   if (type !== "heading" && !isPlainBlockType(type)) {
@@ -488,18 +852,23 @@ function block(value: unknown, path: string, budget: Budget): Block {
  * id, because it is not new: it continues a block of the document. Which block
  * that is, and that the id matches it, only the replayer can tell.
  */
-function newBlocksHaveNoId(parsed: Slice, path: string): void {
+function newBlocksHaveNoId(parsed: Slice, path: string, replacesAtom = false): void {
   const last = parsed.content.length - 1;
-  parsed.content.forEach((item, i) => {
+  (parsed.content as (Inline | Block)[]).forEach((item, i) => {
     const continues = (i === 0 && "openStart" in parsed) || (i === last && "openEnd" in parsed);
-    if (!isInline(item) && item.attrs.nodeId !== null && !continues) {
-      reject("new_block_has_id", `${path}.content[${i}].attrs.nodeId`);
+    // Contract v4 §9, point 3: the atom that replaces an atom block continues it.
+    const continuesAtom = replacesAtom && isAtomBlock(item);
+    if (!isInline(item) && blockNodeId(item) !== null && !continues && !continuesAtom) {
+      reject("new_block_has_id", `${path}.content[${i}]${isAtomBlock(item) ? "" : ".attrs"}.nodeId`);
     }
   });
-  const [first, end] = [parsed.content[0], parsed.content[last]];
+  const [first, end] = [parsed.content[0] as Inline | Block, parsed.content[last] as Inline | Block];
   if (
-    last > 0 && !isInline(first) && !isInline(end) &&
-    first.attrs.nodeId !== null && first.attrs.nodeId === end.attrs.nodeId
+    last > 0 &&
+    !isInline(first) &&
+    !isInline(end) &&
+    blockNodeId(first) !== null &&
+    blockNodeId(first) === blockNodeId(end)
   ) {
     reject("invalid_node_id", `${path}.content[${last}].attrs.nodeId`);
   }
@@ -511,12 +880,13 @@ function slice(value: unknown, path: string, budget: Budget): Slice {
   const raw = items(own.content, `${path}.content`, "invalid_slice");
   const first = raw[0];
   const isText =
-    isPlainObject(first) && Object.hasOwn(first, "type") &&
-    (first.type === "text" || first.type === "citation");
+    isPlainObject(first) &&
+    Object.hasOwn(first, "type") &&
+    (first.type === "text" || ATOM_SINCE.has(first.type));
   const content = isText
     ? inlines(raw, `${path}.content`, budget)
     : raw.map((item, i) => block(item, `${path}.content[${i}]`, budget));
-  const parsed: Slice = { content };
+  const parsed: Slice = { content: content as Slice["content"] };
   let open = 0;
   for (const side of ["openEnd", "openStart"] as const) {
     if (side in own) {
@@ -546,7 +916,7 @@ function sliceKind(parsed: Slice | null): SliceKind {
   if (!parsed) {
     return "none";
   }
-  if (isInline(parsed.content[0])) {
+  if (isInline(parsed.content[0] as Inline | Block)) {
     return "text";
   }
   if ("openStart" in parsed) {
@@ -568,7 +938,12 @@ function sliceKind(parsed: Slice | null): SliceKind {
  *     block and a slice that puts an end of a block back.
  */
 function replaceShape(
-  from: number, to: number, structure: boolean, parsed: Slice | null, path: string,
+  from: number,
+  to: number,
+  structure: boolean,
+  parsed: Slice | null,
+  path: string,
+  v4 = false,
 ): void {
   const kind = sliceKind(parsed);
   const width = to - from;
@@ -582,8 +957,10 @@ function replaceShape(
     reject("invalid_position", `${path}.from`);
   }
   if (
-    (kind === "end" && width === 0) || (kind === "closed" && width === 1) ||
-    (kind === "none" && width === 1 && from === 0)
+    (kind === "end" && width === 0) ||
+    (kind === "closed" && width === 1) ||
+    // v4: the one position at 0 can be an atom block.
+    (kind === "none" && width === 1 && from === 0 && !v4)
   ) {
     reject("invalid_position", `${path}.to`);
   }
@@ -611,7 +988,7 @@ function replaceShape(
   // a last block without text ends with it. A different start would be a
   // change of the block's type or attributes, which is `replaceAround`.
   const single = parsed.content.length === 1;
-  const lastIsEmpty = !("content" in parsed.content[parsed.content.length - 1]);
+  const lastIsEmpty = !("content" in (parsed.content[parsed.content.length - 1] as object));
   if (kind === "end" && ((width === 1 && (single || lastIsEmpty)) || (width === 2 && single))) {
     reject("not_canonical", `${path}.slice`);
   }
@@ -620,16 +997,22 @@ function replaceShape(
 /** Blocks without text, open on both sides: the slice only divides a block. */
 function isSplit(parsed: Slice): boolean {
   return (
-    "openStart" in parsed && "openEnd" in parsed &&
-    parsed.content.every((item) => !isInline(item) && !("content" in item))
+    "openStart" in parsed &&
+    "openEnd" in parsed &&
+    (parsed.content as (Inline | Block)[]).every((item) => !isInline(item) && !isAtomBlock(item) && !("content" in item))
   );
 }
 
 /** A join removes the end of one block and the start of the next: two positions. */
 const MAX_STRUCTURE_RANGE = 2;
 
-function replaceStep(value: unknown, path: string, budget: Budget): EditStepV2 {
-  const own = fields(value, path, ["stepType", "from", "to"], ["slice", "structure", "removedSha256"]);
+function replaceStep(value: unknown, path: string, budget: Budget): EditStepV4 {
+  const own = fields(
+    value,
+    path,
+    ["stepType", "from", "to"],
+    ["slice", "structure", "removedSha256"],
+  );
   const from = position(own.from, `${path}.from`);
   const to = position(own.to, `${path}.to`);
   if (to < from || (to === from && !("slice" in own))) {
@@ -649,8 +1032,17 @@ function replaceStep(value: unknown, path: string, budget: Budget): EditStepV2 {
     reject("invalid_position", `${path}.to`);
   }
   const parsed = "slice" in own ? slice(own.slice, `${path}.slice`, budget) : null;
+  // v4: whole atom blocks, boxes and code blocks put in at a block boundary
+  // or over one atom block need no split (§9, point 3).
+  const wholeV4 =
+    budget.version === 4 &&
+    parsed !== null &&
+    sliceKind(parsed) === "closed" &&
+    (parsed.content as Block[]).every((b) => isAtomBlock(b) || b.type === "box" || b.type === "codeBlock");
+  const replacesAtom =
+    wholeV4 && to - from === 1 && parsed.content.length === 1 && isAtomBlock(parsed.content[0] as Block);
   if (parsed) {
-    newBlocksHaveNoId(parsed, `${path}.slice`);
+    newBlocksHaveNoId(parsed, `${path}.slice`, replacesAtom);
     // With nothing removed the flag changes nothing, so it would be a second
     // form of the same insertion. It is kept exactly where ProseMirror's own
     // split writes it, and refused everywhere else.
@@ -658,7 +1050,7 @@ function replaceStep(value: unknown, path: string, budget: Budget): EditStepV2 {
       reject("not_canonical", `${path}.structure`);
     }
   }
-  replaceShape(from, to, "structure" in own, parsed, path);
+  if (!wholeV4) replaceShape(from, to, "structure" in own, parsed, path, budget.version === 4);
   return {
     from,
     ...(removes ? { removedSha256: own.removedSha256 as string } : {}),
@@ -674,9 +1066,54 @@ function replaceStep(value: unknown, path: string, budget: Budget): EditStepV2 {
  * its content: the gap is the whole inside of the block, and the slice is the
  * one new, empty block around it.
  */
-function replaceAroundStep(value: unknown, path: string, budget: Budget): EditStepV2 {
+/**
+ * Contract v4 §9, point 5. Besides the change of one block's markup (below),
+ * ProseMirror writes the wrapping of blocks in a box (`wrapIn`: the gap is
+ * the whole range, the slice one empty box, `insert` 1) and the lifting of
+ * the blocks out of a box (`lift`: the gap is the inside of the box, no slice,
+ * `insert` 0). Which blocks lie under the range is the replayer's check.
+ */
+function replaceAroundV4(value: unknown, path: string, budget: Budget): EditStepV4 | null {
+  const own = fields(value, path, ["stepType", "from", "to", "gapFrom", "gapTo", "insert", "structure"], ["slice"]);
+  const from = position(own.from, `${path}.from`);
+  const to = position(own.to, `${path}.to`);
+  const gapFrom = position(own.gapFrom, `${path}.gapFrom`);
+  const gapTo = position(own.gapTo, `${path}.gapTo`);
+  if (own.structure !== true) reject("invalid_value", `${path}.structure`);
+  if (own.insert !== 0 && own.insert !== 1) reject("invalid_value", `${path}.insert`);
+  if (to <= from || gapTo < gapFrom || gapFrom < from || gapTo > to) reject("invalid_position", `${path}.from`);
+  const parsed = "slice" in own ? slice(own.slice, `${path}.slice`, budget) : null;
+  const only = parsed?.content[0] as Inline | Block | undefined;
+  if (parsed) {
+    if (parsed.content.length !== 1 || isInline(only!) || isAtomBlock(only!) || hasContent(only as Block) || "openStart" in parsed || "openEnd" in parsed) {
+      reject("invalid_slice", `${path}.slice`);
+    }
+  }
+  const around = gapFrom === from + 1 && gapTo === to - 1;
+  const wrap = gapFrom === from && gapTo === to;
+  // Markup change: the gap is the inside of one block. Wrap: the gap is the range.
+  if (parsed && own.insert === 1 && (around || wrap)) {
+    if (wrap && (only as { type: string }).type !== "box") reject("invalid_slice", `${path}.slice`);
+    return { from, gapFrom, gapTo, insert: 1, slice: parsed as EditStepSliceV4, stepType: "replaceAround", structure: true, to };
+  }
+  // Lift: the blocks of a box, now without it.
+  if (!parsed && own.insert === 0 && around) {
+    return { from, gapFrom, gapTo, insert: 0, stepType: "replaceAround", structure: true, to };
+  }
+  return reject("invalid_position", `${path}.gapFrom`);
+}
+
+function replaceAroundStep(value: unknown, path: string, budget: Budget): EditStepV4 {
+  if (budget.version === 4) return replaceAroundV4(value, path, budget)!;
   const own = fields(value, path, [
-    "stepType", "from", "to", "gapFrom", "gapTo", "insert", "slice", "structure",
+    "stepType",
+    "from",
+    "to",
+    "gapFrom",
+    "gapTo",
+    "insert",
+    "slice",
+    "structure",
   ]);
   const from = position(own.from, `${path}.from`);
   const to = position(own.to, `${path}.to`);
@@ -689,17 +1126,29 @@ function replaceAroundStep(value: unknown, path: string, budget: Budget): EditSt
     reject("invalid_value", `${path}.${own.insert !== 1 ? "insert" : "structure"}`);
   }
   const parsed = slice(own.slice, `${path}.slice`, budget);
-  const only = parsed.content[0];
+  const only = parsed.content[0] as Inline | Block;
   if (
-    parsed.content.length !== 1 || isInline(only) || "content" in only ||
-    "openStart" in parsed || "openEnd" in parsed
+    parsed.content.length !== 1 ||
+    isInline(only) ||
+    "content" in only ||
+    "openStart" in parsed ||
+    "openEnd" in parsed
   ) {
     reject("invalid_slice", `${path}.slice`);
   }
-  return { from, gapFrom, gapTo, insert: 1, slice: parsed, stepType: "replaceAround", structure: true, to };
+  return {
+    from,
+    gapFrom,
+    gapTo,
+    insert: 1,
+    slice: parsed as EditStepSliceV3,
+    stepType: "replaceAround",
+    structure: true,
+    to,
+  };
 }
 
-function markStep(value: unknown, path: string, stepType: "addMark" | "removeMark"): EditStepV2 {
+function markStep(value: unknown, path: string, stepType: "addMark" | "removeMark", version: 1 | 2 | 3 | 4 = 3): EditStepV4 {
   const own = fields(value, path, ["stepType", "from", "to", "mark"]);
   const from = position(own.from, `${path}.from`);
   const to = position(own.to, `${path}.to`);
@@ -710,10 +1159,16 @@ function markStep(value: unknown, path: string, stepType: "addMark" | "removeMar
   if (from === 0) {
     reject("invalid_position", `${path}.from`);
   }
-  return { from, mark: mark(own.mark, `${path}.mark`), stepType, to };
+  if (version === 4) {
+    const parsedMark = markV4(own.mark, `${path}.mark`);
+    // Contract v4 §3.1, §9 point 6: provenance marks enter and leave with the text.
+    if (PROVENANCE_MARKS.has(parsedMark.type)) reject("invalid_mark", `${path}.mark.type`);
+    return { from, mark: parsedMark, stepType, to };
+  }
+  return { from, mark: mark(own.mark, `${path}.mark`), stepType, to } as EditStepV4;
 }
 
-function attrStep(value: unknown, path: string): EditStepV2 {
+function attrStep(value: unknown, path: string): EditStepV4 {
   const own = fields(value, path, ["stepType", "pos", "attr", "value"]);
   const pos = position(own.pos, `${path}.pos`);
   if (own.attr !== "nodeId") {
@@ -751,23 +1206,39 @@ function removedHash(value: unknown, path: string): string {
  * Contract §5.3. The record is read by the same validator as `sources` of a
  * document; its first fault is answered with `invalid_value` at that field.
  */
-function sourceSetStep(value: unknown, path: string, budget: Budget): EditStepV2 {
+function sourceSetStep(value: unknown, path: string, budget: Budget): EditStepV4 {
   const own = fields(value, path, ["stepType", "source"], ["removedSha256"]);
-  const hash = "removedSha256" in own ? removedHash(own.removedSha256, `${path}.removedSha256`) : null;
+  const hash =
+    "removedSha256" in own ? removedHash(own.removedSha256, `${path}.removedSha256`) : null;
   spend(budget, MIN_OBJECT_BYTES, `${path}.source`);
   const errors: ValidationError[] = [];
   const [source] = validateSources([own.source], errors);
   if (errors.length > 0) {
-    reject("invalid_value", `${path}.source${errors[0].path.slice("$.sources[0]".length)}`);
+    reject("invalid_value", `${path}.source${errors[0]!.path.slice("$.sources[0]".length)}`);
   }
   return {
     ...(hash === null ? {} : { removedSha256: hash }),
-    source: sortKeys(source),
+    source: sortKeys(source!),
     stepType: "sourceSet",
   };
 }
 
-function sourceRemoveStep(value: unknown, path: string): EditStepV2 {
+/** Contract v4 §9, point 7: the whole cover, or none (then the old one's hash). */
+function coverSetStep(value: unknown, path: string, budget: Budget): EditStepV4 {
+  const own = fields(value, path, ["stepType"], ["cover", "removedSha256"]);
+  const hash = "removedSha256" in own ? removedHash(own.removedSha256, `${path}.removedSha256`) : null;
+  spend(budget, MIN_OBJECT_BYTES, path);
+  if (!("cover" in own)) {
+    // Removing needs a cover to remove, so the old one's hash.
+    return hash === null ? reject("missing_field", `${path}.removedSha256`) : { removedSha256: hash, stepType: "coverSet" };
+  }
+  const errors: ValidationError[] = [];
+  const cover = validateCover(own.cover, `${path}.cover`, errors);
+  if (!cover || errors.length > 0) reject("invalid_value", errors[0]?.path ?? `${path}.cover`);
+  return { cover: sortKeys(cover), ...(hash === null ? {} : { removedSha256: hash }), stepType: "coverSet" };
+}
+
+function sourceRemoveStep(value: unknown, path: string): EditStepV4 {
   const own = fields(value, path, ["stepType", "sourceId", "removedSha256"]);
   if (!isSourceId(own.sourceId)) {
     reject("invalid_value", `${path}.sourceId`);
@@ -781,7 +1252,7 @@ function sourceRemoveStep(value: unknown, path: string): EditStepV2 {
  * keys, so `JSON.stringify` of it is the canonical form; it is serialised
  * once, which keeps the whole check linear in the size of the input.
  */
-function step(value: unknown, path: string, budget: Budget): EditStepV2 {
+function step(value: unknown, path: string, budget: Budget): EditStepV4 {
   const parsed = stepShape(value, path, budget);
   budget.exact += utf8Length(JSON.stringify(parsed));
   if (budget.exact > MAX_EDIT_STEP_BYTES) {
@@ -790,7 +1261,7 @@ function step(value: unknown, path: string, budget: Budget): EditStepV2 {
   return parsed;
 }
 
-function stepShape(value: unknown, path: string, budget: Budget): EditStepV2 {
+function stepShape(value: unknown, path: string, budget: Budget): EditStepV4 {
   if (!isPlainObject(value)) {
     reject("not_object", path);
   }
@@ -803,13 +1274,15 @@ function stepShape(value: unknown, path: string, budget: Budget): EditStepV2 {
       return replaceAroundStep(value, path, budget);
     case "addMark":
     case "removeMark":
-      return markStep(value, path, stepType);
+      return markStep(value, path, stepType, budget.version);
     case "attr":
       return attrStep(value, path);
     case "sourceSet":
-      return budget.v2 ? sourceSetStep(value, path, budget) : unknownStep(value, path);
+      return budget.version > 1 ? sourceSetStep(value, path, budget) : unknownStep(value, path);
     case "sourceRemove":
-      return budget.v2 ? sourceRemoveStep(value, path) : unknownStep(value, path);
+      return budget.version > 1 ? sourceRemoveStep(value, path) : unknownStep(value, path);
+    case "coverSet":
+      return budget.version === 4 ? coverSetStep(value, path, budget) : unknownStep(value, path);
     default:
       return unknownStep(value, path);
   }
@@ -843,7 +1316,7 @@ export function parseEditStep(value: unknown): EditStepResult {
   return guarded(() => ({
     ok: true,
     // A v1 budget refuses citations and source steps, so the step is v1.
-    step: step(value, "$", { floor: 0, exact: 0, v2: false }) as EditStepV1,
+    step: step(value, "$", { floor: 0, exact: 0, version: 1 }) as EditStepV1,
   }));
 }
 
@@ -861,14 +1334,23 @@ export function parseEditSteps(
   steps: unknown,
 ): EditStepsV2Result;
 export function parseEditSteps(
-  transactionFormat: unknown,
+  transactionFormat: typeof EDIT_STEP_FORMAT_V3,
   steps: unknown,
-): EditStepsResult | EditStepsV2Result;
+): EditStepsV3Result;
+export function parseEditSteps(
+  transactionFormat: typeof EDIT_STEP_FORMAT_V4,
+  steps: unknown,
+): EditStepsV4Result;
 export function parseEditSteps(
   transactionFormat: unknown,
   steps: unknown,
-): EditStepsResult | EditStepsV2Result {
-  if (transactionFormat !== EDIT_STEP_FORMAT_V1 && transactionFormat !== EDIT_STEP_FORMAT_V2) {
+): EditStepsResult | EditStepsV2Result | EditStepsV3Result | EditStepsV4Result;
+export function parseEditSteps(
+  transactionFormat: unknown,
+  steps: unknown,
+): EditStepsResult | EditStepsV2Result | EditStepsV3Result | EditStepsV4Result {
+  const version = FORMAT_VERSION.get(transactionFormat);
+  if (version === undefined) {
     return { ok: false, code: "unsupported_format", path: "$" };
   }
   return guarded(() => {
@@ -877,7 +1359,7 @@ export function parseEditSteps(
     }
     // One budget for the event: all of its steps travel in one segment. The
     // array costs its two brackets and one comma between neighbours.
-    const budget: Budget = { floor: 0, exact: 2, v2: transactionFormat === EDIT_STEP_FORMAT_V2 };
+    const budget: Budget = { floor: 0, exact: 2, version };
     const list = items(steps, "$", "steps_empty");
     return {
       ok: true,
@@ -885,6 +1367,14 @@ export function parseEditSteps(
         budget.exact += i === 0 ? 0 : 1;
         return step(item, `$[${i}]`, budget);
       }),
-    } as EditStepsResult | EditStepsV2Result;
+    } as EditStepsResult | EditStepsV2Result | EditStepsV3Result | EditStepsV4Result;
   });
 }
+
+/** Each accepted format and the schema version whose steps it writes (§5.4, v3 §5). */
+const FORMAT_VERSION: ReadonlyMap<unknown, 1 | 2 | 3 | 4> = new Map([
+  [EDIT_STEP_FORMAT_V1, 1],
+  [EDIT_STEP_FORMAT_V2, 2],
+  [EDIT_STEP_FORMAT_V3, 3],
+  [EDIT_STEP_FORMAT_V4, 4],
+]);

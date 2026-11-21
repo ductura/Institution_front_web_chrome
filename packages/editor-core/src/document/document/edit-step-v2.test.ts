@@ -23,11 +23,20 @@ const HASH = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
 const cite = (over: object = {}) => ({ type: "citation", sourceId: SRC, ...over });
 const text = (value: string, over: object = {}) => ({ type: "text", text: value, ...over });
 const insert = (content: unknown[], at = 1) => ({
-  stepType: "replace", from: at, to: at, slice: { content },
+  stepType: "replace",
+  from: at,
+  to: at,
+  slice: { content },
 });
 const book = (over: object = {}) => ({
-  id: SRC, authors: [{ kind: "person", family: "Prezime", given: "Ime" }], year: 2020,
-  title: "Izvor 1", type: "book", place: "Zagreb", publisher: "Nakladnik", ...over,
+  id: SRC,
+  authors: [{ kind: "person", family: "Prezime", given: "Ime" }],
+  year: 2020,
+  title: "Izvor 1",
+  type: "book",
+  place: "Zagreb",
+  publisher: "Nakladnik",
+  ...over,
 });
 
 function v2(...steps: unknown[]) {
@@ -41,31 +50,44 @@ function accepted(...steps: unknown[]) {
 }
 
 describe("format selection (§5.4, class 28)", () => {
-  it("reads both formats and nothing else", () => {
+  it("reads the three formats and nothing else", () => {
     expect(parseEditSteps(EDIT_STEP_FORMAT_V1, [insert([text("a")])]).ok).toBe(true);
     expect(v2(insert([text("a")])).ok).toBe(true);
-    expect(parseEditSteps("ductus-edit-steps-v3", [insert([text("a")])])).toEqual({
-      ok: false, code: "unsupported_format", path: "$",
+    // SRV-7A (contract document-schema-v3 §5) adds v3; v4 is read (WEB-10C); v5 is unknown.
+    expect(parseEditSteps("ductus-edit-steps-v3", [insert([text("a")])]).ok).toBe(true);
+    expect(parseEditSteps("ductus-edit-steps-v5", [insert([text("a")])])).toEqual({
+      ok: false,
+      code: "unsupported_format",
+      path: "$",
     });
   });
 
   it("refuses a citation and both source steps under v1", () => {
     const v1 = (step: unknown) => parseEditSteps(EDIT_STEP_FORMAT_V1, [step]);
     expect(v1(insert([cite()]))).toEqual({
-      ok: false, code: "invalid_node", path: "$[0].slice.content[0].type",
+      ok: false,
+      code: "invalid_node",
+      path: "$[0].slice.content[0].type",
     });
     expect(v1(insert([text("a"), cite()]))).toEqual({
-      ok: false, code: "invalid_node", path: "$[0].slice.content[1].type",
+      ok: false,
+      code: "invalid_node",
+      path: "$[0].slice.content[1].type",
     });
     expect(parseEditStep(insert([text("a"), cite()]))).toMatchObject({ code: "invalid_node" });
     expect(v1({ stepType: "sourceSet", source: book() })).toEqual({
-      ok: false, code: "unknown_step_type", path: "$[0].stepType",
+      ok: false,
+      code: "unknown_step_type",
+      path: "$[0].stepType",
     });
     expect(v1({ stepType: "sourceRemove", sourceId: SRC, removedSha256: HASH })).toEqual({
-      ok: false, code: "unknown_step_type", path: "$[0].stepType",
+      ok: false,
+      code: "unknown_step_type",
+      path: "$[0].stepType",
     });
-    expect(parseEditStep({ stepType: "sourceRemove", sourceId: SRC, removedSha256: HASH }))
-      .toMatchObject({ code: "unknown_step_type" });
+    expect(
+      parseEditStep({ stepType: "sourceRemove", sourceId: SRC, removedSha256: HASH }),
+    ).toMatchObject({ code: "unknown_step_type" });
   });
 });
 
@@ -73,19 +95,32 @@ describe("citations in a slice (§5.1)", () => {
   it("accepts a citation alone, among text and inside a block, in document form", () => {
     const [alone, among, inBlock] = accepted(
       insert([cite({ locator: "str. 12" })]),
-      insert([text("a", { marks: [{ type: "bold" }] }), cite(), text("b", { marks: [{ type: "bold" }] })], 3),
+      insert(
+        [
+          text("a", { marks: [{ type: "bold" }] }),
+          cite(),
+          text("b", { marks: [{ type: "bold" }] }),
+        ],
+        3,
+      ),
       {
-        stepType: "replace", from: 5, to: 5,
-        slice: { openStart: 1, openEnd: 1, content: [
-          { type: "paragraph", attrs: { nodeId: P }, content: [cite()] },
-          { type: "paragraph", attrs: { nodeId: null } },
-        ] },
+        stepType: "replace",
+        from: 5,
+        to: 5,
+        slice: {
+          openStart: 1,
+          openEnd: 1,
+          content: [
+            { type: "paragraph", attrs: { nodeId: P }, content: [cite()] },
+            { type: "paragraph", attrs: { nodeId: null } },
+          ],
+        },
       },
     );
     expect(alone).toEqual(insert([cite({ locator: "str. 12" })]));
     // Same marks on both sides of a citation are not neighbours (§3.1).
-    expect(among.stepType).toBe("replace");
-    expect(inBlock.stepType).toBe("replace");
+    expect(among!.stepType).toBe("replace");
+    expect(inBlock!.stepType).toBe("replace");
   });
 
   it("returns sorted keys, so JSON.stringify is the JCS form", () => {
@@ -95,12 +130,22 @@ describe("citations in a slice (§5.1)", () => {
 
   it("refuses a citation with marks, unknown fields or a bad sourceId", () => {
     expect(v2(insert([cite({ marks: [{ type: "bold" }] })]))).toEqual({
-      ok: false, code: "unknown_field", path: "$[0].slice.content[0].marks",
+      ok: false,
+      code: "unknown_field",
+      path: "$[0].slice.content[0].marks",
     });
     expect(v2(insert([cite({ text: "x" })]))).toMatchObject({ code: "unknown_field" });
-    for (const sourceId of [SRC.toUpperCase(), "", null, 7, "aaaaaaaa-aaaa-1aaa-8aaa-aaaaaaaaaaaa"]) {
+    for (const sourceId of [
+      SRC.toUpperCase(),
+      "",
+      null,
+      7,
+      "aaaaaaaa-aaaa-1aaa-8aaa-aaaaaaaaaaaa",
+    ]) {
       expect(v2(insert([cite({ sourceId })]))).toEqual({
-        ok: false, code: "invalid_value", path: "$[0].slice.content[0].sourceId",
+        ok: false,
+        code: "invalid_value",
+        path: "$[0].slice.content[0].sourceId",
       });
     }
     expect(v2(insert([{ type: "citation" }]))).toMatchObject({ code: "missing_field" });
@@ -110,7 +155,9 @@ describe("citations in a slice (§5.1)", () => {
     const locators = ["", "x".repeat(101), "\u{1F600}".repeat(101), "a​b", "a\ud800", 12, null];
     for (const locator of locators) {
       expect(v2(insert([cite({ locator })]))).toEqual({
-        ok: false, code: "invalid_value", path: "$[0].slice.content[0].locator",
+        ok: false,
+        code: "invalid_value",
+        path: "$[0].slice.content[0].locator",
       });
     }
     expect(v2(insert([cite({ locator: "\u{1F600}".repeat(100) })])).ok).toBe(true);
@@ -119,20 +166,32 @@ describe("citations in a slice (§5.1)", () => {
 
   it("refuses a citation in a heading (class 26 at the parser)", () => {
     const heading = (content: unknown[]) => ({
-      stepType: "replace", from: 0, to: 0,
+      stepType: "replace",
+      from: 0,
+      to: 0,
       slice: { content: [{ type: "heading", attrs: { level: 1, nodeId: null }, content }] },
     });
     expect(v2(heading([text("a"), cite()]))).toEqual({
-      ok: false, code: "invalid_node", path: "$[0].slice.content[0].content[1].type",
+      ok: false,
+      code: "invalid_node",
+      path: "$[0].slice.content[0].content[1].type",
     });
     expect(v2(heading([text("a")])).ok).toBe(true);
   });
 
   it("refuses a citation as the slice of a replaceAround", () => {
-    expect(v2({
-      stepType: "replaceAround", from: 0, to: 4, gapFrom: 1, gapTo: 3, insert: 1, structure: true,
-      slice: { content: [cite()] },
-    })).toMatchObject({ code: "invalid_slice" });
+    expect(
+      v2({
+        stepType: "replaceAround",
+        from: 0,
+        to: 4,
+        gapFrom: 1,
+        gapTo: 3,
+        insert: 1,
+        structure: true,
+        slice: { content: [cite()] },
+      }),
+    ).toMatchObject({ code: "invalid_slice" });
   });
 
   it("still joins neighbouring text with the same marks only", () => {
@@ -143,7 +202,9 @@ describe("citations in a slice (§5.1)", () => {
 
   it("requires removedSha256 on a removal and refuses it on structure (class 25)", () => {
     expect(v2({ stepType: "replace", from: 1, to: 2 })).toEqual({
-      ok: false, code: "missing_field", path: "$[0].removedSha256",
+      ok: false,
+      code: "missing_field",
+      path: "$[0].removedSha256",
     });
     expect(v2({ stepType: "replace", from: 1, to: 2, removedSha256: "x" })).toMatchObject({
       code: "invalid_removed_hash",
@@ -172,19 +233,31 @@ describe("sourceSet and sourceRemove (§5.3, class 27)", () => {
       [book({ authors: [{ kind: "person", family: "Prezime" }] }), "$[0].source.authors[0].given"],
     ];
     for (const [source, path] of cases) {
-      expect(v2({ stepType: "sourceSet", source })).toEqual({ ok: false, code: "invalid_value", path });
+      expect(v2({ stepType: "sourceSet", source })).toEqual({
+        ok: false,
+        code: "invalid_value",
+        path,
+      });
     }
     expect(v2({ stepType: "sourceSet", source: null })).toEqual({
-      ok: false, code: "invalid_value", path: "$[0].source",
+      ok: false,
+      code: "invalid_value",
+      path: "$[0].source",
     });
     expect(v2({ stepType: "sourceSet" })).toMatchObject({ code: "missing_field" });
   });
 
   it("refuses a malformed hash on sourceSet and unknown fields", () => {
-    expect(v2({ stepType: "sourceSet", source: book(), removedSha256: HASH.toUpperCase() })).toEqual({
-      ok: false, code: "invalid_removed_hash", path: "$[0].removedSha256",
+    expect(
+      v2({ stepType: "sourceSet", source: book(), removedSha256: HASH.toUpperCase() }),
+    ).toEqual({
+      ok: false,
+      code: "invalid_removed_hash",
+      path: "$[0].removedSha256",
     });
-    expect(v2({ stepType: "sourceSet", source: book(), at: 0 })).toMatchObject({ code: "unknown_field" });
+    expect(v2({ stepType: "sourceSet", source: book(), at: 0 })).toMatchObject({
+      code: "unknown_field",
+    });
   });
 
   it("requires a well-formed hash and id on sourceRemove", () => {
@@ -192,13 +265,17 @@ describe("sourceSet and sourceRemove (§5.3, class 27)", () => {
       { removedSha256: HASH, sourceId: SRC, stepType: "sourceRemove" },
     ]);
     expect(v2({ stepType: "sourceRemove", sourceId: SRC })).toEqual({
-      ok: false, code: "missing_field", path: "$[0].removedSha256",
+      ok: false,
+      code: "missing_field",
+      path: "$[0].removedSha256",
     });
     expect(v2({ stepType: "sourceRemove", sourceId: SRC, removedSha256: 1 })).toMatchObject({
       code: "invalid_removed_hash",
     });
     expect(v2({ stepType: "sourceRemove", sourceId: "Izvor 1", removedSha256: HASH })).toEqual({
-      ok: false, code: "invalid_value", path: "$[0].sourceId",
+      ok: false,
+      code: "invalid_value",
+      path: "$[0].sourceId",
     });
   });
 

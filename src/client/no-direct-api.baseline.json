@@ -1,0 +1,211 @@
+{
+ "src/app/kako-radi/page.tsx": [
+  "API URL"
+ ],
+ "src/app/layout.tsx": [
+  "test file import"
+ ],
+ "src/app/rad/[assignmentId]/dnevnik-pristupa/page.tsx": [
+  "API URL"
+ ],
+ "src/app/rad/[assignmentId]/page.tsx": [
+  "API URL"
+ ],
+ "src/app/upis/page.tsx": [
+  "API URL"
+ ],
+ "src/components/admin/FacultyRules.module.css": [
+  "global alias"
+ ],
+ "src/components/admin/TeacherRoles.tsx": [
+  "form submit"
+ ],
+ "src/components/admin/teacher-role-action.ts": [
+  "API URL",
+  "fetch"
+ ],
+ "src/components/auth/sign-in-link.ts": [
+  "API URL"
+ ],
+ "src/components/editor/EarlierDraft.tsx": [
+  "code from URL",
+  "image or src"
+ ],
+ "src/components/editor/LocalDocument.tsx": [
+  "API URL",
+  "code from URL",
+  "image or src",
+  "navigation"
+ ],
+ "src/components/editor/OpenWork.tsx": [
+  "fetch",
+  "global alias"
+ ],
+ "src/components/editor/OpenWorkView.ts": [
+  "API URL"
+ ],
+ "src/components/editor/document-saver.ts": [
+  "API URL"
+ ],
+ "src/components/editor/evidence-session.ts": [
+  "API URL"
+ ],
+ "src/components/editor/live-hold.ts": [
+  "API URL"
+ ],
+ "src/components/fonts/woff2-codepoints.ts": [
+  "import node:zlib"
+ ],
+ "src/components/how-it-works/HowItWorks.module.css": [
+  "global alias"
+ ],
+ "src/components/how-it-works/access.ts": [
+  "API URL"
+ ],
+ "src/components/replay/ReplayView.module.css": [
+  "global alias"
+ ],
+ "src/components/replay/replay-view.ts": [
+  "import  and up to change "
+ ],
+ "src/components/shell/ShellLogout.tsx": [
+  "API URL",
+  "form submit",
+  "navigation"
+ ],
+ "src/components/status/StatusBoard.tsx": [
+  "API URL",
+  "global alias"
+ ],
+ "src/components/status/status-loader.ts": [
+  "API URL",
+  "fetch"
+ ],
+ "src/components/student/StudentWorkspace.tsx": [
+  "API URL"
+ ],
+ "src/components/student/access-log-read.ts": [
+  "API URL"
+ ],
+ "src/components/student/enroll-code.ts": [
+  "API URL",
+  "fetch"
+ ],
+ "src/components/student/upis/course-read.ts": [
+  "API URL"
+ ],
+ "src/components/support/problem-report-client.ts": [
+  "API URL",
+  "fetch"
+ ],
+ "src/components/teacher/assignment-create.ts": [
+  "API URL",
+  "fetch"
+ ],
+ "src/components/teacher/assignment-version.ts": [
+  "API URL",
+  "fetch"
+ ],
+ "src/components/teacher/course-create.ts": [
+  "API URL",
+  "fetch"
+ ],
+ "src/components/teacher/enrollment-code-create.ts": [
+  "API URL",
+  "fetch"
+ ],
+ "src/components/teacher/work-language.ts": [
+  "API URL",
+  "fetch"
+ ],
+ "src/components/vitest.alias.ts": [
+  "import node:url"
+ ],
+ "src/lib/i18n/messages.en.ts": [
+  "import ,\n      due: ",
+  "import ,\n    importValues: { yes: ",
+  "import ,\n    to: ",
+  "test file import"
+ ],
+ "src/lib/i18n/messages.hr.ts": [
+  "test file import"
+ ],
+ "src/lib/status/public-status.ts": [
+  "Reflect"
+ ],
+ "packages/app/next.config.ts": [
+  "API URL",
+  "import node:path"
+ ],
+ "packages/editor-core/src/document/document/edit-step.ts": [
+  "Reflect",
+  "import );\n  const to = position(own.to, ",
+  "import );\n  }\n  if (\n    (kind === ",
+  "import );\n  const parsed = ",
+  "import );\n  }\n  if (version === 4) {\n    const parsedMark = markV4(own.mark, "
+ ],
+ "packages/editor-core/src/document/forensics/evidence-segment-v2.ts": [
+  "import  ||\n    event.source === ",
+  "import ) {\n    return isUuidV4(value.importId) && isSha256(value.importManifestSha256);\n  }\n  if (value.source === ",
+  "import , [",
+  "import ; importId: string; importManifestSha256: string })\n  | (EvidenceEventBaseV4 & { source: "
+ ],
+ "packages/editor-core/src/document/forensics/golden-vectors/load.ts": [
+  "import node:crypto",
+  "import node:fs"
+ ],
+ "packages/editor-core/src/document/forensics/jcs.ts": [
+  "property descriptor"
+ ],
+ "packages/editor-core/src/document/forensics/replay/edit-steps-v1-replayer.ts": [
+  "import node:crypto"
+ ],
+ "packages/editor-core/src/document/forensics/replay/edit-steps-v1-rules.ts": [
+  "property descriptor"
+ ],
+ "packages/editor-core/src/document/json.ts": [
+  "Reflect"
+ ],
+ "packages/editor-core/src/editor/capture.fixture.ts": [
+  "import vitest"
+ ],
+ "packages/editor-core/src/editor/citation.ts": [
+  "test file import"
+ ],
+ "packages/editor-core/src/editor/schema.ts": [
+  "test file import"
+ ],
+ "packages/editor-core/src/editor/source.ts": [
+  "image or src"
+ ],
+ "packages/editor-core/src/journal/atomic-dexie-journal.ts": [
+  "window.open"
+ ],
+ "packages/editor-core/src/sync/conflict.ts": [
+  "fetch"
+ ],
+ "packages/editor-core/src/sync/runner/evidence-test-kit.ts": [
+  "Reflect",
+  "import fake-indexeddb",
+  "import node:crypto",
+  "import vitest"
+ ],
+ "packages/ui/src/table/table.module.css": [
+  "global alias"
+ ],
+ "src/components/editor/rich/blocks/FormulaDialog.tsx": [
+  "test file import",
+  "import katex/dist/katex.min.css"
+ ],
+ "src/components/editor/rich/blocks/katex-render.ts": [
+  "import katex"
+ ],
+ "src/components/editor/spelling/engine.ts": [
+  "fetch",
+  "import hunspell-asm"
+ ],
+ "src/components/editor/sources/proofs/pdf-pages.ts": [
+  "import pdfjs-dist",
+  "import pdfjs-dist/build/pdf.worker.mjs"
+ ]
+}

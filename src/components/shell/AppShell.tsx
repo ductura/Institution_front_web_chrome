@@ -3,7 +3,7 @@
 import { toggleTheme } from "@ductura/ui";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-import { messagesHr as t } from "../../../locales/hr.ts";
+import { messagesHr, type Messages } from "../../../locales/hr.ts";
 
 import styles from "./AppShell.module.css";
 import { accountPlace, appHref, HOW_IT_WORKS_HREF, homeHref, navFor, type ShellRole } from "./nav";
@@ -37,7 +37,7 @@ function Logo() {
 }
 
 /** Flips the theme on `<html>` itself, so React never holds a copy that could disagree. */
-function ThemeToggle() {
+function ThemeToggle({ label }: { label: string }) {
   const toggle = () => {
     let storage: Storage | undefined;
     try {
@@ -48,7 +48,7 @@ function ThemeToggle() {
     toggleTheme(document.documentElement, storage);
   };
   return (
-    <button type="button" className={styles.iconButton} aria-label={t.shell.theme} onClick={toggle}>
+    <button type="button" className={styles.iconButton} aria-label={label} onClick={toggle}>
       <span className={styles.toLight}><Icon name="sun" /></span>
       <span className={styles.toDark}><Icon name="moon" /></span>
     </button>
@@ -94,6 +94,8 @@ export type AppShellProps = {
   base?: string;
   /** The institution's name from the session, in the top bar at every width; none when absent. */
   institution?: string | null;
+  /** Catalogue of the interface language (D-70, WEB-1804); Croatian when absent. */
+  messages?: Messages;
   children: ReactNode;
 };
 
@@ -103,11 +105,12 @@ export type AppShellProps = {
  * (I2); signing out (the same POST as everywhere, without JavaScript, I5)
  * joins with 2.c3-b. Below 800 px the side bar is a drawer behind ☰.
  */
-export default function AppShell({ role, scope, current, crumbs, account, navId = "bocna-navigacija", ownMain = false, drawer = false, base = "", institution = null, children }: AppShellProps) {
+export default function AppShell({ role, scope, current, crumbs, account, navId = "bocna-navigacija", ownMain = false, drawer = false, base = "", institution = null, messages = messagesHr, children }: AppShellProps) {
+  const t = messages;
   const [open, setOpen] = useState(false);
   const sidebar = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
-  const items = navFor(role);
+  const items = navFor(role, t);
   const home = appHref(base, homeHref(role));
   const place = accountPlace(scope, account !== undefined);
 
@@ -144,8 +147,12 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
 
   // Rendered once: in the side bar, or in the top bar where the side bar is a
   // closed drawer, so signing out stays one press away (D-118).
+  // A link the page brings into the account place ("Postavke profila", WEB-1804)
+  // closes the drawer as the navigation's own links do.
   const accountBlock = place === "own" ? (
-    <div className={styles.account}>
+    <div className={styles.account} onClick={(event) => {
+      if (event.target instanceof Element && event.target.closest("a[href]") !== null) setOpen(false);
+    }}>
       {role !== null ? <span className={styles.who}>{t.shell.role[role]}</span> : null}
       {account}
     </div>
@@ -196,6 +203,10 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
           >
             {t.shell.howItWorks}
           </a>
+          {/* "Izjava o pristupačnosti" (WEB-1805, F-03): for everyone, as the law asks it be reachable. */}
+          <a className={styles.infoLink} href={appHref(base, "/pristupacnost")} onClick={() => setOpen(false)}>
+            {t.shell.accessibilityStatement}
+          </a>
           <p className={styles.note}>
             <strong>{t.shell.demoBadge}</strong>
             {t.shell.demoNote}
@@ -236,7 +247,7 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
           <div className={styles.actions}>
             {institution !== null ? <span className={styles.institution}>{institution}</span> : null}
             <span className={styles.demo}>{t.shell.demoBadge}</span>
-            <ThemeToggle />
+            <ThemeToggle label={t.shell.theme} />
             {drawer ? accountBlock : null}
           </div>
         </header>

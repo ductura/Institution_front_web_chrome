@@ -79,7 +79,10 @@ export function deriveChapters(
       level: node.level,
       path,
       number: profile.label([...path]),
-      title: node.children.map((child) => child.text).join("").trim(),
+      title: node.children
+        .map((child) => child.text)
+        .join("")
+        .trim(),
       parentId: nearest(latest, depth),
       ownBlockIds: own,
     });

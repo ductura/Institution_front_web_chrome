@@ -42,6 +42,8 @@ const en = {
       fastPath: "Quick path",
       // DAN-492 (N-16): the works a teacher mentors, outside any course.
       mentoredWorks: "Mentored works",
+      // WEB-17 (A-9): the course summary (N-17), the teacher's fourth place.
+      summary: "Course summary",
       workspace: "Workspace",
       enroll: "Join a course",
       institution: "Institution overview",
@@ -61,6 +63,7 @@ const en = {
     breadcrumb: "Path",
     homeCrumb: "Home",
     howItWorks: `How ${APP_NAME} works`,
+    accessibilityStatement: "Accessibility statement",
   },
   home: {
     openWorkspace: "Open workspace",

@@ -1,0 +1,20 @@
+.stage {
+  max-height: 60vh;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--raised-rule);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.stage img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.caption {
+  margin: 0;
+  color: var(--ink-soft, inherit);
+  font-size: 12px;
+}

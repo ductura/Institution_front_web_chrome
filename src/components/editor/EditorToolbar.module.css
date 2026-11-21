@@ -1,0 +1,24 @@
+/* WEB-15 (E§3.6 toolbar2): the toolbar's own look on top of the shared
+   `.editor-toolbar` rules in globals.css, which stay as they are. */
+
+/* A tool is an icon on a clear ground (prototype `tb ic`, 18 px, stroke 1.5);
+   the name is in aria-label and title. Size and padding stay with the shared
+   `.btn` rules, so the 44 px touch targets on a phone still hold. */
+:global(.editor-toolbar) .icon:global(.btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The block style names the current style, as the prototype's select does;
+   one width for every name, so the tools after it never shift. */
+.style :global(.editor-menu__button) {
+  min-width: 9.5em;
+  justify-content: space-between;
+}
+
+/* WEB-6C: "Izvezi" is the last menu, at the right edge; its list opens leftward. */
+.last :global(.editor-menu__list) {
+  left: auto;
+  right: 0;
+}

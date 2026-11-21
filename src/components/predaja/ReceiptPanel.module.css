@@ -1,0 +1,7 @@
+/* WEB-27: each link of the receipt panel is a target of at least 24 px with
+   room around it (WCAG 2.2 target-size), as the N-06 neighbours (WEB-34). */
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

@@ -25,6 +25,13 @@ export const DOCUMENT_SCHEMA_VERSION = 1;
  */
 export const DOCUMENT_SCHEMA_VERSION_V2 = 2;
 
+/**
+ * Document v3: footnote, cross reference and the citation attributes `via`
+ * and `rq` (docs/contracts/document-schema-v3.md). Like v2 it is accepted by
+ * `validateVersionedDocument` only, and no work changes version.
+ */
+export const DOCUMENT_SCHEMA_VERSION_V3 = 3;
+
 declare const nodeIdBrand: unique symbol;
 
 /**
@@ -86,7 +93,7 @@ export function compareMarks(a: Mark, b: Mark): number {
 /** True when `marks` is deduplicated and in canonical order. */
 export function marksAreCanonical(marks: readonly Mark[]): boolean {
   for (let i = 1; i < marks.length; i += 1) {
-    if (compareMarks(marks[i - 1], marks[i]) >= 0) {
+    if (compareMarks(marks[i - 1]!, marks[i]!) >= 0) {
       return false;
     }
   }
@@ -102,9 +109,7 @@ export function canonicalMarks(marks: readonly Mark[]): Mark[] {
 export function marksEqual(a: readonly Mark[], b: readonly Mark[]): boolean {
   const left = canonicalMarks(a);
   const right = canonicalMarks(b);
-  return (
-    left.length === right.length && left.every((mark, i) => mark === right[i])
-  );
+  return left.length === right.length && left.every((mark, i) => mark === right[i]);
 }
 
 /** The only inline node in F1. `text` is always non-empty in a valid document. */
@@ -168,9 +173,13 @@ export function isPlainBlockType(value: unknown): value is PlainBlockType {
 export const DOCUMENT_BLOCK_TYPES_BY_VERSION: ReadonlyMap<number, ReadonlySet<string>> = new Map([
   [DOCUMENT_SCHEMA_VERSION, new Set<string>(["heading", ...PLAIN_BLOCK_TYPES])],
   [DOCUMENT_SCHEMA_VERSION_V2, new Set<string>(["heading", ...PLAIN_BLOCK_TYPES])],
+  [DOCUMENT_SCHEMA_VERSION_V3, new Set<string>(["heading", ...PLAIN_BLOCK_TYPES])],
 ]);
 
-export type DocumentSchemaVersion = typeof DOCUMENT_SCHEMA_VERSION | typeof DOCUMENT_SCHEMA_VERSION_V2;
+export type DocumentSchemaVersion =
+  | typeof DOCUMENT_SCHEMA_VERSION
+  | typeof DOCUMENT_SCHEMA_VERSION_V2
+  | typeof DOCUMENT_SCHEMA_VERSION_V3;
 
 export function isAcceptedDocumentSchemaVersion(value: unknown): value is DocumentSchemaVersion {
   return typeof value === "number" && DOCUMENT_BLOCK_TYPES_BY_VERSION.has(value);
@@ -194,10 +203,7 @@ export function textNode(text: string, marks: readonly Mark[] = []): InlineNode 
   return { type: "text", text, marks: canonicalMarks(marks) };
 }
 
-export function paragraphNode(
-  id: NodeId,
-  children: readonly InlineNode[] = [],
-): ParagraphNode {
+export function paragraphNode(id: NodeId, children: readonly InlineNode[] = []): ParagraphNode {
   return { type: "paragraph", id, children: [...children] };
 }
 
@@ -209,17 +215,11 @@ export function headingNode(
   return { type: "heading", id, level, children: [...children] };
 }
 
-export function bulletItemNode(
-  id: NodeId,
-  children: readonly InlineNode[] = [],
-): BulletItemNode {
+export function bulletItemNode(id: NodeId, children: readonly InlineNode[] = []): BulletItemNode {
   return { type: "bulletItem", id, children: [...children] };
 }
 
-export function quoteNode(
-  id: NodeId,
-  children: readonly InlineNode[] = [],
-): QuoteNode {
+export function quoteNode(id: NodeId, children: readonly InlineNode[] = []): QuoteNode {
   return { type: "quote", id, children: [...children] };
 }
 
@@ -299,7 +299,13 @@ type DocumentSourceBase = {
  */
 export type DocumentSource =
   | (DocumentSourceBase & { type: "book"; place: string; publisher: string })
-  | (DocumentSourceBase & { type: "article"; journal: string; volume?: string; issue?: string; pages?: string })
+  | (DocumentSourceBase & {
+      type: "article";
+      journal: string;
+      volume?: string;
+      issue?: string;
+      pages?: string;
+    })
   | (DocumentSourceBase & {
       type: "chapter";
       editors: SourcePerson[];
@@ -321,8 +327,231 @@ export type CanonicalDocumentV2 = {
 };
 
 /** A document of any accepted version. */
-export type VersionedDocument = CanonicalDocument | CanonicalDocumentV2;
+export type VersionedDocument = CanonicalDocument | CanonicalDocumentV2 | CanonicalDocumentV3;
 
 export function citationNode(sourceId: SourceId, locator?: string): CitationNode {
-  return locator === undefined ? { type: "citation", sourceId } : { type: "citation", sourceId, locator };
+  return locator === undefined
+    ? { type: "citation", sourceId }
+    : { type: "citation", sourceId, locator };
 }
+
+// ---------------------------------------------------------------------------
+// Document v3 (docs/contracts/document-schema-v3.md §1 to §3)
+
+/** Longest `via` of a citation, in code points (contract v3 §3.2). */
+export const MAX_CITATION_VIA_CODE_POINTS = 200;
+/** Longest text of a footnote, in code points (contract v3 §3.3). */
+export const MAX_FOOTNOTE_TEXT_CODE_POINTS = 2000;
+
+declare const requestIdBrand: unique symbol;
+
+/** Id of a "Mentor traži potvrdu" request kept outside the document (§3.2). */
+export type RequestId = string & { readonly [requestIdBrand]: "RequestId" };
+
+/** `rq` has the form of `sourceId`: a lowercase UUID v4, nil refused. */
+export function isRequestId(value: unknown): value is RequestId {
+  return typeof value === "string" && SOURCE_ID_PATTERN.test(value);
+}
+
+/**
+ * `targetId` of a cross reference (§3.4): a block id in the form an edit step
+ * writes it (lowercase UUID v4), narrower than `isNodeId` on purpose.
+ */
+export function isCrossReferenceTarget(value: unknown): value is NodeId {
+  return typeof value === "string" && SOURCE_ID_PATTERN.test(value);
+}
+
+/** The v2 citation with the optional `via` (§3.2) and `rq`. */
+export type CitationNodeV3 = CitationNode & { via?: string; rq?: RequestId };
+
+/** Plain text, no marks, one position (§3.3). Its number is derived. */
+export type FootnoteNode = { type: "footnote"; text: string };
+
+/**
+ * Points at a block by id (§3.4). A target that is no block, or no heading,
+ * is valid and shown as a cross reference without a target.
+ */
+export type CrossReferenceNode = { type: "crossReference"; targetId: NodeId };
+
+export type InlineNodeV3 = InlineNode | CitationNodeV3 | FootnoteNode | CrossReferenceNode;
+
+export type ParagraphNodeV3 = { type: "paragraph"; id: NodeId; children: InlineNodeV3[] };
+export type BulletItemNodeV3 = { type: "bulletItem"; id: NodeId; children: InlineNodeV3[] };
+export type QuoteNodeV3 = { type: "quote"; id: NodeId; children: InlineNodeV3[] };
+
+/** A heading takes no atom (§3.1), so it is the v1 heading. */
+export type DocumentNodeV3 = ParagraphNodeV3 | HeadingNode | BulletItemNodeV3 | QuoteNodeV3;
+
+export type CanonicalDocumentV3 = {
+  schemaVersion: typeof DOCUMENT_SCHEMA_VERSION_V3;
+  nodes: DocumentNodeV3[];
+  sources: DocumentSource[];
+};
+
+export function footnoteNode(text: string): FootnoteNode {
+  return { type: "footnote", text };
+}
+
+export function crossReferenceNode(targetId: NodeId): CrossReferenceNode {
+  return { type: "crossReference", targetId };
+}
+
+// ---------------------------------------------------------------------------
+// Document v4 (docs/contracts/document-schema-v4.md §1 to §4). Read by
+// `validateDocumentV4` only until the consumers take v4 (contract §11); it
+// is not yet in `DOCUMENT_BLOCK_TYPES_BY_VERSION` or `VersionedDocument`.
+
+export const DOCUMENT_SCHEMA_VERSION_V4 = 4;
+
+/** Longest `tex` of a block formula and of an inline formula (§4.1). */
+export const MAX_FORMULA_TEX_CODE_POINTS = 4000;
+export const MAX_INLINE_FORMULA_TEX_CODE_POINTS = 1000;
+/** Longest `caption` of a code block (§4.2). */
+export const MAX_CODE_CAPTION_CODE_POINTS = 300;
+/** Longest `href` of a link mark (§3). */
+export const MAX_LINK_HREF_LENGTH = 2048;
+
+export const CODE_LANGUAGES = ["c", "html", "java", "javascript", "python", "r", "sql"] as const;
+export type CodeLanguage = (typeof CODE_LANGUAGES)[number];
+
+export const BOX_KINDS = [
+  "definition",
+  "theorem",
+  "lemma",
+  "corollary",
+  "example",
+  "remark",
+  "proof",
+] as const;
+export type BoxKind = (typeof BOX_KINDS)[number];
+
+export type HighlightMark = { color: string; type: "highlight" };
+export type LangMark = { lang: string; type: "lang" };
+export type LinkMark = { href: string; type: "link" };
+export type PasteMark = { pasteId: string; sourceId?: SourceId; type: "paste" };
+
+/** A mark without attributes is a string, one with attributes an object (§3). */
+export type MarkV4 =
+  Mark | "sup" | "sub" | "imported" | HighlightMark | LangMark | LinkMark | PasteMark;
+
+/** Canonical order of mark types (§3); each type appears at most once. */
+export const MARK_V4_ORDER = [
+  "bold",
+  "italic",
+  "sup",
+  "sub",
+  "highlight",
+  "lang",
+  "link",
+  "paste",
+  "imported",
+] as const;
+export type MarkV4Type = (typeof MARK_V4_ORDER)[number];
+
+export function markV4Type(mark: MarkV4): MarkV4Type {
+  return typeof mark === "string" ? mark : mark.type;
+}
+
+export type TextNodeV4 = { type: "text"; text: string; marks: MarkV4[] };
+export type InlineFormulaNode = { type: "inlineFormula"; tex: string };
+export type InlineNodeV4 =
+  TextNodeV4 | CitationNodeV3 | FootnoteNode | CrossReferenceNode | InlineFormulaNode;
+
+export type ParagraphNodeV4 = {
+  type: "paragraph";
+  id: NodeId;
+  children: InlineNodeV4[];
+  variantGroup?: string;
+};
+export type HeadingNodeV4 = {
+  type: "heading";
+  id: NodeId;
+  level: HeadingLevel;
+  children: TextNodeV4[];
+};
+export type BulletItemNodeV4 = { type: "bulletItem"; id: NodeId; children: InlineNodeV4[] };
+export type QuoteNodeV4 = { type: "quote"; id: NodeId; children: InlineNodeV4[] };
+/**
+ * An item of a numbered list (WEB-1608, M5.V1): a flat text block like the
+ * bullet item, `level` 1 to 3 gives the nesting ("1.", "1.1.", "1.1.1.").
+ * The number is never stored: it is derived from the order of the items
+ * (`numberedListNumbers`), so the editor and the export always agree.
+ */
+export type NumberedItemNodeV4 = {
+  type: "numberedItem";
+  id: NodeId;
+  level: HeadingLevel;
+  children: InlineNodeV4[];
+};
+/** Text only, every text node with `marks: []` (§4.2). */
+export type CodeBlockNode = {
+  type: "codeBlock";
+  id: NodeId;
+  children: TextNodeV4[];
+  language?: CodeLanguage;
+  caption?: string;
+};
+/** The only nesting of v4: one or more paragraphs (§4.3). */
+export type BoxNode = { type: "box"; id: NodeId; kind: BoxKind; children: ParagraphNodeV4[] };
+export type FormulaNode = { type: "formula"; id: NodeId; tex: string };
+export type PageBreakNode = { type: "pageBreak"; id: NodeId };
+
+export type DocumentNodeV4 =
+  | ParagraphNodeV4
+  | HeadingNodeV4
+  | BulletItemNodeV4
+  | NumberedItemNodeV4
+  | QuoteNodeV4
+  | CodeBlockNode
+  | BoxNode
+  | FormulaNode
+  | PageBreakNode
+  | TableNode
+  | ImageNode;
+
+/** Document v4, the image (contract v4 §5.2) and the cover (§7). */
+export type ImageCrop = { bottom: number; left: number; right: number; top: number };
+export type ImageNode = {
+  type: "image";
+  id: NodeId;
+  widthPercent: number;
+  align: "left" | "center" | "right";
+  landscape: boolean;
+  attachmentId?: string;
+  attachmentSha256?: string;
+  crop?: ImageCrop;
+  title?: string;
+  source?: string;
+};
+export type CoverV4 = { study?: string; place?: string; date?: string };
+
+export type CanonicalDocumentV4 = {
+  schemaVersion: typeof DOCUMENT_SCHEMA_VERSION_V4;
+  nodes: DocumentNodeV4[];
+  sources: DocumentSource[];
+  cover?: CoverV4;
+};
+
+// Document v4, the table (contract v4 §5.1).
+
+/** Most cells of one table, longest cell and longest figure title or source. */
+export const MAX_TABLE_CELLS = 3000;
+export const MAX_TABLE_CELL_CODE_POINTS = 1000;
+export const MAX_FIGURE_TEXT_CODE_POINTS = 500;
+
+export type TableCellFill = { color: string; column: number; row: number };
+export type TableMerge = { column: number; columnSpan: number; row: number; rowSpan: number };
+
+export type TableNode = {
+  type: "table";
+  id: NodeId;
+  rows: string[][];
+  header: boolean;
+  stripes: boolean;
+  landscape: boolean;
+  headerFill?: string;
+  cellFills?: TableCellFill[];
+  merges?: TableMerge[];
+  title?: string;
+  source?: string;
+};

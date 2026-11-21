@@ -55,6 +55,16 @@ import { isSourceId, MAX_CITATION_LOCATOR_CODE_POINTS } from "../document/docume
 
 export const CITATION = "citation";
 
+/**
+ * The inline atoms of every schema version. The guard below treats them alike
+ * (document-schema-v3 §3.1 and §5.5): none takes a mark, none goes into a
+ * heading. A version whose schema lacks a name never meets it.
+ */
+const ATOM_NAMES: ReadonlySet<string> = new Set([CITATION, "footnote", "crossReference", "inlineFormula"]);
+/** Blocks that hold text only: a heading, and the code block of v4 (§4.2). */
+const TEXT_ONLY: ReadonlySet<string> = new Set(["heading", "codeBlock"]);
+const isAtom = (node: PmNode) => ATOM_NAMES.has(node.type.name);
+
 /** Meta of the guard's own transaction, which takes marks off citations. */
 export const CITATION_UNMARK_META = "citationUnmark";
 
@@ -63,7 +73,7 @@ export const CITATION_SOURCE_HTML_ATTRIBUTE = "data-source-id";
 export const CITATION_LOCATOR_HTML_ATTRIBUTE = "data-locator";
 
 /** Attributes of a pasted citation span, or false when they are not valid. */
-function citationAttrs(element: HTMLElement): { sourceId: string; locator: string | null } | false {
+export function citationAttrs(element: HTMLElement): { sourceId: string; locator: string | null } | false {
   const sourceId = element.getAttribute(CITATION_SOURCE_HTML_ATTRIBUTE);
   if (!isSourceId(sourceId)) return false;
   const locator = element.getAttribute(CITATION_LOCATOR_HTML_ATTRIBUTE);
@@ -74,7 +84,7 @@ function citationAttrs(element: HTMLElement): { sourceId: string; locator: strin
 function holdsMarkedCitation(node: Fragment): boolean {
   let marked = false;
   node.descendants((child) => {
-    marked ||= child.type.name === CITATION && child.marks.length > 0;
+    marked ||= isAtom(child) && child.marks.length > 0;
     return !marked;
   });
   return marked;
@@ -99,26 +109,27 @@ const isMarkStep = (step: Step) =>
 function markedCitations(doc: PmNode): number[] {
   const positions: number[] = [];
   doc.descendants((node, pos) => {
-    if (node.type.name === CITATION && node.marks.length > 0) positions.push(pos);
+    if (isAtom(node) && node.marks.length > 0) positions.push(pos);
     return node.isBlock;
   });
   return positions;
 }
 
 /**
- * `doc` with every citation unmarked; `doc` itself when none is marked. Blocks
- * are flat (a citation sits directly in a block), as in the replayer's
- * `unmarkCitations`.
+ * `doc` with every citation unmarked; `doc` itself when none is marked. Up to
+ * v3 blocks are flat (a citation sits directly in a block), as in the
+ * replayer's `unmarkCitations`; a box of v4 is gone through to its paragraphs.
  */
 function unmarked(doc: PmNode): PmNode {
   if (markedCitations(doc).length === 0) return doc;
-  const blocks: PmNode[] = [];
-  doc.forEach((block) => {
+  const strip = (node: PmNode): PmNode => {
+    if (isAtom(node)) return node.mark([]);
+    if (node.isLeaf) return node;
     const children: PmNode[] = [];
-    block.forEach((child) => children.push(child.type.name === CITATION ? child.mark([]) : child));
-    blocks.push(block.copy(Fragment.from(children)));
-  });
-  return doc.copy(Fragment.from(blocks));
+    node.forEach((child) => children.push(strip(child)));
+    return node.copy(Fragment.from(children));
+  };
+  return strip(doc);
 }
 
 /** True for a transaction of mark steps that marks or unmarks only citations. */
@@ -138,11 +149,12 @@ const isStructuralReplace = (step: Step) =>
  */
 function contentIntoHeading(step: Step, doc: PmNode): { from: number; to: number } | null {
   if (step instanceof ReplaceAroundStep) {
-    return step.slice.content.firstChild?.type.name === "heading" ? { from: step.gapFrom, to: step.gapTo } : null;
+    const target = step.slice.content.firstChild?.type.name;
+    return target !== undefined && TEXT_ONLY.has(target) ? { from: step.gapFrom, to: step.gapTo } : null;
   }
   if (!isStructuralReplace(step)) return null;
   const { from, to, slice } = step as ReplaceStep;
-  if (slice.size !== 0 || to - from !== 2 || doc.resolve(from).parent.type.name !== "heading") return null;
+  if (slice.size !== 0 || to - from !== 2 || !TEXT_ONLY.has(doc.resolve(from).parent.type.name)) return null;
   const $joined = doc.resolve(to);
   return { from: to, to: $joined.end() };
 }
@@ -166,7 +178,7 @@ function headingTakesCitation(tr: Transaction): boolean {
     const to = Math.max(from, Math.min(size, back.map(range.to, 1)));
     let found = false;
     tr.before.nodesBetween(from, to, (node) => {
-      found ||= node.type.name === CITATION;
+      found ||= isAtom(node);
       return !found;
     });
     return found;

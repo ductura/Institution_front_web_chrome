@@ -21,17 +21,24 @@ import {
   createReceiptVerifier,
   type FetchLike,
   type OpenedWork,
-} from "../../client/evidence-ingest";
+} from "../../../../../src/client/evidence-ingest";
 import type { QueuedRow, SignedCommitReceiptVerifier } from "../drain";
 import type { QueuedTransaction } from "../journal-types";
 import type { CommitTransport } from "./drain-runner";
+import { matchesWorkOpening, type VerifiedWorkOpening } from "../../serverSync/work-opening";
 
 export function createEvidenceTransport(
   fetchImpl?: FetchLike,
   protocol: CommitProtocol = createCommitProtocol(),
+  work?: VerifiedWorkOpening,
 ): CommitTransport<QueuedTransaction> {
   return async (documentId, tx) => {
     if (tx?.kind !== "EVIDENCE_SEGMENT") return { status: "invalid_document" };
+    // Keep the bytes used by the verifier and the request identical.
+    if (work) {
+      tx = { ...tx, segment: new Uint8Array(tx.segment), document: new Uint8Array(tx.document) };
+      if (!await matchesWorkOpening(work, documentId, tx)) return { status: "invalid_document" };
+    }
     return commitEvidence({
       documentId,
       clientTransactionId: tx.clientTransactionId,

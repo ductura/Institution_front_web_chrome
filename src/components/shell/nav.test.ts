@@ -39,12 +39,14 @@ describe("navFor", () => {
     expect(navFor("teacher")).toContainEqual({ href: "/nastavnik/mentorstva", label: "Radovi uz mentora" });
   });
 
-  // DAN-1082 (owner, 18. 11. 2026.): the teacher's rail holds places only.
-  it("gives a teacher exactly three places, in order, and no action among them", () => {
+  // DAN-1082 (owner, 18. 11. 2026.): the teacher's rail holds places only;
+  // A-9 (owner, 19. 11. 2026., #2028 c.6997707653) adds "Zbirni" as the fourth.
+  it("gives a teacher exactly four places, in order, and no action among them", () => {
     expect(navFor("teacher")).toEqual([
       { href: "/nastavnik", label: "Moji kolegiji" },
       { href: "/nastavnik/brz-put", label: "Brz put" },
       { href: "/nastavnik/mentorstva", label: "Radovi uz mentora" },
+      { href: "/nastavnik/zbirni", label: "Zbirni pregled" },
     ]);
     expect(navFor("teacher").some((item) => item.href === "/nastavnik/zadatak/novi")).toBe(false);
   });

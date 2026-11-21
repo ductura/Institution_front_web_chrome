@@ -28,11 +28,12 @@
  * opened the database creates it on first use, even right after a logout.
  */
 import Dexie, { type DexieOptions, type Table } from "dexie";
-import { validateDocument, type CanonicalDocument, type DocumentTransaction } from "../document/document";
-import { verifyDocumentSnapshot } from "../document/document/snapshot";
+import { validateDocument, validateVersionedDocument, type CanonicalDocument, type DocumentTransaction, type VersionedDocument } from "../document/document";
+import { verifyDocumentSnapshot, verifyVersionedDocumentSnapshot } from "../document/document/snapshot";
 import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
 import { isEvidenceProfileIdV2 } from "../document/forensics/evidence-segment-v2";
 import { commitRequestFromTransaction } from "../serverSync/contract";
+import { matchesWorkSchema, type VerifiedWorkOpening } from "../serverSync/work-opening";
 import type {
   EvidenceOpening, EvidenceSegmentInput, EvidenceSegmentTransaction, EvidenceStop, EvidenceTiming,
   JournalContents, JournalSnapshot, PendingTransaction, QueuedTransaction, SalvageCopy, SyncMeta,
@@ -58,9 +59,9 @@ export class JournalError extends Error {
   }
 }
 
-export type LocalSaveResult<T extends QueuedTransaction = DocumentTransaction> = {
+export type LocalSaveResult<T extends QueuedTransaction = DocumentTransaction, TDocument extends VersionedDocument = CanonicalDocument> = {
   localSeq: number;
-  snapshot: JournalSnapshot;
+  snapshot: JournalSnapshot<TDocument>;
   pending: PendingTransaction<T>;
   meta: SyncMeta;
 };
@@ -86,12 +87,12 @@ const FINAL_REFUSALS: ReadonlySet<unknown> = new Set([
 type JournalControl = { key: "logout"; state: "closing" };
 
 class JournalDatabase extends Dexie {
-  snapshots!: Table<JournalSnapshot, string>;
+  snapshots!: Table<JournalSnapshot<VersionedDocument>, string>;
   pending!: Table<QueuedRow, [string, number]>;
   meta!: Table<SyncMeta, string>;
   control!: Table<JournalControl, string>;
   timings!: Table<EvidenceTiming, string>;
-  salvage!: Table<Omit<SalvageCopy, "id"> & { id?: number }, number>;
+  salvage!: Table<Omit<SalvageCopy<VersionedDocument>, "id"> & { id?: number }, number>;
   /** Set once ANOTHER connection deletes this database (logout elsewhere). */
   deletedElsewhere = false;
   private everOpened = false;
@@ -166,7 +167,7 @@ function sticky(state: SyncState | undefined): boolean {
  * known state, and rows of this document within the sequence high-water mark.
  */
 function assertConsistent(
-  documentId: string, prior: SyncMeta | undefined, snapshot: JournalSnapshot | undefined,
+  documentId: string, prior: SyncMeta | undefined, snapshot: JournalSnapshot<VersionedDocument> | undefined,
   rows: readonly QueuedRow[],
 ): void {
   if ((!prior && (snapshot || rows.length > 0)) ||
@@ -218,7 +219,7 @@ const isSegmentRow = (row: QueuedRow) => row.tx?.kind === "EVIDENCE_SEGMENT";
 type VerifiedSegment = {
   tx: Omit<EvidenceSegmentTransaction, "baseRevision">;
   predecessor: string | null;
-  document: CanonicalDocument;
+  document: VersionedDocument;
   timing: EvidenceTiming;
 };
 
@@ -228,7 +229,7 @@ type VerifiedSegment = {
  * are copied first, so what is checked is what is stored and sent.
  */
 async function verifySegment(
-  documentId: string, input: EvidenceSegmentInput, savedAt: string,
+  documentId: string, input: EvidenceSegmentInput, savedAt: string, work?: VerifiedWorkOpening,
 ): Promise<VerifiedSegment> {
   if (!(input?.bytes instanceof Uint8Array) || !(input.document instanceof Uint8Array)) {
     throw new JournalError("invalid_input");
@@ -236,13 +237,15 @@ async function verifySegment(
   const segmentBytes = new Uint8Array(input.bytes);
   const documentBytes = new Uint8Array(input.document);
   const [payload, snapshot] = await Promise.all([
-    verifyCanonicalEvidencePayloadV2(segmentBytes), verifyDocumentSnapshot(documentBytes),
+    verifyCanonicalEvidencePayloadV2(segmentBytes, work?.transactionFormat),
+    (work ? verifyVersionedDocumentSnapshot : verifyDocumentSnapshot)(documentBytes),
   ]);
   if (!payload.ok || !snapshot.ok || payload.sha256 !== input.sha256 ||
       payload.segment.documentId !== documentId ||
       payload.segment.finalDocumentHash !== snapshot.sha256) {
     throw new JournalError("invalid_input");
   }
+  assertWorkSchema(documentId, snapshot.document, work);
   const { sequenceFrom, sequenceTo, events, predecessorSegmentHash } = payload.segment;
   const timing = input.timing;
   if (timing?.segmentHash !== payload.sha256 || timing.sequenceFrom !== sequenceFrom ||
@@ -282,10 +285,16 @@ type VerifiedOpening = {
   lastSequenceTo: number;
   headSegmentHash: string | null;
   evidenceProfileId: string;
-  document: CanonicalDocument;
+  document: VersionedDocument;
 };
 
-async function verifyOpening(documentId: string, opened: EvidenceOpening): Promise<VerifiedOpening> {
+function assertWorkSchema(documentId: string, document: VersionedDocument | undefined, work?: VerifiedWorkOpening): void {
+  if (document && (work ? !matchesWorkSchema(work, documentId, document.schemaVersion) : document.schemaVersion !== 1)) {
+    throw new JournalError("invalid_input");
+  }
+}
+
+async function verifyOpening(documentId: string, opened: EvidenceOpening, work?: VerifiedWorkOpening): Promise<VerifiedOpening> {
   if (opened === null || typeof opened !== "object") throw new JournalError("invalid_input");
   // Every field is read once, here: what is checked is what the writes use (#733).
   const {
@@ -301,8 +310,12 @@ async function verifyOpening(documentId: string, opened: EvidenceOpening): Promi
       !(document instanceof Uint8Array)) {
     throw new JournalError("invalid_input");
   }
-  const verified = await verifyDocumentSnapshot(new Uint8Array(document));
+  const verified = await (work ? verifyVersionedDocumentSnapshot : verifyDocumentSnapshot)(new Uint8Array(document));
   if (!verified.ok || verified.sha256 !== documentHash) throw new JournalError("invalid_input");
+  assertWorkSchema(documentId, verified.document, work);
+  if (work && (work.revision !== currentRevision || work.snapshotSha256 !== documentHash)) {
+    throw new JournalError("invalid_input");
+  }
   return { currentRevision, lastSequenceTo, headSegmentHash, evidenceProfileId, document: verified.document };
 }
 
@@ -506,17 +519,27 @@ export class AtomicDexieJournal {
    * `readEvidence`, or as `DrainJournal` does, over rows of either kind.
    */
   async read(documentId: string): Promise<JournalContents> {
-    return this.readAny(documentId) as Promise<JournalContents>;
+    const contents = await this.readAny(documentId);
+    // A snapshot of a schema this reader does not know is refused. One whose
+    // version is not a number at all (a BigInt, a Map in its place) is damage,
+    // not another version: it is returned as stored so the saver's own
+    // validation names it corrupt, never older or empty text (#206 17).
+    const document = contents.snapshot?.document;
+    if (typeof document?.schemaVersion === "number") assertWorkSchema(documentId, document);
+    return contents as JournalContents;
   }
 
   /** `read` for a document with evidence; rows of another kind are `mixed_queue`. */
-  async readEvidence(documentId: string): Promise<JournalContents<EvidenceSegmentTransaction>> {
+  async readEvidence(documentId: string): Promise<JournalContents<EvidenceSegmentTransaction>>;
+  async readEvidence(documentId: string, work: VerifiedWorkOpening): Promise<JournalContents<EvidenceSegmentTransaction, VersionedDocument>>;
+  async readEvidence(documentId: string, work?: VerifiedWorkOpening): Promise<JournalContents<EvidenceSegmentTransaction, VersionedDocument>> {
     const contents = await this.readAny(documentId);
     if (contents.pending.some((row) => !isSegmentRow(row))) throw new JournalError("mixed_queue");
-    return contents as JournalContents<EvidenceSegmentTransaction>;
+    assertWorkSchema(documentId, contents.snapshot?.document, work);
+    return contents as JournalContents<EvidenceSegmentTransaction, VersionedDocument>;
   }
 
-  private async readAny(documentId: string): Promise<JournalContents<QueuedTransaction>> {
+  private async readAny(documentId: string): Promise<JournalContents<QueuedTransaction, VersionedDocument>> {
     if (!validDocumentId(documentId)) throw new JournalError("invalid_input");
     return this.whileUsable(() =>
       this.db.transaction("r", this.db.snapshots, this.db.pending, this.db.meta, async () => {
@@ -579,7 +602,7 @@ export class AtomicDexieJournal {
   private async readForWrite(
     documentId: string, expectedLocalSeq: number, clientTransactionId: string | null, evidence: boolean,
   ): Promise<{
-    prior: SyncMeta | undefined; snapshotBefore: JournalSnapshot | undefined;
+    prior: SyncMeta | undefined; snapshotBefore: JournalSnapshot<VersionedDocument> | undefined;
     rows: QueuedRow[]; localSeq: number;
   }> {
     const [logoutFence, prior, snapshotBefore, rows] = await Promise.all([
@@ -620,9 +643,9 @@ export class AtomicDexieJournal {
    * local chain is the only way on (`queue_not_empty`), and after the recorder
    * stopped the device holds text the server lacks (`evidence_stopped`).
    */
-  async startEvidence(documentId: string, opened: EvidenceOpening, openedAt: string): Promise<SyncMeta> {
+  async startEvidence(documentId: string, opened: EvidenceOpening, openedAt: string, work?: VerifiedWorkOpening): Promise<SyncMeta> {
     if (!validDocumentId(documentId) || !canonicalUtc(openedAt)) throw new JournalError("invalid_input");
-    const opening = await verifyOpening(documentId, opened);
+    const opening = await verifyOpening(documentId, opened, work);
     return this.whileUsable(() => this.db.transaction(
       "rw", this.db.snapshots, this.db.pending, this.db.meta, this.db.control,
       async () => {
@@ -634,6 +657,7 @@ export class AtomicDexieJournal {
         ]);
         if (logoutFence) throw new JournalError("logout_in_progress");
         assertConsistent(documentId, prior, snapshotBefore, rows);
+        assertWorkSchema(documentId, snapshotBefore?.document, work);
         if (sticky(prior?.state)) throw new JournalError("sticky_state");
         if (prior?.evidenceStopped !== undefined) throw new JournalError("evidence_stopped");
         if (rows.length > 0) throw new JournalError("queue_not_empty");
@@ -669,16 +693,23 @@ export class AtomicDexieJournal {
    */
   async saveSegment(
     documentId: string, input: EvidenceSegmentInput, savedAt: string, expectedLocalSeq: number,
-  ): Promise<LocalSaveResult<EvidenceSegmentTransaction>> {
+  ): Promise<LocalSaveResult<EvidenceSegmentTransaction>>;
+  async saveSegment(
+    documentId: string, input: EvidenceSegmentInput, savedAt: string, expectedLocalSeq: number, work: VerifiedWorkOpening,
+  ): Promise<LocalSaveResult<EvidenceSegmentTransaction, VersionedDocument>>;
+  async saveSegment(
+    documentId: string, input: EvidenceSegmentInput, savedAt: string, expectedLocalSeq: number, work?: VerifiedWorkOpening,
+  ): Promise<LocalSaveResult<EvidenceSegmentTransaction, VersionedDocument>> {
     if (!validDocumentId(documentId) || !canonicalUtc(savedAt) || !validSeq(expectedLocalSeq)) {
       throw new JournalError("invalid_input");
     }
-    const verified = await verifySegment(documentId, input, savedAt);
+    const verified = await verifySegment(documentId, input, savedAt, work);
     return this.whileUsable(() => this.db.transaction(
       "rw", [this.db.snapshots, this.db.pending, this.db.meta, this.db.control, this.db.timings],
       async () => {
         const { prior, snapshotBefore, rows, localSeq } =
           await this.readForWrite(documentId, expectedLocalSeq, verified.tx.clientTransactionId, true);
+        assertWorkSchema(documentId, snapshotBefore?.document, work);
         if (prior!.evidenceStopped !== undefined) throw new JournalError("evidence_stopped");
         const last = rows.at(-1)?.tx as EvidenceSegmentTransaction | undefined;
         const head = last
@@ -688,7 +719,7 @@ export class AtomicDexieJournal {
           throw new JournalError("chain_broken");
         }
         const tx: EvidenceSegmentTransaction = { ...verified.tx, baseRevision: snapshotBefore!.revision };
-        const snapshot: JournalSnapshot = {
+        const snapshot: JournalSnapshot<VersionedDocument> = {
           documentId, revision: snapshotBefore!.revision, document: verified.document, savedAt,
         };
         const pending: PendingTransaction<EvidenceSegmentTransaction> = {
@@ -712,19 +743,21 @@ export class AtomicDexieJournal {
    * stop still drain; the document is never SYNCED again and blocks logout.
    */
   async saveUncovered(
-    documentId: string, document: CanonicalDocument, reason: EvidenceStop,
-    savedAt: string, expectedLocalSeq: number,
+    documentId: string, document: VersionedDocument, reason: EvidenceStop,
+    savedAt: string, expectedLocalSeq: number, work?: VerifiedWorkOpening,
   ): Promise<SyncMeta> {
-    const checked = validateDocument(document);
+    const checked = (work ? validateVersionedDocument : validateDocument)(document);
     if (!validDocumentId(documentId) || !canonicalUtc(savedAt) || !validSeq(expectedLocalSeq) ||
         !checked.ok || !["gap", "unsupported_step", "block_identity", "too_large"].includes(reason)) {
       throw new JournalError("invalid_input");
     }
+    assertWorkSchema(documentId, checked.doc, work);
     return this.whileUsable(() => this.db.transaction(
       "rw", this.db.snapshots, this.db.pending, this.db.meta, this.db.control,
       async () => {
         const { prior, snapshotBefore, localSeq } =
           await this.readForWrite(documentId, expectedLocalSeq, null, true);
+        assertWorkSchema(documentId, snapshotBefore?.document, work);
         const meta: SyncMeta = {
           ...prior!, localSeq, state: "LOCAL_DURABLE",
           evidenceStopped: prior!.evidenceStopped ?? reason,
@@ -839,7 +872,7 @@ export class AtomicDexieJournal {
 
   /** Fence and consistency checks shared by the send bookkeeping. */
   private async readForAnswer(documentId: string): Promise<{
-    prior: SyncMeta; snapshot: JournalSnapshot; rows: QueuedRow[];
+    prior: SyncMeta; snapshot: JournalSnapshot<VersionedDocument>; rows: QueuedRow[];
   }> {
     const [logoutFence, prior, snapshot, rows] = await Promise.all([
       this.db.control.get("logout"),
@@ -868,16 +901,17 @@ export class AtomicDexieJournal {
    * dropped (#166), and for a stopped document, whose text is replaced.
    */
   async adoptServerEvidence(
-    documentId: string, opened: EvidenceOpening, confirmed: boolean, decidedAt: string, expectedLocalSeq: number,
+    documentId: string, opened: EvidenceOpening, confirmed: boolean, decidedAt: string, expectedLocalSeq: number, work?: VerifiedWorkOpening,
   ): Promise<SyncMeta> {
     if (!validDocumentId(documentId) || !canonicalUtc(decidedAt) || !validSeq(expectedLocalSeq)) {
       throw new JournalError("invalid_input");
     }
-    const opening = await verifyOpening(documentId, opened);
+    const opening = await verifyOpening(documentId, opened, work);
     return this.whileUsable(() => this.db.transaction(
       "rw", [this.db.snapshots, this.db.pending, this.db.meta, this.db.control, this.db.salvage],
       async () => {
         const { prior, snapshot, rows } = await this.readForAnswer(documentId);
+        assertWorkSchema(documentId, snapshot.document, work);
         if (prior.evidenceHead === undefined || rows.some((row) => !isSegmentRow(row))) {
           throw new JournalError("mixed_queue");
         }
@@ -927,11 +961,14 @@ export class AtomicDexieJournal {
   }
 
   /** The copies kept for `documentId`, newest first. */
-  async readSalvage(documentId: string): Promise<SalvageCopy[]> {
+  async readSalvage(documentId: string): Promise<SalvageCopy[]>;
+  async readSalvage(documentId: string, work: VerifiedWorkOpening): Promise<SalvageCopy<VersionedDocument>[]>;
+  async readSalvage(documentId: string, work?: VerifiedWorkOpening): Promise<SalvageCopy<VersionedDocument>[]> {
     if (!validDocumentId(documentId)) throw new JournalError("invalid_input");
     return this.whileUsable(async () => {
       const copies = await this.db.salvage.where("documentId").equals(documentId).toArray();
-      return (copies as SalvageCopy[]).sort((a, b) => b.id - a.id);
+      for (const copy of copies) assertWorkSchema(documentId, copy.document, work);
+      return (copies as SalvageCopy<VersionedDocument>[]).sort((a, b) => b.id - a.id);
     });
   }
 

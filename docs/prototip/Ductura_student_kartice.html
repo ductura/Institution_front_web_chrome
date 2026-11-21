@@ -1,0 +1,524 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Kartice ekrana</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
+<style>
+:root, :root[data-theme="dark"] {
+  --ground:#242422; --sheet:#2e2e2b; --card:#33332f; --well:#3a3a36; --hover:#3a3a36;
+  --ink:#faf9f5; --ink-2:#dedbd3; --ink-3:#c9c5bb; --rule:#8c887f; --rule-2:#5a5853;
+  --accent:#c8aa6e; --accent-hover:#dcc28a; --accent-ink:#242422; --link-rule:#b3aea3;
+  --field:#2a2a27; --field-rule:#a6a196; --warn:#e9c58b; --warn-soft:#3a2f22; --synced:#a2c6e5;
+  --ff-ui:"Instrument Sans", system-ui, sans-serif;
+  --ff-display:"Newsreader", Georgia, serif;
+  --ff-mono:"JetBrains Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --ground:#f3f2ee; --sheet:#fcfbf8; --card:#fcfbf8; --well:#ecebe5; --hover:#ecebe5;
+    --ink:#242422; --ink-2:#55534d; --ink-3:#5c5a54; --rule:#cfccc4; --rule-2:#e2e0d9;
+    --accent:#806529; --accent-hover:#6b5420; --accent-ink:#fcfbf8; --link-rule:#8a7550;
+    --field:#fcfbf8; --field-rule:#85827a; --warn:#7a5420; --warn-soft:#f3e8d6; --synced:#355b81;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --ground:#f3f2ee; --sheet:#fcfbf8; --card:#fcfbf8; --well:#ecebe5; --hover:#ecebe5;
+  --ink:#242422; --ink-2:#55534d; --ink-3:#5c5a54; --rule:#cfccc4; --rule-2:#e2e0d9;
+  --accent:#806529; --accent-hover:#6b5420; --accent-ink:#fcfbf8; --link-rule:#8a7550;
+  --field:#fcfbf8; --field-rule:#85827a; --warn:#7a5420; --warn-soft:#f3e8d6; --synced:#355b81;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin:0; background:var(--ground); }
+.ke {
+  background:var(--ground); color:var(--ink-2); font:15px/1.55 var(--ff-ui);
+  min-height:100%; overflow-wrap:anywhere;
+  padding:28px max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left));
+}
+.ke-wrap { max-width:860px; margin:0 auto; }
+.ke h1, .ke h2 { font-family:var(--ff-display); font-weight:500; letter-spacing:-0.015em; color:var(--ink); margin:0; }
+.ke h1 { font-size:34px; line-height:1.15; }
+.ke h2 { font-size:23px; line-height:1.25; margin:36px 0 12px; }
+.ke h3 { font:600 12.5px/1.3 var(--ff-ui); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin:18px 0 6px; }
+.ke p { margin:0 0 10px; }
+.ke ul { margin:0 0 6px; padding-left:20px; }
+.ke li { margin:3px 0; }
+.ke a { color:var(--accent); text-decoration:underline; text-decoration-color:var(--link-rule); text-underline-offset:3px; }
+.ke a:hover { color:var(--accent-hover); }
+.ke :focus-visible { outline:3px solid var(--accent); outline-offset:2px; border-radius:4px; }
+.lede { font-size:16.5px; color:var(--ink-2); margin:10px 0 18px; }
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 18px;
+  background:var(--accent); color:var(--accent-ink) !important; border:0; border-radius:5px;
+  font:600 14.5px var(--ff-ui); text-decoration:none !important; cursor:pointer;
+}
+.btn:hover { background:var(--accent-hover); }
+.btn.sec { background:transparent; color:var(--ink) !important; border:1px solid var(--rule); }
+.btn.sec:hover { background:var(--hover); }
+.nalaz { background:var(--sheet); border:1px solid var(--rule-2); border-left:3px solid var(--rule); border-radius:8px; padding:14px 16px; margin:22px 0 0; }
+.nalaz strong { color:var(--ink); }
+.scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--rule-2); border-radius:8px; background:var(--sheet); }
+table { border-collapse:collapse; width:100%; min-width:320px; font-size:14.5px; }
+th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--rule-2); vertical-align:top; }
+th { font-weight:600; color:var(--ink-3); font-size:12.5px; letter-spacing:.04em; text-transform:uppercase; }
+tr:last-child td { border-bottom:0; }
+td a { display:inline-block; min-height:28px; }
+.tag { display:inline-block; font:600 12.5px/1 var(--ff-ui); padding:5px 8px; border-radius:4px; border:1px solid var(--rule); color:var(--ink); white-space:nowrap; }
+.tag.postoji { border-color:var(--synced); color:var(--synced); }
+.tag.djelomicno { border-color:var(--rule); color:var(--ink-2); }
+.tag.nema { border-color:var(--warn); color:var(--warn); background:var(--warn-soft); }
+.vel { color:var(--ink-2); }
+.kartica { background:var(--card); border:1px solid var(--rule-2); border-radius:10px; margin:12px 0; }
+.kartica > summary {
+  list-style:none; cursor:pointer; min-height:56px; padding:12px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+.kartica > summary::-webkit-details-marker { display:none; }
+.kartica > summary::before { content:"+"; font:500 18px/1 var(--ff-mono); color:var(--ink-3); width:14px; }
+.kartica[open] > summary::before { content:"\2212"; }
+.kartica > summary:hover { background:var(--hover); border-radius:10px; }
+.naziv { font:500 19px/1.25 var(--ff-display); color:var(--ink); flex:1 1 180px; }
+.odabrano { font-size:13px; color:var(--ink-3); }
+.tijelo { padding:0 16px 16px; border-top:1px solid var(--rule-2); }
+.mono { font:12px/1.5 var(--ff-mono); color:var(--ink-3); background:var(--well); border-radius:5px; padding:6px 8px; margin:6px 0 0; }
+.procjena { margin-top:8px; }
+.procjena b { color:var(--ink); font-weight:600; }
+.napomena-uz { color:var(--ink-3); font-size:14px; }
+.odluka { margin-top:18px; padding-top:14px; border-top:1px dashed var(--rule-2); }
+.odluka fieldset { border:0; margin:0; padding:0; }
+.odluka legend { font:600 12.5px/1.3 var(--ff-ui); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); padding:0; margin-bottom:8px; }
+.izbor { display:flex; flex-wrap:wrap; gap:8px; }
+.izbor label {
+  position:relative; display:inline-flex; align-items:center; min-height:44px; padding:0 14px;
+  border:1px solid var(--rule); border-radius:5px; cursor:pointer; color:var(--ink); font-weight:500; background:var(--field);
+}
+.izbor input { position:absolute; opacity:0; inset:0; margin:0; cursor:pointer; }
+.izbor label:has(input:checked) { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.izbor label:has(input:focus-visible) { outline:3px solid var(--accent); outline-offset:2px; }
+.polje { display:block; margin-top:12px; }
+.polje span { display:block; font-size:13px; color:var(--ink-3); margin-bottom:4px; }
+.polje input, textarea {
+  width:100%; min-height:44px; padding:10px 12px; border:1px solid var(--field-rule); border-radius:5px;
+  background:var(--field); color:var(--ink); font:15px var(--ff-ui);
+}
+textarea { font:13px/1.6 var(--ff-mono); min-height:240px; resize:vertical; }
+.dno { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+.sitno { font-size:13px; color:var(--ink-3); }
+</style>
+
+<div class="ke"><div class="ke-wrap">
+
+<header>
+  <h1>Kartice ekrana</h1>
+  <p class="lede">Ova stranica za svaki ekran studentskog prototipa Ducture kaže čemu služi, što od toga već postoji u aplikaciji i na poslužitelju te što bi trebalo napraviti, a na dnu svake kartice Vi odlučujete ide li ekran u aplikaciju.</p>
+  <a class="btn" href="https://claude.ai/artifact/4ETsgi3dP8R3UGuzTW4dYg" target="_blank" rel="noopener">Otvori prototip</a>
+
+  <div class="nalaz">
+    <p><strong>Glavni nalaz.</strong> Zasebni poslužitelj ima pozive koji stvarno rade samo za prijavu i za bilježenje zapisa o pisanju (otvaranje, upis i ponovna provjera zapisa), uz nekoliko nastavničkih i pomoćnih poziva. Studentski pozivi za popis zadataka, upis u kolegij, potvrdu obavijesti, predaju i sažetak procesa ondje postoje samo kao ugovor (dogovoreni oblik poziva i odgovora) i kao funkcije u bazi, bez koda koji stvarno odgovara na poziv preko mreže.</p>
+    <p style="margin:0">Aplikacija Ductus ima vlastite rute koje rade za upis, potvrdu obavijesti, sažetak procesa i predaju. U biblioteci komponenata zasebnog weba uređivač, obavijest, izjava, pregled, predaja i potvrda zasad postoje samo kao tekstovi, ne kao komponente.</p>
+  </div>
+</header>
+
+<h2>Pregled</h2>
+<div class="scroll">
+<table>
+  <thead><tr><th>Ekran</th><th>U aplikaciji</th><th>Procjena posla</th></tr></thead>
+  <tbody>
+    <tr><td><a href="#k-prijava">Prijava</a></td><td><span class="tag djelomicno">djelomično</span></td><td class="vel">mali</td></tr>
+    <tr><td><a href="#k-pocetna">Početna i Moji zadaci</a></td><td><span class="tag djelomicno">djelomično</span></td><td class="vel">srednji</td></tr>
+    <tr><td><a href="#k-kolegiji">Moji kolegiji</a></td><td><span class="tag djelomicno">djelomično</span></td><td class="vel">mali</td></tr>
+    <tr><td><a href="#k-radovi">Moji radovi</a></td><td><span class="tag djelomicno">djelomično</span></td><td class="vel">mali</td></tr>
+    <tr><td><a href="#k-upis">Upis u kolegij</a></td><td><span class="tag djelomicno">djelomično</span></td><td class="vel">mali</td></tr>
+    <tr><td><a href="#k-obavijest">Obavijest o zadatku</a></td><td><span class="tag postoji">postoji</span></td><td class="vel">mali do srednji</td></tr>
+    <tr><td><a href="#k-rad">Uređivač</a></td><td><span class="tag djelomicno">djelomično</span></td><td class="vel">mali</td></tr>
+    <tr><td><a href="#k-izjava">Izjava (korak 2)</a></td><td><span class="tag nema">nema</span></td><td class="vel">velik</td></tr>
+    <tr><td><a href="#k-pregled">Prije predaje (korak 3)</a></td><td><span class="tag djelomicno">djelomično</span></td><td class="vel">srednji</td></tr>
+    <tr><td><a href="#k-predaja">Predaja (korak 4)</a></td><td><span class="tag postoji">postoji</span></td><td class="vel">mali do srednji</td></tr>
+    <tr><td><a href="#k-potvrda">Potvrda (korak 5)</a></td><td><span class="tag djelomicno">djelomično</span></td><td class="vel">srednji</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="sitno" style="margin-top:8px">Procjena posla je gruba procjena autora ove stranice, ne izmjereni plan. Imena u prototipu (Student A, Kolegij A do D) su izmišljena.</p>
+
+<h2>Ekrani</h2>
+
+<!-- 1 PRIJAVA -->
+<details class="kartica" id="k-prijava" data-id="prijava" data-naziv="Prijava">
+<summary><span class="naziv">Prijava</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Student se prijavljuje u Ducturu isključivo sustavom AAI@EduHr. Drugog načina prijave nema.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Pritisnuti „Prijava sustavom AAI@EduHr”.</li><li>Otvoriti objašnjenje za prvi dolazak s kodom zadatka.</li><li>Otvoriti „Trebate pomoć?”.</li></ul>
+<h3>Stanja</h3>
+<p>Zadano, preusmjeravanje na AAI@EduHr, prijava odbijena, AAI@EduHr ne odgovara, nova osoba bez uloge i otvorena pomoć.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Nikakve osobne podatke, samo naziv sustava prijave i upute.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Stranica /prijava postoji i vodi na AAI@EduHr i natrag. Aplikacija ima i kartice za isteklu sesiju i za odjavu, kojih prototip nema. Nedostaju kartice za preusmjeravanje, grešku, nedostupnost i osobu bez uloge: neuspjela prijava sada završava golom stranicom s brojem greške (400, 403 ili 503). Testovi postoje (četiri skupa testova koji klikaju kroz preglednik).</p>
+<p class="mono">app/prijava/page.tsx · app/api/auth/login · app/api/auth/callback · SignInScreen.tsx · AccessCard.tsx · src/server/auth/flow.ts</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Radi, s testovima: početak prijave, povratak iz AAI@EduHr, odjava, odjava sa svih uređaja i odjava koju pokrene sam AAI@EduHr. Nedostaje poziv koji vraća tko je prijavljen. Lokalno se prijava isprobava lažnim pružateljem koji radi samo pri razvoju. U biblioteci postoje tekstovi, okvir aplikacije i stanje odjavljenog studenta na početnoj; nema komponente zaslona prijave ni greške prijave.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: četiri kartice koje nedostaju, na postojećoj kartici pristupa.</li><li>Backend: povratak iz prijave treba pri grešci voditi na stranicu s karticom umjesto na golu stranicu s brojem greške.</li></ul>
+<p class="procjena">Procjena: <b>mali posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Otvorenih odluka nema: prijava samo sustavom AAI@EduHr je tvrdo pravilo (D-09).</li><li>Tekst poziva u prototipu nije redak po redak uspoređen s katalogom tekstova.</li><li>Stvarni tok prijave na zasebnom poslužitelju nije pokrenut; opis je iz ugovora i popisa testova.</li><li>Izgled prijave u snimkama zasebnog weba nije otvaran.</li></ul>
+</div>
+</details>
+
+<!-- 2 POCETNA -->
+<details class="kartica" id="k-pocetna" data-id="pocetna" data-naziv="Početna i Moji zadaci">
+<summary><span class="naziv">Početna i Moji zadaci</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Prvi zaslon nakon prijave. Student vidi gdje je stao i koje zadatke ima, s rokovima.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Nastaviti rad karticom „Nastavi”.</li><li>Otvoriti rad, pročitati upute ili otvoriti zadatak.</li><li>Upisati kod kolegija izravno na početnoj.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, bez kolegija (forma za kod i tri koraka), kolegij bez zadatka, učitavanje i greška.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Kolegij, naslov zadatka, rok, oznaku „Rok za 3 dana”, oznaku „Prvo pročitajte obavijest” i vrijeme predaje.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Ruta /zadaci postoji sa stanjima prazno, učitavanje, greška i puno, a podatke čita iz baze uz pravila koja određuju tko smije vidjeti koji redak. Nakon prijave student zasad dolazi na /rad (radni prostor), a ne na /zadaci. Nedostaju kartica „Nastavi”, ravni popis s oznakom bliskog roka, oznake seminarskih grupa i forma za kod na samoj početnoj (sada je ondje samo poveznica). Testova ima mnogo.</p>
+<p class="mono">app/zadaci/page.tsx · app/page.tsx · StudentHome · MyAssignments · EmptyHome · StudentWorkspace · app.student_workspace()</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Popis zadataka i stanje rada po zadatku postoje samo kao ugovor, bez koda koji odgovara na poziv. Nema poziva za radni prostor studenta. Popis u ugovoru nema stanje rada, pa kartica ne može pokazati „predano” ili „u tijeku”. U biblioteci postoje početna, popis zadataka, prazna početna, zaslon greške i zaslon učitavanja.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: kartica „Nastavi”, oznaka bliskog roka, oznake grupa i forma za kod na početnoj.</li><li>Backend: u aplikaciji stanje rada već daje funkcija radnog prostora; na zasebnom poslužitelju trebaju pozivi za popis i stanje rada.</li></ul>
+<p class="procjena">Procjena: <b>srednji posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Odluka nije pronađena u dokumentima, ali je potrebna: smatrate li početnom /rad ili /zadaci.</li><li>Sadržaj radnog prostora na /rad nije pročitan do kraja.</li><li>Nije provjereno sadrži li verzija ugovora 2.4.0 u web klijentu poziv za stanje rada.</li></ul>
+</div>
+</details>
+
+<!-- 3 KOLEGIJI -->
+<details class="kartica" id="k-kolegiji" data-id="kolegiji" data-naziv="Moji kolegiji">
+<summary><span class="naziv">Moji kolegiji</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Pregled kolegija u koje je student upisan, s akademskom godinom i seminarskim grupama.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Otvoriti kolegij i njegov otvoreni zadatak.</li><li>Prijeći na upis novog kolegija.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, jedan kolegij, prazno, učitavanje, greška i istekla prijava.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Naziv kolegija, oznaku „Kolegij · 2026./27.”, nastavnika i oznake seminarskih grupa.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Rute /zadaci/kolegiji i stranica pojedinog kolegija postoje, sa stanjima puno, prazno, greška, učitavanje, kolegij bez otvorenog zadatka, nedostupan kolegij i ponovni pokušaj. Testovi postoje. Nije potvrđeno prikazuje li se više grupa po kolegiju.</p>
+<p class="mono">app/zadaci/kolegiji/page.tsx · app/upis/kolegij/[courseId]/page.tsx · MyAssignments · NoticeCourse · notice-course.ts</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Samo ugovor za popis zadataka, bez koda koji odgovara na poziv; u njemu nema akademske godine, nastavnika ni koda. Nema poziva s pojedinostima kolegija. U biblioteci postoje početna u prikazu kolegija, popis s motivima kolegija i navigacija.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: oznake grupa ako ih nema i stanje istekle prijave.</li><li>Backend: u aplikaciji ništa veće; na zasebnom poslužitelju poziv i polja za godinu i nastavnika.</li></ul>
+<p class="procjena">Procjena: <b>mali posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Otvorene odluke nisu pronađene.</li><li>Razlika između prikaza jednog i više kolegija nije provjerena u kodu.</li><li>Nije potvrđeno prikazuje li aplikacija više grupa po kolegiju.</li></ul>
+</div>
+</details>
+
+<!-- 4 RADOVI -->
+<details class="kartica" id="k-radovi" data-id="radovi" data-naziv="Moji radovi">
+<summary><span class="naziv">Moji radovi</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Popis svih studentovih radova, sa stanjem i rokom za svaki.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Otvoriti rad.</li><li>Vidjeti koji je rad predan i kada.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, prazno, učitavanje i greška.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Stanje rada (nije započet, upute nisu potvrđene, započet, predano u određeno vrijeme) i rok.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Ruta /zadaci/radovi postoji sa stanjima puno, prazno, greška i učitavanje. Aplikacija ima pretraživanje i filtar po godini, kojih prototip nema. Testovi postoje.</p>
+<p class="mono">app/zadaci/radovi/page.tsx · StudentWorkspace · student-workspace-view.ts · app.student_workspace()</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Samo ugovor za stanje rada i popis zadataka. U zasebnom webu postoje samo tekstovi i stavka navigacije; nema rute popisa radova, koda koji odgovara na poziv ni komponente „Moji radovi”.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: uskladiti oznake stanja s prototipom.</li><li>Backend: u aplikaciji ništa; na zasebnom poslužitelju poziv za stanje rada.</li></ul>
+<p class="procjena">Procjena: <b>mali posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Otvorene odluke nisu pronađene. Za Vas ostaje pitanje zadržavaju li se pretraživanje i filtar po godini koje aplikacija ima, a prototip nema.</li><li>Nije utvrđeno koji redak u popisu ekrana (EKRANI.md) odgovara ovom ekranu.</li><li>Nije pronađeno odakle zasebni web očekuje čitati radove; pretpostavka je radni prostor studenta, nije provjereno.</li></ul>
+</div>
+</details>
+
+<!-- 5 UPIS -->
+<details class="kartica" id="k-upis" data-id="upis" data-naziv="Upis u kolegij">
+<summary><span class="naziv">Upis u kolegij</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Student upisuje kolegij kodom koji je dobio od nastavnika.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Upisati kod od 8 do 32 slova i brojki; razmaci, crtice te velika i mala slova nisu važni.</li><li>Poslati kod i nakon uspjeha prijeći na obavijest o zadatku.</li></ul>
+<h3>Stanja</h3>
+<p>Zadano, upis u tijeku, neispravan kod, istekao ili nepostojeći kod, već upisan, bez mreže te upisan, ali kolegij još nema zadatak.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Upisani kod, a nakon uspjeha naziv kolegija.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Ruta /upis postoji s formom, osam različitih poruka o grešci, stanjem slanja i uspjehom koji vodi na obavijest. Poziv za upis radi i ima testove. Slučaj „kolegij nema zadatak” rješava se na stranici kolegija, ne u formi, a „već upisan” nije zasebna kartica.</p>
+<p class="mono">app/upis/page.tsx · app/upis/kolegij/[courseId] · app/api/institution/enrollments · EnrollForm · enroll-code.ts · enrollment-route.ts · institution.enroll_with_code</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Samo ugovor (kod do 64 znaka, odgovori za neispravan kod i za previše pokušaja) i funkcija upisa u bazi, bez koda koji odgovara na poziv. U zasebnom webu postoje mjesto na praznoj početnoj i tekstovi, ali nema forme za upis.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: po želji zasebne kartice „već upisan” i „nema zadatka” u samoj formi.</li><li>Backend: u aplikaciji ništa veće.</li></ul>
+<p class="procjena">Procjena: <b>mali posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Otvorene odluke nisu pronađene.</li><li>Nije provjereno je li „već upisan” zasebno stanje; komentar u kodu kaže da isti odgovor poslužitelja pokriva i taj slučaj.</li><li>Duljina koda nije usklađena: tekst kaže 8 do 32 znaka, ugovor dopušta do 64.</li></ul>
+</div>
+</details>
+
+<!-- 6 OBAVIJEST -->
+<details class="kartica" id="k-obavijest" data-id="obavijest" data-naziv="Obavijest o zadatku">
+<summary><span class="naziv">Obavijest o zadatku</span><span class="tag postoji">postoji</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Prije pisanja student čita pravila zadatka i što se bilježi te to potvrđuje. Potvrda nije privola.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Pročitati opis zadatka i pravila za alate (FPZG čl. 8; pravilo fakulteta otvara se na klik).</li><li>Vidjeti što se bilježi, što se ne bilježi i što vidi nastavnik.</li><li>Označiti potvrdu i pritisnuti „Potvrdi i otvori editor”; gumb radi tek nakon oznake.</li></ul>
+<h3>Stanja</h3>
+<p>Zadano, prije potvrde, učitavanje, greška, zadatak još nije otvoren, potvrđeno (s vremenom i gumbom „Otvori rad”), promijenjen tekst obavijesti koji traži novu potvrdu i račun bez prava potvrde.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Kolegij, naslov, rok, opis, dopuštene i nedopuštene alate, popis onoga što se bilježi i rečenicu „Ductura ne procjenjuje autorstvo ni korištenje AI-ja”.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Postoji. Ruta /zadatak/[id] ima potvrdu koja se zapisuje na poslužitelju aplikacije. Stanja: učitavanje, nedostupno, još nije otvoreno, rok prošao, pravila za alate, što se bilježi, potvrda i promijenjen tekst koji traži novu potvrdu. Testova ima mnogo, uključujući testove koji automatski isprobavaju velik broj slučajnih ulaza. Aplikacija ima detaljnije zaglavlje „Prije pisanja” od prototipa.</p>
+<p class="mono">app/zadatak/[id]/page.tsx · acknowledgment-route.ts · AssignmentNotice · notice-gate.ts · notice-window.ts · institution.acknowledge_notice</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Na zasebnom poslužitelju potvrda obavijesti postoji samo kao ugovor (verzija i otisak teksta, odgovor kad se tekst u međuvremenu promijenio); radi samo otvaranje zapisa. Nedostaju kod koji odgovara na poziv, poziv koji vraća sadržaj obavijesti i poziv za jednu verziju zadatka. U zasebnom webu postoje tekstovi i gumb „Pročitaj upute”, ali ne i sam zaslon.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: usporediti s prototipom i dotjerati razlike; provjeriti postoji li stanje računa bez prava potvrde.</li><li>Backend: u aplikaciji ništa.</li></ul>
+<p class="procjena">Procjena: <b>mali do srednji posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Otvorene odluke nisu pronađene.</li><li>Glavna komponenta obavijesti u aplikaciji nije pročitana, samo popis datoteka i katalog tekstova.</li><li>Točna usporedba s prototipom nije napravljena.</li><li>Na zasebnom poslužitelju nije pronađeno odakle klijent gradi tekst obavijesti čiji se otisak šalje; pretpostavka je predložak i ugovor zadatka, nije provjereno.</li></ul>
+</div>
+</details>
+
+<!-- 7 RAD -->
+<details class="kartica" id="k-rad" data-id="rad" data-naziv="Uređivač">
+<summary><span class="naziv">Uređivač</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Ovdje student piše rad. <strong>Uređivač već postoji u aplikaciji i ne gradi se ponovno.</strong> Prototip ima samo zamjenu kako bi tok od prijave do potvrde bio cijeli.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>U prototipu: pisati, vidjeti stanje pohrane i broj riječi s dopuštenim rasponom, prebaciti list na svijetlo ili tamno i otići na predaju.</li></ul>
+<h3>Stanja</h3>
+<p>U prototipu: puno, prazno, učitavanje, greška, bez mreže i predano (samo čitanje).</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Naslov, kolegij, rok, stanje pohrane i broj riječi.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Rute /rad i /rad/[zadatak] imaju pravi uređivač i bilježenje zapisa o pisanju. Testovi postoje (dokument zadatka, zapis, okvir uređivača i rad bez mreže). Nedostaje samo bočni panel „Rad” (S-15), koji je u popisu ekrana označen kao da ga nema.</p>
+<p class="mono">app/rad/page.tsx · app/rad/[assignmentId] · WorkDocumentProvider · src/editor · app/api/evidence</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Na zasebnom poslužitelju radi otvaranje, upis i ponovna provjera zapisa. Samo kao ugovor postoje čitanje i pisanje dokumenta uživo, komentari, zahtjevi za doradu i zapis pristupa. Zasebni web ima prikaz stanja pohrane (8 stanja), panel sadržaja, razvojni kostur uređivača na privremenim podacima, tekstove te logiku razlika i citata; uređivač ondje nije prenesen (planiran je kao zaseban paket), a nema ni komponenti komentara ni klijenta za zapis.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: samo panel „Rad” (S-15) uz postojeći uređivač, ako ga želite.</li><li>Backend: ništa.</li></ul>
+<p class="procjena">Procjena: <b>mali posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Otvorene odluke nisu pronađene.</li><li>Sadržaj uređivača u aplikaciji nije proučavan; navedeno je samo što postoji, pa ni stanja uređivača nisu uspoređena s prototipom.</li><li>Na zasebnom webu potvrđeno je samo da mapa uređivača ne postoji.</li><li>Točan oblik dijelova zapisa po odlomcima za studenta nije moguće usporediti s prototipom.</li></ul>
+</div>
+</details>
+
+<!-- 8 IZJAVA -->
+<details class="kartica" id="k-izjava" data-id="izjava" data-naziv="Izjava (korak 2)">
+<summary><span class="naziv">Izjava (korak 2)</span><span class="tag nema">nema</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Drugi korak predaje. Student izjavljuje je li i kako koristio AI i vanjske alate (čl. 9 i 15), uz ono što je Ductura sama zabilježila.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Vidjeti zabilježene prijenose iz AI pomoćnika i razgovore s njim te uz njih dodati objašnjenje.</li><li>Ispuniti izjavu: vanjski alati, svrha, faza rada i ljudska pomoć.</li><li>Pregledati priložene razgovore i po želji odgovoriti na pitanje nastavnika.</li><li>Označiti „Potvrđujem izjavu” i ići dalje ili natrag.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, izjava i zapis se ne slažu (student bira u formi), prazno (ništa nije zabilježeno), učitavanje i greška.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Zabilježene prijenose i razgovore, studentovu izjavu, priložene razgovore i pitanje nastavnika.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Nema ga. Koraci predaje u aplikaciji su Provjera zapisa, Predaja i Potvrda. Jedino pronađeno je jedan tekst u katalogu (ključ aiStatement). Popis ekrana ovaj ekran vodi kao djelomičan, a izjava o AI-ju planirana je za fazu M9.</p>
+<p class="mono">nema rute, komponente ni testova · docs: EKRANI S-31, S31-AI (M9)</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Nema nikakvog poziva. Poziv za predaju prima samo dokument i njegovu verziju, pa izjava nema kamo otići. Zasebni web nema ni teksta izjave ni komponente.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: cijeli korak, s formom, prikazom razgovora i usklađivanjem izjave sa zapisom.</li><li>Backend: tablica s pravilima pristupa, poziv koji zapisuje izjavu, veza s predajom i testovi pristupa.</li></ul>
+<p class="procjena">Procjena: <b>velik posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Izjava o AI-ju u fazi M9 vezana je uz odluku D-194, čije su točke 6 i 7 još PRIJEDLOG. Po pravilima projekta skupi dio ne gradi se na prijedlogu dok ga Vi ne odlučite.</li><li>Jedino pronađeno spominjanje izjave je tekstni ključ u katalogu, ne ekran.</li><li>Moguće je da izjava postoji u dokumentima proizvoda izvan pretraženih mjesta; ondje nije tražena.</li></ul>
+</div>
+</details>
+
+<!-- 9 PREGLED -->
+<details class="kartica" id="k-pregled" data-id="pregled" data-naziv="Prije predaje (korak 3)">
+<summary><span class="naziv">Prije predaje (korak 3)</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Treći korak predaje: popis provjera koji ne ocjenjuje rad, uz sažetak procesa pisanja koji vidi i nastavnik.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Provjeriti izjavu i priložene razgovore.</li><li>Otvoriti mjesta na kojima još treba upisati izvor.</li><li>Po želji označiti odakle je zalijepljeni tekst.</li><li>Dodati napomenu i ići dalje ili natrag.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, sve zatvoreno, bez mreže, već predano, prazno (rad nije započet), učitavanje i greška.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Razdoblje pisanja, broj sesija (nova počinje nakon 30 minuta stanke), vrijeme aktivnog uređivanja uz napomenu da nije mjera truda, verzije, lijepljenja dulja od 200 znakova, prijenose iz AI pomoćnika, praznine u zapisu, izjavu, napomene studenta (mogu se samo dodavati), stanje zapisa i kartu porijekla teksta.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Stranica predaje i poziv za sažetak procesa postoje. Stanja: učitavanje teksta; zatvoreno (odjavljen, nije dostupno, nedostupno, nečitljivo); nema teksta na poslužitelju; provjera ima li na uređaju promjena koje poslužitelj nema, s gumbom „Provjeri ponovno”; bez mreže; sažetak učitan ili neuspješan, s ponovnim pokušajem. Testovi postoje. Popis provjera iz prototipa ne postoji.</p>
+<p class="mono">app/rad/[assignmentId]/predaja/page.tsx · app/api/process-summary/route.ts · Submission.tsx · SubmissionView.ts · ProcessSummaryView.tsx · app.read_process_summary_source</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Sažetak procesa postoji samo kao ugovor; radi otvaranje i ponovna provjera zapisa. Nedostaju kod koji odgovara na poziv, poziv za popis provjera i poziv za tekst rada, a u zasebnom webu kartica sažetka, popis provjera i prikaz teksta (postoje tekstovi i prikaz zagrebačkog vremena).</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: popis provjera (izjava, razgovori, mjesta za izvor, oznaka porijekla, napomena) uz postojeći sažetak.</li><li>Backend: zapis napomena studenta (samo dodavanje) i oznake porijekla, ako ih aplikacija još nema.</li></ul>
+<p class="procjena">Procjena: <b>srednji posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Otvorene odluke nisu pronađene. Stavke popisa o izjavi ovise o koraku 2, koji ne postoji.</li><li>Glavna komponenta predaje pročitana je samo do početka predaje, ne cijela.</li><li>Dio kataloga tekstova za studenta nije čitan.</li></ul>
+</div>
+</details>
+
+<!-- 10 PREDAJA -->
+<details class="kartica" id="k-predaja" data-id="predaja" data-naziv="Predaja (korak 4)">
+<summary><span class="naziv">Predaja (korak 4)</span><span class="tag postoji">postoji</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Četvrti korak: student predaje rad. Vrijeme predaje je trenutak kad zahtjev stigne na poslužitelj, a nakon predaje tekst više nije moguće mijenjati.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Pregledati rok, broj riječi i priložene razgovore.</li><li>Pritisnuti predaju i potvrditi je u dijalogu.</li><li>Provjeriti stanje predaje ako ishod nije poznat.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, nakon roka, produljen rok, bez mreže, predaja u tijeku, greška (zapis nije potvrđen), nije dovršeno (zamjenski postupak), ishod nepoznat, učitavanje i greška učitavanja.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Rok, broj riječi i priložene razgovore.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Postoji, na istoj stranici kao korak 3, s pozivom za predaju koji radi. Stanja: gumb, u tijeku, samo jedan zahtjev odjednom, bez mreže, zastarjela verzija, već zatraženo za drugu verziju, nije otvoreno, zapis se ne slaže, zadržano, ishod nepoznat te odjava u drugoj kartici koja briše tekst s uređaja. Testovi postoje. Nedostaje zaseban završni dijalog (Z-08), koji je u popisu ekrana označen kao da ga nema.</p>
+<p class="mono">app/api/submission/route.ts · app.record_submission · src/client/submission.ts · submission-hold.ts</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Samo ugovor (dokument i verzija; odgovor kad je predaja već zatražena; odgovor „pokušajte ponovno za 5 sekundi”) i funkcije predaje u bazi, bez koda koji odgovara na poziv. U zasebnom webu postoje gumb sa stanjem zauzetosti i tekstovi, ali ne i komponenta predaje.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: završni dijalog Z-08 te tekstovi za predaju nakon roka i za produljen rok, ako ih nema.</li><li>Backend: ništa novo, osim ako izjava iz koraka 2 ide uz predaju; tada se mijenja poziv za predaju.</li></ul>
+<p class="procjena">Procjena: <b>mali do srednji posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Otvorene odluke nisu pronađene.</li><li>Nije provjereno je li odluka D-118 u popisu odluka PRIJEDLOG ili odlučena.</li><li>Na zasebnom poslužitelju postoji logika provjere potpisa potvrde, ali stvarni potpisnik za produkciju nije pokrenut.</li></ul>
+</div>
+</details>
+
+<!-- 11 POTVRDA -->
+<details class="kartica" id="k-potvrda" data-id="potvrda" data-naziv="Potvrda (korak 5)">
+<summary><span class="naziv">Potvrda (korak 5)</span><span class="tag djelomicno">djelomično</span><span class="odabrano"></span></summary>
+<div class="tijelo">
+<h3>Čemu služi</h3>
+<p>Peti korak: student dobiva potvrdu predaje s vremenom i otiskom predanog teksta. Otisak je kratak niz znakova izračunan iz teksta koji se promijeni ako se promijeni i jedno slovo.</p>
+<h3>Što student može učiniti</h3>
+<ul><li>Kopirati otisak i otvoriti sažetak procesa.</li><li>Otvoriti provjeru potvrde, koja ne traži prijavu.</li><li>Preuzeti zapis kao PDF s QR kodom i vratiti se na početnu.</li></ul>
+<h3>Stanja</h3>
+<p>Puno, čeka potpis, nakon roka, zapis ima praznine, prazno (nije predano), učitavanje i greška.</p>
+<h3>Podaci koje prikazuje</h3>
+<p>Vrijeme predaje i rok po zagrebačkom vremenu (točne vrijednosti u svjetskom vremenu otvaraju se na klik), početak potpisivanja, SHA-256 otisak, oznaku „Predano nakon roka” i napomenu kad zapis ima praznine.</p>
+<h3>U aplikaciji (Ductus)</h3>
+<p>Potvrda se prikazuje na istoj stranici odmah nakon predaje: vrijeme s poslužitelja, rok, „Predano nakon roka”, stanje zapisa (cijeli ili s prazninama), otisak, verzija i napomena da preglednik ne provjerava potpis. Testovi postoje. Nedostaju stanje „potvrda čeka potpis” (u kodu nije nađeno) i zasebna stranica potvrde.</p>
+<p class="mono">SubmissionView · submission-receipt-v2 · e2e: submission.spec, evidence-receipt.spec</p>
+<h3>Na poslužitelju i u biblioteci komponenata</h3>
+<p>Potpisana potvrda u odgovoru na predaju postoji samo kao ugovor; otvaranje zapisa radi i vraća ključeve za provjeru potpisa. Nedostaju javni poziv za provjeru, preuzimanje zapisa, ponovno dohvaćanje potvrde te komponente potvrde, stranice za provjeru i gumba za preuzimanje.</p>
+<h3>Što bi trebalo napraviti</h3>
+<ul><li>Frontend: zasebna stranica potvrde, „Kopiraj otisak”, stanje „čeka potpis”, javna stranica provjere i preuzimanje PDF-a s QR kodom.</li><li>Backend: javna provjera bez prijave, izrada PDF-a i ponovno dohvaćanje potvrde.</li></ul>
+<p class="procjena">Procjena: <b>srednji posao</b></p>
+<h3>Otvorene odluke i neprovjereno</h3>
+<ul><li>Otvorene odluke nisu pronađene.</li><li>Nije provjereno je li potvrda nakon osvježavanja stranice na istoj ili na posebnoj ruti.</li><li>Nije isprobano jesu li ključevi koje vraća otvaranje zapisa dovoljni za provjeru potvrde u pregledniku.</li><li>Postojeća preuzimanja na zasebnom poslužitelju služe instalacijskim paketima za računalo, ne zapisu predaje.</li></ul>
+</div>
+</details>
+
+<h2>Sažetak odluka</h2>
+<p>Jedan redak po ekranu. Tekst se mijenja čim nešto odaberete ili upišete; možete ga označiti i poslati dalje.</p>
+<textarea id="sazetak" readonly aria-label="Sažetak odluka"></textarea>
+<div class="dno">
+  <button type="button" class="btn" id="oznaci">Označi tekst</button>
+  <span class="sitno" id="pohrana-napomena"></span>
+</div>
+
+</div></div>
+
+<script>
+(function () {
+  var KLJUC = "ductus-kartice-odluke-v1";
+  var IZBORI = ["Ide", "Mijenja se", "Ne ide"];
+  var stanje = {};
+
+  function citaj() {
+    try { var t = window.localStorage.getItem(KLJUC); return t ? JSON.parse(t) || {} : {}; }
+    catch (e) { return {}; }
+  }
+  function pisi() {
+    try { window.localStorage.setItem(KLJUC, JSON.stringify(stanje)); return true; }
+    catch (e) { return false; }
+  }
+
+  var kartice = Array.prototype.slice.call(document.querySelectorAll(".kartica"));
+
+  kartice.forEach(function (k) {
+    var id = k.getAttribute("data-id");
+    var tijelo = k.querySelector(".tijelo");
+    var blok = document.createElement("div");
+    blok.className = "odluka";
+    var radiji = IZBORI.map(function (v) {
+      return '<label><input type="radio" name="odluka-' + id + '" value="' + v + '">' + v + '</label>';
+    }).join("");
+    blok.innerHTML =
+      '<fieldset><legend>Vaša odluka</legend><div class="izbor">' + radiji + '</div></fieldset>' +
+      '<label class="polje"><span>Napomena</span><input type="text" class="napomena" autocomplete="off" placeholder="Kratko, u jednom retku"></label>';
+    tijelo.appendChild(blok);
+  });
+
+  function osvjezi() {
+    var redci = kartice.map(function (k) {
+      var id = k.getAttribute("data-id");
+      var s = stanje[id] || {};
+      var odluka = s.odluka || "nije odlučeno";
+      var nap = (s.napomena || "").replace(/\s+/g, " ").trim();
+      var sazetak = k.querySelector(".odabrano");
+      if (sazetak) sazetak.textContent = s.odluka ? "Vaša odluka: " + s.odluka : "";
+      return k.getAttribute("data-naziv") + ": " + odluka + (nap ? " — " + nap : "");
+    });
+    document.getElementById("sazetak").value = redci.join("\n");
+  }
+
+  var pocetno = citaj();
+  kartice.forEach(function (k) {
+    var id = k.getAttribute("data-id");
+    var s = pocetno[id];
+    if (!s || typeof s !== "object") return;
+    stanje[id] = { odluka: IZBORI.indexOf(s.odluka) >= 0 ? s.odluka : "", napomena: typeof s.napomena === "string" ? s.napomena : "" };
+    if (stanje[id].odluka) {
+      var r = k.querySelector('input[type="radio"][value="' + stanje[id].odluka + '"]');
+      if (r) r.checked = true;
+    }
+    k.querySelector(".napomena").value = stanje[id].napomena;
+  });
+
+  function promjena(e) {
+    var k = e.target.closest(".kartica");
+    if (!k) return;
+    var id = k.getAttribute("data-id");
+    var s = stanje[id] || (stanje[id] = { odluka: "", napomena: "" });
+    if (e.target.type === "radio") s.odluka = e.target.value;
+    else if (e.target.classList.contains("napomena")) s.napomena = e.target.value;
+    else return;
+    var ok = pisi();
+    document.getElementById("pohrana-napomena").textContent = ok
+      ? "Odluke ostaju u ovom pregledniku na ovom uređaju."
+      : "Preglednik ne dopušta pohranu; odluke vrijede dok je stranica otvorena.";
+    osvjezi();
+  }
+  document.addEventListener("change", promjena);
+  document.addEventListener("input", promjena);
+
+  document.getElementById("oznaci").addEventListener("click", function () {
+    var t = document.getElementById("sazetak");
+    t.focus();
+    t.select();
+    try { t.setSelectionRange(0, t.value.length); } catch (e) {}
+  });
+
+  function otvoriCilj(id) {
+    var d = id && document.getElementById(id);
+    if (d && d.tagName === "DETAILS") d.open = true;
+  }
+  document.querySelectorAll('a[href^="#k-"]').forEach(function (a) {
+    a.addEventListener("click", function () { otvoriCilj(a.getAttribute("href").slice(1)); });
+  });
+  if (location.hash) otvoriCilj(location.hash.slice(1));
+
+  osvjezi();
+})();
+</script>
+
+</body></html>

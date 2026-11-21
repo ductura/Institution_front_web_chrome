@@ -1,39 +1,41 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { signInHref } from "@/client/api";
 import SignInScreen from "@/components/auth/SignInScreen";
-import { signedInRedirect, signInHref, signInTarget } from "@/components/auth/sign-in-link";
-import SessionObserver from "@/components/shell/SessionObserver";
-import { shellSession } from "@/components/shell/shell-session";
+import AppShell from "@/components/shell/AppShell";
+import NoRoleCard from "@/components/shell/NoRoleCard";
+import ShellSignOut from "@/components/shell/ShellSignOut";
+import { readShellAccess } from "@/components/shell/shell-read";
+import { signInDecision, type SignInState } from "@/components/shell/sign-in-state";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
-import { SESSION_COOKIE_NAME } from "@/server/auth/session-token";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 export const metadata = { title: `${t.prijava.title} · ${t.app.name}` };
 
-// FE-D3 (DAN-222): the sign-in screen. Students and teachers sign in only
-// through AAI@EduHr (D-09), by the existing login route. Convenience only, not
-// a safeguard: a cookie of the session's shape goes on to the asked page, or
-// to "/", which sends the person to their own page by the role the database
-// knows (DAN-325); a closed session is then told so there (Z-03, #1231). This
-// page reads no database (F-151). The routes behind it check the session
-// themselves.
+const NOTICES: Readonly<Record<Exclude<SignInState, "signIn" | "noRole">, { title: string; body: string; alert?: boolean }>> = {
+  signedOut: { title: t.signInState.signedOutTitle, body: t.signInState.signedOutBody },
+  expired: { title: t.access.expiredTitle, body: t.access.expiredBody },
+  failed: { title: t.auth.failedTitle, body: t.auth.failedBody, alert: true },
+  unavailable: { title: t.signInState.unavailableTitle, body: t.auth.unavailableBody, alert: true },
+};
+
+// WEB-08 (E-1): sign-in only through AAI@EduHr (D-09, D-16), by the server's
+// auth.login.get. The session is read from the server session read (me); the page never
+// reads the database. An account without a role (403) sees A-5 with "Odjava".
 export default async function PrijavaPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
-  const { returnTo } = await searchParams;
-  const onward = signedInRedirect(token, returnTo);
-  if (onward !== null) redirect(onward);
-  // Outside the shell: the sign-in screen marks the session itself (F-113 t.1).
-  const { tag, at } = shellSession(token);
-  return (
-    <>
-      <SessionObserver tag={tag} at={at} />
-      <SignInScreen href={signInHref(signInTarget(returnTo))} />
-    </>
-  );
+  const decision = signInDecision(await readShellAccess(), await searchParams);
+  if (decision.kind === "redirect") redirect(decision.to);
+  if (decision.state === "noRole") {
+    return (
+      <AppShell role={null} scope={null} crumbs={[]} account={<ShellSignOut />}>
+        <NoRoleCard />
+      </AppShell>
+    );
+  }
+  const href = signInHref(decision.returnTo ?? undefined);
+  return <SignInScreen href={href} notice={decision.state === "signIn" ? undefined : NOTICES[decision.state]} />;
 }

@@ -1,0 +1,10 @@
+/* Assistant panel states (s16, 7 to 12): one quiet frame, the text carries the meaning. */
+.panel { display: grid; gap: 8px; padding: 12px; background: var(--well); color: var(--ink); border: 1px solid var(--rule-2); border-radius: var(--radius-control); min-width: 0; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.title { margin: 0; font-size: 14px; font-weight: 600; }
+.status { margin: 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.alert { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--error); background: var(--error-soft); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.meta { margin: 0; font-size: 12.5px; color: var(--ink-3); overflow-wrap: anywhere; }
+.meta:empty { display: none; }
+.slot { min-width: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }

@@ -1,0 +1,41 @@
+{
+  // WEB-01 (Ductus#2028 c.7008147932): the Next.js App Router over src/app.
+  // src/_cekanje holds the pages and components that still read the database
+  // directly (@/server, withActor); it is outside src/app and excluded here,
+  // so Next neither routes nor builds it. Each page PR brings its files back.
+  "extends": "./packages/ui/tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    // WEB-41 (Ductus#2028): stated here, not only inherited from packages/ui,
+    // because pages reach the source of @ductura/editor-core, which passes it.
+    // No temporary exception (WEB-14b) may turn it off again.
+    "noUncheckedIndexedAccess": true,
+    "plugins": [{ "name": "next" }],
+    // Same bridge as src/components/tsconfig.json: "@/" of the code copied
+    // from Ductus, editor and domain paths in @ductura/editor-core.
+    "paths": {
+      "@/editor": ["./packages/editor-core/src/editor"],
+      "@/editor/*": ["./packages/editor-core/src/editor/*"],
+      "@/domain/json": ["./packages/editor-core/src/document/json"],
+      "@/domain/forensics/*": ["./packages/editor-core/src/document/forensics/*"],
+      "@/domain/document": ["./packages/editor-core/src/document/document"],
+      "@/domain/document/*": ["./packages/editor-core/src/document/document/*"],
+      "@/domain/citation": ["./packages/editor-core/src/document/citation"],
+      "@/domain/citation/*": ["./packages/editor-core/src/document/citation/*"],
+      "@/domain/collaboration": ["./packages/editor-core/src/document/collaboration"],
+      "@/domain/collaboration/*": ["./packages/editor-core/src/document/collaboration/*"],
+      "@/domain/diff": ["./packages/editor-core/src/document/diff"],
+      "@/domain/diff/*": ["./packages/editor-core/src/document/diff/*"],
+      "@/domain/text/*": ["./packages/editor-core/src/document/text/*"],
+      "@/domain/sync": ["./packages/editor-core/src/sync"],
+      "@/domain/sync/*": ["./packages/editor-core/src/sync/*"],
+      "@/domain/serverSync/*": ["./packages/editor-core/src/serverSync/*"],
+      "@/lib/journal/*": ["./packages/editor-core/src/journal/*"],
+      "@/lib/sync/*": ["./packages/editor-core/src/sync/runner/*"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "next.config.ts", "src/app", ".next/types/**/*.ts", "packages/ui/src/css-modules.d.ts"],
+  "exclude": ["node_modules", "src/_cekanje", "src/app/vitest.config.ts", "**/*.test.ts", "**/*.test.tsx"]
+}

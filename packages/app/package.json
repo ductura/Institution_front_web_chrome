@@ -8,10 +8,10 @@
     "dev": "next dev -p 5173",
     "build": "next build",
     "start": "next start -p 5173",
-    "build:vite": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test e2e/a11y"
   },
   "dependencies": {
     "@ductura/ui": "workspace:*",
@@ -26,7 +26,6 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "typescript": "5.9.3",
-    "vite": "8.3.3",
     "vitest": "5.0.3"
   }
 }

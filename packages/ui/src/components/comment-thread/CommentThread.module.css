@@ -1,0 +1,18 @@
+/* Comment thread: a card with the comment accent rule (prototype .card.rpc, --cmt). */
+.thread { padding: 10px 12px; background: var(--well); color: var(--ink); border: 1px solid var(--rule-2); border-left: 3px solid var(--cmt); border-radius: var(--radius-control); }
+.thread[data-resolved="true"] { border-left-color: var(--rule-2); color: var(--ink-3); }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.state { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.anchor { margin: 8px 0 0; padding: 2px 8px; font-size: 13px; color: var(--ink-3); border-left: 2px solid var(--rule); }
+.entries { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.entry[data-mentor="true"] .meta strong { color: var(--cmt-ink); }
+.meta { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+.text { margin: 2px 0 0; font-size: 13.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.reply { display: grid; gap: 6px; margin-top: 10px; justify-items: start; }
+.label { font-size: 12.5px; color: var(--ink-3); }
+.field { width: 100%; box-sizing: border-box; padding: 6px 8px; font: inherit; color: var(--ink); background: var(--field); border: 1px solid var(--field-rule); border-radius: var(--radius-control); resize: vertical; }
+.button { min-height: 32px; padding: 0 10px; font: inherit; font-size: 12.5px; color: var(--ink); background: transparent; border: 1px solid var(--field-rule); border-radius: var(--radius-control); cursor: pointer; }
+.button:hover:not(:disabled) { background: var(--hover); }
+.button:disabled { cursor: not-allowed; color: var(--ink-3); border-color: var(--well); }
+.link { margin-top: 6px; padding: 0; font: inherit; font-size: 12.5px; color: var(--ink); background: none; border: 0; text-decoration: underline; cursor: pointer; }
+@media (max-width: 640px) { .button { min-height: 40px; } }

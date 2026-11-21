@@ -27,6 +27,7 @@ import type { Transaction } from "@tiptap/pm/state";
 import { Step } from "@tiptap/pm/transform";
 
 import { EDIT_STEP_FORMAT_V1, parseEditSteps } from "../document/document/edit-step";
+import type { DocumentSource } from "../document/document/schema";
 import { exceedsEvidenceSegmentLimit } from "../document/forensics/evidence-chain-v2";
 import { digestCanonicalDocumentV2 } from "../document/forensics/evidence-replay-v2";
 import {
@@ -40,10 +41,16 @@ import {
 } from "../document/forensics/evidence-segment-v2";
 import { canonicalizeJcs, type JcsJsonValue } from "../document/forensics/jcs";
 import { sha256WebCrypto } from "../document/forensics/crypto";
+import { removesContent } from "../document/forensics/replay/edit-steps-v1-rules";
+import { removesContentV4 } from "../document/forensics/replay/edit-steps-v4-rules";
+import { academicStepFormat, mapStepAtoms, unmarkInlineAtoms, type AcademicSchemaVersion } from "../document/forensics/replay/edit-steps-versioned-browser-replayer";
 
 import { writtenSteps } from "./capture-rewrite";
 import { nodeIdFixesOf } from "./identity";
 import { tiptapToCanonical } from "./interop";
+import { tiptapToCanonicalV2 } from "./interop-v2";
+import { tiptapToCanonicalV3 } from "./interop-v3";
+import { tiptapToCanonicalV4 } from "./interop-v4";
 
 /** Quiet time that closes an event, the same as the local save debounce. */
 export const EVENT_QUIET_MS = 400;
@@ -137,18 +144,46 @@ export async function removedSliceSha256(document: PmNode, from: number, to: num
   return sha256WebCrypto(canonicalizeJcs(document.slice(from, to).toJSON() as JcsJsonValue));
 }
 
+type CaptureVersion = 1 | AcademicSchemaVersion;
+
+/** Source steps keep the order of surviving records and append new ones. */
+async function sourceSteps(before: readonly DocumentSource[], after: readonly DocumentSource[]): Promise<JcsJsonValue[]> {
+  const old = new Map(before.map((source) => [source.id, source]));
+  const next = new Map(after.map((source) => [source.id, source]));
+  const expectedOrder = [...old.keys()].filter((id) => next.has(id)).concat([...next.keys()].filter((id) => !old.has(id)));
+  if (after.length !== expectedOrder.length || after.some((source, i) => source.id !== expectedOrder[i])) {
+    throw new CaptureError("unsupported_step");
+  }
+  const steps: JcsJsonValue[] = [];
+  for (const [id, source] of old) {
+    const canonical = canonicalizeJcs(source);
+    const replacement = next.get(id);
+    if (replacement && canonicalizeJcs(replacement) === canonical) continue;
+    const removedSha256 = await sha256WebCrypto(canonical);
+    steps.push(replacement
+      ? { stepType: "sourceSet", source: replacement as JcsJsonValue, removedSha256 }
+      : { stepType: "sourceRemove", sourceId: id, removedSha256 });
+  }
+  for (const [id, source] of next) {
+    if (!old.has(id)) steps.push({ stepType: "sourceSet", source: source as JcsJsonValue });
+  }
+  return steps;
+}
+
 /**
- * Whether `from..to` of `document` holds a character or a whole block: then
- * the step carries `removedSha256`, otherwise `structure` (BACKEND 4.1; the
- * same test as the replayer's `removesContent`).
+ * The cover is a document attribute, so a change of it is a `docAttr` step;
+ * the format writes it whole, with the hash of the old one (contract v4 §9,
+ * point 7). The editor holds `null` for no cover.
  */
-function removesContent(document: PmNode, from: number, to: number): boolean {
-  if (document.textBetween(from, to).length > 0) return true;
-  let wholeBlock = false;
-  document.forEach((block, offset) => {
-    wholeBlock ||= offset >= from && offset + block.nodeSize <= to;
-  });
-  return wholeBlock;
+async function coverStep(before: unknown, after: unknown): Promise<JcsJsonValue> {
+  const old = before === null || before === undefined ? null : canonicalizeJcs(before as JcsJsonValue);
+  const next = after === null || after === undefined ? null : canonicalizeJcs(after as JcsJsonValue);
+  if (old === next) throw new CaptureError("unsupported_step");
+  return {
+    stepType: "coverSet",
+    ...(next === null ? {} : { cover: after as JcsJsonValue }),
+    ...(old === null ? {} : { removedSha256: await sha256WebCrypto(old) }),
+  };
 }
 
 /**
@@ -166,7 +201,7 @@ function removesContent(document: PmNode, from: number, to: number): boolean {
  *   range whose hash cannot be computed (half of a surrogate pair) refuses
  *   the change.
  */
-async function changeSteps(change: CapturedChange): Promise<JcsJsonValue[]> {
+async function changeSteps(change: CapturedChange, version: CaptureVersion): Promise<JcsJsonValue[]> {
   const steps: JcsJsonValue[] = [];
   let doc = change.docs[0]!;
   const apply = (json: Record<string, unknown>) => {
@@ -181,41 +216,71 @@ async function changeSteps(change: CapturedChange): Promise<JcsJsonValue[]> {
     // a block given the type it has) is refused by the replayer
     // (`step_changes_nothing`, `replace_around_unchanged`): not written.
     if (next.eq(doc)) return;
+    if (version !== 1) {
+      next = unmarkInlineAtoms(next);
+      if ("slice" in json) json.slice = mapStepAtoms(doc.type.schema, json.slice, false);
+    }
     doc = next;
     steps.push(json as JcsJsonValue);
   };
   for (const step of change.steps) {
     if (nodeIdFixesOf(step) !== null) continue;
+    const json = step.toJSON() as Record<string, unknown>;
+    if (version === 4 && json.stepType === "docAttr" && json.attr === "cover") {
+      steps.push(await coverStep(doc.attrs.cover, json.value));
+      const next = step.apply(doc).doc;
+      if (!next) throw new CaptureError("unsupported_step");
+      doc = next;
+      continue;
+    }
+    if (version !== 1 && json.stepType === "docAttr" && json.attr === "sources" && Array.isArray(json.value)) {
+      steps.push(...await sourceSteps(doc.attrs.sources as DocumentSource[], json.value as DocumentSource[]));
+      const next = step.apply(doc).doc;
+      if (!next) throw new CaptureError("unsupported_step");
+      doc = next;
+      continue;
+    }
     let written: Record<string, unknown>[];
     try {
-      written = writtenSteps(doc, step.toJSON() as Record<string, unknown>);
+      written = writtenSteps(doc, json);
     } catch {
       throw new CaptureError("unsupported_step");
     }
     for (const json of written) {
       const { stepType, from, to, structure } = json;
       if (stepType === "replace" && typeof from === "number" && typeof to === "number" && from < to && structure !== true) {
-        if (removesContent(doc, from, to)) json.removedSha256 = await removedSliceSha256(doc, from, to);
+        if ((version === 4 ? removesContentV4 : removesContent)(doc, from, to)) json.removedSha256 = await removedSliceSha256(doc, from, to);
         else json.structure = true;
       }
       apply(json);
     }
   }
   if (doc.childCount !== change.after.childCount) throw new CaptureError("unsupported_step");
-  change.after.forEach((block, pos) => {
-    const id: unknown = block.attrs.nodeId;
-    const held: unknown = doc.nodeAt(pos)?.attrs.nodeId;
-    if (held === id) return;
+  // v4 holds ids on blocks at any depth (a paragraph in a box, an atom block).
+  const fixes: { pos: number; id: unknown; held: unknown }[] = [];
+  const collect = (block: PmNode, pos: number): boolean => {
+    if (block.isInline) return false;
+    const peer = doc.nodeAt(pos);
+    if (!peer || peer.type !== block.type) throw new CaptureError("unsupported_step");
+    fixes.push({ pos, id: block.attrs.nodeId, held: peer.attrs.nodeId });
+    return version === 4;
+  };
+  if (version === 4) change.after.descendants(collect);
+  else change.after.forEach((block, pos) => void collect(block, pos));
+  for (const { pos, id, held } of fixes) {
+    if (held === id) continue;
     if (held !== null || typeof id !== "string") throw new CaptureError("unsupported_step");
     apply({ stepType: "attr", pos, attr: "nodeId", value: id });
-  });
+  }
   if (!doc.eq(change.after)) throw new CaptureError("unsupported_step");
   return steps;
 }
 
 /** Hash of the canonical form of a document; a block without its own id is refused, never given one. */
-async function documentDigest(document: PmNode): Promise<{ canonical: string; sha256: string }> {
-  const candidate = tiptapToCanonical(document.toJSON(), () => {
+async function documentDigest(document: PmNode, version: CaptureVersion): Promise<{ canonical: string; sha256: string }> {
+  const project =
+    version === 1 ? tiptapToCanonical : version === 2 ? tiptapToCanonicalV2 : version === 3 ? tiptapToCanonicalV3 : tiptapToCanonicalV4;
+  const candidate = project(document.toJSON(), () => {
     throw new CaptureError("block_identity");
   });
   if (!candidate.ok) throw new CaptureError("block_identity");
@@ -232,7 +297,7 @@ export class EvidenceRecorder {
   private last: CapturedChange | null = null;
   private failure: CaptureFailure | null = null;
 
-  constructor(private readonly quietMs = EVENT_QUIET_MS) {}
+  constructor(private readonly quietMs = EVENT_QUIET_MS, private readonly version: CaptureVersion = 1) {}
 
   /**
    * False once a gap was seen or an event could not be built: nothing after
@@ -327,7 +392,7 @@ export class EvidenceRecorder {
     for (;;) {
       let built: BuiltSegment;
       try {
-        built = await buildSegment(this.closed.slice(0, count), context);
+        built = await buildSegment(this.closed.slice(0, count), context, this.version);
       } catch (error) {
         const failed = error instanceof EventFailure ? error : new EventFailure(0, "unsupported_step");
         this.stop(failed.code, failed.index);
@@ -355,7 +420,8 @@ class EventFailure extends Error {
   }
 }
 
-async function buildSegment(raw: readonly RawEvent[], context: SegmentContext): Promise<BuiltSegment> {
+async function buildSegment(raw: readonly RawEvent[], context: SegmentContext, version: CaptureVersion): Promise<BuiltSegment> {
+  const format = version === 1 ? EDIT_STEP_FORMAT_V1 : academicStepFormat[version];
   const startedMs = Math.floor(raw[0]!.changes[0]!.at / MINUTE_MS) * MINUTE_MS;
   const lastEvent = raw[raw.length - 1]!;
   const events: EvidenceEventV3[] = [];
@@ -368,15 +434,15 @@ async function buildSegment(raw: readonly RawEvent[], context: SegmentContext): 
       const steps: JcsJsonValue[] = [];
       const offsets: number[] = [];
       for (const change of event.changes) {
-        for (const json of await changeSteps(change)) {
+        for (const json of await changeSteps(change, version)) {
           steps.push(json);
           offsets.push(change.at - startedMs);
         }
       }
-      const parsed = parseEditSteps(EDIT_STEP_FORMAT_V1, steps);
+      const parsed = parseEditSteps(format, steps);
       if (!parsed.ok) throw new CaptureError(parsed.code === "too_large" ? "too_large" : "unsupported_step");
-      const before = previousAfter ?? (await documentDigest(event.changes[0]!.docs[0]!));
-      const after = await documentDigest(event.changes[event.changes.length - 1]!.after);
+      const before = previousAfter ?? (await documentDigest(event.changes[0]!.docs[0]!, version));
+      const after = await documentDigest(event.changes[event.changes.length - 1]!.after, version);
       initial ??= before.sha256;
       events.push({
         sequence,
@@ -410,12 +476,12 @@ async function buildSegment(raw: readonly RawEvent[], context: SegmentContext): 
     finalDocumentHash: previousAfter!.sha256,
     predecessorSegmentHash: context.predecessorSegmentHash,
     events,
-    captureContext: { editorModel: "prosemirror", transactionFormat: EDIT_STEP_FORMAT_V1 },
+    captureContext: { editorModel: "prosemirror", transactionFormat: format },
     evidenceProfileId: context.evidenceProfileId,
   } as EvidenceSegment;
   let canonical: string;
   try {
-    canonical = canonicalEvidenceSegment(segment);
+    canonical = canonicalEvidenceSegment(segment, format);
   } catch {
     throw new CaptureError("unsupported_step");
   }

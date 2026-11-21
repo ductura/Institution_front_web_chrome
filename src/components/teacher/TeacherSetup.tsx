@@ -1,369 +1,191 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Button, Select, TextArea, TextField } from "@ductura/ui";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
-import { formatDateHr, formatDateTimeHr } from "@/lib/i18n/hr";
+import { formatDateTimeHr } from "@/lib/i18n/hr";
 import { wordRangeHr } from "@/lib/i18n/length-line";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import {
-  AI_PURPOSES,
-  WORK_TYPES,
-  assignmentBody,
-  createAssignment,
-  parseWordRange,
-  type AiPurpose,
-  type AssignmentCreation,
-  type WorkType,
+  AI_PURPOSES, assignmentBody, type AssignmentBody, type AssignmentCreation, type AssignmentDraft, type WorkType,
 } from "./assignment-create";
-import { createCourse, type CourseCreation, type CoursePolicy } from "./course-create";
-import { createCourseThenCode, enrollmentCodeExpiry, type EnrollmentCodeCreation } from "./enrollment-code-create";
-import type { ExistingCourse } from "./existing-course";
+import { publishAssignment } from "./TeacherSetup/assignment-mutations";
+import { assignmentSetupMessages as wizard } from "./TeacherSetup/messages.hr";
+import type { TeacherCourse } from "./teacher-courses-read";
 import styles from "./TeacherSetup.module.css";
 
-const YEARS = Object.keys(t.teacher.course.years) as (keyof typeof t.teacher.course.years)[];
-const POLICIES = Object.keys(t.teacher.course.policies) as CoursePolicy[];
+type ExistingCourse = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
+type Step = 1 | 2 | 3 | 4 | 5;
 
-/** Whether `validUntil` is already past on this device; read at submit time, never during render. */
-function alreadyPast(validUntil: string): boolean {
-  return Date.parse(validUntil) <= Date.now();
-}
+const a = t.teacher.assignment;
+const tools = t.teacher.tools;
+const workOptions = (["seminar_paper", "essay"] as const).map((value) => ({ value, label: a.workTypes[value] }));
+const noHelp = { value: "none", label: wizard.noHelp };
+const helpOptions = [{ value: "course", label: wizard.courseHelp }, noHelp];
+const initialDraft: AssignmentDraft = {
+  title: "", workType: "seminar_paper", opensAt: "", dueAt: "", instructions: "",
+  wordMin: "", wordMax: "", aiPurposes: [...AI_PURPOSES],
+};
 
-function PreviewRange({ text }: { text: string | null }) {
-  return text ? <span> · {text}</span> : null;
-}
-
-// Only a code the route returned is shown; the server keeps just its hash, so
-// this is the one time it can be read (#576).
-function CourseCode({ issued, pending }: { issued: { code: string; validUntil: string } | null; pending: boolean }) {
-  const ec = t.teacher.enrollmentCode;
+function ToolRestrictions({ banned }: { banned: readonly string[] }) {
   return (
-    <div className={styles.code} role="status">
-      {issued ? (
-        <>
-          <p className={styles.listHead}>{t.teacher.course.code}: <code>{issued.code}</code></p>
-          <p className={styles.hint}>{ec.validUntil} {formatDateTimeHr(issued.validUntil)}</p>
-          <p className={styles.hint}>{ec.shownOnce}</p>
-        </>
-      ) : pending ? null : <p className={styles.hint}>{ec.courseKept}</p>}
-    </div>
+    <>
+      <p className={styles.listHead}>{tools.banned}</p>
+      <ul className={styles.banned}>
+        {[...banned, ...Object.values(tools.alwaysBanned)].map((text) => <li key={text}>{text}</li>)}
+      </ul>
+      {Object.values(tools.conditions).map((text) => <p key={text} className={styles.hint}>{text}</p>)}
+      <p className={styles.hint}>{tools.source}</p>
+    </>
   );
 }
 
-// The course an assignment joins when it is not created here (DAN-310): read
-// only, and no enrollment code is issued, so the course's code stays as it is.
-function CourseSummary({ course }: { course: ExistingCourse }) {
-  const c = t.teacher.course;
+function StudentPreview({ body }: { body: AssignmentBody }) {
+  const range = wordRangeHr({ min: body.wordMin, max: body.wordMax });
+  const banned = AI_PURPOSES.filter((purpose) => !body.aiPurposes.includes(purpose));
   return (
-    <section className={styles.card} aria-labelledby="kolegij">
-      <h2 id="kolegij">{c.heading}</h2>
-      <p className={styles.listHead}>{course.name}</p>
-      <p className={styles.hint}>
-        {c.years[course.academicYear as keyof typeof c.years] ?? course.academicYear} · {c.policies[course.aiPolicy]}
-      </p>
-      <p className={styles.hint}>{t.teacher.existingCourse.codeKept}</p>
+    <section className={styles.card} aria-labelledby="pregled">
+      <h3 id="pregled">{t.teacher.preview.heading}</h3>
+      <p className={styles.listHead}>{body.title}</p>
+      <p>{a.workTypes[body.workType]} · {t.teacher.preview.opensFrom} {formatDateTimeHr(body.opensAt)} · {t.teacher.preview.due} {formatDateTimeHr(body.dueAt)}</p>
+      {range && <p>{range}</p>}
+      {body.instructions.trim() && <p className={styles.brief}>{body.instructions}</p>}
+      <p className={styles.listHead}>{tools.allowed}</p>
+      {body.aiPurposes.length > 0
+        ? <ul className={styles.summary}>{body.aiPurposes.map((purpose) => <li key={purpose}>{tools.purposes[purpose]}</li>)}</ul>
+        : <p>{t.student.noTools}</p>}
+      <ToolRestrictions banned={banned.map((purpose) => tools.purposes[purpose])} />
+      {body.importAllowed && <p className={styles.hint}>{wizard.importPreview}</p>}
+      <p className={styles.hint}>{t.teacher.preview.rest}</p>
     </section>
   );
 }
 
-// Screen 2 of the design handoff. No identity fields: the verified B-7 role on
-// the server decides who may create a course or an assignment.
-// DAN-310 (M2.4-P01): with `existingCourse` the assignment joins that course
-// and the course form is replaced by its summary.
-export default function TeacherSetup({ existingCourse = null }: { existingCourse?: ExistingCourse | null }) {
-  const c = t.teacher.course;
-  const a = t.teacher.assignment;
-  const tools = t.teacher.tools;
-  const ec = t.teacher.enrollmentCode;
+/** The host's extra field for step 3 (WEB-1801): the value and its setter, so the field lives in the host layer. */
+export type ImportField = (value: boolean, onChange: (value: boolean) => void) => ReactNode;
 
-  const [name, setName] = useState("");
-  const [academicYear, setAcademicYear] = useState<string>(YEARS[0]!);
-  const [aiPolicy, setAiPolicy] = useState<CoursePolicy>(existingCourse?.aiPolicy ?? "partially_allowed");
-  const [course, setCourse] = useState<{ id: string; policy: CoursePolicy } | null>(
-    existingCourse ? { id: existingCourse.id, policy: existingCourse.aiPolicy } : null);
-  const [courseResult, setCourseResult] = useState<CourseCreation | "nameMissing" | null>(null);
-  const savedCourse = useRef<string | null>(null);
-  const [validUntilLocal, setValidUntilLocal] = useState("");
-  const [codeResult, setCodeResult] = useState<EnrollmentCodeCreation | "missing" | null>(null);
-  const expiry = enrollmentCodeExpiry(validUntilLocal);
-  const expiryInput = useRef<HTMLInputElement>(null);
-
-  const [title, setTitle] = useState("");
-  const [workType, setWorkType] = useState<WorkType>("seminar_paper");
-  const [opensAt, setOpensAt] = useState("");
-  const [dueAt, setDueAt] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [wordMin, setWordMin] = useState("");
-  const [wordMax, setWordMax] = useState("");
-  const [purposes, setPurposes] = useState<AiPurpose[]>([...AI_PURPOSES]);
-  const [assignmentResult, setAssignmentResult] = useState<AssignmentCreation | null>(null);
-
+export default function TeacherSetup({ course, importField }: { course: ExistingCourse; importField?: ImportField }) {
+  const [draft, setDraft] = useState(initialDraft);
+  const [step, setStep] = useState<Step>(1);
+  const [result, setResult] = useState<AssignmentCreation | null>(null);
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
-  const request = useRef<{ body: string; id: string } | null>(null);
-  // A response that arrives after the screen is gone sends nothing further.
-  const alive = useRef(true);
-  useEffect(() => {
-    alive.current = true;
-    return () => { alive.current = false; };
-  }, []);
+  const request = useRef<{ body: string; key: string } | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const moved = useRef(false);
+  const published = result?.kind === "available";
+  const uncertain = result?.kind === "unavailable";
+  const courseProhibits = course.aiPolicy === "prohibited";
+  const allowsHelp = !courseProhibits && draft.aiPurposes.length > 0;
+  const checkedBody = step === 5 ? assignmentBody(draft, course.aiPolicy) : null;
+  const body = checkedBody && allowsHelp ? { ...checkedBody, aiPolicy: course.aiPolicy } : checkedBody;
 
-  async function guarded(work: () => Promise<void>) {
-    if (inFlight.current) return;
+  useEffect(() => {
+    if (moved.current) heading.current?.focus();
+  }, [step, published]);
+
+  function move(next: Step) {
+    moved.current = true;
+    setResult(null);
+    setStep(next);
+  }
+
+  function edit<K extends keyof AssignmentDraft>(field: K, value: AssignmentDraft[K]) {
+    setDraft((current) => ({ ...current, [field]: value }));
+    setResult(null);
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (inFlight.current || published) return;
+    if (step === 1) {
+      if (!draft.title.trim() || [...draft.title.trim()].length > 160) return setResult({ kind: "invalid" });
+      return move(2);
+    }
+    const checked = body ?? assignmentBody(draft, course.aiPolicy);
+    if (!checked) return setResult({ kind: "invalid" });
+    if (step === 2) return move(3);
+    if (step === 3) return move(4);
+    if (step === 4) return move(5);
+
+    const serialized = JSON.stringify(checked);
+    if (request.current?.body !== serialized) request.current = { body: serialized, key: crypto.randomUUID() };
     inFlight.current = true;
     setPending(true);
     try {
-      await work();
+      setResult(await publishAssignment(course.id, checked, request.current.key));
     } finally {
       inFlight.current = false;
       setPending(false);
     }
   }
 
-  function submitCourse(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (inFlight.current) return;
-    if (!savedCourse.current && !name.trim()) return setCourseResult("nameMissing");
-    // A deadline already past on this device is refused before any request; the server still decides the rest.
-    if (!expiry || alreadyPast(expiry.validUntil)) {
-      setCodeResult(validUntilLocal ? { kind: "invalid" } : "missing");
-      expiryInput.current?.focus();
-      return;
-    }
-    const draft = { name: name.trim(), academicYear, aiPolicy };
-    const validUntil = expiry.validUntil;
-    void guarded(async () => {
-      // An earlier code is not shown while a new one is asked for: its fate is unknown until the reply.
-      setCodeResult(null);
-      const code = await createCourseThenCode({
-        courseId: savedCourse.current,
-        createCourse: () => createCourse(draft),
-        onCourse: (result) => {
-          setCourseResult(result);
-          if (result.kind !== "available") return;
-          savedCourse.current = result.id;
-          setCourse({ id: result.id, policy: draft.aiPolicy });
-        },
-        validUntil,
-        active: () => alive.current,
-      });
-      if (!code) return;
-      setCodeResult(code);
-      if (code.kind === "invalid") expiryInput.current?.focus();
-    });
-  }
-
-  // A retry key belongs to the serialized body, not the raw form text.
-  function edit<T>(set: (value: T) => void) {
-    return (value: T) => {
-      set(value);
-      setAssignmentResult(null);
-    };
-  }
-
-  const coursePolicy = course?.policy ?? aiPolicy;
-  const allowed = coursePolicy === "prohibited" ? [] : AI_PURPOSES.filter((p) => purposes.includes(p));
-  const bannedPurposes = AI_PURPOSES.filter((p) => !allowed.includes(p));
-  const published = assignmentResult?.kind === "available";
-  const previewRange = parseWordRange(wordMin, wordMax);
-  const previewRangeText = previewRange ? wordRangeHr({ min: previewRange.wordMin, max: previewRange.wordMax }) : null;
-
-  function submitAssignment(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!course || published) return;
-    const body = assignmentBody({ title, instructions, workType, opensAt, dueAt, aiPurposes: purposes, wordMin, wordMax }, course.policy);
-    if (!body) return setAssignmentResult({ kind: "invalid" });
-    const serialized = JSON.stringify(body);
-    if (request.current?.body !== serialized) request.current = { body: serialized, id: crypto.randomUUID() };
-    const key = request.current.id;
-    void guarded(async () => setAssignmentResult(await createAssignment(course.id, body, key)));
-  }
-
-  const courseNotice =
-    courseResult === "nameMissing" ? c.nameMissing
-    : courseResult && courseResult.kind !== "available" ? c.errors[courseResult.kind] : null;
-  const assignmentError =
-    assignmentResult && assignmentResult.kind !== "available" ? a.errors[assignmentResult.kind] : null;
-  const date = (local: string) => (local ? formatDateHr(local) : "…");
-  const issued = codeResult !== null && codeResult !== "missing" && codeResult.kind === "available" ? codeResult : null;
-  const codeError = codeResult === "missing" ? ec.errors.missing
-    : codeResult && codeResult.kind !== "available" ? ec.errors[codeResult.kind] : null;
-  // The instant and offset the request will carry, so a repeated autumn hour is never ambiguous.
-  const selectedExpiry = expiry ? `${ec.selected} ${formatDateTimeHr(expiry.validUntil)} (UTC${expiry.offset})` : "";
-  const courseLabel = pending ? (course ? ec.pending : c.pending) : !course ? c.submit : issued ? ec.replace : ec.retry;
+  const error = result && result.kind !== "available"
+    ? step === 1 ? wizard.invalidTitle : a.errors[result.kind]
+    : undefined;
 
   return (
-    <div className={styles.layout}>
-      <div className={styles.forms}>
-        {existingCourse ? <CourseSummary course={existingCourse} /> : (
-        /* noValidate: the Croatian messages below answer a missing or impossible deadline, not the browser. */
-        <form className={styles.card} onSubmit={submitCourse} aria-labelledby="kolegij" noValidate>
-          <h2 id="kolegij">{c.heading}</h2>
-          <fieldset className={styles.fields} disabled={pending || course !== null}>
-            <label className={styles.field}>
-              <span>{c.name}</span>
-              <input className={styles.control} value={name} maxLength={160} autoComplete="off"
-                onChange={(e) => { setName(e.target.value); setCourseResult(null); }} />
-            </label>
-            <label className={styles.field}>
-              <span>{c.year}</span>
-              <select className={styles.control} value={academicYear} onChange={(e) => setAcademicYear(e.target.value)}>
-                {YEARS.map((y) => <option key={y} value={y}>{c.years[y]}</option>)}
-              </select>
-            </label>
-            <label className={styles.field}>
-              <span>{c.policy}</span>
-              <select className={styles.control} value={aiPolicy}
-                onChange={(e) => setAiPolicy(e.target.value as CoursePolicy)}>
-                {POLICIES.map((p) => <option key={p} value={p}>{c.policies[p]}</option>)}
-              </select>
-            </label>
-          </fieldset>
+    <section className={styles.card} aria-labelledby="zadatak">
+      <p className={styles.listHead}>{course.name} · {course.academicYear}</p>
+      <ol className={styles.steps} role="list">
+        {wizard.steps.map((label, index) => (
+          <li key={label} aria-current={index + 1 === step ? "step" : undefined}>{label}</li>
+        ))}
+      </ol>
+      <h2 id="zadatak" ref={heading} tabIndex={-1}>{published ? a.published : wizard.steps[step - 1]}</h2>
+      {published ? <p role="status">{wizard.publishedNotice}</p> : (
+        <form onSubmit={submit}>
           <fieldset className={styles.fields} disabled={pending}>
-            <label className={styles.field}>
-              <span>{ec.validUntil}</span>
-              <input ref={expiryInput} className={styles.control} type="datetime-local" required
-                value={validUntilLocal} aria-describedby="kod-rok-pomoc kod-rok-odabrano kod-greska"
-                aria-invalid={codeResult === "missing" || codeResult?.kind === "invalid" || undefined}
-                onChange={(event) => { setValidUntilLocal(event.target.value); if (!issued) setCodeResult(null); }} />
-            </label>
-            <p id="kod-rok-pomoc" className={styles.hint}>{ec.expiryHelp}</p>
-            <p id="kod-rok-odabrano" className={styles.hint}>
-              {selectedExpiry}
-            </p>
-            <button className="btn" type="submit">{courseLabel}</button>
-          </fieldset>
-          {courseNotice ? <p className={styles.notice} role="alert">{courseNotice}</p> : null}
-          {codeError ? <p id="kod-greska" className={styles.notice} role="alert">{codeError}</p> : null}
-          {course ? (
-            <>
-              <p className={styles.notice} role="status">{c.created}</p>
-              <CourseCode issued={issued} pending={pending} />
-            </>
-          ) : null}
-        </form>
-        )}
-
-        <form className={styles.card} onSubmit={submitAssignment} aria-labelledby="zadatak">
-          <h2 id="zadatak">{a.heading}</h2>
-          <fieldset className={styles.fields} disabled={pending || published}>
-            <label className={styles.field}>
-              <span>{a.title}</span>
-              <input className={styles.control} value={title} maxLength={200} autoComplete="off"
-                onChange={(e) => edit(setTitle)(e.target.value)} />
-            </label>
-            <label className={styles.field}>
-              <span>{a.workType}</span>
-              <select className={styles.control} value={workType}
-                onChange={(e) => edit(setWorkType)(e.target.value as WorkType)}>
-                {WORK_TYPES.map((w) => <option key={w} value={w}>{a.workTypes[w]}</option>)}
-              </select>
-            </label>
-            <div className={styles.pair}>
-              <label className={styles.field}>
-                <span>{a.opensAt}</span>
-                <input className={styles.control} type="datetime-local" value={opensAt}
-                  aria-describedby="zadatak-vrijeme-pomoc" onChange={(e) => edit(setOpensAt)(e.target.value)} />
-              </label>
-              <label className={styles.field}>
-                <span>{a.dueAt}</span>
-                <input className={styles.control} type="datetime-local" value={dueAt}
-                  aria-describedby="zadatak-vrijeme-pomoc" onChange={(e) => edit(setDueAt)(e.target.value)} />
-              </label>
+            {step === 1 && <>
+              <TextField label={a.title} value={draft.title} required maxLength={160} autoComplete="off"
+                error={error} onChange={(event) => edit("title", event.target.value)} />
+              <Select label={a.workType} value={draft.workType} options={workOptions}
+                onChange={(event) => edit("workType", event.target.value as WorkType)} />
+              <TextArea label={wizard.description} rows={4} value={draft.instructions} maxLength={20_000}
+                onChange={(event) => edit("instructions", event.target.value)} />
+            </>}
+            {step === 2 && <>
+              <div className={styles.pair}>
+                <TextField label={a.opensAt} type="datetime-local" value={draft.opensAt} required hint={a.timesHint}
+                  onChange={(event) => edit("opensAt", event.target.value)} />
+                <TextField label={a.dueAt} type="datetime-local" value={draft.dueAt} required
+                  onChange={(event) => edit("dueAt", event.target.value)} />
+              </div>
+              <div className={styles.pair}>
+                <TextField label={a.wordMin} inputMode="numeric" value={draft.wordMin} hint={a.wordRangeHint}
+                  onChange={(event) => edit("wordMin", event.target.value)} />
+                <TextField label={a.wordMax} inputMode="numeric" value={draft.wordMax}
+                  onChange={(event) => edit("wordMax", event.target.value)} />
+              </div>
+              <Select label={wizard.groups} options={[]} placeholder={wizard.unavailable} disabled />
+            </>}
+            {step === 3 && <>
+              <Select label={wizard.help} value={allowsHelp ? "course" : "none"}
+                options={courseProhibits ? [noHelp] : helpOptions}
+                hint={courseProhibits ? tools.courseProhibits : t.teacher.course.policies[course.aiPolicy]}
+                onChange={(event) => edit("aiPurposes", event.target.value === "course" ? [...AI_PURPOSES] : [])} />
+              {!courseProhibits && <p className={styles.hint}>{wizard.summaryHelpPending}</p>}
+              <Select label={wizard.externalTools} options={[]} placeholder={wizard.unavailable} disabled />
+              {importField?.(draft.importAllowed === true, (value) => edit("importAllowed", value))}
+            </>}
+            {step === 4 && <>
+              <p>{wizard.recordingNotice}</p>
+              <ul className={styles.summary}>{wizard.recorded.map((text) => <li key={text}>{text}</li>)}</ul>
+              <p>{wizard.recordingScope}</p>
+            </>}
+            {body && <>
+              <StudentPreview body={body} />
+              <p className={styles.hint}>{t.teacher.existingCourse.studentsNotified} {wizard.noNotifications}</p>
+            </>}
+            {error && <p className={styles.notice} role="alert">{error}</p>}
+            <div className={styles.actions}>
+              {step > 1 && !uncertain && <Button tone="quiet" onClick={() => move((step - 1) as Step)}>{wizard.back}</Button>}
+              <Button type="submit" busy={pending}>{step === 5 ? pending ? a.pending : a.publish : wizard.next}</Button>
             </div>
-            <p id="zadatak-vrijeme-pomoc" className={styles.hint}>{a.timesHint}</p>
-            <label className={styles.field}>
-              <span>{a.instructions}</span>
-              <textarea className={styles.control} rows={4} value={instructions}
-                onChange={(e) => edit(setInstructions)(e.target.value)} />
-            </label>
-            <div className={styles.pair}>
-              <label className={styles.field}>
-                <span>{a.wordMin}</span>
-                <input className={styles.control} type="text" inputMode="numeric" autoComplete="off"
-                  value={wordMin} onChange={(e) => edit(setWordMin)(e.target.value)} />
-              </label>
-              <label className={styles.field}>
-                <span>{a.wordMax}</span>
-                <input className={styles.control} type="text" inputMode="numeric" autoComplete="off"
-                  value={wordMax} onChange={(e) => edit(setWordMax)(e.target.value)} />
-              </label>
-            </div>
-            <p className={styles.hint}>{a.wordRangeHint}</p>
-
-            <fieldset className={styles.tools}>
-              <legend>{tools.heading}</legend>
-              <p className={styles.hint}>{coursePolicy === "prohibited" ? tools.courseProhibits : tools.narrowOnly}</p>
-              <p className={styles.listHead}>{tools.allowed}</p>
-              {AI_PURPOSES.map((p) => (
-                <label key={p} className={styles.check}>
-                  <input type="checkbox" checked={allowed.includes(p)} disabled={coursePolicy === "prohibited"}
-                    onChange={(e) => edit(setPurposes)(e.target.checked
-                      ? [...purposes, p] : purposes.filter((x) => x !== p))} />
-                  <span>{tools.purposes[p]}</span>
-                </label>
-              ))}
-              {Object.values(tools.conditions).map((text) => <p key={text} className={styles.hint}>{text}</p>)}
-              <p className={styles.listHead}>{tools.banned}</p>
-              {/* DAN-345: with every purpose allowed there is no empty list, only the sentence. */}
-              {bannedPurposes.length ? (
-                <ul className={styles.banned}>
-                  {bannedPurposes.map((p) => (
-                    <li key={p}><s>{tools.purposes[p]}</s></li>
-                  ))}
-                </ul>
-              ) : (
-                <p className={styles.hint}>{tools.bannedNone}</p>
-              )}
-              <p className={styles.hint}>{tools.alwaysBannedHead}</p>
-              <ul className={styles.banned}>
-                {Object.values(tools.alwaysBanned).map((text) => <li key={text}>{text}</li>)}
-              </ul>
-              <p className={styles.hint}>{tools.source}</p>
-            </fieldset>
-
-            <button className="btn" type="submit" disabled={!course}>
-              {published ? a.published : pending && course ? a.pending : a.publish}
-            </button>
           </fieldset>
-          <p className={styles.hint}>
-            {existingCourse ? t.teacher.existingCourse.studentsNotified : course ? a.studentsNotified : a.needCourse}
-          </p>
-          <p className={styles.hint}>{a.newVersion}</p>
-          {assignmentError ? <p className={styles.notice} role="alert">{assignmentError}</p> : null}
-          {published ? <p className={styles.notice} role="status">{a.publishedNotice}</p> : null}
         </form>
-      </div>
-
-      <aside className={styles.preview} aria-labelledby="pregled">
-        <h2 id="pregled">{t.teacher.preview.heading}</h2>
-        <p className={styles.hint}>{t.teacher.preview.step}</p>
-        <h3>{title.trim() || t.teacher.preview.untitled}</h3>
-        <p className={styles.hint}>
-          {a.workTypes[workType]} · {t.teacher.preview.opensFrom} {date(opensAt)} · {t.teacher.preview.due} {date(dueAt)}
-          <PreviewRange text={previewRangeText} />
-        </p>
-        {instructions.trim() ? <p className={styles.brief}>{instructions}</p> : null}
-        <p className={styles.listHead}>{tools.allowed}</p>
-        {/* DAN-345: nothing allowed reads as the student's notice does, not as an empty list. */}
-        {allowed.length ? (
-          <ul className={styles.summary}>
-            {allowed.map((p) => <li key={p}><span aria-hidden="true">✓ </span>{tools.purposes[p]}</li>)}
-          </ul>
-        ) : (
-          <p className={styles.hint}>{t.student.noTools}</p>
-        )}
-        <p className={styles.listHead}>{tools.banned}</p>
-        <ul className={styles.summary}>
-          {[...bannedPurposes.map((p) => tools.purposes[p]),
-            ...Object.values(tools.alwaysBanned)].map((text) => (
-            <li key={text}><span aria-hidden="true">× </span>{text}</li>
-          ))}
-        </ul>
-        {Object.values(tools.conditions).map((text) => <p key={text} className={styles.hint}>{text}</p>)}
-        <p className={styles.hint}>{tools.source}</p>
-        <p className={styles.hint}>{t.teacher.preview.rest}</p>
-      </aside>
-    </div>
+      )}
+    </section>
   );
 }

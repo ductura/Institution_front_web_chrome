@@ -304,7 +304,7 @@ describe("edit step format: the D-96 size limit, to the byte", () => {
 });
 
 describe("parseEditSteps", () => {
-  it.each(["ductus-edit-steps-v3", "DUCTUS-EDIT-STEPS-V2", "ductus-test-insert-text-v0", "", null, undefined, 1, ["x"]])(
+  it.each(["ductus-edit-steps-v5", "DUCTUS-EDIT-STEPS-V2", "ductus-test-insert-text-v0", "", null, undefined, 1, ["x"]])(
     "refuses the unknown format %j before reading a step",
     (format) => {
       const trap = new Proxy([], {
@@ -341,9 +341,9 @@ describe("parseEditSteps", () => {
  */
 describe("edit step format: one ProseMirror for both sides", () => {
   it("resolves every prosemirror package to a single version", () => {
-    const lock = readFileSync(new URL("../../../pnpm-lock.yaml", import.meta.url), "utf8");
+    const lock = readFileSync(new URL("../../../../../pnpm-lock.yaml", import.meta.url), "utf8");
     const versions = new Map<string, Set<string>>();
-    for (const [, name, version] of lock.matchAll(/^ {2}'?(prosemirror-[a-z]+)@([^'(:\s]+)/gm)) {
+    for (const [, name, version] of lock.matchAll(/^ {2}'?(prosemirror-[a-z-]+)@([^'(:\s]+)/gm)) {
       versions.set(name, (versions.get(name) ?? new Set()).add(version));
     }
     expect([...versions.keys()]).toEqual(

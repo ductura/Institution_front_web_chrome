@@ -1,86 +1,40 @@
-import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 
-import AppShell from "@/components/shell/AppShell";
-import { shellSession } from "@/components/shell/shell-session";
-import { readShellRole } from "@/components/shell/shell-role";
-import Submission from "@/components/student/Submission";
-import { assignmentParam, readWorkContext } from "@/components/student/work-context-read";
-import { messagesHr as t } from "@/lib/i18n/messages.hr";
-import { pageActivity } from "@/server/auth/activity";
-import { sessionPrincipal } from "@/server/auth/principal";
-import { SESSION_COOKIE_NAME } from "@/server/auth/session-token";
-import { withActor } from "@/server/db";
-import { readWorkDocument } from "@/server/evidence/work-document-read";
+import { signInHref } from "../../../../client/api";
+import { serverApi } from "../../../../client/server";
+import { assignmentIdOf, editorWorkRead } from "../../../../components/editor/EditorPage.read";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-export const metadata = { title: `${t.submission.title} · ${t.app.name}` };
+
+/** Both reads take no input. */
+const NONE = { params: undefined, query: undefined, body: undefined } as const;
+const UNREACHED = { ok: false, status: 0 } as const;
 
 /**
- * The student's submission of one assignment (F-10, #476 contract
- * 6384297464; Ductura INTEGRACIJA §1 `/rad/[id]/predaja`). The assignment is
- * read as on `/rad?zadatak=`: only a current notice this student acknowledged
- * opens the page; otherwise the notice comes first (PRODUCT §5 rule 6). The
- * page renders no text of the work on the server: the client reads it from
- * the open route and submits exactly that revision. DAN-330: the client part
- * mounts only when the work already exists (B1 `document`), so loading this
- * page never starts a work; a work not started yet says so and links back.
+ * `/rad/<assignmentId>/predaja` (WEB-26): no screen of its own, only the
+ * step the submission stands at. A submitted work opens on step 5 (the
+ * receipt); any other on step 2, where the declaration starts the flow. The
+ * confirmation lives in the browser's tab only (P-7), so the server cannot
+ * skip step 2. The assignment is checked as on every step.
+ *
+ * TODO(ugovor): the state comes from student.assignment-work.get until
+ * student.submission.get is published (SRV-19, SRV-25).
  */
-export default async function SubmissionPage({ params }: { params: Promise<{ assignmentId: string }> }) {
+export default async function SubmissionStepPage({ params }: { params: Promise<{ assignmentId: string }> }) {
   const { assignmentId: raw } = await params;
-  const assignmentId = assignmentParam(raw);
-  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
-  pageActivity(token);
-  // The cookie digest and the server time of this render (D-118).
-  const { tag, at } = shellSession(token);
-  const [principal, read, role, doc] = await Promise.all([
-    sessionPrincipal(token, withActor),
-    readWorkContext(token, assignmentId, withActor),
-    readShellRole(token, withActor),
-    readWorkDocument(token, assignmentId, withActor),
+  const assignmentId = assignmentIdOf(raw);
+  if (assignmentId === null) notFound();
+  const cookie = (await headers()).get("cookie") ?? "";
+  const api = serverApi(cookie);
+  const [assignments, work] = await Promise.all([
+    api("student.assignments.get", NONE).catch(() => UNREACHED),
+    api("student.assignment-work.get", NONE).catch(() => UNREACHED),
   ]);
-  if (read.kind === "noticeFirst" && assignmentId) redirect(`/zadatak/${assignmentId}`);
-  const session = principal.kind === "signed-in" && tag !== null ? { tag, at } : null;
-  const here = `/rad/${encodeURIComponent(raw)}/predaja`;
-
-  let body;
-  if (assignmentId === null) {
-    body = <p role="status">{t.submission.invalid}</p>;
-  } else if (session === null) {
-    body = (
-      <>
-        <p role="status">{t.submission.signedOut}</p>
-        {/* The login route answers with a redirect: a plain link, never a prefetched one. */}
-        <p><a className="btn" href={`/api/auth/login?returnTo=${encodeURIComponent(here)}`}>{t.submission.signIn}</a></p>
-      </>
-    );
-  } else if (read.kind !== "ready") {
-    body = <p role="status">{t.submission.outcome.notFound}</p>;
-  } else if (doc.kind === "notOpened") {
-    body = <p role="status">{t.submission.notStarted}</p>;
-  } else if (doc.kind === "notAccepting") {
-    body = <p role="status">{t.submission.outcome.notOpen}</p>;
-  } else if (doc.kind !== "document") {
-    body = <p role="status">{t.submission.outcome.notFound}</p>;
-  } else {
-    // The journal of this scope says whether the device holds text the server lacks (DAN-699).
-    body = <Submission assignmentId={assignmentId} session={session} scope={principal.kind === "signed-in" ? principal.scope : null} />;
-  }
-
-  const work = read.kind === "ready" ? read : null;
-  // The shell marks this session for the other tabs (D-118, F-113 t.1).
-  return (
-    <AppShell session={{ tag, at }} role={role} scope={principal.kind === "signed-in" ? principal.scope : null} crumbs={[t.submission.title]}>
-      <div className="page">
-        <h1>{t.submission.title}</h1>
-        {work ? <p className="muted">{`${work.course} / ${work.notice.title}`}</p> : null}
-        {body}
-        {assignmentId ? (
-          <p><Link href={`/rad?zadatak=${assignmentId}`}>{t.submission.backToWork}</Link></p>
-        ) : null}
-      </div>
-    </AppShell>
-  );
+  const read = editorWorkRead(assignmentId, assignments, work);
+  if (read.kind === "signedOut") redirect(signInHref(`/rad/${assignmentId}/predaja`));
+  if (read.kind === "noticeFirst") redirect(`/zadatak/${assignmentId}`);
+  if (read.kind === "notFound") notFound();
+  const step = read.kind === "ready" && read.workState === "submitted" ? "potvrda" : "izjava";
+  redirect(`/rad/${assignmentId}/predaja/${step}`);
 }
