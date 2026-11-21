@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@ductura/ui";
 
 import { requestWorkDocx, type WorkDocxResult } from "../../../../client/work-export";
+import { downloadBlob } from "../../EarlierDraft";
 import { docxDownloadMessages as t } from "./messages.hr";
 
 export type SavedDocxVersion = {
@@ -29,22 +30,9 @@ const formatDate = new Intl.DateTimeFormat("hr-HR", {
   timeZone: "Europe/Zagreb",
 });
 
-async function saveDocx(blob: Blob, title: string, signal: AbortSignal) {
+function docxFileName(title: string) {
   const name = title.trim().replace(/[<>:"/\\|?*\p{Cc}]/gu, "_").replace(/[. ]+$/u, "");
-  const url = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("Missing DOCX data"));
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-  if (signal.aborted) return;
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${name || "rad"}.docx`;
-  link.click();
+  return `${name || "rad"}.docx`;
 }
 
 function SavedVersionDownload({ version }: { version: SavedDocxVersion }) {
@@ -68,8 +56,8 @@ function SavedVersionDownload({ version }: { version: SavedDocxVersion }) {
         setState({ kind: "error", reason: result.reason });
         return;
       }
-      await saveDocx(result.blob, version.title, controller.signal);
-      if (!controller.signal.aborted) setState({ kind: "done", hash: result.snapshotSha256 });
+      downloadBlob(result.blob, docxFileName(version.title));
+      setState({ kind: "done", hash: result.snapshotSha256 });
     } catch {
       if (!controller.signal.aborted) setState({ kind: "error", reason: "downloadFailed" });
     } finally {
