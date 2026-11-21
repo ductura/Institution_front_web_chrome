@@ -59,3 +59,8 @@ export { DeclarationAi, type DeclarationAiLabels, type DeclarationAiProps, type 
 export { TeacherAiAttachments, type TeacherAiAttachmentsLabels, type TeacherAiAttachmentsProps, type TeacherAiAttachmentsState, type TeacherAttachedConversation, type TeacherExternalConversation, type TeacherTransfer } from "./components/teacher-ai-attachments";
 export { AssistantTransfer, type AssistantTransferLabels, type AssistantTransferProps } from "./components/assistant-transfer";
 export { AdminAiCostLimits, type AdminAiCostLimitsLabels, type AdminAiCostLimitsProps, type AdminAiCostLimitsState, type CostConfigVersion, type CostLimits } from "./components/admin-ai-policy";
+export {
+  ProvenanceShare, SHARE_CATEGORIES, shareIsConsistent,
+  type AiMatchRecord, type MatchSpan, type ProvenanceBlock, type ProvenanceShareLabels, type ProvenanceShareProps,
+  type ProvenanceShareState, type ShareCategory, type ShareEntry, type ShareRecord,
+} from "./components/provenance-share";

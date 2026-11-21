@@ -1,0 +1,17 @@
+/* How the text was entered (WEB-1220). One neutral look for every category: no level colours, no bars by size. */
+.panel { display: grid; gap: 12px; min-width: 0; }
+.title { margin: 0; font-size: 18px; font-weight: 600; color: var(--ink); }
+.subtitle { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.note { margin: 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.notice { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--ink); border: 1px solid var(--rule-2); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.alert { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--error); background: var(--error-soft); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.group { display: grid; gap: 8px; min-width: 0; }
+.share { display: grid; gap: 0; margin: 0; }
+.entry { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 6px 0; border-bottom: 1px solid var(--rule-2); }
+.label { margin: 0; font-size: 14px; color: var(--ink); overflow-wrap: anywhere; }
+.value { margin: 0; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.text { display: grid; gap: 8px; min-width: 0; }
+.block { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--ink); overflow-wrap: anywhere; }
+/* Marked by an underline as well as the tint, so the mark does not rest on colour alone. */
+.mark { color: inherit; background: var(--rule-2); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
