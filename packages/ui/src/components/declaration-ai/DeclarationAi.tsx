@@ -168,7 +168,7 @@ function Ready({ labels, uses, conversations, onConfirm }: ReadyProps) {
               {visibleTurns(c).map((turn) => (
                 <li key={turn.seq} className={styles.turn} data-author={turn.author}>
                   <span className={styles.who}>{turn.author === "student" ? labels.student : c.assistantName}</span>
-                  <span>{turn.text}</span>
+                  <span className={styles.message}>{turn.text}</span>
                 </li>
               ))}
             </ol>

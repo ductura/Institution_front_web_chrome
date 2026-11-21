@@ -21,4 +21,5 @@
 .turn { display: grid; gap: 2px; padding: 8px 10px; font-size: 13.5px; color: var(--ink); border: 1px solid var(--rule-2); border-radius: var(--radius-control); overflow-wrap: anywhere; }
 .turn[data-author="student"] { background: var(--rule-2); }
 .who { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.message { white-space: pre-wrap; }
 .skel { height: 14px; width: 70%; margin-bottom: 8px; background: var(--rule-2); border-radius: 4px; }
