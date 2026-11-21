@@ -27,6 +27,7 @@ import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
 import { hostText } from "../../../text";
 import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
+import WithdrawSubmission from "./withdraw/WithdrawSubmission";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
@@ -182,6 +183,7 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
           <h1>{t.receipt.title}</h1>
           <ReceiptPanel read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))}
             summaryHref={hrefOf(stepPath(id, "pregled"))} submitHref={hrefOf(stepPath(id, ""))} />
+          <WithdrawSubmission assignmentId={id} />
         </div>
       )}
     </Shown>
