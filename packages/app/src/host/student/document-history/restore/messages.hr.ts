@@ -1,0 +1,23 @@
+const formatMinute = new Intl.DateTimeFormat("hr-HR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Zagreb" });
+
+export const restoreMessages = {
+  title: "Vrati raniju verziju",
+  intro: "Odaberite raniju verziju svojeg teksta. Vraćanje stvara novu verziju; nijedna ranija verzija se ne briše.",
+  choose: "Odaberite verziju",
+  chooseLabel: "Verzija koju vraćate",
+  action: "Vrati ovu verziju",
+  confirmTitle: "Vratiti ovu verziju?",
+  confirmBody: "Tekst iz odabrane verzije postat će nova verzija vašeg rada. Sve dosadašnje verzije ostaju u povijesti.",
+  confirm: "Da, vrati",
+  cancel: "Odustani",
+  nothing: "Nema ranije verzije koju je moguće vratiti.",
+  restoring: "Vraćam verziju…",
+  done: (from: number, to: number): string => `Verzija ${from} vraćena je kao nova verzija ${to}.`,
+  stale: "Rad je u međuvremenu promijenjen. Osvježite povijest i pokušajte ponovno.",
+  unavailable: "Verziju trenutačno nije moguće vratiti. Ništa nije promijenjeno.",
+  signedOut: "Sesija je istekla. Prijavite se ponovno.",
+  retry: "Pokušaj ponovno",
+  version: (revision: number, minute: string): string => `Verzija ${revision} · ${formatMinute.format(new Date(minute))}`,
+  replayStep: (from: number): string => `Vraćena verzija ${from}`,
+  replayNote: "Vraćanje je zaseban korak u reprodukciji, ne izmjena slovo po slovo.",
+} as const;
