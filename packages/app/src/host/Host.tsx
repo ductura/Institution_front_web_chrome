@@ -7,12 +7,11 @@ import { RouteLoading } from "@ductura/ui";
 
 import { AppShell, appHref } from "../../../../src/components/index.ts";
 import ErrorScreen from "../../../../src/components/shell/ErrorScreen.ts";
-import { messagesHr as t } from "../../../../locales/hr.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
 import { nextPath, type Base } from "../bases";
 import { crumbsOf, internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
-import { hostText } from "../text";
+import { navLabel, useLocale } from "../i18n";
 import { HostContext } from "./context";
 import SignOut from "./SignOut";
 
@@ -28,6 +27,8 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   const route = routeOf(`/app${usePathname()}`, base);
   const open = publicPage(route);
   const [session, setSession] = useState<SessionRead | null>(null);
+  const catalogues = useLocale();
+  const { t, app: { host: hostText }, syncFromServer } = catalogues;
 
   const load = useCallback(() => {
     setSession(null);
@@ -65,14 +66,20 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   const role = signedIn === null ? null : shellRole(signedIn.role);
   const resolved = signedIn === null ? null : resolve(route, role);
 
+  // The saved interface language (D-70) is read once the person is signed in.
+  useEffect(() => {
+    if (signedIn !== null) syncFromServer();
+  }, [signedIn, syncFromServer]);
+
   useEffect(() => {
     if (resolved?.kind === "redirect") navigate(resolved.to, true);
   }, [resolved, navigate]);
 
   useEffect(() => {
-    const page = open?.label ?? (resolved?.kind === "page" ? resolved.page.label : null);
+    const shown = open ?? (resolved?.kind === "page" ? resolved.page : null);
+    const page = shown === null ? null : navLabel(shown, role, catalogues);
     document.title = page === null ? t.app.name : `${page} · ${t.app.name}`;
-  }, [open, resolved]);
+  }, [open, resolved, role, catalogues, t]);
 
   if (open !== null) return <HostContext value={{ base, page: open, role: null }}>{children}</HostContext>;
 
@@ -91,7 +98,8 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
       crumbs={crumbs}
       base={base}
       institution={signedIn?.institution ?? null}
-      account={<SignOut />}
+      account={<SignOut base={base} />}
+      messages={t}
       ownMain={ownMain}
     >
       {body}
@@ -105,5 +113,6 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
     return shell(undefined, [], <section className="page"><h1>{t.home.welcome}</h1><p>{hostText.noRole}</p></section>);
   }
   const { page } = resolved;
-  return shell(page.current, crumbsOf(page, role), <HostContext value={{ base, page, role }}>{children}</HostContext>);
+  const crumbs = crumbsOf(page, role).length === 0 ? [] : [navLabel(page, role, catalogues)];
+  return shell(page.current, crumbs, <HostContext value={{ base, page, role }}>{children}</HostContext>);
 }
