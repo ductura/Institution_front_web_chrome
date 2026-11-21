@@ -8,17 +8,20 @@
  */
 
 import { useEditorState } from "@tiptap/react";
-import { createElement as h, useMemo } from "react";
+import { createElement as h, Fragment, useMemo } from "react";
+import { CITATION } from "@/editor";
 
+import { SourceNotebookHost } from "../../../../../packages/app/src/host/editor/source-notebook/SourceNotebookHost";
 import { useLocalEditor, useLocalSignedOut } from "../../LocalDocument";
+import { citationRange } from "../../citations/citation-document";
 import { documentCitations, documentSources, type CitationPlace, type ProofSource } from "./proof-sources";
 import { liveDeps } from "./proofs-deps";
 import { SourceProofsPanel } from "./SourceProofsPanel";
 
-type Read = { sources: ProofSource[]; citations: CitationPlace[]; editable: boolean; key: string };
-const EMPTY: Read = { sources: [], citations: [], editable: false, key: "" };
+type Read = { sources: ProofSource[]; citations: CitationPlace[]; editable: boolean; canInsert: boolean; key: string };
+const EMPTY: Read = { sources: [], citations: [], editable: false, canInsert: false, key: "" };
 
-export function EditorSourceProofs({ assignmentId }: { assignmentId: string }) {
+export function EditorSourceProofs({ assignmentId, documentId }: { assignmentId: string; documentId: string }) {
   const editor = useLocalEditor();
   const signedOut = useLocalSignedOut();
   const read = useEditorState({
@@ -32,12 +35,18 @@ export function EditorSourceProofs({ assignmentId }: { assignmentId: string }) {
         if (node.type.name === "citation") citations.push(...documentCitations({ type: "citation", attrs: node.attrs as Record<string, unknown> }));
         return node.type.name !== "citation";
       });
-      return { sources, citations, editable: e.isEditable, key: JSON.stringify([sources, citations, e.isEditable]) };
+      const canInsert = e.isEditable && citationRange(e.state) !== null;
+      return { sources, citations, editable: e.isEditable, canInsert, key: JSON.stringify([sources, citations, e.isEditable, canInsert]) };
     },
     equalityFn: (a, b) => a?.key === b?.key,
   }) ?? EMPTY;
   const deps = useMemo(() => liveDeps(assignmentId), [assignmentId]);
-  // After the session ends the panel shows nobody's proofs (as CommentPanel).
+  // The proofs and private notes belong to this session only.
   if (signedOut) return null;
-  return h(SourceProofsPanel, { sources: read.sources, citations: read.citations, editable: read.editable, deps });
+  return h(Fragment, null,
+    editor && !editor.isDestroyed && h(SourceNotebookHost, {
+      documentId, editor, sources: read.sources, canInsert: read.canInsert, supported: Boolean(editor.schema.nodes[CITATION]),
+    }),
+    h(SourceProofsPanel, { sources: read.sources, citations: read.citations, editable: read.editable, deps }),
+  );
 }

@@ -1,7 +1,7 @@
 // Ported from Ductus src/components/teacher/TeacherCourses.tsx at 9c45857
 // (DAN-871, 871-1). Only two things differ: the imports, and next/link, which
 // the web does not have, is a plain "a" without prefetch, as in AppShell.
-import { createElement as h, Fragment } from "react";
+import { createElement as h, Fragment, type ReactNode } from "react";
 
 import { messagesHr } from "../../../locales/hr.ts";
 import { countHr } from "../i18n/hr.ts";
@@ -94,12 +94,13 @@ function languageLink(assignmentId: string, documentId: string, i: number) {
  * Written with `createElement`, not JSX, like ProcessSummaryView: the unit
  * tests render it without the Next.js compiler (`jsx: preserve`).
  */
-export default function TeacherCourses({ courses, works = {}, accommodations = {} }: {
+export default function TeacherCourses({ courses, works = {}, accommodations = {}, courseDetails }: {
   courses: readonly TeacherCourse[];
   /** Per assignment id: one row per student with the work and its submission, or null when they could not be read. */
   works?: Readonly<Record<string, readonly AssignmentSubmission[] | null>>;
   /** Per assignment id: the students whose work is marked with an accommodation, or null when that could not be read. */
   accommodations?: Readonly<Record<string, readonly string[] | null>>;
+  courseDetails?: (course: TeacherCourse) => ReactNode;
 }) {
   if (courses.length === 0) {
     return h("section", { className: styles.empty, "aria-labelledby": "bez-kolegija" },
@@ -136,6 +137,7 @@ export default function TeacherCourses({ courses, works = {}, accommodations = {
                 // DAN-310 (M2.4-P02): the next version of this assignment.
                 h("a", { className: styles.version, href: `/nastavnik/zadatak/${encodeURIComponent(assignment.id)}/uredi` },
                   messagesHr.teacher.newVersion.link),
-                h(Works, { assignmentId: assignment.id, works: works[assignment.id], marked: accommodations[assignment.id] })))))),
+                h(Works, { assignmentId: assignment.id, works: works[assignment.id], marked: accommodations[assignment.id] })))),
+        courseDetails?.(course))),
     h("p", { className: styles.note }, t.countNote));
 }

@@ -40,6 +40,7 @@ import CommentPanel from "./CommentPanel";
 import RevisionPanel from "./RevisionPanel";
 import { EditorPanelLayout } from "./SidePanels";
 import { SubmissionRehearsal } from "./submission-rehearsal/SubmissionRehearsal";
+import { WorkPrintExport } from "./print-export/docx-download/WorkPrintExport";
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
 export type OpenRead =
@@ -166,9 +167,10 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       tools={<EditorCommands><div className={helpStyles.toolbar}>
         <EditorToolbar workPartsKey={`ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`} />
         <EditorHelpMenu onSelect={setView} />
+        {!signedOut && <WorkPrintExport documentId={documentId} title={title} />}
       </div></EditorCommands>}
       status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
-      rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} />,
+      rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} documentId={documentId} />,
         comments: <CommentPanel documentId={documentId} session={session} />,
         assistant: <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>

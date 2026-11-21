@@ -1,6 +1,7 @@
 // Generated subset of Institution_server a62e0db (API 1.24.0).
 // WEB-07: remove this supplement when the migration contracts are published.
 // HOST-T2: institution.assignment.get from API 1.38.0; the work-language GET is provisional.
+// WEB-1604: work.source-notes.get from Institution_server 093f9b7 (API 1.52.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -241,6 +242,42 @@ export type MigrationOperations = {
     query: undefined;
     body: undefined;
     success: { status: 200; body: { "wordRange": { "min": number; "max": number | null } | { "min": null; "max": number } | null }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  // SRV-1408 (Institution_server #548), followed by the provisional WEB-1405 view.
+  "institution.teaching-group-members.put": {
+    params: { "id": string; "groupId": string };
+    query: undefined;
+    body: { "assistantIds": (string)[]; "studentIds": (string)[] };
+    success: { status: 200; body: { "updated": true }; headers: {  } };
+    errorCode: "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "unauthorized" | "forbidden" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_timeout" | "conflict" | "body_too_large" | "unsupported_media_type" | "invalid_input" | "unavailable";
+  };
+  "institution.teaching-team.get": {
+    params: { "id": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "holderId": string | null; "assistantIds": (string)[] }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "institution.teaching-team.post": {
+    params: { "id": string };
+    query: undefined;
+    body: { "assistantIds": (string)[] };
+    success: { status: 200; body: { "updated": true }; headers: {  } };
+    errorCode: "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "unauthorized" | "forbidden" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_timeout" | "body_too_large" | "unsupported_media_type" | "invalid_input" | "unavailable";
+  };
+  "institution.teaching-team-view.get": {
+    params: { "id": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "role": "holder"; "holderId": string; "assistants": ({ "id": string; "name": string })[]; "students": ({ "id": string; "name": string; "groupId": string | null })[]; "groups": ({ "id": string; "name": string; "assistantIds": (string)[] })[] } | { "role": "assistant"; "groups": ({ "id": string; "name": string; "students": ({ "id": string; "name": string })[] })[] }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "work.source-notes.get": {
+    params: { "id": string; "sourceId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "notes": ({ "id": string; "quote": string | null; "page": string | null; "note": string | null })[] }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "unavailable";
   };
 };
