@@ -2927,5 +2927,92 @@
       },
       "contentType": "application/json"
     }
+  },
+  {
+    "route": "work.source-notes.get",
+    "name": "notes",
+    "request": {
+      "params": {
+        "id": "doc-izmisljeni-kisni-vrt",
+        "sourceId": "00000000-0000-4000-8000-00000000c0a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "notes": [
+          {
+            "id": "00000000-0000-4000-8000-00000000b001",
+            "quote": "Kisni vrt zadrzava vodu.",
+            "page": "12-14",
+            "note": "Usporediti vrste tla."
+          }
+        ]
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "work.source-notes.get",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "id": "doc-izmisljeni-kisni-vrt",
+        "sourceId": "00000000-0000-4000-8000-00000000c0a1"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000002000"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "work.source-notes.get",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "id": "doc-izmisljeni-kisni-vrt",
+        "sourceId": "00000000-0000-4000-8000-00000000c0a1"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-000000002001"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "work.source-notes.get",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "id": "doc-izmisljeni-kisni-vrt",
+        "sourceId": "00000000-0000-4000-8000-00000000c0a1"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000002002"
+      },
+      "contentType": "application/json"
+    }
   }
 ]

@@ -1,0 +1,30 @@
+.content,
+.notes {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.note {
+  border-block-start: 1px solid var(--rule-2);
+  padding-block-start: 0.65rem;
+  overflow-wrap: anywhere;
+}
+
+.note > :is(p, blockquote) {
+  margin: 0.4rem 0;
+  white-space: pre-wrap;
+}
+
+.note > small {
+  display: block;
+}
+
+.content > p:empty {
+  margin: 0;
+}
