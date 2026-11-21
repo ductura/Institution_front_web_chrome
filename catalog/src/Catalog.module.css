@@ -48,3 +48,8 @@
     padding-inline: 0;
   }
 }
+
+/* The save-status list holds long chips ("Izvan mreže · …"); at 360 px they wrap instead of widening the page. */
+.saveStatus { margin: 0; padding: 16px; list-style: none; display: grid; gap: 8px; }
+.saveStatus > li { min-width: 0; }
+.saveStatus :global([role=status]) { white-space: normal; overflow-wrap: anywhere; }
