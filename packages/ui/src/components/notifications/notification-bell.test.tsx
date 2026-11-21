@@ -28,7 +28,9 @@ describe("NotificationBell", () => {
   it("names the button with the count and keeps a polite live region", () => {
     const out = html({ unread: 2, entries: [entry("a", false)] });
     expect(out).toContain('aria-label="Obavijesti, nepročitanih: 2"');
-    expect(out).toContain('aria-live="polite"');
+    expect(out).toContain('aria-live="polite" aria-atomic="true"');
+    // The shell's bell must not add a second status to every page (ZEL-W10).
+    expect(out).not.toContain('role="status"');
     expect(out).toContain('aria-expanded="false"');
   });
   it("uses the plain name without unread ones", () => expect(html({})).toContain('aria-label="Obavijesti"'));

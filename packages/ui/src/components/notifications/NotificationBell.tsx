@@ -45,7 +45,8 @@ export type NotificationBellProps = {
  * notifications and a list that opens under it. The count is in the button's
  * name and a polite live region says when it changes, so a screen reader
  * learns of a new notification without a reload; an unread entry carries a
- * word, not only a colour.
+ * word, not only a colour. The live region has no status role: the bell sits
+ * in the shell of every page, and the page's own status stays the only one.
  */
 export function NotificationBell({ entries, unread, status, labels, onOpenEntry, defaultOpen = false }: NotificationBellProps) {
   const [open, setOpen] = useState(defaultOpen);
@@ -71,7 +72,7 @@ export function NotificationBell({ entries, unread, status, labels, onOpenEntry,
         </svg>
         {badge !== "" && <span className={styles.badge} aria-hidden="true">{badge}</span>}
       </button>
-      <span role="status" aria-live="polite" className={styles.live}>{said}</span>
+      <span aria-live="polite" aria-atomic="true" className={styles.live}>{said}</span>
       <Popover open={open} anchor={anchor} label={labels.panel} onClose={() => setOpen(false)}>
         {status === "unavailable" ? (
           <p className={styles.note}>{labels.unavailable}</p>
