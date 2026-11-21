@@ -21,7 +21,7 @@ export function EditorOnboarding({ locale, mode, onClose }: Props) {
   const next = useRef<HTMLButtonElement>(null);
   const [step, setStep] = useState(0);
   const t = editorOnboardingMessages[locale];
-  const [title, description] = t.steps[step] ?? t.steps[0]!;
+  const [title, description] = t.steps[step] ?? t.steps[0];
   const last = step === t.steps.length - 1;
   const progress = t.progress.replace("{step}", String(step + 1)).replace("{total}", String(t.steps.length));
 

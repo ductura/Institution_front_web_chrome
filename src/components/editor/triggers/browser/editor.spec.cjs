@@ -100,7 +100,7 @@ test('first visit is scoped to the account and saving works while the guide is o
   await expect(guide).toHaveCount(0);
   await openHelp(page, 'Prvi koraci');
   await guide.getByRole('button', { name: 'Dalje' }).press('Enter');
-  await expect(page.locator('[aria-live="polite"]').filter({ hasText: 'Korak 2 od 3' })).toContainText('Navodi i naredbe');
+  await expect(page.locator('[aria-live="polite"]').filter({ hasText: 'Korak 2 od 3' })).toContainText('Naredbe u tekstu');
   await page.keyboard.press('Escape');
   await expect(guide).toHaveCount(0);
   await expect(help).toBeFocused();
