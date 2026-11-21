@@ -7,7 +7,7 @@ import type { StudentMentorshipCall, StudentMentorshipRequest } from "../../../.
 import type { MentorshipCall } from "../../../../../../src/client/mentorship-requests";
 import type { MentoredWorksCall } from "../../../../../../src/components/teacher/mentored-works-read";
 
-type Stored = StudentMentorshipRequest & { studentName: string; reason?: string };
+type Stored = { -readonly [K in keyof StudentMentorshipRequest]: StudentMentorshipRequest[K] } & { studentName: string; reason?: string };
 const ok = (body: unknown, status = 200) => ({ ok: true as const, status, body });
 const fail = (status: number, code: string) => ({ ok: false as const, status, code });
 

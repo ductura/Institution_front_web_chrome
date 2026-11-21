@@ -9,7 +9,6 @@ import { messagesHr as workText } from "../../../src/lib/i18n/messages.hr.ts";
 import type { SessionRole } from "../../../src/client/api.ts";
 
 import type { Base } from "./bases";
-import { mentorshipRequestText } from "./host/student/mentorship-request/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { hostText } from "./text";
 
@@ -74,7 +73,7 @@ export const PAGES: readonly Page[] = [
   { path: "/zadatak/[id]", label: t.student.title, kind: "pending", roles: ["student", "teacher"] },
   { path: "/upis/kolegij/[courseId]", label: t.student.enroll.title, kind: "pending", roles: ["student"], current: "/upis" },
   // WEB-1404: the student's request for a mentor.
-  { path: "/zadaci/mentorstvo", label: mentorshipRequestText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  { path: "/zadaci/mentorstvo", label: hostText.mentorshipRequest, kind: "pending", roles: ["student"], current: "/zadaci" },
   // HOST-S1: the editor of one work.
   { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },

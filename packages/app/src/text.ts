@@ -12,4 +12,5 @@ export const hostText = {
   signIn: "Prijava",
   // HOST-T3: the label of N-13 (WEB-1113) until locales/ has its catalogue.
   deadlineExtensions: "Produljenje roka",
+  mentorshipRequest: "Zahtjev za mentorstvo",
 } as const;

@@ -4,7 +4,7 @@ import { Button, Card } from "@ductura/ui";
 
 import { createApi } from "../../../../../../src/client/api";
 import type { MentorshipCall } from "../../../../../../src/client/mentorship-requests";
-import { readMentoredWorks, type MentoredWorksCall } from "../../../../../../src/components/teacher/mentored-works-read";
+import { readMentoredWorks, type MentoredWork, type MentoredWorksCall } from "../../../../../../src/components/teacher/mentored-works-read";
 import { readMentorshipRequests } from "../../../../../../src/client/mentorship-requests";
 import MentoredWorks from "../../../../../../src/components/teacher/MentoredWorks";
 import { MentorshipRequestsView, type RequestsRead } from "../../../../../../src/components/teacher/MentorshipRequests";
@@ -29,7 +29,7 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
   { requests?: () => MentorshipCall; works?: () => MentoredWorksCall }) {
   const { base } = useHost();
   const here = appHref(base, HREF);
-  const [read, retry] = useTeacherRead(base, async () => {
+  const [read, retry] = useTeacherRead<{ asked: RequestsRead; works: MentoredWork[] }>(base, async () => {
     const [list, mentored] = await Promise.all([readMentorshipRequests(requests()), readMentoredWorks(works())]);
     if (mentored.kind === "signedOut") return { kind: "signedOut" };
     if (mentored.kind === "notTeacher") return { kind: "notTeacher" };
