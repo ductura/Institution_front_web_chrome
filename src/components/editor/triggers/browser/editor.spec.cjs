@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const { default: AxeBuilder } = require('@axe-core/playwright');
 
 const openHelp = async (page, title) => {
-  await page.getByRole('button', { name: 'Prikaz', exact: true }).click();
+  await page.getByRole('button', { name: 'Pomoć', exact: true }).click();
   await page.getByRole('menuitem', { name: title, exact: true }).click();
 };
 
@@ -12,7 +12,7 @@ for (const [width, theme] of [[1250, 'dark'], [1050, 'light'], [760, 'dark'], [6
     await page.goto('/');
     await page.locator('html').evaluate((el, value) => { el.dataset.theme = value; }, theme);
     const scan = async () => expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-    const help = page.getByRole('button', { name: 'Prikaz', exact: true });
+    const help = page.getByRole('button', { name: 'Pomoć', exact: true });
     await openHelp(page, 'Pomoć u tekstu');
     await page.getByRole('button', { name: 'Mirno', exact: true }).click();
     await expect(page.getByRole('checkbox', { name: 'Duge rečenice' })).not.toBeChecked();
@@ -25,10 +25,14 @@ for (const [width, theme] of [[1250, 'dark'], [1050, 'light'], [760, 'dark'], [6
     await expect(page.getByRole('button', { name: 'Mirno', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await page.keyboard.press('Escape');
     await openHelp(page, 'Prvi koraci');
-    await expect(page.getByText('1 od 3')).toBeVisible();
-    await page.getByRole('button', { name: 'Dalje' }).click();
-    await page.getByRole('button', { name: 'Dalje' }).click();
-    await page.getByRole('button', { name: 'Počni pisati' }).click();
+    const guide = page.getByRole('region', { name: 'Prvi koraci' });
+    await expect(guide.getByRole('heading', { name: 'Prvi koraci' })).toBeFocused();
+    await expect(guide.getByText(/Korak 1 od 3/)).toBeVisible();
+    await guide.getByRole('button', { name: 'Dalje' }).click();
+    await guide.getByRole('button', { name: 'Dalje' }).click();
+    await guide.getByRole('button', { name: 'Završi vodič' }).click();
+    await expect(guide).toHaveCount(0);
+    await expect(help).toBeFocused();
     for (const title of ['Prije prve rečenice', 'Što se bilježi']) {
       await openHelp(page, title);
       await expect(page.getByRole('dialog', { name: title })).toBeVisible();
@@ -73,6 +77,46 @@ for (const [width, theme] of [[1250, 'dark'], [1050, 'light'], [760, 'dark'], [6
     await expect(sheet).toHaveAttribute('contenteditable', 'false');
   });
 }
+
+test('first visit is scoped to the account and saving works while the guide is open', async ({ page }) => {
+  let account = 'a'.repeat(64);
+  await page.route('**/api/v1/me', (route) => route.fulfill({ json: {
+    journalScope: account, sessionTag: 'demo-session-tag',
+  } }));
+  await page.setViewportSize({ width: 400, height: 740 });
+  await page.goto('/');
+  const guide = page.getByRole('region', { name: 'Prvi koraci' });
+  const help = page.getByRole('button', { name: 'Pomoć', exact: true });
+  await expect(guide).toBeVisible();
+  expect((await new AxeBuilder({ page }).include('section[aria-labelledby]').analyze()).violations).toEqual([]);
+  await page.getByRole('button', { name: 'Spremi', exact: true }).click();
+  await expect(page.getByText('Izmišljeni rad je spremljen.')).toBeVisible();
+  await expect(guide).toBeVisible();
+  await guide.getByRole('button', { name: 'Preskoči vodič' }).click();
+  await expect(guide).toHaveCount(0);
+  await expect(help).toBeFocused();
+
+  await Promise.all([page.waitForResponse('**/api/v1/me'), page.reload()]);
+  await expect(guide).toHaveCount(0);
+  await openHelp(page, 'Prvi koraci');
+  await guide.getByRole('button', { name: 'Dalje' }).press('Enter');
+  await expect(page.locator('[aria-live="polite"]').filter({ hasText: 'Korak 2 od 3' })).toContainText('Naredbe u tekstu');
+  await page.keyboard.press('Escape');
+  await expect(guide).toHaveCount(0);
+  await expect(help).toBeFocused();
+
+  account = 'b'.repeat(64);
+  await page.reload();
+  await expect(guide).toBeVisible();
+  await page.locator('html').evaluate((element) => { element.lang = 'en-GB'; });
+  const english = page.getByRole('region', { name: 'Getting started' });
+  await expect(english).toHaveAttribute('lang', 'en');
+  await expect(english.getByText(/About 2 minutes.*Step 1 of 3/)).toBeVisible();
+  await english.getByRole('button', { name: 'Skip guide' }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Getting started' }).click();
+  await expect(english).toBeVisible();
+});
 
 test('current-page settings still work with storage blocked', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(window, 'localStorage', { get: () => { throw new DOMException('blocked', 'SecurityError'); } }));
