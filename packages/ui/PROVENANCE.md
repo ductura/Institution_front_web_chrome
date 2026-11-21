@@ -30,3 +30,5 @@ Promjena oznake ide prvo u Ductus, a ovamo novim prijenosom s novim SHA-om.
 | `src/tokens/tokens.test.ts` | `src/components/shell/tokens.test.ts` (`8a3bfcd7ef96f430c06c09a90d85336eec2a8a68`) | samo putanja do `globals.css`; isti testovi (29) i iste tvrdnje |
 | `src/theme/theme.test.ts` | `src/components/shell/theme.test.ts` (`27e3eeeb40331f2ef2d41e46b442f0cc4809514a`) | izostavljen test „the shared 404 page applies the kept theme”: čita Ductusove `app/not-found.tsx` i `ThemeRestore.tsx`, koji dolaze s 2.c4 |
 | `src/fonts/faces.css` | zamjena za `app/fonts/index.ts` (`next/font/local`) | iste datoteke, težine i `unicode-range` kao obični `@font-face`, bez Nexta |
+| `src/tokens/tokens.css` | nova datoteka (nema izvora) | ulaz paketa `@ductura/ui/tokens.css`: uvozi neizmijenjeni `globals.css` i listovima (`.sheet`, svijetli list) daje vlastiti `--error`, da tekst greške na svijetlom listu u tamnoj ljusci ima kontrast 4,5:1 (ZEL-W14) |
+| `src/tokens/tokens-overlay.test.ts` | nova datoteka (nema izvora) | provjerava redoslijed uvoza i kontrast `--error` na oba lista |
