@@ -31,7 +31,7 @@ describe("withdrawing", () => {
   it("says withdrawn only with the server's signed receipt", async () => {
     const server = fakeWithdrawServer();
     const followup = await withdraw(server.call, ASSIGNMENT);
-    expect(followup).toEqual({ note: { tone: "status", text: withdrawText.withdrawn }, refresh: true });
+    expect(followup).toEqual({ note: { tone: "status", text: withdrawText.withdrawn }, refresh: true, receipt: server.receipts[0] });
     expect(server.receipts).toHaveLength(1);
     const unsigned = async () => ({ ok: true as const, status: 200, body: { receipt: { ...server.receipts[0], signature: "" } } });
     expect((await withdraw(unsigned, ASSIGNMENT))?.note.text).toBe(withdrawText.unknown);

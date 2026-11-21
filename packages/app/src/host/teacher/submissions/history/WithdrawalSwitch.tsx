@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Checkbox } from "@ductura/ui";
 
 import type { HistoryCall, SettingRead } from "./contract";
@@ -14,16 +14,22 @@ import { settingNote, type SettingNote } from "./model";
  * the value asked for (B-6). The assignment settings screen mounts it; it owns no route.
  */
 export default function WithdrawalSwitch({ call, assignmentId, onSignedOut }: { call: HistoryCall; assignmentId: string; onSignedOut?: () => void }) {
-  const [read, setRead] = useState<SettingRead | null>(null);
+  const [state, setState] = useState<{ assignmentId: string; read: SettingRead } | null>(null);
+  const current = useRef(assignmentId);
+  current.current = assignmentId;
+  // Only what was read for the assignment shown now is shown.
+  const read = state?.assignmentId === assignmentId ? state.read : null;
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<SettingNote | null>(null);
 
   useEffect(() => {
+    setBusy(false);
+    setNote(null);
     let live = true;
     void readWithdrawalSetting(call, assignmentId).then((next) => {
       if (!live) return;
       if (next.kind === "session-expired") onSignedOut?.();
-      setRead(next);
+      setState({ assignmentId, read: next });
     });
     return () => { live = false; };
   }, [call, assignmentId, onSignedOut]);
@@ -35,9 +41,12 @@ export default function WithdrawalSwitch({ call, assignmentId, onSignedOut }: { 
     if (busy) return;
     setBusy(true);
     setNote(null);
-    const outcome = await saveWithdrawalSetting(call, assignmentId, enabled);
+    const asked = assignmentId;
+    const outcome = await saveWithdrawalSetting(call, asked, enabled);
+    // An answer for an assignment no longer shown is dropped.
+    if (current.current !== asked) return;
     setBusy(false);
-    if (outcome.kind === "spremljeno") setRead({ kind: "ready", enabled: outcome.enabled });
+    if (outcome.kind === "spremljeno") setState({ assignmentId: asked, read: { kind: "ready", enabled: outcome.enabled } });
     const next = settingNote(outcome);
     if (next === null) onSignedOut?.();
     else setNote(next);

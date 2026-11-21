@@ -4,7 +4,7 @@ import { withdrawText as t } from "./messages.hr";
 
 export type Note = { readonly tone: "status" | "alert"; readonly text: string };
 /** What the page says after an action, and whether the state is read again. */
-export type Followup = { readonly note: Note; readonly refresh: boolean };
+export type Followup = { readonly note: Note; readonly refresh: boolean; /** The signed confirmation of a recorded withdrawal, kept even when the state cannot be read again. */ readonly receipt?: WithdrawalReceipt };
 
 /** The button exists only on the server's word; nothing here compares a time with a deadline. */
 export function canWithdraw(state: WithdrawalState): boolean {
@@ -13,7 +13,7 @@ export function canWithdraw(state: WithdrawalState): boolean {
 
 export function withdrawNote(outcome: WithdrawOutcome): Followup | null {
   switch (outcome.kind) {
-    case "povuceno": return { note: { tone: "status", text: t.withdrawn }, refresh: true };
+    case "povuceno": return { note: { tone: "status", text: t.withdrawn }, refresh: true, receipt: outcome.receipt };
     case "zakljuceno": return { note: { tone: "alert", text: t.closed }, refresh: true };
     case "greska": return { note: { tone: "alert", text: outcome.code === "not_found" ? t.notFound : t.invalid }, refresh: outcome.code === "not_found" };
     case "nepoznato": return { note: { tone: "alert", text: t.unknown }, refresh: false };

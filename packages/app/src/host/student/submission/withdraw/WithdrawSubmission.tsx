@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, Card, Dialog, RouteLoading } from "@ductura/ui";
 
-import { createApi, goToSignIn, signInHref } from "../../../../../../../src/client/api";
+import { createApi, goToSignIn } from "../../../../../../../src/client/api";
 import { downloadBlob } from "../../../../../../../src/components/editor/EarlierDraft";
 import { appHref } from "../../../../../../../src/components/shell/nav";
 import { useHost } from "../../../context";
@@ -35,12 +35,13 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
+  const [kept, setKept] = useState<readonly WithdrawalReceipt[]>([]);
 
   useEffect(() => {
     let live = true;
     void readWithdrawalState(call(), assignmentId).then((result) => {
       if (!live) return;
-      if (result.kind === "session-expired") goToSignIn(signInHref(here));
+      if (result.kind === "session-expired") goToSignIn(here);
       setRead(result);
     });
     return () => { live = false; };
@@ -54,17 +55,23 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
     const followup = await withdraw(call(), assignmentId);
     setBusy(false);
     setAsking(false);
-    if (followup === null) { goToSignIn(signInHref(here)); return; }
+    if (followup === null) { goToSignIn(here); return; }
     setNote(followup.note);
+    if (followup.receipt !== undefined) setKept((list) => [...list, followup.receipt as WithdrawalReceipt]);
     if (followup.refresh) setAttempt((n) => n + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busy, assignmentId, here]);
 
   if (read === null || read.kind === "session-expired") return <RouteLoading label={t.loading} />;
+  const shownReceipts = (read.kind === "ready" ? read.state.receipts : []).concat(
+    kept.filter((k) => !(read.kind === "ready" && read.state.receipts.some((r) => r.withdrawalId === k.withdrawalId))),
+  );
   if (read.kind === "nepoznato") {
     return (
       <Card title={t.title}>
+        {note !== null && note.tone === "status" && <p role="status">{note.text}</p>}
         <p role="alert">{t.unavailable}</p>
+        <Receipts receipts={shownReceipts} />
         <p><Button tone="quiet" onClick={() => { setRead(null); setAttempt((n) => n + 1); }}>{t.retry}</Button></p>
       </Card>
     );
@@ -81,20 +88,7 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
           </>
         )
         : <p>{t.closed}</p>}
-      {state.receipts.length > 0 && (
-        <section aria-labelledby="withdraw-receipts-h">
-          <h3 id="withdraw-receipts-h">{t.receiptsTitle}</h3>
-          <ul>
-            {state.receipts.map((receipt) => (
-              <li key={receipt.withdrawalId} data-testid="withdrawal-receipt">
-                {receiptLine(receipt)}{" "}
-                <Button tone="quiet" aria-label={t.downloadFor.replace("{revision}", String(receipt.revision))}
-                  onClick={() => downloadReceipt(receipt)}>{t.download}</Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <Receipts receipts={shownReceipts} />
       <Dialog open={asking} title={t.dialogTitle} dismissible={!busy} onClose={() => setAsking(false)}
         actions={(
           <>
@@ -105,5 +99,23 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
         <p>{t.explain}</p>
       </Dialog>
     </Card>
+  );
+}
+
+function Receipts({ receipts }: { receipts: readonly WithdrawalReceipt[] }) {
+  if (receipts.length === 0) return null;
+  return (
+    <section aria-labelledby="withdraw-receipts-h">
+      <h3 id="withdraw-receipts-h">{t.receiptsTitle}</h3>
+      <ul>
+        {receipts.map((receipt) => (
+          <li key={receipt.withdrawalId} data-testid="withdrawal-receipt">
+            {receiptLine(receipt)}{" "}
+            <Button tone="quiet" aria-label={t.downloadFor.replace("{revision}", String(receipt.revision))}
+              onClick={() => downloadReceipt(receipt)}>{t.download}</Button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
