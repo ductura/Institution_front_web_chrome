@@ -130,6 +130,14 @@ describe("ductus-edit-steps-v4 · blocks, atoms", () => {
     const heading = { attrs: { level: 1, nodeId: null }, content: [{ tex: "x", type: "inlineFormula" }], type: "heading" };
     expect(code([blockStep(heading)])).toBe("invalid_node");
   });
+
+  it("reads a numbered item with its level (WEB-1608) and refuses it in v3 and with a wrong level", () => {
+    const item = (attrs: Record<string, unknown>) => ({ attrs, content: [text("stavka")], type: "numberedItem" });
+    expect(code([blockStep(item({ level: 2, nodeId: null }))])).toBe("ok");
+    expect(code([blockStep(item({ level: 4, nodeId: null }))])).not.toBe("ok");
+    expect(code([blockStep(item({ nodeId: null }))])).not.toBe("ok");
+    expect(code([blockStep(item({ level: 1, nodeId: null }))], EDIT_STEP_FORMAT_V3)).not.toBe("ok");
+  });
 });
 
 describe("ductus-edit-steps-v4 · replaceAround, coverSet", () => {

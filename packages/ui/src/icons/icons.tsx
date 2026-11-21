@@ -24,6 +24,11 @@ const PATHS = {
       <circle cx="3" cy="12" {...DOT} />
     </>
   ),
+  numberedList: (
+    <>
+      <path d="M7.5 4h6M7.5 8h6M7.5 12h6M2.5 3l1-.5v3M2.5 7.25h2l-2 2.25h2M2.5 11.5h1.75l-1 1 1 1H2.5" />
+    </>
+  ),
   quote: <path d="M3 3v10M6.5 4.5h6.5M6.5 8h6.5M6.5 11.5h4" />,
   chevronDown: <path d="m4 6 4 4 4-4" />,
 } as const satisfies Record<string, ReactNode>;
