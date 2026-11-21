@@ -2037,6 +2037,46 @@
     }
   },
   {
+    "route": "institution.work-work-language.get",
+    "name": "current",
+    "request": {
+      "params": {
+        "assignmentId": "a04d5e6f-7081-4c93-9da4-e5f607182904",
+        "documentId": "izmisljeni-rad-0001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "body": {
+        "title": "Seminarski rad: kućno kompostiranje",
+        "assignmentLanguage": "hr",
+        "exception": null
+      }
+    }
+  },
+  {
+    "route": "institution.work-work-language.get",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "assignmentId": "a04d5e6f-7081-4c93-9da4-e5f607182904",
+        "documentId": "izmisljeni-rad-0001"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-0000000000d2"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
     "route": "teacher.merlin-roster.get",
     "name": "roster",
     "request": {
