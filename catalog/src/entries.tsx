@@ -28,6 +28,7 @@ import type { ProofPicture } from "../../src/components/editor/sources/proofs/cr
 import { startCapture, type Capture } from "../../src/components/editor/sources/proofs/proof-draft.ts";
 import type { ProofsDeps } from "../../src/components/editor/sources/proofs/proofs-deps.ts";
 import { assistantPurposeStateEntries } from "./assistant-purpose-states";
+import { assistantBudgetEntries } from "./assistant-budget";
 import { assistantTransferEntries } from "./assistant-transfer";
 import { assistantThreadEntry } from "./assistant-thread";
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -216,6 +217,7 @@ export const ENTRIES = {
   AssistantThread: assistantThreadEntry,
   ...assistantPurposeStateEntries,
   ...assistantTransferEntries,
+  ...assistantBudgetEntries,
   CheckActionList: {
     prazno: () => <CheckActionList findings={[]} labels={CHECK_LABELS} onAction={nothing} />,
     učitavanje: () => <RouteLoading label="Učitavanje provjera…" />,
