@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@ductura/ui";
 
+import { exportText } from "@/components/editor/EarlierDraft";
 import { readJournalScope } from "@/components/editor/EditorPage.scope";
 import SessionObserver from "@/components/shell/SessionObserver";
 import { watchSessionEnd } from "@/client/session-end";
@@ -48,7 +49,7 @@ export function RecoveryOffer({ base }: { base: Base }) {
                 <time dateTime={new Date(at).toISOString()}>{new Date(at).toLocaleString("hr-HR")}</time>{" "}
                 <a href={`${base}/rad/${encodeURIComponent(assignmentId)}`}>{t.resume}</a>
                 {text !== null && <Button tone="quiet" onClick={() => {
-                  if (!hasEnded(browserMarkStore(), offer.session)) download(text);
+                  if (!hasEnded(browserMarkStore(), offer.session)) exportText(text, "kopija-teksta.txt");
                 }}>{t.download}</Button>}
               </li>
             ))}
@@ -60,11 +61,3 @@ export function RecoveryOffer({ base }: { base: Base }) {
   );
 }
 
-function download(text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "kopija-teksta.txt";
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
