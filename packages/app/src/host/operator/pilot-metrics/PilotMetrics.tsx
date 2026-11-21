@@ -36,7 +36,7 @@ function MetricsView({ data }: { data: PilotMetricsData }) {
     { label: t.median, value: data.receiptTime.p50Ms, duration: true },
     { label: t.p95, value: data.receiptTime.p95Ms, duration: true },
   ];
-  const visible = counts.filter((row) => row.value !== null);
+  const visible = counts.filter((row): row is Row & { value: number } => row.value !== null);
   const max = Math.max(1, ...visible.map((row) => row.value));
   return (
     <>
