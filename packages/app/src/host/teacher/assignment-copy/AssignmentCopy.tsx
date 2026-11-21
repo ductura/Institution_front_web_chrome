@@ -10,10 +10,10 @@ import { wordRangeHr } from "@/lib/i18n/length-line";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { copyAssignment, readCopyCourses, type CopyResult } from "./client";
+import { assignmentCopyMessages as t } from "./messages.hr";
 import styles from "./assignment-copy.module.css";
 
 const teacher = messagesHr.teacher;
-const t = teacher.assignmentCopy;
 type Current = Extract<ApiResult<"institution.assignment.get">, { ok: true }>["body"];
 const editPath = (id: string) => `/nastavnik/zadatak/${encodeURIComponent(id)}/uredi`;
 
