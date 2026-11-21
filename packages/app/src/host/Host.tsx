@@ -16,6 +16,7 @@ import { HostContext } from "./context";
 import { EditorSignOutSlot } from "./editor/save-status/SignOutSlot";
 import { RecoveryOffer } from "./editor/save-status/RecoveryOffer";
 import SignOut from "./SignOut";
+import ShellNotifications from "./shell/notifications/ShellNotifications";
 
 /**
  * The institution front (#2028 c.6993786629 §3.3), as the layout of
@@ -110,7 +111,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
         crumbs={crumbs}
         base={base}
         institution={signedIn?.institution ?? null}
-        account={<SignOut base={base} />}
+        account={<><ShellNotifications base={base} /><SignOut base={base} /></>}
         messages={t}
         ownMain={ownMain}
       >

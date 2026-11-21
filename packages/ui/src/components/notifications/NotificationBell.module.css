@@ -1,0 +1,23 @@
+.root { position: relative; display: inline-flex; align-items: center; }
+.button {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  min-width: 36px; min-height: 36px; padding: 0 8px; border: 1px solid transparent;
+  border-radius: var(--radius); background: transparent; color: var(--ink); cursor: pointer;
+}
+.button:hover { background: var(--raised); border-color: var(--raised-rule); }
+.button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.badge {
+  position: absolute; inset-block-start: 2px; inset-inline-end: 0; min-width: 16px; padding: 0 4px;
+  border-radius: 8px; background: var(--ink); color: var(--paper, #fff); font-size: 11px; line-height: 16px; text-align: center;
+}
+.live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.list { list-style: none; margin: 0; padding: 0; }
+.entry {
+  display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: var(--radius);
+  color: var(--ink); text-decoration: none;
+}
+.entry:hover, .entry:focus-visible { background: var(--raised-rule); }
+.entry[data-read="false"] .text { font-weight: 600; }
+.meta { display: flex; gap: 8px; font-size: 12px; color: var(--ink); opacity: 0.8; }
+.unread { font-weight: 600; }
+.note { margin: 0; padding: 8px; }
