@@ -5,6 +5,5 @@ export const myStudentsText = {
   unnamed: "Ime nije dostupno",
   unavailable: "Popis studenata trenutačno nije dostupan. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",
-  works: "{n} rad(ova)",
   open: "Otvori rad",
 } as const;

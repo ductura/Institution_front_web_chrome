@@ -62,7 +62,7 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
               {students.map((student) => (
                 <li key={student.key} data-testid="my-student">
                   <strong>{student.name ?? s.unnamed}</strong>{" "}
-                  <span>{s.works.replace("{n}", String(student.works.length))}</span>
+                  <span>{student.works[0]?.title}</span>
                 </li>
               ))}
             </ul>
