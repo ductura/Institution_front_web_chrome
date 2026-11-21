@@ -1,8 +1,9 @@
 /* Form elements of WEB-05, on the measures of TextField.module.css. */
-.field { display: grid; gap: 6px; max-width: 360px; }
+/* One column that may shrink below its content, so a long option or label reflows at 320 px (WCAG 1.4.10, WEB-1805). */
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-width: 360px; }
 .label { color: var(--ink); font-weight: 600; }
 .input {
-  min-height: 44px; padding: 0 12px; font: inherit; color: var(--ink);
+  min-height: 44px; max-width: 100%; padding: 0 12px; font: inherit; color: var(--ink);
   background: var(--field); border: 1px solid var(--field-rule); border-radius: var(--radius-control);
 }
 .area { padding: 10px 12px; line-height: 1.5; resize: vertical; }

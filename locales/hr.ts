@@ -64,6 +64,8 @@ export const hr = {
     homeCrumb: "Početna",
     // DAN-431 (J-02): the explanation page, linked for everyone in the side bar.
     howItWorks: `Kako ${APP_NAME} radi`,
+    // WEB-1805 (M11.6, F-03): the link to the accessibility statement, under "Kako Ductura radi".
+    accessibilityStatement: "Izjava o pristupačnosti",
   },
   home: {
     openWorkspace: "Otvori radni prostor",
