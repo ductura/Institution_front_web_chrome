@@ -3,7 +3,7 @@
 //   student.submission-package.post         { assignmentId, requestKey } -> 202 answer (the same key is the same package)
 //   student.submission-package.get          { assignmentId, packageId }  -> 200 answer
 //   student.submission-package-cancel.post  { assignmentId, packageId }  -> 204
-//   GET <downloadPath> under /api/v1/student/assignments/<assignmentId>/package/ -> the ZIP
+//   GET <downloadPath> under the package path of the assignment in the server prefix -> the ZIP
 import { SERVER_PREFIX } from "../../../../../../src/client/api";
 import type { PrepareCalls, Raw } from "../../editor/export/preparation";
 

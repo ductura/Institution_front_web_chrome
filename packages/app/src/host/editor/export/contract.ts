@@ -3,7 +3,7 @@
 //   student.work-pdf-export.post         { documentId, versionId, requestKey } -> 202 answer (the same key is the same preparation)
 //   student.work-pdf-export.get          { documentId, exportId }              -> 200 answer
 //   student.work-pdf-export-cancel.post  { documentId, exportId }              -> 204
-//   GET <downloadPath> under /api/v1/works/<documentId>/exports/              -> the file
+//   GET <downloadPath> under the exports of the work in the server prefix              -> the file
 import { browserTransport, SERVER_PREFIX } from "../../../../../../src/client/api";
 import type { DownloadResult, PrepareCalls, Raw } from "./preparation";
 
