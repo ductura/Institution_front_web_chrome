@@ -62,6 +62,7 @@ import {
   editorSignOutPlan, planAfterDiscard, readLogoutHold, unsavedAfterSettle, untilLoaded, withinHoldLimit, type HoldRead,
 } from "@/client/logout-hold";
 import { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
+import { CroatianQuotes } from "../../../packages/editor-core/src/typography/croatian-quotes";
 import type { SaverFailure } from "@/lib/journal/local-document-saver";
 
 import {
@@ -310,7 +311,8 @@ export function LocalDocumentProvider({
     // caret in the editor state at once, never after the next letter (DAN-247).
     // The source observer's priority puts it before ArrowCollapse's keydown.
     // ChapterNumbers: heading numbers as decorations, never text (DAN-395).
-    extensions: [...createEditorExtensions(t.editor.placeholder), StorableInput, ArrowCollapse, ChapterNumbers, observer.extension],
+    // CroatianQuotes: a typed straight quote becomes „ ” or ‚ ’ (WEB-1605).
+    extensions: [...createEditorExtensions(t.editor.placeholder), StorableInput, ArrowCollapse, ChapterNumbers, CroatianQuotes, observer.extension],
     editable: false,
     immediatelyRender: false,
     injectCSS: false, // app/prosemirror.css (DAN-489)
