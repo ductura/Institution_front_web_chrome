@@ -55,3 +55,4 @@ export {
   type AssistantUnavailableLabels, type AssistantUnavailableProps,
 } from "./components/assistant-states";
 export { AssistantTransfer, type AssistantTransferLabels, type AssistantTransferProps } from "./components/assistant-transfer";
+export { AdminAiCostLimits, type AdminAiCostLimitsLabels, type AdminAiCostLimitsProps, type AdminAiCostLimitsState, type CostConfigVersion, type CostLimits } from "./components/admin-ai-policy";

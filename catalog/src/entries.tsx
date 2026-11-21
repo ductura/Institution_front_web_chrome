@@ -27,6 +27,7 @@ import { proofsPath, type ProofsRead, type SourceProof } from "../../src/client/
 import type { ProofPicture } from "../../src/components/editor/sources/proofs/crop.ts";
 import { startCapture, type Capture } from "../../src/components/editor/sources/proofs/proof-draft.ts";
 import type { ProofsDeps } from "../../src/components/editor/sources/proofs/proofs-deps.ts";
+import { adminAiCostLimitsEntries } from "./admin-ai-cost-limits";
 import { assistantPurposeStateEntries } from "./assistant-purpose-states";
 import { assistantTransferEntries } from "./assistant-transfer";
 import { assistantThreadEntry } from "./assistant-thread";
@@ -216,6 +217,7 @@ export const ENTRIES = {
   AssistantThread: assistantThreadEntry,
   ...assistantPurposeStateEntries,
   ...assistantTransferEntries,
+  ...adminAiCostLimitsEntries,
   CheckActionList: {
     prazno: () => <CheckActionList findings={[]} labels={CHECK_LABELS} onAction={nothing} />,
     učitavanje: () => <RouteLoading label="Učitavanje provjera…" />,

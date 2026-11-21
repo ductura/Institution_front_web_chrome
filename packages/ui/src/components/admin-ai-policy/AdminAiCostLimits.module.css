@@ -1,0 +1,22 @@
+/* Administrator's cost limits for the assistant (A-AI-POL): form, preview, institution total, history. */
+.limits { display: grid; gap: 16px; min-width: 0; }
+.title { margin: 0; font-size: 18px; }
+.heading { margin: 0; font-size: 14px; font-weight: 600; }
+.heading:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: 2px; }
+.form, .preview, .section { display: grid; gap: 10px; min-width: 0; }
+.preview { padding: 12px; background: var(--well); border: 1px solid var(--rule-2); border-radius: var(--radius-control); }
+.note { margin: 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.alert { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--error); background: var(--error-soft); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.meta { margin: 0; font-size: 12.5px; color: var(--ink-3); overflow-wrap: anywhere; }
+/* An empty live region stays in the accessibility tree, so later text is announced, but takes no space. */
+.meta:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.total { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.values { display: grid; gap: 6px; margin: 0; }
+.value { display: grid; gap: 2px; }
+.value dt { font-size: 12.5px; color: var(--ink-2); }
+.value dd { margin: 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.history { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.history > li { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--rule-2); }
+.label { margin: 0; font-size: 13px; font-weight: 600; color: var(--ink); }
+.skel { height: 14px; width: 60%; background: var(--rule-2); border-radius: 4px; }
