@@ -4,12 +4,19 @@ import { useCallback, useEffect, useState } from "react";
 import { Button, Card, Dialog, RouteLoading } from "@ductura/ui";
 
 import { createApi, goToSignIn, signInHref } from "../../../../../../../src/client/api";
+import { downloadBlob } from "../../../../../../../src/components/editor/EarlierDraft";
 import { appHref } from "../../../../../../../src/components/shell/nav";
 import { useHost } from "../../../context";
 import type { StateRead, WithdrawCall } from "./contract";
-import { downloadReceipt } from "./download";
 import { withdrawText as t } from "./messages.hr";
-import { canWithdraw, readWithdrawalState, receiptLine, withdraw, type Note } from "./model";
+import { canWithdraw, readWithdrawalState, receiptFile, receiptLine, withdraw, type Note } from "./model";
+import type { WithdrawalReceipt } from "./contract";
+
+/** Saves the signed confirmation from the browser's memory through the shared download; no request is made. */
+function downloadReceipt(receipt: WithdrawalReceipt): void {
+  const file = receiptFile(receipt);
+  downloadBlob(new Blob([file.content], { type: file.type }), file.filename);
+}
 
 /** TODO(ugovor): the routes are not in the contract yet; createApi answers "client_rejected" and the screen says "unavailable". */
 const defaultCall = () => createApi() as unknown as WithdrawCall;
