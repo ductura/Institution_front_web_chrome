@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { EMPTY_TOC, tableOfContents, type TocSnapshot } from "@ductura/editor-core/outline";
+import { EMPTY_TOC, tableOfContents, type TocSnapshot } from "../../../../../editor-core/src/outline/index.ts";
 
 import { moveButtons, outlineEntriesOf, tocCopyText } from "./toc-model";
 

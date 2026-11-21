@@ -7,7 +7,7 @@
 // without changing any id. Read-only works get the list and the copy only.
 import { useMemo, useState, useSyncExternalStore } from "react";
 
-import { createTocStore, EMPTY_TOC, goToHeading, moveChapterInEditor, type TocEditor } from "@ductura/editor-core/outline";
+import { createTocStore, EMPTY_TOC, goToHeading, moveChapterInEditor, type TocEditor } from "../../../../../editor-core/src/outline/index.ts";
 import { Button, EditorOutline } from "@ductura/ui";
 
 import { tocHr as t } from "./messages.hr";

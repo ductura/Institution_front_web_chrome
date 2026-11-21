@@ -2,7 +2,7 @@
 // Every number comes from the one chapter projection in
 // @ductura/editor-core/outline (deriveChapters, by block id); the host only
 // turns its snapshot into what the @ductura/ui outline draws.
-import { tocText, type TocSnapshot } from "@ductura/editor-core/outline";
+import { tocText, type TocSnapshot } from "../../../../../editor-core/src/outline/index.ts";
 import type { OutlineEntry } from "@ductura/ui";
 
 import { tocHr as t } from "./messages.hr";
