@@ -1,8 +1,7 @@
-import { PendingPage } from "../../../../../src/host/pages";
+import { ReplayPage } from "../../../../../src/host/student/other";
 
-// TREBA API: student.assignment-work.get and evidence.replay.post; src/client has no module for them yet.
-// Source: Ductus src/app/rad/[assignmentId]/reprodukcija/page.tsx, copied to src/app/rad/[assignmentId]/reprodukcija/.
-/** "Reprodukcija Vašeg rada". */
-export default function Page() {
-  return <PendingPage />;
+/** "Reprodukcija Vašeg rada" (S-34, evidence.replay.post); HOST-S5. */
+export default async function Page({ params }: { params: Promise<{ assignmentId: string }> }) {
+  const { assignmentId } = await params;
+  return <ReplayPage assignmentId={assignmentId} />;
 }

@@ -2415,6 +2415,44 @@
     }
   },
   {
+    "route": "student.text-check-config.get",
+    "name": "ready",
+    "request": {
+      "params": {
+        "assignmentId": "4b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d01"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "enabledCheckIds": [
+          "claim",
+          "long",
+          "colloq",
+          "fix"
+        ],
+        "lektaProfileId": "fpzg-politologija-diplomski"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.text-check-config.get",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "assignmentId": "4b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d99"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
     "route": "institution.work-work-language.get",
     "name": "current",
     "kind": "success",
