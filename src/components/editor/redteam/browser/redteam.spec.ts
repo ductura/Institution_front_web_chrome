@@ -89,6 +89,10 @@ test.describe("red-team: AI tipkač (Ductura)", () => {
     });
     // The finding: every change is labelled exactly as a person's typing.
     expect(new Set(labels)).toEqual(new Set(["editor"]));
+    // P-2 proposal: the same input is flagged for review.
+    const flags = await page.evaluate(() => window.__source!.flags());
+    console.log(`P-2 oznake: ${JSON.stringify(flags)}`);
+    expect(flags.length, "P-2 flags the scripted input for review").toBeGreaterThan(0);
   });
 
   test("usporedba: lijepljenje (Ctrl+V)", async ({ page, context, browserName }) => {

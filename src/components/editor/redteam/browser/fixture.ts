@@ -11,10 +11,16 @@ import { Editor } from "@tiptap/core";
 import {
   ArrowCollapse, ChapterNumbers, createEditorExtensions, sourceOfChange, SourceObserver, StorableInput,
 } from "../../../../../packages/editor-core/src/editor";
+import {
+  changeShape, InputRhythm, reviewFlags, type Burst, type ReviewFlag,
+} from "../../../../../packages/editor-core/src/editor/review-signals";
 
 type Harness = {
   ready: boolean;
   sources(): string[];
+  /** P-2 proposal: bursts and review flags of the author's changes. */
+  bursts(): Burst[];
+  flags(): ReviewFlag[];
   text(): string;
   /** A change made by a script through the editor's own API, with no DOM event. */
   scripted(text: string): void;
@@ -31,19 +37,35 @@ const editor = new Editor({
 });
 
 const sources: string[] = [];
+const rhythm = new InputRhythm();
+let frontier = 0;
+let selectionWasEmpty = true;
 let ready = false;
 
 editor.on("transaction", ({ transaction, appendedTransactions }) => {
   const all = [transaction, ...appendedTransactions];
   const seen = observer.take(all);
   // What the editor does to itself while it is created is not a change of the author.
-  if (!ready || !all.some((tr) => tr.docChanged)) return;
-  sources.push(sourceOfChange(all, seen));
+  if (!ready || !all.some((tr) => tr.docChanged)) {
+    selectionWasEmpty = editor.state.selection.empty;
+    return;
+  }
+  const source = sourceOfChange(all, seen);
+  sources.push(source);
+  // Typing and keyless input are the author's input; the rest is not rhythm.
+  if (source === "editor" || source === "keyless-input") {
+    const shape = changeShape(all, frontier, selectionWasEmpty);
+    frontier = shape.frontier;
+    rhythm.record({ at: performance.now(), inserted: shape.inserted, removed: shape.removed, wentBack: shape.wentBack });
+  }
+  selectionWasEmpty = editor.state.selection.empty;
 });
 
 const harness: Harness = {
   ready: false,
   sources: () => [...sources],
+  bursts: () => rhythm.bursts(),
+  flags: () => reviewFlags(rhythm.bursts(), { automated: navigator.webdriver === true, rhythmRecorded: true }),
   text: () => editor.getText(),
   scripted: (text) => { editor.commands.insertContent(text); },
 };
