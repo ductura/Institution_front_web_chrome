@@ -1,6 +1,6 @@
 /* The editor toolbar, outline and progress (M5.2): on the tokens of this package, paper and graphite. */
 .toolbar {
-  display: flex; align-items: center; gap: 4px; padding: 6px 10px; overflow-x: auto;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 10px;
   background: var(--chrome); border-bottom: 1px solid var(--rule-2); color: var(--ink);
 }
 .group { display: flex; align-items: center; gap: 2px; flex: none; }
