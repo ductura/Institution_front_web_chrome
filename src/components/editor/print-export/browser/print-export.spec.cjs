@@ -3,9 +3,11 @@ const { expect, test } = require("@playwright/test");
 
 const fixture = "/__fixture/print-export";
 const docxType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const docxPath = "/api/v1/works/demo-rad/export?format=docx&versionId=42";
+const snapshotSha256 = "1234567890ab" + "c".repeat(52);
 
 test.beforeEach(async ({ page }) => {
-  await page.route(`**${fixture}`, (route) => route.fulfill({
+  await page.route((url) => url.pathname === fixture, (route) => route.fulfill({
     contentType: "text/html",
     body: `<!doctype html><html lang="hr"><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,15 +31,18 @@ function onePagePdf() {
     + `<< /Size 4 /Root 1 0 R >>\nstartxref\n${pdf.length}\n%%EOF\n`;
 }
 
-test("the preview can retry and Word downloads the file returned by the loader", async ({ page }) => {
+test("the preview can retry and DOCX downloads the file returned by the client", async ({ page }) => {
   let previews = 0;
   let downloads = 0;
   await page.route("**/__fixture/export.pdf", (route) => ++previews === 1
     ? route.fulfill({ status: 503 })
     : route.fulfill({ contentType: "application/pdf", body: onePagePdf() }));
-  await page.route("**/__fixture/export.docx", (route) => ++downloads === 1
+  await page.route((url) => url.pathname + url.search === docxPath, (route) => ++downloads === 1
     ? route.fulfill({ contentType: "text/html", body: "<p>Izmišljena pogreška</p>" })
-    : route.fulfill({ contentType: docxType, body: "Izmišljeni seminarski rad" }));
+    : route.fulfill({
+      contentType: docxType, headers: { "X-Export-Snapshot-Sha256": snapshotSha256 },
+      body: "Izmišljeni seminarski rad",
+    }));
 
   await page.setViewportSize({ width: 360, height: 750 });
   await page.goto(fixture);
@@ -52,18 +57,61 @@ test("the preview can retry and Word downloads the file returned by the loader",
     .toHaveAttribute("href", await preview.getAttribute("src"));
   expect((await dialog.boundingBox()).width).toBeLessThan(360);
 
-  const word = dialog.getByRole("button", { name: "Preuzmi Word (.docx)" });
+  const word = dialog.getByRole("button", { name: "Preuzmi DOCX" });
   await word.click();
   await expect(dialog.getByRole("alert")).toContainText("Preuzimanje rada nije uspjelo");
   const downloadPromise = page.waitForEvent("download");
   await word.click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe("izmisljeni-rad.docx");
+  expect(download.suggestedFilename()).toBe("Izmišljeni rad.docx");
   expect(await readFile(await download.path(), "utf8")).toBe("Izmišljeni seminarski rad");
+  await expect(dialog.getByRole("status")).toHaveText("Otisak izvoza: 1234567890ab…");
   const previewUrl = await preview.getAttribute("src");
   await dialog.getByRole("button", { name: "Zatvori" }).click();
   await expect(opener).toBeFocused();
   expect(await page.evaluate((url) => fetch(url).then(() => true, () => false), previewUrl)).toBe(false);
+});
+
+test("the DOCX client sends the saved revision, shows progress and maps 404 and 422", async ({ page }) => {
+  let respond;
+  const pending = new Promise((resolve) => { respond = resolve; });
+  let calls = 0;
+  await page.route("**/api/v1/works/demo-rad/versions", (route) => route.fulfill({
+    json: {
+      versions: [
+        { kind: "checkpoint", revision: 42, savedMinute: "2026-11-21T08:10:00.000Z" },
+        { kind: "checkpoint", revision: 41, savedMinute: "2026-11-20T08:10:00.000Z" },
+      ],
+      nextBeforeRevision: null,
+    },
+  }));
+  await page.route((url) => url.pathname.endsWith("/export"), async (route) => {
+    const { pathname, search } = new URL(route.request().url());
+    expect(pathname + search).toBe(docxPath);
+    expect(route.request().method()).toBe("GET");
+    expect(route.request().headers().accept).toBe(docxType);
+    calls += 1;
+    await route.fulfill({ status: calls === 1 ? await pending : 422 });
+  });
+  try {
+    await page.goto(`${fixture}?docx`);
+    await page.getByRole("button", { name: "Pregled ispisa" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("PDF — Uskoro")).toBeVisible();
+    await expect(dialog.getByText(/Spremljena verzija od 21\.\s*11\.\s*2026\./)).toBeVisible();
+    const button = dialog.getByRole("button", { name: "Preuzmi DOCX" });
+    await button.click();
+    const busy = dialog.getByRole("button", { name: "Preuzimam DOCX…" });
+    await expect(busy).toBeDisabled();
+    await expect(busy).toHaveAttribute("aria-busy", "true");
+    respond(404);
+    await expect(dialog.getByRole("alert")).toHaveText("Rad ili spremljena verzija nisu dostupni.");
+    await button.click();
+    await expect(dialog.getByRole("alert")).toHaveText("Zahtjev za izvoz nije valjan.");
+    expect(calls).toBe(2);
+  } finally {
+    respond(404);
+  }
 });
 
 test("closing cancels a pending preview and restores editor focus", async ({ page }) => {
