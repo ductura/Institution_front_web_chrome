@@ -1,0 +1,48 @@
+/* WEB-1705: phone width (360 px). Nothing here applies from 640 px up. */
+@media (max-width: 639px) {
+  .review {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .review :global(.page) {
+    padding-inline: 12px;
+  }
+
+  .review img,
+  .review table,
+  .review pre {
+    max-width: 100%;
+  }
+
+  .review pre {
+    overflow-x: auto;
+  }
+
+  /* Touch targets: at least 24 by 24 px (WCAG 2.5.8), for buttons, fields and stand-alone links. */
+  .review button,
+  .review [role="button"],
+  .review summary,
+  .review input:not([type="checkbox"]):not([type="radio"]),
+  .review select,
+  .review textarea {
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  .review textarea,
+  .review input:not([type="checkbox"]):not([type="radio"]),
+  .review select {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .review ul a,
+  .review nav a,
+  .review aside a {
+    display: inline-block;
+    min-height: 24px;
+    min-width: 24px;
+  }
+}

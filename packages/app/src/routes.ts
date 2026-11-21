@@ -9,6 +9,7 @@ import { messagesHr as workText } from "../../../src/lib/i18n/messages.hr.ts";
 import type { SessionRole } from "../../../src/client/api.ts";
 
 import type { Base } from "./bases";
+import { profileHr } from "./i18n/messages.hr";
 import { hostText } from "./text";
 
 export { BASES, type Base } from "./bases";
@@ -92,6 +93,8 @@ export const PAGES: readonly Page[] = [
   // HOST-T3: N-13 "Produljenje roka" (WEB-1113), reached from the overview page (N-17).
   { path: "/nastavnik/zadatak/[assignmentId]/produljenje", label: hostText.deadlineExtensions, kind: "pending", roles: ["teacher"], current: "/nastavnik/zbirni" },
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
+  // WEB-1804 (M11.5): interface language, name and notifications, for everyone signed in.
+  { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
 ];

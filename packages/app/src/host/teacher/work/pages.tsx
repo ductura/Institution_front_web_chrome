@@ -25,6 +25,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { hostText } from "../../../text";
 import { useHost } from "../../context";
+import MobileReview from "../mobile-review/MobileReview";
 import { useTeacherRead } from "../../pages";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
@@ -117,7 +118,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   };
 
   return (
-    <div className="page">
+    <MobileReview><div className="page">
       <LiveWorkFrame documentId={documentId} frame={null} recordState={stopped ? null : recordState} mentorInAside
         text={<>
           {view.connection === "retrying" && view.document === null && <p role="alert">{workText.liveUnavailable}</p>}
@@ -141,7 +142,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
           </>}
           <RecordLimits />
         </>} />
-    </div>
+    </div></MobileReview>
   );
 }
 
