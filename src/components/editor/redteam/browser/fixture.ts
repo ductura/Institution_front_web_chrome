@@ -12,7 +12,7 @@ import {
   ArrowCollapse, ChapterNumbers, createEditorExtensions, sourceOfChange, SourceObserver, StorableInput,
 } from "../../../../../packages/editor-core/src/editor";
 import {
-  changeShape, InputRhythm, reviewFlags, type Burst, type ReviewFlag,
+  changeShape, entersRhythm, InputRhythm, reviewFlags, type Burst, type ReviewFlag,
 } from "../../../../../packages/editor-core/src/editor/review-signals";
 
 type Harness = {
@@ -52,8 +52,8 @@ editor.on("transaction", ({ transaction, appendedTransactions }) => {
   }
   const source = sourceOfChange(all, seen);
   sources.push(source);
-  // Typing and keyless input are the author's input; the rest is not rhythm.
-  if (source === "editor" || source === "keyless-input") {
+  // Only typing is rhythm; dictation and on-screen keyboards never are (P-2 §4).
+  if (entersRhythm(source)) {
     const shape = changeShape(all, frontier, selectionWasEmpty);
     frontier = shape.frontier;
     rhythm.record({ at: performance.now(), inserted: shape.inserted, removed: shape.removed, wentBack: shape.wentBack });

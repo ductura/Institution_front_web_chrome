@@ -9,7 +9,7 @@ const command = "node catalog/node_modules/vite/bin/vite.js --config src/compone
 
 module.exports = defineConfig({
   testDir: __dirname,
-  testMatch: "redteam.spec.ts",
+  testMatch: /(redteam|kontrola)\.spec\.ts$/,
   workers: 1,
   retries: 0,
   reporter: [["line"]],

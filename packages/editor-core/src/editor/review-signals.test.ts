@@ -3,7 +3,7 @@ import { EditorState, TextSelection } from "@tiptap/pm/state";
 import { describe, expect, it } from "vitest";
 
 import {
-  BURST_QUIET_MS, changeShape, InputRhythm, MAX_INTERVALS_PER_BURST, PLACEHOLDER_THRESHOLDS, reviewFlags, type Burst,
+  BURST_QUIET_MS, changeShape, entersRhythm, InputRhythm, MAX_INTERVALS_PER_BURST, PLACEHOLDER_THRESHOLDS, reviewFlags, type Burst,
 } from "./review-signals";
 import { createEditorExtensions } from "./schema";
 
@@ -100,5 +100,16 @@ describe("changeShape", () => {
     const state = start();
     const tr = state.tr.insertText("y");
     expect(changeShape([tr], state.selection.head, false).wentBack).toBe(true);
+  });
+});
+
+describe("entersRhythm", () => {
+  it("records only typing: assistive input and the rest never enter the rhythm (P-2 §4)", () => {
+    expect(entersRhythm("editor")).toBe(true);
+    for (const source of [
+      "keyless-input", "composition", "system-replacement", "paste", "cut", "drop", "citation-form", "unattributed",
+    ]) {
+      expect(entersRhythm(source), source).toBe(false);
+    }
   });
 });

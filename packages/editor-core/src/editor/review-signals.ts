@@ -19,6 +19,17 @@ export const BURST_QUIET_MS = 4000;
 /** Most intervals kept per burst (P-1, PRODUCT §5 rule 4). */
 export const MAX_INTERVALS_PER_BURST = 130;
 
+/**
+ * Whether a change of this source enters the rhythm. Only `editor`, typing
+ * the capture layer positively attributed to keys. `keyless-input` is
+ * dictation, an on-screen keyboard or an input method without key proof:
+ * assistive technology is never a reason for a flag (P-2 §4, draft N-4), so
+ * it is not recorded at all, and neither is anything that is not typing.
+ */
+export function entersRhythm(source: string): boolean {
+  return source === "editor";
+}
+
 /** One change of the author, as the recorder needs it. */
 export type InputChange = Readonly<{
   /** Milliseconds on any monotonic clock the caller keeps (performance.now). */
