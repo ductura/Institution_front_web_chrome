@@ -63,7 +63,9 @@ export function AssistantTransfer({ labels, paragraph, answer, onApply, onCancel
     wasOpen.current = open;
   }, [open]);
 
+  const unavailable = disabled || busy || transferred;
   const close = (apply: boolean) => {
+    if (apply && unavailable) return;
     setOpen(false);
     if (apply) onApply();
     else onCancel?.();
@@ -85,7 +87,7 @@ export function AssistantTransfer({ labels, paragraph, answer, onApply, onCancel
         </p>
       )}
       <span ref={anchor}>
-        <InertButton tone="quiet" inert={disabled || transferred || open} busy={busy} describedBy={meta === "" ? undefined : metaId} onClick={() => setOpen(true)}>
+        <InertButton tone="quiet" inert={unavailable || open} busy={busy} describedBy={meta === "" ? undefined : metaId} onClick={() => setOpen(true)}>
           {labels.transfer}
         </InertButton>
       </span>
@@ -117,7 +119,9 @@ export function AssistantTransfer({ labels, paragraph, answer, onApply, onCancel
             </p>
           </figure>
           <div className={styles.actions}>
-            <InertButton onClick={() => close(true)}>{labels.apply}</InertButton>
+            <InertButton inert={unavailable} busy={busy} describedBy={meta === "" ? undefined : metaId} onClick={() => close(true)}>
+              {labels.apply}
+            </InertButton>
             <InertButton tone="quiet" onClick={() => close(false)}>
               {labels.cancel}
             </InertButton>

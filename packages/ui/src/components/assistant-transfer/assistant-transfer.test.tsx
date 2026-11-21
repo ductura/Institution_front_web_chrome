@@ -132,6 +132,27 @@ describe("AssistantTransfer", () => {
     }
   });
 
+  it("apply does nothing once the parent turns the transfer unavailable, cancel still closes", () => {
+    for (const props of [{ disabled: true }, { busy: true }, { transferred: true }]) {
+      const onApply = vi.fn();
+      const onCancel = vi.fn();
+      const el = mount(<AssistantTransfer labels={labels} paragraph={PARAGRAPH} answer={ANSWER} onApply={onApply} onCancel={onCancel} />);
+      click(button(el, "Prenesi u rad"));
+      act(() => root!.render(<AssistantTransfer labels={labels} paragraph={PARAGRAPH} answer={ANSWER} onApply={onApply} onCancel={onCancel} {...props} />));
+      const apply = button(el, "Primijeni");
+      expect(apply.getAttribute("aria-disabled")).toBe("true");
+      click(apply);
+      expect(onApply).not.toHaveBeenCalled();
+      expect(side(el, "before")).not.toBeNull();
+      click(button(el, "Odustani"));
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(side(el, "before")).toBeNull();
+      act(() => root?.unmount());
+      host?.remove();
+      root = undefined;
+    }
+  });
+
   it("an error from the parent is an alert", () => {
     const html = renderToStaticMarkup(<AssistantTransfer labels={labels} paragraph={PARAGRAPH} answer={ANSWER} onApply={vi.fn()} error="Prijenos nije uspio." />);
     expect(html).toMatch(/role="alert"[^>]*>Prijenos nije uspio\./u);
