@@ -67,6 +67,27 @@ describe("EditorToolbar", () => {
   });
 });
 
+describe("EditorToolbar with disabled buttons", () => {
+  const withDisabled = (): EditorToolbarGroup[] => [
+    { id: "h", label: "Povijest izmjena", actions: [
+      { id: "undo", label: "Poništi", icon: "undo", disabled: true, onSelect: () => undefined },
+      { id: "redo", label: "Ponovi", icon: "redo", onSelect: () => undefined },
+      { id: "x", label: "Kurziv", icon: "italic", disabled: true, onSelect: () => undefined },
+      { id: "bold", label: "Podebljano", icon: "bold", onSelect: () => undefined },
+    ] },
+  ];
+  it("puts the tab stop on the first enabled button and arrows skip disabled ones", () => {
+    const el = mount(<EditorToolbar groups={withDisabled()} />);
+    const buttons = el.querySelectorAll("button");
+    expect([...buttons].map((b) => b.tabIndex)).toEqual([-1, 0, -1, -1]);
+    buttons[1]!.focus();
+    key(el.querySelector('[role="toolbar"]')!, "ArrowRight");
+    expect(document.activeElement).toBe(buttons[3]);
+    key(el.querySelector('[role="toolbar"]')!, "ArrowRight");
+    expect(document.activeElement).toBe(buttons[1]);
+  });
+});
+
 describe("EditorOutline", () => {
   it("lists headings, marks the current one and reports the click", async () => {
     const spy = vi.fn();

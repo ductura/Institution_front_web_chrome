@@ -41,10 +41,12 @@ export type EditorToolbarProps = {
 export function EditorToolbar({ groups, label = editorToolbarHr.toolbar }: EditorToolbarProps) {
   const [active, setActive] = useState(0);
   const flat = groups.flatMap((g) => g.actions.map((a) => ({ group: g, action: a })));
-  const tabStop = Math.min(active, Math.max(0, flat.length - 1));
+  // The one tab stop sits on an enabled button: the active one, else the next enabled, else the first.
+  const enabled = flat.map((f, i) => (f.action.disabled ? -1 : i)).filter((i) => i >= 0);
+  const tabStop = enabled.includes(active) ? active : (enabled.find((i) => i > active) ?? enabled[0] ?? 0);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("button")].filter((b) => b.offsetParent !== null || !b.closest("[data-secondary]"));
+    const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("button")].filter((b) => !b.disabled && (b.offsetParent !== null || !b.closest("[data-secondary]")));
     const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
     const next = toolbarIndex(current < 0 ? 0 : current, buttons.length, event.key);
     if (next === null) return;
