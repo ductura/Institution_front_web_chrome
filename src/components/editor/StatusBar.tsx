@@ -1,4 +1,5 @@
 import { SaveState, type SaveStateName } from "@ductura/ui";
+import { SaveStatus } from "@ductura/ui/save-status";
 import type { ReactNode } from "react";
 
 import { pluralHr } from "../../lib/i18n/hr";
@@ -91,13 +92,16 @@ export default function StatusBar({
   readOnly = false,
   length,
   children,
+  online,
 }: {
   save: StatusSave | null;
   readOnly?: boolean;
   length?: { readonly words: number | null; readonly range: ScopeRange };
   children?: ReactNode;
+  online?: boolean;
 }) {
   const scope = length === undefined ? null : scopeLine(length.words, length.range);
+  const Chip = online === undefined ? SaveState : SaveStatus;
   return (
     <footer className={styles.bar} aria-label={t.workspace.status}>
       {readOnly ? (
@@ -105,7 +109,7 @@ export default function StatusBar({
       ) : save === null ? (
         <span>{t.workspace.statusNoJournal}</span>
       ) : (
-        <SaveState state={shownSaveState(save)} blocked={save.blocked} />
+        <Chip state={shownSaveState(save)} blocked={save.blocked} online={online} />
       )}
       {scope === null ? null : <span>{scope}</span>}
       {children}
