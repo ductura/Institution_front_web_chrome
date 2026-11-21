@@ -30,6 +30,7 @@ import type { ProofsDeps } from "../../src/components/editor/sources/proofs/proo
 import { adminAiCostLimitsEntries } from "./admin-ai-cost-limits";
 import { assistantPurposeStateEntries } from "./assistant-purpose-states";
 import { assistantBudgetEntries } from "./assistant-budget";
+import { declarationAiEntries } from "./declaration-ai";
 import { assistantTransferEntries } from "./assistant-transfer";
 import { assistantThreadEntry } from "./assistant-thread";
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -220,6 +221,7 @@ export const ENTRIES = {
   ...assistantTransferEntries,
   ...adminAiCostLimitsEntries,
   ...assistantBudgetEntries,
+  ...declarationAiEntries,
   CheckActionList: {
     prazno: () => <CheckActionList findings={[]} labels={CHECK_LABELS} onAction={nothing} />,
     učitavanje: () => <RouteLoading label="Učitavanje provjera…" />,
