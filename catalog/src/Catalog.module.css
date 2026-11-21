@@ -26,6 +26,10 @@
   --raised: var(--sheet);
   --raised-rule: var(--field-rule);
 }
+.component:global(#EditorToolbar) .sheet {
+  --chrome: var(--sheet);
+  --hover: var(--well);
+}
 .component:global(#AppointmentCalendar) .sheet {
   --chrome: var(--sheet);
   --hover: var(--well);

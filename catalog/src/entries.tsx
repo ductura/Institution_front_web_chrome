@@ -1,6 +1,6 @@
 import {
   AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
+  EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
   Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
 } from "@ductura/ui";
@@ -125,6 +125,28 @@ function TimelineExample() {
 
 const nothing = () => undefined;
 
+const EDITOR_GROUPS = [
+  { id: "history", label: "Povijest izmjena", actions: [
+    { id: "undo", label: "Poništi", icon: "undo", onSelect: nothing, shortcut: "Control+Z" },
+    { id: "redo", label: "Ponovi", icon: "redo", onSelect: nothing, shortcut: "Control+Y", disabled: true },
+  ] },
+  { id: "block", label: "Stil bloka", actions: [
+    { id: "paragraph", label: "Odlomak", icon: "paragraph", onSelect: nothing },
+    { id: "heading1", label: "Naslov 1", icon: "heading", onSelect: nothing, pressed: true },
+  ] },
+  { id: "text", label: "Tekst", actions: [
+    { id: "bold", label: "Podebljano", icon: "bold", onSelect: nothing },
+    { id: "italic", label: "Kurziv", icon: "italic", onSelect: nothing },
+    { id: "bulletList", label: "Popis", icon: "bulletList", onSelect: nothing },
+    { id: "quote", label: "Citat", icon: "quote", onSelect: nothing },
+  ] },
+] as const;
+const EDITOR_HEADINGS = [
+  { id: "a", number: "1", title: "Izmišljeni uvod", level: 1 as const },
+  { id: "b", number: "1.1", title: "Izmišljeni cilj", level: 2 as const },
+  { id: "c", number: "2", title: "Izmišljena rasprava", level: 1 as const },
+];
+
 // WEB-6A components (invented example text only). Drawer, Popover, FindBar and ContextMenu
 // show in the page flow; the palette and the shortcuts dialog are modal, so each state
 // opens from its own button, as SourceForm does.
@@ -240,6 +262,27 @@ export const ENTRIES = {
     greška: () => <p role="alert">Pomoćnik se nije učitao.</p>,
     puno: () => <AssistantComingSoon labels={ASSISTANT_LABELS} purposes={["Izmišljeni prijedlog 1", "Izmišljeni prijedlog 2"]} />,
     onemogućeno: () => <p>Pomoćnik trenutačno nije dostupan.</p>,
+  },
+  EditorToolbar: {
+    prazno: () => <p>Alati se pokazuju kad je rad otvoren za uređivanje.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje alata…" />,
+    greška: () => <p role="alert">Alati se nisu učitali.</p>,
+    puno: () => <EditorToolbar groups={EDITOR_GROUPS} />,
+    onemogućeno: () => <EditorToolbar groups={EDITOR_GROUPS.map((g) => ({ ...g, actions: g.actions.map((a) => ({ ...a, disabled: true })) }))} />,
+  },
+  EditorOutline: {
+    prazno: () => <EditorOutline entries={[]} onSelect={nothing} />,
+    učitavanje: () => <RouteLoading label="Učitavanje naslova…" />,
+    greška: () => <p role="alert">Naslovi se nisu učitali.</p>,
+    puno: () => <EditorOutline entries={EDITOR_HEADINGS} currentId="b" onSelect={nothing} />,
+    onemogućeno: () => <p>Popis naslova trenutačno nije dostupan.</p>,
+  },
+  EditorProgress: {
+    prazno: () => <EditorProgress words={0} range={null} />,
+    učitavanje: () => <RouteLoading label="Učitavanje napretka…" />,
+    greška: () => <p role="alert">Napredak se nije učitao.</p>,
+    puno: () => <EditorProgress words={2100} range={{ min: 2000, max: 2500 }} />,
+    onemogućeno: () => <p>Napredak trenutačno nije dostupan.</p>,
   },
   ObjectToolbar: {
     prazno: () => <p>Traka se pokazuje tek kad je odabrana tablica ili slika.</p>,
