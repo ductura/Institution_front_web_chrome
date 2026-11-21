@@ -7,7 +7,7 @@
  * invented answers. The body is built by buildProblemReportBody's model: no
  * work content, no name, no identifier leaves the page, only the closed list.
  */
-import { outcomeFromResponse, type ProblemReportBody, type SendOutcome } from "../components/support/problem-report";
+import { outcomeFromResponse, type ProblemReportBody, type SendOutcome } from "./problem-report";
 
 export type ProblemReportCall = (
   id: "support.problem-report.post",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { buildProblemReportBody } from "../components/support/index.ts";
-import { sendProblemReport, type ProblemReportCall } from "./problem-report.ts";
+import { buildProblemReportBody } from "./index.ts";
+import { sendProblemReport, type ProblemReportCall } from "./problem-report-send.ts";
 
 // Invented content only.
 const BODY = buildProblemReportBody({

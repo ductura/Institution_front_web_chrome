@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Dialog, ProblemReportForm } from "@ductura/ui";
 
 import { createApi } from "../../../../src/client/api.ts";
-import { sendProblemReport, type ProblemReportCall } from "../../../../src/client/problem-report.ts";
+import { sendProblemReport, type ProblemReportCall } from "../../../../src/components/support/problem-report-send.ts";
 import { PROBLEM_REPORT_CATEGORIES } from "../../../../src/components/support/index.ts";
 import { INITIAL_FORM, createSender, formView, scheduleUnlock, type FormState } from "../../../../src/components/support/index.ts";
 
