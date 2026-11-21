@@ -1,8 +1,10 @@
-import { PendingPage } from "../../../../src/host/pages";
+import { paramOf } from "../../../../../../src/components/student/radovi/works-view";
+import { MyWorksPage } from "../../../../src/host/student/other";
 
-// TREBA API: the student's works (Ductus app.student_workspace()); @ductura/contracts 2.8.0 has no read for it.
-// Source: Ductus src/app/zadaci/radovi/page.tsx, copied to src/app/zadaci/radovi/.
-/** S "Moji radovi". */
-export default function Page() {
-  return <PendingPage />;
+/** S "Moji radovi" (WEB-10): student.assignments.get and student.assignment-work.get; HOST-S5. */
+export default async function Page({ searchParams }: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  return <MyWorksPage filter={{ q: paramOf(query.q), year: paramOf(query.godina) }} />;
 }

@@ -46,7 +46,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
   const assignmentId = workPath.slice('/rad/'.length);
   const submissionPath = `${workPath}/predaja`;
 
-  const revision = await test.step('Upis dvaju odlomaka i potvrda spremanja te snimke', async () => {
+  const savedWork = await test.step('Upis dvaju odlomaka i potvrda spremanja te snimke', async () => {
     await editor.click();
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End');
     const [commit] = await Promise.all([
@@ -67,16 +67,33 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
       })(),
     ]);
     await expectHttp200(commit, 'Spremanje obaju odlomaka');
+    const request = commit.request().postDataJSON();
     const saved = await commit.json();
     expect(saved).toMatchObject({
       status: expect.stringMatching(/^(committed|duplicate)$/),
-      receipt: { status: 'signed' },
+      receipt: {
+        status: 'signed',
+        signedReceipt: {
+          payload: {
+            documentId: request.documentId,
+            clientTransactionId: request.clientTransactionId,
+            revision: saved.revision,
+            segmentHash: expect.stringMatching(SHA256_HEX),
+          },
+        },
+      },
     });
     expect(Number.isSafeInteger(saved.revision)).toBe(true);
     expect(saved.revision).toBeGreaterThan(0);
     await expect(statusBar.getByRole('status')).toHaveText('Spremljeno na poslužitelju', { timeout: 30_000 });
-    return saved.revision as number;
+    return {
+      revision: saved.revision as number,
+      documentId: request.documentId as string,
+      documentHash: createHash('sha256').update(Buffer.from(request.document, 'base64')).digest('hex'),
+      headSegmentHash: saved.receipt.signedReceipt.payload.segmentHash as string,
+    };
   });
+  const { revision } = savedWork;
 
   const work = await test.step('Potvrda Izjave i pregled spremljenih odlomaka prije predaje', async () => {
     await page.getByRole('link', { name: 'Predaja rada', exact: true }).click();
@@ -96,7 +113,14 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     ]);
     await expectHttp200(opened, 'Čitanje spremljene revizije za predaju');
     const body = await opened.json();
-    expect(body).toMatchObject({ status: 'opened', submitted: false, currentRevision: revision });
+    expect(body).toMatchObject({
+      status: 'opened',
+      submitted: false,
+      currentRevision: revision,
+      documentId: savedWork.documentId,
+      documentHash: savedWork.documentHash,
+      headSegmentHash: savedWork.headSegmentHash,
+    });
 
     const manuscript = page.getByRole('document', { name: 'Tekst koji predajete', exact: true });
     for (const paragraph of paragraphs) {
@@ -123,8 +147,8 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
           assignmentId,
           documentId: work.documentId,
           revision,
-          artifactSha256: work.documentHash,
-          evidenceHeadSegmentHash: work.headSegmentHash,
+          artifactSha256: savedWork.documentHash,
+          evidenceHeadSegmentHash: savedWork.headSegmentHash,
         },
         signature: { algorithm: 'Ed25519', signatureEncoding: 'raw' },
       },
@@ -142,19 +166,20 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     return body.receipt;
   });
 
-  await test.step('Potvrda predaje i isti otisak u sučelju', async () => {
+  await test.step('Potvrda predaje prikazuje isti otisak i nakon osvježavanja', async () => {
     await expect(page).toHaveURL(`${submissionPath}/potvrda`);
     await expect(page.getByRole('heading', { name: 'Potvrda predaje', exact: true })).toBeVisible();
     const fingerprint = page.locator('code').filter({ hasText: new RegExp(`^${receipt.payload.artifactSha256}$`) });
-    // Prijavi izostanak otiska i svejedno provjeri zaključavanje rada.
-    await expect.soft(fingerprint).toBeVisible();
+    await expect.soft(fingerprint, 'Otisak nakon predaje').toBeVisible();
+    await page.reload();
+    await expect.soft(fingerprint, 'Isti otisak nakon osvježavanja').toBeVisible();
   });
 
   await test.step('Ponovno otvaranje rada dopušta samo čitanje', async () => {
     await page.goto(workPath);
     await expect(page).toHaveURL(workPath);
     await expect(statusBar.getByText('Samo za čitanje', { exact: true })).toBeVisible();
-    await expect(editor.and(page.locator('[contenteditable="true"]'))).toHaveCount(0);
+    await expect(editor.and(page.locator('[contenteditable="true"], [contenteditable="plaintext-only"]'))).toHaveCount(0);
 
     const stored = await page.request.get(`/api/v1/student/assignments/${assignmentId}/submission`);
     await expect(stored).toBeOK();

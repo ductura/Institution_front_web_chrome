@@ -7,3 +7,12 @@ export type Base = (typeof BASES)[number];
 export function baseOfSegment(segment: string): Base | null {
   return BASES.find((b) => b === `/app/${segment}`) ?? null;
 }
+
+/**
+ * Next's path of an app route under a base: the browser's path without the
+ * basePath "/app", as router.push and router.replace want it (they add the
+ * basePath themselves; a path with it would open "/app/app/...").
+ */
+export function nextPath(base: Base, route: string): string {
+  return (route === "/" ? `${base}/` : `${base}${route}`).slice("/app".length);
+}

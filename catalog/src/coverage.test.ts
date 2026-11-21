@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import { basename } from "node:path";
 
 import * as ui from "@ductura/ui";
+import { AssistantThread } from "@ductura/ui/assistant-thread";
 import { describe, expect, it } from "vitest";
 
 import { CATALOG_STATES, catalogGaps, componentNames } from "./coverage";
@@ -122,6 +123,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "teacher/consultation-records/ConsultationRecords.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "teacher/consultation-records/NewConsultation.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "teacher/deadline-extensions/DeadlineExtensions.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "teacher/merlin-export/MerlinExport.tsx", // WEB-1114: page of N-18; catalogue entry follows with the host mount.
   "teacher/revision/ReturnForRevisionDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/assistant/coming-soon/AssistantComingSoonCard.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/mentor/consultation-slots/ConsultationSlots.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
@@ -136,11 +138,12 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/rich/blocks/FormulaDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/rich/blocks/RichBlockTools.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/text-fixes/TextFixesPanel.tsx", // WEB-1103: not mounted yet; awaits the Pregled card mount.
+  "editor/review/ReviewPanel.tsx", // WEB-1102: Pregled card, not mounted in the right panel yet; awaits its entry with the mount.
 ]);
 
 describe("every component has a catalogue entry with all five states (web.md §6 B5)", () => {
   it("the catalogue covers every component @ductura/ui exports", () => {
-    expect(catalogGaps(ui, ENTRIES)).toEqual([]);
+    expect(catalogGaps({ ...ui, AssistantThread }, ENTRIES)).toEqual([]);
   });
 
   it("the catalogue covers every component src/components exports (DAN-753)", () => {

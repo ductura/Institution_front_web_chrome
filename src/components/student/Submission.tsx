@@ -27,7 +27,7 @@ import { useOnline } from "@/client/online-status";
 import { readSubmissionState, submitWork, type LocalCall, type SubmitInput, type SubmitOutcome } from "@/client/submission";
 
 import { readConfirmed, useSessionTag } from "../predaja/Declaration";
-import { confirmationKey } from "../predaja/flow";
+import { confirmationKey, samePath } from "../predaja/flow";
 import type { Stage } from "../predaja/stage";
 import { SubmitDialog } from "../predaja/SubmitDialog";
 import { nextOf, OUTCOME_ID, SubmissionView, type Answer, type Next, type TextNode, type WorkRead } from "./SubmissionView";
@@ -105,6 +105,8 @@ export type SubmissionProps = {
   readonly stage: Stage;
   /** TODO(ugovor): the transport of student.submission.get (SRV-22); none until 3.1.0. */
   readonly local?: LocalCall;
+  /** Where a path of the flow (written without a host's base) is opened; the host adds its base. */
+  readonly hrefOf?: (path: string) => string;
 };
 
 /** Another assignment starts from nothing: no text or answer of the one before stays. */
@@ -112,7 +114,7 @@ export default function Submission(props: SubmissionProps) {
   return <AssignmentSubmission key={props.assignmentId} {...props} />;
 }
 
-function AssignmentSubmission({ assignmentId, stage, local }: SubmissionProps) {
+function AssignmentSubmission({ assignmentId, stage, local, hrefOf = samePath }: SubmissionProps) {
   const router = useRouter();
   const online = useOnline();
   const [work, setWork] = useState<WorkRead>({ kind: "loading" });
@@ -135,10 +137,10 @@ function AssignmentSubmission({ assignmentId, stage, local }: SubmissionProps) {
       setNext(step);
       // The answer takes the focus once it is drawn (#385 H8).
       requestAnimationFrame(() => document.getElementById(OUTCOME_ID)?.focus());
-    } else if (step.go === "receipt") router.push(`${base}/predaja/potvrda`);
-    else if (step.go === "notice") router.push(`/zadatak/${encodeURIComponent(assignmentId)}`);
-    else goToSignIn(here);
-  }, [assignmentId, base, here, router]);
+    } else if (step.go === "receipt") router.push(hrefOf(`${base}/predaja/potvrda`));
+    else if (step.go === "notice") router.push(hrefOf(`/zadatak/${encodeURIComponent(assignmentId)}`));
+    else goToSignIn(hrefOf(here));
+  }, [assignmentId, base, here, hrefOf, router]);
 
   const load = useCallback(async () => {
     const mine = ++ticket.current;
@@ -147,9 +149,9 @@ function AssignmentSubmission({ assignmentId, stage, local }: SubmissionProps) {
     const read = await readWork(assignmentId);
     if (mine !== ticket.current) return;
     if (read.kind !== "notice" && read.kind !== "signIn") setWork(read);
-    else if (read.kind === "notice") router.push(`/zadatak/${encodeURIComponent(assignmentId)}`);
-    else goToSignIn(here);
-  }, [assignmentId, here, router]);
+    else if (read.kind === "notice") router.push(hrefOf(`/zadatak/${encodeURIComponent(assignmentId)}`));
+    else goToSignIn(hrefOf(here));
+  }, [assignmentId, here, hrefOf, router]);
 
   // Read after the first render, so the server's markup (unconfirmed, loading) matches.
   // The confirmation counts only for the sign-in that made it (WEB-24, flow.ts).
@@ -189,7 +191,7 @@ function AssignmentSubmission({ assignmentId, stage, local }: SubmissionProps) {
     <>
       <SubmissionView work={work} stage={stage} confirmed={confirmed} online={online} sending={sending} checking={checking}
         next={next} onOpen={() => setDialog(true)} onCheck={() => void check()} onReload={() => void load()}
-        onDeclaration={() => router.push(`${base}/predaja/izjava`)} onBack={() => router.push(`${base}/predaja/pregled`)} />
+        onDeclaration={() => router.push(hrefOf(`${base}/predaja/izjava`))} onBack={() => router.push(hrefOf(`${base}/predaja/pregled`))} />
       <SubmitDialog open={dialog} revision={work.kind === "ready" ? work.revision : 0} late={stage.kind === "closed"}
         sending={sending} onSubmit={() => void submit()} onClose={() => setDialog(false)} />
     </>
