@@ -1,7 +1,7 @@
 // M1.8: the one place the client names a refusal of access. Invented names only.
 import { describe, expect, it } from "vitest";
 import {
-  accessFailureOf, accessKindOf, codeOfBody, heldUnsentInput, HELD_LIMIT, holdsUnsentInput, holdUnsentInput, noAccessRoute, releaseUnsentInput,
+  accessFailureOf, accessKindOf, routeWithTail, codeOfBody, heldUnsentInput, HELD_LIMIT, holdsUnsentInput, holdUnsentInput, noAccessRoute, releaseUnsentInput,
   SESSION_ENDED_CODES,
 } from "./session";
 import type { MarkStore } from "./session-marks";
@@ -48,6 +48,17 @@ describe("no-access route", () => {
     expect(accessKindOf("expired")).toBe("expired");
     expect(accessKindOf("signedOut")).toBe("signedOut");
     for (const value of [null, "", "denied", "x", "EXPIRED"]) expect(accessKindOf(value)).toBe("denied");
+  });
+});
+
+describe("routeWithTail", () => {
+  it("keeps the query and fragment of the asked address", () => {
+    expect(routeWithTail("/nastavnik/zadatak/novi?kolegij=k1", "/nastavnik/zadatak/novi")).toBe("/nastavnik/zadatak/novi?kolegij=k1");
+    expect(routeWithTail("/zadaci#dno", "/zadaci")).toBe("/zadaci#dno");
+    expect(routeWithTail("/zadaci", "/zadaci")).toBe("/zadaci");
+  });
+  it("leaves a route that already has them", () => {
+    expect(routeWithTail("/app/web/zadaci?a=1", "/zadaci?a=1")).toBe("/zadaci?a=1");
   });
 });
 

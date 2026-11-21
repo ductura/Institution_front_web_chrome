@@ -42,6 +42,13 @@ test("an ended session keeps unsent input on the device and offers AAI@EduHr sig
   expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
 });
 
+test("the sign-in link keeps the query of the page asked for", async ({ page }) => {
+  await noSessionRead(page);
+  await page.goto("/app/web/nema-ovlasti?kind=signedOut&returnTo=%2Fnastavnik%2Fzadatak%2Fnovi%3Fkolegij%3Dk1");
+  const href = new URL((await page.getByRole("link", { name: "Prijavi se preko AAI@EduHr" }).getAttribute("href"))!, "http://x");
+  expect(href.searchParams.get("returnTo")).toBe("/app/web/nastavnik/zadatak/novi?kolegij=k1");
+});
+
 test("without kept input the note is not shown", async ({ page }) => {
   await noSessionRead(page);
   await page.goto("/app/web/nema-ovlasti?kind=expired");

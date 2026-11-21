@@ -6,7 +6,7 @@ import { AccessDenied } from "@ductura/ui";
 
 import { appHref } from "../../../../../src/components/index.ts";
 import { signInHref } from "../../../../../src/client/api.ts";
-import { accessKindOf, holdsUnsentInput } from "../../../../../src/client/session.ts";
+import { accessKindOf, holdsUnsentInput, routeWithTail } from "../../../../../src/client/session.ts";
 
 import { useLocale } from "../../../src/i18n";
 import { internalRoute } from "../../../src/routes";
@@ -19,7 +19,8 @@ export default function NoAccess() {
   const params = useSearchParams();
   const kind = accessKindOf(params.get("kind"));
   const requested = params.get("returnTo");
-  const back = requested === null ? null : internalRoute(requested, base);
+  const route = requested === null ? null : internalRoute(requested, base);
+  const back = requested === null || route === null ? null : routeWithTail(requested, route);
   const [holdsInput, setHoldsInput] = useState(false);
   // Storage is the browser's, so it is read after mount; the server render never claims anything is kept.
   useEffect(() => {

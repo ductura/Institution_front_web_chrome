@@ -42,6 +42,17 @@ export function noAccessRoute(kind: AccessFailure, returnTo?: string): string {
   return `/nema-ovlasti?${query.toString()}`;
 }
 
+/**
+ * The validated route with the query and fragment of the address it came from:
+ * `route` is what the app recognised, `href` is what was asked for. A route
+ * that already carries them (a base-relative address) is kept as it is.
+ */
+export function routeWithTail(href: string, route: string): string {
+  if (/[?#]/.test(route)) return route;
+  const path = href.split(/[?#]/, 1)[0] ?? "";
+  return `${route}${href.slice(path.length)}`;
+}
+
 /** The kind a screen's address names; anything unknown is "denied", the screen that reveals the least. */
 export function accessKindOf(value: string | null): AccessFailure {
   return value === "expired" || value === "signedOut" ? value : "denied";
