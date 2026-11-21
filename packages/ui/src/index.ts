@@ -64,3 +64,7 @@ export {
   type AiMatchRecord, type MatchSpan, type ProvenanceBlock, type ProvenanceShareLabels, type ProvenanceShareProps,
   type ProvenanceShareState, type ShareCategory, type ShareEntry, type ShareRecord,
 } from "./components/provenance-share";
+export { EditorToolbar, type EditorToolbarAction, type EditorToolbarGroup, type EditorToolbarProps } from "./components/editor-toolbar";
+export { EditorOutline, type EditorOutlineProps, type OutlineEntry } from "./components/editor-toolbar";
+export { EditorProgress, type EditorProgressProps } from "./components/editor-toolbar";
+export { bodyWordCount, editorToolbarHr, groupWords, progressOf, rangeText, type Progress, type ProgressBlock, type ProgressStatus, type WordRange } from "./components/editor-toolbar";
