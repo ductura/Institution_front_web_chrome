@@ -56,5 +56,6 @@ export {
 } from "./components/assistant-states";
 export { AssistantBudget, type AssistantBudgetLabels, type AssistantBudgetProps, type AssistantBudgetState } from "./components/assistant-budget";
 export { DeclarationAi, type DeclarationAiLabels, type DeclarationAiProps, type DeclarationAiState, type DeclarationAttachment, type DeclarationConversation, type DeclarationTurn, type DeclarationUse } from "./components/declaration-ai";
+export { TeacherAiAttachments, type TeacherAiAttachmentsLabels, type TeacherAiAttachmentsProps, type TeacherAiAttachmentsState, type TeacherAttachedConversation, type TeacherExternalConversation, type TeacherTransfer } from "./components/teacher-ai-attachments";
 export { AssistantTransfer, type AssistantTransferLabels, type AssistantTransferProps } from "./components/assistant-transfer";
 export { AdminAiCostLimits, type AdminAiCostLimitsLabels, type AdminAiCostLimitsProps, type AdminAiCostLimitsState, type CostConfigVersion, type CostLimits } from "./components/admin-ai-policy";
