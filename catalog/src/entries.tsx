@@ -77,7 +77,7 @@ function ToastInline({ toasts }: { toasts: Parameters<typeof ToastRegion>[0]["to
 }
 const ICON_LABELS: Record<IconName, string> = {
   undo: "Poništi", redo: "Ponovi", paragraph: "Odlomak", heading: "Naslov", bold: "Podebljano", italic: "Kurziv",
-  bulletList: "Popis", quote: "Citat", chevronDown: "Više",
+  bulletList: "Popis", numberedList: "Numerirani popis", quote: "Citat", chevronDown: "Više",
 };
 
 function SourceFormExample() {

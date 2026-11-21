@@ -703,6 +703,7 @@ const BLOCK_ATTRS_V4: Readonly<Record<string, readonly string[]>> = {
   paragraph: ["nodeId", "variantGroup"],
   heading: ["level", "nodeId"],
   bulletItem: ["nodeId"],
+  numberedItem: ["level", "nodeId"],
   quote: ["nodeId"],
   codeBlock: ["caption", "language", "nodeId"],
   box: ["kind", "nodeId"],
@@ -770,7 +771,7 @@ function blockV4(value: unknown, path: string, budget: Budget, inBox = false): B
   const attrs = fields(own.attrs, `${path}.attrs`, [...BLOCK_ATTRS_V4[type]!]);
   const out: Record<string, unknown> = { nodeId: nodeId(attrs.nodeId, `${path}.attrs.nodeId`) };
   const attrPath = (name: string) => `${path}.attrs.${name}`;
-  if (type === "heading") {
+  if (type === "heading" || type === "numberedItem") {
     if (!isHeadingLevel(attrs.level)) reject("invalid_node", attrPath("level"));
     out.level = attrs.level;
   } else if (type === "paragraph") {
