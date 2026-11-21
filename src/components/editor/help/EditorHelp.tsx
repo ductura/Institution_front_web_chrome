@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Checkbox, Dialog, ToastRegion, useToasts } from "@ductura/ui";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Button, Checkbox, Dialog } from "@ductura/ui";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { editorHelpHr as t } from "../../../lib/i18n/messages.hr";
 import { defaultHelp, forLevel, levelOf, readHelp, settingsKey, toggleWarning, warningKeys, warnings, type HelpSettings, type Level, type Warning } from "./preferences";
@@ -24,7 +24,7 @@ export function useEditorHelp() {
   } as const;
 }
 
-export type EditorHelpView = "writing" | "onboarding" | "firstSentence" | "recorded";
+export type EditorHelpView = "writing" | "firstSentence" | "recorded";
 type Notice = {
   course: string;
   title: string;
@@ -40,29 +40,13 @@ type Props = {
   help: ReturnType<typeof useEditorHelp>;
   counts?: Partial<Record<Warning, number>>;
   notice?: Notice;
+  /** The work surface still passes this from the previous first-run hint. */
   fresh?: boolean;
 };
 
-const onboardingKey = "ductura:editor-onboarding";
-
-export function EditorHelpDialogs({ view, onClose, help, counts, notice, fresh = false }: Props) {
-  const { toasts, show, dismiss } = useToasts();
-  const hinted = useRef(false);
-  useEffect(() => {
-    if (!fresh || view !== null || hinted.current) return;
-    try { if (localStorage.getItem(onboardingKey)) return; } catch { /* Storage is optional. */ }
-    const timer = setTimeout(() => {
-      hinted.current = true;
-      try { localStorage.setItem(onboardingKey, "1"); } catch { /* Storage is optional. */ }
-      show(t.onboardingHint);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [fresh, view, show]);
-
+export function EditorHelpDialogs({ view, onClose, help, counts, notice }: Props) {
   const close = <Button tone="quiet" onClick={onClose}>{t.close}</Button>;
   return <>
-    {fresh && <ToastRegion toasts={toasts} onDismiss={dismiss} label={t.onboarding} closeLabel={t.close} />}
-    {view === "onboarding" && <Onboarding onClose={onClose} />}
     <Dialog open={view === "writing"} title={t.settingsTitle} actions={close} onClose={onClose}>
       <p className={styles.quiet}>{t.settingsIntro}</p>
       <div className={styles.levels}>
@@ -97,26 +81,4 @@ export function EditorHelpDialogs({ view, onClose, help, counts, notice, fresh =
       ))}</dl>
     </Dialog>
   </>;
-}
-
-function Onboarding({ onClose }: Pick<Props, "onClose">) {
-  const [step, setStep] = useState(0);
-  const [title, text] = t.steps[step] ?? t.steps[0];
-  const last = step === t.steps.length - 1;
-  const finish = () => {
-    try { localStorage.setItem(onboardingKey, "1"); } catch { /* Storage is optional. */ }
-    onClose();
-  };
-  return (
-    <Dialog open title={t.onboarding} onClose={onClose} actions={<>
-      <Button tone="quiet" onClick={finish}>{t.skip}</Button>
-      <Button onClick={last ? finish : () => setStep(step + 1)}>{last ? t.start : t.next}</Button>
-    </>}>
-      <div className={styles.step} aria-live="polite">
-        <p className={styles.quiet}>{t.onboardingStep.replace("{step}", String(step + 1)).replace("{total}", String(t.steps.length))}</p>
-        <h3>{title}</h3>
-        <p>{text}</p>
-      </div>
-    </Dialog>
-  );
 }

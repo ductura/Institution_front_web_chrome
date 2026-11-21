@@ -13,6 +13,7 @@ import shell from "../layout/Layout.module.css";
 import styles from "../SidePanels.module.css";
 import { LeftPanel, type LeftSections } from "./LeftPanel";
 import { PanelSettings } from "./PanelSettings";
+import { FOCUS_MODE_EVENT, togglesFocus } from "./focus-mode";
 import { DEFAULT_PREFERENCES, effectiveLayout, readPreferences, writePreferences, type LayoutPreferences, type Side } from "./preferences";
 import { RightPanel, type PanelGroup, type RightSections } from "./RightPanel";
 
@@ -83,15 +84,18 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.isComposing || event.repeat || document.querySelector("dialog:modal")) return;
-      const shortcut = (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key === ".";
-      if (!shortcut && !(focus && event.key === "Escape")) return;
+      if (!togglesFocus(event, focus, document.querySelector("dialog:modal") !== null)) return;
       event.preventDefault();
       moveFocus.current = document.activeElement === exit.current || document.activeElement === enter.current;
       setFocus(!focus);
     };
+    const onRequest = () => setFocus(true);
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener(FOCUS_MODE_EVENT, onRequest);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener(FOCUS_MODE_EVENT, onRequest);
+    };
   }, [focus]);
 
   const setSide = (side: Side, value: LayoutPreferences[Side]) => {

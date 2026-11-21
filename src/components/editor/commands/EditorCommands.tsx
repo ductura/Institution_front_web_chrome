@@ -5,6 +5,7 @@ import { useEditorState } from "@tiptap/react";
 import { Button, CommandPalette, ShortcutsDialog } from "@ductura/ui";
 
 import { useLocalEditor, useLocalSignedOut } from "../LocalDocument";
+import { FindReplaceBar } from "../find-replace/FindReplaceBar";
 import { editorCommandsHr as t } from "./messages.hr";
 import { paletteActions } from "./palette";
 import { editorShortcut, shortcutGroups } from "./shortcuts";
@@ -17,6 +18,7 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
   const signedOut = useLocalSignedOut();
   const editor = signedOut ? null : localEditor;
   const [dialog, setDialog] = useState<DialogName | null>(null);
+  const [finding, setFinding] = useState(false);
   const toolbar = useRef<HTMLDivElement>(null);
   const snapshot = useEditorState({ editor, selector: ({ editor: current }) => current && {
     doc: current.state.doc, selection: current.state.selection, editable: current.isEditable,
@@ -34,6 +36,13 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
         toolbar.current?.querySelector<HTMLElement>("[data-roving][tabindex='0']:enabled, [data-command-trigger]:enabled")?.focus();
         return;
       }
+      if (action === "find") {
+        if (dialog !== null) return;
+        event.preventDefault();
+        setFinding(true);
+        toolbar.current?.parentElement?.querySelector<HTMLInputElement>("[data-find-replace] input[type='search']")?.focus();
+        return;
+      }
       event.preventDefault();
       setDialog(dialog === action ? null : action);
     };
@@ -41,8 +50,12 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", keyDown);
   }, [editor, dialog]);
 
-  const actions = editor && dialog === "palette" ? paletteActions(editor, () => setDialog("shortcuts")) : [];
+  const actions = editor && dialog === "palette" ? paletteActions(editor, () => setDialog("shortcuts"), () => setFinding(true)) : [];
   const close = () => setDialog(null);
+  const closeFind = () => {
+    setFinding(false);
+    editor?.view.focus();
+  };
 
   return (
     <>
@@ -55,6 +68,7 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
           {t.palette}
         </Button> : null}
       </div>
+      {editor && finding ? <div data-find-replace=""><FindReplaceBar editor={editor} onClose={closeFind} /></div> : null}
       <CommandPalette open={!!editor && dialog === "palette"} commands={actions} onClose={close}
         onRun={(id) => actions.find((action) => action.id === id && !action.disabled)?.run?.()} />
       <ShortcutsDialog open={!!editor && dialog === "shortcuts"} groups={shortcutGroups(snapshot?.editable ?? false)} onClose={close} />

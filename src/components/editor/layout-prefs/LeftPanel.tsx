@@ -7,6 +7,9 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { blockPosition, currentHeading, numberedHeadings, type NumberedHeading } from "@/editor";
 import { editorPanelLayoutsHr as t, messagesHr } from "@/lib/i18n/messages.hr";
 
+import { ChapterLength } from "../../../../packages/app/src/host/editor/chapter-length/ChapterLength";
+import { editorChapterWordCounts } from "../../../../packages/app/src/host/editor/chapter-length/chapter-length";
+import { useChapterTargets } from "../../../../packages/app/src/host/editor/chapter-length/use-chapter-targets";
 import { useLocalEditor } from "../LocalDocument";
 import styles from "../SidePanels.module.css";
 import type { PanelLayout } from "./preferences";
@@ -17,9 +20,13 @@ const headingLabel = (heading: NumberedHeading) => `${heading.number}. ${heading
 
 export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread", ReactNode>>;
 
-type Outline = { headings: NumberedHeading[]; current: NumberedHeading | undefined };
+type Outline = { headings: NumberedHeading[]; current: NumberedHeading | undefined; words?: readonly number[] };
 
-function ChapterCards({ outline, go }: { outline: Outline; go: (heading: NumberedHeading) => void }) {
+function ChapterCards({ outline, go, label }: {
+  outline: Outline;
+  go: (heading: NumberedHeading) => void;
+  label: (heading: NumberedHeading) => ReactNode;
+}) {
   const [open, setOpen] = useState<string | null>(null);
   const returnTo = useRef<string | null>(null);
   const back = useRef<HTMLButtonElement>(null);
@@ -45,10 +52,10 @@ function ChapterCards({ outline, go }: { outline: Outline; go: (heading: Numbere
     const children = headings.slice(chapterIndex + 1, next === -1 ? undefined : next);
     return <div className={styles.chapterCards}>
       <Button ref={back} tone="quiet" onClick={() => setOpen(null)}>{t.allChapters}</Button>
-      <Button tone="quiet" onClick={() => go(chapter)}>{headingLabel(chapter)}</Button>
+      <Button tone="quiet" onClick={() => go(chapter)}>{label(chapter)}</Button>
       <h2>{t.subchapters}</h2>
       {children.map((heading) => <Button key={headingKey(heading)} tone="quiet" onClick={() => go(heading)}>
-        {headingLabel(heading)}
+        {label(heading)}
       </Button>)}
       {children.length === 0 && <p>{t.noSubchapters}</p>}
     </div>;
@@ -59,7 +66,7 @@ function ChapterCards({ outline, go }: { outline: Outline; go: (heading: Numbere
       .map((heading) => <Button key={headingKey(heading)} tone="quiet" data-chapter={headingKey(heading)}
         aria-current={heading === active ? "location" : undefined}
         onClick={() => { returnTo.current = headingKey(heading); setOpen(headingKey(heading)); }}>
-        {headingLabel(heading)} <span aria-hidden="true">›</span>
+        {label(heading)} <span aria-hidden="true">›</span>
       </Button>)}
     {headings.length === 0 && <p className="rail-empty">{w.structureEmpty}</p>}
   </div>;
@@ -73,9 +80,18 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
 }) {
   const editor = useLocalEditor();
   const data = useEditorState({ editor, selector: ({ editor: instance }): Outline => {
-    const headings = instance && !instance.isDestroyed ? numberedHeadings(instance.state.doc) : [];
-    return { headings, current: headings[currentHeading(headings, instance?.state.selection.from ?? 0)] };
+    if (!instance || instance.isDestroyed) return { headings: [], current: undefined };
+    const { doc, selection } = instance.state;
+    const headings = numberedHeadings(doc);
+    return { headings, current: headings[currentHeading(headings, selection.from)], words: editorChapterWordCounts(doc) };
   } }) ?? { headings: [], current: undefined };
+  const targets = useChapterTargets(editor !== null);
+  const wordsByPosition = new Map(data.headings.map((heading, index) => [heading.pos, data.words?.[index]]));
+  const label = (heading: NumberedHeading) => {
+    const words = wordsByPosition.get(heading.pos);
+    const target = heading.id ? targets.get(heading.id) : undefined;
+    return <span>{headingLabel(heading)}{words !== undefined && <ChapterLength words={words} target={target} />}</span>;
+  };
   const go = (heading: NumberedHeading) => {
     if (!editor || editor.isDestroyed) return;
     const pos = heading.id ? blockPosition(editor.state.doc, heading.id) : heading.pos;
@@ -91,7 +107,7 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
     <ol className="outline">
       {data.headings.map((heading) => <li key={headingKey(heading)} data-level={heading.level} className="outline__item">
         <Button tone="quiet" className="outline__link" aria-current={heading === data.current ? "location" : undefined}
-          onClick={() => go(heading)}>{headingLabel(heading)}</Button>
+          onClick={() => go(heading)}>{label(heading)}</Button>
       </li>)}
     </ol>
   </nav> : <p className="rail-empty">{w.structureEmpty}</p>;
@@ -99,7 +115,7 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
   return <>
     <div className={styles.panelHeading}><span>{t.variants.left[layout]}</span>{settings}</div>
     {layout === "b" ? <PanelTabs label={w.structureLabel} tabs={[{ id: "structure", label: w.structure, content: outline }, ...content]} /> : <>
-      {layout === "c" ? <ChapterCards outline={data} go={go} /> : outline}
+      {layout === "c" ? <ChapterCards outline={data} go={go} label={label} /> : outline}
       {content.map(({ id, label, content: section }) => <Details key={id} summary={label}>{section}</Details>)}
     </>}
   </>;

@@ -12,6 +12,13 @@ describe("editor shortcuts", () => {
     expect(key({ key: "F10", altKey: true })).toBe("toolbar");
   });
 
+  it("opens find and replace with Ctrl+F, also for a locked work", () => {
+    expect(key({ key: "f", ctrlKey: true })).toBe("find");
+    expect(key({ key: "F", metaKey: true })).toBe("find");
+    expect(key({ key: "f", ctrlKey: true, shiftKey: true })).toBeNull();
+    expect(shortcutGroups(false).flatMap(({ items }) => items.map((item) => item.keys))).toContain("Ctrl+F");
+  });
+
   it("leaves composing, taken and different chords to their owner", () => {
     const chord = { key: "k", ctrlKey: true };
     expect(key({ ...chord, isComposing: true })).toBeNull();
