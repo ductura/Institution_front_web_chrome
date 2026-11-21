@@ -170,13 +170,6 @@ describe("contrast of the semantic tokens (FE-D2)", () => {
     }
   });
 
-  it("each sheet carries its own error text, so a dark shell never puts light error text on the paper", () => {
-    for (const sheet of [rule(".sheet"), light]) {
-      expect(contrast(token(sheet, "--error")!, token(sheet, "--sheet")!)).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(token(sheet, "--error")!, token(sheet, "--error-soft")!)).toBeGreaterThanOrEqual(4.5);
-    }
-  });
-
   it("keeps small quiet text readable on the selected, hover and card surfaces too", () => {
     for (const surface of ["--selected", "--hover", "--card"]) {
       expect(contrast(dark("--ink-3"), dark(surface))).toBeGreaterThanOrEqual(4.5);

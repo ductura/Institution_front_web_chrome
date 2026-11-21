@@ -7,7 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./assistant-thread": "./src/components/assistant-thread/AssistantThread.tsx",
-    "./tokens.css": "./src/tokens/globals.css",
+    "./tokens.css": "./src/tokens/tokens.css",
     "./fonts.css": "./src/fonts/faces.css"
   },
   "scripts": {
