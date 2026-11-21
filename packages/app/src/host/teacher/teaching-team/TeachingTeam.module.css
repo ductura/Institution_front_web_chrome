@@ -1,0 +1,19 @@
+.panel,
+.editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel {
+  padding-block-start: 1rem;
+}
+
+.editor > p {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
