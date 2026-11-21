@@ -69,4 +69,5 @@ export { EditorOutline, type EditorOutlineProps, type OutlineEntry } from "./com
 export { EditorProgress, type EditorProgressProps } from "./components/editor-toolbar";
 export { bodyWordCount, editorToolbarHr, groupWords, progressOf, rangeText, type Progress, type ProgressBlock, type ProgressStatus, type WordRange } from "./components/editor-toolbar";
 export { DEFAULT_UI_LOCALE, formatDate, formatDateTime, formatNumber, formatTime, htmlLang, isUiLocale, keyGaps, UI_LOCALES, UiLocaleContext, uiMessagesEn, uiMessagesFor, uiMessagesHr, useUiLocale, zagrebWall, ZAGREB, type Gaps, type UiLocale, type UiMessages, type Wall } from "./i18n";
+export { AccessDenied, type AccessDeniedLabels, type AccessDeniedProps, type AccessKind } from "./components/access-denied";
 export { EditorOnboarding, editorOnboardingMessages } from "./components/onboarding/EditorOnboarding";

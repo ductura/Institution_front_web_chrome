@@ -33,6 +33,7 @@ import { assistantPurposeStateEntries } from "./assistant-purpose-states";
 import { assistantBudgetEntries } from "./assistant-budget";
 import { declarationAiEntries } from "./declaration-ai";
 import { teacherAiAttachmentsEntries } from "./teacher-ai-attachments";
+import { accessDeniedEntries } from "./access-denied";
 import { provenanceShareEntries } from "./provenance-share";
 import { assistantTransferEntries } from "./assistant-transfer";
 import { assistantThreadEntry } from "./assistant-thread";
@@ -248,6 +249,7 @@ export const ENTRIES = {
   ...assistantBudgetEntries,
   ...declarationAiEntries,
   ...teacherAiAttachmentsEntries,
+  ...accessDeniedEntries,
   ...provenanceShareEntries,
   CheckActionList: {
     prazno: () => <CheckActionList findings={[]} labels={CHECK_LABELS} onAction={nothing} />,
