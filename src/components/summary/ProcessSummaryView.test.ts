@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
@@ -6,6 +9,7 @@ import type { ProcessSummaryV1 } from "./ProcessSummaryView";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { unreadableCharacters } from "../../../scripts/forbidden-terms/characters";
+import { extractUiText, isUiTextModule } from "../../../scripts/forbidden-terms/scan";
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
 import { overviewHr as overview } from "./ProcessSummaryView.messages.hr";
 import { ProcessSummaryView } from "./ProcessSummaryView";
@@ -346,6 +350,15 @@ describe("ProcessSummaryView: interface vocabulary", () => {
       expect(markup).toContain(text);
       expect(unreadableCharacters(text)).toEqual([]);
       expect(findForbiddenTerms(text)).toEqual([]);
+    }
+  });
+
+  it("keeps its text where the forbidden-terms scan reads it", () => {
+    const catalogue = "src/lib/i18n/messages.hr.ts";
+    expect(isUiTextModule(catalogue)).toBe(true);
+    const read = extractUiText(catalogue, readFileSync(fileURLToPath(new URL(`../../../${catalogue}`, import.meta.url)), "utf8"), "catalogue").map((piece) => piece.text);
+    for (const text of [t.title, t.sameForEveryone, t.gaps.explanation, t.pastes.origins.not_observed, t.recordState.has_gaps]) {
+      expect(read).toContain(text);
     }
   });
 });
