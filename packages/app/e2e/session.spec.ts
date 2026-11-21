@@ -27,6 +27,9 @@ async function fakeServer(page: Page, me: Me) {
     seen.meCredentials.push(route.request().headers()["cookie"] ?? null);
     await route.fulfill({ status: me.status, contentType: "application/json", body: JSON.stringify(me.body ?? { code: "unauthenticated" }) });
   });
+  // WEB-1804: the host reads the saved interface language once signed in; none is saved here.
+  await page.route("**/api/v1/profile/interface-locale", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ locale: null }) }));
   await page.route("**/api/v1/student/assignments", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) }));
   await page.route("**/api/v1/teacher/courses", (route) =>

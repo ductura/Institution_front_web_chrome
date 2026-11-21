@@ -64,3 +64,4 @@ export {
   type AiMatchRecord, type MatchSpan, type ProvenanceBlock, type ProvenanceShareLabels, type ProvenanceShareProps,
   type ProvenanceShareState, type ShareCategory, type ShareEntry, type ShareRecord,
 } from "./components/provenance-share";
+export { DEFAULT_UI_LOCALE, formatDate, formatDateTime, formatNumber, formatTime, htmlLang, isUiLocale, keyGaps, UI_LOCALES, UiLocaleContext, uiMessagesEn, uiMessagesFor, uiMessagesHr, useUiLocale, zagrebWall, ZAGREB, type Gaps, type UiLocale, type UiMessages, type Wall } from "./i18n";
