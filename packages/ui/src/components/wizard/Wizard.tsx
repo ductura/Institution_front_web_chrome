@@ -20,7 +20,7 @@ export interface WizardLabels {
 }
 
 /** What the finish call reports; the wizard shows `error` and stays on the last step. */
-export type WizardOutcome = { ok: true } | { ok: false; error: string };
+export type WizardOutcome = { ok: true } | { ok: false; error: string; /** The result is unknown (e.g. a lost reply): fields and navigation lock, only finishing again stays possible. */ uncertain?: boolean };
 
 export interface WizardProps<V> {
   steps: readonly WizardStep<V>[];
@@ -41,12 +41,14 @@ export function Wizard<V>({ steps, initialValues, labels, onFinish, done, headin
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [finished, setFinished] = useState(false);
+  const [uncertain, setUncertain] = useState(false);
   const inFlight = useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
   const step = steps[state.index]!;
   const last = state.index === steps.length - 1;
+  const locked = finished || uncertain;
   const Heading = headingLevel === 2 ? "h2" : "h3";
 
   useEffect(() => {
@@ -76,7 +78,7 @@ export function Wizard<V>({ steps, initialValues, labels, onFinish, done, headin
     setFailure(null);
     try {
       const outcome = await onFinish(state.values);
-      if (outcome.ok) { moved.current = true; setFinished(true); } else setFailure(outcome.error);
+      if (outcome.ok) { moved.current = true; setFinished(true); } else { setFailure(outcome.error); setUncertain(outcome.uncertain === true); }
     } finally {
       inFlight.current = false;
       setPending(false);
@@ -92,7 +94,7 @@ export function Wizard<V>({ steps, initialValues, labels, onFinish, done, headin
       <ol className={styles.steps} role="list" aria-label={labels.steps}>
         {steps.map((item, index) => (
           <li key={item.id} className={styles.step} aria-current={index === state.index ? "step" : undefined}>
-            <button type="button" className={styles.stepButton} disabled={pending || index > state.reached}
+            <button type="button" className={styles.stepButton} disabled={pending || locked || index > state.reached}
               onClick={() => go(jumpTo(steps, state, index))}>
               <span className={styles.number} aria-hidden="true">{index + 1}</span>
               {item.label}
@@ -102,15 +104,17 @@ export function Wizard<V>({ steps, initialValues, labels, onFinish, done, headin
       </ol>
       <Heading ref={heading} tabIndex={-1} className={styles.title}>{step.label}</Heading>
       <form onSubmit={submit} noValidate>
-        <fieldset className={styles.fields} disabled={pending}>
+        <fieldset className={styles.fields} disabled={pending || locked}>
           {step.render(context)}
           {footer?.(state.values, state.index)}
           {failure && <p className={styles.notice} role="alert">{failure}</p>}
+        </fieldset>
+        {!finished && (
           <div className={styles.actions}>
-            {state.index > 0 && <Button tone="quiet" onClick={() => go(retreat(state))}>{labels.back}</Button>}
+            {state.index > 0 && !uncertain && <Button tone="quiet" busy={pending} onClick={() => go(retreat(state))}>{labels.back}</Button>}
             <Button type="submit" busy={pending}>{last ? (pending ? labels.finishing : labels.finish) : labels.next}</Button>
           </div>
-        </fieldset>
+        )}
       </form>
     </section>
   );

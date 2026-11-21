@@ -119,7 +119,7 @@ export default function AssignmentWizard({ course, publish = publishAssignment }
     // One retry key per body, so a repeated click after an unclear reply cannot create a second assignment.
     if (request.current?.body !== serialized) request.current = { body: serialized, key: crypto.randomUUID() };
     const result = await publish(course.id, aiBody, request.current.key);
-    return result.kind === "available" ? { ok: true } : { ok: false, error: a.errors[result.kind] };
+    return result.kind === "available" ? { ok: true } : { ok: false, error: a.errors[result.kind], uncertain: result.kind === "unavailable" };
   }
 
   return (
