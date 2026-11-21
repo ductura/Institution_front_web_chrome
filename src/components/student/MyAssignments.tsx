@@ -1,5 +1,5 @@
 import { RouteLoading } from "@ductura/ui";
-import { createElement as h, Suspense, use, type ReactElement } from "react";
+import { createElement as h, Suspense, use, type ReactElement, type ReactNode } from "react";
 
 import { messagesHr } from "../../../locales/hr.ts";
 import { messagesHr as webHr } from "../../lib/i18n/messages.hr";
@@ -52,7 +52,13 @@ function teacherNames(teachers: readonly CourseTeacher[]): string {
  * `level` is the course name's heading level: h3 under the "Moji kolegiji" h2
  * of S01, h2 right under the page h1 of S02, so no heading level is skipped.
  */
-type ListProps = { courses: readonly MyCourse[]; level?: 2 | 3; assignmentHref?: AssignmentHref };
+type ListProps = { courses: readonly MyCourse[]; level?: 2 | 3; assignmentHref?: AssignmentHref; assignmentAction?: AssignmentAction };
+
+/**
+ * WEB-1402: an action the host draws on an assignment's card under its link (the
+ * Next host's "Započni rad"). Null, or no prop, draws nothing: the card is as before.
+ */
+export type AssignmentAction = (assignment: MyAssignment) => ReactNode;
 
 /** Where an assignment opens. Each host routes its own: the Vite host keeps `/rad?zadatak=`. */
 export type AssignmentHref = (assignmentId: string) => string;
@@ -84,7 +90,7 @@ function Settled({ read, signIn }: ReadProps): ReactElement {
     h(StudentHome, { read: settled, enroll: null, signIn, view: "courses" }));
 }
 
-function list({ courses, level = 3, assignmentHref = legacyAssignmentHref }: ListProps) {
+function list({ courses, level = 3, assignmentHref = legacyAssignmentHref, assignmentAction }: ListProps) {
   return h("div", { className: styles.grid },
     courses.map((course) =>
       h("section", { key: course.id, className: styles.course, "aria-labelledby": `kolegij-${course.id}` },
@@ -106,5 +112,6 @@ function list({ courses, level = 3, assignmentHref = legacyAssignmentHref }: Lis
                     h("span", { className: styles.due }, deadline(assignment)),
                     h("span", { className: styles.action },
                       assignment.noticeFirst ? home.readNotice : home.open,
-                      h("span", { "aria-hidden": "true", className: styles.arrow }, "→"))))))))));
+                      h("span", { "aria-hidden": "true", className: styles.arrow }, "→")))),
+                assignmentAction?.(assignment) ?? null))))));
 }
