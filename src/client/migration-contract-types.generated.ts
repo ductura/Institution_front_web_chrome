@@ -288,4 +288,12 @@ export type MigrationOperations = {
     success: { status: 200; body: { "asOf": string; "minimumGroup": 5; "submissions": { "recorded": 0 | number | null; "notRecorded": 0 | number | null }; "receipts": { "issued": 0 | number | null; "pending": 0 | number | null }; "helpRequests": { "total": 0 | number | null; "saveProblems": 0 | number | null }; "receiptTime": { "p50Ms": number | null; "p95Ms": number | null } }; headers: {  } };
     errorCode: "unauthenticated" | "forbidden" | "invalid_input" | "unavailable";
   };
+  // SRV-1904, Institution_server 1a4ac0d (API 1.65.0).
+  "teacher.assignment-copy.post": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: { "requestKey": string; "courseId": string; "opensAt"?: string; "dueAt"?: string };
+    success: { status: 201; body: { "id": string; "versionNo": 1 }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "conflict" | "unavailable";
+  };
 };

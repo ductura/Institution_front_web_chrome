@@ -3158,5 +3158,146 @@
         "requestId": "00000000-0000-4000-8000-000000190604"
       }
     }
+  },
+  {
+    "route": "teacher.assignment-copy.post",
+    "name": "copy",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      },
+      "body": {
+        "requestKey": "00000000-0000-4000-8000-000000190401",
+        "courseId": "00000000-0000-4000-8000-0000000000b2"
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "body": {
+        "id": "00000000-0000-4000-8000-000000190402",
+        "versionNo": 1
+      }
+    }
+  },
+  {
+    "route": "teacher.assignment-copy.post",
+    "name": "copy-new-dates",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      },
+      "body": {
+        "requestKey": "00000000-0000-4000-8000-000000190403",
+        "courseId": "00000000-0000-4000-8000-0000000000b2",
+        "opensAt": "2027-10-01T08:00:00.000Z",
+        "dueAt": "2027-12-15T23:00:00.000Z"
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "body": {
+        "id": "00000000-0000-4000-8000-000000190404",
+        "versionNo": 1
+      }
+    }
+  },
+  {
+    "route": "teacher.assignment-copy.post",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      },
+      "body": {
+        "requestKey": "00000000-0000-4000-8000-000000190401",
+        "courseId": "00000000-0000-4000-8000-0000000000b2"
+      }
+    },
+    "response": {
+      "status": 503,
+      "contentType": "application/json",
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-00000019041c"
+      }
+    }
+  },
+  {
+    "route": "teacher.assignment-copy.post",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      },
+      "body": {
+        "requestKey": "00000000-0000-4000-8000-000000190401",
+        "courseId": "00000000-0000-4000-8000-0000000000b2"
+      }
+    },
+    "response": {
+      "status": 401,
+      "contentType": "application/json",
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-00000019041f"
+      }
+    }
+  },
+  {
+    "route": "teacher.assignment-copy.post",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      },
+      "body": {
+        "requestKey": "00000000-0000-4000-8000-000000190401",
+        "courseId": "00000000-0000-4000-8000-0000000000b2"
+      }
+    },
+    "response": {
+      "status": 404,
+      "contentType": "application/json",
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-000000190420"
+      }
+    }
+  },
+  {
+    "route": "teacher.assignment-copy.post",
+    "name": "conflict",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      },
+      "body": {
+        "requestKey": "00000000-0000-4000-8000-000000190401",
+        "courseId": "00000000-0000-4000-8000-0000000000b2",
+        "dueAt": "2027-12-15T23:00:00.000Z"
+      }
+    },
+    "response": {
+      "status": 409,
+      "contentType": "application/json",
+      "body": {
+        "error": "conflict",
+        "code": "conflict",
+        "messageKey": "errors.conflict",
+        "status": 409,
+        "requestId": "00000000-0000-4000-8000-000000190421"
+      }
+    }
   }
 ]
