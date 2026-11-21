@@ -1,9 +1,10 @@
 /**
  * Interface vocabulary that the product never uses (Ductus docs/PRODUCT.md §5,
  * "Rječnik sučelja"), ported from Ductus scripts/forbidden-terms/terms.ts at
- * d52a92c3 (S-1L.1, DAN-768, PR-b1). Not ported: the markup readings
- * (`findForbiddenTermsInMarkup` and its windows) and entities.ts, since
- * locales/ holds no JSX or HTML; the characters check comes with PR-b2.
+ * d52a92c3 (S-1L.1, DAN-768, PR-b1). Not ported: entities.ts, since
+ * locales/ holds no JSX or HTML; the characters check comes with PR-b2. The
+ * markup readings (`findForbiddenTermsInMarkup` and its windows) came later
+ * from Ductus 0cdb0f1f for the copied front (see the end of this file).
  * Where Ductus and §5 read word for word differ, the stricter side holds
  * (contract Ductus#1836 c.6890523605, confirmed in c.6890541239); such an
  * entry is marked "§5 delta N".
@@ -459,4 +460,134 @@ export function findForbiddenTerms(text: string, lang?: Language): ForbiddenTerm
             : folded,
       ),
   );
+}
+
+/**
+ * The text `entry.pattern` reads in `raw`, as `findForbiddenTerms` reads it: the allowed reading for an entry with
+ * `allows`, the phrase reading for a contextual entry or one that reads phrases, the folded text for the rest.
+ */
+function readingFor(entry: ForbiddenTerm, raw: string): string {
+  if (entry.allows) return allowedReading(raw, entry.allows);
+  return entry.contextual || entry.readsPhrases ? foldPhrases(raw) : foldText(raw);
+}
+
+/*
+ * Markup readings, ported from Ductus scripts/forbidden-terms/terms.ts at 0cdb0f1f (`findForbiddenTermsInMarkup`,
+ * its windows, `windowsCutShort`, `closedUpPastQuotes`). The one change: every reading goes through `readingFor`,
+ * so an entry with `allows` (which Ductus does not have) is read the way `findForbiddenTerms` reads it here.
+ */
+
+/**
+ * Dictionary entries in text that markup puts together from several pieces, such as `Nestali <strong>podaci</strong>`.
+ * The same text is given twice: `joined` has the pieces as the browser joins them, with `PHRASE_BREAK` where a phrase
+ * ends, and `spaced` has a space at every element boundary. An entry found in either reading is reported.
+ *
+ * A contextual entry is decided by the joined reading, which is what a person sees. The spaced reading can only clear
+ * it: when the word stands whole in the spaced reading and is acceptable there, the match came from two texts running
+ * together. When the spaced reading does not hold the whole word at all, an element split the word itself.
+ *
+ * A third reading closes the text up over every `PHRASE_BREAK`, so what stands on the two sides of an unknown part or
+ * an element boundary is read as one word; the parts next to each other are read closed up by themselves as well
+ * (`inWindows`). `closedUp: false` leaves this reading out.
+ */
+export function findForbiddenTermsInMarkup(joined: string, spaced: string, closedUp = true): ForbiddenTerm[] {
+  const closedRaw = joined.replaceAll(PHRASE_BREAK, "");
+  // Closed up past the quotation marks at a boundary too: see `closedUpPastQuotes`.
+  const tightRaw = closedUpPastQuotes(joined);
+  const windows = closedUp ? inWindows(joined) : NO_TERMS;
+  return FORBIDDEN_TERMS.filter((entry) => {
+    const reads = (raw: string): boolean => entry.pattern.test(readingFor(entry, raw));
+    if (!entry.contextual) return reads(joined) || reads(spaced) || (closedUp && (reads(closedRaw) || reads(tightRaw) || windows.has(entry)));
+    const shownPhrases = foldPhrases(joined);
+    const apartPhrases = foldPhrases(spaced);
+    if (entry.pattern.test(shownPhrases) && (entry.pattern.test(apartPhrases) || !entry.contextual.word.test(apartPhrases))) return true;
+    if (!closedUp) return false;
+    // The word itself put together across something unknown: there is no whole word to judge without closing it.
+    if (!entry.contextual.word.test(shownPhrases)) return reads(closedRaw) || reads(tightRaw) || windows.has(entry);
+    // The word stands whole somewhere, and that place was judged above. It says nothing about another place where the word is cut.
+    const cut = withoutWholeWords(joined, entry.contextual.word);
+    return reads(cut.replaceAll(PHRASE_BREAK, "")) || reads(closedUpPastQuotes(cut)) || inWindows(cut).has(entry);
+  });
+}
+
+/** Letters and digits written in a row, with what `foldLetters` drops between them. */
+const WRITTEN_WORD = /[\p{L}\p{N}\p{M}\p{Cf}ᅟᅠㅤﾠ]+/gu;
+/** Stands where a whole word was taken out: it ends the phrase and no boundary is closed up over it. */
+const TAKEN_OUT = ".";
+
+/** `joined` without the places where `word` is written whole; one acceptable place does not clear another. */
+function withoutWholeWords(joined: string, word: RegExp): string {
+  return joined.replace(WRITTEN_WORD, (written) => {
+    const folded = foldLetters(written);
+    return word.exec(folded)?.[0] === folded ? TAKEN_OUT : written;
+  });
+}
+
+/**
+ * The most letters, digits and spaces that the parts strictly inside a window may hold: the longest text a pattern
+ * is written for has 34 characters, the rest is room for longer endings. A bound, not a proof.
+ */
+const WINDOW = 48;
+/** The most parts in a window; a text that this bound cuts a window in is reported by `windowsCutShort`. */
+export const MAX_WINDOW_PARTS = 64;
+/** Parts kept on each side of a window, apart from it: the other words of a phrase, at most four. */
+const CONTEXT = 4;
+const NO_TERMS: ReadonlySet<ForbiddenTerm> = new Set();
+/** What was found in a piece of text; the same pieces come back for every element around them. */
+const foundInPiece = new Map<string, readonly ForbiddenTerm[]>();
+
+/** Entries in `joined` read in windows: every run of parts an entry can reach across, closed up by itself. */
+function inWindows(joined: string): ReadonlySet<ForbiddenTerm> {
+  const parts = joined.split(PHRASE_BREAK).filter((part) => part !== "");
+  if (parts.length < 3) return NO_TERMS;
+  const lengths = parts.map((part) => foldText(part).length);
+  const quoted = [...joined].some((char) => QUOTATION_MARKS.has(char.codePointAt(0)!));
+  const found = new Set<ForbiddenTerm>();
+  for (let start = 0; start < parts.length - 1; start += 1) {
+    const before = parts.slice(Math.max(0, start - CONTEXT), start);
+    for (let end = start + 2, widest = widestWindow(lengths, start).end; end <= widest; end += 1) {
+      const inside = parts.slice(start, end);
+      const after = parts.slice(end, end + CONTEXT);
+      for (const closed of new Set([inside.join(""), quoted ? closedUpPastQuotes(inside.join(PHRASE_BREAK)) : inside.join("")])) {
+        const piece = [...before, closed, ...after].join(PHRASE_BREAK);
+        let terms = foundInPiece.get(piece);
+        if (!terms) {
+          terms = FORBIDDEN_TERMS.filter((entry) => entry.pattern.test(readingFor(entry, piece)));
+          if (foundInPiece.size >= 200_000) foundInPiece.clear();
+          foundInPiece.set(piece, terms);
+        }
+        for (const term of terms) {
+          // A contextual word that is whole without the last part is judged there: that part, closed up after the place, would hide the place.
+          const narrower = foldPhrases(closedUpPastQuotes(inside.slice(0, -1).join(PHRASE_BREAK)));
+          if (!term.contextual?.word.test(narrower)) found.add(term);
+        }
+      }
+    }
+  }
+  return found;
+}
+
+/** The end of the widest window that starts at `start`, and whether `MAX_WINDOW_PARTS` stopped it. */
+function widestWindow(lengths: readonly number[], start: number): { end: number; cut: boolean } {
+  let end = start + 1;
+  for (let within = 0; end < lengths.length && within <= WINDOW; end += 1, within += lengths[end - 1]!) {
+    if (end + 1 - start > MAX_WINDOW_PARTS) return { end, cut: true };
+  }
+  return { end, cut: false };
+}
+
+/** Whether `joined` has a run of parts that `inWindows` did not read as far as an entry can reach. */
+export function windowsCutShort(joined: string): boolean {
+  const lengths = joined.split(PHRASE_BREAK).filter((part) => part !== "").map((part) => foldText(part).length);
+  return lengths.length >= 3 && lengths.some((_, start) => widestWindow(lengths, start).cut);
+}
+
+/** The quotation marks of Croatian and English outside ASCII. */
+const QUOTATION_MARKS: ReadonlySet<number> = new Set([0xab, 0xbb, 0x2018, 0x2019, 0x201a, 0x201c, 0x201d, 0x201e]);
+/** What stands between two words around a `PHRASE_BREAK`, the break included. */
+const AROUND_A_BREAK = /[^\p{L}\p{N}]*￿[^\p{L}\p{N}]*/gu;
+
+/** `joined` closed up, and without the quotation marks that stand between two words where a `PHRASE_BREAK` stands. */
+export function closedUpPastQuotes(joined: string): string {
+  return joined.replace(AROUND_A_BREAK, (run) => [...run].filter((char) => char !== PHRASE_BREAK && !QUOTATION_MARKS.has(char.codePointAt(0)!)).join(""));
 }

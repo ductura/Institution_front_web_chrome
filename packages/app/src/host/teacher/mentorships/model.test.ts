@@ -8,10 +8,10 @@ const work = (id: string, student: { givenName: string; familyName: string } | n
 });
 
 describe("studentsOf", () => {
-  it("is one row per student, in the server's order, and never names a student without a name pair", () => {
+  it("is one row per mentorship in the server's order: equal names are not merged, no name pair is never named", () => {
     const iva = { givenName: "Iva", familyName: "Izmišljena" };
-    const rows = studentsOf([work("a", iva), work("b", null), work("c", iva), work("d", null)]);
-    expect(rows.map((r) => [r.name, r.works.length])).toEqual([["Iva Izmišljena", 2], [null, 1], [null, 1]]);
+    const rows = studentsOf([work("a", iva), work("b", null), work("c", iva)]);
+    expect(rows.map((r) => [r.key, r.name])).toEqual([["a", "Iva Izmišljena"], ["b", null], ["c", "Iva Izmišljena"]]);
   });
   it("is empty for no works", () => {
     expect(studentsOf([])).toEqual([]);

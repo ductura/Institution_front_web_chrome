@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Button, Card, RouteLoading, Select, Tag, TextField } from "@ductura/ui";
 
-import { createApi, goToSignIn, signInHref } from "../../../../../../src/client/api";
+import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import {
   canWithdraw, TITLE_MAX, WORK_TYPES, type MentorshipRead, type MentorshipWorkType, type StudentMentorshipCall,
 } from "../../../../../../src/client/mentorship";
@@ -37,7 +37,7 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
     let live = true;
     void readMyMentorshipRequests(call()).then((result) => {
       if (!live) return;
-      if (result.kind === "session-expired") goToSignIn(signInHref(here));
+      if (result.kind === "session-expired") goToSignIn(here);
       setRead(result);
     });
     return () => { live = false; };
@@ -47,7 +47,7 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
 
   const finish = useCallback((followup: { note: Note; refresh: boolean } | null) => {
     setBusy(null);
-    if (followup === null) { goToSignIn(signInHref(here)); return; }
+    if (followup === null) { goToSignIn(here); return; }
     setNote(followup.note);
     if (followup.refresh) setAttempt((n) => n + 1);
   }, [here]);
