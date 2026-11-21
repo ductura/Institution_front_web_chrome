@@ -1,0 +1,32 @@
+import { describe, expect, it } from "vitest";
+
+import { ariaKeyShortcuts, displayKeys, SHORTCUTS, shortcutListGroups } from "./shortcut-definitions";
+
+describe("editor shortcut definitions (WEB-1908)", () => {
+  it("has unique command ids", () => {
+    expect(new Set(SHORTCUTS.map((s) => s.id)).size).toBe(SHORTCUTS.length);
+  });
+  it("shows Ctrl on PC and Cmd on a Mac, with the Mac exception for redo", () => {
+    const bold = SHORTCUTS.find((s) => s.id === "bold")!;
+    const redo = SHORTCUTS.find((s) => s.id === "redo")!;
+    expect(displayKeys(bold)).toBe("Ctrl+B");
+    expect(displayKeys(bold, true)).toBe("Cmd+B");
+    expect(displayKeys(redo)).toBe("Ctrl+Y");
+    expect(displayKeys(redo, true)).toBe("Cmd+Shift+Z");
+  });
+  it("omits writing shortcuts for a locked work but keeps moving and view", () => {
+    const ids = (editable: boolean) => shortcutListGroups(editable).flatMap((g) => g.items.map((i) => i.id));
+    expect(ids(true)).toContain("bold");
+    expect(ids(false)).not.toContain("bold");
+    expect(ids(false)).toEqual(expect.arrayContaining(["palette", "find", "shortcuts", "close"]));
+  });
+  it("lists the shortcut list itself, reachable by keyboard", () => {
+    expect(shortcutListGroups(false).flatMap((g) => g.items).find((i) => i.id === "shortcuts")?.keys).toContain("Ctrl+/");
+  });
+  it("gives aria-keyshortcuts from the same definition", () => {
+    expect(ariaKeyShortcuts("undo")).toBe("Control+Z");
+    expect(ariaKeyShortcuts("undo", true)).toBe("Meta+Z");
+    expect(ariaKeyShortcuts("shortcuts")).toBe("Control+/");
+    expect(ariaKeyShortcuts("nope")).toBeUndefined();
+  });
+});
