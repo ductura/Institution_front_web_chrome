@@ -1,4 +1,4 @@
-import { messagesHr as t } from "../../../locales/hr.ts";
+import { messagesHr, type Messages } from "../../../locales/hr.ts";
 
 /**
  * The side navigation of the design v3 shell (#476 6314969336, I3): which
@@ -13,7 +13,8 @@ export type NavItem = {
   label: string;
 };
 
-const NAV: Record<ShellRole, readonly NavItem[]> = {
+// The labels come from the catalogue of the interface language (D-70, WEB-1804); Croatian by default.
+const nav = (t: Messages): Record<ShellRole, readonly NavItem[]> => ({
   teacher: [
     // DAN-1082: three places. "Novi kolegij i zadatak" is an action, not a
     // place: it is the button on "Moji kolegiji" (TeacherCourses), not an item.
@@ -44,11 +45,11 @@ const NAV: Record<ShellRole, readonly NavItem[]> = {
     // DAN-590 (A-04): the faculty rule versions, read only.
     { href: "/ustanova/pravila", label: t.shell.nav.facultyRules },
   ],
-};
+});
 
-/** The items of `role`; none without a role (signed out, or neither role). */
-export function navFor(role: ShellRole | null): readonly NavItem[] {
-  return role === null ? [] : NAV[role];
+/** The items of `role`; none without a role (signed out, or neither role). Labels in the language of `t`. */
+export function navFor(role: ShellRole | null, t: Messages = messagesHr): readonly NavItem[] {
+  return role === null ? [] : nav(t)[role];
 }
 
 export type AccountPlace = "own" | "signOut" | "none";
