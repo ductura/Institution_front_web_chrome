@@ -53,6 +53,8 @@ export const hr = {
       institutionCourses: "Kolegiji",
       // DAN-590 (A-04): the faculty rule versions, /ustanova/pravila.
       facultyRules: "Pravila fakulteta",
+      // WEB-1301 (A-05): data classes and legal holds, /ustanova/cuvanje.
+      dataRetention: "Čuvanje podataka",
     },
     role: { teacher: "Nastavnik", student: "Student", admin: "Administrator" },
     demoNote: "Nijedan stvarni osobni podatak.",

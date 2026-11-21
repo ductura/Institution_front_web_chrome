@@ -3395,5 +3395,208 @@
         "requestId": "00000000-0000-4000-8000-000000190421"
       }
     }
+  },
+  {
+    "route": "institution.retention.get",
+    "name": "ready",
+    "request": {},
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "classes": [
+          {
+            "classId": "DATA-CLASS-01",
+            "name": "Izmišljeni radni tekst",
+            "retentionDays": 365,
+            "mode": "delete"
+          },
+          {
+            "classId": "DATA-CLASS-02",
+            "name": "Izmišljeni zapis pristupa",
+            "retentionDays": null,
+            "mode": "dry_run"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "institution.retention.get",
+    "name": "forbidden",
+    "request": {},
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000013003"
+      }
+    }
+  },
+  {
+    "route": "institution.retention.get",
+    "name": "unauthorized",
+    "request": {},
+    "response": {
+      "status": 401,
+      "contentType": "application/json",
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000013001"
+      }
+    }
+  },
+  {
+    "route": "institution.retention.get",
+    "name": "unavailable",
+    "request": {},
+    "response": {
+      "status": 503,
+      "contentType": "application/json",
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000013003"
+      }
+    }
+  },
+  {
+    "route": "institution.legal-holds.get",
+    "name": "ready",
+    "request": {},
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "holds": [
+          {
+            "id": "b1301000-0000-4000-8000-000000000001",
+            "subject": "Izmišljeni kolegij za test",
+            "caseReference": "IZM-2026-001",
+            "placedAt": "2026-11-20T09:00:00.000Z",
+            "placedByName": "Ana Izmišljena",
+            "own": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "institution.legal-holds.get",
+    "name": "forbidden",
+    "request": {},
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000013003"
+      }
+    }
+  },
+  {
+    "route": "institution.legal-holds.post",
+    "name": "created",
+    "request": {
+      "body": {
+        "subject": "Izmišljeni kolegij za test",
+        "caseReference": "IZM-2026-002"
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "id": "b1301000-0000-4000-8000-000000000002"
+      }
+    }
+  },
+  {
+    "route": "institution.legal-holds.post",
+    "name": "forbidden",
+    "request": {
+      "body": {
+        "subject": "Izmišljeni kolegij za test",
+        "caseReference": "IZM-2026-002"
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000013003"
+      }
+    }
+  },
+  {
+    "route": "institution.legal-hold-release.post",
+    "name": "released",
+    "request": {
+      "params": {
+        "holdId": "b1301000-0000-4000-8000-000000000001"
+      },
+      "body": {
+        "reason": "Izmišljeni slučaj je zatvoren."
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "id": "b1301000-0000-4000-8000-000000000001",
+        "releasedAt": "2026-11-21T10:00:00.000Z"
+      }
+    }
+  },
+  {
+    "route": "institution.legal-hold-release.post",
+    "name": "forbidden",
+    "request": {
+      "params": {
+        "holdId": "b1301000-0000-4000-8000-000000000001"
+      },
+      "body": {
+        "reason": "Izmišljeni slučaj je zatvoren."
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000013003"
+      }
+    }
   }
 ]

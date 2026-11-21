@@ -29,6 +29,7 @@ import type { ProofPicture } from "../../src/components/editor/sources/proofs/cr
 import { startCapture, type Capture } from "../../src/components/editor/sources/proofs/proof-draft.ts";
 import type { ProofsDeps } from "../../src/components/editor/sources/proofs/proofs-deps.ts";
 import { adminAiCostLimitsEntries } from "./admin-ai-cost-limits";
+import { retentionLegalHoldEntries } from "./retention-legal-hold";
 import { assistantPurposeStateEntries } from "./assistant-purpose-states";
 import { assistantBudgetEntries } from "./assistant-budget";
 import { declarationAiEntries } from "./declaration-ai";
@@ -265,6 +266,7 @@ export const ENTRIES = {
   ...assistantPurposeStateEntries,
   ...assistantTransferEntries,
   ...adminAiCostLimitsEntries,
+  ...retentionLegalHoldEntries,
   ...assistantBudgetEntries,
   ...declarationAiEntries,
   ...teacherAiAttachmentsEntries,
