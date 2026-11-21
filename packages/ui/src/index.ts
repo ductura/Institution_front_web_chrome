@@ -55,4 +55,5 @@ export {
   type AssistantUnavailableLabels, type AssistantUnavailableProps,
 } from "./components/assistant-states";
 export { AssistantBudget, type AssistantBudgetLabels, type AssistantBudgetProps, type AssistantBudgetState } from "./components/assistant-budget";
+export { DeclarationAi, type DeclarationAiLabels, type DeclarationAiProps, type DeclarationAiState, type DeclarationAttachment, type DeclarationConversation, type DeclarationTurn, type DeclarationUse } from "./components/declaration-ai";
 export { AssistantTransfer, type AssistantTransferLabels, type AssistantTransferProps } from "./components/assistant-transfer";
