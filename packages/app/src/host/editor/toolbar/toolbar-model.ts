@@ -4,6 +4,8 @@
 // @ductura/ui toolbar draws, the outline and the progress against the range.
 import { bodyWordCount, editorToolbarHr as t, type EditorToolbarGroup, type OutlineEntry, type ProgressBlock, type WordRange } from "@ductura/ui";
 
+import { ariaKeyShortcuts } from "../shortcuts/shortcut-definitions";
+
 export type BlockStyle = "paragraph" | "heading1" | "heading2" | "heading3";
 
 /** What the editor reports about the selection. */
@@ -33,7 +35,8 @@ export type ToolbarCommands = {
 };
 
 const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/u.test(navigator.platform ?? "");
-const MOD = IS_MAC ? "Meta" : "Control";
+// WEB-1908: the keys come from the one shortcut definition the list is drawn from.
+const keysOf = (id: string) => ariaKeyShortcuts(id, IS_MAC);
 
 export function toolbarGroups(state: ToolbarState, run: ToolbarCommands): EditorToolbarGroup[] {
   const off = !state.editable;
@@ -41,22 +44,22 @@ export function toolbarGroups(state: ToolbarState, run: ToolbarCommands): Editor
     ({ id: style, label, icon, pressed: state.block === style, disabled: off, shortcut, onSelect: () => run.setBlock(style) }) as const;
   return [
     { id: "history", label: t.history, actions: [
-      { id: "undo", label: t.undo, icon: "undo", disabled: off || !state.canUndo, shortcut: `${MOD}+Z`, onSelect: run.undo },
-      { id: "redo", label: t.redo, icon: "redo", disabled: off || !state.canRedo, shortcut: IS_MAC ? "Meta+Shift+Z" : "Control+Y", onSelect: run.redo },
+      { id: "undo", label: t.undo, icon: "undo", disabled: off || !state.canUndo, shortcut: keysOf("undo"), onSelect: run.undo },
+      { id: "redo", label: t.redo, icon: "redo", disabled: off || !state.canRedo, shortcut: keysOf("redo"), onSelect: run.redo },
     ] },
     { id: "block", label: t.blockStyle, actions: [
-      block("paragraph", t.paragraph, "paragraph", `${MOD}+Alt+0`),
-      block("heading1", t.heading1, "heading", `${MOD}+Alt+1`),
-      block("heading2", t.heading2, "heading", `${MOD}+Alt+2`),
-      block("heading3", t.heading3, "heading", `${MOD}+Alt+3`),
+      block("paragraph", t.paragraph, "paragraph", keysOf("paragraph")),
+      block("heading1", t.heading1, "heading", keysOf("heading1")),
+      block("heading2", t.heading2, "heading", keysOf("heading2")),
+      block("heading3", t.heading3, "heading", keysOf("heading3")),
     ] },
     { id: "text", label: t.text, actions: [
-      { id: "bold", label: t.bold, icon: "bold", pressed: state.bold, disabled: off, shortcut: `${MOD}+B`, onSelect: run.toggleBold },
-      { id: "italic", label: t.italic, icon: "italic", pressed: state.italic, disabled: off, shortcut: `${MOD}+I`, onSelect: run.toggleItalic },
+      { id: "bold", label: t.bold, icon: "bold", pressed: state.bold, disabled: off, shortcut: keysOf("bold"), onSelect: run.toggleBold },
+      { id: "italic", label: t.italic, icon: "italic", pressed: state.italic, disabled: off, shortcut: keysOf("italic"), onSelect: run.toggleItalic },
     ] },
     { id: "blocks", label: t.blocks, actions: [
       { id: "bulletList", label: t.bulletList, icon: "bulletList", pressed: state.bulletList, disabled: off, onSelect: run.toggleBulletList },
-      { id: "numberedList", label: t.numberedList, icon: "numberedList", pressed: state.numberedList, disabled: off, shortcut: `${MOD}+Shift+7`, onSelect: run.toggleNumberedList },
+      { id: "numberedList", label: t.numberedList, icon: "numberedList", pressed: state.numberedList, disabled: off, shortcut: keysOf("numberedList"), onSelect: run.toggleNumberedList },
       { id: "quote", label: t.quote, icon: "quote", pressed: state.quote, disabled: off, onSelect: run.toggleQuote },
     ] },
   ];

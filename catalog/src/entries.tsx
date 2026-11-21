@@ -1,8 +1,8 @@
 import {
   AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  EditorOnboarding, EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
+  EditorOnboarding, EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
   Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
-  type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
+  type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup, type ShortcutListGroup,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
 
@@ -161,6 +161,10 @@ const SAMPLE_SHORTCUTS: ShortcutGroup[] = [
   { title: "Oblikovanje", items: [{ keys: "Ctrl+B", label: "Podebljano" }, { keys: "Ctrl+I", label: "Kurziv" }] },
   { title: "Rad", items: [{ keys: "Ctrl+F", label: "Traži u radu" }, { keys: "Ctrl+K", label: "Naredbe" }] },
 ];
+const SAMPLE_SHORTCUT_LIST: ShortcutListGroup[] = [
+  { id: "writing", title: "Pisanje", items: [{ id: "undo", label: "Poništi", keys: "Ctrl+Z" }, { id: "bold", label: "Podebljano", keys: "Ctrl+B" }] },
+  { id: "view", title: "Prikaz", items: [{ id: "shortcuts", label: "Ovaj popis", keys: "Ctrl+/ ili ?" }, { id: "close", label: "Zatvara prozor ili izbornik", keys: "Esc" }] },
+];
 const SAMPLE_MENU: MenuEntry[] = [
   { kind: "heading", label: "Odlomak" },
   { kind: "item", id: "copy", label: "Kopiraj", hint: "Ctrl+C" },
@@ -187,6 +191,14 @@ function ShortcutsExample({ groups, label }: { groups: ShortcutGroup[]; label: s
   return <>
     <Button aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>{label}</Button>
     <ShortcutsDialog open={open} groups={groups} onClose={() => setOpen(false)} />
+  </>;
+}
+
+function ShortcutListExample({ groups, label }: { groups: ShortcutListGroup[]; label: string }) {
+  const [open, setOpen] = useState(false);
+  return <>
+    <Button aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>{label}</Button>
+    <ShortcutListDialog open={open} groups={groups} onClose={() => setOpen(false)} />
   </>;
 }
 
@@ -535,6 +547,20 @@ export const ENTRIES = {
     greška: () => <><ShortcutsExample groups={[]} label="Prikaži prečace (neuspjelo)" /><p role="alert">Prečaci se nisu učitali.</p></>,
     puno: () => <ShortcutsExample groups={SAMPLE_SHORTCUTS} label="Prikaži prečace" />,
     onemogućeno: () => <Button disabled>Prikaži prečace</Button>,
+  },
+  ShortcutList: {
+    prazno: () => <ShortcutList groups={[]} />,
+    učitavanje: () => <p role="status">Učitavanje prečaca…</p>,
+    greška: () => <p role="alert">Prečaci se nisu učitali.</p>,
+    puno: () => <ShortcutList groups={SAMPLE_SHORTCUT_LIST} />,
+    onemogućeno: () => <ShortcutList groups={[{ id: "view", title: "Prikaz", items: [{ id: "close", label: "Zatvara prozor ili izbornik", keys: "Esc" }] }]} />,
+  },
+  ShortcutListDialog: {
+    prazno: () => <ShortcutListExample groups={[]} label="Otvori popis prečaca (bez prečaca)" />,
+    učitavanje: () => <><ShortcutListExample groups={[]} label="Otvori popis prečaca (učitavanje)" /><p>Učitavanje prečaca…</p></>,
+    greška: () => <><ShortcutListExample groups={[]} label="Otvori popis prečaca (neuspjelo)" /><p role="alert">Prečaci se nisu učitali.</p></>,
+    puno: () => <ShortcutListExample groups={SAMPLE_SHORTCUT_LIST} label="Otvori popis prečaca" />,
+    onemogućeno: () => <Button disabled>Otvori popis prečaca</Button>,
   },
   FindBar: {
     prazno: () => <FindBarExample total={0} />,

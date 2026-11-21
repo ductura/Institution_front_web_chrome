@@ -71,3 +71,5 @@ export { bodyWordCount, editorToolbarHr, groupWords, progressOf, rangeText, type
 export { DEFAULT_UI_LOCALE, formatDate, formatDateTime, formatNumber, formatTime, htmlLang, isUiLocale, keyGaps, UI_LOCALES, UiLocaleContext, uiMessagesEn, uiMessagesFor, uiMessagesHr, useUiLocale, zagrebWall, ZAGREB, type Gaps, type UiLocale, type UiMessages, type Wall } from "./i18n";
 export { AccessDenied, type AccessDeniedLabels, type AccessDeniedProps, type AccessKind } from "./components/access-denied";
 export { EditorOnboarding, editorOnboardingMessages } from "./components/onboarding/EditorOnboarding";
+export { ShortcutList, ShortcutListDialog, useShortcutListKey, type ShortcutListDialogProps, type ShortcutListProps } from "./components/shortcut-list/ShortcutList";
+export { opensShortcutList, spokenKeys, visibleGroups, type ShortcutEntry, type ShortcutListGroup } from "./components/shortcut-list/shortcut-list-model";
