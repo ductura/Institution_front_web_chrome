@@ -17,7 +17,7 @@ const LABELS: AccessDeniedLabels = {
 };
 
 const view = (kind: "denied" | "expired" | "signedOut", holdsInput = false) => (
-  <AccessDenied kind={kind} labels={LABELS} signInHref="/api/v1/auth/login" homeHref="/" holdsInput={holdsInput} />
+  <AccessDenied kind={kind} labels={LABELS} signInHref="#prijava" homeHref="/" holdsInput={holdsInput} />
 );
 
 export const accessDeniedEntries = {
