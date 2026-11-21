@@ -10,8 +10,8 @@
     "start": "next start -p 5173",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test && playwright test --config tests/a11y/playwright.config.ts",
-    "test:a11y": "playwright test --config tests/a11y/playwright.config.ts"
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test e2e/a11y"
   },
   "dependencies": {
     "@ductura/ui": "workspace:*",

@@ -130,7 +130,7 @@ export const statementEn: StatementText = {
     heading: "Preparation of this statement",
     prepared: "This statement was prepared on {date}.",
     method:
-      "Method: self-assessment, with an automated check of every main screen and a manual keyboard check. The statement is reviewed at least once a year and after every major change to the interface.",
+      "Method: a self-assessment, with an automated check of every main screen and a manual keyboard check. The statement is reviewed at least once a year and after every major change to the interface.",
   },
   feedback: {
     heading: "Feedback and contact information",

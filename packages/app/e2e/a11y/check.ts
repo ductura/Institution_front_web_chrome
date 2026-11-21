@@ -13,29 +13,30 @@ export const BLOCKING = ["critical", "serious"];
 
 export type Theme = "dark" | "light";
 
-/** Opens a screen under /app/web for its role, in a theme, and waits until it has settled. */
-export async function open(page: Page, screen: Screen, theme: Theme) {
+/** Opens a screen under /app/web for its role, in the default dark theme (D-188), and waits until it has settled. */
+export async function open(page: Page, screen: Screen) {
   await fakeServer(page, screen.role);
-  await page.addInitScript((light) => {
-    try {
-      if (light) localStorage.setItem("ductura.theme", "light");
-    } catch { /* storage may be blocked */ }
-  }, theme === "light");
   await page.goto(`/app/web${screen.path}`);
   await page.waitForLoadState("networkidle");
   // The host shows the page once the session is read; a loading state is not the screen.
   await expect(page.locator("main").first()).toBeVisible();
   await expect(page.getByRole("status", { name: /Učitavam|Prijavljujem/ })).toHaveCount(0);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+}
+
+/** Switches the theme as the shell's toggle does: the attribute on <html> that the tokens read. */
+export async function setTheme(page: Page, theme: Theme) {
+  await page.locator("html").evaluate((html, value) => html.setAttribute("data-theme", value), theme);
   await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
 }
 
 /** Runs axe; every finding goes to the report, critical and serious ones fail the test. */
-export async function axe(page: Page, info: TestInfo) {
+export async function axe(page: Page, info: TestInfo, label: string) {
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
   const findings = results.violations.map((v) => ({
     id: v.id, impact: v.impact, help: v.help, targets: v.nodes.map((n) => n.target.join(" ")).slice(0, 5),
   }));
-  await info.attach("axe.json", { body: JSON.stringify(findings, null, 2), contentType: "application/json" });
+  await info.attach(`axe-${label}.json`, { body: JSON.stringify(findings, null, 2), contentType: "application/json" });
   expect(findings.filter((f) => BLOCKING.includes(f.impact ?? ""))).toEqual([]);
 }
 

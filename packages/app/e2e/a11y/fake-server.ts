@@ -19,7 +19,7 @@ const assignmentVectors = read("../../../../src/components/student/fixtures/stud
   vectors: { name: string; response: { body: unknown } }[];
 };
 const assignments = assignmentVectors.vectors.find((v) => v.name === "ready")!.response.body;
-const teacher = read("../../e2e/fixtures/teacher.json") as Record<string, unknown>;
+const teacher = read("../fixtures/teacher.json") as Record<string, unknown>;
 
 const STATUS = {
   checkedAt: "2026-11-20T08:30:00Z",
