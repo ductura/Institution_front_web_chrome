@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 
 import { InertButton } from "../assistant-states/InertButton";
