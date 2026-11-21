@@ -1,6 +1,6 @@
 "use client";
 
-import { EditorOnboarding, editorOnboardingMessages } from "@ductura/ui/onboarding";
+import { EditorOnboarding, editorOnboardingMessages } from "@ductura/ui";
 import { useRef, useState } from "react";
 
 import { useEditorOnboarding } from "../../../../packages/app/src/host/student/onboarding/useEditorOnboarding";

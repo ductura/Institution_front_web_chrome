@@ -1,6 +1,6 @@
 import {
   AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
+  EditorOnboarding, EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
   Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
 } from "@ductura/ui";
@@ -269,6 +269,13 @@ export const ENTRIES = {
     greška: () => <p role="alert">Alati se nisu učitali.</p>,
     puno: () => <EditorToolbar groups={EDITOR_GROUPS} />,
     onemogućeno: () => <EditorToolbar groups={EDITOR_GROUPS.map((g) => ({ ...g, actions: g.actions.map((a) => ({ ...a, disabled: true })) }))} />,
+  },
+  EditorOnboarding: {
+    prazno: () => <p>Vodič je zatvoren.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje postavke vodiča…" />,
+    greška: () => <p>Vodič je dostupan iz izbornika Pomoć.</p>,
+    puno: () => <EditorOnboarding locale="hr" mode="automatic" onClose={nothing} />,
+    onemogućeno: () => <Button disabled>Prvi koraci</Button>,
   },
   EditorOutline: {
     prazno: () => <EditorOutline entries={[]} onSelect={nothing} />,
