@@ -27,7 +27,7 @@ Okruženje: Chrome na računalu, NVDA (Windows) i VoiceOver (macOS), lokalni sto
 
 - [ ] Moji kolegiji i radovi uz mentora: popisi se čitaju kao popisi, poveznice imaju ime rada.
 - [ ] Novi zadatak: svako polje ima oznaku; pogreške obrasca najavljuju se i vode na polje.
-- [ ] Zbirni pregled: tablica ima zaglavlja stupaca i redaka; razvrstavanje najavljuje smjer. Na 320 px stranica se pomiče vodoravno (vidi „Otvoreno” u PR-u).
+- [ ] Zbirni pregled: tablica ima zaglavlja stupaca i redaka; razvrstavanje najavljuje smjer.
 - [ ] Rad uživo i potvrda predaje: zaključano stanje najavi se tekstom, ne samo bojom.
 
 ## 4. Administrator ustanove
