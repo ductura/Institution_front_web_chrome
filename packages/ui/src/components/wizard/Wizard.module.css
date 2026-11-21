@@ -1,0 +1,15 @@
+/* Generic step-by-step form: a step list, one step's fields, back / next / finish. */
+.wizard { display: grid; gap: 16px; }
+.steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; color: var(--ink-3); }
+.step { display: flex; }
+.stepButton { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 8px; font: inherit; color: inherit; background: transparent; border: 1px solid transparent; border-radius: var(--radius-control); cursor: pointer; }
+.stepButton:disabled { cursor: default; opacity: .7; }
+.stepButton:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.step[aria-current="step"] .stepButton { color: var(--ink); border-color: var(--accent); font-weight: 600; }
+.number { display: grid; place-items: center; min-inline-size: 1.5em; background: var(--well); color: var(--ink); border-radius: 50%; font-variant-numeric: tabular-nums; }
+.title { margin: 0; font-size: 18px; }
+.title:focus { outline: none; }
+.title:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+.fields { display: grid; gap: 12px; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.notice { margin: 0; padding: 10px 12px; color: var(--ink); background: var(--well); border: 1px solid var(--rule-2); border-left: 3px solid var(--ink); border-radius: var(--radius-control); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }

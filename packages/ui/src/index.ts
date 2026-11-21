@@ -75,3 +75,8 @@ export { EditorOnboarding, editorOnboardingMessages } from "./components/onboard
 export { ShortcutList, ShortcutListDialog, useShortcutListKey, type ShortcutListDialogProps, type ShortcutListProps } from "./components/shortcut-list/ShortcutList";
 export { opensShortcutList, spokenKeys, visibleGroups, type ShortcutEntry, type ShortcutListGroup } from "./components/shortcut-list/shortcut-list-model";
 export { NotificationBell, announcement as notificationAnnouncement, badgeText as notificationBadgeText, type NotificationBellLabels, type NotificationBellProps, type NotificationEntry } from "./components/notifications";
+export {
+  Wizard, advance as wizardAdvance, finishCheck as wizardFinishCheck, jumpTo as wizardJumpTo, retreat as wizardRetreat,
+  setValue as wizardSetValue, startState as wizardStart,
+  type WizardErrors, type WizardLabels, type WizardOutcome, type WizardProps, type WizardState, type WizardStep, type WizardStepContext,
+} from "./components/wizard";
