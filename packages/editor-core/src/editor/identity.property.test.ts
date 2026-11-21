@@ -5,7 +5,7 @@ import type { Transaction } from "@tiptap/pm/state";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { newNodeId, type NodeId } from "../document/document";
+import { isNodeId, newNodeId, type NodeId } from "../document/document";
 
 import { startFreshHistory } from "./history";
 import { replaceWithStoredDocument } from "./identity";
@@ -37,7 +37,7 @@ type Op =
   | { kind: "remove"; at: number }
   | { kind: "move"; from: number; to: number; stripped: boolean }
   | { kind: "split"; at: number; offset: number; copyAttrs: boolean }
-  | { kind: "pasteInto"; at: number; offset: number; carried: Carried; pick: number }
+  | { kind: "pasteInto"; at: number; offset: number; carried: Carried; pick: number; clipboard: boolean }
   | { kind: "join"; at: number }
   | { kind: "type"; at: number }
   | { kind: "pasteOutside"; at: number; carried: Carried; pick: number; blocks: 1 | 2; sameText: boolean }
@@ -54,7 +54,7 @@ const op: fc.Arbitrary<Op> = fc.oneof(
   fc.record({ kind: fc.constant("remove" as const), at: index }),
   fc.record({ kind: fc.constant("move" as const), from: index, to: index, stripped: fc.boolean() }),
   fc.record({ kind: fc.constant("split" as const), at: index, offset: index, copyAttrs: fc.boolean() }),
-  fc.record({ kind: fc.constant("pasteInto" as const), at: index, offset: index, carried, pick: index }),
+  fc.record({ kind: fc.constant("pasteInto" as const), at: index, offset: index, carried, pick: index, clipboard: fc.boolean() }),
   fc.record({ kind: fc.constant("join" as const), at: index }),
   fc.record({ kind: fc.constant("type" as const), at: index }),
   fc.record({ kind: fc.constant("pasteOutside" as const), at: index, carried, pick: index, blocks: fc.constantFrom<1 | 2>(1, 2), sameText: fc.boolean() }),
@@ -73,7 +73,7 @@ function run(ops: Op[]): void {
   const extensions = createEditorExtensions().map((extension) =>
     extension.name === "nodeIdentity" ? NodeIdentity.configure({ mint }) : extension,
   );
-  let model: Entry[] = STORED.map((id, i) => ({ id, text: `p${i}` }));
+  let model: Entry[] = STORED.map((id, i) => ({ id, text: `Stavak ${i}` }));
   const editor = new Editor({
     element: null,
     extensions,
@@ -120,7 +120,25 @@ function run(ops: Op[]): void {
     editor.view.dispatch(closeHistory(tr));
   };
 
+  const asPasted = (slice: Slice): Slice => {
+    for (const plugin of editor.state.plugins) {
+      const transform = plugin.props.transformPasted;
+      if (transform) slice = transform.call(plugin, slice, editor.view, false);
+    }
+    return slice;
+  };
+
   const check = (step: string) => {
+    // Conversion can mint replacements for missing or repeated ids. Inspect the
+    // live editor state first so those repairs cannot hide an identity regression.
+    const liveIds = new Set<string>();
+    editor.state.doc.forEach((block) => {
+      const id: unknown = block.attrs[NODE_ID_ATTRIBUTE];
+      if (!isNodeId(id)) throw new Error(`${step}: block is missing a valid id`);
+      const key = id.toLowerCase();
+      expect(liveIds.has(key), `${step}: repeated live block id ${id}`).toBe(false);
+      liveIds.add(key);
+    });
     const result = tiptapToCanonical(editor.getJSON());
     if (!result.ok) throw new Error(`${step}: no canonical form: ${JSON.stringify(result.errors)}`);
     const actual = result.doc.nodes.map((node) => ({ id: node.id as string, text: node.children.map((c) => c.text).join("") }));
@@ -180,7 +198,13 @@ function run(ops: Op[]): void {
         const offset = 1 + (step.offset % (text.length - 1));
         // Without `typesAfter` ProseMirror copies every attribute, the id included.
         const types = step.copyAttrs ? undefined : [{ type: schema.nodes.paragraph, attrs: { [NODE_ID_ATTRIBUTE]: null } }];
-        act(tr.split(posOf(at) + 1 + offset, 1, types), [
+        tr.split(posOf(at) + 1 + offset, 1, types);
+        if (step.copyAttrs) {
+          // F-044: the unprocessed split contains two copies of the same id.
+          expect(tr.doc.child(at).attrs[NODE_ID_ATTRIBUTE]).toBe(model[at].id);
+          expect(tr.doc.child(at + 1).attrs[NODE_ID_ATTRIBUTE]).toBe(model[at].id);
+        }
+        act(tr, [
           ...model.slice(0, at),
           { id: model[at].id, text: text.slice(0, offset) },
           { id: NEW, text: text.slice(offset) },
@@ -200,7 +224,8 @@ function run(ops: Op[]): void {
           schema.nodes.paragraph.create({ [NODE_ID_ATTRIBUTE]: idFor(step.carried, step.pick) }, schema.text(value)),
         );
         const pos = posOf(at) + 1 + offset;
-        act(tr.replace(pos, pos, new Slice(Fragment.from(pasted), 1, 1)), [
+        const slice = new Slice(Fragment.from(pasted), 1, 1);
+        act(tr.replace(pos, pos, step.clipboard ? asPasted(slice) : slice), [
           ...model.slice(0, at),
           { id: offset === 0 ? NEW : id, text: text.slice(0, offset) + one },
           { id: offset === 0 ? id : NEW, text: two + text.slice(offset) },
@@ -234,11 +259,7 @@ function run(ops: Op[]): void {
         const removedText = typeof id === "string" ? removedTexts.get(id) : undefined;
         if (step.sameText && removedText !== undefined) texts[0] = removedText;
         const nodes = texts.map((value) => schema.nodes.paragraph.create({ [NODE_ID_ATTRIBUTE]: id }, schema.text(value)));
-        let slice = new Slice(Fragment.from(nodes), 0, 0);
-        for (const plugin of editor.state.plugins) {
-          const transform = plugin.props.transformPasted;
-          if (transform) slice = transform.call(plugin, slice, editor.view as never, false);
-        }
+        const slice = asPasted(new Slice(Fragment.from(nodes), 0, 0));
         act(tr.replace(posOf(at), posOf(at), slice), [
           ...model.slice(0, at),
           ...texts.map((text): Entry => ({ id: NEW, text })),
@@ -276,10 +297,31 @@ function run(ops: Op[]): void {
     }
     check(`step ${n} (${step.kind})`);
   });
+  editor.destroy();
 }
 
 describe("block identity under arbitrary editing", () => {
   it("every block holds the id the model expects after every step", () => {
     fc.assert(fc.property(fc.array(op, { maxLength: 40 }), run));
+  });
+
+  it("F-044: live block ids stay unique through split, join, and paste sequences", () => {
+    const scenario = fc.record({
+      block: fc.nat({ max: STORED.length - 1 }),
+      offset: index,
+      carried,
+      pick: index,
+      pasteAt: index,
+      rest: fc.array(op, { maxLength: 40 }),
+    });
+    fc.assert(fc.property(scenario, ({ block, offset, carried, pick, pasteAt, rest }) => {
+      run([
+        { kind: "split", at: block, offset, copyAttrs: true },
+        { kind: "join", at: block }, // Rejoin the two halves just created.
+        { kind: "pasteInto", at: block, offset, carried, pick, clipboard: true },
+        { kind: "pasteOutside", at: pasteAt, carried, pick, blocks: 2, sameText: false },
+        ...rest,
+      ]);
+    }), { seed: 1607, numRuns: 250 });
   });
 });
