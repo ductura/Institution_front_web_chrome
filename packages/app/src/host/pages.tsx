@@ -16,6 +16,7 @@ import type { Base } from "../bases";
 import { internalRoute, routeOf } from "../routes";
 import { hostText } from "../text";
 import { useHost } from "./context";
+import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 
 // The pages the host shows, one per route of app/[base]/. Each reads the
 // institution server only through src/client.
@@ -133,7 +134,8 @@ export function TeacherCoursesPage() {
   });
   const tc = t.teacherCourses;
   return <TeacherPage title={tc.title} lead={tc.lead} read={read} retry={retry} unavailable={tc.unavailable} retryLabel={tc.retry}
-    ready={(courses) => <TeacherCourses courses={courses} />} />;
+    ready={(courses) => <TeacherCourses courses={courses}
+      courseDetails={(course) => <CourseTeachingTeam courseId={course.id} courseName={course.name} />} />} />;
 }
 
 /** N-16 "Radovi uz mentora" over teacher.mentorships.get. */
