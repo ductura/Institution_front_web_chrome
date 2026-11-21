@@ -82,6 +82,7 @@ export type AdminAiCostLimitsProps = {
  */
 export function AdminAiCostLimits({ labels, state, onPublish, onRetry, publishing = false, publishError }: AdminAiCostLimitsProps) {
   const [sentFrom, setSentFrom] = useState<number | null>(null);
+  const statusId = useId();
 
   if (state.kind === "loading") {
     return (
@@ -115,7 +116,7 @@ export function AdminAiCostLimits({ labels, state, onPublish, onRetry, publishin
     <div className={styles.limits}>
       <h2 className={styles.title}>{labels.title}</h2>
       {configured ? null : <p className={styles.note}>{labels.notConfigured}</p>}
-      <p className={styles.meta} role="status">{note}</p>
+      <p id={statusId} className={styles.meta} role="status">{note}</p>
       <Editor
         key={latestNo}
         labels={labels}
@@ -124,6 +125,7 @@ export function AdminAiCostLimits({ labels, state, onPublish, onRetry, publishin
         money={money}
         publishing={publishing}
         publishError={publishError}
+        statusId={statusId}
         onPublish={(limits) => {
           setSentFrom(latestNo);
           onPublish(limits);
@@ -160,10 +162,12 @@ type EditorProps = {
   money: (micro: string | null) => string;
   publishing: boolean;
   publishError: "limit_above_cap" | "failed" | undefined;
+  /** The status line that says a publish is in progress; it explains why Back waits. */
+  statusId: string;
   onPublish: (limits: CostLimits) => void;
 };
 
-function Editor({ labels, latest, capMicro, money, publishing, publishError, onPublish }: EditorProps) {
+function Editor({ labels, latest, capMicro, money, publishing, publishError: parentError, statusId, onPublish }: EditorProps) {
   const id = useId();
   const [draft, setDraft] = useState<Record<LimitField, string>>(() => {
     const value = (micro: string | null | undefined) => (micro == null ? "" : (microToEur(micro) ?? ""));
@@ -171,6 +175,9 @@ function Editor({ labels, latest, capMicro, money, publishing, publishError, onP
   });
   const [attempted, setAttempted] = useState(false);
   const [reviewed, setReviewed] = useState<CostLimits | null>(null);
+  // The parent's publish error belongs to the values last sent; after going back and reviewing again it no longer applies.
+  const [sent, setSent] = useState<CostLimits | null>(null);
+  const publishError = sent !== null && reviewed !== sent ? undefined : parentError;
   const previewTitle = useRef<HTMLHeadingElement>(null);
   const wasReviewing = useRef(false);
 
@@ -206,11 +213,14 @@ function Editor({ labels, latest, capMicro, money, publishing, publishError, onP
             inert={publishError === "limit_above_cap"}
             busy={publishing}
             describedBy={publishError === undefined ? undefined : `${id}-server`}
-            onClick={() => onPublish(reviewed)}
+            onClick={() => {
+              setSent(reviewed);
+              onPublish(reviewed);
+            }}
           >
             {labels.publish}
           </InertButton>
-          <InertButton tone="quiet" inert={publishing} onClick={() => setReviewed(null)}>{labels.back}</InertButton>
+          <InertButton tone="quiet" inert={publishing} describedBy={publishing ? statusId : undefined} onClick={() => setReviewed(null)}>{labels.back}</InertButton>
         </div>
       </section>
     );

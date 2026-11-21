@@ -174,10 +174,12 @@ describe("AdminAiCostLimits", () => {
     expect(onPublish).toHaveBeenCalledWith(expect.objectContaining({ studentDayMicro: "4000000" }));
   });
 
-  it("limit_above_cap from the server is an alert and the publish stays inert", () => {
+  it("limit_above_cap from the server is an alert, the publish stays inert until a new review", () => {
     const onPublish = vi.fn();
     const el = mount({ onPublish });
     click(button(el, labels.review));
+    click(button(el, labels.publish));
+    expect(onPublish).toHaveBeenCalledTimes(1);
     render({ onPublish, publishError: "limit_above_cap" });
     const alert = el.querySelector('[role="alert"]')!;
     expect(alert.textContent).toBe(labels.serverAboveCap);
@@ -185,7 +187,30 @@ describe("AdminAiCostLimits", () => {
     expect(publish.getAttribute("aria-disabled")).toBe("true");
     expect(publish.getAttribute("aria-describedby")).toBe(alert.id);
     click(publish);
-    expect(onPublish).not.toHaveBeenCalled();
+    expect(onPublish).toHaveBeenCalledTimes(1);
+
+    click(button(el, labels.back));
+    expect(el.querySelector('[role="alert"]')).toBeNull();
+    type(input(el, labels.fields.studentDayMicro), "1,5");
+    click(button(el, labels.review));
+    expect(el.querySelector('[role="alert"]')).toBeNull();
+    expect(button(el, labels.publish)?.getAttribute("aria-disabled")).toBeNull();
+    click(button(el, labels.publish));
+    expect(onPublish).toHaveBeenCalledTimes(2);
+    expect(onPublish).toHaveBeenLastCalledWith(expect.objectContaining({ studentDayMicro: "1500000" }));
+  });
+
+  it("while publishing, Back waits and is described by the status", () => {
+    const el = mount();
+    click(button(el, labels.review));
+    render({ publishing: true });
+    const status = el.querySelector('[role="status"]')!;
+    expect(status.textContent).toBe(labels.publishing);
+    const back = button(el, labels.back)!;
+    expect(back.getAttribute("aria-disabled")).toBe("true");
+    expect(back.getAttribute("aria-describedby")).toBe(status.id);
+    click(back);
+    expect(el.textContent).toContain(labels.previewTitle);
   });
 
   it("a new version resets the form and is announced", () => {

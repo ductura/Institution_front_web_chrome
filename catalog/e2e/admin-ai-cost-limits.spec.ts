@@ -1,8 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+// The state cells only: the component's own value lists also hold <dd>s.
+const cell = (page: Page, index: number) => page.locator("#AdminAiCostLimits > div > dl > div > dd").nth(index);
 
 test("a limit above the cap blocks the preview; a valid one is published after the preview", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  const full = page.locator("#AdminAiCostLimits").locator("dd").nth(3);
+  const full = cell(page, 3);
   const day = full.getByLabel("Dnevna granica po studentu", { exact: true });
   const review = full.getByRole("button", { name: "Pregledaj prije objave" });
 
@@ -25,7 +28,7 @@ test("a limit above the cap blocks the preview; a valid one is published after t
 
 test("without a cap the review stays focusable but inert, with the reason", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  const off = page.locator("#AdminAiCostLimits").locator("dd").nth(4);
+  const off = cell(page, 4);
   const review = off.getByRole("button", { name: "Pregledaj prije objave" });
   await expect(review).toHaveAttribute("aria-disabled", "true");
   await expect(review).toHaveAccessibleDescription(/Operater još nije objavio strop/u);
