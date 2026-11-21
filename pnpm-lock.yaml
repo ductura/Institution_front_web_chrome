@@ -79,6 +79,9 @@ importers:
 
   packages/app:
     dependencies:
+      '@ductura/editor-core':
+        specifier: workspace:*
+        version: link:../editor-core
       '@ductura/ui':
         specifier: workspace:*
         version: link:../ui
