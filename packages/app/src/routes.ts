@@ -72,6 +72,8 @@ export const PAGES: readonly Page[] = [
   }))),
   { path: "/zadatak/[id]", label: t.student.title, kind: "pending", roles: ["student", "teacher"] },
   { path: "/upis/kolegij/[courseId]", label: t.student.enroll.title, kind: "pending", roles: ["student"], current: "/upis" },
+  // WEB-1404: the student's request for a mentor.
+  { path: "/zadaci/mentorstvo", label: hostText.mentorshipRequest, kind: "pending", roles: ["student"], current: "/zadaci" },
   // HOST-S1: the editor of one work.
   { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },
