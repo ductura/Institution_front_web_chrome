@@ -21,14 +21,14 @@ export function chapterWordCounts(document: VersionedDocument): ReadonlyMap<stri
 }
 
 type EditorDocument = { toJSON(): unknown };
-const editorCounts = new WeakMap<EditorDocument, ReadonlyMap<string, number>>();
+const editorCounts = new WeakMap<EditorDocument, readonly number[]>();
 
-/** Selection changes reuse the counts for the same immutable editor document. */
-export function editorChapterWordCounts(document: EditorDocument): ReadonlyMap<string, number> {
+/** Counts stay in projection order, including headings whose block ids are being minted. */
+export function editorChapterWordCounts(document: EditorDocument): readonly number[] {
   const cached = editorCounts.get(document);
   if (cached) return cached;
   const canonical = tiptapToCanonical(document.toJSON());
-  const counts = canonical.ok ? chapterWordCounts(canonical.doc) : new Map<string, number>();
+  const counts = canonical.ok ? [...chapterWordCounts(canonical.doc).values()] : [];
   editorCounts.set(document, counts);
   return counts;
 }

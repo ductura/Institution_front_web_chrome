@@ -37,9 +37,13 @@ describe("chapter length", () => {
     const before = canonicalToTiptap({ schemaVersion: 1, nodes: [h1, paragraph(2, "Prvi tekst"), h2, paragraph(4, "Drugi")] });
     const after = canonicalToTiptap({ schemaVersion: 1, nodes: [h2, paragraph(4, "Drugi novi tekst"), h1, paragraph(2, "Prvi tekst")] });
     const original = { toJSON: () => before };
-    expect([...editorChapterWordCounts(original)]).toEqual([[id(1), 2], [id(3), 1]]);
+    expect(editorChapterWordCounts(original)).toEqual([2, 1]);
     expect(editorChapterWordCounts(original)).toBe(editorChapterWordCounts(original));
-    expect([...editorChapterWordCounts({ toJSON: () => after })]).toEqual([[id(3), 3], [id(1), 2]]);
+    expect(editorChapterWordCounts({ toJSON: () => after })).toEqual([3, 2]);
+    expect(editorChapterWordCounts({ toJSON: () => ({ type: "doc", content: [
+      { type: "heading", attrs: { level: 1 } },
+      { type: "paragraph", content: [{ type: "text", text: "Novi tekst" }] },
+    ] }) })).toEqual([2]);
   });
 
   it("shows only the count when no chapter range is supplied and treats counts outside a range the same", async () => {

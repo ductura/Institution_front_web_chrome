@@ -20,7 +20,7 @@ const headingLabel = (heading: NumberedHeading) => `${heading.number}. ${heading
 
 export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread", ReactNode>>;
 
-type Outline = { headings: NumberedHeading[]; current: NumberedHeading | undefined; words?: ReadonlyMap<string, number> };
+type Outline = { headings: NumberedHeading[]; current: NumberedHeading | undefined; words?: readonly number[] };
 
 function ChapterCards({ outline, go, label }: {
   outline: Outline;
@@ -86,10 +86,11 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
     return { headings, current: headings[currentHeading(headings, selection.from)], words: editorChapterWordCounts(doc) };
   } }) ?? { headings: [], current: undefined };
   const targets = useChapterTargets(editor !== null);
+  const wordsByPosition = new Map(data.headings.map((heading, index) => [heading.pos, data.words?.[index]]));
   const label = (heading: NumberedHeading) => {
-    const id = heading.id;
-    const words = id ? data.words?.get(id) : undefined;
-    return <span>{headingLabel(heading)}{id && words !== undefined && <ChapterLength words={words} target={targets.get(id)} />}</span>;
+    const words = wordsByPosition.get(heading.pos);
+    const target = heading.id ? targets.get(heading.id) : undefined;
+    return <span>{headingLabel(heading)}{words !== undefined && <ChapterLength words={words} target={target} />}</span>;
   };
   const go = (heading: NumberedHeading) => {
     if (!editor || editor.isDestroyed) return;
