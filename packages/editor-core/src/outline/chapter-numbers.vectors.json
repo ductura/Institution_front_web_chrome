@@ -1,0 +1,376 @@
+{
+  "_opis": "WEB-1602 (M5.3): brojevi naslova po id-u bloka iz jedine projekcije (deriveChapters, neutralno numeriranje D-229). Izvoz (SRV-1512) mora nositi iste parove [blockId, broj]. Samo izmišljeni tekst.",
+  "version": 1,
+  "cases": [
+    {
+      "name": "prazan rad",
+      "document": {
+        "schemaVersion": 1,
+        "nodes": [
+          {
+            "type": "paragraph",
+            "id": "00000000-0000-4000-8000-000000000001",
+            "children": [
+              {
+                "type": "text",
+                "text": "Izmišljeni odlomak 1.",
+                "marks": []
+              }
+            ]
+          }
+        ]
+      },
+      "numbers": []
+    },
+    {
+      "name": "tri razine",
+      "document": {
+        "schemaVersion": 1,
+        "nodes": [
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000001",
+            "level": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "Uvod",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "id": "00000000-0000-4000-8000-000000000002",
+            "children": [
+              {
+                "type": "text",
+                "text": "Izmišljeni odlomak 2.",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000003",
+            "level": 2,
+            "children": [
+              {
+                "type": "text",
+                "text": "Cilj rada",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "id": "00000000-0000-4000-8000-000000000004",
+            "children": [
+              {
+                "type": "text",
+                "text": "Izmišljeni odlomak 4.",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000005",
+            "level": 3,
+            "children": [
+              {
+                "type": "text",
+                "text": "Pitanje",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000006",
+            "level": 2,
+            "children": [
+              {
+                "type": "text",
+                "text": "Metoda",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000007",
+            "level": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "Rasprava",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "id": "00000000-0000-4000-8000-000000000008",
+            "children": [
+              {
+                "type": "text",
+                "text": "Izmišljeni odlomak 8.",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000009",
+            "level": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "Zaključak",
+                "marks": []
+              }
+            ]
+          }
+        ]
+      },
+      "numbers": [
+        [
+          "00000000-0000-4000-8000-000000000001",
+          "1"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000003",
+          "1.1"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000005",
+          "1.1.1"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000006",
+          "1.2"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000007",
+          "2"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000009",
+          "3"
+        ]
+      ]
+    },
+    {
+      "name": "preskočena razina",
+      "document": {
+        "schemaVersion": 1,
+        "nodes": [
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000001",
+            "level": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "Okvir",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000002",
+            "level": 3,
+            "children": [
+              {
+                "type": "text",
+                "text": "Pojam",
+                "marks": []
+              }
+            ]
+          }
+        ]
+      },
+      "numbers": [
+        [
+          "00000000-0000-4000-8000-000000000001",
+          "1"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000002",
+          "1.0.1"
+        ]
+      ]
+    },
+    {
+      "name": "počinje razinom 2",
+      "document": {
+        "schemaVersion": 1,
+        "nodes": [
+          {
+            "type": "paragraph",
+            "id": "00000000-0000-4000-8000-000000000001",
+            "children": [
+              {
+                "type": "text",
+                "text": "Izmišljeni odlomak 1.",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000002",
+            "level": 2,
+            "children": [
+              {
+                "type": "text",
+                "text": "Napomena",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000003",
+            "level": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "Uvod",
+                "marks": []
+              }
+            ]
+          }
+        ]
+      },
+      "numbers": [
+        [
+          "00000000-0000-4000-8000-000000000002",
+          "0.1"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000003",
+          "1"
+        ]
+      ]
+    },
+    {
+      "name": "prazan naslov",
+      "document": {
+        "schemaVersion": 1,
+        "nodes": [
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000001",
+            "level": 1,
+            "children": []
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000002",
+            "level": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "Drugo",
+                "marks": []
+              }
+            ]
+          }
+        ]
+      },
+      "numbers": [
+        [
+          "00000000-0000-4000-8000-000000000001",
+          "1"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000002",
+          "2"
+        ]
+      ]
+    },
+    {
+      "name": "poglavlje premješteno gore",
+      "document": {
+        "schemaVersion": 1,
+        "nodes": [
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000007",
+            "level": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "Rasprava",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "id": "00000000-0000-4000-8000-000000000008",
+            "children": [
+              {
+                "type": "text",
+                "text": "Izmišljeni odlomak 8.",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000001",
+            "level": 1,
+            "children": [
+              {
+                "type": "text",
+                "text": "Uvod",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "id": "00000000-0000-4000-8000-000000000002",
+            "children": [
+              {
+                "type": "text",
+                "text": "Izmišljeni odlomak 2.",
+                "marks": []
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "id": "00000000-0000-4000-8000-000000000003",
+            "level": 2,
+            "children": [
+              {
+                "type": "text",
+                "text": "Cilj rada",
+                "marks": []
+              }
+            ]
+          }
+        ]
+      },
+      "numbers": [
+        [
+          "00000000-0000-4000-8000-000000000007",
+          "1"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000001",
+          "2"
+        ],
+        [
+          "00000000-0000-4000-8000-000000000003",
+          "2.1"
+        ]
+      ]
+    }
+  ]
+}
