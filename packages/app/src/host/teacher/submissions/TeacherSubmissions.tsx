@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import { Button, DataTable, type DataTableColumn } from "@ductura/ui";
 
 import type {
-  SubmissionsRead, SubmittedRow, TeacherSubmissionsPort, VersionRead,
+  SubmittedRow, TeacherSubmissionsPort, VersionRead,
 } from "../../../../../../src/client/teacher-submissions.ts";
-import { canOpen, documentBlocks, failureMessage, lateTag, submittedAt, type DocumentBlock } from "./model";
+import {
+  answeredPanel, canOpen, documentBlocks, failureMessage, forAssignment, lateTag, submittedAt,
+  type DocumentBlock, type ListState, type VersionPanel,
+} from "./model";
 import { submissionsMessages as text } from "./messages.hr";
 
 /**
@@ -19,32 +22,36 @@ export default function TeacherSubmissions(
   { port, assignmentId, names = {} }:
   { port: TeacherSubmissionsPort; assignmentId: string; names?: Readonly<Record<string, string>> },
 ) {
-  const [read, setRead] = useState<SubmissionsRead | null>(null);
+  const [list, setList] = useState<ListState>(null);
   const [attempt, setAttempt] = useState(0);
-  const [version, setVersion] = useState<VersionRead | "loading" | null>(null);
+  const [openPanel, setPanel] = useState<VersionPanel>(null);
+  const read = forAssignment(list, assignmentId)?.read ?? null;
+  const panel = forAssignment(openPanel, assignmentId);
+  const nameOf = (row: SubmittedRow) => names[row.studentId] ?? row.studentId;
 
   useEffect(() => {
     let active = true;
     void port.list(assignmentId)
-      .then((next) => { if (active) setRead(next); })
-      .catch(() => { if (active) setRead({ kind: "nepoznato" }); });
+      .then((next) => { if (active) setList({ assignmentId, read: next }); })
+      .catch(() => { if (active) setList({ assignmentId, read: { kind: "nepoznato" } }); });
     return () => { active = false; };
   }, [port, assignmentId, attempt]);
 
-  const open = async (submissionId: string) => {
-    setVersion("loading");
-    setVersion(await port.open(assignmentId, submissionId).catch((): VersionRead => ({ kind: "nepoznato" })));
+  const open = async (row: SubmittedRow & { submissionId: string }) => {
+    setPanel({ assignmentId, row, read: "loading" });
+    const next = await port.open(assignmentId, row.submissionId).catch((): VersionRead => ({ kind: "nepoznato" }));
+    setPanel((current) => answeredPanel(current, assignmentId, row, next));
   };
 
   const columns: readonly DataTableColumn<SubmittedRow>[] = [
-    { id: "student", header: text.student, rowHeader: true, cell: (row) => names[row.studentId] ?? row.studentId, sortValue: (row) => names[row.studentId] ?? row.studentId },
+    { id: "student", header: text.student, rowHeader: true, cell: nameOf, sortValue: nameOf },
     { id: "revision", header: text.revision, numeric: true, cell: (row) => row.revision, sortValue: (row) => row.revision },
     { id: "time", header: text.time, cell: submittedAt, sortValue: (row) => row.requestedMinute },
     { id: "tag", header: text.tag, cell: (row) => lateTag(row) },
     {
       id: "open", header: text.open,
       cell: (row) => (canOpen(row)
-        ? <Button tone="quiet" onClick={() => void open(row.submissionId)}>{text.open}</Button>
+        ? <Button tone="quiet" onClick={() => void open(row)}>{text.open}</Button>
         : text.pending),
     },
   ];
@@ -53,7 +60,7 @@ export default function TeacherSubmissions(
     return (
       <div>
         <p role="alert">{failureMessage(read)}</p>
-        <Button tone="quiet" onClick={() => { setRead(null); setAttempt((n) => n + 1); }}>{text.retry}</Button>
+        <Button tone="quiet" onClick={() => { setList(null); setAttempt((n) => n + 1); }}>{text.retry}</Button>
       </div>
     );
   }
@@ -63,12 +70,14 @@ export default function TeacherSubmissions(
       <h2 id="submissions-h">{text.title}</h2>
       <DataTable caption={text.caption} columns={columns} rows={read?.rows ?? []} rowKey={(row) => `${row.studentId}:${row.revision}`}
         empty={text.empty} loading={read === null} loadingLabel={text.loading} />
-      {version !== null && <SubmittedVersionView version={version} onClose={() => setVersion(null)} />}
+      {panel !== null && <SubmittedVersionView panel={panel} student={nameOf(panel.row)} onClose={() => setPanel(null)} />}
     </section>
   );
 }
 
-function SubmittedVersionView({ version, onClose }: { version: VersionRead | "loading"; onClose: () => void }) {
+function SubmittedVersionView(
+  { panel: { row, read: version }, student, onClose }: { panel: NonNullable<VersionPanel>; student: string; onClose: () => void },
+) {
   const body = version === "loading"
     ? <p role="status">{text.versionLoading}</p>
     : version.kind !== "ready"
@@ -76,7 +85,8 @@ function SubmittedVersionView({ version, onClose }: { version: VersionRead | "lo
       : <DocumentText view={documentBlocks(version.version.document)} />;
   return (
     <section aria-labelledby="submitted-version-h" data-readonly="true">
-      <h3 id="submitted-version-h">{text.versionTitle}</h3>
+      <h3 id="submitted-version-h">{text.versionTitle}: {student}</h3>
+      <p>{text.revision} {row.revision}</p>
       <p>{text.versionNote}</p>
       {body}
       <Button tone="quiet" onClick={onClose}>{text.close}</Button>

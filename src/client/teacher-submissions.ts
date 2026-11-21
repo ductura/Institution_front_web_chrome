@@ -64,7 +64,8 @@ const UNKNOWN = { kind: "nepoznato" } as const;
 const EXPIRED = { kind: "session-expired" } as const;
 const UUID = { type: "string", pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" } as const;
 const REVISION = { type: "integer", minimum: 0, maximum: Number.MAX_SAFE_INTEGER } as const;
-const MINUTE = { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00\\.000Z$" } as const;
+// A real calendar minute, not only its shape: a row the table cannot format is `nepoznato`.
+const MINUTE = { type: "string", format: "date-time", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00\\.000Z$" } as const;
 const WORK_ID = { anyOf: [{ type: "null" }, { type: "string", minLength: 1 }] } as const;
 const closed = (properties: Record<string, Schema>, optional: readonly string[] = []): Schema => ({
   type: "object", additionalProperties: false, properties,
@@ -107,14 +108,13 @@ async function read<T>(
 
 /**
  * teacher.submissions.get (TODO(ugovor)): one row per recorded submission.
- * Without `submittedVersions` (a server before SRV-1508) the lateness is not
- * known, so the read is `nepoznato` rather than an empty table. A student
+ * The server leaves `submittedVersions` out when no version is recorded
+ * (SRV-1508 teacher-reads), so its absence is an empty table. A student
  * twice, or two versions with one submission id, is `nepoznato`.
  */
 export function readTeacherSubmissions(call: SubmissionsCall, assignmentId: string): Promise<SubmissionsRead> {
   return read(call, "teacher.submissions.get", { assignmentId }, LIST, (body) => {
-    const { submissions, submittedVersions } = body as ListBody;
-    if (submittedVersions === undefined) return UNKNOWN;
+    const { submissions, submittedVersions = [] } = body as ListBody;
     const ids = submittedVersions.flatMap((v) => (v.submissionId === null ? [] : [v.submissionId]));
     const students = submittedVersions.map((v) => v.studentId);
     if (new Set(students).size !== students.length || new Set(ids).size !== ids.length) return UNKNOWN;

@@ -58,10 +58,14 @@ describe("readTeacherSubmissions", () => {
     expect(await readTeacherSubmissions(answering({ submittedVersions: [], submissions: [] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [] });
   });
 
+  it("reads an answer without submittedVersions as no rows: the server leaves it out when none is recorded", async () => {
+    expect(await readTeacherSubmissions(answering({ submissions: [SUBMITTED, NOT_SUBMITTED] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [] });
+  });
+
   it.each([
-    ["no submittedVersions", { submissions: [SUBMITTED] }],
     ["an unknown field", { ...LIST_BODY, extra: 1 }],
     ["an unknown version field", { ...LIST_BODY, submittedVersions: [{ ...VERSION, deadline: "x" }] }],
+    ["a time with no calendar date", { ...LIST_BODY, submissions: [{ ...SUBMITTED, requestedMinute: "2026-13-15T21:30:00.000Z" }] }],
     ["a string lateness", { ...LIST_BODY, submittedVersions: [{ ...VERSION, late: "true" }] }],
     ["a student twice", { ...LIST_BODY, submittedVersions: [VERSION, { ...VERSION, submissionId: null }] }],
   ])("reads %s as nepoznato", async (_name, body) => {

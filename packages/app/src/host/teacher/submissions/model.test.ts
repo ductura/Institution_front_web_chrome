@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { findForbiddenTerms } from "../../../../../../scripts/forbidden-terms/terms.ts";
 import { FAKE_ROWS, fakeSubmissionsPort } from "./fake-port";
 import { submissionsMessages } from "./messages.hr";
-import { canOpen, documentBlocks, failureMessage, lateTag, submittedAt } from "./model";
+import { answeredPanel, canOpen, documentBlocks, failureMessage, forAssignment, lateTag, submittedAt } from "./model";
 
 const [onTime, late] = FAKE_ROWS as [(typeof FAKE_ROWS)[number], (typeof FAKE_ROWS)[number]];
 
@@ -47,6 +47,22 @@ describe("submitted version read only", () => {
       kind: "ready",
       blocks: [{ kind: "heading", text: "Izmišljeni naslov" }, { kind: "paragraph", text: "Izmišljeni odlomak predanog rada." }],
     });
+  });
+
+  it("drops an answer for a version no longer open", () => {
+    const other = { ...late, submissionId: "00000000-0000-4000-8000-0000000000c2" };
+    const ready = { kind: "nepoznato" } as const;
+    expect(answeredPanel({ assignmentId: "a", row: other, read: "loading" }, "a", onTime, ready)).toEqual({ assignmentId: "a", row: other, read: "loading" });
+    expect(answeredPanel(null, "a", onTime, ready)).toBeNull();
+    expect(answeredPanel({ assignmentId: "b", row: onTime, read: "loading" }, "a", onTime, ready)).toEqual({ assignmentId: "b", row: onTime, read: "loading" });
+    expect(answeredPanel({ assignmentId: "a", row: onTime, read: "loading" }, "a", onTime, ready)).toEqual({ assignmentId: "a", row: onTime, read: ready });
+  });
+
+  it("shows nothing read for another assignment", () => {
+    const list = { assignmentId: "a", read: { kind: "ready", rows: [...FAKE_ROWS] } } as const;
+    expect(forAssignment(list, "a")).toBe(list);
+    expect(forAssignment(list, "b")).toBeNull();
+    expect(forAssignment({ assignmentId: "a", row: onTime, read: "loading" }, "b")).toBeNull();
   });
 
   it("reads the contract vector's empty document", () => {

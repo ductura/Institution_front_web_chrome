@@ -67,3 +67,19 @@ export function failureMessage(read: SubmissionsRead | VersionRead): string {
 export function canOpen(row: SubmittedRow): row is SubmittedRow & { submissionId: string } {
   return row.submissionId !== null;
 }
+
+/** A read kept with the assignment it was made for. */
+export type ForAssignment<T> = { readonly assignmentId: string } & T;
+export type ListState = ForAssignment<{ readonly read: SubmissionsRead }> | null;
+/** The open version panel: the row asked for and its read. */
+export type VersionPanel = ForAssignment<{ readonly row: SubmittedRow; readonly read: VersionRead | "loading" }> | null;
+
+/** Only what was read for the assignment shown now: another assignment's rows or version are never shown under it. */
+export function forAssignment<T extends ForAssignment<object>>(state: T | null, assignmentId: string): T | null {
+  return state !== null && state.assignmentId === assignmentId ? state : null;
+}
+
+/** The panel after a version read answers: an answer for a row no longer open (another opened, or closed) is dropped. */
+export function answeredPanel(panel: VersionPanel, assignmentId: string, row: SubmittedRow, read: VersionRead): VersionPanel {
+  return forAssignment(panel, assignmentId)?.row.submissionId === row.submissionId ? { assignmentId, row, read } : panel;
+}
