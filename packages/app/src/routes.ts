@@ -94,6 +94,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik", label: t.teacher.workLanguageException.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // HOST-T3: N-13 "Produljenje roka" (WEB-1113), reached from the overview page (N-17).
   { path: "/nastavnik/zadatak/[assignmentId]/produljenje", label: hostText.deadlineExtensions, kind: "pending", roles: ["teacher"], current: "/nastavnik/zbirni" },
+  // WEB-1502 (M7.2): the submissions of one assignment, reached from the overview (N-17).
+  { path: "/nastavnik/zadatak/[assignmentId]/predaje", label: hostText.assignmentSubmissions, kind: "pending", roles: ["teacher"], current: "/nastavnik/zbirni" },
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
   // WEB-1804 (M11.5): interface language, name and notifications, for everyone signed in.
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },

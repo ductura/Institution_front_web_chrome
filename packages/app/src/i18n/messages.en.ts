@@ -78,6 +78,7 @@ export const hostTextEn = {
   signOutFailed: "Signing out did not work. Please try again.",
   signIn: "Sign in",
   deadlineExtensions: "Deadline extension",
+  assignmentSubmissions: "Assignment submissions",
   mentorshipRequest: "Mentorship request",
 };
 
