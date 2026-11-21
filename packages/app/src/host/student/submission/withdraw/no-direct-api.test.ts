@@ -1,0 +1,16 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+
+// WEB-1903: the withdrawal screens reach the server only through the transport they are given
+// (createApi), never through a network primitive of their own.
+const FORBIDDEN = /\bfetch\s*\(|XMLHttpRequest|\bWebSocket\b|\bEventSource\b|sendBeacon|\baxios\b|["'`]\/?api\/|<form\b[^>]*\baction\s*=/;
+const DIRS = [import.meta.dirname, join(import.meta.dirname, "../../../teacher/submissions/history")];
+
+describe("no direct API in WEB-1903 modules", () => {
+  it("source files hold no network primitive and no API URL", () => {
+    const files = DIRS.flatMap((dir) => readdirSync(dir).filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f)).map((f) => join(dir, f)));
+    expect(files.length).toBeGreaterThan(10);
+    for (const file of files) expect({ file, hit: FORBIDDEN.test(readFileSync(file, "utf8")) }).toEqual({ file, hit: false });
+  });
+});
