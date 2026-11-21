@@ -1,0 +1,21 @@
+// Interface copy of the bulk download of submissions (WEB-1902; plan P-D2).
+export const bulkText = {
+  title: "Skupno preuzimanje predaja",
+  action: "Preuzmi sve predaje",
+  empty: "Još nema predaja za preuzimanje.",
+  loading: "Učitavam stanje preuzimanja.",
+  idle: "Predaje se mogu pripremiti za preuzimanje u jednoj datoteci.",
+  requesting: "Zahtjev se šalje…",
+  preparing: "Priprema se datoteka s predajama. Stanje se osvježava samo.",
+  refresh: "Osvježi stanje",
+  ready: "Datoteka je spremna za preuzimanje.",
+  download: "Preuzmi datoteku",
+  expiresAt: "Poveznica vrijedi do",
+  expired: "Poveznica je istekla. Pripremi datoteku ponovno.",
+  prepareAgain: "Pripremi ponovno",
+  unavailable: "Skupno preuzimanje trenutačno nije dostupno. Pokušaj ponovno.",
+  notFound: "Zadatak nije pronađen.",
+  forbidden: "Predaje može preuzeti samo nastavnik zadatka.",
+  requestUnknown: "Nije poznato je li zahtjev zaprimljen. Osvježi stanje prije novog pokušaja.",
+  retry: "Pokušaj ponovno",
+} as const;
