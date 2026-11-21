@@ -236,4 +236,11 @@ export type MigrationOperations = {
     success: { status: 200; body: { "enabledCheckIds": (string)[]; "lektaProfileId": string | null }; headers: {  } };
     errorCode: "invalid_assignment_id" | "unauthorized" | "not_found" | "unavailable";
   };
+  "student.assignment-requirements.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "wordRange": { "min": number; "max": number | null } | { "min": null; "max": number } | null }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
 };

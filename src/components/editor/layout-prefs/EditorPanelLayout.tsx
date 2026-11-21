@@ -43,9 +43,10 @@ export type EditorPanelLayoutProps = {
   children: ReactNode;
   leftSections?: LeftSections;
   rightSections?: RightSections;
+  renderWork?: (closeDrawer: () => void) => ReactNode;
 };
 
-export function EditorPanelLayout({ header, tools, status, title, children, leftSections, rightSections }: EditorPanelLayoutProps) {
+export function EditorPanelLayout({ header, tools, status, title, children, leftSections, rightSections, renderWork }: EditorPanelLayoutProps) {
   const theme = useSheetTheme();
   const narrowRail = useSyncExternalStore(railQuery.subscribe, railQuery.snapshot, serverSnapshot);
   const narrowPanel = useSyncExternalStore(panelQuery.subscribe, panelQuery.snapshot, serverSnapshot);
@@ -105,7 +106,8 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
   const close = () => setDrawer(null);
   const left = <LeftPanel layout={leftLayout} sections={leftSections} onJump={close}
     settings={<PanelSettings side="left" value={prefs.left} onChange={(value) => setSide("left", value)} />} />;
-  const right = <RightPanel layout={rightLayout} sections={rightSections} drawer={narrowPanel}
+  const sections = renderWork ? { ...rightSections, work: renderWork(close) } : rightSections;
+  const right = <RightPanel layout={rightLayout} sections={sections} drawer={narrowPanel}
     selection={rightLayout === "b" ? contextView : selection} onSelect={rightLayout === "b" ? setContextView : setSelection}
     settings={<PanelSettings side="right" value={prefs.right} onChange={(value) => setSide("right", value)} />} />;
 

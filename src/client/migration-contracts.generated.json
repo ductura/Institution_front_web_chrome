@@ -5959,5 +5959,102 @@
         "unavailable"
       ]
     }
+  },
+  "student.assignment-requirements.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/requirements",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "wordRange"
+              ],
+              "properties": {
+                "wordRange": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "min",
+                        "max"
+                      ],
+                      "properties": {
+                        "min": {
+                          "minimum": 1,
+                          "maximum": 1000000,
+                          "type": "integer"
+                        },
+                        "max": {
+                          "anyOf": [
+                            {
+                              "minimum": 1,
+                              "maximum": 1000000,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "min",
+                        "max"
+                      ],
+                      "properties": {
+                        "min": {
+                          "type": "null"
+                        },
+                        "max": {
+                          "minimum": 1,
+                          "maximum": 1000000,
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }

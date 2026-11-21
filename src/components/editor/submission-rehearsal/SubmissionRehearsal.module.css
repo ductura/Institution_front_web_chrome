@@ -1,0 +1,23 @@
+.rows {
+  margin: 0;
+  min-width: 0;
+}
+
+.row {
+  padding: 8px 0;
+  border-block-start: 1px solid var(--rule-2);
+}
+
+.row dt {
+  font-weight: 600;
+}
+
+.row dd {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}

@@ -2514,5 +2514,138 @@
         "exception": null
       }
     }
+  },
+  {
+    "route": "student.assignment-requirements.get",
+    "name": "without-bounds",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "wordRange": null
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.assignment-requirements.get",
+    "name": "with-bounds",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "wordRange": {
+          "min": 800,
+          "max": 1200
+        }
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.assignment-requirements.get",
+    "name": "without-maximum",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "wordRange": {
+          "min": 800,
+          "max": null
+        }
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.assignment-requirements.get",
+    "name": "without-minimum",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "wordRange": {
+          "min": null,
+          "max": 1200
+        }
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.assignment-requirements.get",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000001903"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.assignment-requirements.get",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "assignmentId": "nije-uuid"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-000000001904"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.assignment-requirements.get",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000001905"
+      },
+      "contentType": "application/json"
+    }
   }
 ]
