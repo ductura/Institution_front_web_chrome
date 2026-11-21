@@ -6837,5 +6837,119 @@
         "unavailable"
       ]
     }
+  },
+  "teacher.assignment-copy.post": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/copy",
+    "method": "POST",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "requestKey",
+        "courseId"
+      ],
+      "properties": {
+        "requestKey": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        },
+        "courseId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        },
+        "opensAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+          "type": "string"
+        },
+        "dueAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the copy",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "versionNo"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "versionNo": {
+                  "const": 1,
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
