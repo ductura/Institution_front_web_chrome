@@ -81,3 +81,5 @@ export {
   setValue as wizardSetValue, startState as wizardStart,
   type WizardErrors, type WizardLabels, type WizardOutcome, type WizardProps, type WizardState, type WizardStep, type WizardStepContext,
 } from "./components/wizard";
+export { RetentionClasses, type RetentionClass, type RetentionClassesLabels, type RetentionClassesProps, type RetentionClassesState, type RetentionMode } from "./components/retention-classes";
+export { LegalHolds, type LegalHold, type LegalHoldsLabels, type LegalHoldsProps, type LegalHoldsState } from "./components/legal-hold";
