@@ -5890,5 +5890,74 @@
         "unavailable"
       ]
     }
+  },
+  "student.text-check-config.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/text-check-config",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "enabledCheckIds",
+                "lektaProfileId"
+              ],
+              "properties": {
+                "enabledCheckIds": {
+                  "type": "array",
+                  "items": {
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "lektaProfileId": {
+                  "anyOf": [
+                    {
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "invalid_assignment_id"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
