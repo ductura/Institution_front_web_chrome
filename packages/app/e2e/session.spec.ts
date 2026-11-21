@@ -166,11 +166,14 @@ test("a teacher's read answering 401 sends the browser to sign-in", async ({ pag
 test("a student's Ductus pages open at their addresses, marked as not connected yet", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
-  await page.goto("/app/chrome/rad/izm-zadatak-1/predaja");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Predaja rada");
+  await page.goto("/app/chrome/rad");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radni prostor");
   await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
   await axe(page);
 
+  // Moji radovi is connected (HOST-S5): it reads an empty list.
+  await page.route("**/api/v1/student/assignments", (route) => route.fulfill({ json: { courses: [] } }));
+  await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({ json: { assignments: [] } }));
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Moji radovi" }).click();
   await expect(page).toHaveURL(/\/app\/chrome\/zadaci\/radovi$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji radovi");
@@ -190,8 +193,8 @@ test("a teacher's Ductus pages open at their addresses, and /nastavnik/kolegiji 
   await expect(page).toHaveURL(/\/app\/chrome\/nastavnik$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
 
-  await page.goto("/app/web/nastavnik/zadatak/izm-zadatak-1/uredi");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nova verzija zadatka");
+  await page.goto("/app/web/nastavnik/brz-put");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
   await axe(page);
   expect(errors).toEqual([]);

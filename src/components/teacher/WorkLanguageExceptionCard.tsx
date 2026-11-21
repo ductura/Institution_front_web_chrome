@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@ductura/ui";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { WORK_LANGUAGES, type WorkLanguage } from "@/domain/assignment/work-language";
@@ -20,6 +21,8 @@ export interface WorkLanguageExceptionCardProps {
   exception: WorkLanguage | null;
   /** Initial outcome; only tests pass it, to render a state without a click. */
   initial?: WorkLanguageExceptionSave | null;
+  saveLanguage?: (language: WorkLanguage | null) => Promise<WorkLanguageExceptionSave>;
+  onReload?: () => void;
 }
 
 // DAN-386 (M2.10-P02d, contract on #1836 c.6858305983): one work's language,
@@ -27,7 +30,7 @@ export interface WorkLanguageExceptionCardProps {
 // a confirmed save the card stays usable; a conflict, a refusal or an
 // unconfirmed reply locks it and offers a fresh read, never a resend.
 export default function WorkLanguageExceptionCard({
-  assignmentId, documentId, assignmentLanguage, exception, initial = null,
+  assignmentId, documentId, assignmentLanguage, exception, initial = null, saveLanguage, onReload,
 }: WorkLanguageExceptionCardProps) {
   const [chosen, setChosen] = useState<WorkLanguage | null>(exception);
   const [result, setResult] = useState<WorkLanguageExceptionSave | null>(initial);
@@ -58,7 +61,8 @@ export default function WorkLanguageExceptionCard({
     inFlight.current = true;
     setPending(true);
     const language = chosen;
-    void saveWorkLanguageException(assignmentId, documentId, language).then((reply) => {
+    const save = saveLanguage ? saveLanguage(language) : saveWorkLanguageException(assignmentId, documentId, language);
+    void save.then((reply) => {
       inFlight.current = false;
       if (!alive.current) return;
       setPending(false);
@@ -95,7 +99,9 @@ export default function WorkLanguageExceptionCard({
       <button className="btn" type="submit" disabled={locked || !changed}>{pending ? w.pending : w.save}</button>
       {result?.kind === "saved" ? <p className={styles.notice} role="status">{w.saved.replace("{language}", names[result.language])}</p> : null}
       {error ? <p className={styles.notice} role="alert">{error}</p> : null}
-      {locked && !pending ? <p><a href={page}>{w.reload}</a></p> : null}
+      {locked && !pending && (onReload
+        ? <Button type="button" onClick={onReload}>{w.reload}</Button>
+        : <p><a href={page}>{w.reload}</a></p>)}
     </form>
   );
 }

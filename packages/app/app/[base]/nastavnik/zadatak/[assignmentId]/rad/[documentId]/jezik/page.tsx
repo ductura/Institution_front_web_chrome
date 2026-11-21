@@ -1,8 +1,6 @@
-import { PendingPage } from "../../../../../../../../src/host/pages";
+import WorkLanguagePage from "../../../../../../../../src/host/teacher/assignment/work-language";
 
-// TREBA API: institution.work-work-language.post with a read of the work; src/client has no module for it yet.
-// Source: Ductus src/app/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik/page.tsx, copied to src/app/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik/.
-/** "Jezik rada jednog studenta". */
-export default function Page() {
-  return <PendingPage />;
+export default async function Page({ params }: { params: Promise<{ assignmentId: string; documentId: string }> }) {
+  const { assignmentId, documentId } = await params;
+  return <WorkLanguagePage key={`${assignmentId}:${documentId}`} assignmentId={assignmentId} documentId={documentId} />;
 }

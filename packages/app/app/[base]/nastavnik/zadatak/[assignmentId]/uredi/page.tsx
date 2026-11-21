@@ -1,8 +1,6 @@
-import { PendingPage } from "../../../../../../src/host/pages";
+import AssignmentVersionPage from "../../../../../../src/host/teacher/assignment/assignment-version";
 
-// TREBA API: institution.assignment-versions.post and institution.work-language.post with a read of the current version; src/client has no module for them yet.
-// Source: Ductus src/app/nastavnik/zadatak/[assignmentId]/uredi/page.tsx, copied to src/app/nastavnik/zadatak/[assignmentId]/uredi/.
-/** "Nova verzija zadatka". */
-export default function Page() {
-  return <PendingPage />;
+export default async function Page({ params }: { params: Promise<{ assignmentId: string }> }) {
+  const { assignmentId } = await params;
+  return <AssignmentVersionPage key={assignmentId} assignmentId={assignmentId} />;
 }

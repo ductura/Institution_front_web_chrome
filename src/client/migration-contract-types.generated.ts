@@ -1,5 +1,6 @@
 // Generated subset of Institution_server a62e0db (API 1.24.0).
 // WEB-07: remove this supplement when the migration contracts are published.
+// HOST-T2: institution.assignment.get from API 1.38.0; the work-language GET is provisional.
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -124,6 +125,20 @@ export type MigrationOperations = {
     success: { status: 200; body: { "versions": ({ "kind": "submission"; "revision": number; "savedMinute": string; "afterDeadline": boolean } | { "kind": "checkpoint"; "revision": number; "savedMinute": string })[]; "nextBeforeRevision": number | null }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
   };
+  "institution.assignment.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "assignmentId": string; "courseId": string; "versionNo": number; "title": string; "instructions": string; "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "opensAt": string; "dueAt": string; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "importAllowed": boolean; "wordMin": number | null; "wordMax": number | null; "groupIds"?: (string)[]; "externalToolsAllowed"?: boolean; "aiSummaryOnly"?: boolean }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "not_found" | "unavailable";
+  };
+  "institution.work-work-language.get": {
+    params: { "assignmentId": string; "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "title": string; "assignmentLanguage": "hr" | "en"; "exception": "hr" | "en" | null }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "not_found" | "unavailable";
+  };
   // Institution_server 46e4aad (SRV-NG).
   "student.notice.get": {
     params: { "assignmentId": string };
@@ -177,6 +192,42 @@ export type MigrationOperations = {
     body: undefined;
     success: { status: 200; body: { "documentId": string; "studentId": string; "studentName": string | null; "assignmentId": string; "state": "predano" | "nije_predano" | "nakon_roka" | "ceka"; "prevDocumentId": string | null; "nextDocumentId": string | null }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  // Institution_server 10ae097 (SRV-1109 and SRV-1110): Merlin roster, CSV, package and download.
+  "teacher.merlin-roster.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "rows": ({ "familyName": string; "givenName": string; "submitted": false; "submittedMinute": null; "afterDeadline": null; "pdfName": null; "pdfSha256": null; "docxName": null; "docxSha256": null } | { "familyName": string; "givenName": string; "submitted": true; "submittedMinute": string; "afterDeadline": boolean; "pdfName": string; "pdfSha256": string; "docxName": string; "docxSha256": string } | { "familyName": null; "givenName": null; "submitted": false; "submittedMinute": null; "afterDeadline": null; "pdfName": null; "pdfSha256": null; "docxName": null; "docxSha256": null } | { "familyName": null; "givenName": null; "submitted": true; "submittedMinute": string; "afterDeadline": boolean; "pdfName": string; "pdfSha256": string; "docxName": string; "docxSha256": string })[]; "extensionReasons": ({ "studentId": string | null; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" })[] }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
+  };
+  "teacher.merlin-roster-csv.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: undefined; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
+  };
+  "teacher.merlin-packages.post": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: { "requestKey": string };
+    success: { status: 202; body: { "id": string; "state": "queued" | "ready" | "failed" | "expired" }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
+  };
+  "teacher.merlin-package.get": {
+    params: { "assignmentId": string; "packageId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "id": string; "state": "queued" | "failed" } | { "id": string; "state": "ready"; "downloadPath": string; "expiresAt": string; "sha256": string } | { "id": string; "state": "expired"; "expiresAt": string; "sha256": string }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
+  };
+  "teacher.merlin-package-download.get": {
+    params: { "assignmentId": string; "packageId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: undefined; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable" | "conflict" | "not_allowed";
   };
   "student.text-check-config.get": {
     params: { "assignmentId": string };
