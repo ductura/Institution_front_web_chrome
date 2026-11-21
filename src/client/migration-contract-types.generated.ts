@@ -303,4 +303,12 @@ export type MigrationOperations = {
     success: { status: 201; body: { "versionNo": number; "publishedAt": string }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "forbidden" | "invalid_json" | "unsupported_media_type" | "unavailable" | "conflict" | "invalid_input" | "invalid_work_type" | "invalid_ai_policy" | "invalid_ai_purposes" | "invalid_evidence_profile";
   };
+  // SRV-1904, Institution_server 1a4ac0d (API 1.65.0).
+  "teacher.assignment-copy.post": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: { "requestKey": string; "courseId": string; "opensAt"?: string; "dueAt"?: string };
+    success: { status: 201; body: { "id": string; "versionNo": 1 }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "conflict" | "unavailable";
+  };
 };
