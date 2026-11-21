@@ -12,7 +12,7 @@ export function editorShortcut(event: KeyboardEvent) {
   return null;
 }
 
-const available = new Set(["Ctrl+Z", "Ctrl+Y", "Ctrl+B", "Ctrl+I", "Ctrl+K", "Ctrl+F", "Ctrl+/", "Esc"]);
+const available = new Set(["Ctrl+Z", "Ctrl+Y", "Ctrl+B", "Ctrl+I", "Ctrl+K", "Ctrl+F", "Ctrl+.", "Ctrl+/", "Esc"]);
 
 export function shortcutGroups(editable: boolean) {
   return DEFAULT_SHORTCUT_GROUPS.map(({ title, items }, index) => ({
