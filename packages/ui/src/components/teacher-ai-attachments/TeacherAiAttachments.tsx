@@ -174,7 +174,7 @@ function Ready({ labels, state }: { labels: TeacherAiAttachmentsLabels; state: R
           {opened.turns.filter((t) => t.seq <= opened.throughSeq).map((turn) => (
             <li key={turn.seq} className={styles.turn} data-author={turn.author}>
               <span className={styles.who}>{turn.author === "student" ? labels.student : opened.assistantName}</span>
-              <span>{turn.text}</span>
+              <span className={styles.message}>{turn.text}</span>
             </li>
           ))}
         </ol>
