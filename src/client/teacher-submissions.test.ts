@@ -1,7 +1,7 @@
 // WEB-1502: readAssignmentSubmissions over invented answers of teacher.submissions.get.
 import { describe, expect, it } from "vitest";
 
-import { readAssignmentSubmissions, type SubmissionsCall } from "./teacher-submissions";
+import { readAssignmentPeople, readAssignmentSubmissions, type SubmissionsCall } from "./teacher-submissions";
 
 const A = "00000000-0000-4000-8000-0000000000a1";
 const S = (n: number) => `00000000-0000-4000-8000-00000000000${n}`;
@@ -36,5 +36,26 @@ describe("readAssignmentSubmissions", () => {
       [{ ...open, afterDeadline: true }],
     ]) expect((await readAssignmentSubmissions(answer(200, { submissions: bad }), A)).kind).toBe("unavailable");
     expect((await readAssignmentSubmissions(answer(200, {}), A)).kind).toBe("unavailable");
+  });
+});
+
+describe("whole-minute timestamps of the contract", () => {
+  it("accepts `:00.000Z` and refuses a minute with seconds", async () => {
+    expect((await readAssignmentSubmissions(answer(200, { submissions: [{ ...done, requestedMinute: "2026-11-02T13:32:00.000Z" }] }), A)).kind).toBe("ready");
+    expect((await readAssignmentSubmissions(answer(200, { submissions: [{ ...done, requestedMinute: "2026-11-02T13:32:07.000Z" }] }), A)).kind).toBe("unavailable");
+  });
+});
+
+describe("readAssignmentPeople over the contract's overview", () => {
+  const ok = (body: unknown) => async () => ({ ok: true as const, status: 200, body });
+  it("joins given and family name; a half name or a failed read gives no name", async () => {
+    const people = await readAssignmentPeople(ok({ students: [
+      { studentId: S(1), givenName: "Ana", familyName: "Izmišljena", groupName: "A" },
+      { studentId: S(2), givenName: "Ana", familyName: null, groupName: null },
+    ] }), A);
+    expect(people.get(S(1))).toEqual({ name: "Ana Izmišljena", group: "A" });
+    expect(people.get(S(2))).toEqual({ name: null, group: null });
+    expect((await readAssignmentPeople(async () => ({ ok: false, status: 503, code: "x" }), A)).size).toBe(0);
+    expect((await readAssignmentPeople(async () => { throw new Error("down"); }, A)).size).toBe(0);
   });
 });

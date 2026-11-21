@@ -11,7 +11,7 @@ const S = (n: number) => `00000000-0000-4000-8000-00000000000${n}`;
 const sub = (n: number, over: Record<string, unknown> = {}) => ({
   studentId: S(n), documentId: D(n), submitted: true, revision: 2, requestedMinute: "2026-11-02T13:32Z", afterDeadline: false, ...over,
 }) as never;
-const overview = [{ studentId: S(1), name: "Izmišljena Osoba 1", group: "A" }, { studentId: S(2), name: "Izmišljena Osoba 2", group: null }] as never;
+const overview = new Map([[S(1), { name: "Izmišljena Osoba 1", group: "A" }], [S(2), { name: "Izmišljena Osoba 2", group: null }]]);
 
 const render = (rows: readonly TableRow[]) =>
   renderToStaticMarkup(h(SubmissionsTable, { assignmentTitle: "Izmišljeni zadatak", rows, href: (p: string) => `/app/web${p}` }));
@@ -32,12 +32,12 @@ describe("SubmissionsTable (M7.2)", () => {
   });
 
   it("never computes lateness: a late minute with afterDeadline false is not tagged", () => {
-    const html = render(buildRows([sub(1, { requestedMinute: "2099-01-01T00:00Z", afterDeadline: false })], null));
+    const html = render(buildRows([sub(1, { requestedMinute: "2099-01-01T00:00Z", afterDeadline: false })], new Map()));
     expect(html).not.toContain('data-state="late"');
   });
 
   it("says a missing name instead of inventing one", () => {
-    expect(render(buildRows([sub(1)], null))).toContain("Ime nije dostupno");
+    expect(render(buildRows([sub(1)], new Map()))).toContain("Ime nije dostupno");
   });
 
   it("shows the empty state without submissions", () => {
@@ -45,7 +45,7 @@ describe("SubmissionsTable (M7.2)", () => {
   });
 
   it("links only a submitted work with a safe document id", () => {
-    const [row] = buildRows([sub(1)], null);
+    const [row] = buildRows([sub(1)], new Map());
     expect(viewHref(row!)).toBe(`/nastavnik/rad/${D(1)}/predaja`);
     expect(viewHref({ ...row!, documentId: ".." })).toBeNull();
     expect(viewHref({ ...row!, documentId: null })).toBeNull();

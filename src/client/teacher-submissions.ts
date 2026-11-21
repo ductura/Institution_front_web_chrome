@@ -33,9 +33,9 @@ export type SubmissionsRead =
 
 const UNAVAILABLE = { kind: "unavailable" } as const;
 
-/** A real UTC minute `YYYY-MM-DDTHH:MMZ`. */
+/** A real whole UTC minute: `YYYY-MM-DDTHH:MMZ` or the contract's `YYYY-MM-DDTHH:MM:00.000Z`. */
 function realMinute(minute: string): boolean {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})Z$/.exec(minute);
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::00(?:\.000)?)?Z$/.exec(minute);
   if (match === null) return false;
   const [y, m, d, h, min] = match.slice(1).map(Number) as [number, number, number, number, number];
   return m >= 1 && m <= 12 && d >= 1 && d <= new Date(Date.UTC(y, m, 0)).getUTCDate() && h <= 23 && min <= 59;
@@ -58,4 +58,36 @@ export async function readAssignmentSubmissions(call: SubmissionsCall, assignmen
   } catch {
     return UNAVAILABLE;
   }
+}
+
+/** What the screen needs of createApi() to name the students: teacher.assignment-overview.get. */
+export type PeopleCall = (
+  id: "teacher.assignment-overview.get",
+  input: { params: { assignmentId: string }; query: undefined; body: undefined },
+) => Promise<{ ok: true; status: number; body: unknown } | { ok: false; status: number; code: string }>;
+
+export type Person = { readonly name: string | null; readonly group: string | null };
+
+/**
+ * The names and groups of the students of an assignment, from the contract's
+ * overview (`givenName`, `familyName`, `groupName`). A name needs both parts;
+ * otherwise it is `null`, never a stand-in. A failed read is an empty map: the
+ * table then says "Ime nije dostupno" instead of failing.
+ */
+export async function readAssignmentPeople(call: PeopleCall, assignmentId: string): Promise<ReadonlyMap<string, Person>> {
+  const people = new Map<string, Person>();
+  try {
+    const result = await call("teacher.assignment-overview.get", { params: { assignmentId }, query: undefined, body: undefined });
+    const students = result.ok && result.status === 200 ? (result.body as { students?: unknown } | null)?.students : null;
+    if (!Array.isArray(students)) return people;
+    for (const s of students as Record<string, unknown>[]) {
+      if (typeof s?.studentId !== "string") continue;
+      const part = (v: unknown) => (typeof v === "string" && v.trim() !== "" ? v : null);
+      const given = part(s.givenName), family = part(s.familyName);
+      people.set(s.studentId, { name: given !== null && family !== null ? `${given} ${family}` : null, group: part(s.groupName) });
+    }
+  } catch {
+    return new Map();
+  }
+  return people;
 }

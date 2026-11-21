@@ -3,8 +3,7 @@
 import { appHref } from "../../../../../../src/components/index.ts";
 import { readTeacherCourses, type TeacherCoursesCall } from "../../../../../../src/components/teacher/teacher-courses-read";
 import { createApi } from "../../../../../../src/client/api.ts";
-import { readAssignmentOverview, type TeacherCall } from "../../../../../../src/client/teacher-reads";
-import { readAssignmentSubmissions, type SubmissionsCall } from "../../../../../../src/client/teacher-submissions";
+import { readAssignmentPeople, readAssignmentSubmissions, type PeopleCall, type SubmissionsCall } from "../../../../../../src/client/teacher-submissions";
 
 import { useHost } from "../../context";
 import { TeacherPage, useTeacherRead } from "../../pages";
@@ -19,17 +18,16 @@ export function SubmissionsPage({ assignmentId }: { assignmentId: string }) {
   const { base } = useHost();
   const [read, retry] = useTeacherRead<Detail>(base, async () => {
     const client = createApi();
-    const [submissions, overview, courses] = await Promise.all([
+    const [submissions, people, courses] = await Promise.all([
       readAssignmentSubmissions(client as unknown as SubmissionsCall, assignmentId),
-      readAssignmentOverview(client as unknown as TeacherCall, assignmentId),
+      readAssignmentPeople(client as unknown as PeopleCall, assignmentId),
       readTeacherCourses(client as unknown as TeacherCoursesCall),
     ]);
     if (submissions.kind !== "ready") return submissions;
-    if (overview.kind === "session-expired") return { kind: "signedOut" };
     const title = courses.kind === "ready"
       ? courses.courses.flatMap((c) => c.assignments).find((a) => a.id === assignmentId)?.title ?? ""
       : "";
-    return { kind: "ready", value: { title, rows: buildRows(submissions.rows, overview.kind === "ready" ? overview.rows : null) } };
+    return { kind: "ready", value: { title, rows: buildRows(submissions.rows, people) } };
   });
   return (
     <TeacherPage title={t.title} lead={t.lead} read={read} retry={retry} unavailable={t.unavailable} retryLabel={t.retry}

@@ -1,5 +1,4 @@
-import type { OverviewRow } from "../../../../../../src/client/teacher-reads";
-import type { SubmissionRow } from "../../../../../../src/client/teacher-submissions";
+import type { Person, SubmissionRow } from "../../../../../../src/client/teacher-submissions";
 
 /** A row of the table: the contract's row plus the name and group of the overview, when it could be read. */
 export type TableRow = {
@@ -15,8 +14,7 @@ export type TableRow = {
 };
 
 /** Names and groups come from the overview of the same assignment; without it they stay `null`, never a stand-in. */
-export function buildRows(submissions: readonly SubmissionRow[], overview: readonly OverviewRow[] | null): TableRow[] {
-  const people = new Map((overview ?? []).map((r) => [r.studentId, r]));
+export function buildRows(submissions: readonly SubmissionRow[], people: ReadonlyMap<string, Person>): TableRow[] {
   return submissions.map((s) => ({
     studentId: s.studentId,
     name: people.get(s.studentId)?.name ?? null,
