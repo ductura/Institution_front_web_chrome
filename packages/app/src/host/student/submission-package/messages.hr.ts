@@ -1,0 +1,18 @@
+export const submissionPackageText = {
+  title: "Paket za referadu",
+  lead: "Paket sadrži predani rad i potvrdu predaje, za ustanovu koja ga traži.",
+  start: "Preuzmi paket za referadu",
+  preparing: "Pripremam paket…",
+  cancel: "Odustani",
+  cancelled: "Priprema je prekinuta. Paket nije preuzet.",
+  failed: "Paket nije bilo moguće pripremiti. Pokušajte ponovno.",
+  expired: "Pripremljeni paket više nije dostupan. Pripremite ga ponovno.",
+  unknown: "Priprema paketa trenutačno nije dostupna. Pokušajte ponovno.",
+  retry: "Pokušaj ponovno",
+  downloading: "Preuzimam paket…",
+  done: "Paket je preuzet.",
+  mismatch: "Preuzeta datoteka ne odgovara otisku koji je dao poslužitelj, pa nije preuzeta.",
+  downloadFailed: "Preuzimanje paketa nije uspjelo.",
+  retryDownload: "Preuzmi ponovno",
+  fingerprint: (prefix: string) => `Otisak paketa: ${prefix}…`,
+} as const;

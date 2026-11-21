@@ -6,12 +6,14 @@ import { Button } from "@ductura/ui";
 import { readTimeMachineVersions } from "../../../../client/time-machine";
 import { PrintExportDialog } from "../PrintExportDialog";
 import { printExportMessages as t } from "../messages.hr";
+import type { ReactNode } from "react";
 import type { DocxVersion } from "./DocxDownload";
 
-function OpenWorkPrintExport({ documentId, title, onClose }: {
+function OpenWorkPrintExport({ documentId, title, onClose, renderPdf }: {
   documentId: string;
   title: string;
   onClose: () => void;
+  renderPdf?: RenderPdf;
 }) {
   const [version, setVersion] = useState<DocxVersion>("loading");
 
@@ -38,13 +40,18 @@ function OpenWorkPrintExport({ documentId, title, onClose }: {
     return () => { open = false; };
   }, [documentId, title]);
 
-  return <PrintExportDialog open onClose={onClose} docxVersion={version} />;
+  const pdfExport = renderPdf === undefined ? undefined
+    : version && typeof version === "object" ? renderPdf({ documentId, versionId: version.versionId, title }) : null;
+  return <PrintExportDialog open onClose={onClose} docxVersion={version} pdfExport={pdfExport} />;
 }
 
-export function WorkPrintExport({ documentId, title }: { documentId: string; title: string }) {
+/** The host draws the PDF download for a saved version (WEB-1803). */
+export type RenderPdf = (version: { documentId: string; versionId: string; title: string }) => ReactNode;
+
+export function WorkPrintExport({ documentId, title, renderPdf }: { documentId: string; title: string; renderPdf?: RenderPdf }) {
   const [open, setOpen] = useState(false);
   return <>
     <Button tone="quiet" onClick={() => setOpen(true)}>{t.title}</Button>
-    {open && <OpenWorkPrintExport key={documentId} documentId={documentId} title={title} onClose={() => setOpen(false)} />}
+    {open && <OpenWorkPrintExport key={documentId} documentId={documentId} title={title} onClose={() => setOpen(false)} renderPdf={renderPdf} />}
   </>;
 }

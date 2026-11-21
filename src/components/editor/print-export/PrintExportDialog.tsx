@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, Dialog } from "@ductura/ui";
 
 import { DocxDownload, type DocxVersion } from "./docx-download/DocxDownload";
@@ -16,11 +16,13 @@ type Props = {
   onClose: () => void;
   loadPreview?: LoadWorkPreview;
   docxVersion: DocxVersion;
+  /** The PDF download of the host (WEB-1803); without it the dialog keeps the "soon" note. */
+  pdfExport?: ReactNode;
 };
 
 type Preview = { state: "loading" | "failed" } | { state: "ready"; url: string };
 
-function PrintExportContent({ onClose, loadPreview, docxVersion }: Omit<Props, "open">) {
+function PrintExportContent({ onClose, loadPreview, docxVersion, pdfExport }: Omit<Props, "open">) {
   const closeButton = useRef<HTMLButtonElement>(null);
   const [attempt, setAttempt] = useState(0);
   const [preview, setPreview] = useState<Preview>({ state: "loading" });
@@ -56,7 +58,7 @@ function PrintExportContent({ onClose, loadPreview, docxVersion }: Omit<Props, "
       actions={<Button tone="quiet" ref={closeButton} onClick={onClose}>{t.close}</Button>}
     >
       <div className={loadPreview ? styles.preview : undefined}>
-        {!loadPreview && <p>{docxDownloadMessages.pdfSoon}</p>}
+        {pdfExport !== undefined ? pdfExport : !loadPreview && <p>{docxDownloadMessages.pdfSoon}</p>}
         {loadPreview && preview.state === "loading" && <p role="status">{t.previewLoading}</p>}
         {loadPreview && preview.state === "failed" && <>
           <p role="alert">{t.previewFailed}</p>
