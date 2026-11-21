@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { CATALOG_STATES } from "./coverage";
 import { ENTRIES, SCREEN_ENTRIES } from "./entries";
 import styles from "./Catalog.module.css";
+import { DeclarationFlow } from "./declaration-flow";
 
 // A screen (src/components) is the shell itself, so it shows only on the shell;
 // the white sheet sits inside a screen, never around it (DAN-753).
@@ -40,6 +41,7 @@ function Catalog() {
           ))}
         </section>
       ))}
+      <DeclarationFlow />
     </main>
   );
 }
