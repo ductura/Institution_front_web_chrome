@@ -1,0 +1,15 @@
+export const directEditMessages = {
+  title: "Izravne izmjene",
+  locked: "Student nije dopustio izravne izmjene ovog rada. Uređivanje je zaključano.",
+  revoked: "Student je opozvao dopuštenje. Uređivanje je zaključano, a vaša zadnja izmjena nije spremljena.",
+  unavailable: "Dopuštenje studenta trenutačno nije moguće provjeriti. Uređivanje je zaključano.",
+  open: "Student je dopustio izravne izmjene. Vaš je tekst u radu označen.",
+  field: "Vaša izmjena teksta",
+  save: "Spremi izmjenu",
+  saved: "Izmjena je spremljena i označena kao nastavnikova.",
+  failed: "Izmjena nije spremljena. Pokušajte ponovno.",
+  unknown: "Nije poznato je li izmjena spremljena. Osvježite stranicu pa provjerite tekst.",
+  signedOut: "Sesija je istekla. Prijavite se ponovno.",
+  mark: "Nastavnikov tekst",
+  retry: "Pokušaj ponovno",
+} as const;
