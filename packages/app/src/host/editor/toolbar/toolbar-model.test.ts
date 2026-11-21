@@ -2,15 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 
 import { currentHeadingId, outlineEntries, progressWords, toolbarGroups, type ToolbarCommands, type ToolbarState } from "./toolbar-model";
 
-const state: ToolbarState = { canUndo: true, canRedo: false, block: "heading2", bold: true, italic: false, bulletList: false, quote: false, editable: true };
+const state: ToolbarState = { canUndo: true, canRedo: false, block: "heading2", bold: true, italic: false, bulletList: false, numberedList: false, quote: false, editable: true };
 const run = (): ToolbarCommands => ({
-  undo: vi.fn(), redo: vi.fn(), setBlock: vi.fn(), toggleBold: vi.fn(), toggleItalic: vi.fn(), toggleBulletList: vi.fn(), toggleQuote: vi.fn(),
+  undo: vi.fn(), redo: vi.fn(), setBlock: vi.fn(), toggleBold: vi.fn(), toggleItalic: vi.fn(), toggleBulletList: vi.fn(), toggleNumberedList: vi.fn(), toggleQuote: vi.fn(),
 });
 
 describe("toolbarGroups", () => {
   it("carries every action of E§3.6 with names, in toolbar order", () => {
     const ids = toolbarGroups(state, run()).flatMap((g) => g.actions.map((a) => a.id));
-    expect(ids).toEqual(["undo", "redo", "paragraph", "heading1", "heading2", "heading3", "bold", "italic", "bulletList", "quote"]);
+    expect(ids).toEqual(["undo", "redo", "paragraph", "heading1", "heading2", "heading3", "bold", "italic", "bulletList", "numberedList", "quote"]);
   });
   it("follows the selection: pressed, and undo/redo only when there is something to undo", () => {
     const all = toolbarGroups(state, run()).flatMap((g) => g.actions);

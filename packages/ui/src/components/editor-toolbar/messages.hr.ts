@@ -9,6 +9,7 @@ export const editorToolbarHr = {
   bold: "Podebljano",
   italic: "Kurziv",
   bulletList: "Popis",
+  numberedList: "Numerirani popis",
   quote: "Citat",
   blockStyle: "Stil bloka",
   history: "Povijest izmjena",

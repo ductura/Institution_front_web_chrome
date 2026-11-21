@@ -53,6 +53,7 @@ const BLOCK_FIELDS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["paragraph", new Set(["type", "id", "children", "variantGroup"])],
   ["heading", new Set(["type", "id", "level", "children"])],
   ["bulletItem", new Set(["type", "id", "children"])],
+  ["numberedItem", new Set(["type", "id", "level", "children"])],
   ["quote", new Set(["type", "id", "children"])],
   ["codeBlock", new Set(["type", "id", "children", "language", "caption"])],
   ["box", new Set(["type", "id", "kind", "children"])],
@@ -153,7 +154,7 @@ function validateBlock(
     return null;
   }
   const children = validateInlineChildren(raw.children, path, type as string, errors);
-  if (type === "heading" && !isHeadingLevel(raw.level)) {
+  if ((type === "heading" || type === "numberedItem") && !isHeadingLevel(raw.level)) {
     errors.push({ path: `${path}.level`, code: "HEADING_LEVEL_INVALID" });
   }
   const language = raw.language;
@@ -184,6 +185,8 @@ function validateBlock(
   switch (type) {
     case "heading":
       return { type, id, level: raw.level as 1 | 2 | 3, children: children as TextNodeV4[] };
+    case "numberedItem":
+      return { type, id, level: raw.level as 1 | 2 | 3, children };
     case "codeBlock":
       return {
         type,
