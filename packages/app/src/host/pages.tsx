@@ -17,6 +17,7 @@ import { internalRoute, routeOf } from "../routes";
 import { hostText } from "../text";
 import { useHost } from "./context";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
+import { startWorkAction } from "./student/start-work/action";
 
 // The pages the host shows, one per route of app/[base]/. Each reads the
 // institution server only through src/client.
@@ -70,7 +71,8 @@ export function StudentPage({ view }: { view: "home" | "courses" }) {
     };
   }, []);
   if (read === null) return <p role="status">{hostText.loading}</p>;
-  return <StudentHome read={read} enroll={null} view={view} signIn={(returnTo) => signInHref(appHref(base, returnTo))} />;
+  return <StudentHome read={read} enroll={null} view={view} signIn={(returnTo) => signInHref(appHref(base, returnTo))}
+    assignmentAction={startWorkAction} />;
 }
 
 export type TeacherRead<T> = { kind: "ready"; value: T } | { kind: "signedOut" } | { kind: "notTeacher" } | { kind: "unavailable" };
