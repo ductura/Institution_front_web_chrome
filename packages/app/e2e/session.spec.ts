@@ -327,6 +327,8 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   await expect(page.getByRole("listitem").filter({ hasText: "Predaja rada" })).toContainText("Ne radi");
   await expect(page.getByRole("listitem").filter({ hasText: "Prikaz za mentora" })).toContainText("Nije uključeno");
   await expect(page.getByText(/^Zadnja provjera:/)).toBeVisible();
+  await expect(page.getByText("Trenutačno nema planiranih održavanja.")).toBeVisible();
+  await expect(page.getByText("Nema zabilježenih prekida.")).toBeVisible();
   expect(seen.login).toEqual([]);
   await axe(page);
   expect(errors).toEqual([]);
