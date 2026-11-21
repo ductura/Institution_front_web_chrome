@@ -13,5 +13,7 @@
   border-radius: var(--radius-sm); cursor: pointer;
 }
 .item:hover, .item:focus-visible { background: var(--hover); }
+/* WCAG 2.4.7 (WEB-1805): the global outline sits 4 px outside the row and the menu scrolls, so its edge was cut; drawn inside the row it shows whole. */
+.item:focus-visible { outline-offset: calc(var(--focus-width) * -1); }
 .item[aria-disabled="true"] { color: var(--ink-3); cursor: not-allowed; background: transparent; }
 .hint { color: var(--ink-3); font-size: 12px; white-space: nowrap; }

@@ -99,6 +99,8 @@ export const PAGES: readonly Page[] = [
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.
   { path: "/nema-ovlasti", label: accessDeniedHr.pageTitle, kind: "pending", roles: [], public: true },
+  // WEB-1805 (M11.6, F-03): the accessibility statement; public, as the law asks.
+  { path: "/pristupacnost", label: t.shell.accessibilityStatement, kind: "pending", roles: [], public: true },
 ];
 
 /** The public page of a route, or null when the route needs the session. */
