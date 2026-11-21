@@ -11,7 +11,7 @@
  * (P-6); an answer that carries one is a broken contract, not a display.
  *
  * WEB-1409: the page is wired to the routes of SRV-1414
- * (GET /api/v1/student/mentorship-requests, GET /api/v1/student/mentor-candidates).
+ * (student mentorship requests and mentor candidates, both GET).
  * They are not in the contract release this repo pins yet, so the shapes stay
  * local (TODO(ugovor)) and `mentorshipCall()` sends them over the browser
  * transport itself; the student picks a teacher from the candidates and the
@@ -19,6 +19,7 @@
  * do not allow is "nepoznato", never an empty list.
  */
 
+import { mentorshipCall } from "./api";
 import { matchesSchema, type Schema } from "./schema-check";
 
 export type StudentMentorshipCall = (
@@ -189,35 +190,4 @@ export async function withdrawMentorshipRequest(call: StudentMentorshipCall, req
   }
 }
 
-const ROUTES = {
-  "student.mentorship-requests.get": { method: "GET", path: "/api/v1/student/mentorship-requests" },
-  "student.mentorship-request.post": { method: "POST", path: "/api/v1/student/mentorship-requests" },
-  "student.mentorship-request-withdraw.post": { method: "POST", path: "/api/v1/student/mentorship-requests/withdraw" },
-  "student.mentor-candidates.get": { method: "GET", path: "/api/v1/student/mentor-candidates" },
-} as const;
-
-/**
- * The transport of the student's mentorship page: the four routes over the browser's own
- * fetch, same origin, session cookie only. An answer without a JSON body is a failure
- * with its status (an unreadable success is never a success).
- */
-export function mentorshipCall(transport: typeof fetch = (input, init) => fetch(input, init)): StudentMentorshipCall {
-  return async (id, input) => {
-    const route = ROUTES[id];
-    try {
-      const response = await transport(new URL(route.path, globalThis.location.origin), {
-        method: route.method,
-        redirect: "manual",
-        credentials: "same-origin",
-        headers: route.method === "POST" ? { "content-type": "application/json" } : undefined,
-        body: route.method === "POST" ? JSON.stringify(input.body ?? {}) : undefined,
-      });
-      if (response.status >= 400) return { ok: false, status: response.status, code: "error" };
-      const type = response.headers.get("content-type") ?? "";
-      if (!type.startsWith("application/json")) return { ok: false, status: 0, code: "unexpected" };
-      return { ok: true, status: response.status, body: await response.json() };
-    } catch {
-      return { ok: false, status: 0, code: "unexpected" };
-    }
-  };
-}
+export { mentorshipCall };
