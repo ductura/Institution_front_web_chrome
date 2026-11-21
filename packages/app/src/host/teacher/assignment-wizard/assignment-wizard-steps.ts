@@ -27,3 +27,8 @@ export function checkSchedule(draft: AssignmentDraft): WizardErrors {
   if (!parseWordRange(draft.wordMin, draft.wordMax)) errors.wordMax = e.words;
   return errors;
 }
+
+/** The create body with the practice flag (WEB-1901): a boolean from the checkbox, never a grade or score field. */
+export function withPractice<T extends object>(body: T, draft: { practice?: boolean }): T & { practice: boolean } {
+  return { ...body, practice: draft.practice === true };
+}
