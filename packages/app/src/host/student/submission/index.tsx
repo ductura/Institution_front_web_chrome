@@ -28,6 +28,7 @@ import { hostText } from "../../../text";
 import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 import PortableRecord from "../portable-record/PortableRecord";
+import SubmissionPackage from "../submission-package/SubmissionPackage";
 import WithdrawSubmission from "./withdraw/WithdrawSubmission";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -185,6 +186,7 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
           <ReceiptPanel read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))}
             summaryHref={hrefOf(stepPath(id, "pregled"))} submitHref={hrefOf(stepPath(id, ""))} />
           {receipt.kind === "potvrdeno" ? <PortableRecord submissionId={receipt.receipt.payload.submissionId} /> : null}
+          {receipt.kind === "potvrdeno" ? <SubmissionPackage assignmentId={id} /> : null}
           <WithdrawSubmission assignmentId={id} />
         </div>
       )}

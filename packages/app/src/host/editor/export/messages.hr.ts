@@ -1,0 +1,18 @@
+export const pdfExportText = {
+  start: "Preuzmi PDF",
+  preparing: "Pripremam PDF…",
+  cancel: "Odustani",
+  cancelled: "Priprema je prekinuta. PDF nije preuzet.",
+  failed: "PDF nije bilo moguće pripremiti. Pokušajte ponovno.",
+  expired: "Pripremljeni PDF više nije dostupan. Pripremite ga ponovno.",
+  unknown: "Priprema PDF-a trenutačno nije dostupna. Pokušajte ponovno.",
+  retry: "Pokušaj ponovno",
+  downloading: "Preuzimam PDF…",
+  done: "PDF je preuzet.",
+  mismatch: "Preuzeta datoteka ne odgovara otisku koji je dao poslužitelj, pa nije preuzeta.",
+  downloadFailed: "Preuzimanje PDF-a nije uspjelo.",
+  retryDownload: "Preuzmi ponovno",
+  pdfA: "PDF/A",
+  pdfAExplain: "Poslužitelj je potvrdio da je ova datoteka u formatu PDF/A.",
+  fingerprint: (prefix: string) => `Otisak PDF-a: ${prefix}…`,
+} as const;

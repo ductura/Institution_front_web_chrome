@@ -40,7 +40,7 @@ import CommentPanel from "./CommentPanel";
 import RevisionPanel from "./RevisionPanel";
 import { EditorPanelLayout } from "./SidePanels";
 import { SubmissionRehearsal } from "./submission-rehearsal/SubmissionRehearsal";
-import { WorkPrintExport } from "./print-export/docx-download/WorkPrintExport";
+import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/WorkPrintExport";
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
 export type OpenRead =
@@ -108,6 +108,7 @@ export default function EditorPageWork({
   topBar,
   length,
   sessionControls,
+  renderPdf,
 }: {
   assignmentId: string;
   course: string;
@@ -115,6 +116,8 @@ export default function EditorPageWork({
   topBar?: ReactNode;
   length?: ComponentProps<typeof StatusBar>["length"];
   sessionControls?: (work: Extract<OpenRead, { kind: "ready" }>) => ReactNode;
+  /** The host's PDF download in the print preview (WEB-1803). */
+  renderPdf?: RenderPdf;
 }) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
@@ -137,14 +140,14 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} />
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -154,6 +157,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   scope: string;
   session: SessionMark;
   saveSummary: boolean;
+  renderPdf?: RenderPdf;
 }) {
   const editor = useLocalEditor();
   const signedOut = useLocalSignedOut();
@@ -167,7 +171,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       tools={<EditorCommands><div className={helpStyles.toolbar}>
         <EditorToolbar workPartsKey={`ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`} />
         <EditorHelpMenu onSelect={setView} />
-        {!signedOut && <WorkPrintExport documentId={documentId} title={title} />}
+        {!signedOut && <WorkPrintExport documentId={documentId} title={title} renderPdf={renderPdf} />}
       </div></EditorCommands>}
       status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
       rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} documentId={documentId} />,
