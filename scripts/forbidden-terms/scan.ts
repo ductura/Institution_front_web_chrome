@@ -11,6 +11,10 @@ import ts from "typescript";
 import { shownText, unreadableCharacters } from "./characters.ts";
 import { findForbiddenTerms, foldText, type ForbiddenTerm } from "./terms.ts";
 
+// The scan of interface text outside locales/ (src/lib/i18n and the label and message modules of the copied front),
+// with the names the Ductus tests import from scan.ts. Not part of the copy of ductura/Institution_server.
+export { UI_TEXT_MODULES, extractUiText, findUiTextModules, isUiTextModule, scanUiTextModules, type UiText, type UiTextFinding } from "./ui-text.ts";
+
 /** `table` is the export of a `.ts` catalogue that holds it. */
 type Catalogue = Readonly<{ lang: "hr" | "en"; table?: string }>;
 

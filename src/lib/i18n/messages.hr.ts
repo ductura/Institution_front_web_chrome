@@ -1059,8 +1059,8 @@ export const hr = {
     // #711 F1b (contract §4): the earlier draft of this device, offered only to read and copy.
     earlierDraftSummary: "Na ovom uređaju čuva se Vaš raniji tekst koji nije u ovom radu.",
     // Owner (#711, O3 and amendment c): since 3d-2c2b a paste is an evidence step of the work, so the sentence that says so is back.
-    earlierDraftExplain: "Tekst ostaje gdje je i ne briše se. Ako ga želite u ovom radu, kopirajte ga i zalijepite; zapis rada tada to bilježi kao lijepljenje.",
-    earlierDraftCopy: "Kopiraj tekst",
+    earlierDraftExplain: "Tekst ostaje gdje je i ne briše se. Ako ga želite u ovom radu, uzmite ga odavde i zalijepite; zapis rada tada to bilježi kao lijepljenje.",
+    earlierDraftCopy: "Stavi tekst u međuspremnik",
     // Owner accepted (#711 c.6396392080, b): the contract text "Kopirano u međuspremnik." fails the stem list of messages.test.ts (kopiran).
     earlierDraftCopied: "Tekst je u međuspremniku.",
     // Owner accepted (#711 c.6396392080, a): the contract text "Tekst nije moguće kopirati." is a forbidden term (kopir-, PRODUCT §5).
@@ -1171,7 +1171,7 @@ export const hr = {
     exportItems: {
       docx: "Word (.docx)",
       print: "Pregled ispisa",
-      copy: "Kopiraj tekst rada",
+      copy: "Stavi tekst rada u međuspremnik",
     },
     // The prototype's 28 characters, as described on hover (E§3.6 menu-chars).
     specialChars: {
@@ -1253,9 +1253,9 @@ export const hr = {
     unconfirmedNote:
       "Odgovor se može poslati kad poslužitelj primi sve izmjene teksta. Ako je uz tekst javljena greška ili sukob, najprije postupite prema toj obavijesti; upisano objašnjenje ostaje ovdje.",
     keptLabel: "Neposlano obrazloženje",
-    keptHint: "Ovo obrazloženje nije poslano jer se na zahtjev više ne odgovara. Kopirajte ga ako ga želite sačuvati.",
+    keptHint: "Ovo obrazloženje nije poslano jer se na zahtjev više ne odgovara. Sačuvajte ga negdje drugdje ako ga želite zadržati.",
     keptForLabel: "Neposlano obrazloženje za zahtjev za doradu {n}",
-    keptUnloadedHint: "Ovo obrazloženje nije poslano, a zahtjevi se trenutačno ne mogu učitati. Kopirajte ga ako ga želite sačuvati.",
+    keptUnloadedHint: "Ovo obrazloženje nije poslano, a zahtjevi se trenutačno ne mogu učitati. Sačuvajte ga negdje drugdje ako ga želite zadržati.",
     errors: {
       signedOut: "Prijava je istekla. Prijavite se ponovno.",
       forbidden: "Ovaj račun ne može odgovoriti na ovaj zahtjev.",
