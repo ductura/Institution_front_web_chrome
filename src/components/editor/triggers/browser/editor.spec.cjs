@@ -28,7 +28,6 @@ for (const [width, theme] of [[1250, 'dark'], [1050, 'light'], [760, 'dark'], [6
     const guide = page.getByRole('region', { name: 'Prvi koraci' });
     await expect(guide.getByRole('heading', { name: 'Prvi koraci' })).toBeFocused();
     await expect(guide.getByText(/Korak 1 od 3/)).toBeVisible();
-    await scan();
     await guide.getByRole('button', { name: 'Dalje' }).click();
     await guide.getByRole('button', { name: 'Dalje' }).click();
     await guide.getByRole('button', { name: 'Završi vodič' }).click();
@@ -89,6 +88,7 @@ test('first visit is scoped to the account and saving works while the guide is o
   const guide = page.getByRole('region', { name: 'Prvi koraci' });
   const help = page.getByRole('button', { name: 'Pomoć', exact: true });
   await expect(guide).toBeVisible();
+  expect((await new AxeBuilder({ page }).include('section[aria-labelledby]').analyze()).violations).toEqual([]);
   await page.getByRole('button', { name: 'Spremi', exact: true }).click();
   await expect(page.getByText('Izmišljeni rad je spremljen.')).toBeVisible();
   await expect(guide).toBeVisible();
