@@ -6,7 +6,7 @@ import { tiptapToCanonical } from "../editor/interop";
 import { createEditorExtensions, NODE_ID_ATTRIBUTE } from "../editor/schema";
 
 import {
-  chapterMoveTransaction,
+  canMoveChapter,
   chapterNumberVector,
   ChapterMove,
   ChapterNumbers,
@@ -135,6 +135,25 @@ describe("createTocStore: the table of contents refreshes live", () => {
     editor.destroy();
   });
 
+  it("tells every view, not only the first that subscribed", () => {
+    const editor = editorOf(WORK);
+    const store = createTocStore(editor);
+    const first = vi.fn();
+    const second = vi.fn();
+    const stopFirst = store.subscribe(first);
+    const stopSecond = store.subscribe(second);
+    cursorTo(editor, ID(1));
+    type(editor, "Novi ");
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+    stopFirst();
+    type(editor, "x");
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(2);
+    stopSecond();
+    editor.destroy();
+  });
+
   it("is empty without an editor", () => {
     const store = createTocStore(null);
     expect(store.getSnapshot().entries).toEqual([]);
@@ -157,6 +176,7 @@ describe("a chapter move keeps every id and the export numbers follow", () => {
     expect(s.currentKey).toBe(ID(5));
     expect(exported(editor)).toEqual(s.entries.map((e) => [e.id, e.number]));
 
+    // The cut and the insert are one undo step.
     editor.commands.undo();
     expect(blockIds(editor)).toEqual(start);
     editor.commands.redo();
@@ -164,9 +184,32 @@ describe("a chapter move keeps every id and the export numbers follow", () => {
     editor.destroy();
   });
 
+  it("keeps the ids of repeated blocks (empty paragraphs, the same text) in both chapters, and through undo", () => {
+    const editor = editorOf([
+      [1, "Uvod"], ["p", ""], ["p", ""], ["p", "Isti odlomak."],
+      [1, "Okvir"], ["p", ""], ["p", ""], ["p", "Isti odlomak."],
+      [1, "Zaključak"], ["p", ""],
+    ]);
+    const start = blockIds(editor);
+    expect(moveChapterInEditor(editor, "down", ID(1))).toBe(true);
+    expect(blockIds(editor)).toEqual([ID(5), ID(6), ID(7), ID(8), ID(1), ID(2), ID(3), ID(4), ID(9), ID(10)]);
+    expect(moveChapterInEditor(editor, "down", ID(1))).toBe(true);
+    expect(blockIds(editor)).toEqual([ID(5), ID(6), ID(7), ID(8), ID(9), ID(10), ID(1), ID(2), ID(3), ID(4)]);
+    expect(moveChapterInEditor(editor, "up", ID(9))).toBe(true);
+    expect(blockIds(editor)).toEqual([ID(9), ID(10), ID(5), ID(6), ID(7), ID(8), ID(1), ID(2), ID(3), ID(4)]);
+    editor.commands.undo();
+    editor.commands.undo();
+    editor.commands.undo();
+    expect(blockIds(editor)).toEqual(start);
+    editor.commands.redo();
+    expect(blockIds(editor)).toEqual([ID(5), ID(6), ID(7), ID(8), ID(1), ID(2), ID(3), ID(4), ID(9), ID(10)]);
+    editor.destroy();
+  });
+
   it("moves down by key and by Alt+Shift+ArrowDown", () => {
     const editor = editorOf(WORK);
-    expect(chapterMoveTransaction(editor.state, "down", ID(7))).toBeNull();
+    expect(canMoveChapter(editor.state, "down", ID(7))).toBe(false);
+    expect(canMoveChapter(editor.state, "down", ID(1))).toBe(true);
     expect(moveChapterInEditor(editor, "down", ID(1))).toBe(true);
     expect(blockIds(editor)).toEqual([ID(5), ID(6), ID(1), ID(2), ID(3), ID(4), ID(7)]);
 

@@ -21,12 +21,18 @@ export type PlanHeading = { readonly block: number; readonly level: number };
 /**
  * The blocks `[start, end)` are replaced by the same blocks in `order` (block
  * indices of the old order). `moved` is the new index of the moved heading.
+ * The same move as a cut and an insert: the chapter's blocks
+ * `[chapterFrom, chapterTo)` go in front of old block `insertAt` (or to the
+ * end of the range when `insertAt` is `end`); every other block stays put.
  */
 export type ChapterMovePlan = {
   readonly start: number;
   readonly end: number;
   readonly order: readonly number[];
   readonly moved: number;
+  readonly chapterFrom: number;
+  readonly chapterTo: number;
+  readonly insertAt: number;
 };
 
 /** Index (in `headings`) of the first heading after `i` that ends chapter `i`. */
@@ -68,13 +74,13 @@ export function planChapterMove(
     const start = headings[k]!.block;
     const end = blockOf(headings, selfEnd, blockCount);
     const order = [...range(self.block, end), ...range(start, self.block)];
-    return { start, end, order, moved: start };
+    return { start, end, order, moved: start, chapterFrom: self.block, chapterTo: end, insertAt: start };
   }
   if (selfEnd >= headings.length || headings[selfEnd]!.level !== self.level) return null;
   const next = headings[selfEnd]!.block;
   const end = blockOf(headings, subtreeEnd(headings, selfEnd), blockCount);
   const order = [...range(next, end), ...range(self.block, next)];
-  return { start: self.block, end, order, moved: self.block + (end - next) };
+  return { start: self.block, end, order, moved: self.block + (end - next), chapterFrom: self.block, chapterTo: next, insertAt: end };
 }
 
 /** The headings of a canonical document for the plan, read from the one projection. */

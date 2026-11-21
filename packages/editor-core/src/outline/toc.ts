@@ -92,15 +92,17 @@ export function compareChapterNumbers(
   actual: ChapterNumberVector,
 ): { readonly equal: boolean; readonly mismatches: readonly ChapterNumberMismatch[] } {
   const mismatches: ChapterNumberMismatch[] = [];
-  const actualById = new Map(actual.map(([id, n]) => [id, n]));
+  const actualById = new Map<string, string>();
   const expectedById = new Map(expected.map(([id, n]) => [id, n]));
+  for (const [id, number] of actual) {
+    // A heading listed twice is a surplus line, even with the right number.
+    if (actualById.has(id) || !expectedById.has(id)) mismatches.push({ kind: "extra", blockId: id, actual: number });
+    else actualById.set(id, number);
+  }
   for (const [id, number] of expected) {
     const found = actualById.get(id);
     if (found === undefined) mismatches.push({ kind: "missing", blockId: id, expected: number });
     else if (found !== number) mismatches.push({ kind: "number", blockId: id, expected: number, actual: found });
-  }
-  for (const [id, number] of actual) {
-    if (!expectedById.has(id)) mismatches.push({ kind: "extra", blockId: id, actual: number });
   }
   if (mismatches.length === 0) {
     expected.forEach(([id], index) => {

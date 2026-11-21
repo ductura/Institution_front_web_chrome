@@ -110,7 +110,8 @@ describe("moveChapter: a move never changes an id", () => {
   it("the plan reports where the moved heading lands", () => {
     // Blocks: 0 h1, 1 p, 2 h1, 3 p, 4 p.
     const plan = planChapterMove([{ block: 0, level: 1 }, { block: 2, level: 1 }], 5, 0, "down")!;
-    expect(plan).toEqual({ start: 0, end: 5, order: [2, 3, 4, 0, 1], moved: 3 });
+    expect(plan).toEqual({ start: 0, end: 5, order: [2, 3, 4, 0, 1], moved: 3, chapterFrom: 0, chapterTo: 2, insertAt: 5 });
+    expect(planChapterMove([{ block: 0, level: 1 }, { block: 2, level: 1 }], 5, 1, "up")).toMatchObject({ chapterFrom: 2, chapterTo: 5, insertAt: 0, moved: 0 });
   });
 });
 
@@ -130,9 +131,14 @@ describe("the export carries the same numbers (SRV-1512 vectors)", () => {
       { kind: "number", blockId: id(2), expected: "1.1", actual: "1.2" },
     ]);
     expect(compareChapterNumbers(expected, [[id(1), "1"], [id(3), "2"], [id(9), "3"]]).mismatches).toEqual([
-      { kind: "missing", blockId: id(2), expected: "1.1" },
       { kind: "extra", blockId: id(9), actual: "3" },
+      { kind: "missing", blockId: id(2), expected: "1.1" },
     ]);
+    // A heading the export lists twice is not equal, even with the right number.
+    expect(compareChapterNumbers([[id(1), "1"]], [[id(1), "1"], [id(1), "1"]])).toEqual({
+      equal: false,
+      mismatches: [{ kind: "extra", blockId: id(1), actual: "1" }],
+    });
     expect(compareChapterNumbers([[id(1), "1"], [id(2), "1"]], [[id(2), "1"], [id(1), "1"]]).mismatches).toEqual([
       { kind: "order", index: 0, expected: id(1), actual: id(2) },
       { kind: "order", index: 1, expected: id(2), actual: id(1) },
