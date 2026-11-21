@@ -178,3 +178,28 @@ for (const { name, path, api, unavailable } of [
     await expect(page.getByRole("button", { name: messagesHr.teacherCourses.retry })).toBeVisible();
   });
 }
+
+test("wizard (WEB-1403): a step with an error cannot be skipped, and going back keeps the input", async ({ page }) => {
+  await teacherSession(page);
+  await page.route("**/api/v1/teacher/courses", (route) => route.fulfill({ json: fixtures["teacher.courses.get"] }));
+  await page.goto(`${newPath}?kolegij=${course.id}`);
+
+  const next = page.getByRole("button", { name: wizard.next });
+  await next.click();
+  await expect(page.getByText(/Upišite naslov zadatka/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Rok i opseg/ })).toBeDisabled();
+
+  await page.getByLabel(assignment.title, { exact: true }).fill("Izmišljeni zadatak za povratak");
+  await next.click();
+  await next.click();
+  await expect(page.getByLabel(assignment.opensAt, { exact: true })).toHaveAttribute("aria-invalid", "true");
+  await page.getByLabel(assignment.opensAt, { exact: true }).fill("2027-01-10T10:00");
+  await page.getByLabel(assignment.dueAt, { exact: true }).fill("2027-01-05T10:00");
+  await next.click();
+  await expect(page.getByText(/Rok mora biti nakon početka/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Natrag" }).click();
+  await expect(page.getByLabel(assignment.title, { exact: true })).toHaveValue("Izmišljeni zadatak za povratak");
+  await next.click();
+  await expect(page.getByLabel(assignment.opensAt, { exact: true })).toHaveValue("2027-01-10T10:00");
+});

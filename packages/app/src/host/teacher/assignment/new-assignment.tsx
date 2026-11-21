@@ -3,13 +3,12 @@
 import Link from "next/link";
 
 import { createApi } from "@/client/api";
-import TeacherSetup from "@/components/teacher/TeacherSetup";
 import { assignmentSetupMessages } from "@/components/teacher/TeacherSetup/messages.hr";
 import { newAssignmentHref } from "@/components/teacher/links";
 import { readTeacherCourses } from "@/components/teacher/teacher-courses-read";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { ImportAllowedField } from "../assignment-wizard/ImportAllowedField";
+import AssignmentWizard from "../assignment-wizard/AssignmentWizard";
 
 import { AssignmentPage, useAssignmentRead } from "./page-state";
 
@@ -27,8 +26,7 @@ export default function NewAssignmentPage({ courseId }: { courseId?: string | st
       {(courses, href) => {
         if (courseId !== undefined) {
           const selected = typeof courseId === "string" && courses.find((course) => course.id.toLowerCase() === courseId.toLowerCase());
-          return selected ? <TeacherSetup key={selected.id} course={selected}
-            importField={(value, onChange) => <ImportAllowedField value={value} onChange={onChange} />} /> : (
+          return selected ? <AssignmentWizard key={selected.id} course={selected} /> : (
             <>
               <p role="alert">{t.missing}</p>
               <p><a href={href(path)}>{assignmentSetupMessages.choose}</a></p>
