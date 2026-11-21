@@ -6056,5 +6056,109 @@
         "unavailable"
       ]
     }
+  },
+  "work.source-notes.get": {
+    "path": "/api/v1/works/{id}/sources/{sourceId}/notes",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "id",
+        "sourceId"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "sourceId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "notes ordered by id",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "notes"
+              ],
+              "properties": {
+                "notes": {
+                  "maxItems": 100,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "quote",
+                      "page",
+                      "note"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "quote": {
+                        "anyOf": [
+                          {
+                            "pattern": "^(?=[\\s\\S]*[^ \\t\\r\\n])(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000\\uD800-\\uDFFF]){1,4000}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "page": {
+                        "anyOf": [
+                          {
+                            "pattern": "^(?=[\\s\\S]*[^ \\t\\r\\n])(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000\\uD800-\\uDFFF]){1,80}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "note": {
+                        "anyOf": [
+                          {
+                            "pattern": "^(?=[\\s\\S]*[^ \\t\\r\\n])(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000\\uD800-\\uDFFF]){1,4000}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }

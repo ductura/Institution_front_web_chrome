@@ -1,6 +1,7 @@
 // Generated subset of Institution_server a62e0db (API 1.24.0).
 // WEB-07: remove this supplement when the migration contracts are published.
 // HOST-T2: institution.assignment.get from API 1.38.0; the work-language GET is provisional.
+// WEB-1604: work.source-notes.get from Institution_server 093f9b7 (API 1.52.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -241,6 +242,13 @@ export type MigrationOperations = {
     query: undefined;
     body: undefined;
     success: { status: 200; body: { "wordRange": { "min": number; "max": number | null } | { "min": null; "max": number } | null }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.source-notes.get": {
+    params: { "id": string; "sourceId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "notes": ({ "id": string; "quote": string | null; "page": string | null; "note": string | null })[] }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "unavailable";
   };
 };
