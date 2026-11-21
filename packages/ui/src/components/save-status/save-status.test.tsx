@@ -1,0 +1,25 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { expect, it } from "vitest";
+
+import { SaveStatus } from "./SaveStatus";
+
+it.each([
+  ["LOCAL_DURABLE", true, "Spremljeno na uređaju"],
+  ["SYNCED", true, "Spremljeno na poslužitelju"],
+  ["SAVING_LOCAL", true, "Sprema se…"],
+  ["SYNCING", true, "Sprema se…"],
+  ["ERROR", true, "Nije spremljeno na uređaju"],
+  ["LOCAL_DURABLE", false, "Izvan mreže · Spremljeno na uređaju"],
+  ["ERROR", false, "Izvan mreže · Nije spremljeno na uređaju"],
+  ["RECOVERY_REQUIRED", false, "Izvan mreže · Potreban oporavak"],
+] as const)("%s when online is %s has a qualified live label", (state, online, label) => {
+  const html = renderToStaticMarkup(<SaveStatus state={state} online={online} />);
+  expect(html).toContain('role="status"');
+  expect(html).toContain(`>${label}</span>`);
+});
+
+it("a blocked tab never claims a save", () => {
+  const html = renderToStaticMarkup(<SaveStatus state="SYNCED" blocked />);
+  expect(html).toContain("Dokument je otvoren u drugoj kartici.");
+  expect(html).not.toContain("Spremljeno");
+});

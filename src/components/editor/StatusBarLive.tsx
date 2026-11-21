@@ -19,10 +19,15 @@ import StatusBar, { statusSaveOf } from "./StatusBar";
 export default function StatusBarLive({
   evidence,
   length,
+  online,
 }: {
   evidence: boolean;
   length?: ComponentProps<typeof StatusBar>["length"];
+  online?: boolean;
 }) {
   const { phase, state } = useLocalSaveRead();
-  return <StatusBar save={statusSaveOf({ phase, state, receiptVerifiedHere: evidence && state === "SYNCED" })} length={length} />;
+  const save = online !== undefined && phase === "unavailable"
+    ? { state: "ERROR", receiptSigned: false, blocked: false } as const
+    : statusSaveOf({ phase, state, receiptVerifiedHere: evidence && state === "SYNCED" });
+  return <StatusBar save={save} length={length} online={online} />;
 }
