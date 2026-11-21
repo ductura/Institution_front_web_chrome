@@ -24,6 +24,12 @@ importers:
       '@playwright/test':
         specifier: 1.63.0
         version: 1.63.0
+      '@tiptap/core':
+        specifier: 3.33.0
+        version: 3.33.0(@tiptap/pm@3.33.0)
+      '@tiptap/pm':
+        specifier: 3.33.0
+        version: 3.33.0
       '@types/node':
         specifier: 26.6.4
         version: 26.6.4
