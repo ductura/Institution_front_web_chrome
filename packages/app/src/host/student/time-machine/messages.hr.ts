@@ -14,6 +14,8 @@ export const timeMachineMessages = {
   loadingCompare: "Učitavanje usporedbe…",
   empty: "Za usporedbu su potrebne barem dvije verzije.",
   samePoint: "Odaberite dvije različite verzije.",
+  partialVersions: "Prikazane su samo novije verzije.",
+  truncated: "Prikazan je samo dio razlika.",
   noChanges: "Između odabranih verzija nema razlike.",
   unavailable: "Verzije trenutačno nije moguće dohvatiti.",
   compareFailed: "Usporedba se nije učitala.",

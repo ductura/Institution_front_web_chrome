@@ -13,10 +13,10 @@ export type CompareBlock = {
 };
 
 export type VersionsRead =
-  | { readonly kind: "ready"; readonly versions: readonly Version[] }
+  | { readonly kind: "ready"; readonly versions: readonly Version[]; readonly partial: boolean }
   | { readonly kind: "signedOut" | "unavailable" };
 export type CompareRead =
-  | { readonly kind: "ready"; readonly blocks: readonly CompareBlock[] }
+  | { readonly kind: "ready"; readonly blocks: readonly CompareBlock[]; readonly truncated: boolean }
   | { readonly kind: "signedOut" | "notFound" | "unavailable" };
 
 export interface TimeMachinePort {
@@ -36,13 +36,12 @@ export function orderedPair(a: number, b: number): { from: number; to: number } 
   return a < b ? { from: a, to: b } : { from: b, to: a };
 }
 
-/** Diff parts for the shared DiffView: words in order, a space between neighbours, a line break between blocks. */
+/** Diff parts for the shared DiffView: fragments verbatim (whitespace belongs to the fragment text), a line break between blocks. */
 export function diffParts(blocks: readonly CompareBlock[]): DiffPart[] {
   const parts: DiffPart[] = [];
   blocks.forEach((block, index) => {
     if (index > 0) parts.push({ kind: "same", text: "\n" });
-    block.words.forEach((word, i) => {
-      if (i > 0) parts.push({ kind: "same", text: " " });
+    block.words.forEach((word) => {
       parts.push({ kind: word.op, text: word.text });
     });
   });

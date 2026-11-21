@@ -14,12 +14,13 @@ describe("time machine model", () => {
     expect(orderedPair(3, 1)).toEqual({ from: 1, to: 3 });
     expect(orderedPair(2, 2)).toBeNull();
   });
-  it("builds diff parts with spaces and block breaks", async () => {
+  it("builds diff parts verbatim with block breaks", async () => {
     const read = await fakeTimeMachinePort().compare("d", 1, 3);
     if (read.kind !== "ready") throw new Error("ready expected");
     const parts = diffParts([...read.blocks, ...read.blocks]);
     expect(parts.filter((p) => p.kind === "removed").map((p) => p.text)).toEqual(["stari", "stari"]);
     expect(parts.some((p) => p.text === "\n")).toBe(true);
+    expect(parts.filter((p) => p.text === " ")).toEqual([]);
   });
   it("shows no duration, pace or size of change", () => {
     const joined = Object.values(timeMachineMessages).map((v) => (typeof v === "string" ? v : v("checkpoint", 1, "2026-11-20T09:15:00.000Z"))).join(" ");

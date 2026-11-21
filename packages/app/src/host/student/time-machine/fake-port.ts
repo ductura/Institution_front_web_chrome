@@ -11,14 +11,15 @@ export function fakeTimeMachinePort(): TimeMachinePort & { readonly compares: re
   const compares: [number, number][] = [];
   return {
     compares,
-    async versions() { return { kind: "ready", versions: FAKE_VERSIONS }; },
+    async versions() { return { kind: "ready", versions: FAKE_VERSIONS, partial: false }; },
     async compare(_id, from, to) {
       compares.push([from, to]);
       return {
         kind: "ready",
         blocks: [{ op: "changed", words: [
-          { op: "same", text: "Izmišljeni" }, { op: "removed", text: "stari" }, { op: "added", text: "novi" }, { op: "same", text: "odlomak." },
+          { op: "same", text: "Izmišljeni " }, { op: "removed", text: "stari" }, { op: "added", text: "novi" }, { op: "same", text: " odlomak." },
         ] }],
+        truncated: false,
       };
     },
   };

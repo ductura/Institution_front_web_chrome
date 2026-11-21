@@ -19,8 +19,8 @@ export type TimeMachineBlock = {
   op: "same" | "added" | "removed" | "changed";
   words: { op: "same" | "added" | "removed"; text: string }[];
 };
-export type VersionsResult = { kind: "ready"; versions: TimeMachineVersion[] } | { kind: "signedOut" | "unavailable" };
-export type CompareResult = { kind: "ready"; blocks: TimeMachineBlock[] } | { kind: "signedOut" | "notFound" | "unavailable" };
+export type VersionsResult = { kind: "ready"; versions: TimeMachineVersion[]; partial: boolean } | { kind: "signedOut" | "unavailable" };
+export type CompareResult = { kind: "ready"; blocks: TimeMachineBlock[]; truncated: boolean } | { kind: "signedOut" | "notFound" | "unavailable" };
 
 /** TODO(ugovor): the transport of a route that is not in the published contract yet. */
 export type CompareCall = (
@@ -36,7 +36,12 @@ export async function readTimeMachineVersions(documentId: string, api = createAp
   try {
     const result = await api("work.versions.get", { params: { documentId }, query: undefined, body: undefined });
     if (!result.ok) return { kind: result.status === 401 ? "signedOut" : "unavailable" };
-    return { kind: "ready", versions: result.body.versions.map(({ kind, revision, savedMinute }) => ({ kind, revision, savedMinute })) };
+    // TODO(ugovor): this base's contract has no beforeRevision query for work.versions.get, so older pages
+    // cannot be asked for; `partial` tells the page that older versions exist and are not listed.
+    return {
+      kind: "ready", partial: result.body.nextBeforeRevision !== null,
+      versions: result.body.versions.map(({ kind, revision, savedMinute }) => ({ kind, revision, savedMinute })),
+    };
   } catch {
     return { kind: "unavailable" };
   }
@@ -63,7 +68,8 @@ export async function readTimeMachineComparison(
       }
       blocks.push({ op: block.op as TimeMachineBlock["op"], words });
     }
-    return { kind: "ready", blocks };
+    if (body.truncated !== undefined && typeof body.truncated !== "boolean") return { kind: "unavailable" };
+    return { kind: "ready", blocks, truncated: body.truncated === true };
   } catch {
     return { kind: "unavailable" };
   }
