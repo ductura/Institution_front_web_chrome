@@ -55,6 +55,19 @@ export const pageLabelsEn = {
   consultations: "Consultations",
 };
 
+export const accessDeniedEn = {
+  pageTitle: "No access",
+  title: { denied: "You do not have access to this view", expired: "Your sign-in has expired", signedOut: "Sign-in needed" },
+  body: {
+    denied: "This view is not available with your account. If you think it should be, contact your institution's administrator.",
+    expired: "Your sign-in expired after a long time without activity. Sign in again through AAI@EduHr and carry on where you left off.",
+    signedOut: "Sign in through AAI@EduHr to open this view.",
+  },
+  signIn: "Sign in through AAI@EduHr",
+  heldNote: "Input you had not sent is still saved on this device. You can continue it after signing in.",
+  home: "Back to the start",
+};
+
 export const hostTextEn = {
   loading: "Loading…",
   signingIn: "Taking you to sign-in through AAI@EduHr…",

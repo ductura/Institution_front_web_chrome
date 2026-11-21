@@ -108,9 +108,10 @@ describe("the teacher's pages of Ductus app/", () => {
 });
 
 describe("publicPage", () => {
-  it("gives the pages opened without a session: Stanje sustava and Prijava", () => {
+  it("gives the pages opened without a session: Stanje sustava, Prijava and Nema ovlasti", () => {
     expect(publicPage("/stanje")).toMatchObject({ label: "Stanje sustava" });
     expect(publicPage("/prijava")).toMatchObject({ label: "Prijava" });
+    expect(publicPage("/nema-ovlasti")).toMatchObject({ label: "Nema ovlasti" });
     expect(publicPage("/zadaci")).toBeNull();
     expect(publicPage("/kako-radi")).toBeNull();
     expect(publicPage("/")).toBeNull();

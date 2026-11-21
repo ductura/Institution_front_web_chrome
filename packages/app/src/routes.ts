@@ -9,7 +9,7 @@ import { messagesHr as workText } from "../../../src/lib/i18n/messages.hr.ts";
 import type { SessionRole } from "../../../src/client/api.ts";
 
 import type { Base } from "./bases";
-import { profileHr } from "./i18n/messages.hr";
+import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { hostText } from "./text";
 
 export { BASES, type Base } from "./bases";
@@ -97,6 +97,8 @@ export const PAGES: readonly Page[] = [
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
+  // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.
+  { path: "/nema-ovlasti", label: accessDeniedHr.pageTitle, kind: "pending", roles: [], public: true },
 ];
 
 /** The public page of a route, or null when the route needs the session. */
