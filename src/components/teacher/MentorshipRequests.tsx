@@ -105,7 +105,11 @@ export default function MentorshipRequests({ read, here }: { read: RequestsRead;
   return <MentorshipRequestsView read={read} here={here} call={MENTORSHIP_CALL} />;
 }
 
-export function MentorshipRequestsView({ read, here, call }: { read: RequestsRead; here: string; call: MentorshipCall | null }) {
+export function MentorshipRequestsView({ read, here, call, onDecided }: {
+  read: RequestsRead; here: string; call: MentorshipCall | null;
+  /** A client-side host reads its own state again here; without it the router refreshes the server page. */
+  onDecided?: () => void;
+}) {
   const router = useRouter();
   const [gone, setGone] = useState<ReadonlySet<string>>(new Set());
   const [busy, setBusy] = useState<{ id: string; decision: Decision } | null>(null);
@@ -119,7 +123,7 @@ export function MentorshipRequestsView({ read, here, call }: { read: RequestsRea
     setNote(null);
     setDialogError(null);
     setBusy({ id: request.requestId, decision });
-    const next = await submitDecision({ call, refresh: () => router.refresh(), signIn: () => goToSignIn(here) }, request, decision, text);
+    const next = await submitDecision({ call, refresh: () => (onDecided === undefined ? router.refresh() : onDecided()), signIn: () => goToSignIn(here) }, request, decision, text);
     setBusy(null);
     if (next === null) return;
     if (next.drop) {
