@@ -137,6 +137,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/mentor/working-criteria/WorkingCriteria.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/rich/blocks/FormulaDialog.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
   "editor/rich/blocks/RichBlockTools.tsx", // ZEL-W13: landed without a catalogue entry; awaits its lane.
+  "editor/text-fixes/TextFixesPanel.tsx", // WEB-1103: not mounted yet; awaits the Pregled card mount.
   "editor/review/ReviewPanel.tsx", // WEB-1102: Pregled card, not mounted in the right panel yet; awaits its entry with the mount.
 ]);
 
