@@ -14,6 +14,8 @@ import { nextPath, type Base } from "../bases";
 import { crumbsOf, internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
 import { hostText } from "../text";
 import { HostContext } from "./context";
+import { EditorSignOutSlot } from "./editor/save-status/SignOutSlot";
+import { RecoveryOffer } from "./editor/save-status/RecoveryOffer";
 import SignOut from "./SignOut";
 
 /**
@@ -84,18 +86,21 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   if (resolved === null || resolved.kind === "redirect") return <RouteLoading label={hostText.loading} />;
 
   const shell = (current: string | undefined, crumbs: readonly string[], body: ReactNode, ownMain = false) => (
-    <AppShell
-      role={role}
-      scope={null}
-      current={current}
-      crumbs={crumbs}
-      base={base}
-      institution={signedIn?.institution ?? null}
-      account={<SignOut />}
-      ownMain={ownMain}
-    >
-      {body}
-    </AppShell>
+    <EditorSignOutSlot>
+      <AppShell
+        role={role}
+        scope={null}
+        current={current}
+        crumbs={crumbs}
+        base={base}
+        institution={signedIn?.institution ?? null}
+        account={<SignOut />}
+        ownMain={ownMain}
+      >
+        {role === "student" && <RecoveryOffer base={base} />}
+        {body}
+      </AppShell>
+    </EditorSignOutSlot>
   );
 
   if (resolved.kind === "notFound") {

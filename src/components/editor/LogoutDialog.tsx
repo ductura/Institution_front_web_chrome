@@ -49,6 +49,7 @@ export type LogoutDialogProps = {
   working: boolean;
   /** The sign-out ended on this device without the server's answer (#1330). */
   signedOutHere: boolean;
+  keptOnDevice?: boolean;
   /**
    * The last sign-out got no confirmation from the server, so nothing has
    * ended (F-285): the dialog says so and the confirm button tries again.
@@ -75,6 +76,7 @@ export default function LogoutDialog({
   plan,
   working,
   signedOutHere,
+  keptOnDevice,
   unconfirmed = false,
   onConfirm,
   onStay,
@@ -278,7 +280,7 @@ export default function LogoutDialog({
             onConfirm={confirmAfter}
           />
         ) : null}
-        <Alert signedOutHere={signedOutHere} unconfirmed={unconfirmed && !signedOutHere && !working} kept={!nothingHeld(plan)} textId={textId} discardFailed={discard === "failed"} />
+        <Alert signedOutHere={signedOutHere} unconfirmed={unconfirmed && !signedOutHere && !working} kept={keptOnDevice ?? !nothingHeld(plan)} textId={textId} discardFailed={discard === "failed"} />
         {signedOutHere ? <CloseAction stayRef={stayRef} onClose={onStay} /> : <MainActions
           exportFirst={exportFirst}
           offerExport={offerExport}

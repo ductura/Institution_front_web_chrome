@@ -2,6 +2,8 @@ import "@ductura/ui/fonts.css";
 import "@ductura/ui/tokens.css";
 
 import { createRoot } from "react-dom/client";
+import { SaveStatus } from "@ductura/ui/save-status";
+import { Blocked, Offline, OfflineUnsaved, SavedOnDevice, SavedOnServer, Saving, Unsaved } from "../../packages/ui/src/components/save-status/SaveStatus.stories";
 
 import { CATALOG_STATES } from "./coverage";
 import { ENTRIES, SCREEN_ENTRIES } from "./entries";
@@ -42,6 +44,14 @@ function Catalog() {
         </section>
       ))}
       <DeclarationFlow />
+      <section id="SaveStatus" aria-labelledby="save-status-title" className={styles.component}>
+        <h2 id="save-status-title">Stanje spremanja</h2>
+        <ul className={styles.shell}>
+          {[SavedOnDevice, SavedOnServer, Saving, Unsaved, Offline, OfflineUnsaved, Blocked].map(({ args }, index) => (
+            <li key={index}><SaveStatus {...args} /></li>
+          ))}
+        </ul>
+      </section>
     </main>
   );
 }
