@@ -1,0 +1,18 @@
+/*
+ * Entry point of @ductura/ui/tokens.css. globals.css stays byte for byte the
+ * Ductus source (PROVENANCE.md); local corrections live below it.
+ */
+@import "./globals.css";
+
+/*
+ * Error text follows the sheet, never the shell (WCAG 1.4.3 on the paper).
+ * Without these, a light sheet inside the dark shell inherits the dark
+ * shell's light --error (#f0a08f) and the alert text falls below 4.5:1.
+ */
+.sheet {
+  --error: #f0a08f;
+}
+
+.sheet[data-sheet-theme="light"] {
+  --error: #9c3f33;
+}
