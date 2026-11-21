@@ -59,7 +59,8 @@ export function ProfileSettings({ notifications = unavailableNotificationSetting
     setLanguageStatus(null);
     const saved = await setLocale(chosen);
     setSaving(false);
-    setTouched(false);
+    // After a failed save the choice stays, so trying again sends the same language.
+    if (saved.kind === "saved") setTouched(false);
     if (saved.kind === "signedOut") setLanguageStatus({ tone: "alert", text: p.language.signedOut });
     else if (saved.kind === "failed") setLanguageStatus({ tone: "alert", text: p.language.failed });
     // The confirmation is read in the new language, from the catalogue it now shows.

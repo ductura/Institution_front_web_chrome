@@ -42,6 +42,8 @@ export function LocaleProvider({ children, call = liveCall }: { children: ReactN
   const [locale, setState] = useState<UiLocale>(DEFAULT_UI_LOCALE);
   const [server, setServer] = useState<LocaleValue["server"]>("unread");
   const asked = useRef(false);
+  // Bumped by every save, so a read that started before it cannot undo it.
+  const generation = useRef(0);
 
   useEffect(() => {
     const stored = readStoredLocale(storage());
@@ -55,20 +57,23 @@ export function LocaleProvider({ children, call = liveCall }: { children: ReactN
   const syncFromServer = useCallback(() => {
     if (asked.current) return;
     asked.current = true;
+    const started = generation.current;
     void readInterfaceLocale(call).then((read) => {
+      if (started !== generation.current) return;
       if (read.kind !== "saved") {
         setServer("failed");
         return;
       }
       setServer("read");
-      if (read.locale !== null) {
-        setState(read.locale);
-        storeLocale(storage(), read.locale);
-      }
+      // No saved value is the default, not the browser's copy: that copy may be another account's.
+      const locale = read.locale ?? DEFAULT_UI_LOCALE;
+      setState(locale);
+      storeLocale(storage(), locale);
     });
   }, [call]);
 
   const setLocale = useCallback(async (next: UiLocale) => {
+    generation.current += 1;
     const saved = await saveInterfaceLocale(call, next);
     if (saved.kind === "saved") {
       setState(saved.locale);

@@ -147,8 +147,12 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
 
   // Rendered once: in the side bar, or in the top bar where the side bar is a
   // closed drawer, so signing out stays one press away (D-118).
+  // A link the page brings into the account place ("Postavke profila", WEB-1804)
+  // closes the drawer as the navigation's own links do.
   const accountBlock = place === "own" ? (
-    <div className={styles.account}>
+    <div className={styles.account} onClick={(event) => {
+      if (event.target instanceof Element && event.target.closest("a[href]") !== null) setOpen(false);
+    }}>
       {role !== null ? <span className={styles.who}>{t.shell.role[role]}</span> : null}
       {account}
     </div>
