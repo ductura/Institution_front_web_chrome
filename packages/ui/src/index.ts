@@ -64,6 +64,7 @@ export {
   type AiMatchRecord, type MatchSpan, type ProvenanceBlock, type ProvenanceShareLabels, type ProvenanceShareProps,
   type ProvenanceShareState, type ShareCategory, type ShareEntry, type ShareRecord,
 } from "./components/provenance-share";
+export { ProblemReportForm, type ProblemReportFormLabels, type ProblemReportFormProps, type ProblemReportFormView } from "./components/problem-report";
 export { EditorToolbar, type EditorToolbarAction, type EditorToolbarGroup, type EditorToolbarProps } from "./components/editor-toolbar";
 export { EditorOutline, type EditorOutlineProps, type OutlineEntry } from "./components/editor-toolbar";
 export { EditorProgress, type EditorProgressProps } from "./components/editor-toolbar";

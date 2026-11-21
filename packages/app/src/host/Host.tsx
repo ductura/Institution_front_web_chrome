@@ -15,6 +15,7 @@ import { navLabel, useLocale } from "../i18n";
 import { HostContext } from "./context";
 import { EditorSignOutSlot } from "./editor/save-status/SignOutSlot";
 import { RecoveryOffer } from "./editor/save-status/RecoveryOffer";
+import ProblemReportHelp from "./ProblemReportHelp";
 import SignOut from "./SignOut";
 
 /**
@@ -112,6 +113,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
         institution={signedIn?.institution ?? null}
         account={<SignOut base={base} />}
         messages={t}
+        help={(linkClass) => <ProblemReportHelp triggerClass={linkClass} />}
         ownMain={ownMain}
       >
         {role === "student" && <RecoveryOffer base={base} />}
