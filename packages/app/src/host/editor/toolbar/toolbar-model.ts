@@ -14,6 +14,7 @@ export type ToolbarState = {
   bold: boolean;
   italic: boolean;
   bulletList: boolean;
+  numberedList: boolean;
   quote: boolean;
   /** No editor yet (the journal is still being read) or a read-only work. */
   editable: boolean;
@@ -27,6 +28,7 @@ export type ToolbarCommands = {
   toggleBold(): void;
   toggleItalic(): void;
   toggleBulletList(): void;
+  toggleNumberedList(): void;
   toggleQuote(): void;
 };
 
@@ -54,6 +56,7 @@ export function toolbarGroups(state: ToolbarState, run: ToolbarCommands): Editor
     ] },
     { id: "blocks", label: t.blocks, actions: [
       { id: "bulletList", label: t.bulletList, icon: "bulletList", pressed: state.bulletList, disabled: off, onSelect: run.toggleBulletList },
+      { id: "numberedList", label: t.numberedList, icon: "numberedList", pressed: state.numberedList, disabled: off, shortcut: `${MOD}+Shift+7`, onSelect: run.toggleNumberedList },
       { id: "quote", label: t.quote, icon: "quote", pressed: state.quote, disabled: off, onSelect: run.toggleQuote },
     ] },
   ];

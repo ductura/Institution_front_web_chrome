@@ -12,3 +12,8 @@
 .input:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); }
 .note { margin: 0; color: var(--ink-3); }
 .note[data-error] { color: var(--ink); font-weight: 600; }
+/* WCAG 2.4.7: Chromium gives a date or time field an inner calendar button that
+   takes a Tab stop of its own, and while it has focus the field no longer matches
+   :focus-visible, so the global ring disappears. A text field shows the ring on
+   any focus anyway, so the same ring on :focus-within changes nothing else. */
+.input:focus-within { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }

@@ -9,7 +9,7 @@ const draw = (props: Parameters<typeof Icon>[0]) => Icon(props) as ReactElement<
 describe("toolbar icons (WEB-03)", () => {
   it("has the icons the static toolbar needs (WEB-15)", () => {
     expect([...ICON_NAMES].sort()).toEqual(
-      ["bold", "bulletList", "chevronDown", "heading", "italic", "paragraph", "quote", "redo", "undo"],
+      ["bold", "bulletList", "chevronDown", "heading", "italic", "numberedList", "paragraph", "quote", "redo", "undo"],
     );
   });
 

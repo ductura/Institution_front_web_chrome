@@ -32,6 +32,7 @@ import Text from "@tiptap/extension-text";
 import { PluginKey } from "@tiptap/pm/state";
 
 import { blockMarkerRule, markerRemoval } from "./block-marker";
+import { NumberedItem } from "../lists/numbered-item";
 import { BulletItem } from "./bullet-item";
 import { Citation } from "./citation";
 import { CitationV3, CrossReference, Footnote } from "./atoms-v3";
@@ -72,6 +73,7 @@ export const ID_CARRYING_TYPES = ["paragraph", "heading", "bulletItem", "quote"]
  */
 export const ID_CARRYING_TYPES_V4 = [
   ...ID_CARRYING_TYPES,
+  "numberedItem",
   "codeBlock",
   "box",
   "table",
@@ -325,6 +327,7 @@ export const DocumentV4 = DocumentV2.extend({
 /** Every extension name registered by `createEditorExtensionsV4`. */
 export const V4_EXTENSION_NAMES = [
   ...V3_EXTENSION_NAMES,
+  "numberedItem",
   "sup",
   "sub",
   "highlight",
@@ -356,6 +359,7 @@ export function createEditorExtensionsV4(placeholder: string = DEFAULT_PLACEHOLD
     ParagraphV4,
     MarkedHeading.extend({ content: "text*" }).configure({ levels: [...F1_HEADING_LEVELS] }),
     BulletItem,
+    NumberedItem,
     Text,
     Bold,
     Italic,

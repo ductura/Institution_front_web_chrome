@@ -1,0 +1,63 @@
+/* The accessibility statement (WEB-1805): a readable column of sections on the
+   page's own tokens; no colour of its own, so contrast is the theme's. */
+.statement h2 {
+  margin: 0 0 8px;
+  font-family: var(--ff-display);
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 500;
+}
+
+.statement h3 {
+  margin: 16px 0 4px;
+  font-size: 17px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.statement ul {
+  margin: 8px 0 0;
+  padding-left: 1.25em;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statement a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.body {
+  margin-top: 12px !important;
+  font-weight: 600;
+}
+
+.contact {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+}
+
+.contact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .contact {
+    grid-template-columns: 1fr;
+  }
+
+  .contact dd {
+    margin-bottom: 8px;
+  }
+}

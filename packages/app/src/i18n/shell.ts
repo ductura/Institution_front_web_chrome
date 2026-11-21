@@ -32,6 +32,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/prijava": (c) => c.app.host.signIn,
   "/nema-ovlasti": (c) => c.app.accessDenied.pageTitle,
   "/profil": (c) => c.app.profile.title,
+  "/pristupacnost": (c) => c.t.shell.accessibilityStatement,
 };
 
 /**

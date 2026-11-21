@@ -105,7 +105,7 @@ export function contentEqualV4(a: CanonicalDocumentV4, b: CanonicalDocumentV4): 
 }
 
 export type TextBlockV4 = {
-  kind: "heading" | "paragraph" | "bulletItem" | "quote" | "codeBlock";
+  kind: "heading" | "paragraph" | "bulletItem" | "numberedItem" | "quote" | "codeBlock";
   text: string;
 };
 
@@ -150,7 +150,7 @@ export function documentWordCountV4(doc: CanonicalDocumentV4): number {
   };
   const visit = (node: DocumentNodeV4): void => {
     if (node.type === "box") node.children.forEach(visit);
-    else if (node.type === "paragraph" || node.type === "heading" || node.type === "bulletItem" || node.type === "quote") {
+    else if (node.type === "paragraph" || node.type === "heading" || node.type === "bulletItem" || node.type === "numberedItem" || node.type === "quote") {
       count(node.children as readonly InlineNodeV4[]);
     }
   };

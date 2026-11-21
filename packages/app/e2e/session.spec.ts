@@ -327,6 +327,8 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   await expect(page.getByRole("listitem").filter({ hasText: "Predaja rada" })).toContainText("Ne radi");
   await expect(page.getByRole("listitem").filter({ hasText: "Prikaz za mentora" })).toContainText("Nije uključeno");
   await expect(page.getByText(/^Zadnja provjera:/)).toBeVisible();
+  await expect(page.getByText("Trenutačno nema planiranih održavanja.")).toBeVisible();
+  await expect(page.getByText("Nema zabilježenih prekida.")).toBeVisible();
   expect(seen.login).toEqual([]);
   await axe(page);
   expect(errors).toEqual([]);
@@ -340,6 +342,16 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   expect(seen.login).toHaveLength(2);
   expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/app/web/");
   expect(seen.me).toBe(0);
+});
+
+test("Stanje sustava has no horizontal scroll at 360 px", async ({ page }) => {
+  await fakeServer(page, { status: 401 });
+  await page.route(STATUS_PATH, (route) => route.fulfill({ status: 200, json: PUBLIC_STATUS }));
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto("/app/chrome/stanje");
+  await expect(page.getByText("Nema zabilježenih prekida.")).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
 });
 
 test("Stanje sustava shows an API refusal without sending the reader to sign-in", async ({ page }) => {

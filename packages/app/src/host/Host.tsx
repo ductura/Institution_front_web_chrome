@@ -80,7 +80,16 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   useEffect(() => {
     const shown = open ?? (resolved?.kind === "page" ? resolved.page : null);
     const page = shown === null ? null : navLabel(shown, role, catalogues);
-    document.title = page === null ? t.app.name : `${page} · ${t.app.name}`;
+    const title = page === null ? t.app.name : `${page} · ${t.app.name}`;
+    // WCAG 2.4.2 (WEB-1805): Next streams the root layout's title after hydration on
+    // public pages and on pages with async params, and would put back the bare app name.
+    const keep = () => {
+      if (document.title !== title) document.title = title;
+    };
+    keep();
+    const watch = new MutationObserver(keep);
+    watch.observe(document.head, { childList: true, subtree: true, characterData: true });
+    return () => watch.disconnect();
   }, [open, resolved, role, catalogues, t]);
 
   if (open !== null) return <HostContext value={{ base, page: open, role: null }}>{children}</HostContext>;
