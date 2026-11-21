@@ -78,8 +78,8 @@ describe("F1b interface text", () => {
   it("is the accepted text of the contract", () => {
     expect(t.earlierDraftSummary).toBe("Na ovom uređaju čuva se Vaš raniji tekst koji nije u ovom radu.");
     // Since 3d-2c2b a paste is an evidence step, so the explanation says the work records it (owner, #711 amendment c).
-    expect(t.earlierDraftExplain).toBe("Tekst ostaje gdje je i ne briše se. Ako ga želite u ovom radu, kopirajte ga i zalijepite; zapis rada tada to bilježi kao lijepljenje.");
-    expect(t.earlierDraftCopy).toBe("Kopiraj tekst");
+    expect(t.earlierDraftExplain).toBe("Tekst ostaje gdje je i ne briše se. Ako ga želite u ovom radu, uzmite ga odavde i zalijepite; zapis rada tada to bilježi kao lijepljenje.");
+    expect(t.earlierDraftCopy).toBe("Stavi tekst u međuspremnik");
     // The contract wrote "Kopirano u međuspremnik." here; messages.test.ts refuses the stem "kopiran" (owner accepted, #711 c.6396392080 b).
     expect(t.earlierDraftCopied).toBe("Tekst je u međuspremniku.");
     // The contract wrote "kopirati" here, a forbidden term (owner accepted, #711 c.6396392080 a).

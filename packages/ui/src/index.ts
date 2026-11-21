@@ -73,3 +73,4 @@ export { AccessDenied, type AccessDeniedLabels, type AccessDeniedProps, type Acc
 export { EditorOnboarding, editorOnboardingMessages } from "./components/onboarding/EditorOnboarding";
 export { ShortcutList, ShortcutListDialog, useShortcutListKey, type ShortcutListDialogProps, type ShortcutListProps } from "./components/shortcut-list/ShortcutList";
 export { opensShortcutList, spokenKeys, visibleGroups, type ShortcutEntry, type ShortcutListGroup } from "./components/shortcut-list/shortcut-list-model";
+export { NotificationBell, announcement as notificationAnnouncement, badgeText as notificationBadgeText, type NotificationBellLabels, type NotificationBellProps, type NotificationEntry } from "./components/notifications";

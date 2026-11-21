@@ -1109,7 +1109,7 @@ const en = {
     exportItems: {
       docx: "Word (.docx)",
       print: "Print preview",
-      copy: "Copy the text of the work",
+      copy: "Put the text of the work on the clipboard",
     },
     specialChars: {
       "„": "opening quotation mark", "”": "closing quotation mark", "‚": "opening single quotation mark",
