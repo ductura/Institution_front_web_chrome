@@ -4,13 +4,18 @@ import { describe, expect, it } from "vitest";
 
 import { messagesEn } from "@/lib/i18n/messages.en";
 import { messagesHr } from "@/lib/i18n/messages.hr";
-import { parseStatusNotices, STATUS_NOTICES } from "@/lib/status/public-notices";
+import { parseStatusNotices, STATUS_NOTICES as SHIPPED, type StatusNotices } from "@/lib/status/public-notices";
 
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms";
 
 import NoticesView from "./NoticesView";
 
 const t = messagesHr.statusPage;
+// Invented demo entries; the shipped list stays empty until a real event exists.
+const STATUS_NOTICES: StatusNotices = {
+  maintenance: [{ id: "o-2026-12-05", startsAt: "2026-12-05T21:00:00Z", endsAt: "2026-12-05T22:00:00Z", parts: ["writing", "submission"] }],
+  outages: [{ id: "p-2026-10-14", startedAt: "2026-10-14T08:10:00Z", endedAt: "2026-10-14T08:42:00Z", parts: ["submission"], kind: "prekid" }],
+};
 const now = Date.parse("2026-11-21T10:00:00Z");
 const render = (notices = STATUS_NOTICES) => renderToStaticMarkup(h(NoticesView, { notices, now }));
 
@@ -35,6 +40,10 @@ describe("NoticesView (WEB-1905)", () => {
     expect(html).not.toMatch(/@|https?:|href=/);
     expect(findForbiddenTerms(html.replace(/<[^>]*>/g, " "))).toEqual([]);
     for (const c of [messagesHr.statusPage, messagesEn.statusPage]) expect(findForbiddenTerms(JSON.stringify(c))).toEqual([]);
+  });
+
+  it("ships no invented event on the public page", () => {
+    expect(SHIPPED).toEqual({ maintenance: [], outages: [] });
   });
 
   it("accepts the shipped list and rejects open shapes", () => {

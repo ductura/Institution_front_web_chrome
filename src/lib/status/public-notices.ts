@@ -1,7 +1,6 @@
 // WEB-1905 (P-D5): planned maintenance and past outages on the public status
 // page. A closed shape with no person, work, host or address: only an instant,
-// a part of the service and a short fixed word for the kind of event. The
-// entries below are invented; the real list is a later change of this file.
+// a part of the service and a short fixed word for the kind of event.
 
 import { COMPONENTS, type ComponentName } from "./public-status";
 
@@ -49,8 +48,5 @@ export function arrangeNotices(n: StatusNotices, now: number): StatusNotices {
   };
 }
 
-/** Invented entries for the pilot page (no real event yet). */
-export const STATUS_NOTICES: StatusNotices = {
-  maintenance: [{ id: "o-2026-12-05", startsAt: "2026-12-05T21:00:00Z", endsAt: "2026-12-05T22:00:00Z", parts: ["writing", "submission"] }],
-  outages: [{ id: "p-2026-10-14", startedAt: "2026-10-14T08:10:00Z", endedAt: "2026-10-14T08:42:00Z", parts: ["submission"], kind: "prekid" }],
-};
+/** Verified events only; empty until the first real one (a demo list lives in the tests). */
+export const STATUS_NOTICES: StatusNotices = { maintenance: [], outages: [] };

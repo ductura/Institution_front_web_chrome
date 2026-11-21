@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { appHref } from "@/components/shell/nav";
 import NoticesView from "@/components/status/NoticesView";
 import StatusBoard from "@/components/status/StatusBoard";
@@ -10,6 +12,12 @@ import { useHost } from "../context";
 
 export default function SystemStatusPage() {
   const { base } = useHost();
+  // Re-read the clock so a finished maintenance window leaves the list without a reload.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <main id="sadrzaj" tabIndex={-1} className="page">
@@ -19,7 +27,7 @@ export default function SystemStatusPage() {
         <p>{t.statusPage.intro}</p>
       </header>
       <StatusBoard />
-      <NoticesView notices={STATUS_NOTICES} now={Date.now()} />
+      <NoticesView notices={STATUS_NOTICES} now={now} />
     </main>
   );
 }
