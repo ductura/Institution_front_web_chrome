@@ -46,7 +46,7 @@ function Catalog() {
       <DeclarationFlow />
       <section id="SaveStatus" aria-labelledby="save-status-title" className={styles.component}>
         <h2 id="save-status-title">Stanje spremanja</h2>
-        <ul className={styles.shell}>
+        <ul className={styles.saveStatus}>
           {[SavedOnDevice, SavedOnServer, Saving, Unsaved, Offline, OfflineUnsaved, Blocked].map(({ args }, index) => (
             <li key={index}><SaveStatus {...args} /></li>
           ))}
