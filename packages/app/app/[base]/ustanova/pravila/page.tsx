@@ -1,6 +1,6 @@
-import InstitutionPage from "../../../../src/host/institution/InstitutionPage";
+import { InstitutionConfig } from "../../../../src/host/admin/institution-config/InstitutionConfig";
 
 /** A-04 faculty rule versions. */
 export default function Page() {
-  return <InstitutionPage view="rules" />;
+  return <InstitutionConfig />;
 }

@@ -3158,5 +3158,567 @@
         "requestId": "00000000-0000-4000-8000-000000190604"
       }
     }
+  },
+  {
+    "route": "institution.config.get",
+    "name": "history",
+    "request": {},
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "current": {
+          "version": 2,
+          "effectiveFrom": "2026-11-22T09:30:00.000Z",
+          "rules": {
+            "citationStyle": "fpzg",
+            "workLanguages": [
+              "hr"
+            ],
+            "defaultWorkLanguage": "hr"
+          }
+        },
+        "versions": [
+          {
+            "version": 1,
+            "effectiveFrom": "2026-11-21T10:00:00.000Z",
+            "rules": {
+              "citationStyle": "fpzg",
+              "workLanguages": [
+                "hr",
+                "en"
+              ],
+              "defaultWorkLanguage": "hr"
+            }
+          },
+          {
+            "version": 2,
+            "effectiveFrom": "2026-11-22T09:30:00.000Z",
+            "rules": {
+              "citationStyle": "fpzg",
+              "workLanguages": [
+                "hr"
+              ],
+              "defaultWorkLanguage": "hr"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "institution.config.get",
+    "name": "no-version-yet",
+    "request": {},
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "current": null,
+        "versions": []
+      }
+    }
+  },
+  {
+    "route": "institution.config.get",
+    "name": "unauthorized",
+    "request": {},
+    "response": {
+      "status": 401,
+      "contentType": "application/json",
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000140682"
+      }
+    }
+  },
+  {
+    "route": "institution.config.get",
+    "name": "forbidden",
+    "request": {},
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000140683"
+      }
+    }
+  },
+  {
+    "route": "institution.config.get",
+    "name": "invalid_input",
+    "request": {},
+    "response": {
+      "status": 422,
+      "contentType": "application/json",
+      "body": {
+        "error": "invalid_input",
+        "code": "invalid_input",
+        "messageKey": "errors.invalidInput",
+        "status": 422,
+        "requestId": "00000000-0000-4000-8000-000000140684"
+      }
+    }
+  },
+  {
+    "route": "institution.config.get",
+    "name": "unavailable",
+    "request": {},
+    "response": {
+      "status": 503,
+      "contentType": "application/json",
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000140685"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "publish-first",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "version": 1,
+        "effectiveFrom": "2026-11-21T10:00:00.000Z",
+        "rules": {
+          "citationStyle": "fpzg",
+          "workLanguages": [
+            "hr",
+            "en"
+          ],
+          "defaultWorkLanguage": "hr"
+        }
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "publish-second",
+    "request": {
+      "body": {
+        "expectedVersion": 1,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "version": 2,
+        "effectiveFrom": "2026-11-22T09:30:00.000Z",
+        "rules": {
+          "citationStyle": "fpzg",
+          "workLanguages": [
+            "hr"
+          ],
+          "defaultWorkLanguage": "hr"
+        }
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "invalid_input",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr"
+        ],
+        "defaultWorkLanguage": "en"
+      }
+    },
+    "response": {
+      "status": 422,
+      "contentType": "application/json",
+      "body": {
+        "error": "invalid_input",
+        "code": "invalid_input",
+        "messageKey": "errors.invalidInput",
+        "status": 422,
+        "requestId": "00000000-0000-4000-8000-000000140622"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "invalid_input",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr",
+        "aiPolicy": "encouraged"
+      }
+    },
+    "response": {
+      "status": 422,
+      "contentType": "application/json",
+      "body": {
+        "error": "invalid_input",
+        "code": "invalid_input",
+        "messageKey": "errors.invalidInput",
+        "status": 422,
+        "requestId": "00000000-0000-4000-8000-000000140623"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "origin_missing",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "origin_missing",
+        "code": "origin_missing",
+        "messageKey": "errors.originMissing",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000140624"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "origin_mismatch",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "origin_mismatch",
+        "code": "origin_mismatch",
+        "messageKey": "errors.originMismatch",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000140625"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "cross_site",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "cross_site",
+        "code": "cross_site",
+        "messageKey": "errors.crossSite",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000140626"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "body_too_large",
+    "request": {},
+    "response": {
+      "status": 413,
+      "contentType": "application/json",
+      "body": {
+        "error": "body_too_large",
+        "code": "body_too_large",
+        "messageKey": "errors.bodyTooLarge",
+        "status": 413,
+        "requestId": "00000000-0000-4000-8000-000000140627"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "body_timeout",
+    "request": {},
+    "response": {
+      "status": 408,
+      "contentType": "application/json",
+      "body": {
+        "error": "body_timeout",
+        "code": "body_timeout",
+        "messageKey": "errors.bodyTimeout",
+        "status": 408,
+        "requestId": "00000000-0000-4000-8000-000000140628"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "content_length_invalid",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 400,
+      "contentType": "application/json",
+      "body": {
+        "error": "content_length_invalid",
+        "code": "content_length_invalid",
+        "messageKey": "errors.contentLengthInvalid",
+        "status": 400,
+        "requestId": "00000000-0000-4000-8000-000000140629"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "content_length_mismatch",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 400,
+      "contentType": "application/json",
+      "body": {
+        "error": "content_length_mismatch",
+        "code": "content_length_mismatch",
+        "messageKey": "errors.contentLengthMismatch",
+        "status": 400,
+        "requestId": "00000000-0000-4000-8000-00000014062a"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "body_stream_error",
+    "request": {},
+    "response": {
+      "status": 400,
+      "contentType": "application/json",
+      "body": {
+        "error": "body_stream_error",
+        "code": "body_stream_error",
+        "messageKey": "errors.bodyStreamError",
+        "status": 400,
+        "requestId": "00000000-0000-4000-8000-00000014062b"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "unavailable",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 503,
+      "contentType": "application/json",
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-00000014062c"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "unsupported_media_type",
+    "request": {},
+    "response": {
+      "status": 415,
+      "contentType": "application/json",
+      "body": {
+        "error": "unsupported_media_type",
+        "code": "unsupported_media_type",
+        "messageKey": "errors.unsupportedMediaType",
+        "status": 415,
+        "requestId": "00000000-0000-4000-8000-00000014062d"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "invalid_json",
+    "request": {},
+    "response": {
+      "status": 400,
+      "contentType": "application/json",
+      "body": {
+        "error": "invalid_json",
+        "code": "invalid_json",
+        "messageKey": "errors.invalidJson",
+        "status": 400,
+        "requestId": "00000000-0000-4000-8000-00000014062e"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "unauthorized",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 401,
+      "contentType": "application/json",
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-00000014062f"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "conflict",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 409,
+      "contentType": "application/json",
+      "body": {
+        "error": "conflict",
+        "code": "conflict",
+        "messageKey": "errors.conflict",
+        "status": 409,
+        "requestId": "00000000-0000-4000-8000-000000140630"
+      }
+    }
+  },
+  {
+    "route": "institution.config-versions.post",
+    "name": "forbidden",
+    "request": {
+      "body": {
+        "expectedVersion": 0,
+        "citationStyle": "fpzg",
+        "workLanguages": [
+          "hr",
+          "en"
+        ],
+        "defaultWorkLanguage": "hr"
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000140631"
+      }
+    }
   }
 ]

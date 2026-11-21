@@ -6837,5 +6837,1006 @@
         "unavailable"
       ]
     }
+  },
+  "institution.config.get": {
+    "path": "/api/v1/institution/config",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the current version and the history",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "current",
+                "versions"
+              ],
+              "properties": {
+                "current": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "version",
+                        "effectiveFrom",
+                        "rules"
+                      ],
+                      "properties": {
+                        "version": {
+                          "minimum": 1,
+                          "maximum": 2147483647,
+                          "type": "integer"
+                        },
+                        "effectiveFrom": {
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                          "type": "string"
+                        },
+                        "rules": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "citationStyle",
+                            "workLanguages",
+                            "defaultWorkLanguage"
+                          ],
+                          "properties": {
+                            "citationStyle": {
+                              "const": "fpzg",
+                              "type": "string"
+                            },
+                            "workLanguages": {
+                              "minItems": 1,
+                              "maxItems": 2,
+                              "type": "array",
+                              "items": {
+                                "anyOf": [
+                                  {
+                                    "const": "hr",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "en",
+                                    "type": "string"
+                                  }
+                                ]
+                              }
+                            },
+                            "defaultWorkLanguage": {
+                              "anyOf": [
+                                {
+                                  "const": "hr",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "en",
+                                  "type": "string"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "versions": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "version",
+                      "effectiveFrom",
+                      "rules"
+                    ],
+                    "properties": {
+                      "version": {
+                        "minimum": 1,
+                        "maximum": 2147483647,
+                        "type": "integer"
+                      },
+                      "effectiveFrom": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "rules": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "citationStyle",
+                          "workLanguages",
+                          "defaultWorkLanguage"
+                        ],
+                        "properties": {
+                          "citationStyle": {
+                            "const": "fpzg",
+                            "type": "string"
+                          },
+                          "workLanguages": {
+                            "minItems": 1,
+                            "maxItems": 2,
+                            "type": "array",
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "const": "hr",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "en",
+                                  "type": "string"
+                                }
+                              ]
+                            }
+                          },
+                          "defaultWorkLanguage": {
+                            "anyOf": [
+                              {
+                                "const": "hr",
+                                "type": "string"
+                              },
+                              {
+                                "const": "en",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "unauthorized",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "unauthorized",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.unauthorized",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 401,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "forbidden",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "forbidden",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.forbidden",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 403,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "422": {
+        "description": "invalid_input",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "invalid_input",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "invalid_input",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.invalidInput",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 422,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "503": {
+        "description": "unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "unavailable",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "unavailable",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.unavailable",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 503,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.config-versions.post": {
+    "path": "/api/v1/institution/config/versions",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "expectedVersion",
+        "citationStyle",
+        "workLanguages",
+        "defaultWorkLanguage"
+      ],
+      "properties": {
+        "expectedVersion": {
+          "minimum": 0,
+          "maximum": 2147483646,
+          "type": "integer"
+        },
+        "citationStyle": {
+          "const": "fpzg",
+          "type": "string"
+        },
+        "workLanguages": {
+          "minItems": 1,
+          "maxItems": 2,
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "const": "hr",
+                "type": "string"
+              },
+              {
+                "const": "en",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "defaultWorkLanguage": {
+          "anyOf": [
+            {
+              "const": "hr",
+              "type": "string"
+            },
+            {
+              "const": "en",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the new version",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "version",
+                "effectiveFrom",
+                "rules"
+              ],
+              "properties": {
+                "version": {
+                  "minimum": 1,
+                  "maximum": 2147483647,
+                  "type": "integer"
+                },
+                "effectiveFrom": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                },
+                "rules": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "citationStyle",
+                    "workLanguages",
+                    "defaultWorkLanguage"
+                  ],
+                  "properties": {
+                    "citationStyle": {
+                      "const": "fpzg",
+                      "type": "string"
+                    },
+                    "workLanguages": {
+                      "minItems": 1,
+                      "maxItems": 2,
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "const": "hr",
+                            "type": "string"
+                          },
+                          {
+                            "const": "en",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    },
+                    "defaultWorkLanguage": {
+                      "anyOf": [
+                        {
+                          "const": "hr",
+                          "type": "string"
+                        },
+                        {
+                          "const": "en",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "content_length_invalid, content_length_mismatch, body_stream_error, invalid_json",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "const": "content_length_invalid",
+                      "type": "string"
+                    },
+                    "code": {
+                      "const": "content_length_invalid",
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "const": "errors.contentLengthInvalid",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": 400,
+                      "type": "number"
+                    },
+                    "requestId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "const": "content_length_mismatch",
+                      "type": "string"
+                    },
+                    "code": {
+                      "const": "content_length_mismatch",
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "const": "errors.contentLengthMismatch",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": 400,
+                      "type": "number"
+                    },
+                    "requestId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "const": "body_stream_error",
+                      "type": "string"
+                    },
+                    "code": {
+                      "const": "body_stream_error",
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "const": "errors.bodyStreamError",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": 400,
+                      "type": "number"
+                    },
+                    "requestId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "const": "invalid_json",
+                      "type": "string"
+                    },
+                    "code": {
+                      "const": "invalid_json",
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "const": "errors.invalidJson",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": 400,
+                      "type": "number"
+                    },
+                    "requestId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "unauthorized",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "unauthorized",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.unauthorized",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 401,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "origin_missing, origin_mismatch, cross_site, forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "const": "origin_missing",
+                      "type": "string"
+                    },
+                    "code": {
+                      "const": "origin_missing",
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "const": "errors.originMissing",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": 403,
+                      "type": "number"
+                    },
+                    "requestId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "const": "origin_mismatch",
+                      "type": "string"
+                    },
+                    "code": {
+                      "const": "origin_mismatch",
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "const": "errors.originMismatch",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": 403,
+                      "type": "number"
+                    },
+                    "requestId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "const": "cross_site",
+                      "type": "string"
+                    },
+                    "code": {
+                      "const": "cross_site",
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "const": "errors.crossSite",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": 403,
+                      "type": "number"
+                    },
+                    "requestId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "const": "forbidden",
+                      "type": "string"
+                    },
+                    "code": {
+                      "const": "forbidden",
+                      "type": "string"
+                    },
+                    "messageKey": {
+                      "const": "errors.forbidden",
+                      "type": "string"
+                    },
+                    "status": {
+                      "const": 403,
+                      "type": "number"
+                    },
+                    "requestId": {
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "408": {
+        "description": "body_timeout",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "body_timeout",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "body_timeout",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.bodyTimeout",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 408,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "conflict",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "conflict",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.conflict",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 409,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "413": {
+        "description": "body_too_large",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "body_too_large",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "body_too_large",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.bodyTooLarge",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 413,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "415": {
+        "description": "unsupported_media_type",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "unsupported_media_type",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "unsupported_media_type",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.unsupportedMediaType",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 415,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "422": {
+        "description": "invalid_input",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "invalid_input",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "invalid_input",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.invalidInput",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 422,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "503": {
+        "description": "unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "const": "unavailable",
+                  "type": "string"
+                },
+                "code": {
+                  "const": "unavailable",
+                  "type": "string"
+                },
+                "messageKey": {
+                  "const": "errors.unavailable",
+                  "type": "string"
+                },
+                "status": {
+                  "const": 503,
+                  "type": "number"
+                },
+                "requestId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }

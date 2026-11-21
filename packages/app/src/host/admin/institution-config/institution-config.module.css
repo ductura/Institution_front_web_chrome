@@ -1,0 +1,23 @@
+.layout, .history, .form, .fields, .values {
+  display: grid;
+  gap: var(--space-3, 0.75rem);
+}
+
+.layout { max-inline-size: 48rem; }
+.layout h2 { margin-block-end: var(--space-3, 0.75rem); }
+.history h2, .values { margin: 0; }
+.form { justify-items: start; }
+.fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+.fields legend, .values dt { font-weight: 600; }
+.values dd { margin-inline-start: 0; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+  margin-block-start: var(--space-3, 0.75rem);
+}

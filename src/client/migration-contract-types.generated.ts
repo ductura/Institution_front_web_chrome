@@ -288,4 +288,19 @@ export type MigrationOperations = {
     success: { status: 200; body: { "asOf": string; "minimumGroup": 5; "submissions": { "recorded": 0 | number | null; "notRecorded": 0 | number | null }; "receipts": { "issued": 0 | number | null; "pending": 0 | number | null }; "helpRequests": { "total": 0 | number | null; "saveProblems": 0 | number | null }; "receiptTime": { "p50Ms": number | null; "p95Ms": number | null } }; headers: {  } };
     errorCode: "unauthenticated" | "forbidden" | "invalid_input" | "unavailable";
   };
+  // SRV-1406, Institution_server cf10b46 (API 1.67.0).
+  "institution.config.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "current": { "version": number; "effectiveFrom": string; "rules": { "citationStyle": "fpzg"; "workLanguages": ("hr" | "en")[]; "defaultWorkLanguage": "hr" | "en" } } | null; "versions": ({ "version": number; "effectiveFrom": string; "rules": { "citationStyle": "fpzg"; "workLanguages": ("hr" | "en")[]; "defaultWorkLanguage": "hr" | "en" } })[] }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "institution.config-versions.post": {
+    params: undefined;
+    query: undefined;
+    body: { "expectedVersion": number; "citationStyle": "fpzg"; "workLanguages": ("hr" | "en")[]; "defaultWorkLanguage": "hr" | "en" };
+    success: { status: 201; body: { "version": number; "effectiveFrom": string; "rules": { "citationStyle": "fpzg"; "workLanguages": ("hr" | "en")[]; "defaultWorkLanguage": "hr" | "en" } }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "forbidden" | "invalid_input" | "conflict" | "unavailable";
+  };
 };

@@ -206,9 +206,10 @@ test("a teacher's Ductus pages open at their addresses, and /nastavnik/kolegiji 
 test("the administrator's Ductus pages open at their addresses, and only for the administrator", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
+  await page.route("**/api/v1/institution/config", (route) => route.fulfill({ json: { current: null, versions: [] } }));
   await page.goto("/app/web/ustanova/pravila");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pravila fakulteta");
-  await expect(page.getByText("Prikaz pravila fakulteta trenutačno nije dostupan.")).toBeVisible();
+  await expect(page.getByText("Još nema objavljenih pravila.")).toBeVisible();
   await axe(page);
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Korisnici" }).click();
   await expect(page).toHaveURL(/\/app\/web\/ustanova\/korisnici$/);
