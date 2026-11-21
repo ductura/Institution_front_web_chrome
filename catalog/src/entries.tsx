@@ -32,6 +32,7 @@ import { assistantPurposeStateEntries } from "./assistant-purpose-states";
 import { assistantBudgetEntries } from "./assistant-budget";
 import { declarationAiEntries } from "./declaration-ai";
 import { teacherAiAttachmentsEntries } from "./teacher-ai-attachments";
+import { provenanceShareEntries } from "./provenance-share";
 import { assistantTransferEntries } from "./assistant-transfer";
 import { assistantThreadEntry } from "./assistant-thread";
 import type { CatalogEntries, CatalogState } from "./coverage";
@@ -224,6 +225,7 @@ export const ENTRIES = {
   ...assistantBudgetEntries,
   ...declarationAiEntries,
   ...teacherAiAttachmentsEntries,
+  ...provenanceShareEntries,
   CheckActionList: {
     prazno: () => <CheckActionList findings={[]} labels={CHECK_LABELS} onAction={nothing} />,
     učitavanje: () => <RouteLoading label="Učitavanje provjera…" />,
