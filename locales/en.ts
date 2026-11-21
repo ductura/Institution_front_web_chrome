@@ -63,6 +63,7 @@ const en = {
     breadcrumb: "Path",
     homeCrumb: "Home",
     howItWorks: `How ${APP_NAME} works`,
+    accessibilityStatement: "Accessibility statement",
   },
   home: {
     openWorkspace: "Open workspace",

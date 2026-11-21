@@ -203,6 +203,10 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
           >
             {t.shell.howItWorks}
           </a>
+          {/* "Izjava o pristupačnosti" (WEB-1805, F-03): for everyone, as the law asks it be reachable. */}
+          <a className={styles.infoLink} href={appHref(base, "/pristupacnost")} onClick={() => setOpen(false)}>
+            {t.shell.accessibilityStatement}
+          </a>
           <p className={styles.note}>
             <strong>{t.shell.demoBadge}</strong>
             {t.shell.demoNote}
