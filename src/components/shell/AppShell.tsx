@@ -96,6 +96,8 @@ export type AppShellProps = {
   institution?: string | null;
   /** Catalogue of the interface language (D-70, WEB-1804); Croatian when absent. */
   messages?: Messages;
+  /** The help place of the side bar (WEB-1806): "Prijavi problem"; gets the class of the shell's own links. */
+  help?: (linkClass: string) => ReactNode;
   children: ReactNode;
 };
 
@@ -105,7 +107,7 @@ export type AppShellProps = {
  * (I2); signing out (the same POST as everywhere, without JavaScript, I5)
  * joins with 2.c3-b. Below 800 px the side bar is a drawer behind ☰.
  */
-export default function AppShell({ role, scope, current, crumbs, account, navId = "bocna-navigacija", ownMain = false, drawer = false, base = "", institution = null, messages = messagesHr, children }: AppShellProps) {
+export default function AppShell({ role, scope, current, crumbs, account, navId = "bocna-navigacija", ownMain = false, drawer = false, base = "", institution = null, messages = messagesHr, help, children }: AppShellProps) {
   const t = messages;
   const [open, setOpen] = useState(false);
   const sidebar = useRef<HTMLElement>(null);
@@ -207,6 +209,7 @@ export default function AppShell({ role, scope, current, crumbs, account, navId 
           <a className={styles.infoLink} href={appHref(base, "/pristupacnost")} onClick={() => setOpen(false)}>
             {t.shell.accessibilityStatement}
           </a>
+          {help !== undefined ? help(styles.infoLink ?? "") : null}
           <p className={styles.note}>
             <strong>{t.shell.demoBadge}</strong>
             {t.shell.demoNote}

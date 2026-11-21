@@ -5,7 +5,9 @@ import { defineConfig, devices } from "@playwright/test";
 // request leaves the browser; the port is its own, apart from the root e2e.
 const port = 5191;
 export default defineConfig({
-  testDir: "./e2e",
+  // e2e: the flows; tests/mobile: the 360 px view of the main screens (WEB-1806).
+  testDir: ".",
+  testMatch: ["e2e/**/*.spec.ts", "tests/mobile/**/*.spec.ts"],
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   use: { baseURL: `http://127.0.0.1:${port}`, trace: "retain-on-failure" },
