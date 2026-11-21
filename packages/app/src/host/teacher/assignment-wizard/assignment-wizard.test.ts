@@ -36,9 +36,9 @@ describe("assignment wizard step checks (WEB-1403)", () => {
     expect(html).not.toContain(wizardHr.labels.back);
   });
 
-  it("sends the practice flag as a boolean and never adds a grade field (WEB-1901)", () => {
+  it("sends the practice flag only when ticked, as a boolean and never adds a grade field (WEB-1901)", () => {
     expect(withPractice({ title: "x" }, { practice: true })).toEqual({ title: "x", practice: true });
-    expect(withPractice({ title: "x" }, {})).toEqual({ title: "x", practice: false });
+    expect(withPractice({ title: "x" }, {})).toEqual({ title: "x" });
     expect(Object.keys(withPractice({ title: "x" }, { practice: true })).join()).not.toMatch(/grade|score|ocjen/i);
   });
 

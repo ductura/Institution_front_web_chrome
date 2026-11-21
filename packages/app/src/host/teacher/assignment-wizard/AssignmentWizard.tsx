@@ -19,7 +19,7 @@ import { wizardHr as w } from "./messages.hr";
 
 type Course = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
 /** `practice` is the practice-assignment flag (WEB-1901); the server stores it and returns it, no grade field exists for it. */
-type PracticeBody = NonNullable<ReturnType<typeof assignmentBody>> & { practice: boolean };
+type PracticeBody = NonNullable<ReturnType<typeof assignmentBody>> & { practice?: true };
 type Publish = (courseId: string, body: PracticeBody, requestKey: string) => Promise<AssignmentCreation>;
 type WizardDraft = AssignmentDraft & { practice?: boolean };
 

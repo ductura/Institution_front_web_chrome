@@ -28,7 +28,10 @@ export function checkSchedule(draft: AssignmentDraft): WizardErrors {
   return errors;
 }
 
-/** The create body with the practice flag (WEB-1901): a boolean from the checkbox, never a grade or score field. */
-export function withPractice<T extends object>(body: T, draft: { practice?: boolean }): T & { practice: boolean } {
-  return { ...body, practice: draft.practice === true };
+/**
+ * The create body with the practice flag (WEB-1901): sent only when ticked, as a boolean, never a grade or score field.
+ * Until the server contract lists `practice`, a ticked box is rejected by the typed client; an unticked one changes nothing.
+ */
+export function withPractice<T extends object>(body: T, draft: { practice?: boolean }): T & { practice?: true } {
+  return draft.practice === true ? { ...body, practice: true } : body;
 }
