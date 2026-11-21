@@ -40,6 +40,7 @@ import { problemReportEntries } from "./problem-report";
 import { assistantTransferEntries } from "./assistant-transfer";
 import { assistantThreadEntry } from "./assistant-thread";
 import { wizardEntries } from "./wizard";
+import { notificationBellEntries } from "./notification-bell";
 import type { CatalogEntries, CatalogState } from "./coverage";
 
 type Entry = Record<CatalogState, () => React.ReactNode>;
@@ -259,6 +260,7 @@ const ASSISTANT_LABELS = { title: "Pomoćnik", badge: "Uskoro", body: "Pomoćnik
 export const ENTRIES = {
   AssistantThread: assistantThreadEntry,
   ...wizardEntries,
+  ...notificationBellEntries,
   ...assistantPurposeStateEntries,
   ...assistantTransferEntries,
   ...adminAiCostLimitsEntries,

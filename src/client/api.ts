@@ -632,3 +632,52 @@ export function mentorshipCall(transport: typeof fetch = browserTransport): Stud
     }
   };
 }
+
+/**
+ * WEB-1402 (plan M2.1, DAN-330): the student's "Započni rad", POST /api/v1/assignments/{id}/start.
+ * Not in the pinned contract yet (TODO(ugovor)), so createApi does not know it; kept here,
+ * the only file allowed an API URL. The id is a path segment, encoded.
+ */
+export type StartWorkTransport = (
+  assignmentId: string,
+) => Promise<{ ok: true; status: number; body: unknown } | { ok: false; status: number; code: string }>;
+
+/** The code of an error body (`code`, then `error`), or "error" when there is none. */
+async function errorCodeOf(response: Response): Promise<string> {
+  try {
+    const body: unknown = await response.json();
+    if (typeof body !== "object" || body === null) return "error";
+    const record = body as Record<string, unknown>;
+    const code = Object.hasOwn(record, "code") ? record.code : Object.hasOwn(record, "error") ? record.error : undefined;
+    return typeof code === "string" ? code : "error";
+  } catch {
+    return "error";
+  }
+}
+
+/**
+ * The transport of "Započni rad": the browser's own fetch, same origin, session cookie only,
+ * an empty JSON body. A failure keeps its status and the code of its body (a 401 that says the
+ * session ended reads differently from one that never had a session); an answer without a JSON
+ * body is a failure, never a started work.
+ */
+export function startWorkCall(transport: typeof fetch = browserTransport): StartWorkTransport {
+  return async (assignmentId) => {
+    try {
+      const path = `/api/v1/assignments/${encodeURIComponent(assignmentId)}/start`;
+      const response = await transport(new URL(path, globalThis.location.origin), {
+        method: "POST",
+        redirect: "manual",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      });
+      if (response.status >= 400) return { ok: false, status: response.status, code: await errorCodeOf(response) };
+      const type = response.headers.get("content-type") ?? "";
+      if (!type.startsWith("application/json")) return { ok: false, status: 0, code: "unexpected" };
+      return { ok: true, status: response.status, body: await response.json() };
+    } catch {
+      return { ok: false, status: 0, code: "unexpected" };
+    }
+  };
+}

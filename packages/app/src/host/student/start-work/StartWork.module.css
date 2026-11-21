@@ -1,0 +1,21 @@
+/* WEB-1402: "Započni rad" under the assignment's link on its card, on the existing tokens only. */
+.start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 0 24px 16px;
+}
+
+.facts {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
+}
