@@ -1,4 +1,4 @@
-import type { AssistantThreadLabels } from "@ductura/ui/assistant-thread";
+import type { AssistantThreadLabels } from "@ductura/ui";
 
 export const assistantThreadHr = {
   conversation: "Razgovor s pomoćnikom",

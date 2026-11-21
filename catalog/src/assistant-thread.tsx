@@ -1,4 +1,4 @@
-import { AssistantThread, type AssistantMessage } from "@ductura/ui/assistant-thread";
+import { AssistantThread, type AssistantMessage } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
 import { assistantThreadHr } from "../../src/components/pomocnik/messages.hr";
