@@ -11,6 +11,11 @@ type Stored = { -readonly [K in keyof StudentMentorshipRequest]: StudentMentorsh
 const ok = (body: unknown, status = 200) => ({ ok: true as const, status, body });
 const fail = (status: number, code: string) => ({ ok: false as const, status, code });
 
+export const FAKE_TEACHERS = [
+  { teacherId: "10000000-0000-4000-8000-000000000001", displayName: "Marko Izmišljeni" },
+  { teacherId: "10000000-0000-4000-8000-000000000002", displayName: "Ana Izmišljena" },
+] as const;
+
 export function fakeMentorshipServer(studentName = "Iva Izmišljena") {
   const rows: Stored[] = [];
   let next = 1;
@@ -21,11 +26,15 @@ export function fakeMentorshipServer(studentName = "Iva Izmišljena") {
 
   const student: StudentMentorshipCall = async (call, input) => {
     const body = input.body as Record<string, string> | undefined;
+    if (call === "student.mentor-candidates.get") return ok({ candidates: FAKE_TEACHERS });
     if (call === "student.mentorship-requests.get") return ok({ requests: rows.map(publicView) });
     if (call === "student.mentorship-request.post") {
+      const teacher = FAKE_TEACHERS.find((c) => c.teacherId === body?.teacherId);
+      if (teacher === undefined) return fail(404, "not_found");
       if (rows.some((r) => r.status === "pending" && r.title === body?.title)) return fail(409, "conflict");
       const row: Stored = {
         requestId: id(), title: body?.title ?? "", workType: body?.workType as Stored["workType"],
+        teacherId: teacher.teacherId, teacherName: teacher.displayName,
         status: "pending", requestedAt: clock(), decidedAt: null, studentName,
       };
       rows.push(row);

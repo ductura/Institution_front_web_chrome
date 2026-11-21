@@ -1,5 +1,5 @@
 import {
-  readMyMentorshipRequests, submitMentorshipRequest, withdrawMentorshipRequest,
+  readMentorCandidates, readMyMentorshipRequests, submitMentorshipRequest, withdrawMentorshipRequest,
   type NewRequest, type StudentMentorshipCall, type StudentMentorshipRequest, type SubmitOutcome, type WithdrawOutcome,
 } from "../../../../../../src/client/mentorship";
 import { mentorshipRequestText as t } from "./messages.hr";
@@ -15,6 +15,7 @@ export function submitNote(outcome: SubmitOutcome): Followup | null {
     case "poslano": return { note: { tone: "status", text: t.sent }, refresh: true };
     case "vec-postoji": return { note: { tone: "alert", text: t.alreadyOpen }, refresh: true };
     case "greska": return { note: { tone: "alert", text: t.invalid }, refresh: false };
+    case "nepoznat-nastavnik": return { note: { tone: "alert", text: t.teacherGone }, refresh: true };
     case "nepoznato": return { note: { tone: "alert", text: t.unknown }, refresh: false };
     default: return null;
   }
@@ -40,7 +41,7 @@ export async function withdrawRequest(call: StudentMentorshipCall, requestId: st
   return withdrawNote(await withdrawMentorshipRequest(call, requestId));
 }
 
-export { readMyMentorshipRequests };
+export { readMentorCandidates, readMyMentorshipRequests };
 
 /** The status as text; a colour is never the only carrier. */
 export function statusText(request: StudentMentorshipRequest): string {

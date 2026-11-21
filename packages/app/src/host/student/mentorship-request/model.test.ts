@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { fakeMentorshipServer } from "./fake-port";
+import { FAKE_TEACHERS, fakeMentorshipServer } from "./fake-port";
 import { sendRequest, withdrawRequest } from "./model";
 import { mentorshipRequestText as t } from "./messages.hr";
-import { readMyMentorshipRequests } from "../../../../../../src/client/mentorship";
+import { mentorshipCall, readMentorCandidates, readMyMentorshipRequests } from "../../../../../../src/client/mentorship";
 import { decideMentorshipRequest, readMentorshipRequests } from "../../../../../../src/client/mentorship-requests";
 import { readMentoredWorks } from "../../../../../../src/components/teacher/mentored-works-read";
 import { studentsOf } from "../../teacher/mentorships/model";
 
 const TITLE = "Izmišljeni naslov završnog rada";
-const NEW = { title: TITLE, workType: "bachelor_thesis" } as const;
+const NEW = { title: TITLE, workType: "bachelor_thesis", teacherId: FAKE_TEACHERS[0].teacherId } as const;
 
 async function mine(server: ReturnType<typeof fakeMentorshipServer>) {
   const read = await readMyMentorshipRequests(server.student);
@@ -69,6 +69,51 @@ describe("WEB-1404 mentorship flow over an invented server", () => {
     expect((await mine(server))[0]?.status).toBe("approved");
   });
 
+  it("(0) the student picks a teacher from the candidates and the request names that teacher", async () => {
+    const server = fakeMentorshipServer();
+    const read = await readMentorCandidates(server.student);
+    expect(read).toEqual({ kind: "ready", candidates: FAKE_TEACHERS });
+    await sendRequest(server.student, { ...NEW, teacherId: FAKE_TEACHERS[1].teacherId });
+    expect((await mine(server))[0]).toMatchObject({ teacherId: FAKE_TEACHERS[1].teacherId, teacherName: "Ana Izmišljena" });
+  });
+
+  it("a teacher outside the candidates is refused, said so, and the list is read again; no teacher sends nothing", async () => {
+    const server = fakeMentorshipServer();
+    const stranger = "20000000-0000-4000-8000-000000000009";
+    expect(await sendRequest(server.student, { ...NEW, teacherId: stranger })).toEqual({ note: { tone: "alert", text: t.teacherGone }, refresh: true });
+    expect(await mine(server)).toEqual([]);
+    expect((await sendRequest(server.student, { ...NEW, teacherId: "" }))?.note.text).toBe(t.invalid);
+  });
+
+  it("candidates: a broken answer or a repeated teacher is never a list; an ended session is its own", async () => {
+    const answer = (body: unknown) => async () => ({ ok: true as const, status: 200, body });
+    expect(await readMentorCandidates(answer({ candidates: [FAKE_TEACHERS[0], FAKE_TEACHERS[0]] }))).toEqual({ kind: "nepoznato" });
+    expect(await readMentorCandidates(answer({ candidates: [{ teacherId: "x", displayName: "y" }] }))).toEqual({ kind: "nepoznato" });
+    expect(await readMentorCandidates(answer({ candidates: [] }))).toEqual({ kind: "ready", candidates: [] });
+    expect(await readMentorCandidates(async () => ({ ok: false as const, status: 401, code: "session_expired" }))).toEqual({ kind: "session-expired" });
+    expect(await readMentorCandidates(async () => ({ ok: false as const, status: 503, code: "x" }))).toEqual({ kind: "nepoznato" });
+  });
+
+  it("the transport sends the four routes same-origin and never takes a non-JSON success", async () => {
+    const seen: string[] = [];
+    (globalThis as { location?: unknown }).location ??= { origin: "http://localhost" };
+    const json = { headers: { "content-type": "application/json" } };
+    const call = mentorshipCall(async (url, init) => {
+      seen.push(`${init?.method} ${(url as URL).pathname}`);
+      return new Response(JSON.stringify({ requests: [] }), json);
+    });
+    await call("student.mentorship-requests.get", {});
+    await call("student.mentor-candidates.get", {});
+    await call("student.mentorship-request.post", { body: {} });
+    expect(seen).toEqual([
+      "GET /api/v1/student/mentorship-requests", "GET /api/v1/student/mentor-candidates", "POST /api/v1/student/mentorship-requests",
+    ]);
+    expect(await mentorshipCall(async () => new Response("<html>", { headers: { "content-type": "text/html" } }))("student.mentor-candidates.get", {}))
+      .toEqual({ ok: false, status: 0, code: "unexpected" });
+    expect(await mentorshipCall(async () => new Response("{}", { status: 404, ...json }))("student.mentor-candidates.get", {}))
+      .toMatchObject({ ok: false, status: 404 });
+  });
+
   it("a second open request with the same title is refused by the server and said so", async () => {
     const server = fakeMentorshipServer();
     await sendRequest(server.student, NEW);
@@ -101,7 +146,7 @@ describe("WEB-1404 mentorship flow over an invented server", () => {
   });
 
   it("an answer carrying a reason, or a decided request without a time, is a broken contract", async () => {
-    const base = { requestId: "00000000-0000-4000-8000-000000000001", title: TITLE, workType: "bachelor_thesis", requestedAt: "2026-11-21T10:00:00.000Z" };
+    const base = { requestId: "00000000-0000-4000-8000-000000000001", title: TITLE, teacherId: FAKE_TEACHERS[0].teacherId, teacherName: "Marko Izmišljeni", workType: "bachelor_thesis", requestedAt: "2026-11-21T10:00:00.000Z" };
     const answer = (requests: unknown[]) => async () => ({ ok: true as const, status: 200, body: { requests } });
     expect(await readMyMentorshipRequests(answer([{ ...base, status: "declined", decidedAt: "2026-11-21T11:00:00.000Z", reason: "x" }]))).toEqual({ kind: "nepoznato" });
     expect(await readMyMentorshipRequests(answer([{ ...base, status: "declined", decidedAt: null }]))).toEqual({ kind: "nepoznato" });

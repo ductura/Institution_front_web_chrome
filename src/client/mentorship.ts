@@ -10,17 +10,19 @@
  * decline is kept by the server only and is never part of these shapes
  * (P-6); an answer that carries one is a broken contract, not a display.
  *
- * TODO(ugovor): the three routes are not in @ductura/contracts yet. Until
- * they are, the shapes are local (the smallest contract the plan and the
- * prototype give), the caller passes the transport (`StudentMentorshipCall`)
- * and createApi answers "client_rejected" to them, so the page says
- * "unavailable", never "no requests".
+ * WEB-1409: the page is wired to the routes of SRV-1414
+ * (GET /api/v1/student/mentorship-requests, GET /api/v1/student/mentor-candidates).
+ * They are not in the contract release this repo pins yet, so the shapes stay
+ * local (TODO(ugovor)) and `mentorshipCall()` sends them over the browser
+ * transport itself; the student picks a teacher from the candidates and the
+ * request names that teacher. A transport that answers anything the shapes
+ * do not allow is "nepoznato", never an empty list.
  */
 
 import { matchesSchema, type Schema } from "./schema-check";
 
 export type StudentMentorshipCall = (
-  id: "student.mentorship-requests.get" | "student.mentorship-request.post" | "student.mentorship-request-withdraw.post",
+  id: "student.mentorship-requests.get" | "student.mentorship-request.post" | "student.mentorship-request-withdraw.post" | "student.mentor-candidates.get",
   input: { readonly body?: unknown },
 ) => Promise<{ ok: true; status: number; body: unknown } | { ok: false; status: number; code: string }>;
 
@@ -31,13 +33,23 @@ export type StudentMentorshipRequest = {
   readonly requestId: string;
   readonly title: string;
   readonly workType: MentorshipWorkType;
+  readonly teacherId: string;
+  readonly teacherName: string;
   readonly status: MentorshipStatus;
   readonly requestedAt: string;
   /** Null while pending. */
   readonly decidedAt: string | null;
 };
 
-export type NewRequest = { readonly title: string; readonly workType: MentorshipWorkType };
+export type NewRequest = { readonly title: string; readonly workType: MentorshipWorkType; readonly teacherId: string };
+
+/** A teacher the student may ask (student.mentor-candidates.get). */
+export type MentorCandidate = { readonly teacherId: string; readonly displayName: string };
+
+export type CandidatesRead =
+  | { readonly kind: "ready"; readonly candidates: readonly MentorCandidate[] }
+  | { readonly kind: "session-expired" }
+  | { readonly kind: "nepoznato" };
 
 export const TITLE_MAX = 256;
 export const WORK_TYPES: readonly MentorshipWorkType[] = [
@@ -55,6 +67,8 @@ export type SubmitOutcome =
   | { readonly kind: "vec-postoji" }
   | { readonly kind: "session-expired" }
   | { readonly kind: "greska"; readonly code: "invalid" }
+  /** 404: the teacher is not a candidate (any more); the candidates are read again. */
+  | { readonly kind: "nepoznat-nastavnik" }
   /** 408, 503, a broken connection, any other shape: the request may be recorded. */
   | { readonly kind: "nepoznato" };
 
@@ -79,9 +93,14 @@ const REQUEST: Schema = closed({
   requestId: UUID,
   title: TEXT,
   workType: oneOf(WORK_TYPES),
+  teacherId: UUID,
+  teacherName: TEXT,
   status: oneOf(STATUSES),
   requestedAt: { type: "string", format: "date-time" },
   decidedAt: { anyOf: [{ type: "null" }, { type: "string", format: "date-time" }] },
+});
+const CANDIDATES: Schema = closed({
+  candidates: { type: "array", items: closed({ teacherId: UUID, displayName: TEXT }) },
 });
 const LIST: Schema = closed({ requests: { type: "array", items: REQUEST } });
 const SENT: Schema = closed({ request: REQUEST });
@@ -113,22 +132,36 @@ export async function readMyMentorshipRequests(call: StudentMentorshipCall): Pro
   }
 }
 
+/** student.mentor-candidates.get (TODO(ugovor)): the teachers the student may ask, each once. */
+export async function readMentorCandidates(call: StudentMentorshipCall): Promise<CandidatesRead> {
+  try {
+    const result = await call("student.mentor-candidates.get", {});
+    if (!result.ok) return result.status === 401 ? { kind: "session-expired" } : UNKNOWN;
+    if (result.status !== 200 || !matchesSchema(CANDIDATES, result.body)) return UNKNOWN;
+    const { candidates } = result.body as { candidates: MentorCandidate[] };
+    return new Set(candidates.map((c) => c.teacherId)).size === candidates.length ? { kind: "ready", candidates } : UNKNOWN;
+  } catch {
+    return UNKNOWN;
+  }
+}
+
 /** student.mentorship-request.post (TODO(ugovor)). Never throws. */
 export async function submitMentorshipRequest(call: StudentMentorshipCall, input: NewRequest): Promise<SubmitOutcome> {
   const title = titleToSend(input.title);
-  if (title === null || !WORK_TYPES.includes(input.workType)) return { kind: "greska", code: "invalid" };
+  if (title === null || !WORK_TYPES.includes(input.workType) || !matchesSchema(UUID, input.teacherId)) return { kind: "greska", code: "invalid" };
   try {
-    const result = await call("student.mentorship-request.post", { body: { title, workType: input.workType } });
+    const result = await call("student.mentorship-request.post", { body: { title, workType: input.workType, teacherId: input.teacherId } });
     if (result.ok) {
       if (result.status !== 200 && result.status !== 201) return UNKNOWN;
       if (!matchesSchema(SENT, result.body)) return UNKNOWN;
       const { request } = result.body as { request: StudentMentorshipRequest };
-      return request.status === "pending" && request.decidedAt === null && request.title === title && request.workType === input.workType
+      return request.status === "pending" && request.decidedAt === null && request.title === title && request.workType === input.workType && request.teacherId === input.teacherId
         ? { kind: "poslano", request }
         : UNKNOWN;
     }
     if (result.status === 401) return { kind: "session-expired" };
     if (result.status === 409) return { kind: "vec-postoji" };
+    if (result.status === 404) return { kind: "nepoznat-nastavnik" };
     if (result.status === 422) return { kind: "greska", code: "invalid" };
     return UNKNOWN;
   } catch {
@@ -154,4 +187,37 @@ export async function withdrawMentorshipRequest(call: StudentMentorshipCall, req
   } catch {
     return UNKNOWN;
   }
+}
+
+const ROUTES = {
+  "student.mentorship-requests.get": { method: "GET", path: "/api/v1/student/mentorship-requests" },
+  "student.mentorship-request.post": { method: "POST", path: "/api/v1/student/mentorship-requests" },
+  "student.mentorship-request-withdraw.post": { method: "POST", path: "/api/v1/student/mentorship-requests/withdraw" },
+  "student.mentor-candidates.get": { method: "GET", path: "/api/v1/student/mentor-candidates" },
+} as const;
+
+/**
+ * The transport of the student's mentorship page: the four routes over the browser's own
+ * fetch, same origin, session cookie only. An answer without a JSON body is a failure
+ * with its status (an unreadable success is never a success).
+ */
+export function mentorshipCall(transport: typeof fetch = (input, init) => fetch(input, init)): StudentMentorshipCall {
+  return async (id, input) => {
+    const route = ROUTES[id];
+    try {
+      const response = await transport(new URL(route.path, globalThis.location.origin), {
+        method: route.method,
+        redirect: "manual",
+        credentials: "same-origin",
+        headers: route.method === "POST" ? { "content-type": "application/json" } : undefined,
+        body: route.method === "POST" ? JSON.stringify(input.body ?? {}) : undefined,
+      });
+      if (response.status >= 400) return { ok: false, status: response.status, code: "error" };
+      const type = response.headers.get("content-type") ?? "";
+      if (!type.startsWith("application/json")) return { ok: false, status: 0, code: "unexpected" };
+      return { ok: true, status: response.status, body: await response.json() };
+    } catch {
+      return { ok: false, status: 0, code: "unexpected" };
+    }
+  };
 }

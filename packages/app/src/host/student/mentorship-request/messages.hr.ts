@@ -5,6 +5,13 @@ export const mentorshipRequestText = {
   formTitle: "Novi zahtjev",
   fieldTitle: "Naslov rada",
   fieldTitleHint: "Najviše 256 znakova.",
+  fieldTeacher: "Nastavnik",
+  fieldTeacherPlaceholder: "Odaberite nastavnika",
+  fieldTeacherRequired: "Odaberite nastavnika s popisa.",
+  noCandidates: "Trenutačno nema nastavnika kojima možete poslati zahtjev.",
+  candidatesUnavailable: "Popis nastavnika trenutačno nije dostupan. Pokušajte ponovno.",
+  teacherLabel: "Nastavnik: {name}",
+  teacherGone: "Odabrani nastavnik više nije na popisu. Popis je osvježen, odaberite ponovno.",
   fieldType: "Vrsta rada",
   workTypes: {
     seminar_paper: "Seminarski rad",
