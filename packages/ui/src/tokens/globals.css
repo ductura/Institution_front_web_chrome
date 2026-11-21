@@ -178,6 +178,8 @@
   --field: #2a2a27;
   --field-rule: #a6a196;
   --field-placeholder: #bcb7ac;
+  /* Error text follows the sheet, never the shell (WCAG 1.4.3 on the paper). */
+  --error: #f0a08f;
   --error-soft: #3e302b;
   color-scheme: dark;
 }
@@ -213,6 +215,7 @@
   --field: #fcfbf8;
   --field-rule: #85827a;
   --field-placeholder: #5c5a54;
+  --error: #9c3f33;
   --error-soft: #f7e4dd;
   color-scheme: light;
 }
