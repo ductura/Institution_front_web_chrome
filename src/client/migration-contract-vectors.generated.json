@@ -3160,6 +3160,102 @@
     }
   },
   {
+    "route": "institution.faculty-rules.get",
+    "name": "ready",
+    "request": {},
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "rules": [
+          {
+            "workType": "essay",
+            "versions": [
+              {
+                "versionNo": 1,
+                "aiPolicy": "prohibited",
+                "aiPurposes": [],
+                "evidenceProfile": "basic",
+                "importAllowed": false,
+                "origin": "operator",
+                "publishedAt": "2026-10-01T10:00:00.000Z"
+              },
+              {
+                "versionNo": 2,
+                "aiPolicy": "partially_allowed",
+                "aiPurposes": [
+                  "formatting"
+                ],
+                "evidenceProfile": "basic",
+                "importAllowed": false,
+                "origin": "administrator",
+                "publishedAt": "2026-11-03T10:00:00.000Z"
+              }
+            ]
+          },
+          {
+            "workType": "master_thesis",
+            "versions": []
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "institution.faculty-rules.post",
+    "name": "created",
+    "request": {
+      "body": {
+        "workType": "essay",
+        "basedOnVersionNo": 2,
+        "aiPolicy": "prohibited",
+        "aiPurposes": [],
+        "evidenceProfile": "extended",
+        "importAllowed": true
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "versionNo": 3,
+        "publishedAt": "2026-11-21T09:00:00.000Z"
+      }
+    }
+  },
+  {
+    "route": "institution.faculty-rules.post",
+    "name": "invalid-ai-purposes",
+    "request": {
+      "body": {
+        "workType": "essay",
+        "basedOnVersionNo": 2,
+        "aiPolicy": "prohibited",
+        "aiPurposes": [
+          "formatting"
+        ],
+        "evidenceProfile": "basic",
+        "importAllowed": false
+      }
+    },
+    "response": {
+      "status": 422,
+      "contentType": "application/json",
+      "body": {
+        "error": "invalid_ai_purposes",
+        "code": "invalid_ai_purposes",
+        "messageKey": "errors.invalid_ai_purposes",
+        "status": 422
+      }
+    }
+  },
+  {
     "route": "teacher.assignment-copy.post",
     "name": "copy",
     "request": {

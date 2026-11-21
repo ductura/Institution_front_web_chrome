@@ -6838,6 +6838,374 @@
       ]
     }
   },
+  "institution.faculty-rules.get": {
+    "path": "/api/v1/institution/faculty-rules",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the rule versions per work type",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "rules"
+              ],
+              "properties": {
+                "rules": {
+                  "type": "array",
+                  "maxItems": 7,
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "workType",
+                      "versions"
+                    ],
+                    "properties": {
+                      "workType": {
+                        "anyOf": [
+                          {
+                            "const": "short_paper",
+                            "type": "string"
+                          },
+                          {
+                            "const": "essay",
+                            "type": "string"
+                          },
+                          {
+                            "const": "seminar_paper",
+                            "type": "string"
+                          },
+                          {
+                            "const": "bachelor_thesis",
+                            "type": "string"
+                          },
+                          {
+                            "const": "master_thesis",
+                            "type": "string"
+                          },
+                          {
+                            "const": "specialist_thesis",
+                            "type": "string"
+                          },
+                          {
+                            "const": "doctoral_thesis",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "versions": {
+                        "type": "array",
+                        "maxItems": 500,
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "versionNo",
+                            "aiPolicy",
+                            "aiPurposes",
+                            "evidenceProfile",
+                            "importAllowed",
+                            "origin",
+                            "publishedAt"
+                          ],
+                          "properties": {
+                            "versionNo": {
+                              "type": "number",
+                              "minimum": 1,
+                              "maximum": 2147483647
+                            },
+                            "aiPolicy": {
+                              "anyOf": [
+                                {
+                                  "const": "prohibited",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "partially_allowed",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "encouraged",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "aiPurposes": {
+                              "type": "array",
+                              "maxItems": 5,
+                              "items": {
+                                "anyOf": [
+                                  {
+                                    "const": "formatting",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "proofreading",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "literature_search",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "transcription",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "translation",
+                                    "type": "string"
+                                  }
+                                ]
+                              }
+                            },
+                            "evidenceProfile": {
+                              "anyOf": [
+                                {
+                                  "const": "basic",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "extended",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "importAllowed": {
+                              "type": "boolean"
+                            },
+                            "origin": {
+                              "anyOf": [
+                                {
+                                  "const": "operator",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "administrator",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "publishedAt": {
+                              "format": "date-time",
+                              "maxLength": 24,
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.faculty-rules.post": {
+    "path": "/api/v1/institution/faculty-rules",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "workType",
+        "basedOnVersionNo",
+        "aiPolicy",
+        "aiPurposes",
+        "evidenceProfile",
+        "importAllowed"
+      ],
+      "properties": {
+        "workType": {
+          "anyOf": [
+            {
+              "const": "short_paper",
+              "type": "string"
+            },
+            {
+              "const": "essay",
+              "type": "string"
+            },
+            {
+              "const": "seminar_paper",
+              "type": "string"
+            },
+            {
+              "const": "bachelor_thesis",
+              "type": "string"
+            },
+            {
+              "const": "master_thesis",
+              "type": "string"
+            },
+            {
+              "const": "specialist_thesis",
+              "type": "string"
+            },
+            {
+              "const": "doctoral_thesis",
+              "type": "string"
+            }
+          ]
+        },
+        "basedOnVersionNo": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aiPolicy": {
+          "anyOf": [
+            {
+              "const": "prohibited",
+              "type": "string"
+            },
+            {
+              "const": "partially_allowed",
+              "type": "string"
+            },
+            {
+              "const": "encouraged",
+              "type": "string"
+            }
+          ]
+        },
+        "aiPurposes": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "anyOf": [
+              {
+                "const": "formatting",
+                "type": "string"
+              },
+              {
+                "const": "proofreading",
+                "type": "string"
+              },
+              {
+                "const": "literature_search",
+                "type": "string"
+              },
+              {
+                "const": "transcription",
+                "type": "string"
+              },
+              {
+                "const": "translation",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "evidenceProfile": {
+          "anyOf": [
+            {
+              "const": "basic",
+              "type": "string"
+            },
+            {
+              "const": "extended",
+              "type": "string"
+            }
+          ]
+        },
+        "importAllowed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the new version is published",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "versionNo",
+                "publishedAt"
+              ],
+              "properties": {
+                "versionNo": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2147483647
+                },
+                "publishedAt": {
+                  "format": "date-time",
+                  "maxLength": 24,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden",
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input",
+        "invalid_work_type",
+        "invalid_ai_policy",
+        "invalid_ai_purposes",
+        "invalid_evidence_profile"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
   "teacher.assignment-copy.post": {
     "path": "/api/v1/teacher/assignments/{assignmentId}/copy",
     "method": "POST",

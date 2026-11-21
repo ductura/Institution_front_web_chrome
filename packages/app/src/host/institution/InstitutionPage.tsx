@@ -6,6 +6,7 @@ import { appHref } from "@/components/index";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { useHost } from "../context";
+import RulesPage from "../admin/institution-config/RulesPage";
 import { messagesHr as t } from "./messages.hr";
 
 const newCourse = messagesHr.institutionCourses.newCourse;
@@ -17,7 +18,8 @@ export default function InstitutionPage({ view }: { view: keyof typeof t }) {
   return (
     <section className="page" data-role={role ?? undefined}>
       <h1>{page.label}</h1>
-      <p role="status">{t[view]}</p>
+      {view !== "rules" && <p role="status">{t[view]}</p>}
+      {view === "rules" && <RulesPage />}
       {view === "courses" && (
         <section aria-labelledby="novi-kolegij">
           <h2 id="novi-kolegij">{newCourse.title}</h2>
