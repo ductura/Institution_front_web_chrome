@@ -3,19 +3,19 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Button, Card, RouteLoading, Select, Tag, TextField } from "@ductura/ui";
 
-import { createApi, goToSignIn } from "../../../../../../src/client/api";
+import { goToSignIn } from "../../../../../../src/client/api";
 import {
-  canWithdraw, TITLE_MAX, WORK_TYPES, type MentorshipRead, type MentorshipWorkType, type StudentMentorshipCall,
+  canWithdraw, mentorshipCall, TITLE_MAX, WORK_TYPES, type CandidatesRead, type MentorshipRead, type MentorshipWorkType, type StudentMentorshipCall,
 } from "../../../../../../src/client/mentorship";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { formatDateHr } from "../../../../../../src/lib/i18n/hr";
 import { useHost } from "../../context";
 import { hostText } from "../../../text";
 import { mentorshipRequestText as t } from "./messages.hr";
-import { readMyMentorshipRequests, sendRequest, statusText, withdrawRequest, type Note } from "./model";
+import { readMentorCandidates, readMyMentorshipRequests, sendRequest, statusText, withdrawRequest, type Note } from "./model";
 
-/** The student's transport: the client of src/client; the routes are not in the contract yet (TODO(ugovor)). */
-const defaultCall = () => createApi() as unknown as StudentMentorshipCall;
+/** The student's transport: the routes of SRV-1414 over src/client/mentorship (not in the pinned contract yet, TODO(ugovor)). */
+const defaultCall = () => mentorshipCall();
 
 /**
  * Student: "Zahtjev za mentorstvo" (WEB-1404). The form sends a request, the list
@@ -28,6 +28,8 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
   const here = appHref(base, "/zadaci/mentorstvo");
   const [read, setRead] = useState<MentorshipRead | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [candidates, setCandidates] = useState<CandidatesRead | null>(null);
+  const [teacherId, setTeacherId] = useState("");
   const [title, setTitle] = useState("");
   const [workType, setWorkType] = useState<MentorshipWorkType>("bachelor_thesis");
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,6 +41,13 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
       if (!live) return;
       if (result.kind === "session-expired") goToSignIn(here);
       setRead(result);
+    });
+    void readMentorCandidates(call()).then((result) => {
+      if (!live) return;
+      if (result.kind === "session-expired") goToSignIn(here);
+      setCandidates(result);
+      // A teacher who dropped off the list can no longer be chosen.
+      if (result.kind === "ready") setTeacherId((id) => (result.candidates.some((c) => c.teacherId === id) ? id : ""));
     });
     return () => { live = false; };
     // `call` and `here` are stable per mount; the attempt is what asks again.
@@ -56,8 +65,9 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
     event.preventDefault();
     if (busy !== null) return;
     setNote(null);
+    if (teacherId === "") { setNote({ tone: "alert", text: t.fieldTeacherRequired }); return; }
     setBusy("send");
-    const followup = await sendRequest(call(), { title, workType });
+    const followup = await sendRequest(call(), { title, workType, teacherId });
     if (followup?.note.tone === "status") setTitle("");
     finish(followup);
   }
@@ -91,7 +101,7 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
                 </Tag>
                 <br />
                 <span>
-                  {t.workTypes[request.workType]} · {t.sentOn.replace("{date}", formatDateHr(request.requestedAt))}
+                  {t.teacherLabel.replace("{name}", request.teacherName)} · {t.workTypes[request.workType]} · {t.sentOn.replace("{date}", formatDateHr(request.requestedAt))}
                   {request.decidedAt === null ? "" : ` · ${t.decidedOn.replace("{date}", formatDateHr(request.decidedAt))}`}
                 </span>
                 {canWithdraw(request) && (
@@ -121,11 +131,16 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
       {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
       <Card title={t.formTitle}>
         <form onSubmit={(event) => void send(event)}>
+          {candidates !== null && candidates.kind === "nepoznato" && <p role="alert">{t.candidatesUnavailable}</p>}
+          {candidates !== null && candidates.kind === "ready" && candidates.candidates.length === 0 && <p>{t.noCandidates}</p>}
+          <Select label={t.fieldTeacher} value={teacherId}
+            options={[{ value: "", label: t.fieldTeacherPlaceholder }, ...(candidates?.kind === "ready" ? candidates.candidates.map((c) => ({ value: c.teacherId, label: c.displayName })) : [])]}
+            onChange={(event) => setTeacherId(event.target.value)} />
           <TextField label={t.fieldTitle} hint={t.fieldTitleHint} value={title} maxLength={TITLE_MAX} required
             onChange={(event) => setTitle(event.target.value)} />
           <Select label={t.fieldType} value={workType} options={WORK_TYPES.map((value) => ({ value, label: t.workTypes[value] }))}
             onChange={(event) => setWorkType(event.target.value as MentorshipWorkType)} />
-          <p><Button type="submit" busy={busy === "send"} disabled={busy !== null && busy !== "send"}>
+          <p><Button type="submit" busy={busy === "send"} disabled={(busy !== null && busy !== "send") || candidates?.kind !== "ready"}>
             {busy === "send" ? t.sending : t.send}
           </Button></p>
         </form>
