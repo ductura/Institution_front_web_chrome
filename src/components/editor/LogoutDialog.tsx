@@ -50,6 +50,7 @@ export type LogoutDialogProps = {
   /** The sign-out ended on this device without the server's answer (#1330). */
   signedOutHere: boolean;
   keptOnDevice?: boolean;
+  unsavedWarning?: string;
   /**
    * The last sign-out got no confirmation from the server, so nothing has
    * ended (F-285): the dialog says so and the confirm button tries again.
@@ -77,6 +78,7 @@ export default function LogoutDialog({
   working,
   signedOutHere,
   keptOnDevice,
+  unsavedWarning,
   unconfirmed = false,
   onConfirm,
   onStay,
@@ -237,7 +239,7 @@ export default function LogoutDialog({
     >
       <div className={styles.body}>
         <h2 id={titleId} className={styles.title}>{t.logoutTitle}</h2>
-        {signedOutHere ? null : <Intro textId={textId} text={text} note={note} />}
+        {signedOutHere ? null : <Intro textId={textId} text={plan.unsaved ? unsavedWarning ?? text : text} note={note} />}
         {copy ? (
           <section className={styles.copy} aria-label={t.copyTitle}>
             <p className={styles.text}>{copy.text}</p>

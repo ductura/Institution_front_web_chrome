@@ -906,12 +906,14 @@ export function LocalLogout({
   action = "/api/auth/logout",
   afterSignOut = followLogoutNatively,
   keepCopy,
+  unsavedWarning,
   renderTrigger = (trigger) => trigger,
 }: {
   buttonClassName?: string;
   action?: string;
   afterSignOut?: () => void;
   keepCopy?: (text: string | null) => boolean;
+  unsavedWarning?: string;
   renderTrigger?: (trigger: ReactNode) => ReactNode;
 } = {}) {
   const { editor, phase, prepareSignOut, staySignedIn, signOut, discardAfterSubmission, unconfirmedNow } = useLocalDocument();
@@ -929,7 +931,10 @@ export function LocalLogout({
     setPreparing(true);
     void prepareSignOut()
       // Writing has stopped either way; an unknown count shows no number.
-      .catch((): LogoutPlan => ({ unsaved: false, pending: null }))
+      .catch((): LogoutPlan => ({
+        unsaved: Boolean(keepCopy && editor && !editor.isDestroyed && !editor.isEmpty && unconfirmedNow()),
+        pending: null,
+      }))
       .then((next) => {
         // The page's session has ended: `/` renders under the browser's cookie.
         if (next === "leave") {
@@ -949,11 +954,12 @@ export function LocalLogout({
     if (keepCopy) {
       let kept = Boolean(next.copies || next.pending || next.kept);
       try {
-        if (next.unsaved && editor && !editor.isDestroyed) {
-          kept = keepCopy(editor.getText({ blockSeparator: "\n\n" })) || kept;
-        } else if (kept && phase === "ready" && unconfirmedNow()) {
+        const copySaved = next.unsaved && editor && !editor.isDestroyed &&
+          keepCopy(editor.getText({ blockSeparator: "\n\n" }));
+        if (!copySaved && kept && phase === "ready" && unconfirmedNow()) {
           keepCopy(null);
         }
+        kept = kept || Boolean(copySaved);
       } catch {
         // A failure to keep the extra copy never holds the sign-out.
       }
@@ -997,6 +1003,7 @@ export function LocalLogout({
           working={working}
           signedOutHere={signedOutHere}
           keptOnDevice={keptOnDevice}
+          unsavedWarning={unsavedWarning}
           onConfirm={() => confirm(plan)}
           onStay={stay}
           copies={plan.copies}

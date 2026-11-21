@@ -8,6 +8,7 @@ import { leaveFor, LOGOUT_PATH } from "@/client/api";
 import { browserMarkStore, hasEnded, type SessionMark } from "@/client/session-marks";
 
 import styles from "../../SignOut.module.css";
+import { exitCopyHr } from "./messages.hr";
 import { copyStorage, keepExitCopy } from "./recovery";
 import { SignOutSlot } from "./SignOutSlot";
 
@@ -22,6 +23,7 @@ export function EditorSessionControls({ scope, session, assignmentId }: {
       buttonClassName={styles.signOut}
       action={LOGOUT_PATH}
       afterSignOut={() => leaveFor("/")}
+      unsavedWarning={exitCopyHr.warning}
       renderTrigger={(trigger) => target ? createPortal(trigger, target) : null}
       keepCopy={(text) => {
         if (hasEnded(browserMarkStore(), session)) return false;
