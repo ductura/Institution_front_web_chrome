@@ -38,7 +38,7 @@ const LABELS: Readonly<Record<string, Label>> = {
  * written in routes.ts.
  */
 export function navLabel(page: Page, role: ShellRole | null, c: Catalogues): string {
-  const item = navFor(role, c.t).find((i) => i.href === page.path);
+  const item = navFor(role, c.t).find((i) => page.path === i.href);
   if (item !== undefined) return item.label;
   return LABELS[page.path]?.(c) ?? page.label;
 }

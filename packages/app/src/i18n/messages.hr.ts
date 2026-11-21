@@ -1,6 +1,6 @@
 /**
  * The profile settings page (WEB-1804, M11.5, D-70), Croatian. The English
- * table is `profileEn` in `./messages.en.ts`; `parity.test.ts` checks both.
+ * table is `profileEn` in `./messages.en.ts`; the parity test checks both.
  */
 export const profileHr = {
   title: "Postavke profila",

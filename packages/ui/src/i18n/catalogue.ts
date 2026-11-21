@@ -15,7 +15,7 @@ import type { UiLocale } from "./locale";
 /**
  * Every text table of the UI package's own components, by section. The
  * Croatian sections stay next to their components; the English ones are in
- * `./en.ts`, and `i18n.test.ts` checks that both have the same keys.
+ * `./en.ts`, and the i18n test checks that both have the same keys.
  */
 export const uiMessagesHr = {
   diff: diffMessages,

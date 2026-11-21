@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { baseOfSegment } from "../../src/bases";
 import Host from "../../src/host/Host";
-import { LocaleProvider } from "../../src/i18n";
+import { LocaleProvider } from "../../src/i18n/LocaleProvider";
 
 /**
  * Everything under /app/web/ and /app/chrome/ (#2028 c.6993786629 §1): the

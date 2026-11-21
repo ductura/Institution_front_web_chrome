@@ -1,6 +1,6 @@
 /**
  * In-app notification settings (M11.5, SRV-1701) behind a port. The server
- * contract for them is not in `@ductura/contracts` yet, so the app uses
+ * contract for them is not in the published contracts package yet, so the app uses
  * `unavailableNotificationSettings`: the page says the settings are not
  * available and sends nothing. `createFakeNotificationSettings` is the
  * in-memory stand-in the tests use. When SRV-1701 publishes its route, a port
