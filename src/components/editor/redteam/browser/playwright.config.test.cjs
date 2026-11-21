@@ -9,15 +9,16 @@ const command = "node catalog/node_modules/vite/bin/vite.js --config src/compone
 
 module.exports = defineConfig({
   testDir: __dirname,
-  testMatch: /(redteam|kontrola)\.spec\.ts$/,
+  testMatch: /(redteam|kontrola|kanali)\.spec\.ts$/,
   workers: 1,
   retries: 0,
   reporter: [["line"]],
   use: { baseURL: "http://127.0.0.1:5399", locale: "hr-HR", headless: !live },
+  // kanali.spec.ts uses CDP and a Blink switch: Chromium only, and never in the live run.
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
-    { name: "webkit", use: { ...devices["Desktop Safari"] } },
+    { name: "chromium", use: { ...devices["Desktop Chrome"] }, testIgnore: live ? /kanali\.spec\.ts$/ : undefined },
+    { name: "firefox", use: { ...devices["Desktop Firefox"] }, testIgnore: /kanali\.spec\.ts$/ },
+    { name: "webkit", use: { ...devices["Desktop Safari"] }, testIgnore: /kanali\.spec\.ts$/ },
   ],
   webServer: live ? undefined : { command, cwd: path.resolve(__dirname, "../../../../.."), url: "http://127.0.0.1:5399", timeout: 60_000 },
 });
