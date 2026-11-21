@@ -14,4 +14,5 @@ export const hostText = {
   deadlineExtensions: "Produljenje roka",
   // WEB-1502 (M7.2): the label of the submissions page.
   assignmentSubmissions: "Predaje zadatka",
+  mentorshipRequest: "Zahtjev za mentorstvo",
 } as const;

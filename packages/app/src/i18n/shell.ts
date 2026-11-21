@@ -27,6 +27,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik": (c) => c.t.teacher.workLanguageException.title,
   "/nastavnik/zadatak/[assignmentId]/produljenje": (c) => c.app.host.deadlineExtensions,
   "/nastavnik/zadatak/[assignmentId]/predaje": (c) => c.app.host.assignmentSubmissions,
+  "/zadaci/mentorstvo": (c) => c.app.host.mentorshipRequest,
   "/kako-radi": (c) => c.t.shell.howItWorks,
   "/stanje": (c) => c.t.statusPage.pageTitle,
   "/prijava": (c) => c.app.host.signIn,
