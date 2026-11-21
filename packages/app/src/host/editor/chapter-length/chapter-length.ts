@@ -1,4 +1,5 @@
 import {
+  DOCUMENT_SCHEMA_VERSION_V3,
   documentWordCount,
   type VersionedDocument,
 } from "../../../../../editor-core/src/document/document/index.ts";
@@ -14,7 +15,7 @@ export function chapterWordCounts(document: VersionedDocument): ReadonlyMap<stri
       const block = blocks.get(id);
       return block ? [block] : [];
     });
-    counts.set(chapter.blockId, documentWordCount({ ...document, nodes } as VersionedDocument));
+    counts.set(chapter.blockId, documentWordCount({ schemaVersion: DOCUMENT_SCHEMA_VERSION_V3, sources: [], nodes }));
   }
   return counts;
 }

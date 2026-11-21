@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   DOCUMENT_SCHEMA_VERSION_V3,
   textNode,
+  type CanonicalDocumentV3,
   type DocumentNodeV3,
   type NodeId,
 } from "../../../../../editor-core/src/document/document/schema.ts";
@@ -18,7 +19,7 @@ const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")
 const intro = { type: "heading", id: id(1), level: 1, children: [textNode("Izmišljeni uvod")] } as const;
 const method = { type: "heading", id: id(3), level: 3, children: [textNode("Metoda")] } as const;
 const paragraph = (n: number, text: string) => ({ type: "paragraph" as const, id: id(n), children: [textNode(text)] });
-const documentOf = (...nodes: DocumentNodeV3[]) => ({ schemaVersion: DOCUMENT_SCHEMA_VERSION_V3, sources: [], nodes });
+const documentOf = (...nodes: DocumentNodeV3[]): CanonicalDocumentV3 => ({ schemaVersion: DOCUMENT_SCHEMA_VERSION_V3, sources: [], nodes });
 const render = (props: Parameters<typeof ChapterLength>[0]) => renderToStaticMarkup(createElement(ChapterLength, props));
 
 describe("chapter length", () => {
