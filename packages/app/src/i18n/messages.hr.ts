@@ -52,4 +52,18 @@ export const pageLabelsHr = {
   consultations: "Konzultacije",
 };
 
+/** M1.8: the no-access and session-ended screen. English: `accessDeniedEn` in ./messages.en.ts. */
+export const accessDeniedHr = {
+  pageTitle: "Nema ovlasti",
+  title: { denied: "Nemate ovlasti za ovaj prikaz", expired: "Prijava je istekla", signedOut: "Potrebna je prijava" },
+  body: {
+    denied: "Ovaj prikaz nije dostupan s Vašim računom. Ako mislite da bi trebao biti, obratite se administratoru svoje ustanove.",
+    expired: "Prijava je istekla zbog dulje neaktivnosti. Prijavite se ponovno preko AAI@EduHr i nastavite gdje ste stali.",
+    signedOut: "Za ovaj prikaz prijavite se preko AAI@EduHr.",
+  },
+  signIn: "Prijavi se preko AAI@EduHr",
+  heldNote: "Neposlani unos ostao je spremljen na uređaju (ne na poslužitelju). Nakon prijave možete ga nastaviti.",
+  home: "Na početnu",
+} as const;
+
 export type ProfileMessages = typeof profileHr;

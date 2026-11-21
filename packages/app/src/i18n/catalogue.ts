@@ -11,9 +11,9 @@ import { teacherAiLabels } from "../host/teacher/work/ai-attachments/messages.hr
 import { teacherWorkMessages } from "../host/teacher/work/messages.hr";
 import { hostText } from "../text";
 import {
-  declarationLabelsEn, declarationStatusEn, hostTextEn, institutionEn, noticeReadEn, pageLabelsEn, profileEn, teacherAiLabelsEn, teacherWorkEn,
+  accessDeniedEn, declarationLabelsEn, declarationStatusEn, hostTextEn, institutionEn, noticeReadEn, pageLabelsEn, profileEn, teacherAiLabelsEn, teacherWorkEn,
 } from "./messages.en";
-import { pageLabelsHr, profileHr } from "./messages.hr";
+import { accessDeniedHr, pageLabelsHr, profileHr } from "./messages.hr";
 
 /**
  * Every text table of the app's own screens, by section. The Croatian
@@ -22,6 +22,7 @@ import { pageLabelsHr, profileHr } from "./messages.hr";
  */
 export const appMessagesHr = {
   host: hostText,
+  accessDenied: accessDeniedHr,
   profile: profileHr,
   pages: pageLabelsHr,
   institution: institutionHr,
@@ -34,6 +35,7 @@ export const appMessagesHr = {
 
 export const appMessagesEn = {
   host: hostTextEn,
+  accessDenied: accessDeniedEn,
   profile: profileEn,
   pages: pageLabelsEn,
   institution: institutionEn,
