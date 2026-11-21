@@ -170,7 +170,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         {!signedOut && <WorkPrintExport documentId={documentId} title={title} />}
       </div></EditorCommands>}
       status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
-      rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} />,
+      rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} documentId={documentId} />,
         comments: <CommentPanel documentId={documentId} session={session} />,
         assistant: <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>
