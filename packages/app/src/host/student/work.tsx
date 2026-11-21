@@ -27,6 +27,8 @@ import { hostText } from "../../text";
 import { nextPath } from "../../bases";
 import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
+import { ImportHost } from "../editor/import/ImportHost";
+import { unavailableTransport } from "../../../../../src/client/import.ts";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
@@ -71,7 +73,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
-            sessionControls={({ scope, session }) => <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />} />,
+            sessionControls={({ scope, session }) => <>
+              <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
+              <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
+            </>} />,
         });
       }
       const submission = frame.variant === "predano"

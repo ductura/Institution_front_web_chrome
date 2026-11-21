@@ -24,6 +24,8 @@ export interface AssignmentDraft {
   aiPurposes: AiPurpose[];
   wordMin: string;
   wordMax: string;
+  /** The wizard's "Dopušten uvoz" (WEB-1801); absent means off. */
+  importAllowed?: boolean;
 }
 
 export interface AssignmentBody {
@@ -37,7 +39,7 @@ export interface AssignmentBody {
   wordMin: number | null;
   wordMax: number | null;
   evidenceProfile: "basic";
-  importAllowed: false;
+  importAllowed: boolean;
 }
 
 export type AssignmentCreation =
@@ -94,9 +96,9 @@ export function assignmentBody(draft: AssignmentDraft, course: CoursePolicy): As
     aiPurposes,
     wordMin: range.wordMin,
     wordMax: range.wordMax,
-    // No form field yet; the narrowest values the contract accepts.
+    // The profile has no form field yet; import is off unless the teacher ticks it (WEB-1801).
     evidenceProfile: "basic",
-    importAllowed: false,
+    importAllowed: draft.importAllowed === true,
   };
 }
 

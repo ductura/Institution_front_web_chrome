@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Select, TextArea, TextField } from "@ductura/ui";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import { formatDateTimeHr } from "@/lib/i18n/hr";
 import { wordRangeHr } from "@/lib/i18n/length-line";
@@ -56,12 +56,16 @@ function StudentPreview({ body }: { body: AssignmentBody }) {
         ? <ul className={styles.summary}>{body.aiPurposes.map((purpose) => <li key={purpose}>{tools.purposes[purpose]}</li>)}</ul>
         : <p>{t.student.noTools}</p>}
       <ToolRestrictions banned={banned.map((purpose) => tools.purposes[purpose])} />
+      {body.importAllowed && <p className={styles.hint}>{wizard.importPreview}</p>}
       <p className={styles.hint}>{t.teacher.preview.rest}</p>
     </section>
   );
 }
 
-export default function TeacherSetup({ course }: { course: ExistingCourse }) {
+/** The host's extra field for step 3 (WEB-1801): the value and its setter, so the field lives in the host layer. */
+export type ImportField = (value: boolean, onChange: (value: boolean) => void) => ReactNode;
+
+export default function TeacherSetup({ course, importField }: { course: ExistingCourse; importField?: ImportField }) {
   const [draft, setDraft] = useState(initialDraft);
   const [step, setStep] = useState<Step>(1);
   const [result, setResult] = useState<AssignmentCreation | null>(null);
@@ -163,6 +167,7 @@ export default function TeacherSetup({ course }: { course: ExistingCourse }) {
                 onChange={(event) => edit("aiPurposes", event.target.value === "course" ? [...AI_PURPOSES] : [])} />
               {!courseProhibits && <p className={styles.hint}>{wizard.summaryHelpPending}</p>}
               <Select label={wizard.externalTools} options={[]} placeholder={wizard.unavailable} disabled />
+              {importField?.(draft.importAllowed === true, (value) => edit("importAllowed", value))}
             </>}
             {step === 4 && <>
               <p>{wizard.recordingNotice}</p>

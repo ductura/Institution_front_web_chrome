@@ -9,6 +9,8 @@ import { newAssignmentHref } from "@/components/teacher/links";
 import { readTeacherCourses } from "@/components/teacher/teacher-courses-read";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
+import { ImportAllowedField } from "../assignment-wizard/ImportAllowedField";
+
 import { AssignmentPage, useAssignmentRead } from "./page-state";
 
 const path = "/nastavnik/zadatak/novi";
@@ -25,7 +27,8 @@ export default function NewAssignmentPage({ courseId }: { courseId?: string | st
       {(courses, href) => {
         if (courseId !== undefined) {
           const selected = typeof courseId === "string" && courses.find((course) => course.id.toLowerCase() === courseId.toLowerCase());
-          return selected ? <TeacherSetup key={selected.id} course={selected} /> : (
+          return selected ? <TeacherSetup key={selected.id} course={selected}
+            importField={(value, onChange) => <ImportAllowedField value={value} onChange={onChange} />} /> : (
             <>
               <p role="alert">{t.missing}</p>
               <p><a href={href(path)}>{assignmentSetupMessages.choose}</a></p>
