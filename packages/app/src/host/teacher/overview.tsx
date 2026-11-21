@@ -17,6 +17,7 @@ import { readDeadlineExtensions, readExtensionStudents, type ExtensionStudent } 
 import { readAssignmentOverview, type OverviewRow, type TeacherCall } from "../../../../../src/client/teacher-reads.ts";
 import { messagesHr } from "../../../../../src/lib/i18n/messages.hr.ts";
 
+import { submissionsMessages } from "./submissions/messages.hr";
 import { TeacherPage, useTeacherRead, type TeacherRead } from "../pages";
 import { nextPath } from "../../bases";
 import { useHost } from "../context";
@@ -65,6 +66,7 @@ export function AssignmentOverviewPage() {
             <Button type="submit">{summary.pickSubmit}</Button>
           </form>
           <p><a href={appHref(base, extensionsHref(chosen.id))}>{summary.extendDeadline}</a></p>
+          <p><a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(chosen.id)}/predaje`)}>{submissionsMessages.linkLabel}</a></p>
           <AssignmentOverview assignmentTitle={chosen.title} rows={rows} />
         </>
       )} />
