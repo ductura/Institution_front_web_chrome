@@ -2472,14 +2472,6 @@ export const editorHelpHr = {
     cmt: ["Komentari u tekstu", "Kad su isključeni, ostaju u kartici Komentari."],
   },
   inText: "u tekstu: {count}",
-  onboarding: "Prvi koraci",
-  onboardingStep: "{step} od {total}",
-  onboardingHint: "Prvi koraci su u izborniku Prikaz, ako ih želite pogledati.",
-  steps: [
-    ["Navod s @", "Upišite @ i početak prezimena autora. Ductura ponudi izvore iz literature, a Enter umeće navod."],
-    ["Naredbe s /", "Upišite / za tablicu, sliku, fusnotu, frazu ili oznaku Za provjeru na mjestu kojem ćete se vratiti."],
-    ["Pomoć u tekstu", "U izborniku Prikaz birate koliko Vam Ductura pomaže u tekstu, tamni ili bijeli list i stil citiranja."],
-  ],
   firstSentence: "Prije prve rečenice",
   due: "Rok {date}",
   length: "opseg {min} do {max} riječi",
@@ -2490,9 +2482,6 @@ export const editorHelpHr = {
     ["Što vidi nastavnik", "Nastavnik zadatka vidi tekst spremljen na poslužitelju, komentare, povijest verzija i isti sažetak procesa koji vidite i Vi."],
     ["Što se ne bilježi", "Pojedinačni pritisci tipki i ritam pisanja."],
   ],
-  skip: "Preskoči",
-  next: "Dalje",
-  start: "Počni pisati",
   close: "Zatvori",
 } as const;
 

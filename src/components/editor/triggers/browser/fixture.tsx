@@ -15,9 +15,12 @@ function Fixture() {
   const help = useEditorHelp();
   const [view, setView] = useState<EditorHelpView | null>(null);
   const [showOutline, setShowOutline] = useState(true);
+  const [saved, setSaved] = useState(false);
   const editor = useEditor({ extensions: createEditorExtensions(""), editorProps: { attributes: { role: "textbox", "aria-multiline": "true", "aria-label": "Tekst rada" } } });
   return <main style={{ margin: 16 }}><h1>Izmišljeni rad</h1>
+    <Button onClick={() => setSaved(true)}>Spremi</Button>
     <EditorHelpMenu onSelect={setView} />
+    {saved && <p>Izmišljeni rad je spremljen.</p>}
     <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help}
       notice={{ course: "Izmišljeni kolegij", title: "Izmišljeni rad", due: "1. prosinca", length: { min: 10, max: 20 }, instructions: <p>Izmišljena uputa.</p> }} />
     <Button onMouseDown={(event) => event.preventDefault()} onClick={() => editor?.setEditable(!editor.isEditable)}>Promijeni uređivanje</Button>
