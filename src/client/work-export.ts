@@ -25,7 +25,7 @@ export async function requestWorkDocx(
   if (response.status === 404) return { ok: false, reason: "notFound" };
   if (response.status === 422) return { ok: false, reason: "invalidRequest" };
   const snapshotSha256 = response.headers.get("X-Export-Snapshot-Sha256");
-  const contentType = response.headers.get("Content-Type")?.split(";")[0].trim();
+  const contentType = response.headers.get("Content-Type")?.split(";", 1)[0]?.trim().toLowerCase();
   if (!response.ok || contentType !== DOCX || !snapshotSha256 || !/^[a-f0-9]{64}$/i.test(snapshotSha256)) {
     return { ok: false, reason: "downloadFailed" };
   }
