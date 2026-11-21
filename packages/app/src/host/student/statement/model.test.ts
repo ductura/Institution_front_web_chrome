@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { attachFile, helpValid, isReadOnly, printoutError, saveHelp } from "./model";
+import { attachFile, helpAfterRead, helpValid, isReadOnly, printoutError, saveHelp, withKind } from "./model";
 import { fakeStatementPort, PROBE_LIMITS } from "./fake-port";
 
 const ID = "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60";
@@ -35,6 +35,29 @@ describe("statement: printout and human help (WEB-1503)", () => {
     const narrowed = { ...read, helpKinds: ["proofreading" as const] };
     expect((await saveHelp(port, ID, narrowed, { kind: "none", text: "" })).kind).toBe("rejected");
     expect(port.saved).toEqual([]);
+  });
+
+  it("drops the description when the student switches to no human help", () => {
+    const next = withKind({ kind: "content", text: "Izmišljeni opis pomoći" }, "none");
+    expect(next).toEqual({ kind: "none", text: "" });
+    expect(helpValid(next)).toBe(true);
+    expect(withKind({ kind: "content", text: "Opis" }, "other")).toEqual({ kind: "other", text: "Opis" });
+  });
+
+  it("keeps an unsaved draft when the view is read again after an upload", async () => {
+    const port = fakeStatementPort();
+    await saveHelp(port, ID, await port.read(ID), { kind: "proofreading", text: "Spremljeni opis" });
+    const draft = { kind: "content" as const, text: "Nespremljena izmjena" };
+    expect(helpAfterRead(draft, await port.read(ID))).toBe(draft);
+    expect(helpAfterRead(null, await port.read(ID))).toEqual({ kind: "proofreading", text: "Spremljeni opis" });
+  });
+
+  it("starts an unsaved statement on a kind the server offers", async () => {
+    const read = await fakeStatementPort().read(ID);
+    if (read.kind !== "ready") throw new Error("unreachable");
+    expect(helpAfterRead(null, read)).toEqual({ kind: "none", text: "" });
+    expect(helpAfterRead(null, { ...read, helpKinds: ["proofreading", "other"] })).toEqual({ kind: "proofreading", text: "" });
+    expect(helpAfterRead(null, { kind: "unavailable" })).toBeNull();
   });
 
   it("is read only after submission: nothing is sent", async () => {

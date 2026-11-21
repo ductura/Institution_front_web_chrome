@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Select, TextArea } from "@ductura/ui";
 
-import type { HumanHelpKind, StatementPort, StatementRead } from "../../../../../../src/client/statement.ts";
-import { attachFile, helpValid, isReadOnly, saveHelp } from "./model";
+import type { HumanHelp, HumanHelpKind, StatementPort, StatementRead } from "../../../../../../src/client/statement.ts";
+import { attachFile, helpAfterRead, helpValid, isReadOnly, saveHelp, withKind } from "./model";
 import { statementMessages as text } from "./messages.hr";
 
 /**
@@ -14,10 +14,8 @@ import { statementMessages as text } from "./messages.hr";
 export default function StudentStatement({ port, assignmentId }: { port: StatementPort; assignmentId: string }) {
   const [read, setRead] = useState<StatementRead | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [kind, setKind] = useState<HumanHelpKind>("none");
-  const [helpText, setHelpText] = useState("");
+  const [draft, setDraft] = useState<HumanHelp | null>(null);
   const [fileError, setFileError] = useState<string | undefined>();
-  const filled = useRef(false);
   const [notice, setNotice] = useState<{ tone: "status" | "alert"; message: string } | null>(null);
 
   useEffect(() => {
@@ -25,16 +23,7 @@ export default function StudentStatement({ port, assignmentId }: { port: Stateme
     void port.read(assignmentId).then((next) => {
       if (!active) return;
       setRead(next);
-      // Fill the fields once: a refresh after an upload must not discard unsaved edits.
-      if (next.kind === "ready" && !filled.current) {
-        filled.current = true;
-        if (next.humanHelp) {
-          setKind(next.humanHelp.kind);
-          setHelpText(next.humanHelp.text);
-        } else if (!next.helpKinds.includes("none") && next.helpKinds[0]) {
-          setKind(next.helpKinds[0]);
-        }
-      }
+      setDraft((current) => helpAfterRead(current, next));
     }).catch(() => { if (active) setRead({ kind: "unavailable" }); });
     return () => { active = false; };
   }, [port, assignmentId, attempt]);
@@ -50,7 +39,8 @@ export default function StudentStatement({ port, assignmentId }: { port: Stateme
   }
 
   const locked = isReadOnly(read);
-  const help = { kind, text: helpText };
+  const help = draft ?? { kind: read.helpKinds[0] ?? "none", text: "" };
+  const { kind, text: helpText } = help;
 
   const save = async () => {
     const result = await saveHelp(port, assignmentId, read, help);
@@ -74,13 +64,9 @@ export default function StudentStatement({ port, assignmentId }: { port: Stateme
       <p>{read.statementText}</p>
       <Select label={text.helpLegend} disabled={locked} value={kind}
         options={read.helpKinds.map((k) => ({ value: k, label: text.helpKinds[k] }))}
-        onChange={(event) => {
-          const next = event.target.value as HumanHelpKind;
-          setKind(next);
-          if (next === "none") setHelpText("");
-        }} />
+        onChange={(event) => setDraft(withKind(help, event.target.value as HumanHelpKind))} />
       {kind !== "none" && (
-        <TextArea label={text.helpText} readOnly={locked} value={helpText} onChange={(event) => setHelpText(event.target.value)} />
+        <TextArea label={text.helpText} readOnly={locked} value={helpText} onChange={(event) => setDraft({ kind, text: event.target.value })} />
       )}
       <h3>{text.printoutTitle}</h3>
       <p>{text.printoutNote}</p>

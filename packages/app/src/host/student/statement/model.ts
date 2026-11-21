@@ -1,6 +1,6 @@
 // Rules of the statement view (WEB-1503), kept apart from React so they are tested directly.
 import {
-  checkPrintout, type HumanHelp, type StatementFile, type StatementPort, type StatementRead,
+  checkPrintout, type HumanHelp, type HumanHelpKind, type StatementFile, type StatementPort, type StatementRead,
   type StatementWrite, type AttachmentLimits,
 } from "../../../../../../src/client/statement.ts";
 import { megabytes, statementMessages as text } from "./messages.hr";
@@ -24,6 +24,22 @@ export function printoutError(file: StatementFile, limits: AttachmentLimits): st
 /** A help of "none" carries no text; any other kind needs a description. */
 export function helpValid(help: HumanHelp): boolean {
   return help.kind === "none" ? help.text.trim() === "" : help.text.trim() !== "";
+}
+
+/** Changing the kind to "none" drops the description, which "none" may not carry. */
+export function withKind(help: HumanHelp, kind: HumanHelpKind): HumanHelp {
+  return { kind, text: kind === "none" ? "" : help.text };
+}
+
+/**
+ * The fields after a read: an existing draft is kept (a refresh after an upload must not discard
+ * unsaved edits); otherwise the saved help, or the first kind the server offers.
+ */
+export function helpAfterRead(draft: HumanHelp | null, read: StatementRead): HumanHelp | null {
+  if (draft !== null || read.kind !== "ready") return draft;
+  if (read.humanHelp) return read.humanHelp;
+  const kind = read.helpKinds.includes("none") ? "none" : read.helpKinds[0];
+  return kind === undefined ? null : { kind, text: "" };
 }
 
 /** Sends the help only when the view is open for writing and the input is valid. */
