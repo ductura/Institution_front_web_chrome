@@ -18,6 +18,7 @@ type Props = {
 export function EditorOnboarding({ locale, mode, onClose }: Props) {
   const id = useId();
   const heading = useRef<HTMLHeadingElement>(null);
+  const next = useRef<HTMLButtonElement>(null);
   const [step, setStep] = useState(0);
   const t = editorOnboardingMessages[locale];
   const [title, description] = t.steps[step] ?? t.steps[0]!;
@@ -34,8 +35,8 @@ export function EditorOnboarding({ locale, mode, onClose }: Props) {
   }
 
   return <>
-    <div role="status" aria-atomic="true" className={styles.announcement} lang={locale}>
-      {mode && (step === 0 ? `${t.title}. ${t.duration}. ` : "") + `${progress}. ${title}. ${description}`}
+    <div aria-live="polite" aria-atomic="true" className={styles.announcement} lang={locale}>
+      {mode && `${step === 0 ? `${t.title}. ${t.duration}. ` : ""}${progress}. ${title}. ${description}`}
     </div>
     {mode && <section className={styles.guide} lang={locale} aria-labelledby={id} onKeyDown={(event) => {
       if (event.key === "Escape") {
@@ -48,10 +49,13 @@ export function EditorOnboarding({ locale, mode, onClose }: Props) {
       <h3>{title}</h3>
       <p>{description}</p>
       <div className={styles.actions}>
-        <Button tone="quiet" aria-disabled={step === 0} onClick={() => { if (step > 0) setStep(step - 1); }}>
+        <Button tone="quiet" disabled={step === 0} onClick={() => {
+          if (step === 1) next.current?.focus();
+          setStep(step - 1);
+        }}>
           {t.previous}
         </Button>
-        <Button onClick={last ? close : () => setStep(step + 1)}>{last ? t.finish : t.next}</Button>
+        <Button ref={next} onClick={last ? close : () => setStep(step + 1)}>{last ? t.finish : t.next}</Button>
         <Button tone="quiet" onClick={close}>{t.skip}</Button>
       </div>
     </section>}
