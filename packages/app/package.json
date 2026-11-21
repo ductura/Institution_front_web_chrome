@@ -10,7 +10,7 @@
     "start": "next start -p 5173",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test && playwright test --config tests/a11y/playwright.config.ts",
     "test:a11y": "playwright test --config tests/a11y/playwright.config.ts"
   },
   "dependencies": {
