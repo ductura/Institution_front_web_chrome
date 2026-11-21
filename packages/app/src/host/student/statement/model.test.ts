@@ -28,6 +28,15 @@ describe("statement: printout and human help (WEB-1503)", () => {
     expect(helpValid({ kind: "none", text: "" })).toBe(true);
   });
 
+  it("refuses a help kind the server did not offer", async () => {
+    const port = fakeStatementPort();
+    const read = await port.read(ID);
+    if (read.kind !== "ready") throw new Error("unreachable");
+    const narrowed = { ...read, helpKinds: ["proofreading" as const] };
+    expect((await saveHelp(port, ID, narrowed, { kind: "none", text: "" })).kind).toBe("rejected");
+    expect(port.saved).toEqual([]);
+  });
+
   it("is read only after submission: nothing is sent", async () => {
     const port = fakeStatementPort();
     port.submit();

@@ -28,7 +28,7 @@ export function helpValid(help: HumanHelp): boolean {
 
 /** Sends the help only when the view is open for writing and the input is valid. */
 export async function saveHelp(port: StatementPort, id: string, read: StatementRead, help: HumanHelp): Promise<StatementWrite> {
-  if (isReadOnly(read) || !helpValid(help)) return { kind: "rejected" };
+  if (read.kind !== "ready" || isReadOnly(read) || !read.helpKinds.includes(help.kind) || !helpValid(help)) return { kind: "rejected" };
   try { return await port.saveHumanHelp(id, { kind: help.kind, text: help.text.trim() }); }
   catch { return { kind: "unavailable" }; }
 }

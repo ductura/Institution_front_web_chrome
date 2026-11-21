@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Select, TextArea } from "@ductura/ui";
 
 import type { HumanHelpKind, StatementPort, StatementRead } from "../../../../../../src/client/statement.ts";
@@ -17,6 +17,7 @@ export default function StudentStatement({ port, assignmentId }: { port: Stateme
   const [kind, setKind] = useState<HumanHelpKind>("none");
   const [helpText, setHelpText] = useState("");
   const [fileError, setFileError] = useState<string | undefined>();
+  const filled = useRef(false);
   const [notice, setNotice] = useState<{ tone: "status" | "alert"; message: string } | null>(null);
 
   useEffect(() => {
@@ -24,9 +25,15 @@ export default function StudentStatement({ port, assignmentId }: { port: Stateme
     void port.read(assignmentId).then((next) => {
       if (!active) return;
       setRead(next);
-      if (next.kind === "ready" && next.humanHelp) {
-        setKind(next.humanHelp.kind);
-        setHelpText(next.humanHelp.text);
+      // Fill the fields once: a refresh after an upload must not discard unsaved edits.
+      if (next.kind === "ready" && !filled.current) {
+        filled.current = true;
+        if (next.humanHelp) {
+          setKind(next.humanHelp.kind);
+          setHelpText(next.humanHelp.text);
+        } else if (!next.helpKinds.includes("none") && next.helpKinds[0]) {
+          setKind(next.helpKinds[0]);
+        }
       }
     }).catch(() => { if (active) setRead({ kind: "unavailable" }); });
     return () => { active = false; };
@@ -67,7 +74,11 @@ export default function StudentStatement({ port, assignmentId }: { port: Stateme
       <p>{read.statementText}</p>
       <Select label={text.helpLegend} disabled={locked} value={kind}
         options={read.helpKinds.map((k) => ({ value: k, label: text.helpKinds[k] }))}
-        onChange={(event) => setKind(event.target.value as HumanHelpKind)} />
+        onChange={(event) => {
+          const next = event.target.value as HumanHelpKind;
+          setKind(next);
+          if (next === "none") setHelpText("");
+        }} />
       {kind !== "none" && (
         <TextArea label={text.helpText} readOnly={locked} value={helpText} onChange={(event) => setHelpText(event.target.value)} />
       )}
