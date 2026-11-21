@@ -3158,5 +3158,194 @@
         "requestId": "00000000-0000-4000-8000-000000190604"
       }
     }
+  },
+  {
+    "route": "mentorship.request-withdraw.post",
+    "name": "withdrawn",
+    "request": {
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-studenta-mentorstvo-0001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin"
+      },
+      "params": {
+        "requestId": "00000000-0000-4000-8000-0000000014a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "requestId": "00000000-0000-4000-8000-0000000014a1",
+        "state": "withdrawn"
+      }
+    }
+  },
+  {
+    "route": "mentorship.requests.post",
+    "name": "requested",
+    "request": {
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-studenta-mentorstvo-0001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "teacherId": "00000000-0000-4000-8000-0000000014c1",
+        "workType": "bachelor_thesis"
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "requestId": "00000000-0000-4000-8000-0000000014a1",
+        "state": "requested"
+      }
+    }
+  },
+  {
+    "route": "mentorship.student-mentor-candidates.get",
+    "name": "candidates",
+    "request": {
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-studenta-00000000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "candidates": [
+          {
+            "teacherId": "00000000-0000-4000-8000-000000001414",
+            "name": {
+              "givenName": "Vesna",
+              "familyName": "Izmišljena"
+            },
+            "department": null
+          },
+          {
+            "teacherId": "00000000-0000-4000-8000-000000001415",
+            "name": null,
+            "department": null
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "mentorship.student-mentor-candidates.get",
+    "name": "no-candidates",
+    "request": {
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-studenta-00000000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "candidates": []
+      }
+    }
+  },
+  {
+    "route": "mentorship.student-requests.get",
+    "name": "own-requests",
+    "request": {
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-studenta-00000000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "requests": [
+          {
+            "requestId": "00000000-0000-4000-8000-000000001421",
+            "teacherId": "00000000-0000-4000-8000-000000001414",
+            "teacherName": {
+              "givenName": "Vesna",
+              "familyName": "Izmišljena"
+            },
+            "workType": "master_thesis",
+            "requestedAt": "2027-02-03T10:00:00.000Z",
+            "state": "requested",
+            "endedAt": null,
+            "mentorshipId": null
+          },
+          {
+            "requestId": "00000000-0000-4000-8000-000000001422",
+            "teacherId": "00000000-0000-4000-8000-000000001415",
+            "teacherName": null,
+            "workType": "bachelor_thesis",
+            "requestedAt": "2027-01-20T09:30:00.000Z",
+            "state": "approved",
+            "endedAt": "2027-01-22T08:00:00.000Z",
+            "mentorshipId": "00000000-0000-4000-8000-000000001431"
+          },
+          {
+            "requestId": "00000000-0000-4000-8000-000000001423",
+            "teacherId": "00000000-0000-4000-8000-000000001414",
+            "teacherName": {
+              "givenName": "Vesna",
+              "familyName": "Izmišljena"
+            },
+            "workType": "bachelor_thesis",
+            "requestedAt": "2027-01-10T12:00:00.000Z",
+            "state": "declined",
+            "endedAt": "2027-01-12T12:00:00.000Z",
+            "mentorshipId": null
+          },
+          {
+            "requestId": "00000000-0000-4000-8000-000000001424",
+            "teacherId": "00000000-0000-4000-8000-000000001415",
+            "teacherName": null,
+            "workType": "bachelor_thesis",
+            "requestedAt": "2027-01-05T12:00:00.000Z",
+            "state": "withdrawn",
+            "endedAt": "2027-01-06T12:00:00.000Z",
+            "mentorshipId": null
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "mentorship.student-requests.get",
+    "name": "no-requests",
+    "request": {
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-studenta-00000000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "requests": []
+      }
+    }
   }
 ]
