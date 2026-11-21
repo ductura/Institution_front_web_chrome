@@ -1,0 +1,13 @@
+/* Use of today's assistant limit (s16-bud, B1 to B6): a share, never money. */
+.budget { display: grid; gap: 8px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.count { font-weight: 600; color: var(--ink); }
+.bar { height: 8px; overflow: hidden; background: var(--rule-2); border-radius: 4px; }
+.fill { display: block; height: 100%; background: var(--accent); }
+.bar[data-band="near"] .fill, .bar[data-band="full"] .fill { background: var(--error); }
+.note { margin: 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.alert { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--error); background: var(--error-soft); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.meta { margin: 0; font-size: 12.5px; color: var(--ink-3); overflow-wrap: anywhere; }
+.skel { height: 14px; width: 60%; background: var(--rule-2); border-radius: 4px; }
+.skel[data-line="bar"] { height: 8px; width: 100%; }
+@media (prefers-reduced-motion: no-preference) { .fill { transition: width 200ms ease; } }
