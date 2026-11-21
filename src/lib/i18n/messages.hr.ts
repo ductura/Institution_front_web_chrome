@@ -2495,3 +2495,31 @@ export const editorHelpHr = {
   start: "Počni pisati",
   close: "Zatvori",
 } as const;
+
+/**
+ * WEB-1220: the entry-method share on both submission screens, the same words
+ * for the student and the teacher. Provisional until the SRV-1220 contract
+ * proposal is approved.
+ */
+export const provenanceShareHr = {
+  title: "Način unosa teksta",
+  notice: "Prikazuje samo kako je tekst unesen. Ne pokazuje tko je autor teksta.",
+  categories: {
+    written: "napisano u Ducturi",
+    ai_transferred: "preneseno iz AI pomoćnika",
+    pasted: "zalijepljeno",
+    imported: "uvezeno",
+    unattributed: "bez zabilježenog načina unosa",
+  },
+  lessThanOne: "manje od 1 %",
+  empty: "U predanoj verziji nema teksta.",
+  textHeading: "Tekst predane verzije",
+  matchLegend: "Označeno: podudara se s odgovorom AI pomoćnika.",
+  noMarks: "U tekstu nema označenih dijelova.",
+  loading: "Učitavam zapis o načinu unosa.",
+  pending: "Zapis se još izračunava. Predaja je zaprimljena kao i inače.",
+  none: "Za ovu predaju nema zapisa o načinu unosa.",
+  disabled: "Zapis o načinu unosa nije uključen za ovaj zadatak.",
+  error: "Zapis o načinu unosa trenutačno nije moguće prikazati.",
+  retry: "Pokušaj ponovno",
+} as const;

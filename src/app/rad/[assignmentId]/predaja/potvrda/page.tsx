@@ -4,8 +4,10 @@ import { notFound, redirect } from "next/navigation";
 
 import { signInHref } from "../../../../../client/api";
 import { serverApi } from "../../../../../client/server";
+import { screenProvenance } from "../../../../../client/provenance-fake";
 import { readSubmissionState, type LocalCall, type SubmissionRead } from "../../../../../client/submission";
 import { assignmentIdOf, editorWorkRead } from "../../../../../components/editor/EditorPage.read";
+import { ProvenancePanel, readProvenance } from "../../../../../components/predaja/ProvenancePanel";
 import { ReceiptPanel, studentReceiptRead } from "../../../../../components/predaja/ReceiptPanel";
 import RoleShell from "../../../../../components/shell/RoleShell";
 import { messagesHr as t } from "../../../../../lib/i18n/messages.hr";
@@ -26,6 +28,12 @@ const UNREACHED = { ok: false, status: 0 } as const;
 const LOCAL: LocalCall | undefined = undefined;
 
 /**
+ * TODO(ugovor): the entry-method share (WEB-1220) reads the in-memory fake
+ * until the SRV-1220 proposal is approved and its route (SRV-1221) exists.
+ */
+const PROVENANCE = screenProvenance;
+
+/**
  * `/rad/<assignmentId>/predaja/potvrda`: step 5 of the submission, "Potvrda"
  * (WEB-27, S: E-11). The assignment is checked as on the other steps through
  * src/client with the request's session cookie: signed out → AAI@EduHr
@@ -42,12 +50,13 @@ export default async function ReceiptPage({ params }: { params: Promise<{ assign
   // The Cookie header as the browser sent it: re-serialising the cookies could alter a value.
   const cookie = (await headers()).get("cookie") ?? "";
   const api = serverApi(cookie);
-  const [assignments, work, submission] = await Promise.all([
+  const [assignments, work, submission, provenance] = await Promise.all([
     api("student.assignments.get", NONE).catch(() => UNREACHED),
     api("student.assignment-work.get", NONE).catch(() => UNREACHED),
     LOCAL === undefined
       ? Promise.resolve<SubmissionRead>({ kind: "nepoznato" })
       : readSubmissionState(LOCAL, assignmentId),
+    readProvenance(PROVENANCE, assignmentId),
   ]);
   const read = editorWorkRead(assignmentId, assignments, work);
   if (read.kind === "signedOut" || submission.kind === "session-expired") redirect(signInHref(here));
@@ -61,6 +70,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ assign
         <Steps currentStep={5} />
         <h1>{t.receipt.title}</h1>
         <ReceiptPanel read={receipt} retryHref={here} summaryHref={`${base}/predaja/pregled`} submitHref={`${base}/predaja`} />
+        <ProvenancePanel read={provenance} />
       </div>
     </RoleShell>
   );
