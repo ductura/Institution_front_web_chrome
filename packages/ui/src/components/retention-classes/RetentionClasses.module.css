@@ -1,0 +1,5 @@
+.root { display: grid; gap: 12px; min-width: 0; }
+.title { margin: 0; font-size: 18px; }
+.lead { margin: 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.fail { display: grid; gap: 8px; justify-items: start; }
+.alert { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--ink); background: var(--error-soft); border-radius: var(--radius-control); overflow-wrap: anywhere; }

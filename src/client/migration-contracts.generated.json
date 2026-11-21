@@ -7319,5 +7319,344 @@
         "unavailable"
       ]
     }
+  },
+  "institution.retention.get": {
+    "path": "/api/v1/institution/retention",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the data classes with their retention",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "classes"
+              ],
+              "properties": {
+                "classes": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "classId",
+                      "name",
+                      "retentionDays",
+                      "mode"
+                    ],
+                    "properties": {
+                      "classId": {
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "name": {
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "retentionDays": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 1,
+                            "maximum": 36500
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "mode": {
+                        "anyOf": [
+                          {
+                            "const": "dry_run",
+                            "type": "string"
+                          },
+                          {
+                            "const": "delete",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.legal-holds.get": {
+    "path": "/api/v1/institution/legal-holds",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the active legal holds",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "holds"
+              ],
+              "properties": {
+                "holds": {
+                  "type": "array",
+                  "maxItems": 500,
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "subject",
+                      "caseReference",
+                      "placedAt",
+                      "placedByName",
+                      "own"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                        "type": "string"
+                      },
+                      "subject": {
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "caseReference": {
+                        "minLength": 1,
+                        "maxLength": 100,
+                        "type": "string"
+                      },
+                      "placedAt": {
+                        "format": "date-time",
+                        "maxLength": 24,
+                        "type": "string"
+                      },
+                      "placedByName": {
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "own": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.legal-holds.post": {
+    "path": "/api/v1/institution/legal-holds",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "subject",
+        "caseReference"
+      ],
+      "properties": {
+        "subject": {
+          "minLength": 1,
+          "maxLength": 200,
+          "type": "string"
+        },
+        "caseReference": {
+          "minLength": 1,
+          "maxLength": 100,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the hold is placed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden",
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.legal-hold-release.post": {
+    "path": "/api/v1/institution/legal-holds/{holdId}/release",
+    "method": "POST",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "holdId"
+      ],
+      "properties": {
+        "holdId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "reason"
+      ],
+      "properties": {
+        "reason": {
+          "minLength": 1,
+          "maxLength": 500,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the hold is released",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "releasedAt"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                  "type": "string"
+                },
+                "releasedAt": {
+                  "format": "date-time",
+                  "maxLength": 24,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden",
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ],
+      "404": [
+        "not_found"
+      ]
+    }
   }
 }

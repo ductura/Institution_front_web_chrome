@@ -311,4 +311,33 @@ export type MigrationOperations = {
     success: { status: 201; body: { "id": string; "versionNo": 1 }; headers: { "cache-control"?: string } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "conflict" | "unavailable";
   };
+  // WEB-1301: provisional contract of data retention and legal holds (no server route yet); replaced by the published one (WEB-07).
+  "institution.retention.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "classes": ({ "classId": string; "name": string; "retentionDays": number | null; "mode": "dry_run" | "delete" })[] }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "unavailable";
+  };
+  "institution.legal-holds.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "holds": ({ "id": string; "subject": string; "caseReference": string; "placedAt": string; "placedByName": string; "own": boolean })[] }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "unavailable";
+  };
+  "institution.legal-holds.post": {
+    params: undefined;
+    query: undefined;
+    body: { "subject": string; "caseReference": string };
+    success: { status: 201; body: { "id": string }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "forbidden" | "invalid_json" | "unsupported_media_type" | "unavailable" | "conflict" | "invalid_input";
+  };
+  "institution.legal-hold-release.post": {
+    params: { "holdId": string };
+    query: undefined;
+    body: { "reason": string };
+    success: { status: 200; body: { "id": string; "releasedAt": string }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "forbidden" | "invalid_json" | "unsupported_media_type" | "unavailable" | "conflict" | "invalid_input" | "not_found";
+  };
 };

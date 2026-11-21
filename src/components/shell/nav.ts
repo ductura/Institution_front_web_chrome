@@ -44,6 +44,8 @@ const nav = (t: Messages): Record<ShellRole, readonly NavItem[]> => ({
     { href: "/ustanova/kolegiji", label: t.shell.nav.institutionCourses },
     // DAN-590 (A-04): the faculty rule versions, read only.
     { href: "/ustanova/pravila", label: t.shell.nav.facultyRules },
+    // WEB-1301 (A-05): the data classes and the legal holds.
+    { href: "/ustanova/cuvanje", label: t.shell.nav.dataRetention },
   ],
 });
 

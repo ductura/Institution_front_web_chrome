@@ -53,4 +53,5 @@ export const SCREENS: readonly Screen[] = [
   { name: "administrator: kolegiji", path: "/ustanova/kolegiji", role: "institution_admin" },
   { name: "administrator: korisnici", path: "/ustanova/korisnici", role: "institution_admin" },
   { name: "administrator: pravila", path: "/ustanova/pravila", role: "institution_admin" },
+  { name: "administrator: čuvanje podataka", path: "/ustanova/cuvanje", role: "institution_admin" },
 ];
