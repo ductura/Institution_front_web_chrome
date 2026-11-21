@@ -1,6 +1,6 @@
 import {
   AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
+  EditorOnboarding, EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutsDialog,
   Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup,
 } from "@ductura/ui";
@@ -11,12 +11,13 @@ import type { OverviewRow } from "../../src/client/teacher-reads";
 import { BeforeSubmitView, type BeforeSubmitViewProps } from "../../src/components/predaja/BeforeSubmit.tsx";
 import { DeclarationView, type DeclarationViewProps, type RecordedSummary } from "../../src/components/predaja/Declaration.tsx";
 import type { SubmissionNote, SubmissionReceipt } from "../../src/client/submission.ts";
+import { VECTOR_9_1 } from "../../src/client/provenance-fake.ts";
 import { WorkspaceTopBarView } from "../../src/components/editor/WorkspaceTopBar.tsx";
 import { MentorshipRequestsView } from "../../src/components/teacher/MentorshipRequests.tsx";
 import type { ProcessSummaryV1 } from "../../src/components/summary/ProcessSummaryView.tsx";
 import {
   AppShell, AssignmentOverview, CourseStudents, EmptyHome, LiveWorkFrame, MentoredWorks, MentorshipRequests, MyAssignments,
-  NoteDialog, OutlinePanel, ReceiptPanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses, VerificationForm,
+  NoteDialog, OutlinePanel, ProvenancePanel, ReceiptPanel, StudentHome, SubmissionView, SubmitDialog, TeacherCourses, VerificationForm,
   type AssignmentSubmission, type LiveWorkFrameData, type ReceiptRead, type SubmissionViewProps, type MentoredWork, type MyCourse, type OutlineRow, type RequestsRead,
   type TeacherCourse,
 } from "../../src/components/index.ts";
@@ -268,6 +269,13 @@ export const ENTRIES = {
     greška: () => <p role="alert">Alati se nisu učitali.</p>,
     puno: () => <EditorToolbar groups={EDITOR_GROUPS} />,
     onemogućeno: () => <EditorToolbar groups={EDITOR_GROUPS.map((g) => ({ ...g, actions: g.actions.map((a) => ({ ...a, disabled: true })) }))} />,
+  },
+  EditorOnboarding: {
+    prazno: () => <p>Vodič je zatvoren.</p>,
+    učitavanje: () => <RouteLoading label="Učitavanje postavke vodiča…" />,
+    greška: () => <p>Vodič je dostupan iz izbornika Pomoć.</p>,
+    puno: () => <EditorOnboarding locale="hr" mode="automatic" onClose={nothing} />,
+    onemogućeno: () => <Button disabled>Prvi koraci</Button>,
   },
   EditorOutline: {
     prazno: () => <EditorOutline entries={[]} onSelect={nothing} />,
@@ -1031,6 +1039,15 @@ export const SCREEN_ENTRIES = {
     greška: () => receiptPanel({ kind: "error" }),
     puno: () => receiptPanel({ kind: "potvrdeno", receipt: signedReceipt }),
     onemogućeno: () => receiptPanel({ kind: "ceka", revision: 7, requestedAt: "2026-11-19T13:05:00.000000Z" }),
+  },
+  // WEB-1220: "učitavanje" is the share still being computed ("pending"); the view's own
+  // "loading" belongs to the screen, which reads before it renders.
+  ProvenancePanel: {
+    prazno: () => <ProvenancePanel read={{ kind: "none" }} />,
+    učitavanje: () => <ProvenancePanel read={{ kind: "pending" }} />,
+    greška: () => <ProvenancePanel read={{ kind: "error" }} />,
+    puno: () => <ProvenancePanel read={VECTOR_9_1} />,
+    onemogućeno: () => <ProvenancePanel read={{ kind: "disabled" }} />,
   },
   VerificationForm: {
     prazno: () => <VerificationForm state={{ kind: "idle" }} onChange={nothing} onVerify={nothing} />,

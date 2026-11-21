@@ -44,6 +44,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
         json: access === 200 ? { access: "allowed", scope: "a".repeat(64) }
           : { error: access === 401 ? "unauthorized" : "unavailable" } });
       case "/api/v1/teacher/courses": return route.fulfill({ json: { courses: [] } });
+      // WEB-1804: the host reads the saved interface language once signed in; none is saved here.
+      case "/api/v1/profile/interface-locale": return route.fulfill({ json: { locale: null } });
       case "/api/v1/auth/login": return route.fulfill({ contentType: "text/html", body: "<p>Lažni AAI@EduHr</p>" });
       case `/api/v1/live/${documentId}`: return route.fulfill({
         contentType: "application/json", body: snapshot, headers: { etag },

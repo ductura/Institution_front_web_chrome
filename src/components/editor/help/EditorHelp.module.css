@@ -36,11 +36,6 @@
   font-weight: 600;
 }
 
-.step h3 {
-  margin: 6px 0;
-  font-size: 14px;
-}
-
 .toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

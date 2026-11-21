@@ -3,6 +3,7 @@ import type { Command } from "@ductura/ui";
 import { numberedHeadings } from "@/editor";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
+import { requestFocusMode } from "../layout-prefs/focus-mode";
 import { BLOCK_STYLES, stateOf, TOOLS } from "../EditorToolbarFor";
 import { convertBlock, copyText, insertHole } from "../toolbar-menu";
 import { editorCommandsHr as text } from "./messages.hr";
@@ -32,7 +33,7 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
     ...(["cite", "newSource", "table", "image", "footnote", "xref", "phrase"] as const)
       .map((key) => action(key, t.toolbar.insertItems[key])),
     action("comment", text.comment),
-    action("focus", text.focus, undefined, "Ctrl+."),
+    action("focus", text.focus, () => requestFocusMode(), "Ctrl+."),
     action("outline", text.outline, undefined, "Ctrl+\\"),
     action("docx", t.toolbar.exportItems.docx),
     action("print", t.toolbar.exportItems.print),

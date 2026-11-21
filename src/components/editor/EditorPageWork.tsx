@@ -106,12 +106,14 @@ export default function EditorPageWork({
   title,
   topBar,
   length,
+  sessionControls,
 }: {
   assignmentId: string;
   course: string;
   title: string;
   topBar?: ReactNode;
   length?: ComponentProps<typeof StatusBar>["length"];
+  sessionControls?: (work: Extract<OpenRead, { kind: "ready" }>) => ReactNode;
 }) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
@@ -134,13 +136,14 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} />
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} />
+        {sessionControls?.(read)}
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -149,6 +152,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   documentId: string;
   scope: string;
   session: SessionMark;
+  saveSummary: boolean;
 }) {
   const editor = useLocalEditor();
   const signedOut = useLocalSignedOut();
@@ -163,7 +167,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         <EditorToolbar workPartsKey={`ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`} />
         <EditorHelpMenu onSelect={setView} />
       </div></EditorCommands>}
-      status={<StatusBarLive evidence length={length} />}
+      status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
       rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} />,
         comments: <CommentPanel documentId={documentId} session={session} />,
         assistant: <AssistantComingSoonCard /> }}

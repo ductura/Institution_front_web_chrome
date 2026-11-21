@@ -2472,14 +2472,6 @@ export const editorHelpHr = {
     cmt: ["Komentari u tekstu", "Kad su isključeni, ostaju u kartici Komentari."],
   },
   inText: "u tekstu: {count}",
-  onboarding: "Prvi koraci",
-  onboardingStep: "{step} od {total}",
-  onboardingHint: "Prvi koraci su u izborniku Prikaz, ako ih želite pogledati.",
-  steps: [
-    ["Navod s @", "Upišite @ i početak prezimena autora. Ductura ponudi izvore iz literature, a Enter umeće navod."],
-    ["Naredbe s /", "Upišite / za tablicu, sliku, fusnotu, frazu ili oznaku Za provjeru na mjestu kojem ćete se vratiti."],
-    ["Pomoć u tekstu", "U izborniku Prikaz birate koliko Vam Ductura pomaže u tekstu, tamni ili bijeli list i stil citiranja."],
-  ],
   firstSentence: "Prije prve rečenice",
   due: "Rok {date}",
   length: "opseg {min} do {max} riječi",
@@ -2490,8 +2482,33 @@ export const editorHelpHr = {
     ["Što vidi nastavnik", "Nastavnik zadatka vidi tekst spremljen na poslužitelju, komentare, povijest verzija i isti sažetak procesa koji vidite i Vi."],
     ["Što se ne bilježi", "Pojedinačni pritisci tipki i ritam pisanja."],
   ],
-  skip: "Preskoči",
-  next: "Dalje",
-  start: "Počni pisati",
   close: "Zatvori",
+} as const;
+
+/**
+ * WEB-1220: the entry-method share on both submission screens, the same words
+ * for the student and the teacher. Provisional until the SRV-1220 contract
+ * proposal is approved.
+ */
+export const provenanceShareHr = {
+  title: "Način unosa teksta",
+  notice: "Prikazuje samo kako je tekst unesen. Ne pokazuje tko je autor teksta.",
+  categories: {
+    written: "napisano u Ducturi",
+    ai_transferred: "preneseno iz AI pomoćnika",
+    pasted: "zalijepljeno",
+    imported: "uvezeno",
+    unattributed: "bez zabilježenog načina unosa",
+  },
+  lessThanOne: "manje od 1 %",
+  empty: "U predanoj verziji nema teksta.",
+  textHeading: "Tekst predane verzije",
+  matchLegend: "Označeno: podudara se s odgovorom AI pomoćnika.",
+  noMarks: "U tekstu nema označenih dijelova.",
+  loading: "Učitavam zapis o načinu unosa.",
+  pending: "Zapis se još izračunava. Predaja je zaprimljena kao i inače.",
+  none: "Za ovu predaju nema zapisa o načinu unosa.",
+  disabled: "Zapis o načinu unosa nije uključen za ovaj zadatak.",
+  error: "Zapis o načinu unosa trenutačno nije moguće prikazati.",
+  retry: "Pokušaj ponovno",
 } as const;

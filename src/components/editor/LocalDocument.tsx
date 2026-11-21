@@ -62,6 +62,7 @@ import {
   editorSignOutPlan, planAfterDiscard, readLogoutHold, unsavedAfterSettle, untilLoaded, withinHoldLimit, type HoldRead,
 } from "@/client/logout-hold";
 import { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
+import { CroatianQuotes } from "../../../packages/editor-core/src/typography/croatian-quotes";
 import type { SaverFailure } from "@/lib/journal/local-document-saver";
 
 import {
@@ -310,7 +311,8 @@ export function LocalDocumentProvider({
     // caret in the editor state at once, never after the next letter (DAN-247).
     // The source observer's priority puts it before ArrowCollapse's keydown.
     // ChapterNumbers: heading numbers as decorations, never text (DAN-395).
-    extensions: [...createEditorExtensions(t.editor.placeholder), StorableInput, ArrowCollapse, ChapterNumbers, observer.extension],
+    // CroatianQuotes: a typed straight quote becomes „ ” or ‚ ’ (WEB-1605).
+    extensions: [...createEditorExtensions(t.editor.placeholder), StorableInput, ArrowCollapse, ChapterNumbers, CroatianQuotes, observer.extension],
     editable: false,
     immediatelyRender: false,
     injectCSS: false, // app/prosemirror.css (DAN-489)
@@ -668,7 +670,8 @@ export function LocalDocumentProvider({
     const store = browserMarkStore();
     // Taken now: a session that becomes current meanwhile stays (#1444).
     const own = markTag ?? currentSession(store)?.tag ?? null;
-    const reached = await postLogout();
+    if (session && hasEnded(store, session)) return false;
+    const reached = await postLogout().catch(() => false);
     // Ended here either way; without an answer nothing calls the route again.
     const ended = endAfterLogout(store, own);
     for (const tag of ended) channelRef.current?.postMessage(tag);
@@ -678,7 +681,7 @@ export function LocalDocumentProvider({
     }
     sheetOwnerRef.current = null;
     // Unconfirmed work stays for this person's next sign-in (D-118).
-    await (locked ? locked.clear() : clearWithoutEditor(scope, documentId)).catch(() => undefined);
+    await withinHoldLimit(() => locked ? locked.clear() : clearWithoutEditor(scope, documentId), undefined);
     if (reached) return true;
     if (stopRef.current) stopRef.current();
     else setPhase("signed-out");
@@ -900,12 +903,27 @@ export function useLocalStatus(): { loading: boolean; words: number } {
  * session can always be ended (I1). Without script the form posts to the
  * logout route directly, which ends it as well.
  */
-export function LocalLogout() {
-  const { editor, phase, prepareSignOut, staySignedIn, signOut, discardAfterSubmission } = useLocalDocument();
+export function LocalLogout({
+  buttonClassName = "btn",
+  action = "/api/auth/logout",
+  afterSignOut = followLogoutNatively,
+  keepCopy,
+  unsavedWarning,
+  renderTrigger = (trigger) => trigger,
+}: {
+  buttonClassName?: string;
+  action?: string;
+  afterSignOut?: () => void;
+  keepCopy?: (text: string | null) => boolean;
+  unsavedWarning?: string;
+  renderTrigger?: (trigger: ReactNode) => ReactNode;
+} = {}) {
+  const { editor, phase, prepareSignOut, staySignedIn, signOut, discardAfterSubmission, unconfirmedNow } = useLocalDocument();
   const [preparing, setPreparing] = useState(false);
   const [plan, setPlan] = useState<LogoutPlan | null>(null);
   const [working, setWorking] = useState(false);
   const [signedOutHere, setSignedOutHere] = useState(false);
+  const [keptOnDevice, setKeptOnDevice] = useState<boolean>();
   const preparedRef = useRef<LogoutPlan>({ unsaved: false, pending: null });
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -915,7 +933,10 @@ export function LocalLogout() {
     setPreparing(true);
     void prepareSignOut()
       // Writing has stopped either way; an unknown count shows no number.
-      .catch((): LogoutPlan => ({ unsaved: false, pending: null }))
+      .catch((): LogoutPlan => ({
+        unsaved: Boolean(keepCopy && editor && !editor.isDestroyed && !editor.isEmpty && unconfirmedNow()),
+        pending: null,
+      }))
       .then((next) => {
         // The page's session has ended: `/` renders under the browser's cookie.
         if (next === "leave") {
@@ -925,13 +946,27 @@ export function LocalLogout() {
         setPreparing(false);
         preparedRef.current = next;
         // Nothing at all stays on this device: no dialog (O1, #476 c.6396707923).
-        if (nothingHeld(next)) confirm();
+        if (nothingHeld(next)) confirm(next);
         else setPlan(next);
       });
   };
-  const confirm = () => {
+  const confirm = (next = preparedRef.current) => {
     if (working) return;
     setWorking(true);
+    if (keepCopy) {
+      let kept = Boolean(next.copies || next.pending || next.kept);
+      try {
+        const copySaved = next.unsaved && editor && !editor.isDestroyed &&
+          keepCopy(editor.getText({ blockSeparator: "\n\n" }));
+        if (!copySaved && kept && phase === "ready" && unconfirmedNow()) {
+          keepCopy(null);
+        }
+        kept = kept || Boolean(copySaved);
+      } catch {
+        // A failure to keep the extra copy never holds the sign-out.
+      }
+      setKeptOnDevice(kept);
+    }
     // Without the server's answer the dialog says it ended here (D-118).
     const failure = () => {
       setPlan((open) => open ?? preparedRef.current);
@@ -939,7 +974,7 @@ export function LocalLogout() {
       setWorking(false);
     };
     void signOut().then((done) => {
-      if (done) followLogoutNatively();
+      if (done) afterSignOut();
       else failure();
     }, failure);
   };
@@ -959,17 +994,19 @@ export function LocalLogout() {
   }, [plan]);
   return (
     <>
-      <form method="post" action="/api/auth/logout" onSubmit={onSubmit}>
-        <button ref={buttonRef} type="submit" className="btn" disabled={preparing || working}>
+      {renderTrigger(<form method="post" action={action} onSubmit={onSubmit}>
+        <button ref={buttonRef} type="submit" className={buttonClassName} disabled={preparing || working || signedOutHere}>
           {preparing || working ? t.auth.loggingOut : t.auth.logout}
         </button>
-      </form>
+      </form>)}
       {plan ? (
         <LogoutDialog
           plan={plan}
           working={working}
           signedOutHere={signedOutHere}
-          onConfirm={confirm}
+          keptOnDevice={keptOnDevice}
+          unsavedWarning={unsavedWarning}
+          onConfirm={() => confirm(plan)}
           onStay={stay}
           copies={plan.copies}
           onExport={() => {
