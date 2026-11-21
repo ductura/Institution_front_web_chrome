@@ -1,3 +1,5 @@
+import { browserTransport, SERVER_PREFIX } from "./api";
+
 export type WorkDocxResult =
   | { ok: true; blob: Blob; snapshotSha256: string }
   | { ok: false; reason: "notFound" | "invalidRequest" | "downloadFailed" };
@@ -8,13 +10,15 @@ export async function requestWorkDocx(
   documentId: string,
   versionId: string,
   signal: AbortSignal,
-  request: typeof fetch = fetch,
+  request = browserTransport,
 ): Promise<WorkDocxResult> {
   const query = new URLSearchParams({ format: "docx", versionId });
-  const response = await request(`/api/v1/works/${encodeURIComponent(documentId)}/export?${query}`, {
+  const response = await request(`${SERVER_PREFIX}works/${encodeURIComponent(documentId)}/export?${query}`, {
     method: "GET",
     headers: { Accept: DOCX },
     credentials: "same-origin",
+    cache: "no-store",
+    redirect: "error",
     signal,
   });
 
