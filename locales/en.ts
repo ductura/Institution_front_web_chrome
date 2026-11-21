@@ -53,6 +53,8 @@ const en = {
       institutionCourses: "Courses",
       // DAN-590 (A-04): the faculty rule versions, /ustanova/pravila.
       facultyRules: "Faculty rules",
+      // WEB-1301 (A-05): data classes and legal holds, /ustanova/cuvanje.
+      dataRetention: "Data retention",
     },
     role: { teacher: "Teacher", student: "Student", admin: "Administrator" },
     demoNote: "No real personal data.",
