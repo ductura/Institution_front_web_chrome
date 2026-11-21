@@ -1,0 +1,15 @@
+/* Transfer into the work (s16, assist2): the comparison shows the paragraph before and after. */
+.transfer { display: grid; gap: 8px; min-width: 0; }
+.status { margin: 0; font-size: 13.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.alert { margin: 0; padding: 8px 10px; font-size: 13.5px; color: var(--error); background: var(--error-soft); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.meta { margin: 0; font-size: 12.5px; color: var(--ink-3); overflow-wrap: anywhere; }
+.meta:empty { display: none; }
+.compare { display: grid; gap: 8px; padding: 12px; background: var(--well); border: 1px solid var(--rule-2); border-radius: var(--radius-control); min-width: 0; }
+.title { margin: 0; font-size: 14px; font-weight: 600; }
+.title:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: 2px; }
+.side { display: grid; gap: 4px; margin: 0; min-width: 0; }
+.label { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--ink-3); }
+.text { margin: 0; font-size: 13.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.removed { background: var(--error-soft); text-decoration: line-through; }
+.added { background: var(--accent-soft); text-decoration: underline; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }

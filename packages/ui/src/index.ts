@@ -54,3 +54,4 @@ export {
   type AssistantProviderErrorLabels, type AssistantProviderErrorProps, type AssistantStateAction, type AssistantStateCommonProps,
   type AssistantUnavailableLabels, type AssistantUnavailableProps,
 } from "./components/assistant-states";
+export { AssistantTransfer, type AssistantTransferLabels, type AssistantTransferProps } from "./components/assistant-transfer";
