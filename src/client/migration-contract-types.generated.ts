@@ -280,4 +280,12 @@ export type MigrationOperations = {
     success: { status: 200; body: { "notes": ({ "id": string; "quote": string | null; "page": string | null; "note": string | null })[] }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "unavailable";
   };
+  // SRV-1906, Institution_server f31edd7 (API 1.60.0).
+  "ops.pilot-metrics.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "asOf": string; "minimumGroup": 5; "submissions": { "recorded": 0 | number | null; "notRecorded": 0 | number | null }; "receipts": { "issued": 0 | number | null; "pending": 0 | number | null }; "helpRequests": { "total": 0 | number | null; "saveProblems": 0 | number | null }; "receiptTime": { "p50Ms": number | null; "p95Ms": number | null } }; headers: {  } };
+    errorCode: "unauthenticated" | "forbidden" | "invalid_input" | "unavailable";
+  };
 };
