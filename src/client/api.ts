@@ -681,3 +681,19 @@ export function startWorkCall(transport: typeof fetch = browserTransport): Start
     }
   };
 }
+
+/**
+ * WEB-1304 (plan M7.10): the student's portable record, GET /api/v1/student/submissions/{id}/portable-record.
+ * Not in the pinned contract yet (TODO(ugovor)) and the answer is a file, not JSON, so createApi
+ * does not know it; kept here, the only file allowed an API URL. The id is a path segment, encoded;
+ * the caller (client/portable-record.ts) reads the answer.
+ */
+export type PortableRecordTransport = (submissionId: string) => Promise<Response>;
+
+export function portableRecordCall(transport: typeof fetch = browserTransport, baseUrl: string = globalThis.location.origin): PortableRecordTransport {
+  return (submissionId) => transport(new URL(`/api/v1/student/submissions/${encodeURIComponent(submissionId)}/portable-record`, baseUrl), {
+    method: "GET",
+    redirect: "manual",
+    credentials: "same-origin",
+  });
+}
