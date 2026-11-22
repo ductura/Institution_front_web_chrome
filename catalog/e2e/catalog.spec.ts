@@ -128,7 +128,7 @@ for (const theme of THEMES) {
 
 // axe over the whole catalogue is CPU-bound. Since #447 (fullyParallel, 4 workers
 // on a 4-core runner) all six ran at once beside the screenshot tests and hit the
-// 60 s limit. They run one after another in one worker, as before #447; the rules
+// 60 s limit. They run one after another in one worker, as before #447, with a 180 s limit; the rules
 // and the scope (the whole page, every theme and width) are unchanged.
 test.describe("axe", () => {
   test.describe.configure({ mode: "default" });
@@ -136,7 +136,8 @@ test.describe("axe", () => {
     // 400 px is the width of the left panel's acceptance (DAN-977); the page is checked whole.
     for (const width of [1440, 400, 360]) {
       test(`${theme} shell has no WCAG 2.2 AA violations at ${width} px (axe)`, async ({ page }) => {
-        test.setTimeout(60_000);
+        // Measured on the ui runner with the run serial (#461, run 45072157174): 28 to 64 s per check.
+        test.setTimeout(180_000);
         await open(page, theme, width);
         const started = Date.now();
         const result = await new AxeBuilder({ page })
