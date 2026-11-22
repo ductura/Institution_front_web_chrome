@@ -8,18 +8,18 @@
 }
 .area { min-height: 88px; line-height: var(--lh-ui); resize: vertical; }
 .input::placeholder { color: var(--field-placeholder); opacity: 1; }
-.input[aria-invalid="true"] { border-color: var(--field-invalid); border-width: var(--field-invalid-width); }
+.input[aria-invalid="true"] { border-color: var(--field-invalid, var(--error)); border-width: var(--field-invalid-width); }
 .input[aria-busy="true"] { cursor: progress; }
 .input:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); border-color: var(--rule-2); }
 .note { margin: 0; color: var(--ink-3); font-size: var(--fs-sm); }
 .note[data-error] {
-  color: var(--err-ink); font-weight: var(--err-weight);
+  color: var(--err-ink, var(--error)); font-weight: var(--err-weight);
   border-left: var(--err-bar) solid var(--warn); padding-left: var(--err-pad);
 }
 
 .check { display: inline-flex; gap: var(--space-2); align-items: center; min-height: var(--target); color: var(--ink); cursor: pointer; }
 .box { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
-.box[aria-invalid="true"] { outline: var(--field-invalid-width) solid var(--field-invalid); outline-offset: 2px; }
+.box[aria-invalid="true"] { outline: var(--field-invalid-width) solid var(--field-invalid, var(--error)); outline-offset: 2px; }
 /* The error mark above is an outline too and outranks the global :focus-visible
    ring, so without this an invalid box looks the same focused or not (WCAG 2.4.7). */
 .box[aria-invalid="true"]:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }

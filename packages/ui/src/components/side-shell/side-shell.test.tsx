@@ -73,6 +73,11 @@ describe("SideShell (the prototypes' shell, VIZ-0)", () => {
     expect(host.querySelector("[data-shell-role]")?.getAttribute("data-shell-role")).toBe("student");
   });
 
+  it("shows the institution's name in the foot when there is one", () => {
+    mount({ context: "Izmišljeni fakultet" });
+    expect(host.querySelector("aside p")?.textContent).toBe("Izmišljeni fakultet");
+  });
+
   it("marks the teacher's frame, which the tokens widen (prototype.css)", () => {
     mount({ role: "teacher" });
     expect(host.querySelector("[data-shell-role]")?.getAttribute("data-shell-role")).toBe("teacher");

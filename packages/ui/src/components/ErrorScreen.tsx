@@ -30,7 +30,7 @@ export function ErrorScreen({ title, body, onRetry, retryLabel, homeLabel, homeH
     h(
       "div",
       { className: styles.card },
-      h("h1", { className: styles.title }, title),
+      h("h1", null, title),
       h("p", { role: onRetry ? "alert" : undefined, className: styles.body }, body),
       h(
         "p",
