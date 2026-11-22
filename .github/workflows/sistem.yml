@@ -10,8 +10,6 @@ on:
       server_ref:
         description: Grana Institution_servera
         default: migracija/kopija-ductus-backend
-  push:
-    branches: ["migracija/kopija-ductus-front"]
 permissions:
   contents: read
 concurrency:
