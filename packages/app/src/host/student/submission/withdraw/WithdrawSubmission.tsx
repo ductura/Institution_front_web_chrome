@@ -18,7 +18,7 @@ function downloadReceipt(receipt: WithdrawalReceipt): void {
   downloadBlob(new Blob([file.content], { type: file.type }), file.filename);
 }
 
-/** TODO(ugovor): the routes are not in the contract yet; createApi answers "client_rejected" and the screen says "unavailable". */
+/** The routes are the server's own (student.submission-withdrawal.get and .post, SRV-2005), served by createApi from the contract excerpt. */
 const defaultCall = () => createApi() as unknown as WithdrawCall;
 
 /**
@@ -111,7 +111,7 @@ function Receipts({ receipts }: { receipts: readonly WithdrawalReceipt[] }) {
         {receipts.map((receipt) => (
           <li key={receipt.withdrawalId} data-testid="withdrawal-receipt">
             {receiptLine(receipt)}{" "}
-            <Button tone="quiet" aria-label={t.downloadFor.replace("{revision}", String(receipt.revision))}
+            <Button tone="quiet" aria-label={receipt.revision === null ? t.downloadForNoRevision : t.downloadFor.replace("{revision}", String(receipt.revision))}
               onClick={() => downloadReceipt(receipt)}>{t.download}</Button>
           </li>
         ))}

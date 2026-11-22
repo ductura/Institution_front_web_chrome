@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { findForbiddenTerms } from "../../../../../../../scripts/forbidden-terms/terms.ts";
-import { ASSIGNMENT, fakeWithdrawServer } from "./fake-port";
+import { ASSIGNMENT, envelopeOf, fakeWithdrawServer } from "./fake-port";
 import { withdrawText } from "./messages.hr";
 import { canWithdraw, readWithdrawalState, receiptFile, receiptLine, withdraw, withdrawNote } from "./model";
 
@@ -31,9 +31,14 @@ describe("withdrawing", () => {
   it("says withdrawn only with the server's signed receipt", async () => {
     const server = fakeWithdrawServer();
     const followup = await withdraw(server.call, ASSIGNMENT);
-    expect(followup).toEqual({ note: { tone: "status", text: withdrawText.withdrawn }, refresh: true, receipt: server.receipts[0] });
+    const stored = server.receipts[0] as (typeof server.receipts)[number];
+    expect(followup).toEqual({
+      note: { tone: "status", text: withdrawText.withdrawn }, refresh: true,
+      receipt: { withdrawalId: stored.withdrawalId, assignmentId: ASSIGNMENT, revision: null, withdrawnAt: stored.withdrawnAt, signature: stored.signature, envelope: envelopeOf(stored) },
+    });
     expect(server.receipts).toHaveLength(1);
-    const unsigned = async () => ({ ok: true as const, status: 200, body: { receipt: { ...server.receipts[0], signature: "" } } });
+    const envelope = envelopeOf(stored);
+    const unsigned = async () => ({ ok: true as const, status: 200, body: { status: "withdrawn", receipt: { ...envelope, signature: { ...envelope.signature, signatureBase64Url: "" } } } });
     expect((await withdraw(unsigned, ASSIGNMENT))?.note.text).toBe(withdrawText.unknown);
   });
 
@@ -44,6 +49,8 @@ describe("withdrawing", () => {
   });
 
   it("names the other failures and hands a lost session back", async () => {
+    const refused = async () => ({ ok: false as const, status: 403, code: "not_allowed" });
+    expect(await withdraw(refused, ASSIGNMENT)).toEqual({ note: { tone: "alert", text: withdrawText.closed }, refresh: true });
     expect(withdrawNote({ kind: "nepoznato" })?.refresh).toBe(false);
     expect(withdrawNote({ kind: "greska", code: "not_found" })).toEqual({ note: { tone: "alert", text: withdrawText.notFound }, refresh: true });
     expect(withdrawNote({ kind: "session-expired" })).toBeNull();
@@ -61,6 +68,12 @@ describe("downloadable receipt", () => {
     expect(file.filename).toBe("potvrda-povlacenja-00000000-r7-00000000.json");
     expect(JSON.parse(file.content)).toEqual(receipt);
     expect(receiptLine(receipt)).toContain("Revizija 7");
+    // The answer to the withdrawal itself carries the signed envelope and no revision.
+    const followup = await withdraw(fakeWithdrawServer().call, ASSIGNMENT);
+    const kept = followup?.receipt;
+    expect(kept?.revision).toBeNull();
+    expect(kept !== undefined && receiptLine(kept)).toMatch(/^Povučeno /);
+    expect(kept !== undefined && JSON.parse(receiptFile(kept).content).payload.receiptSchema).toBe("ductus-submission-withdrawal-receipt-v1");
   });
 
   it("holds no forbidden term in its copy", () => {

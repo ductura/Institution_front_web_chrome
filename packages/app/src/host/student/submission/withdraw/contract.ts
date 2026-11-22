@@ -1,23 +1,51 @@
 // Withdrawal of a submission, the student's side (WEB-1903; plan P-D3).
-// TODO(ugovor): the routes are not in @ductura/contracts yet. These are the smallest shapes the
-// plan gives: the caller passes the transport and createApi answers "client_rejected" to them, so
-// the screen says "unavailable", never "nothing to withdraw". Every state is the server's answer
-// (B-6): the button exists only while the server's `withdrawable` is true, and the client never
+// WEB-2003: the operations are the server's own (SRV-2005): student.submission-withdrawal.get and
+// .post, from the contract excerpt. The caller passes the transport, so a rejected call reads as
+// "unavailable", never "nothing to withdraw". Every state is the server's answer (B-6): the button exists only while the server's `withdrawable` is true, and the client never
 // compares a time with a deadline.
 import { matchesSchema, type Schema } from "../../../../../../../src/client/schema-check";
 
 export type WithdrawCall = (
-  id: "student.submission-withdrawal.get" | "student.submission-withdraw.post",
+  id: "student.submission-withdrawal.get" | "student.submission-withdrawal.post",
   input: { readonly params?: Readonly<Record<string, string>>; readonly body?: unknown },
 ) => Promise<{ ok: true; status: number; body: unknown } | { ok: false; status: number; code: string }>;
 
-/** The signed confirmation of one withdrawal; it is what the student downloads. */
+/** The server's signed envelope of one withdrawal (ductus-submission-withdrawal-receipt-v1). */
+export type SignedWithdrawalReceipt = {
+  readonly payload: {
+    readonly receiptSchema: "ductus-submission-withdrawal-receipt-v1";
+    readonly withdrawalId: string;
+    readonly submissionId: string;
+    readonly submissionReceiptSha256: string;
+    readonly evidenceDomainId: string;
+    readonly principalId: string;
+    readonly assignmentId: string;
+    readonly withdrawnAt: string;
+    readonly dueAt: string;
+    readonly signedAt: string;
+  };
+  readonly payloadDigestSha256: string;
+  readonly signature: {
+    readonly algorithm: "Ed25519";
+    readonly keyId: string;
+    readonly keyVersion: string;
+    readonly signatureEncoding: "raw";
+    readonly signatureBase64Url: string;
+  };
+};
+
+/**
+ * One withdrawal as the student sees it. The list read gives a summary with the revision; the
+ * answer to the withdrawal itself gives the full signed envelope, which carries no revision
+ * (`revision` is null then) and is what the student downloads when it is present.
+ */
 export type WithdrawalReceipt = {
   readonly withdrawalId: string;
   readonly assignmentId: string;
-  readonly revision: number;
+  readonly revision: number | null;
   readonly withdrawnAt: string;
   readonly signature: string;
+  readonly envelope?: SignedWithdrawalReceipt;
 };
 
 export type WithdrawalState = {
@@ -52,7 +80,32 @@ const RECEIPT: Schema = closed({
   signature: { type: "string", minLength: 1 },
 });
 const STATE: Schema = closed({ withdrawable: { type: "boolean" }, receipts: { type: "array", items: RECEIPT } });
-const WITHDRAWN: Schema = closed({ receipt: RECEIPT });
+const SHA: Schema = { type: "string", minLength: 1 };
+const ENVELOPE: Schema = closed({
+  payload: closed({
+    receiptSchema: { const: "ductus-submission-withdrawal-receipt-v1" },
+    withdrawalId: UUID,
+    submissionId: UUID,
+    submissionReceiptSha256: SHA,
+    evidenceDomainId: UUID,
+    principalId: UUID,
+    assignmentId: UUID,
+    withdrawnAt: { type: "string", format: "date-time" },
+    dueAt: { type: "string", format: "date-time" },
+    signedAt: { type: "string", format: "date-time" },
+  }),
+  payloadDigestSha256: SHA,
+  signature: closed({
+    algorithm: { const: "Ed25519" },
+    keyId: SHA,
+    keyVersion: SHA,
+    signatureEncoding: { const: "raw" },
+    signatureBase64Url: SHA,
+  }),
+});
+const WITHDRAWN: Schema = closed({ status: { const: "withdrawn" }, receipt: ENVELOPE });
+/** Server codes that mean the withdrawal is closed: deadline passed, switched off, nothing submitted. */
+const CLOSED_CODES = new Set(["conflict", "not_allowed", "refused", "not_started"]);
 
 export async function readWithdrawalState(call: WithdrawCall, assignmentId: string): Promise<StateRead> {
   if (!matchesSchema(UUID, assignmentId)) return UNKNOWN;
@@ -73,15 +126,17 @@ export async function readWithdrawalState(call: WithdrawCall, assignmentId: stri
 export async function withdrawSubmission(call: WithdrawCall, assignmentId: string): Promise<WithdrawOutcome> {
   if (!matchesSchema(UUID, assignmentId)) return { kind: "greska", code: "invalid" };
   try {
-    const result = await call("student.submission-withdraw.post", { body: { assignmentId } });
+    const result = await call("student.submission-withdrawal.post", { params: { assignmentId } });
     if (result.ok) {
-      if (result.status !== 200 && result.status !== 201) return UNKNOWN;
-      if (!matchesSchema(WITHDRAWN, result.body)) return UNKNOWN;
-      const { receipt } = result.body as { receipt: WithdrawalReceipt };
-      return receipt.assignmentId === assignmentId ? { kind: "povuceno", receipt } : UNKNOWN;
+      if (result.status !== 200 || !matchesSchema(WITHDRAWN, result.body)) return UNKNOWN;
+      const envelope = (result.body as { receipt: SignedWithdrawalReceipt }).receipt;
+      if (envelope.payload.assignmentId !== assignmentId) return UNKNOWN;
+      const { withdrawalId, withdrawnAt } = envelope.payload;
+      const receipt: WithdrawalReceipt = { withdrawalId, assignmentId, revision: null, withdrawnAt, signature: envelope.signature.signatureBase64Url, envelope };
+      return { kind: "povuceno", receipt };
     }
     if (result.status === 401) return { kind: "session-expired" };
-    if (result.status === 409) return { kind: "zakljuceno" };
+    if (result.status === 409 || CLOSED_CODES.has(result.code)) return { kind: "zakljuceno" };
     if (result.status === 404) return { kind: "greska", code: "not_found" };
     if (result.status === 422) return { kind: "greska", code: "invalid" };
     return UNKNOWN;
