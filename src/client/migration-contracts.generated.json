@@ -9151,7 +9151,26 @@
       "additionalProperties": false
     },
     "responses": {
-      "200": {}
+      "200": {
+        "description": "ZIP bytes (application/zip); the contract format has no binary body",
+        "headers": {
+          "content-disposition": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "x-content-sha256": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
     },
     "errors": {
       "401": [
@@ -9320,7 +9339,26 @@
       "additionalProperties": false
     },
     "responses": {
-      "200": {}
+      "200": {
+        "description": "ZIP or PDF bytes; the contract format has no binary body",
+        "headers": {
+          "content-disposition": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "x-content-sha256": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
     },
     "errors": {
       "401": [
