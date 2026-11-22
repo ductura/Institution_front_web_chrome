@@ -50,7 +50,7 @@ describe("byFamilyName (N-16)", () => {
 describe("the row of one work", () => {
   it("says the state in words only", () => {
     expect(stateText(WORKS[0]!)).toBe("U pisanju");
-    expect(stateText(WORKS[1]!)).toBe("Student još nije započeo rad.");
+    expect(stateText(WORKS[1]!)).toBe("Rad nije započet.");
     expect(stateText(WORKS[2]!)).toBe("Predano");
   });
 
@@ -65,7 +65,7 @@ describe("MentoredWorks", () => {
     const shown = text(renderToStaticMarkup(h(MentoredWorks, { works: WORKS })));
     expect(shown).toContain(t.listTitle);
     expect(shown).toContain("Ante Čvorić Naslov 3 Diplomski rad · Predano");
-    expect(shown).toContain(`${t.unnamed} Naslov 2 Završni rad · Student još nije započeo rad.`);
+    expect(shown).toContain(`${t.unnamed} Naslov 2 Završni rad · Rad nije započet.`);
     expect(shown).toContain(t.orderNote);
     expect(shown.indexOf("Ana Crtić")).toBeLessThan(shown.indexOf("Vesna Žbunić"));
   });
@@ -78,7 +78,8 @@ describe("MentoredWorks", () => {
 
   it("says there is no open mentorship when the list is empty, and no order note", () => {
     const shown = text(renderToStaticMarkup(h(MentoredWorks, { works: [] })));
-    expect(shown).toContain(t.empty);
+    expect(shown).toContain("Nemate mentorstava");
+    expect(shown).toContain("Mentorstvo nastaje kad odobrite studentov zahtjev.");
     expect(shown).not.toContain(t.orderNote);
   });
 

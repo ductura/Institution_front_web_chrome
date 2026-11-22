@@ -1,0 +1,41 @@
+// WEB-2134 (par-e-stem): the texts of the quote check and the LaTeX export. The quote texts are the milder
+// wording of INVENTAR §8.5 (owner decision 22. 11.): the check compares letters and says what differs; it
+// never says that a quote "does not agree" with a source.
+export const stemHr = {
+  quote: {
+    title: "Navod prema izvoru",
+    fine: "U redu je ovako",
+    hint: "Doslovni navod mora biti prepisan točno. Usporedba je slovo po slovo i ne razumije smisao.",
+    matchesProof: (page: string | null) => (page === null ? "Tekst navoda podudara se s tekstom u priloženoj potvrdi." : `Tekst navoda podudara se s tekstom u priloženoj potvrdi, str. ${page}.`),
+    matchesNote: "Tekst navoda podudara se s tekstom u Vašoj bilješci uz izvor.",
+    pageDiffers: (proof: string, quoted: string) => `Tekst navoda podudara se s tekstom u priloženoj potvrdi, ali je tamo stranica ${proof}, a u navodu ${quoted}.`,
+    notFound: (where: string) => `Tekst navoda nije pronađen u ${where}. Provjerite jeste li priložili pravu stranicu.`,
+    differs: (where: string, words: string) => `Tekst navoda razlikuje se od teksta u ${where} u riječima: ${words}.`,
+    inProof: "priloženoj potvrdi",
+    inNote: "Vašoj bilješci uz izvor",
+    inEither: "priloženoj potvrdi ni u bilješci uz izvor",
+    whereAt: (near: string) => `U izvoru piše: „${near}”`,
+  },
+  review: {
+    title: "Navodi prema izvoru",
+    empty: "U radu još nema doslovnih navoda s navodom izvora.",
+    allConfirmed: (n: number) => `Potvrđeno: ${n}`,
+    someConfirmed: (n: number, m: number) => `${n} od ${m} potvrđeno`,
+    unchecked: "Bez priložene potvrde ili bilješke, ne može se usporediti.",
+    unavailable: "Usporedba navoda trenutačno nije dostupna.",
+  },
+  latex: {
+    item: "LaTeX (.tex)",
+    note: "Za odsjeke koji ga traže.",
+    untitled: "Rad bez naslova",
+    done: "Preuzet je rad.tex.",
+    failed: "Preuzimanje nije uspjelo.",
+    unavailable: "Preuzimanje nije dostupno u ovom prikazu.",
+    imagesNote: "Slike se ne uključuju u .tex; na njihovu mjestu stoji napomena.",
+    imagePlaceholder: "Ovdje ide slika (nije uključena u izvoz).",
+    bibliography: "Literatura",
+    contents: "Sadržaj",
+    codeCaption: "Ispis",
+    boxes: { definition: "Definicija", theorem: "Teorem", lemma: "Lema", corollary: "Korolar", example: "Primjer", remark: "Napomena", proof: "Dokaz" },
+  },
+} as const;

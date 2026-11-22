@@ -15,17 +15,19 @@ import { anchorForSelection, placeAnchor, placeThreads } from "@/components/teac
 import { ConsultationRecords } from "@/components/teacher/consultation-records/ConsultationRecords";
 import { consultationMessages } from "@/components/teacher/consultation-records/messages.hr";
 import LiveText, { liveStopped, openMarks, useLiveView } from "@/components/teacher/LiveText";
-import LiveWorkFrame, { liveWorkHref, SUMMARY_ANCHOR } from "@/components/teacher/LiveWorkFrame";
+import { liveWorkHref, SUMMARY_ANCHOR } from "@/components/teacher/LiveWorkFrame";
 import RecordLimits from "@/components/teacher/RecordLimits";
 import { selectedRange, selectInBlock } from "@/components/teacher/selection";
 import { SummaryCardBody, useProcessSummary } from "@/components/teacher/SummaryCard";
-import TeacherComments, { useComments } from "@/components/teacher/TeacherComments";
+import { useComments } from "@/components/teacher/TeacherComments";
+import TeacherComments from "../comments/TeacherCommentsPanel";
 import type { TextAnchor } from "@/domain/collaboration";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { hostText } from "../../../text";
 import { useHost } from "../../context";
 import MobileReview from "../mobile-review/MobileReview";
+import WorkFrame from "../n06/WorkFrame";
 import { useTeacherRead } from "../../pages";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
@@ -109,7 +111,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   const textRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<TextAnchor | null>(null);
   const placed = stopped || comments.outcome?.kind !== "ok" ? [] : placeThreads(view.document, comments.outcome.threads);
-  const recordState = summary.outcome?.kind === "ok" ? summary.outcome.summary.recordState : null;
+  const gaps = !stopped && summary.outcome?.kind === "ok" ? summary.outcome.summary.gaps.items : [];
   const receiptHref = `${workHref}${VIEWS.receipt.suffix}`;
   const select = () => {
     const root = textRef.current;
@@ -119,7 +121,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
 
   return (
     <MobileReview><div className="page">
-      <LiveWorkFrame documentId={documentId} frame={null} recordState={stopped ? null : recordState} mentorInAside
+      <WorkFrame documentId={documentId} gaps={gaps}
         text={<>
           {view.connection === "retrying" && view.document === null && <p role="alert">{workText.liveUnavailable}</p>}
           <LiveText view={view} marks={openMarks(placed)} textRef={textRef} onSelect={select} />
