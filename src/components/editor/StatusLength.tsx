@@ -19,7 +19,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { useLocalEditor, useLocalStatus } from "./LocalDocument";
 
 /** Words in the editor's current selection; 0 for a caret or no editor. */
-function useSelectedWords(): number {
+export function useSelectedWords(): number {
   const editor = useLocalEditor();
   const [selected, setSelected] = useState(0);
   useEffect(() => {
