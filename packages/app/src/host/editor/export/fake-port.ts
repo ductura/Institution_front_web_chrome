@@ -1,9 +1,9 @@
 // An in-memory server for the preparation flow (WEB-1803), invented data. Tests only.
-import { pdfDownloadPrefix } from "./contract";
+import { SERVER_PREFIX } from "../../../../../../src/client/api";
 import type { PrepareCalls, Raw } from "./preparation";
 
 export const FILE_ID = "00000000-0000-4000-8000-0000000000f1";
-export const PREFIX = pdfDownloadPrefix("doc-1");
+export const PREFIX = `${SERVER_PREFIX}works/doc-1/exports/`;
 export const BYTES = new TextEncoder().encode("%PDF-1.7 invented test file");
 export const BYTES_SHA = "e19ae5cd0e8d54f6c5b1d1c0cb21ee2b0d01bb4d6dd5d3ff1ca1b83b0bd6b6e9";
 
