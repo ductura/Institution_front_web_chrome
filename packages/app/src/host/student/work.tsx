@@ -33,6 +33,8 @@ import { ReviewCardHost, RevisionActionsHost } from "../editor/work/review/Revie
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
+import { SourcesMention } from "../editor/sources-mention/SourcesMention";
+import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
@@ -107,6 +109,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
+            triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
+            literature={() => <LiteratureList />}
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <ReviewCardHost editor={editor} assignmentId={id} documentId={documentId} />,
               work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
