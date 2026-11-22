@@ -134,8 +134,10 @@
   "Reflect"
  ],
  "packages/app/next.config.ts": [
-  "API URL",
   "import node:path"
+ ],
+ "packages/app/src/rewrites.ts": [
+  "API URL"
  ],
  "packages/editor-core/src/document/document/edit-step.ts": [
   "Reflect",
