@@ -10,7 +10,7 @@ import {
 } from '../../packages/editor-core/src/document/forensics/evidence-receipt-verifier';
 import { restartServer, type Restart } from './server-proces';
 import { app, repoRevisions, shippedHost, webOrigin } from './stog';
-import { assignmentOf, describePageOnFailure, openDemoWork, signInDemoStudent } from './student';
+import { assignmentOf, describePageOnFailure, journalHolds, openDemoWork, signInDemoStudent } from './student';
 
 // INT-02 (VS-1, A05/A06; INT-10, DAN-887). The student enters through the
 // Preloader on `/`, writes in the shipped packages/app, and the claims of
@@ -45,41 +45,6 @@ async function recordSaveChip(context: BrowserContext) {
 }
 
 const chipHistory = (page: Page) => page.evaluate(() => (window as unknown as { __vs1Chip: Seen[] }).__vs1Chip);
-
-/** True when a journal database of this origin holds `needle` in a stored snapshot (A05). */
-function journalHolds(page: Page, needle: string) {
-  return page.evaluate(async (needle) => {
-    const decoder = new TextDecoder();
-    const holds = (value: unknown, depth = 0): boolean => {
-      if (depth > 64 || value === null || value === undefined) return false;
-      if (typeof value === 'string') return value.includes(needle);
-      if (value instanceof ArrayBuffer) return decoder.decode(value).includes(needle);
-      if (ArrayBuffer.isView(value)) return decoder.decode(value).includes(needle);
-      if (typeof value === 'object') return Object.values(value).some((entry) => holds(entry, depth + 1));
-      return false;
-    };
-    const names = (await indexedDB.databases()).map(({ name }) => name ?? '').filter((name) => name.startsWith('ductus-journal-v1-'));
-    for (const name of names) {
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(name);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-      try {
-        if (!db.objectStoreNames.contains('snapshots')) continue;
-        const rows = await new Promise<unknown[]>((resolve, reject) => {
-          const request = db.transaction('snapshots').objectStore('snapshots').getAll();
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
-        });
-        if (rows.some((row) => holds(row))) return true;
-      } finally {
-        db.close();
-      }
-    }
-    return false;
-  }, needle);
-}
 
 const journalCount = (page: Page) => page.evaluate(async () =>
   (await indexedDB.databases()).filter(({ name }) => name?.startsWith('ductus-journal-v1-')).length);
