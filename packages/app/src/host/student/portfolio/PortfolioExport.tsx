@@ -44,7 +44,7 @@ export default function PortfolioExport({ port }: { port: PortfolioPort }) {
                 <p>{t.submittedOn(submittedDate(e.submittedAt))}</p>
                 {e.courseEnded ? <p>{t.courseEnded}</p> : null}
                 <h3>{t.pdfHeading}</h3>
-                <PdfExport version={{ documentId: e.documentId, versionId: e.versionId, title: e.title }} here="/portfelj" />
+                <PdfExport assignmentId={e.assignmentId} version={{ documentId: e.documentId, versionId: e.versionId, title: e.title }} here="/portfelj" />
                 <h3>{t.packageHeading}</h3>
                 <p>{t.packageLead}</p>
                 <PortableRecord submissionId={e.submissionId} />

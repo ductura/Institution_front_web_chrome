@@ -1,5 +1,5 @@
-// WEB-1803 (M8.5, M8.6): the preparation of a file on the server (the PDF of a work, the package
-// for the registrar's office) as one flow: ask, read the state until it is ready, or stop when the
+// WEB-1803 (M8.6): the preparation of a file on the server (the package for the registrar's office;
+// the PDF of a work is one GET since WEB-2005, see pdf.ts) as one flow: ask, read the state until it is ready, or stop when the
 // student gives up. Every state is the server's answer (B-6): the PDF/A mark exists only when a
 // ready answer says `pdfA: true`, a download path is trusted only when it has the shape the
 // contract gives, and a file counts as downloaded only when its SHA-256 matches the server's.

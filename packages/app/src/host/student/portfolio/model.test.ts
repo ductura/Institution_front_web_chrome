@@ -5,7 +5,7 @@ import { portfolioText as t } from "./messages.hr";
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const raw = (n: number, over: Partial<PortfolioRaw> = {}): PortfolioRaw => ({
-  submissionId: id(n), documentId: id(n + 100), versionId: id(n + 200), title: `Izmišljeni rad ${n}`,
+  submissionId: id(n), assignmentId: id(n + 300), documentId: id(n + 100), versionId: id(n + 200), title: `Izmišljeni rad ${n}`,
   submittedAt: `2026-0${n}-10T10:00:00Z`, courseEnded: false, status: "submitted", ...over,
 });
 
@@ -16,7 +16,7 @@ it("offers only submitted versions, newest first", () => {
 });
 
 it("entries do not carry the status on, and ill-formed ids are dropped", () => {
-  const view = portfolioView({ kind: "ok", entries: [raw(1), raw(2, { versionId: "x" })] });
+  const view = portfolioView({ kind: "ok", entries: [raw(1), raw(2, { versionId: "x" }), raw(5, { assignmentId: "x" })] });
   expect(view).toEqual({ kind: "ready", entries: [{ ...raw(1), status: undefined }].map(({ status: _s, ...e }) => e) });
 });
 
