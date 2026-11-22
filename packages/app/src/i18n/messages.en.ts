@@ -57,6 +57,7 @@ export const pageLabelsEn = {
   studentDataExport: "Student data export",
   studentDataDownload: "Export of my data",
   merlinExport: "Export for Merlin",
+  courseStudents: "Student list",
 };
 
 export const accessDeniedEn = {

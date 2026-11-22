@@ -36,7 +36,7 @@ async function fakeServer(page: Page, me: Me) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ locale: null }) }));
   await page.route("**/api/v1/student/assignments", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) }));
-  // WEB-2103/WEB-2105: the student's pages also read the state of each work; none is started here.
+  // WEB-2102/WEB-2103/WEB-2105: the student's pages also read the state of each work; none is started here.
   await page.route("**/api/v1/student/assignment-work", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ assignments: [] }) }));
   // WEB-2144: each course card reads the caller's role from the teaching-team view; here the teacher holds the course alone.
