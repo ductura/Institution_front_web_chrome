@@ -85,6 +85,6 @@ describe("N-10 SummaryPage", () => {
 
   it("offers the jump only for an anchor the map reports", async () => {
     const host = await show(fakeN10Port(), new Set(["pv-paste-1"]));
-    expect([...host.querySelectorAll("button")].map((b) => b.textContent)).toEqual(["Prikaži mjesto u radu"]);
+    expect([...host.querySelectorAll("section a")].map((b) => b.textContent)).toEqual(["Prikaži mjesto u radu"]);
   });
 });

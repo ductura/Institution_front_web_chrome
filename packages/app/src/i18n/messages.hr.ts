@@ -52,6 +52,7 @@ export const pageLabelsHr = {
   consultations: "Konzultacije",
   versionComparison: "Usporedba verzija",
   processSummary: "Sažetak procesa",
+  interviewPreparation: "Priprema za razgovor",
   studentDataExport: "Izvoz podataka studenta",
   studentDataDownload: "Izvoz mojih podataka",
   merlinExport: "Izvoz za Merlin",

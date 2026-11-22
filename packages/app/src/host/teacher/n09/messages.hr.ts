@@ -1,6 +1,7 @@
 // N-09 "Reprodukcija rada" (WEB-2159, PARITET N-09): interface text as in the prototype and INVENTAR-nastavnik 3.10.
 export const n09Messages = {
   title: "Reprodukcija rada",
+  backToWork: "Natrag na rad",
   intro: "Ovo je nastanak rada, promjenu po promjenu. Služi razgovoru o radu, ne ocjeni. Bez vremenske osi i bez trajanja.",
   foot: "Isti prikaz vide student, mentor i nastavnik zadatka. Reprodukciju smijete gledati i prije predaje; student to zna iz obavijesti o zadatku.",
   loading: "Učitavam promjene rada…",
