@@ -16,7 +16,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { appHref } from "../../../../../../src/components/index.ts";
 import { assignmentIdOf, editorWorkRead } from "../../../../../../src/components/editor/EditorPage.read.ts";
 import { readSubmittedWork } from "../../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
-import BeforeSubmit from "../../../../../../src/components/predaja/BeforeSubmit.tsx";
 import Declaration from "../../../../../../src/components/predaja/Declaration.tsx";
 import { studentReceiptRead, type ReceiptRead } from "../../../../../../src/components/predaja/ReceiptPanel.tsx";
 import { stageOf, type Stage } from "../../../../../../src/components/predaja/stage.ts";
@@ -31,6 +30,7 @@ import SubmissionPackage from "../submission-package/SubmissionPackage";
 import { stepsText } from "./steps/messages.hr";
 import StepsShell from "./steps/StepsShell";
 import ReceiptScreen from "./receipt/ReceiptScreen";
+import BeforeSubmitStep from "./summary/BeforeSubmitStep";
 import { VERIFY_PATH } from "../../public/verify/model";
 import WithdrawSubmission from "./withdraw/WithdrawSubmission";
 import SubmitStep from "./submit/SubmitStep";
@@ -134,8 +134,9 @@ export function DeclarationStepPage({ assignmentId }: { assignmentId: string }) 
   );
 }
 
-/** Step 3, "Prije predaje"; `declaredFor` is the `?izjava=` step 2 handed over. */
+/** Step 3, "Prije predaje", with the summary and notes from the server; `declaredFor` is the `?izjava=` step 2 handed over. */
 export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignmentId: string; declaredFor?: string }) {
+  const { base } = useHost();
   const hrefOf = useHrefOf();
   const shown = useChecked(assignmentId, "pregled", async (checked, id) => ({ checked, id }));
   return (
@@ -144,8 +145,10 @@ export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignment
         <StepsShell step="beforeSubmit" work={checked} workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
           receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
           <p>{stepsText.intro}</p>
-          <BeforeSubmit assignmentId={id} summary={{ kind: "unavailable" }} declaredFor={declaredFor} hrefOf={hrefOf}
-            stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }} />
+          <BeforeSubmitStep assignmentId={id} declaredFor={declaredFor} hrefOf={hrefOf}
+            workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
+            stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }}
+            onSignIn={() => goToSignIn(appHref(base, stepPath(id, "pregled")))} />
         </StepsShell>
       )}
     </Shown>
