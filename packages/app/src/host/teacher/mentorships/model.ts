@@ -1,4 +1,5 @@
 import type { MentoredWork } from "../../../../../../src/components/teacher/mentored-works-read";
+import { byFamilyName, studentName } from "../../../../../../src/components/teacher/mentored-works-view";
 
 export type MentoredStudent = {
   /** The mentorship: the work has no student identifier, so a name never joins two rows. */
@@ -19,4 +20,19 @@ export function studentsOf(works: readonly MentoredWork[]): readonly MentoredStu
     name: work.student === null ? null : `${work.student.givenName} ${work.student.familyName}`.trim(),
     works: [work],
   }));
+}
+
+/**
+ * PIL-K-ROKOVI: one key-dates card per mentorship, in the order of the works list (by family name);
+ * a mentorship with two works still has one card. The name is the list's own (with its stand-in text).
+ */
+export function mentorshipsOf(works: readonly MentoredWork[]): readonly { readonly mentorshipId: string; readonly name: string }[] {
+  const seen = new Set<string>();
+  const out: { mentorshipId: string; name: string }[] = [];
+  for (const work of byFamilyName(works)) {
+    if (seen.has(work.mentorshipId)) continue;
+    seen.add(work.mentorshipId);
+    out.push({ mentorshipId: work.mentorshipId, name: studentName(work) });
+  }
+  return out;
 }
