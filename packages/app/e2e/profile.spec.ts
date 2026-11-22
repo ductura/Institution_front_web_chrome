@@ -141,7 +141,7 @@ test("on a narrow screen the settings link closes the navigation drawer", async 
   const fake: Fake = { saved: null, posts: [], me: 0, login: 0 };
   await fakeServer(page, fake);
   await page.goto("/app/web/zadaci");
-  await page.getByRole("button", { name: "Otvori navigaciju" }).click();
+  await page.getByRole("button", { name: "Izbornik" }).click();
   await page.getByRole("link", { name: "Postavke profila" }).click();
   await expect(page).toHaveURL(/\/app\/web\/profil$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Postavke profila");

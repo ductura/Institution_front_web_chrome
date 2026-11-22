@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Dialog, TeacherAiAttachments, type TeacherAiAttachmentsState } from "@ductura/ui";
+import { ActionRow, Button, Dialog, EntryList, TeacherAiAttachments, type TeacherAiAttachmentsState } from "@ductura/ui";
 
 import type { DeclarationPort, TeacherDeclarationRead } from "../../../../../../src/client/declaration.ts";
 import { teacherAiLabels } from "../work/ai-attachments/messages.hr";
@@ -41,38 +41,35 @@ export default function AiDeclarationSection({ port = unavailableDeclarationPort
   const open = ready !== null && openIndex !== null ? ready.conversations[openIndex] : undefined;
 
   return (
-    <section aria-label={text.heading}>
+    <section className="card" aria-label={text.heading}>
       <h2>{text.heading}</h2>
       <TeacherAiAttachments labels={teacherAiLabels} state={state} onRetry={retry} />
       {ready && ready.conversations.length > 0 && (
-        <div>
-          <h3>{`${text.conversationsHeading} (${ready.conversations.length})`}</h3>
-          <ul>
+        <>
+          <h3 className="sb-sub">{`${text.conversationsHeading} (${ready.conversations.length})`}</h3>
+          <ul className="list">
             {ready.conversations.map((c, i) => (
-              <li key={c.conversationId}>
-                <span>{c.title}</span>{" "}
-                <Button onClick={(event) => { opener.current = event.currentTarget; setOpenIndex(i); }}>
-                  {text.review}
-                </Button>
+              <li key={c.conversationId} className="item">
+                <span className="title">{c.title}</span>
+                <ActionRow>
+                  <Button tone="secondary" size="small" onClick={(event) => { opener.current = event.currentTarget; setOpenIndex(i); }}>
+                    {text.review}
+                  </Button>
+                </ActionRow>
               </li>
             ))}
           </ul>
-        </div>
+        </>
       )}
       <Dialog open={open !== undefined} title={text.dialogTitle((openIndex ?? 0) + 1, ready?.confirmedAt ?? "")}
         onClose={() => setOpenIndex(null)}
-        actions={<Button onClick={() => setOpenIndex(null)}>{text.close}</Button>}>
+        actions={<Button tone="secondary" onClick={() => setOpenIndex(null)}>{text.close}</Button>}>
         {open && (
           <>
-            <p>{text.dialogNote}</p>
-            <ol>
-              {open.turns.filter((t) => t.seq <= open.throughSeq).map((turn) => (
-                <li key={turn.seq}>
-                  <strong>{turn.author === "student" ? text.student : open.assistantName}</strong>{" "}
-                  <span>{turn.text}</span>
-                </li>
-              ))}
-            </ol>
+            <p className="meta">{text.dialogNote}</p>
+            <EntryList entries={open.turns.filter((t) => t.seq <= open.throughSeq).map((turn) => ({
+              id: String(turn.seq), who: turn.author === "student" ? text.student : open.assistantName, text: turn.text,
+            }))} />
           </>
         )}
       </Dialog>

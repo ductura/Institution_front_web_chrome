@@ -53,3 +53,9 @@
 .saveStatus { margin: 0; padding: 16px; list-style: none; display: grid; gap: 8px; }
 .saveStatus > li { min-width: 0; }
 .saveStatus :global([role=status]) { white-space: normal; overflow-wrap: anywhere; }
+
+/* VIZ-0: the prototypes' shell, one state under another; the rail is as tall as its cell, not the window. */
+.component:global(#SideShell) .states { grid-template-columns: minmax(0, 1fr); }
+.component:global(#SideShell) .state dd { display: block; border: 1px solid var(--rule); }
+.component:global(#SideShell) .state dd > div { min-height: 380px; }
+.component:global(#SideShell) aside { position: static; align-self: stretch; height: auto; }

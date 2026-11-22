@@ -6,7 +6,7 @@
  * the "Pregled literature" summary. It writes nothing itself; `onCite` does.
  */
 
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
@@ -15,20 +15,22 @@ import { filterSources, splitByCitation, summarize, type ListedSource } from "./
 
 const t = messagesHr.workspace.sources.list;
 
-type Props = {
-  items: readonly ListedSource[];
+type Props<T extends ListedSource> = {
+  items: readonly T[];
   editable: boolean;
-  onCite: (item: ListedSource) => void;
+  onCite: (item: T) => void;
+  /** The host's own actions after "Citiraj" in a row (WEB-2123: "Uredi", "Ukloni"); none by default. */
+  rowActions?: (item: T) => ReactNode;
 };
 
-export default function SourceList({ items, editable, onCite }: Props) {
+export default function SourceList<T extends ListedSource>({ items, editable, onCite, rowActions }: Props<T>) {
   const id = useId();
   const [query, setQuery] = useState("");
   const shown = filterSources(items, query);
   const { cited, uncited } = splitByCitation(shown);
   const total = summarize(items);
 
-  const group = (key: string, title: string, rows: readonly ListedSource[]) => (
+  const group = (key: string, title: string, rows: readonly T[]) => (
     <section aria-labelledby={`${id}-${key}`}>
       <h3 id={`${id}-${key}`} className={styles.group}>{title.replace("{n}", String(rows.length))}</h3>
       <ul className={styles.list}>
@@ -46,6 +48,7 @@ export default function SourceList({ items, editable, onCite }: Props) {
             >
               {messagesHr.workspace.sources.cite}
             </button>
+            {rowActions?.(item)}
           </li>
         ))}
       </ul>

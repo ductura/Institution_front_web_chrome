@@ -1,11 +1,15 @@
 /* A native table: never display block, grid or flex on its parts, or it loses its header semantics. */
 .wrap { position: relative; min-inline-size: 0; }
-.scroll { overflow-x: auto; max-width: 100%; border-radius: var(--radius); }
+/* The prototype's .tbl (Ductura_nastavnik.html, VIZ-0): a --rule-2 frame with 6 px corners. */
+.scroll { overflow-x: auto; max-width: 100%; border: 1px solid var(--rule-2); border-radius: var(--radius); }
 .scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.table { width: 100%; border-collapse: collapse; font-size: 14px; color: var(--ink); }
-.caption { caption-side: top; text-align: start; padding: 0 0 8px; font-weight: 600; }
-.table th, .table td { padding: 8px 12px; text-align: start; vertical-align: top; border-bottom: 1px solid var(--rule-2); }
-.table thead th { font-size: 12px; font-weight: 600; color: var(--ink-2); white-space: nowrap; border-bottom-color: var(--rule); }
+.table { width: 100%; border-collapse: collapse; font-size: var(--fs-ui); color: var(--ink); }
+.caption { caption-side: top; text-align: start; padding: var(--space-2) var(--space-3); font-weight: 600; border-bottom: 1px solid var(--rule-2); }
+.table th, .table td { padding: var(--space-2) var(--space-3); text-align: start; vertical-align: top; border-bottom: 1px solid var(--rule-2); }
+.table tbody tr:last-child > * { border-bottom: 0; }
+.table thead th { font-size: var(--fs-sm); font-weight: 600; color: var(--ink-3); white-space: nowrap; background: var(--chrome); }
+/* The sheets set no --chrome of their own; there the header row sits on their --well. */
+:global(.sheet) .table thead th { background: var(--well); }
 .table tbody th { font-weight: 600; }
 .table [data-numeric] { text-align: end; font-variant-numeric: tabular-nums; }
 .sort {

@@ -224,7 +224,9 @@ export function responseMatches(id: string, status: number, body: unknown, bodyB
   const spec = RESPONSES.get(id)?.[String(status)];
   if (spec === undefined) return false;
   const schema = spec.content?.["application/json"]?.schema;
-  if (schema === undefined) return body === undefined && bodyBytes === 0;
+  // A declared non-JSON body (the JPEG proof image, WEB-2133B) is bytes the client does not read.
+  const bytes = Object.keys(spec.content ?? {}).some((type) => type !== "application/json");
+  if (schema === undefined) return body === undefined && (bytes || bodyBytes === 0);
   return body !== undefined && matchesSchema(schema, body);
 }
 

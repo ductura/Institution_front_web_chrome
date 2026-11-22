@@ -1,0 +1,321 @@
+/*
+ * The prototypes' shell (VIZ-0): Ductura_student.html / Ductura_nastavnik.html
+ * `.shell`, `.side`, `.side-foot`, `.main`; D-202 (64 px rail, no icons).
+ * Below 800 px the side bar is one row at the top; "Izbornik" opens the
+ * navigation and the foot in place under it.
+ */
+.shell {
+  display: grid;
+  grid-template-columns: var(--side-w) minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+.side {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3h);
+  height: 100vh;
+  height: 100dvh;
+  padding: var(--space-3h) var(--space-1);
+  overflow-y: auto;
+  background: var(--chrome);
+  border-right: 1px solid var(--rule-2);
+}
+
+.brand {
+  display: grid;
+  place-items: center;
+  min-height: var(--target);
+  color: var(--ink);
+  font: 500 24px / 1 var(--ff-display);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--ink);
+}
+
+.word {
+  display: none;
+}
+
+.menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--target);
+  padding: 0 var(--space-2h);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink);
+  font: 600 var(--fs-ui) / var(--lh-control) var(--ff-ui);
+}
+
+.menu:hover {
+  background: var(--hover);
+}
+
+/* One column as wide as the rail: a long word breaks inside it instead of widening it. */
+.nav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+}
+
+/* The prototype's rail labels: 11 px, centred, breaking inside the rail. */
+/* Block, not grid: a centred grid item takes its text's widest line and runs out of the rail. */
+.nav a {
+  display: block;
+  align-content: center;
+  min-height: var(--target);
+  padding: var(--space-1h) var(--space-0);
+  border-radius: var(--radius-control);
+  color: var(--ink-2);
+  font-size: var(--fs-2xs);
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: break-word;
+}
+
+.nav a:hover {
+  background: var(--hover);
+  color: var(--ink-2);
+}
+
+.nav a[aria-current="page"] {
+  background: var(--well);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1h);
+  margin-top: auto;
+}
+
+/* Not in the prototypes: the institution's name, kept from the old top bar, as quiet 11 px text. */
+.context {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.tools {
+  display: grid;
+  place-items: center;
+}
+
+/* Quiet links of the foot (and the account's links, e.g. "Postavke profila"): as the rail's labels, centred, 11 px. */
+.quiet,
+.account a:not(dialog *, [role="dialog"] *) {
+  display: block;
+  align-content: center;
+  width: 100%;
+  min-height: var(--target);
+  padding: var(--space-1) var(--space-0);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-2);
+  font: 400 var(--fs-2xs) / 1.2 var(--ff-ui);
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  cursor: pointer;
+}
+
+.quiet:hover,
+.quiet[aria-current="page"],
+.account a:not(dialog *, [role="dialog"] *):hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+/* The prototype's `.side-foot .btn` (btn small secondary): ◐ and Odjava. */
+.footButton,
+.account button:not(dialog *, [role="dialog"] *) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--target);
+  padding: 0 var(--space-0);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink);
+  font: 600 var(--fs-2xs) / var(--lh-control) var(--ff-ui);
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.footButton:hover,
+.account button:not(dialog *, [role="dialog"] *):hover {
+  background: var(--hover);
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.account,
+.account > *,
+.account > * > * {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1h);
+}
+
+.main {
+  display: grid;
+  align-content: start;
+  gap: var(--main-gap);
+  width: 100%;
+  max-width: var(--main-w);
+  min-width: 0;
+  margin: 0 auto;
+  padding: var(--main-pad-top) var(--space-6) var(--space-9);
+}
+
+.main > * {
+  min-width: 0;
+}
+
+.narrow {
+  max-width: var(--main-narrow-w);
+}
+
+.own {
+  min-width: 0;
+}
+
+@media (max-width: 799.98px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .side {
+    position: static;
+    z-index: 5;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    height: auto;
+    padding: var(--space-2) var(--gutter-r) var(--space-2) var(--gutter-l);
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule-2);
+  }
+
+  .mark {
+    display: none;
+  }
+
+  .word {
+    display: inline;
+    font-size: var(--fs-title-sm);
+  }
+
+  .menu {
+    display: inline-flex;
+  }
+
+  .nav,
+  .foot {
+    display: none;
+    flex-basis: 100%;
+  }
+
+  .side[data-open="true"] .nav {
+    display: grid;
+  }
+
+  .side[data-open="true"] .nav a {
+    padding: var(--space-1h) var(--space-2h);
+    font-size: var(--fs-ui);
+    text-align: left;
+  }
+
+  .side[data-open="true"] .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1h);
+    margin: 0;
+  }
+
+  .side[data-open="true"] .context {
+    flex-basis: 100%;
+    text-align: left;
+    font-size: var(--fs-sm);
+  }
+
+  .side[data-open="true"] .quiet {
+    width: auto;
+    padding: 0 var(--space-2h);
+    font-size: var(--fs-ui);
+  }
+
+  .side[data-open="true"] .account,
+  .side[data-open="true"] .account > *,
+  .side[data-open="true"] .account > * > * {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .side[data-open="true"] .account a:not(dialog *, [role="dialog"] *) {
+    width: auto;
+    padding: 0 var(--space-2h);
+    font-size: var(--fs-ui);
+  }
+
+  .side[data-open="true"] :is(.footButton, .account button:not(dialog *, [role="dialog"] *)) {
+    width: auto;
+    padding: 0 var(--space-3);
+    font-size: var(--fs-ui);
+  }
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: var(--space-5) var(--gutter-r) var(--space-8) var(--gutter-l);
+  }
+
+  [data-shell-role="teacher"] .main {
+    padding-top: var(--space-4);
+  }
+}
+
+/* Without JavaScript "Izbornik" cannot open anything, so the navigation and the foot stay open (I5). */
+@media (scripting: none) and (max-width: 799.98px) {
+  .nav {
+    display: grid;
+  }
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .menu {
+    display: none;
+  }
+}

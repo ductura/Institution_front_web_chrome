@@ -56,7 +56,7 @@ describe("Button states", () => {
 
   it("greška: offers a retry that works", () => {
     const m = html("Button", "greška");
-    expect(text(m)).toBe("Pokušajte ponovno");
+    expect(text(m)).toBe("Pokušaj ponovno");
     expect(m).not.toMatch(/disabled|aria-busy/);
   });
 
@@ -170,7 +170,7 @@ describe("Card states", () => {
 
   it("prazno: says it is empty, nothing else", () => {
     const m = html("Card", "prazno");
-    expect(text(m)).toBe("Moji radovi Još nema radova.");
+    expect(text(m)).toBe("Još nemate kolegija. Ovdje će se prikazati Vaši kolegiji i njihovi zadaci.");
     expect(m).not.toMatch(/aria-busy|aria-disabled|role="alert"/);
   });
 
@@ -182,7 +182,7 @@ describe("Card states", () => {
 
   it("greška: the message is an alert and replaces the content", () => {
     const m = html("Card", "greška");
-    expect(m).toMatch(/<p role="alert"[^>]*>Popis se nije učitao\. Pokušajte ponovno\.<\/p>/);
+    expect(m).toMatch(/<p role="alert"[^>]*>Podatke nije bilo moguće učitati\. To ne znači da nema kolegija ili radova\.<\/p>/);
     expect(m).not.toMatch(/aria-busy/);
   });
 

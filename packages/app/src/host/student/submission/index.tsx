@@ -16,8 +16,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { appHref } from "../../../../../../src/components/index.ts";
 import { assignmentIdOf, editorWorkRead } from "../../../../../../src/components/editor/EditorPage.read.ts";
 import { readSubmittedWork } from "../../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
-import BeforeSubmit from "../../../../../../src/components/predaja/BeforeSubmit.tsx";
-import Declaration from "../../../../../../src/components/predaja/Declaration.tsx";
 import { studentReceiptRead, type ReceiptRead } from "../../../../../../src/components/predaja/ReceiptPanel.tsx";
 import { stageOf, type Stage } from "../../../../../../src/components/predaja/stage.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../../src/client/api.ts";
@@ -28,9 +26,12 @@ import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 import PortableRecord from "../portable-record/PortableRecord";
 import SubmissionPackage from "../submission-package/SubmissionPackage";
+import DeclarationStep from "./declaration/DeclarationStep";
+import { unavailableReader, type DeclarationReader, type DeclarationRead } from "./declaration/model";
 import { stepsText } from "./steps/messages.hr";
 import StepsShell from "./steps/StepsShell";
 import ReceiptScreen from "./receipt/ReceiptScreen";
+import BeforeSubmitStep from "./summary/BeforeSubmitStep";
 import { VERIFY_PATH } from "../../public/verify/model";
 import WithdrawSubmission from "./withdraw/WithdrawSubmission";
 import SubmitStep from "./submit/SubmitStep";
@@ -118,24 +119,37 @@ export function SubmissionStartPage({ assignmentId }: { assignmentId: string }) 
   return <Shown shown={shown}>{() => null}</Shown>;
 }
 
-/** Step 2, "Izjava". The process summary is not in the contract yet and reads as not loadable (§5 rule 11). */
-export function DeclarationStepPage({ assignmentId }: { assignmentId: string }) {
+/** Step 2, "Izjava" (E-9, WEB-2107). The declaration has no server route yet, so `reader` answers "error" (§5 rule 11). */
+export function DeclarationStepPage({ assignmentId, reader = unavailableReader }: { assignmentId: string; reader?: DeclarationReader }) {
   const hrefOf = useHrefOf();
   const shown = useChecked(assignmentId, "izjava", async (checked, id) => ({ checked, id }));
+  const [attempt, setAttempt] = useState(0);
+  const [read, setRead] = useState<DeclarationRead>({ kind: "loading" });
+  const id = shown.kind === "ready" ? shown.value.id : null;
+  useEffect(() => {
+    if (id === null) return;
+    let live = true;
+    setRead({ kind: "loading" });
+    void reader(id).then((next) => { if (live) setRead(next); }, () => { if (live) setRead({ kind: "error" }); });
+    return () => { live = false; };
+  }, [id, reader, attempt]);
   return (
     <Shown shown={shown} loading={stepsText.loadingRecorded}>
-      {({ checked, id }) => (
-        <StepsShell step="declaration" work={checked} workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
-          receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
-          <Declaration assignmentId={id} recorded={{ kind: "error" }} hrefOf={hrefOf} />
+      {({ checked, id: assignment }) => (
+        <StepsShell step="declaration" work={checked} workHref={hrefOf(stepPath(assignment, "").replace(/\/predaja$/, ""))}
+          receiptHref={hrefOf(stepPath(assignment, "potvrda"))} onRetry={shown.reload}>
+          {checked.kind === "ready"
+            ? <DeclarationStep assignmentId={assignment} workState={checked.workState} read={read} hrefOf={hrefOf} onRetry={() => setAttempt((n) => n + 1)} />
+            : null}
         </StepsShell>
       )}
     </Shown>
   );
 }
 
-/** Step 3, "Prije predaje"; `declaredFor` is the `?izjava=` step 2 handed over. */
+/** Step 3, "Prije predaje", with the summary and notes from the server; `declaredFor` is the `?izjava=` step 2 handed over. */
 export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignmentId: string; declaredFor?: string }) {
+  const { base } = useHost();
   const hrefOf = useHrefOf();
   const shown = useChecked(assignmentId, "pregled", async (checked, id) => ({ checked, id }));
   return (
@@ -144,8 +158,10 @@ export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignment
         <StepsShell step="beforeSubmit" work={checked} workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
           receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
           <p>{stepsText.intro}</p>
-          <BeforeSubmit assignmentId={id} summary={{ kind: "unavailable" }} declaredFor={declaredFor} hrefOf={hrefOf}
-            stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }} />
+          <BeforeSubmitStep assignmentId={id} declaredFor={declaredFor} hrefOf={hrefOf}
+            workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
+            stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }}
+            onSignIn={() => goToSignIn(appHref(base, stepPath(id, "pregled")))} />
         </StepsShell>
       )}
     </Shown>

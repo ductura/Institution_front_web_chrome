@@ -15,7 +15,7 @@ import { DeclarationFlow } from "./declaration-flow";
 // ?theme=light shows the light shell; anything else is the dark default (D-188).
 // Parts of the shell's own panels sit on --chrome and never on the sheet (WEB-06).
 // The bell sits in the shell's account place (WEB-1702).
-const SHELL_ONLY = new Set(["PanelTabs", "NotificationBell"]);
+const SHELL_ONLY = new Set(["PanelTabs", "NotificationBell", "SideShell"]);
 const shellOnly = (name: string) => name in SCREEN_ENTRIES || SHELL_ONLY.has(name);
 
 const theme = new URLSearchParams(location.search).get("theme") === "light" ? "light" : "dark";

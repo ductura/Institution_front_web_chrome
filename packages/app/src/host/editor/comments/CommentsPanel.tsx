@@ -4,7 +4,7 @@
 // in two steps, quick replies, one comment on several places, a new comment on selected text and
 // saved comments. A write shows success only from the server's answer (B-6); a failed write keeps
 // what was typed. The collaborator only reads and comments (INVENTAR §7 t. 5).
-import { Button, Dialog } from "@ductura/ui";
+import { Button, Chip, Dialog, PillTag } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import styles from "./comments.module.css";
@@ -119,33 +119,44 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
     try { await navigator.clipboard.writeText(printText(comments)); setMessage(t.copied); } catch { setMessage(t.copyFailed); }
   };
   const chip = (label: string, on: boolean, click: () => void) => (
-    <button type="button" className={styles.tag} aria-pressed={on} onClick={click}>{label}</button>
+    <Chip pressed={on} onClick={click}>{label}</Chip>
   );
   const open = openForPrint(comments);
   const groups = repeated(comments);
+  const kindTone = (k: Kind) => (k === "must" ? "warn" : k === "praise" ? "ok" : "neutral") as "warn" | "ok" | "neutral";
 
   return (
     <section className={styles.root} aria-label={t.title}>
-      <div className={styles.row}>
-        <h3>{t.title} ({live.length})</h3>
-        <Button tone="quiet" onClick={() => void read()}>{t.refresh}</Button>
-        {!submitted && <Button tone="quiet" onClick={() => openNew()}>{t.newTitle}</Button>}
-        <Button tone="quiet" onClick={() => setDlg("rounds")}>{t.rounds}</Button>
-        <Button tone="quiet" onClick={() => setDlg("print")}>{t.print}</Button>
-        {role === "teacher" && <Button tone="quiet" onClick={() => setDlg("templates")}>{t.templatesTitle}</Button>}
-      </div>
+      <h3 className={styles.ptitle}>{t.title} ({live.length})</h3>
       {role === "collaborator" && <p className={styles.muted}>{t.readOnly}</p>}
       <p className={styles.muted}>{t.noteScope}</p>
       {message && <p role="status" className={styles.muted}>{message}</p>}
       {showFilters(live.length, turn, kindFilter, counts.fresh) && (
-        <div className={styles.row} role="group" aria-label={t.title}>
+        <div className={styles.tools} role="group" aria-label={t.title}>
           {chip(t.filters.mine(counts.mine), turn === "mine", () => setTurn(turn === "mine" ? null : "mine"))}
           {chip(t.filters.waitingFor(mentorWord, counts.other), turn === "other", () => setTurn(turn === "other" ? null : "other"))}
           {counts.fresh > 0 && chip(t.filters.fresh(counts.fresh), turn === "new", () => setTurn(turn === "new" ? null : "new"))}
           {KINDS.map((k) => chip(t.kinds[k], kindFilter === k, () => setKindFilter(kindFilter === k ? null : k)))}
         </div>
       )}
-      {groups.map((g) => <p key={g.key} className={styles.muted}>{t.repeated(g.total)}: {g.text} ({g.open})</p>)}
+      {groups.map((g) => (
+        <div key={g.key} className={`${styles.card} ${styles.note}`}>
+          <b>{t.repeated(g.total)}: {g.text}</b>
+          <p>({g.open})</p>
+        </div>
+      ))}
+      <div className={styles.bar}>
+        {!submitted && <Button tone="secondary" size="dense" onClick={() => openNew()}>{t.newTitle}</Button>}
+        <details className={styles.more}>
+          <summary>{t.more}</summary>
+          <div className={styles.menu}>
+            <button type="button" onClick={() => void read()}>{t.refresh}</button>
+            <button type="button" onClick={() => setDlg("rounds")}>{t.rounds}</button>
+            <button type="button" onClick={() => setDlg("print")}>{t.print}</button>
+            {role === "teacher" && <button type="button" onClick={() => setDlg("templates")}>{t.templatesTitle}</button>}
+          </div>
+        </details>
+      </div>
       {shown.length === 0 && <p className={styles.muted}>{t.empty}</p>}
       <ul className={styles.list}>
         {shown.map((c) => {
@@ -153,56 +164,56 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
           const tn = turnOf(c);
           const label = turnLabel(tn, role);
           return (
-            <li key={c.id} className={`${styles.card} ${c.id === activeId ? styles.active : ""}`} data-cid={c.id}>
-              <div className={styles.row}>
-                {c.kind && <span className={styles.tag}>{t.kinds[c.kind]}</span>}
-                <span className={styles.tag}>{statusOf(c)}</span>
-                {label && <span className={`${styles.tag} ${isMine(tn, role) ? styles.mine : ""}`}>{label}</span>}
+            <li key={c.id} className={`${styles.card} ${c.id === activeId ? styles.active : ""} ${c.kind === "praise" ? styles.praise : ""}`} data-cid={c.id}>
+              <div className={styles.meta}>
+                {c.kind && <PillTag tone={kindTone(c.kind)}>{t.kinds[c.kind]}</PillTag>}
+                <PillTag tone={c.resolved ? "ok" : "neutral"}>{statusOf(c)}</PillTag>
+                {label && <PillTag tone={isMine(tn, role) ? "me" : "neutral"}>{label}</PillTag>}
               </div>
               <p className={styles.quote}>„{c.place.quote}”</p>
-              <p>{c.text}</p>
+              <p className={styles.body}>{c.text}</p>
               {c.replies.map((r) => <p key={r.id} className={styles.reply}>{r.text}</p>)}
-              <div className={styles.row}>
-                {c.place.lost ? <span className={styles.muted}>{t.textGone}</span> : <Button tone="quiet" onClick={() => onJump(c.place)}>{t.show}</Button>}
+              <div className={styles.actions}>
+                {c.place.lost ? <span className={styles.muted}>{t.textGone}</span> : <Button tone="ghost" size="dense" onClick={() => onJump(c.place)}>{t.show}</Button>}
               </div>
               {c.also.length > 0 && (
-                <div>
-                  <p className={styles.muted}>{t.alsoTitle(c.also.length)}</p>
-                  {c.also.map((a, i) => a.lost ? <i key={i}>{t.alsoGone}</i> : <Button key={i} tone="quiet" onClick={() => onJump(a)}>„{a.quote}”</Button>)}
+                <div className={styles.also}>
+                  <p className={styles.sub}>{t.alsoTitle(c.also.length)}</p>
+                  {c.also.map((a, i) => a.lost ? <i key={i}>{t.alsoGone}</i> : <button key={i} type="button" className={`${styles.quote} ${styles.jump}`} onClick={() => onJump(a)}>„{a.quote}”</button>)}
                 </div>
               )}
               {replyFor === c.id ? (
-                <div className={styles.root}>
-                  <label>{t.replyLabel}
+                <div>
+                  <label className={styles.label}>{t.replyLabel}
                     <textarea className={styles.field} value={draft} onChange={(e) => setDraft(e.target.value)} autoFocus
                       onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) void sendReply(c); if (e.key === "Escape") setReplyFor(null); }} />
                   </label>
-                  <div className={styles.row}>
-                    <Button busy={busy} onClick={() => void sendReply(c)}>{busy ? t.sending : t.send}</Button>
-                    <Button tone="quiet" onClick={() => setReplyFor(null)}>{t.cancel}</Button>
+                  <div className={styles.actions}>
+                    <Button size="dense" busy={busy} onClick={() => void sendReply(c)}>{busy ? t.sending : t.send}</Button>
+                    <Button tone="secondary" size="dense" onClick={() => setReplyFor(null)}>{t.cancel}</Button>
                   </div>
                 </div>
               ) : (
-                <div className={styles.row}>
-                  {can.reply && <Button tone="quiet" onClick={() => { setReplyFor(c.id); setDraft(""); }}>{t.reply}</Button>}
+                <div className={styles.actions}>
+                  {can.reply && <Button tone="ghost" size="dense" onClick={() => { setReplyFor(c.id); setDraft(""); }}>{t.reply}</Button>}
                   {can.quick && (["clarify", "disagree"] as const).map((q) => (
-                    <button key={q} type="button" className={styles.tag} onClick={() => { setReplyFor(c.id); setDraft(quickReply(q)); }}>{t.quick[q]}</button>
+                    <Chip key={q} onClick={() => { setReplyFor(c.id); setDraft(quickReply(q)); }}>{t.quick[q]}</Chip>
                   ))}
-                  {can.resolve && <Button tone="quiet" busy={busy} onClick={() => void run(() => port!.setResolved(workId, c.id, true), t.saved, (x) => x.resolved)}>{t.resolve}</Button>}
-                  {can.reopen && <Button tone="quiet" busy={busy} onClick={() => void run(() => port!.setResolved(workId, c.id, false), t.saved, (x) => !x.resolved)}>{t.reopen}</Button>}
-                  {can.confirm && <Button busy={busy} onClick={() => void run(() => port!.confirm(workId, c.id), t.saved, (x) => x.confirmed === true)}>{t.confirm}</Button>}
-                  {can.confirm && <Button tone="quiet" onClick={() => { setBackFor(c.id); setNote(""); }}>{t.sendBack}</Button>}
-                  {can.addPlace && <Button tone="quiet" onClick={() => void addHere(c)}>{t.alsoAdd}</Button>}
+                  {can.resolve && <Button tone="ghost" size="dense" busy={busy} onClick={() => void run(() => port!.setResolved(workId, c.id, true), t.saved, (x) => x.resolved)}>{t.resolve}</Button>}
+                  {can.reopen && <Button tone="ghost" size="dense" busy={busy} onClick={() => void run(() => port!.setResolved(workId, c.id, false), t.saved, (x) => !x.resolved)}>{t.reopen}</Button>}
+                  {can.confirm && <Button size="dense" busy={busy} onClick={() => void run(() => port!.confirm(workId, c.id), t.saved, (x) => x.confirmed === true)}>{t.confirm}</Button>}
+                  {can.confirm && <Button tone="secondary" size="dense" onClick={() => { setBackFor(c.id); setNote(""); }}>{t.sendBack}</Button>}
+                  {can.addPlace && <Button tone="ghost" size="dense" onClick={() => void addHere(c)}>{t.alsoAdd}</Button>}
                 </div>
               )}
               {backFor === c.id && (
-                <div className={styles.root}>
-                  <label>{t.sendBackLabel}
+                <div>
+                  <label className={styles.label}>{t.sendBackLabel}
                     <textarea className={styles.field} value={note} onChange={(e) => setNote(e.target.value)} autoFocus />
                   </label>
-                  <div className={styles.row}>
-                    <Button busy={busy} onClick={() => void sendBack(c)}>{t.sendBack}</Button>
-                    <Button tone="quiet" onClick={() => setBackFor(null)}>{t.cancel}</Button>
+                  <div className={styles.actions}>
+                    <Button size="dense" busy={busy} onClick={() => void sendBack(c)}>{t.sendBack}</Button>
+                    <Button tone="secondary" size="dense" onClick={() => setBackFor(null)}>{t.cancel}</Button>
                   </div>
                 </div>
               )}
@@ -215,8 +226,8 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
         <p className={styles.muted}>{t.roundsNote}</p>
         {byRound(comments, round).map((row) => (
           <div key={row.round}>
-            <h4>{t.round(row.round, row.current)}</h4>
-            <ul className={styles.list}>{row.comments.map((c) => <li key={c.id}>{c.kind ? `${t.kinds[c.kind]}: ` : ""}{c.text} ({statusOf(c)})</li>)}</ul>
+            <h4 className={styles.ptitle}>{t.round(row.round, row.current)}</h4>
+            <ul className={styles.list}>{row.comments.map((c) => <li key={c.id} className={styles.printItem}>{c.kind ? `${t.kinds[c.kind]}: ` : ""}{c.text} ({statusOf(c)})</li>)}</ul>
           </div>
         ))}
         {byRound(comments, round).length === 0 && <p className={styles.muted}>{t.noRounds}</p>}
@@ -225,7 +236,14 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
       <Dialog open={dlg === "print"} title={t.print} onClose={() => setDlg(null)}
         actions={<><Button onClick={() => void copyPrint()}>{t.printCopy}</Button><Button tone="quiet" onClick={() => window.print()}>{t.printDo}</Button></>}>
         <p className={styles.muted}>{open.length === 0 ? t.printEmpty : t.printCount(open.length)}</p>
-        <ol>{open.map((c) => <li key={c.id}>„{c.place.quote}”: {c.text}</li>)}</ol>
+        <div className={styles.print}>
+          {open.map((c) => (
+            <div key={c.id} className={styles.printItem}>
+              <blockquote>„{c.place.quote}”</blockquote>
+              <p>{c.text}</p>
+            </div>
+          ))}
+        </div>
       </Dialog>
 
       <Dialog open={dlg === "templates"} title={t.templatesTitle} onClose={() => setDlg(null)} actions={<Button tone="quiet" onClick={() => setDlg(null)}>{t.cancel}</Button>}>
@@ -233,10 +251,12 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
         {templates.length === 0 && <p className={styles.muted}>{t.templatesEmpty}</p>}
         <ul className={styles.list}>
           {templates.map((x) => (
-            <li key={x.id} className={styles.row}>
-              <span>{x.text} <span className={styles.tag}>{t.kinds[x.kind]}</span></span>
-              <Button tone="quiet" onClick={() => { setDlg(null); openNew({ text: x.text, kind: x.kind }); }}>{t.templateUse}</Button>
-              <Button tone="quiet" busy={busy} onClick={() => void templateWrite(() => port!.deleteTemplate(x.id))}>{t.templateDelete}</Button>
+            <li key={x.id} className={styles.card}>
+              <p className={styles.body}>{x.text} <PillTag tone={kindTone(x.kind)}>{t.kinds[x.kind]}</PillTag></p>
+              <div className={styles.actions}>
+                <Button tone="ghost" size="dense" onClick={() => { setDlg(null); openNew({ text: x.text, kind: x.kind }); }}>{t.templateUse}</Button>
+                <Button tone="ghost" size="dense" busy={busy} onClick={() => void templateWrite(() => port!.deleteTemplate(x.id))}>{t.templateDelete}</Button>
+              </div>
             </li>
           ))}
         </ul>
@@ -247,14 +267,16 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
         <p className={styles.muted}>{t.newQuote}</p>
         <p className={styles.quote}>„{form.place?.quote}”</p>
         {role === "teacher" && (
-          <div className={styles.row} role="group" aria-label={t.newKind}>
-            {KINDS.map((k) => chip(t.kinds[k], form.kind === k, () => setForm((f) => ({ ...f, kind: k }))))}
+          <div className={styles.kind} role="group" aria-label={t.newKind}>
+            {KINDS.map((k) => (
+              <button key={k} type="button" aria-pressed={form.kind === k} onClick={() => setForm((f) => ({ ...f, kind: k }))}>{t.kinds[k]}</button>
+            ))}
           </div>
         )}
-        <label>{t.newText}
+        <label className={styles.label}>{t.newText}
           <textarea className={styles.field} value={form.text} onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))} />
         </label>
-        {role === "teacher" && <label><input type="checkbox" checked={form.save} onChange={(e) => setForm((f) => ({ ...f, save: e.target.checked }))} /> {t.saveAsTemplate}</label>}
+        {role === "teacher" && <label className={styles.label}><input type="checkbox" checked={form.save} onChange={(e) => setForm((f) => ({ ...f, save: e.target.checked }))} /> {t.saveAsTemplate}</label>}
       </Dialog>
     </section>
   );
