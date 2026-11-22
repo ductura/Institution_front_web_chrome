@@ -1,4 +1,4 @@
-import { zagrebParts } from "../../../../../../src/components/summary/zagreb-time.ts";
+import { whenHr } from "../assignment-facts/model.ts";
 import type { TeacherCourse } from "../../../../../../src/components/teacher/teacher-courses-read.ts";
 import type { TeachingTeamView } from "../../../../../../src/client/teaching-team.ts";
 import { assignmentCardMessages as t } from "./messages.hr";
@@ -12,10 +12,9 @@ export function roleOf(view: TeachingTeamView | null): CardRole {
   return view.role === "holder" ? "holder" : "collaborator";
 }
 
-/** `8. studenoga 2026. u 23:59`, in Europe/Zagreb; the raw text when the instant cannot be read. */
+/** `8. 11. 2026. u 23:59`, as the prototype writes it, in Europe/Zagreb; the raw text when the instant cannot be read. */
 export function dueText(iso: string): string {
-  const parts = zagrebParts(iso);
-  return parts === null ? iso : `${parts.date} ${t.at} ${parts.time}`;
+  return whenHr(iso) ?? iso;
 }
 
 /** The assignment whose deadline is the nearest one not yet passed, or null. */

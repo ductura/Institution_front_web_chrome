@@ -1,0 +1,6 @@
+/* The round notice and the revision actions in the Mentor card (prototype editor.css: .c2st, .card, .row). VIZ-E4. */
+.card { display: block; font: 400 13.5px / 1.5 var(--ff-ui); color: var(--ink); }
+.notice { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); padding: 2px 2px 8px; margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 2px; }
+.status { font-size: 12.5px; color: var(--ink-2); margin: 6px 2px; }
+.alert { color: var(--error); background: var(--error-soft); border-radius: var(--radius-sm); padding: 6px 8px; font-size: 12.5px; margin: 0 0 8px; }

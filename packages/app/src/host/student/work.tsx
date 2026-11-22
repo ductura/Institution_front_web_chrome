@@ -29,10 +29,11 @@ import { nextPath } from "../../bases";
 import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { ImportHost } from "../editor/import/ImportHost";
-import { ReviewCardHost, RevisionActionsHost } from "../editor/work/review/ReviewHost";
+import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
+import { PregledHost } from "../editor/right/PregledHost";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
@@ -112,7 +113,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
             literature={() => <LiteratureList />}
             hostSections={{
-              review: ({ editor, assignmentId: id, documentId }) => <ReviewCardHost editor={editor} assignmentId={id} documentId={documentId} />,
+              review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
             }}
             leftSections={{ ...leftSectionsFor(assignmentId), chapter: <ChapterPanel workId={assignmentId} /> }}

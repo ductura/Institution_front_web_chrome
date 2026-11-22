@@ -2,7 +2,7 @@
 .row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; }
 .item { display: grid; gap: 0.25rem; border-block-start: 1px solid var(--rule-2); padding-block-start: 0.65rem; overflow-wrap: anywhere; }
-.card { border: 1px solid var(--rule-2); border-radius: 6px; padding: 0.65rem; background: var(--paper); color: var(--ink); }
+.card { border: 1px solid var(--rule-2); border-radius: var(--radius); padding: 10px 12px; background: var(--card); color: var(--ink); }
 .card > p { margin: 0.35rem 0; }
 .where { display: grid; gap: 0.25rem; }
 .place { all: unset; cursor: pointer; display: block; padding: 0.25rem 0; text-decoration: underline; text-underline-offset: 2px; }
