@@ -18,6 +18,8 @@ import { selectedRange, selectInBlock } from "@/components/teacher/selection";
 import { SummaryCardBody, useProcessSummary } from "@/components/teacher/SummaryCard";
 import { useComments } from "@/components/teacher/TeacherComments";
 import TeacherComments from "../comments/TeacherCommentsPanel";
+import ProposalsPanel from "../proposals/ProposalsPanel";
+import { proposalsPort } from "../proposals/port";
 import type { TextAnchor } from "@/domain/collaboration";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
@@ -154,6 +156,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               onReload={() => void comments.load()} onShow={({ nodeId, start, end }) => {
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
+            <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
           </>}
           <RecordLimits />
