@@ -2,6 +2,8 @@ import path from "node:path";
 
 import type { NextConfig } from "next";
 
+import { institutionRewrites, institutionServerUrl } from "./src/rewrites.ts";
+
 // The institution front under /app/web/ and /app/chrome/ (#2028 c.6993786629
 // §1): basePath "/app" and the segment app/[base]/ (web or chrome). The edge
 // routes only those two prefixes here, so the build's own files are asked for
@@ -10,8 +12,8 @@ const root = path.join(import.meta.dirname, "../..");
 
 // The API path belongs to the institution server. Behind the edge it never reaches
 // this app; on `next dev`, `next start` and Vercel it is passed on to
-// INSTITUTION_SERVER_URL, read when the app is built.
-const institutionServer = (process.env.INSTITUTION_SERVER_URL ?? "http://127.0.0.1:4000").replace(/\/+$/, "");
+// INSTITUTION_SERVER_URL, read when the app is built (src/rewrites.ts).
+const institutionServer = institutionServerUrl(process.env.INSTITUTION_SERVER_URL);
 
 const nextConfig: NextConfig = {
   basePath: "/app",
@@ -27,7 +29,7 @@ const nextConfig: NextConfig = {
   turbopack: { root },
   outputFileTracingRoot: root,
   async rewrites() {
-    return [{ source: "/api/v1/:path*", destination: `${institutionServer}/api/v1/:path*`, basePath: false }];
+    return institutionRewrites(institutionServer, process.env.NODE_ENV);
   },
 };
 
