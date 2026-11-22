@@ -66,7 +66,17 @@ export const consultHr = {
     notFound: "Kriteriji za ovaj rad nisu dostupni.",
     retry: "Pokušaj ponovno",
     unrated: "još nije ocijenjeno",
-    assessments: { needs_work: "treba doraditi", good: "dobro", very_good: "vrlo dobro" },
+    /** The criteria's text by id; the server sends only the id and a message key (LOK-WEB-20). */
+    names: {
+      topic: "Tema, cilj i istraživačko pitanje",
+      structure: "Struktura i logika izlaganja",
+      sources: "Izvori i citiranje",
+      method: "Metoda i analiza",
+      language: "Jezik i stil",
+      formatting: "Tehnička obrada",
+    },
+    /** An assessment is a label, never points: 0, 1 and 2 as the server sends them. */
+    assessments: { 0: "treba doraditi", 1: "dobro", 2: "vrlo dobro" },
     assessmentGroup: "Procjena: {title}",
     addNote: "+ napomena",
     editNote: "uredi napomenu",

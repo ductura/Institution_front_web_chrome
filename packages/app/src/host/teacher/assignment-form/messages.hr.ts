@@ -71,7 +71,6 @@ export const assignmentFormHr = {
     aiCourse: "Prema pravilima kolegija", aiNone: "Bez AI pomoći", groupsAll: "svi upisani studenti",
     toolsUnavailable: "nedostupno", practice: "Probni zadatak, bez ocjene", regular: "Redovni zadatak",
   },
-  reviewNote: "Studenti upisani u kolegij vide zadatak među svojim zadacima. Rok se kasnije mijenja samo produljenjem, koje se bilježi.",
   publish: "Objavi zadatak",
   backToForm: "Natrag na obrazac",
 } as const;

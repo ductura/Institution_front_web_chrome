@@ -12,21 +12,30 @@ import { ReceiptPanel, studentReceiptRead, type ReceiptRead } from "@/components
 import ReplayView from "@/components/replay/ReplayView";
 import { appHref } from "@/components/shell/nav";
 import { anchorForSelection, placeAnchor, placeThreads } from "@/components/teacher/comment-place";
-import { ConsultationRecords } from "@/components/teacher/consultation-records/ConsultationRecords";
-import { consultationMessages } from "@/components/teacher/consultation-records/messages.hr";
 import LiveText, { liveStopped, openMarks, useLiveView } from "@/components/teacher/LiveText";
-import LiveWorkFrame, { liveWorkHref, SUMMARY_ANCHOR } from "@/components/teacher/LiveWorkFrame";
+import { liveWorkHref, SUMMARY_ANCHOR } from "@/components/teacher/LiveWorkFrame";
 import RecordLimits from "@/components/teacher/RecordLimits";
 import { selectedRange, selectInBlock } from "@/components/teacher/selection";
 import { SummaryCardBody, useProcessSummary } from "@/components/teacher/SummaryCard";
-import TeacherComments, { useComments } from "@/components/teacher/TeacherComments";
+import { useComments } from "@/components/teacher/TeacherComments";
+import TeacherComments from "../comments/TeacherCommentsPanel";
 import type { TextAnchor } from "@/domain/collaboration";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { hostText } from "../../../text";
 import { useHost } from "../../context";
+import AiDeclarationSection from "../ai-declaration/AiDeclarationSection";
 import MobileReview from "../mobile-review/MobileReview";
+import { N12Consultations } from "../n12/N12Consultations";
+import { n12Messages as consultationMessages } from "../n12/messages.hr";
+import WorkFrame from "../n06/WorkFrame";
+import { FallbackPanel, PreSubmitPanel } from "../pre-submit/PreSubmitPanel";
+import { showFallback } from "../pre-submit/model";
 import { useTeacherRead } from "../../pages";
+import N11Compare from "../n11/Compare";
+import N11Entry from "../n11/Entry";
+import { n11Messages } from "../n11/messages.hr";
+import { n11Port } from "../n11/port";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
 const VIEWS = {
@@ -34,6 +43,7 @@ const VIEWS = {
   replay: { suffix: "/reprodukcija", title: t.replay.titleTeacher },
   receipt: { suffix: "/predaja", title: t.receipt.title },
   consultations: { suffix: "/konzultacije", title: consultationMessages.title },
+  comparison: { suffix: "/usporedba", title: n11Messages.title },
 } as const;
 
 type View = keyof typeof VIEWS;
@@ -84,8 +94,13 @@ function OpenWork({ documentId, path, view, session }: {
   const workHref = appHref(base, path);
   if (ended) return <WorkStatus title={title}><p role="status">{t.liveView.connection.signedOut}</p></WorkStatus>;
   if (view === "consultations") {
-    // ConsultationRecords uses Next Link and router, which supply basePath themselves.
-    return <ConsultationRecords key={documentId} documentId={documentId} workHref={workHref.slice("/app".length)} />;
+    // N-12 (WEB-2161). The router adds the basePath itself, so it gets the path without "/app".
+    return <N12Consultations key={documentId} documentId={documentId} workHref={workHref}
+      appPath={`${workHref.slice("/app".length)}/konzultacije`} />;
+  }
+  if (view === "comparison") {
+    return <N11Compare key={documentId} port={n11Port} documentId={documentId} signInHref={workHref}
+      replayHref={`${workHref}${VIEWS.replay.suffix}`} />;
   }
   if (view === "receipt") {
     return <Receipt documentId={documentId} workHref={workHref} current={current} />;
@@ -109,7 +124,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   const textRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<TextAnchor | null>(null);
   const placed = stopped || comments.outcome?.kind !== "ok" ? [] : placeThreads(view.document, comments.outcome.threads);
-  const recordState = summary.outcome?.kind === "ok" ? summary.outcome.summary.recordState : null;
+  const gaps = !stopped && summary.outcome?.kind === "ok" ? summary.outcome.summary.gaps.items : [];
   const receiptHref = `${workHref}${VIEWS.receipt.suffix}`;
   const select = () => {
     const root = textRef.current;
@@ -119,7 +134,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
 
   return (
     <MobileReview><div className="page">
-      <LiveWorkFrame documentId={documentId} frame={null} recordState={stopped ? null : recordState} mentorInAside
+      <WorkFrame documentId={documentId} gaps={gaps}
         text={<>
           {view.connection === "retrying" && view.document === null && <p role="alert">{workText.liveUnavailable}</p>}
           <LiveText view={view} marks={openMarks(placed)} textRef={textRef} onSelect={select} />
@@ -127,6 +142,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
             <li><a href={receiptHref}>{VIEWS.receipt.title}</a></li>
             <li><a href={`${workHref}${VIEWS.replay.suffix}`}>{VIEWS.replay.title}</a></li>
             <li><a href={`${workHref}${VIEWS.consultations.suffix}`}>{VIEWS.consultations.title}</a></li>
+            <N11Entry port={n11Port} documentId={documentId} href={`${workHref}${VIEWS.comparison.suffix}`} />
           </ul>}
         </>}
         aside={<>
@@ -168,6 +184,8 @@ function Receipt({ documentId, workHref, current }: { documentId: string; workHr
     setResult(null);
     setAttempt((n) => n + 1);
   };
+  const submitted = result?.kind === "ready" && result.state !== "nije_predano";
+  const summary = useProcessSummary(documentId, current, submitted);
   const read: ReceiptRead = result === null || result.kind === "signedOut" ? { kind: "loading" }
     : result.kind === "ready" ? studentReceiptRead(result.submission, result.state === "nije_predano" ? "open" : "submitted")
       : { kind: "error" };
@@ -177,9 +195,13 @@ function Receipt({ documentId, workHref, current }: { documentId: string; workHr
       {result?.kind === "ready" && result.studentName && <p>{result.studentName}</p>}
       {result?.kind === "notFound" ? <p role="alert">{t.liveView.connection.notFound}</p> : (
         <div onClick={retry}>
+          {submitted && <PreSubmitPanel outcome={summary.outcome} summaryHref={`${workHref}#${SUMMARY_ANCHOR}`}
+            onReload={() => void summary.load()} />}
           <ReceiptPanel read={read} retryHref={here} summaryHref={`${workHref}#${SUMMARY_ANCHOR}`} />
+          {submitted && showFallback(read.kind) && <FallbackPanel fallback={{ kind: "unavailable" }} />}
         </div>
       )}
+      {result?.kind === "ready" && <AiDeclarationSection submissionId={documentId} />}
     </WorkStatus>
   );
 }

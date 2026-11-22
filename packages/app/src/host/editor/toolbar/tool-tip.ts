@@ -57,7 +57,7 @@ export type TipPlace = { left: number; top: number };
 export function tipPlace(button: { left: number; width: number; bottom: number }, tip: { width: number }, viewport: { width: number }): TipPlace {
   const centred = button.left + button.width / 2 - tip.width / 2;
   const left = Math.max(TIP_GAP_PX, Math.min(centred, viewport.width - tip.width - TIP_GAP_PX));
-  return { left, top: button.bottom + TIP_GAP_PX };
+  return { top: button.bottom + TIP_GAP_PX, left };
 }
 
 /** How long to wait before showing for this kind of input. */

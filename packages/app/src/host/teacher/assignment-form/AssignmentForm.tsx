@@ -16,6 +16,9 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { checkForm, errorSummary, withPractice, type FormErrors } from "./form-checks";
 import { ImportAllowedField } from "./ImportAllowedField";
 import { assignmentFormHr as f } from "./messages.hr";
+import { publishHr } from "../publish/messages.hr";
+import { CheckListLink, PublishDone } from "../publish/PublishDone";
+import { isUncertain, publishOutcome } from "../publish/publish-outcome";
 
 type Course = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
 /** `practice` is the practice-assignment flag (WEB-1901); the server stores it and returns it, no grade field exists for it. */
@@ -60,6 +63,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
   const [draft, setDraft] = useState<FormDraft>(initialDraft);
   const [phase, setPhase] = useState<Phase>("form");
   const [errors, setErrors] = useState<FormErrors>({});
+  const [uncertain, setUncertain] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const courseProhibits = course.aiPolicy === "prohibited";
   const set = <K extends keyof FormDraft>(key: K, value: FormDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
@@ -85,14 +89,16 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
     setFailure(null);
     setPhase("publishing");
     const result = await publish(course.id, aiBody, request.current.key);
-    if (result.kind === "available") setPhase("published");
-    else { setFailure(a.errors[result.kind]); setPhase("review"); }
+    const outcome = publishOutcome(result);
+    setUncertain(isUncertain(result));
+    if (outcome.ok) setPhase("published");
+    else { setFailure(outcome.error ?? a.errors.unavailable); setPhase("review"); }
   }
 
   const heading = <p>{course.name} · {course.academicYear}</p>;
 
   if (phase === "published") {
-    return <section aria-label={`${course.name} · ${course.academicYear}`}>{heading}<p role="status">{setup.publishedNotice}</p></section>;
+    return <section aria-label={`${course.name} · ${course.academicYear}`}>{heading}<div role="status"><PublishDone /></div></section>;
   }
 
   if (phase === "review" || phase === "publishing") {
@@ -115,9 +121,10 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
           <dt>{f.labels.ai}</dt><dd>{allowsHelp ? f.values.aiCourse : f.values.aiNone}</dd>
           <dt>{f.labels.tools}</dt><dd>{f.values.toolsUnavailable}</dd>
         </dl>
-        <p>{f.reviewNote}</p>
+        <p>{publishHr.reviewNote}</p>
         {busy && <p role="status">{a.pending}</p>}
         {failure && <p role="alert">{failure}</p>}
+        {uncertain && <CheckListLink />}
         <p>
           <Button type="button" busy={busy} onClick={() => void confirm()}>{busy ? a.pending : f.publish}</Button>{" "}
           <Button type="button" tone="quiet" disabled={busy} onClick={() => setPhase("form")}>{f.backToForm}</Button>

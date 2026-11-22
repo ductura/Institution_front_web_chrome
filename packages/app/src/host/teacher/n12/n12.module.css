@@ -1,0 +1,14 @@
+.page { display: grid; gap: var(--space-4); max-width: 58rem; }
+.page > a { justify-self: start; }
+.page h1, .panel h2, .panel h3, .panel p { margin: 0; }
+.panel { display: grid; gap: var(--space-5); min-width: 0; padding: clamp(1rem, 4vw, 2rem); background: var(--card); border: 1px solid var(--raised-rule); border-radius: var(--radius); }
+.fields, .facts { display: grid; gap: var(--space-4); min-inline-size: 0; padding: 0; margin: 0; border: 0; }
+.pair { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-4); }
+.facts { grid-template-columns: max-content minmax(0, 1fr); }
+.facts dt, .hint, .additions time { color: var(--ink-3); }
+.facts dd { margin: 0; }
+.facts dd, .additions p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.additions { padding: 0; margin: 0; list-style: none; }
+.additions li { padding-block: var(--space-3); border-bottom: 1px solid var(--raised-rule); }
+.error { padding: var(--space-2) var(--space-3); background: var(--error-soft); border-radius: var(--radius-sm); }
