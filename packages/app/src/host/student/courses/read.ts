@@ -1,10 +1,12 @@
 // WEB-2103: one read of student.assignments.get (and, for E-4, the work states) with
 // the A-3 fields (groups, workType, mentor) the shared MyCourse type does not carry.
+import type { MyAssignment } from "../../../../../../src/components/student/my-assignments-read";
 import type { Group, Mentor } from "./model";
 
 export type Assignment = {
   id: string; title: string; dueAt: string; noticeFirst: boolean;
-  workType?: string; mentor?: Mentor | null; extendedDueAt?: string | null;
+  // The contract's closed set of work kinds, as the shared MyAssignment carries it since WEB-2102.
+  workType?: MyAssignment["workType"]; mentor?: Mentor | null; extendedDueAt?: string | null;
 };
 export type Course = { id: string; name: string; academicYear?: string; groups?: Group[]; assignments: Assignment[] };
 export type WorkState = "not_started" | "in_progress" | "submitted";

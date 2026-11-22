@@ -22,6 +22,15 @@ export const uiMessagesEn = {
     table: "Table preview",
     image: "Image preview",
   },
+  sideShell: {
+    menu: "Menu",
+    home: {
+      student: "Ductura, student home",
+      teacher: "Ductura, teacher home",
+      admin: "Ductura, institution home",
+      none: "Ductura, home",
+    },
+  },
   searchableList: {
     search: "Search sources",
     results: "Sources",

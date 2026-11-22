@@ -2,12 +2,16 @@ import { formatDateTimeHr } from "../../../../../../../src/lib/i18n/hr";
 import type { HistoryEvent, HistoryRead, SettingOutcome } from "./contract";
 import { historyText as t } from "./messages.hr";
 
-/** Newest first; the record minute decides, the id keeps equal minutes in a fixed order. */
+/** Newest first; the record time decides, the id keeps equal times in a fixed order. */
 export function newestFirst(events: readonly HistoryEvent[]): HistoryEvent[] {
-  return [...events].sort((a, b) => (a.at === b.at ? a.eventId.localeCompare(b.eventId) : a.at < b.at ? 1 : -1));
+  return [...events].sort((a, b) => (a.at === b.at ? a.id.localeCompare(b.id) : a.at < b.at ? 1 : -1));
 }
 
-export const eventText = (event: HistoryEvent): string => (event.kind === "withdrawn" ? t.withdrawn : t.submitted);
+/** What happened; a submission after the deadline says so, as the server recorded it. */
+export function eventText(event: HistoryEvent): string {
+  if (event.kind === "withdrawal") return t.withdrawn;
+  return event.afterDeadline === true ? `${t.submitted} ${t.afterDeadline}` : t.submitted;
+}
 export const eventTime = (event: HistoryEvent): string => formatDateTimeHr(event.at);
 
 export function failureMessage(read: HistoryRead): string {

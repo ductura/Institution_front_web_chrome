@@ -29,10 +29,14 @@ import { nextPath } from "../../bases";
 import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { ImportHost } from "../editor/import/ImportHost";
+import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
-import { PregledGroup } from "../editor/right/PregledGroup";
+import { PregledHost } from "../editor/right/PregledHost";
+import { SourcesMention } from "../editor/sources-mention/SourcesMention";
+import { LiteratureList } from "../editor/sources-mention/LiteratureList";
+import { MarksHost } from "../editor/marks/MarksHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
@@ -106,13 +110,19 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
-            renderReview={({ editor, documentId }) => <PregledGroup editor={editor} documentId={documentId} />}
+            triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
+            literature={() => <LiteratureList />}
+            hostSections={{
+              review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
+              work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
+            }}
             leftSections={{ ...leftSectionsFor(assignmentId), chapter: <ChapterPanel workId={assignmentId} /> }}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
               <RulesHost role="student" />
+              <MarksHost />
             </>} />,
         });
       }
