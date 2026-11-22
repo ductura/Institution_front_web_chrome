@@ -6,7 +6,10 @@ export type ScanResult = { kind: "isbn"; isbn: string } | { kind: "unsupported" 
 type Detector = { detect(image: ImageBitmapSource): Promise<{ rawValue: string }[]> };
 type DetectorCtor = new (options: { formats: string[] }) => Detector;
 
-export async function scanBarcode(file: Blob, ctor: DetectorCtor | undefined = (globalThis as { BarcodeDetector?: DetectorCtor }).BarcodeDetector,
+declare const BarcodeDetector: DetectorCtor | undefined;
+const nativeDetector = (): DetectorCtor | undefined => (typeof BarcodeDetector === "undefined" ? undefined : BarcodeDetector);
+
+export async function scanBarcode(file: Blob, ctor: DetectorCtor | undefined = nativeDetector(),
   decode: (blob: Blob) => Promise<ImageBitmapSource> = (b) => createImageBitmap(b)): Promise<ScanResult> {
   if (!ctor) return { kind: "unsupported" };
   try {

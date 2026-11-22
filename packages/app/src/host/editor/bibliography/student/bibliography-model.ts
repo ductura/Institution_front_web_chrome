@@ -110,9 +110,9 @@ export function relianceNotes(sources: readonly BibSource[], places: readonly Ci
     if (list.length < 5) continue;
     const counts = new Map<string, number>();
     for (const p of list) counts.set(p.sourceId, (counts.get(p.sourceId) ?? 0) + 1);
-    const top = [...counts].sort((a, b) => b[1] - a[1])[0];
-    if (!top) continue;
-    const [id, count] = top;
+    const best = [...counts].sort((a, b) => b[1] - a[1])[0];
+    if (!best) continue;
+    const [id, count] = best;
     const source = sources.find((s) => s.id === id);
     if (source && count * 2 >= list.length) {
       out.push({ chapter, source, count, total: list.length, firstIndex: list.find((p) => p.sourceId === id)!.index });
