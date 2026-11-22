@@ -17,6 +17,14 @@ async function studentSession(page: Page) {
   await page.route("**/api/v1/me", (route) => route.fulfill({
     json: { role: "student", institution: { displayName: "Izmišljeni fakultet" } },
   }));
+  // WEB-2105: the editor at /rad/<id> reads the assignment and its work; once
+  // acknowledged the notice no longer comes first, so the editor opens.
+  await page.route("**/api/v1/student/assignments", (route) => route.fulfill({ json: { courses: [{
+    name: "Izmišljeni kolegij", assignments: [{ id: ID, title: TITLE, dueAt: notice.dueAt, noticeFirst: false }],
+  }] } }));
+  await page.route("**/api/v1/student/assignment-work", (route) =>
+    route.fulfill({ json: { assignments: [{ assignmentId: ID, workState: "not_started" }] } }));
+  await page.route(`**/api/v1/student/assignments/${ID}/requirements`, (route) => route.fulfill({ json: { wordRange: null } }));
 }
 
 function pauseResponse() {
@@ -73,7 +81,7 @@ test("renders the notice, waits for both writes and restores the confirmation on
   await page.reload();
   await expect(editor).toHaveJSProperty("pathname", `/app/web/rad/${ID}`);
   await editor.click();
-  expect(new URL(page.url()).pathname).toBe(`/app/web/rad/${ID}`);
+  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
   expect(writes).toBe(1);
 });
 

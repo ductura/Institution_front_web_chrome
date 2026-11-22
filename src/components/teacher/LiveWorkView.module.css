@@ -244,3 +244,10 @@
   align-items: center;
   min-height: 44px;
 }
+
+/* N-06 back link: a touch target of at least 44px on a phone (WCAG 2.5.8). */
+.back a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

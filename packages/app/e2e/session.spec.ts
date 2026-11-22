@@ -236,8 +236,9 @@ test("a teacher's read: 403 asks for a teacher account, 503 offers a retry that 
   await page.route("**/api/v1/teacher/mentorships", (route) =>
     route.fulfill({ status: 403, contentType: "application/json", body: "{\"code\":\"forbidden\",\"error\":\"forbidden\"}" }));
   await page.goto("/app/web/nastavnik");
-  // Next keeps an empty role="alert" route announcer outside <main>.
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText("Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.");
+  // Next keeps an empty role="alert" route announcer outside <main>. The course
+  // card (N-01, WEB-2144) says the list is not shown empty while it cannot be read.
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText("Popis kolegija trenutačno nije dostupan. Pokušajte ponovno; popis se ne prikazuje prazan dok se ne učita.");
   await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
   await expect.poll(() => courses).toBe(2);
   await axe(page);
@@ -254,12 +255,13 @@ test("a teacher's read answering 401 sends the browser to sign-in", async ({ pag
   expect(new URL(seen.login.at(-1)!).searchParams.get("returnTo")).toBe("/app/web/nastavnik");
 });
 
-test("a student's Ductus pages open at their addresses, marked as not connected yet", async ({ page }) => {
+test("a student's Ductus pages open at their addresses", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
+  // Radni prostor is connected (WEB-2105): with no work in progress it says so.
   await page.goto("/app/chrome/rad");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radni prostor");
-  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  await expect(page.getByText("Nemate rad u tijeku. Rad započnite na kartici zadatka.")).toBeVisible();
   await axe(page);
 
   // Moji radovi is connected (HOST-S5): it reads an empty list.

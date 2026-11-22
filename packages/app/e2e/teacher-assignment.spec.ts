@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 import { assignmentSetupMessages as wizard } from "../../../src/components/teacher/TeacherSetup/messages.hr";
+import { assignmentFormHr as form } from "../src/host/teacher/assignment-form/messages.hr";
 import type { TeacherCourse } from "../../../src/components/teacher/teacher-courses-read";
 import { messagesHr } from "../../../src/lib/i18n/messages.hr";
 
@@ -47,7 +48,8 @@ test("teacher selects a course and sees publication only after the API confirms 
   await page.goto(newPath);
   await page.getByRole("link", { name: new RegExp(course.name) }).click();
   await expect(page).toHaveURL(`${newPath}?kolegij=${course.id}`);
-  await page.getByLabel(assignment.title, { exact: true }).fill("Izmišljeni novi zadatak");
+  // WEB-2146: the one-section form labels the title field "Naslov zadatka".
+  await page.getByLabel(form.fields.title, { exact: true }).fill("Izmišljeni novi zadatak");
   await page.getByLabel("Otvaranje", { exact: true }).fill("2027-01-10T10:00");
   await page.getByLabel("Rok", { exact: true }).fill("2027-01-30T16:00");
   await page.getByRole("button", { name: "Pregled i objava" }).click();
