@@ -18,6 +18,7 @@ import { useHost } from "./context";
 import { teacherShellHr } from "./teacher/shell/messages.hr";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { courseStudentsMessages } from "./teacher/n04/messages.hr";
+import { merlinMessages } from "./teacher/merlin/messages.hr";
 import { startWorkAction } from "./student/start-work/action";
 import SignInScreen from "./signin/SignInScreen";
 import { signInViewOf } from "./signin/sign-in-view";
@@ -149,6 +150,7 @@ export function TeacherCoursesPage() {
     ready={(courses) => <TeacherCourses courses={courses}
       courseDetails={(course) => <>
         <p><a href={appHref(base, `/nastavnik/kolegiji/${encodeURIComponent(course.id)}/studenti`)}>{courseStudentsMessages.link}</a></p>
+        {course.assignments[0] === undefined ? null : <p><a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(course.assignments[0].id)}/merlin`)}>{merlinMessages.link}</a></p>}
         <CourseTeachingTeam courseId={course.id} courseName={course.name} />
       </>} />} />;
 }
