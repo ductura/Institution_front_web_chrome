@@ -1,20 +1,18 @@
 "use client";
 
-import { Button, Card } from "@ductura/ui";
-
 import { createApi } from "../../../../../../src/client/api";
 import type { MentorshipCall } from "../../../../../../src/client/mentorship-requests";
 import { readMentoredWorks, type MentoredWork, type MentoredWorksCall } from "../../../../../../src/components/teacher/mentored-works-read";
 import { readMentorshipRequests } from "../../../../../../src/client/mentorship-requests";
-import MentoredWorks from "../../../../../../src/components/teacher/MentoredWorks";
-import { MentorshipRequestsView, type RequestsRead } from "../../../../../../src/components/teacher/MentorshipRequests";
+import { type RequestsRead } from "../../../../../../src/components/teacher/MentorshipRequests";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { messagesHr as t } from "../../../../../../locales/hr";
 import { useHost } from "../../context";
 import { useTeacherRead } from "../../pages";
 import { teacherShellHr } from "../shell/messages.hr";
-import { myStudentsText as s } from "./messages.hr";
-import { studentsOf } from "./model";
+import { RequestsCard } from "../n16/RequestsCard";
+import { WorksList } from "../n16/WorksList";
+import { TeacherPage } from "../shell/TeacherPage";
 
 const HREF = "/nastavnik/mentorstva";
 const requestsCall = () => createApi() as unknown as MentorshipCall;
@@ -39,46 +37,14 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
     return { kind: "ready", value: { asked, works: mentored.works } };
   });
   const mw = t.mentoredWorks;
-
-  let body;
-  if (read === null) body = <p role="status">{teacherShellHr.loadingMentorships}</p>;
-  else if (read.kind === "unavailable") {
-    body = (
-      <>
-        <p role="alert">{mw.unavailable}</p>
-        <p><Button tone="quiet" onClick={retry}>{mw.retry}</Button></p>
-      </>
-    );
-  } else if (read.kind !== "ready") body = <p role="status">{t.teacher.signedOut}</p>;
-  else {
-    const students = studentsOf(read.value.works);
-    body = (
-      <>
-        <MentorshipRequestsView read={read.value.asked} here={here} call={requests()}
-          onDecided={retry} />
-        <Card title={s.title}>
-          <p>{s.lead}</p>
-          {students.length === 0 ? <p>{s.empty}</p> : (
-            <ul>
-              {students.map((student) => (
-                <li key={student.key} data-testid="my-student">
-                  <strong>{student.name ?? s.unnamed}</strong>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-        <MentoredWorks works={read.value.works} />
-      </>
-    );
-  }
   return (
-    <div className="page">
-      <header>
-        <h1>{mw.title}</h1>
-        <p>{mw.lead}</p>
-      </header>
-      {body}
-    </div>
+    <TeacherPage title={mw.title} lead={mw.lead} loading={teacherShellHr.loadingMentorships} read={read} retry={retry}
+      unavailable={mw.unavailable} retryLabel={mw.retry}
+      ready={(value) => (
+        <>
+          <WorksList works={value.works} base={base} />
+          <RequestsCard read={value.asked} here={here} call={requests()} onDecided={retry} />
+        </>
+      )} />
   );
 }

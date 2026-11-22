@@ -1,6 +1,5 @@
 "use client";
 
-import { Button, PanelTabs } from "@ductura/ui";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -13,6 +12,7 @@ import { liveWorkHref, SUMMARY_ANCHOR } from "../../../../../../src/components/t
 import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr";
 import { useHost } from "../../context";
 import { TeacherPage, useTeacherRead } from "../../pages";
+import { PageHead } from "../shell/TeacherPage";
 import { fastPathHostText as t } from "./messages.hr";
 import { assignmentOf, detailLines, fastPathRead, stateText, type FastPathAnswer } from "./model";
 
@@ -23,10 +23,10 @@ export default function FastPathPage({ read = readFastPath }: { read?: (assignme
   const assignmentId = assignmentOf(useSearchParams().get("zadatak"));
   if (assignmentId === null) {
     return (
-      <div className="page">
-        <h1>{t.title}</h1>
-        <p role="status">{fp.pickAssignment}</p>
-      </div>
+      <>
+        <PageHead title={t.title} lead={t.lead} />
+        <section className="card"><p className="note" role="status">{fp.pickAssignment}</p></section>
+      </>
     );
   }
   return <AssignmentFastPath key={assignmentId} assignmentId={assignmentId} read={read} />;
@@ -47,9 +47,9 @@ export function FastPathBody({ students, hrefOf }: { students: readonly FastPath
   const [chosenId, setChosenId] = useState(sorted[0]?.id);
   if (sorted.length === 0) {
     return (
-      <section aria-labelledby="brz-put-prazno">
+      <section className="card center" aria-labelledby="brz-put-prazno">
         <h2 id="brz-put-prazno">{t.emptyTitle}</h2>
-        <p role="status">{t.emptyText}</p>
+        <p className="note" role="status">{t.emptyText}</p>
       </section>
     );
   }
@@ -58,31 +58,30 @@ export function FastPathBody({ students, hrefOf }: { students: readonly FastPath
   const current = sorted[index]!;
   const work = liveWorkHref(current.documentId);
   const step = (to: FastPathStudent | undefined, label: string) => (
-    <Button tone="quiet" disabled={to === undefined} onClick={() => to && setChosenId(to.id)}>{label}</Button>
+    <button type="button" className="btn secondary" aria-disabled={to === undefined ? "true" : undefined}
+      onClick={() => to && setChosenId(to.id)}>{label}</button>
   );
   return (
-    <div>
-      <nav aria-label={fp.studentsLabel}>
-        <h2>{fp.studentsTitle}</h2>
-        <ul>
-          {sorted.map((s) => (
-            <li key={s.id}>
-              <Button tone="quiet" aria-current={s.id === current.id ? "true" : undefined} onClick={() => setChosenId(s.id)}>
-                <span>{fullName(s)}</span> <span data-work={s.work}>{stateText(s)}</span>
-              </Button>
-            </li>
-          ))}
-        </ul>
-        <p>{fp.orderNote}</p>
+    <div className="fp">
+      <nav className="card fp-list" aria-label={fp.studentsLabel} style={{ padding: 12 }}>
+        <p className="meta">{fp.studentsTitle}</p>
+        {sorted.map((s) => (
+          <a key={s.id} href="#brz-put" aria-current={s.id === current.id ? "true" : undefined}
+            onClick={(event) => { event.preventDefault(); setChosenId(s.id); }}>
+            {fullName(s)}<span data-work={s.work}>{stateText(s)}</span>
+          </a>
+        ))}
+        <p className="meta">{fp.orderNote}</p>
       </nav>
-      <section aria-labelledby="brz-put-student">
+      <section className="card" aria-labelledby="brz-put-student">
         <h2 id="brz-put-student">{fullName(current)}</h2>
         {current.record ? <Work student={current} record={current.record} summaryHref={work && hrefOf(`${work}#${SUMMARY_ANCHOR}`)} />
-          : <p role="status">{t.notStarted}</p>}
-        <p>
-          {step(sorted[index - 1], c.previous)} {step(sorted[index + 1], c.next)}
-          {work && <> <a href={hrefOf(work)}>{fp.openWork}</a></>}
-        </p>
+          : <p className="note" role="status">{t.notStarted}</p>}
+        <div className="sb-acts">
+          {step(sorted[index - 1], t.previous)}
+          {step(sorted[index + 1], t.next)}
+          {work && <a className="btn" href={hrefOf(work)}>{fp.openWork}</a>}
+        </div>
       </section>
     </div>
   );
@@ -90,7 +89,7 @@ export function FastPathBody({ students, hrefOf }: { students: readonly FastPath
 
 function Work({ student, record, summaryHref }: { student: FastPathStudent; record: FastPathRecord; summaryHref: string | null }) {
   const text = (
-    <article aria-label={fp.textLabel}>
+    <article className="sheet ed-sheet" data-sheet-theme="light" aria-label={fp.textLabel} style={{ padding: 24 }}>
       {textRuns(record.blocks).map((run, i) => {
         if (run.kind === "heading") return <h3 key={i}>{run.texts[0]}</h3>;
         if (run.kind === "bulletItem") return <ul key={i}>{run.texts.map((s, j) => <li key={j}>{s}</li>)}</ul>;
@@ -99,23 +98,26 @@ function Work({ student, record, summaryHref }: { student: FastPathStudent; reco
       })}
     </article>
   );
+  const [tab, setTab] = useState<"text" | "summary">("text");
   return (
     <>
-      <dl>
-        {detailLines(student, record).map((line) => [
-          <dt key={`${line.key}-k`}>{line.label}</dt>,
-          <dd key={`${line.key}-v`} data-line={line.key}>{line.value}</dd>,
-        ])}
-      </dl>
-      <PanelTabs label={fp.viewLabel} tabs={[
-        { id: "text", label: fp.views.text, content: text },
-        { id: "summary", label: fp.views.summary, content: (
-          <div>
+      {detailLines(student, record).map((line) => (
+        <div key={line.key} className="sb-kv"><span>{line.label}</span><b data-line={line.key}>{line.value}</b></div>
+      ))}
+      <div className="tabs" role="tablist" aria-label={fp.viewLabel}>
+        {(["text", "summary"] as const).map((id) => (
+          <button key={id} type="button" role="tab" id={`fp-tab-${id}`} aria-selected={tab === id} aria-controls={`fp-panel-${id}`}
+            onClick={() => setTab(id)}>{fp.views[id]}</button>
+        ))}
+      </div>
+      <div role="tabpanel" id={`fp-panel-${tab}`} aria-labelledby={`fp-tab-${tab}`}>
+        {tab === "text" ? text : (
+          <div style={{ display: "grid", gap: 12 }}>
             <ProcessSummaryView summary={record.summary} />
             {summaryHref && <a href={summaryHref}>{c.openSummary}</a>}
           </div>
-        ) },
-      ]} />
+        )}
+      </div>
     </>
   );
 }

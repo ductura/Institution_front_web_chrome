@@ -22,6 +22,7 @@ const PROTO: Readonly<Record<string, Proto>> = {
   "student: predaja, potvrda": { file: S, hash: "potvrda" },
   "nastavnik: kolegiji": { file: N, hash: "kolegiji" },
   "nastavnik: brz put": { file: N, hash: "brz-put" },
+  "nastavnik: mentorstva": { file: N, hash: "mentorstva" },
   "nastavnik: zbirni pregled": { file: N, hash: "zbirni" },
   "nastavnik: novi zadatak": { file: N, hash: "novi-zadatak" },
   "nastavnik: produljenje roka": { file: N, hash: "produljenje" },
