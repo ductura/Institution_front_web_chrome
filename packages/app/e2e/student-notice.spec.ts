@@ -73,7 +73,8 @@ test("renders the notice, waits for both writes and restores the confirmation on
   await page.reload();
   await expect(editor).toHaveJSProperty("pathname", `/app/web/rad/${ID}`);
   await editor.click();
-  expect(new URL(page.url()).pathname).toBe(`/app/web/rad/${ID}`);
+  // The editor link routes on the client; wait for the address rather than read it once.
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`/app/web/rad/${ID}`);
   expect(writes).toBe(1);
 });
 
