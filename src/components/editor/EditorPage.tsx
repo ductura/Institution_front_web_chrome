@@ -23,6 +23,9 @@ export default function EditorPage({
   toolbar = null,
   topBar = null,
   aside,
+  banner = null,
+  heading = true,
+  stand = null,
   children,
 }: {
   course: string | null;
@@ -31,6 +34,12 @@ export default function EditorPage({
   toolbar?: ReactNode;
   topBar?: ReactNode;
   aside?: ReactNode;
+  /** A note above the sheet, in the canvas (prototype `.ed-banner`: offline, submitted). */
+  banner?: ReactNode;
+  /** False: no title on the sheet (a new work shows only its placeholder). */
+  heading?: boolean;
+  /** When given, shown in the canvas in place of the sheet (the work could not be opened, or is loading). */
+  stand?: ReactNode;
   children: ReactNode;
 }) {
   const theme = useSheetTheme();
@@ -42,10 +51,13 @@ export default function EditorPage({
       {/* Always rendered, so the grid keeps its rows with or without a toolbar. */}
       <div className={styles.toolbar}>{toolbar}</div>
       <main id="sadrzaj" className={styles.area}>
-        <article className={`sheet ${styles.sheet}`} data-sheet-theme={theme} aria-label={t.workspace.documentLabel}>
-          <h1 className={styles.title}>{title ?? t.workspace.documentUntitled}</h1>
-          {children}
-        </article>
+        {banner}
+        {stand ?? (
+          <article className={`sheet ${styles.sheet}`} data-sheet-theme={theme} aria-label={t.workspace.documentLabel}>
+            {heading ? <h1 className={styles.title}>{title ?? t.workspace.documentUntitled}</h1> : null}
+            {children}
+          </article>
+        )}
         {aside}
       </main>
       {status}
