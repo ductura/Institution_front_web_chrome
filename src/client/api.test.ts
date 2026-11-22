@@ -180,6 +180,23 @@ describe("src/client/api input", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it("sends a query only for a migration operation whose contract has a query schema (WEB-2007)", async () => {
+    const reply = JSON.stringify({ from: 1, to: 2, blocks: [] });
+    const { api, fetchImpl } = answering(200, reply);
+    const params = { documentId: "izmišljeni-rad" };
+    expect(await api("work.compare.get", { params, query: { from: "1", to: "2" }, body: undefined })).toMatchObject({ ok: true });
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toContain("/works/" + encodeURIComponent("izmišljeni-rad") + "/compare?from=1&to=2");
+    const refused = [
+      { from: "1" }, { from: "1", to: "2", extra: "x" }, { from: "0", to: "2" }, { from: "1", to: "2 " }, undefined,
+    ];
+    for (const query of refused) {
+      expect(await api("work.compare.get", { params, query: query as never, body: undefined })).toMatchObject({ code: "client_rejected" });
+    }
+    // An operation without a query schema still refuses any query.
+    expect(await api("work.versions.get", { params, query: { x: "1" } as never, body: undefined })).toMatchObject({ code: "client_rejected" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it("refuses a body field no branch of an anyOf body names", async () => {
     const { api, fetchImpl } = answering(200, "{}");
     const input = vectorInput("collaboration.revision-requests.post", "stale-counter") as { params: unknown; body: Record<string, unknown> };

@@ -42,6 +42,8 @@ type MigrationRoute = {
   readonly path: string;
   readonly method: string;
   readonly params?: Schema;
+  /** Only an operation whose contract has a query schema takes a query (WEB-2007). */
+  readonly query?: Schema;
   readonly body?: Schema;
   readonly responses: Readonly<Record<string, ResponseSpec>>;
   readonly errors: Readonly<Record<string, readonly string[]>>;
@@ -284,7 +286,7 @@ function migrationError(route: MigrationRoute, status: number, body: unknown): s
 async function callMigrationRoute<Id extends ApiOperationId>(
   id: Id, route: MigrationRoute, wire: WireInput, baseUrl: string, transport: typeof fetch,
 ): Promise<ApiResult<Id>> {
-  if (wire.query !== undefined || !acceptsPart(route.params, wire.params) || !acceptsPart(route.body, wire.body)) {
+  if (!acceptsPart(route.query, wire.query) || !acceptsPart(route.params, wire.params) || !acceptsPart(route.body, wire.body)) {
     return { ok: false, status: 0, code: "client_rejected" };
   }
   let requestBody: string | undefined;
@@ -297,7 +299,12 @@ async function callMigrationRoute<Id extends ApiOperationId>(
   }
   const params = wire.params as Record<string, string> | undefined;
   const path = route.path.replace(/\{(\w+)\}/g, (_, name: string) => encodeURIComponent(params?.[name] ?? ""));
-  const response = await transport(new URL(path, baseUrl), {
+  const url = new URL(path, baseUrl);
+  if (route.query !== undefined) {
+    // acceptsPart checked the query against the schema above: an object of string values named by the contract.
+    for (const [name, value] of Object.entries(wire.query as Record<string, string>)) url.searchParams.set(name, value);
+  }
+  const response = await transport(url, {
     method: route.method,
     redirect: "manual",
     headers: requestBody === undefined ? undefined : { "content-type": "application/json" },
