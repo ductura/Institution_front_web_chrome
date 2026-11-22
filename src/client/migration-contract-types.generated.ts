@@ -7,6 +7,7 @@
 // Faza 3 (WEB-2004, WEB-2005): bulk download, submission package and PDF export routes from Institution_server 9e67d7ca (API 1.75.0).
 // Faza 3 (WEB-2003): submission withdrawal routes from Institution_server e299665f (API 1.76.0).
 // Faza 3 (WEB-2007): work comparison route from Institution_server 7aab1437 (API 1.76.0).
+// Faza 3 (WEB-2008): teaching team view from Institution_server 34b0a9a1 (#607, SRV-2007, API 1.78.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -249,7 +250,7 @@ export type MigrationOperations = {
     success: { status: 200; body: { "wordRange": { "min": number; "max": number | null } | { "min": null; "max": number } | null }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "unavailable";
   };
-  // SRV-1408 (Institution_server #548), followed by the provisional WEB-1405 view.
+  // SRV-1408 (Institution_server #548), followed by the WEB-1405 view published by SRV-2007 (#607).
   "institution.teaching-group-members.put": {
     params: { "id": string; "groupId": string };
     query: undefined;
