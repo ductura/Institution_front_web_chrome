@@ -20,6 +20,7 @@ import ProblemReportHelp from "./ProblemReportHelp";
 import SignOut from "./SignOut";
 import { StudentToasts } from "./student/toast/StudentToasts";
 import { NoRoleScreen } from "./signin/SignInScreen";
+import { ljuskaOf } from "./ljuska-po-ekranu";
 import ShellNotifications from "./shell/notifications/ShellNotifications";
 import { shellMessagesFor } from "./teacher/shell/messages";
 
@@ -152,13 +153,18 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
     return shell(undefined, <section className="card"><h1>{t.home.welcome}</h1><p className="note">{hostText.noRole}</p></section>);
   }
   const { page } = resolved;
-  // VIZ-S3 (S: E-7): the student's workspace has no shell in the prototype (`shell: 'none'`):
-  // the page is the whole window, with its own top bar and status bar.
-  if (role === "student" && page.path === "/rad/[assignmentId]") {
+  // VIZ-S3, VIZ-CSS: a screen the prototype registers with `shell: 'none'` (the workspace, the
+  // submission steps, the teacher's work pages) is the whole window, with its own bar
+  // (ljuska-po-ekranu.ts).
+  if (ljuskaOf(page.path) === "none") {
+    // The workspace brings its own `<main>`; the other screens' frames name their content
+    // `#sadrzaj` (StepFrame, the teacher's work page) and get the landmark here.
+    const own = <HostContext value={{ base, page, role }}>{children}</HostContext>;
+    const body = page.path === "/rad/[assignmentId]" ? own : <main>{own}</main>;
     return (
       <EditorSignOutSlot>
-        <RecoveryOffer base={base} />
-        <StudentToasts><HostContext value={{ base, page, role }}>{children}</HostContext></StudentToasts>
+        {role === "student" && <RecoveryOffer base={base} />}
+        {role === "student" ? <StudentToasts>{body}</StudentToasts> : body}
       </EditorSignOutSlot>
     );
   }
