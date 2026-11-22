@@ -20,7 +20,13 @@ import migrationContracts from "./migration-contracts.generated.json" with { typ
 import type { MigrationOperations } from "./migration-contract-types.generated";
 import { matchesSchema, type Schema } from "./schema-check";
 
-type ResponseSpec = { readonly content?: Readonly<Record<string, { readonly schema?: Schema }>> };
+// A binary answer (a file download) names only its description and headers; with no content schema the body
+// is read as no JSON at all, exactly as before (WEB-2004A).
+type ResponseSpec = {
+  readonly description?: string;
+  readonly headers?: Readonly<Record<string, unknown>>;
+  readonly content?: Readonly<Record<string, { readonly schema?: Schema }>>;
+};
 type BodySchema = { readonly properties?: object; readonly anyOf?: readonly BodySchema[]; readonly additionalProperties?: unknown };
 type Operation = {
   readonly operationId: string;
