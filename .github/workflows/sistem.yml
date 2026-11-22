@@ -57,8 +57,7 @@ jobs:
           FPID=$!
           sleep 5
           for u in /kako-radi / /api/v1/health; do
-            curl -sS -o /dev/null -w "$u %{http_code} %{time_total}s
-" --max-time 240 "http://127.0.0.1:3100$u" || echo "$u PAD"
+            curl -sS -o /dev/null -w "$u %{http_code} %{time_total}s\n" --max-time 240 "http://127.0.0.1:3100$u" || echo "$u PAD"
           done
           cat "$RUNNER_TEMP/front.log"
           kill $FPID || true
