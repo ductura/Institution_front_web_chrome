@@ -57,7 +57,7 @@
 /* The prototype's .err: the text says what failed; colour or bar only points at it. */
 .error {
   margin: 0;
-  color: var(--err-ink, var(--error));
+  color: var(--err-ink);
   font-size: var(--fs-sm);
   font-weight: var(--err-weight);
   border-left: var(--err-bar) solid var(--warn);

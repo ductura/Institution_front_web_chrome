@@ -75,10 +75,7 @@ describe("prototype.css: the prototype parity layer over globals.css", () => {
     expect([token(root, "--main-w"), token(teacher, "--main-w")]).toEqual(["880px", "960px"]);
     expect([token(root, "--main-narrow-w"), token(teacher, "--main-narrow-w")]).toEqual(["640px", "680px"]);
     expect([token(root, "--dialog-w"), token(teacher, "--dialog-w")]).toEqual(["480px", "520px"]);
-    expect(token(teacher, "--field-invalid")).toBe("var(--warn)");
-    expect(token(teacher, "--err-ink")).toBe("currentcolor");
-    // Undefined at the root, so the sheet's own --error is used there (resolved where it is used).
-    expect(root).not.toMatch(/--err-ink:|--field-invalid:/);
+    expect([token(root, "--field-invalid"), token(teacher, "--field-invalid")]).toEqual(["var(--error)", "var(--warn)"]);
   });
 
   it("writes the prototype's shared classes with the prototype's names", () => {

@@ -39,11 +39,6 @@
   justify-items: start;
 }
 
-/* In the flow of a page (a sheet included) the toast sits on --card, which both sheets set under their own ink. */
-.inline .toast {
-  background: var(--card);
-}
-
 .toast {
   display: flex;
   gap: var(--space-3);

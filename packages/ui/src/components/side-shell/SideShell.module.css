@@ -62,27 +62,24 @@
   background: var(--hover);
 }
 
-/* One column as wide as the rail: a long word breaks inside it instead of widening it. */
 .nav {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1);
 }
 
-/* The prototype's rail labels: 11 px, centred, breaking inside the rail. */
-/* Block, not grid: a centred grid item takes its text's widest line and runs out of the rail. */
+/* The interface floor of 12 px (AppShell, DAN-891); the prototype's rail labels are 11 px. */
 .nav a {
-  display: block;
-  align-content: center;
+  display: grid;
+  place-items: center;
   min-height: var(--target);
   padding: var(--space-1h) var(--space-0);
   border-radius: var(--radius-control);
   color: var(--ink-2);
-  font-size: var(--fs-2xs);
+  font-size: 12px;
   line-height: 1.2;
   text-align: center;
   text-decoration: none;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .nav a:hover {
@@ -98,20 +95,8 @@
 
 .foot {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1h);
   margin-top: auto;
-}
-
-/* Not in the prototypes: the institution's name, kept from the old top bar, as quiet 11 px text. */
-.context {
-  margin: 0;
-  color: var(--ink-3);
-  font-size: var(--fs-2xs);
-  line-height: 1.2;
-  text-align: center;
-  overflow-wrap: break-word;
-  hyphens: auto;
 }
 
 .tools {
@@ -119,11 +104,10 @@
   place-items: center;
 }
 
-/* Quiet links of the foot (and the account's links, e.g. "Postavke profila"): as the rail's labels, centred, 11 px. */
-.quiet,
-.account a:not(dialog *, [role="dialog"] *) {
-  display: block;
-  align-content: center;
+/* Quiet links of the foot: as the rail's labels, centred, 12 px. */
+.quiet {
+  display: grid;
+  place-items: center;
   width: 100%;
   min-height: var(--target);
   padding: var(--space-1) var(--space-0);
@@ -131,25 +115,22 @@
   border-radius: var(--radius-control);
   background: transparent;
   color: var(--ink-2);
-  font: 400 var(--fs-2xs) / 1.2 var(--ff-ui);
+  font: 400 12px / 1.2 var(--ff-ui);
   text-align: center;
   text-decoration: none;
-  white-space: normal;
-  overflow-wrap: break-word;
-  hyphens: auto;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
 .quiet:hover,
-.quiet[aria-current="page"],
-.account a:not(dialog *, [role="dialog"] *):hover {
+.quiet[aria-current="page"] {
   background: var(--hover);
   color: var(--ink);
 }
 
 /* The prototype's `.side-foot .btn` (btn small secondary): ◐ and Odjava. */
 .footButton,
-.account button:not(dialog *, [role="dialog"] *) {
+.account :is(a, button):not(dialog *, [role="dialog"] *) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -160,7 +141,7 @@
   border-radius: var(--radius-control);
   background: transparent;
   color: var(--ink);
-  font: 600 var(--fs-2xs) / var(--lh-control) var(--ff-ui);
+  font: 600 12px / var(--lh-control) var(--ff-ui);
   text-align: center;
   text-decoration: none;
   white-space: normal;
@@ -168,7 +149,7 @@
 }
 
 .footButton:hover,
-.account button:not(dialog *, [role="dialog"] *):hover {
+.account :is(a, button):not(dialog *, [role="dialog"] *):hover {
   background: var(--hover);
   border-color: var(--rule);
   color: var(--ink);
@@ -178,7 +159,6 @@
 .account > *,
 .account > * > * {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1h);
 }
 
@@ -249,6 +229,7 @@
   }
 
   .side[data-open="true"] .nav a {
+    place-items: center start;
     padding: var(--space-1h) var(--space-2h);
     font-size: var(--fs-ui);
     text-align: left;
@@ -260,12 +241,6 @@
     align-items: center;
     gap: var(--space-1h);
     margin: 0;
-  }
-
-  .side[data-open="true"] .context {
-    flex-basis: 100%;
-    text-align: left;
-    font-size: var(--fs-sm);
   }
 
   .side[data-open="true"] .quiet {
@@ -281,13 +256,7 @@
     flex-wrap: wrap;
   }
 
-  .side[data-open="true"] .account a:not(dialog *, [role="dialog"] *) {
-    width: auto;
-    padding: 0 var(--space-2h);
-    font-size: var(--fs-ui);
-  }
-
-  .side[data-open="true"] :is(.footButton, .account button:not(dialog *, [role="dialog"] *)) {
+  .side[data-open="true"] :is(.footButton, .account :is(a, button):not(dialog *, [role="dialog"] *)) {
     width: auto;
     padding: 0 var(--space-3);
     font-size: var(--fs-ui);

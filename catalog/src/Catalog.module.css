@@ -58,4 +58,4 @@
 .component:global(#SideShell) .states { grid-template-columns: minmax(0, 1fr); }
 .component:global(#SideShell) .state dd { display: block; border: 1px solid var(--rule); }
 .component:global(#SideShell) .state dd > div { min-height: 380px; }
-.component:global(#SideShell) aside { position: static; align-self: stretch; height: auto; }
+.component:global(#SideShell) aside { position: static; height: auto; }

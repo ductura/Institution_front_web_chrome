@@ -23,8 +23,11 @@
   background: var(--card);
 }
 
-/* The h1 keeps no class of its own (screens are matched by their plain <h1>). */
-.screen .card > h1 {
+.title {
+  font-size: var(--fs-title-lg);
+}
+
+.screen h1.title {
   font-size: var(--fs-title-lg);
 }
 

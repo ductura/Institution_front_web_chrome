@@ -27,8 +27,6 @@ export type SideShellProps = {
   menuLabel: string;
   /** Name of the theme button (◐), e.g. "Promijeni svijetlu ili tamnu temu". */
   themeLabel: string;
-  /** A quiet line at the top of the foot: the institution's name from the session (#2028 c.6993786629 §3.3). */
-  context?: string | null;
   /** Quiet links of the foot ("Kako Ductura radi", "Izjava o pristupačnosti"). */
   links?: readonly SideShellItem[];
   /** A help control in the foot; gets the class of the foot's quiet links. */
@@ -73,7 +71,7 @@ function flipTheme() {
  */
 export function SideShell({
   role = null, name, mark = "D", homeHref, homeLabel, sideLabel, navLabel, items, current, menuLabel, themeLabel,
-  context = null, links = [], help, tools, account, narrow = false, ownMain = false, navId = "bocna-navigacija", frame = "main", children,
+  links = [], help, tools, account, narrow = false, ownMain = false, navId = "bocna-navigacija", frame = "main", children,
 }: SideShellProps) {
   const [open, setOpen] = useState(false);
   const menu = useRef<HTMLButtonElement>(null);
@@ -122,7 +120,6 @@ export function SideShell({
           </nav>
         ) : null}
         <div className={styles.foot}>
-          {context ? <p className={styles.context}>{context}</p> : null}
           {tools !== undefined ? <div className={styles.tools}>{tools}</div> : null}
           {links.map((link) => (
             <a key={link.href} className={styles.quiet} href={link.href}

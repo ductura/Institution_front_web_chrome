@@ -8,8 +8,6 @@
 .table th, .table td { padding: var(--space-2) var(--space-3); text-align: start; vertical-align: top; border-bottom: 1px solid var(--rule-2); }
 .table tbody tr:last-child > * { border-bottom: 0; }
 .table thead th { font-size: var(--fs-sm); font-weight: 600; color: var(--ink-3); white-space: nowrap; background: var(--chrome); }
-/* The sheets set no --chrome of their own; there the header row sits on their --well. */
-:global(.sheet) .table thead th { background: var(--well); }
 .table tbody th { font-weight: 600; }
 .table [data-numeric] { text-align: end; font-variant-numeric: tabular-nums; }
 .sort {
