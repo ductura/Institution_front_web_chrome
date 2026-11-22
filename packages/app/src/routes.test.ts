@@ -117,6 +117,7 @@ describe("the student data export (WEB-1302)", () => {
 describe("publicPage", () => {
   it("gives the pages opened without a session: Stanje sustava, Prijava and Nema ovlasti", () => {
     expect(publicPage("/stanje")).toMatchObject({ label: "Stanje sustava" });
+    expect(publicPage("/provjera")).toMatchObject({ label: "Provjera potvrde" });
     expect(publicPage("/prijava")).toMatchObject({ label: "Prijava" });
     expect(publicPage("/nema-ovlasti")).toMatchObject({ label: "Nema ovlasti" });
     expect(publicPage("/izvoz-podataka/izmisljeni-token")).toMatchObject({ label: "Izvoz mojih podataka" });

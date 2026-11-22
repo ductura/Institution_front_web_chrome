@@ -58,6 +58,7 @@ export const pageLabelsEn = {
   studentDataDownload: "Export of my data",
   merlinExport: "Export for Merlin",
   courseStudents: "Student list",
+  receiptVerification: "Receipt check",
 };
 
 export const accessDeniedEn = {

@@ -9,6 +9,7 @@ import { REVISION_ZERO_JCS } from "../../editor-core/src/document/document/revis
 import { mentorWorkHr } from "../../../src/components/editor/mentor/work-state/messages.hr";
 import { consultationMessages } from "../../../src/components/teacher/consultation-records/messages.hr";
 import { messagesHr as t } from "../../../src/lib/i18n/messages.hr";
+import { n07Messages } from "../src/host/teacher/n07/messages.hr";
 
 const assignmentId = "00000000-0000-4000-8000-0000000000a1";
 const studentId = "00000000-0000-4000-8000-0000000000e1";
@@ -118,9 +119,9 @@ test("access and receipt errors show a retry and recover after a fresh read", as
   allow();
   await page.getByRole("button", { name: t.teacherLiveWork.retry }).click();
 
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(t.receipt.error);
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(n07Messages.error);
   failReceipt = false;
-  await page.getByRole("link", { name: t.receipt.retry }).click();
+  await page.getByRole("button", { name: n07Messages.retry }).click();
   await expect(page.getByText(/\bPredano\b/)).toBeVisible();
 });
 

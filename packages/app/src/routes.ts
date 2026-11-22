@@ -14,7 +14,7 @@ import { studentDataExportMessages } from "./host/institution/student-data-expor
 import { studentDataDownloadMessages } from "./host/public/student-data-download/messages.hr";
 import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
-import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
+import { accessDeniedHr, pageLabelsHr, profileHr } from "./i18n/messages.hr";
 import { hostText } from "./text";
 
 export { BASES, type Base } from "./bases";
@@ -113,6 +113,8 @@ export const PAGES: readonly Page[] = [
   // open to everyone signed in, since the registry office has no role of its own and the server decides.
   { path: STUDENT_DATA_EXPORT_PATH, label: studentDataExportMessages.title, kind: "pending", roles: [], current: STUDENT_DATA_EXPORT_PATH },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
+  // WEB-2155 (C-6): the public check of a receipt, linked from N-07; public, it needs no sign-in.
+  { path: "/provjera", label: pageLabelsHr.receiptVerification, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.
   { path: "/nema-ovlasti", label: accessDeniedHr.pageTitle, kind: "pending", roles: [], public: true },

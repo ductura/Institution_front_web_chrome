@@ -32,6 +32,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/zadaci/mentorstvo": (c) => c.app.host.mentorshipRequest,
   "/kako-radi": (c) => c.t.shell.howItWorks,
   "/stanje": (c) => c.t.statusPage.pageTitle,
+  "/provjera": (c) => c.app.pages.receiptVerification,
   "/prijava": (c) => c.app.host.signIn,
   "/nema-ovlasti": (c) => c.app.accessDenied.pageTitle,
   "/profil": (c) => c.app.profile.title,
