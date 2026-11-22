@@ -14,3 +14,12 @@ export const noticeText = {
   facultyAllowed: "Dopušteno pravilom fakulteta",
   facultyBanned: "Nije dopušteno pravilom fakulteta",
 };
+
+// E-5 `MSG` of the prototype: the text under the field for the three states the
+// prototype names (neispravan, istekao, mreza); other refusals keep the shared text.
+export const enrolErrors = {
+  malformed: "Kod ima od 8 do 32 slova i brojke. Provjerite ga i upišite ponovno.",
+  invalidCode: "Kod ne postoji ili je istekao. Provjerite ga s nastavnikom.",
+  expiredCode: "Kod ne postoji ili je istekao. Provjerite ga s nastavnikom.",
+  offline: "Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.",
+} as const;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { codeFromQuery, editorPath } from "./model";
+import { codeFromQuery, editorPath, enrolError } from "./model";
 import { enrolText, noticeText } from "./messages.hr";
 
 describe("WEB-2104 upis i obavijest", () => {
@@ -21,5 +21,12 @@ describe("WEB-2104 upis i obavijest", () => {
     expect(enrolText.openAssignment).toBe("Otvori zadatak");
     expect(enrolText.another).toBe("Upiši drugi kolegij");
     expect(noticeText.facultyRule).toBe("Pravilo fakulteta (FPZG čl. 8)");
+  });
+
+  it("says the prototype's text under the field", () => {
+    expect(enrolError({ kind: "malformed" })).toBe("Kod ima od 8 do 32 slova i brojke. Provjerite ga i upišite ponovno.");
+    expect(enrolError({ kind: "invalidCode" })).toBe("Kod ne postoji ili je istekao. Provjerite ga s nastavnikom.");
+    expect(enrolError({ kind: "offline" })).toBe("Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.");
+    expect(enrolError(null)).toBeNull();
   });
 });

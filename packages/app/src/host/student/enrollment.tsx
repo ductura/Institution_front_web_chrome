@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 
 import { appHref } from "../../../../../src/components/index.ts";
 import EnrolForm from "./enrol/EnrolForm";
+import enrolStyles from "./enrol/Enrol.module.css";
 import styles from "../../../../../src/components/student/upis/Enroll.module.css";
 import { courseHref, noticeHref, readCourse, type CourseRead } from "../../../../../src/components/student/upis/course-read.ts";
 import { createApi, leaveFor, signInHref } from "../../../../../src/client/api.ts";
@@ -37,11 +38,8 @@ export function EnrollPage() {
     go(href, replace);
   };
   return (
-    <div className={`page ${styles.screen}`}>
-      <section className={styles.card}>
-        <h1>{t.student.enroll.heading}</h1>
-        <EnrolForm signInHref={signInHref(appHref(base, "/upis"))} navigate={navigate} />
-      </section>
+    <div className={enrolStyles.screen}>
+      <EnrolForm signInHref={signInHref(appHref(base, "/upis"))} navigate={navigate} />
     </div>
   );
 }
