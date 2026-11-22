@@ -19,7 +19,9 @@ import {
 } from "@/client/teacher-working-criteria";
 
 import styles from "./WorkingCriteria.module.css";
-import { IDLE_ROW as IDLE, afterWrite, assessmentChange, headingText, noteChange, type Row } from "./criteria-logic";
+import {
+  IDLE_ROW as IDLE, afterWrite, assessmentChange, criterionTitle, headingText, noteChange, type Row,
+} from "./criteria-logic";
 import { workingCriteriaHr as t } from "./messages.hr";
 
 export type CriteriaLoad =
@@ -52,11 +54,12 @@ export function CriteriaView({ load, rows, onPick, onEdit, onDraft, onSaveNote, 
       <h2 id="radni-kriteriji">{headingText(load.criteria)}</h2>
       <ul className={styles.list}>
         {load.criteria.map((c) => {
-          const row = rows[c.criterionId] ?? IDLE;
+          const row = rows[c.id] ?? IDLE;
+          const title = criterionTitle(c);
           return (
-            <li key={c.criterionId} className={styles.item}>
-              <b>{c.title}</b>
-              <div className={styles.seg} role="group" aria-label={t.assessmentGroup.replace("{title}", c.title)}>
+            <li key={c.id} className={styles.item}>
+              <b>{title}</b>
+              <div className={styles.seg} role="group" aria-label={t.assessmentGroup.replace("{title}", title)}>
                 {ASSESSMENTS.map((a) => (
                   <Button key={a} aria-pressed={c.assessment === a} disabled={row.busy} onClick={() => onPick(c, a)}>
                     {t.assessments[a]}
@@ -68,7 +71,7 @@ export function CriteriaView({ load, rows, onPick, onEdit, onDraft, onSaveNote, 
               {row.editing ? (
                 <div className={styles.card}>
                   <label>
-                    {t.noteLabel.replace("{title}", c.title)}
+                    {t.noteLabel.replace("{title}", title)}
                     <textarea className={styles.field} value={row.draft} maxLength={NOTE_MAX} disabled={row.busy}
                       onChange={(e) => onDraft(c, e.target.value)} />
                   </label>
@@ -116,7 +119,7 @@ export default function WorkingCriteria({ documentId, call, onSessionEnd }: {
   const patch = (id: string, next: Partial<Row>) => setRows((all) => ({ ...all, [id]: { ...(all[id] ?? IDLE), ...next } }));
 
   const send = async (criterion: WorkingCriterion, input: CriterionInput, done: Partial<Row>) => {
-    const id = criterion.criterionId;
+    const id = criterion.id;
     if (!call || inFlight.current.has(id)) return;
     inFlight.current.add(id);
     patch(id, { busy: true, error: null });
@@ -133,12 +136,12 @@ export default function WorkingCriteria({ documentId, call, onSessionEnd }: {
   return (
     <CriteriaView load={load} rows={rows} onRetry={() => void read()}
       onPick={(c, a) => void send(c, assessmentChange(c, a), {})}
-      onEdit={(c) => patch(c.criterionId, { editing: true, draft: c.note ?? "", error: null })}
-      onDraft={(c, text) => patch(c.criterionId, { draft: text })}
-      onCancel={(c) => patch(c.criterionId, { editing: false, error: null })}
+      onEdit={(c) => patch(c.id, { editing: true, draft: c.note ?? "", error: null })}
+      onDraft={(c, text) => patch(c.id, { draft: text })}
+      onCancel={(c) => patch(c.id, { editing: false, error: null })}
       onSaveNote={(c) => {
-        const input = noteChange(c, rows[c.criterionId]?.draft ?? "");
-        if (input === null) patch(c.criterionId, { error: t.errors.invalid });
+        const input = noteChange(c, rows[c.id]?.draft ?? "");
+        if (input === null) patch(c.id, { error: t.errors.invalid });
         else void send(c, input, { editing: false });
       }} />
   );
