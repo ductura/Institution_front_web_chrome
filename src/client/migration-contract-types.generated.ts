@@ -6,6 +6,7 @@
 // Faza 3 (WEB-2001, WEB-2002): consultation slots and student mentorship routes from Institution_server 9e67d7ca (API 1.75.0).
 // Faza 3 (WEB-2004, WEB-2005): bulk download, submission package and PDF export routes from Institution_server 9e67d7ca (API 1.75.0).
 // Faza 3 (WEB-2003): submission withdrawal routes from Institution_server e299665f (API 1.76.0).
+// Faza 3 (WEB-2007): work comparison route from Institution_server 7aab1437 (API 1.76.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -483,5 +484,12 @@ export type MigrationOperations = {
     body: { "allowed": boolean };
     success: { status: 200; body: { "allowed": boolean; "changedAt": string | null }; headers: { "cache-control"?: string } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
+  };
+  "work.compare.get": {
+    params: { "documentId": string };
+    query: { from: string; to: string };
+    body: undefined;
+    success: { status: 200; body: { from: number; to: number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
   };
 };
