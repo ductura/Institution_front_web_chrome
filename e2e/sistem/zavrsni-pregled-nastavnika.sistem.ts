@@ -7,7 +7,7 @@ import { isNodeId } from '../../packages/editor-core/src/document/document/schem
 import { fastPathHostText } from '../../packages/app/src/host/teacher/n05/messages.hr';
 import { messagesHr as t } from '../../src/lib/i18n/messages.hr';
 import { app, webOrigin } from './stog';
-import { describePageOnFailure, openDemoAssignment, signInDemoStudent, signInThroughPreloader } from './student';
+import { UNCONFIRMED_V2, describePageOnFailure, openDemoAssignment, signInDemoStudent, signInThroughPreloader } from './student';
 
 describePageOnFailure();
 
@@ -91,6 +91,8 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       const paragraph = teacherPage.getByRole('document', { name: t.liveView.documentLabel })
         .locator('p[data-node-id]').filter({ hasText: 'U izmišljenom vrtu kompostiramo lišće' });
       await expect(paragraph).toBeVisible();
+      // INT-14: the teacher sees exactly V1, without the student's unconfirmed local V2.
+      await expect(teacherPage.getByRole('document', { name: t.liveView.documentLabel })).not.toContainText(UNCONFIRMED_V2);
       const quote = await paragraph.innerText();
       const nodeId = await paragraph.getAttribute('data-node-id');
       if (!isNodeId(nodeId)) throw new Error('U predanom odlomku nema valjanog identifikatora za sidro komentara.');

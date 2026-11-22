@@ -78,3 +78,44 @@ export function describePageOnFailure() {
     }
   });
 }
+
+/**
+ * INT-14 (A08): the start of a paragraph the student writes after V1 is confirmed, while the
+ * server's answer never arrives. Neither the submission nor the teacher may show it.
+ */
+export const UNCONFIRMED_V2 = 'Lokalna verzija V2 koju poslužitelj nije potvrdio';
+
+/** True when a journal database of this origin holds `needle` in a stored snapshot (A05). */
+export function journalHolds(page: Page, needle: string) {
+  return page.evaluate(async (needle) => {
+    const decoder = new TextDecoder();
+    const holds = (value: unknown, depth = 0): boolean => {
+      if (depth > 64 || value === null || value === undefined) return false;
+      if (typeof value === 'string') return value.includes(needle);
+      if (value instanceof ArrayBuffer) return decoder.decode(value).includes(needle);
+      if (ArrayBuffer.isView(value)) return decoder.decode(value).includes(needle);
+      if (typeof value === 'object') return Object.values(value).some((entry) => holds(entry, depth + 1));
+      return false;
+    };
+    const names = (await indexedDB.databases()).map(({ name }) => name ?? '').filter((name) => name.startsWith('ductus-journal-v1-'));
+    for (const name of names) {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open(name);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        if (!db.objectStoreNames.contains('snapshots')) continue;
+        const rows = await new Promise<unknown[]>((resolve, reject) => {
+          const request = db.transaction('snapshots').objectStore('snapshots').getAll();
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        if (rows.some((row) => holds(row))) return true;
+      } finally {
+        db.close();
+      }
+    }
+    return false;
+  }, needle);
+}

@@ -4,7 +4,7 @@ import { expect, test, type Response } from '@playwright/test';
 
 import { canonicalizeJcs } from '../../packages/editor-core/src/document/forensics/jcs';
 import { webOrigin } from './stog';
-import { assignmentOf, describePageOnFailure, dismissGuide, openDemoWork, signInDemoStudent } from './student';
+import { UNCONFIRMED_V2, assignmentOf, describePageOnFailure, dismissGuide, openDemoWork, signInDemoStudent } from './student';
 
 describePageOnFailure();
 
@@ -32,6 +32,8 @@ async function expectHttp200(response: Response, operation: string) {
 
 test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async ({ page }) => {
   const runId = randomUUID();
+  const unconfirmed = `${UNCONFIRMED_V2} (${runId}).`;
+  const heldCommits: Array<{ abort: () => Promise<void> }> = [];
   const paragraphs = [
     `U izmišljenom vrtu kompostiramo lišće (${runId}).`,
     `U drugom odlomku pratimo promjene u kompostu (${runId}).`,
@@ -97,6 +99,30 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
   });
   const { revision } = savedWork;
 
+  await test.step('INT-14: lokalna verzija V2 ostaje na uređaju jer poslužitelj ne odgovara', async () => {
+    // The commit of V2 reaches the network, but its answer never comes back (A08, N03): the device
+    // keeps V2, the server keeps V1. The held requests are aborted once the work is submitted.
+    await page.route(`${webOrigin}/api/v1/evidence/commit`, async (route) => {
+      heldCommits.push(route);
+    });
+    const [held] = await Promise.all([
+      page.waitForRequest((request) => request.url() === `${webOrigin}/api/v1/evidence/commit`
+        && request.method() === 'POST', { timeout: 30_000 }),
+      (async () => {
+        await editor.click();
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End');
+        await page.keyboard.press('Enter');
+        await page.keyboard.insertText(unconfirmed);
+      })(),
+    ]);
+    const document = held.postDataJSON()?.document;
+    if (typeof document === 'string') {
+      expect(Buffer.from(document, 'base64').toString('utf8')).toContain(UNCONFIRMED_V2);
+    }
+    await expect(editor).toContainText(unconfirmed);
+    await expect(statusBar.getByRole('status')).toHaveText('Spremljeno na uređaju', { timeout: 30_000 });
+  });
+
   const work = await test.step('Potvrda Izjave i pregled spremljenih odlomaka prije predaje', async () => {
     await dismissGuide(page);
     // At 1280×720 the editor's toolbar lies over the top bar's "Predaja rada" and takes the pointer
@@ -137,6 +163,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     const snapshot = Buffer.from(body.document, 'base64');
     expect(createHash('sha256').update(snapshot).digest('hex')).toBe(savedWork.documentHash);
     for (const paragraph of paragraphs) expect(snapshot.toString('utf8')).toContain(paragraph);
+    expect(snapshot.toString('utf8'), 'INT-14: predaja čita potvrđeni V1, ne lokalni V2').not.toContain(UNCONFIRMED_V2);
     await expect(page.getByRole('heading', { name: 'Predati rad?', exact: true })).toBeVisible();
     return body;
   });
@@ -144,9 +171,15 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
   const receipt = await test.step('Predaja spremljene revizije i provjera Ed25519 potpisa potvrde', async () => {
     await page.getByRole('button', { name: 'Predaj rad', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Predati rad?', exact: true });
+    // INT-16: with a newer local version the app may warn first; the test keeps the confirmed V<n>.
+    const keepConfirmed = page.getByRole('button', { name: `Predaj potvrđenu verziju V${revision}`, exact: true });
+    await keepConfirmed.waitFor({ state: 'visible', timeout: 3_000 }).then(() => keepConfirmed.click(), () => undefined);
     const [submitted] = await Promise.all([
       page.waitForResponse((response) => isPost(response, `${webOrigin}/api/v1/submission`)),
-      dialog.getByRole('button', { name: 'Predaj rad', exact: true }).click(),
+      (async () => {
+        await dialog.getByRole('button', { name: 'Predaj rad', exact: true }).click();
+        await keepConfirmed.waitFor({ state: 'visible', timeout: 3_000 }).then(() => keepConfirmed.click(), () => undefined);
+      })(),
     ]);
     await expectHttp200(submitted, 'Predaja rada');
     expect(submitted.request().postDataJSON()).toEqual({ documentId: work.documentId, revision });
@@ -198,5 +231,15 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     const stored = await page.request.get(`/api/v1/student/assignments/${assignmentId}/submission`);
     await expect(stored).toBeOK();
     expect(await stored.json()).toEqual({ state: 'potvrdeno', receipt });
+  });
+
+  await test.step('INT-14: nakon predaje poslužitelj i dalje ima samo V1', async () => {
+    await page.unroute(`${webOrigin}/api/v1/evidence/commit`);
+    for (const route of heldCommits.splice(0)) await route.abort().catch(() => undefined);
+    const opened = await page.request.post('/api/v1/evidence/open', { data: { assignmentId } });
+    await expect(opened).toBeOK();
+    const body = await opened.json();
+    expect(body).toMatchObject({ submitted: true, currentRevision: revision, documentHash: savedWork.documentHash });
+    expect(Buffer.from(body.document, 'base64').toString('utf8')).not.toContain(UNCONFIRMED_V2);
   });
 });
