@@ -43,6 +43,9 @@ import { n11Port } from "../n11/port";
 import SummaryPage from "../n10/SummaryPage";
 import { n10Messages } from "../n10/messages.hr";
 import { n10Port } from "../n10/port";
+import InterviewPage from "../interview/InterviewPage";
+import { interviewMessages } from "../interview/messages.hr";
+import { interviewPort } from "../interview/port";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
 const VIEWS = {
@@ -52,6 +55,7 @@ const VIEWS = {
   consultations: { suffix: "/konzultacije", title: consultationMessages.title },
   comparison: { suffix: "/usporedba", title: n11Messages.title },
   summary: { suffix: "/sazetak", title: n10Messages.title },
+  interview: { suffix: "/priprema-razgovora", title: interviewMessages.title },
 } as const;
 
 type View = keyof typeof VIEWS;
@@ -115,6 +119,11 @@ function OpenWork({ documentId, path, view, session }: {
     // N-10 (WEB-2157): the summary as its own page; the origin map (N-10 br. 18) is another task.
     return <SummaryPage key={documentId} port={summaryPort} documentId={documentId} workHref={workHref}
       signInHref={`${workHref}${VIEWS.summary.suffix}`} />;
+  }
+  if (view === "interview") {
+    // N-14 (WEB-1530): the teacher's preparation for a talk about the work.
+    return <InterviewPage key={documentId} port={interviewPort} documentId={documentId} workHref={workHref}
+      summaryHref={`${workHref}${VIEWS.summary.suffix}`} />;
   }
   if (view === "receipt") {
     return <Receipt documentId={documentId} workHref={workHref} current={current} />;

@@ -25,6 +25,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/nastavnik/rad/[id]/konzultacije": (c) => c.app.pages.consultations,
   "/nastavnik/rad/[id]/usporedba": (c) => c.app.pages.versionComparison,
   "/nastavnik/rad/[id]/sazetak": (c) => c.app.pages.processSummary,
+  "/nastavnik/rad/[id]/priprema-razgovora": (c) => c.app.pages.interviewPreparation,
   "/nastavnik/zadatak/novi": (c) => c.t.teacher.title,
   "/nastavnik/zadatak/[assignmentId]/uredi": (c) => c.t.teacher.newVersion.title,
   "/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik": (c) => c.t.teacher.workLanguageException.title,
