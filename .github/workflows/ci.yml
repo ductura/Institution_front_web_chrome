@@ -132,10 +132,20 @@ jobs:
 
   # @ductura/ui and its catalogue (DAN-750, web 2.c1): typecheck, unit tests,
   # visual baselines and axe. Moved from ui.yml so ci-ok can need it (DAN-885).
+  # The ui job runs as four parts of one matrix job, each on its own runner:
+  # axe is CPU-bound (#461), so the six full-page checks were serial on one
+  # runner and the job took 12 to 15 minutes. The checks, rules, themes and
+  # widths are unchanged; only where they run changes. ci-ok needs `ui`, whose
+  # result is success only when every part succeeded.
   ui:
     needs: changes
     if: ${{ needs.changes.outputs.ui == 'true' }}
+    name: ui (${{ matrix.part }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [checks, behaviour, axe-dark, axe-light]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -149,38 +159,51 @@ jobs:
         working-directory: src/client
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
       - name: Typecheck
+        if: matrix.part == 'checks'
         run: pnpm -r run typecheck
       - name: Unit tests (tokens, provenance, save state, catalogue coverage)
+        if: matrix.part == 'checks'
         run: pnpm -r run test
       - name: Playwright version
+        if: matrix.part != 'checks'
         id: pw
         run: echo "version=$(grep -m1 -oP "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
       - name: Browser cache
+        if: matrix.part != 'checks'
         id: pw-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
       - name: Browser
-        if: steps.pw-cache.outputs.cache-hit != 'true'
+        if: matrix.part != 'checks' && steps.pw-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @ductura/catalog exec playwright install --with-deps chromium
       - name: Browser system dependencies (browser cached)
-        if: steps.pw-cache.outputs.cache-hit == 'true'
+        if: matrix.part != 'checks' && steps.pw-cache.outputs.cache-hit == 'true'
         run: pnpm --filter @ductura/catalog exec playwright install-deps chromium
       # Daniel (22. 11. 2026): while the features are still being built, the
       # pixel baselines only report and do not block ci-ok, and run only on
       # pushes to the base, not on PRs; behaviour and axe still block. They
       # become required again with VIZ-0.
-      - name: Behaviour and axe tests of the catalogue
-        run: pnpm --filter @ductura/catalog run test:visual --grep-invert "matches its baselines"
+      - name: Behaviour tests of the catalogue
+        if: matrix.part == 'behaviour'
+        run: pnpm --filter @ductura/catalog run test:visual --grep-invert "matches its baselines|WCAG 2.2 AA violations"
+      - name: Axe tests of the catalogue (dark shell)
+        if: matrix.part == 'axe-dark'
+        run: pnpm --filter @ductura/catalog run test:visual --grep "dark shell has no WCAG 2.2 AA violations"
+      - name: Axe tests of the catalogue (light shell)
+        if: matrix.part == 'axe-light'
+        run: pnpm --filter @ductura/catalog run test:visual --grep "light shell has no WCAG 2.2 AA violations"
       - name: Visual baselines of the catalogue (report only)
         id: baselines
-        if: github.event_name == 'push'
+        if: matrix.part == 'behaviour' && github.event_name == 'push'
         continue-on-error: true
         run: pnpm --filter @ductura/catalog run test:visual --grep "matches its baselines"
       - uses: actions/upload-artifact@v4
         if: failure() || steps.baselines.outcome == 'failure'
-        with: { name: catalog-report, path: catalog/test-results/ }
+        with:
+          name: catalog-report-${{ matrix.part }}
+          path: catalog/test-results/
 
   # The institution front's host (#2028 c.6993786629 §1, §3.3): packages/app
   # built and served by dev-server.mjs under /app/web/ and /app/chrome/, over a
