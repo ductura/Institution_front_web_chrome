@@ -36,6 +36,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "next.config.ts", "src/app", ".next/types/**/*.ts", "packages/ui/src/css-modules.d.ts"],
+  "include": ["next-env.d.ts", "next.config.ts", "src/app", "src/middleware.ts", ".next/types/**/*.ts", "packages/ui/src/css-modules.d.ts"],
   "exclude": ["node_modules", "src/_cekanje", "src/app/vitest.config.ts", "**/*.test.ts", "**/*.test.tsx"]
 }
