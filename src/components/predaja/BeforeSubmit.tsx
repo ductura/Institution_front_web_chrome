@@ -160,10 +160,12 @@ export type BeforeSubmitProps = {
   readonly declaredFor?: string;
   /** Where a path of the flow (written without a host's base) is opened; the host adds its base. */
   readonly hrefOf?: (path: string) => string;
+  /** A repeated summary read; without it the page is refreshed (the copied route reads on the server). */
+  readonly onRetry?: () => void;
 };
 
 /** The step with its state: the declaration as step 2 left it in this tab, the notes from the server. */
-export default function BeforeSubmit({ assignmentId, summary, stage, local, declaredFor, hrefOf = samePath }: BeforeSubmitProps) {
+export default function BeforeSubmit({ assignmentId, summary, stage, local, declaredFor, hrefOf = samePath, onRetry }: BeforeSubmitProps) {
   const router = useRouter();
   const online = useOnline();
   const tag = useSessionTag();
@@ -190,7 +192,7 @@ export default function BeforeSubmit({ assignmentId, summary, stage, local, decl
         onDeclaration={() => router.push(hrefOf(stepHref(assignmentId, "izjava")))}
         onBack={() => router.push(hrefOf(stepHref(assignmentId, "izjava")))}
         onReceipt={() => router.push(hrefOf(stepHref(assignmentId, "potvrda")))}
-        onRetry={() => router.refresh()}
+        onRetry={onRetry ?? (() => router.refresh())}
         onOpenNote={() => setNoteOpen(true)}
       />
       <NoteDialog open={noteOpen} onClose={() => setNoteOpen(false)}
