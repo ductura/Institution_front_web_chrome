@@ -83,7 +83,7 @@ export function pageContentSecurityPolicy({ nonce, development, issuerOrigin }: 
     script.push("'unsafe-eval'");
     style.push("'unsafe-inline'");
   }
-  const formAction = issuerOrigin === null ? "'self'" : `'self' ${issuerOrigin}`;
+  const formSources = issuerOrigin === null ? "'self'" : `'self' ${issuerOrigin}`;
   return [
     "default-src 'self'",
     `script-src ${script.join(" ")}`,
@@ -94,7 +94,7 @@ export function pageContentSecurityPolicy({ nonce, development, issuerOrigin }: 
     "worker-src 'none'",
     "object-src 'none'",
     "base-uri 'none'",
-    `form-action ${formAction}`,
+    `form-action ${formSources}`,
     "frame-ancestors 'none'",
   ].join("; ");
 }
