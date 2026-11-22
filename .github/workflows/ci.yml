@@ -146,6 +146,12 @@ jobs:
       fail-fast: false
       matrix:
         part: [checks, behaviour, axe-dark, axe-light]
+    # One place for the filters: the parts below and the coverage check use them.
+    env:
+      BASELINES: "matches its baselines"
+      AXE_ANY: "WCAG 2.2 AA violations"
+      AXE_DARK: "dark shell has no WCAG 2.2 AA violations"
+      AXE_LIGHT: "light shell has no WCAG 2.2 AA violations"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -164,6 +170,22 @@ jobs:
       - name: Unit tests (tokens, provenance, save state, catalogue coverage)
         if: matrix.part == 'checks'
         run: pnpm -r run test
+      # Every blocking catalogue test must run in exactly one part: a new axe
+      # test outside both shell filters would otherwise run nowhere.
+      - name: Every catalogue test runs in one part
+        if: matrix.part == 'checks'
+        run: |
+          set -euo pipefail
+          count() { pnpm --filter @ductura/catalog exec playwright test --list "$@" | grep -oP '^Total: \K[0-9]+' || echo 0; }
+          all=$(count --grep-invert "$BASELINES")
+          behaviour=$(count --grep-invert "$BASELINES|$AXE_ANY")
+          dark=$(count --grep "$AXE_DARK")
+          light=$(count --grep "$AXE_LIGHT")
+          echo "all $all = behaviour $behaviour + axe-dark $dark + axe-light $light"
+          if [ "$all" -eq 0 ] || [ $((behaviour + dark + light)) -ne "$all" ]; then
+            echo "::error::the ui parts do not cover every catalogue test exactly once"
+            exit 1
+          fi
       - name: Playwright version
         if: matrix.part != 'checks'
         id: pw
@@ -187,13 +209,13 @@ jobs:
       # become required again with VIZ-0.
       - name: Behaviour tests of the catalogue
         if: matrix.part == 'behaviour'
-        run: pnpm --filter @ductura/catalog run test:visual --grep-invert "matches its baselines|WCAG 2.2 AA violations"
+        run: pnpm --filter @ductura/catalog run test:visual --grep-invert "$BASELINES|$AXE_ANY"
       - name: Axe tests of the catalogue (dark shell)
         if: matrix.part == 'axe-dark'
-        run: pnpm --filter @ductura/catalog run test:visual --grep "dark shell has no WCAG 2.2 AA violations"
+        run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_DARK"
       - name: Axe tests of the catalogue (light shell)
         if: matrix.part == 'axe-light'
-        run: pnpm --filter @ductura/catalog run test:visual --grep "light shell has no WCAG 2.2 AA violations"
+        run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_LIGHT"
       - name: Visual baselines of the catalogue (report only)
         id: baselines
         if: matrix.part == 'behaviour' && github.event_name == 'push'
