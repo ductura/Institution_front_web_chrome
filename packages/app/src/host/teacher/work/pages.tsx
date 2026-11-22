@@ -9,7 +9,6 @@ import type { SessionMark } from "@/client/session-marks";
 import { readTeacherWorkAccess, readTeacherWorkReceipt } from "@/client/teacher-work";
 import { ReadOnlyMentor } from "@/components/editor/mentor/work-state/ReadOnlyMentor";
 import { ReceiptPanel, studentReceiptRead, type ReceiptRead } from "@/components/predaja/ReceiptPanel";
-import ReplayView from "@/components/replay/ReplayView";
 import { appHref } from "@/components/shell/nav";
 import { anchorForSelection, placeAnchor, placeThreads } from "@/components/teacher/comment-place";
 import LiveText, { liveStopped, openMarks, useLiveView } from "@/components/teacher/LiveText";
@@ -19,6 +18,8 @@ import { selectedRange, selectInBlock } from "@/components/teacher/selection";
 import { SummaryCardBody, useProcessSummary } from "@/components/teacher/SummaryCard";
 import { useComments } from "@/components/teacher/TeacherComments";
 import TeacherComments from "../comments/TeacherCommentsPanel";
+import ProposalsPanel from "../proposals/ProposalsPanel";
+import { proposalsPort } from "../proposals/port";
 import type { TextAnchor } from "@/domain/collaboration";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
@@ -29,6 +30,7 @@ import MobileReview from "../mobile-review/MobileReview";
 import { N12Consultations } from "../n12/N12Consultations";
 import { n12Messages as consultationMessages } from "../n12/messages.hr";
 import WorkFrame from "../n06/WorkFrame";
+import ReplayPage from "../n09/ReplayPage";
 import { FallbackPanel, PreSubmitPanel } from "../pre-submit/PreSubmitPanel";
 import { showFallback } from "../pre-submit/model";
 import { useTeacherRead } from "../../pages";
@@ -109,7 +111,7 @@ function OpenWork({ documentId, path, view, session }: {
     return (
       <WorkStatus title={title}>
         <p><a href={workHref}>{consultationMessages.backToWork}</a></p>
-        <ReplayView documentId={documentId} session={session} student={false} />
+        <ReplayPage documentId={documentId} session={session} />
       </WorkStatus>
     );
   }
@@ -154,6 +156,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               onReload={() => void comments.load()} onShow={({ nodeId, start, end }) => {
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
+            <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
           </>}
           <RecordLimits />

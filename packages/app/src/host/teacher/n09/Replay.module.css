@@ -1,0 +1,27 @@
+/* N-09 (WEB-2159): the controls row of the prototype (.rp-ctl, .rp-range); the rest reuses the replay view's module. */
+.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+}
+
+.range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.range input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  accent-color: var(--accent);
+}

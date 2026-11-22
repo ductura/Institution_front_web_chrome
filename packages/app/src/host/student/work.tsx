@@ -29,9 +29,12 @@ import { nextPath } from "../../bases";
 import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { ImportHost } from "../editor/import/ImportHost";
+import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
 import { StatusExtras, useRehearsalSupplements } from "../editor/status/StatusExtras";
+import { ChapterPanel } from "../editor/left/ChapterPanel";
+import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
@@ -95,12 +98,16 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const frame = workspaceFrame(read, undefined, { kind: "ready", wordRange });
       const title = read.kind === "ready" ? read.title : null;
-      const topBar = <WorkspaceTopBar assignmentId={assignmentId} title={title} />;
+      const bar = <WorkspaceTopBar assignmentId={assignmentId} title={title} />;
+      // WEB-2136: view mode, "samo naslovi" and panel widths, only where the panels are (the full editor).
+      const topBar = frame.variant === "puno" ? <ShellView>{bar}</ShellView> : bar;
       const length = { words: null, range: frame.range };
       if (read.kind === "ready" && frame.variant === "puno") {
         return setShown({
           kind: "page",
-          node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length} statusExtra={<StatusExtras />} useSupplements={useRehearsalSupplements}
+          node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
+            statusExtra={<StatusExtras />} useSupplements={useRehearsalSupplements}
+            leftSections={{ ...leftSectionsFor(assignmentId), chapter: <ChapterPanel workId={assignmentId} /> }}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
