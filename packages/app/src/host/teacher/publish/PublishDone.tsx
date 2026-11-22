@@ -11,10 +11,10 @@ import { publishHr } from "./messages.hr";
 export function PublishDone() {
   const host = useContext(HostContext);
   return (
-    <>
+    <div className="banner">
       <p>{publishHr.published}</p>
-      {host && <p><a href={appHref(host.base, "/nastavnik/kolegiji")}>{publishHr.toCourses}</a></p>}
-    </>
+      {host && <div className="acts"><a className="btn secondary" href={appHref(host.base, "/nastavnik/kolegiji")}>{publishHr.toCourses}</a></div>}
+    </div>
   );
 }
 
@@ -24,5 +24,10 @@ export function CheckListLink({ courseId, title }: { courseId?: string; title?: 
   if (!host) return null;
   // The course list shows the banner "prekinuto" for this assignment (WEB-2145).
   const query = new URLSearchParams({ objava: "prekinuta", ...(courseId ? { kolegij: courseId } : {}), ...(title ? { zadatak: title } : {}) });
-  return <p><a href={appHref(host.base, `/nastavnik/kolegiji?${query.toString()}`)}>{publishHr.checkList}</a></p>;
+  return (
+    <div className="banner warn" role="status">
+      <p><b>{publishHr.uncertainTitle}</b> {publishHr.uncertainBody}</p>
+      <div className="acts"><a className="btn secondary" href={appHref(host.base, `/nastavnik/kolegiji?${query.toString()}`)}>{publishHr.checkList}</a></div>
+    </div>
+  );
 }
