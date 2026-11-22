@@ -6337,7 +6337,7 @@
     },
     "responses": {
       "200": {
-        "description": "Provisional: course team view scoped by the authenticated caller",
+        "description": "the team view for the caller's role",
         "content": {
           "application/json": {
             "schema": {
@@ -6362,6 +6362,7 @@
                       "type": "string"
                     },
                     "assistants": {
+                      "maxItems": 500,
                       "type": "array",
                       "items": {
                         "additionalProperties": false,
@@ -6376,13 +6377,14 @@
                             "type": "string"
                           },
                           "name": {
-                            "type": "string",
-                            "minLength": 1
+                            "maxLength": 511,
+                            "type": "string"
                           }
                         }
                       }
                     },
                     "students": {
+                      "maxItems": 5000,
                       "type": "array",
                       "items": {
                         "additionalProperties": false,
@@ -6398,8 +6400,8 @@
                             "type": "string"
                           },
                           "name": {
-                            "type": "string",
-                            "minLength": 1
+                            "maxLength": 511,
+                            "type": "string"
                           },
                           "groupId": {
                             "anyOf": [
@@ -6416,6 +6418,7 @@
                       }
                     },
                     "groups": {
+                      "maxItems": 500,
                       "type": "array",
                       "items": {
                         "additionalProperties": false,
@@ -6431,10 +6434,11 @@
                             "type": "string"
                           },
                           "name": {
-                            "type": "string",
-                            "minLength": 1
+                            "maxLength": 511,
+                            "type": "string"
                           },
                           "assistantIds": {
+                            "maxItems": 500,
                             "type": "array",
                             "items": {
                               "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?![\\s\\S])",
@@ -6459,6 +6463,7 @@
                       "type": "string"
                     },
                     "groups": {
+                      "maxItems": 500,
                       "type": "array",
                       "items": {
                         "additionalProperties": false,
@@ -6474,10 +6479,11 @@
                             "type": "string"
                           },
                           "name": {
-                            "type": "string",
-                            "minLength": 1
+                            "maxLength": 511,
+                            "type": "string"
                           },
                           "students": {
+                            "maxItems": 5000,
                             "type": "array",
                             "items": {
                               "additionalProperties": false,
@@ -6492,8 +6498,8 @@
                                   "type": "string"
                                 },
                                 "name": {
-                                  "type": "string",
-                                  "minLength": 1
+                                  "maxLength": 511,
+                                  "type": "string"
                                 }
                               }
                             }

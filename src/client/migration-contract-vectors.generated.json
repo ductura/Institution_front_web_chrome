@@ -2861,7 +2861,7 @@
   },
   {
     "route": "institution.teaching-team-view.get",
-    "name": "holder",
+    "name": "success-holder",
     "kind": "success",
     "request": {
       "params": {
@@ -2872,26 +2872,26 @@
       "status": 200,
       "body": {
         "role": "holder",
-        "holderId": "c0000000-0000-4000-8000-000000000002",
+        "holderId": "7e000000-0000-4000-8000-000000000001",
         "assistants": [
           {
-            "id": "c0000000-0000-4000-8000-000000000003",
-            "name": "Asistent Jantar"
+            "id": "7e000000-0000-4000-8000-000000000002",
+            "name": "Izmišljena Asistentica"
           }
         ],
         "students": [
           {
-            "id": "c0000000-0000-4000-8000-000000000005",
-            "name": "Student Oblak",
-            "groupId": "c0000000-0000-4000-8000-000000000004"
+            "id": "5a000000-0000-4000-8000-000000000001",
+            "name": "Izmišljen Student",
+            "groupId": "9a000000-0000-4000-8000-00000000000a"
           }
         ],
         "groups": [
           {
-            "id": "c0000000-0000-4000-8000-000000000004",
-            "name": "Seminar o oblacima",
+            "id": "9a000000-0000-4000-8000-00000000000a",
+            "name": "Grupa A",
             "assistantIds": [
-              "c0000000-0000-4000-8000-000000000003"
+              "7e000000-0000-4000-8000-000000000002"
             ]
           }
         ]
@@ -2901,7 +2901,7 @@
   },
   {
     "route": "institution.teaching-team-view.get",
-    "name": "assistant",
+    "name": "success-assistant",
     "kind": "success",
     "request": {
       "params": {
@@ -2914,12 +2914,12 @@
         "role": "assistant",
         "groups": [
           {
-            "id": "c0000000-0000-4000-8000-000000000004",
-            "name": "Seminar o oblacima",
+            "id": "9a000000-0000-4000-8000-00000000000a",
+            "name": "Grupa A",
             "students": [
               {
-                "id": "c0000000-0000-4000-8000-000000000005",
-                "name": "Student Oblak"
+                "id": "5a000000-0000-4000-8000-000000000001",
+                "name": "Izmišljen Student"
               }
             ]
           }

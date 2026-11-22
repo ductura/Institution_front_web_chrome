@@ -30,7 +30,7 @@ export function createTeachingTeam(courseId: string, api = createApi()) {
   return {
     async read(): Promise<Read> {
       try {
-        // The provisional read supplies the caller's course role and only their visible groups.
+        // The view supplies the caller's course role and only their visible groups (SRV-2007).
         const scope = await api("institution.teaching-team-view.get", { params, query: undefined, body: undefined });
         if (!scope.ok) return failure(scope.status);
         if (scope.body.role === "assistant") return { kind: "ready", view: scope.body };
