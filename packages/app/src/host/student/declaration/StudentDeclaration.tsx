@@ -40,6 +40,7 @@ export default function StudentDeclaration({ port, submissionId }: { port: Decla
   }, [port, submissionId, attempt]);
 
   const confirm = async (attachments: DeclarationAttachment[]) => {
+    if (status === "confirming") return;
     setStatus("confirming");
     const result = await port.confirm(submissionId, attachments);
     if (result.kind === "stale") {

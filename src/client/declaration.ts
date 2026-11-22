@@ -214,6 +214,29 @@ export type DeclarationPortOptions = {
 /** The real DeclarationPort over declaration-v1 (PIL-K-IZJAVA-PORT). */
 export function createDeclarationPort(call: Call = createApi(), options: DeclarationPortOptions = {}): DeclarationPort {
   const session = options.session ?? createDeclarationSession();
+  // A second confirmation while one is on its way gets the same answer, not a second PUT.
+  const confirming = new Map<string, Promise<ConfirmResult>>();
+
+  async function confirmOnce(assignmentId: string, attachments: readonly Attachment[]): Promise<ConfirmResult> {
+    const draft = session.states.get(assignmentId)?.draft ?? null;
+    const tools = draft?.ai.declaredTools ?? [];
+    // The reviewed conversations are not sent: declaration-v1 keeps ai.attachments empty.
+    const use = draft?.ai.use ?? (tools.length > 0 || attachments.length > 0 ? "used" : "not_used");
+    const write = await writeDraft(call, session, assignmentId, { ownWork: true, ai: { use }, confirm: true });
+    switch (write.kind) {
+      case "saved":
+        return write.state.state === "confirmed" || write.state.state === "bound" ? { kind: "confirmed" } : { kind: "unavailable" };
+      case "conflict":
+      case "signedOut":
+        return { kind: write.kind };
+      case "refused":
+        // The error body's conversationIds do not travel through createApi: every reviewed one is named.
+        return write.code === "attachment_stale" ? { kind: "stale", conversationIds: attachments.map((a) => a.conversationId) } : { kind: "unavailable" };
+      default:
+        return { kind: "unavailable" };
+    }
+  }
+
   return {
     async readStudent(assignmentId) {
       const read = await readStudentState(call, session, assignmentId);
@@ -225,24 +248,12 @@ export function createDeclarationPort(call: Call = createApi(), options: Declara
       return { kind: "ready", uses, conversations: [] };
     },
 
-    async confirm(assignmentId, attachments) {
-      const draft = session.states.get(assignmentId)?.draft ?? null;
-      const tools = draft?.ai.declaredTools ?? [];
-      // The reviewed conversations are not sent: declaration-v1 keeps ai.attachments empty.
-      const use = draft?.ai.use ?? (tools.length > 0 || attachments.length > 0 ? "used" : "not_used");
-      const write = await writeDraft(call, session, assignmentId, { ownWork: true, ai: { use }, confirm: true });
-      switch (write.kind) {
-        case "saved":
-          return write.state.state === "confirmed" || write.state.state === "bound" ? { kind: "confirmed" } : { kind: "unavailable" };
-        case "conflict":
-        case "signedOut":
-          return { kind: write.kind };
-        case "refused":
-          // The error body's conversationIds do not travel through createApi: every reviewed one is named.
-          return write.code === "attachment_stale" ? { kind: "stale", conversationIds: attachments.map((a) => a.conversationId) } : { kind: "unavailable" };
-        default:
-          return { kind: "unavailable" };
-      }
+    confirm(assignmentId, attachments) {
+      const pending = confirming.get(assignmentId);
+      if (pending !== undefined) return pending;
+      const run = confirmOnce(assignmentId, attachments).finally(() => confirming.delete(assignmentId));
+      confirming.set(assignmentId, run);
+      return run;
     },
 
     async readTeacher(submissionId) {

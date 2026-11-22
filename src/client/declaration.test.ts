@@ -224,6 +224,18 @@ describe("declaration adapter (PIL-K-IZJAVA-PORT)", () => {
     expect(s.sent.filter((r) => r.method === "GET")).toHaveLength(2);
   });
 
+  it("a second click while the confirmation is on its way sends no second PUT", async () => {
+    const s = versionedServer();
+    const port = createDeclarationPort(s.call);
+    await port.readStudent(ASSIGNMENT);
+    const [a, b] = await Promise.all([port.confirm(ASSIGNMENT, []), port.confirm(ASSIGNMENT, [])]);
+    expect([a, b]).toEqual([{ kind: "confirmed" }, { kind: "confirmed" }]);
+    expect(s.sent.filter((r) => r.method === "PUT")).toHaveLength(1);
+    // Once it is answered, the next confirmation is a new write again (on the version it returned).
+    expect(await port.confirm(ASSIGNMENT, [])).toEqual({ kind: "confirmed" });
+    expect(s.sent.filter((r) => r.method === "PUT")).toHaveLength(2);
+  });
+
   it("401 is signedOut for every read; a signed-out view writes nothing", async () => {
     const s = server(() => error(401, "unauthorized"));
     const port = createDeclarationPort(s.call, { teacherTarget: () => ({ assignmentId: ASSIGNMENT, studentId: ASSIGNMENT }) });
