@@ -30,6 +30,7 @@ import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { ImportHost } from "../editor/import/ImportHost";
 import { ShellView } from "../editor/shell/ShellView";
+import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
 import { StartWork } from "./start-work/StartWork";
 import { readWordRange } from "./work/requirements";
@@ -106,6 +107,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
+              <RulesHost role="student" />
             </>} />,
         });
       }

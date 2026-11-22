@@ -1,7 +1,7 @@
 "use client";
 
 import { Checkbox, Select, TextArea, TextField, Wizard, type WizardOutcome, type WizardStep } from "@ductura/ui";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import {
   AI_PURPOSES, assignmentBody, type AssignmentCreation, type AssignmentDraft, type WorkType,
@@ -16,6 +16,9 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { checkBasics, checkSchedule, withPractice } from "./assignment-wizard-steps";
 import { ImportAllowedField } from "./ImportAllowedField";
 import { wizardHr as w } from "./messages.hr";
+import { publishHr } from "../publish/messages.hr";
+import { CheckListLink, PublishDone } from "../publish/PublishDone";
+import { isUncertain, publishOutcome } from "../publish/publish-outcome";
 
 type Course = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
 /** `practice` is the practice-assignment flag (WEB-1901); the server stores it and returns it, no grade field exists for it. */
@@ -36,6 +39,7 @@ const initialDraft: AssignmentDraft = {
  */
 export default function AssignmentWizard({ course, publish = publishAssignment }: { course: Course; publish?: Publish }) {
   const request = useRef<{ body: string; key: string } | null>(null);
+  const [uncertain, setUncertain] = useState(false);
   const courseProhibits = course.aiPolicy === "prohibited";
 
   const steps: WizardStep<WizardDraft>[] = [
@@ -110,7 +114,7 @@ export default function AssignmentWizard({ course, publish = publishAssignment }
               {range && <><dt>{w.fieldsLabel.words}</dt><dd>{range}</dd></>}
               <dt>{w.fieldsLabel.help}</dt><dd>{help}</dd>
             </dl>
-            <p>{t.teacher.existingCourse.studentsNotified} {setup.noNotifications}</p>
+            <p>{publishHr.reviewNote}</p>
           </section>
         );
       },
@@ -125,14 +129,16 @@ export default function AssignmentWizard({ course, publish = publishAssignment }
     // One retry key per body, so a repeated click after an unclear reply cannot create a second assignment.
     if (request.current?.body !== serialized) request.current = { body: serialized, key: crypto.randomUUID() };
     const result = await publish(course.id, aiBody, request.current.key);
-    return result.kind === "available" ? { ok: true } : { ok: false, error: a.errors[result.kind], uncertain: result.kind === "unavailable" };
+    setUncertain(isUncertain(result));
+    return publishOutcome(result);
   }
 
   return (
     <section aria-label={`${course.name} · ${course.academicYear}`}>
       <p>{course.name} · {course.academicYear}</p>
       <Wizard steps={steps} initialValues={initialDraft} labels={{ ...w.labels, finish: a.publish, finishing: a.pending }} onFinish={finish}
-        done={setup.publishedNotice} />
+        done={<PublishDone />} />
+      {uncertain && <CheckListLink />}
     </section>
   );
 }
