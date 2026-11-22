@@ -57,8 +57,7 @@ jobs:
         run: |
           probe() {
             for u in /api/v1/health /kako-radi; do
-              curl -sS -o /dev/null -w "$1 $u %{http_code} %{time_total}s
-" --max-time 90 "http://127.0.0.1:3100$u" || echo "$1 $u PAD"
+              curl -sS -o /dev/null -w "$1 $u %{http_code} %{time_total}s\n" --max-time 90 "http://127.0.0.1:3100$u" || echo "$1 $u PAD"
             done
           }
           echo "== webpack dev"
