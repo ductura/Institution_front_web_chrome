@@ -16,10 +16,10 @@ export function fakeHistoryServer(events: readonly HistoryEvent[] = FAKE_EVENTS,
   let enabled = opts.enabled ?? true;
   const call: HistoryCall = async (id, input) => {
     if (id === "teacher.submission-history.get") return ok({ events });
-    if (id === "teacher.assignment-withdrawal-setting.get") return ok({ enabled });
+    if (id === "teacher.submission-withdrawal.get") return ok({ allowed: enabled, changedAt: null });
     if (opts.forbidSave === true) return { ok: false as const, status: 403, code: "forbidden" };
-    enabled = (input.body as { enabled: boolean }).enabled;
-    return ok({ enabled });
+    enabled = (input.body as { allowed: boolean }).allowed;
+    return ok({ allowed: enabled, changedAt: "2026-12-01T10:00:00.000Z" });
   };
   return { call, enabled: () => enabled };
 }
