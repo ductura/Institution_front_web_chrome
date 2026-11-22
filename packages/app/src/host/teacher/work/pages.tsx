@@ -19,6 +19,9 @@ import { SummaryCardBody, useProcessSummary } from "@/components/teacher/Summary
 import { useComments } from "@/components/teacher/TeacherComments";
 import TeacherComments from "../comments/TeacherCommentsPanel";
 import ProposalsPanel from "../proposals/ProposalsPanel";
+import { TextElementsView } from "../text-elements/TextElements";
+import { textElementsMessages } from "../text-elements/messages.hr";
+import { useTextElements } from "../text-elements/useTextElements";
 import ProvenanceMap from "../provenance/ProvenanceMap";
 import { proposalsPort } from "../proposals/port";
 import type { TextAnchor } from "@/domain/collaboration";
@@ -136,6 +139,8 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   const summary = useProcessSummary(documentId, current, !stopped);
   const comments = useComments(documentId, current, !stopped);
   const textRef = useRef<HTMLDivElement>(null);
+  // WEB-2153: the shared reader shows only document v1; a v2/v3 text is read here, with citations and footnotes.
+  const elementsState = useTextElements(documentId, !stopped && view.document === null && view.connection === "retrying", current);
   const [draft, setDraft] = useState<TextAnchor | null>(null);
   const placed = stopped || comments.outcome?.kind !== "ok" ? [] : placeThreads(view.document, comments.outcome.threads);
   const gaps = !stopped && summary.outcome?.kind === "ok" ? summary.outcome.summary.gaps.items : [];
@@ -150,8 +155,13 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
     <MobileReview><div className="page">
       <WorkFrame documentId={documentId} gaps={gaps}
         text={<>
-          {view.connection === "retrying" && view.document === null && <p role="alert">{workText.liveUnavailable}</p>}
-          <LiveText view={view} marks={openMarks(placed)} textRef={textRef} onSelect={select} />
+          {elementsState.elements !== null
+            ? <div ref={textRef}><TextElementsView elements={elementsState.elements} /></div>
+            : <>
+              {view.connection === "retrying" && view.document === null && <p role="alert">{workText.liveUnavailable}</p>}
+              {elementsState.unavailable && <p role="status">{textElementsMessages.unavailable}</p>}
+              <LiveText view={view} marks={openMarks(placed)} textRef={textRef} onSelect={select} />
+            </>}
           {!stopped && <ul>
             <li><a href={receiptHref}>{VIEWS.receipt.title}</a></li>
             <li><a href={`${workHref}${VIEWS.replay.suffix}`}>{VIEWS.replay.title}</a></li>
