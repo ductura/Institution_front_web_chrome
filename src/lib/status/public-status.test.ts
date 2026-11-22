@@ -118,3 +118,37 @@ describe("isStaleAt", () => {
     expect(isStaleAt(last, now)).toBe(stale);
   });
 });
+
+// LOK-WEB-7: the server's /api/v1/status also sends maintenanceWindows; the
+// page read every such answer as broken and showed the error on /stanje.
+describe("parsePublicStatus with maintenanceWindows", () => {
+  const W = { startsAt: "2027-03-06T22:00:00.000Z", endsAt: "2027-03-06T23:30:00.000Z" };
+  const withWindows = (maintenanceWindows: unknown) => ({ ...valid, maintenanceWindows });
+
+  it("keeps an empty list and checked windows", () => {
+    expect(parsePublicStatus(withWindows([]))).toEqual({ ...valid, maintenanceWindows: [] });
+    expect(parsePublicStatus(withWindows([W, W]))).toEqual({ ...valid, maintenanceWindows: [W, W] });
+  });
+
+  it("returns fresh window objects", () => {
+    const input = withWindows([W]);
+    expect(parsePublicStatus(input)?.maintenanceWindows?.[0]).not.toBe(W);
+  });
+
+  it.each<[string, unknown]>([
+    ["not an array", W],
+    ["null", null],
+    ["more than 50", Array.from({ length: 51 }, () => W)],
+    ["window without endsAt", [{ startsAt: W.startsAt }]],
+    ["window with an extra field", [{ ...W, note: "x" }]],
+    ["time without milliseconds", [{ ...W, endsAt: "2027-03-06T23:30:00Z" }]],
+    ["not a real day", [{ ...W, startsAt: "2027-02-30T22:00:00.000Z" }]],
+    ["window not an object", ["2027-03-06T22:00:00.000Z"]],
+  ])("rejects %s", (_name, windows) => {
+    expect(parsePublicStatus(withWindows(windows))).toBeNull();
+  });
+
+  it("still rejects any other extra field", () => {
+    expect(parsePublicStatus({ ...withWindows([]), note: "x" })).toBeNull();
+  });
+});

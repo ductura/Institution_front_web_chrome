@@ -8,11 +8,19 @@ export type ComponentState = (typeof COMPONENT_STATES)[number];
 export const COMPONENTS = ["writing", "submission", "mentorView"] as const;
 export type ComponentName = (typeof COMPONENTS)[number];
 
+/** One planned maintenance, both ends exact UTC instants with milliseconds. */
+export type MaintenanceWindow = { startsAt: string; endsAt: string };
+
 export type PublicStatus = {
   /** When the server ran the checks, an ISO instant in UTC. */
   checkedAt: string;
   components: Record<ComponentName, ComponentState>;
+  /** Current and upcoming planned maintenance; absent when the server could not read the schedule. */
+  maintenanceWindows?: MaintenanceWindow[];
 };
+
+/** The server sends at most this many maintenance windows. */
+export const MAX_MAINTENANCE_WINDOWS = 50;
 
 /** How often the page asks again. */
 export const POLL_MS = 30_000;
@@ -33,6 +41,24 @@ function isInstant(value: unknown): value is string {
   return back.slice(0, 19) === value.slice(0, 19);
 }
 
+const WINDOW_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+function parseWindows(value: unknown): MaintenanceWindow[] | null {
+  if (!Array.isArray(value) || value.length > MAX_MAINTENANCE_WINDOWS) return null;
+  const windows: MaintenanceWindow[] = [];
+  for (const item of value) {
+    if (!isPlainObject(item) || !hasExactKeys(item, ["startsAt", "endsAt"])) return null;
+    const { startsAt, endsAt } = item;
+    if (!isWindowInstant(startsAt) || !isWindowInstant(endsAt)) return null;
+    windows.push({ startsAt, endsAt });
+  }
+  return windows;
+}
+
+function isWindowInstant(value: unknown): value is string {
+  return isInstant(value) && WINDOW_INSTANT.test(value);
+}
+
 function hasExactKeys(value: object, keys: readonly string[]): boolean {
   const own = Reflect.ownKeys(value);
   return own.length === keys.length && keys.every((key) => Object.hasOwn(value, key));
@@ -47,15 +73,23 @@ const isState = (value: unknown): value is ComponentState =>
 /**
  * The response body as a checked value, or null for anything else: a missing,
  * extra or mistyped field, an unknown state word or a time that is not a real
- * UTC instant. Never throws; the result is a fresh object of checked fields.
+ * UTC instant. maintenanceWindows is the one optional field (the server's
+ * /api/v1/status, LOK-WEB-7). Never throws; the result is a fresh object of
+ * checked fields.
  */
 export function parsePublicStatus(input: unknown): PublicStatus | null {
-  if (!isPlainObject(input) || !hasExactKeys(input, ["checkedAt", "components"])) return null;
+  if (!isPlainObject(input)) return null;
+  const withWindows = Object.hasOwn(input, "maintenanceWindows");
+  const keys = withWindows ? ["checkedAt", "components", "maintenanceWindows"] : ["checkedAt", "components"];
+  if (!hasExactKeys(input, keys)) return null;
   const { checkedAt, components } = input;
   if (!isInstant(checkedAt) || !isPlainObject(components) || !hasExactKeys(components, COMPONENTS)) return null;
   const { writing, submission, mentorView } = components;
   if (!isState(writing) || !isState(submission) || !isState(mentorView)) return null;
-  return { checkedAt, components: { writing, submission, mentorView } };
+  const status: PublicStatus = { checkedAt, components: { writing, submission, mentorView } };
+  if (!withWindows) return status;
+  const maintenanceWindows = parseWindows(input.maintenanceWindows);
+  return maintenanceWindows === null ? null : { ...status, maintenanceWindows };
 }
 
 /**
