@@ -112,7 +112,7 @@ function OpenWork({ documentId, path, view, session }: {
       appPath={`${workHref.slice("/app".length)}/konzultacije`} />;
   }
   if (view === "comparison") {
-    return <N11Compare key={documentId} port={n11Port} documentId={documentId} signInHref={workHref}
+    return <N11Compare key={documentId} port={n11Port} documentId={documentId} signInHref={workHref} workHref={workHref}
       replayHref={`${workHref}${VIEWS.replay.suffix}`} />;
   }
   if (view === "summary") {
@@ -130,12 +130,7 @@ function OpenWork({ documentId, path, view, session }: {
     return <N07ReceiptPage key={documentId} documentId={documentId} workHref={workHref} current={current} />;
   }
   if (view === "replay") {
-    return (
-      <WorkStatus title={title}>
-        <p><a href={workHref}>{consultationMessages.backToWork}</a></p>
-        <ReplayPage documentId={documentId} session={session} />
-      </WorkStatus>
-    );
+    return <ReplayPage documentId={documentId} session={session} workHref={workHref} />;
   }
   return <LiveWork documentId={documentId} workHref={workHref} session={session} />;
 }

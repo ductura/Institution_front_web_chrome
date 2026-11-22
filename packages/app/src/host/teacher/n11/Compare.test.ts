@@ -9,7 +9,7 @@ import { fakeN11Port } from "./fake-port";
 describe("N-11 compare screen", () => {
   it("paints the title and the loading text first", () => {
     const html = renderToStaticMarkup(createElement(N11Compare, { port: fakeN11Port(), documentId: "d", replayHref: "/r", signInHref: "/s" }));
-    expect(html).toContain("<h1>Usporedba verzija</h1>");
+    expect(html).toContain('<h1 id="pg-h">Usporedba verzija</h1>');
     expect(html).toContain("Učitavam poslane verzije…");
   });
 });
