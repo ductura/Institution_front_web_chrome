@@ -4,7 +4,7 @@ import { LegalHolds, PanelTabs, RetentionClasses, formatDateTime, type LegalHold
 import { useCallback, useEffect, useState } from "react";
 
 import { fetchLegalHolds, placeLegalHold, releaseLegalHold, type FailedKind, type LegalHoldActionOutcome } from "@/client/legal-holds";
-import { fetchRetention } from "@/client/retention";
+import { fetchRetention, type RetentionClassRow } from "@/client/retention";
 
 import { useHost } from "../../context";
 import { retentionMessages as t } from "./messages.hr";
@@ -16,11 +16,14 @@ const say = (kind: FailedKind | "invalid" | "stale"): string =>
 const classLabels = t.classes;
 const holdLabels = t.holds;
 
+/** A class as the table shows it: named from the catalogue by its key, never by the server's message key. */
+const shown = (c: RetentionClassRow) => ({ classId: c.key, name: t.classNames[c.key], retentionDays: c.retentionDays, mode: c.mode });
+
 function useClasses() {
   const [state, setState] = useState<RetentionClassesState>({ kind: "loading" });
   const load = useCallback(() => {
     setState({ kind: "loading" });
-    void fetchRetention().then((out) => setState(out.kind === "ok" ? { kind: "ready", classes: out.classes } : { kind: "error", message: say(out.kind) }));
+    void fetchRetention().then((out) => setState(out.kind === "ok" ? { kind: "ready", classes: out.classes.map(shown) } : { kind: "error", message: say(out.kind) }));
   }, []);
   useEffect(load, [load]);
   return [state, load] as const;

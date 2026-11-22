@@ -10,6 +10,15 @@ export const retentionMessages = {
     invalid: "Poslužitelj nije prihvatio ove vrijednosti. Provjerite polja i pokušajte ponovno.",
     stale: "Zadržavanje je u međuvremenu skinuto ili ne postoji. Popis je ponovno učitan.",
   },
+  /** The name of each data class the server knows (LOK-WEB-3), by its key. */
+  classNames: {
+    sessions: "Sesije prijave",
+    "live-state": "Stanje uređivanja uživo",
+    versions: "Verzije rada",
+    "change-times": "Vrijeme pojedinih izmjena",
+    "access-log": "Zapis pristupa",
+    receipts: "Sažeci i potvrde predaje",
+  },
   classes: {
     title: "Klase podataka",
     lead: "Za svaku klasu podataka vidi se rok čuvanja i način. Ovdje se podaci samo prikazuju; nijedna radnja brisanja nije dostupna.",

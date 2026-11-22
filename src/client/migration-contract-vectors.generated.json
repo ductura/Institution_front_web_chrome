@@ -3409,16 +3409,28 @@
       "body": {
         "classes": [
           {
-            "classId": "DATA-CLASS-01",
-            "name": "Izmišljeni radni tekst",
+            "key": "versions",
+            "label": "retention.versions",
             "retentionDays": 365,
-            "mode": "delete"
+            "mode": "execute",
+            "candidates": 12,
+            "lastRunAt": "2026-11-20T03:00:00.000Z"
           },
           {
-            "classId": "DATA-CLASS-02",
-            "name": "Izmišljeni zapis pristupa",
+            "key": "access-log",
+            "label": "retention.accessLog",
             "retentionDays": null,
-            "mode": "dry_run"
+            "mode": "dry-run",
+            "candidates": 0,
+            "lastRunAt": null
+          },
+          {
+            "key": "receipts",
+            "label": "retention.receipts",
+            "retentionDays": null,
+            "mode": "dry-run",
+            "candidates": null,
+            "lastRunAt": null
           }
         ]
       }
