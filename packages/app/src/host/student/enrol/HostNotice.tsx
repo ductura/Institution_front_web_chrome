@@ -130,12 +130,15 @@ export default function HostNotice({ view, timing, editorHref }: { view: NoticeV
   const kindLine = [workTypes[view.workType], wordRangeHr({ min: view.wordMin, max: view.wordMax })].filter(Boolean).join(" · ");
 
   return (
-    <article className={styles.notice} aria-labelledby="zadatak">
-      <header className={styles.head}>
-        <p className={styles.kicker}>{s.step}</p>
-        <h1 id="zadatak">{view.title}</h1>
-        <NoticeMeta kind={kindLine} due={s.dueAt.replace("{time}", time(view.dueAt))} />
+    <article className={`${styles.notice} ${own.narrow}`} aria-labelledby="zadatak">
+      <header className={own.hero}>
+        <p className={own.eyebrow}>{noticeText.eyebrow}</p>
+        <h1 id="zadatak">{noticeText.heroBefore} <em>{noticeText.heroAccent}</em></h1>
       </header>
+      <section className={own.lead} aria-label={view.title}>
+        <h2>{view.title}</h2>
+        <NoticeMeta kind={kindLine} due={s.dueAt.replace("{time}", time(view.dueAt))} />
+      </section>
       {note ? <p className={styles.window} role="status">{note}</p> : null}
       {returning ? done : null}
       <ToolsCard view={view} />

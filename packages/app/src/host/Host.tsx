@@ -3,30 +3,32 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
-import { RouteLoading } from "@ductura/ui";
+import { RouteLoading, SideShell } from "@ductura/ui";
 
-import { AppShell, appHref } from "../../../../src/components/index.ts";
+import { appHref } from "../../../../src/components/index.ts";
+import { HOW_IT_WORKS_HREF, homeHref, navFor } from "../../../../src/components/shell/nav.ts";
 import ErrorScreen from "../../../../src/components/shell/ErrorScreen.ts";
 import { goToSignIn, readSession, type SessionRead } from "../../../../src/client/api.ts";
 
 import { nextPath, type Base } from "../bases";
-import { crumbsOf, internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
+import { internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
 import { navLabel, useLocale } from "../i18n";
 import { HostContext } from "./context";
 import { EditorSignOutSlot } from "./editor/save-status/SignOutSlot";
 import { RecoveryOffer } from "./editor/save-status/RecoveryOffer";
 import ProblemReportHelp from "./ProblemReportHelp";
 import SignOut from "./SignOut";
+import { StudentToasts } from "./student/toast/StudentToasts";
 import { NoRoleScreen } from "./signin/SignInScreen";
 import ShellNotifications from "./shell/notifications/ShellNotifications";
 import { shellMessagesFor } from "./teacher/shell/messages";
-import { teacherShellHr } from "./teacher/shell/messages.hr";
 
 /**
  * The institution front (#2028 c.6993786629 §3.3), as the layout of
  * app/[base]/: reads the session once, sends a signed-out browser to AAI@EduHr
  * sign-in (D-09), and shows the page of the path for the session's role inside
- * the shell, with the institution's name. Links of the app open through the
+ * the prototypes' shell (VIZ-0: no top bar, so no breadcrumb and no
+ * institution line, as in the prototypes). Links of the app open through the
  * Next router, without a reload.
  */
 export default function Host({ base, children }: { base: Base; children: ReactNode }) {
@@ -35,7 +37,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   const open = publicPage(route);
   const [session, setSession] = useState<SessionRead | null>(null);
   const catalogues = useLocale();
-  const { t, app: { host: hostText }, syncFromServer } = catalogues;
+  const { t, app: { host: hostText }, ui, syncFromServer } = catalogues;
 
   const load = useCallback(() => {
     setSession(null);
@@ -107,34 +109,47 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   }
   if (resolved === null || resolved.kind === "redirect") return <RouteLoading label={hostText.loading} />;
 
-  const shell = (current: string | undefined, crumbs: readonly string[], body: ReactNode, ownMain = false) => (
-    <EditorSignOutSlot>
-      <AppShell
-        role={role}
-        scope={null}
-        current={current}
-        crumbs={crumbs}
-        base={base}
-        institution={signedIn?.institution ?? null}
-        account={<><ShellNotifications base={base} /><SignOut base={base} /></>}
-        messages={shellMessagesFor(t, role)}
-        menuText={role === "teacher" ? teacherShellHr.menu : undefined}
-        help={(linkClass) => <ProblemReportHelp triggerClass={linkClass} />}
-        ownMain={ownMain}
-      >
-        {role === "student" && <RecoveryOffer base={base} />}
-        {body}
-      </AppShell>
-    </EditorSignOutSlot>
-  );
+  // VIZ-0: the prototypes' shell (SideShell of @ductura/ui): the 64 px rail with
+  // the navigation and its foot, no top bar. The links the old top bar and side
+  // bar carried stay, in the rail's foot.
+  const shell = (current: string | undefined, body: ReactNode, ownMain = false) => {
+    const shellText = shellMessagesFor(t, role);
+    const link = (path: string) => appHref(base, path);
+    return (
+      <EditorSignOutSlot>
+        <SideShell
+          role={role}
+          name={t.app.name}
+          homeHref={link(homeHref(role))}
+          homeLabel={ui.sideShell.home[role ?? "none"]}
+          sideLabel={shellText.shell.sideNav}
+          navLabel={shellText.shell.workNav}
+          items={navFor(role, shellText).map((item) => ({ href: link(item.href), label: item.label }))}
+          current={current === undefined ? undefined : link(current)}
+          menuLabel={ui.sideShell.menu}
+          themeLabel={shellText.shell.theme}
+          links={[
+            { href: link(HOW_IT_WORKS_HREF), label: shellText.shell.howItWorks },
+            { href: link("/pristupacnost"), label: shellText.shell.accessibilityStatement },
+          ]}
+          help={(linkClass) => <ProblemReportHelp triggerClass={linkClass} />}
+          tools={<ShellNotifications base={base} />}
+          account={<SignOut base={base} />}
+          ownMain={ownMain}
+        >
+          {role === "student" && <RecoveryOffer base={base} />}
+          {role === "student" ? <StudentToasts>{body}</StudentToasts> : body}
+        </SideShell>
+      </EditorSignOutSlot>
+    );
+  };
 
   if (resolved.kind === "notFound") {
-    return shell(undefined, [t.errorPage.notFoundTitle], <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />, true);
+    return shell(undefined, <ErrorScreen title={t.errorPage.notFoundTitle} body={t.errorPage.notFoundBody} />, true);
   }
   if (resolved.kind === "noRole") {
-    return shell(undefined, [], <section className="page"><h1>{t.home.welcome}</h1><p>{hostText.noRole}</p></section>);
+    return shell(undefined, <section className="card"><h1>{t.home.welcome}</h1><p className="note">{hostText.noRole}</p></section>);
   }
   const { page } = resolved;
-  const crumbs = crumbsOf(page, role).length === 0 ? [] : [navLabel(page, role, { ...catalogues, t: shellMessagesFor(t, role) })];
-  return shell(page.current, crumbs, <HostContext value={{ base, page, role }}>{children}</HostContext>);
+  return shell(page.current, <HostContext value={{ base, page, role }}>{children}</HostContext>);
 }

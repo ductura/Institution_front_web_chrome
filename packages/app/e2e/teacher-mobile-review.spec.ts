@@ -24,6 +24,7 @@ if (typeof documentId !== "string") throw new Error("Missing documentId in signe
 const workBody = vectors.find((v) => v.route === "teacher.work.get" && v.name === "submitted-work")!.response.body;
 const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "teacher-without-name")!.response.body;
 const profileBody = { ...profile, roles: ["teacher"] };
+const originNothingRecorded = vectors.find((v) => v.route === "work.origin-composition.get" && v.name === "nothing-recorded")!.response.body;
 const path = `/nastavnik/rad/${encodeURIComponent(documentId)}`;
 const work = `/app/web${path}`;
 const receiptPath = `/api/v1/teacher/assignments/${assignmentId}/students/${studentId}/submission`;
@@ -54,6 +55,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
         contentType: "application/json", body: snapshot, headers: { etag },
       });
       case "/api/v1/process-summary": return route.fulfill({ status: 404, json: { error: "not_found" } });
+      // WEB-2157 (#410): the N-10 summary page also reads its details; no summary exists for this work either.
+      case "/api/v1/process-summary/details": return route.fulfill({ status: 404, json: { error: "not_found" } });
       case "/api/v1/comments/list": return route.fulfill({ json: { comments: [{
         threadId: "00000000-0000-4000-8000-000000000001", commentId: "00000000-0000-4000-8000-000000000001",
         position: 1, authorRole: "teacher", isOwn: true, body: "Izmišljeni komentar mentora uz ovaj odlomak.",
@@ -66,6 +69,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
       case `/api/v1/teacher/works/${documentId}`: return route.fulfill({ json: workBody });
       case receiptPath: return route.fulfill({ json: signed });
       case consultationPath: return route.fulfill({ json: { records: [] } });
+      // WEB-2158 (#407): Karta podrijetla reads work.origin-composition.get ("nothing-recorded" vector).
+      case `/api/v1/works/${documentId}/origin-composition`: return route.fulfill({ json: originNothingRecorded });
       case `/api/v1/works/${documentId}/milestones`: return route.fulfill({ json: { milestones: [] } });
       case `/api/v1/works/${documentId}/versions`: return route.fulfill({ json: {
         versions: [{ kind: "submission", revision: 1, savedMinute: "2026-11-20T12:00:00.000Z", afterDeadline: false }],
@@ -111,7 +116,10 @@ async function expectTargets(page: Page) {
   const small = await page.evaluate(() => {
     const controls = document.querySelectorAll<HTMLElement>("a[href], button, input:not([type=hidden]), textarea, select, summary, [role=button]");
     return [...controls].flatMap((el) => {
-      const box = el.getBoundingClientRect();
+      // An input inside its own label (the @ductura/ui Checkbox, WEB-05) is tapped through that label, so the
+      // label is the target that must reach 24 px; the box itself only draws the state.
+      const wrapping = el instanceof HTMLInputElement ? [...(el.labels ?? [])].find((label) => label.contains(el)) : undefined;
+      const box = (wrapping ?? el).getBoundingClientRect();
       if (box.width === 0 && box.height === 0) return [];
       return box.width < 24 || box.height < 24
         ? [`${el.tagName.toLowerCase()} "${(el.textContent ?? "").trim().slice(0, 30)}" ${Math.round(box.width)}x${Math.round(box.height)}`]

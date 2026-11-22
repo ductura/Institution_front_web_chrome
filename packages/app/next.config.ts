@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
   // /app/web/ is where sign-in returns (§3); the host reads both forms of a
   // path, so neither is redirected to the other.
   skipTrailingSlashRedirect: true,
+  // LOK-WEB-6: `next dev` serves its own scripts and HMR only to localhost, so a
+  // page opened on 127.0.0.1 hung on "Učitavanje". Development only; a build
+  // ignores it.
+  allowedDevOrigins: ["127.0.0.1"],
   // The screens, locales and the client are imported from the workspace root.
   turbopack: { root },
   outputFileTracingRoot: root,

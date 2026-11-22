@@ -1,0 +1,90 @@
+import type { MyAssignment, MyCourse } from "../../../../../../src/components/student/my-assignments-read";
+import type { WorkState } from "../../../../../../src/components/student/radovi/works-read";
+import { homeText as t } from "./messages.hr";
+
+/** The row kinds of the prototype's `kind(t, s)`, in the order of its checks. */
+export type RowKind = "predano" | "obavijest" | "rad" | "zadatak";
+
+export type TaskRow = {
+  readonly id: string;
+  readonly title: string;
+  readonly course: string;
+  readonly kind: RowKind;
+  /** Deadline as the assignment gives it: the extended one replaces the original. */
+  readonly dueAt: string;
+  readonly extended: boolean;
+  /** The workType label, or the generic "Zadatak". */
+  readonly typeLabel: string;
+};
+
+/** The state of one work: the read's, and `null` where the work-state read did not answer. */
+export type States = ReadonlyMap<string, WorkState> | null | undefined;
+
+/** `predano` if submitted; `obavijest` if the notice is open; `rad` if started; else `zadatak`. */
+export function kindOf(assignment: MyAssignment, states: States): RowKind {
+  const state = states?.get(assignment.id);
+  if (state === "submitted") return "predano";
+  if (assignment.noticeFirst) return "obavijest";
+  if (state === "in_progress") return "rad";
+  return "zadatak";
+}
+
+/** The flat list of every visible assignment, courses in the read's order, each with its course. */
+export function flatRows(courses: readonly MyCourse[], states: States): TaskRow[] {
+  return courses.flatMap((course) =>
+    course.assignments.map((assignment): TaskRow => {
+      const extended = typeof assignment.extendedDueAt === "string" && assignment.extendedDueAt !== "";
+      return {
+        id: assignment.id, title: assignment.title, course: course.name, kind: kindOf(assignment, states),
+        dueAt: extended ? (assignment.extendedDueAt as string) : assignment.dueAt, extended,
+        typeLabel: assignment.workType === undefined ? t.taskFallback : t.workTypes[assignment.workType],
+      };
+    }));
+}
+
+/**
+ * The "nastavak rada" card: the first started, unsubmitted work whose notice is
+ * acknowledged (INVENTAR wins over the HTML's fallback without the notice). Rows
+ * of kind `rad` are exactly those, since `obavijest` is checked first.
+ */
+export function continueRow(rows: readonly TaskRow[]): TaskRow | null {
+  return rows.find((row) => row.kind === "rad") ?? null;
+}
+
+const DAY_MS = 86_400_000;
+
+/** `Rok za N dana` within 7 days of the deadline, none after it has passed or far ahead; null otherwise. */
+export function nearTag(dueAt: string, now: number): string | null {
+  const due = Date.parse(dueAt);
+  if (Number.isNaN(due) || due < now) return null;
+  const days = Math.ceil((due - now) / DAY_MS);
+  if (days > 7) return null;
+  if (days <= 0) return t.nearToday;
+  return days === 1 ? t.nearOne : t.nearMany.replace("{n}", String(days));
+}
+
+/** The prototype's R-10: no spaces at the edges, capitals; empty stays empty. */
+export function normalizeCode(raw: string): string {
+  return raw.trim().toUpperCase();
+}
+
+/** Where a row opens (R-9): a submitted work its receipt, an open notice the notice, else the work. */
+export function rowRoute(row: Pick<TaskRow, "id" | "kind">): string {
+  const id = encodeURIComponent(row.id);
+  if (row.kind === "predano") return `/rad/${id}/predaja/potvrda`;
+  if (row.kind === "obavijest") return `/zadatak/${id}`;
+  return `/rad/${id}`;
+}
+
+/** The enrolment page with the code carried over (R-10), or without one. */
+export function enrollRoute(code: string): string {
+  const normal = normalizeCode(code);
+  return normal === "" ? "/upis" : `/upis?kod=${encodeURIComponent(normal)}`;
+}
+
+/** The button label of a row (btn()): "Otvori rad", "Pročitaj upute" or "Otvori zadatak". */
+export function rowAction(kind: RowKind): { label: string; primary: boolean } {
+  if (kind === "predano") return { label: t.openWork, primary: false };
+  if (kind === "obavijest") return { label: t.readNotice, primary: false };
+  return { label: kind === "rad" ? t.openWork : t.openTask, primary: true };
+}
