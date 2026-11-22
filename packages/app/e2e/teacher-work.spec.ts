@@ -11,6 +11,7 @@ import { messagesHr as t } from "../../../src/lib/i18n/messages.hr";
 // The host's own N-08 comments panel (WEB-2154), N-09 replay page (WEB-2159), N-12 consultations (#398) and N-06 frame (WEB-2150) texts.
 import { teacherCommentsMessages as comments } from "../src/host/teacher/comments/messages.hr";
 import { n09Messages as replay } from "../src/host/teacher/n09/messages.hr";
+import { n10Messages as summary } from "../src/host/teacher/n10/messages.hr";
 import { n12Messages as consultationMessages } from "../src/host/teacher/n12/messages.hr";
 import { workFrameMessages as frame } from "../src/host/teacher/n06/messages.hr";
 
@@ -56,6 +57,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
         contentType: "application/json", body: snapshot, headers: { etag },
       });
       case "/api/v1/process-summary": return route.fulfill({ status: 404, json: { error: "not_found" } });
+      // WEB-2157: the N-10 page also reads the details of the summary; neither exists for this work.
+      case "/api/v1/process-summary/details": return route.fulfill({ status: 404, json: { error: "not_found" } });
       case "/api/v1/comments/list": return route.fulfill({ json: { comments: [] } });
       case "/api/v1/evidence/replay": return route.fulfill({ json: {
         replayFormat: "ductus-evidence-replay-v1", segmentCount: 0, head: null,
@@ -93,7 +96,11 @@ test("teacher opens the live text, replay, signed receipt and consultations unde
   await expect(page.getByText("Iva Izmišljena")).toBeVisible();
   await expect(page.getByText(/\bPredano\b/)).toBeVisible();
   await page.getByRole("link", { name: t.receipt.summary, exact: true }).click();
-  await expect(page).toHaveURL(`${work}#sazetak-procesa`);
+  // WEB-2157 (#410): the summary is its own N-10 page.
+  await expect(page).toHaveURL(`${work}/sazetak`);
+  await expect(page.getByText(summary.notFound)).toBeVisible();
+  await page.getByRole("link", { name: summary.backToWork, exact: true }).click();
+  await expect(page).toHaveURL(work);
   // WEB-2150 (#385): the N-06 frame names the same views in its own navigation.
   await page.getByRole("navigation", { name: frame.linksLabel }).getByRole("link", { name: consultationMessages.title, exact: true }).click();
   await expect(page).toHaveURL(`${work}/konzultacije`);

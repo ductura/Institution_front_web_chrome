@@ -47,6 +47,10 @@ async function fakeServer(page: Page, me: Me) {
   // WEB-2145: the N-01 task facts read each course roster (teacher.course-students.get); nobody is enrolled.
   await page.route("**/api/v1/teacher/courses/*/students", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ students: [] }) }));
+  // ...and per assignment its submissions, overview and deadline extensions; none yet.
+  await page.route("**/api/v1/teacher/assignments/*/submissions", (route) => route.fulfill({ json: { submissions: [] } }));
+  await page.route("**/api/v1/teacher/assignments/*/overview", (route) => route.fulfill({ json: { students: [] } }));
+  await page.route("**/api/v1/teacher/assignments/*/deadline-extensions", (route) => route.fulfill({ json: { extensions: [] } }));
   await page.route("**/api/v1/teacher/courses", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
   await page.route("**/api/v1/teacher/mentorships", (route) =>
