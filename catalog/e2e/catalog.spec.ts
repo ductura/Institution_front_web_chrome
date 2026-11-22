@@ -109,17 +109,6 @@ for (const theme of THEMES) {
       await expect(sheet.getByText("Odabrano: 20. 11. 2026. u 14:00")).toBeVisible();
     });
 
-    // 400 px is the width of the left panel's acceptance (DAN-977); the page is checked whole.
-    for (const width of [1440, 400, 360]) {
-      test(`has no WCAG 2.2 AA violations at ${width} px (axe)`, async ({ page }) => {
-        test.setTimeout(60_000);
-        await open(page, theme, width);
-        const result = await new AxeBuilder({ page })
-          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
-        expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
-      });
-    }
-
     for (const width of WIDTHS) {
       test(`matches its baselines at ${width} px`, async ({ page }) => {
         await open(page, theme, width);
@@ -136,3 +125,26 @@ for (const theme of THEMES) {
     }
   });
 }
+
+// axe over the whole catalogue is CPU-bound. Since #447 (fullyParallel, 4 workers
+// on a 4-core runner) all six ran at once beside the screenshot tests and hit the
+// 60 s limit. They run one after another in one worker, as before #447; the rules
+// and the scope (the whole page, every theme and width) are unchanged.
+test.describe("axe", () => {
+  test.describe.configure({ mode: "default" });
+  for (const theme of THEMES) {
+    // 400 px is the width of the left panel's acceptance (DAN-977); the page is checked whole.
+    for (const width of [1440, 400, 360]) {
+      test(`${theme} shell has no WCAG 2.2 AA violations at ${width} px (axe)`, async ({ page }) => {
+        test.setTimeout(60_000);
+        await open(page, theme, width);
+        const started = Date.now();
+        const result = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+        test.info().annotations.push({ type: "axe-ms", description: String(Date.now() - started) });
+        console.log(`axe ${theme} ${width}px: ${Date.now() - started} ms`);
+        expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+      });
+    }
+  }
+});
