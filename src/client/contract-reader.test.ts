@@ -33,6 +33,7 @@ function schemaOf(vector: Vector): Json | undefined {
   return spec?.content?.["application/json"]?.schema as Json | undefined;
 }
 
+const multipart = (v: Vector) => (v.request as { headers?: Record<string, string> }).headers?.["content-type"]?.startsWith("multipart/") === true;
 const successes = vectors.filter((v) => v.response.status < 400 && (v.response as { contentType?: string }).contentType?.startsWith("application/json") === true);
 
 describe("client reader against the migration vectors", () => {
@@ -45,6 +46,14 @@ describe("client reader against the migration vectors", () => {
     const { status, body } = vector.response;
     const contentType = (vector.response as { contentType?: string }).contentType ?? "application/json";
     const read = (answer: unknown) => createApi({ baseUrl: BASE_URL, fetchImpl: answering(status, answer, contentType) })(id, inputOf(vector));
+
+    // A multipart upload (the source proof image) is no JSON body: this client does not send it, so there is no answer to read.
+    if (multipart(vector)) {
+      it(`${id} ${vector.name}: is a multipart upload the client refuses before sending`, async () => {
+        expect(await read(body)).toEqual({ ok: false, status: 0, code: "client_rejected" });
+      });
+      continue;
+    }
 
     it(`${id} ${vector.name}: accepts the valid answer`, async () => {
       expect(await read(body)).toEqual({ ok: true, status, body, headers: {} });
@@ -70,7 +79,7 @@ describe("client reader against the migration vectors", () => {
   }
 
   it("refuses an answer that is not an object where the contract gives one", async () => {
-    for (const vector of successes.filter((v) => isObject(v.response.body) && schemaOf(v)?.type === "object")) {
+    for (const vector of successes.filter((v) => !multipart(v) && isObject(v.response.body) && schemaOf(v)?.type === "object")) {
       const { status } = vector.response;
       const contentType = (vector.response as { contentType?: string }).contentType ?? "application/json";
       const result = await createApi({ baseUrl: BASE_URL, fetchImpl: answering(status, "nope", contentType) })(vector.route as ApiOperationId, inputOf(vector));
