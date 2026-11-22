@@ -20,7 +20,6 @@ import BeforeSubmit from "../../../../../../src/components/predaja/BeforeSubmit.
 import Declaration from "../../../../../../src/components/predaja/Declaration.tsx";
 import { studentReceiptRead, type ReceiptRead } from "../../../../../../src/components/predaja/ReceiptPanel.tsx";
 import { stageOf, type Stage } from "../../../../../../src/components/predaja/stage.ts";
-import Submission from "../../../../../../src/components/student/Submission.tsx";
 import { browserTransport, createApi, goToSignIn } from "../../../../../../src/client/api.ts";
 import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
 
@@ -31,6 +30,8 @@ import PortableRecord from "../portable-record/PortableRecord";
 import SubmissionPackage from "../submission-package/SubmissionPackage";
 import ReceiptScreen from "./receipt/ReceiptScreen";
 import WithdrawSubmission from "./withdraw/WithdrawSubmission";
+import SubmitStep from "./submit/SubmitStep";
+import { extendedDueOf, submitStageOf } from "./submit/model";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
@@ -39,7 +40,7 @@ type Step = "" | "izjava" | "pregled" | "slanje" | "potvrda";
 
 /** What the checked assignment allows a step to show. */
 type Checked =
-  | { readonly kind: "ready"; readonly title: string; readonly workState: string; readonly stage: Stage }
+  | { readonly kind: "ready"; readonly title: string; readonly workState: string; readonly stage: Stage; readonly dueAt: string; readonly extendedDueAt: string | null }
   | { readonly kind: "unavailable" };
 
 type Shown<T> = { kind: "loading" } | { kind: "notFound" } | { kind: "ready"; value: T };
@@ -76,7 +77,7 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const checked: Checked = read.kind === "ready"
-        ? { kind: "ready", title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()) }
+        ? { kind: "ready", title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()), dueAt: read.dueAt, extendedDueAt: extendedDueOf(assignments.ok ? assignments.body : null, assignmentId) }
         : { kind: "unavailable" };
       const value = await then(checked, assignmentId);
       if (live && value !== null) setShown({ kind: "ready", value });
@@ -148,7 +149,6 @@ export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignment
 export function SubmitStepPage({ assignmentId }: { assignmentId: string }) {
   const router = useRouter();
   const { base } = useHost();
-  const hrefOf = useHrefOf();
   const shown = useChecked(assignmentId, "slanje", async (checked, id) => {
     if (checked.kind === "ready" && checked.stage.kind === "submitted") {
       router.replace(nextPath(base, stepPath(id, "potvrda")));
@@ -159,7 +159,8 @@ export function SubmitStepPage({ assignmentId }: { assignmentId: string }) {
   return (
     <Shown shown={shown}>
       {({ checked, id }) => (
-        <Submission assignmentId={id} hrefOf={hrefOf} stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }} />
+        <SubmitStep assignmentId={id} title={checked.kind === "ready" ? checked.title : ""} dueAt={checked.kind === "ready" ? checked.dueAt : null}
+          stage={checked.kind === "ready" ? submitStageOf(checked.workState, checked.dueAt, checked.extendedDueAt, Date.now()) : { kind: "unavailable" }} />
       )}
     </Shown>
   );
