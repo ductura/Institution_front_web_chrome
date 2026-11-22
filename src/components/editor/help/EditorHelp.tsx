@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { editorHelpHr as t } from "../../../lib/i18n/messages.hr";
 import { defaultHelp, forLevel, levelOf, readHelp, settingsKey, toggleWarning, warningKeys, warnings, type HelpSettings, type Level, type Warning } from "./preferences";
+import { WhatIsRecorded } from "./what-is-recorded";
 import styles from "./EditorHelp.module.css";
 
 export function useEditorHelp() {
@@ -76,9 +77,7 @@ export function EditorHelpDialogs({ view, onClose, help, counts, notice }: Props
       </>}
     </Dialog>
     <Dialog open={view === "recorded"} title={t.recorded} actions={close} onClose={onClose}>
-      <dl className={styles.recording}>{t.recording.map(([heading, text]) => (
-        <div key={heading}><dt>{heading}</dt><dd>{text}</dd></div>
-      ))}</dl>
+      <WhatIsRecorded />
     </Dialog>
   </>;
 }
