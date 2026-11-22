@@ -477,9 +477,9 @@ export type MigrationOperations = {
   };
   "work.compare.get": {
     params: { "documentId": string };
-    query: { "from": string; "to": string };
+    query: { from: string; to: string };
     body: undefined;
-    success: { status: 200; body: { "from": number; "to": number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
+    success: { status: 200; body: { from: number; to: number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
   };
   "platform.status.get": {
@@ -632,8 +632,8 @@ export type MigrationOperations = {
   "evidence.replay.post": {
     params: undefined;
     query: undefined;
-    body: { "documentId": string; "from": 0 } | { "documentId": string; "from": number; "head": { "segmentHash": string; "segmentCount": number } };
-    success: { status: 200; body: { "replayFormat": "ductus-evidence-replay-v1"; "segmentCount": number; "head": { "segmentHash": string; "segmentCount": number } | null; "from": number; "next": number | null; "startDocument": string | null; "segments": (string)[]; "resumeDocuments": { [key: string]: string } }; headers: {  } };
+    body: { "documentId": string; from: 0 } | { "documentId": string; from: number; "head": { "segmentHash": string; "segmentCount": number } };
+    success: { status: 200; body: { "replayFormat": "ductus-evidence-replay-v1"; "segmentCount": number; "head": { "segmentHash": string; "segmentCount": number } | null; from: number; "next": number | null; "startDocument": string | null; "segments": (string)[]; "resumeDocuments": { [key: string]: string } }; headers: {  } };
     errorCode: "forbidden" | "upgrade_required" | "unsupported_media_type" | "unauthenticated" | "too_large" | "timeout" | "bad_request" | "invalid" | "not_found" | "record_changed" | "unavailable";
   };
   "institution.academic-years.get": {
@@ -892,14 +892,14 @@ export type MigrationOperations = {
     params: undefined;
     query: undefined;
     body: { "documentId": string };
-    success: { status: 200; body: { "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ "from": string; "to": string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { "from": string; "to": string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" }; "activeEditingMinutes": number; "keyEvents": ({ "kind": "import" | "ai-transfer"; "at": { "from": string; "to": string } })[] }; headers: {  } };
+    success: { status: 200; body: { "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ from: string; to: string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { from: string; to: string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" }; "activeEditingMinutes": number; "keyEvents": ({ "kind": "import" | "ai-transfer"; "at": { from: string; to: string } })[] }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
   };
   "projection.process-summary.post": {
     params: undefined;
     query: undefined;
     body: { "documentId": string };
-    success: { status: 200; body: { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ "from": string; "to": string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { "from": string; "to": string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" }; headers: {  } };
+    success: { status: 200; body: { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ from: string; to: string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { from: string; to: string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
   };
   "settings.catalogue.get": {
@@ -1172,7 +1172,7 @@ export type MigrationOperations = {
     params: undefined;
     query: undefined;
     body: { "assignmentId": string };
-    success: { status: 200; body: { "kind": "ok"; "students": ({ "id": string; "givenName": string; "surname": string; "documentId": null; "work": "notice_pending"; "lastChangeAt": null; "record": null } | { "id": string; "givenName": string; "surname": string; "documentId": string; "work": "writing" | "submitted"; "lastChangeAt": string | null; "record": { "pastesWithoutSource": number; "blocks": ({ "kind": "heading" | "paragraph" | "bulletItem" | "quote"; "text": string })[]; "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ "from": string; "to": string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { "from": string; "to": string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" } } } | { "id": string; "givenName": null; "surname": null; "documentId": null; "work": "notice_pending"; "lastChangeAt": null; "record": null } | { "id": string; "givenName": null; "surname": null; "documentId": string; "work": "writing" | "submitted"; "lastChangeAt": string | null; "record": { "pastesWithoutSource": number; "blocks": ({ "kind": "heading" | "paragraph" | "bulletItem" | "quote"; "text": string })[]; "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ "from": string; "to": string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { "from": string; "to": string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" } } })[] }; headers: {  } };
+    success: { status: 200; body: { "kind": "ok"; "students": ({ "id": string; "givenName": string; "surname": string; "documentId": null; "work": "notice_pending"; "lastChangeAt": null; "record": null } | { "id": string; "givenName": string; "surname": string; "documentId": string; "work": "writing" | "submitted"; "lastChangeAt": string | null; "record": { "pastesWithoutSource": number; "blocks": ({ "kind": "heading" | "paragraph" | "bulletItem" | "quote"; "text": string })[]; "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ from: string; to: string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { from: string; to: string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" } } } | { "id": string; "givenName": null; "surname": null; "documentId": null; "work": "notice_pending"; "lastChangeAt": null; "record": null } | { "id": string; "givenName": null; "surname": null; "documentId": string; "work": "writing" | "submitted"; "lastChangeAt": string | null; "record": { "pastesWithoutSource": number; "blocks": ({ "kind": "heading" | "paragraph" | "bulletItem" | "quote"; "text": string })[]; "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ from: string; to: string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { from: string; to: string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" } } })[] }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "unauthorized" | "unsupported_media_type" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "invalid_input" | "unavailable";
   };
   "teacher.mentorship.get": {
@@ -1459,7 +1459,7 @@ export type MigrationOperations = {
     params: { "documentId": string; "revision": string };
     query: { "compareFrom"?: string };
     body: undefined;
-    success: { status: 200; body: { "revision": number; "document": string } | { "from": number; "to": number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
+    success: { status: 200; body: { "revision": number; "document": string } | { from: number; to: number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
   };
   "student.course-literature.get": {
