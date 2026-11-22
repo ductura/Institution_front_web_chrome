@@ -49,12 +49,12 @@ export function directEditBadge(enabled: boolean): string {
  */
 export async function changeDirectEdit(
   port: DirectEditPort,
-  assignmentId: string,
+  documentId: string,
   enabled: boolean,
 ): Promise<DirectEditWrite> {
   let result: DirectEditWrite;
   try {
-    result = await port.write(assignmentId, enabled);
+    result = await port.write(documentId, enabled);
   } catch {
     return { kind: "unknown" };
   }

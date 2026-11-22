@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@ductura/ui";
 import { goToSignIn } from "@/client/api";
 
@@ -19,9 +19,10 @@ export function DirectEditView(
   { state: DirectEditState; busy: boolean; note: string | null; submitted: boolean; onChange: (enabled: boolean) => void },
 ) {
   const { enabled } = state;
+  const heading = useId();
   return (
-    <section aria-label={text.title}>
-      <h2>{text.title}</h2>
+    <section aria-labelledby={heading}>
+      <h2 id={heading}>{text.title}</h2>
       <p>{text.description}</p>
       <p data-direct-edit-badge={enabled ? "on" : "off"}>{directEditBadge(enabled)}</p>
       {submitted
