@@ -1,0 +1,5 @@
+.list, .list dd { margin: 0; }
+.list > div { padding: 8px 0; border-block-end: 1px solid var(--rule-2); }
+.list dt { font-weight: 600; }
+.list dd { color: var(--ink-3); }
+.note { color: var(--ink-3); margin-block: 12px 0; }
