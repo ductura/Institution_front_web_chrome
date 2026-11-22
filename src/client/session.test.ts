@@ -64,10 +64,13 @@ describe("readSession", () => {
     expect(await readSession(answering(() => new Response(null, { status: 401 })))).toEqual({ kind: "signedOut" });
   });
 
+  it("is unavailable, marked noRole, on 403: signed in through AAI@EduHr without a role (E-1)", async () => {
+    expect(await readSession(answering(() => json(403, {})))).toEqual({ kind: "unavailable", noRole: true });
+  });
+
   it("is unavailable on any other answer, a body that is not JSON, or a broken connection", async () => {
     for (const response of [
       () => json(503, { code: "unavailable" }),
-      () => json(403, {}),
       () => new Response("<html>", { status: 200, headers: { "content-type": "text/html" } }),
       () => new Response("{", { status: 200, headers: { "content-type": "application/json" } }),
       () => json(200, ["student"]),
