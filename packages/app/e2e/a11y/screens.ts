@@ -12,6 +12,7 @@ const D = "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f01";
 export const SCREENS: readonly Screen[] = [
   // Public: no session is read. /prijava is left out: it hands the browser to AAI@EduHr at once (D-09).
   { name: "stanje sustava", path: "/stanje", role: null },
+  { name: "provjera potvrde", path: "/provjera", role: null },
   { name: "nema ovlasti", path: "/nema-ovlasti?kind=denied", role: null },
   { name: "prijava istekla", path: "/nema-ovlasti?kind=expired", role: null },
   { name: "izjava o pristupačnosti", path: "/pristupacnost", role: null },

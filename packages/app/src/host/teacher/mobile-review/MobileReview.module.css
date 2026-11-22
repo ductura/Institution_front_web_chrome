@@ -40,7 +40,8 @@
 
   .review ul a,
   .review nav a,
-  .review aside a {
+  .review aside a,
+  .review p > a:only-child {
     display: inline-block;
     min-height: 24px;
     min-width: 24px;

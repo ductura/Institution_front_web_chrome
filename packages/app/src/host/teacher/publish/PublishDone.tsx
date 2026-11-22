@@ -19,8 +19,10 @@ export function PublishDone() {
 }
 
 /** Link shown under the wizard while a publish is of unknown outcome: the teacher checks the list first. */
-export function CheckListLink() {
+export function CheckListLink({ courseId, title }: { courseId?: string; title?: string } = {}) {
   const host = useContext(HostContext);
   if (!host) return null;
-  return <p><a href={appHref(host.base, "/nastavnik/kolegiji")}>{publishHr.checkList}</a></p>;
+  // The course list shows the banner "prekinuto" for this assignment (WEB-2145).
+  const query = new URLSearchParams({ objava: "prekinuta", ...(courseId ? { kolegij: courseId } : {}), ...(title ? { zadatak: title } : {}) });
+  return <p><a href={appHref(host.base, `/nastavnik/kolegiji?${query.toString()}`)}>{publishHr.checkList}</a></p>;
 }

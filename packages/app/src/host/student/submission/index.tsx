@@ -31,6 +31,7 @@ import SubmissionPackage from "../submission-package/SubmissionPackage";
 import { stepsText } from "./steps/messages.hr";
 import StepsShell from "./steps/StepsShell";
 import ReceiptScreen from "./receipt/ReceiptScreen";
+import { VERIFY_PATH } from "../../public/verify/model";
 import WithdrawSubmission from "./withdraw/WithdrawSubmission";
 import SubmitStep from "./submit/SubmitStep";
 import { extendedDueOf, submitStageOf } from "./submit/model";
@@ -191,7 +192,7 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
         <div className="page receipt-page">
           <Steps currentStep={5} />
           <h1>{t.receipt.title}</h1>
-          <ReceiptScreen read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))} workHref={hrefOf(`/rad/${encodeURIComponent(id)}`)} homeHref={hrefOf("/")} />
+          <ReceiptScreen read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))} workHref={hrefOf(`/rad/${encodeURIComponent(id)}`)} homeHref={hrefOf("/")} checkHref={hrefOf(VERIFY_PATH)} />
           {receipt.kind === "potvrdeno" ? <PortableRecord submissionId={receipt.receipt.payload.submissionId} /> : null}
           {receipt.kind === "potvrdeno" ? <SubmissionPackage assignmentId={id} submissionId={receipt.receipt.payload.submissionId} /> : null}
           <WithdrawSubmission assignmentId={id} />
