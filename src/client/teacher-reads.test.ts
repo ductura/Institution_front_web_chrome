@@ -10,6 +10,7 @@ import { readTeacherCourses, type TeacherCoursesCall } from "../components/teach
 import { createApi } from "./api";
 import { readSubmissionState, type SubmissionReceipt } from "./submission";
 import { readAssignmentOverview, readCourseStudents, readTeacherReceipt, type TeacherCall } from "./teacher-reads";
+import contractVectors from "./migration-contract-vectors.generated.json" with { type: "json" };
 
 const server = createFakeServer();
 let baseUrl = "";
@@ -112,23 +113,42 @@ describe("WEB-30 teacher reads (TODO(ugovor))", () => {
     expect(await readCourseStudents(answer(200, { students: [] }), "tuđi")).toEqual({ kind: "ready", students: [] });
   });
 
+  /** The contract's row (teacher.assignment-overview.get) for `row` and `notSubmitted`. */
+  const wire = {
+    studentId: STUDENT, givenName: "Ana", familyName: "Izmišljena", groupName: "A", submitted: true,
+    requestedMinute: "2026-11-02T09:15:00.000Z", afterDeadline: false, evidenceRecord: "continuous",
+  };
+  const wireNot = {
+    ...wire, studentId: OTHER, givenName: null, familyName: null, groupName: "B", submitted: false,
+    requestedMinute: null, afterDeadline: null, evidenceRecord: null,
+  };
+
   it("assignment overview: submitted, after the deadline and not submitted rows", async () => {
     const late = { ...row, studentId: OTHER, afterDeadline: true, evidenceRecord: "with_gaps" };
+    const wireLate = { ...wire, studentId: OTHER, afterDeadline: true, evidenceRecord: "with_gaps" };
     const calls: Parameters<TeacherCall>[] = [];
-    expect(await readAssignmentOverview(answer(200, { rows: [row, late] }, calls), ASSIGNMENT)).toEqual({ kind: "ready", rows: [row, late] });
+    expect(await readAssignmentOverview(answer(200, { students: [wire, wireLate] }, calls), ASSIGNMENT)).toEqual({ kind: "ready", rows: [row, late] });
     expect(calls).toEqual([["teacher.assignment-overview.get", { params: { assignmentId: ASSIGNMENT } }]]);
-    expect(await readAssignmentOverview(answer(200, { rows: [row, notSubmitted] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [row, notSubmitted] });
-    const leap = { ...row, requestedMinute: "2028-02-29T23:59Z" };
-    expect(await readAssignmentOverview(answer(200, { rows: [leap] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [leap] });
-    const ceka = { ...row, evidenceRecord: null };
-    expect(await readAssignmentOverview(answer(200, { rows: [ceka] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [ceka] });
+    expect(await readAssignmentOverview(answer(200, { students: [wire, wireNot] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [row, notSubmitted] });
+    const leap = await readAssignmentOverview(answer(200, { students: [{ ...wire, requestedMinute: "2028-02-29T23:59:00.000Z" }] }), ASSIGNMENT);
+    expect(leap).toEqual({ kind: "ready", rows: [{ ...row, requestedMinute: "2028-02-29T23:59Z" }] });
+    const ceka = await readAssignmentOverview(answer(200, { students: [{ ...wire, evidenceRecord: null }] }), ASSIGNMENT);
+    expect(ceka).toEqual({ kind: "ready", rows: [{ ...row, evidenceRecord: null }] });
   });
 
-  it("overview accepts an optional documentId and still works without it", async () => {
-    const withId = { ...row, documentId: "izmisljeni-rad-0001" };
-    expect(await readAssignmentOverview(answer(200, { rows: [withId] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [withId] });
-    expect(await readAssignmentOverview(answer(200, { rows: [row] }), ASSIGNMENT)).toEqual({ kind: "ready", rows: [row] });
-    expect(await readAssignmentOverview(answer(200, { rows: [{ ...row, documentId: "" }] }), ASSIGNMENT)).toEqual({ kind: "nepoznato" });
+  it("overview reads the contract vector's body (LOK-WEB-2)", async () => {
+    const vector = contractVectors.find((v) => v.route === "teacher.assignment-overview.get" && v.response.status === 200);
+    const body = vector?.response.body as { students: { studentId: string; givenName: string; familyName: string; groupName: string }[] };
+    const [first] = body.students;
+    const read = await readAssignmentOverview(answer(200, body), ASSIGNMENT);
+    expect(read).toEqual({ kind: "ready", rows: [{
+      studentId: first?.studentId, name: `${first?.givenName} ${first?.familyName}`, group: first?.groupName,
+      submitted: false, requestedMinute: null, afterDeadline: false, evidenceRecord: null,
+    }] });
+  });
+
+  it("overview: a documentId is not in the contract, so it is nepoznato", async () => {
+    expect(await readAssignmentOverview(answer(200, { students: [{ ...wire, documentId: "izmisljeni-rad-0001" }] }), ASSIGNMENT)).toEqual({ kind: "nepoznato" });
   });
 
   const nepoznato = { kind: "nepoznato" };
@@ -146,20 +166,28 @@ describe("WEB-30 teacher reads (TODO(ugovor))", () => {
   });
 
   it.each([
-    ["a submission hash", { rows: [{ ...row, artifactSha256: "a".repeat(64) }] }],
-    ["a submission id", { rows: [{ ...row, submissionId: STUDENT }] }],
-    ["the text", { rows: [{ ...row, text: "izmišljeni tekst" }] }],
-    ["a time with seconds", { rows: [{ ...row, requestedMinute: "2026-11-02T09:15:00Z" }] }],
-    ["a date that does not exist", { rows: [{ ...row, requestedMinute: "2026-11-31T09:15Z" }] }],
-    ["29 February of a common year", { rows: [{ ...row, requestedMinute: "2026-02-29T09:15Z" }] }],
-    ["month 13", { rows: [{ ...row, requestedMinute: "2026-13-01T09:15Z" }] }],
-    ["hour 24", { rows: [{ ...row, requestedMinute: "2026-11-02T24:00Z" }] }],
-    ["minute 60", { rows: [{ ...row, requestedMinute: "2026-11-02T09:60Z" }] }],
-    ["a time on a work not submitted", { rows: [{ ...notSubmitted, requestedMinute: "2026-11-02T09:15Z" }] }],
-    ["a record on a work not submitted", { rows: [{ ...notSubmitted, evidenceRecord: "continuous" }] }],
-    ["after the deadline but not submitted", { rows: [{ ...notSubmitted, afterDeadline: true }] }],
-    ["submitted without a time", { rows: [{ ...row, requestedMinute: null }] }],
-    ["an unknown record", { rows: [{ ...row, evidenceRecord: "partial" }] }],
+    ["the old local shape", { rows: [row] }],
+    ["a submission hash", { students: [{ ...wire, artifactSha256: "a".repeat(64) }] }],
+    ["a submission id", { students: [{ ...wire, submissionId: STUDENT }] }],
+    ["the text", { students: [{ ...wire, text: "izmišljeni tekst" }] }],
+    ["a minute without seconds", { students: [{ ...wire, requestedMinute: "2026-11-02T09:15Z" }] }],
+    ["a time with seconds", { students: [{ ...wire, requestedMinute: "2026-11-02T09:15:30.000Z" }] }],
+    ["a date that does not exist", { students: [{ ...wire, requestedMinute: "2026-11-31T09:15:00.000Z" }] }],
+    ["29 February of a common year", { students: [{ ...wire, requestedMinute: "2026-02-29T09:15:00.000Z" }] }],
+    ["month 13", { students: [{ ...wire, requestedMinute: "2026-13-01T09:15:00.000Z" }] }],
+    ["hour 24", { students: [{ ...wire, requestedMinute: "2026-11-02T24:00:00.000Z" }] }],
+    ["minute 60", { students: [{ ...wire, requestedMinute: "2026-11-02T09:60:00.000Z" }] }],
+    ["a time on a work not submitted", { students: [{ ...wireNot, requestedMinute: "2026-11-02T09:15:00.000Z" }] }],
+    ["a record on a work not submitted", { students: [{ ...wireNot, evidenceRecord: "continuous" }] }],
+    ["after the deadline but not submitted", { students: [{ ...wireNot, afterDeadline: true }] }],
+    ["a deadline flag false on a work not submitted", { students: [{ ...wireNot, afterDeadline: false }] }],
+    ["submitted without a deadline flag", { students: [{ ...wire, afterDeadline: null }] }],
+    ["submitted without a time", { students: [{ ...wire, requestedMinute: null }] }],
+    ["only a given name", { students: [{ ...wire, familyName: null }] }],
+    ["an empty family name", { students: [{ ...wire, familyName: "" }] }],
+    ["an empty group name", { students: [{ ...wire, groupName: "" }] }],
+    ["the same student twice", { students: [wire, wire] }],
+    ["an unknown record", { students: [{ ...wire, evidenceRecord: "partial" }] }],
   ])("assignment overview with %s is nepoznato, never shown", async (_name, body) => {
     expect(await readAssignmentOverview(answer(200, body), ASSIGNMENT)).toEqual(nepoznato);
   });

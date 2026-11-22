@@ -72,22 +72,40 @@ const STUDENTS = list("students", closed({
   group: OR_NULL(TEXT),
   works: { type: "array", items: closed({ assignmentId: UUID, state: { anyOf: ["predano", "nije_predano", "nakon_roka", "ceka"].map((c) => ({ const: c })) } }) },
 }));
-const MINUTE = { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}Z$" } as const;
-const overviewRow = (): Schema => {
-  const row = closed({
-    studentId: UUID,
-    name: OR_NULL(TEXT),
-    group: OR_NULL(TEXT),
-    submitted: { type: "boolean" },
-    requestedMinute: OR_NULL(MINUTE),
-    afterDeadline: { type: "boolean" },
-    evidenceRecord: { anyOf: [{ type: "null" }, { const: "continuous" }, { const: "with_gaps" }] },
-    documentId: TEXT,
-  }) as { required: string[] };
-  row.required = row.required.filter((k) => k !== "documentId");
-  return row as Schema;
+/** The server's minute (`YYYY-MM-DDTHH:MM:00.000Z`, LOK-WEB-2); the row keeps `YYYY-MM-DDTHH:MMZ`. */
+const WIRE_MINUTE = { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00\\.000Z$" } as const;
+const NAME = { type: "string", minLength: 1, maxLength: 255 } as const;
+/** teacher.assignment-overview.get as the contract gives it (LOK-WEB-2). */
+const OVERVIEW = list("students", closed({
+  studentId: UUID,
+  givenName: OR_NULL(NAME),
+  familyName: OR_NULL(NAME),
+  groupName: OR_NULL({ type: "string", minLength: 1 }),
+  submitted: { type: "boolean" },
+  requestedMinute: OR_NULL(WIRE_MINUTE),
+  afterDeadline: OR_NULL({ type: "boolean" }),
+  evidenceRecord: { anyOf: [{ type: "null" }, { const: "continuous" }, { const: "with_gaps" }] },
+}));
+
+type OverviewWire = {
+  studentId: string; givenName: string | null; familyName: string | null; groupName: string | null;
+  submitted: boolean; requestedMinute: string | null; afterDeadline: boolean | null; evidenceRecord: EvidenceRecord | null;
 };
-const OVERVIEW = list("rows", overviewRow());
+
+/** The contract row as the page's row; a half name, or a deadline flag that disagrees with `submitted`, is null (contradiction). */
+function toRow(w: OverviewWire): OverviewRow | null {
+  if ((w.givenName === null) !== (w.familyName === null)) return null;
+  if (w.submitted !== (w.afterDeadline !== null)) return null;
+  return {
+    studentId: w.studentId,
+    name: w.givenName === null ? null : `${w.givenName} ${w.familyName}`,
+    group: w.groupName,
+    submitted: w.submitted,
+    requestedMinute: w.requestedMinute === null ? null : `${w.requestedMinute.slice(0, 16)}Z`,
+    afterDeadline: w.afterDeadline ?? false,
+    evidenceRecord: w.evidenceRecord,
+  };
+}
 
 /** A row is consistent: a time and a record only when submitted, after the deadline only when submitted. */
 function consistent(row: OverviewRow): boolean {
@@ -129,7 +147,9 @@ export function readCourseStudents(call: TeacherCall, courseId: string): Promise
 /** teacher.assignment-overview.get (TODO(ugovor), N-17): a contradictory row makes the whole read `nepoznato`. */
 export function readAssignmentOverview(call: TeacherCall, assignmentId: string): Promise<Read<{ kind: "ready"; rows: OverviewRow[] }>> {
   return read(call, "teacher.assignment-overview.get", { assignmentId }, OVERVIEW, (body) => {
-    const { rows } = body as { rows: OverviewRow[] };
+    const mapped = (body as { students: OverviewWire[] }).students.map(toRow);
+    if (mapped.some((r) => r === null)) return UNKNOWN;
+    const rows = mapped as OverviewRow[];
     return rows.every(consistent) && unique(rows.map((r) => r.studentId)) ? { kind: "ready", rows } : UNKNOWN;
   });
 }
