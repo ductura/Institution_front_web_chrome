@@ -1,18 +1,15 @@
 /**
- * A student's data export (WEB-1302; SRV-1308).
+ * A student's data export (WEB-1302, WEB-1302B; SRV-1308).
  *
  * The registry office requests it once it has checked the student's identity, the institution
  * administrator approves it with a reference, and the student downloads the file once, through a
- * link with a token, without a session.
- *
- * TODO(ugovor): the four routes are not in the generated contracts yet, so the shapes are local
- * and checked here; the transports are studentDataExportCall and studentDataDownloadCall in api.ts
- * (the only file allowed an API URL), both injectable. When the contracts have the routes this
- * moves onto createApi and keeps its result types.
+ * link with a token, without a session. The three JSON routes go through createApi, which checks
+ * every answer against the contract; the download is a file, so it goes through
+ * studentDataDownloadCall in api.ts on the contract's path.
  */
 
-import { studentDataDownloadCall, studentDataExportCall, type StudentDataExportCall } from "./api";
-import { matchesSchema, type Schema } from "./schema-check";
+import { createApi, studentDataDownloadCall, type ApiResult, type Input } from "./api";
+import { matchesSchema } from "./schema-check";
 
 export type IdentityDocument = "identity_card" | "passport" | "student_card";
 export type ExportState = "requested" | "approved" | "ready" | "downloaded" | "expired";
@@ -38,31 +35,18 @@ export type DownloadOutcome =
 
 export const NOTE_MAX = 80;
 export const REFERENCE_MAX = 120;
-export { studentDataExportCall };
+type ExportOperation =
+  | "institution.student-data-exports.get"
+  | "institution.student-data-exports.post"
+  | "institution.student-data-exports-approve.post";
+/** The part of createApi the export page uses; a test hands in its own. */
+export type StudentDataExportCall = <Id extends ExportOperation>(id: Id, input: Input<Id>) => Promise<ApiResult<Id>>;
+export const studentDataExportCall = (): StudentDataExportCall => createApi();
 
 const UUID_PATTERN = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
 const UUID = { type: "string", pattern: UUID_PATTERN } as const;
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
-const closed = (properties: Record<string, Schema>): Schema =>
-  ({ type: "object", additionalProperties: false, required: Object.keys(properties), properties });
-const INSTANT = { type: "string", format: "date-time" } as const;
-const STATES: readonly ExportState[] = ["requested", "approved", "ready", "downloaded", "expired"];
 const DOCUMENTS: readonly IdentityDocument[] = ["identity_card", "passport", "student_card"];
-
-// TODO(ugovor): local shapes of SRV-1308 (server/contracts/routes/student-data-export.ts).
-const LIST: Schema = closed({
-  exports: {
-    type: "array",
-    items: closed({
-      exportId: UUID,
-      state: { anyOf: STATES.map((c) => ({ const: c })) },
-      requestedAt: INSTANT,
-      expiresAt: { anyOf: [{ type: "null" }, INSTANT] },
-    }),
-  },
-});
-const CREATED: Schema = closed({ exportId: UUID });
-const APPROVED: Schema = closed({ exportId: UUID, state: { const: "approved" } });
 const NOTE = { type: "string", minLength: 1, maxLength: NOTE_MAX } as const;
 const REFERENCE = { type: "string", minLength: 1, maxLength: REFERENCE_MAX } as const;
 
@@ -72,10 +56,9 @@ const failed = (status: number): { kind: FailedKind } =>
 /** institution.student-data-exports.get: the requests, newest first. Never throws. */
 export async function listStudentDataExports(call: StudentDataExportCall = studentDataExportCall()): Promise<ListOutcome> {
   try {
-    const result = await call("institution.student-data-exports.get", {});
+    const result = await call("institution.student-data-exports.get", { params: undefined, query: undefined, body: undefined });
     if (!result.ok) return failed(result.status);
-    if (result.status !== 200 || !matchesSchema(LIST, result.body)) return { kind: "unavailable" };
-    const { exports } = result.body as { exports: StudentDataExport[] };
+    const { exports } = result.body;
     return new Set(exports.map((e) => e.exportId)).size === exports.length ? { kind: "ok", exports } : { kind: "unavailable" };
   } catch {
     return { kind: "unavailable" };
@@ -92,12 +75,8 @@ export async function requestStudentDataExport(
   if (!matchesSchema(UUID, body.studentId) || !DOCUMENTS.includes(body.identityCheckedBy)
     || !matchesSchema(NOTE, body.note) || body.note.trim() !== body.note) return { kind: "invalid" };
   try {
-    const result = await call("institution.student-data-exports.post", { body });
-    if (result.ok) {
-      return result.status === 201 && matchesSchema(CREATED, result.body)
-        ? { kind: "ok", exportId: (result.body as { exportId: string }).exportId }
-        : { kind: "unavailable" };
-    }
+    const result = await call("institution.student-data-exports.post", { params: undefined, query: undefined, body });
+    if (result.ok) return { kind: "ok", exportId: result.body.exportId };
     if (result.status === 404) return { kind: "notFound" };
     if (result.status === 409) return { kind: "exists" };
     if (result.status === 400 || result.status === 422) return { kind: "invalid" };
@@ -114,13 +93,8 @@ export async function approveStudentDataExport(
   if (!matchesSchema(UUID, exportId)) return { kind: "stale" };
   if (!matchesSchema(REFERENCE, reference) || reference.trim() !== reference) return { kind: "invalid" };
   try {
-    const result = await call("institution.student-data-exports-approve.post", { exportId, body: { reference } });
-    if (result.ok) {
-      const body = result.body as { exportId?: unknown };
-      return result.status === 200 && matchesSchema(APPROVED, result.body) && body.exportId === exportId
-        ? { kind: "ok" }
-        : { kind: "unavailable" };
-    }
+    const result = await call("institution.student-data-exports-approve.post", { params: { exportId }, query: undefined, body: { reference } });
+    if (result.ok) return result.body.exportId === exportId ? { kind: "ok" } : { kind: "unavailable" };
     if (result.status === 404 || result.status === 409) return { kind: "stale" };
     if (result.status === 400 || result.status === 422) return { kind: "invalid" };
     return failed(result.status);

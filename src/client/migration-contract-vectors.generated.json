@@ -3598,5 +3598,411 @@
         "requestId": "00000000-0000-4000-8000-000000013003"
       }
     }
+  },
+  {
+    "route": "institution.student-data-exports.get",
+    "name": "list",
+    "request": {},
+    "response": {
+      "status": 200,
+      "body": {
+        "exports": [
+          {
+            "exportId": "00000000-0000-4000-8000-0000000001f1",
+            "state": "ready",
+            "requestedAt": "2026-11-21T09:15:00.000Z",
+            "expiresAt": "2026-11-22T10:00:00.000Z"
+          },
+          {
+            "exportId": "00000000-0000-4000-8000-0000000001f2",
+            "state": "requested",
+            "requestedAt": "2026-11-20T08:00:00.000Z",
+            "expiresAt": null
+          }
+        ]
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.get",
+    "name": "empty",
+    "request": {},
+    "response": {
+      "status": 200,
+      "body": {
+        "exports": []
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.get",
+    "name": "unauthorized",
+    "request": {},
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-0000000013a4"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.get",
+    "name": "forbidden",
+    "request": {},
+    "response": {
+      "status": 403,
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-0000000013a5"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.get",
+    "name": "unavailable",
+    "request": {},
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-0000000013a6"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.post",
+    "name": "requested",
+    "request": {
+      "body": {
+        "studentId": "00000000-0000-4000-8000-0000000000e1",
+        "identityCheckedBy": "identity_card",
+        "note": "IZMISLJENA-PROVJERA-2026-01"
+      }
+    },
+    "response": {
+      "status": 201,
+      "body": {
+        "exportId": "00000000-0000-4000-8000-0000000001f1"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.post",
+    "name": "requested-passport",
+    "request": {
+      "body": {
+        "studentId": "00000000-0000-4000-8000-0000000000e1",
+        "identityCheckedBy": "passport",
+        "note": "IZMISLJENA-PROVJERA-2026-02"
+      }
+    },
+    "response": {
+      "status": 201,
+      "body": {
+        "exportId": "00000000-0000-4000-8000-0000000001f2"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.post",
+    "name": "unauthorized",
+    "request": {
+      "body": {
+        "studentId": "00000000-0000-4000-8000-0000000000e1",
+        "identityCheckedBy": "identity_card",
+        "note": "IZMISLJENA-PROVJERA-2026-01"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000001389"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.post",
+    "name": "forbidden",
+    "request": {
+      "body": {
+        "studentId": "00000000-0000-4000-8000-0000000000e1",
+        "identityCheckedBy": "identity_card",
+        "note": "IZMISLJENA-PROVJERA-2026-01"
+      }
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-00000000138f"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.post",
+    "name": "not-found",
+    "request": {
+      "body": {
+        "studentId": "00000000-0000-4000-8000-0000000000e1",
+        "identityCheckedBy": "identity_card",
+        "note": "IZMISLJENA-PROVJERA-2026-01"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-000000001390"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.post",
+    "name": "conflict",
+    "request": {
+      "body": {
+        "studentId": "00000000-0000-4000-8000-0000000000e1",
+        "identityCheckedBy": "identity_card",
+        "note": "IZMISLJENA-PROVJERA-2026-01"
+      }
+    },
+    "response": {
+      "status": 409,
+      "body": {
+        "error": "conflict",
+        "code": "conflict",
+        "messageKey": "errors.conflict",
+        "status": 409,
+        "requestId": "00000000-0000-4000-8000-000000001391"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports.post",
+    "name": "unavailable",
+    "request": {
+      "body": {
+        "studentId": "00000000-0000-4000-8000-0000000000e1",
+        "identityCheckedBy": "identity_card",
+        "note": "IZMISLJENA-PROVJERA-2026-01"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000001392"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports-approve.post",
+    "name": "approved",
+    "request": {
+      "params": {
+        "exportId": "00000000-0000-4000-8000-0000000001f1"
+      },
+      "body": {
+        "reference": "IZMISLJENI-POSAO-2026-01"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "exportId": "00000000-0000-4000-8000-0000000001f1",
+        "state": "approved"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports-approve.post",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "exportId": "00000000-0000-4000-8000-0000000001f1"
+      },
+      "body": {
+        "reference": "IZMISLJENI-POSAO-2026-01"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-00000000139b"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports-approve.post",
+    "name": "forbidden",
+    "request": {
+      "params": {
+        "exportId": "00000000-0000-4000-8000-0000000001f1"
+      },
+      "body": {
+        "reference": "IZMISLJENI-POSAO-2026-01"
+      }
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-0000000013a0"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports-approve.post",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "exportId": "00000000-0000-4000-8000-0000000001f1"
+      },
+      "body": {
+        "reference": "IZMISLJENI-POSAO-2026-01"
+      }
+    },
+    "response": {
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-0000000013a1"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports-approve.post",
+    "name": "conflict",
+    "request": {
+      "params": {
+        "exportId": "00000000-0000-4000-8000-0000000001f1"
+      },
+      "body": {
+        "reference": "IZMISLJENI-POSAO-2026-01"
+      }
+    },
+    "response": {
+      "status": 409,
+      "body": {
+        "error": "conflict",
+        "code": "conflict",
+        "messageKey": "errors.conflict",
+        "status": 409,
+        "requestId": "00000000-0000-4000-8000-0000000013a2"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "institution.student-data-exports-approve.post",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "exportId": "00000000-0000-4000-8000-0000000001f1"
+      },
+      "body": {
+        "reference": "IZMISLJENI-POSAO-2026-01"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-0000000013a3"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.data-export.get",
+    "name": "not-allowed",
+    "request": {
+      "params": {
+        "token": "IzmisljeniTokenPoveznice0123456789abcdefghi"
+      }
+    },
+    "response": {
+      "status": 410,
+      "body": {
+        "error": "not_allowed",
+        "code": "not_allowed",
+        "messageKey": "errors.notAllowed",
+        "status": 410,
+        "requestId": "00000000-0000-4000-8000-0000000013a7"
+      },
+      "contentType": "application/json"
+    }
+  },
+  {
+    "route": "student.data-export.get",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "token": "IzmisljeniTokenPoveznice0123456789abcdefghi"
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-0000000013a8"
+      },
+      "contentType": "application/json"
+    }
   }
 ]

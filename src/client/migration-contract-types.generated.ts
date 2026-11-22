@@ -2,6 +2,7 @@
 // WEB-07: remove this supplement when the migration contracts are published.
 // HOST-T2: institution.assignment.get from API 1.38.0; the work-language GET is provisional.
 // WEB-1604: work.source-notes.get from Institution_server 093f9b7 (API 1.52.0).
+// WEB-1302B: student data export routes from Institution_server d92115c (API 1.75.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -339,5 +340,33 @@ export type MigrationOperations = {
     body: { "reason": string };
     success: { status: 200; body: { "id": string; "releasedAt": string }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "forbidden" | "invalid_json" | "unsupported_media_type" | "unavailable" | "conflict" | "invalid_input" | "not_found";
+  };
+  "institution.student-data-exports.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "exports": ({ "exportId": string; "state": "requested" | "approved" | "ready" | "downloaded" | "expired"; "requestedAt": string; "expiresAt": string | null })[] }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "unavailable";
+  };
+  "institution.student-data-exports.post": {
+    params: undefined;
+    query: undefined;
+    body: { "studentId": string; "identityCheckedBy": "identity_card" | "passport" | "student_card"; "note": string };
+    success: { status: 201; body: { "exportId": string }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "invalid_input" | "unsupported_media_type" | "invalid_json" | "forbidden" | "not_found" | "conflict" | "unavailable";
+  };
+  "institution.student-data-exports-approve.post": {
+    params: { "exportId": string };
+    query: undefined;
+    body: { "reference": string };
+    success: { status: 200; body: { "exportId": string; "state": "approved" }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "invalid_input" | "unsupported_media_type" | "invalid_json" | "forbidden" | "not_found" | "conflict" | "unavailable";
+  };
+  "student.data-export.get": {
+    params: { "token": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: undefined; headers: {  } };
+    errorCode: "not_allowed" | "unavailable";
   };
 };

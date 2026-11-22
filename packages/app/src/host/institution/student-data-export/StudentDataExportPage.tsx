@@ -5,9 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   approveStudentDataExport, listStudentDataExports, requestStudentDataExport, studentDataExportCall,
-  type ApproveOutcome, type RequestInput, type RequestOutcome,
+  type ApproveOutcome, type RequestInput, type RequestOutcome, type StudentDataExportCall,
 } from "@/client/student-data-export";
-import type { StudentDataExportCall } from "@/client/api";
 
 import { useHost } from "../../context";
 import { studentDataExportMessages as t } from "./messages.hr";
