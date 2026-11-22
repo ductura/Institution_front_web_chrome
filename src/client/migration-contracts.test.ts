@@ -6,9 +6,17 @@ import vectors from "./migration-contract-vectors.generated.json" with { type: "
 const BASE_URL = "https://ductura.example.invalid";
 type Vector = (typeof vectors)[number];
 
+/** Statuses a Response cannot carry a body with (204 from the WEB-2133B deletes). */
+const NULL_BODY_STATUS = new Set([204, 205, 304]);
+/** Input errors: a vector whose request the client's own check refuses is never sent (WEB-2133B PUT vectors). */
+const INPUT_ERROR_STATUS = new Set([400, 408, 413, 415, 422]);
+/** A response the contract declares as bytes, not JSON (the JPEG proof image): the client reads no body. */
+const binary = (vector: Vector) => vector.response.contentType !== undefined && !vector.response.contentType.startsWith("application/json")
+  && vector.response.status < 300 && vector.response.body !== undefined;
+
 function responding(vector: Vector, body: unknown = vector.response.body) {
   return vi.fn(async (_url: URL | RequestInfo, _init?: RequestInit) =>
-    new Response(JSON.stringify(body), {
+    new Response(NULL_BODY_STATUS.has(vector.response.status) ? null : JSON.stringify(body), {
       status: vector.response.status,
       headers: { "content-type": vector.response.contentType },
     }));
@@ -32,12 +40,17 @@ describe("WEB-07 temporary API contracts", () => {
       const { status, body } = vector.response;
       const result = await api(id, inputFor(vector));
 
+      if (INPUT_ERROR_STATUS.has(status) && "code" in result && result.code === "client_rejected") {
+        // The body is raw bytes (rawBody) or breaks the request schema: refused before the network.
+        expect(fetchImpl).not.toHaveBeenCalled();
+        return;
+      }
       expect(fetchImpl).toHaveBeenCalledTimes(1);
-      if (status < 400) expect(result).toEqual({ ok: true, status, body, headers: {} });
+      if (status < 400) expect(result).toEqual({ ok: true, status, body: binary(vector) ? undefined : body, headers: {} });
       else expect(result).toEqual({ ok: false, status, code: vector.name.replaceAll("-", "_") });
     });
 
-    if (vector.response.status < 400) {
+    if (vector.response.status < 400 && !NULL_BODY_STATUS.has(vector.response.status) && !binary(vector)) {
       it(`${id} ${vector.name} rejects undeclared response fields`, async () => {
         const fetchImpl = responding(vector, { ...vector.response.body, unexpectedField: true });
         const api = createApi({ baseUrl: BASE_URL, fetchImpl });
