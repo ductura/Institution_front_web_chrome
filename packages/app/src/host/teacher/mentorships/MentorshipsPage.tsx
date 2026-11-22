@@ -12,6 +12,8 @@ import { useTeacherRead } from "../../pages";
 import { teacherShellHr } from "../shell/messages.hr";
 import { RequestsCard } from "../n16/RequestsCard";
 import { WorksList } from "../n16/WorksList";
+import { myStudentsText as ms } from "./messages.hr";
+import { studentsOf } from "./model";
 import { TeacherPage } from "../shell/TeacherPage";
 
 const HREF = "/nastavnik/mentorstva";
@@ -44,7 +46,26 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
         <>
           <WorksList works={value.works} base={base} />
           <RequestsCard read={value.asked} here={here} call={requests()} onDecided={retry} />
+          <MyStudents works={value.works} />
         </>
       )} />
+  );
+}
+
+/** "Moji studenti" (WEB-1404): the students whose request was approved; kept after the prototype's cards. */
+function MyStudents({ works }: { works: Parameters<typeof studentsOf>[0] }) {
+  const students = studentsOf(works);
+  return (
+    <section className="card" aria-labelledby="moji-studenti">
+      <h2 id="moji-studenti">{ms.title}</h2>
+      <p className="note">{ms.lead}</p>
+      {students.length === 0 ? <p className="note">{ms.empty}</p> : (
+        <ul className="list">
+          {students.map((student) => (
+            <li key={student.key} className="item" data-testid="my-student"><span className="title">{student.name ?? ms.unnamed}</span></li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
