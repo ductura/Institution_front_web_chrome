@@ -17,6 +17,7 @@ import { hostText } from "../text";
 import { useHost } from "./context";
 import { AssignmentCards } from "./teacher/assignment-card/AssignmentCards";
 import { assignmentCardMessages as card } from "./teacher/assignment-card/messages.hr";
+import { teacherShellHr } from "./teacher/shell/messages.hr";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { startWorkAction } from "./student/start-work/action";
 import SignInScreen from "./signin/SignInScreen";
@@ -108,7 +109,7 @@ export function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>
 }
 
 /** The page heading, its lead and one state of a teacher's read. */
-export function TeacherPage<T>({ title, lead, read, retry, unavailable, retryLabel, ready, loading = hostText.loading }: {
+export function TeacherPage<T>({ title, lead, loading = hostText.loading, read, retry, unavailable, retryLabel, ready }: {
   title: string; lead: string; loading?: string; read: TeacherRead<T> | null; retry: () => void;
   unavailable: string; retryLabel: string; ready: (value: T) => ReactNode;
 }) {
@@ -158,6 +159,6 @@ export function MentoredWorksPage() {
     return result.kind === "ready" ? { kind: "ready", value: result.works } : result;
   });
   const mw = t.mentoredWorks;
-  return <TeacherPage title={mw.title} lead={mw.lead} read={read} retry={retry} unavailable={mw.unavailable} retryLabel={mw.retry}
+  return <TeacherPage title={mw.title} lead={mw.lead} loading={teacherShellHr.loadingMentorships} read={read} retry={retry} unavailable={mw.unavailable} retryLabel={mw.retry}
     ready={(works) => <MentoredWorks works={works} />} />;
 }

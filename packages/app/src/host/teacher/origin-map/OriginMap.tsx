@@ -5,6 +5,9 @@ import { Button } from "@ductura/ui";
 
 import { readOriginComposition, type OriginCall, type OriginRead } from "./contract";
 import { originText as t } from "./messages.hr";
+import AssistantMatchSection from "./assistant-match/AssistantMatchSection";
+import { readAssistantMatch, type MatchCall, type MatchRead } from "./assistant-match/contract";
+import { matchShown, withoutAssistantMatch } from "./assistant-match/model";
 import { kindLabel, rhythmCell, segmentTime, shareRows, unknownLine } from "./model";
 
 /**
@@ -13,9 +16,20 @@ import { kindLabel, rhythmCell, segmentTime, shareRows, unknownLine } from "./mo
  * percent stands with the notice that it is not evidence of authorship; the rhythm is a column of the
  * genealogy only while the teacher has not switched it off.
  */
-export default function OriginMap({ call, documentId, onSignedOut }: { call: OriginCall; documentId: string; onSignedOut?: () => void }) {
+export default function OriginMap({ call, documentId, onSignedOut, matchCall }: { call: OriginCall; documentId: string; onSignedOut?: () => void; matchCall?: MatchCall }) {
   const [read, setRead] = useState<OriginRead | null>(null);
+  const [match, setMatch] = useState<MatchRead | null>(null);
   const [attempt, setAttempt] = useState(0);
+
+  // WEB-1230: the assistant match is behind the faculty flag. Without a port, or while the server says the flag
+  // is off, nothing of it is shown, not even its share or its segments.
+  useEffect(() => {
+    let active = true;
+    setMatch(null);
+    if (matchCall === undefined) return;
+    void readAssistantMatch(matchCall, documentId).then((answer) => { if (active) setMatch(answer); });
+    return () => { active = false; };
+  }, [matchCall, documentId, attempt]);
 
   useEffect(() => {
     let active = true;
@@ -32,13 +46,13 @@ export default function OriginMap({ call, documentId, onSignedOut }: { call: Ori
     <section aria-labelledby="origin-map-h">
       <h2 id="origin-map-h">{t.title}</h2>
       <p>{t.intro}</p>
-      <Body read={read} onRetry={() => setAttempt((n) => n + 1)} />
+      <Body read={read} match={match} hasMatchPort={matchCall !== undefined} onRetry={() => setAttempt((n) => n + 1)} />
       <p>{t.limits}</p>
     </section>
   );
 }
 
-function Body({ read, onRetry }: { read: OriginRead | null; onRetry: () => void }) {
+function Body({ read, match, hasMatchPort, onRetry }: { read: OriginRead | null; match: MatchRead | null; hasMatchPort: boolean; onRetry: () => void }) {
   if (read === null) return <p role="status">{t.loading}</p>;
   if (read.kind === "empty") return <p role="status">{t.empty}</p>;
   if (read.kind === "notFound") return <p role="alert">{t.notFound}</p>;
@@ -51,7 +65,7 @@ function Body({ read, onRetry }: { read: OriginRead | null; onRetry: () => void 
       </>
     );
   }
-  const c = read.composition;
+  const c = hasMatchPort && matchShown(match) ? read.composition : withoutAssistantMatch(read.composition);
   const unknown = unknownLine(c);
   return (
     <>
@@ -86,6 +100,7 @@ function Body({ read, onRetry }: { read: OriginRead | null; onRetry: () => void 
         </tbody>
       </table>
       {c.rhythmRecorded && <p>{t.rhythmNotice}</p>}
+      {hasMatchPort && <AssistantMatchSection read={match} composition={read.composition} onRetry={onRetry} />}
     </>
   );
 }

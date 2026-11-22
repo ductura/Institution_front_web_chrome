@@ -19,6 +19,8 @@ import ProblemReportHelp from "./ProblemReportHelp";
 import SignOut from "./SignOut";
 import { NoRoleScreen } from "./signin/SignInScreen";
 import ShellNotifications from "./shell/notifications/ShellNotifications";
+import { shellMessagesFor } from "./teacher/shell/messages";
+import { teacherShellHr } from "./teacher/shell/messages.hr";
 
 /**
  * The institution front (#2028 c.6993786629 §3.3), as the layout of
@@ -82,7 +84,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
 
   useEffect(() => {
     const shown = open ?? (resolved?.kind === "page" ? resolved.page : null);
-    const page = shown === null ? null : navLabel(shown, role, catalogues);
+    const page = shown === null ? null : navLabel(shown, role, { ...catalogues, t: shellMessagesFor(t, role) });
     const title = page === null ? t.app.name : `${page} · ${t.app.name}`;
     // WCAG 2.4.2 (WEB-1805): Next streams the root layout's title after hydration on
     // public pages and on pages with async params, and would put back the bare app name.
@@ -115,7 +117,8 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
         base={base}
         institution={signedIn?.institution ?? null}
         account={<><ShellNotifications base={base} /><SignOut base={base} /></>}
-        messages={t}
+        messages={shellMessagesFor(t, role)}
+        menuText={role === "teacher" ? teacherShellHr.menu : undefined}
         help={(linkClass) => <ProblemReportHelp triggerClass={linkClass} />}
         ownMain={ownMain}
       >
@@ -132,6 +135,6 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
     return shell(undefined, [], <section className="page"><h1>{t.home.welcome}</h1><p>{hostText.noRole}</p></section>);
   }
   const { page } = resolved;
-  const crumbs = crumbsOf(page, role).length === 0 ? [] : [navLabel(page, role, catalogues)];
+  const crumbs = crumbsOf(page, role).length === 0 ? [] : [navLabel(page, role, { ...catalogues, t: shellMessagesFor(t, role) })];
   return shell(page.current, crumbs, <HostContext value={{ base, page, role }}>{children}</HostContext>);
 }

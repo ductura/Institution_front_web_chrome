@@ -1,0 +1,29 @@
+/* WEB-2131: the look of the buttons, the tool tip, the quick bar and the customise rows, on the tokens of @ductura/ui. */
+.wrap { position: relative; }
+/* Ikone: the words stay out of sight (the name is in aria-label). Riječi: the icons go. Ikone i riječi: both. */
+.wrap[data-look="icons"] button > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.wrap[data-look="words"] button > svg { display: none; }
+.tip {
+  position: fixed; z-index: 65; max-width: 240px; padding: 8px 10px; font-size: 13px; line-height: 1.35;
+  color: var(--ink); background: var(--card); border: 1px solid var(--rule-2); border-radius: var(--radius-control);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 18%); pointer-events: none;
+}
+.tipName { font-weight: 600; }
+.kbd { margin-inline-start: 8px; padding: 0 4px; font-size: 11px; color: var(--ink-3); border: 1px solid var(--rule-2); border-radius: 3px; }
+.tipText { margin: 4px 0 0; color: var(--ink-2, var(--ink)); }
+.ctx { margin-inline-start: 6px; }
+.quick {
+  position: fixed; inset-inline: 0; z-index: 36; display: flex; justify-content: space-around; gap: 4px; padding: 4px 6px;
+  background: var(--chrome); border-top: 1px solid var(--rule-2);
+}
+.quick button { min-width: 42px; min-height: 42px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: var(--radius-control); }
+.quick button:disabled { color: var(--ink-3); }
+.quick button:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.fixedBottom { bottom: var(--keyboard-inset, 0); }
+.rows { display: grid; gap: 6px; margin: 12px 0; padding: 0; list-style: none; }
+.row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px; align-items: center; }
+.rowName { font-size: 14px; }
+.rowNote { display: block; font-size: 12px; color: var(--ink-3); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.help { margin: 4px 0 8px; font-size: 13px; color: var(--ink-3); }
+.sizeGroup { display: inline-flex; gap: 2px; }

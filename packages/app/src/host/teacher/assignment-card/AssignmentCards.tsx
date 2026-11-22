@@ -100,11 +100,12 @@ export function AssignmentCard({ course, here, onIssued, extra }: {
         </>
       ) : null}
       <div className={styles.acts}>
-        <a className="btn secondary small" href={link("/nastavnik/studenti")}>{t.studentList}</a>
+        <a className="btn secondary small" href={link(`/nastavnik/kolegiji/${encodeURIComponent(course.id)}/studenti`)}>{t.studentList}</a>
         {role !== "collaborator" ? <a className="btn secondary small" href={link(newAssignmentHref(course.id))}>{t.addTask}</a> : null}
         {role !== "collaborator" && next ? <a className="btn secondary small" href={link(extensionsHref(next.id))}>{t.extension}</a> : null}
         <a className="btn secondary small" href={link("/nastavnik/zbirni")}>{t.overview}</a>
-        {role !== "collaborator" ? <a className="btn secondary small" href={link("/nastavnik/izvoz")}>{t.merlin}</a> : null}
+        {role !== "collaborator" && course.assignments[0] !== undefined
+          ? <a className="btn secondary small" href={link(`/nastavnik/zadatak/${encodeURIComponent(course.assignments[0].id)}/merlin`)}>{t.merlin}</a> : null}
         {role === "holder" ? <Button tone="quiet" onClick={() => setOpen(true)} aria-label={`${t.newCode}: ${course.name}`}>{t.newCode}</Button> : null}
       </div>
       {course.assignments.map((assignment) => (
