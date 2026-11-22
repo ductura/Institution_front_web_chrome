@@ -52642,6 +52642,28 @@
   },
   {
     "route": "teacher.work.get",
+    "name": "submitted-work",
+    "request": {
+      "params": {
+        "documentId": "izmisljeni-rad-predaje-0001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "body": {
+        "documentId": "izmisljeni-rad-predaje-0001",
+        "studentId": "00000000-0000-4000-8000-0000000000e1",
+        "studentName": "Iva Izmišljena",
+        "assignmentId": "00000000-0000-4000-8000-0000000000a1",
+        "state": "predano",
+        "prevDocumentId": null,
+        "nextDocumentId": null
+      }
+    }
+  },
+  {
+    "route": "teacher.work.get",
     "name": "middle-work",
     "request": {
       "params": {
