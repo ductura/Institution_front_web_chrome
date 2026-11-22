@@ -13,6 +13,9 @@ export const noticeText = {
   facultyRule: "Pravilo fakulteta (FPZG čl. 8)",
   facultyAllowed: "Dopušteno pravilom fakulteta",
   facultyBanned: "Nije dopušteno pravilom fakulteta",
+  eyebrow: "Prije pisanja",
+  heroBefore: "Prije prve",
+  heroAccent: "rečenice",
 };
 
 // E-5 `MSG` of the prototype: the text under the field for the three states the
@@ -23,3 +26,5 @@ export const enrolErrors = {
   expiredCode: "Kod ne postoji ili je istekao. Provjerite ga s nastavnikom.",
   offline: "Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.",
 } as const;
+
+// E-6 hero of the prototype (`hero()`): the eyebrow is the shared s.step ("Prije pisanja").
