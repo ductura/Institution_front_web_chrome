@@ -86,3 +86,18 @@ export function forAssignment<T extends ForAssignment<object>>(state: T | null, 
 export function answeredPanel(panel: VersionPanel, assignmentId: string, row: SubmittedRow, read: VersionRead): VersionPanel {
   return forAssignment(panel, assignmentId)?.row.studentId === row.studentId ? { assignmentId, row, read } : panel;
 }
+
+/** Whether a list failure offers "Pokušaj ponovno": a refusal or a missing assignment is final, never retried. */
+export function canRetry(read: SubmissionsRead): boolean {
+  return read.kind !== "greska";
+}
+
+/** While one version is being read, no other opening is asked: each opening is recorded by the server. */
+export function isOpening(panel: VersionPanel): boolean {
+  return panel !== null && panel.read === "loading";
+}
+
+/** The accessible name of a row's open button, naming the student (the visible text is the same in every row). */
+export function openLabel(student: string): string {
+  return `${text.open}: ${student}`;
+}

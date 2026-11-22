@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { findForbiddenTerms } from "../../../../../../scripts/forbidden-terms/terms.ts";
 import { FAKE_ROWS, fakeSubmissionsPort } from "./fake-port";
 import { submissionsMessages } from "./messages.hr";
-import { answeredPanel, canOpen, documentBlocks, failureMessage, forAssignment, lateTag, submittedAt } from "./model";
+import { answeredPanel, canOpen, canRetry, documentBlocks, failureMessage, forAssignment, isOpening, lateTag, openLabel, submittedAt } from "./model";
 
 const [onTime, late] = FAKE_ROWS as [(typeof FAKE_ROWS)[number], (typeof FAKE_ROWS)[number]];
 
@@ -76,6 +76,23 @@ describe("submitted version read only", () => {
     ["a citation, never dropped", "{\"nodes\":[{\"type\":\"paragraph\",\"children\":[{\"type\":\"citation\",\"sourceId\":\"s1\"}]}],\"schemaVersion\":2}"],
   ])("shows %s as unreadable", (_name, document) => {
     expect(documentBlocks(document)).toEqual({ kind: "unreadable" });
+  });
+});
+
+describe("page states (PIL-D2-PREDAJE)", () => {
+  it("says a refused or missing list calmly and offers no retry; other failures retry", () => {
+    const refused = { kind: "greska", code: "not_found" } as const;
+    expect(failureMessage(refused, "list")).toBe(submissionsMessages.noAccess);
+    expect(canRetry(refused)).toBe(false);
+    expect(canRetry({ kind: "nepoznato" })).toBe(true);
+    expect(canRetry({ kind: "session-expired" })).toBe(true);
+  });
+
+  it("blocks a second opening while a version is read, and names the student on each button", () => {
+    expect(isOpening(null)).toBe(false);
+    expect(isOpening({ assignmentId: "a", row: onTime, read: "loading" })).toBe(true);
+    expect(isOpening({ assignmentId: "a", row: onTime, read: { kind: "nepoznato" } })).toBe(false);
+    expect(openLabel("Izmišljena Studentica")).toBe("Otvori predanu verziju: Izmišljena Studentica");
   });
 });
 

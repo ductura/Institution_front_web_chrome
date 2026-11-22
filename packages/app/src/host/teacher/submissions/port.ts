@@ -1,6 +1,7 @@
 // PIL-D2-PREDAJE: the real port of the teacher's submissions screen, over the contract client
 // (src/client/teacher-submissions.ts, routes teacher.submissions.get and teacher.submission-detail.get).
 // No network primitive here: the transport is createApi's, passed in by the page.
+import { appHref } from "../../../../../../src/components/shell/nav";
 import {
   submissionsPort, type SubmissionsCall, type TeacherSubmissionsPort,
 } from "../../../../../../src/client/teacher-submissions.ts";
@@ -31,3 +32,6 @@ export function clientSubmissionsPort(call: SubmissionsCall, onExpired: () => vo
 
 /** The page of the submissions of one assignment, without the base. */
 export const submissionsHref = (assignmentId: string): string => `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}/predaje`;
+
+/** Where sign-in returns after an ended session: this page under the app's base. */
+export const signInReturn = (base: string, assignmentId: string): string => appHref(base, submissionsHref(assignmentId));

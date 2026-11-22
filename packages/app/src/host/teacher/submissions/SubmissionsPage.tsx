@@ -6,17 +6,18 @@ import { useMemo } from "react";
 
 import { createApi, goToSignIn } from "../../../../../../src/client/api.ts";
 import type { SubmissionsCall } from "../../../../../../src/client/teacher-submissions.ts";
-import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
 import TeacherSubmissions from "./TeacherSubmissions";
 import { submissionsMessages as text } from "./messages.hr";
-import { clientSubmissionsPort, submissionsHref } from "./port";
+import { clientSubmissionsPort, signInReturn } from "./port";
 
 export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string }) {
   const { base } = useHost();
+  // The cast as in the other host pages (Merlin, N-01): createApi is generic over every operation id,
+  // SubmissionsCall names only the two this screen reads; the client checks each answer against the contract.
   const port = useMemo(() => clientSubmissionsPort(
     createApi() as unknown as SubmissionsCall,
-    () => goToSignIn(appHref(base, submissionsHref(assignmentId))),
+    () => goToSignIn(signInReturn(base, assignmentId)),
   ), [base, assignmentId]);
   return (
     <div className="page">

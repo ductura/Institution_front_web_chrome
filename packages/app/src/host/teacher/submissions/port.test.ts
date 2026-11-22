@@ -5,7 +5,7 @@ import { createApi } from "../../../../../../src/client/api.ts";
 import type { SubmissionsCall } from "../../../../../../src/client/teacher-submissions.ts";
 import { failureMessage } from "./model";
 import { submissionsMessages as text } from "./messages.hr";
-import { clientSubmissionsPort, submissionsHref } from "./port";
+import { clientSubmissionsPort, signInReturn, submissionsHref } from "./port";
 
 // PIL-D2-PREDAJE: the real port over createApi, answered by the contract's own vectors
 // (migration-contract-vectors.generated.json), so the shapes are the server's, not local copies.
@@ -83,5 +83,7 @@ describe("submissions port over the contract (PIL-D2-PREDAJE)", () => {
 
   it("links the page of one assignment", () => {
     expect(submissionsHref("3a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c01")).toBe("/nastavnik/zadatak/3a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c01/predaje");
+    expect(signInReturn("/app/chrome", "z1")).toBe("/app/chrome/nastavnik/zadatak/z1/predaje");
+    expect(signInReturn("/app/web", "z1")).toBe("/app/web/nastavnik/zadatak/z1/predaje");
   });
 });
