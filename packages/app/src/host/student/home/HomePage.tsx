@@ -151,7 +151,7 @@ export function HomePage() {
           <ul className={styles.list}>
             {rows.map((row) => (
               <Row key={row.id} row={row} now={now} go={go}
-                action={row.kind !== "zadatak" ? null : startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false })} />
+                action={row.kind === "predano" || row.kind === "obavijest" ? null : startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false })} />
             ))}
           </ul>
         </section>

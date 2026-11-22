@@ -32,6 +32,9 @@ async function fakeServer(page: Page, me: Me) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ locale: null }) }));
   await page.route("**/api/v1/student/assignments", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) }));
+  // WEB-2102: the student's home also reads the work states; none has been started here.
+  await page.route("**/api/v1/student/assignment-work", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ assignments: [] }) }));
   await page.route("**/api/v1/teacher/courses", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
   await page.route("**/api/v1/teacher/mentorships", (route) =>
