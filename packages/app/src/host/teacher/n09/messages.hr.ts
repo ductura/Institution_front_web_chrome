@@ -1,0 +1,26 @@
+// N-09 "Reprodukcija rada" (WEB-2159, PARITET N-09): interface text as in the prototype and INVENTAR-nastavnik 3.10.
+export const n09Messages = {
+  title: "Reprodukcija rada",
+  intro: "Ovo je nastanak rada, promjenu po promjenu. Služi razgovoru o radu, ne ocjeni. Bez vremenske osi i bez trajanja.",
+  foot: "Isti prikaz vide student, mentor i nastavnik zadatka. Reprodukciju smijete gledati i prije predaje; student to zna iz obavijesti o zadatku.",
+  loading: "Učitavam promjene rada…",
+  error: "Promjene rada trenutačno nije moguće učitati. Pokušajte ponovno.",
+  retry: "Pokušaj ponovno",
+  empty: "Nema promjena za prikaz: rad još nije započet.",
+  controlsLabel: "Kontrole reprodukcije",
+  play: "Pokreni",
+  stop: "Zaustavi",
+  previous: "Prethodna promjena",
+  next: "Sljedeća promjena",
+  speed: "Brzina",
+  jump: "Skok na",
+  /** The record carries no sessions (D-239 open question), so the jump is shown as unavailable. */
+  jumpUnavailable: "nedostupno",
+  jumpNote: "Skok na sesiju nije dostupan: zapis ne nosi sesije.",
+  slider: "Promjena",
+  sliderValue: (n: number, total: number): string => `Promjena ${n} od ${total}`,
+  sourceLead: "izvor ove promjene:",
+  sourceTyped: "utipkano",
+  sourcePasted: "zalijepljeno",
+  sourceGap: "praznina u zapisu",
+} as const;
