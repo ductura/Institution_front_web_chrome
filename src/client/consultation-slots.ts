@@ -5,9 +5,9 @@
  * confirmed slot.
  *
  * Server operations (generated contract extract):
- *   work.consultation-slots.get   GET   /api/v1/works/{documentId}/consultation-slots
- *   work.consultation-slots.post  POST  .../consultation-slots {startsAt}
- *   work.consultation-slots.patch PATCH .../consultation-slots/{slotId} {action, startsAt?}
+ *   work.consultation-slots.get  (GET)
+ *   work.consultation-slots.post  (POST)
+ *   work.consultation-slots.patch  (PATCH)
  *
  * A write counts as done only when the answer names the same slot and carries
  * the state the action leads to (B-6): anything else is "nepoznato" and the
