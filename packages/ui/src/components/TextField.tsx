@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes } from "react";
+import { useId, type InputHTMLAttributes, type Ref } from "react";
 
 import styles from "./TextField.module.css";
 
@@ -8,9 +8,12 @@ export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id"> &
   /** Shown under the field and announced with it; marks the field invalid. */
   error?: string;
   busy?: boolean;
+  /** Marks the field invalid without a message under it (the prototype's toast + aria-invalid). */
+  invalid?: boolean;
+  ref?: Ref<HTMLInputElement>;
 };
 
-export function TextField({ label, hint, error, busy = false, className, ...rest }: TextFieldProps) {
+export function TextField({ label, hint, error, busy = false, invalid = false, className, ...rest }: TextFieldProps) {
   const id = useId();
   const note = error ?? hint;
   return (
@@ -22,7 +25,7 @@ export function TextField({ label, hint, error, busy = false, className, ...rest
         className={styles.input}
         readOnly={busy || rest.readOnly}
         aria-busy={busy || undefined}
-        aria-invalid={error ? true : undefined}
+        aria-invalid={error || invalid ? true : undefined}
         aria-describedby={note ? `${id}-note` : undefined}
       />
       {note && <p id={`${id}-note`} className={styles.note} data-error={error ? "" : undefined}>{note}</p>}
