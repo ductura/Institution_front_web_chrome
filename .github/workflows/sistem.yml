@@ -1,0 +1,117 @@
+name: Sistem
+# INT-08: završni prolaz Faze 3. Na runneru podiže stvarni stog (INT-01,
+# `pnpm stog:gore` iz Institution_servera: PostgreSQL s migracijama i seedom,
+# server, lažni OIDC i ovaj front) i pokreće `pnpm test:sistem` (INT-02..05).
+# Nije required check i ne ulazi u ci-ok. Prijava je samo lažni OIDC (D-09),
+# svi podaci su izmišljeni (demo seed), bez tajni.
+on:
+  workflow_dispatch:
+    inputs:
+      server_ref:
+        description: Grana Institution_servera
+        default: migracija/kopija-ductus-backend
+permissions:
+  contents: read
+concurrency:
+  group: sistem-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  sistem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      STOG_FRONT_DIR: ${{ github.workspace }}/Institution_front_web_chrome
+      STOG_SERVER_DIR: ${{ github.workspace }}/Institution_server
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: Institution_front_web_chrome
+          persist-credentials: false
+      # Public repo, no token.
+      - uses: actions/checkout@v4
+        with:
+          repository: ductura/Institution_server
+          ref: ${{ inputs.server_ref || 'migracija/kopija-ductus-backend' }}
+          path: Institution_server
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm install -g pnpm@10.33.0
+      - name: Install server
+        working-directory: Institution_server
+        run: pnpm install --frozen-lockfile
+      - name: Install web
+        working-directory: Institution_front_web_chrome
+        run: pnpm install --frozen-lockfile
+      - name: Install src/client
+        working-directory: Institution_front_web_chrome/src/client
+        run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+      - name: Browser
+        working-directory: Institution_front_web_chrome
+        run: pnpm exec playwright install --with-deps chromium
+      - name: SHAs
+        run: |
+          echo "SHA_WEB=$(git -C Institution_front_web_chrome rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "SHA_SERVER=$(git -C Institution_server rev-parse HEAD)" >> "$GITHUB_ENV"
+      # `pnpm stog:gore` (INT-01) pokreće front skriptom `next:dev`, a `next dev`
+      # na ovom frontu ne odgovara ni na jedan zahtjev (INT-08 nalaz, vidi PR).
+      # Zato ovdje isti koraci kao stog:gore, ali front je `next build` +
+      # `next start`: PostgreSQL (Docker compose), migracije, seed, simulator i
+      # server preko `pnpm lokalno --izvor=http://localhost:3000`.
+      - name: "Stog gore (INT-01): baza, server, simulator"
+        working-directory: Institution_server
+        env:
+          DATABASE_URL: postgres://ductus:ductus-local-only@127.0.0.1:54329/ductus
+        run: |
+          docker compose up -d --build --wait postgres-main
+          nohup node scripts/lokalno/lokalno.ts --izvor=http://localhost:3000 > "$RUNNER_TEMP/stog.log" 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8090/.well-known/openid-configuration >/dev/null 2>&1 && break
+            sleep 5
+          done
+          curl -fsS http://127.0.0.1:4000/api/v1/health || { echo "::error::server se nije podigao"; tail -n 200 "$RUNNER_TEMP/stog.log"; exit 1; }
+      - name: Front (next build + next start)
+        working-directory: Institution_front_web_chrome
+        env:
+          INSTITUTION_SERVER_URL: http://127.0.0.1:4000
+          NEXT_PUBLIC_API_BASE: /api/v1
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          pnpm next:build
+          nohup pnpm exec next start -p 3000 > "$RUNNER_TEMP/front.log" 2>&1 &
+          cd ../Institution_server
+          for i in $(seq 1 30); do pnpm stog:zdravlje >/dev/null 2>&1 && break; sleep 3; done
+          pnpm stog:zdravlje || { tail -n 100 "$RUNNER_TEMP/front.log"; exit 1; }
+      - name: Seed INT-04
+        working-directory: Institution_server
+        run: docker compose exec -T postgres-main psql -U ductus -d ductus -v ON_ERROR_STOP=1 < ../Institution_front_web_chrome/e2e/sistem/seed-int04.sql
+      - name: pnpm test:sistem
+        working-directory: Institution_front_web_chrome
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/sistem-report.json
+        run: pnpm test:sistem --reporter=list,json
+      - name: Tablica
+        if: always()
+        working-directory: Institution_front_web_chrome
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          if [ -f "$RUNNER_TEMP/sistem-report.json" ]; then
+            node e2e/sistem/tablica.mjs "$RUNNER_TEMP/sistem-report.json" "$RUNNER_TEMP/out" | tee -a "$GITHUB_STEP_SUMMARY" || true
+          else
+            echo "Playwright nije stvorio izvještaj (stog ili setup pao)." | tee -a "$GITHUB_STEP_SUMMARY"
+            printf '{"runUrl":"%s","sha":{"web":"%s","server":"%s"},"scenarios":[],"error":"no report"}\n' "$RUN_URL" "$SHA_WEB" "$SHA_SERVER" > "$RUNNER_TEMP/out/vs-run.json"
+          fi
+      - name: Dnevnici stoga
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          cp "$RUNNER_TEMP/stog.log" "$RUNNER_TEMP/front.log" "$RUNNER_TEMP/out/" 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sistem
+          path: |
+            ${{ runner.temp }}/out/
+            Institution_front_web_chrome/test-results/sistem/
+          if-no-files-found: warn
