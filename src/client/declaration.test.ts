@@ -120,3 +120,101 @@ describe("fake declaration", () => {
     expect(await port.readTeacher("missing")).toEqual({ kind: "unavailable" });
   });
 });
+
+// ---------------------------------------------------------------------------
+// The real adapter over declaration-v1 (PIL-K-IZJAVA-PORT), against a recorded transport.
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
+import { createApi } from "./api";
+import { createDeclarationPort } from "./declaration";
+import contracts from "./migration-contracts.generated.json" with { type: "json" };
+import { matchesSchema, type Schema } from "./schema-check";
+
+const ASSIGNMENT = "00000000-0000-4000-8000-0000000000a1";
+const FORM = { formId: "test-izjava", formVersion: 1, formSha256: "a".repeat(64) };
+const STATE = {
+  state: "draft", submitted: false, currentRevision: 2, version: 4, formText: "Izmišljeni obrazac.",
+  currentForm: { ...FORM, text: "Izmišljeni obrazac." },
+  draft: {
+    baseVersion: 3, revision: 2, form: FORM, ownWork: { confirmed: false },
+    humanHelp: { received: true, entries: [{ kind: "language", text: "Izmišljena lektura." }] },
+    ai: { use: "used", declaredTools: [{ toolLabel: "Izmišljeni alat", purposeText: "Lektura", phaseText: "Pisanje" }], attachments: [], externalAttachmentIds: [] },
+    confirm: false,
+  },
+  payload: null, declarationSha256: null, uploads: [],
+};
+const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const error = (status: number, code: string) => json(status, { error: code, code, messageKey: "errors.x", status, requestId: "00000000-0000-4000-8000-000000000000" });
+
+function server(answer: (method: string, body: unknown) => Response) {
+  const sent: { method: string; path: string; body: unknown }[] = [];
+  const fetchImpl: typeof fetch = async (input, init) => {
+    const method = init?.method ?? "GET";
+    const body: unknown = typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
+    sent.push({ method, path: new URL(String(input)).pathname, body });
+    return answer(method, body);
+  };
+  return { sent, call: createApi({ baseUrl: "https://ductura.example.invalid", fetchImpl }) };
+}
+
+describe("declaration adapter (PIL-K-IZJAVA-PORT)", () => {
+  it("confirms with a body the contract accepts, on top of the version it read", async () => {
+    const s = server((method) => (method === "GET" ? json(200, STATE) : json(200, { ...STATE, state: "confirmed", version: 5 })));
+    const port = createDeclarationPort(s.call);
+    const attachment = { conversationId: "c-1", reason: "transfer" as const, throughSeq: 2, messagesSha256: "c".repeat(64) };
+    expect(await port.confirm(ASSIGNMENT, [attachment])).toEqual({ kind: "confirmed" });
+    const put = s.sent.find((r) => r.method === "PUT");
+    expect(put?.path).toBe(`/api/v1/student/assignments/${ASSIGNMENT}/declaration`);
+    expect(matchesSchema(contracts["student.declaration.put"].body as Schema, put?.body)).toBe(true);
+    expect(put?.body).toMatchObject({
+      baseVersion: 4, revision: 2, form: FORM, ownWork: { confirmed: true }, confirm: true,
+      humanHelp: STATE.draft.humanHelp,
+      ai: { use: "used", attachments: [{ conversationId: "c-1", throughSeq: 2, messagesSha256: "c".repeat(64) }] },
+    });
+  });
+
+  it("a 409 for the version is a conflict, never a quiet success (B-6)", async () => {
+    for (const code of ["declaration_conflict", "stale_revision", "conflict"]) {
+      const s = server((method) => (method === "GET" ? json(200, STATE) : error(409, code)));
+      expect(await createDeclarationPort(s.call).confirm(ASSIGNMENT, []), code).toEqual({ kind: "conflict" });
+    }
+    const stale = server((method) => (method === "GET" ? json(200, STATE) : error(409, "attachment_stale")));
+    const attachment = { conversationId: "c-1", reason: "transfer" as const, throughSeq: 2, messagesSha256: "c".repeat(64) };
+    expect(await createDeclarationPort(stale.call).confirm(ASSIGNMENT, [attachment])).toEqual({ kind: "stale", conversationIds: ["c-1"] });
+  });
+
+  it("401 is signedOut for every read and the confirmation", async () => {
+    const s = server(() => error(401, "unauthorized"));
+    const port = createDeclarationPort(s.call, { teacherTarget: () => ({ assignmentId: ASSIGNMENT, studentId: ASSIGNMENT }) });
+    expect(await port.readStudent(ASSIGNMENT)).toEqual({ kind: "signedOut" });
+    expect(await port.confirm(ASSIGNMENT, [])).toEqual({ kind: "signedOut" });
+    expect(await port.readTeacher("s-1")).toEqual({ kind: "signedOut" });
+    expect(s.sent.some((r) => r.method === "PUT")).toBe(false);
+  });
+
+  it("reads the declared tools, and the teacher's bound declaration", async () => {
+    const s = server(() => json(200, STATE));
+    expect(await createDeclarationPort(s.call).readStudent(ASSIGNMENT))
+      .toEqual({ kind: "ready", uses: [{ purpose: "Lektura", provider: "Izmišljeni alat", phase: "Pisanje" }], conversations: [] });
+    const none = server(() => json(200, { state: "none", payload: null, declarationSha256: null }));
+    const target = { teacherTarget: () => ({ assignmentId: ASSIGNMENT, studentId: ASSIGNMENT }) };
+    expect(await createDeclarationPort(none.call, target).readTeacher("s-1")).toEqual({ kind: "pending" });
+    expect(none.sent[0]?.path).toBe(`/api/v1/teacher/assignments/${ASSIGNMENT}/students/${ASSIGNMENT}/declaration`);
+    expect(await createDeclarationPort(none.call).readTeacher("s-1")).toEqual({ kind: "unavailable" });
+  });
+
+  it("declaration-fake.ts stays for tests and the catalogue: no app source imports it", () => {
+    const root = new URL("../../", import.meta.url).pathname;
+    const found: string[] = [];
+    const walk = (dir: string): void => {
+      for (const name of readdirSync(dir)) {
+        if (name === "node_modules" || name === "dist" || name.startsWith(".")) continue;
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) walk(path);
+        else if (/\.(?:ts|tsx)$/.test(name) && !/\.test\.tsx?$/.test(name) && /["'][^"'\n]*declaration-fake(?:\.ts)?["']/.test(readFileSync(path, "utf8"))) found.push(relative(root, path));
+      }
+    };
+    for (const dir of ["src", "packages/app/src"]) walk(join(root, dir));
+    expect(found).toEqual([]);
+  });
+});

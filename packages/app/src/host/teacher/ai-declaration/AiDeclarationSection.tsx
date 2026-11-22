@@ -11,7 +11,7 @@ import { unavailableDeclarationPort } from "./ports";
 type Ready = Extract<TeacherDeclarationRead, { kind: "ready" }>;
 
 function toState(read: TeacherDeclarationRead): TeacherAiAttachmentsState {
-  if (read.kind === "unavailable") return { kind: "error" };
+  if (read.kind === "unavailable" || read.kind === "signedOut") return { kind: "error" };
   // The conversations are listed below and open in the ch-h dialog, not in the page.
   return read.kind === "ready" ? { ...read, conversations: [] } : read;
 }

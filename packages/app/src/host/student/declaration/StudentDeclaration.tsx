@@ -11,6 +11,7 @@ type Status = "idle" | "confirming" | "confirmed" | "stale" | "failed";
 function toState(read: StudentDeclarationRead): DeclarationAiState {
   switch (read.kind) {
     case "unavailable":
+    case "signedOut":
       return { kind: "error" };
     case "no_use":
     case "ai_disabled":
