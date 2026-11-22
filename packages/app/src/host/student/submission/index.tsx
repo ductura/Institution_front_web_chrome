@@ -146,6 +146,7 @@ export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignment
           receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
           <p>{stepsText.intro}</p>
           <BeforeSubmitStep assignmentId={id} declaredFor={declaredFor} hrefOf={hrefOf}
+            workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
             stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }}
             onSignIn={() => goToSignIn(appHref(base, stepPath(id, "pregled")))} />
         </StepsShell>

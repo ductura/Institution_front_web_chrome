@@ -2,7 +2,7 @@
 
 import { Button, Card, Steps } from "@ductura/ui";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 
 import { useOnline } from "../../client/online-status";
 import { addNote, readNotes, type LocalCall, type Read, type SubmissionNote } from "../../client/submission";
@@ -63,6 +63,8 @@ export type BeforeSubmitViewProps = {
   readonly onReceipt: () => void;
   readonly onRetry: () => void;
   readonly onOpenNote: () => void;
+  /** A host's own right column (summary with the notes inside, PD-1 section 9); it replaces the notes card too. */
+  readonly aside?: ReactNode;
 };
 
 /**
@@ -100,6 +102,7 @@ export function BeforeSubmitView(props: BeforeSubmitViewProps) {
               <dd>{t.formNotRun}</dd>
             </dl>
           </Card>
+          {props.aside === undefined && <>
           <Card title={t.notes} busy={notes.kind === "loading"}
             error={notes.kind === "unavailable" ? t.notesUnavailable : undefined}>
             {notes.kind === "ready" && (notes.notes.length === 0
@@ -111,13 +114,14 @@ export function BeforeSubmitView(props: BeforeSubmitViewProps) {
               <Button tone="quiet" disabled={!canAddNote} onClick={props.onOpenNote}>{t.addNote}</Button>
             </p>
           )}
+          </>}
         </div>
-        <aside>
+        {props.aside !== undefined ? <aside>{props.aside}</aside> : <aside>
           {summary.kind === "ready" ? <ProcessSummaryView summary={summary.summary} />
             : <Card title={s.title} busy={summary.kind === "loading"} error={summary.kind === "error" || summary.kind === "unavailable" ? t.summaryError : undefined} />}
           {summary.kind === "loading" && <p role="status">{t.summaryLoading}</p>}
           {summary.kind === "error" && <Button tone="quiet" onClick={props.onRetry}>{t.retry}</Button>}
-        </aside>
+        </aside>}
       </div>
       {submitted ? (
         <p>
@@ -162,10 +166,12 @@ export type BeforeSubmitProps = {
   readonly hrefOf?: (path: string) => string;
   /** A repeated summary read; without it the page is refreshed (the copied route reads on the server). */
   readonly onRetry?: () => void;
+  /** A host's own right column, given the declaration and network state; the step then shows no notes of its own. */
+  readonly aside?: (state: { readonly confirmed: boolean; readonly online: boolean }) => ReactNode;
 };
 
 /** The step with its state: the declaration as step 2 left it in this tab, the notes from the server. */
-export default function BeforeSubmit({ assignmentId, summary, stage, local, declaredFor, hrefOf = samePath, onRetry }: BeforeSubmitProps) {
+export default function BeforeSubmit({ assignmentId, summary, stage, local, declaredFor, hrefOf = samePath, onRetry, aside }: BeforeSubmitProps) {
   const router = useRouter();
   const online = useOnline();
   const tag = useSessionTag();
@@ -194,10 +200,11 @@ export default function BeforeSubmit({ assignmentId, summary, stage, local, decl
         onReceipt={() => router.push(hrefOf(stepHref(assignmentId, "potvrda")))}
         onRetry={onRetry ?? (() => router.refresh())}
         onOpenNote={() => setNoteOpen(true)}
+        aside={aside?.({ confirmed, online })}
       />
-      <NoteDialog open={noteOpen} onClose={() => setNoteOpen(false)}
+      {aside === undefined && <NoteDialog open={noteOpen} onClose={() => setNoteOpen(false)}
         onAdd={(text) => saveNote(local, assignmentId, text)}
-        onAdded={(note) => setNotes((current) => current.kind === "ready" ? { kind: "ready", notes: [...current.notes, note] } : current)} />
+        onAdded={(note) => setNotes((current) => current.kind === "ready" ? { kind: "ready", notes: [...current.notes, note] } : current)} />}
     </>
   );
 }
