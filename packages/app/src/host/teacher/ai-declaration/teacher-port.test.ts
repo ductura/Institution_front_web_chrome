@@ -100,6 +100,8 @@ describe("N-07 declaration through the teacher port (PIL-K-AI-PRILOZI)", () => {
     ["the work route fails", { work: () => error(503, "unavailable"), declaration: () => json(200, BOUND) }],
     ["the work route names another work", { work: () => json(200, { ...WORK, documentId: "drugi-dokument" }), declaration: () => json(200, BOUND) }],
     ["the session has ended", { work: () => error(401, "unauthenticated"), declaration: () => json(200, BOUND) }],
+    ["the declaration route says the session has ended", { work: () => json(200, WORK), declaration: () => error(401, "unauthenticated") }],
+    ["the declaration route refuses this teacher", { work: () => json(200, WORK), declaration: () => error(403, "forbidden") }],
   ];
   for (const [when, answer] of failures) {
     it(`says it cannot load, not an empty declaration, when ${when}`, async () => {
