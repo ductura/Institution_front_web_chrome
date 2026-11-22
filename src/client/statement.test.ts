@@ -76,12 +76,34 @@ describe("statement adapter (PIL-K-IZJAVA-PORT)", () => {
     expect(put?.body).toMatchObject({
       baseVersion: 0, revision: 1, form: FORM, confirm: false,
       humanHelp: { received: true, entries: [{ kind: "language", text: "Izmišljena lektura" }] },
-      ai: { attachments: [], externalAttachmentIds: [] },
+      ai: { attachments: [], externalAttachmentIds: [UPLOAD_ID] },
     });
   });
 
+  it("links a printout the server holds but the draft does not name, in a fresh session, within the limit", async () => {
+    const draft = {
+      baseVersion: 0, revision: 1, form: FORM, ownWork: { confirmed: false }, humanHelp: { received: false, entries: [] },
+      ai: { use: null, declaredTools: [], attachments: [], externalAttachmentIds: [] }, confirm: false,
+    };
+    const reloaded = { ...STATE, state: "draft", version: 1, draft };
+    const s = server((method) => json(200, reloaded));
+    await s.port.read(ASSIGNMENT);
+    expect(await s.port.saveHumanHelp(ASSIGNMENT, { kind: "none", text: "" })).toEqual({ kind: "saved" });
+    expect(s.sent.at(-1)?.body).toMatchObject({ baseVersion: 1, ai: { externalAttachmentIds: [UPLOAD_ID] } });
+    // The draft names 4, the server holds 10 others: the draft's come first, then held ones up to 10.
+    const id = (n: number) => `00000000-0000-4000-8000-0000000001${String(n).padStart(2, "0")}`;
+    const named = [0, 1, 2, 3].map(id);
+    const held = Array.from({ length: 10 }, (_, i) => ({ ...STATE.uploads[0], externalAttachmentId: id(10 + i) }));
+    const full = server(() => json(200, { ...reloaded, uploads: held, draft: { ...draft, ai: { ...draft.ai, externalAttachmentIds: named } } }));
+    await full.port.read(ASSIGNMENT);
+    expect(await full.port.saveHumanHelp(ASSIGNMENT, { kind: "none", text: "" })).toEqual({ kind: "saved" });
+    const ids = (full.sent.at(-1)?.body as { ai: { externalAttachmentIds: string[] } }).ai.externalAttachmentIds;
+    expect(ids).toEqual([...named, ...held.slice(0, 6).map((u) => u.externalAttachmentId)]);
+    expect(matchesSchema(contracts["student.declaration.put"].body as Schema, full.sent.at(-1)?.body)).toBe(true);
+  });
+
   it("adds a new printout to the ones the draft already names, and links it once", async () => {
-    const withEarlier = { ...STATE, state: "draft", draft: {
+    const withEarlier = { ...STATE, state: "draft", uploads: [], draft: {
       baseVersion: 0, revision: 1, form: FORM, ownWork: { confirmed: false }, humanHelp: { received: false, entries: [] },
       ai: { use: null, declaredTools: [], attachments: [], externalAttachmentIds: [EARLIER_ID] }, confirm: false,
     } };

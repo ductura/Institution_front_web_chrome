@@ -101,7 +101,11 @@ type WireAi = NonNullable<StudentState["draft"]>["ai"];
 /** The 409 codes that mean "someone wrote first": the read is no longer the current version. */
 export const VERSION_CONFLICTS: ReadonlySet<string> = new Set(["declaration_conflict", "conflict", "stale_revision", "form_outdated"]);
 
-/** What one view read, by assignment, and the printouts it uploaded since its last saved draft. */
+/**
+ * What one view read, by assignment, and the printouts it uploaded since its last saved draft.
+ * The view's two ports share it: a write goes on the latest read of either half, so a mount
+ * builds both with createDeclarationStepPorts and refreshes the two halves together.
+ */
 export type DeclarationSession = {
   readonly states: Map<string, StudentState>;
   readonly uploaded: Map<string, readonly string[]>;
@@ -155,9 +159,16 @@ export function nextDraft(state: StudentState, change: Change): PutBody | null {
   };
 }
 
-/** The draft's printouts with this view's new uploads added after them, each once. */
+/** declaration-v1: at most this many external printouts in a draft (externalAttachmentIds maxItems). */
+export const MAX_LINKED_PRINTOUTS = 10;
+
+/**
+ * The printouts a write links: the draft's, then every upload the server holds that the draft does
+ * not name yet (also after a reload), then this view's newer ones, each once, within the limit.
+ */
 export function linkedUploads(state: StudentState, uploaded: readonly string[] = []): string[] {
-  return [...new Set([...(state.draft?.ai.externalAttachmentIds ?? []), ...uploaded])];
+  const held = state.uploads.map((u) => u.externalAttachmentId);
+  return [...new Set([...(state.draft?.ai.externalAttachmentIds ?? []), ...held, ...uploaded])].slice(0, MAX_LINKED_PRINTOUTS);
 }
 
 /** The file name a printout is shown under: the contract keeps no original name. */
