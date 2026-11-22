@@ -1,12 +1,10 @@
 "use client";
 
-import { Button, Skeleton } from "@ductura/ui";
+import { Button, Tag } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { appHref } from "../../../../../../src/components/index.ts";
-import { homeDate } from "../../../../../../src/components/home/home-date.ts";
-import { zagrebParts } from "../../../../../../src/components/summary/zagreb-time.ts";
 import type { MyCourse } from "../../../../../../src/components/student/my-assignments-read.ts";
 import { readMyWorks, type WorksRead } from "../../../../../../src/components/student/radovi/works-read.ts";
 import { createApi, signInHref } from "../../../../../../src/client/api.ts";
@@ -15,31 +13,29 @@ import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 import { startWorkAction } from "../start-work/action";
 import { CodeCard, CodeForm } from "./CodeForm";
+import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
 import { continueRow, flatRows, nearTag, rowAction, rowRoute, type RowKind, type TaskRow } from "./model";
 
-function dueText(iso: string): string {
-  const parts = zagrebParts(iso);
-  return parts === null ? iso : `${parts.date} u ${parts.time}`;
-}
+const dueText = protoDateTime;
 
 function Row({ row, now, go, action }: { row: TaskRow; now: number; go: (route: string) => void; action: ReturnType<typeof startWorkAction> }) {
   const { label, primary } = rowAction(row.kind);
   const near = row.kind === "predano" ? null : nearTag(row.dueAt, now);
   return (
     <li className={styles.item}>
-      <span className={styles.itemBody}>
+      <span>
         <span className={styles.eyebrow}>{row.course}</span>
         <span className={styles.title}>{row.title}</span>
         <span className={styles.when}>
           {row.kind === "predano" ? <span>{t.submitted}</span> : <span>{(row.extended ? t.extendedDue : t.due).replace("{due}", dueText(row.dueAt))}</span>}
-          {near === null ? null : <span className={`${styles.tag} ${styles.near}`}>{near}</span>}
-          {row.kind === "obavijest" ? <span className={`${styles.tag} ${styles.open}`}>{t.noticeFirst}</span> : null}
+          {near === null ? null : <Tag tone="warn">{near}</Tag>}
+          {row.kind === "obavijest" ? <Tag tone="open">{t.noticeFirst}</Tag> : null}
         </span>
       </span>
       <span className={styles.itemActions}>
-        <Button tone={primary ? "primary" : "quiet"} aria-label={t.openFor.replace("{action}", label).replace("{title}", row.title)}
+        <Button size="small" tone={primary ? "primary" : "secondary"} aria-label={t.openFor.replace("{action}", label).replace("{title}", row.title)}
           onClick={() => go(rowRoute(row))}>{label}</Button>
         {action}
       </span>
@@ -50,10 +46,10 @@ function Row({ row, now, go, action }: { row: TaskRow; now: number; go: (route: 
 function Hero() {
   // The date is the browser's moment in Zagreb time; empty until mounted, so server and client markup agree.
   const [today, setToday] = useState("");
-  useEffect(() => setToday(homeDate(new Date())), []);
+  useEffect(() => setToday(protoToday(new Date())), []);
   return (
     <div className={styles.hero}>
-      <span className={styles.eyebrow}>{today}</span>
+      <span className={styles.meta}>{today}</span>
       <h1>{t.heading} <em>{t.headingEm}</em></h1>
       <p className={styles.lede}>{t.lede}</p>
     </div>
@@ -114,7 +110,16 @@ export function HomePage() {
   const go = (route: string) => router.push(nextPath(base, route));
 
   let body;
-  if (read === null) body = <Skeleton label={t.loading} lines={4} />;
+  if (read === null) {
+    body = (
+      <div className={styles.course} aria-busy="true" role="status">
+        <span className={styles.hidden}>{t.loading}</span>
+        <div className={styles.skel} data-w="40" />
+        <div className={styles.item}><div className={styles.skel} data-w="80" /><div className={styles.skel} data-w="60" /></div>
+        <div className={styles.item}><div className={styles.skel} data-w="80" /><div className={styles.skel} data-w="40" /></div>
+      </div>
+    );
+  }
   else if (read.kind === "signedOut") {
     body = (
       <div className={`${styles.card} ${styles.center}`}>
@@ -127,7 +132,7 @@ export function HomePage() {
       <div className={styles.card} role="alert">
         <h2>{t.errorHeading}</h2>
         <p className={styles.note}>{t.errorBody}</p>
-        <Button onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>
+        <Button className={styles.start} onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>
       </div>
     );
   } else if (read.courses.length === 0) body = <Empty />;
@@ -151,7 +156,7 @@ export function HomePage() {
           <ul className={styles.list}>
             {rows.map((row) => (
               <Row key={row.id} row={row} now={now} go={go}
-                action={row.kind === "predano" || row.kind === "obavijest" ? null : startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false })} />
+                action={row.kind !== "zadatak" ? null : startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false })} />
             ))}
           </ul>
         </section>
