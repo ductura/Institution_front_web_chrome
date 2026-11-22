@@ -5,7 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { signInHref } from "../../../../../client/api";
 import { serverApi } from "../../../../../client/server";
 import { screenProvenance } from "../../../../../client/provenance-fake";
-import { readSubmissionState, type LocalCall, type SubmissionRead } from "../../../../../client/submission";
+import { readSubmissionState, type LocalCall } from "../../../../../client/submission";
 import { assignmentIdOf, editorWorkRead } from "../../../../../components/editor/EditorPage.read";
 import { ProvenancePanel, readProvenance } from "../../../../../components/predaja/ProvenancePanel";
 import { ReceiptPanel, studentReceiptRead } from "../../../../../components/predaja/ReceiptPanel";
@@ -20,12 +20,17 @@ const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
 
 /**
- * TODO(ugovor): student.submission.get comes with @ductura/contracts 3.1.0
- * (SRV-19, SRV-25). Until then there is no transport, the receipt reads as
- * unknown and a submitted work shows the error variant, never "predano"
- * (B-6). On the release this becomes the read through src/client.
+ * student.submission.get through src/client with the request's cookie (the
+ * route is in the migration contract). createApi checks the answer against
+ * the contract; readSubmissionState then checks the receipt itself. Only that
+ * read goes this way, every other id stays unreachable here.
  */
-const LOCAL: LocalCall | undefined = undefined;
+function submissionCall(api: ReturnType<typeof serverApi>): LocalCall {
+  return (id, { params }) => id === "student.submission.get"
+    ? api("student.submission.get", { params, query: undefined, body: undefined }).catch(() => UNREACHED_CALL)
+    : Promise.resolve(UNREACHED_CALL);
+}
+const UNREACHED_CALL = { ok: false, status: 0, code: "unavailable" } as const;
 
 /**
  * TODO(ugovor): the entry-method share (WEB-1220) reads the in-memory fake
@@ -53,9 +58,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ assign
   const [assignments, work, submission, provenance] = await Promise.all([
     api("student.assignments.get", NONE).catch(() => UNREACHED),
     api("student.assignment-work.get", NONE).catch(() => UNREACHED),
-    LOCAL === undefined
-      ? Promise.resolve<SubmissionRead>({ kind: "nepoznato" })
-      : readSubmissionState(LOCAL, assignmentId),
+    readSubmissionState(submissionCall(api), assignmentId),
     readProvenance(PROVENANCE, assignmentId),
   ]);
   const read = editorWorkRead(assignmentId, assignments, work);
