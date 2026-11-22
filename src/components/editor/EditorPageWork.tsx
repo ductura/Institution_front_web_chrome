@@ -111,6 +111,7 @@ export default function EditorPageWork({
   sessionControls,
   renderPdf,
   triggers,
+  literature,
   leftSections,
 }: {
   assignmentId: string;
@@ -123,6 +124,8 @@ export default function EditorPageWork({
   renderPdf?: RenderPdf;
   /** The host's "@" and "/" menus with the sources of the work; without it the menus open without sources (WEB-2123). */
   triggers?: (work: { documentId: string }) => ReactNode;
+  /** The host's list of the work's sources above the proofs in the sources card (WEB-2123). */
+  literature?: (work: { documentId: string }) => ReactNode;
   /** The host's sections of the left panel (WEB-2126). */
   leftSections?: LeftSections;
 }) {
@@ -147,14 +150,14 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} leftSections={leftSections} triggers={triggers} />
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} leftSections={leftSections} triggers={triggers} literature={literature} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, leftSections, triggers }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, leftSections, triggers, literature }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -166,6 +169,8 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   saveSummary: boolean;
   renderPdf?: RenderPdf;
   triggers?: (work: { documentId: string }) => ReactNode;
+  /** The host's list of the work's sources above the proofs in the sources card (WEB-2123). */
+  literature?: (work: { documentId: string }) => ReactNode;
   leftSections?: LeftSections;
 }) {
   const editor = useLocalEditor();
@@ -183,7 +188,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         {!signedOut && <WorkPrintExport documentId={documentId} title={title} renderPdf={renderPdf} />}
       </div></EditorCommands>}
       status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
-      rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} documentId={documentId} />,
+      rightSections={{ sources: <>{literature?.({ documentId })}<EditorSourceProofs assignmentId={assignmentId} documentId={documentId} /></>,
         comments: <CommentPanel documentId={documentId} session={session} />,
         assistant: <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>

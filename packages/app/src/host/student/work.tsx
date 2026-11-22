@@ -33,6 +33,7 @@ import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
+import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
@@ -107,6 +108,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
             triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
+            literature={() => <LiteratureList />}
             leftSections={{ ...leftSectionsFor(assignmentId), chapter: <ChapterPanel workId={assignmentId} /> }}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session }) => <>

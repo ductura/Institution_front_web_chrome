@@ -3,7 +3,7 @@ import type { EditorState, Transaction } from "@tiptap/pm/state";
 import { TextSelection } from "@tiptap/pm/state";
 
 import { citationRange, insertCitation } from "@/components/editor/citations/citation-document";
-import { sourceLabel } from "@/components/editor/sources/proofs/proof-sources";
+import { documentCitations, documentSources, sourceLabel } from "@/components/editor/sources/proofs/proof-sources";
 import type { Source } from "@/components/editor/triggers/items";
 import { MAX_DOCUMENT_SOURCES } from "@/domain/document/schema";
 
@@ -72,4 +72,16 @@ export function addSourceAt(
 
 export function jumpTo(state: EditorState, pos: number): Transaction {
   return state.tr.setSelection(TextSelection.near(state.doc.resolve(pos))).scrollIntoView();
+}
+
+/** The sources of the work as entries "Autor (godina). Naslov" with whether any citation points at them (Literatura list). */
+export function listedSources(doc: Parameters<typeof documentSources>[0]): { id: string; entry: string; cited: boolean }[] {
+  const cited = new Set(documentCitations(doc).map((c) => c.sourceId));
+  const titles = new Map<string, string>();
+  const list = doc?.attrs?.sources;
+  if (Array.isArray(list)) for (const raw of list) {
+    const s = raw as Record<string, unknown> | null;
+    if (s && typeof s.id === "string" && typeof s.title === "string") titles.set(s.id, s.title);
+  }
+  return documentSources(doc).map(({ id, label }) => ({ id, entry: `${label}. ${titles.get(id) ?? ""}`.trim(), cited: cited.has(id) }));
 }

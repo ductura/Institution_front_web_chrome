@@ -1,10 +1,10 @@
 import { getSchema } from "@tiptap/core";
 import type { SourceDraft } from "@ductura/ui";
 import { EditorState, TextSelection } from "@tiptap/pm/state";
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createEditorExtensionsV2, tiptapToCanonicalV2 } from "@/editor";
 import { triggerItems } from "@/components/editor/triggers/items";
-import { addSourceAt, addSourceTransaction, mentionSources, nextPlace, plainCitationPlaces } from "./mention-model";
+import { addSourceAt, addSourceTransaction, listedSources, mentionSources, nextPlace, plainCitationPlaces } from "./mention-model";
 
 const ID = "00000000-0000-4000-8000-00000000c0a1";
 const NEW = "00000000-0000-4000-8000-00000000c0a2";
@@ -74,4 +74,23 @@ it("finds the '[izvor]' marks in text order and walks to the next one, wrapping"
   expect(nextPlace(places, 6)).toBe(17);
   expect(nextPlace(places, 17)).toBe(6);
   expect(nextPlace([], 3)).toBeNull();
+});
+
+describe("listedSources", () => {
+  const id1 = "11111111-1111-4111-8111-111111111111";
+  const id2 = "22222222-2222-4222-8222-222222222222";
+  const doc = {
+    attrs: { sources: [
+      { id: id1, title: "Izmišljena knjiga", year: 2020, authors: [{ kind: "person", family: "Horvat" }] },
+      { id: id2, title: "Drugi izmišljeni članak", year: 2021, authors: [{ kind: "person", family: "Kovač" }] },
+    ] },
+    content: [{ type: "paragraph", content: [{ type: "citation", attrs: { sourceId: id1, locator: "3" } }] }],
+  };
+  it("marks which sources are cited", () => {
+    expect(listedSources(doc)).toEqual([
+      { id: id1, entry: "Horvat (2020). Izmišljena knjiga", cited: true },
+      { id: id2, entry: "Kovač (2021). Drugi izmišljeni članak", cited: false },
+    ]);
+  });
+  it("is empty without sources", () => expect(listedSources(null)).toEqual([]));
 });
