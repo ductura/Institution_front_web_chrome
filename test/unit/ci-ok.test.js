@@ -5,7 +5,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { parseDocument } from 'yaml';
 
 const dir = new URL('../../.github/workflows/', import.meta.url);
@@ -61,7 +63,25 @@ const run = (value) => {
 };
 const needs = (o) => JSON.stringify(Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { result: v, outputs: {} }])));
 
+// A needs object with `changes` and its outputs: skipped jobs listed in `off`
+// were switched off by changes, the others it wanted to run.
+const withChanges = (results, outputs, changes = 'success') =>
+  JSON.stringify({
+    changes: { result: changes, outputs },
+    ...Object.fromEntries(Object.entries(results).map(([k, v]) => [k, { result: v, outputs: {} }])),
+  });
+
 const cases = [
+  ['skipped job that changes switched off', withChanges({ a: 'success', b: 'skipped' }, { a: 'true', b: 'false' }), 0],
+  ['every job switched off', withChanges({ a: 'skipped', b: 'skipped' }, { a: 'false', b: 'false' }), 0],
+  ['skipped job that changes wanted', withChanges({ a: 'success', b: 'skipped' }, { a: 'true', b: 'true' }), 1],
+  ['skipped job with no changes output', withChanges({ a: 'success', b: 'skipped' }, { a: 'true' }), 1],
+  ['skipped job, output not exactly false', withChanges({ b: 'skipped' }, { b: 'False' }), 1],
+  ['skipped because changes itself failed', withChanges({ b: 'skipped' }, { b: 'false' }, 'failure'), 1],
+  ['changes itself skipped', withChanges({ b: 'success' }, { b: 'true' }, 'skipped'), 1],
+  ['switched-off job that failed anyway', withChanges({ b: 'failure' }, { b: 'false' }), 1],
+  ['switched-off job cancelled', withChanges({ b: 'cancelled' }, { b: 'false' }), 1],
+
   ['one failure', needs({ a: 'success', b: 'failure' }), 1],
   ['cancelled', needs({ a: 'success', b: 'cancelled' }), 1],
   ['skipped', needs({ a: 'success', b: 'skipped' }), 1],
@@ -170,5 +190,78 @@ test('ci.yml itself runs on pull requests', () => {
 test('no other workflow runs jobs that ci-ok cannot see', () => {
   for (const file of readdirSync(dir).filter((f) => /\.ya?ml$/i.test(f) && f !== 'ci.yml')) {
     assert.deepEqual(strayEvents(readFileSync(new URL(file, dir), 'utf8')), [], file);
+  }
+});
+
+// The `changes` job decides which jobs a change needs. Its script runs here in
+// a throwaway git repository, so a wrong path rule shows up as a failing case.
+const changesScript = jobsOf(workflow).changes?.steps?.find((s) => typeof s?.run === 'string' && s.run.includes('# changes:begin'))?.run;
+
+function changesFor(files, { event = 'pull_request', base = true } = {}) {
+  const repo = mkdtempSync(join(tmpdir(), 'changes-'));
+  try {
+    const git = (...a) => spawnSync('git', a, { cwd: repo, encoding: 'utf8' });
+    git('init', '-q');
+    git('config', 'user.email', 'a@example.invalid');
+    git('config', 'user.name', 'a');
+    writeFileSync(join(repo, 'seed.md'), 'x');
+    git('add', '.');
+    git('commit', '-q', '-m', 'base');
+    const baseSha = git('rev-parse', 'HEAD').stdout.trim();
+    for (const f of files) {
+      mkdirSync(join(repo, dirname(f)), { recursive: true });
+      writeFileSync(join(repo, f), 'y');
+    }
+    git('add', '.');
+    git('commit', '-q', '--allow-empty', '-m', 'change');
+    const out = join(repo, '..', `out-${process.pid}-${Math.random()}`);
+    writeFileSync(out, '');
+    const r = spawnSync('bash', ['-c', changesScript], {
+      cwd: repo,
+      encoding: 'utf8',
+      env: { PATH: process.env.PATH, EVENT: event, BASE: base ? baseSha : '', GITHUB_OUTPUT: out },
+    });
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    return Object.fromEntries(readFileSync(out, 'utf8').trim().split('\n').map((l) => l.split('=')));
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+}
+const on = (o) => Object.keys(o).filter((k) => o[k] === 'true').sort().join(',');
+
+const pathCases = [
+  [['docs/x.md'], ''],
+  [['README.md'], ''],
+  [['packages/app/src/host/a.tsx'], 'app,ui'],
+  [['packages/ui/src/a.tsx'], 'app,ui'],
+  [['catalog/a.ts'], 'ui'],
+  [['packages/editor-core/src/a.ts'], 'app,client,ui'],
+  [['src/client/api.ts'], 'app,client,ui'],
+  [['src/components/a.tsx'], 'app,test,ui'],
+  [['test/unit/a.test.js'], 'test'],
+  [['e2e/a.spec.ts'], 'test'],
+  [['package.json'], 'app,client,test,ui'],
+  [['pnpm-lock.yaml'], 'app,client,test,ui'],
+  [['pnpm-workspace.yaml'], 'app,client,test,ui'],
+  [['.github/workflows/ci.yml'], 'app,client,test,ui'],
+  [['docs/x.md', 'package.json'], 'app,client,test,ui'],
+];
+for (const [files, expected] of pathCases) {
+  test(`changes: ${files.join(', ')} runs [${expected}]`, () => {
+    assert.equal(typeof changesScript, 'string', 'changes has the changes:begin block');
+    assert.equal(on(changesFor(files)), expected);
+  });
+}
+test('changes: a push runs every job', () => {
+  assert.equal(on(changesFor(['docs/x.md'], { event: 'push' })), 'app,client,test,ui');
+});
+test('changes: no base sha runs every job', () => {
+  assert.equal(on(changesFor(['docs/x.md'], { base: false })), 'app,client,test,ui');
+});
+test('every job except changes is gated by changes and needs it', () => {
+  for (const [name, job] of Object.entries(jobsOf(workflow))) {
+    if (name === 'changes') continue;
+    assert.ok(needsOf(job).includes('changes'), `${name} needs changes`);
+    if (name !== 'ci-ok') assert.equal(job.if, `\${{ needs.changes.outputs.${name} == 'true' }}`, name);
   }
 });
