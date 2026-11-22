@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { CanonicalDocumentV4, NodeId } from "../../../../../editor-core/src/document/document/index.ts";
-import { parseCitationStyle } from "../../../../../editor-core/src/document/citation/style";
-import fpzg from "../../../../../../config/faculties/fpzg/citation.json";
 
-import { buildTex, texEscape } from "./latex";
+import { buildTex, texEscape, type TexCitations } from "./latex";
 import { stemHr } from "./messages.hr";
 import { checkQuote, findQuotes, locatorPage } from "./quote-check";
 import { dismissKey, reviewQuotes } from "./quote-review";
@@ -98,8 +96,13 @@ describe("reviewQuotes", () => {
 });
 
 describe("buildTex", () => {
-  const style = parseCitationStyle(fpzg);
-  const tex = buildTex(doc, { title: "Izmišljeni rad", style });
+  // A stand-in for the institution's style; the real one is the shell's.
+  const citations: TexCitations = {
+    inText: (s, locator) => `(${s.authors[0]?.kind === "person" ? s.authors[0].family : "?"}, ${s.year}${locator ? `: ${locator}` : ""})`,
+    entry: (s) => `${s.title} (${s.year})`,
+    order: (list) => [...list].sort((a, b) => a.title.localeCompare(b.title, "hr")),
+  };
+  const tex = buildTex(doc, { title: "Izmišljeni rad", citations });
   it("escapes special characters and labels the headings", () => {
     expect(texEscape("a_b & 50% #1")).toBe("a\\_b \\& 50\\% \\#1");
     expect(tex).toContain("\\section{Uvod \\& svrha}\\label{sec:" + id(1) + "}");
@@ -114,12 +117,12 @@ describe("buildTex", () => {
     expect(tex).toContain("\\begin{itemize}\n\\item prva\n\\item druga\n\\end{itemize}");
   });
   it("cites from the institution's style and lists the cited source", () => {
-    expect(tex).toContain("Ilić");
+    expect(tex).toContain("(Ilić, 2001: 12)");
     expect(tex).toMatch(/\\section\*\{Literatura\}[\s\S]*Uvod u izmišljeno/);
   });
   it("is the same bytes for the same work, and a reference to nothing is marked", () => {
-    expect(buildTex(doc, { title: "Izmišljeni rad", style })).toBe(tex);
+    expect(buildTex(doc, { title: "Izmišljeni rad", citations })).toBe(tex);
     const lost: CanonicalDocumentV4 = { ...doc, nodes: [{ type: "paragraph", id: id(2), children: [{ type: "crossReference", targetId: id(99) }] }] };
-    expect(buildTex(lost, { title: "", style })).toContain("[referenca?]");
+    expect(buildTex(lost, { title: "", citations })).toContain("[referenca?]");
   });
 });

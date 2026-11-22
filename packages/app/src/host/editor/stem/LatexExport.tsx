@@ -7,16 +7,16 @@ import { useState } from "react";
 
 import { downloadBlob } from "../../../../../../src/components/editor/EarlierDraft";
 import type { CanonicalDocumentV4 } from "../../../../../editor-core/src/document/document/index.ts";
-import type { CitationStyle } from "../../../../../editor-core/src/document/citation/style";
-import { buildTex, TEX_FILE } from "./latex";
+import { buildTex, TEX_FILE, type TexCitations } from "./latex";
 import { stemHr as t } from "./messages.hr";
 
 type State = "idle" | "done" | "failed";
 
-export default function LatexExport({ doc, title, style, canDownload = true }: {
+export default function LatexExport({ doc, title, citations, canDownload = true }: {
   doc: CanonicalDocumentV4;
   title: string;
-  style: CitationStyle;
+  /** The institution's citation style, from the shell. */
+  citations: TexCitations;
   canDownload?: boolean;
 }) {
   const [state, setState] = useState<State>("idle");
@@ -24,7 +24,7 @@ export default function LatexExport({ doc, title, style, canDownload = true }: {
 
   function start() {
     try {
-      downloadBlob(new Blob([buildTex(doc, { title, style })], { type: "application/x-tex;charset=utf-8" }), TEX_FILE);
+      downloadBlob(new Blob([buildTex(doc, { title, citations })], { type: "application/x-tex;charset=utf-8" }), TEX_FILE);
       setState("done");
     } catch {
       setState("failed");

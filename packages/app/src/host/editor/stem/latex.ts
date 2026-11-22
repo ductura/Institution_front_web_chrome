@@ -4,12 +4,20 @@
 import type {
   CanonicalDocumentV4, DocumentNodeV4, DocumentSource, InlineNodeV4, MarkV4, TextNodeV4,
 } from "../../../../../editor-core/src/document/document/index.ts";
-import { assignYearSuffixes, formatBibliographyEntry, formatCitationInText, sortBibliography } from "../../../../../editor-core/src/document/citation/format";
-import type { CitationStyle } from "../../../../../editor-core/src/document/citation/style";
 
 import { stemHr as m } from "./messages.hr";
 
-export type TexOptions = { readonly title: string; readonly style: CitationStyle };
+/**
+ * How the institution's citation style writes a source. The caller gives it (the editor shell holds the style),
+ * so this module never reads a style of its own; `order` sorts and gives year suffixes to the cited sources.
+ */
+export type TexCitations = {
+  readonly inText: (source: DocumentSource, locator?: string) => string;
+  readonly entry: (source: DocumentSource) => string;
+  readonly order: (sources: readonly DocumentSource[]) => readonly DocumentSource[];
+};
+
+export type TexOptions = { readonly title: string; readonly citations: TexCitations };
 
 const SPECIAL: Record<string, string> = { "\\": "\\textbackslash{}", "&": "\\&", "%": "\\%", "$": "\\$", "#": "\\#", _: "\\_", "{": "\\{", "}": "\\}", "~": "\\textasciitilde{}", "^": "\\textasciicircum{}" };
 export const texEscape = (s: string): string => s.replace(/[\\&%$#_{}~^]/g, (c) => SPECIAL[c]!);
@@ -25,7 +33,7 @@ const LISTING = { c: "C", html: "HTML", java: "Java", javascript: "JavaScript", 
 type Ctx = {
   readonly sources: ReadonlyMap<string, DocumentSource>;
   readonly targets: ReadonlyMap<string, Target>;
-  readonly style: CitationStyle;
+  readonly citations: TexCitations;
   readonly cited: Set<string>;
 };
 
@@ -56,7 +64,7 @@ function inline(children: readonly InlineNodeV4[], ctx: Ctx): string {
         const source = ctx.sources.get(c.sourceId);
         if (source === undefined) return "[?]";
         ctx.cited.add(c.sourceId);
-        return texEscape(formatCitationInText(source, ctx.style, c.locator));
+        return texEscape(ctx.citations.inText(source, c.locator));
       }
     }
   }).join("");
@@ -109,13 +117,11 @@ function block(node: DocumentNodeV4, ctx: Ctx): string {
   }
 }
 
-const withoutId = (s: DocumentSource) => { const { id: _id, ...rest } = s; return rest; };
-
 /** The whole `.tex` text of a work. */
 export function buildTex(doc: CanonicalDocumentV4, opts: TexOptions): string {
   const targets = new Map<string, Target>();
   for (const n of doc.nodes) if (n.type in PREFIX) targets.set(n.id, n.type as Target);
-  const ctx: Ctx = { sources: new Map(doc.sources.map((s) => [s.id, s])), targets, style: opts.style, cited: new Set() };
+  const ctx: Ctx = { sources: new Map(doc.sources.map((s) => [s.id, s])), targets, citations: opts.citations, cited: new Set() };
 
   const body: string[] = [];
   let list: "itemize" | "enumerate" | null = null;
@@ -127,11 +133,11 @@ export function buildTex(doc: CanonicalDocumentV4, opts: TexOptions): string {
   }
   close();
 
-  const cited = assignYearSuffixes(sortBibliography(doc.sources.filter((s) => ctx.cited.has(s.id)).map(withoutId)));
+  const cited = opts.citations.order(doc.sources.filter((s) => ctx.cited.has(s.id)));
   const literature = cited.length === 0 ? [] : [
     `\\section*{${m.latex.bibliography}}`,
     "\\begin{itemize}",
-    ...cited.map((s) => `\\item ${texEscape(formatBibliographyEntry(s, opts.style))}`),
+    ...cited.map((s) => `\\item ${texEscape(opts.citations.entry(s))}`),
     "\\end{itemize}",
   ];
 
