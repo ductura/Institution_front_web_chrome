@@ -56,6 +56,17 @@ jobs:
         run: |
           echo "SHA_WEB=$(git -C Institution_front_web_chrome rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "SHA_SERVER=$(git -C Institution_server rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Dijagnoza fronta (privremeno)
+        working-directory: Institution_front_web_chrome
+        env: { PORT: "3000", INSTITUTION_SERVER_URL: "http://127.0.0.1:4000" }
+        run: |
+          nohup pnpm next:dev > "$RUNNER_TEMP/front-diag.log" 2>&1 &
+          sleep 25
+          curl -sS -m 120 -o /dev/null -w "127.0.0.1 / -> %{http_code} in %{time_total}s\n" http://127.0.0.1:3000/ || true
+          curl -sS -m 120 -o /dev/null -w "localhost / -> %{http_code} in %{time_total}s\n" http://localhost:3000/ || true
+          tail -n 60 "$RUNNER_TEMP/front-diag.log"
+          pkill -f "next" || true
+          sleep 3
       - name: Stog gore (INT-01)
         working-directory: Institution_server
         run: |
