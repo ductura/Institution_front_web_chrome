@@ -10,9 +10,10 @@ import { mentorWorkHr } from "../../../src/components/editor/mentor/work-state/m
 import { messagesHr as t } from "../../../src/lib/i18n/messages.hr";
 import { n07Messages } from "../src/host/teacher/n07/messages.hr";
 import { preSubmitMessages } from "../src/host/teacher/pre-submit/messages.hr";
-// The host's own N-08 comments panel (WEB-2154), N-09 replay page (WEB-2159), N-12 consultations (#398) and N-06 frame (WEB-2150) texts.
+// The host's own N-08 comments panel (WEB-2154), N-09 replay page (WEB-2159), N-10 summary page (WEB-2157), N-12 consultations (#398) and N-06 frame (WEB-2150) texts.
 import { teacherCommentsMessages as comments } from "../src/host/teacher/comments/messages.hr";
 import { n09Messages as replay } from "../src/host/teacher/n09/messages.hr";
+import { n10Messages as summary } from "../src/host/teacher/n10/messages.hr";
 import { n12Messages as consultationMessages } from "../src/host/teacher/n12/messages.hr";
 import { workFrameMessages as frame } from "../src/host/teacher/n06/messages.hr";
 
@@ -29,6 +30,7 @@ if (typeof documentId !== "string") throw new Error("Missing documentId in signe
 const workBody = vectors.find((v) => v.route === "teacher.work.get" && v.name === "submitted-work")!.response.body;
 const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "teacher-without-name")!.response.body;
 const profileBody = { ...profile, roles: ["teacher"] };
+const originNothingRecorded = vectors.find((v) => v.route === "work.origin-composition.get" && v.name === "nothing-recorded")!.response.body;
 const path = `/nastavnik/rad/${encodeURIComponent(documentId)}`;
 const work = `/app/web${path}`;
 const receiptPath = `/api/v1/teacher/assignments/${assignmentId}/students/${studentId}/submission`;
@@ -58,6 +60,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
         contentType: "application/json", body: snapshot, headers: { etag },
       });
       case "/api/v1/process-summary": return route.fulfill({ status: 404, json: { error: "not_found" } });
+      // WEB-2157 (#410): the N-10 summary page also reads its details; no summary exists for this work either.
+      case "/api/v1/process-summary/details": return route.fulfill({ status: 404, json: { error: "not_found" } });
       case "/api/v1/comments/list": return route.fulfill({ json: { comments: [] } });
       case "/api/v1/evidence/replay": return route.fulfill({ json: {
         replayFormat: "ductus-evidence-replay-v1", segmentCount: 0, head: null,
@@ -66,6 +70,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
       case `/api/v1/teacher/works/${documentId}`: return route.fulfill({ json: workBody });
       case receiptPath: return route.fulfill({ json: signed });
       case consultationPath: return route.fulfill({ json: { records: [] } });
+      // WEB-2158 (#407): Karta podrijetla reads work.origin-composition.get ("nothing-recorded" vector).
+      case `/api/v1/works/${documentId}/origin-composition`: return route.fulfill({ json: originNothingRecorded });
       case `/api/v1/works/${documentId}/milestones`: return route.fulfill({ json: { milestones: [] } });
       case `/api/v1/works/${documentId}/versions`: return route.fulfill({ json: {
         versions: [{ kind: "submission", revision: 1, savedMinute: "2026-11-20T12:00:00.000Z", afterDeadline: false }],
@@ -92,9 +98,13 @@ test("teacher opens the live text, replay, signed receipt and consultations unde
   await expect(page).toHaveURL(`${work}/predaja`);
   await expect(page.getByText("Iva Izmišljena")).toBeVisible();
   await expect(page.getByText(/\bPredano\b/)).toBeVisible();
-  // N-07 (WEB-2155): "Prije predaje" links to the N-10 summary page (WEB-2157).
+  // N-07 (WEB-2155): "Prije predaje" links to the N-10 summary page (WEB-2157, #410), its own page under the work.
   await expect(page.getByRole("link", { name: preSubmitMessages.fullSummary, exact: true })).toHaveAttribute("href", `${work}/sazetak`);
-  await page.getByRole("link", { name: n07Messages.backToWork }).first().click();
+  await page.getByRole("link", { name: preSubmitMessages.fullSummary, exact: true }).click();
+  await expect(page).toHaveURL(`${work}/sazetak`);
+  await expect(page.getByRole("heading", { level: 1, name: summary.title })).toBeVisible();
+  await page.getByRole("link", { name: summary.backToWork }).click();
+  await expect(page).toHaveURL(work);
   // WEB-2150 (#385): the N-06 frame names the same views in its own navigation.
   await page.getByRole("navigation", { name: frame.linksLabel }).getByRole("link", { name: consultationMessages.title, exact: true }).click();
   await expect(page).toHaveURL(`${work}/konzultacije`);
