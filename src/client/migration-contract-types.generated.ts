@@ -10,6 +10,7 @@
 // Faza 3 (WEB-2008): teaching team view from Institution_server 34b0a9a1 (#607, SRV-2007, API 1.78.0).
 // LOK-WEB-5: teacher mentorship request routes from Institution_server d8b7fc40 (API 1.79.0).
 // Faza 3: auth.backchannel-logout.post, auth.callback.get, auth.login.get, auth.logout-all.post, auth.logout.post, auth.webauthn-assertion.post, auth.webauthn-challenge.post, auth.webauthn-registration.post, client.context.post, collaboration.comments.post, collaboration.revision-requests.post, course.aggregate.get, downloads.manifest.get, evidence.commit.post, evidence.open.post, evidence.replay.post, institution.academic-years.get, institution.acknowledgment.post, institution.admin-courses.get, institution.assignment-versions.post, institution.config-versions.post, institution.config.get, institution.courses.post, institution.enrollment-code-revocation.post, institution.enrollment-code-state.get, institution.enrollment-code.post, institution.enrollments.post, institution.origin-threshold.delete, institution.origin-threshold.put, institution.origin-thresholds.get, institution.role-confirmation.post, institution.role-revocation.post, institution.student-removal.post, institution.student-return.post, institution.student-work-language.post, institution.teacher-roles.get, institution.work-language.post, institution.work-work-language.post, live.document.get, live.document.put, mentorship.key-dates.get, mentorship.notes.get, mentorship.notes.post, mentorship.request-approve.post, mentorship.request-decline.post, notifications.list.get, notifications.read.post, platform.health.get, platform.ready.get, profile.interface-locale.get, profile.interface-locale.post, profile.staff-affiliation.get, projection.process-summary-details.post, projection.process-summary.post, settings.catalogue.get, settings.values.get, settings.values.put, sources.lookup.post, student-work.start.post, student-work.works.get, student.access-log.get, student.assignment-work.get, student.assistant-conversation.get, student.assistant-request.post, student.deadline-history.get, student.declaration-attachments.post, student.declaration.get, student.declaration.put, student.portable-record.get, student.receipt-pdf.get, student.source-proof-image.get, student.source-proofs.get, student.source-proofs.post, student.submission-history.get, student.submission-notes.get, student.submission-notes.post, student.submission.get, student.work-sources.delete, student.work-sources.put, student.work-sources.get, submission.submit.post, support.problem-report.post, support.problem-reports.post, teacher.access.get, teacher.assignment-grade.get, teacher.assignment-submissions.post, teacher.comment-bank.delete, teacher.comment-bank.get, teacher.comment-bank.post, teacher.course-students.get, teacher.courses.get, teacher.declaration.get, teacher.fast-path.post, teacher.mentorship.get, teacher.mentorships.get, teacher.receipt-pdf.get, teacher.submission-detail.get, teacher.submissions.get, work.access.get, work.attachments.get, work.attachments.post, work.changes-since-review.get, work.comment-draft.delete, work.comment-drafts.get, work.comment-drafts.post, work.comments.publish.post, work.direct-edit.get, work.direct-edit.put, work.event-disputes.get, work.event-disputes.post, work.export.get, work.imports.confirm.post, work.imports.post, work.interview-appointment.put, work.interview-explanations.post, work.interview-held.post, work.interview-invite.post, work.interview-pdf.get, work.interview-questions.delete, work.interview-questions.post, work.interview.get, work.milestone-states.get, work.milestones.approve.post, work.milestones.delete, work.milestones.details.patch, work.milestones.request-revision.post, work.milestones.submit.post, work.origin-composition.get, work.origin-thresholds.get, work.review.post, work.source-notes.delete, work.source-notes.patch, work.source-notes.post, work.version.get from Institution_server cd62eb73 (API 1.84.0).
+// Faza 3: student.course-literature.get, student.source-proof-requests.get, teacher.course-literature.delete, teacher.course-literature.put, teacher.course-literature.get, teacher.literature-seen.put, teacher.source-guidance.get, teacher.source-proof-image.get, teacher.source-proof-request.delete, teacher.source-proof-request.put, teacher.source-proofs.get, teacher.source-recommendation.delete, teacher.source-recommendation.put from Institution_server 16cb1f93 (API 1.85.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -1459,5 +1460,96 @@ export type MigrationOperations = {
     body: undefined;
     success: { status: 200; body: { "revision": number; "document": string } | { from: number; to: number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
+  };
+  "student.course-literature.get": {
+    params: { "courseId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "sources": ({ "id": string; "record": { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "book"; "place": string; "publisher": string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "article"; "journal": string; "volume"?: string; "issue"?: string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "chapter"; "editors": ({ "kind": "person"; "family": string; "given": string })[]; "bookTitle": string; "place": string; "publisher": string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "web"; "url": string; "accessed": string }; "doi": string | null; "isbn": string | null; "undated": boolean; "createdAt": string; "updatedAt": string })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "student.source-proof-requests.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "proofRequests": ({ "id": string; "sourceId": string; "instruction": string; "dueAt": string; "createdAt": string; "closedAt": string | null })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.course-literature.delete": {
+    params: { "courseId": string; "sourceId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 204; body: undefined; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.course-literature.put": {
+    params: { "courseId": string; "sourceId": string };
+    query: undefined;
+    body: { "record": { [key: string]: unknown }; "doi"?: string | null; "isbn"?: string | null; "undated"?: boolean };
+    success: { status: 200; body: { "id": string; "record": { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "book"; "place": string; "publisher": string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "article"; "journal": string; "volume"?: string; "issue"?: string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "chapter"; "editors": ({ "kind": "person"; "family": string; "given": string })[]; "bookTitle": string; "place": string; "publisher": string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "web"; "url": string; "accessed": string }; "doi": string | null; "isbn": string | null; "undated": boolean; "createdAt": string; "updatedAt": string }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "conflict";
+  };
+  "teacher.course-literature.get": {
+    params: { "courseId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "canWrite": boolean; "sources": ({ "id": string; "record": { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "book"; "place": string; "publisher": string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "article"; "journal": string; "volume"?: string; "issue"?: string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "chapter"; "editors": ({ "kind": "person"; "family": string; "given": string })[]; "bookTitle": string; "place": string; "publisher": string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "web"; "url": string; "accessed": string }; "doi": string | null; "isbn": string | null; "undated": boolean; "createdAt": string; "updatedAt": string })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.literature-seen.put": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "seenAt": string }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.source-guidance.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "canWrite": boolean; "sources": ({ "id": string; "record": { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "book"; "place": string; "publisher": string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "article"; "journal": string; "volume"?: string; "issue"?: string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "chapter"; "editors": ({ "kind": "person"; "family": string; "given": string })[]; "bookTitle": string; "place": string; "publisher": string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "web"; "url": string; "accessed": string }; "doi": string | null; "isbn": string | null; "undated": boolean; "requirement": "recommended" | "required" | null; "createdAt": string; "updatedAt": string; "proofCount": number })[]; "proofRequests": ({ "id": string; "sourceId": string; "instruction": string; "dueAt": string; "createdAt": string; "closedAt": string | null })[]; "literatureSeenAt": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.source-proof-image.get": {
+    params: { "documentId": string; "sourceId": string; "proofId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: Blob; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.source-proof-request.delete": {
+    params: { "documentId": string; "sourceId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 204; body: undefined; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.source-proof-request.put": {
+    params: { "documentId": string; "sourceId": string };
+    query: undefined;
+    body: { "instruction": string; "dueAt": string };
+    success: { status: 200; body: { "id": string; "sourceId": string; "instruction": string; "dueAt": string; "createdAt": string; "closedAt": string | null }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "unsupported_media_type" | "invalid_json" | "invalid_input";
+  };
+  "teacher.source-proofs.get": {
+    params: { "documentId": string; "sourceId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "proofs": ({ "id": string; "page": string; "note": string | null; "imagePath": string })[] }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.source-recommendation.delete": {
+    params: { "documentId": string; "sourceId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 204; body: undefined; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.source-recommendation.put": {
+    params: { "documentId": string; "sourceId": string };
+    query: undefined;
+    body: { "record": { [key: string]: unknown }; "doi"?: string | null; "isbn"?: string | null; "undated"?: boolean; "requirement": "recommended" | "required" };
+    success: { status: 200; body: { "id": string; "record": { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "book"; "place": string; "publisher": string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "article"; "journal": string; "volume"?: string; "issue"?: string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "chapter"; "editors": ({ "kind": "person"; "family": string; "given": string })[]; "bookTitle": string; "place": string; "publisher": string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "web"; "url": string; "accessed": string }; "doi": string | null; "isbn": string | null; "undated": boolean; "requirement": "recommended" | "required" | null; "createdAt": string; "updatedAt": string }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "unsupported_media_type" | "invalid_json" | "invalid_input";
   };
 };

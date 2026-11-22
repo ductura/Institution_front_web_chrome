@@ -2,6 +2,7 @@ import { diffMessages } from "../components/diff-view/messages.hr";
 import { objectToolbarHr } from "../components/object-toolbar/messages.hr";
 import { previewDialogHr } from "../components/preview-dialog/messages.hr";
 import { searchableListHr } from "../components/searchable-list/messages.hr";
+import { sideShellHr } from "../components/side-shell/messages.hr";
 import { sourceFormHr } from "../components/source-form/messages.hr";
 import { timelineMessages } from "../components/timeline/messages.hr";
 import { fingerprintMessages } from "../fingerprint/messages.hr";
@@ -22,6 +23,7 @@ export const uiMessagesHr = {
   objectToolbar: objectToolbarHr,
   previewDialog: previewDialogHr,
   searchableList: searchableListHr,
+  sideShell: sideShellHr,
   sourceForm: sourceFormHr,
   timeline: timelineMessages,
   fingerprint: fingerprintMessages,

@@ -38,3 +38,13 @@
   font-weight: 600;
   color: var(--ink-2);
 }
+
+/* E-6 on the prototype's `.main.narrow` and `.up-hero` (VIZ-S2). */
+.narrow { max-width: 640px; margin-inline: auto; }
+.hero { display: grid; gap: 6px; text-align: center; }
+.hero h1 { margin: 0; font-size: 40px; font-weight: 400; }
+.hero h1 em { font-style: italic; color: var(--accent); }
+.eyebrow { margin: 0; color: var(--ink-3); font-size: var(--fs-sm); }
+.lead { display: grid; gap: 6px; }
+.lead h2 { margin: 0; font-size: 22px; }
+@media (max-width: 640px) { .hero h1 { font-size: 30px; } }

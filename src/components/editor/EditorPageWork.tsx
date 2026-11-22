@@ -115,6 +115,8 @@ export default function EditorPageWork({
   length,
   sessionControls,
   renderPdf,
+  triggers,
+  literature,
   hostSections,
   leftSections,
 }: {
@@ -126,6 +128,10 @@ export default function EditorPageWork({
   sessionControls?: (work: Extract<OpenRead, { kind: "ready" }>) => ReactNode;
   /** The host's PDF download in the print preview (WEB-1803). */
   renderPdf?: RenderPdf;
+  /** The host's "@" and "/" menus with the sources of the work; without it the menus open without sources (WEB-2123). */
+  triggers?: (work: { documentId: string }) => ReactNode;
+  /** The host's list of the work's sources above the proofs in the sources card (WEB-2123). */
+  literature?: (work: { documentId: string }) => ReactNode;
   /** Cards the host adds to the right panel (WEB-2121): the Pregled card and the revision actions. */
   hostSections?: HostSections;
   /** The host's sections of the left panel (WEB-2126). */
@@ -152,14 +158,14 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} />
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} triggers={triggers} literature={literature} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, hostSections, leftSections }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, hostSections, leftSections, triggers, literature }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -170,6 +176,9 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   session: SessionMark;
   saveSummary: boolean;
   renderPdf?: RenderPdf;
+  triggers?: (work: { documentId: string }) => ReactNode;
+  /** The host's list of the work's sources above the proofs in the sources card (WEB-2123). */
+  literature?: (work: { documentId: string }) => ReactNode;
   hostSections?: HostSections;
   leftSections?: LeftSections;
 }) {
@@ -188,7 +197,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         {!signedOut && <WorkPrintExport documentId={documentId} title={title} renderPdf={renderPdf} />}
       </div></EditorCommands>}
       status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
-      rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} documentId={documentId} />,
+      rightSections={{ sources: <>{literature?.({ documentId })}<EditorSourceProofs assignmentId={assignmentId} documentId={documentId} /></>,
         comments: <CommentPanel documentId={documentId} session={session} />,
         review: hostSections?.review?.({ editor, assignmentId, documentId }),
         assistant: <AssistantComingSoonCard /> }}
@@ -200,7 +209,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       </>}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
-      <TriggerPopover editor={editor} />
+      {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help}
         fresh={phase === "ready" && editor?.isEmpty}
         notice={{ course, title, length: length?.range ?? undefined, instructions: null }} />
