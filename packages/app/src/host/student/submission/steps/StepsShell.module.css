@@ -7,13 +7,13 @@
   align-items: center;
   gap: var(--space-3, 0.75rem);
   padding: var(--space-2, 0.5rem) 0;
-  background: var(--paper, #fff);
-  border-bottom: 1px solid var(--line, #d8d8d8);
+  background: var(--chrome);
+  border-bottom: 1px solid var(--rule-2);
 }
 
 .path {
   margin: 0;
-  color: var(--ink, #1a1a1a);
+  color: var(--ink);
 }
 
 .panel {
