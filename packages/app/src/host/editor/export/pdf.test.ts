@@ -41,7 +41,8 @@ describe("readPdf (WEB-2005)", () => {
   });
 
   it("marks PDF/A only when the server says pdfa-2u with a report hash", async () => {
-    const certified = vector("certified").body;
+    // The contract's vectors have no certified PDF/A answer; the same invented bytes under the server's PDF/A words.
+    const certified = { ...vector("ordinary").body, format: "pdfa-2u", reportHash: "a".repeat(64) };
     const yes = await readPdf(answering(success(certified)).call, ASSIGNMENT, "doc-1");
     expect(yes.kind === "ready" && yes.pdfA).toBe(true);
     const noHash = await readPdf(answering(success({ ...certified, reportHash: null })).call, ASSIGNMENT, "doc-1");
