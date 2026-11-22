@@ -1,11 +1,11 @@
 name: viz-usporedba
-# Izvještaj, ne vrata: nije u needs od ci-ok i nikad ne pada zbog razlike
+# Izvještaj, ne vrata (pokreće se ručno): nije u needs od ci-ok i nikad ne pada zbog razlike
 # (VIZ-CI, Daniel 22. 11. 2026.: pisci sami vide izgled). Gradi aplikaciju,
 # snima zaslone koje PR dira i njihove prototipe (docs/prototip/, kopija u
 # ovom repou, pa bez tokena) na 390, 768, 1100 i 1280 px i računa razliku.
 on:
-  pull_request:
-    paths: ["packages/app/**", "packages/ui/**", "src/components/**", "tests/prototip/**", ".github/workflows/viz-usporedba.yml"]
+  # Bez pull_request: ci.yml mora biti jedini workflow na PR-u (test/unit/ci-ok.test.js).
+  # Pisac ga pokreće na svojoj grani: gh workflow run viz-usporedba.yml --ref <grana>
   workflow_dispatch:
     inputs:
       sve: { description: "Snimi sve zaslone iz tests/prototip/mapa.json", type: boolean, default: true }
