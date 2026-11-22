@@ -17,6 +17,12 @@ const ready = assignments.vectors.find((v) => v.name === "ready")!.response.body
 // Bodies of the teacher.courses.get "courses" and teacher.mentorships.get "works" vectors of @ductura/test-fakes 3.0.1.
 const teacher = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", import.meta.url), "utf8")) as Record<string, unknown>;
 
+// Response bodies of the contract vectors (src/client), so the fakes keep the contract's shape.
+const vectors = JSON.parse(readFileSync(new URL("../../../src/client/migration-contract-vectors.generated.json", import.meta.url), "utf8")) as {
+  route: string; name: string; response: { body: unknown };
+}[];
+const vector = (route: string, name: string) => vectors.find((v) => v.route === route && v.name === name)!.response.body;
+
 type Me = { status: number; body?: unknown };
 
 /** Fakes the institution server: /me, the student's assignments, login and logout. Returns what was asked. */
@@ -32,6 +38,18 @@ async function fakeServer(page: Page, me: Me) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ locale: null }) }));
   await page.route("**/api/v1/student/assignments", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) }));
+  // LOK-WEB-24: the student home reads the work state and each assignment's
+  // requirements, and the teacher home the course team and its view; unfaked they reached the
+  // dead proxy (127.0.0.1:9) and logged a 500. A test may still route them itself.
+  await page.route("**/api/v1/student/assignment-work", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ assignments: [] }) }));
+  await page.route("**/api/v1/student/assignments/*/requirements", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(vector("student.assignment-requirements.get", "without-bounds")) }));
+  await page.route("**/api/v1/courses/*/team", (route) => route.request().method() === "GET"
+    ? route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(vector("institution.teaching-team.get", "success")) })
+    : route.fallback());
+  await page.route("**/api/v1/courses/*/team/view", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(vector("institution.teaching-team-view.get", "success-holder")) }));
   await page.route("**/api/v1/teacher/courses", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
   await page.route("**/api/v1/teacher/mentorships", (route) =>
