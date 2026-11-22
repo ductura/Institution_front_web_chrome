@@ -15,7 +15,7 @@ export default function RestoreHost({ documentId, history, port, onRestored }: {
   history: Pick<TimeMachinePort, "versions">;
   /** Only tests pass one; the page uses the editor's save path. */
   port?: RestorePort;
-  onRestored?: (fromRevision: number, newRevision: number) => void;
+  onRestored?: (fromRevision: number) => void;
 }) {
   const editor = useRestoreEditor();
   const real = useMemo(() => port ?? clientRestorePort(editor), [port, editor]);
@@ -37,7 +37,7 @@ export default function RestoreHost({ documentId, history, port, onRestored }: {
       documentId={documentId}
       versions={versions}
       port={real}
-      onRestored={(from, to) => { setRound((n) => n + 1); onRestored?.(from, to); }}
+      onRestored={(from) => { setRound((n) => n + 1); onRestored?.(from); }}
       onStale={() => setRound((n) => n + 1)}
     />
   );

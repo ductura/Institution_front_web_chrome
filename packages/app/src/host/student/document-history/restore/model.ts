@@ -5,7 +5,11 @@
 import type { Version } from "../../time-machine/model";
 
 export type RestoreOutcome =
-  | { readonly kind: "saved"; readonly revision: number }
+  /**
+   * The server confirmed the restored text with a verified receipt. No revision number: the receipt
+   * stays inside the save path, and the version list is no proof of which checkpoint it made.
+   */
+  | { readonly kind: "saved" }
   | { readonly kind: "stale"; readonly currentRevision: number }
   /** The text is in the sheet and the device's journal, the server's receipt has not come yet (PIL-D7-OBNOVA). */
   | { readonly kind: "signedOut" | "unavailable" | "pending" };
@@ -29,16 +33,14 @@ export function restorableVersions(versions: readonly Version[]): readonly Versi
   return [...byRevision.values()].sort((a, b) => b.revision - a.revision);
 }
 
-/** Restores through the port. A saved answer must be a revision strictly above the base, else it is unavailable. */
+/** Restores through the port; a port that throws is unavailable, never a guessed result. */
 export async function restoreVersion(
   port: RestorePort, documentId: string, versions: readonly Version[], fromRevision: number,
 ): Promise<RestoreOutcome> {
   if (!restorableVersions(versions).some((v) => v.revision === fromRevision)) return { kind: "unavailable" };
   const base = headRevision(versions);
   try {
-    const outcome = await port.restore(documentId, fromRevision, base);
-    if (outcome.kind === "saved" && !(Number.isSafeInteger(outcome.revision) && outcome.revision > base)) return { kind: "unavailable" };
-    return outcome;
+    return await port.restore(documentId, fromRevision, base);
   } catch {
     return { kind: "unavailable" };
   }

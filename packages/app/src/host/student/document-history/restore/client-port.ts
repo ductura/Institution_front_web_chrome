@@ -20,6 +20,8 @@ export type RestoreEditor = {
   writable(): boolean;
   /** The sheet may hold text the server has not confirmed, read at the moment of the call (DAN-314). */
   unconfirmed(): boolean;
+  /** Changes the editor has reported in this tab; a change typed and confirmed during the reads moves it. */
+  edits(): number;
   /** Puts the document into the sheet as one change of the author; false when the editor refused it. */
   apply(document: CanonicalDocument): boolean;
   /** Waits for the server's verified receipt of every change in the sheet, or says why it did not come. */
@@ -37,30 +39,40 @@ export function restorableDocument(text: string): CanonicalDocument | null {
 }
 
 export function clientRestorePort(editor: RestoreEditor, call: Call = createApi()): RestorePort {
+  let running = false;
+  const restore: RestorePort["restore"] = async (documentId, fromRevision, baseRevision) => {
+    if (editor.signedOut()) return { kind: "signedOut" };
+    // Text typed and not yet confirmed is newer than any listed version: never overwritten.
+    if (editor.unconfirmed()) return { kind: "stale", currentRevision: baseRevision };
+    const edits = editor.edits();
+    const listed = await readTimeMachineVersions(documentId, call);
+    if (listed.kind !== "ready") return { kind: listed.kind };
+    const current = head(listed.versions);
+    if (current !== baseRevision) return { kind: "stale", currentRevision: current };
+    const read = await readTimeMachineVersion(documentId, fromRevision, call);
+    if (read.kind === "signedOut") return { kind: "signedOut" };
+    if (read.kind !== "ready") return { kind: "unavailable" };
+    const document = restorableDocument(read.document);
+    if (document === null) return { kind: "unavailable" };
+    // Everything may have changed during the two reads, a change typed and already confirmed included.
+    if (editor.signedOut()) return { kind: "signedOut" };
+    if (editor.unconfirmed() || editor.edits() !== edits) return { kind: "stale", currentRevision: baseRevision };
+    if (!editor.writable() || !editor.apply(document)) return { kind: "unavailable" };
+    const confirmed = await editor.confirmed();
+    // The text is in the sheet and in the journal: a sign-out keeps it for the next sign-in (D-118).
+    if (confirmed === "signedOut") return { kind: "signedOut" };
+    return confirmed === "confirmed" ? { kind: "saved" } : { kind: "pending" };
+  };
   return {
+    // One restore at a time: a second click while the first runs changes nothing.
     async restore(documentId, fromRevision, baseRevision) {
-      if (editor.signedOut()) return { kind: "signedOut" };
-      // Text typed and not yet confirmed is newer than any listed version: never overwritten.
-      if (editor.unconfirmed()) return { kind: "stale", currentRevision: baseRevision };
-      const listed = await readTimeMachineVersions(documentId, call);
-      if (listed.kind !== "ready") return { kind: listed.kind };
-      const current = head(listed.versions);
-      if (current !== baseRevision) return { kind: "stale", currentRevision: current };
-      const read = await readTimeMachineVersion(documentId, fromRevision, call);
-      if (read.kind === "signedOut") return { kind: "signedOut" };
-      if (read.kind !== "ready") return { kind: "unavailable" };
-      const document = restorableDocument(read.document);
-      if (document === null) return { kind: "unavailable" };
-      // Everything may have changed during the two reads.
-      if (editor.signedOut()) return { kind: "signedOut" };
-      if (editor.unconfirmed()) return { kind: "stale", currentRevision: baseRevision };
-      if (!editor.writable() || !editor.apply(document)) return { kind: "unavailable" };
-      const confirmed = await editor.confirmed();
-      // The text is in the sheet and in the journal: a sign-out keeps it for the next sign-in (D-118).
-      if (confirmed !== "confirmed") return confirmed === "signedOut" ? { kind: "signedOut" } : { kind: "pending" };
-      const after = await readTimeMachineVersions(documentId, call);
-      const revision = after.kind === "ready" ? head(after.versions) : 0;
-      return revision > baseRevision ? { kind: "saved", revision } : { kind: "pending" };
+      if (running) return { kind: "unavailable" };
+      running = true;
+      try {
+        return await restore(documentId, fromRevision, baseRevision);
+      } finally {
+        running = false;
+      }
     },
   };
 }

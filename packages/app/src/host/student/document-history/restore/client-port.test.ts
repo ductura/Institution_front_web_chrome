@@ -40,6 +40,7 @@ function fakeEditor(over: Partial<RestoreEditor> = {}): RestoreEditor & { applie
     signedOut: () => false,
     writable: () => true,
     unconfirmed: () => false,
+    edits: () => 0,
     apply: (document) => { applied.push(document); return true; },
     confirmed: async () => "confirmed",
     ...over,
@@ -50,11 +51,11 @@ const paths = (fetchImpl: ReturnType<typeof serving>) =>
   fetchImpl.mock.calls.map(([url, init]) => `${init?.method ?? "GET"} ${new URL(String(url)).pathname}`);
 
 describe("restore real port (PIL-D7-OBNOVA)", () => {
-  it("(1) puts version 1 into the editor once and reports the NEW revision above the head; nothing is deleted", async () => {
-    const fetchImpl = serving([3, 4]);
+  it("(1) puts version 1 into the editor once and is saved only on the server's verified receipt; nothing is deleted", async () => {
+    const fetchImpl = serving([3]);
     const editor = fakeEditor();
     const outcome = await clientRestorePort(editor, createApi({ baseUrl, fetchImpl })).restore("rad-1", 1, 3);
-    expect(outcome).toEqual({ kind: "saved", revision: 4 });
+    expect(outcome).toEqual({ kind: "saved" });
     expect(editor.applied).toEqual([restorableDocument(VERSION_1)]);
     expect(paths(fetchImpl).every((p) => p.startsWith("GET "))).toBe(true);
   });
@@ -77,6 +78,24 @@ describe("restore real port (PIL-D7-OBNOVA)", () => {
     expect(await clientRestorePort(late, createApi({ baseUrl, fetchImpl: serving([3]) })).restore("rad-1", 1, 3))
       .toEqual({ kind: "stale", currentRevision: 3 });
     expect(late.applied).toEqual([]);
+    // A change typed AND confirmed during the reads leaves nothing unconfirmed, but the count moved.
+    let count = 0;
+    const confirmedMeanwhile = fakeEditor({ edits: () => count++ });
+    expect(await clientRestorePort(confirmedMeanwhile, createApi({ baseUrl, fetchImpl: serving([3]) })).restore("rad-1", 1, 3))
+      .toEqual({ kind: "stale", currentRevision: 3 });
+    expect(confirmedMeanwhile.applied).toEqual([]);
+  });
+
+  it("a second restore while the first runs is refused and applies nothing", async () => {
+    let release: (value: "confirmed") => void = () => {};
+    const editor = fakeEditor({ confirmed: () => new Promise((resolve) => { release = resolve; }) });
+    const port = clientRestorePort(editor, createApi({ baseUrl, fetchImpl: serving([3]) }));
+    const first = port.restore("rad-1", 1, 3);
+    expect(await port.restore("rad-1", 1, 3)).toEqual({ kind: "unavailable" });
+    await vi.waitFor(() => expect(editor.applied).toHaveLength(1));
+    release("confirmed");
+    expect(await first).toEqual({ kind: "saved" });
+    expect(editor.applied).toHaveLength(1);
   });
 
   it("(3) a sign-out gives signedOut and loses nothing", async () => {
@@ -93,10 +112,8 @@ describe("restore real port (PIL-D7-OBNOVA)", () => {
     expect(during.applied).toHaveLength(1);
   });
 
-  it("no receipt in time, or no new head yet, is pending, never saved", async () => {
+  it("no receipt in time is pending, never saved", async () => {
     expect(await clientRestorePort(fakeEditor({ confirmed: async () => "waiting" }), createApi({ baseUrl, fetchImpl: serving([3]) })).restore("rad-1", 1, 3))
-      .toEqual({ kind: "pending" });
-    expect(await clientRestorePort(fakeEditor(), createApi({ baseUrl, fetchImpl: serving([3, 3]) })).restore("rad-1", 1, 3))
       .toEqual({ kind: "pending" });
   });
 
@@ -110,7 +127,7 @@ describe("restore real port (PIL-D7-OBNOVA)", () => {
   });
 
   it("(4) the port reaches no route but the two version reads; the write is the editor's save path", async () => {
-    const fetchImpl = serving([3, 4]);
+    const fetchImpl = serving([3]);
     await clientRestorePort(fakeEditor(), createApi({ baseUrl, fetchImpl })).restore("rad-1", 1, 3);
     expect(new Set(paths(fetchImpl))).toEqual(new Set(["GET /api/v1/works/rad-1/versions", "GET /api/v1/works/rad-1/versions/1"]));
     const imports = (file: string) => [...readFileSync(join(import.meta.dirname, file), "utf8").matchAll(/from\s+"([^"]+)"/g)].map((m) => m[1]).sort();
@@ -118,7 +135,9 @@ describe("restore real port (PIL-D7-OBNOVA)", () => {
       "../../../../../../../src/client/api.ts", "../../../../../../../src/client/time-machine.ts", "./model", "@/domain/document",
     ].sort());
     // The editor bridge sends nothing itself: no src/client module, only the editor's own provider.
-    expect(imports("restore-editor.ts")).toEqual(["./client-port", "@/components/editor/LocalDocument", "@/editor", "react"].sort());
+    expect(imports("restore-editor.ts")).toEqual([
+      "./client-port", "@/components/editor/LocalDocument", "@/domain/document", "@/editor", "@tiptap/core", "react",
+    ].sort());
   });
 });
 
