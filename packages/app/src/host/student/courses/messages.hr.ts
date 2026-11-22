@@ -1,0 +1,28 @@
+/** WEB-2103 (paritet E-3/E-4): texts of the student's courses and works, as in INVENTAR-student.md. */
+export const coursesText = {
+  signedOut: "Prijava nije valjana. Prijavite se ponovno.",
+  signIn: "Prijava sustavom AAI@EduHr",
+  retry: "Pokušaj ponovno",
+  loading: "Učitavanje…",
+  coursesEmpty: "Zasad niste upisani ni u jedan kolegij.",
+  enroll: "Upiši kolegij kodom",
+  group: "Seminarska grupa",
+  mentor: "Mentor",
+  dueLabel: "Rok: {time}",
+  dueSoon: "Rok za {n} {unit}",
+  dayOne: "dan",
+  dayMany: "dana",
+  dueToday: "Rok je danas",
+  noticeFirst: "Prvo pročitajte obavijest",
+  submittedAt: "Predano {time}",
+  submittedNoTime: "Predano",
+  workTypes: {
+    short_paper: "Kratki rad",
+    essay: "Esej",
+    seminar_paper: "Seminarski rad",
+    bachelor_thesis: "Završni rad",
+    master_thesis: "Diplomski rad",
+    specialist_thesis: "Specijalistički rad",
+    doctoral_thesis: "Doktorski rad",
+  },
+} as const;
