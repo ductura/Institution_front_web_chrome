@@ -1,14 +1,15 @@
 "use client";
 
-import { Button, DataTable, Select, Skeleton, TextArea, TextField } from "@ductura/ui";
+import { Button, Select, TextArea, TextField } from "@ductura/ui";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import {
   addConsultationNote, readConsultations, readConsultationVersions, saveConsultation,
   type ConsultationRecord, type VersionsPage,
 } from "../../../../../../src/client/consultation-records";
 import { formatDateHr, formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
+import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { n12Messages as t } from "./messages.hr";
 import { checkAddition, checkForm, recordTitle, revisionLabel, sortRecords, todayIso, versionOptions } from "./model";
 import styles from "./n12.module.css";
@@ -25,11 +26,11 @@ export function N12Consultations({ documentId, workHref, appPath }: {
 }) {
   const router = useRouter();
   const search = useSearchParams();
+  const toasts = useTeacherToasts();
   const recordId = search.get("zapis");
   const recordHref = (id: string) => `${appPath}?zapis=${encodeURIComponent(id)}`;
   const [records, setRecords] = useState<ConsultationRecord[] | null | undefined>();
   const [attempt, setAttempt] = useState(0);
-  const [createdId, setCreatedId] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -38,52 +39,96 @@ export function N12Consultations({ documentId, workHref, appPath }: {
   }, [documentId, attempt]);
 
   const record = records?.find(({ id }) => id === recordId);
-  return (
-    <div className={`page ${styles.page}`}>
-      <a href={workHref}>{t.backToWork}</a>
-      <h1>{t.title}</h1>
-      {records === undefined ? <Skeleton label={t.loading} /> : records === null ? (
-        <>
-          <p role="alert" className={styles.error}>{t.readError}</p>
-          <div><Button onClick={() => { setRecords(undefined); setAttempt((n) => n + 1); }}>{t.retry}</Button></div>
-        </>
-      ) : search.has("novi") ? (
-        <NewRecord documentId={documentId} cancelHref={`${workHref}/konzultacije`} onSaved={(saved) => {
-          setRecords((current) => [...(current ?? []), saved]);
-          setCreatedId(saved.id);
-          router.replace(recordHref(saved.id));
-        }} />
-      ) : recordId !== null ? (
-        <>
-          <a href={`${workHref}/konzultacije`} onClick={(event) => { event.preventDefault(); setCreatedId(null); router.push(appPath); }}>{t.allRecords}</a>
-          {record === undefined ? <p role="alert">{t.missingRecord}</p> : (
-            <RecordView key={record.id} documentId={documentId} record={record} justCreated={createdId === record.id}
-              onAdded={(addition) => setRecords((current) => current?.map((item) => item.id === record.id
-                ? { ...item, additions: [...item.additions, addition] } : item))} />
-          )}
-        </>
-      ) : (
-        <>
-          {records.length === 0 ? <p>{t.empty}</p> : (
-            <DataTable caption={t.list} rowKey={(item) => item.id} rows={sortRecords(records)} empty={t.empty} columns={[
-              { id: "date", header: t.date, cell: (item) => <time dateTime={item.heldOn}>{dateHr(item.heldOn)}</time> },
-              { id: "topic", header: t.topic, rowHeader: true, cell: (item) => (
-                <a href={`${workHref}/konzultacije?zapis=${encodeURIComponent(item.id)}`}
-                  onClick={(event) => { event.preventDefault(); router.push(recordHref(item.id)); }}>{item.topic}</a>
-              ) },
-              { id: "revision", header: t.version, cell: (item) => revisionLabel(item.revision) },
-            ]} />
-          )}
-          <p className={styles.hint}>{t.listNote}</p>
-          <div><Button onClick={() => { setCreatedId(null); router.push(`${appPath}?novi=1`); }}>{t.new}</Button></div>
-        </>
-      )}
+  const toList = () => router.push(appPath);
+  const toNew = () => router.push(`${appPath}?novi=1`);
+  const frame = (title: string, body: ReactNode, busy = false) => (
+    <div className={styles.wrap}>
+      <header className={styles.bar}><a className="btn ghost" href={workHref}>{t.backToWork}</a></header>
+      <div className={styles.page} id="sadrzaj" tabIndex={-1}>
+        <section className={`panel ${styles.panel}`} aria-labelledby="pg-h" aria-busy={busy || undefined}>
+          <div className={styles.top}><h1 id="pg-h">{title}</h1></div>
+          <div className={styles.body}>{body}</div>
+        </section>
+      </div>
+      <TeacherToastRegion toasts={toasts.toasts} onDismiss={toasts.dismiss} />
     </div>
   );
+
+  if (records === undefined) {
+    return frame(t.title, (
+      <>
+        <p className="note" role="status">{t.loading}</p>
+        <div className="skel w80" /><div className="skel w60" /><div className="skel w40" />
+      </>
+    ), true);
+  }
+  if (records === null) {
+    return frame(t.title, (
+      <>
+        <p className="note" role="alert">{t.readError}</p>
+        <div className={styles.acts}><Button tone="secondary" onClick={() => { setRecords(undefined); setAttempt((n) => n + 1); }}>{t.retry}</Button></div>
+      </>
+    ));
+  }
+  if (search.has("novi")) {
+    return frame(t.new, (
+      <NewRecord documentId={documentId} toasts={toasts} onCancel={toList} onSaved={(saved) => {
+        setRecords((current) => [...(current ?? []), saved]);
+        toasts.show(t.recordSaved);
+        router.replace(recordHref(saved.id));
+      }} />
+    ));
+  }
+  if (recordId !== null) {
+    if (record === undefined) {
+      return frame(t.title, (
+        <>
+          <p className="note" role="alert">{t.missingRecord}</p>
+          <div className={styles.acts}><Button tone="secondary" onClick={toList}>{t.allRecords}</Button></div>
+        </>
+      ));
+    }
+    return frame(recordTitle(dateHr(record.heldOn)), (
+      <RecordView key={record.id} documentId={documentId} record={record} toasts={toasts} onList={toList}
+        onAdded={(addition) => setRecords((current) => current?.map((item) => item.id === record.id
+          ? { ...item, additions: [...item.additions, addition] } : item))} />
+    ));
+  }
+  if (records.length === 0) {
+    return frame(t.title, (
+      <>
+        <p className="note">{t.empty}</p>
+        <div className={styles.acts}><Button onClick={toNew}>{t.new}</Button></div>
+      </>
+    ));
+  }
+  return frame(t.title, (
+    <>
+      <div className="tbl" tabIndex={0} role="region" aria-label={t.list}>
+        <table>
+          <thead><tr><th scope="col">{t.date}</th><th scope="col">{t.topic}</th><th scope="col">{t.version}</th></tr></thead>
+          <tbody>
+            {sortRecords(records).map((item) => (
+              <tr key={item.id}>
+                <td><a href={`${workHref}/konzultacije?zapis=${encodeURIComponent(item.id)}`}
+                  onClick={(event) => { event.preventDefault(); router.push(recordHref(item.id)); }}>{dateHr(item.heldOn)}</a></td>
+                <td>{item.topic}</td>
+                <td>{revisionLabel(item.revision)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="meta">{t.listNote}</p>
+      <div className={styles.acts}><Button onClick={toNew}>{t.new}</Button></div>
+    </>
+  ));
 }
 
-function NewRecord({ documentId, cancelHref, onSaved }: {
-  documentId: string; cancelHref: string; onSaved: (record: ConsultationRecord) => void;
+type Toasts = ReturnType<typeof useTeacherToasts>;
+
+function NewRecord({ documentId, toasts, onCancel, onSaved }: {
+  documentId: string; toasts: Toasts; onCancel: () => void; onSaved: (record: ConsultationRecord) => void;
 }) {
   const [versions, setVersions] = useState<VersionsPage["versions"]>([]);
   const [next, setNext] = useState<number | null>(null);
@@ -91,8 +136,9 @@ function NewRecord({ documentId, cancelHref, onSaved }: {
   const [loading, setLoading] = useState(true);
   const [versionError, setVersionError] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [invalid, setInvalid] = useState(false);
   const pending = useRef(false);
+  const topic = useRef<HTMLInputElement>(null);
   const options = versionOptions(versions, formatDateTimeHr);
 
   useEffect(() => {
@@ -118,108 +164,101 @@ function NewRecord({ documentId, cancelHref, onSaved }: {
       { heldOn: field("heldOn"), revision: field("revision"), topic: field("topic"), agreement: field("agreement") },
       options.map(({ value }) => value),
     );
-    if (!checked.ok) return setError(checked.message);
+    if (!checked.ok) {
+      if (field("topic").trim() === "") { setInvalid(true); topic.current?.focus(); }
+      toasts.show(checked.message);
+      return;
+    }
+    setInvalid(false);
     pending.current = true;
     setSaving(true);
-    setError(null);
     const saved = await saveConsultation(documentId, checked.value);
     if (saved !== null) return onSaved(saved);
     pending.current = false;
     setSaving(false);
-    setError(t.recordError);
+    toasts.show(t.recordError);
   }
 
   return (
-    <section className={styles.panel} aria-labelledby="n12-novi">
-      <h2 id="n12-novi">{t.new}</h2>
-      <form onSubmit={submit} noValidate>
-        <fieldset className={styles.fields} disabled={saving} aria-label={t.new}>
-          <div className={styles.pair}>
-            <TextField label={t.date} name="heldOn" type="date" defaultValue={todayIso()} />
-            <Select label={t.version} name="revision" placeholder={t.pickVersion} options={options} disabled={options.length === 0} />
-          </div>
-          {loading && <p role="status">{t.loadingVersions}</p>}
-          {versionError && <p role="alert" className={styles.error}>{t.versionsError}</p>}
-          {!loading && !versionError && next === null && options.length === 0 && <p>{t.emptyVersions}</p>}
-          {!loading && (versionError || next !== null) && (
-            <div><Button tone="quiet" onClick={() => {
-              setLoading(true);
-              setVersionError(false);
-              setRequest({ before: versionError ? request.before : next });
-            }}>{versionError ? t.retry : t.olderVersions}</Button></div>
-          )}
-          <TextField label={t.topic} name="topic" />
-          <TextArea label={t.agreement} name="agreement" />
-          <p className={styles.hint}>{t.newNote}</p>
-          {error !== null && <p role="alert" className={styles.error}>{error}</p>}
-          <div className={styles.actions}>
-            <Button type="submit" disabled={options.length === 0}>{saving ? t.saving : t.save}</Button>
-            {!saving && <a href={cancelHref}>{t.cancel}</a>}
-          </div>
-        </fieldset>
-      </form>
-    </section>
+    <form className={styles.plain} onSubmit={submit} noValidate>
+      <div className={styles.pair}>
+        <TextField label={t.date} name="heldOn" type="date" defaultValue={todayIso()} />
+        <Select label={t.version} name="revision" placeholder={t.pickVersion} options={options} disabled={options.length === 0} />
+      </div>
+      {loading && <p className="note" role="status">{t.loadingVersions}</p>}
+      {versionError && <p className="note" role="alert">{t.versionsError}</p>}
+      {!loading && !versionError && next === null && options.length === 0 && <p className="note">{t.emptyVersions}</p>}
+      {!loading && (versionError || next !== null) && (
+        <div className={styles.acts}><Button tone="secondary" onClick={() => {
+          setLoading(true);
+          setVersionError(false);
+          setRequest({ before: versionError ? request.before : next });
+        }}>{versionError ? t.retry : t.olderVersions}</Button></div>
+      )}
+      <TextField label={t.topic} name="topic" ref={topic} invalid={invalid} />
+      <TextArea label={t.agreement} name="agreement" />
+      <p className="meta">{t.newNote}</p>
+      <div className={styles.acts}>
+        <Button type="submit" busy={saving} disabled={options.length === 0}>{saving ? t.saving : t.save}</Button>
+        {!saving && <Button tone="secondary" onClick={onCancel}>{t.cancel}</Button>}
+      </div>
+    </form>
   );
 }
 
-function RecordView({ documentId, record, justCreated, onAdded }: {
-  documentId: string; record: ConsultationRecord; justCreated: boolean;
+function RecordView({ documentId, record, toasts, onList, onAdded }: {
+  documentId: string; record: ConsultationRecord; toasts: Toasts; onList: () => void;
   onAdded: (addition: ConsultationRecord["additions"][number]) => void;
 }) {
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState<{ kind: "status" | "alert"; text: string } | null>(
-    justCreated ? { kind: "status", text: t.recordSaved } : null,
-  );
+  const [invalid, setInvalid] = useState(false);
   const pending = useRef(false);
+  const field = useRef<HTMLTextAreaElement>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending.current) return;
     const form = event.currentTarget;
     const checked = checkAddition(String(new FormData(form).get("text") ?? ""));
-    if (!checked.ok) return setNotice({ kind: "alert", text: checked.message });
+    if (!checked.ok) {
+      setInvalid(true);
+      field.current?.focus();
+      toasts.show(checked.message);
+      return;
+    }
+    setInvalid(false);
     pending.current = true;
     setSaving(true);
-    setNotice(null);
     const addition = await addConsultationNote(documentId, record.id, checked.text);
     pending.current = false;
     setSaving(false);
-    if (addition === null) return setNotice({ kind: "alert", text: t.additionError });
+    if (addition === null) return void toasts.show(t.additionError);
     onAdded(addition);
     form.reset();
-    setNotice({ kind: "status", text: t.additionSaved });
+    toasts.show(t.additionSaved);
   }
 
   return (
-    <section className={styles.panel} aria-labelledby="n12-zapis">
-      <h2 id="n12-zapis">{recordTitle(dateHr(record.heldOn))}</h2>
-      <dl className={styles.facts}>
-        <dt>{t.topic}</dt><dd>{record.topic}</dd>
-        <dt>{t.version}</dt><dd>{revisionLabel(record.revision)}</dd>
-        <dt>{t.agreement}</dt><dd>{record.agreement || t.noAgreement}</dd>
-      </dl>
-      <section aria-labelledby="n12-dopune">
-        <h3 id="n12-dopune">{t.additions}</h3>
-        {record.additions.length === 0 ? <p>{t.emptyAdditions}</p> : (
-          <ul className={styles.additions}>
-            {record.additions.map((addition) => (
-              <li key={addition.id}>
-                <time dateTime={addition.createdAt}>{t.additionAuthor} · {formatDateTimeHr(addition.createdAt)}</time>
-                <p>{addition.text}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <form onSubmit={submit} noValidate>
-        <fieldset className={styles.fields} disabled={saving} aria-label={t.additionText}>
-          <TextArea label={t.additionText} name="text" rows={3} />
-          <p className={styles.hint}>{t.additionNote}</p>
-          <p className={styles.hint}>{t.additionStudent}</p>
-          {notice !== null && <p role={notice.kind} className={notice.kind === "alert" ? styles.error : undefined}>{notice.text}</p>}
-          <div><Button type="submit">{saving ? t.saving : t.add}</Button></div>
-        </fieldset>
+    <>
+      <div className={styles.kv}><span>{t.date}</span><b>{dateHr(record.heldOn)}</b></div>
+      <div className={styles.kv}><span>{t.topic}</span><b>{record.topic}</b></div>
+      <div className={styles.kv}><span>{t.version}</span><b>{revisionLabel(record.revision)}</b></div>
+      <div className={styles.state}><span className={styles.heading}>{t.agreement}</span><span>{record.agreement || t.noAgreement}</span></div>
+      <div className={styles.state}>
+        <span className={styles.heading}>{t.additions}</span>
+        {record.additions.length === 0 ? <span className="meta">{t.emptyAdditions}</span> : record.additions.map((addition) => (
+          <div className={styles.entry} key={addition.id}>
+            <span className={styles.who}>{t.additionAuthor} · {formatDateTimeHr(addition.createdAt)}</span>
+            <span>{addition.text}</span>
+          </div>
+        ))}
+      </div>
+      <form className={styles.plain} onSubmit={submit} noValidate>
+        <TextArea label={t.additionText} name="text" ref={field} invalid={invalid} readOnly={saving} hint={t.additionNote} />
+        <div className={styles.acts}><Button tone="secondary" type="submit" busy={saving}>{saving ? t.saving : t.add}</Button></div>
       </form>
-    </section>
+      <p className="meta">{t.additionStudent}</p>
+      <div className={styles.acts}><Button tone="secondary" onClick={onList}>{t.allRecords}</Button></div>
+    </>
   );
 }
