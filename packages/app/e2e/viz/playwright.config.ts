@@ -7,12 +7,12 @@ import { defineConfig, devices } from "@playwright/test";
 const port = 5192;
 const url = process.env.VIZ_URL;
 export default defineConfig({
-  testDir: "e2e/viz",
+  testDir: ".",
   testMatch: "**/*.viz.ts",
-  outputDir: "test-results/viz",
+  outputDir: "../../test-results/viz",
   workers: 1,
   reporter: "line",
-  globalTeardown: "./e2e/viz/izvjestaj.ts",
+  globalTeardown: "./izvjestaj.ts",
   use: { baseURL: url ?? `http://127.0.0.1:${port}`, ...devices["Desktop Chrome"] },
   webServer: url ? undefined : {
     command: `pnpm run build && pnpm exec next start -p ${port}`,
