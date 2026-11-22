@@ -12,7 +12,7 @@ const six = [1, 2, 3, 4, 5, 6].map((n) => c(n));
 describe("criteria logic", () => {
   it("counts the assessed criteria in the heading", () => {
     expect(headingText(six)).toBe("Kriteriji ocjene · 0 od 6");
-    const list = withSaved(six, c(2, { assessment: "good" }));
+    const list = withSaved(six, c(2, { assessment: 2 }));
     expect(doneCount(list)).toBe(1);
     expect(headingText(list)).toBe("Kriteriji ocjene · 1 od 6");
     expect(list.map((x) => x.id)).toEqual(CRITERION_IDS);
