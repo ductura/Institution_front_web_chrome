@@ -1,0 +1,50 @@
+// N-10 "Sažetak procesa" (WEB-2157, PARITET N-10 br. 17): interface text as in the prototype
+// (Ductura_nastavnik.html, screen "sazetak", function summary) and INVENTAR-nastavnik 3.9.
+// The "nije dostupno" lines are not in the prototype: the server does not yet give those parts to the teacher.
+export const n10Messages = {
+  title: "Sažetak procesa",
+  backToWork: "Natrag na rad",
+  intro: "Isti sažetak vide student i nastavnik. Vremena su po zagrebačkom vremenu, zaokružena na minutu.",
+  loading: "Učitavam sažetak procesa…",
+  error: "Sažetak procesa trenutačno nije moguće učitati. Pokušajte ponovno; zapis time nije zahvaćen.",
+  notFound: "Sažetak ovog rada nije dostupan ovom računu.",
+  retry: "Pokušaj ponovno",
+  empty: "Rad još nije započet, pa sažetka procesa nema.",
+  observed: "opaženo",
+  periodTitle: "Razdoblje rada",
+  periodFirst: "Prvi zabilježeni događaj",
+  periodLast: "Posljednji zabilježeni događaj",
+  sessionsTitle: "Sesije",
+  sessionsLabel: "Sesije iz primljenih odsječaka",
+  sessionsList: "Popis sesija",
+  activeTitle: "Aktivno vrijeme uređivanja",
+  activeNote: "Vrijeme uređivanja nije mjera truda ni vremena razmišljanja.",
+  versionsTitle: "Verzije",
+  versionsEmpty: "Još ništa nije poslano na pregled ni predano.",
+  versionSent: "poslano na pregled",
+  versionSubmitted: "predano",
+  pastesTitle: "Lijepljenja",
+  pastesEmpty: "Nema lijepljenja iznad praga.",
+  sourceNotObserved: "Izvor nije opažen.",
+  jump: "Prikaži mjesto u radu",
+  assistantTitle: "AI pomoćnik",
+  assistantEmpty: "Nema prijenosa iz AI pomoćnika.",
+  assistantNote: "Popisano je svako prenošenje teksta iz AI pomoćnika u rad.",
+  assistantDetailsMissing: "Pružatelj, model, svrha i preneseni tekst nisu dostupni.",
+  gapsTitle: "Praznine u zapisu",
+  gapsNone: "Zapis nema praznina.",
+  notesTitle: "Napomene studenta",
+  stateTitle: "Stanje zapisa",
+  stateComplete: "Zapis je cjelovit.",
+  stateGaps: "Zapis ima praznine (vidi popis).",
+  stateUnchanged: "Zapis je neizmijenjen od primitka na poslužitelj.",
+  /** A part of the summary the server does not give (or did not give now): said plainly, never guessed. */
+  unavailable: "Trenutačno nije dostupno.",
+  sessionsMeta: (minutes: string, gaps: boolean): string =>
+    `Sesija je niz promjena bez prekida duljeg od ${minutes} (prag P-01, postavka fakulteta).${gaps ? " Raspon praznine nije uračunat." : ""}`,
+  activeLabel: (sessions: string): string => `Zbroj trajanja ${sessions}`,
+  pastesMeta: (characters: string): string =>
+    `Popisano je svako lijepljenje dulje od ${characters} (prag P-02, postavka fakulteta). Vrijeme je zaokruženo na odsječak zapisa. Bez zbroja.`,
+  gap: (from: string, to: string): string =>
+    `Od verzije ${from} do verzije ${to}. Poslužitelj je primio obje verzije, ali ne i odsječke između njih, pa promjene u tom rasponu nisu zabilježene pojedinačno.`,
+} as const;
