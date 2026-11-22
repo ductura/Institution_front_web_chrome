@@ -32,6 +32,7 @@ import { ImportHost } from "../editor/import/ImportHost";
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
+import { MarksHost } from "../editor/marks/MarksHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
@@ -111,6 +112,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
               <RulesHost role="student" />
+              <MarksHost />
             </>} />,
         });
       }
