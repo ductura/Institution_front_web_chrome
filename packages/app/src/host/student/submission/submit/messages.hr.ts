@@ -60,4 +60,13 @@ export const submitText = {
     other: "Predaju nije moguće poslati. Pokušajte ponovno.",
   },
   reload: "Učitaj ponovno",
+  // INT-16: a newer version on this device that the server has not confirmed yet.
+  newer: {
+    title: "Na uređaju je novija verzija",
+    text: "Na ovom uređaju postoji novija verzija teksta koju poslužitelj još nije potvrdio. Predaje se uvijek samo verzija koju je poslužitelj potvrdio.",
+    latest: "Pošalji najprije zadnju verziju pa predaj",
+    confirmed: "Predaj potvrđenu verziju V{n}",
+    sendingLatest: "Šaljem zadnju verziju na poslužitelj…",
+    notSent: "Zadnja verzija nije stigla na poslužitelj, pa rad nije predan. Ostavite radni prostor otvoren s vezom i pokušajte ponovno ili predajte potvrđenu verziju V{n}.",
+  },
 } as const;
