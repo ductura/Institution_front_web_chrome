@@ -29,6 +29,7 @@ describe("restore own text", () => {
   it("passes stale, signed-out and a thrown failure on without inventing a result", async () => {
     expect(await restoreVersion(fakeRestorePort({ kind: "stale", currentRevision: 5 }), "d", FAKE_VERSIONS, 1)).toEqual({ kind: "stale", currentRevision: 5 });
     expect(await restoreVersion(fakeRestorePort({ kind: "signedOut" }), "d", FAKE_VERSIONS, 1)).toEqual({ kind: "signedOut" });
+    expect(await restoreVersion(fakeRestorePort({ kind: "pending" }), "d", FAKE_VERSIONS, 1)).toEqual({ kind: "pending" });
     const failing = { restore: async () => { throw new Error("x"); } };
     expect(await restoreVersion(failing, "d", FAKE_VERSIONS, 1)).toEqual({ kind: "unavailable" });
   });
@@ -52,7 +53,7 @@ describe("restore own text", () => {
 
   it("holds no forbidden term and no duration or pace wording (PRODUCT §5)", () => {
     const m = restoreMessages;
-    const strings: string[] = [...Object.values(m).filter((v) => typeof v === "string") as string[], m.done(1, 2), m.version(1, "2026-11-20T09:15:00.000Z"), m.replayStep(1)];
+    const strings: string[] = [...Object.values(m).filter((v) => typeof v === "string") as string[], m.done(1, 2), m.version(1, "2026-11-20T09:15:00.000Z"), m.replayStep(1), m.restoredVersion(4, 1)];
     for (const s of strings) expect(findForbiddenTerms(s, "hr")).toEqual([]);
     expect(strings.join(" ")).not.toMatch(/trajanj|ritam|brzin/i);
   });

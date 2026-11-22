@@ -7,7 +7,8 @@ import type { Version } from "../../time-machine/model";
 export type RestoreOutcome =
   | { readonly kind: "saved"; readonly revision: number }
   | { readonly kind: "stale"; readonly currentRevision: number }
-  | { readonly kind: "signedOut" | "unavailable" };
+  /** The text is in the sheet and the device's journal, the server's receipt has not come yet (PIL-D7-OBNOVA). */
+  | { readonly kind: "signedOut" | "unavailable" | "pending" };
 
 export interface RestorePort {
   /** Saves the text of `fromRevision` as a new revision on top of `baseRevision` (the save path). */

@@ -9,15 +9,19 @@ import { restoreMessages as text } from "./messages.hr";
 
 /** "Vrati raniju verziju" (WEB-1907; P-D7): pick an earlier version, confirm, save it as a new revision. */
 export default function RestoreVersion({
-  documentId, versions, port, onRestored,
+  documentId, versions, port, onRestored, onStale,
 }: {
   documentId: string; versions: readonly Version[]; port: RestorePort; onRestored?: (fromRevision: number, newRevision: number) => void;
+  /** The list is older than the server's head: the caller reads it again (PIL-D7-OBNOVA). */
+  onStale?: () => void;
 }) {
   const [picked, setPicked] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<RestoreOutcome | null>(null);
   const [from, setFrom] = useState(0);
+  // This page's restores, so each new revision carries "vraćeno iz verzije N" (PIL-D7-OBNOVA).
+  const [restored, setRestored] = useState<readonly { from: number; to: number }[]>([]);
   const options = restorableVersions(versions);
 
   const run = async () => {
@@ -28,7 +32,13 @@ export default function RestoreVersion({
     setBusy(false);
     setResult(outcome);
     setFrom(revision);
-    if (outcome.kind === "saved") { setPicked(""); onRestored?.(revision, outcome.revision); }
+    if (outcome.kind === "saved") {
+      setPicked("");
+      setRestored((list) => [...list, { from: revision, to: outcome.revision }]);
+      onRestored?.(revision, outcome.revision);
+    }
+    if (outcome.kind === "pending") setPicked("");
+    if (outcome.kind === "stale") onStale?.();
   };
 
   return (
@@ -59,8 +69,14 @@ export default function RestoreVersion({
         {result?.kind === "saved" ? <p role="status">{text.done(from, result.revision)}</p> : null}
         {result?.kind === "stale" ? <p role="alert">{text.stale}</p> : null}
         {result?.kind === "signedOut" ? <p role="alert">{text.signedOut}</p> : null}
+        {result?.kind === "pending" ? <p role="status">{text.pending}</p> : null}
         {result?.kind === "unavailable" ? <><p role="alert">{text.unavailable}</p><Button onClick={() => void run()}>{text.retry}</Button></> : null}
       </div>
+      {restored.length > 0 ? (
+        <ul aria-label={text.title}>
+          {restored.map((r) => <li key={r.to} data-restored-from={r.from}>{text.restoredVersion(r.to, r.from)}</li>)}
+        </ul>
+      ) : null}
     </section>
   );
 }
