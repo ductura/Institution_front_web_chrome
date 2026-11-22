@@ -19,6 +19,7 @@ import { messagesHr } from "../../../../../src/lib/i18n/messages.hr.ts";
 
 import { TeacherPage, useTeacherRead, type TeacherRead } from "../pages";
 import { nextPath } from "../../bases";
+import { teacherShellHr } from "./shell/messages.hr";
 import { useHost } from "../context";
 
 const summary = messagesHr.teacherSummary;
@@ -46,7 +47,7 @@ export function AssignmentOverviewPage() {
     return { kind: "ready", value: { choices, chosen, rows: overview.kind === "ready" ? overview.rows : null } };
   });
   return (
-    <TeacherPage title={summary.title} lead={summary.lead} read={read} retry={retry}
+    <TeacherPage title={summary.title} lead={summary.lead} loading={teacherShellHr.loadingSummary} read={read} retry={retry}
       unavailable={summary.unavailable} retryLabel={summary.retry}
       ready={({ choices, chosen, rows }) => chosen === null ? (
         <section aria-labelledby="zbirni-prazno">
@@ -84,7 +85,7 @@ export function DeadlineExtensionsPage({ assignmentId }: { assignmentId: string 
     return { kind: "ready", value: { read: extensionsRead, students } };
   });
   return (
-    <TeacherPage title={extensions.title} lead={extensions.lead} read={read} retry={retry}
+    <TeacherPage title={extensions.title} lead={extensions.lead} loading={teacherShellHr.loadingExtensions} read={read} retry={retry}
       unavailable={extensions.unavailable} retryLabel={extensions.retry}
       ready={(value) => <DeadlineExtensions assignmentId={assignmentId} read={value.read} students={value.students}
         onRecorded={retry} returnTo={appHref(base, extensionsHref(assignmentId))} />} />

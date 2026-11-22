@@ -15,6 +15,7 @@ import type { Base } from "../bases";
 import { internalRoute, routeOf } from "../routes";
 import { hostText } from "../text";
 import { useHost } from "./context";
+import { teacherShellHr } from "./teacher/shell/messages.hr";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { startWorkAction } from "./student/start-work/action";
 import SignInScreen from "./signin/SignInScreen";
@@ -106,12 +107,12 @@ export function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>
 }
 
 /** The page heading, its lead and one state of a teacher's read. */
-export function TeacherPage<T>({ title, lead, read, retry, unavailable, retryLabel, ready }: {
-  title: string; lead: string; read: TeacherRead<T> | null; retry: () => void;
+export function TeacherPage<T>({ title, lead, loading = hostText.loading, read, retry, unavailable, retryLabel, ready }: {
+  title: string; lead: string; loading?: string; read: TeacherRead<T> | null; retry: () => void;
   unavailable: string; retryLabel: string; ready: (value: T) => ReactNode;
 }) {
   let body: ReactNode;
-  if (read === null || read.kind === "signedOut") body = <p role="status">{read === null ? hostText.loading : hostText.signingIn}</p>;
+  if (read === null || read.kind === "signedOut") body = <p role="status">{read === null ? loading : hostText.signingIn}</p>;
   else if (read.kind === "notTeacher") body = <p role="status">{t.teacher.signedOut}</p>;
   else if (read.kind === "unavailable") {
     body = (
@@ -143,7 +144,7 @@ export function TeacherCoursesPage() {
     return result.kind === "ready" ? { kind: "ready", value: result.courses } : result;
   });
   const tc = t.teacherCourses;
-  return <TeacherPage title={tc.title} lead={tc.lead} read={read} retry={retry} unavailable={tc.unavailable} retryLabel={tc.retry}
+  return <TeacherPage title={tc.title} lead={tc.lead} loading={teacherShellHr.loadingCourses} read={read} retry={retry} unavailable={tc.unavailable} retryLabel={tc.retry}
     ready={(courses) => <TeacherCourses courses={courses}
       courseDetails={(course) => <CourseTeachingTeam courseId={course.id} courseName={course.name} />} />} />;
 }
@@ -156,6 +157,6 @@ export function MentoredWorksPage() {
     return result.kind === "ready" ? { kind: "ready", value: result.works } : result;
   });
   const mw = t.mentoredWorks;
-  return <TeacherPage title={mw.title} lead={mw.lead} read={read} retry={retry} unavailable={mw.unavailable} retryLabel={mw.retry}
+  return <TeacherPage title={mw.title} lead={mw.lead} loading={teacherShellHr.loadingMentorships} read={read} retry={retry} unavailable={mw.unavailable} retryLabel={mw.retry}
     ready={(works) => <MentoredWorks works={works} />} />;
 }
