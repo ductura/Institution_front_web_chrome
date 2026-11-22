@@ -28,6 +28,8 @@ import { hostText } from "../../../text";
 import { useHost } from "../../context";
 import MobileReview from "../mobile-review/MobileReview";
 import WorkFrame from "../n06/WorkFrame";
+import { FallbackPanel, PreSubmitPanel } from "../pre-submit/PreSubmitPanel";
+import { showFallback } from "../pre-submit/model";
 import { useTeacherRead } from "../../pages";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
@@ -170,6 +172,8 @@ function Receipt({ documentId, workHref, current }: { documentId: string; workHr
     setResult(null);
     setAttempt((n) => n + 1);
   };
+  const submitted = result?.kind === "ready" && result.state !== "nije_predano";
+  const summary = useProcessSummary(documentId, current, submitted);
   const read: ReceiptRead = result === null || result.kind === "signedOut" ? { kind: "loading" }
     : result.kind === "ready" ? studentReceiptRead(result.submission, result.state === "nije_predano" ? "open" : "submitted")
       : { kind: "error" };
@@ -179,7 +183,10 @@ function Receipt({ documentId, workHref, current }: { documentId: string; workHr
       {result?.kind === "ready" && result.studentName && <p>{result.studentName}</p>}
       {result?.kind === "notFound" ? <p role="alert">{t.liveView.connection.notFound}</p> : (
         <div onClick={retry}>
+          {submitted && <PreSubmitPanel outcome={summary.outcome} summaryHref={`${workHref}#${SUMMARY_ANCHOR}`}
+            onReload={() => void summary.load()} />}
           <ReceiptPanel read={read} retryHref={here} summaryHref={`${workHref}#${SUMMARY_ANCHOR}`} />
+          {submitted && showFallback(read.kind) && <FallbackPanel fallback={{ kind: "unavailable" }} />}
         </div>
       )}
     </WorkStatus>
