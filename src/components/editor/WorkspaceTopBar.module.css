@@ -1,28 +1,69 @@
-/* WEB-23 (S: E-7): the workspace's top bar, in the shell's chrome. */
+/* VIZ-S3 (S: E-7): the prototype's `.ed-top`, `.ed-title` and `.ed-actions`. */
 .bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  min-height: 48px;
+  gap: 8px 12px;
+  min-width: 0;
   box-sizing: border-box;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--rule);
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--rule-2);
   background: var(--chrome);
   color: var(--ink);
   font-family: var(--ff-ui);
-  font-size: 14px;
 }
-.back { color: var(--ink-2); }
-.title {
-  flex: 1 1 12rem;
-  min-width: 0;
-  margin: 0;
+.back {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  font: 600 var(--fs-ui) / var(--lh-control) var(--ff-ui);
+  text-decoration: underline;
+  text-decoration-color: var(--link-rule);
+  text-underline-offset: 3px;
+}
+.back:hover { background: var(--hover); }
+.heading { flex: 1 1 220px; min-width: 0; display: grid; gap: 0; }
+.heading b {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 600;
+  font: 600 16px / 1.3 var(--ff-display);
 }
-.themes { display: inline-flex; gap: 4px; }
-.submit { display: inline-flex; align-items: center; gap: 8px; }
-.note { color: var(--ink-2); font-size: 13px; }
+.heading span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* The prototype's switch only carries aria-pressed; it does not paint it as pressed. */
+.bar .theme[aria-pressed="true"] { background: transparent; border-color: var(--rule); }
+.bar .theme[aria-pressed="true"]:hover { background: var(--hover); }
+.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--target);
+  padding: 0 var(--space-2h);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 600 var(--fs-ui) / var(--lh-control) var(--ff-ui);
+  text-decoration: none;
+}
+.link:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-ink); }
+.primary { white-space: nowrap; }
+.submit { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.note { color: var(--ink-2); font-size: 12.5px; }
+@media (max-width: 640px) {
+  .bar { padding: 8px 12px; }
+  .actions { width: 100%; }
+  .actions .link, .actions .primary { flex: 1 1 auto; }
+}
