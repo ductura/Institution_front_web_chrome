@@ -28,6 +28,6 @@ describe("ShellView (first draw)", () => {
   it("offers the teacher's view when it has a route", () => {
     const live = draw({ teacherHref: "/x" });
     expect(live).not.toContain("Pogled nastavnika još nije spojen");
-    expect(live).toMatch(/<button[^>]*aria-label="Kako vidi nastavnik"(?![^>]*disabled)[^>]*>/);
+    expect(live).toMatch(/<a[^>]*href="\/x"[^>]*>/);
   });
 });

@@ -1,11 +1,11 @@
 /* The prototype's `.seg` (editor.css): a recessed pill; the pressed button is raised. */
 .seg { display: flex; flex: none; padding: 2px; background: var(--well); border-radius: var(--radius); }
-.seg button {
+.seg :is(button, a) {
   height: 30px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: transparent;
-  color: var(--ink-2); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer;
+  color: var(--ink-2); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box;
 }
-.seg button:hover:not(:disabled, [aria-pressed="true"]) { color: var(--ink); }
-.seg button[aria-pressed="true"] { background: var(--chrome); color: var(--ink); font-weight: 500; }
+.seg :is(button, a):hover:not(:disabled, [aria-pressed="true"]) { color: var(--ink); }
+.seg :is(button, a)[aria-pressed="true"] { background: var(--chrome); color: var(--ink); font-weight: 500; }
 .seg button:disabled:not([aria-pressed="true"]) { opacity: .45; cursor: default; }
-.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-@media (max-width: 640px) { .seg button { height: 36px; padding: 0 7px; } }
+.seg :is(button, a):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (max-width: 640px) { .seg :is(button, a) { height: 36px; padding: 0 7px; } }

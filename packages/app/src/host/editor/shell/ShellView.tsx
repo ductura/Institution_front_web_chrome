@@ -54,8 +54,7 @@ export function ShellView({ children, teacherHref, mode = "write" }: ShellViewPr
           </>
         ) : (
           <SegmentedControl label={t.modeLabel} value={mode}
-            options={[{ value: "write", label: t.write }, { value: "teacher", label: teacherLabel, ariaLabel: t.teacher }]}
-            onChange={(value) => { if (value === "teacher" && mode !== "teacher") window.location.href = teacherHref; }} />
+            options={[{ value: "write", label: t.write }, { value: "teacher", label: teacherLabel, ariaLabel: t.teacher, href: teacherHref }]} />
         )}
       </div>
       <details className={styles.view}>

@@ -12,6 +12,8 @@ export type SegmentedOption = {
   readonly disabled?: boolean;
   /** Why the option is disabled, or what it does, as a tooltip. */
   readonly title?: string;
+  /** The option leads to another page: it is drawn as a link, not a button. */
+  readonly href?: string;
 };
 
 export type SegmentedControlProps = {
@@ -33,7 +35,9 @@ export type SegmentedControlProps = {
 export function SegmentedControl({ label, options, value, onChange, className }: SegmentedControlProps) {
   return (
     <div role="group" aria-label={label} className={[styles.seg, className].filter(Boolean).join(" ")}>
-      {options.map((option) => (
+      {options.map((option) => option.href !== undefined && !option.disabled ? (
+        <a key={option.value} href={option.href} aria-label={option.ariaLabel} title={option.title}>{option.label}</a>
+      ) : (
         <button
           key={option.value}
           type="button"
