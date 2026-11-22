@@ -3,11 +3,11 @@
 // HOST-S3 (graditelj, 20. 11. 2026.): enrolment by the teacher's code in the
 // host (E-5, WEB-11, F-7), read only through src/client. The screens are the
 // ones of the copied pages (src/app/upis/), with the host's base on every link.
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { appHref } from "../../../../../src/components/index.ts";
-import EnrollForm from "../../../../../src/components/student/upis/EnrollForm.tsx";
+import EnrolForm from "./enrol/EnrolForm";
 import styles from "../../../../../src/components/student/upis/Enroll.module.css";
 import { courseHref, noticeHref, readCourse, type CourseRead } from "../../../../../src/components/student/upis/course-read.ts";
 import { createApi, leaveFor, signInHref } from "../../../../../src/client/api.ts";
@@ -28,13 +28,11 @@ function useGo() {
 export function EnrollPage() {
   const { base } = useHost();
   const go = useGo();
-  // R-10: "?kod=" from the home, trimmed and in capitals; R-17 gives the focus to the field.
-  const code = (useSearchParams().get("kod") ?? "").trim().toUpperCase();
   return (
     <div className={`page ${styles.screen}`}>
       <section className={styles.card}>
         <h1>{t.student.enroll.heading}</h1>
-        <EnrollForm signInHref={signInHref(appHref(base, "/upis"))} navigate={go} initialCode={code} />
+        <EnrolForm signInHref={signInHref(appHref(base, "/upis"))} navigate={go} />
       </section>
     </div>
   );

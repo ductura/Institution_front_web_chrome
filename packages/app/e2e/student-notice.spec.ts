@@ -68,12 +68,12 @@ test("renders the notice, waits for both writes and restores the confirmation on
   const editor = page.getByRole("link", { name: "Otvori editor" });
   await expect(editor).toHaveCount(0);
   ackResponse.release();
-  await expect(editor).toHaveJSProperty("pathname", "/app/web/rad");
-  await expect(editor).toHaveJSProperty("search", `?zadatak=${ID}`);
+  await expect(editor).toHaveJSProperty("pathname", `/app/web/rad/${ID}`);
+  await expect(editor).toHaveJSProperty("search", "");
   await page.reload();
-  await expect(editor).toHaveJSProperty("pathname", "/app/web/rad");
+  await expect(editor).toHaveJSProperty("pathname", `/app/web/rad/${ID}`);
   await editor.click();
-  expect(new URL(page.url()).searchParams.get("zadatak")).toBe(ID);
+  expect(new URL(page.url()).pathname).toBe(`/app/web/rad/${ID}`);
   expect(writes).toBe(1);
 });
 

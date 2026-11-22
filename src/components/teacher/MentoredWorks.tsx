@@ -25,7 +25,8 @@ const t = messagesHr.mentoredWorks;
 export default function MentoredWorks({ works }: { works: readonly MentoredWork[] }) {
   if (works.length === 0) {
     return h("section", { className: styles.empty, "aria-labelledby": "bez-mentorstava" },
-      h("h2", { id: "bez-mentorstava" }, t.empty));
+      h("h2", { id: "bez-mentorstava" }, t.empty),
+      h("p", null, t.emptyHint));
   }
   return h(Fragment, null,
     h("section", { className: styles.list, "aria-labelledby": "radovi-abecedno" },

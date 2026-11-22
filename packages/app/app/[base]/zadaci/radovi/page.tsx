@@ -1,5 +1,5 @@
 import { paramOf } from "../../../../../../src/components/student/radovi/works-view";
-import { MyWorksPage } from "../../../../src/host/student/other";
+import { MyWorksPage } from "../../../../src/host/student/courses/WorksPage";
 
 /** S "Moji radovi" (WEB-10): student.assignments.get and student.assignment-work.get; HOST-S5. */
 export default async function Page({ searchParams }: {

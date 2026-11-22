@@ -2,15 +2,13 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import type { WorkingCriterion } from "@/client/teacher-working-criteria";
+import { CRITERION_IDS, type WorkingCriterion } from "@/client/teacher-working-criteria";
 
 import { CriteriaView, type CriteriaLoad } from "./WorkingCriteria";
 import { IDLE_ROW } from "./criteria-logic";
 import { workingCriteriaHr as t } from "./messages.hr";
 
-const six: WorkingCriterion[] = [1, 2, 3, 4, 5, 6].map((n) => ({
-  criterionId: `bbbbbbbb-0000-4000-8000-00000000000${n}`, title: `Izmišljeni kriterij ${n}`, assessment: null, note: null,
-}));
+const six: WorkingCriterion[] = CRITERION_IDS.map((id) => ({ id, label: `workingCriteria.${id}`, assessment: null, note: null }));
 const noop = () => undefined;
 const view = (load: CriteriaLoad, rows = {}) =>
   renderToStaticMarkup(createElement(CriteriaView, {
@@ -20,22 +18,25 @@ const view = (load: CriteriaLoad, rows = {}) =>
 describe("CriteriaView", () => {
   it("shows all six criteria with three assessments each and the working-note line", () => {
     const html = view({ kind: "ready", criteria: six });
-    for (const c of six) expect(html).toContain(c.title);
+    for (const id of CRITERION_IDS) expect(html).toContain(t.criteria[id]);
+    expect(html).not.toContain("workingCriteria.");
+    for (const label of Object.values(t.assessments)) expect(html).toContain(label);
     expect(html.match(/aria-pressed/g)).toHaveLength(18);
     expect(html).toContain("Kriteriji ocjene · 0 od 6");
     expect(html).toContain(t.note);
     expect(html).toContain(t.addNote);
   });
   it("shows a saved assessment as pressed, the note and the count", () => {
-    const list = [{ ...six[0], assessment: "good" as const, note: "Dobro." }, ...six.slice(1)];
+    const list = [{ ...six[0], assessment: 1 as const, note: "Dobro." }, ...six.slice(1)];
     const html = view({ kind: "ready", criteria: list });
     expect(html).toContain("Kriteriji ocjene · 1 od 6");
-    expect(html).toContain('aria-pressed="true"');
+    expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-pressed="true"[^>]*>dobro</);
     expect(html).toContain("Dobro.");
     expect(html).toContain(t.editNote);
   });
   it("keeps the typed note and shows the reason after a failed write", () => {
-    const rows = { [six[0].criterionId]: { ...IDLE_ROW, editing: true, draft: "Neposlana napomena", error: t.errors.unknown } };
+    const rows = { [six[0].id]: { ...IDLE_ROW, editing: true, draft: "Neposlana napomena", error: t.errors.unknown } };
     const html = view({ kind: "ready", criteria: six }, rows);
     expect(html).toContain("Neposlana napomena");
     expect(html).toContain(t.errors.unknown);

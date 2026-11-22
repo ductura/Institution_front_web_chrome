@@ -1,17 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, RouteLoading } from "@ductura/ui";
 
 import { goToSignIn } from "@/client/api";
 import { readStudentNotice, type StudentNoticeRead } from "@/client/student-notice";
 import { appHref } from "@/components/shell/nav";
-import AssignmentNotice from "@/components/student/AssignmentNotice";
 import styles from "@/components/student/AssignmentNotice.module.css";
 import { markNoticeRead } from "@/components/student/obavijest/notice-read-mark";
 import { noticeWindow } from "@/components/student/notice-window";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { useHost } from "../../context";
+import HostNotice from "../enrol/HostNotice";
+import { editorPath } from "../enrol/model";
 import { noticeReadText } from "./messages.hr";
 
 type ReadStatus = "idle" | "sending" | "read" | "stale" | "failed";
@@ -52,21 +53,6 @@ export default function NoticePage({ assignmentId }: { assignmentId: string }) {
     setAttempt((previous) => previous + 1);
   };
 
-  // The shared screen renders a legacy editor link after acknowledgment.
-  // Adapt it on this host, including links opened in another tab.
-  const bindEditorLink = useCallback((container: HTMLDivElement | null) => {
-    if (!container) return;
-    const adapt = () => {
-      const link = container.querySelector<HTMLAnchorElement>('a[href^="/rad?zadatak="]');
-      // Rewrite only the local pathname, preserving the origin and assignment query.
-      if (link) link.pathname = appHref(base, "/rad");
-    };
-    adapt();
-    const observer = new MutationObserver(adapt);
-    observer.observe(container, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [base]);
-
   return (
     <div className={`page ${styles.screen}`}>
       <p className={styles.back}>
@@ -74,12 +60,11 @@ export default function NoticePage({ assignmentId }: { assignmentId: string }) {
       </p>
       {notice === null ? <RouteLoading label={t.student.loading} /> : notice.kind === "available" ? (
         <>
-          <div ref={bindEditorLink}>
-            <AssignmentNotice
-              view={notice.view}
-              timing={noticeWindow(notice.view.opensAt, notice.view.dueAt, Date.now())}
-            />
-          </div>
+          <HostNotice
+            view={notice.view}
+            timing={noticeWindow(notice.view.opensAt, notice.view.dueAt, Date.now())}
+            editorHref={appHref(base, editorPath(notice.view.assignmentId))}
+          />
           {readStatus === "sending" || readStatus === "read" ? (
             <p className={styles.status} role="status">{noticeReadText[readStatus]}</p>
           ) : null}

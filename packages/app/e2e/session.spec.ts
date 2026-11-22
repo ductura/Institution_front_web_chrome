@@ -132,8 +132,75 @@ test("Odjava posts auth.logout.post and leaves for the preloader", async ({ page
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
   await page.goto("/app/web/zadaci");
   await page.getByRole("button", { name: "Odjava" }).click();
+  // A-6: the dialog asks first; "Ostani" ends nothing.
+  const dialog = page.getByRole("dialog", { name: "Odjava" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Odjavit ćete se iz Ducture i iz sustava AAI@EduHr");
+  await dialog.getByRole("button", { name: "Ostani" }).click();
+  await expect(dialog).toBeHidden();
+  expect(seen.logout).toBe(0);
+  await page.getByRole("button", { name: "Odjava" }).click();
+  await dialog.getByRole("button", { name: "Odjavi se" }).click();
   await expect(page).toHaveURL((url) => url.pathname === "/");
   expect(seen.logout).toBe(1);
+});
+
+test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E-1 bezuloge)", async ({ page }) => {
+  const seen = await fakeServer(page, { status: 403, body: { code: "forbidden" } });
+  await page.goto("/app/web/zadaci");
+  const card = page.getByRole("status").filter({ hasText: "Prijava je uspjela" });
+  await expect(card.getByRole("heading", { level: 2 })).toHaveText("Prijava je uspjela");
+  await expect(card).toContainText("Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.");
+  await expect(card).toContainText("Javite se koordinatoru na svojoj ustanovi.");
+  await axe(page);
+  await card.getByRole("button", { name: "Odjava" }).click();
+  await page.getByRole("dialog", { name: "Odjava" }).getByRole("button", { name: "Odjavi se" }).click();
+  await expect(page).toHaveURL((url) => url.pathname === "/");
+  expect(seen.logout).toBe(1);
+});
+
+test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the button", async ({ page }) => {
+  const seen = await fakeServer(page, { status: 401 });
+  const errors = errorsOf(page);
+  await page.goto("/app/web/prijava");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Dobro došli");
+  await expect(page.getByRole("heading", { level: 2 })).toContainText("Vaš akademski identitet.");
+  await expect(page.getByText("Lozinku upisujete samo kod AAI@EduHr.")).toBeVisible();
+  await expect(page.getByText("Ne možete se prijaviti računom AAI@EduHr?")).toBeHidden();
+  await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).toHaveAttribute("open", "");
+  await axe(page);
+  expect(seen.login).toEqual([]);
+  expect(seen.me).toBe(0);
+
+  await page.goto("/app/web/prijava?stanje=pomoc");
+  await expect(page.locator("details", { hasText: "Trebate pomoć?" })).toHaveAttribute("open", "");
+  await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).not.toHaveAttribute("open", "");
+  await expect(page.getByRole("link", { name: "Službena pomoć AAI@EduHr" })).toBeVisible();
+
+  for (const query of ["stanje=greska", "greska=login_failed"]) {
+    await page.goto(`/app/web/prijava?${query}`);
+    const alert = page.getByRole("main").getByRole("alert");
+    await expect(alert.getByRole("heading", { level: 2 })).toHaveText("Prijava nije dovršena");
+    await expect(alert).toContainText("Pokušajte ponovno; ako se ponovi, javite se koordinatoru");
+    await expect(alert.getByRole("link", { name: "Na početnu" })).toHaveAttribute("href", "/");
+    await axe(page);
+  }
+  for (const query of ["stanje=nedostupno", "greska=provider_unavailable"]) {
+    await page.goto(`/app/web/prijava?${query}`);
+    const alert = page.getByRole("main").getByRole("alert");
+    await expect(alert).toContainText("Prijava preko AAI@EduHr trenutačno ne odgovara. Pokušajte ponovno za nekoliko minuta.");
+    await expect(alert.getByRole("link", { name: "Pokušaj ponovno" })).toBeVisible();
+  }
+
+  await page.goto("/app/web/prijava?stanje=bezuloge");
+  await expect(page.getByRole("status").filter({ hasText: "Prijava je uspjela" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Odjava" })).toBeVisible();
+
+  await page.goto("/app/web/prijava?stanje=greska&returnTo=%2Fzadaci%2Fkolegiji");
+  await page.getByRole("link", { name: "Pokušaj ponovno" }).click();
+  await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
+  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/web/zadaci/kolegiji");
+  expect(errors).toEqual([]);
 });
 
 test("an unanswering institution server shows a retry, not an empty app", async ({ page }) => {
@@ -342,10 +409,12 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   expect(errors).toEqual([]);
 
   await page.goto("/app/chrome/prijava?returnTo=%2Fzadaci%2Fkolegiji");
+  await page.getByRole("link", { name: "Prijava sustavom AAI@EduHr" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(1);
   expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/zadaci/kolegiji");
   await page.goto("/app/web/prijava?returnTo=https%3A%2F%2Fexample.org%2F");
+  await page.getByRole("link", { name: "Prijava sustavom AAI@EduHr" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(2);
   expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/app/web/");
