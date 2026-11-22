@@ -66,6 +66,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
       case `/api/v1/teacher/works/${documentId}`: return route.fulfill({ json: workBody });
       case receiptPath: return route.fulfill({ json: signed });
       case consultationPath: return route.fulfill({ json: { records: [] } });
+      // WEB-2158: the origin map reads the composition of the text; only typed text, so no mark.
+      case `/api/v1/works/${documentId}/origin-composition`: return route.fulfill({ json: { parts: [{ kind: "typed", percent: 100 }] } });
       case `/api/v1/works/${documentId}/milestones`: return route.fulfill({ json: { milestones: [] } });
       case `/api/v1/works/${documentId}/versions`: return route.fulfill({ json: {
         versions: [{ kind: "submission", revision: 1, savedMinute: "2026-11-20T12:00:00.000Z", afterDeadline: false }],

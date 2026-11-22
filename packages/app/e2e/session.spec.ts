@@ -44,6 +44,9 @@ async function fakeServer(page: Page, me: Me) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(HOLDER_VIEW) }));
   await page.route("**/api/v1/courses/*/team", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ holderId: TEAM_HOLDER_ID, assistantIds: [] }) }));
+  // WEB-2145: the N-01 task facts read each course roster (teacher.course-students.get); nobody is enrolled.
+  await page.route("**/api/v1/teacher/courses/*/students", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ students: [] }) }));
   await page.route("**/api/v1/teacher/courses", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
   await page.route("**/api/v1/teacher/mentorships", (route) =>
@@ -230,8 +233,8 @@ test("a teacher's read: 403 asks for a teacher account, 503 offers a retry that 
   await page.route("**/api/v1/teacher/mentorships", (route) =>
     route.fulfill({ status: 403, contentType: "application/json", body: "{\"code\":\"forbidden\",\"error\":\"forbidden\"}" }));
   await page.goto("/app/web/nastavnik");
-  // Next keeps an empty role="alert" route announcer outside <main>.
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText("Popis kolegija trenutačno nije dostupan. Pokušajte ponovno; popis se ne prikazuje prazan dok se ne učita.");
+  // Next keeps an empty role="alert" route announcer outside <main>; the teacher toast list inside it is empty too.
+  await expect(page.getByRole("main").getByRole("alert").filter({ hasText: "Popis kolegija" })).toHaveText("Popis kolegija trenutačno nije dostupan. Pokušajte ponovno; popis se ne prikazuje prazan dok se ne učita.");
   await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
   await expect.poll(() => courses).toBe(2);
   await axe(page);
