@@ -16,7 +16,7 @@ import styles from "./SignOut.module.css";
  * "Odjava" with its dialog (A-6, E-0 R-3): the button opens it, the person
  * confirms, auth.logout.post ends the Ductura session, and the browser then
  * follows the route natively on to the AAI@EduHr logout and back to "/"
- * (INT-20c: a fetch cannot follow that redirect, so the provider session
+ * (INT-20c: a script request cannot follow that redirect, so the provider session
  * would outlive the sign-out). Without the server's confirmation nothing has
  * ended: the dialog says so and offers it again (F-285). Esc, the backdrop and
  * "Ostani" close it; while the request runs nothing closes it.
