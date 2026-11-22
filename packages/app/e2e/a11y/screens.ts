@@ -15,6 +15,7 @@ export const SCREENS: readonly Screen[] = [
   { name: "nema ovlasti", path: "/nema-ovlasti?kind=denied", role: null },
   { name: "prijava istekla", path: "/nema-ovlasti?kind=expired", role: null },
   { name: "izjava o pristupačnosti", path: "/pristupacnost", role: null },
+  { name: "preuzimanje izvoza podataka", path: "/izvoz-podataka/IzmisljeniTokenZaProvjeruPristupacnosti_001", role: null },
   // Student.
   { name: "student: moji zadaci", path: "/zadaci", role: "student" },
   { name: "student: moji kolegiji", path: "/zadaci/kolegiji", role: "student" },
@@ -54,4 +55,5 @@ export const SCREENS: readonly Screen[] = [
   { name: "administrator: korisnici", path: "/ustanova/korisnici", role: "institution_admin" },
   { name: "administrator: pravila", path: "/ustanova/pravila", role: "institution_admin" },
   { name: "administrator: čuvanje podataka", path: "/ustanova/cuvanje", role: "institution_admin" },
+  { name: "administrator: izvoz podataka studenta", path: "/ustanova/izvoz-podataka", role: "institution_admin" },
 ];

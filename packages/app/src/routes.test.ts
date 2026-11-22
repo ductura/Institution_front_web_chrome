@@ -107,11 +107,21 @@ describe("the teacher's pages of Ductus app/", () => {
   });
 });
 
+describe("the student data export (WEB-1302)", () => {
+  it("opens for the administrator and for a signed-in account without a role of its own", () => {
+    expect(resolve("/ustanova/izvoz-podataka", "admin")).toMatchObject({ kind: "page", page: { label: "Izvoz podataka studenta" } });
+    expect(resolve("/ustanova/izvoz-podataka", null)).toMatchObject({ kind: "page", page: { label: "Izvoz podataka studenta" } });
+  });
+});
+
 describe("publicPage", () => {
   it("gives the pages opened without a session: Stanje sustava, Prijava and Nema ovlasti", () => {
     expect(publicPage("/stanje")).toMatchObject({ label: "Stanje sustava" });
     expect(publicPage("/prijava")).toMatchObject({ label: "Prijava" });
     expect(publicPage("/nema-ovlasti")).toMatchObject({ label: "Nema ovlasti" });
+    expect(publicPage("/izvoz-podataka/izmisljeni-token")).toMatchObject({ label: "Izvoz mojih podataka" });
+    expect(publicPage("/izvoz-podataka")).toBeNull();
+    expect(publicPage("/ustanova/izvoz-podataka")).toBeNull();
     expect(publicPage("/zadaci")).toBeNull();
     expect(publicPage("/kako-radi")).toBeNull();
     expect(publicPage("/")).toBeNull();
