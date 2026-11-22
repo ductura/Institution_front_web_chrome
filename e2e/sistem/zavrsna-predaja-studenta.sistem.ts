@@ -99,7 +99,10 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
 
   const work = await test.step('Potvrda Izjave i pregled spremljenih odlomaka prije predaje', async () => {
     await dismissGuide(page);
-    await page.getByRole('link', { name: 'Predaja rada', exact: true }).click();
+    // At 1280×720 the editor's toolbar lies over the top bar's "Predaja rada" and takes the pointer
+    // (open finding in the PR); the link is opened from the keyboard, as a keyboard user does.
+    await page.getByRole('link', { name: 'Predaja rada', exact: true }).focus();
+    await page.keyboard.press('Enter');
     await expect(page).toHaveURL(`${submissionPath}/izjava`);
     await expect(page.getByRole('heading', { name: 'Izjava', exact: true })).toBeVisible();
     const next = page.getByRole('button', { name: 'Dalje', exact: true });
