@@ -25,9 +25,9 @@ const UNREACHED = { ok: false, status: 0 } as const;
  * the contract; readSubmissionState then checks the receipt itself. Only that
  * read goes this way, every other id stays unreachable here.
  */
-function submissionCall(api: ReturnType<typeof serverApi>): LocalCall {
+function submissionCall(server: ReturnType<typeof serverApi>): LocalCall {
   return (id, { params }) => id === "student.submission.get"
-    ? api("student.submission.get", { params, query: undefined, body: undefined }).catch(() => UNREACHED_CALL)
+    ? server("student.submission.get", { params, query: undefined, body: undefined }).catch(() => UNREACHED_CALL)
     : Promise.resolve(UNREACHED_CALL);
 }
 const UNREACHED_CALL = { ok: false, status: 0, code: "unavailable" } as const;
@@ -54,11 +54,11 @@ export default async function ReceiptPage({ params }: { params: Promise<{ assign
   const here = `${base}/predaja/potvrda`;
   // The Cookie header as the browser sent it: re-serialising the cookies could alter a value.
   const cookie = (await headers()).get("cookie") ?? "";
-  const api = serverApi(cookie);
+  const server = serverApi(cookie);
   const [assignments, work, submission, provenance] = await Promise.all([
-    api("student.assignments.get", NONE).catch(() => UNREACHED),
-    api("student.assignment-work.get", NONE).catch(() => UNREACHED),
-    readSubmissionState(submissionCall(api), assignmentId),
+    server("student.assignments.get", NONE).catch(() => UNREACHED),
+    server("student.assignment-work.get", NONE).catch(() => UNREACHED),
+    readSubmissionState(submissionCall(server), assignmentId),
     readProvenance(PROVENANCE, assignmentId),
   ]);
   const read = editorWorkRead(assignmentId, assignments, work);
