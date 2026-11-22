@@ -7,13 +7,13 @@
 }
 .input::placeholder { color: var(--field-placeholder); opacity: 1; }
 /* Student: --error edge; teacher: 2 px --warn edge ([data-shell-role="teacher"], prototype.css). */
-.input[aria-invalid="true"] { border-color: var(--field-invalid); border-width: var(--field-invalid-width); }
+.input[aria-invalid="true"] { border-color: var(--field-invalid, var(--error)); border-width: var(--field-invalid-width); }
 .input[aria-busy="true"] { cursor: progress; }
 .input:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); border-color: var(--rule-2); }
 .note { margin: 0; color: var(--ink-3); font-size: var(--fs-sm); }
 /* The prototype's .err: the message carries the meaning, the colour or bar only points at it. */
 .note[data-error] {
-  color: var(--err-ink); font-weight: var(--err-weight);
+  color: var(--err-ink, var(--error)); font-weight: var(--err-weight);
   border-left: var(--err-bar) solid var(--warn); padding-left: var(--err-pad);
 }
 /* WCAG 2.4.7: Chromium gives a date or time field an inner calendar button that
