@@ -19,7 +19,8 @@ import { liveWorkHref, SUMMARY_ANCHOR } from "@/components/teacher/LiveWorkFrame
 import RecordLimits from "@/components/teacher/RecordLimits";
 import { selectedRange, selectInBlock } from "@/components/teacher/selection";
 import { SummaryCardBody, useProcessSummary } from "@/components/teacher/SummaryCard";
-import TeacherComments, { useComments } from "@/components/teacher/TeacherComments";
+import { useComments } from "@/components/teacher/TeacherComments";
+import TeacherComments from "../comments/TeacherCommentsPanel";
 import type { TextAnchor } from "@/domain/collaboration";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
