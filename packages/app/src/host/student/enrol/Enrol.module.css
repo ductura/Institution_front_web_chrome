@@ -1,0 +1,15 @@
+/* E-5 on the prototype's `.main.narrow` (640 px) and `.card.up-center` (VIZ-S2); the field is CodeField of @ductura/ui. */
+.screen { width: 100%; max-width: 640px; margin: 0 auto; padding: 32px 24px 56px; }
+@media (max-width: 640px) { .screen { padding: 20px 16px 40px; } .card { padding: 16px; } }
+
+.card {
+  display: grid; justify-items: center; gap: 12px; width: 100%; padding: 24px; text-align: center;
+  background: var(--card); border: 1px solid var(--rule-2); border-radius: 10px;
+}
+
+.card h1 { margin: 0; font-size: 26px; }
+.form { display: grid; justify-items: center; gap: 12px; width: 100%; }
+.meta { margin: 0; color: var(--ink-3); font-size: var(--fs-sm); }
+.note { margin: 0; color: var(--ink-2); }
+.hidden { position: absolute; left: -9999px; }
+.link { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }

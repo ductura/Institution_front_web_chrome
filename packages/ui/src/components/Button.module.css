@@ -1,9 +1,22 @@
+/* The prototype's .btn (Ductura_student.html, Ductura_nastavnik.html, VIZ-0). */
 .button {
-  min-height: 44px; padding: 0 18px; border-radius: var(--radius-control);
-  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1h);
+  min-height: var(--target); padding: 0 var(--space-3h); border-radius: var(--radius-control);
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+  font: 600 var(--fs-ui) / var(--lh-control) var(--ff-ui); text-align: center;
 }
 .button:hover:not(:disabled, [aria-disabled="true"]) { background: var(--accent-hover); border-color: var(--accent-hover); }
-.button[data-tone="quiet"] { background: transparent; color: var(--ink); border-color: var(--field-rule); }
-.button[data-tone="quiet"]:hover:not(:disabled, [aria-disabled="true"]) { background: var(--hover); border-color: var(--field-rule); }
+.button:is([data-tone="secondary"], [data-tone="quiet"]) { background: transparent; color: var(--ink); border-color: var(--rule); }
+.button:is([data-tone="secondary"], [data-tone="quiet"]):hover:not(:disabled, [aria-disabled="true"]) { background: var(--hover); border-color: var(--rule); }
+.button[data-tone="ghost"] {
+  background: transparent; color: var(--ink); border-color: transparent;
+  text-decoration: underline; text-decoration-color: var(--link-rule); text-underline-offset: 3px;
+}
+.button[data-tone="ghost"]:hover:not(:disabled, [aria-disabled="true"]) { background: var(--hover); border-color: transparent; }
+.button[data-size="small"] { padding: 0 var(--space-2h); }
+.button[data-size="dense"] { min-height: var(--target-dense); padding: 0 var(--space-2); font-weight: 500; }
+.button[aria-pressed="true"] { background: var(--well); border-color: var(--ink-2); color: var(--ink); }
 .button[aria-busy="true"] { cursor: progress; }
-.button:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); border-color: var(--well); }
+.button:disabled, .button[aria-disabled="true"]:not([aria-busy="true"]) {
+  cursor: not-allowed; background: var(--well); color: var(--ink-3); border-color: var(--rule-2);
+}

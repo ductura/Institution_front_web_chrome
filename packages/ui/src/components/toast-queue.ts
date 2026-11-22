@@ -7,7 +7,8 @@ export type ToastTone = "neutral" | "error";
 export type ToastItem = { readonly id: number; readonly text: string; readonly tone: ToastTone };
 
 export const MAX_TOASTS = 3;
-export const TOAST_TIMEOUT_MS = 6000;
+/** The prototype's App.toast: 3200 ms (orchestrator decision 2164, 22. 11. 2026.). */
+export const TOAST_TIMEOUT_MS = 3200;
 
 /** The list with `item` added; the oldest leave first when it is full. */
 export function addToast(list: readonly ToastItem[], item: ToastItem): ToastItem[] {

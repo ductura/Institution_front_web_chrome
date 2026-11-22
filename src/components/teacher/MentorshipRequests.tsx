@@ -10,7 +10,7 @@ import {
   decideMentorshipRequest, REASON_MAX,
   type Decision, type DecisionOutcome, type MentorshipCall, type MentorshipRequest,
 } from "../../client/mentorship-requests.ts";
-import { formatDateHr } from "../../lib/i18n/hr.ts";
+import { formatDateTimeHr } from "../../lib/i18n/hr.ts";
 import { messagesHr } from "../../lib/i18n/messages.hr.ts";
 
 import styles from "./MentoredWorks.module.css";
@@ -30,14 +30,14 @@ export type DecisionNote = { readonly tone: "status" | "alert"; readonly text: s
  * An unknown outcome keeps the request and says that the decision may have
  * been recorded; it never says it was.
  */
-export function decisionNote(outcome: DecisionOutcome, decision: Decision): DecisionNote | null {
+export function decisionNote(outcome: DecisionOutcome, decision: Decision, withReason = false): DecisionNote | null {
   switch (outcome.kind) {
     case "odluceno":
-      return { tone: "status", text: decision === "approve" ? t.approved : t.declined, drop: true };
+      return { tone: "status", text: decision === "approve" ? t.approved : withReason ? t.declinedWithReason : t.declined, drop: true };
     case "vec-odluceno":
       return { tone: "alert", text: t.alreadyDecided, drop: true };
     case "greska":
-      return { tone: "alert", text: outcome.code === "not_found" ? t.notFound : t.invalid, drop: false };
+      return { tone: "alert", text: t.invalid, drop: false };
     case "nepoznato":
       return { tone: "alert", text: t.unknown, drop: false };
     default:
@@ -76,14 +76,14 @@ export async function submitDecision(
     deps.signIn();
     return null;
   }
-  const note = decisionNote(outcome, decision);
+  const note = decisionNote(outcome, decision, reason !== undefined);
   if (note?.drop) deps.refresh();
   return note;
 }
 
 function requestMeta(request: MentorshipRequest): string {
   const type = workTypes[request.workType] ?? "";
-  const sent = t.sentOn.replace("{date}", formatDateHr(request.requestedAt));
+  const sent = t.sentOn.replace("{date}", formatDateTimeHr(request.requestedAt));
   return type === "" ? sent : `${type} · ${sent}`;
 }
 
@@ -97,7 +97,7 @@ const MENTORSHIP_CALL: MentorshipCall | null = null;
 /**
  * WEB-32 (N-16): the card "Zahtjevi za mentorstvo" with "Odobri" and "Odbij".
  * "Odbij" opens the do-h dialog with an optional reason (f-ro, up to 600
- * characters) that the student does not see (P-6). A note follows only the
+ * characters) that the student sees (N-16, WEB-2148). A note follows only the
  * server's answer (B-6); after a recorded decision the page is read again, so
  * an approved work appears in the list of mentored works.
  */
@@ -171,7 +171,6 @@ export function MentorshipRequestsView({ read, here, call, onDecided }: {
             return (
               <li key={request.requestId} className={styles.work}>
                 <span className={styles.name}>{name}</span>
-                <span className={styles.title}>{request.title}</span>
                 <span className={styles.meta}>{requestMeta(request)}</span>
                 <span className={styles.open}>
                   <Button busy={mine && busy?.decision === "approve"} disabled={busy !== null && !mine}
@@ -204,10 +203,10 @@ export function MentorshipRequestsView({ read, here, call, onDecided }: {
           </>
         }
       >
-        <p>{declining ? t.dialogLead.replace("{name}", declining.studentName ?? t.unnamed) : ""}</p>
+        <p>{declining ? [declining.studentName ?? t.unnamed, workTypes[declining.workType]].filter(Boolean).join(" · ") : ""}</p>
         <TextArea
           label={t.reason}
-          hint={t.reasonHint.replace("{max}", String(REASON_MAX))}
+          hint={t.reasonHint}
           maxLength={REASON_MAX}
           value={reason}
           busy={busy !== null}

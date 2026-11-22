@@ -1,8 +1,18 @@
+/* The prototype's .card (Ductura_student.html, Ductura_nastavnik.html; VIZ-0). */
 .card {
-  display: grid; gap: 8px; width: 100%; max-width: 360px; padding: 16px 18px;
-  background: var(--card); color: var(--ink); border: 1px solid var(--raised-rule); border-radius: var(--radius);
+  display: grid; gap: var(--space-3); width: 100%; min-width: 0; padding: var(--space-6);
+  background: var(--card); color: var(--ink); border: 1px solid var(--rule-2); border-radius: var(--radius-card);
 }
-.title { margin: 0; font-family: var(--ff-display); font-size: 20px; font-weight: 500; line-height: 1.2; }
-.quiet { margin: 0; color: var(--ink-3); }
-.error { margin: 0; padding: 8px 10px; color: var(--ink); background: var(--error-soft); border-radius: var(--radius-sm); }
+.card[data-center] { justify-items: center; text-align: center; }
+.title { margin: 0; font-family: var(--ff-display); font-size: var(--fs-title); font-weight: 500; line-height: var(--lh-heading); letter-spacing: var(--tracking-display); }
+.quiet { margin: 0; color: var(--ink-2); }
+/* The error card of the prototype: plain note text under the title, no colour of its own. */
+.error { margin: 0; color: var(--ink-2); }
+.loading { display: grid; gap: var(--space-2); }
+.bar { display: block; width: 80%; height: 12px; border-radius: var(--radius-sm); background: var(--well); animation: skel 1.4s ease-in-out infinite alternate; }
+.bar:last-child { width: 60%; }
+@keyframes skel { from { opacity: 0.55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .bar { animation: none; } }
+.hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .card[aria-disabled="true"] { background: var(--well); border-style: dashed; color: var(--ink-3); }
+@media (max-width: 640px) { .card { padding: var(--space-4); } }

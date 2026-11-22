@@ -53,8 +53,13 @@ export const profileEn: ProfileMessages = {
 
 export const pageLabelsEn = {
   consultations: "Consultations",
+  versionComparison: "Version comparison",
+  processSummary: "Process summary",
   studentDataExport: "Student data export",
   studentDataDownload: "Export of my data",
+  merlinExport: "Export for Merlin",
+  courseStudents: "Student list",
+  receiptCheck: "Receipt check",
 };
 
 export const accessDeniedEn = {
@@ -77,6 +82,9 @@ export const hostTextEn = {
   sessionUnavailable: "The institution server is not responding right now. Please try again in a few minutes.",
   pending: "This view is not connected to the institution server yet.",
   noRole: "This account has no role at the institution yet. Roles are given by the institution administrator.",
+  signInRedirecting: "Taking you to AAI@EduHr",
+  signInNoRoleTitle: "Signed in",
+  signInNoRoleBody: "This account has no role yet, so your space cannot be opened.",
   signOutFailed: "Signing out did not work. Please try again.",
   signIn: "Sign in",
   deadlineExtensions: "Deadline extension",

@@ -17,6 +17,10 @@ const ready = assignments.vectors.find((v) => v.name === "ready")!.response.body
 // Bodies of the teacher.courses.get "courses" and teacher.mentorships.get "works" vectors of @ductura/test-fakes 3.0.1.
 const teacher = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", import.meta.url), "utf8")) as Record<string, unknown>;
 
+/** The teaching-team view of a course the teacher holds alone (institution.teaching-team-view.get, holder). */
+const TEAM_HOLDER_ID = "5e4d3c2b-1a09-4f8e-8d7c-6b5a49382701";
+const HOLDER_VIEW = { role: "holder", holderId: TEAM_HOLDER_ID, assistants: [], students: [], groups: [] };
+
 type Me = { status: number; body?: unknown };
 
 /** Fakes the institution server: /me, the student's assignments, login and logout. Returns what was asked. */
@@ -32,10 +36,31 @@ async function fakeServer(page: Page, me: Me) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ locale: null }) }));
   await page.route("**/api/v1/student/assignments", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) }));
+  // WEB-2102/WEB-2103/WEB-2105: the student's pages also read the state of each work; none is started here.
+  await page.route("**/api/v1/student/assignment-work", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ assignments: [] }) }));
+  // WEB-2144: each course card reads the caller's role from the teaching-team view; here the teacher holds the course alone.
+  await page.route("**/api/v1/courses/*/team/view", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(HOLDER_VIEW) }));
+  await page.route("**/api/v1/courses/*/team", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ holderId: TEAM_HOLDER_ID, assistantIds: [] }) }));
   await page.route("**/api/v1/teacher/courses", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
+  // WEB-2145 (#411): the N-01 task facts read each course's roster, then per assignment its submissions,
+  // overview and deadline extensions; here nobody is enrolled yet (empty-roster and the empty lists).
+  await page.route("**/api/v1/teacher/courses/*/students", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ students: [] }) }));
+  await page.route("**/api/v1/teacher/assignments/*/submissions", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ submissions: [] }) }));
+  await page.route("**/api/v1/teacher/assignments/*/overview", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ students: [] }) }));
+  await page.route("**/api/v1/teacher/assignments/*/deadline-extensions", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ extensions: [] }) }));
   await page.route("**/api/v1/teacher/mentorships", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.mentorships.get"]) }));
+  // LOK-WEB-5: the teacher's mentorship page reads open requests (teacher.mentorship-requests.get "empty-requests").
+  await page.route("**/api/v1/teacher/mentorship-requests", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ requests: [] }) }));
   await page.route("**/api/v1/auth/login**", async (route) => {
     seen.login.push(route.request().url());
     await route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><html lang=\"hr\"><title>AAI@EduHr</title><p>Lažni AAI@EduHr</p></html>" });
@@ -126,8 +151,75 @@ test("Odjava posts auth.logout.post and leaves for the preloader", async ({ page
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
   await page.goto("/app/web/zadaci");
   await page.getByRole("button", { name: "Odjava" }).click();
+  // A-6: the dialog asks first; "Ostani" ends nothing.
+  const dialog = page.getByRole("dialog", { name: "Odjava" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Odjavit ćete se iz Ducture i iz sustava AAI@EduHr");
+  await dialog.getByRole("button", { name: "Ostani" }).click();
+  await expect(dialog).toBeHidden();
+  expect(seen.logout).toBe(0);
+  await page.getByRole("button", { name: "Odjava" }).click();
+  await dialog.getByRole("button", { name: "Odjavi se" }).click();
   await expect(page).toHaveURL((url) => url.pathname === "/");
   expect(seen.logout).toBe(1);
+});
+
+test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E-1 bezuloge)", async ({ page }) => {
+  const seen = await fakeServer(page, { status: 403, body: { code: "forbidden" } });
+  await page.goto("/app/web/zadaci");
+  const card = page.getByRole("status").filter({ hasText: "Prijava je uspjela" });
+  await expect(card.getByRole("heading", { level: 2 })).toHaveText("Prijava je uspjela");
+  await expect(card).toContainText("Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.");
+  await expect(card).toContainText("Javite se koordinatoru na svojoj ustanovi.");
+  await axe(page);
+  await card.getByRole("button", { name: "Odjava" }).click();
+  await page.getByRole("dialog", { name: "Odjava" }).getByRole("button", { name: "Odjavi se" }).click();
+  await expect(page).toHaveURL((url) => url.pathname === "/");
+  expect(seen.logout).toBe(1);
+});
+
+test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the button", async ({ page }) => {
+  const seen = await fakeServer(page, { status: 401 });
+  const errors = errorsOf(page);
+  await page.goto("/app/web/prijava");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Dobro došli");
+  await expect(page.getByRole("heading", { level: 2 })).toContainText("Vaš akademski identitet.");
+  await expect(page.getByText("Lozinku upisujete samo kod AAI@EduHr.")).toBeVisible();
+  await expect(page.getByText("Ne možete se prijaviti računom AAI@EduHr?")).toBeHidden();
+  await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).toHaveAttribute("open", "");
+  await axe(page);
+  expect(seen.login).toEqual([]);
+  expect(seen.me).toBe(0);
+
+  await page.goto("/app/web/prijava?stanje=pomoc");
+  await expect(page.locator("details", { hasText: "Trebate pomoć?" })).toHaveAttribute("open", "");
+  await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).not.toHaveAttribute("open", "");
+  await expect(page.getByRole("link", { name: "Službena pomoć AAI@EduHr" })).toBeVisible();
+
+  for (const query of ["stanje=greska", "greska=login_failed"]) {
+    await page.goto(`/app/web/prijava?${query}`);
+    const alert = page.getByRole("main").getByRole("alert");
+    await expect(alert.getByRole("heading", { level: 2 })).toHaveText("Prijava nije dovršena");
+    await expect(alert).toContainText("Pokušajte ponovno; ako se ponovi, javite se koordinatoru");
+    await expect(alert.getByRole("link", { name: "Na početnu" })).toHaveAttribute("href", "/");
+    await axe(page);
+  }
+  for (const query of ["stanje=nedostupno", "greska=provider_unavailable"]) {
+    await page.goto(`/app/web/prijava?${query}`);
+    const alert = page.getByRole("main").getByRole("alert");
+    await expect(alert).toContainText("Prijava preko AAI@EduHr trenutačno ne odgovara. Pokušajte ponovno za nekoliko minuta.");
+    await expect(alert.getByRole("link", { name: "Pokušaj ponovno" })).toBeVisible();
+  }
+
+  await page.goto("/app/web/prijava?stanje=bezuloge");
+  await expect(page.getByRole("status").filter({ hasText: "Prijava je uspjela" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Odjava" })).toBeVisible();
+
+  await page.goto("/app/web/prijava?stanje=greska&returnTo=%2Fzadaci%2Fkolegiji");
+  await page.getByRole("link", { name: "Pokušaj ponovno" }).click();
+  await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
+  expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/web/zadaci/kolegiji");
+  expect(errors).toEqual([]);
 });
 
 test("an unanswering institution server shows a retry, not an empty app", async ({ page }) => {
@@ -148,8 +240,10 @@ test("a teacher's read: 403 asks for a teacher account, 503 offers a retry that 
   await page.route("**/api/v1/teacher/mentorships", (route) =>
     route.fulfill({ status: 403, contentType: "application/json", body: "{\"code\":\"forbidden\",\"error\":\"forbidden\"}" }));
   await page.goto("/app/web/nastavnik");
-  // Next keeps an empty role="alert" route announcer outside <main>.
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText("Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.");
+  // Next keeps an empty role="alert" route announcer outside <main>. Inside it, the N-01 toast region
+  // (WEB-2145) keeps its own role="alert" live region on the page before any message; it stays empty.
+  await expect(page.getByRole("region", { name: "Obavijesti" }).getByRole("alert")).toBeEmpty();
+  await expect(page.getByRole("main").getByRole("alert").filter({ hasText: /\S/ })).toHaveText("Popis kolegija trenutačno nije dostupan. Pokušajte ponovno; popis se ne prikazuje prazan dok se ne učita.");
   await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
   await expect.poll(() => courses).toBe(2);
   await axe(page);
@@ -166,12 +260,14 @@ test("a teacher's read answering 401 sends the browser to sign-in", async ({ pag
   expect(new URL(seen.login.at(-1)!).searchParams.get("returnTo")).toBe("/app/web/nastavnik");
 });
 
-test("a student's Ductus pages open at their addresses, marked as not connected yet", async ({ page }) => {
+test("a student's Ductus pages open at their addresses; the workspace without a work in progress points to Moji zadaci", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
   await page.goto("/app/chrome/rad");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radni prostor");
-  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  // WEB-2105 (#359) connected /rad: it reads the works, and none is in progress here.
+  await expect(page.getByText("Nemate rad u tijeku. Rad započnite na kartici zadatka.")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: "Moji zadaci" })).toHaveAttribute("href", "/app/chrome/zadaci");
   await axe(page);
 
   // Moji radovi is connected (HOST-S5): it reads an empty list.
@@ -336,10 +432,12 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   expect(errors).toEqual([]);
 
   await page.goto("/app/chrome/prijava?returnTo=%2Fzadaci%2Fkolegiji");
+  await page.getByRole("link", { name: "Prijava sustavom AAI@EduHr" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(1);
   expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/app/chrome/zadaci/kolegiji");
   await page.goto("/app/web/prijava?returnTo=https%3A%2F%2Fexample.org%2F");
+  await page.getByRole("link", { name: "Prijava sustavom AAI@EduHr" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(2);
   expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/app/web/");

@@ -49,6 +49,8 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/help/EditorHelp.tsx",
   "editor/help/EditorHelpMenu.tsx",
   "editor/help/EditorNotices.tsx",
+  "editor/help/what-is-recorded/WhatIsRecorded.tsx",
+  "editor/rhythm/RhythmSetting.tsx",
   "editor/layout-prefs/EditorPanelLayout.fixture.tsx",
   "editor/pages/CoverDialog.tsx",
   "editor/pages/CoverPage.tsx",
