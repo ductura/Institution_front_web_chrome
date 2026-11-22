@@ -3497,12 +3497,14 @@
       "body": {
         "holds": [
           {
-            "id": "b1301000-0000-4000-8000-000000000001",
-            "subject": "Izmišljeni kolegij za test",
+            "holdId": "b1301000-0000-4000-8000-000000000001",
+            "subjectType": "assignment",
+            "subjectId": "a1301000-0000-4000-8000-000000000001",
             "caseReference": "IZM-2026-001",
+            "placedBy": "d1301000-0000-4000-8000-000000000001",
             "placedAt": "2026-11-20T09:00:00.000Z",
-            "placedByName": "Ana Izmišljena",
-            "own": true
+            "releasedBy": null,
+            "releasedAt": null
           }
         ]
       }
@@ -3529,7 +3531,8 @@
     "name": "created",
     "request": {
       "body": {
-        "subject": "Izmišljeni kolegij za test",
+        "subjectType": "student",
+        "subjectId": "c1301000-0000-4000-8000-000000000001",
         "caseReference": "IZM-2026-002"
       }
     },
@@ -3540,7 +3543,7 @@
         "cache-control": "no-store"
       },
       "body": {
-        "id": "b1301000-0000-4000-8000-000000000002"
+        "holdId": "b1301000-0000-4000-8000-000000000002"
       }
     }
   },
@@ -3549,7 +3552,8 @@
     "name": "forbidden",
     "request": {
       "body": {
-        "subject": "Izmišljeni kolegij za test",
+        "subjectType": "student",
+        "subjectId": "c1301000-0000-4000-8000-000000000001",
         "caseReference": "IZM-2026-002"
       }
     },
@@ -3583,7 +3587,7 @@
         "cache-control": "no-store"
       },
       "body": {
-        "id": "b1301000-0000-4000-8000-000000000001",
+        "holdId": "b1301000-0000-4000-8000-000000000001",
         "releasedAt": "2026-11-21T10:00:00.000Z"
       }
     }
