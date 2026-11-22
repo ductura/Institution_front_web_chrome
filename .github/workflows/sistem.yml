@@ -107,6 +107,13 @@ jobs:
           DUCTURA_EDGE_FRONT: http://127.0.0.1:5173
         run: |
           pnpm build
+          # migracija/nextjs: the Preloader is a Next app on :3100 behind the
+          # edge (main is a static build the edge serves itself).
+          if node -e 'process.exit(require("./package.json").scripts?.start ? 0 : 1)'; then
+            nohup pnpm start > "$RUNNER_TEMP/preloader.log" 2>&1 &
+            for i in $(seq 1 30); do curl -fsS -o /dev/null http://127.0.0.1:3100/ && break; sleep 1; done
+            curl -fsS -o /dev/null http://127.0.0.1:3100/ || { tail -n 60 "$RUNNER_TEMP/preloader.log"; exit 1; }
+          fi
           nohup node deploy/edge/dev-proxy.mjs > "$RUNNER_TEMP/edge.log" 2>&1 &
           for i in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:8000/ && break; sleep 1; done
           curl -fsS -o /dev/null http://localhost:8000/ || { cat "$RUNNER_TEMP/edge.log"; exit 1; }
@@ -139,7 +146,7 @@ jobs:
         if: always()
         run: |
           mkdir -p "$RUNNER_TEMP/out"
-          cp "$RUNNER_TEMP/stog.log" "$RUNNER_TEMP/front.log" "$RUNNER_TEMP/edge.log" "$RUNNER_TEMP/out/" 2>/dev/null || true
+          cp "$RUNNER_TEMP/stog.log" "$RUNNER_TEMP/front.log" "$RUNNER_TEMP/edge.log" "$RUNNER_TEMP/preloader.log" "$RUNNER_TEMP/out/" 2>/dev/null || true
           cp -r "$RUNNER_TEMP/stog-procesi" "$RUNNER_TEMP/out/" 2>/dev/null || true
           ps -eo pid,ppid,args --forest | grep -E 'node|pnpm' | grep -v grep > "$RUNNER_TEMP/out/procesi.txt" || true
       - uses: actions/upload-artifact@v4
