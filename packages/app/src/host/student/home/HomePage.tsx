@@ -9,7 +9,7 @@ import type { MyCourse } from "../../../../../../src/components/student/my-assig
 import { readMyWorks, type WorksRead } from "../../../../../../src/components/student/radovi/works-read.ts";
 import { createApi, signInHref } from "../../../../../../src/client/api.ts";
 
-import { nextPath } from "../../../bases";
+import { nextPath, type Base } from "../../../bases";
 import { useHost } from "../../context";
 import { startWorkAction } from "../start-work/action";
 import { CodeCard, CodeForm } from "./CodeForm";
@@ -20,7 +20,7 @@ import { continueRow, flatRows, nearTag, rowAction, rowRoute, type RowKind, type
 
 const dueText = protoDateTime;
 
-function Row({ row, now, go, action }: { row: TaskRow; now: number; go: (route: string) => void; action: ReturnType<typeof startWorkAction> }) {
+function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base; action: ReturnType<typeof startWorkAction> }) {
   const { label, primary } = rowAction(row.kind);
   const near = row.kind === "predano" ? null : nearTag(row.dueAt, now);
   return (
@@ -35,8 +35,8 @@ function Row({ row, now, go, action }: { row: TaskRow; now: number; go: (route: 
         </span>
       </span>
       <span className={styles.itemActions}>
-        <Button size="small" tone={primary ? "primary" : "secondary"} aria-label={t.openFor.replace("{action}", label).replace("{title}", row.title)}
-          onClick={() => go(rowRoute(row))}>{label}</Button>
+        <a className={styles.open} data-tone={primary ? "primary" : "secondary"} aria-label={t.openFor.replace("{action}", label).replace("{title}", row.title)}
+          href={appHref(base, rowRoute(row))}>{label}</a>
         {action}
       </span>
     </li>
@@ -155,8 +155,8 @@ export function HomePage() {
           <h2 id="po-h">{t.tasksHeading}</h2>
           <ul className={styles.list}>
             {rows.map((row) => (
-              <Row key={row.id} row={row} now={now} go={go}
-                action={row.kind !== "zadatak" ? null : startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false })} />
+              <Row key={row.id} row={row} now={now} base={base}
+                action={row.kind === "predano" || row.kind === "obavijest" ? null : startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false })} />
             ))}
           </ul>
         </section>

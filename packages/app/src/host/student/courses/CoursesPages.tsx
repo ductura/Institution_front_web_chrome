@@ -88,7 +88,6 @@ export function State({ read, retry, here, base }: { read: CoursesRead | null; r
 /** One task row, as the prototype's `task()` draws it: the course (if asked), the title, the date line, the button. */
 export function TaskItem({ a, course, kind, now, line }: { a: Assignment; course: string | null; kind: RowKind; now: Date; line?: ReactNode }) {
   const { base } = useHost();
-  const router = useRouter();
   const due = effectiveDue(a.dueAt, a.extendedDueAt);
   const near = kind === "submitted" ? null : nearTag(due, now);
   const action = ROW_ACTION[kind];
@@ -104,8 +103,8 @@ export function TaskItem({ a, course, kind, now, line }: { a: Assignment; course
           {line === undefined && kind === "notice" ? <Tag tone="open">{t.noticeFirst}</Tag> : null}
         </span>
       </span>
-      <Button size="small" tone={action.primary ? "primary" : "secondary"} aria-label={`${action.label}: ${a.title}`}
-        onClick={() => router.push(nextPath(base, route))}>{action.label}</Button>
+      <a className={own.open} data-tone={action.primary ? "primary" : "secondary"} aria-label={`${action.label}: ${a.title}`}
+        href={appHref(base, route)}>{action.label}</a>
     </li>
   );
 }
