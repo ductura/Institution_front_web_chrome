@@ -37,7 +37,6 @@ jobs:
           ref: ${{ inputs.server_ref || 'migracija/kopija-ductus-backend' }}
           path: Institution_server
           persist-credentials: false
-          token: ""
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
       - run: npm install -g pnpm@10.33.0
