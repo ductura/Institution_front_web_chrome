@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { fakeTeacherPort, FAKE_PREPARATION } from "./fake-port";
 import { interviewMessages } from "./messages.hr";
-import { appointmentLine, failureMessage, isInvited, orderedQuestions, questionError, zagrebToIso } from "./model";
+import { appointmentLine, failureMessage, isInvited, orderedQuestions, pdfBytes, questionError, zagrebToIso } from "./model";
 
 const ID = "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60";
 
@@ -38,6 +38,10 @@ describe("teacher interview preparation (WEB-1530)", () => {
     expect(zagrebToIso("2026-11-24", "10:30")).toBe("2026-11-24T09:30:00.000Z");
     expect(zagrebToIso("2026-07-01", "10:30")).toBe("2026-07-01T08:30:00.000Z");
     expect(zagrebToIso("", "10:30")).toBeNull();
+  });
+
+  it("decodes the PDF bytes", () => {
+    expect(Array.from(pdfBytes({ pdfBase64: "JVBERi0=" }))).toEqual([37, 80, 68, 70, 45]);
   });
 
   it("describes the appointment and failures", () => {

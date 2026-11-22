@@ -3,8 +3,9 @@
 import { Button, Card, DataTable, TextArea, TextField } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
+import { downloadBlob } from "../../../../../../src/components/editor/EarlierDraft";
 import { interviewMessages as text } from "./messages.hr";
-import { appointmentLine, dateHr, failureMessage, isInvited, momentHr, orderedQuestions, pdfDownloadHref, questionError, zagrebToIso } from "./model";
+import { appointmentLine, dateHr, failureMessage, isInvited, momentHr, orderedQuestions, pdfBytes, questionError, zagrebToIso } from "./model";
 import type { InterviewOutcome, InterviewPreparation, InterviewQuestion, InterviewTeacherPort } from "./port";
 
 type Props = {
@@ -57,10 +58,7 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
     setNotice(null);
     const out = await port.pdf(documentId).catch((): InterviewOutcome<never> => ({ kind: "unavailable" }));
     if (out.kind !== "ok") { setNotice(failureMessage(out)); return; }
-    const link = document.createElement("a");
-    link.href = pdfDownloadHref(out.value);
-    link.download = out.value.filename;
-    link.click();
+    downloadBlob(new Blob([pdfBytes(out.value)], { type: "application/pdf" }), out.value.filename);
     setNotice(text.pdfReady);
   };
 

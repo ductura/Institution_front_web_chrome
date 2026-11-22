@@ -52,6 +52,10 @@ export function failureMessage(outcome: Exclude<InterviewOutcome<unknown>, { kin
   }
 }
 
-export function pdfDownloadHref(file: { pdfBase64: string }): string {
-  return `data:application/pdf;base64,${file.pdfBase64}`;
+/** The PDF the server sends as standard Base64, as bytes for a Blob download. */
+export function pdfBytes(file: { pdfBase64: string }): Uint8Array<ArrayBuffer> {
+  const raw = atob(file.pdfBase64);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
+  return bytes;
 }
