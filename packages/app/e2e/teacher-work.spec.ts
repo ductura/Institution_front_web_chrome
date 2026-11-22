@@ -59,6 +59,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
       case `/api/v1/live/${documentId}`: return route.fulfill({
         contentType: "application/json", body: snapshot, headers: { etag },
       });
+      // WEB-2151: the work page also reads the revision requests; none exist for this work.
+      case "/api/v1/revision-requests/list": return route.fulfill({ json: { requests: [] } });
       case "/api/v1/process-summary": return route.fulfill({ status: 404, json: { error: "not_found" } });
       // WEB-2157 (#410): the N-10 summary page also reads its details; no summary exists for this work either.
       case "/api/v1/process-summary/details": return route.fulfill({ status: 404, json: { error: "not_found" } });
