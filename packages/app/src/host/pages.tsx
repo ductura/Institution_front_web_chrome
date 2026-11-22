@@ -16,6 +16,7 @@ import { internalRoute, routeOf } from "../routes";
 import { hostText } from "../text";
 import { useHost } from "./context";
 import { AssignmentCards } from "./teacher/assignment-card/AssignmentCards";
+import { CourseTasks, InterruptedPublish } from "./teacher/assignment-facts/AssignmentFacts";
 import { assignmentCardMessages as card } from "./teacher/assignment-card/messages.hr";
 import { teacherShellHr } from "./teacher/shell/messages.hr";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
@@ -114,9 +115,11 @@ export function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>
 }
 
 /** The page heading, its lead and one state of a teacher's read. */
-export function TeacherPage<T>({ title, lead, loading = hostText.loading, read, retry, unavailable, retryLabel, ready }: {
+export function TeacherPage<T>({ title, lead, loading = hostText.loading, read, retry, unavailable, retryLabel, ready, notice }: {
   title: string; lead: string; loading?: string; read: TeacherRead<T> | null; retry: () => void;
   unavailable: string; retryLabel: string; ready: (value: T) => ReactNode;
+  /** Above the body and kept across a new read (N-01 banner "prekinuto", WEB-2145). */
+  notice?: ReactNode;
 }) {
   let body: ReactNode;
   if (read === null || read.kind === "signedOut") body = <p role="status">{read === null ? loading : hostText.signingIn}</p>;
@@ -135,6 +138,7 @@ export function TeacherPage<T>({ title, lead, loading = hostText.loading, read, 
         <h1>{title}</h1>
         <p>{lead}</p>
       </header>
+      {notice}
       {body}
     </div>
   );
@@ -151,8 +155,9 @@ export function TeacherCoursesPage() {
     return result.kind === "ready" ? { kind: "ready", value: result.courses } : result;
   });
   return <TeacherPage title={card.title} lead={card.lead} loading={card.loading} read={read} retry={retry}
-    unavailable={card.unavailable} retryLabel={card.retry}
+    unavailable={card.unavailable} retryLabel={card.retry} notice={<InterruptedPublish onChecked={retry} />}
     ready={(courses) => <AssignmentCards courses={courses} here={appHref(base, "/nastavnik")}
+      tasks={(course) => <CourseTasks course={course} />}
       extra={(course) => <CourseTeachingTeam courseId={course.id} courseName={course.name} />} />} />;
 }
 

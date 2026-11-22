@@ -124,7 +124,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
         <p>{publishHr.reviewNote}</p>
         {busy && <p role="status">{a.pending}</p>}
         {failure && <p role="alert">{failure}</p>}
-        {uncertain && <CheckListLink />}
+        {uncertain && <CheckListLink courseId={course.id} title={draft.title.trim()} />}
         <p>
           <Button type="button" busy={busy} onClick={() => void confirm()}>{busy ? a.pending : f.publish}</Button>{" "}
           <Button type="button" tone="quiet" disabled={busy} onClick={() => setPhase("form")}>{f.backToForm}</Button>
