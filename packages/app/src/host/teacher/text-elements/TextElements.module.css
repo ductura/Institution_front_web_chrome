@@ -1,0 +1,4 @@
+.cite { background: var(--well); border-radius: 3px; padding: 0 3px; }
+.open { border: 1px dashed var(--rule); border-radius: 3px; padding: 0 4px; color: var(--ink-2); font-size: 14px; }
+.notes { border-top: 1px solid var(--rule); margin-top: 28px; padding-top: 8px; font-size: 13.5px; color: var(--ink-2); }
+.notes p { margin: 4px 0; }
