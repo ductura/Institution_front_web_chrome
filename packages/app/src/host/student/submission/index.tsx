@@ -18,7 +18,7 @@ import { assignmentIdOf, editorWorkRead } from "../../../../../../src/components
 import { readSubmittedWork } from "../../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
 import BeforeSubmit from "../../../../../../src/components/predaja/BeforeSubmit.tsx";
 import Declaration from "../../../../../../src/components/predaja/Declaration.tsx";
-import { ReceiptPanel, studentReceiptRead, type ReceiptRead } from "../../../../../../src/components/predaja/ReceiptPanel.tsx";
+import { studentReceiptRead, type ReceiptRead } from "../../../../../../src/components/predaja/ReceiptPanel.tsx";
 import { stageOf, type Stage } from "../../../../../../src/components/predaja/stage.ts";
 import Submission from "../../../../../../src/components/student/Submission.tsx";
 import { browserTransport, createApi, goToSignIn } from "../../../../../../src/client/api.ts";
@@ -29,6 +29,7 @@ import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 import PortableRecord from "../portable-record/PortableRecord";
 import SubmissionPackage from "../submission-package/SubmissionPackage";
+import ReceiptScreen from "./receipt/ReceiptScreen";
 import WithdrawSubmission from "./withdraw/WithdrawSubmission";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -183,8 +184,7 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
         <div className="page receipt-page">
           <Steps currentStep={5} />
           <h1>{t.receipt.title}</h1>
-          <ReceiptPanel read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))}
-            summaryHref={hrefOf(stepPath(id, "pregled"))} submitHref={hrefOf(stepPath(id, ""))} />
+          <ReceiptScreen read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))} workHref={hrefOf(`/rad/${encodeURIComponent(id)}`)} homeHref={hrefOf("/")} />
           {receipt.kind === "potvrdeno" ? <PortableRecord submissionId={receipt.receipt.payload.submissionId} /> : null}
           {receipt.kind === "potvrdeno" ? <SubmissionPackage assignmentId={id} submissionId={receipt.receipt.payload.submissionId} /> : null}
           <WithdrawSubmission assignmentId={id} />
