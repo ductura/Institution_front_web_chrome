@@ -10207,6 +10207,123 @@
       ]
     }
   },
+  "platform.status.get": {
+    "path": "/api/v1/status",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "status",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "checkedAt",
+                "components"
+              ],
+              "properties": {
+                "checkedAt": {
+                  "format": "date-time",
+                  "maxLength": 24,
+                  "type": "string"
+                },
+                "components": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "writing",
+                    "submission",
+                    "mentorView"
+                  ],
+                  "properties": {
+                    "writing": {
+                      "anyOf": [
+                        {
+                          "const": "radi",
+                          "type": "string"
+                        },
+                        {
+                          "const": "ne_radi",
+                          "type": "string"
+                        },
+                        {
+                          "const": "nije_ukljuceno",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "submission": {
+                      "anyOf": [
+                        {
+                          "const": "radi",
+                          "type": "string"
+                        },
+                        {
+                          "const": "ne_radi",
+                          "type": "string"
+                        },
+                        {
+                          "const": "nije_ukljuceno",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "mentorView": {
+                      "anyOf": [
+                        {
+                          "const": "radi",
+                          "type": "string"
+                        },
+                        {
+                          "const": "ne_radi",
+                          "type": "string"
+                        },
+                        {
+                          "const": "nije_ukljuceno",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "maintenanceWindows": {
+                  "maxItems": 50,
+                  "description": "Current and upcoming planned maintenance, ordered by start time. Omitted when the schedule could not be read.",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "startsAt",
+                      "endsAt"
+                    ],
+                    "properties": {
+                      "startsAt": {
+                        "format": "date-time",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "endsAt": {
+                        "format": "date-time",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
   "teacher.mentorship-requests.get": {
     "path": "/api/v1/teacher/mentorship-requests",
     "method": "GET",
