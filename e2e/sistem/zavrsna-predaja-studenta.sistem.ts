@@ -4,7 +4,9 @@ import { expect, test, type Response } from '@playwright/test';
 
 import { canonicalizeJcs } from '../../packages/editor-core/src/document/forensics/jcs';
 import { webOrigin } from './stog';
-import { openDemoWork, signInDemoStudent } from './student';
+import { assignmentOf, describePageOnFailure, openDemoWork, signInDemoStudent } from './student';
+
+describePageOnFailure();
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const RECEIPT_SCHEMA = 'ductus-submission-receipt-v2';
@@ -43,7 +45,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     await expect(editor, 'Za predaju treba uređiv rad iz svježeg lokalnog seeda.').toBeEditable();
     return path;
   });
-  const assignmentId = workPath.slice('/rad/'.length);
+  const assignmentId = assignmentOf(workPath);
   const submissionPath = `${workPath}/predaja`;
 
   const savedWork = await test.step('Upis dvaju odlomaka i potvrda spremanja te snimke', async () => {

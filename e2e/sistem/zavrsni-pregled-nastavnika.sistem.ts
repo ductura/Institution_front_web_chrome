@@ -5,26 +5,23 @@ import { expect, test, type Page } from '@playwright/test';
 import { createTextAnchor } from '../../packages/editor-core/src/document/collaboration/anchor';
 import { isNodeId } from '../../packages/editor-core/src/document/document/schema';
 import { messagesHr as t } from '../../src/lib/i18n/messages.hr';
-import { oidcOrigin, webOrigin } from './stog';
-import { openDemoWork, signInDemoStudent } from './student';
+import { app, webOrigin } from './stog';
+import { assignmentOf, describePageOnFailure, openDemoWork, signInDemoStudent, signInThroughPreloader } from './student';
+
+describePageOnFailure();
 
 const title = 'Seminarski rad: kućno kompostiranje';
 const otherCourse = 'Izmišljeni seminar o gradskim krovovima';
 const studentName = /Lucija Đaković/;
 
 async function signInTeacher(page: Page, courseTeacher: boolean) {
-  await page.goto('/prijava?returnTo=%2Fnastavnik');
-  await page.getByRole('link', { name: 'Prijava sustavom AAI@EduHr', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.origin === oidcOrigin);
-  if (courseTeacher) {
-    await page.locator('button[name="account"][value="demo-teacher"]').click();
-  } else {
-    await page.getByLabel('Domena ustanove').fill('demo.ductus.test');
-    await page.getByLabel('Uloga').selectOption('nastavnik');
-    await page.getByLabel('Korisničko ime (neobavezno)').fill('demo-int04-nastavnik');
-    await page.getByRole('button', { name: 'Prijavi se', exact: true }).click();
-  }
-  await expect(page, courseTeacher ? 'Prijava nastavnika kolegija.' : 'Za drugog nastavnika učitaj seed-int04.sql.').toHaveURL(`${webOrigin}/nastavnik`);
+  await signInThroughPreloader(page, courseTeacher ? 'demo-teacher' : async (oidc) => {
+    await oidc.getByLabel('Domena ustanove').fill('demo.ductus.test');
+    await oidc.getByLabel('Uloga').selectOption('nastavnik');
+    await oidc.getByLabel('Korisničko ime (neobavezno)').fill('demo-int04-nastavnik');
+    await oidc.getByRole('button', { name: 'Prijavi se', exact: true }).click();
+  });
+  await expect(page, courseTeacher ? 'Prijava nastavnika kolegija.' : 'Za drugog nastavnika učitaj seed-int04.sql.').toHaveURL(`${webOrigin}${app('/nastavnik')}`);
   const profile = await page.request.get('/api/v1/me');
   await expect(profile).toBeOK();
   expect(await profile.json()).toMatchObject({
@@ -49,7 +46,7 @@ function postFromBrowser(page: Page, path: string, data: object) {
 test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi kolegij nema pristup', async ({ page, browser }) => {
   const { assignmentId, documentId, artifactSha256 } = await test.step('Pronađi spremljenu potvrdu iz INT-03', async () => {
     await signInDemoStudent(page);
-    const assignmentId = (await openDemoWork(page)).slice('/rad/'.length);
+    const assignmentId = assignmentOf(await openDemoWork(page));
     const response = await page.request.get(`/api/v1/student/assignments/${assignmentId}/submission`);
     await expect(response).toBeOK();
     const submission = await response.json();
@@ -59,8 +56,8 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
     });
     return submission.receipt.payload as { assignmentId: string; documentId: string; artifactSha256: string };
   });
-  const fastPath = `/nastavnik/brz-put?zadatak=${encodeURIComponent(assignmentId)}`;
-  const workPath = `/nastavnik/rad/${encodeURIComponent(documentId)}`;
+  const fastPath = app(`/nastavnik/brz-put?zadatak=${encodeURIComponent(assignmentId)}`);
+  const workPath = app(`/nastavnik/rad/${encodeURIComponent(documentId)}`);
   const liveApi = `/api/v1/live/${encodeURIComponent(documentId)}`;
   const teacher = await browser.newContext({ baseURL: webOrigin });
   const other = await browser.newContext({ baseURL: webOrigin });

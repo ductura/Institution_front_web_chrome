@@ -2,15 +2,32 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// INT-10 (DAN-887): the system tests run what is shipped. The browser has one
+// origin, the Preloader's local edge (deploy/edge/dev-proxy.mjs of
+// ductura/Preloader): `/` is the Preloader's build, `/api/v1/*` the real
+// Institution_server and `/app/web/*` the production build of packages/app
+// (`pnpm build` + `pnpm start` in this repo). The root Next app in src/app is
+// not served.
 const webRoot = fileURLToPath(new URL('../..', import.meta.url));
-const startHelp = 'U repou Institution_server pokreni pnpm stog:gore (INT-01) i provjeri pnpm stog:zdravlje.';
-const port = Number(process.env.STOG_FRONT_PORT ?? '3000');
-if (!Number.isInteger(port) || port < 1024 || port > 65535 || port === 4000 || port === 8090) {
-  throw new Error('STOG_FRONT_PORT mora biti port od 1024 do 65535, različit od portova 4000 i 8090.');
+const startHelp = 'Pokreni stog kao .github/workflows/sistem.yml: Institution_server (pnpm lokalno --izvor=http://localhost:8000), '
+  + 'ovaj front (pnpm build && pnpm start) i edge Preloadera (pnpm build && pnpm edge).';
+const port = Number(process.env.STOG_EDGE_PORT ?? '8000');
+if (!Number.isInteger(port) || port < 1024 || port > 65535 || port === 4000 || port === 8090 || port === 5173) {
+  throw new Error('STOG_EDGE_PORT mora biti port od 1024 do 65535, različit od portova 4000, 5173 i 8090.');
 }
 
+/** The one origin the browser uses: the Preloader's edge. */
 export const webOrigin = `http://localhost:${port}`;
 export const oidcOrigin = 'http://localhost:8090';
+/** Where packages/app answers behind the edge (README of packages/app). */
+export const appBase = '/app/web';
+/** The direct address of Institution_server, for the health check after a restart. */
+export const serverHealthUrl = 'http://127.0.0.1:4000/api/v1/health';
+/** The host the tests exercise: the shipped package, not src/app. */
+export const shippedHost = 'packages/app';
+
+/** A path of the shipped app, e.g. app('/zadaci') = '/app/web/zadaci'. */
+export const app = (path: string) => `${appBase}${path === '/' ? '/' : path}`;
 
 async function checkService(url: string, service: string, checkBody?: (response: Response) => Promise<void>) {
   try {
@@ -23,11 +40,11 @@ async function checkService(url: string, service: string, checkBody?: (response:
     else await response.body?.cancel();
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`INT-02: lokalni stog nije spreman. ${service} (${url}): ${detail}. ${startHelp}`);
+    throw new Error(`INT-10: lokalni stog nije spreman. ${service} (${url}): ${detail}. ${startHelp}`);
   }
 }
 
-async function checkHealth(response: Response) {
+export async function checkHealth(response: Response) {
   const health = await response.json();
   if (health.status !== 'ok' || typeof health.serverVersion !== 'string') {
     throw new Error('neočekivan odgovor Institution_servera');
@@ -35,7 +52,19 @@ async function checkHealth(response: Response) {
   if (health.state !== 'ok') throw new Error('PostgreSQL nije spreman');
 }
 
-function revision(directory: string, repo: string) {
+async function checkPreloader(response: Response) {
+  const html = await response.text();
+  // The Preloader's first screen offers the AAI@EduHr sign-in that returns to the web (#2028 §3.1).
+  if (!html.includes('/api/v1/auth/login?returnTo=%2Fapp%2Fweb%2F')) throw new Error('na / nije prvi ekran Preloadera');
+}
+
+async function checkShippedApp(response: Response) {
+  const html = await response.text();
+  // The production build of packages/app asks for its files under /app/web/_next/ (assetPrefix).
+  if (!html.includes('/app/web/_next/')) throw new Error('na /app/web/ nije izgradnja packages/app');
+}
+
+export function revision(directory: string, repo: string) {
   try {
     return execFileSync('git', ['rev-parse', '--verify', 'HEAD'], {
       cwd: directory,
@@ -43,21 +72,32 @@ function revision(directory: string, repo: string) {
       stdio: ['ignore', 'pipe', 'pipe'],
     }).trim();
   } catch {
-    throw new Error(`INT-02: ne mogu očitati Git HEAD za ${repo} u ${directory}. ` +
-      'STOG_SERVER_DIR treba pokazivati na checkout iz kojeg je pokrenut pnpm stog:gore.');
+    throw new Error(`INT-10: ne mogu očitati Git HEAD za ${repo} u ${directory}. ` +
+      'STOG_SERVER_DIR i STOG_PRELOADER_DIR trebaju pokazivati na checkoute iz kojih je stog pokrenut.');
   }
 }
 
+export const serverRoot = () => resolve(webRoot, process.env.STOG_SERVER_DIR?.trim() || '../Institution_server');
+export const preloaderRoot = () => resolve(webRoot, process.env.STOG_PRELOADER_DIR?.trim() || '../Preloader');
+export const repoRevisions = () => ({
+  web: revision(webRoot, 'Institution_front_web_chrome'),
+  server: revision(serverRoot(), 'Institution_server'),
+  preloader: revision(preloaderRoot(), 'Preloader'),
+});
+
 export default async function setup() {
-  await checkService(`${webOrigin}/`, 'Next.js');
-  await checkService('http://localhost:4000/api/v1/health', 'Institution_server', checkHealth);
-  await checkService(`${webOrigin}/api/v1/health`, 'Next.js → Institution_server', checkHealth);
+  await checkService(`${webOrigin}/`, 'Preloader (edge)', checkPreloader);
+  await checkService(`${webOrigin}${appBase}/stanje`, 'packages/app (edge)', checkShippedApp);
+  await checkService(serverHealthUrl, 'Institution_server', checkHealth);
+  await checkService(`${webOrigin}/api/v1/health`, 'edge → Institution_server', checkHealth);
   await checkService(`${oidcOrigin}/.well-known/openid-configuration`, 'Simulator AAI@EduHr', async (response) => {
     const discovery = await response.json();
     if (discovery.issuer !== oidcOrigin) throw new Error('neočekivan OIDC izdavatelj');
   });
 
-  const serverRoot = resolve(webRoot, process.env.STOG_SERVER_DIR?.trim() || '../Institution_server');
-  console.log(`INT-02 WEB SHA ${revision(webRoot, 'Institution_front_web_chrome')}`);
-  console.log(`INT-02 SRV SHA ${revision(serverRoot, 'Institution_server')}`);
+  const shas = repoRevisions();
+  console.log(`INT-10 WEB SHA ${shas.web}`);
+  console.log(`INT-10 SRV SHA ${shas.server}`);
+  console.log(`INT-10 PRELOADER SHA ${shas.preloader}`);
+  console.log(`INT-10 HOST ${shippedHost} na ${webOrigin}${appBase}/`);
 }

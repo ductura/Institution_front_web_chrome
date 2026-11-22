@@ -3,11 +3,13 @@ import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 
 import { messagesHr as t } from '../../src/lib/i18n/messages.hr';
-import { oidcOrigin, webOrigin } from './stog';
-import { signInDemoStudent } from './student';
+import { app, webOrigin } from './stog';
+import { describePageOnFailure, signInDemoStudent, signInThroughPreloader } from './student';
 
-const adminCourses = '/ustanova/kolegiji';
-const teacherCourses = '/nastavnik/kolegiji';
+describePageOnFailure();
+
+const adminCourses = app('/ustanova/kolegiji');
+const teacherCourses = app('/nastavnik');
 const createCourseApi = '/api/v1/institution/admin/courses';
 const settingsApi = '/api/v1/settings/values';
 const profileKey = 'lekta.profile';
@@ -21,10 +23,8 @@ async function signIn(
   path: string,
   role: 'institution_admin' | 'teacher',
 ) {
-  await page.goto(`/prijava?returnTo=${encodeURIComponent(path)}`);
-  await page.getByRole('link', { name: 'Prijava sustavom AAI@EduHr', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.origin === oidcOrigin);
-  await page.locator(`button[name="account"][value="${account}"]`).click();
+  await signInThroughPreloader(page, account);
+  await page.goto(path);
   await expect(page).toHaveURL(`${webOrigin}${path}`);
 
   const me = await page.request.get('/api/v1/me');
