@@ -18,5 +18,5 @@ export const studentMilestonesHr = {
   signedOut: "Sesija je završila. Prijavi se ponovno.",
   revisionTitle: "Mentor traži doradu",
   revisionDue: "Rok dorade: {due}",
-  state: { open: "Otvoreno", submitted: "Poslano", approved: "Odobreno", returned: "Vraćeno na doradu" },
+  state: { not_submitted: "Nije poslano", submitted: "Poslano", approved: "Odobreno", revision_requested: "Vraćeno na doradu" },
 } as const;

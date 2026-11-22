@@ -1,30 +1,21 @@
 /**
  * Student side of the milestones (WEB-1521, N-15).
  *
- * Reading uses `work.milestones.get` (in the generated extract). Sending a
- * milestone for review is SRV-1520 `POST .../milestones/{milestoneId}/submit`;
- * that operation is not in the web extract yet, so this module types it as a
- * port the caller injects. Nothing here calls the API directly. The write
- * counts as done only when the answer names the same milestone in the state
+ * Reading uses `work.milestone-states.get` (state, submittedAt, revision
+ * comment and deadline); sending uses `work.milestones.submit.post`. Both are
+ * in the generated extract and go only through `createApi`. The write counts
+ * as done only when the answer names the same milestone in the state
  * "submitted" (B-6); anything else is unknown and the screen keeps its state.
  */
 
-import type { WorkMilestone } from "./work-milestones";
+import { createApi, type ApiResult } from "./api";
 
-/** Server operation id assumed for SRV-1520 submit (not yet in the extract). */
-export const SUBMIT_OPERATION = "work.milestones.submit";
+type Milestones = Extract<ApiResult<"work.milestone-states.get">, { ok: true }>["body"]["milestones"];
+export type StudentMilestone = Milestones[number];
 
-/** Extract state plus the optional revision fields SRV-1520 adds. */
-export type StudentMilestone = WorkMilestone & {
-  readonly revisionComment?: string | null;
-  readonly revisionDueAt?: string | null;
-};
-
-export type SubmitAnswer =
-  | { readonly ok: true; readonly status: number; readonly body: unknown }
-  | { readonly ok: false; readonly status: number; readonly code?: string };
-/** The caller owns the transport: `(documentId, milestoneId) => answer`. */
-export type SubmitPort = (documentId: string, milestoneId: string) => Promise<SubmitAnswer>;
+export async function readStudentMilestones(documentId: string, api = createApi()) {
+  return api("work.milestone-states.get", { params: { documentId }, query: undefined, body: undefined });
+}
 
 export type SubmitResult =
   | { readonly kind: "saved"; readonly milestone: StudentMilestone }
@@ -34,29 +25,26 @@ export type SubmitResult =
   /** 408, 503, a broken connection, any other shape: the write may be recorded. */
   | { readonly kind: "nepoznato" };
 
-/** A port for builds where the operation is not available yet: always unknown. */
-export const unavailableSubmit: SubmitPort = async () => ({ ok: false, status: 503, code: "unavailable" });
-
 /** The next milestone to show: the first one not yet approved, in list order. */
 export function nextMilestone(list: readonly StudentMilestone[]): StudentMilestone | null {
   return list.find((item) => item.state !== "approved") ?? null;
 }
 
-/** The student may send only an open or returned milestone. */
-export const maySubmit = (item: StudentMilestone): boolean => item.state === "open" || item.state === "returned";
+/** The student may send only a not yet sent milestone or one returned for revision. */
+export const maySubmit = (item: StudentMilestone): boolean =>
+  item.state === "not_submitted" || item.state === "revision_requested";
 
 /** Never throws. */
-export async function submitMilestone(port: SubmitPort, documentId: string, milestoneId: string): Promise<SubmitResult> {
+export async function submitMilestone(documentId: string, milestoneId: string, api = createApi()): Promise<SubmitResult> {
   try {
-    const answer = await port(documentId, milestoneId);
-    if (!answer.ok) {
-      if (answer.status === 401) return { kind: "session-expired" };
-      return answer.status === 409 ? { kind: "promijenjeno" } : { kind: "nepoznato" };
+    const result = await api("work.milestones.submit.post", { params: { documentId, milestoneId }, query: undefined, body: undefined });
+    if (!result.ok) {
+      if (result.status === 401) return { kind: "session-expired" };
+      return result.status === 409 ? { kind: "promijenjeno" } : { kind: "nepoznato" };
     }
-    const body = answer.body as Partial<StudentMilestone> | null;
-    if (body && typeof body === "object" && typeof body.id === "string"
-      && body.id.toLowerCase() === milestoneId.toLowerCase() && body.state === "submitted") {
-      return { kind: "saved", milestone: body as StudentMilestone };
+    const body = result.body;
+    if (body.id.toLowerCase() === milestoneId.toLowerCase() && body.state === "submitted") {
+      return { kind: "saved", milestone: body };
     }
     return { kind: "nepoznato" };
   } catch {

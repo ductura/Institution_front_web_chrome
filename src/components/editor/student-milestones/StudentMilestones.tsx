@@ -3,8 +3,7 @@
 import { Button, Dialog } from "@ductura/ui";
 import { useRef, useState } from "react";
 
-import { maySubmit, nextMilestone, submitMilestone, unavailableSubmit, type StudentMilestone, type SubmitPort } from "@/client/milestone-submit";
-import { readWorkMilestones } from "@/client/work-milestones";
+import { maySubmit, nextMilestone, readStudentMilestones, submitMilestone } from "@/client/milestone-submit";
 import { zagrebParts } from "@/components/summary/zagreb-time";
 
 import { useMentorRead, type MentorAccess } from "../mentor/milestones/useMentorRead";
@@ -13,20 +12,20 @@ import styles from "./StudentMilestones.module.css";
 
 const when = (iso: string) => { const p = zagrebParts(iso); return p ? `${p.date} ${p.time}` : iso; };
 
-export function StudentMilestones({ submit = unavailableSubmit, ...access }: MentorAccess & { submit?: SubmitPort }) {
-  const { data, setData, status, retry } = useMentorRead(readWorkMilestones, access);
+export function StudentMilestones(access: MentorAccess) {
+  const { data, setData, status, retry } = useMentorRead(readStudentMilestones, access);
   const [asking, setAsking] = useState(false);
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState<string>();
   const inFlight = useRef(false);
-  const list = (data?.milestones ?? []) as readonly StudentMilestone[];
+  const list = data?.milestones ?? [];
   const next = nextMilestone(list);
 
   const send = async () => {
     if (!next || inFlight.current || !access.current()) return;
     inFlight.current = true;
     setSending(true);
-    const result = await submitMilestone(submit, access.documentId, next.id);
+    const result = await submitMilestone(access.documentId, next.id);
     inFlight.current = false;
     if (!access.current()) return;
     setSending(false);
@@ -53,11 +52,11 @@ export function StudentMilestones({ submit = unavailableSubmit, ...access }: Men
 
   const line = (next.dueAt === null ? t.nextNoDue : t.next.replace("{due}", when(next.dueAt)))
     .replace("{title}", next.title).replace("{state}", t.state[next.state]);
-  const comment = next.state === "returned" ? next.revisionComment : null;
+  const comment = next.state === "revision_requested" ? next.revisionComment : null;
 
   return <section className={styles.box} aria-label={next.title}>
     <p><strong>{line}</strong></p>
-    {next.state === "returned" && <div className={styles.revision}>
+    {next.state === "revision_requested" && <div className={styles.revision}>
       <p><strong>{t.revisionTitle}</strong></p>
       {comment && <p>{comment}</p>}
       {next.revisionDueAt && <p>{t.revisionDue.replace("{due}", when(next.revisionDueAt))}</p>}
