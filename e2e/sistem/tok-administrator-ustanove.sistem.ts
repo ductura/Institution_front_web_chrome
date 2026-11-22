@@ -109,7 +109,7 @@ test('INT-05: administrator izrađuje kolegij, postavlja profil provjera, a nosi
       const body = await created.json();
       expect(created.status(), `Izrada kolegija: ${JSON.stringify(body)}`).toBe(200);
       expect(body).toMatchObject({ id: expect.stringMatching(uuid), groups: [] });
-      await expect(page.getByRole('status')).toHaveText(form.created.replace('{name}', courseName));
+      await expect(page.getByRole('status').filter({ hasText: courseName })).toHaveText(form.created.replace('{name}', courseName));
       return { courseId: body.id as string, academicYear, aiPolicy };
     });
 

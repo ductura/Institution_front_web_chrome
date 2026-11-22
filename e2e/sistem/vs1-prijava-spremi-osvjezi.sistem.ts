@@ -129,13 +129,11 @@ function replayHeaders(headers: Record<string, string>) {
   return Object.fromEntries(Object.entries(headers).filter(([name]) => !skip.has(name) && !name.startsWith(':')));
 }
 
-test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje je potvrđeno, a rad preživi ponovno pokretanje servera', async ({ browser }, testInfo) => {
+test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje je potvrđeno, a rad preživi ponovno pokretanje servera', async ({ browser, context, page }, testInfo) => {
   test.setTimeout(240_000);
   const sentence = `U izmišljenom vrtu nastaje kompost (VS-1 ${randomUUID()}).`;
   const shas = repoRevisions();
-  const context = await browser.newContext({ baseURL: webOrigin });
   await recordSaveChip(context);
-  const page = await context.newPage();
   const editor = page.getByRole('textbox', { name: 'Tekst rada', exact: true });
   const chip = page.locator('footer[aria-label="Stanje rada"]').getByRole('status');
   const claims: Record<string, string> = {};
@@ -186,13 +184,17 @@ test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje 
 
   const before = await test.step('VS-1.7 (A05): „Spremljeno na poslužitelju” tek nakon provjerene potvrde za istu transakciju, dokument i reviziju', async () => {
     const releasedAt = Date.now();
+    // The first send may ask for protocol 2; a server without it answers 426 and
+    // the client sends the same commit again under 1 (src/client/evidence-ingest.ts).
     const [commit] = await Promise.all([
-      page.waitForResponse((response) => response.request() === held, { timeout: 30_000 }),
+      page.waitForResponse((response) => carries(response.request(), sentence) && response.status() !== 426, { timeout: 30_000 }),
       (async () => release())(),
     ]);
+    const confirmed = commit.request();
+    expect(confirmed.postDataJSON().clientTransactionId, 'isti ključ kao zadržani zahtjev').toBe(held.postDataJSON().clientTransactionId);
     const body = commit.status() === 200 ? await commit.json() : await commit.json().catch(() => null);
     expect(commit.status(), `spremanje: ${JSON.stringify(body)}`).toBe(200);
-    const sent = held.postDataJSON() as { documentId: string; clientTransactionId: string; segments: string[]; document: string };
+    const sent = confirmed.postDataJSON() as { documentId: string; clientTransactionId: string; segments: string[]; document: string };
     expect(body).toMatchObject({
       status: expect.stringMatching(/^(committed|duplicate)$/),
       revision: expect.any(Number),
@@ -221,7 +223,7 @@ test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje 
       revision: body.revision as number,
       text: documentText(Buffer.from(sent.document, 'base64')),
       hash: sha256(Buffer.from(sent.document, 'base64')),
-      request: { headers: replayHeaders(await held.allHeaders()), body: held.postData() ?? '' },
+      request: { headers: replayHeaders(await confirmed.allHeaders()), body: confirmed.postData() ?? '' },
     };
   });
   expect(before.documentId).toBe(opened.documentId);
@@ -291,7 +293,7 @@ test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje 
     }
   });
 
-  await context.close();
+  await page.close();
 
   const restart: Restart = await test.step('VS-1.13 (A06): Institution_server se stvarno gasi i ponovno podiže (novi PID)', async () =>
     restartServer(testInfo.outputPath('institution-server-nakon-ponovnog-pokretanja.log')));

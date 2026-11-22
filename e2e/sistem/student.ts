@@ -40,6 +40,15 @@ export async function openDemoWork(page: Page) {
   return new URL(page.url()).pathname;
 }
 
+/**
+ * The editor's first-run guide ("Prvi koraci") covers the sheet's top bar
+ * until it is closed; a student closes it with "Preskoči vodič".
+ */
+export async function dismissGuide(page: Page) {
+  const skip = page.getByRole('button', { name: 'Preskoči vodič', exact: true });
+  if (await skip.isVisible()) await skip.click();
+}
+
 /** The assignment id in a work path from openDemoWork. */
 export const assignmentOf = (workPath: string) => workPath.slice(app('/rad/').length);
 
