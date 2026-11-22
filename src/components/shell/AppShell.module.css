@@ -318,6 +318,13 @@
   display: none;
 }
 
+/* The drawer button as a word ("Izbornik"): as wide as its text. */
+.menuText {
+  width: auto;
+  padding: 0 var(--space-3, 12px);
+  font: inherit;
+}
+
 .shade {
   position: fixed;
   inset: 0;

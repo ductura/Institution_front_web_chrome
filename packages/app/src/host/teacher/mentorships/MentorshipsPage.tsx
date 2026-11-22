@@ -12,6 +12,7 @@ import { appHref } from "../../../../../../src/components/shell/nav";
 import { messagesHr as t } from "../../../../../../locales/hr";
 import { useHost } from "../../context";
 import { useTeacherRead } from "../../pages";
+import { teacherShellHr } from "../shell/messages.hr";
 import { myStudentsText as s } from "./messages.hr";
 import { studentsOf } from "./model";
 
@@ -40,7 +41,7 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
   const mw = t.mentoredWorks;
 
   let body;
-  if (read === null) body = <p role="status">…</p>;
+  if (read === null) body = <p role="status">{teacherShellHr.loadingMentorships}</p>;
   else if (read.kind === "unavailable") {
     body = (
       <>
