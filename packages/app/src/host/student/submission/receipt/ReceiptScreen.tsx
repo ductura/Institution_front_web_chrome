@@ -7,6 +7,7 @@ import type { ReceiptRead } from "../../../../../../../src/components/predaja/Re
 import { browserTransport, goToSignIn } from "../../../../../../../src/client/api";
 import { downloadBlob } from "../../../../../../../src/components/editor/EarlierDraft";
 import { fetchRecord } from "../../portable-record/model";
+import { verifyHref } from "../../../public/verify/model";
 import { fingerprintGroups, receiptView, type Row } from "./model";
 import { receiptText as t } from "./messages.hr";
 
@@ -16,6 +17,8 @@ export type ReceiptScreenProps = {
   /** Where a work without a receipt goes on (the workspace). */
   readonly workHref: string;
   readonly homeHref: string;
+  /** The public check /provjera under the base (WEB-2111); without it the section says the check is not available. */
+  readonly checkHref?: string;
   /** The process summary: not in the contract yet, so the host passes the "unavailable" panel. */
   readonly summary?: ReactNode;
 };
@@ -72,7 +75,7 @@ function RecordDownload({ submissionId }: { submissionId: string }) {
 }
 
 /** E-11 in every variant of the prototype; "Predano" only with the signed receipt (B-6). */
-export default function ReceiptScreen({ read, retryHref, workHref, homeHref, summary }: ReceiptScreenProps) {
+export default function ReceiptScreen({ read, retryHref, workHref, homeHref, checkHref, summary }: ReceiptScreenProps) {
   const [open, setOpen] = useState(false);
   const view = receiptView(read);
   if (view.kind === "loading") return <p role="status">{t.loading}</p>;
@@ -119,7 +122,9 @@ export default function ReceiptScreen({ read, retryHref, workHref, homeHref, sum
       <section aria-labelledby="receipt-verify">
         <h3 id="receipt-verify">{t.verifyTitle}</h3>
         <p>{t.verifyLead}</p>
-        <p role="note">{t.verifyUnavailable}</p>
+        {checkHref === undefined
+          ? <p role="note">{t.verifyUnavailable}</p>
+          : <p><a href={verifyHref(checkHref, submissionId, view.fingerprint)}>{t.verifyTitle}</a></p>}
       </section>
       <div><QrSample /><p>{t.qrNote}</p></div>
       <RecordDownload submissionId={submissionId} />

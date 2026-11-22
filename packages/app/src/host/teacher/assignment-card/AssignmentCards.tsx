@@ -37,8 +37,10 @@ function Field({ name, children }: { name: string; children: string }) {
 }
 
 /** One course card (N-01): role, enrolled, code state, next deadline, the buttons and the tasks. */
-export function AssignmentCard({ course, here, onIssued, extra }: {
+export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
   course: TeacherCourse; here: string; onIssued: () => void; extra?: React.ReactNode;
+  /** The tasks with their facts (WEB-2145); without it, title and deadline only. */
+  tasks?: React.ReactNode;
 }) {
   const { base } = useHost();
   const team = useTeam(course.id);
@@ -108,7 +110,7 @@ export function AssignmentCard({ course, here, onIssued, extra }: {
           ? <a className="btn secondary small" href={link(`/nastavnik/zadatak/${encodeURIComponent(course.assignments[0].id)}/merlin`)}>{t.merlin}</a> : null}
         {role === "holder" ? <Button tone="quiet" onClick={() => setOpen(true)} aria-label={`${t.newCode}: ${course.name}`}>{t.newCode}</Button> : null}
       </div>
-      {course.assignments.map((assignment) => (
+      {tasks ?? course.assignments.map((assignment) => (
         <div key={assignment.id} className={styles.task}>
           <h3>{assignment.title}</h3>
           <p className={styles.meta}>{t.due} {dueText(assignment.dueAt)}</p>
@@ -128,8 +130,9 @@ export function AssignmentCard({ course, here, onIssued, extra }: {
 }
 
 /** The cards of N-01, or the empty state; the toast region lives here. */
-export function AssignmentCards({ courses, here, extra }: {
+export function AssignmentCards({ courses, here, extra, tasks }: {
   courses: readonly TeacherCourse[]; here: string; extra?: (course: TeacherCourse) => React.ReactNode;
+  tasks?: (course: TeacherCourse) => React.ReactNode;
 }) {
   const { base } = useHost();
   const { toasts, show, dismiss } = useToasts();
@@ -141,7 +144,8 @@ export function AssignmentCards({ courses, here, extra }: {
     <>
       <div className={styles.acts}>{newCourse}</div>
       {courses.map((course) => (
-        <AssignmentCard key={course.id} course={course} here={here} onIssued={() => show(t.issued)} extra={extra?.(course)} />
+        <AssignmentCard key={course.id} course={course} here={here} onIssued={() => show(t.issued)} extra={extra?.(course)}
+          tasks={tasks?.(course)} />
       ))}
       <ToastRegion toasts={toasts} onDismiss={dismiss} label={t.toastLabel} closeLabel={t.toastClose} />
     </>

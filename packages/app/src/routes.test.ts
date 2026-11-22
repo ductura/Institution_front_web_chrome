@@ -120,6 +120,7 @@ describe("publicPage", () => {
     expect(publicPage("/prijava")).toMatchObject({ label: "Prijava" });
     expect(publicPage("/nema-ovlasti")).toMatchObject({ label: "Nema ovlasti" });
     expect(publicPage("/izvoz-podataka/izmisljeni-token")).toMatchObject({ label: "Izvoz mojih podataka" });
+    expect(publicPage("/provjera")).toMatchObject({ label: "Provjera potvrde" });
     expect(publicPage("/izvoz-podataka")).toBeNull();
     expect(publicPage("/ustanova/izvoz-podataka")).toBeNull();
     expect(publicPage("/zadaci")).toBeNull();
@@ -142,6 +143,8 @@ describe("internalRoute", () => {
     expect(internalRoute("/app/web/zadaci", "/app/web")).toBe("/zadaci");
     expect(internalRoute("/app/web/", "/app/web")).toBe("/");
     expect(internalRoute("/zadaci/kolegiji", "/app/chrome")).toBe("/zadaci/kolegiji");
+    // WEB-2111: the receipt's link to the check keeps the QR fragment.
+    expect(internalRoute("/app/web/provjera#r=a&o=b", "/app/web")).toBe("/provjera#r=a&o=b");
     expect(internalRoute("/upis?kod=1#x", "/app/web")).toBe("/upis");
     expect(internalRoute("/", "/app/web")).toBe("/");
   });
