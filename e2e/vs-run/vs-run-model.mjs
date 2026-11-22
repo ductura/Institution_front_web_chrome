@@ -5,6 +5,7 @@ export const SCENARIOS = {
   'zavrsna-predaja-studenta': 'INT-03 (A08 predaja)',
   'zavrsni-pregled-nastavnika': 'INT-04 (A09 RLS)',
   'tok-administrator-ustanove': 'INT-05 (A02–A04 administrator)',
+  'editor-val1': 'INT-13 (WEB-14, WEB-15 editor)',
 };
 
 /** The claims of docs/plan/VS-1.md, in order. */

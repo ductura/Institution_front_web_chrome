@@ -865,10 +865,12 @@ export function LocalSaveChip() {
  * provider's phase and the very state `LocalSaveChip` would show, never the
  * stored state on its own.
  */
-export function useLocalSaveRead(): { phase: Phase; state: SyncState | null } {
+export function useLocalSaveRead(): { phase: Phase; state: SyncState | null; receiptVerified: boolean } {
   const value = useLocalDocument();
   const chip = chipOf(value);
-  return { phase: value.phase, state: chip === null || chip.state === "blocked" ? null : chip.state };
+  const state = chip === null || chip.state === "blocked" ? null : chip.state;
+  // INT-11: the saver's own result of the receipt check, not a guess from the state.
+  return { phase: value.phase, state, receiptVerified: state === "SYNCED" && value.snapshot?.receiptVerified === true };
 }
 
 /** States in which this tab is putting the text on the device. */
