@@ -1,3 +1,4 @@
+import { returnStatus } from "../../../../../../../src/client/return-for-revision.ts";
 import type { RevisionRequest } from "../../../../../../../src/client/revision-requests.ts";
 
 /** What the review cards decide from the revision requests the server listed. */
@@ -38,5 +39,11 @@ export type RevisionPort = {
   returnForRevision: ((body: { action: "return"; documentId: string; instruction: string; dueAt: string | null }) => Promise<number | null>) | null;
 };
 
-/** Live port: send and return are not in the migration contract extract (WEB-2121 PITANJE), so they are unavailable. */
-export const LIVE_PORT: RevisionPort = { send: null, returnForRevision: null };
+/**
+ * Live port: "Vrati na doradu" is `work.return-for-revision.post` (WEB-2155B). The deadline is optional here, as on
+ * the work page; "send" is still not in the contract extract, so it stays unavailable.
+ */
+export const LIVE_PORT: RevisionPort = {
+  send: null,
+  returnForRevision: ({ documentId, instruction, dueAt }) => returnStatus(documentId, instruction, dueAt),
+};

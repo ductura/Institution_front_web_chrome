@@ -1,7 +1,8 @@
 // Transport of the teacher's revision request. list, accept and reopen are the contract's
-// collaboration.revision-requests.post; `create` is not wired: its body needs a text anchor and has no
-// deadline field, so nothing is invented and sending answers "unavailable" (PITANJE on Ductus#2052).
+// collaboration.revision-requests.post; `create` is the whole-work return with the mandatory deadline,
+// work.return-for-revision.post (WEB-2155B), because the anchored create has no deadline field.
 import { createApi, type ApiOptions, type Input } from "@/client/api";
+import { returnStatus } from "@/client/return-for-revision";
 import { listRevisionRequests, type RevisionListOutcome, type RevisionRequest } from "@/client/revision-requests";
 import { acceptBody, reopenBody, type RevisionBody } from "./model";
 
@@ -27,9 +28,13 @@ async function send(action: "accept" | "reopen", body: object | null, options?: 
   }
 }
 
+function outcomeOf(status: number | null): ActionOutcome {
+  return status === 200 ? "ok" : status === 401 ? "signedOut" : status === 403 ? "forbidden" : status === 409 ? "conflict" : "unavailable";
+}
+
 export const revisionPort: RevisionPort = {
   list: (documentId, current) => listRevisionRequests(documentId, current),
-  create: async () => "unavailable",
+  create: async (documentId, body) => outcomeOf(await returnStatus(documentId, body.instruction, body.dueAt)),
   accept: (request) => send("accept", acceptBody(request)),
   reopen: (request) => send("reopen", reopenBody(request)),
 };
