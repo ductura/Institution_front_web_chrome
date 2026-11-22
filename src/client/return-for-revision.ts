@@ -22,11 +22,11 @@ export type ReturnResult =
 
 /** Never throws. `dueAt` null sends no deadline. */
 export async function returnWorkForRevision(
-  documentId: string, comment: string, dueAt: string | null, api?: Api,
+  documentId: string, comment: string, dueAt: string | null, call?: Api,
 ): Promise<ReturnResult> {
   try {
     const body = dueAt === null ? { comment } : { comment, revisionDueAt: dueAt };
-    const result = await (api ?? createApi())("work.return-for-revision.post", { params: { documentId }, query: undefined, body });
+    const result = await (call ?? createApi())("work.return-for-revision.post", { params: { documentId }, query: undefined, body });
     if (!result.ok) {
       if (result.status === 401) return { kind: "session-expired" };
       if (result.status === 403) return { kind: "forbidden" };
@@ -41,8 +41,8 @@ export async function returnWorkForRevision(
 }
 
 /** The HTTP status a dialog `post` reads: 200 only for a confirmed return, null when nothing is known. */
-export async function returnStatus(documentId: string, comment: string, dueAt: string | null, api?: Api): Promise<number | null> {
-  const result = await returnWorkForRevision(documentId, comment, dueAt, api);
+export async function returnStatus(documentId: string, comment: string, dueAt: string | null, call?: Api): Promise<number | null> {
+  const result = await returnWorkForRevision(documentId, comment, dueAt, call);
   switch (result.kind) {
     case "returned": return 200;
     case "session-expired": return 401;
