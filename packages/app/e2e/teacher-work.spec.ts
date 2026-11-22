@@ -7,9 +7,14 @@ import type ContractVectors from "../../../src/client/migration-contract-vectors
 import { canonicalizeJcs } from "../../editor-core/src/document/forensics/jcs";
 import { REVISION_ZERO_JCS } from "../../editor-core/src/document/document/revision-zero";
 import { mentorWorkHr } from "../../../src/components/editor/mentor/work-state/messages.hr";
-import { consultationMessages } from "../../../src/components/teacher/consultation-records/messages.hr";
 import { messagesHr as t } from "../../../src/lib/i18n/messages.hr";
 import { n07Messages } from "../src/host/teacher/n07/messages.hr";
+import { preSubmitMessages } from "../src/host/teacher/pre-submit/messages.hr";
+// The host's own N-08 comments panel (WEB-2154), N-09 replay page (WEB-2159), N-12 consultations (#398) and N-06 frame (WEB-2150) texts.
+import { teacherCommentsMessages as comments } from "../src/host/teacher/comments/messages.hr";
+import { n09Messages as replay } from "../src/host/teacher/n09/messages.hr";
+import { n12Messages as consultationMessages } from "../src/host/teacher/n12/messages.hr";
+import { workFrameMessages as frame } from "../src/host/teacher/n06/messages.hr";
 
 const assignmentId = "00000000-0000-4000-8000-0000000000a1";
 const studentId = "00000000-0000-4000-8000-0000000000e1";
@@ -81,15 +86,17 @@ test("teacher opens the live text, replay, signed receipt and consultations unde
   await expect(page.getByRole("link", { name: mentorWorkHr.receipt, exact: true })).toHaveAttribute("href", `${work}/predaja`);
   await page.getByRole("link", { name: t.replay.titleTeacher }).click();
   await expect(page).toHaveURL(`${work}/reprodukcija`);
-  await expect(page.getByText(t.replay.empty)).toBeVisible();
+  await expect(page.getByText(replay.empty)).toBeVisible();
   await page.getByRole("link", { name: consultationMessages.backToWork }).click();
   await page.getByRole("link", { name: t.receipt.title }).click();
   await expect(page).toHaveURL(`${work}/predaja`);
   await expect(page.getByText("Iva Izmišljena")).toBeVisible();
   await expect(page.getByText(/\bPredano\b/)).toBeVisible();
-  await page.getByRole("link", { name: t.receipt.summary }).click();
-  await expect(page).toHaveURL(`${work}#sazetak-procesa`);
-  await page.getByRole("link", { name: consultationMessages.title, exact: true }).click();
+  // N-07 (WEB-2155): "Prije predaje" links to the N-10 summary page (WEB-2157).
+  await expect(page.getByRole("link", { name: preSubmitMessages.fullSummary, exact: true })).toHaveAttribute("href", `${work}/sazetak`);
+  await page.getByRole("link", { name: n07Messages.backToWork }).first().click();
+  // WEB-2150 (#385): the N-06 frame names the same views in its own navigation.
+  await page.getByRole("navigation", { name: frame.linksLabel }).getByRole("link", { name: consultationMessages.title, exact: true }).click();
   await expect(page).toHaveURL(`${work}/konzultacije`);
   await expect(page.getByText(consultationMessages.empty)).toBeVisible();
   await expect(page.getByRole("link", { name: consultationMessages.backToWork })).toHaveAttribute("href", work);
@@ -144,7 +151,7 @@ test("the anchored comment is shown after the server confirms and returns it", a
   await page.route("**/api/v1/comments/list", (route) => route.fulfill({ json: { comments: recorded ? [recorded] : [] } }));
   try {
     await page.goto(work);
-    await expect(page.getByText(t.teacherComments.empty)).toBeVisible();
+    await expect(page.getByText(comments.empty)).toBeVisible();
     await page.getByText(text).evaluate((element) => {
       const range = document.createRange();
       range.selectNodeContents(element);
@@ -153,11 +160,11 @@ test("the anchored comment is shown after the server confirms and returns it", a
       selection.addRange(range);
       element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
     });
-    const form = page.getByRole("form", { name: t.teacherComments.newTitle });
+    const form = page.getByRole("form", { name: comments.newTitle });
     await form.getByRole("textbox").fill(comment);
-    await form.getByRole("button", { name: t.teacherComments.publish }).click();
-    await expect(form.getByRole("button", { name: t.teacherComments.publishing })).toBeVisible();
-    await expect(page.getByText(t.teacherComments.empty)).toBeVisible();
+    await form.getByRole("button", { name: comments.newSubmit }).click();
+    await expect(form.getByRole("button", { name: comments.newSubmitting })).toBeVisible();
+    await expect(page.getByText(comments.empty)).toBeVisible();
   } finally {
     finish();
   }

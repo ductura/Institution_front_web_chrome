@@ -24,6 +24,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/nastavnik/rad/[id]/predaja": (c) => c.work.receipt.title,
   "/nastavnik/rad/[id]/konzultacije": (c) => c.app.pages.consultations,
   "/nastavnik/rad/[id]/usporedba": (c) => c.app.pages.versionComparison,
+  "/nastavnik/rad/[id]/sazetak": (c) => c.app.pages.processSummary,
   "/nastavnik/zadatak/novi": (c) => c.t.teacher.title,
   "/nastavnik/zadatak/[assignmentId]/uredi": (c) => c.t.teacher.newVersion.title,
   "/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik": (c) => c.t.teacher.workLanguageException.title,
@@ -32,13 +33,13 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/zadaci/mentorstvo": (c) => c.app.host.mentorshipRequest,
   "/kako-radi": (c) => c.t.shell.howItWorks,
   "/stanje": (c) => c.t.statusPage.pageTitle,
-  "/provjera": (c) => c.app.pages.receiptVerification,
   "/prijava": (c) => c.app.host.signIn,
   "/nema-ovlasti": (c) => c.app.accessDenied.pageTitle,
   "/profil": (c) => c.app.profile.title,
   "/pristupacnost": (c) => c.t.shell.accessibilityStatement,
   "/ustanova/izvoz-podataka": (c) => c.app.pages.studentDataExport,
   "/izvoz-podataka/[token]": (c) => c.app.pages.studentDataDownload,
+  "/provjera": (c) => c.app.pages.receiptCheck,
 };
 
 /**

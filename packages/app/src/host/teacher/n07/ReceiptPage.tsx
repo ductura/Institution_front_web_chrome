@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { goToSignIn } from "@/client/api";
 import { readTeacherWorkReceipt } from "@/client/teacher-work";
 import { appHref } from "@/components/shell/nav";
-import { SUMMARY_ANCHOR } from "@/components/teacher/LiveWorkFrame";
 import { useProcessSummary } from "@/components/teacher/SummaryCard";
 import ReturnForRevisionDialog from "@/components/teacher/revision/ReturnForRevisionDialog";
 
@@ -124,7 +123,8 @@ export default function N07ReceiptPage({ documentId, workHref, current, port = L
   const submitted = isSubmittedRead(input);
   const summary = useProcessSummary(documentId, current, submitted);
   const view = receiptView(input);
-  const summaryHref = `${workHref}#${SUMMARY_ANCHOR}`;
+  // N-10 (WEB-2157): the process summary is its own page under the work.
+  const summaryHref = `${workHref}/sazetak`;
   const name = input?.kind === "ready" ? input.studentName : null;
 
   return (

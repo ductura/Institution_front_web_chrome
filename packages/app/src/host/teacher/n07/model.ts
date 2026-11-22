@@ -7,6 +7,7 @@ import type { SubmissionState } from "@/client/submission";
 import { readVerificationFields } from "@/components/public-verification/code";
 import { zagrebEpochMs, zagrebWall } from "@/lib/i18n/zagreb";
 
+import { VERIFY_PATH } from "../../public/verify/model";
 import { stateLine, type ServerState } from "../n06/model";
 import { n07Messages as text } from "./messages.hr";
 
@@ -61,7 +62,7 @@ export const groupsOfFour = (hex: string): string => (hex.match(/.{1,4}/g) ?? []
 /** The path of the public check (C-6) with the receipt's code in the fragment, which never reaches a server log. */
 export function verifyPath(submissionId: string, sha256: string): string | null {
   const code = readVerificationFields({ receiptId: submissionId, fingerprint: sha256 });
-  return code === null ? null : `/provjera#r=${code.receiptId}&o=${code.fingerprint}`;
+  return code === null ? null : `${VERIFY_PATH}#r=${code.receiptId}&o=${code.fingerprint}`;
 }
 
 export function receiptView(input: ReceiptInput): ReceiptView {

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@ductura/ui";
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { watchSessionEnd } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
@@ -17,12 +17,14 @@ import { SummaryCardBody, useProcessSummary } from "@/components/teacher/Summary
 import { useComments } from "@/components/teacher/TeacherComments";
 import TeacherComments from "../comments/TeacherCommentsPanel";
 import ProposalsPanel from "../proposals/ProposalsPanel";
+import ProvenanceMap from "../provenance/ProvenanceMap";
 import { proposalsPort } from "../proposals/port";
 import type { TextAnchor } from "@/domain/collaboration";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { hostText } from "../../../text";
 import { useHost } from "../../context";
+import { TeacherBibliographyHost } from "../../editor/bibliography/teacher/TeacherBibliographyHost";
 import MobileReview from "../mobile-review/MobileReview";
 import { N12Consultations } from "../n12/N12Consultations";
 import { n12Messages as consultationMessages } from "../n12/messages.hr";
@@ -34,6 +36,9 @@ import N11Entry from "../n11/Entry";
 import { n11Messages } from "../n11/messages.hr";
 import { n11Port } from "../n11/port";
 import N07ReceiptPage from "../n07/ReceiptPage";
+import SummaryPage from "../n10/SummaryPage";
+import { n10Messages } from "../n10/messages.hr";
+import { n10Port } from "../n10/port";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
 const VIEWS = {
@@ -42,6 +47,7 @@ const VIEWS = {
   receipt: { suffix: "/predaja", title: t.receipt.title },
   consultations: { suffix: "/konzultacije", title: consultationMessages.title },
   comparison: { suffix: "/usporedba", title: n11Messages.title },
+  summary: { suffix: "/sazetak", title: n10Messages.title },
 } as const;
 
 type View = keyof typeof VIEWS;
@@ -87,6 +93,7 @@ function OpenWork({ documentId, path, view, session }: {
     return () => { watch.current = null; listener.close(); };
   }, [session]);
   const current = useCallback(() => watch.current?.ended() === false, []);
+  const summaryPort = useMemo(() => n10Port(current), [current]);
 
   const title = VIEWS[view].title;
   const workHref = appHref(base, path);
@@ -99,6 +106,11 @@ function OpenWork({ documentId, path, view, session }: {
   if (view === "comparison") {
     return <N11Compare key={documentId} port={n11Port} documentId={documentId} signInHref={workHref}
       replayHref={`${workHref}${VIEWS.replay.suffix}`} />;
+  }
+  if (view === "summary") {
+    // N-10 (WEB-2157): the summary as its own page; the origin map (N-10 br. 18) is another task.
+    return <SummaryPage key={documentId} port={summaryPort} documentId={documentId} workHref={workHref}
+      signInHref={`${workHref}${VIEWS.summary.suffix}`} />;
   }
   if (view === "receipt") {
     // N-07 "Što je student predao" (WEB-2155).
@@ -154,7 +166,9 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
+            <TeacherBibliographyHost documentId={documentId} submitted={view.submitted} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
+            <ProvenanceMap documentId={documentId} />
           </>}
           <RecordLimits />
         </>} />
