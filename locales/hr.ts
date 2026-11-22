@@ -717,17 +717,18 @@ export const hr = {
   // DAN-492 (M2.6-P02, N-16), design pregled-radova-v2: only what the read gives (D-202).
   mentoredWorks: {
     title: "Radovi uz mentora",
-    lead: "Završni, diplomski i drugi radovi kojima ste mentor. Prikaz samo čita; ništa ne mijenja.",
+    lead: "Radovi studenata kojima ste mentor, po prezimenu.",
     listTitle: "Radovi · abecedno",
     orderNote: "Popis se ne može poredati po brojevima.",
-    empty: "Nemate otvorenih mentorstava.",
-    unavailable: "Radovi trenutačno nisu dostupni. Pokušajte ponovno.",
+    empty: "Nemate mentorstava",
+    emptyHint: "Mentorstvo nastaje kad odobrite studentov zahtjev.",
+    unavailable: "Popis mentorstava trenutačno nije dostupan. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
     unnamed: "Ime nije dostupno",
     open: "Otvori rad",
     // The state as text only, never a colour (D-128).
     state: {
-      not_started: "Student još nije započeo rad.",
+      not_started: "Rad nije započet.",
       in_progress: "U pisanju",
       submitted: "Predano",
     },
