@@ -16,7 +16,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { appHref } from "../../../../../../src/components/index.ts";
 import { assignmentIdOf, editorWorkRead } from "../../../../../../src/components/editor/EditorPage.read.ts";
 import { readSubmittedWork } from "../../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
-import Declaration from "../../../../../../src/components/predaja/Declaration.tsx";
 import { studentReceiptRead, type ReceiptRead } from "../../../../../../src/components/predaja/ReceiptPanel.tsx";
 import { stageOf, type Stage } from "../../../../../../src/components/predaja/stage.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../../src/client/api.ts";
@@ -27,6 +26,8 @@ import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 import PortableRecord from "../portable-record/PortableRecord";
 import SubmissionPackage from "../submission-package/SubmissionPackage";
+import DeclarationStep from "./declaration/DeclarationStep";
+import { unavailableReader, type DeclarationReader, type DeclarationRead } from "./declaration/model";
 import { stepsText } from "./steps/messages.hr";
 import StepsShell from "./steps/StepsShell";
 import ReceiptScreen from "./receipt/ReceiptScreen";
@@ -118,16 +119,28 @@ export function SubmissionStartPage({ assignmentId }: { assignmentId: string }) 
   return <Shown shown={shown}>{() => null}</Shown>;
 }
 
-/** Step 2, "Izjava". The process summary is not in the contract yet and reads as not loadable (§5 rule 11). */
-export function DeclarationStepPage({ assignmentId }: { assignmentId: string }) {
+/** Step 2, "Izjava" (E-9, WEB-2107). The declaration has no server route yet, so `reader` answers "error" (§5 rule 11). */
+export function DeclarationStepPage({ assignmentId, reader = unavailableReader }: { assignmentId: string; reader?: DeclarationReader }) {
   const hrefOf = useHrefOf();
   const shown = useChecked(assignmentId, "izjava", async (checked, id) => ({ checked, id }));
+  const [attempt, setAttempt] = useState(0);
+  const [read, setRead] = useState<DeclarationRead>({ kind: "loading" });
+  const id = shown.kind === "ready" ? shown.value.id : null;
+  useEffect(() => {
+    if (id === null) return;
+    let live = true;
+    setRead({ kind: "loading" });
+    void reader(id).then((next) => { if (live) setRead(next); }, () => { if (live) setRead({ kind: "error" }); });
+    return () => { live = false; };
+  }, [id, reader, attempt]);
   return (
     <Shown shown={shown} loading={stepsText.loadingRecorded}>
-      {({ checked, id }) => (
-        <StepsShell step="declaration" work={checked} workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
-          receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
-          <Declaration assignmentId={id} recorded={{ kind: "error" }} hrefOf={hrefOf} />
+      {({ checked, id: assignment }) => (
+        <StepsShell step="declaration" work={checked} workHref={hrefOf(stepPath(assignment, "").replace(/\/predaja$/, ""))}
+          receiptHref={hrefOf(stepPath(assignment, "potvrda"))} onRetry={shown.reload}>
+          {checked.kind === "ready"
+            ? <DeclarationStep assignmentId={assignment} workState={checked.workState} read={read} hrefOf={hrefOf} onRetry={() => setAttempt((n) => n + 1)} />
+            : null}
         </StepsShell>
       )}
     </Shown>
