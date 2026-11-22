@@ -7636,6 +7636,9 @@
         "origin_mismatch",
         "cross_site"
       ],
+      "404": [
+        "not_found"
+      ],
       "408": [
         "body_timeout"
       ],
@@ -7653,9 +7656,318 @@
       ],
       "503": [
         "unavailable"
+      ]
+    }
+  },
+  "institution.student-data-exports.get": {
+    "path": "/api/v1/institution/student-data-exports",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "exports"
+              ],
+              "properties": {
+                "exports": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "exportId",
+                      "state",
+                      "requestedAt",
+                      "expiresAt"
+                    ],
+                    "properties": {
+                      "exportId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "state": {
+                        "anyOf": [
+                          {
+                            "const": "requested",
+                            "type": "string"
+                          },
+                          {
+                            "const": "approved",
+                            "type": "string"
+                          },
+                          {
+                            "const": "ready",
+                            "type": "string"
+                          },
+                          {
+                            "const": "downloaded",
+                            "type": "string"
+                          },
+                          {
+                            "const": "expired",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "requestedAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "expiresAt": {
+                        "anyOf": [
+                          {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.student-data-exports.post": {
+    "path": "/api/v1/institution/student-data-exports",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "studentId",
+        "identityCheckedBy",
+        "note"
+      ],
+      "properties": {
+        "studentId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        },
+        "identityCheckedBy": {
+          "anyOf": [
+            {
+              "const": "identity_card",
+              "type": "string"
+            },
+            {
+              "const": "passport",
+              "type": "string"
+            },
+            {
+              "const": "student_card",
+              "type": "string"
+            }
+          ]
+        },
+        "note": {
+          "minLength": 1,
+          "maxLength": 80,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "exportId"
+              ],
+              "properties": {
+                "exportId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
       ],
       "404": [
         "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.student-data-exports-approve.post": {
+    "path": "/api/v1/institution/student-data-exports/{exportId}/approve",
+    "method": "POST",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "exportId"
+      ],
+      "properties": {
+        "exportId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        }
+      }
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "reference"
+      ],
+      "properties": {
+        "reference": {
+          "minLength": 1,
+          "maxLength": 120,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "exportId",
+                "state"
+              ],
+              "properties": {
+                "exportId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "state": {
+                  "const": "approved",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.data-export.get": {
+    "path": "/api/v1/student/data-export/{token}",
+    "method": "GET",
+    "params": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "token": {
+          "pattern": "^[A-Za-z0-9_-]{43}$",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {}
+    },
+    "errors": {
+      "410": [
+        "not_allowed"
+      ],
+      "503": [
+        "unavailable"
       ]
     }
   }

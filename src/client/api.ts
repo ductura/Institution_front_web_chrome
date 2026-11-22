@@ -699,55 +699,17 @@ export function portableRecordCall(transport: typeof fetch = browserTransport, b
 }
 
 /**
- * WEB-1302 (SRV-1308): the data export of a student, requested by the registry office and
- * approved by the institution administrator. Not in the pinned contract yet (TODO(ugovor)),
- * so createApi does not know these routes; kept here, the only file allowed an API URL.
+ * WEB-1302B (SRV-1308): the student's one-time download, student.data-export.get. The answer is
+ * a file, which createApi does not read, so the path comes from the contract and the caller
+ * (client/student-data-export.ts) reads the answer. The token is a path segment, encoded, and no
+ * session is sent.
  */
-export type StudentDataExportCall = (
-  id: "institution.student-data-exports.get" | "institution.student-data-exports.post" | "institution.student-data-exports-approve.post",
-  input: { readonly exportId?: string; readonly body?: unknown },
-) => Promise<{ ok: true; status: number; body: unknown } | { ok: false; status: number; code: string }>;
+const STUDENT_DATA_DOWNLOAD = migrationContracts["student.data-export.get"].path;
 
-const STUDENT_DATA_EXPORTS = "/api/v1/institution/student-data-exports";
-
-/**
- * The transport of the export page: the browser's own fetch, same origin, session cookie only.
- * The export id of an approval is a path segment, encoded. A failure keeps its status and code;
- * an answer without a JSON body is a failure, never a success.
- */
-export function studentDataExportCall(transport: typeof fetch = browserTransport): StudentDataExportCall {
-  return async (id, input) => {
-    const post = id !== "institution.student-data-exports.get";
-    const path = id === "institution.student-data-exports-approve.post"
-      ? `${STUDENT_DATA_EXPORTS}/${encodeURIComponent(input.exportId ?? "")}/approve`
-      : STUDENT_DATA_EXPORTS;
-    try {
-      const response = await transport(new URL(path, globalThis.location.origin), {
-        method: post ? "POST" : "GET",
-        redirect: "manual",
-        credentials: "same-origin",
-        headers: post ? { "content-type": "application/json" } : undefined,
-        body: post ? JSON.stringify(input.body ?? {}) : undefined,
-      });
-      if (response.status >= 400) return { ok: false, status: response.status, code: await errorCodeOf(response) };
-      const type = response.headers.get("content-type") ?? "";
-      if (!type.startsWith("application/json")) return { ok: false, status: 0, code: "unexpected" };
-      return { ok: true, status: response.status, body: await response.json() };
-    } catch {
-      return { ok: false, status: 0, code: "unexpected" };
-    }
-  };
-}
-
-/**
- * WEB-1302 (SRV-1308): the student's one-time download, GET /api/v1/student/data-export/{token}.
- * Not in the pinned contract yet (TODO(ugovor)) and the answer is a file; the token is a path
- * segment, encoded, and no session is sent; the caller (client/student-data-export.ts) reads the answer.
- */
 export type StudentDataDownloadTransport = (token: string) => Promise<Response>;
 
 export function studentDataDownloadCall(transport: typeof fetch = browserTransport, baseUrl: string = globalThis.location.origin): StudentDataDownloadTransport {
-  return (token) => transport(new URL(`/api/v1/student/data-export/${encodeURIComponent(token)}`, baseUrl), {
+  return (token) => transport(new URL(STUDENT_DATA_DOWNLOAD.replace("{token}", encodeURIComponent(token)), baseUrl), {
     method: "GET",
     redirect: "manual",
     credentials: "omit",
