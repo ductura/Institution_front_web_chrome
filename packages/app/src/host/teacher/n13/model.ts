@@ -1,7 +1,7 @@
 // Pure rules of N-13 "Produljenje roka" (WEB-2162; INVENTAR-nastavnik 3.13, PARITET N-13). The page reads the
 // extensions, the students and (when it can) the task name, course and current deadline through a port in
 // src/client; a part the read does not give is left out or said as unavailable, never guessed. No network call here.
-import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
+import { momentHr as formatDateTimeHr } from "../n12/model";
 import { EXTENSION_REASONS, type DeadlineExtension, type ExtensionDraft, type ExtensionStudent, type RecordOutcome } from "../../../../../../src/client/deadline-extensions";
 import { n13Messages as text } from "./messages.hr";
 

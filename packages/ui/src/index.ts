@@ -30,6 +30,7 @@ export { ToastRegion, useToasts, type ToastRegionProps } from "./components/Toas
 export { MAX_TOASTS, TOAST_TIMEOUT_MS, type ToastItem, type ToastTone } from "./components/toast-queue";
 export { readTheme, saveTheme, THEME_KEY, themeOf, toggleTheme, type ShellTheme } from "./theme/theme";
 export { Icon, ICON_NAMES, type IconName, type IconProps } from "./icons/icons";
+export { ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, type EntryData, type OptionChoice, type OptionGroupProps, type SummaryRowData } from "./components/form-parts";
 export { Fingerprint, type FingerprintProps } from "./fingerprint";
 export { KeyValueList, type KeyValueItem, type KeyValueListProps } from "./key-value";
 export { Steps, type StepNumber, type StepsProps } from "./steps";

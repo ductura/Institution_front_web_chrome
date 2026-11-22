@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { n12Messages as t } from "./messages.hr";
-import { checkAddition, checkForm, recordTitle, revisionLabel, sortRecords, todayIso, versionOptions } from "./model";
+import { checkAddition, checkForm, dayHr, momentHr, recordTitle, revisionLabel, sortRecords, todayIso, versionOptions } from "./model";
 
 describe("N-12 model", () => {
   it("keeps the prototype wording", () => {
@@ -38,5 +38,13 @@ describe("N-12 model", () => {
   it("rejects an empty addition", () => {
     expect(checkAddition("  ")).toEqual({ ok: false, message: t.needAddition });
     expect(checkAddition(" x ")).toEqual({ ok: true, text: "x" });
+  });
+});
+
+describe("prototype date writing", () => {
+  it("writes a day and a moment in Zagreb time", () => {
+    expect(dayHr("2026-11-05T22:30:00.000Z")).toBe("5. 11. 2026.");
+    expect(dayHr("2026-11-05T23:30:00.000Z")).toBe("6. 11. 2026.");
+    expect(momentHr("2026-11-04T07:30:00.000Z")).toBe("4. 11. 2026. u 8:30");
   });
 });

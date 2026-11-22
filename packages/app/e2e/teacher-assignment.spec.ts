@@ -53,7 +53,7 @@ test("teacher selects a course and sees publication only after the API confirms 
   await page.getByRole("button", { name: "Pregled i objava" }).click();
   try {
     await page.getByRole("button", { name: assignment.publish, exact: true }).click();
-    await expect(page.getByRole("button", { name: assignment.pending, exact: true })).toBeDisabled();
+    await expect(page.getByRole("status").filter({ hasText: assignment.pending })).toBeVisible();
     await expect(page.getByText(wizard.publishedNotice)).toHaveCount(0);
   } finally {
     confirm();

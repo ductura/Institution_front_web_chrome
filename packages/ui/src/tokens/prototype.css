@@ -485,3 +485,95 @@ textarea.input {
     font-size: var(--fs-display-sm);
   }
 }
+
+/* Ductura_nastavnik.html: .banner, .opt, fieldset/legend (inside a card), .sb-acts, .sb-spin (VIZ-N6). */
+.banner {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2h) var(--space-3h);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--well);
+}
+
+.banner.warn {
+  border-left-color: var(--warn);
+}
+
+.opt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2h);
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  cursor: pointer;
+}
+
+.opt input {
+  margin-top: var(--space-0);
+}
+
+.card fieldset {
+  display: grid;
+  gap: var(--space-0);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2h) var(--space-3);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+}
+
+.card legend {
+  padding: 0 var(--space-1);
+  font-weight: 600;
+}
+
+.sb-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sb-state {
+  display: grid;
+  gap: var(--space-0);
+  min-width: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--rule-2);
+}
+
+.sb-state > .sb-h {
+  font-weight: 600;
+}
+
+.sb-spin {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: d-spin 0.8s linear infinite;
+}
+
+@keyframes d-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .sb-acts .btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: var(--space-4);
+  }
+
+  .pagehead h1 {
+    font-size: var(--fs-display-sm);
+  }
+}
