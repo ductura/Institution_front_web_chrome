@@ -237,7 +237,10 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
   await test.step('INT-14: nakon predaje poslužitelj i dalje ima samo V1', async () => {
     await page.unroute(`${webOrigin}/api/v1/evidence/commit`);
     for (const route of heldCommits.splice(0)) await route.abort().catch(() => undefined);
-    const opened = await page.request.post('/api/v1/evidence/open', { data: { assignmentId } });
+    const opened = await page.request.post('/api/v1/evidence/open', {
+      headers: { origin: webOrigin, 'content-type': 'application/json', 'ductus-protocol': '1' },
+      data: { assignmentId },
+    });
     await expect(opened).toBeOK();
     const body = await opened.json();
     expect(body).toMatchObject({ submitted: true, currentRevision: revision, documentHash: savedWork.documentHash });
