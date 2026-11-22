@@ -23,6 +23,7 @@ import { atOf } from "../steps/time";
 import { checksText as c } from "./messages.hr";
 import SummaryPanel from "./SummaryPanel";
 import { notesCall, readStepSummary, type ClientAnswer, type NotesClient, type SummaryPorts } from "./model";
+import { routerPath } from "../../../../bases";
 
 const PORTS: SummaryPorts = { readWork: (id) => readWork(id), readSummary: (documentId) => fetchProcessSummary(documentId) };
 
@@ -80,7 +81,7 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, declaredFo
   const retry = () => setAttempt((n) => n + 1);
   const submitted = stage.kind === "submitted";
   const nextHint = !online ? c.offline : confirmed ? undefined : c.declarationMissing;
-  const go = (step: "izjava" | "slanje" | "potvrda") => router.push(hrefOf(stepHref(assignmentId, step)));
+  const go = (step: "izjava" | "slanje" | "potvrda") => router.push(routerPath(hrefOf(stepHref(assignmentId, step))));
   const openNote = () => {
     if (!online || notes.kind !== "ready") return;
     setNoteOpen(true);

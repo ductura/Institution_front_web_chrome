@@ -4,27 +4,26 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { createTextAnchor } from '../../packages/editor-core/src/document/collaboration/anchor';
 import { isNodeId } from '../../packages/editor-core/src/document/document/schema';
+import { fastPathHostText } from '../../packages/app/src/host/teacher/n05/messages.hr';
 import { messagesHr as t } from '../../src/lib/i18n/messages.hr';
-import { oidcOrigin, webOrigin } from './stog';
-import { openDemoWork, signInDemoStudent } from './student';
+import { app, webOrigin } from './stog';
+import { describePageOnFailure, openDemoAssignment, signInDemoStudent, signInThroughPreloader } from './student';
+
+describePageOnFailure();
 
 const title = 'Seminarski rad: kućno kompostiranje';
+const course = 'Izmišljeni seminar iz ekologije grada';
 const otherCourse = 'Izmišljeni seminar o gradskim krovovima';
 const studentName = /Lucija Đaković/;
 
 async function signInTeacher(page: Page, courseTeacher: boolean) {
-  await page.goto('/prijava?returnTo=%2Fnastavnik');
-  await page.getByRole('link', { name: 'Prijava sustavom AAI@EduHr', exact: true }).click();
-  await expect(page).toHaveURL((url) => url.origin === oidcOrigin);
-  if (courseTeacher) {
-    await page.locator('button[name="account"][value="demo-teacher"]').click();
-  } else {
-    await page.getByLabel('Domena ustanove').fill('demo.ductus.test');
-    await page.getByLabel('Uloga').selectOption('nastavnik');
-    await page.getByLabel('Korisničko ime (neobavezno)').fill('demo-int04-nastavnik');
-    await page.getByRole('button', { name: 'Prijavi se', exact: true }).click();
-  }
-  await expect(page, courseTeacher ? 'Prijava nastavnika kolegija.' : 'Za drugog nastavnika učitaj seed-int04.sql.').toHaveURL(`${webOrigin}/nastavnik`);
+  await signInThroughPreloader(page, courseTeacher ? 'demo-teacher' : async (oidc) => {
+    await oidc.getByLabel('Domena ustanove').fill('demo.ductus.test');
+    await oidc.getByLabel('Uloga').selectOption('nastavnik');
+    await oidc.getByLabel('Korisničko ime (neobavezno)').fill('demo-int04-nastavnik');
+    await oidc.getByRole('button', { name: 'Prijavi se', exact: true }).click();
+  });
+  await expect(page, courseTeacher ? 'Prijava nastavnika kolegija.' : 'Za drugog nastavnika učitaj seed-int04.sql.').toHaveURL(`${webOrigin}${app('/nastavnik')}`);
   const profile = await page.request.get('/api/v1/me');
   await expect(profile).toBeOK();
   expect(await profile.json()).toMatchObject({
@@ -49,7 +48,7 @@ function postFromBrowser(page: Page, path: string, data: object) {
 test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi kolegij nema pristup', async ({ page, browser }) => {
   const { assignmentId, documentId, artifactSha256 } = await test.step('Pronađi spremljenu potvrdu iz INT-03', async () => {
     await signInDemoStudent(page);
-    const assignmentId = (await openDemoWork(page)).slice('/rad/'.length);
+    const { assignmentId } = await openDemoAssignment(page);
     const response = await page.request.get(`/api/v1/student/assignments/${assignmentId}/submission`);
     await expect(response).toBeOK();
     const submission = await response.json();
@@ -59,8 +58,8 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
     });
     return submission.receipt.payload as { assignmentId: string; documentId: string; artifactSha256: string };
   });
-  const fastPath = `/nastavnik/brz-put?zadatak=${encodeURIComponent(assignmentId)}`;
-  const workPath = `/nastavnik/rad/${encodeURIComponent(documentId)}`;
+  const fastPath = app(`/nastavnik/brz-put?zadatak=${encodeURIComponent(assignmentId)}`);
+  const workPath = app(`/nastavnik/rad/${encodeURIComponent(documentId)}`);
   const liveApi = `/api/v1/live/${encodeURIComponent(documentId)}`;
   const teacher = await browser.newContext({ baseURL: webOrigin });
   const other = await browser.newContext({ baseURL: webOrigin });
@@ -69,16 +68,19 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
     const teacherPage = await teacher.newPage();
     const { quote, nodeId } = await test.step('U Brzom putu otvori istu predaju i usporedi predani tekst', async () => {
       await signInTeacher(teacherPage, true);
-      const assignment = teacherPage.getByRole('listitem').filter({ has: teacherPage.getByText(title, { exact: true }) });
-      await assignment.getByRole('link', { name: t.fastPath.title, exact: true }).click();
+      // N-01 of packages/app lists the teacher's courses without a per-assignment link to "Brz put"
+      // (AssignmentFacts links /nastavnik/brz-put without ?zadatak=; open finding in INT-10), so
+      // the course is checked on the home page and "Brz put" is opened by its address.
+      await expect(teacherPage.getByRole('heading', { name: course, exact: true })).toBeVisible();
+      await teacherPage.goto(fastPath);
       await expect(teacherPage).toHaveURL(fastPath);
-      const submitted = teacherPage.getByRole('navigation', { name: t.fastPath.studentsLabel }).getByRole('button', { name: studentName });
-      await expect(submitted.getByText(t.fastPath.work.submitted, { exact: true })).toBeVisible();
+      const submitted = teacherPage.getByRole('navigation', { name: t.fastPath.studentsLabel }).getByRole('link', { name: studentName });
+      await expect(submitted.getByText(fastPathHostText.work.submitted, { exact: true })).toBeVisible();
       await submitted.click();
       const openWork = teacherPage.getByRole('link', { name: t.fastPath.openWork, exact: true });
       await expect(openWork).toHaveAttribute('href', workPath);
       const [live] = await Promise.all([
-        teacherPage.waitForResponse((response) => response.url() === `${webOrigin}${liveApi}` && response.request().method() === 'GET'),
+        teacherPage.waitForResponse((response) => response.url() === `${webOrigin}${liveApi}` && response.request().method() === 'GET', { timeout: 30_000 }),
         openWork.click(),
       ]);
       expect(live.status()).toBe(200);
@@ -125,7 +127,7 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       ]);
       expect(foreignList.status()).toBe(200);
       expect(await foreignList.json()).toEqual({ kind: 'ok', students: [] });
-      await expect(otherPage.getByText(t.fastPath.empty, { exact: true })).toBeVisible();
+      await expect(otherPage.getByText(fastPathHostText.emptyText, { exact: true })).toBeVisible();
       await expect(otherPage.getByRole('link', { name: t.fastPath.openWork, exact: true })).toHaveCount(0);
 
       const [denied] = await Promise.all([

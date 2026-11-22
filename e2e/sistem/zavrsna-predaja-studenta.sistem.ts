@@ -4,7 +4,9 @@ import { expect, test, type Response } from '@playwright/test';
 
 import { canonicalizeJcs } from '../../packages/editor-core/src/document/forensics/jcs';
 import { webOrigin } from './stog';
-import { openDemoWork, signInDemoStudent } from './student';
+import { assignmentOf, describePageOnFailure, dismissGuide, openDemoWork, signInDemoStudent } from './student';
+
+describePageOnFailure();
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const RECEIPT_SCHEMA = 'ductus-submission-receipt-v2';
@@ -43,7 +45,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     await expect(editor, 'Za predaju treba uređiv rad iz svježeg lokalnog seeda.').toBeEditable();
     return path;
   });
-  const assignmentId = workPath.slice('/rad/'.length);
+  const assignmentId = assignmentOf(workPath);
   const submissionPath = `${workPath}/predaja`;
 
   const savedWork = await test.step('Upis dvaju odlomaka i potvrda spremanja te snimke', async () => {
@@ -96,21 +98,29 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
   const { revision } = savedWork;
 
   const work = await test.step('Potvrda Izjave i pregled spremljenih odlomaka prije predaje', async () => {
-    await page.getByRole('link', { name: 'Predaja rada', exact: true }).click();
+    await dismissGuide(page);
+    // At 1280×720 the editor's toolbar lies over the top bar's "Predaja rada" and takes the pointer
+    // (open finding in the PR); the link is opened from the keyboard, as a keyboard user does.
+    await page.getByRole('link', { name: 'Predaja rada', exact: true }).focus();
+    await page.keyboard.press('Enter');
     await expect(page).toHaveURL(`${submissionPath}/izjava`);
     await expect(page.getByRole('heading', { name: 'Izjava', exact: true })).toBeVisible();
     const next = page.getByRole('button', { name: 'Dalje', exact: true });
     await expect(next).toBeDisabled();
     await page.getByRole('checkbox', { name: 'Potvrđujem izjavu' }).check();
+    await expect(next).toBeEnabled();
     await next.click();
+    await expect(page).toHaveURL((url) => url.pathname === `${submissionPath}/pregled`);
     await expect(page.getByRole('heading', { name: 'Prije predaje', exact: true })).toBeVisible();
-    await expect(page.getByText('Potvrđena.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Potvrđena', { exact: true })).toBeVisible();
 
+    // packages/app reads the server's revision on step 4 ("slanje"), where the text is submitted.
     const [opened] = await Promise.all([
       page.waitForResponse((response) => isPost(response, `${webOrigin}/api/v1/evidence/open`)
         && response.request().postDataJSON()?.assignmentId === assignmentId),
-      page.getByRole('button', { name: 'Dalje na predaju', exact: true }).click(),
+      page.getByRole('button', { name: 'Dalje', exact: true }).click(),
     ]);
+    await expect(page).toHaveURL((url) => url.pathname === `${submissionPath}/slanje`);
     await expectHttp200(opened, 'Čitanje spremljene revizije za predaju');
     const body = await opened.json();
     expect(body).toMatchObject({
@@ -122,10 +132,12 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
       headSegmentHash: savedWork.headSegmentHash,
     });
 
-    const manuscript = page.getByRole('document', { name: 'Tekst koji predajete', exact: true });
-    for (const paragraph of paragraphs) {
-      await expect(manuscript.locator('p').filter({ hasText: paragraph })).toHaveText(paragraph);
-    }
+    // The step shows the words of the text it submits, not the text: both paragraphs are in the server's
+    // snapshot it read, and the hash of those bytes is the saved one.
+    const snapshot = Buffer.from(body.document, 'base64');
+    expect(createHash('sha256').update(snapshot).digest('hex')).toBe(savedWork.documentHash);
+    for (const paragraph of paragraphs) expect(snapshot.toString('utf8')).toContain(paragraph);
+    await expect(page.getByRole('heading', { name: 'Predati rad?', exact: true })).toBeVisible();
     return body;
   });
 
@@ -167,12 +179,14 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
   });
 
   await test.step('Potvrda predaje prikazuje isti otisak i nakon osvježavanja', async () => {
-    await expect(page).toHaveURL(`${submissionPath}/potvrda`);
-    await expect(page.getByRole('heading', { name: 'Potvrda predaje', exact: true })).toBeVisible();
-    const fingerprint = page.locator('code').filter({ hasText: new RegExp(`^${receipt.payload.artifactSha256}$`) });
-    await expect.soft(fingerprint, 'Otisak nakon predaje').toBeVisible();
+    await expect(page).toHaveURL((url) => url.pathname === `${submissionPath}/potvrda`);
+    // E-11: the fingerprint in groups of four characters (receipt/model.ts fingerprintGroups).
+    const grouped = receipt.payload.artifactSha256.match(/.{4}/g).join(' ');
+    await expect(page.getByRole('heading', { name: /^Predano / })).toBeVisible();
+    const fingerprint = page.getByText(grouped, { exact: true });
+    await expect(fingerprint, 'Otisak nakon predaje').toBeVisible();
     await page.reload();
-    await expect.soft(fingerprint, 'Isti otisak nakon osvježavanja').toBeVisible();
+    await expect(fingerprint, 'Isti otisak nakon osvježavanja').toBeVisible();
   });
 
   await test.step('Ponovno otvaranje rada dopušta samo čitanje', async () => {
