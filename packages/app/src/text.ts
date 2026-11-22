@@ -8,6 +8,10 @@ export const hostText = {
   sessionUnavailable: "Poslužitelj ustanove trenutačno ne odgovara. Pokušajte ponovno za nekoliko minuta.",
   pending: "Ovaj prikaz još nije spojen na poslužitelj ustanove.",
   noRole: "Ovaj račun još nema ulogu u ustanovi. Ulogu dodjeljuje administrator ustanove.",
+  // E-1 (paritet 2101): the states of /prijava that the catalogues do not carry.
+  signInRedirecting: "Preusmjeravamo Vas na AAI@EduHr",
+  signInNoRoleTitle: "Prijava je uspjela",
+  signInNoRoleBody: "Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.",
   signOutFailed: "Odjava nije uspjela. Pokušajte ponovno.",
   signIn: "Prijava",
   // HOST-T3: the label of N-13 (WEB-1113) until locales/ has its catalogue.

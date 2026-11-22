@@ -2,7 +2,6 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { RouteLoading } from "@ductura/ui";
 
 import {
   appHref, MentoredWorks, readMentoredWorks, readTeacherCourses, StudentHome, TeacherCourses,
@@ -18,6 +17,8 @@ import { hostText } from "../text";
 import { useHost } from "./context";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { startWorkAction } from "./student/start-work/action";
+import SignInScreen from "./signin/SignInScreen";
+import { signInViewOf } from "./signin/sign-in-view";
 
 // The pages the host shows, one per route of app/[base]/. Each reads the
 // institution server only through src/client.
@@ -43,18 +44,25 @@ export function PublicPendingPage() {
 }
 
 /**
- * Ductus /prijava: sign-in is AAI@EduHr only (D-09), so the page goes straight
- * to the login of the institution server. A returnTo of the app ("/zadaci" or
+ * Ductus /prijava (E-1, paritet 2101): the sign-in screen with the states of
+ * the prototype. Sign-in is AAI@EduHr only (D-09): the button, and "Pokušaj
+ * ponovno" in the error states, show "preusmjeravanje" and leave for the login
+ * of the institution server. A returnTo of the app ("/zadaci" or
  * "/app/web/zadaci") comes back under this base; any other goes to its home.
+ * `?stanje=` and the login route's `?greska=` ask for a state.
  */
 export function SignInPage() {
   const { base } = useHost();
-  const returnTo = useSearchParams().get("returnTo");
-  useEffect(() => {
-    const route = returnTo === null ? null : internalRoute(returnTo, base);
-    leaveFor(signInHref(appHref(base, route ?? "/")));
-  }, [base, returnTo]);
-  return <RouteLoading label={hostText.signingIn} />;
+  const query = useSearchParams();
+  const [leaving, setLeaving] = useState(false);
+  const returnTo = query.get("returnTo");
+  const route = returnTo === null ? null : internalRoute(returnTo, base);
+  const href = signInHref(appHref(base, route ?? "/"));
+  const start = () => {
+    setLeaving(true);
+    leaveFor(href);
+  };
+  return <SignInScreen view={leaving ? "redirecting" : signInViewOf(query)} href={href} onStart={start} />;
 }
 
 /** S01 and S02 over student.assignments.get, read once per visit. */

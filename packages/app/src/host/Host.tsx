@@ -17,6 +17,7 @@ import { EditorSignOutSlot } from "./editor/save-status/SignOutSlot";
 import { RecoveryOffer } from "./editor/save-status/RecoveryOffer";
 import ProblemReportHelp from "./ProblemReportHelp";
 import SignOut from "./SignOut";
+import { NoRoleScreen } from "./signin/SignInScreen";
 import ShellNotifications from "./shell/notifications/ShellNotifications";
 
 /**
@@ -98,6 +99,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
 
   if (session === null) return <RouteLoading label={hostText.loading} />;
   if (session.kind === "signedOut") return <RouteLoading label={hostText.signingIn} />;
+  if (session.kind === "unavailable" && session.noRole === true) return <NoRoleScreen />;
   if (session.kind === "unavailable") {
     return <ErrorScreen title={hostText.sessionUnavailableTitle} body={hostText.sessionUnavailable} onRetry={load} />;
   }
