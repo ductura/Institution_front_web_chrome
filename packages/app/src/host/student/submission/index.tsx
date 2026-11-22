@@ -186,7 +186,7 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
           <ReceiptPanel read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))}
             summaryHref={hrefOf(stepPath(id, "pregled"))} submitHref={hrefOf(stepPath(id, ""))} />
           {receipt.kind === "potvrdeno" ? <PortableRecord submissionId={receipt.receipt.payload.submissionId} /> : null}
-          {receipt.kind === "potvrdeno" ? <SubmissionPackage assignmentId={id} /> : null}
+          {receipt.kind === "potvrdeno" ? <SubmissionPackage assignmentId={id} submissionId={receipt.receipt.payload.submissionId} /> : null}
           <WithdrawSubmission assignmentId={id} />
         </div>
       )}

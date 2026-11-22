@@ -1,57 +1,61 @@
 import { describe, expect, it } from "vitest";
 
 import { findForbiddenTerms } from "../../../../../../../scripts/forbidden-terms/terms.ts";
-import { isSafeHref, readBulkStatus, requestBulkPreparation } from "./contract";
-import { ASSIGNMENT, fakeBulkServer } from "./fake-port";
+import { bulkFilePath, isBulkHref, requestBulkLink } from "./contract";
+import { ASSIGNMENT, TOKEN, fakeBulkServer } from "./fake-port";
 import { bulkText } from "./messages.hr";
-import { failureMessage, requestFailure, viewOf } from "./model";
+import { requestFailure, viewOf } from "./model";
 
 const NOW = new Date("2026-12-01T10:00:00.000Z");
+const answer = (body: unknown, status = 201) => async () => ({ ok: true as const, status, body });
+const good = { format: "pdf", downloadPath: `${bulkFilePath(ASSIGNMENT, "pdf")}?token=${TOKEN}`, expiresAt: "2026-12-01T12:00:00.000Z" };
 
-describe("bulk download of submissions (WEB-1902)", () => {
-  it("an assignment without submissions is the empty state, not an error", async () => {
-    const read = await readBulkStatus(fakeBulkServer({ state: "empty" }).call, ASSIGNMENT);
-    expect(read).toEqual({ kind: "ready", status: { state: "empty" } });
-    expect(viewOf({ state: "empty" }, NOW)).toEqual({ kind: "empty" });
+describe("bulk download of submissions (WEB-1902, WEB-2004)", () => {
+  it("asks teacher.submissions-bulk-link.post for the chosen format and returns the server's link", async () => {
+    const server = fakeBulkServer({ expiresAt: "2026-12-01T12:00:00.000Z" });
+    const outcome = await requestBulkLink(server.call, ASSIGNMENT, "docx");
+    expect(server.posts).toEqual([{ params: { assignmentId: ASSIGNMENT }, body: { format: "docx" } }]);
+    expect(outcome).toEqual({
+      kind: "poveznica",
+      link: { format: "docx", href: `${bulkFilePath(ASSIGNMENT, "docx")}?token=${TOKEN}`, expiresAt: "2026-12-01T12:00:00.000Z" },
+    });
   });
 
-  it("goes idle -> preparing -> ready and shows the expiry the server states", async () => {
-    const server = fakeBulkServer();
-    expect(await requestBulkPreparation(server.call, ASSIGNMENT)).toEqual({ kind: "zaprimljeno", status: { state: "preparing", submissionCount: 2 } });
-    expect(server.posts).toEqual([{ assignmentId: ASSIGNMENT }]);
-    server.finish("2026-12-01T12:00:00.000Z");
-    const read = await readBulkStatus(server.call, ASSIGNMENT);
-    const view = viewOf(read.kind === "ready" ? read.status : { state: "empty" }, NOW);
+  it("shows the expiry the server states and treats an expired link as expired, never as a link", () => {
+    const link = { format: "pdf", href: good.downloadPath, expiresAt: "2026-12-01T10:00:00.000Z" } as const;
+    expect(viewOf(link, NOW)).toEqual({ kind: "expired" });
+    const view = viewOf(link, new Date("2026-12-01T09:59:59.000Z"));
     expect(view.kind).toBe("ready");
     if (view.kind === "ready") expect(view.until).toContain("2026");
-  });
-
-  it("an expired link is shown as expired, never as a link", () => {
-    const status = { state: "ready", submissionCount: 2, href: "/x/y.zip", expiresAt: "2026-12-01T10:00:00.000Z" } as const;
-    expect(viewOf(status, NOW)).toEqual({ kind: "expired" });
-    expect(viewOf(status, new Date("2026-12-01T09:59:59.000Z")).kind).toBe("ready");
     expect(bulkText.expired).toContain("istekla");
   });
 
-  it("a broken answer is unknown; unsafe links and a zero count in idle are refused", async () => {
-    const bad = (body: unknown) => async () => ({ ok: true as const, status: 200, body });
-    expect(await readBulkStatus(bad({ state: "idle", submissionCount: 0 }), ASSIGNMENT)).toEqual({ kind: "nepoznato" });
-    expect(await readBulkStatus(bad({ state: "ready", submissionCount: 1, href: "https://evil.example/x", expiresAt: "2026-12-01T12:00:00.000Z" }), ASSIGNMENT)).toEqual({ kind: "nepoznato" });
-    expect(await readBulkStatus(bad({ state: "empty", extra: 1 }), ASSIGNMENT)).toEqual({ kind: "nepoznato" });
-    expect(["//evil.example/x", "javascript:1", "/ok/file.zip"].map(isSafeHref)).toEqual([false, false, true]);
-    const stale = async () => ({ ok: true as const, status: 202, body: { state: "idle", submissionCount: 2 } });
-    expect(await requestBulkPreparation(stale, ASSIGNMENT)).toEqual({ kind: "nepoznato" });
-    const down = async () => { throw new Error("offline"); };
-    expect(await readBulkStatus(down, ASSIGNMENT)).toEqual({ kind: "nepoznato" });
+  it("a broken, foreign or wrong-status answer is unknown", async () => {
+    const unknown = { kind: "nepoznato" };
+    expect(await requestBulkLink(answer({ ...good, extra: 1 }), ASSIGNMENT, "pdf")).toEqual(unknown);
+    expect(await requestBulkLink(answer({ ...good, downloadPath: "https://evil.example/x" }), ASSIGNMENT, "pdf")).toEqual(unknown);
+    expect(await requestBulkLink(answer({ ...good, downloadPath: `${bulkFilePath(ASSIGNMENT, "docx")}?token=${TOKEN}` }), ASSIGNMENT, "pdf")).toEqual(unknown);
+    expect(await requestBulkLink(answer({ ...good, format: "docx" }), ASSIGNMENT, "pdf")).toEqual(unknown);
+    expect(await requestBulkLink(answer(good, 200), ASSIGNMENT, "pdf")).toEqual(unknown);
+    expect(await requestBulkLink(async () => { throw new Error("offline"); }, ASSIGNMENT, "pdf")).toEqual(unknown);
     expect(requestFailure({ kind: "nepoznato" })).toBe(bulkText.requestUnknown);
   });
 
+  it("accepts only the file path of this assignment with a token", () => {
+    const other = "00000000-0000-4000-8000-0000000000b2";
+    expect(isBulkHref(good.downloadPath, ASSIGNMENT, "pdf")).toBe(true);
+    expect(isBulkHref(good.downloadPath, other, "pdf")).toBe(false);
+    expect(isBulkHref(`${bulkFilePath(ASSIGNMENT, "pdf")}?token=x`, ASSIGNMENT, "pdf")).toBe(false);
+    expect(isBulkHref(bulkFilePath(ASSIGNMENT, "pdf"), ASSIGNMENT, "pdf")).toBe(false);
+  });
+
   it("names a refusal and hands a lost session back", async () => {
-    const forbidden = fakeBulkServer(undefined, { forbid: true });
-    const read = await readBulkStatus(forbidden.call, ASSIGNMENT);
-    expect(failureMessage(read)).toBe(bulkText.forbidden);
-    expect(await readBulkStatus(async () => ({ ok: false, status: 401, code: "x" }), ASSIGNMENT)).toEqual({ kind: "session-expired" });
-    expect(await readBulkStatus(forbidden.call, "not-an-id")).toEqual({ kind: "greska", code: "not_found" });
+    const forbidden = await requestBulkLink(fakeBulkServer({ forbid: true }).call, ASSIGNMENT, "pdf");
+    expect(requestFailure(forbidden)).toBe(bulkText.forbidden);
+    expect(await requestBulkLink(async () => ({ ok: false, status: 401, code: "unauthorized" }), ASSIGNMENT, "pdf")).toEqual({ kind: "session-expired" });
+    const gone = await requestBulkLink(async () => ({ ok: false, status: 404, code: "not_found" }), ASSIGNMENT, "pdf");
+    expect(requestFailure(gone)).toBe(bulkText.notFound);
+    expect(await requestBulkLink(fakeBulkServer().call, "not-an-id", "pdf")).toEqual({ kind: "greska", code: "not_found" });
   });
 
   it("holds no forbidden term in its copy", () => {

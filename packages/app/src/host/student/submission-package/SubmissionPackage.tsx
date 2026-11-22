@@ -1,32 +1,65 @@
 "use client";
 
-// WEB-1803 (M8.6): on the receipt of a submitted work, the package for the registrar's office.
-import { Card } from "@ductura/ui";
+// WEB-1803 (M8.6; WEB-2004): on the receipt of a submitted work, the package for the registrar's office.
+// The server gives a link that expires; the screen shows it with the expiry the server states.
+import { useEffect, useState } from "react";
+import { Button, Card } from "@ductura/ui";
 
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
-import { downloadFromServer } from "../../editor/export/contract";
-import { PreparationControl } from "../../editor/export/PreparationControl";
+import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
 import { useHost } from "../../context";
-import { packageCalls, packageDownloadPrefix, packageFileName, type PackageCall } from "./contract";
+import { requestPackageLink, type PackageCall, type PackageLink } from "./contract";
 import { submissionPackageText as t } from "./messages.hr";
 
-/** TODO(ugovor): until the routes are published createApi answers "client_rejected" and the screen says "unavailable". */
 const defaultCall = () => createApi() as unknown as PackageCall;
 
-export default function SubmissionPackage({ assignmentId, call = defaultCall }: { assignmentId: string; call?: () => PackageCall }) {
+export default function SubmissionPackage(
+  { assignmentId, submissionId, call = defaultCall, now = () => new Date() }:
+  { assignmentId: string; submissionId: string; call?: () => PackageCall; now?: () => Date },
+) {
   const { base } = useHost();
+  const [link, setLink] = useState<{ submissionId: string; link: PackageLink } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const current = link?.submissionId === submissionId ? link.link : null;
+
+  useEffect(() => {
+    setBusy(false);
+    setNote(null);
+    setLink(null);
+  }, [submissionId]);
+
+  async function request() {
+    if (busy) return;
+    setBusy(true);
+    setNote(null);
+    const asked = submissionId;
+    const outcome = await requestPackageLink(call(), asked);
+    setBusy(false);
+    if (outcome.kind === "poveznica") setLink((cur) => (cur === null || cur.submissionId === asked ? { submissionId: asked, link: outcome.link } : cur));
+    else if (outcome.kind === "session-expired") goToSignIn(appHref(base, `/rad/${encodeURIComponent(assignmentId)}/predaja/potvrda`));
+    else setNote(outcome.kind === "greska" ? t.notFound : t.unknown);
+  }
+
+  const expired = current !== null && Date.parse(current.expiresAt) <= now().getTime();
   return (
     <Card title={t.title}>
       <p>{t.lead}</p>
-      <PreparationControl
-        text={t}
-        makeCalls={(key) => packageCalls(call(), assignmentId, key)}
-        download={downloadFromServer}
-        downloadPrefix={packageDownloadPrefix(assignmentId)}
-        fileName={packageFileName(assignmentId)}
-        onSignedOut={() => goToSignIn(appHref(base, `/rad/${encodeURIComponent(assignmentId)}/predaja/potvrda`))}
-      />
+      {current !== null && !expired ? (
+        <>
+          <p role="status">{t.ready}</p>
+          <a href={current.href} download>{t.download}</a>
+          <p>{t.expiresAt} {formatDateTimeHr(current.expiresAt)}.</p>
+        </>
+      ) : (
+        <>
+          {expired && <p role="alert">{t.expired}</p>}
+          <Button onClick={() => void request()} disabled={busy}>{expired ? t.requestAgain : t.start}</Button>
+        </>
+      )}
+      {busy && <p role="status">{t.requesting}</p>}
+      {note !== null && <p role="alert">{note}</p>}
     </Card>
   );
 }
