@@ -11,7 +11,7 @@ import { documentSources } from "@/components/editor/sources/proofs/proof-source
 import { QuickSource } from "@/components/editor/sources/quick-source/QuickSource";
 import {
   addSourceTransaction, citationCount, editSourceTransaction, jumpTo, linkPlaceTransaction, listedSources,
-  placeExcerpt, plainCitationPlaces, removeSourceTransaction, sourceDraftOf,
+  placeExcerpt, unsourcedCitationPlaces, removeSourceTransaction, sourceDraftOf,
 } from "./mention-model";
 import { sourcesMentionHr as t } from "./messages.hr";
 
@@ -53,7 +53,7 @@ export function LiteratureList() {
   const json = useMemo(() => (doc ? doc.toJSON() : null), [doc]);
   const items = useMemo(() => listedSources(json), [json]);
   const choices = useMemo(() => documentSources(json), [json]);
-  const places = useMemo(() => (doc ? plainCitationPlaces(doc) : []), [doc]);
+  const places = useMemo(() => (doc ? unsourcedCitationPlaces(doc) : []), [doc]);
   if (signedOut || !editor || !doc) return null;
   const editable = editor.isEditable;
 
@@ -73,10 +73,10 @@ export function LiteratureList() {
     {places.length > 0 && <section aria-label={t.plainHeading(places.length)}>
       <h3>{t.plainHeading(places.length)}</h3>
       <ul>
-        {places.map((pos) => <li key={pos}>
+        {places.map(({ pos, marker }) => <li key={pos}>
           <p>{placeExcerpt(doc, pos)}</p>
           <Button tone="quiet" onClick={trusted(() => { editor.view.dispatch(jumpTo(editor.state, pos)); editor.commands.focus(); })}>{t.show}</Button>
-          {editable && <>
+          {editable && marker && <>
             <Button tone="quiet" disabled={choices.length === 0} onClick={trusted(() => setOpen({ kind: "link", pos }))}>{t.link}</Button>
             <Button tone="quiet" onClick={trusted(() => setOpen({ kind: "add", pos }))}>{t.add}</Button>
           </>}
