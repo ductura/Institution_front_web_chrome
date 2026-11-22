@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { effectiveDue, groupLabels, mentorLabel, nearTag, rowKind, workTypeLabel } from "./model";
+import { effectiveDue, groupLabels, mentorLabel, nearTag, practiceOf, rowKind, workTypeLabel } from "./model";
 import { readCourses, type CoursesCall } from "./read";
 
 const NOW = new Date("2026-11-22T10:00:00Z");
@@ -27,6 +27,13 @@ describe("E-3/E-4 model", () => {
     expect(nearTag("2026-11-23T08:00:00Z", NOW)).toBe("Rok je danas");
     expect(nearTag("2026-12-30T10:00:00Z", NOW)).toBeNull();
     expect(nearTag("2026-11-20T10:00:00Z", NOW)).toBeNull();
+  });
+  it("marks practice only when the server says isPractice: true (P-D1)", () => {
+    const base = { id: "a", title: "Izmišljeni probni esej", dueAt: "2026-12-01T10:00:00Z", noticeFirst: false };
+    expect(practiceOf({ ...base, isPractice: true })).toBe(true);
+    expect(practiceOf({ ...base, isPractice: false })).toBe(false);
+    expect(practiceOf(base)).toBe(false);
+    expect(practiceOf({ ...base, isPractice: "true" })).toBe(false);
   });
   it("lets an extension replace the deadline", () => {
     expect(effectiveDue("a", "b")).toBe("b");

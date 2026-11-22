@@ -1,5 +1,6 @@
 import { whenHr } from "../assignment-facts/model.ts";
 import type { TeacherCourse } from "../../../../../../src/components/teacher/teacher-courses-read.ts";
+import type { readAssignmentVersion } from "../../../../../../src/client/teacher-assignment.ts";
 import type { TeachingTeamView } from "../../../../../../src/client/teaching-team.ts";
 import { assignmentCardMessages as t } from "./messages.hr";
 
@@ -45,4 +46,19 @@ export function codeFieldText(role: CardRole, issued: "now" | "before" | null): 
   if (role === "collaborator") return t.codeHolderIssues;
   if (issued === "now") return t.codeIssuedNow;
   return issued === "before" ? t.codeIssuedBefore : t.codeUnknown;
+}
+
+// P-D1: teacher.courses.get has no practice flag; institution.assignment.get has `isPractice`.
+export type AssignmentRead = Awaited<ReturnType<typeof readAssignmentVersion>>;
+export type ReadAssignment = (assignmentId: string) => Promise<AssignmentRead>;
+
+/** Only a ready read whose server answer says `isPractice: true` is practice. */
+export function practiceOf(read: AssignmentRead): boolean {
+  return read.kind === "ready" && read.value.isPractice === true;
+}
+
+/** The practice flag of each assignment, keyed by id; a read that throws counts as not practice. */
+export async function readPractice(ids: readonly string[], read: ReadAssignment): Promise<ReadonlyMap<string, boolean>> {
+  const flags = await Promise.all(ids.map((id) => read(id).then(practiceOf, () => false)));
+  return new Map(ids.map((id, index) => [id, flags[index] === true]));
 }

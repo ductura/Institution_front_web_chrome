@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Dialog, ToastRegion, useToasts } from "@ductura/ui";
+import { Button, Dialog, PracticeBadge, ToastRegion, useToasts } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
@@ -12,6 +12,7 @@ import type { TeacherCourse } from "../../../../../../src/components/teacher/tea
 import { useHost } from "../../context";
 import { assignmentCardMessages as t } from "./messages.hr";
 import { codeFieldText, dueText, enrolledText, nextDeadline, roleOf, type CardRole } from "./model";
+import { usePractice } from "./practice";
 import styles from "./AssignmentCards.module.css";
 
 type Failure = keyof typeof t.errors;
@@ -34,6 +35,17 @@ function useTeam(courseId: string): { view: TeachingTeamView | null; done: boole
 
 function Field({ name, children }: { name: string; children: string }) {
   return <div><span className={styles.label}>{name}</span>{children}</div>;
+}
+
+/** The card's own task list (title, deadline, "Probni"), used when no task facts are passed in. */
+function CardTasks({ course }: { course: TeacherCourse }) {
+  const practice = usePractice(course.assignments);
+  return course.assignments.map((assignment) => (
+    <div key={assignment.id} className={styles.task}>
+      <h3>{assignment.title}</h3>
+      <p className="meta">{t.due} {dueText(assignment.dueAt)} <PracticeBadge practice={practice.get(assignment.id)} /></p>
+    </div>
+  ));
 }
 
 /** "Novi kolegij i zadatak": the head's action when there are courses, the card's when there are none. */
@@ -117,12 +129,7 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
           ? <a className={small} href={link(`/nastavnik/zadatak/${encodeURIComponent(course.assignments[0].id)}/merlin`)}>{t.merlin}</a> : null}
         {role === "holder" ? <button type="button" className={small} onClick={() => setOpen(true)} aria-label={`${t.newCode}: ${course.name}`}>{t.newCode}</button> : null}
       </div>
-      {tasks ?? course.assignments.map((assignment) => (
-        <div key={assignment.id} className={styles.task}>
-          <h3>{assignment.title}</h3>
-          <p className="meta">{t.due} {dueText(assignment.dueAt)}</p>
-        </div>
-      ))}
+      {tasks ?? <CardTasks course={course} />}
       {extra}
       <Dialog open={open} title={t.dialogTitle} onClose={close} dismissible={!busy}
         error={failure ? t.errors[failure] : undefined}
