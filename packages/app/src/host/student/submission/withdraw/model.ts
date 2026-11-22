@@ -29,15 +29,17 @@ export async function withdraw(call: WithdrawCall, assignmentId: string): Promis
 export { readWithdrawalState };
 
 export function receiptLine(receipt: WithdrawalReceipt): string {
-  return t.receiptLine.replace("{revision}", String(receipt.revision)).replace("{date}", formatDateTimeHr(receipt.withdrawnAt));
+  const date = formatDateTimeHr(receipt.withdrawnAt);
+  return receipt.revision === null ? t.receiptLineNoRevision.replace("{date}", date) : t.receiptLine.replace("{revision}", String(receipt.revision)).replace("{date}", date);
 }
 
 /** The downloadable confirmation: exactly the signed fields the server gave, as JSON, so it can be checked later. */
 export function receiptFile(receipt: WithdrawalReceipt): { readonly filename: string; readonly type: string; readonly content: string } {
-  const { withdrawalId, assignmentId, revision, withdrawnAt, signature } = receipt;
+  const { withdrawalId, assignmentId, revision, withdrawnAt, signature, envelope } = receipt;
+  const tag = revision === null ? "" : `-r${revision}`;
   return {
-    filename: `potvrda-povlacenja-${assignmentId.slice(0, 8)}-r${revision}-${withdrawalId.slice(0, 8)}.json`,
+    filename: `potvrda-povlacenja-${assignmentId.slice(0, 8)}${tag}-${withdrawalId.slice(0, 8)}.json`,
     type: "application/json",
-    content: `${JSON.stringify({ withdrawalId, assignmentId, revision, withdrawnAt, signature }, null, 2)}\n`,
+    content: `${JSON.stringify(envelope ?? { withdrawalId, assignmentId, revision, withdrawnAt, signature }, null, 2)}\n`,
   };
 }

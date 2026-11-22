@@ -34,7 +34,7 @@ describe("withdrawal switch", () => {
     expect(await readWithdrawalSetting(server.call, ASSIGNMENT)).toEqual({ kind: "ready", enabled: true });
     expect(await saveWithdrawalSetting(server.call, ASSIGNMENT, false)).toEqual({ kind: "spremljeno", enabled: false });
     expect(server.enabled()).toBe(false);
-    const stale = async () => ({ ok: true as const, status: 200, body: { enabled: true } });
+    const stale = async () => ({ ok: true as const, status: 200, body: { allowed: true, changedAt: null } });
     expect(await saveWithdrawalSetting(stale, ASSIGNMENT, false)).toEqual({ kind: "nepoznato" });
   });
 

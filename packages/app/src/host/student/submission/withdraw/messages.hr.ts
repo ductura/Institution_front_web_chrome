@@ -11,6 +11,8 @@ export const withdrawText = {
   withdrawn: "Predaja je povučena. Potvrdu povlačenja možete preuzeti.",
   receiptsTitle: "Potvrde povlačenja",
   receiptLine: "Revizija {revision}, povučeno {date}",
+  receiptLineNoRevision: "Povučeno {date}",
+  downloadForNoRevision: "Preuzmi potvrdu povlačenja",
   download: "Preuzmi potvrdu",
   downloadFor: "Preuzmi potvrdu povlačenja revizije {revision}",
   loading: "Učitavam stanje predaje.",

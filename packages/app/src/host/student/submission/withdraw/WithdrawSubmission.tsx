@@ -111,7 +111,7 @@ function Receipts({ receipts }: { receipts: readonly WithdrawalReceipt[] }) {
         {receipts.map((receipt) => (
           <li key={receipt.withdrawalId} data-testid="withdrawal-receipt">
             {receiptLine(receipt)}{" "}
-            <Button tone="quiet" aria-label={t.downloadFor.replace("{revision}", String(receipt.revision))}
+            <Button tone="quiet" aria-label={receipt.revision === null ? t.downloadForNoRevision : t.downloadFor.replace("{revision}", String(receipt.revision))}
               onClick={() => downloadReceipt(receipt)}>{t.download}</Button>
           </li>
         ))}
