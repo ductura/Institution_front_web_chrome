@@ -44,15 +44,18 @@ async function fakeServer(page: Page, me: Me) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(HOLDER_VIEW) }));
   await page.route("**/api/v1/courses/*/team", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ holderId: TEAM_HOLDER_ID, assistantIds: [] }) }));
-  // WEB-2145: the N-01 task facts read each course roster (teacher.course-students.get); nobody is enrolled.
-  await page.route("**/api/v1/teacher/courses/*/students", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ students: [] }) }));
-  // ...and per assignment its submissions, overview and deadline extensions; none yet.
-  await page.route("**/api/v1/teacher/assignments/*/submissions", (route) => route.fulfill({ json: { submissions: [] } }));
-  await page.route("**/api/v1/teacher/assignments/*/overview", (route) => route.fulfill({ json: { students: [] } }));
-  await page.route("**/api/v1/teacher/assignments/*/deadline-extensions", (route) => route.fulfill({ json: { extensions: [] } }));
   await page.route("**/api/v1/teacher/courses", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
+  // WEB-2145 (#411): the N-01 task facts read each course's roster, then per assignment its submissions,
+  // overview and deadline extensions; here nobody is enrolled yet (empty-roster and the empty lists).
+  await page.route("**/api/v1/teacher/courses/*/students", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ students: [] }) }));
+  await page.route("**/api/v1/teacher/assignments/*/submissions", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ submissions: [] }) }));
+  await page.route("**/api/v1/teacher/assignments/*/overview", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ students: [] }) }));
+  await page.route("**/api/v1/teacher/assignments/*/deadline-extensions", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ extensions: [] }) }));
   await page.route("**/api/v1/teacher/mentorships", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.mentorships.get"]) }));
   // LOK-WEB-5: the teacher's mentorship page reads open requests (teacher.mentorship-requests.get "empty-requests").
@@ -237,8 +240,10 @@ test("a teacher's read: 403 asks for a teacher account, 503 offers a retry that 
   await page.route("**/api/v1/teacher/mentorships", (route) =>
     route.fulfill({ status: 403, contentType: "application/json", body: "{\"code\":\"forbidden\",\"error\":\"forbidden\"}" }));
   await page.goto("/app/web/nastavnik");
-  // Next keeps an empty role="alert" route announcer outside <main>; the teacher toast list inside it is empty too.
-  await expect(page.getByRole("main").getByRole("alert").filter({ hasText: "Popis kolegija" })).toHaveText("Popis kolegija trenutačno nije dostupan. Pokušajte ponovno; popis se ne prikazuje prazan dok se ne učita.");
+  // Next keeps an empty role="alert" route announcer outside <main>. Inside it, the N-01 toast region
+  // (WEB-2145) keeps its own role="alert" live region on the page before any message; it stays empty.
+  await expect(page.getByRole("region", { name: "Obavijesti" }).getByRole("alert")).toBeEmpty();
+  await expect(page.getByRole("main").getByRole("alert").filter({ hasText: /\S/ })).toHaveText("Popis kolegija trenutačno nije dostupan. Pokušajte ponovno; popis se ne prikazuje prazan dok se ne učita.");
   await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
   await expect.poll(() => courses).toBe(2);
   await axe(page);
