@@ -17,6 +17,10 @@ const ready = assignments.vectors.find((v) => v.name === "ready")!.response.body
 // Bodies of the teacher.courses.get "courses" and teacher.mentorships.get "works" vectors of @ductura/test-fakes 3.0.1.
 const teacher = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", import.meta.url), "utf8")) as Record<string, unknown>;
 
+/** The teaching-team view of a course the teacher holds alone (institution.teaching-team-view.get, holder). */
+const TEAM_HOLDER_ID = "5e4d3c2b-1a09-4f8e-8d7c-6b5a49382701";
+const HOLDER_VIEW = { role: "holder", holderId: TEAM_HOLDER_ID, assistants: [], students: [], groups: [] };
+
 type Me = { status: number; body?: unknown };
 
 /** Fakes the institution server: /me, the student's assignments, login and logout. Returns what was asked. */
@@ -32,6 +36,14 @@ async function fakeServer(page: Page, me: Me) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ locale: null }) }));
   await page.route("**/api/v1/student/assignments", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) }));
+  // WEB-2102/WEB-2103/WEB-2105: the student's pages also read the state of each work; none is started here.
+  await page.route("**/api/v1/student/assignment-work", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ assignments: [] }) }));
+  // WEB-2144: each course card reads the caller's role from the teaching-team view; here the teacher holds the course alone.
+  await page.route("**/api/v1/courses/*/team/view", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(HOLDER_VIEW) }));
+  await page.route("**/api/v1/courses/*/team", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ holderId: TEAM_HOLDER_ID, assistantIds: [] }) }));
   await page.route("**/api/v1/teacher/courses", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
   await page.route("**/api/v1/teacher/mentorships", (route) =>
@@ -219,7 +231,7 @@ test("a teacher's read: 403 asks for a teacher account, 503 offers a retry that 
     route.fulfill({ status: 403, contentType: "application/json", body: "{\"code\":\"forbidden\",\"error\":\"forbidden\"}" }));
   await page.goto("/app/web/nastavnik");
   // Next keeps an empty role="alert" route announcer outside <main>.
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText("Kolegiji trenutačno nisu dostupni. Pokušajte ponovno.");
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText("Popis kolegija trenutačno nije dostupan. Pokušajte ponovno; popis se ne prikazuje prazan dok se ne učita.");
   await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
   await expect.poll(() => courses).toBe(2);
   await axe(page);
@@ -236,12 +248,14 @@ test("a teacher's read answering 401 sends the browser to sign-in", async ({ pag
   expect(new URL(seen.login.at(-1)!).searchParams.get("returnTo")).toBe("/app/web/nastavnik");
 });
 
-test("a student's Ductus pages open at their addresses, marked as not connected yet", async ({ page }) => {
+test("a student's Ductus pages open at their addresses; the workspace without a work in progress points to Moji zadaci", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
   await page.goto("/app/chrome/rad");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radni prostor");
-  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  // WEB-2105 (#359) connected /rad: it reads the works, and none is in progress here.
+  await expect(page.getByText("Nemate rad u tijeku. Rad započnite na kartici zadatka.")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: "Moji zadaci" })).toHaveAttribute("href", "/app/chrome/zadaci");
   await axe(page);
 
   // Moji radovi is connected (HOST-S5): it reads an empty list.

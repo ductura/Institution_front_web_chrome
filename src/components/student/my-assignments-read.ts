@@ -11,6 +11,8 @@ export type MyAssignment = {
   noticeFirst: boolean;
   /** WEB-09 (A-3): a later deadline the teacher gave this student; null or absent: none. */
   extendedDueAt?: string | null;
+  /** WEB-2102: the kind of work as the contract gives it; absent: not given. */
+  workType?: "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis";
 };
 
 /** WEB-09 (A-3): a teacher of the course as student.assignments.get names them. */
