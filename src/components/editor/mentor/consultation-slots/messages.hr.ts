@@ -8,7 +8,7 @@ export const consultationSlotsHr = {
   empty: "Nema dogovorenih termina.",
   status: {
     requested: { student: "čeka mentora", teacher: "čeka Vaš odgovor" },
-    proposed: { student: "mentor predlaže drugi termin", teacher: "čeka studenta" },
+    countered: { student: "mentor predlaže drugi termin", teacher: "čeka studenta" },
     confirmed: { student: "potvrđeno", teacher: "potvrđeno" },
   },
   proposedLine: "Prijedlog mentora: {time}",

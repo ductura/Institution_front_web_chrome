@@ -9,8 +9,8 @@ import { consultationSlotsHr as t } from "./messages.hr";
 import { IDLE_FORM, timeText, type Role } from "./slots-logic";
 
 const noop = () => undefined;
-const slot = (status: ConsultationSlot["status"], startsAt = "2026-11-21T12:00:00.000Z", n = 1): ConsultationSlot =>
-  ({ slotId: `2d8b3e4a-6c7f-4a01-9c3d-4e5f6a7b8c9${n}`, startsAt, status });
+const slot = (status: ConsultationSlot["state"], startsAt = "2026-11-21T12:00:00.000Z", n = 1): ConsultationSlot =>
+  ({ id: `2d8b3e4a-6c7f-4a01-9c3d-4e5f6a7b8c9${n}`, startsAt, proposedAt: "2026-11-20T11:11:00.000Z", state: status });
 const view = (role: Role, load: SlotsLoad, extra: Partial<Parameters<typeof SlotsView>[0]> = {}) =>
   renderToStaticMarkup(createElement(SlotsView, {
     load, role, request: IDLE_FORM, forms: {}, onRequestOpen: noop, onRequestDraft: noop, onRequestSend: noop,
@@ -33,8 +33,8 @@ describe("SlotsView", () => {
   });
   it("the student sees the counter-proposal and can accept that time", () => {
     const alt = "2026-11-24T13:30:00.000Z";
-    const html = view("student", { kind: "ready", slots: [slot("proposed", alt)] });
-    expect(html).toContain(t.status.proposed.student);
+    const html = view("student", { kind: "ready", slots: [slot("countered", alt)] });
+    expect(html).toContain(t.status.countered.student);
     expect(html).toContain(t.accept.replace("{time}", timeText(alt)));
     expect(html).not.toContain(t.confirm);
   });
@@ -53,7 +53,7 @@ describe("SlotsView", () => {
     expect(html).toContain('value="2026-11-21T13:00"');
     expect(html).toContain(t.errors.unknown);
     const s = slot("requested");
-    const teacher = view("teacher", { kind: "ready", slots: [s] }, { forms: { [s.slotId]: failed } });
+    const teacher = view("teacher", { kind: "ready", slots: [s] }, { forms: { [s.id]: failed } });
     expect(teacher).toContain('value="2026-11-21T13:00"');
     expect(teacher).toContain(t.errors.unknown);
   });
