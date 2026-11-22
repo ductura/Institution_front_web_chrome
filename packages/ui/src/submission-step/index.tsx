@@ -111,9 +111,11 @@ export function StepDecl({ title, tag, own = false, onSubmit, children }: {
     : <div className={cx(styles.decl, own && styles.own)}>{heading}{children}</div>;
 }
 
-/** One recorded item with a quiet second line (who, where). */
-export function StepEntry({ who, children }: { who: ReactNode; children?: ReactNode }) {
-  return <div className={styles.entry}><span className={styles.who}>{who}</span>{children ? <span>{children}</span> : null}</div>;
+/** One recorded item: the text, then a quiet line (who, where). `whoFirst`: the quiet line leads, as in a conversation. */
+export function StepEntry({ who, whoFirst = false, children }: { who: ReactNode; whoFirst?: boolean; children?: ReactNode }) {
+  const quiet = <span className={styles.who}>{who}</span>;
+  const main = children ? <span>{children}</span> : null;
+  return <div className={styles.entry}>{whoFirst ? <>{quiet}{main}</> : <>{main}{quiet}</>}</div>;
 }
 
 /** A row of buttons. */
@@ -180,4 +182,9 @@ export function StepQr({ children, label }: { children: ReactNode; label?: strin
 /** A line with a tag at its end ("opaženo", "izjavljeno"), wrapping on a narrow screen (prototype `.sb-ev`). */
 export function StepLine({ children, tag }: { children: ReactNode; tag?: ReactNode }) {
   return <div className={styles.ev}><span>{children}</span>{tag}</div>;
+}
+
+/** A native disclosure with the prototype's plain summary (a marker, no box): "Popis sesija", "Točne vrijednosti iz potvrde (UTC)". */
+export function StepDetails({ summary, children }: { summary: string; children: ReactNode }) {
+  return <details><summary>{summary}</summary>{children}</details>;
 }

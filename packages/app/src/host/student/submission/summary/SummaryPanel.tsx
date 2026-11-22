@@ -2,7 +2,7 @@
 
 // PD-1 on step 3 and 5 (WEB-2108, VIZ-S4): the process summary in the prototype's panel, the eleven
 // sections as `.sb-state` blocks, each marked observed or declared (Ductura_student.html, `summary()`).
-import { Button, Details, StepActions, StepKv, StepLine, StepLoading, StepPanel, StepSection, ToastRegion, Tag, useToasts } from "@ductura/ui";
+import { Button, StepActions, StepDetails, StepKv, StepLine, StepLoading, StepPanel, StepSection, ToastRegion, Tag, useToasts } from "@ductura/ui";
 import type { ReactNode } from "react";
 
 import type { SubmissionNote } from "../../../../../../../src/client/submission.ts";
@@ -87,7 +87,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
       <Part title={t.sessions.title} tag={observed}>
         <StepKv label={t.sessions.label}>{s.sessions.value}</StepKv>
         <p className="meta">{s.sessions.meta}</p>
-        {s.sessions.list.length > 0 && <Details summary={t.sessions.list}><ul className="facts">{s.sessions.list.map((line, i) => <li key={i}>{line}</li>)}</ul></Details>}
+        {s.sessions.list.length > 0 && <StepDetails summary={t.sessions.list}><ul className="facts">{s.sessions.list.map((line, i) => <li key={i}>{line}</li>)}</ul></StepDetails>}
       </Part>
       <Part title={t.editing.title} tag={observed}>
         <StepKv label={s.editing.label}>{s.editing.value}</StepKv>

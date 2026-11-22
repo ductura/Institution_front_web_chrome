@@ -33,7 +33,7 @@ export function ChatDialog({ chat, onClose }: { chat: Chat | null; onClose: () =
     <Dialog open title={chatTitle(chat)} onClose={onClose} actions={<Button tone="secondary" onClick={onClose}>{d.close}</Button>}>
       <div ref={body} style={{ display: "grid", gap: 12 }}>
         <p className="meta">{d.meta}</p>
-        {chat.entries.map((entry, index) => <StepEntry key={index} who={entryLabel(entry)}>{entry.text}</StepEntry>)}
+        {chat.entries.map((entry, index) => <StepEntry key={index} who={entryLabel(entry)} whoFirst>{entry.text}</StepEntry>)}
       </div>
     </Dialog>
   );

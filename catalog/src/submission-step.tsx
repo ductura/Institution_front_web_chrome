@@ -1,5 +1,5 @@
 import {
-  Button, StepActions, StepCheck, StepDecl, StepEntry, StepFrame, StepKv, StepLine, StepLoading, StepMono, StepNav, StepPanel, StepPlaces,
+  Button, StepActions, StepCheck, StepDecl, StepDetails, StepEntry, StepFrame, StepKv, StepLine, StepLoading, StepMono, StepNav, StepPanel, StepPlaces,
   StepQr, StepSection, StepSpinner, StepSub,
 } from "@ductura/ui";
 import type { ReactNode } from "react";
@@ -95,6 +95,13 @@ export const submissionStepEntries = {
     greška: () => <StepLine>Lijepljenja nije moguće prikazati.</StepLine>,
     puno: () => <StepLine tag={<span className="tag">opaženo</span>}>22. 10. 2026., odsječak oko 10:35 · 640 znakova</StepLine>,
     onemogućeno: () => <StepLine tag={<span className="tag open">izjavljeno</span>}>Napomena je samo za čitanje.</StepLine>,
+  } satisfies Five,
+  StepDetails: {
+    prazno: () => <StepDetails summary="Popis sesija"><p className="note">Nema sesija.</p></StepDetails>,
+    učitavanje: () => <StepDetails summary="Popis sesija"><p className="note" role="status">Učitavam sesije…</p></StepDetails>,
+    greška: () => <StepDetails summary="Popis sesija"><p className="note" role="alert">Sesije nije moguće prikazati.</p></StepDetails>,
+    puno: () => <StepDetails summary="Popis sesija"><ul className="facts"><li>20. 10. 2026., 18:05 do 19:40</li></ul></StepDetails>,
+    onemogućeno: () => <StepDetails summary="Točne vrijednosti iz potvrde (UTC)"><StepMono>requestedAt 2026-11-05T20:14:07.482193Z</StepMono></StepDetails>,
   } satisfies Five,
   StepSub: {
     prazno: () => <StepSub>Prilozi</StepSub>,

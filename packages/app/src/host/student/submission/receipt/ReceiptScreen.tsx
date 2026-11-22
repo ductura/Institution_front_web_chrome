@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  Button, Details, StepActions, StepKv, StepLoading, StepMono, StepNav, StepPanel, StepQr, StepSub, ToastRegion, useToasts,
+  Button, StepActions, StepDetails, StepKv, StepLoading, StepMono, StepNav, StepPanel, StepQr, StepSub, ToastRegion, useToasts,
 } from "@ductura/ui";
 import { useState, type ReactNode } from "react";
 
@@ -34,9 +34,9 @@ const kvs = (rows: readonly Row[]) => rows.map((r) => <StepKv key={r.id} label={
 
 function Utc({ rows }: { rows: readonly Row[] }) {
   return (
-    <Details summary={t.utc}>
+    <StepDetails summary={t.utc}>
       <StepMono>{rows.map((r, i) => <span key={r.id}>{i > 0 && <br />}{`${r.label} ${r.value}`}</span>)}</StepMono>
-    </Details>
+    </StepDetails>
   );
 }
 
