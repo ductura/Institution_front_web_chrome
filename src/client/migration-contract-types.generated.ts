@@ -11,6 +11,7 @@
 // LOK-WEB-5: teacher mentorship request routes from Institution_server d8b7fc40 (API 1.79.0).
 // Faza 3: auth.backchannel-logout.post, auth.callback.get, auth.login.get, auth.logout-all.post, auth.logout.post, auth.webauthn-assertion.post, auth.webauthn-challenge.post, auth.webauthn-registration.post, client.context.post, collaboration.comments.post, collaboration.revision-requests.post, course.aggregate.get, downloads.manifest.get, evidence.commit.post, evidence.open.post, evidence.replay.post, institution.academic-years.get, institution.acknowledgment.post, institution.admin-courses.get, institution.assignment-versions.post, institution.config-versions.post, institution.config.get, institution.courses.post, institution.enrollment-code-revocation.post, institution.enrollment-code-state.get, institution.enrollment-code.post, institution.enrollments.post, institution.origin-threshold.delete, institution.origin-threshold.put, institution.origin-thresholds.get, institution.role-confirmation.post, institution.role-revocation.post, institution.student-removal.post, institution.student-return.post, institution.student-work-language.post, institution.teacher-roles.get, institution.work-language.post, institution.work-work-language.post, live.document.get, live.document.put, mentorship.key-dates.get, mentorship.notes.get, mentorship.notes.post, mentorship.request-approve.post, mentorship.request-decline.post, notifications.list.get, notifications.read.post, platform.health.get, platform.ready.get, profile.interface-locale.get, profile.interface-locale.post, profile.staff-affiliation.get, projection.process-summary-details.post, projection.process-summary.post, settings.catalogue.get, settings.values.get, settings.values.put, sources.lookup.post, student-work.start.post, student-work.works.get, student.access-log.get, student.assignment-work.get, student.assistant-conversation.get, student.assistant-request.post, student.deadline-history.get, student.declaration-attachments.post, student.declaration.get, student.declaration.put, student.portable-record.get, student.receipt-pdf.get, student.source-proof-image.get, student.source-proofs.get, student.source-proofs.post, student.submission-history.get, student.submission-notes.get, student.submission-notes.post, student.submission.get, student.work-sources.delete, student.work-sources.put, student.work-sources.get, submission.submit.post, support.problem-report.post, support.problem-reports.post, teacher.access.get, teacher.assignment-grade.get, teacher.assignment-submissions.post, teacher.comment-bank.delete, teacher.comment-bank.get, teacher.comment-bank.post, teacher.course-students.get, teacher.courses.get, teacher.declaration.get, teacher.fast-path.post, teacher.mentorship.get, teacher.mentorships.get, teacher.receipt-pdf.get, teacher.submission-detail.get, teacher.submissions.get, work.access.get, work.attachments.get, work.attachments.post, work.changes-since-review.get, work.comment-draft.delete, work.comment-drafts.get, work.comment-drafts.post, work.comments.publish.post, work.direct-edit.get, work.direct-edit.put, work.event-disputes.get, work.event-disputes.post, work.export.get, work.imports.confirm.post, work.imports.post, work.interview-appointment.put, work.interview-explanations.post, work.interview-held.post, work.interview-invite.post, work.interview-pdf.get, work.interview-questions.delete, work.interview-questions.post, work.interview.get, work.milestone-states.get, work.milestones.approve.post, work.milestones.delete, work.milestones.details.patch, work.milestones.request-revision.post, work.milestones.submit.post, work.origin-composition.get, work.origin-thresholds.get, work.review.post, work.source-notes.delete, work.source-notes.patch, work.source-notes.post, work.version.get from Institution_server cd62eb73 (API 1.84.0).
 // Faza 3: student.course-literature.get, student.source-proof-requests.get, teacher.course-literature.delete, teacher.course-literature.put, teacher.course-literature.get, teacher.literature-seen.put, teacher.source-guidance.get, teacher.source-proof-image.get, teacher.source-proof-request.delete, teacher.source-proof-request.put, teacher.source-proofs.get, teacher.source-recommendation.delete, teacher.source-recommendation.put from Institution_server 16cb1f93 (API 1.85.0).
+// Faza 3: auth.backchannel-logout.post, auth.callback.get, auth.login.get, auth.logout-all.post, auth.logout.post, auth.webauthn-assertion.post, auth.webauthn-challenge.post, auth.webauthn-registration.post, client.context.post, collaboration.comments.post, collaboration.revision-requests.post, course.aggregate.get, downloads.manifest.get, evidence.commit.post, evidence.open.post, evidence.replay.post, institution.academic-years.get, institution.acknowledgment.post, institution.admin-courses.get, institution.admin-courses.post, institution.assignment-versions.post, institution.assignment.get, institution.config-versions.post, institution.config.get, institution.course-assignments.post, institution.course-group-teachers.post, institution.course-groups.get, institution.course-groups.post, institution.courses.post, institution.enrollment-code-revocation.post, institution.enrollment-code-state.get, institution.enrollment-code.post, institution.enrollments.post, institution.faculty-rules.get, institution.faculty-rules.post, institution.legal-hold-release.post, institution.legal-holds.get, institution.legal-holds.post, institution.origin-threshold.delete, institution.origin-threshold.put, institution.origin-thresholds.get, institution.retention.get, institution.role-confirmation.post, institution.role-revocation.post, institution.student-data-exports-approve.post, institution.student-data-exports.get, institution.student-data-exports.post, institution.student-removal.post, institution.student-return.post, institution.student-work-language.post, institution.teacher-roles.get, institution.teaching-group-members.put, institution.teaching-team-view.get, institution.teaching-team.get, institution.teaching-team.post, institution.work-language.post, institution.work-work-language.get, institution.work-work-language.post, live.document.get, live.document.put, mentorship.key-dates.get, mentorship.notes.get, mentorship.notes.post, mentorship.request-approve.post, mentorship.request-decline.post, mentorship.request-withdraw.post, mentorship.requests.post, mentorship.student-mentor-candidates.get, mentorship.student-requests.get, notifications.list.get, notifications.read.post, ops.pilot-metrics.get, platform.health.get, platform.ready.get, platform.status.get, profile.interface-locale.get, profile.interface-locale.post, profile.me.get, profile.staff-affiliation.get, projection.process-summary-details.post, projection.process-summary.post, public.verification.post, settings.catalogue.get, settings.values.get, settings.values.put, sources.lookup.post, student-work.start.post, student-work.works.get, student.access-log.get, student.assignment-requirements.get, student.assignment-work.get, student.assignments.get, student.assistant-conversation.get, student.assistant-request.post, student.course-literature.get, student.data-export.get, student.deadline-history.get, student.declaration-attachments.post, student.declaration.get, student.declaration.put, student.enrollments.post, student.notice-read.post, student.notice.get, student.portable-record.get, student.receipt-pdf.get, student.source-proof-image.get, student.source-proof-requests.get, student.source-proofs.get, student.source-proofs.post, student.submission-history.get, student.submission-notes.get, student.submission-notes.post, student.submission-package-link.post, student.submission-package.get, student.submission-withdrawal.get, student.submission-withdrawal.post, student.submission.get, student.text-check-config.get, student.work-sources.delete, student.work-sources.put, student.work-sources.get, submission.submit.post, support.problem-report.post, support.problem-reports.post, teacher.access.get, teacher.assignment-copy.post, teacher.assignment-grade.get, teacher.assignment-overview.get, teacher.assignment-submissions.post, teacher.comment-bank.delete, teacher.comment-bank.get, teacher.comment-bank.post, teacher.course-literature.delete, teacher.course-literature.put, teacher.course-literature.get, teacher.course-students.get, teacher.courses.get, teacher.deadline-extension.post, teacher.deadline-extensions.get, teacher.declaration.get, teacher.fast-path.post, teacher.literature-seen.put, teacher.mentorship-request-decision.post, teacher.mentorship-requests.get, teacher.mentorship.get, teacher.mentorships.get, teacher.merlin-package-download.get, teacher.merlin-package.get, teacher.merlin-packages.post, teacher.merlin-roster-csv.get, teacher.merlin-roster.get, teacher.receipt-pdf.get, teacher.source-guidance.get, teacher.source-proof-image.get, teacher.source-proof-request.delete, teacher.source-proof-request.put, teacher.source-proofs.get, teacher.source-recommendation.delete, teacher.source-recommendation.put, teacher.submission-detail.get, teacher.submission-history.get, teacher.submission-receipt.get, teacher.submission-withdrawal.get, teacher.submission-withdrawal.post, teacher.submissions-bulk-link.post, teacher.submissions-bulk.get, teacher.submissions.get, teacher.work.get, teacher.working-criteria.get, teacher.working-criterion.put, work.access.get, work.attachments.get, work.attachments.post, work.changes-since-review.get, work.comment-draft.delete, work.comment-drafts.get, work.comment-drafts.post, work.comments.publish.post, work.compare.get, work.consultation-additions.post, work.consultation-records.get, work.consultation-records.post, work.consultation-slots.get, work.consultation-slots.post, work.consultation-slots.patch, work.direct-edit.get, work.direct-edit.put, work.event-disputes.get, work.event-disputes.post, work.export-pdf.get, work.export.get, work.imports.confirm.post, work.imports.post, work.interview-appointment.put, work.interview-explanations.post, work.interview-held.post, work.interview-invite.post, work.interview-pdf.get, work.interview-questions.delete, work.interview-questions.post, work.interview.get, work.messages.get, work.messages.post, work.milestone-states.get, work.milestones.approve.post, work.milestones.delete, work.milestones.patch, work.milestones.details.patch, work.milestones.get, work.milestones.request-revision.post, work.milestones.submit.post, work.origin-composition.get, work.origin-thresholds.get, work.return-for-revision.post, work.review.post, work.source-notes.delete, work.source-notes.get, work.source-notes.patch, work.source-notes.post, work.version.get, work.versions.get from Institution_server 1f2eebc2 (API 1.86.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -22,7 +23,7 @@ export type MigrationOperations = {
   "institution.course-assignments.post": {
     params: { "courseId": string };
     query: undefined;
-    body: { "requestKey": string; "title": string; "instructions": string; "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "opensAt": string; "dueAt": string; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "importAllowed": boolean; "wordMin": number | null; "wordMax": number | null };
+    body: { "requestKey": string; "title": string; "instructions": string; "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "opensAt": string; "dueAt": string; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "importAllowed": boolean; "wordMin": number | null; "wordMax": number | null; "groupIds"?: (string)[]; "externalToolsAllowed"?: boolean; "aiSummaryOnly"?: boolean; "isPractice"?: boolean };
     success: { status: 201; body: { "id": string }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "invalid_input" | "unsupported_media_type" | "invalid_json" | "forbidden" | "unavailable" | "conflict";
   };
@@ -86,21 +87,21 @@ export type MigrationOperations = {
     params: { "assignmentId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "students": ({ "studentId": string; "givenName": string | null; "familyName": string | null; "groupName": string | null; "submitted": boolean; "requestedMinute": string | null; "afterDeadline": boolean | null; "evidenceRecord": "continuous" | "with_gaps" | null })[] }; headers: {  } };
+    success: { status: 200; body: { "students": ({ "studentId": string; "givenName": string; "familyName": string; "groupName": string | null; "submitted": false; "requestedMinute": null; "afterDeadline": null; "evidenceRecord": null } | { "studentId": string; "givenName": string; "familyName": string; "groupName": string | null; "submitted": true; "requestedMinute": string; "afterDeadline": boolean; "evidenceRecord": "continuous" | "with_gaps" | null } | { "studentId": string; "givenName": null; "familyName": null; "groupName": string | null; "submitted": false; "requestedMinute": null; "afterDeadline": null; "evidenceRecord": null } | { "studentId": string; "givenName": null; "familyName": null; "groupName": string | null; "submitted": true; "requestedMinute": string; "afterDeadline": boolean; "evidenceRecord": "continuous" | "with_gaps" | null })[] }; headers: { "cache-control"?: string } };
     errorCode: "unauthorized" | "forbidden" | "unavailable";
   };
   "teacher.deadline-extension.post": {
     params: { "assignmentId": string };
     query: undefined;
     body: { "scope": "one"; "studentId": string; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" } | { "scope": "all"; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" };
-    success: { status: 201; body: { "extension": { "id": string; "scope": "one" | "all"; "studentId": string | null; "previousDueAt": string; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" | null; "createdBy": string; "createdAt": string }; "existingSubmissionsUnchanged": boolean }; headers: {  } };
+    success: { status: 201; body: { "extension": { "id": string; "scope": "one" | "all"; "studentId": string | null; "previousDueAt": string; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" | null; "createdBy": string; "createdAt": string }; "existingSubmissionsUnchanged": boolean }; headers: { "cache-control"?: string } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
   };
   "teacher.deadline-extensions.get": {
     params: { "assignmentId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "extensions": ({ "id": string; "scope": "one" | "all"; "studentId": string | null; "previousDueAt": string; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" | null; "createdBy": string; "createdAt": string })[] }; headers: {  } };
+    success: { status: 200; body: { "extensions": ({ "id": string; "scope": "one" | "all"; "studentId": string | null; "previousDueAt": string; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" | null; "createdBy": string; "createdAt": string })[] }; headers: { "cache-control"?: string } };
     errorCode: "unauthorized" | "not_found" | "unavailable";
   };
   "work.consultation-additions.post": {
@@ -126,7 +127,7 @@ export type MigrationOperations = {
   };
   "work.versions.get": {
     params: { "documentId": string };
-    query: undefined;
+    query: { "beforeRevision"?: string };
     body: undefined;
     success: { status: 200; body: { "versions": ({ "kind": "submission"; "revision": number; "savedMinute": string; "afterDeadline": boolean } | { "kind": "checkpoint"; "revision": number; "savedMinute": string })[]; "nextBeforeRevision": number | null }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
@@ -170,8 +171,8 @@ export type MigrationOperations = {
     params: { "assignmentId": string; "studentId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "state": "none" } | { "state": "ceka"; "revision": number; "requestedAt": string } | { "state": "potvrdeno"; "receipt": { "payload": { "receiptSchema": "ductus-submission-receipt-v2"; "submissionId": string; "evidenceDomainId": string; "principalId": string; "assignmentId": string; "assignmentVersion": number; "documentId": string; "evidencePackageId": string; "revision": number; "artifactSha256": string; "evidenceHeadSegmentHash": string; "evidenceRecord": "continuous" | "with_gaps"; "requestedAt": string; "dueAt": string; "afterDeadline": boolean; "signedAt": string }; "payloadDigestSha256": string; "signature": { "algorithm": "Ed25519"; "keyId": string; "keyVersion": string; "signatureEncoding": "raw"; "signatureBase64Url": string } } }; headers: {  } };
-    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
+    success: { status: 200; body: { "state": "none" } | { "state": "ceka"; "revision": number; "requestedAt": string } | { "state": "potvrdeno"; "receipt": { "payload": { "receiptSchema": "ductus-submission-receipt-v2"; "submissionId": string; "evidenceDomainId": string; "principalId": string; "assignmentId": string; "assignmentVersion": number; "documentId": string; "evidencePackageId": string; "revision": number; "artifactSha256": string; "evidenceHeadSegmentHash": string; "evidenceRecord": "continuous" | "with_gaps"; "requestedAt": string; "dueAt": string; "afterDeadline": boolean; "signedAt": string }; "payloadDigestSha256": string; "signature": { "algorithm": "Ed25519"; "keyId": string; "keyVersion": string; "signatureEncoding": "raw"; "signatureBase64Url": string } } }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "unavailable" | "not_found";
   };
   "teacher.work.get": {
     params: { "documentId": string };
@@ -184,7 +185,7 @@ export type MigrationOperations = {
     params: { "assignmentId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "assignmentId": string; "courseId": string; "versionNo": number; "title": string; "instructions": string; "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "opensAt": string; "dueAt": string; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "importAllowed": boolean; "wordMin": number | null; "wordMax": number | null; "groupIds"?: (string)[]; "externalToolsAllowed"?: boolean; "aiSummaryOnly"?: boolean }; headers: {  } };
+    success: { status: 200; body: { "assignmentId": string; "courseId": string; "versionNo": number; "title": string; "instructions": string; "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "opensAt": string; "dueAt": string; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "importAllowed": boolean; "wordMin": number | null; "wordMax": number | null; "groupIds"?: (string)[]; "externalToolsAllowed"?: boolean; "aiSummaryOnly"?: boolean; "isPractice"?: boolean }; headers: {  } };
     errorCode: "unauthorized" | "forbidden" | "invalid_input" | "not_found" | "unavailable";
   };
   "institution.work-work-language.get": {
@@ -192,41 +193,41 @@ export type MigrationOperations = {
     query: undefined;
     body: undefined;
     success: { status: 200; body: { "title": string; "assignmentLanguage": "hr" | "en"; "exception": "hr" | "en" | null }; headers: {  } };
-    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "not_found" | "unavailable";
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
   };
   "teacher.merlin-roster.get": {
     params: { "assignmentId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "rows": ({ "familyName": string; "givenName": string; "submitted": false; "submittedMinute": null; "afterDeadline": null; "pdfName": null; "pdfSha256": null; "docxName": null; "docxSha256": null } | { "familyName": string; "givenName": string; "submitted": true; "submittedMinute": string; "afterDeadline": boolean; "pdfName": string; "pdfSha256": string; "docxName": string; "docxSha256": string } | { "familyName": null; "givenName": null; "submitted": false; "submittedMinute": null; "afterDeadline": null; "pdfName": null; "pdfSha256": null; "docxName": null; "docxSha256": null } | { "familyName": null; "givenName": null; "submitted": true; "submittedMinute": string; "afterDeadline": boolean; "pdfName": string; "pdfSha256": string; "docxName": string; "docxSha256": string })[]; "extensionReasons": ({ "studentId": string | null; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" })[] }; headers: {  } };
+    success: { status: 200; body: { "rows": ({ "familyName": string; "givenName": string; "submitted": false; "submittedMinute": null; "afterDeadline": null; "pdfName": null; "pdfSha256": null; "docxName": null; "docxSha256": null } | { "familyName": string; "givenName": string; "submitted": true; "submittedMinute": string; "afterDeadline": boolean; "pdfName": string; "pdfSha256": string; "docxName": string; "docxSha256": string } | { "familyName": null; "givenName": null; "submitted": false; "submittedMinute": null; "afterDeadline": null; "pdfName": null; "pdfSha256": null; "docxName": null; "docxSha256": null } | { "familyName": null; "givenName": null; "submitted": true; "submittedMinute": string; "afterDeadline": boolean; "pdfName": string; "pdfSha256": string; "docxName": string; "docxSha256": string })[]; "extensionReasons": ({ "studentId": string | null; "dueAt": string; "reasonId": "justified" | "technical" | "agreement" | "all" })[] }; headers: { "cache-control"?: string } };
     errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
   };
   "teacher.merlin-roster-csv.get": {
     params: { "assignmentId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: undefined; headers: {  } };
+    success: { status: 200; body: undefined; headers: { "content-disposition"?: string; "cache-control"?: string } };
     errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
   };
   "teacher.merlin-packages.post": {
     params: { "assignmentId": string };
     query: undefined;
     body: { "requestKey": string };
-    success: { status: 202; body: { "id": string; "state": "queued" | "ready" | "failed" | "expired" }; headers: {  } };
+    success: { status: 202; body: { "id": string; "state": "queued" | "ready" | "failed" | "expired" }; headers: { "cache-control"?: string } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
   };
   "teacher.merlin-package.get": {
     params: { "assignmentId": string; "packageId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "id": string; "state": "queued" | "failed" } | { "id": string; "state": "ready"; "downloadPath": string; "expiresAt": string; "sha256": string } | { "id": string; "state": "expired"; "expiresAt": string; "sha256": string }; headers: {  } };
+    success: { status: 200; body: { "id": string; "state": "queued" | "failed" } | { "id": string; "state": "ready"; "downloadPath": string; "expiresAt": string; "sha256": string } | { "id": string; "state": "expired"; "expiresAt": string; "sha256": string }; headers: { "cache-control"?: string } };
     errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
   };
   "teacher.merlin-package-download.get": {
     params: { "assignmentId": string; "packageId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: undefined; headers: {  } };
+    success: { status: 200; body: undefined; headers: { "content-disposition"?: string; "cache-control"?: string; "x-content-sha256"?: string } };
     errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable" | "conflict" | "not_allowed";
   };
   "student.text-check-config.get": {
@@ -234,7 +235,7 @@ export type MigrationOperations = {
     query: undefined;
     body: undefined;
     success: { status: 200; body: { "enabledCheckIds": (string)[]; "lektaProfileId": string | null }; headers: {  } };
-    errorCode: "invalid_assignment_id" | "unauthorized" | "not_found" | "unavailable";
+    errorCode: "unauthorized" | "not_found" | "unavailable";
   };
   "student.assignment-requirements.get": {
     params: { "assignmentId": string };
@@ -248,7 +249,7 @@ export type MigrationOperations = {
     query: undefined;
     body: { "assistantIds": (string)[]; "studentIds": (string)[] };
     success: { status: 200; body: { "updated": true }; headers: {  } };
-    errorCode: "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "unauthorized" | "forbidden" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_timeout" | "conflict" | "body_too_large" | "unsupported_media_type" | "invalid_input" | "unavailable";
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "unsupported_media_type" | "conflict";
   };
   "institution.teaching-team.get": {
     params: { "id": string };
@@ -262,7 +263,7 @@ export type MigrationOperations = {
     query: undefined;
     body: { "assistantIds": (string)[] };
     success: { status: 200; body: { "updated": true }; headers: {  } };
-    errorCode: "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "unauthorized" | "forbidden" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_timeout" | "body_too_large" | "unsupported_media_type" | "invalid_input" | "unavailable";
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "unsupported_media_type";
   };
   "institution.teaching-team-view.get": {
     params: { "id": string };
@@ -280,24 +281,24 @@ export type MigrationOperations = {
   };
   "ops.pilot-metrics.get": {
     params: undefined;
-    query: undefined;
+    query: { [key: string]: unknown };
     body: undefined;
     success: { status: 200; body: { "asOf": string; "minimumGroup": 5; "submissions": { "recorded": 0 | number | null; "notRecorded": 0 | number | null }; "receipts": { "issued": 0 | number | null; "pending": 0 | number | null }; "helpRequests": { "total": 0 | number | null; "saveProblems": 0 | number | null }; "receiptTime": { "p50Ms": number | null; "p95Ms": number | null } }; headers: {  } };
     errorCode: "unauthenticated" | "forbidden" | "invalid_input" | "unavailable";
   };
   "institution.faculty-rules.get": {
     params: undefined;
-    query: undefined;
+    query: { [key: string]: unknown };
     body: undefined;
-    success: { status: 200; body: { "rules": ({ "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "versions": ({ "versionNo": number; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "importAllowed": boolean; "origin": "operator" | "administrator"; "publishedAt": string })[] })[] }; headers: {  } };
-    errorCode: "unauthorized" | "forbidden" | "unavailable";
+    success: { status: 200; body: { "rules": ({ "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "versions": ({ "versionNo": number; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "importAllowed": boolean; "origin": "operator" | "administrator"; "publishedAt": string })[] })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
   };
   "institution.faculty-rules.post": {
     params: undefined;
     query: undefined;
     body: { "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "basedOnVersionNo": number | null; "aiPolicy": "prohibited" | "partially_allowed" | "encouraged"; "aiPurposes": ("formatting" | "proofreading" | "literature_search" | "transcription" | "translation")[]; "evidenceProfile": "basic" | "extended"; "importAllowed": boolean };
-    success: { status: 201; body: { "versionNo": number; "publishedAt": string }; headers: {  } };
-    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "forbidden" | "invalid_json" | "unsupported_media_type" | "unavailable" | "conflict" | "invalid_input" | "invalid_work_type" | "invalid_ai_policy" | "invalid_ai_purposes" | "invalid_evidence_profile";
+    success: { status: 201; body: { "versionNo": number; "publishedAt": string }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "forbidden" | "invalid_input" | "invalid_work_type" | "invalid_ai_policy" | "invalid_ai_purposes" | "invalid_evidence_profile" | "conflict" | "unavailable";
   };
   "teacher.assignment-copy.post": {
     params: { "assignmentId": string };
@@ -308,58 +309,58 @@ export type MigrationOperations = {
   };
   "institution.retention.get": {
     params: undefined;
-    query: undefined;
+    query: { [key: string]: unknown };
     body: undefined;
     success: { status: 200; body: { "classes": ({ "key": "sessions" | "live-state" | "versions" | "change-times" | "access-log" | "receipts"; "label": string; "retentionDays": number | null; "mode": "execute" | "dry-run"; "candidates": number | null; "lastRunAt": string | null })[] }; headers: {  } };
-    errorCode: "unauthorized" | "forbidden" | "unavailable";
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
   };
   "institution.legal-holds.get": {
     params: undefined;
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "holds": ({ "holdId": string; "subjectType": "work" | "student" | "assignment"; "subjectId": string; "caseReference": string; "placedBy": string; "placedAt": string; "releasedBy": string | null; "releasedAt": string | null })[] }; headers: {  } };
+    success: { status: 200; body: { "holds": ({ "holdId": string; "subjectType": "work" | "student" | "assignment"; "subjectId": string; "caseReference": string; "placedBy": string; "placedAt": string; "releasedBy": string | null; "releasedAt": string | null })[] }; headers: { "cache-control"?: string } };
     errorCode: "unauthorized" | "forbidden" | "unavailable";
   };
   "institution.legal-holds.post": {
     params: undefined;
     query: undefined;
     body: { "subjectType": "work" | "student" | "assignment"; "subjectId": string; "caseReference": string };
-    success: { status: 201; body: { "holdId": string }; headers: {  } };
-    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "forbidden" | "invalid_json" | "unsupported_media_type" | "unavailable" | "invalid_input" | "not_found";
+    success: { status: 201; body: { "holdId": string }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "forbidden" | "not_found" | "unavailable";
   };
   "institution.legal-hold-release.post": {
     params: { "holdId": string };
     query: undefined;
     body: { "reason": string };
-    success: { status: 200; body: { "holdId": string; "releasedAt": string }; headers: {  } };
-    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "forbidden" | "invalid_json" | "unsupported_media_type" | "unavailable" | "conflict" | "invalid_input" | "not_found";
+    success: { status: 200; body: { "holdId": string; "releasedAt": string }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "forbidden" | "not_found" | "conflict" | "unavailable";
   };
   "institution.student-data-exports.get": {
     params: undefined;
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "exports": ({ "exportId": string; "state": "requested" | "approved" | "ready" | "downloaded" | "expired"; "requestedAt": string; "expiresAt": string | null })[] }; headers: {  } };
+    success: { status: 200; body: { "exports": ({ "exportId": string; "state": "requested" | "approved" | "ready" | "downloaded" | "expired"; "requestedAt": string; "expiresAt": string | null })[] }; headers: { "cache-control"?: string } };
     errorCode: "unauthorized" | "forbidden" | "unavailable";
   };
   "institution.student-data-exports.post": {
     params: undefined;
     query: undefined;
     body: { "studentId": string; "identityCheckedBy": "identity_card" | "passport" | "student_card"; "note": string };
-    success: { status: 201; body: { "exportId": string }; headers: {  } };
-    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "invalid_input" | "unsupported_media_type" | "invalid_json" | "forbidden" | "not_found" | "conflict" | "unavailable";
+    success: { status: 201; body: { "exportId": string }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "forbidden" | "not_found" | "conflict" | "unavailable";
   };
   "institution.student-data-exports-approve.post": {
     params: { "exportId": string };
     query: undefined;
     body: { "reference": string };
-    success: { status: 200; body: { "exportId": string; "state": "approved" }; headers: {  } };
-    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "invalid_input" | "unsupported_media_type" | "invalid_json" | "forbidden" | "not_found" | "conflict" | "unavailable";
+    success: { status: 200; body: { "exportId": string; "state": "approved" }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "forbidden" | "not_found" | "conflict" | "unavailable";
   };
   "student.data-export.get": {
     params: { "token": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: undefined; headers: {  } };
+    success: { status: 200; body: undefined; headers: { "content-disposition"?: string; "cache-control"?: string; "x-content-sha256"?: string } };
     errorCode: "not_allowed" | "unavailable";
   };
   "work.consultation-slots.get": {
@@ -476,9 +477,9 @@ export type MigrationOperations = {
   };
   "work.compare.get": {
     params: { "documentId": string };
-    query: { from: string; to: string };
+    query: { "from": string; "to": string };
     body: undefined;
-    success: { status: 200; body: { from: number; to: number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
+    success: { status: 200; body: { "from": number; "to": number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
   };
   "platform.status.get": {
@@ -500,7 +501,7 @@ export type MigrationOperations = {
     query: undefined;
     body: { "requestId": string; "decision": "approve" } | { "requestId": string; "decision": "decline"; "reason"?: string };
     success: { status: 200; body: { "decision": "approve"; "mentorshipId": string } | { "decision": "decline" }; headers: { "cache-control"?: string } };
-    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "forbidden" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "conflict" | "unavailable" | "unsupported_media_type" | "invalid_json" | "invalid_input";
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "forbidden" | "unavailable" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "conflict";
   };
   "teacher.working-criteria.get": {
     params: { "documentId": string };
@@ -631,8 +632,8 @@ export type MigrationOperations = {
   "evidence.replay.post": {
     params: undefined;
     query: undefined;
-    body: { "documentId": string; from: 0 } | { "documentId": string; from: number; "head": { "segmentHash": string; "segmentCount": number } };
-    success: { status: 200; body: { "replayFormat": "ductus-evidence-replay-v1"; "segmentCount": number; "head": { "segmentHash": string; "segmentCount": number } | null; from: number; "next": number | null; "startDocument": string | null; "segments": (string)[]; "resumeDocuments": { [key: string]: string } }; headers: {  } };
+    body: { "documentId": string; "from": 0 } | { "documentId": string; "from": number; "head": { "segmentHash": string; "segmentCount": number } };
+    success: { status: 200; body: { "replayFormat": "ductus-evidence-replay-v1"; "segmentCount": number; "head": { "segmentHash": string; "segmentCount": number } | null; "from": number; "next": number | null; "startDocument": string | null; "segments": (string)[]; "resumeDocuments": { [key: string]: string } }; headers: {  } };
     errorCode: "forbidden" | "upgrade_required" | "unsupported_media_type" | "unauthenticated" | "too_large" | "timeout" | "bad_request" | "invalid" | "not_found" | "record_changed" | "unavailable";
   };
   "institution.academic-years.get": {
@@ -891,14 +892,14 @@ export type MigrationOperations = {
     params: undefined;
     query: undefined;
     body: { "documentId": string };
-    success: { status: 200; body: { "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ from: string; to: string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { from: string; to: string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" }; "activeEditingMinutes": number; "keyEvents": ({ "kind": Lowercase<"IMPORT"> | "ai-transfer"; "at": { from: string; to: string } })[] }; headers: {  } };
+    success: { status: 200; body: { "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ "from": string; "to": string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { "from": string; "to": string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" }; "activeEditingMinutes": number; "keyEvents": ({ "kind": "import" | "ai-transfer"; "at": { "from": string; "to": string } })[] }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
   };
   "projection.process-summary.post": {
     params: undefined;
     query: undefined;
     body: { "documentId": string };
-    success: { status: 200; body: { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ from: string; to: string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { from: string; to: string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" }; headers: {  } };
+    success: { status: 200; body: { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ "from": string; "to": string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { "from": string; "to": string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
   };
   "settings.catalogue.get": {
@@ -1171,7 +1172,7 @@ export type MigrationOperations = {
     params: undefined;
     query: undefined;
     body: { "assignmentId": string };
-    success: { status: 200; body: { "kind": "ok"; "students": ({ "id": string; "givenName": string; "surname": string; "documentId": null; "work": "notice_pending"; "lastChangeAt": null; "record": null } | { "id": string; "givenName": string; "surname": string; "documentId": string; "work": "writing" | "submitted"; "lastChangeAt": string | null; "record": { "pastesWithoutSource": number; "blocks": ({ "kind": "heading" | "paragraph" | "bulletItem" | "quote"; "text": string })[]; "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ from: string; to: string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { from: string; to: string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" } } } | { "id": string; "givenName": null; "surname": null; "documentId": null; "work": "notice_pending"; "lastChangeAt": null; "record": null } | { "id": string; "givenName": null; "surname": null; "documentId": string; "work": "writing" | "submitted"; "lastChangeAt": string | null; "record": { "pastesWithoutSource": number; "blocks": ({ "kind": "heading" | "paragraph" | "bulletItem" | "quote"; "text": string })[]; "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ from: string; to: string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { from: string; to: string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" } } })[] }; headers: {  } };
+    success: { status: 200; body: { "kind": "ok"; "students": ({ "id": string; "givenName": string; "surname": string; "documentId": null; "work": "notice_pending"; "lastChangeAt": null; "record": null } | { "id": string; "givenName": string; "surname": string; "documentId": string; "work": "writing" | "submitted"; "lastChangeAt": string | null; "record": { "pastesWithoutSource": number; "blocks": ({ "kind": "heading" | "paragraph" | "bulletItem" | "quote"; "text": string })[]; "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ "from": string; "to": string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { "from": string; "to": string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" } } } | { "id": string; "givenName": null; "surname": null; "documentId": null; "work": "notice_pending"; "lastChangeAt": null; "record": null } | { "id": string; "givenName": null; "surname": null; "documentId": string; "work": "writing" | "submitted"; "lastChangeAt": string | null; "record": { "pastesWithoutSource": number; "blocks": ({ "kind": "heading" | "paragraph" | "bulletItem" | "quote"; "text": string })[]; "summary": { "summaryFormat": "ductus-process-summary-v1"; "sessions": { "evidenceKind": "observed"; "breakAboveMinutes": number; "count": number; "items": ({ "from": string; "to": string })[] }; "pastes": { "evidenceKind": "observed"; "listedAboveCharacters": number; "listed": ({ "at": { "from": string; "to": string }; "characters": number; "origin": "not_observed" })[]; "smallerCount": number }; "gaps": { "evidenceKind": "observed"; "items": ({ "previousEndedAt": string; "nextStartedAt": string })[] }; "recordState": "complete" | "has_gaps" } } })[] }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "unauthorized" | "unsupported_media_type" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "invalid_input" | "unavailable";
   };
   "teacher.mentorship.get": {
@@ -1311,7 +1312,7 @@ export type MigrationOperations = {
     params: { "documentId": string };
     query: undefined;
     body: { "fileBase64": string; "fileName": string | null };
-    success: { status: 201; body: { "importId": string; "manifestSha256": string; "source": Lowercase<"IMPORT">; "evidenceKind": "imported"; "fileFormat": "docx" | "pdf"; "content": { "schemaVersion": 2; "nodes": ({ "type": "paragraph"; "id": string; "children": ({ "type": "text"; "text": string; "marks": ("bold" | "italic")[] })[] } | { "type": "heading"; "id": string; "level": 1 | 2 | 3; "children": ({ "type": "text"; "text": string; "marks": ("bold" | "italic")[] })[] } | { "type": "bulletItem"; "id": string; "children": ({ "type": "text"; "text": string; "marks": ("bold" | "italic")[] })[] } | { "type": "quote"; "id": string; "children": ({ "type": "text"; "text": string; "marks": ("bold" | "italic")[] })[] })[]; "sources": ({  })[] }; "traces": ({ "traceKind": "comment" | "deletion" | "insertion"; "count": number })[]; "rawByteLength": number; "fileName": string | null; "baseRevision": number; "expiresAt": string }; headers: {  } };
+    success: { status: 201; body: { "importId": string; "manifestSha256": string; "source": "import"; "evidenceKind": "imported"; "fileFormat": "docx" | "pdf"; "content": { "schemaVersion": 2; "nodes": ({ "type": "paragraph"; "id": string; "children": ({ "type": "text"; "text": string; "marks": ("bold" | "italic")[] })[] } | { "type": "heading"; "id": string; "level": 1 | 2 | 3; "children": ({ "type": "text"; "text": string; "marks": ("bold" | "italic")[] })[] } | { "type": "bulletItem"; "id": string; "children": ({ "type": "text"; "text": string; "marks": ("bold" | "italic")[] })[] } | { "type": "quote"; "id": string; "children": ({ "type": "text"; "text": string; "marks": ("bold" | "italic")[] })[] })[]; "sources": ({  })[] }; "traces": ({ "traceKind": "comment" | "deletion" | "insertion"; "count": number })[]; "rawByteLength": number; "fileName": string | null; "baseRevision": number; "expiresAt": string }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "invalid_document" | "pdf_no_text_layer" | "import_not_allowed" | "not_found" | "unavailable";
   };
   "work.interview-appointment.put": {
@@ -1458,7 +1459,7 @@ export type MigrationOperations = {
     params: { "documentId": string; "revision": string };
     query: { "compareFrom"?: string };
     body: undefined;
-    success: { status: 200; body: { "revision": number; "document": string } | { from: number; to: number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
+    success: { status: 200; body: { "revision": number; "document": string } | { "from": number; "to": number; "blocks": ({ "kind": "paragraph" | "bulletItem" | "quote"; "change": "unchanged" | "removed" | "added"; "text": string } | { "kind": "heading"; "level": number; "change": "unchanged" | "removed" | "added"; "text": string })[] }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
   };
   "student.course-literature.get": {
@@ -1551,5 +1552,12 @@ export type MigrationOperations = {
     body: { "record": { [key: string]: unknown }; "doi"?: string | null; "isbn"?: string | null; "undated"?: boolean; "requirement": "recommended" | "required" };
     success: { status: 200; body: { "id": string; "record": { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "book"; "place": string; "publisher": string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "article"; "journal": string; "volume"?: string; "issue"?: string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "chapter"; "editors": ({ "kind": "person"; "family": string; "given": string })[]; "bookTitle": string; "place": string; "publisher": string; "pages"?: string } | { "id": string; "authors": ({ "kind": "person"; "family": string; "given": string } | { "kind": "organization"; "name": string; "acronym"?: string })[]; "year": number; "title": string; "type": "web"; "url": string; "accessed": string }; "doi": string | null; "isbn": string | null; "undated": boolean; "requirement": "recommended" | "required" | null; "createdAt": string; "updatedAt": string }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "unsupported_media_type" | "invalid_json" | "invalid_input";
+  };
+  "work.return-for-revision.post": {
+    params: { "documentId": string };
+    query: undefined;
+    body: { "comment": string; "revisionDueAt"?: string };
+    success: { status: 200; body: { "id": string; "state": "returned_for_revision"; "round": number; "comment": string; "revisionDueAt": string | null; "returnedAt": string }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "forbidden" | "conflict" | "invalid_json" | "unsupported_media_type" | "invalid_input" | "unavailable";
   };
 };
