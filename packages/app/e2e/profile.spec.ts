@@ -103,7 +103,8 @@ test("a save the server refuses keeps the language and says so", async ({ page }
   await page.goto("/app/web/profil");
   await page.getByLabel("Jezik", { exact: true }).selectOption("en");
   await page.getByRole("button", { name: "Spremi jezik" }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText("Jezik nije spremljen na poslužitelju. Pokušajte ponovno.");
+  // PD-7 (#361) keeps an empty role="alert" toast list in the student shell; the page's own alert is the one with text.
+  await expect(page.getByRole("main").getByRole("alert").filter({ hasText: /\S/ })).toHaveText("Jezik nije spremljen na poslužitelju. Pokušajte ponovno.");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Postavke profila");
   await expect(page.locator("html")).toHaveAttribute("lang", "hr");
   // The choice stays, so trying again sends English once more.
@@ -154,6 +155,6 @@ test("an expired sign-in on save asks to sign in again instead of pretending", a
   await page.goto("/app/web/profil");
   await page.getByLabel("Jezik", { exact: true }).selectOption("en");
   await page.getByRole("button", { name: "Spremi jezik" }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("AAI@EduHr");
+  await expect(page.getByRole("main").getByRole("alert").filter({ hasText: /\S/ })).toContainText("AAI@EduHr");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Postavke profila");
 });
