@@ -85,3 +85,72 @@ export function listedSources(doc: Parameters<typeof documentSources>[0]): { id:
   }
   return documentSources(doc).map(({ id, label }) => ({ id, entry: `${label}. ${titles.get(id) ?? ""}`.trim(), cited: cited.has(id) }));
 }
+
+const PLAIN = "[izvor]";
+
+/** The text around a "[izvor]" place, for the card in the list (about 60 characters, on one line). */
+export function placeExcerpt(doc: EditorState["doc"], pos: number): string {
+  const $pos = doc.resolve(pos);
+  const block = $pos.parent;
+  const start = $pos.start();
+  const text = block.textBetween(0, block.content.size, " ", " ");
+  const at = pos - start;
+  const before = text.slice(Math.max(0, at - 40), at);
+  const after = text.slice(at, at + PLAIN.length + 20);
+  return `${at > 40 ? "…" : ""}${before}${after}${at + PLAIN.length + 20 < text.length ? "…" : ""}`.replace(/\s+/g, " ").trim();
+}
+
+/** Replaces the "[izvor]" at `pos` with a citation of the source; null when the place or the source is no longer there. */
+export function linkPlaceTransaction(state: EditorState, pos: number, sourceId: string): Transaction | null {
+  const type = state.schema.nodes.citation;
+  const sources: unknown = state.doc.attrs.sources;
+  if (!type || !Array.isArray(sources) || !sources.some((s) => (s as { id?: unknown } | null)?.id === sourceId)) return null;
+  if (pos < 0 || pos + PLAIN.length > state.doc.content.size) return null;
+  if (state.doc.textBetween(pos, pos + PLAIN.length) !== PLAIN) return null;
+  const $from = state.doc.resolve(pos);
+  const $to = state.doc.resolve(pos + PLAIN.length);
+  if (!$from.sameParent($to) || !$from.parent.canReplaceWith($from.index(), $to.index(), type)) return null;
+  const tr = state.tr.replaceWith(pos, pos + PLAIN.length, type.create({ sourceId, locator: null }));
+  return tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1))).scrollIntoView();
+}
+
+/** How many citations of the work point at the source. */
+export function citationCount(doc: EditorState["doc"], sourceId: string): number {
+  let count = 0;
+  doc.descendants((node) => { if (node.type.name === "citation" && node.attrs.sourceId === sourceId) count += 1; });
+  return count;
+}
+
+/**
+ * Removes the source from the work (prototype `srcDel`): every citation of it becomes "[izvor]",
+ * so the place stays visible for checking. Null when the source is not in the work.
+ */
+export function removeSourceTransaction(state: EditorState, sourceId: string): Transaction | null {
+  const sources: unknown = state.doc.attrs.sources;
+  if (!Array.isArray(sources) || !sources.some((s) => (s as { id?: unknown } | null)?.id === sourceId)) return null;
+  const places: number[] = [];
+  state.doc.descendants((node, pos) => {
+    if (node.type.name === "citation" && node.attrs.sourceId === sourceId) places.push(pos);
+  });
+  const tr = state.tr;
+  // From the end, so the earlier positions stay valid.
+  for (const pos of places.reverse()) tr.replaceWith(pos, pos + 1, state.schema.text(PLAIN));
+  return tr.setDocAttribute("sources", sources.filter((s) => (s as { id?: unknown } | null)?.id !== sourceId));
+}
+
+/** The stored source as a draft for the form "Uredi izvor"; null for a record the form cannot show. */
+export function sourceDraftOf(sources: unknown, sourceId: string): SourceDraft | null {
+  if (!Array.isArray(sources)) return null;
+  const raw = sources.find((s) => (s as { id?: unknown } | null)?.id === sourceId) as Record<string, unknown> | undefined;
+  if (!raw || typeof raw.type !== "string" || typeof raw.title !== "string" || !Array.isArray(raw.authors)) return null;
+  const { id: _id, ...draft } = raw;
+  return draft as SourceDraft;
+}
+
+/** Writes the edited source in place of the old one; the id and the citations stay. */
+export function editSourceTransaction(state: EditorState, sourceId: string, draft: SourceDraft): Transaction | null {
+  const sources: unknown = state.doc.attrs.sources;
+  if (!Array.isArray(sources) || !sources.some((s) => (s as { id?: unknown } | null)?.id === sourceId)) return null;
+  return state.tr.setDocAttribute("sources", sources.map((s) =>
+    (s as { id?: unknown } | null)?.id === sourceId ? { id: sourceId, ...draft } : s));
+}

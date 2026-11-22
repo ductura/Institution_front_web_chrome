@@ -4,7 +4,10 @@ import { EditorState, TextSelection } from "@tiptap/pm/state";
 import { describe, expect, it } from "vitest";
 import { createEditorExtensionsV2, tiptapToCanonicalV2 } from "@/editor";
 import { triggerItems } from "@/components/editor/triggers/items";
-import { addSourceAt, addSourceTransaction, listedSources, mentionSources, nextPlace, plainCitationPlaces } from "./mention-model";
+import {
+  addSourceAt, addSourceTransaction, citationCount, editSourceTransaction, linkPlaceTransaction, listedSources, mentionSources,
+  nextPlace, placeExcerpt, plainCitationPlaces, removeSourceTransaction, sourceDraftOf,
+} from "./mention-model";
 
 const ID = "00000000-0000-4000-8000-00000000c0a1";
 const NEW = "00000000-0000-4000-8000-00000000c0a2";
@@ -93,4 +96,68 @@ describe("listedSources", () => {
     ]);
   });
   it("is empty without sources", () => expect(listedSources(null)).toEqual([]));
+});
+
+describe("the citations left as \"[izvor]\" and the sources of the list", () => {
+  const citations = (state: EditorState) => {
+    const found: string[] = [];
+    state.doc.descendants((n) => { if (n.type.name === "citation") found.push(String(n.attrs.sourceId)); });
+    return found;
+  };
+
+  it("links a place to a source: the marker becomes a citation and the count drops", () => {
+    const state = stateWith("Prvo [izvor] pa kraj.");
+    const [place] = plainCitationPlaces(state.doc);
+    const tr = linkPlaceTransaction(state, place!, ID);
+    expect(tr).not.toBeNull();
+    const next = state.apply(tr!);
+    expect(citations(next)).toEqual([ID]);
+    expect(plainCitationPlaces(next.doc)).toEqual([]);
+    expect(next.doc.textContent).toBe("Prvo  pa kraj.");
+  });
+
+  it("does not link a place that changed or a source that is not in the work", () => {
+    const state = stateWith("Prvo [izvor] pa kraj.");
+    expect(linkPlaceTransaction(state, 2, ID)).toBeNull();
+    expect(linkPlaceTransaction(state, 6, NEW)).toBeNull();
+    expect(linkPlaceTransaction(state, 999, ID)).toBeNull();
+  });
+
+  it("shows the text around the place on one line", () => {
+    const state = stateWith("Prvo [izvor] pa kraj.");
+    expect(placeExcerpt(state.doc, 6)).toBe("Prvo [izvor] pa kraj.");
+    const long = stateWith(`${"a".repeat(60)} [izvor] ${"b".repeat(40)}`);
+    const [at] = plainCitationPlaces(long.doc);
+    expect(placeExcerpt(long.doc, at!)).toMatch(/^…a+ \[izvor\] b+…$/);
+  });
+
+  it("removes a cited source: its citations become \"[izvor]\" and the other source stays", () => {
+    const other = { ...book, id: NEW, title: "Drugi vrt" };
+    const linked = (() => {
+      let s = stateWith("A [izvor] B [izvor] C [izvor]", [book, other]);
+      const [p1, p2, p3] = plainCitationPlaces(s.doc);
+      s = s.apply(linkPlaceTransaction(s, p3!, NEW)!);
+      s = s.apply(linkPlaceTransaction(s, p2!, ID)!);
+      return s.apply(linkPlaceTransaction(s, p1!, ID)!);
+    })();
+    expect(citationCount(linked.doc, ID)).toBe(2);
+    const after = linked.apply(removeSourceTransaction(linked, ID)!);
+    expect(citations(after)).toEqual([NEW]);
+    expect(plainCitationPlaces(after.doc)).toHaveLength(2);
+    expect((after.doc.attrs.sources as { id: string }[]).map((s) => s.id)).toEqual([NEW]);
+    expect(removeSourceTransaction(after, ID)).toBeNull();
+  });
+
+  it("edits a source in place, keeping its id and its citations", () => {
+    let state = stateWith("A [izvor]");
+    state = state.apply(linkPlaceTransaction(state, plainCitationPlaces(state.doc)[0]!, ID)!);
+    const before = sourceDraftOf(state.doc.attrs.sources, ID);
+    expect(before).toMatchObject({ type: "book", title: "Izmišljeni vrt" });
+    expect(before).not.toHaveProperty("id");
+    const after = state.apply(editSourceTransaction(state, ID, { ...before!, title: "Izmišljeni vrt, drugo izdanje" } as SourceDraft)!);
+    expect(after.doc.attrs.sources).toEqual([{ ...book, title: "Izmišljeni vrt, drugo izdanje" }]);
+    expect(citations(after)).toEqual([ID]);
+    expect(editSourceTransaction(after, NEW, draft)).toBeNull();
+    expect(sourceDraftOf([{ id: ID }], ID)).toBeNull();
+  });
 });
