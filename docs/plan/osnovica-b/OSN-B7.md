@@ -1,0 +1,7 @@
+# OSN-B7 osnovica-testovi-klijent
+
+Zapisnik osnovice faze 1 (ductura/.github#56, kategorija B). Provjereno na `migracija/kopija-ductus-front` (0f5d0ab). Ductusovi testovi izvora: `src/client/*.test.ts` u danielrisavi77-create/Ductus.
+
+- `src/client/api-contract.test.ts`: nije preneseno: test povezuje stvarne poslužiteljske rukovatelje (`handleCommentRequest`, `handleLiveReadRequest`, `handleReplayRequest`, `withActor`, golden vektori `@/domain/forensics`) s klijentskim čitačima. U ovom repou nema `server/`, `domain/` ni `adapters/` koda (rukovatelji su samo u `src/_cekanje/app/api/**`, izvan gradnje, i koriste `@/server/*` kojeg nema); ekvivalent ugovornog testa žive u `migration-contracts.test.ts` i `contract-vectors.test.ts`. Kod se ne piše iz nule.
+- `src/client/comments-bridge.test.ts`: nije preneseno: modul `src/client/comments-bridge.ts` ne postoji (simboli `announceCommentsLoaded`, `onCommentsLoaded`, `handleShowInText`, `showInText` nigdje nisu definirani); uvoze ga samo stare komponente `HeadingOutline.tsx` i `TeacherViewSheet.tsx`, a host ima vlastiti `TeacherCommentsPanel`.
+- `src/client/submission-hold.test.ts`: nije preneseno: modul `submission-hold.ts` ne postoji (`readDocumentHold`, `sendGuard`, `submitWhenClear` nigdje nisu definirani). Postojeći `submission.ts` i `session-end.ts`/`session-marks.ts` nemaju tu zaštitu (predaja se ne blokira dok uređaj drži nesinkroniziran tekst); to je funkcionalni jaz, ne dio ovog zadatka.
