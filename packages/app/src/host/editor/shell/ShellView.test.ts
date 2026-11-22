@@ -23,4 +23,7 @@ describe("ShellView (first draw)", () => {
   it("links to the teacher's view when it has a route", () => {
     expect(renderToStaticMarkup(createElement(ShellView, { teacherHref: "/x" }))).toContain('href="/x"');
   });
+  it("mounts the shortcut list's button, opened by ? and closed with the dialog (PIL-D8-PRECACI)", () => {
+    expect(html).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*aria-keyshortcuts="\?"[^>]*>Prečaci<\/button>/);
+  });
 });
