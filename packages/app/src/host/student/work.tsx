@@ -29,6 +29,7 @@ import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { ImportHost } from "../editor/import/ImportHost";
 import PdfExport from "../editor/export/PdfExport";
+import { PregledGroup } from "../editor/right/PregledGroup";
 import { unavailableTransport } from "../../../../../src/client/import.ts";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -74,6 +75,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
+            renderReview={({ editor, documentId }) => <PregledGroup editor={editor} documentId={documentId} />}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />

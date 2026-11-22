@@ -43,6 +43,9 @@ import { SubmissionRehearsal } from "./submission-rehearsal/SubmissionRehearsal"
 import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/WorkPrintExport";
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
+/** What the host draws in the "Pregled" group: the open editor and the work. */
+export type ReviewRender = (work: { editor: ReturnType<typeof useLocalEditor>; documentId: string }) => ReactNode;
+
 export type OpenRead =
   | { readonly kind: "opening" }
   | { readonly kind: "ready"; readonly documentId: string; readonly scope: string; readonly session: SessionMark }
@@ -109,6 +112,7 @@ export default function EditorPageWork({
   length,
   sessionControls,
   renderPdf,
+  renderReview,
 }: {
   assignmentId: string;
   course: string;
@@ -118,6 +122,8 @@ export default function EditorPageWork({
   sessionControls?: (work: Extract<OpenRead, { kind: "ready" }>) => ReactNode;
   /** The host's PDF download in the print preview (WEB-1803). */
   renderPdf?: RenderPdf;
+  /** The host's group "Pregled" of the right panel (WEB-2127). */
+  renderReview?: ReviewRender;
 }) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
@@ -140,14 +146,14 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} />
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} renderReview={renderReview} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, renderReview }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -158,6 +164,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   session: SessionMark;
   saveSummary: boolean;
   renderPdf?: RenderPdf;
+  renderReview?: ReviewRender;
 }) {
   const editor = useLocalEditor();
   const signedOut = useLocalSignedOut();
@@ -176,6 +183,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
       rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} documentId={documentId} />,
         comments: <CommentPanel documentId={documentId} session={session} />,
+        ...(renderReview ? { review: renderReview({ editor, documentId }) } : {}),
         assistant: <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
