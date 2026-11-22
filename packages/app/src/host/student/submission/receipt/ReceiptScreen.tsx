@@ -66,7 +66,7 @@ export default function ReceiptScreen({ read, retryHref, onRetry, workHref, home
     return (
       <StepPanel title={t.panelTitle}>
         <p className="note" role="alert">{t.error}</p>
-        <StepActions><Button tone="secondary" onClick={() => { if (onRetry) onRetry(); else window.location.assign(retryHref); }}>{t.retry}</Button></StepActions>
+        <StepActions>{onRetry ? <Button tone="secondary" onClick={onRetry}>{t.retry}</Button> : <a className="btn secondary" href={retryHref}>{t.retry}</a>}</StepActions>
       </StepPanel>
     );
   }
