@@ -39,7 +39,7 @@ import StatusBarLive from "./StatusBarLive";
 import CommentPanel from "./CommentPanel";
 import RevisionPanel from "./RevisionPanel";
 import { EditorPanelLayout } from "./SidePanels";
-import { SubmissionRehearsal } from "./submission-rehearsal/SubmissionRehearsal";
+import { SubmissionRehearsal, type SubmissionRehearsalProps } from "./submission-rehearsal/SubmissionRehearsal";
 import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/WorkPrintExport";
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
@@ -109,6 +109,8 @@ export default function EditorPageWork({
   length,
   sessionControls,
   renderPdf,
+  statusExtra,
+  useSupplements,
 }: {
   assignmentId: string;
   course: string;
@@ -118,6 +120,10 @@ export default function EditorPageWork({
   sessionControls?: (work: Extract<OpenRead, { kind: "ready" }>) => ReactNode;
   /** The host's PDF download in the print preview (WEB-1803). */
   renderPdf?: RenderPdf;
+  /** Rendered at the end of the status bar, inside the document provider (host/editor/status). */
+  statusExtra?: ReactNode;
+  /** The rehearsal's extra rows; a hook of the host, constant for the page's life. */
+  useSupplements?: () => SubmissionRehearsalProps["supplements"];
 }) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
@@ -140,14 +146,17 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} />
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf}
+          statusExtra={statusExtra} useSupplements={useSupplements} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf }: {
+const noSupplements = (): SubmissionRehearsalProps["supplements"] => undefined;
+
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, statusExtra, useSupplements }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -158,8 +167,13 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   session: SessionMark;
   saveSummary: boolean;
   renderPdf?: RenderPdf;
+  statusExtra?: ReactNode;
+  useSupplements?: () => SubmissionRehearsalProps["supplements"];
 }) {
   const editor = useLocalEditor();
+  const useRows = useSupplements ?? noSupplements;
+  const supplements = useRows();
+  const [printOpen, setPrintOpen] = useState(false);
   const signedOut = useLocalSignedOut();
   const { phase } = useLocalSaveRead();
   const savingLocally = useLocalSavingOnDevice();
@@ -171,15 +185,16 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       tools={<EditorCommands><div className={helpStyles.toolbar}>
         <EditorToolbar workPartsKey={`ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`} />
         <EditorHelpMenu onSelect={setView} />
-        {!signedOut && <WorkPrintExport documentId={documentId} title={title} renderPdf={renderPdf} />}
+        {!signedOut && <WorkPrintExport documentId={documentId} title={title} renderPdf={renderPdf} open={printOpen} onOpenChange={setPrintOpen} />}
       </div></EditorCommands>}
-      status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
+      status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} liveWords={Boolean(statusExtra)}>{statusExtra}</StatusBarLive>}
       rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} documentId={documentId} />,
         comments: <CommentPanel documentId={documentId} session={session} />,
         assistant: <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
-          sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer} />}
+          sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer}
+          supplements={supplements} onPrintPreview={() => setPrintOpen(true)} />}
         <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />
       </>}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />

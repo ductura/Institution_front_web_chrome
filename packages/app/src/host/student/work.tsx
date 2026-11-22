@@ -29,6 +29,7 @@ import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { ImportHost } from "../editor/import/ImportHost";
 import PdfExport from "../editor/export/PdfExport";
+import { StatusExtras, useRehearsalSupplements } from "../editor/status/StatusExtras";
 import { unavailableTransport } from "../../../../../src/client/import.ts";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -73,7 +74,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       if (read.kind === "ready" && frame.variant === "puno") {
         return setShown({
           kind: "page",
-          node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
+          node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length} statusExtra={<StatusExtras />} useSupplements={useRehearsalSupplements}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
