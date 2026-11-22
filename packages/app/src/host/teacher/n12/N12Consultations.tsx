@@ -8,13 +8,16 @@ import {
   addConsultationNote, readConsultations, readConsultationVersions, saveConsultation,
   type ConsultationRecord, type VersionsPage,
 } from "../../../../../../src/client/consultation-records";
-import { formatDateHr, formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { n12Messages as t } from "./messages.hr";
-import { checkAddition, checkForm, recordTitle, revisionLabel, sortRecords, todayIso, versionOptions } from "./model";
+import { checkAddition, checkForm, dayHr, momentHr, recordTitle, revisionLabel, sortRecords, todayIso, versionOptions } from "./model";
 import styles from "./n12.module.css";
 
-const dateHr = (heldOn: string) => formatDateHr(`${heldOn}T12:00:00Z`);
+/** The prototype writes dates as "3. 11. 2026." (day. month. year.). */
+const dateHr = (heldOn: string) => {
+  const [year, month, day] = heldOn.split("-").map(Number);
+  return `${day}. ${month}. ${year}.`;
+};
 
 /**
  * N-12 "Konzultacije" (WEB-2161): list, new record and one record with additions, all inside the work.
@@ -139,7 +142,7 @@ function NewRecord({ documentId, toasts, onCancel, onSaved }: {
   const [invalid, setInvalid] = useState(false);
   const pending = useRef(false);
   const topic = useRef<HTMLInputElement>(null);
-  const options = versionOptions(versions, formatDateTimeHr);
+  const options = versionOptions(versions, dayHr);
 
   useEffect(() => {
     let live = true;
@@ -183,7 +186,8 @@ function NewRecord({ documentId, toasts, onCancel, onSaved }: {
     <form className={styles.plain} onSubmit={submit} noValidate>
       <div className={styles.pair}>
         <TextField label={t.date} name="heldOn" type="date" defaultValue={todayIso()} />
-        <Select label={t.version} name="revision" placeholder={t.pickVersion} options={options} disabled={options.length === 0} />
+        <Select key={options[0]?.value ?? "none"} label={t.version} name="revision" defaultValue={options[0]?.value}
+          placeholder={options.length === 0 ? t.pickVersion : undefined} options={options} disabled={options.length === 0} />
       </div>
       {loading && <p className="note" role="status">{t.loadingVersions}</p>}
       {versionError && <p className="note" role="alert">{t.versionsError}</p>}
@@ -248,7 +252,7 @@ function RecordView({ documentId, record, toasts, onList, onAdded }: {
         <span className={styles.heading}>{t.additions}</span>
         {record.additions.length === 0 ? <span className="meta">{t.emptyAdditions}</span> : record.additions.map((addition) => (
           <div className={styles.entry} key={addition.id}>
-            <span className={styles.who}>{t.additionAuthor} · {formatDateTimeHr(addition.createdAt)}</span>
+            <span className={styles.who}>{t.additionAuthor} · {momentHr(addition.createdAt)}</span>
             <span>{addition.text}</span>
           </div>
         ))}

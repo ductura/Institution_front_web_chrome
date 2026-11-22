@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Card, DataTable, Fingerprint, Select, type DataTableColumn } from "@ductura/ui";
+import { Button, Card, Fingerprint, Select } from "@ductura/ui";
 
 import { newRequestKey, packageView } from "../../../../../../src/client/merlin-export.ts";
 import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr.ts";
@@ -12,10 +12,6 @@ import {
 } from "./model";
 
 const IDS = ["familyName", "givenName", "submitted", "submittedMinute", "afterDeadline", "fileName", "pdfSha256", "docxSha256"] as const;
-const COLUMNS: DataTableColumn<{ key: string; cells: string[] }>[] = IDS.map((id, i) => ({
-  id, header: COLUMN_HEADERS[i] ?? id, rowHeader: i === 0, cell: (r) => r.cells[i] ?? text.none,
-}));
-
 /**
  * N-18 "Izvoz za Merlin" (WEB-2163): the CSV preview with the eight columns of the prototype, the card
  * "Otisci", the package prepared under a request key (a repeated request is the same package), a
@@ -90,38 +86,60 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
   const ended = status.kind === "view" && status.view.kind !== "priprema";
   const rows = data.rows.map((row, i) => ({ key: String(i), cells: rowCells(row) }));
   const options = data.assignments === null ? [] : data.assignments.map((a) => ({ value: a.id, label: a.title ?? text.taskUnnamed }));
+  const selectField = options.length > 1 ? (
+    <div style={{ maxWidth: 420 }}>
+      <Select label={text.taskLabel} options={options} value={assignmentId} onChange={(event) => onChoose?.(event.target.value)} />
+    </div>
+  ) : null;
 
+  const heading = said === null ? null : said.lines[0];
+  if (!submitted) {
+    return (
+      <>
+        {selectField}
+        <Card title={text.emptyTitle} center><p className="note">{text.emptyBody}</p></Card>
+      </>
+    );
+  }
   return (
     <>
-      {options.length > 1 ? (
-        <div style={{ maxWidth: 420 }}>
-          <Select label={text.taskLabel} options={options} value={assignmentId} onChange={(event) => onChoose?.(event.target.value)} />
-        </div>
-      ) : null}
-      {submitted ? null : (
-        <Card title={text.emptyTitle}><p>{text.emptyBody}</p></Card>
-      )}
-      {said !== null ? (
-        <div role={said.tone} aria-live="polite" data-testid="merlin-status">
-          {said.lines.map((line, i) => (i === 0 && canDownload(status) ? <p key={line}><b>{line}</b></p> : <p key={line}>{line}</p>))}
+      {selectField}
+      {said === null ? null : status.kind === "pending" || (status.kind === "view" && status.view.kind === "priprema") ? (
+        <p className="note" role="status" aria-live="polite" data-testid="merlin-status">
+          <span className="sb-spin" aria-hidden="true" /> {said.lines[0]}
+        </p>
+      ) : (
+        <div className="banner" role={said.tone} aria-live="polite" data-testid="merlin-status">
           {canDownload(status) ? (
-            <div>
-              <strong>{text.packageFingerprint}</strong>
-              <Fingerprint value={status.view.sha256} />
-              <p>{text.packageFingerprintNote}</p>
-              <Button onClick={download} busy={busy}>{text.download}</Button>
-            </div>
-          ) : null}
+            <>
+              <p><b>{heading}</b> {said.lines[1]}</p>
+              <div className="sb-state">
+                <span className="sb-h">{text.packageFingerprint}</span>
+                <Fingerprint value={status.view.sha256} />
+                <span className="meta">{text.packageFingerprintNote}</span>
+              </div>
+              <div className="acts"><Button onClick={download} busy={busy}>{text.download}</Button></div>
+            </>
+          ) : said.lines.map((line) => <p key={line}>{line}</p>)}
         </div>
-      ) : null}
+      )}
       <Card title={text.rosterTitle}>
-        <DataTable caption={text.rosterCaption} columns={COLUMNS} rows={rows} rowKey={(r) => r.key} empty={text.rosterEmpty} />
-        <p>{text.rosterNote}</p>
+        {rows.length === 0 ? <p className="note">{text.rosterEmpty}</p> : (
+          <div className="tbl" tabIndex={0} role="region" aria-label={text.rosterCaption}>
+            <table>
+              <thead><tr>{IDS.map((id, i) => <th key={id} scope="col">{COLUMN_HEADERS[i] ?? id}</th>)}</tr></thead>
+              <tbody>{rows.map((r) => (
+                <tr key={r.key}>{IDS.map((id, i) => <td key={id} className={i >= 5 ? "mono" : undefined}>{r.cells[i] ?? text.none}</td>)}</tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )}
+        <p className="meta">{text.rosterNote}</p>
       </Card>
       <Card title={text.fingerprintsTitle}>
-        <p>{text.fingerprintsNote}</p>
-        <p>{text.fingerprintsMeaning}</p>
-        <p>{text.trail}</p>
+        <p className="note">{text.fingerprintsNote}</p>
+        <p className="note">{text.fingerprintsMeaning}</p>
+        <p className="meta">{text.trail}</p>
       </Card>
       {data.extensionReasons.length > 0 ? (
         <Card title={text.reasonsTitle}>
@@ -129,9 +147,9 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
           <p>{text.reasonsNote}</p>
         </Card>
       ) : null}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {submitted ? <Button onClick={prepare} busy={preparing}>{ended ? text.prepareAgain : text.prepare}</Button> : null}
-        <Button tone="quiet" onClick={() => port.leaveFor(port.csvPath(assignmentId))}>{text.csv}</Button>
+      <div className="acts">
+        <Button onClick={prepare} busy={preparing}>{ended ? text.prepareAgain : text.prepare}</Button>
+        <Button tone="secondary" onClick={() => port.leaveFor(port.csvPath(assignmentId))}>{text.csv}</Button>
       </div>
     </>
   );

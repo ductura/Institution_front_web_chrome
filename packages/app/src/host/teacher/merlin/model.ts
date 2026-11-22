@@ -1,7 +1,7 @@
 // Pure rules of N-18 "Izvoz za Merlin" (WEB-2163): the eight CSV columns of the prototype, the status
 // lines and the reading of the package. No network here: the port is src/client/merlin-export.ts.
 import type { MerlinExtensionReason, MerlinPackage, MerlinRow, PackageRequest, PackageView } from "../../../../../../src/client/merlin-export.ts";
-import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr.ts";
+import { momentHr as formatDateTimeHr } from "../n12/model";
 import { merlinMessages as text } from "./messages.hr";
 
 export type { MerlinExtensionReason, MerlinPackage, MerlinRow, PackageRequest, PackageView };
