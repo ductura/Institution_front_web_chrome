@@ -56,26 +56,35 @@ jobs:
         run: |
           echo "SHA_WEB=$(git -C Institution_front_web_chrome rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "SHA_SERVER=$(git -C Institution_server rev-parse HEAD)" >> "$GITHUB_ENV"
-      - name: Dijagnoza fronta (privremeno)
-        working-directory: Institution_front_web_chrome
-        env: { PORT: "3000", INSTITUTION_SERVER_URL: "http://127.0.0.1:4000" }
-        run: |
-          nohup pnpm next:dev > "$RUNNER_TEMP/front-diag.log" 2>&1 &
-          sleep 25
-          curl -sS -m 120 -o /dev/null -w "127.0.0.1 / -> %{http_code} in %{time_total}s\n" http://127.0.0.1:3000/ || true
-          curl -sS -m 120 -o /dev/null -w "localhost / -> %{http_code} in %{time_total}s\n" http://localhost:3000/ || true
-          tail -n 60 "$RUNNER_TEMP/front-diag.log"
-          pkill -f "next" || true
-          sleep 3
-      - name: Stog gore (INT-01)
+      # `pnpm stog:gore` (INT-01) pokreće front skriptom `next:dev`, a `next dev`
+      # na ovom frontu ne odgovara ni na jedan zahtjev (INT-08 nalaz, vidi PR).
+      # Zato ovdje isti koraci kao stog:gore, ali front je `next build` +
+      # `next start`: PostgreSQL (Docker compose), migracije, seed, simulator i
+      # server preko `pnpm lokalno --izvor=http://localhost:3000`.
+      - name: "Stog gore (INT-01): baza, server, simulator"
         working-directory: Institution_server
+        env:
+          DATABASE_URL: postgres://ductus:ductus-local-only@127.0.0.1:54329/ductus
         run: |
-          nohup pnpm stog:gore > "$RUNNER_TEMP/stog.log" 2>&1 &
-          for i in $(seq 1 90); do
-            if pnpm stog:zdravlje >/dev/null 2>&1; then echo "stog spreman"; pnpm stog:zdravlje; exit 0; fi
-            sleep 10
+          docker compose up -d --build --wait postgres-main
+          nohup node scripts/lokalno/lokalno.ts --izvor=http://localhost:3000 > "$RUNNER_TEMP/stog.log" 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8090/.well-known/openid-configuration >/dev/null 2>&1 && break
+            sleep 5
           done
-          echo "::error::stog se nije podigao"; tail -n 200 "$RUNNER_TEMP/stog.log"; exit 1
+          curl -fsS http://127.0.0.1:4000/api/v1/health || { echo "::error::server se nije podigao"; tail -n 200 "$RUNNER_TEMP/stog.log"; exit 1; }
+      - name: Front (next build + next start)
+        working-directory: Institution_front_web_chrome
+        env:
+          INSTITUTION_SERVER_URL: http://127.0.0.1:4000
+          NEXT_PUBLIC_API_BASE: /api/v1
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          pnpm next:build
+          nohup pnpm exec next start -p 3000 > "$RUNNER_TEMP/front.log" 2>&1 &
+          cd ../Institution_server
+          for i in $(seq 1 30); do pnpm stog:zdravlje >/dev/null 2>&1 && break; sleep 3; done
+          pnpm stog:zdravlje || { tail -n 100 "$RUNNER_TEMP/front.log"; exit 1; }
       - name: Seed INT-04
         working-directory: Institution_server
         run: docker compose exec -T postgres-main psql -U ductus -d ductus -v ON_ERROR_STOP=1 < ../Institution_front_web_chrome/e2e/sistem/seed-int04.sql
@@ -97,7 +106,9 @@ jobs:
           fi
       - name: Dnevnici stoga
         if: always()
-        run: cp "$RUNNER_TEMP/stog.log" "$RUNNER_TEMP/out/stog.log" 2>/dev/null || true
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          cp "$RUNNER_TEMP/stog.log" "$RUNNER_TEMP/front.log" "$RUNNER_TEMP/out/" 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
