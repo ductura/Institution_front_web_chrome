@@ -1,5 +1,6 @@
-/* VIZ-0: the prototype's loading state (.skel inside .item frames, E-2 "učitavanje"). */
+/* VIZ-0: the prototype's loading state (S-02 "učitavanje": .skel bars inside .item frames, in a .po-course panel). */
 .screen {
+  width: 100%;
   max-width: var(--main-w);
   padding: var(--main-pad-top) var(--space-6) var(--space-9);
 }
@@ -10,7 +11,16 @@
 
 .column {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-2h);
+  padding: var(--space-3h) var(--space-4);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius-card);
+  background: var(--chrome);
+}
+
+/* The sheets set no --chrome of their own; there the panel sits on the sheet itself. */
+:global(.sheet) .column {
+  background: var(--sheet);
 }
 
 .item {

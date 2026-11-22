@@ -127,8 +127,9 @@ export function normalise(text: string): string {
     .replace(/(["'`])\s*,\s*(["'`])/g, "$1/$2");
 }
 
+// An "import" inside a string literal (a generated enum value: "kind": "import" | "ai-transfer") is not a statement.
 function bareImports(text: string): string[] {
-  const found = [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
+  const found = [...text.matchAll(/(?:\bfrom\s*|(?<!["'`])\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
   return found.map((m) => m[1] ?? "").filter((spec) => !spec.startsWith(".") && !spec.startsWith("/"));
 }
 

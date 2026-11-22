@@ -25,7 +25,7 @@
   padding: 56px 50px 48px;
   border-radius: var(--radius);
   background: var(--sheet);
-  box-shadow: var(--shadow);
+  box-shadow: var(--lift);
   font-family: var(--ff-manuscript);
 }
 .title { margin: 0 0 24px; font-size: var(--fs-h1); }
