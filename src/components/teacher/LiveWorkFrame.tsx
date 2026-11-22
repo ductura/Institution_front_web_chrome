@@ -25,10 +25,8 @@ import styles from "./LiveWorkView.module.css";
 const t = messagesHr.teacherLiveWork;
 
 /**
- * TODO(ugovor): who and what the work is, and its neighbours in the
- * teacher's list. No published route gives this by document id yet
- * (Ductus#2028, wweb34 PITANJE point 3); a name the server does not have is
- * `null`, never a stand-in.
+ * Who and what the work is, and its neighbours in the teacher's list
+ * (teacher.work.get); a name the server does not have is `null`, never a stand-in.
  */
 export type LiveWorkFrameData = {
   readonly studentName: string | null;
@@ -74,7 +72,7 @@ function neighbour(id: string | null, label: string, rel: "prev" | "next") {
 
 export type LiveWorkFrameProps = {
   documentId: string;
-  /** Null until the frame's read exists (TODO(ugovor)); the view then shows only the text. */
+  /** Null while the frame is not read (or the route has none); the view then shows only the text. */
   frame: LiveWorkFrameData | null;
   recordState: RecordState | null;
   /** `LiveWorkView` of this work, or the page's placeholder. */

@@ -37,7 +37,6 @@ export async function readTeacherWorkReceipt(
   if (!current()) return { kind: "signedOut" };
   try {
     const api = createApi(options);
-    // TODO(ugovor): the document lookup agreed in Ductus#2028 c.7024185874.
     const work = await api("teacher.work.get", { params: { documentId }, query: undefined, body: undefined });
     if (!current() || work.status === 401) return { kind: "signedOut" };
     if (!work.ok) return { kind: work.status === 404 ? "notFound" : "unavailable" };
@@ -61,5 +60,34 @@ export async function readTeacherWorkReceipt(
     return { kind: "ready", studentName, state, submission };
   } catch {
     return { kind: "unavailable" };
+  }
+}
+
+/** Who and what a work is and its neighbours in the teacher's list (teacher.work.get). */
+export type TeacherWorkFrame = {
+  readonly studentName: string | null;
+  /** The route does not give the assignment title; never a stand-in. */
+  readonly assignmentTitle: string | null;
+  /** True only when the server states the work is submitted (B-6: never inferred here). */
+  readonly submitted: boolean;
+  readonly previousId: string | null;
+  readonly nextId: string | null;
+};
+
+/** The frame of the live view of `documentId`, or null when the route has none for it. Never throws. */
+export async function readTeacherWorkFrame(
+  documentId: string, options?: ApiOptions,
+): Promise<TeacherWorkFrame | null> {
+  try {
+    const api = createApi(options);
+    const work = await api("teacher.work.get", { params: { documentId }, query: undefined, body: undefined });
+    if (!work.ok || work.body.documentId !== documentId) return null;
+    const { studentName, state, prevDocumentId, nextDocumentId } = work.body;
+    return {
+      studentName, assignmentTitle: null, submitted: state === "predano",
+      previousId: prevDocumentId, nextId: nextDocumentId,
+    };
+  } catch {
+    return null;
   }
 }

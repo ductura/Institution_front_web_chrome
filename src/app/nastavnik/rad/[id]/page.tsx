@@ -14,8 +14,8 @@ export const metadata = { title: `${messagesHr.liveView.context} · ${messagesHr
  *
  * The live text and the process summary are read in the browser by
  * `LiveWorkView` (live.document.get, projection.process-summary.post).
- * TODO(ugovor) teacher.work.get: the heading and the neighbours come with that
- * route (Ductus#2028 c.7024185874); until then the frame is `null`.
+ * The heading and the neighbours are read in the browser by `LiveWorkView`
+ * (teacher.work.get).
  */
 export default async function LiveWorkPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,7 +29,7 @@ export default async function LiveWorkPage({ params }: { params: Promise<{ id: s
   }
   return (
     <div className="page">
-      <LiveWorkView documentId={id} frame={null} />
+      <LiveWorkView documentId={id} />
     </div>
   );
 }
