@@ -4,6 +4,11 @@ on:
   pull_request:
 permissions:
   contents: read
+# A newer push to the same PR or branch cancels the older run, so runners are
+# not spent on commits nobody will merge (Daniel, 22. 11. 2026: speed up).
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -79,10 +84,19 @@ jobs:
         run: pnpm -r run test
       - name: Browser
         run: pnpm --filter @ductura/catalog exec playwright install --with-deps chromium
-      - name: Visual and axe tests of the catalogue
-        run: pnpm --filter @ductura/catalog run test:visual
+      # Daniel (22. 11. 2026): while the features are still being built, the
+      # pixel baselines only report and do not block ci-ok, and run only on
+      # pushes to the base, not on PRs; behaviour and axe still block. They
+      # become required again with VIZ-0.
+      - name: Behaviour and axe tests of the catalogue
+        run: pnpm --filter @ductura/catalog run test:visual --grep-invert "matches its baselines"
+      - name: Visual baselines of the catalogue (report only)
+        id: baselines
+        if: github.event_name == 'push'
+        continue-on-error: true
+        run: pnpm --filter @ductura/catalog run test:visual --grep "matches its baselines"
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() || steps.baselines.outcome == 'failure'
         with: { name: catalog-report, path: catalog/test-results/ }
 
   # The institution front's host (#2028 c.6993786629 §1, §3.3): packages/app

@@ -35,7 +35,7 @@ export const n12Messages = {
   emptyAdditions: "Nema dopuna.",
   additionAuthor: "Vi",
   additionText: "Dopuna zapisa",
-  additionNote: "Zapis dopunjuje samo mentor. Zapis se ne briše ni ne prepravlja.",
+  additionNote: "Zapis se ne briše ni ne prepravlja; može se samo dopuniti. Zapis dopunjuje samo mentor. Student zapis i dopune vidi, ali ih ne dopunjuje. Dopuna nosi vrijeme.",
   additionStudent: "Isti zapis i dopune vidi i student.",
   add: "Dodaj dopunu",
   needAddition: "Upišite dopunu.",

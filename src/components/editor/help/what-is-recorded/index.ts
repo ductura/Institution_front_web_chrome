@@ -1,1 +1,1 @@
-export { WhatIsRecorded, useRhythmSetting } from "./WhatIsRecorded";
+export { WhatIsRecorded } from "./WhatIsRecorded";

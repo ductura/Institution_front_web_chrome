@@ -14,9 +14,6 @@
  "src/app/upis/page.tsx": [
   "API URL"
  ],
- "src/components/admin/FacultyRules.module.css": [
-  "global alias"
- ],
  "src/components/admin/TeacherRoles.tsx": [
   "form submit"
  ],
@@ -56,14 +53,8 @@
  "src/components/fonts/woff2-codepoints.ts": [
   "import node:zlib"
  ],
- "src/components/how-it-works/HowItWorks.module.css": [
-  "global alias"
- ],
  "src/components/how-it-works/access.ts": [
   "API URL"
- ],
- "src/components/replay/ReplayView.module.css": [
-  "global alias"
  ],
  "src/components/replay/replay-view.ts": [
   "import  and up to change "
@@ -191,9 +182,6 @@
   "import fake-indexeddb",
   "import node:crypto",
   "import vitest"
- ],
- "packages/ui/src/table/table.module.css": [
-  "global alias"
  ],
  "src/components/editor/rich/blocks/FormulaDialog.tsx": [
   "test file import",

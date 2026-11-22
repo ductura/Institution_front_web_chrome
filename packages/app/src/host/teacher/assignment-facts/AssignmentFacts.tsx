@@ -2,7 +2,7 @@
 
 // WEB-2145: the tasks of one N-01 course card with their facts, and the banner of an interrupted publish.
 // Layout only: the classes are those of the course card (assignment-card) and @ductura/ui components.
-import { Button, Card, Skeleton } from "@ductura/ui";
+import { Skeleton } from "@ductura/ui";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -17,7 +17,6 @@ import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { assignmentFactsMessages as text } from "./messages.hr";
 import { factsOf, interruptedOf, publishedIn, type AssignmentReads } from "./model";
 import { readCourseFacts, type CourseFactsRead } from "./read";
-import styles from "./AssignmentFacts.module.css";
 
 /** The facts of one course, read once per visit and per "Pokušaj ponovno". */
 function useCourseFacts(course: TeacherCourse): [CourseFactsRead | null, () => void] {
@@ -43,45 +42,47 @@ function useCourseFacts(course: TeacherCourse): [CourseFactsRead | null, () => v
 function Facts({ reads }: { reads: AssignmentReads }) {
   const { base } = useHost();
   const facts = factsOf(reads, Date.now());
-  if (facts.opened === null) return <p className={cardStyles.meta}>{text.noStudents}</p>;
+  if (facts.opened === null) return <p className="note">{text.noStudents}</p>;
   return (
     <>
-      <p className={cardStyles.meta}>{facts.opened}</p>
-      <p className={cardStyles.meta}>{facts.sum}</p>
-      <ul className={styles.rows}>
-        {facts.rows.map((row) => (
-          <li key={row.studentId} className={styles.row}>
-            <span>{row.name}</span>
-            <span className={cardStyles.meta}>{row.line}</span>
-            {row.kind === "notOpened" ? <span className={cardStyles.meta}>{text.notStarted}</span>
-              : row.documentId !== null ? (
-                <a className="btn secondary small" href={appHref(base, `/nastavnik/rad/${encodeURIComponent(row.documentId)}`)}
-                  aria-label={`${text.openWork}: ${row.name}`}>{text.openWork}</a>
-              ) : null}
-          </li>
-        ))}
-      </ul>
+      <p className="note">{facts.opened}</p>
+      <p className="note">{facts.sum}</p>
+      {facts.rows.map((row) => (
+        <div key={row.studentId} className={cardStyles.subRow}>
+          <span className={cardStyles.who}>{row.name}</span>
+          <span className={cardStyles.factsLine}>{row.line}</span>
+          {row.kind === "notOpened" ? <span className="meta">{text.notStarted}</span>
+            : row.documentId !== null ? (
+              <a className="btn secondary small" href={appHref(base, `/nastavnik/rad/${encodeURIComponent(row.documentId)}`)}
+                aria-label={`${text.openWork}: ${row.name}`}>{text.openWork}</a>
+            ) : null}
+        </div>
+      ))}
     </>
   );
 }
 
 /** The tasks of one course card (N-01 korak A i B): title, deadline, facts and a row per student. */
 export function CourseTasks({ course }: { course: TeacherCourse }) {
+  const { base } = useHost();
   const [read, retry] = useCourseFacts(course);
   return (
     <>
-      {course.assignments.map((assignment) => (
+      {course.assignments.map((assignment, index) => (
         <div key={assignment.id} className={cardStyles.task}>
           <h3>{assignment.title}</h3>
-          <p className={cardStyles.meta}>{card.due} {dueText(assignment.dueAt)}</p>
+          <p className="meta">{card.due} {dueText(assignment.dueAt)}{Date.parse(assignment.dueAt) < Date.now() ? ` · ${text.deadlinePassed}` : ""}</p>
           {read === null || read.kind === "signedOut" ? (
-            <div><p className={cardStyles.meta}>{text.loading}</p><Skeleton label={text.loading} lines={2} /></div>
+            <div><p className="meta">{text.loading}</p><Skeleton label={text.loading} lines={2} /></div>
           ) : read.kind === "unavailable" ? (
             <div>
-              <p role="alert" className={cardStyles.meta}>{text.unavailable}</p>
-              <Button tone="quiet" onClick={retry}>{text.retry}</Button>
+              <p role="alert" className="note">{text.unavailable}</p>
+              <div className="acts"><button type="button" className="btn secondary small" onClick={retry}>{text.retry}</button></div>
             </div>
           ) : read.reads.get(assignment.id) ? <Facts reads={read.reads.get(assignment.id) as AssignmentReads} /> : null}
+          {index === 0 ? (
+            <div className="acts"><a className="btn small" href={appHref(base, "/nastavnik/brz-put")}>{text.fastPath}</a></div>
+          ) : null}
         </div>
       ))}
     </>
@@ -116,12 +117,12 @@ export function InterruptedPublish({ onChecked }: { onChecked: () => void }) {
   return (
     <>
       {which !== null && !done ? (
-        <div role="status">
-          <Card title={text.interruptedTitle(which.title)}>
-            <p>{text.interruptedBody}</p>
-            {failed ? <p role="alert">{text.checkUnavailable}</p> : null}
-            <Button tone="quiet" busy={busy} onClick={() => void check()}>{busy ? text.checking : text.check}</Button>
-          </Card>
+        <div className={`${cardStyles.banner}`} role="status">
+          <p><b>{text.interruptedTitle(which.title)}</b> {text.interruptedBody}</p>
+          {failed ? <p role="alert" className="err">{text.checkUnavailable}</p> : null}
+          <div className="acts">
+            <button type="button" className="btn secondary" disabled={busy} onClick={() => void check()}>{busy ? text.checking : text.check}</button>
+          </div>
         </div>
       ) : null}
       <TeacherToastRegion toasts={toasts} onDismiss={dismiss} />
