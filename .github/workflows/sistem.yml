@@ -51,27 +51,17 @@ jobs:
       - name: Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Dijagnoza fronta (samo dokazna grana)
+      # next dev na runneru javi "Ready", ali prvi zahtjev ne dovrši ni za 90 s
+      # (webpack i Turbopack; run 45031948304), dok build + start odgovara
+      # odmah. Stog zato dobiva izgrađen front: stog.ts pokreće skriptu
+      # next:dev, pa je ovdje, samo na runneru, preusmjerimo na next start.
+      # INSTITUTION_SERVER_URL front čita pri pokretanju, ne pri buildu.
+      - name: Build fronta (next build) i next:dev → next start
         env:
           NEXT_TELEMETRY_DISABLED: "1"
         run: |
-          probe() {
-            for u in /api/v1/health /kako-radi; do
-              curl -sS -o /dev/null -w "$1 $u %{http_code} %{time_total}s\n" --max-time 90 "http://127.0.0.1:3100$u" || echo "$1 $u PAD"
-            done
-          }
-          echo "== webpack dev"
-          nohup pnpm exec next dev --webpack -p 3100 > "$RUNNER_TEMP/f1.log" 2>&1 &
-          P=$!; sleep 8; probe webpack; tail -40 "$RUNNER_TEMP/f1.log"; kill $P || true; pkill -f "next dev" || true; sleep 3
-          echo "== build + start"
-          timeout 600 pnpm exec next build > "$RUNNER_TEMP/f2.log" 2>&1 || echo "BUILD PAD $?"
-          tail -60 "$RUNNER_TEMP/f2.log"
-          nohup pnpm exec next start -p 3100 > "$RUNNER_TEMP/f3.log" 2>&1 &
-          P=$!; sleep 5; probe start; tail -40 "$RUNNER_TEMP/f3.log"; kill $P || true; pkill -f "next start" || true; sleep 3
-          echo "== turbopack dev, trace"
-          NEXT_TURBOPACK_TRACING=1 nohup pnpm exec next dev -p 3100 > "$RUNNER_TEMP/f4.log" 2>&1 &
-          P=$!; sleep 8; probe turbo; tail -40 "$RUNNER_TEMP/f4.log"; ps -o pid,pcpu,rss,args -u "$(id -u)" | grep -i next | head; kill $P || true; pkill -f "next dev" || true; sleep 3
-          ls -la .next 2>/dev/null | head
+          pnpm exec next build
+          pnpm pkg set "scripts.next:dev=NODE_ENV=production next start -p 3000"
 
       - name: Stog gore (pnpm stog:gore)
         working-directory: Institution_server
@@ -83,7 +73,7 @@ jobs:
           for i in $(seq 1 120); do
             if pnpm --silent stog:zdravlje > /dev/null 2>&1; then
               echo "Stog je zdrav nakon $((i * 5)) s."
-              # Zagrijavanje next dev: globalSetup (stog.ts) čeka samo 10 s po zahtjevu.
+              # Provjera fronta i proxyja prije testova (globalSetup čeka 10 s po zahtjevu).
               curl -fsS --retry 10 --retry-all-errors --max-time 120 -o /dev/null http://localhost:3000/
               curl -fsS --retry 10 --retry-all-errors --max-time 120 -o /dev/null http://localhost:3000/api/v1/health
               exit 0
