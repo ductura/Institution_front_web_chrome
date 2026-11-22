@@ -1,0 +1,7 @@
+{
+  "name": "ductura-viz-usporedba",
+  "private": true,
+  "type": "module",
+  "description": "Usporedba zaslona aplikacije s prototipom (izvještaj, ne blokira). Odvojen paket: ne ulazi u pnpm radni prostor.",
+  "dependencies": { "pixelmatch": "7.1.0", "pngjs": "7.0.0" }
+}

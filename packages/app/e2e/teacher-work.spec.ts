@@ -1,14 +1,19 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 import type ContractVectors from "../../../src/client/migration-contract-vectors.generated.json";
 import { canonicalizeJcs } from "../../editor-core/src/document/forensics/jcs";
 import { REVISION_ZERO_JCS } from "../../editor-core/src/document/document/revision-zero";
 import { mentorWorkHr } from "../../../src/components/editor/mentor/work-state/messages.hr";
-import { consultationMessages } from "../../../src/components/teacher/consultation-records/messages.hr";
 import { messagesHr as t } from "../../../src/lib/i18n/messages.hr";
+// The host's own N-08 comments panel (WEB-2154), N-09 replay page (WEB-2159), N-10 summary page (WEB-2157), N-12 consultations (#398) and N-06 frame (WEB-2150) texts.
+import { teacherCommentsMessages as comments } from "../src/host/teacher/comments/messages.hr";
+import { n09Messages as replay } from "../src/host/teacher/n09/messages.hr";
+import { n10Messages as summary } from "../src/host/teacher/n10/messages.hr";
+import { n12Messages as consultationMessages } from "../src/host/teacher/n12/messages.hr";
+import { workFrameMessages as frame } from "../src/host/teacher/n06/messages.hr";
 
 const assignmentId = "00000000-0000-4000-8000-0000000000a1";
 const studentId = "00000000-0000-4000-8000-0000000000e1";
@@ -23,6 +28,7 @@ if (typeof documentId !== "string") throw new Error("Missing documentId in signe
 const workBody = vectors.find((v) => v.route === "teacher.work.get" && v.name === "submitted-work")!.response.body;
 const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "teacher-without-name")!.response.body;
 const profileBody = { ...profile, roles: ["teacher"] };
+const originNothingRecorded = vectors.find((v) => v.route === "work.origin-composition.get" && v.name === "nothing-recorded")!.response.body;
 const path = `/nastavnik/rad/${encodeURIComponent(documentId)}`;
 const work = `/app/web${path}`;
 const receiptPath = `/api/v1/teacher/assignments/${assignmentId}/students/${studentId}/submission`;
@@ -52,6 +58,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
         contentType: "application/json", body: snapshot, headers: { etag },
       });
       case "/api/v1/process-summary": return route.fulfill({ status: 404, json: { error: "not_found" } });
+      // WEB-2157 (#410): the N-10 summary page also reads its details; no summary exists for this work either.
+      case "/api/v1/process-summary/details": return route.fulfill({ status: 404, json: { error: "not_found" } });
       case "/api/v1/comments/list": return route.fulfill({ json: { comments: [] } });
       case "/api/v1/evidence/replay": return route.fulfill({ json: {
         replayFormat: "ductus-evidence-replay-v1", segmentCount: 0, head: null,
@@ -60,12 +68,15 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
       case `/api/v1/teacher/works/${documentId}`: return route.fulfill({ json: workBody });
       case receiptPath: return route.fulfill({ json: signed });
       case consultationPath: return route.fulfill({ json: { records: [] } });
+      // WEB-2158 (#407): Karta podrijetla reads work.origin-composition.get ("nothing-recorded" vector).
+      case `/api/v1/works/${documentId}/origin-composition`: return route.fulfill({ json: originNothingRecorded });
       case `/api/v1/works/${documentId}/milestones`: return route.fulfill({ json: { milestones: [] } });
       case `/api/v1/works/${documentId}/versions`: return route.fulfill({ json: {
         versions: [{ kind: "submission", revision: 1, savedMinute: "2026-11-20T12:00:00.000Z", afterDeadline: false }],
         nextBeforeRevision: null,
       } });
-      default: throw new Error(`Unexpected fake API request ${url.pathname}`);
+      // LOK-WEB-26: everything else goes to the shared fake server, which fails outside the contract.
+      default: return route.fallback();
     }
   });
   return { seen, allow: () => { access = 200; } };
@@ -80,15 +91,20 @@ test("teacher opens the live text, replay, signed receipt and consultations unde
   await expect(page.getByRole("link", { name: mentorWorkHr.receipt, exact: true })).toHaveAttribute("href", `${work}/predaja`);
   await page.getByRole("link", { name: t.replay.titleTeacher }).click();
   await expect(page).toHaveURL(`${work}/reprodukcija`);
-  await expect(page.getByText(t.replay.empty)).toBeVisible();
+  await expect(page.getByText(replay.empty)).toBeVisible();
   await page.getByRole("link", { name: consultationMessages.backToWork }).click();
   await page.getByRole("link", { name: t.receipt.title }).click();
   await expect(page).toHaveURL(`${work}/predaja`);
   await expect(page.getByText("Iva Izmišljena")).toBeVisible();
   await expect(page.getByText(/\bPredano\b/)).toBeVisible();
-  await page.getByRole("link", { name: t.receipt.summary }).click();
-  await expect(page).toHaveURL(`${work}#sazetak-procesa`);
-  await page.getByRole("link", { name: consultationMessages.title, exact: true }).click();
+  await page.getByRole("link", { name: t.receipt.summary, exact: true }).click();
+  // WEB-2157 (#410): the process summary is its own N-10 page under the work, no longer an anchor on it.
+  await expect(page).toHaveURL(`${work}/sazetak`);
+  await expect(page.getByRole("heading", { level: 1, name: summary.title })).toBeVisible();
+  await page.getByRole("link", { name: summary.backToWork }).click();
+  await expect(page).toHaveURL(work);
+  // WEB-2150 (#385): the N-06 frame names the same views in its own navigation.
+  await page.getByRole("navigation", { name: frame.linksLabel }).getByRole("link", { name: consultationMessages.title, exact: true }).click();
   await expect(page).toHaveURL(`${work}/konzultacije`);
   await expect(page.getByText(consultationMessages.empty)).toBeVisible();
   await expect(page.getByRole("link", { name: consultationMessages.backToWork })).toHaveAttribute("href", work);
@@ -143,7 +159,7 @@ test("the anchored comment is shown after the server confirms and returns it", a
   await page.route("**/api/v1/comments/list", (route) => route.fulfill({ json: { comments: recorded ? [recorded] : [] } }));
   try {
     await page.goto(work);
-    await expect(page.getByText(t.teacherComments.empty)).toBeVisible();
+    await expect(page.getByText(comments.empty)).toBeVisible();
     await page.getByText(text).evaluate((element) => {
       const range = document.createRange();
       range.selectNodeContents(element);
@@ -152,11 +168,11 @@ test("the anchored comment is shown after the server confirms and returns it", a
       selection.addRange(range);
       element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
     });
-    const form = page.getByRole("form", { name: t.teacherComments.newTitle });
+    const form = page.getByRole("form", { name: comments.newTitle });
     await form.getByRole("textbox").fill(comment);
-    await form.getByRole("button", { name: t.teacherComments.publish }).click();
-    await expect(form.getByRole("button", { name: t.teacherComments.publishing })).toBeVisible();
-    await expect(page.getByText(t.teacherComments.empty)).toBeVisible();
+    await form.getByRole("button", { name: comments.newSubmit }).click();
+    await expect(form.getByRole("button", { name: comments.newSubmitting })).toBeVisible();
+    await expect(page.getByText(comments.empty)).toBeVisible();
   } finally {
     finish();
   }

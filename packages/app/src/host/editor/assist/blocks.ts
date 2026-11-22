@@ -52,9 +52,9 @@ export function norm(text: string): string {
  */
 export function chaptersOf(blocks: readonly AssistBlock[], chapterLevel: number = CHAPTER_LEVEL): AssistChapter[] {
   const chapters: AssistChapter[] = [];
-  let top = 0;
+  let major = 0;
   let sub = 0;
-  let parent: string | null = null;
+  let majorId: string | null = null;
   let current: { id: string; level: number; title: string; number: string; parentId: string | null; texts: string[]; cites: number } | null = null;
   const close = () => {
     if (!current) return;
@@ -67,11 +67,11 @@ export function chaptersOf(blocks: readonly AssistBlock[], chapterLevel: number 
     if (block.kind === "heading" && (block.level === chapterLevel || block.level === chapterLevel + 1)) {
       close();
       if (block.level === chapterLevel) {
-        top += 1; sub = 0; parent = block.id;
-        current = { id: block.id, level: block.level, title: block.text.trim(), number: String(top), parentId: null, texts: [], cites: 0 };
+        major += 1; sub = 0; majorId = block.id;
+        current = { id: block.id, level: block.level, title: block.text.trim(), number: String(major), parentId: null, texts: [], cites: 0 };
       } else {
         sub += 1;
-        current = { id: block.id, level: block.level, title: block.text.trim(), number: `${top}.${sub}`, parentId: parent, texts: [], cites: 0 };
+        current = { id: block.id, level: block.level, title: block.text.trim(), number: `${major}.${sub}`, parentId: majorId, texts: [], cites: 0 };
       }
       continue;
     }

@@ -91,6 +91,10 @@ const OPEN_KEYS = [
   "status", "documentId", "evidenceProfileId", "currentRevision", "documentHash",
   "headSegmentHash", "lastSequenceTo", "document", "receiptKeys", "submitted",
 ];
+// SRV-7F (server #439): the server also sends the work's schemaVersion and its revision 0 hash.
+// Both are optional in the contract; when present they must have their contract shape.
+const OPEN_OPTIONAL_KEYS = ["schemaVersion", "revisionZeroHash"];
+const SCHEMA_VERSIONS: readonly unknown[] = [1, 2, 3];
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -226,7 +230,10 @@ function receiptDomainOf(keys: unknown): { domain: string; keys: EvidenceDomainK
 export function openedWorkFrom(value: unknown): OpenedWork | null {
   if (!isObject(value) || value.status !== "opened") return null;
   const own = Object.keys(value);
-  if (own.length !== OPEN_KEYS.length || !OPEN_KEYS.every((key) => own.includes(key))) return null;
+  const optional = own.filter((key) => OPEN_OPTIONAL_KEYS.includes(key));
+  if (own.length !== OPEN_KEYS.length + optional.length || !OPEN_KEYS.every((key) => own.includes(key))) return null;
+  if ("schemaVersion" in value && !SCHEMA_VERSIONS.includes(value.schemaVersion)) return null;
+  if ("revisionZeroHash" in value && !(typeof value.revisionZeroHash === "string" && SHA256_HEX.test(value.revisionZeroHash))) return null;
   const {
     documentId, evidenceProfileId, currentRevision, documentHash, headSegmentHash, lastSequenceTo, submitted,
   } = value;

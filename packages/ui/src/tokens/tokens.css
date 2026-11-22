@@ -1,8 +1,10 @@
 /*
  * Entry point of @ductura/ui/tokens.css. globals.css stays byte for byte the
- * Ductus source (PROVENANCE.md); local corrections live below it.
+ * Ductus source (PROVENANCE.md); local corrections live below it, and
+ * prototype.css carries the prototype parity layer (VIZ-0) over both.
  */
 @import "./globals.css";
+@import "./prototype.css";
 
 /*
  * Error text follows the sheet, never the shell (WCAG 1.4.3 on the paper).

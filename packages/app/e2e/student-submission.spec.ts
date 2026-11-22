@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 // HOST-S2: the submission steps in the host, with an invented /api/v1.
 const ID = "5d1e2f30-4a5b-4c6d-8e7f-9a0b1c2d3e4f";

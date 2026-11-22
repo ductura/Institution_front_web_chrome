@@ -26,9 +26,9 @@ describe("fetchLegalHolds", () => {
   });
 
   it("reads the contract's ready vector", async () => {
-    const vector = contractVectors.find((v) => v.route === "institution.legal-holds.get" && v.name === "ready")!;
+    const vector = contractVectors.find((v) => v.route === "institution.legal-holds.get" && v.name === "list")!;
     const out = await fetchLegalHolds({ baseUrl: BASE, fetchImpl: reply(200, vector.response.body) });
-    expect(out.kind === "ok" ? out.holds.map((h) => h.caseReference) : out.kind).toEqual(["IZM-2026-001"]);
+    expect(out.kind === "ok" ? out.holds.map((h) => h.caseReference) : out.kind).toEqual(["IZMISLJENI-SLUCAJ-2026-01"]);
   });
 
   it("maps 401, 403 and 503", async () => {

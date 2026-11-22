@@ -1,0 +1,579 @@
+/*
+ * Prototype parity layer (VIZ-0, Daniel 22. 11. 2026.: "identično").
+ *
+ * The approved prototypes (docs/prototip/: Ductura_student.html,
+ * Ductura_nastavnik.html, editor/editor.css, INVENTAR-editor.md §1.5–1.8)
+ * share the colour tokens of globals.css value for value, so this layer adds
+ * only what globals.css lacks or holds differently:
+ *
+ *  1. the type, spacing, size and layout scale the prototypes write as
+ *     literals (13.5 px body, 12.5 px meta, 44 px targets, 10 px cards ...),
+ *     named here so components and pages never repeat a number;
+ *  2. the four origin colours of editor v0.27 (--p-typed, --p-ai, --p-match,
+ *     --p-imp; the editor wins for the editor);
+ *  3. the base element rules of the prototypes (headings in Newsreader,
+ *     no default margins, links with a quiet underline);
+ *  4. the shared classes of the prototypes ("Zajednički dijelovi": .btn,
+ *     .input, .field, .card, .item, .row, .list, .panel, .tag, .skel, .tbl,
+ *     .eyebrow, .meta, .note, .lede, .err, .ok, .acts, .pagehead ...), with
+ *     the prototype's own names, so a page written to the prototype looks
+ *     like it without a style of its own.
+ *
+ * Where the two outer prototypes differ, the student values are the default
+ * and the teacher's sit under [data-shell-role="teacher"] (SideShell sets it):
+ * main width 880/960, narrow 640/680, top padding 32/24, gap 24/20, dialog
+ * 480/520, and the error mark (student: --error text and edge; teacher: ink
+ * with a 3 px --warn bar and a 2 px --warn edge on the field).
+ */
+
+:root {
+  /* Origin colours of editor v0.27 (mentor3): marks only, never text. */
+  --p-typed: #9bbf9a;
+  --p-ai: #d9a26a;
+  --p-match: #d7c069;
+  --p-imp: #b7a4d6;
+
+  /* Type scale (Instrument Sans for the interface, Newsreader for headings). */
+  --fs-2xs: 11px;
+  --fs-xs: 11.5px;
+  --fs-sm: 12.5px;
+  --fs-ui: 13.5px;
+  --fs-md: 15px;
+  --fs-title-sm: 19px;
+  --fs-title: 20px;
+  --fs-title-lg: 22px;
+  --fs-display-sm: 24px;
+  --fs-page: 30px;
+  --fs-hero: 40px;
+  --lh-ui: 1.5;
+  --lh-control: 1.1;
+  --lh-heading: 1.15;
+  --tracking-display: -0.015em;
+  --tracking-caps: 0.04em;
+
+  /* Spacing scale: the 4 px steps the package already uses (--space-1 = 4px ...
+     --space-4 = 16px), with the prototypes' half steps (2, 6, 10, 14 px). */
+  --space-0: 2px;
+  --space-1: 4px;
+  --space-1h: 6px;
+  --space-2: 8px;
+  --space-2h: 10px;
+  --space-3: 12px;
+  --space-3h: 14px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 56px;
+
+  /* Sizes. */
+  --target: 44px;
+  --target-dense: 32px;
+  --side-w: 64px;
+  --radius-card: 10px;
+  --radius-pill: 999px;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+
+  /* Page frame (student default; teacher below). */
+  --main-w: 880px;
+  --main-narrow-w: 640px;
+  --main-pad-top: 32px;
+  --main-gap: 24px;
+  --dialog-w: 480px;
+
+  /*
+   * The error mark (student default; teacher below). --err-ink and
+   * --field-invalid stay undefined here: a var() in a custom property is
+   * resolved where it is declared, so a root value would carry the shell's
+   * --error into the white sheet. Callers write var(--err-ink, var(--error)).
+   */
+  --err-weight: 400;
+  --err-bar: 0px;
+  --err-pad: 0px;
+  --field-invalid-width: 1px;
+}
+
+:root[data-theme="light"]:not(:has(#prijava-kartica, #pocetna-naslov)) {
+  --p-typed: #4f7d4e;
+  --p-ai: #a8642a;
+  --p-match: #8a7420;
+  --p-imp: #6d55a3;
+}
+
+[data-shell-role="teacher"] {
+  --main-w: 960px;
+  --main-narrow-w: 680px;
+  --main-pad-top: 24px;
+  --main-gap: 20px;
+  --dialog-w: 520px;
+  /* currentColor is resolved where it is used: the ink of the surface, shell or sheet. */
+  --err-ink: currentColor;
+  --err-weight: 600;
+  --err-bar: 3px;
+  --err-pad: 8px;
+  --field-invalid: var(--warn);
+  --field-invalid-width: 2px;
+}
+
+/* Base elements, as both outer prototypes write them. */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--ff-display);
+  font-weight: 500;
+  line-height: var(--lh-heading);
+  letter-spacing: var(--tracking-display);
+}
+
+p,
+ul,
+ol {
+  margin: 0;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  text-decoration: underline;
+  text-decoration-color: var(--link-rule);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Shared parts ("Zajednički dijelovi") of the prototypes. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1h);
+  min-height: var(--target);
+  padding: 0 var(--space-3h);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 600 var(--fs-ui) / var(--lh-control) var(--ff-ui);
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-ink);
+}
+
+.btn.secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.btn.secondary:hover {
+  background: var(--hover);
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: transparent;
+  text-decoration: underline;
+  text-decoration-color: var(--link-rule);
+  text-underline-offset: 3px;
+}
+
+.btn.ghost:hover {
+  background: var(--hover);
+}
+
+.btn.small {
+  padding: 0 var(--space-2h);
+}
+
+.btn.dense {
+  min-height: var(--target-dense);
+  padding: 0 var(--space-2);
+  font-weight: 500;
+}
+
+.btn[aria-pressed="true"] {
+  background: var(--well);
+  border-color: var(--ink-2);
+}
+
+.btn[aria-disabled="true"],
+.btn:disabled {
+  background: var(--well);
+  color: var(--ink-3);
+  border-color: var(--rule-2);
+  cursor: not-allowed;
+}
+
+.input {
+  min-width: 0;
+  min-height: var(--target);
+  padding: var(--space-1h) var(--space-2h);
+  border: 1px solid var(--field-rule);
+  border-radius: var(--radius-control);
+  background: var(--field);
+  color: var(--ink);
+}
+
+.input::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--field-invalid, var(--error));
+  border-width: var(--field-invalid-width);
+}
+
+textarea.input {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.field label,
+.field .lbl {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+.err {
+  color: var(--err-ink, var(--error));
+  font-size: var(--fs-sm);
+  font-weight: var(--err-weight);
+  border-left: var(--err-bar) solid var(--warn);
+  padding-left: var(--err-pad);
+}
+
+.ok {
+  color: var(--synced);
+  font-size: var(--fs-sm);
+}
+
+.eyebrow,
+.meta {
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+}
+
+.note,
+.lede {
+  color: var(--ink-2);
+}
+
+.mono {
+  font-family: var(--ff-mono);
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px var(--space-1h);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tag.open {
+  border-style: dashed;
+}
+
+.tag.near {
+  border-color: var(--warn);
+  color: var(--ink);
+}
+
+.card {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-6);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+.card.center {
+  justify-items: center;
+  text-align: center;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item,
+.row {
+  display: grid;
+  gap: var(--space-1h);
+  min-width: 0;
+  padding: var(--space-2h) var(--space-3);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.row {
+  gap: var(--space-1);
+}
+
+.item .title {
+  font-weight: 600;
+}
+
+.panel {
+  min-width: 0;
+  overflow: clip;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius-card);
+  background: var(--chrome);
+}
+
+.skel {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--well);
+  animation: d-skel 1.4s ease-in-out infinite alternate;
+}
+
+.skel.w40 {
+  width: 40%;
+}
+
+.skel.w60 {
+  width: 60%;
+}
+
+.skel.w80 {
+  width: 80%;
+}
+
+@keyframes d-skel {
+  from {
+    opacity: 0.55;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-0);
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-2);
+}
+
+.tbl {
+  overflow-x: auto;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+}
+
+.tbl table {
+  width: max-content;
+  min-width: 600px;
+  max-width: none;
+  border-collapse: collapse;
+}
+
+.tbl th,
+.tbl td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--rule-2);
+  text-align: left;
+  vertical-align: top;
+}
+
+.tbl th {
+  background: var(--chrome);
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.tbl tr:last-child td {
+  border-bottom: 0;
+}
+
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pagehead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.pagehead h1 {
+  font-size: var(--fs-page);
+}
+
+.pagehead .lede {
+  flex-basis: 100vw;
+  max-width: 68ch;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: var(--space-4);
+  }
+
+  .pagehead h1 {
+    font-size: var(--fs-display-sm);
+  }
+}
+
+/* Ductura_nastavnik.html: .banner, .opt, fieldset/legend (inside a card), .sb-acts, .sb-spin (VIZ-N6). */
+.banner {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2h) var(--space-3h);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--well);
+}
+
+.banner.warn {
+  border-left-color: var(--warn);
+}
+
+.opt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2h);
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  cursor: pointer;
+}
+
+.opt input {
+  margin-top: var(--space-0);
+}
+
+.card fieldset {
+  display: grid;
+  gap: var(--space-0);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2h) var(--space-3);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+}
+
+.card legend {
+  padding: 0 var(--space-1);
+  font-weight: 600;
+}
+
+.sb-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sb-state {
+  display: grid;
+  gap: var(--space-0);
+  min-width: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--rule-2);
+}
+
+.sb-state > .sb-h {
+  font-weight: 600;
+}
+
+.sb-spin {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: d-spin 0.8s linear infinite;
+}
+
+@keyframes d-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .sb-acts .btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: var(--space-4);
+  }
+
+  .pagehead h1 {
+    font-size: var(--fs-display-sm);
+  }
+}

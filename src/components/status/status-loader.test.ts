@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { createApi } from "@/client/api";
+import { parsePublicStatus } from "@/lib/status/public-status";
+
 import { contractStatusRequest, onWake, REQUEST_TIMEOUT_MS, statusLoader } from "./status-loader";
 
 const body = { checkedAt: "2026-11-12T10:25:00.000Z", components: { writing: "radi", submission: "radi", mentorView: "radi" } };
@@ -175,5 +178,35 @@ describe("contractStatusRequest (WEB-13, platform.status.get on /api/v1)", () =>
     expect(calls).toBe(2);
     third.abort();
     await expect(again).rejects.toThrow();
+  });
+});
+
+// LOK-WEB-7: the answer the server's /api/v1/status really sends, through the real createApi.
+describe("platform.status.get through createApi", () => {
+  const SERVER_BODY = {
+    checkedAt: "2026-11-22T13:00:24.495Z",
+    components: { writing: "radi", submission: "radi", mentorView: "radi" },
+    maintenanceWindows: [{ startsAt: "2026-11-23T22:00:00.000Z", endsAt: "2026-11-23T23:00:00.000Z" }],
+  };
+  const serving = (body: unknown) => createApi({
+    baseUrl: "https://ductura.example.invalid",
+    fetchImpl: async () => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }),
+  });
+
+  it("reads maintenanceWindows and the page parses the answer", async () => {
+    const response = await contractStatusRequest(serving(SERVER_BODY))(new AbortController().signal);
+    expect(response.status).toBe(200);
+    expect(parsePublicStatus(await response.json())).toEqual(SERVER_BODY);
+  });
+
+  const read = (body: unknown) => serving(body)("platform.status.get", { params: undefined, query: undefined, body: undefined });
+
+  it("still refuses a field the server does not declare", async () => {
+    expect(await read({ ...SERVER_BODY, note: "x" })).toEqual({ ok: false, status: 200, code: "unexpected" });
+  });
+
+  it("refuses a window time without milliseconds", async () => {
+    const windows = [{ startsAt: "2026-11-23T22:00:00Z", endsAt: "2026-11-23T23:00:00.000Z" }];
+    expect(await read({ ...SERVER_BODY, maintenanceWindows: windows })).toEqual({ ok: false, status: 200, code: "unexpected" });
   });
 });

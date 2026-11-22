@@ -375,8 +375,18 @@ describe("F-8 3c: the open route", () => {
     ["submitted as a number", openBody({ submitted: 0 })],
     ["submitted as null", openBody({ submitted: null })],
     ["submitted with an extra key", openBody({ submittedAt: "2026-10-25T10:00:00.000Z" })],
+    ["schemaVersion outside 1..3", openBody({ schemaVersion: 4 })],
+    ["schemaVersion as a string", openBody({ schemaVersion: "1" })],
+    ["a short revisionZeroHash", openBody({ revisionZeroHash: "a" })],
+    ["revisionZeroHash as null", openBody({ revisionZeroHash: null })],
   ])("refuses %s", (_name, body) => {
     expect(openedWorkFrom(body)).toBeNull();
+  });
+
+  it("reads the answer of a server that sends schemaVersion and revisionZeroHash (SRV-7F)", () => {
+    const work = openedWorkFrom(openBody({ schemaVersion: 1, revisionZeroHash: "b".repeat(64) }));
+    expect(work?.documentId).toBe(DOC);
+    expect(openedWorkFrom(openBody({ schemaVersion: 3 }))).not.toBeNull();
   });
 
   it.each([true, false])("reads submitted as the server says it (%s)", (submitted) => {

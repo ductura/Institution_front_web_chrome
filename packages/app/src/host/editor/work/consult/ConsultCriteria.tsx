@@ -12,7 +12,7 @@ import {
 } from "../../../../../../../src/client/teacher-working-criteria";
 
 import styles from "./Consult.module.css";
-import { assessmentChange, canEditCriteria, criteriaHeading, criterionFailure, noteChange, withCriterion, type Role } from "./consult-model";
+import { assessmentChange, canEditCriteria, criteriaHeading, criterionFailure, criterionTitle, noteChange, withCriterion, type Role } from "./consult-model";
 import { consultHr } from "./messages.hr";
 
 const t = consultHr.criteria;
@@ -41,7 +41,7 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
 
   const patch = (id: string, next: Partial<Row>) => setRows((all) => ({ ...all, [id]: { ...(all[id] ?? IDLE), ...next } }));
   const send = async (c: WorkingCriterion, input: CriterionInput, done: Partial<Row>) => {
-    const id = c.criterionId;
+    const id = c.id;
     if (!call || !canEditCriteria(role) || inFlight.current.has(id)) return;
     inFlight.current.add(id);
     patch(id, { busy: true, error: null });
@@ -63,7 +63,7 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
     return (
       <div className={styles.card}>
         <p role="alert" className={styles.error}>{text}</p>
-        {load.kind === "unavailable" && call ? <Button onClick={() => void read()}>{t.retry}</Button> : null}
+        {load.kind === "unavailable" && call ? <Button size="dense" tone="secondary" onClick={() => void read()}>{t.retry}</Button> : null}
       </div>
     );
   }
@@ -73,14 +73,15 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
       <h3 id="radni-kriteriji">{criteriaHeading(load.criteria)}</h3>
       <ul className={styles.list}>
         {load.criteria.map((c) => {
-          const row = rows[c.criterionId] ?? IDLE;
+          const row = rows[c.id] ?? IDLE;
+          const title = criterionTitle(c);
           return (
-            <li key={c.criterionId} className={styles.item}>
-              <b>{c.title}</b>
+            <li key={c.id} className={styles.item}>
+              <b>{title}</b>
               {editable ? (
-                <div className={styles.seg} role="group" aria-label={t.assessmentGroup.replace("{title}", c.title)}>
+                <div className={styles.seg} role="group" aria-label={t.assessmentGroup.replace("{title}", title)}>
                   {ASSESSMENTS.map((a) => (
-                    <Button key={a} aria-pressed={c.assessment === a} disabled={row.busy} onClick={() => void send(c, assessmentChange(c, a), {})}>{t.assessments[a]}</Button>
+                    <Button size="dense" tone="secondary" key={a} aria-pressed={c.assessment === a} disabled={row.busy} onClick={() => void send(c, assessmentChange(c, a), {})}>{t.assessments[a]}</Button>
                   ))}
                 </div>
               ) : c.assessment !== null ? <span>{t.assessments[c.assessment]}</span> : null}
@@ -88,20 +89,20 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
               {c.note !== null && !row.editing ? <p className={styles.noteText}>{c.note}</p> : null}
               {editable && row.editing ? (
                 <div className={styles.card}>
-                  <label>{t.noteLabel.replace("{title}", c.title)}
-                    <textarea className={styles.field} value={row.draft} maxLength={NOTE_MAX} disabled={row.busy} onChange={(e) => patch(c.criterionId, { draft: e.target.value })} />
+                  <label>{t.noteLabel.replace("{title}", title)}
+                    <textarea className={styles.field} value={row.draft} maxLength={NOTE_MAX} disabled={row.busy} onChange={(e) => patch(c.id, { draft: e.target.value })} />
                   </label>
                   <p className={styles.muted}>{t.noteHint.replace("{max}", String(NOTE_MAX))}</p>
                   <div className={styles.row}>
-                    <Button disabled={row.busy} onClick={() => {
+                    <Button size="dense" disabled={row.busy} onClick={() => {
                       const input = noteChange(c, row.draft);
-                      if (input === null) patch(c.criterionId, { error: t.errors.invalid }); else void send(c, input, { editing: false });
+                      if (input === null) patch(c.id, { error: t.errors.invalid }); else void send(c, input, { editing: false });
                     }}>{row.busy ? t.saving : t.saveNote}</Button>
-                    <Button disabled={row.busy} onClick={() => patch(c.criterionId, { editing: false, error: null })}>{t.cancel}</Button>
+                    <Button size="dense" tone="secondary" disabled={row.busy} onClick={() => patch(c.id, { editing: false, error: null })}>{t.cancel}</Button>
                   </div>
                 </div>
               ) : editable ? (
-                <Button disabled={row.busy} onClick={() => patch(c.criterionId, { editing: true, draft: c.note ?? "", error: null })}>{c.note === null ? t.addNote : t.editNote}</Button>
+                <Button size="dense" tone="secondary" disabled={row.busy} onClick={() => patch(c.id, { editing: true, draft: c.note ?? "", error: null })}>{c.note === null ? t.addNote : t.editNote}</Button>
               ) : null}
               {row.error ? <p role="alert" className={styles.error}>{row.error}</p> : null}
             </li>

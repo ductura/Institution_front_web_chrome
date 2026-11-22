@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 const ID = "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60";
 const PATH = `/zadatak/${ID}`;
@@ -73,7 +73,8 @@ test("renders the notice, waits for both writes and restores the confirmation on
   await page.reload();
   await expect(editor).toHaveJSProperty("pathname", `/app/web/rad/${ID}`);
   await editor.click();
-  expect(new URL(page.url()).pathname).toBe(`/app/web/rad/${ID}`);
+  // The editor link routes on the client; wait for the address rather than read it once.
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`/app/web/rad/${ID}`);
   expect(writes).toBe(1);
 });
 

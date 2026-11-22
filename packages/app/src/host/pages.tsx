@@ -15,8 +15,14 @@ import type { Base } from "../bases";
 import { internalRoute, routeOf } from "../routes";
 import { hostText } from "../text";
 import { useHost } from "./context";
+import { AssignmentCards, NewCourseLink } from "./teacher/assignment-card/AssignmentCards";
+import { CourseTasks, InterruptedPublish } from "./teacher/assignment-facts/AssignmentFacts";
+import { assignmentCardMessages as card } from "./teacher/assignment-card/messages.hr";
+import { teacherShellHr } from "./teacher/shell/messages.hr";
+import { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { startWorkAction } from "./student/start-work/action";
+import { HomePage } from "./student/home/HomePage";
 import SignInScreen from "./signin/SignInScreen";
 import { signInViewOf } from "./signin/sign-in-view";
 
@@ -65,8 +71,12 @@ export function SignInPage() {
   return <SignInScreen view={leaving ? "redirecting" : signInViewOf(query)} href={href} onStart={start} />;
 }
 
-/** S01 and S02 over student.assignments.get, read once per visit. */
+/** S01 (E-2, WEB-2102) is its own page; S02 over student.assignments.get, read once per visit. */
 export function StudentPage({ view }: { view: "home" | "courses" }) {
+  return view === "home" ? <HomePage /> : <CoursesPage />;
+}
+
+function CoursesPage() {
   const { base } = useHost();
   const [read, setRead] = useState<MyAssignmentsRead | null>(null);
   useEffect(() => {
@@ -79,11 +89,11 @@ export function StudentPage({ view }: { view: "home" | "courses" }) {
     };
   }, []);
   if (read === null) return <p role="status">{hostText.loading}</p>;
-  return <StudentHome read={read} enroll={null} view={view} signIn={(returnTo) => signInHref(appHref(base, returnTo))}
+  return <StudentHome read={read} enroll={null} view="courses" signIn={(returnTo) => signInHref(appHref(base, returnTo))}
     assignmentAction={startWorkAction} />;
 }
 
-export type TeacherRead<T> = { kind: "ready"; value: T } | { kind: "signedOut" } | { kind: "notTeacher" } | { kind: "unavailable" };
+export { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";
 
 /** One read per visit and per "Pokušaj ponovno"; a signed-out answer goes to sign-in. */
 export function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>>): [TeacherRead<T> | null, () => void] {
@@ -105,33 +115,6 @@ export function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>
   return [result, () => setAttempt((n) => n + 1)];
 }
 
-/** The page heading, its lead and one state of a teacher's read. */
-export function TeacherPage<T>({ title, lead, read, retry, unavailable, retryLabel, ready }: {
-  title: string; lead: string; read: TeacherRead<T> | null; retry: () => void;
-  unavailable: string; retryLabel: string; ready: (value: T) => ReactNode;
-}) {
-  let body: ReactNode;
-  if (read === null || read.kind === "signedOut") body = <p role="status">{read === null ? hostText.loading : hostText.signingIn}</p>;
-  else if (read.kind === "notTeacher") body = <p role="status">{t.teacher.signedOut}</p>;
-  else if (read.kind === "unavailable") {
-    body = (
-      <>
-        <p role="alert">{unavailable}</p>
-        <p><button type="button" className="btn" onClick={retry}>{retryLabel}</button></p>
-      </>
-    );
-  } else body = ready(read.value);
-  return (
-    <div className="page">
-      <header>
-        <h1>{title}</h1>
-        <p>{lead}</p>
-      </header>
-      {body}
-    </div>
-  );
-}
-
 const coursesCall = () => createApi() as unknown as TeacherCoursesCall;
 const mentorshipsCall = () => createApi() as unknown as MentoredWorksCall;
 
@@ -142,10 +125,12 @@ export function TeacherCoursesPage() {
     const result = await readTeacherCourses(coursesCall());
     return result.kind === "ready" ? { kind: "ready", value: result.courses } : result;
   });
-  const tc = t.teacherCourses;
-  return <TeacherPage title={tc.title} lead={tc.lead} read={read} retry={retry} unavailable={tc.unavailable} retryLabel={tc.retry}
-    ready={(courses) => <TeacherCourses courses={courses}
-      courseDetails={(course) => <CourseTeachingTeam courseId={course.id} courseName={course.name} />} />} />;
+  return <TeacherPage title={card.title} lead={card.lead} loading={card.loading} read={read} retry={retry}
+    unavailable={card.unavailable} retryLabel={card.retry} notice={<InterruptedPublish onChecked={retry} />}
+    actions={(courses) => (courses.length > 0 ? <NewCourseLink /> : null)}
+    ready={(courses) => <AssignmentCards courses={courses} here={appHref(base, "/nastavnik")}
+      tasks={(course) => <CourseTasks course={course} />}
+      extra={(course) => <CourseTeachingTeam courseId={course.id} courseName={course.name} />} />} />;
 }
 
 /** N-16 "Radovi uz mentora" over teacher.mentorships.get. */
@@ -156,6 +141,6 @@ export function MentoredWorksPage() {
     return result.kind === "ready" ? { kind: "ready", value: result.works } : result;
   });
   const mw = t.mentoredWorks;
-  return <TeacherPage title={mw.title} lead={mw.lead} read={read} retry={retry} unavailable={mw.unavailable} retryLabel={mw.retry}
+  return <TeacherPage title={mw.title} lead={mw.lead} loading={teacherShellHr.loadingMentorships} read={read} retry={retry} unavailable={mw.unavailable} retryLabel={mw.retry}
     ready={(works) => <MentoredWorks works={works} />} />;
 }
