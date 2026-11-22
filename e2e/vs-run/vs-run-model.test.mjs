@@ -15,6 +15,7 @@ const allPass = report({
   'zavrsna-predaja-studenta': 'expected',
   'zavrsni-pregled-nastavnika': 'expected',
   'tok-administrator-ustanove': 'expected',
+  'editor-val1': 'expected',
 });
 const values = (over = {}) => ({
   host: 'packages/app',
@@ -80,4 +81,12 @@ test('no report at all is a failed run, not a crash', () => {
   assert.equal(run.ok, false);
   assert.ok(run.scenarios.every((s) => s.status === 'NIJE POKRENUT'));
   assert.equal(run.serverPid, null);
+});
+
+test('INT-13: the editor scenario is in the table, and a run without it or with it failed is not ok', () => {
+  const run = buildVsRun({ report: allPass, values: values(), env, now });
+  assert.deepEqual(run.scenarios.find((s) => s.file === 'editor-val1'), { file: 'editor-val1', label: 'INT-13 (WEB-14, WEB-15 editor)', status: 'PROLAZ', tests: 1, errors: [] });
+  const withoutEditor = Object.fromEntries(run.scenarios.filter((s) => s.file !== 'editor-val1').map((s) => [s.file, 'expected']));
+  assert.equal(buildVsRun({ report: report(withoutEditor), values: values(), env, now }).ok, false);
+  assert.equal(buildVsRun({ report: report({ ...withoutEditor, 'editor-val1': 'unexpected' }), values: values(), env, now }).ok, false);
 });
