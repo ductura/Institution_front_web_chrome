@@ -30,5 +30,5 @@ Jedan redak po Ductusovom slučaju iz `content-security-policy.test.ts`:
 
 Nije u opsegu (otvoreno):
 
-- `packages/app` (domaćin pod `/app/web/`, `pnpm build`) nema politiku stranica. Njegov `app/layout.tsx` ima vlastitu inline skriptu teme (drugi tekst, pa drugi hash od THEME_SCRIPT) i dio stranica može biti prerenderiran bez noncea. Prijenos tamo traži zaseban zadatak u traci domaćina.
+- `packages/app` (domaćin pod `/app/web/`, `pnpm build`): njegova gradnja također preuzima `src/middleware.ts` (izlaz gradnje pokazuje `ƒ Proxy (Middleware)`), pa politika vrijedi i za domaćina. Njegova inline skripta teme u `app/layout.tsx` imala je drugi tekst, a time i drugi hash, pa ju je politika odbijala (CI `app`, e2e provjere konzole). Popravljena je stranica, a ne politika: layout sada koristi THEME_SCRIPT. Jedina statička ruta domaćina je `/_not-found`. Do nje se ne dolazi ispod `/app/web/` ni `/app/chrome/`, jer tamo nepostojeće putanje prikazuje `[[...path]]`.
 - Statička politika API odgovora (`next.config.ts` u Ductusu postavlja `API_CONTENT_SECURITY_POLICY` i `STATIC_CONTENT_SECURITY_POLICY` kao zaglavlja): konstante su prenesene, `next.config.ts` nije na putanjama ovog zadatka.
