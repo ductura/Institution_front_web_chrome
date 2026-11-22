@@ -73,8 +73,8 @@ const isState = (value: unknown): value is ComponentState =>
 /**
  * The response body as a checked value, or null for anything else: a missing,
  * extra or mistyped field, an unknown state word or a time that is not a real
- * UTC instant. maintenanceWindows is the one optional field (the server's
- * /api/v1/status, LOK-WEB-7). Never throws; the result is a fresh object of
+ * UTC instant. maintenanceWindows is the one optional field (platform.status.get,
+ * LOK-WEB-7). Never throws; the result is a fresh object of
  * checked fields.
  */
 export function parsePublicStatus(input: unknown): PublicStatus | null {
