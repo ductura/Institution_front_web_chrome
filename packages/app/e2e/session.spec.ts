@@ -36,6 +36,9 @@ async function fakeServer(page: Page, me: Me) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
   await page.route("**/api/v1/teacher/mentorships", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.mentorships.get"]) }));
+  // LOK-WEB-5: the teacher's mentorship page reads open requests (teacher.mentorship-requests.get "empty-requests").
+  await page.route("**/api/v1/teacher/mentorship-requests", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ requests: [] }) }));
   await page.route("**/api/v1/auth/login**", async (route) => {
     seen.login.push(route.request().url());
     await route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><html lang=\"hr\"><title>AAI@EduHr</title><p>Lažni AAI@EduHr</p></html>" });

@@ -37,7 +37,7 @@ export function decisionNote(outcome: DecisionOutcome, decision: Decision): Deci
     case "vec-odluceno":
       return { tone: "alert", text: t.alreadyDecided, drop: true };
     case "greska":
-      return { tone: "alert", text: outcome.code === "not_found" ? t.notFound : t.invalid, drop: false };
+      return { tone: "alert", text: t.invalid, drop: false };
     case "nepoznato":
       return { tone: "alert", text: t.unknown, drop: false };
     default:
@@ -171,7 +171,6 @@ export function MentorshipRequestsView({ read, here, call, onDecided }: {
             return (
               <li key={request.requestId} className={styles.work}>
                 <span className={styles.name}>{name}</span>
-                <span className={styles.title}>{request.title}</span>
                 <span className={styles.meta}>{requestMeta(request)}</span>
                 <span className={styles.open}>
                   <Button busy={mine && busy?.decision === "approve"} disabled={busy !== null && !mine}

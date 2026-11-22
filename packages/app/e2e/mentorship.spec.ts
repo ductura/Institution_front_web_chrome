@@ -65,6 +65,7 @@ test("when the routes fail the page says unavailable, never an empty list", asyn
 test("the teacher's page says the requests are unavailable and shows no success", async ({ page }) => {
   await session(page, "teacher");
   await page.route("**/api/v1/teacher/mentorships", (route) => route.fulfill({ json: { works: [] } }));
+  await page.route("**/api/v1/teacher/mentorship-requests", (route) => route.fulfill({ status: 503, json: { code: "unavailable" } }));
   await page.goto("/app/web/nastavnik/mentorstva");
   await expect(page.getByRole("heading", { name: "Moji studenti" })).toBeVisible();
   await expect(page.getByText(messagesHr.mentorshipRequests.unavailable)).toBeVisible();

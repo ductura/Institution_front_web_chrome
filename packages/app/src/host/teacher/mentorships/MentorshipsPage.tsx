@@ -22,8 +22,8 @@ const worksCall = () => createApi() as unknown as MentoredWorksCall;
 /**
  * N-16 (WEB-1404): the requests of students (approve or decline), "Moji studenti"
  * (the students whose request was approved) and their works. The requests read
- * through the client; until the routes are in the contract (TODO(ugovor)) that
- * read says "unavailable", never "none". After a decision the page reads again.
+ * through the contract client (LOK-WEB-5); a failed read says "unavailable",
+ * never "none". After a decision the page reads again.
  */
 export default function MentorshipsPage({ requests = requestsCall, works = worksCall }:
   { requests?: () => MentorshipCall; works?: () => MentoredWorksCall }) {

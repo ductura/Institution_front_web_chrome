@@ -11,8 +11,9 @@ import { LegalHolds, type LegalHold, type LegalHoldsLabels, type LegalHoldsProps
 const labels: LegalHoldsLabels = {
   title: "Pravna zadržavanja", lead: "Zadržavanje zaustavlja brisanje.", listTitle: "Aktivna zadržavanja", empty: "Nema aktivnih zadržavanja.",
   loading: "Učitavanje…", retry: "Pokušaj ponovno",
-  placedBy: (name, at) => `Postavio/la: ${name}, ${at}`, reference: (ref) => `Referenca slučaja: ${ref}`,
-  placeTitle: "Postavi zadržavanje", subject: "Predmet", subjectHint: "Što se zadržava.", caseReference: "Referenca slučaja", caseReferenceHint: "Broj slučaja.",
+  placedBy: (name, at) => `Postavio/la: ${name}, ${at}`, placedOn: (at) => `Postavljeno: ${at}`, reference: (ref) => `Referenca slučaja: ${ref}`,
+  placeTitle: "Postavi zadržavanje", subjectType: "Vrsta predmeta", subjectTypes: { work: "Rad", student: "Student", assignment: "Zadatak" },
+  subjectTypePlaceholder: "Odaberite…", subjectTypeMissing: "Odaberite vrstu predmeta.", subject: "Predmet", subjectHint: "Što se zadržava.", caseReference: "Referenca slučaja", caseReferenceHint: "Broj slučaja.",
   subjectMissing: "Upišite predmet.", caseReferenceMissing: "Upišite referencu slučaja.", place: "Postavi zadržavanje", placing: "Postavljam…",
   release: "Skini zadržavanje", releaseOwn: "Zadržavanje koje ste postavili skida drugi administrator ili operater.",
   releaseTitle: (s) => `Skidanje zadržavanja: ${s}`, reason: "Razlog skidanja", reasonHint: "Upisuje se u zapis.", reasonMissing: "Upišite razlog.",
@@ -42,6 +43,13 @@ const field = (el: HTMLElement, label: string) => {
   const id = [...el.querySelectorAll("label")].find((l) => l.textContent === label)!.htmlFor;
   return document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement;
 };
+function choose(el: HTMLElement, label: string, value: string) {
+  const select = document.getElementById([...el.querySelectorAll("label")].find((l) => l.textContent === label)!.htmlFor) as HTMLSelectElement;
+  act(() => {
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(select, value);
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+}
 function type(f: HTMLInputElement | HTMLTextAreaElement, value: string) {
   const proto = f instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   act(() => {
@@ -57,6 +65,9 @@ describe("LegalHolds", () => {
     const el = mount();
     expect(el.textContent).toContain(labels.empty);
     expect(field(el, "Predmet")).toBeTruthy();
+    expect(field(el, "Vrsta predmeta")).toBeTruthy();
+    expect(field(el, "Predmet").maxLength).toBe(256);
+    expect(field(el, "Referenca slučaja").maxLength).toBe(120);
     expect(field(el, "Referenca slučaja")).toBeTruthy();
     expect(await violations(el)).toEqual([]);
   });
@@ -67,6 +78,12 @@ describe("LegalHolds", () => {
     expect(el.textContent).toContain("Referenca slučaja: IZM-2026-001");
     expect(el.textContent).toContain("Postavio/la: Ana Izmišljena, 20. 11. 2026.");
     expect(await violations(el)).toEqual([]);
+  });
+
+  it("shows only the time for a hold whose placer has no name", () => {
+    const el = mount({ state: { kind: "ready", holds: [hold({ placedByName: undefined })] } });
+    expect(el.textContent).toContain("Postavljeno: 20. 11. 2026.");
+    expect(el.textContent).not.toContain("Postavio/la");
   });
 
   it("shows the given message for an error, not a raw code, and retries", () => {
@@ -83,14 +100,18 @@ describe("LegalHolds", () => {
     const form = el.querySelectorAll("form")[0] as HTMLFormElement;
     submit(form);
     expect(onPlace).not.toHaveBeenCalled();
+    expect(el.textContent).toContain("Odaberite vrstu predmeta.");
     expect(el.textContent).toContain("Upišite predmet.");
     expect(el.textContent).toContain("Upišite referencu slučaja.");
     expect(field(el, "Predmet").getAttribute("aria-invalid")).toBe("true");
     expect(await violations(el)).toEqual([]);
-    type(field(el, "Predmet"), "  Izmišljeni kolegij  ");
+    type(field(el, "Predmet"), "  rad-izm-9  ");
     type(field(el, "Referenca slučaja"), " IZM-2026-009 ");
     submit(form);
-    expect(onPlace).toHaveBeenCalledWith({ subject: "Izmišljeni kolegij", caseReference: "IZM-2026-009" });
+    expect(onPlace).not.toHaveBeenCalled();
+    choose(el, "Vrsta predmeta", "work");
+    submit(form);
+    expect(onPlace).toHaveBeenCalledWith({ subjectType: "work", subjectId: "rad-izm-9", caseReference: "IZM-2026-009" });
   });
 
   it("shows an action error from the server catalogue under the form", () => {
@@ -136,6 +157,7 @@ describe("LegalHolds", () => {
   it("does nothing while busy", () => {
     const onPlace = vi.fn();
     const el = mount({ busy: true, onPlace });
+    choose(el, "Vrsta predmeta", "student");
     type(field(el, "Predmet"), "x");
     type(field(el, "Referenca slučaja"), "y");
     submit(el.querySelectorAll("form")[0] as HTMLFormElement);

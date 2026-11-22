@@ -775,7 +775,6 @@ export const hr = {
     approved: "Zahtjev je odobren. Rad je u popisu radova uz mentora.",
     declined: "Zahtjev je odbijen.",
     alreadyDecided: "O ovom je zahtjevu već odlučeno ili ga je student povukao.",
-    notFound: "Zahtjev više nije dostupan.",
     invalid: "Razlog nije valjan. Skratite ga i pokušajte ponovno.",
     unknown: "Nije poznato je li odluka zabilježena. Osvježite stranicu prije novog pokušaja.",
   },
@@ -2487,13 +2486,7 @@ export const editorHelpHr = {
   firstSentence: "Prije prve rečenice",
   due: "Rok {date}",
   length: "opseg {min} do {max} riječi",
-  recorded: "Što se bilježi",
-  recording: [
-    ["Koraci spremanja", "Uz korake spremanja bilježe se promjene teksta, vrijeme zaokruženo na minutu i digitalni otisak."],
-    ["Podrijetlo teksta", "Bilježi se način unosa teksta, primjerice pisanje ili lijepljenje, te verzije i predaja rada."],
-    ["Što vidi nastavnik", "Nastavnik zadatka vidi tekst spremljen na poslužitelju, komentare, povijest verzija i isti sažetak procesa koji vidite i Vi."],
-    ["Što se ne bilježi", "Pojedinačni pritisci tipki i ritam pisanja."],
-  ],
+  recorded: "Što Ductura bilježi dok pišeš",
   close: "Zatvori",
 } as const;
 
@@ -2523,4 +2516,25 @@ export const provenanceShareHr = {
   disabled: "Zapis o načinu unosa nije uključen za ovaj zadatak.",
   error: "Zapis o načinu unosa trenutačno nije moguće prikazati.",
   retry: "Pokušaj ponovno",
+} as const;
+
+/** WEB-0612: P-1 §6, word for word. */
+export const whatIsRecordedHr = {
+  what: { heading: "Što je u radu i kako je ušlo", text: "Tipkano, iz pomoćnika, uvezeno ili zalijepljeno." },
+  when: { heading: "Kad je otprilike nastalo", text: "Na minutu." },
+  rhythm: {
+    heading: "Ritam unosa",
+    text: "Razmake između unosa, ne koje tipke. Možeš ga isključiti ovdje:",
+    toggle: "Bilježi ritam tipkanja",
+  },
+  not: { heading: "Što ne bilježi", text: "Koje tipke pritišćeš, koliko brzo tipkaš kao broj, ništa izvan Ducture." },
+  who: { heading: "Tko vidi", text: "Ti i tvoj nastavnik ili mentor, isto i u isto vrijeme." },
+  note: "Ništa od ovoga nije ocjena ni tvrdnja o autorstvu.",
+} as const;
+
+/** WEB-0910: the rhythm setting beside the dialog "Što Ductura bilježi dok pišeš". */
+export const inputRhythmHr = {
+  toggle: "Bilježi ritam tipkanja",
+  teacherOnly: "Ritam unosa može isključiti samo nastavnik.",
+  unknown: "Postavka ritma trenutačno nije dostupna.",
 } as const;

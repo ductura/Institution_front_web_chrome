@@ -33,7 +33,7 @@ for (const [width, theme] of [[1250, 'dark'], [1050, 'light'], [760, 'dark'], [6
     await guide.getByRole('button', { name: 'Završi vodič' }).click();
     await expect(guide).toHaveCount(0);
     await expect(help).toBeFocused();
-    for (const title of ['Prije prve rečenice', 'Što se bilježi']) {
+    for (const title of ['Prije prve rečenice', 'Što Ductura bilježi dok pišeš']) {
       await openHelp(page, title);
       await expect(page.getByRole('dialog', { name: title })).toBeVisible();
       await scan();
