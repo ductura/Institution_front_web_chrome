@@ -18,14 +18,21 @@
  * `submittedVersions` list and a `submissionId` the server never sends, so
  * no row was ever shown and no version could be opened. The caller still
  * passes the transport (`SubmissionsCall`).
+ *
+ * INT-12 (N05): both shapes are read from the contract itself (RESPONSES of
+ * api.ts), no longer from local copies that had drifted (a documentId the
+ * contract refuses, e.g. one with surrounding spaces, passed). Here only what
+ * the contract cannot state is added: a real calendar minute, a student once.
+ * contract-parsers.test.ts holds both reads to every 2xx vector.
  */
 
+import { RESPONSES } from "./api";
 import { matchesSchema, type Schema } from "./schema-check";
 import type { Read } from "./submission";
 
 export type SubmissionsRoute = "teacher.submissions.get" | "teacher.submission-detail.get";
 
-/** TODO(ugovor): the transport of a route that is not in the published contract yet. */
+/** The transport; the page that mounts the screen binds it. */
 export type SubmissionsCall = (
   id: SubmissionsRoute,
   input: { readonly params: Readonly<Record<string, string>> },
@@ -59,27 +66,13 @@ export interface TeacherSubmissionsPort {
 
 const UNKNOWN = { kind: "nepoznato" } as const;
 const EXPIRED = { kind: "session-expired" } as const;
-const UUID = { type: "string", pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" } as const;
-const REVISION = { type: "integer", minimum: 0, maximum: Number.MAX_SAFE_INTEGER } as const;
-// A real calendar minute, not only its shape: a row the table cannot format is `nepoznato`.
-const MINUTE = { type: "string", format: "date-time", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00\\.000Z$" } as const;
-const WORK_ID = { anyOf: [{ type: "null" }, { type: "string", minLength: 1 }] } as const;
-const closed = (properties: Record<string, Schema>, optional: readonly string[] = []): Schema => ({
-  type: "object", additionalProperties: false, properties,
-  required: Object.keys(properties).filter((key) => !optional.includes(key)),
-});
-
-// TODO(ugovor): local copies of SRV-1508 (Institution_server #538) until the contract is published.
-const NOT_SUBMITTED = closed({
-  studentId: UUID, documentId: WORK_ID, submitted: { const: false },
-  revision: { type: "null" }, requestedMinute: { type: "null" }, afterDeadline: { type: "null" },
-});
-const SUBMITTED = closed({
-  studentId: UUID, documentId: WORK_ID, submitted: { const: true },
-  revision: REVISION, requestedMinute: MINUTE, afterDeadline: { type: "boolean" },
-});
-const LIST = closed({ submissions: { type: "array", items: { anyOf: [NOT_SUBMITTED, SUBMITTED] } } });
-const DETAIL = closed({ studentId: UUID, revision: REVISION, late: { type: "boolean" }, document: { type: "string" } });
+/** The 200 schema the contract gives a route; a route without one reads as `nepoznato`. */
+const contractSchema = (id: SubmissionsRoute): Schema =>
+  RESPONSES.get(id)?.["200"]?.content?.["application/json"]?.schema ?? false;
+const LIST = contractSchema("teacher.submissions.get");
+const DETAIL = contractSchema("teacher.submission-detail.get");
+// A real calendar minute, not only the contract's pattern: a row the table cannot format is `nepoznato`.
+const MINUTE: Schema = { type: "string", format: "date-time" };
 
 type ListBody = {
   submissions: ({ studentId: string; submitted: false } | { studentId: string; submitted: true; revision: number; requestedMinute: string; afterDeadline: boolean })[];
@@ -104,6 +97,7 @@ export function readTeacherSubmissions(call: SubmissionsCall, assignmentId: stri
     const { submissions } = body as ListBody;
     const students = submissions.map((s) => s.studentId);
     if (new Set(students).size !== students.length) return UNKNOWN;
+    if (submissions.some((s) => s.submitted && !matchesSchema(MINUTE, s.requestedMinute))) return UNKNOWN;
     const rows = submissions.flatMap((s): SubmittedRow[] => (s.submitted
       ? [{ studentId: s.studentId, revision: s.revision, late: s.afterDeadline, requestedMinute: s.requestedMinute }]
       : []));
