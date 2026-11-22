@@ -52,16 +52,27 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Dijagnoza fronta (samo dokazna grana)
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
         run: |
-          nohup pnpm exec next dev -p 3100 > "$RUNNER_TEMP/front.log" 2>&1 &
-          FPID=$!
-          sleep 5
-          for u in /kako-radi / /api/v1/health; do
-            curl -sS -o /dev/null -w "$u %{http_code} %{time_total}s\n" --max-time 240 "http://127.0.0.1:3100$u" || echo "$u PAD"
-          done
-          cat "$RUNNER_TEMP/front.log"
-          kill $FPID || true
-          sleep 2
+          probe() {
+            for u in /api/v1/health /kako-radi; do
+              curl -sS -o /dev/null -w "$1 $u %{http_code} %{time_total}s
+" --max-time 90 "http://127.0.0.1:3100$u" || echo "$1 $u PAD"
+            done
+          }
+          echo "== webpack dev"
+          nohup pnpm exec next dev --webpack -p 3100 > "$RUNNER_TEMP/f1.log" 2>&1 &
+          P=$!; sleep 8; probe webpack; tail -40 "$RUNNER_TEMP/f1.log"; kill $P || true; pkill -f "next dev" || true; sleep 3
+          echo "== build + start"
+          timeout 600 pnpm exec next build > "$RUNNER_TEMP/f2.log" 2>&1 || echo "BUILD PAD $?"
+          tail -60 "$RUNNER_TEMP/f2.log"
+          nohup pnpm exec next start -p 3100 > "$RUNNER_TEMP/f3.log" 2>&1 &
+          P=$!; sleep 5; probe start; tail -40 "$RUNNER_TEMP/f3.log"; kill $P || true; pkill -f "next start" || true; sleep 3
+          echo "== turbopack dev, trace"
+          NEXT_TURBOPACK_TRACING=1 nohup pnpm exec next dev -p 3100 > "$RUNNER_TEMP/f4.log" 2>&1 &
+          P=$!; sleep 8; probe turbo; tail -40 "$RUNNER_TEMP/f4.log"; ps -o pid,pcpu,rss,args -u "$(id -u)" | grep -i next | head; kill $P || true; pkill -f "next dev" || true; sleep 3
+          ls -la .next 2>/dev/null | head
 
       - name: Stog gore (pnpm stog:gore)
         working-directory: Institution_server
