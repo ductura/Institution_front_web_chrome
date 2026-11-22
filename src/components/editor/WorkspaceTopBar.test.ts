@@ -33,13 +33,24 @@ describe("WorkspaceTopBarView", () => {
     expect(html).toContain(t.workspace.submitOffline);
   });
 
-  it("announces the pressed sheet theme", () => {
-    for (const theme of ["light", "dark"] as const) {
-      const html = bar(true, theme);
-      const pressed = theme === "light" ? t.workspace.sheetThemeLight : t.workspace.sheetThemeDark;
-      expect(html).toMatch(new RegExp(`aria-pressed="true"[^>]*>${pressed}<`));
-      expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
-    }
+  it("has one sheet switch that names the other sheet and is pressed while the sheet is white", () => {
+    // Prototype `.ed-top`: "Bijeli list" on the dark sheet, "Tamni list" on the white one.
+    const light = bar(true, "light");
+    expect(light).toMatch(new RegExp(`aria-pressed="true"[^>]*>${t.workspace.sheetThemeDark}<`));
+    const dark = bar(true, "dark");
+    expect(dark).toMatch(new RegExp(`aria-pressed="false"[^>]*>${t.workspace.sheetThemeLight}<`));
+    expect(dark.match(/aria-pressed/g)).toHaveLength(1);
+  });
+
+  it("shows the course line and hides Predaja rada on a read only work", () => {
+    const html = renderToStaticMarkup(
+      createElement(WorkspaceTopBarView, {
+        assignmentId: ID, title: "Izmišljeni rad", subtitle: "Izmišljeni kolegij · rok 8. 11. 2026., 23:59",
+        readOnly: true, online: true, theme: "dark", onTheme: () => {},
+      }),
+    );
+    expect(html).toContain("Izmišljeni kolegij · rok 8. 11. 2026., 23:59");
+    expect(html).not.toContain(t.workspace.submitWork);
   });
 });
 

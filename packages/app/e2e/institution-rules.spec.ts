@@ -2,7 +2,7 @@
 // The history is read only, a 422 shows beside its field, and only the
 // administrator opens the page. Invented people and rules only.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 const ME = (role: string) => ({ role, displayName: "Ana Izmišljena", institution: { slug: "izm", displayName: "Izmišljeni fakultet za testove" } });
 const version = (versionNo: number, over: object = {}) => ({

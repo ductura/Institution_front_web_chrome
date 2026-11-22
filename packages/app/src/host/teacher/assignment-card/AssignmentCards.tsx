@@ -36,6 +36,12 @@ function Field({ name, children }: { name: string; children: string }) {
   return <div><span className={styles.label}>{name}</span>{children}</div>;
 }
 
+/** "Novi kolegij i zadatak": the head's action when there are courses, the card's when there are none. */
+export function NewCourseLink() {
+  const { base } = useHost();
+  return <div className="acts"><a className="btn" href={appHref(base, "/nastavnik/zadatak/novi")}>{t.newCourse}</a></div>;
+}
+
 /** One course card (N-01): role, enrolled, code state, next deadline, the buttons and the tasks. */
 export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
   course: TeacherCourse; here: string; onIssued: () => void; extra?: React.ReactNode;
@@ -85,45 +91,46 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
 
   const unknown = (value: string | null) => value ?? t.unavailableValue;
   const roleText = role === "holder" ? t.roleHolder : role === "collaborator" ? t.roleCollaborator : null;
+  const small = "btn secondary small";
   return (
-    <section className={styles.card} aria-labelledby={id}>
+    <section className={`card ${styles.course}`} aria-labelledby={id}>
       <h2 id={id}>{course.name}</h2>
       <div className={styles.kv}>
         <Field name={t.role}>{unknown(roleText)}</Field>
         <Field name={t.enrolled}>{unknown(team.done ? enrolledText(team.view) : null)}</Field>
         <Field name={t.codeField}>{codeFieldText(role, issued)}</Field>
-        <Field name={t.nextDeadline}>{next ? dueText(next.dueAt) : t.noDeadline}</Field>
-        {course.assignments.length === 0 ? <Field name={t.tasks}>{t.noTasks}</Field> : null}
+        {course.assignments.length === 0 ? <Field name={t.tasks}>{t.noTasks}</Field>
+          : <Field name={t.nextDeadline}>{next ? dueText(next.dueAt) : t.noDeadline}</Field>}
       </div>
       {code ? (
         <>
           <p className={styles.code} aria-label={t.codeLabel}>{code}</p>
-          <p className={styles.meta}>{t.codeOnce}</p>
+          <p className="meta">{t.codeOnce}</p>
         </>
       ) : null}
-      <div className={styles.acts}>
-        <a className="btn secondary small" href={link(`/nastavnik/kolegiji/${encodeURIComponent(course.id)}/studenti`)}>{t.studentList}</a>
-        {role !== "collaborator" ? <a className="btn secondary small" href={link(newAssignmentHref(course.id))}>{t.addTask}</a> : null}
-        {role !== "collaborator" && next ? <a className="btn secondary small" href={link(extensionsHref(next.id))}>{t.extension}</a> : null}
-        <a className="btn secondary small" href={link("/nastavnik/zbirni")}>{t.overview}</a>
+      <div className="acts">
+        <a className={small} href={link(`/nastavnik/kolegiji/${encodeURIComponent(course.id)}/studenti`)}>{t.studentList}</a>
+        {role !== "collaborator" ? <a className={small} href={link(newAssignmentHref(course.id))}>{t.addTask}</a> : null}
+        {role !== "collaborator" && next ? <a className={small} href={link(extensionsHref(next.id))}>{t.extension}</a> : null}
+        <a className={small} href={link("/nastavnik/zbirni")}>{t.overview}</a>
         {role !== "collaborator" && course.assignments[0] !== undefined
-          ? <a className="btn secondary small" href={link(`/nastavnik/zadatak/${encodeURIComponent(course.assignments[0].id)}/merlin`)}>{t.merlin}</a> : null}
-        {role === "holder" ? <Button tone="quiet" onClick={() => setOpen(true)} aria-label={`${t.newCode}: ${course.name}`}>{t.newCode}</Button> : null}
+          ? <a className={small} href={link(`/nastavnik/zadatak/${encodeURIComponent(course.assignments[0].id)}/merlin`)}>{t.merlin}</a> : null}
+        {role === "holder" ? <button type="button" className={small} onClick={() => setOpen(true)} aria-label={`${t.newCode}: ${course.name}`}>{t.newCode}</button> : null}
       </div>
       {tasks ?? course.assignments.map((assignment) => (
         <div key={assignment.id} className={styles.task}>
           <h3>{assignment.title}</h3>
-          <p className={styles.meta}>{t.due} {dueText(assignment.dueAt)}</p>
+          <p className="meta">{t.due} {dueText(assignment.dueAt)}</p>
         </div>
       ))}
       {extra}
       <Dialog open={open} title={t.dialogTitle} onClose={close} dismissible={!busy}
         error={failure ? t.errors[failure] : undefined}
         actions={<>
-          <Button tone="quiet" onClick={close}>{t.cancel}</Button>
           <Button busy={busy} onClick={() => void issue()}>{busy ? t.issuing : t.issue}</Button>
+          <Button tone="secondary" onClick={close}>{t.cancel}</Button>
         </>}>
-        <p className={styles.meta}>{t.dialogLead}</p>
+        <p className="note">{t.dialogLead}</p>
       </Dialog>
     </section>
   );
@@ -136,13 +143,17 @@ export function AssignmentCards({ courses, here, extra, tasks }: {
 }) {
   const { base } = useHost();
   const { toasts, show, dismiss } = useToasts();
-  const newCourse = <a className="btn" href={appHref(base, "/nastavnik/zadatak/novi")}>{t.newCourse}</a>;
   if (courses.length === 0) {
-    return <section className={`${styles.card} ${styles.center}`}><h2>{t.empty}</h2><p>{t.emptyLead}</p>{newCourse}</section>;
+    return (
+      <section className="card center">
+        <h2>{t.empty}</h2>
+        <p className="note">{t.emptyLead}</p>
+        <a className="btn" href={appHref(base, "/nastavnik/zadatak/novi")}>{t.newCourse}</a>
+      </section>
+    );
   }
   return (
     <>
-      <div className={styles.acts}>{newCourse}</div>
       {courses.map((course) => (
         <AssignmentCard key={course.id} course={course} here={here} onIssued={() => show(t.issued)} extra={extra?.(course)}
           tasks={tasks?.(course)} />

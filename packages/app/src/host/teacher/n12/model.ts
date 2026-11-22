@@ -45,3 +45,14 @@ export const checkAddition = (text: string): { ok: true; text: string } | { ok: 
   const trimmed = text.trim();
   return trimmed ? { ok: true, text: trimmed } : { ok: false, message: t.needAddition };
 };
+
+const ZAGREB = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Europe/Zagreb", day: "numeric", month: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hourCycle: "h23",
+});
+const part = (iso: string, type: string) => ZAGREB.formatToParts(new Date(iso)).find((p) => p.type === type)?.value ?? "";
+
+/** "5. 11. 2026." in Zagreb time, as the prototype writes a date. */
+export const dayHr = (iso: string) => `${Number(part(iso, "day"))}. ${Number(part(iso, "month"))}. ${part(iso, "year")}.`;
+
+/** "4. 11. 2026. u 8:30" in Zagreb time, as the prototype writes a moment. */
+export const momentHr = (iso: string) => `${dayHr(iso)} u ${Number(part(iso, "hour"))}:${part(iso, "minute")}`;

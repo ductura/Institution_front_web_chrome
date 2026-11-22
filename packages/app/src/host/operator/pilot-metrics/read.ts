@@ -11,7 +11,7 @@ export type PilotMetricsState = PilotMetricsRead | { kind: "loading" };
 
 export async function readPilotMetrics(options?: ApiOptions): Promise<PilotMetricsRead> {
   try {
-    const answer = await createApi(options)(OPERATION, { params: undefined, query: undefined, body: undefined });
+    const answer = await createApi(options)(OPERATION, { params: undefined, query: {}, body: undefined });
     if (answer.ok) return { kind: "ready", data: answer.body };
     if (answer.status === 401 || answer.status === 403) return { kind: "denied" };
   } catch {

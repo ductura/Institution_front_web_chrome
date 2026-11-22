@@ -1,7 +1,7 @@
 import {
-  AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  EditorOnboarding, EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
-  Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
+  AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, Chip, CodeField, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
+  EditorOnboarding, EditorOutline, ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
+  PillTag, SideShell, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup, type ShortcutListGroup,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
@@ -38,6 +38,7 @@ import { accessDeniedEntries } from "./access-denied";
 import { portableRecordEntries } from "./portable-record";
 import { studentDataExportEntries } from "./student-data-export";
 import { practiceBadgeEntries } from "./practice-badge";
+import { formPartsEntries } from "./form-parts";
 import { provenanceShareEntries } from "./provenance-share";
 import { problemReportEntries } from "./problem-report";
 import { eventDisputeEntries } from "./event-dispute";
@@ -74,6 +75,21 @@ function SearchableListExample() {
     <p role="status">{selected}</p>
   </div>;
 }
+const SIDE_ITEMS = {
+  student: [["/zadaci", "Moji zadaci"], ["/zadaci/kolegiji", "Moji kolegiji"], ["/zadaci/radovi", "Moji radovi"], ["/rad", "Radni prostor"], ["/upis", "Upis u kolegij"]],
+  teacher: [["/nastavnik", "Moji kolegiji"], ["/nastavnik/brz-put", "Brz put"], ["/nastavnik/mentorstva", "Radovi uz mentora"], ["/nastavnik/zbirni", "Zbirni"]],
+} as const;
+const sideShell = (role: "student" | "teacher" | null, navId: string, body: React.ReactNode) => (
+  <SideShell role={role} name="Ductura" homeHref="#" homeLabel={role === "teacher" ? "Ductura, nastavnička početna" : "Ductura, studentska početna"}
+    sideLabel="Bočna navigacija" navLabel="Radni prostor" navId={navId} frame="div"
+    items={role === null ? [] : SIDE_ITEMS[role].map(([href, label]) => ({ href: `#${href}`, label }))}
+    current={role === null ? undefined : `#${SIDE_ITEMS[role][0][0]}`}
+    menuLabel="Izbornik" themeLabel="Promijeni svijetlu ili tamnu temu"
+    account={<Button tone="secondary" size="small">Odjava</Button>}>
+    {body}
+  </SideShell>
+);
+
 // The toast region is fixed to the viewport; in the catalogue it sits in the flow.
 function ToastInline({ toasts }: { toasts: Parameters<typeof ToastRegion>[0]["toasts"] }) {
   return (
@@ -276,6 +292,7 @@ export const ENTRIES = {
   ...portableRecordEntries,
   ...studentDataExportEntries,
   ...practiceBadgeEntries,
+  ...formPartsEntries,
   ...provenanceShareEntries,
   ...problemReportEntries,
   ...eventDisputeEntries,
@@ -408,11 +425,18 @@ export const ENTRIES = {
     puno: () => <Steps currentStep={5} />,
     onemogućeno: () => <p>Koraci predaje trenutačno nisu dostupni.</p>,
   },
+  // VIZ-0: the prototype's .btn, .btn.secondary, .btn.ghost, .btn.small and .btn.dense.
   Button: {
     prazno: () => <Button tone="quiet">Odustani</Button>,
     učitavanje: () => <Button busy>Spremanje…</Button>,
-    greška: () => <Button tone="quiet">Pokušajte ponovno</Button>,
-    puno: () => <Button>Predaj rad</Button>,
+    greška: () => <Button>Pokušaj ponovno</Button>,
+    puno: () => <>
+      <Button>Predaj rad</Button>
+      <Button tone="secondary">Pročitaj upute</Button>
+      <Button tone="ghost">Na početnu</Button>
+      <Button tone="secondary" size="small">Odjava</Button>
+      <Button tone="secondary" size="dense">Usporedi</Button>
+    </>,
     onemogućeno: () => <Button disabled>Predaj rad</Button>,
   },
   TextField: {
@@ -422,6 +446,27 @@ export const ENTRIES = {
     puno: () => <TextField label="Naslov rada" defaultValue="Javne politike u lokalnoj zajednici" hint="Najviše 120 znakova." />,
     onemogućeno: () => <TextField label="Naslov rada" disabled defaultValue="Javne politike u lokalnoj zajednici" />,
   },
+  Chip: {
+    prazno: () => <Chip>Na Vama 0</Chip>,
+    učitavanje: () => <Chip disabled>Učitavanje…</Chip>,
+    greška: () => <Chip pressed>Mora se popraviti 2</Chip>,
+    puno: () => <><Chip pressed>Na Vama 3</Chip> <Chip>Čeka mentora 1</Chip> <Chip>Novo 2</Chip></>,
+    onemogućeno: () => <Chip disabled>Pohvala 1</Chip>,
+  },
+  PillTag: {
+    prazno: () => <PillTag>riješeno</PillTag>,
+    učitavanje: () => <PillTag>Učitavanje…</PillTag>,
+    greška: () => <PillTag tone="err">tekst je obrisan</PillTag>,
+    puno: () => <><PillTag tone="warn">mora se popraviti</PillTag> <PillTag tone="ok">riješeno</PillTag> <PillTag tone="me">na Vama</PillTag> <PillTag tone="new">novo</PillTag></>,
+    onemogućeno: () => <PillTag>zatvoreno</PillTag>,
+  },
+  CodeField: {
+    prazno: () => <CodeField label="Kod kolegija" placeholder="KOD-KOLEGIJA" hint="Kod Vam daje nastavnik. Razmaci, crtice i velika ili mala slova nisu bitni." action={<Button disabled>Upiši</Button>} />,
+    učitavanje: () => <CodeField label="Kod kolegija" busy defaultValue="KOL-D-2026" hint="Upisivanje u kolegij…" action={<Button busy>Upisivanje…</Button>} />,
+    greška: () => <CodeField label="Kod kolegija" defaultValue="K7" error="Kod ima od 8 do 32 slova i brojke. Provjerite ga i upišite ponovno." hint="Kod Vam daje nastavnik. Razmaci, crtice i velika ili mala slova nisu bitni." action={<Button>Upiši</Button>} />,
+    puno: () => <CodeField label="Kod kolegija" defaultValue="KOL-D-2026" hint="Kod Vam daje nastavnik. Razmaci, crtice i velika ili mala slova nisu bitni." action={<Button>Upiši</Button>} />,
+    onemogućeno: () => <CodeField label="Kod kolegija" disabled defaultValue="KOL-D-2026" action={<Button disabled>Upiši</Button>} />,
+  },
   SaveState: {
     prazno: () => <SaveState state="EDITING" />,
     učitavanje: () => <><SaveState state="SAVING_LOCAL" /><SaveState state="SYNCING" /></>,
@@ -429,10 +474,11 @@ export const ENTRIES = {
     puno: () => <><SaveState state="LOCAL_DURABLE" /><SaveState state="SYNCED" /></>,
     onemogućeno: () => <SaveState state="EDITING" blocked />,
   },
+  // VIZ-0: the prototype's .card and its empty (.card.center) and error cards (E-2).
   Card: {
-    prazno: () => <Card title="Moji radovi" empty="Još nema radova." />,
+    prazno: () => <Card center title="Još nemate kolegija." empty="Ovdje će se prikazati Vaši kolegiji i njihovi zadaci." />,
     učitavanje: () => <Card title="Moji radovi" busy />,
-    greška: () => <Card title="Moji radovi" error="Popis se nije učitao. Pokušajte ponovno." />,
+    greška: () => <Card title="Prikaz trenutačno nije dostupan." error="Podatke nije bilo moguće učitati. To ne znači da nema kolegija ili radova." />,
     puno: () => <Card title="Seminarski rad"><p>Uvod u temu i plan poglavlja.</p></Card>,
     onemogućeno: () => <Card title="Moji radovi" disabled><p>Zadatak je zatvoren.</p></Card>,
   },
@@ -493,7 +539,7 @@ export const ENTRIES = {
     prazno: () => <Tag>Bez grupe</Tag>,
     učitavanje: () => <Tag>Učitavanje…</Tag>,
     greška: () => <Tag tone="warn">Rok je prošao</Tag>,
-    puno: () => <><Tag>Grupa A</Tag> <Tag tone="accent">2026./2027.</Tag> <Tag tone="warn">Rok produljen</Tag></>,
+    puno: () => <><Tag>Grupa A</Tag> <Tag tone="warn">Rok za 3 dana</Tag> <Tag tone="open">Prvo pročitajte obavijest</Tag> <Tag tone="accent">2026./2027.</Tag></>,
     onemogućeno: () => <Tag>Zatvoreno</Tag>,
   },
   Skeleton: {
@@ -524,6 +570,24 @@ export const ENTRIES = {
     greška: () => <RouteLoading label={t.student.loading} />,
     puno: () => <RouteLoading label={t.workspace.statusLoading} />,
     onemogućeno: () => <RouteLoading label={t.workspace.panelLoading} />,
+  },
+  // VIZ-0: the prototypes' shell; in the catalogue the page frame is a div (the catalogue has its own main).
+  SideShell: {
+    prazno: () => sideShell(null, "bocna-1", <div className="card center"><h2>Još nemate kolegija.</h2><p className="note">Ovdje će se prikazati Vaši kolegiji i njihovi zadaci.</p></div>),
+    učitavanje: () => sideShell("student", "bocna-2", <Skeleton label="Učitavanje zadataka…" lines={3} />),
+    greška: () => sideShell("student", "bocna-3", <div className="card" role="alert"><h2>Prikaz trenutačno nije dostupan.</h2>
+      <p className="note">Podatke nije bilo moguće učitati. To ne znači da nema kolegija ili radova.</p>
+      <Button style={{ justifySelf: "start" }}>Pokušaj ponovno</Button></div>),
+    puno: () => sideShell("student", "bocna-4", <>
+      <h2>Moji zadaci</h2>
+      <ul className="list">
+        <li className="item"><span className="meta">Kolegij A</span><span className="title">Izmišljeni seminar o lokalnim medijima</span>
+          <span className="meta">Rok: 8. 11. 2026., 23:59 <Tag tone="warn">Rok za 3 dana</Tag></span></li>
+        <li className="item"><span className="meta">Kolegij B</span><span className="title">Izmišljeni esej o javnoj raspravi</span>
+          <span className="meta">Rok: 15. 1. 2027., 23:59 <Tag tone="open">Prvo pročitajte obavijest</Tag></span></li>
+      </ul>
+    </>),
+    onemogućeno: () => sideShell("teacher", "bocna-5", <div className="card"><h2>Moji kolegiji</h2><p className="note">Navigacija je dostupna, kolegiji se još ne prikazuju.</p></div>),
   },
   PanelTabs: {
     prazno: () => <PanelTabs label="Ploče" tabs={[{ id: "komentari", label: "Komentari", content: <p>Još nema komentara.</p> }]} />,

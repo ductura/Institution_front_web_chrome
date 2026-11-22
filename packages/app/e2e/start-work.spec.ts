@@ -1,7 +1,7 @@
 // WEB-1402 (plan M2.1): "Započni rad" on the assignment card, with an invented /api/v1 that
 // keeps the server's rule: one work per student and assignment, made by the first call.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 import { startWorkText as s } from "../src/host/student/start-work/messages.hr";
 

@@ -1,17 +1,28 @@
-/* Toasts (WEB-04): bottom right of the viewport, above the page, never over the sheet's text column on a phone. */
+/*
+ * Toasts (WEB-04) on the prototype's #toast (VIZ-0): centred at the foot of
+ * the viewport, 16 px up (or the safe area), a raised surface on a --rule
+ * edge with 6 px corners, 10 px by 14 px inside, the --lift shadow.
+ */
 .region {
   position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 50;
+  left: 0;
+  right: 0;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  z-index: 60;
   display: grid;
-  gap: 8px;
-  width: min(360px, calc(100vw - 32px));
+  justify-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+  margin: 0 auto;
 }
 
 .inline {
   position: static;
   width: auto;
+  max-width: 100%;
+  margin: 0;
+  justify-items: start;
 }
 
 .region:has(.list:empty + .list:empty) {
@@ -20,28 +31,35 @@
 
 .list {
   display: grid;
-  gap: 8px;
+  justify-items: center;
+  gap: var(--space-2);
+}
+
+.inline .list {
+  justify-items: start;
+}
+
+/* In the flow of a page (a sheet included) the toast sits on --card, which both sheets set under their own ink. */
+.inline .toast {
+  background: var(--card);
 }
 
 .toast {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
-  padding: 10px 12px;
-  border: 1px solid var(--raised-rule);
-  border-left-width: 4px;
-  border-radius: var(--radius-control);
-  background: var(--card);
+  padding: var(--space-2h) var(--space-3h);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--raised);
   color: var(--ink);
   box-shadow: var(--lift);
-  font-size: 13px;
-  line-height: 1.5;
+  max-width: calc(100vw - 32px);
 }
 
 /* The text says it is an error; the edge only points at it. */
 .toast[data-tone="error"] {
   border-color: var(--error);
-  background: var(--error-soft);
 }
 
 .text {
@@ -49,14 +67,21 @@
   margin: 0;
 }
 
+/* Closing stays possible (WCAG 2.2.1), as the prototype's quiet underlined text. */
 .close {
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--field-rule);
+  min-height: var(--target-dense);
+  padding: 0 var(--space-2);
+  border: 0;
   border-radius: var(--radius-control);
   background: transparent;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  text-decoration: underline;
+  text-decoration-color: var(--link-rule);
+  text-underline-offset: 3px;
 }
 
 .close:hover {
   background: var(--hover);
+  color: var(--ink);
 }

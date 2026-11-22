@@ -105,13 +105,13 @@ export default function StatusBar({
   return (
     <footer className={styles.bar} aria-label={t.workspace.status}>
       {readOnly ? (
-        <span>{t.workspace.readOnly}</span>
+        <SaveState state="SYNCED" label={t.workspace.readOnly} />
       ) : save === null ? (
-        <span>{t.workspace.statusNoJournal}</span>
+        <SaveState state="LOCAL_DURABLE" label={t.workspace.statusNoJournal} />
       ) : (
         <Chip state={shownSaveState(save)} blocked={save.blocked} online={online} />
       )}
-      {scope === null ? null : <span>{scope}</span>}
+      {scope === null ? null : <span className={styles.scope}>{scope}</span>}
       {children}
     </footer>
   );

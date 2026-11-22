@@ -37,7 +37,7 @@ test("prijavi problem: the form says the work's content is not sent, and sends n
   page.on("request", (request) => {
     if (request.url().includes("/support/problem-report")) sent.push(request.postDataJSON());
   });
-  await page.getByRole("button", { name: "Otvori navigaciju" }).click();
+  await page.getByRole("button", { name: "Izbornik" }).click();
   await page.getByRole("button", { name: "Prijavi problem" }).click();
   const dialog = page.getByRole("dialog", { name: "Prijavi problem" });
   await expect(dialog).toBeVisible();

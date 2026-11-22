@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 import type ContractVectors from "../../../src/client/migration-contract-vectors.generated.json";
 import { canonicalizeJcs } from "../../editor-core/src/document/forensics/jcs";
@@ -78,7 +78,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
         versions: [{ kind: "submission", revision: 1, savedMinute: "2026-11-20T12:00:00.000Z", afterDeadline: false }],
         nextBeforeRevision: null,
       } });
-      default: throw new Error(`Unexpected fake API request ${url.pathname}`);
+      // LOK-WEB-26: everything else goes to the shared fake server, which fails outside the contract.
+      default: return route.fallback();
     }
   });
   return { seen, allow: () => { access = 200; } };

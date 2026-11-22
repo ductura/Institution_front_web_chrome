@@ -3,7 +3,7 @@
 // profile.interface-locale.post and the whole shell changes language at once,
 // with no new sign-in; dates and numbers follow it. Invented people only.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const ME = { role: "student", displayName: "Iva Izmišljena", institution: { slug: "izm", displayName: "Izmišljeni fakultet za testove" } };
@@ -141,7 +141,7 @@ test("on a narrow screen the settings link closes the navigation drawer", async 
   const fake: Fake = { saved: null, posts: [], me: 0, login: 0 };
   await fakeServer(page, fake);
   await page.goto("/app/web/zadaci");
-  await page.getByRole("button", { name: "Otvori navigaciju" }).click();
+  await page.getByRole("button", { name: "Izbornik" }).click();
   await page.getByRole("link", { name: "Postavke profila" }).click();
   await expect(page).toHaveURL(/\/app\/web\/profil$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Postavke profila");

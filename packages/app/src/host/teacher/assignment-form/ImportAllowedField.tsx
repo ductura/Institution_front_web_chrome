@@ -9,7 +9,7 @@ export function ImportAllowedField({ value, onChange }: { value: boolean; onChan
   return (
     <>
       <Checkbox label={t.label} checked={value} onChange={(event) => onChange(event.target.checked)} />
-      <p>{value ? t.hint : t.off}</p>
+      <p className="meta">{value ? t.hint : t.off}</p>
     </>
   );
 }
