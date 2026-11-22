@@ -5,18 +5,24 @@ import { useId, useState, type FormEvent } from "react";
 import buttonStyles from "../Button.module.css";
 import { Button } from "../Button";
 import { InertButton } from "../assistant-states/InertButton";
+import { Select } from "../Select";
 import { TextArea } from "../TextArea";
 import { TextField } from "../TextField";
 import styles from "./LegalHolds.module.css";
 
+/** What a hold is placed on: a work, a student or an assignment. */
+export type LegalHoldSubjectType = "work" | "student" | "assignment";
+
 /** One active legal hold; `own` is true for a hold the signed-in administrator placed. */
 export type LegalHold = {
   readonly id: string;
+  /** Display text, already composed (e.g. the subject type and its id). */
   readonly subject: string;
   readonly caseReference: string;
   /** Display text, already formatted. */
   readonly placedAt: string;
-  readonly placedByName: string;
+  /** Who placed the hold, when the page knows a name; without it only the time is shown. */
+  readonly placedByName?: string;
   readonly own: boolean;
 };
 
@@ -28,8 +34,14 @@ export type LegalHoldsLabels = {
   loading: string;
   retry: string;
   placedBy: (name: string, at: string) => string;
+  /** The placing time alone, for a hold whose placer has no name to show. */
+  placedOn: (at: string) => string;
   reference: (caseReference: string) => string;
   placeTitle: string;
+  subjectType: string;
+  subjectTypes: Readonly<Record<LegalHoldSubjectType, string>>;
+  subjectTypePlaceholder: string;
+  subjectTypeMissing: string;
   subject: string;
   subjectHint: string;
   caseReference: string;
@@ -59,7 +71,7 @@ export type LegalHoldsState =
 export type LegalHoldsProps = {
   labels: LegalHoldsLabels;
   state: LegalHoldsState;
-  onPlace: (input: { subject: string; caseReference: string }) => void;
+  onPlace: (input: { subjectType: LegalHoldSubjectType; subjectId: string; caseReference: string }) => void;
   onRelease: (id: string, reason: string) => void;
   onRetry?: () => void;
   /** A place or release call is running; the buttons wait. */
@@ -67,6 +79,8 @@ export type LegalHoldsProps = {
   /** The catalogue text of a refused place or release (e.g. 403); shown under the form. */
   actionError?: string;
 };
+
+const SUBJECT_TYPES: readonly LegalHoldSubjectType[] = ["work", "student", "assignment"];
 
 function ReleaseForm({ hold, labels, busy, onRelease, onCancel }: {
   hold: LegalHold; labels: LegalHoldsLabels; busy: boolean; onRelease: (id: string, reason: string) => void; onCancel: () => void;
@@ -82,7 +96,7 @@ function ReleaseForm({ hold, labels, busy, onRelease, onCancel }: {
   };
   return (
     <form className={styles.form} onSubmit={submit} aria-label={labels.releaseTitle(hold.subject)} noValidate>
-      <TextArea label={labels.reason} hint={labels.reasonHint} error={error} value={reason} rows={3} maxLength={500}
+      <TextArea label={labels.reason} hint={labels.reasonHint} error={error} value={reason} rows={3} maxLength={600}
         onChange={(event) => { setReason(event.target.value); setError(undefined); }} autoFocus />
       <div className={styles.actions}>
         <Button type="submit" busy={busy}>{busy ? labels.releasing : labels.confirmRelease}</Button>
@@ -94,13 +108,14 @@ function ReleaseForm({ hold, labels, busy, onRelease, onCancel }: {
 
 /**
  * The institution's legal holds (M10.3, M10.7): the list of active holds, a form to place one
- * (subject and case reference) and the release of a hold with a reason. The administrator cannot
+ * (subject type, subject id and case reference) and the release of a hold with a reason. The administrator cannot
  * release a hold they placed themselves: that button stays focusable but inert, with the reason.
  */
 export function LegalHolds({ labels, state, onPlace, onRelease, onRetry, busy = false, actionError }: LegalHoldsProps) {
+  const [subjectType, setSubjectType] = useState<LegalHoldSubjectType | "">("");
   const [subject, setSubject] = useState("");
   const [caseReference, setCaseReference] = useState("");
-  const [errors, setErrors] = useState<{ subject?: string; caseReference?: string }>({});
+  const [errors, setErrors] = useState<{ subjectType?: string; subject?: string; caseReference?: string }>({});
   const [releasing, setReleasing] = useState<string | null>(null);
   const ownNoteId = useId();
 
@@ -108,12 +123,14 @@ export function LegalHolds({ labels, state, onPlace, onRelease, onRetry, busy = 
     event.preventDefault();
     if (busy) return;
     const found = {
+      ...(subjectType === "" ? { subjectType: labels.subjectTypeMissing } : {}),
       ...(subject.trim() === "" ? { subject: labels.subjectMissing } : {}),
       ...(caseReference.trim() === "" ? { caseReference: labels.caseReferenceMissing } : {}),
     };
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
-    onPlace({ subject: subject.trim(), caseReference: caseReference.trim() });
+    if (subjectType === "" || Object.keys(found).length > 0) return;
+    onPlace({ subjectType, subjectId: subject.trim(), caseReference: caseReference.trim() });
+    setSubjectType("");
     setSubject("");
     setCaseReference("");
   };
@@ -140,7 +157,7 @@ export function LegalHolds({ labels, state, onPlace, onRelease, onRetry, busy = 
               <li key={hold.id} className={styles.item}>
                 <p className={styles.subject}>{hold.subject}</p>
                 <p className={styles.meta}>{labels.reference(hold.caseReference)}</p>
-                <p className={styles.meta}>{labels.placedBy(hold.placedByName, hold.placedAt)}</p>
+                <p className={styles.meta}>{hold.placedByName === undefined ? labels.placedOn(hold.placedAt) : labels.placedBy(hold.placedByName, hold.placedAt)}</p>
                 {releasing === hold.id ? (
                   <ReleaseForm hold={hold} labels={labels} busy={busy} onRelease={onRelease} onCancel={() => setReleasing(null)} />
                 ) : hold.own ? (
@@ -160,9 +177,12 @@ export function LegalHolds({ labels, state, onPlace, onRelease, onRetry, busy = 
       <section className={styles.section} aria-labelledby={`${ownNoteId}-place`}>
         <h3 id={`${ownNoteId}-place`} className={styles.heading}>{labels.placeTitle}</h3>
         <form className={styles.form} onSubmit={place} noValidate>
-          <TextField label={labels.subject} hint={labels.subjectHint} error={errors.subject} value={subject} maxLength={200}
+          <Select label={labels.subjectType} placeholder={labels.subjectTypePlaceholder} error={errors.subjectType} value={subjectType}
+            options={SUBJECT_TYPES.map((value) => ({ value, label: labels.subjectTypes[value] }))}
+            onChange={(event) => setSubjectType(event.target.value as LegalHoldSubjectType | "")} />
+          <TextField label={labels.subject} hint={labels.subjectHint} error={errors.subject} value={subject} maxLength={256}
             onChange={(event) => setSubject(event.target.value)} />
-          <TextField label={labels.caseReference} hint={labels.caseReferenceHint} error={errors.caseReference} value={caseReference} maxLength={100}
+          <TextField label={labels.caseReference} hint={labels.caseReferenceHint} error={errors.caseReference} value={caseReference} maxLength={120}
             onChange={(event) => setCaseReference(event.target.value)} />
           {actionError === undefined ? null : <p role="alert" className={styles.alert}>{actionError}</p>}
           <div className={styles.actions}>

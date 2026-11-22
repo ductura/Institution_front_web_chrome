@@ -7463,7 +7463,7 @@
     "method": "GET",
     "responses": {
       "200": {
-        "description": "the active legal holds",
+        "description": "the holds, possibly none",
         "content": {
           "application/json": {
             "schema": {
@@ -7475,45 +7475,79 @@
               "properties": {
                 "holds": {
                   "type": "array",
-                  "maxItems": 500,
                   "items": {
                     "additionalProperties": false,
                     "type": "object",
                     "required": [
-                      "id",
-                      "subject",
+                      "holdId",
+                      "subjectType",
+                      "subjectId",
                       "caseReference",
+                      "placedBy",
                       "placedAt",
-                      "placedByName",
-                      "own"
+                      "releasedBy",
+                      "releasedAt"
                     ],
                     "properties": {
-                      "id": {
-                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                      "holdId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
                         "type": "string"
                       },
-                      "subject": {
+                      "subjectType": {
+                        "anyOf": [
+                          {
+                            "const": "work",
+                            "type": "string"
+                          },
+                          {
+                            "const": "student",
+                            "type": "string"
+                          },
+                          {
+                            "const": "assignment",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "subjectId": {
                         "minLength": 1,
-                        "maxLength": 200,
+                        "maxLength": 256,
                         "type": "string"
                       },
                       "caseReference": {
                         "minLength": 1,
-                        "maxLength": 100,
+                        "maxLength": 120,
+                        "type": "string"
+                      },
+                      "placedBy": {
+                        "minLength": 1,
                         "type": "string"
                       },
                       "placedAt": {
-                        "format": "date-time",
-                        "maxLength": 24,
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
                         "type": "string"
                       },
-                      "placedByName": {
-                        "minLength": 1,
-                        "maxLength": 200,
-                        "type": "string"
+                      "releasedBy": {
+                        "anyOf": [
+                          {
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       },
-                      "own": {
-                        "type": "boolean"
+                      "releasedAt": {
+                        "anyOf": [
+                          {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     }
                   }
@@ -7543,18 +7577,35 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "subject",
+        "subjectType",
+        "subjectId",
         "caseReference"
       ],
       "properties": {
-        "subject": {
+        "subjectType": {
+          "anyOf": [
+            {
+              "const": "work",
+              "type": "string"
+            },
+            {
+              "const": "student",
+              "type": "string"
+            },
+            {
+              "const": "assignment",
+              "type": "string"
+            }
+          ]
+        },
+        "subjectId": {
           "minLength": 1,
-          "maxLength": 200,
+          "maxLength": 256,
           "type": "string"
         },
         "caseReference": {
           "minLength": 1,
-          "maxLength": 100,
+          "maxLength": 120,
           "type": "string"
         }
       }
@@ -7568,11 +7619,11 @@
               "additionalProperties": false,
               "type": "object",
               "required": [
-                "id"
+                "holdId"
               ],
               "properties": {
-                "id": {
-                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "holdId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
                   "type": "string"
                 }
               }
@@ -7597,11 +7648,11 @@
         "origin_mismatch",
         "cross_site"
       ],
+      "404": [
+        "not_found"
+      ],
       "408": [
         "body_timeout"
-      ],
-      "409": [
-        "conflict"
       ],
       "413": [
         "body_too_large"
@@ -7642,7 +7693,7 @@
       "properties": {
         "reason": {
           "minLength": 1,
-          "maxLength": 500,
+          "maxLength": 600,
           "type": "string"
         }
       }
@@ -7656,17 +7707,16 @@
               "additionalProperties": false,
               "type": "object",
               "required": [
-                "id",
+                "holdId",
                 "releasedAt"
               ],
               "properties": {
-                "id": {
-                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "holdId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
                   "type": "string"
                 },
                 "releasedAt": {
-                  "format": "date-time",
-                  "maxLength": 24,
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
                   "type": "string"
                 }
               }
