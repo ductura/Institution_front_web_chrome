@@ -25,6 +25,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { hostText } from "../../../text";
 import { useHost } from "../../context";
+import { TeacherBibliographyHost } from "../../editor/bibliography/teacher/TeacherBibliographyHost";
 import AiDeclarationSection from "../ai-declaration/AiDeclarationSection";
 import MobileReview from "../mobile-review/MobileReview";
 import { N12Consultations } from "../n12/N12Consultations";
@@ -157,6 +158,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
+            <TeacherBibliographyHost documentId={documentId} submitted={view.submitted} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
           </>}
           <RecordLimits />
