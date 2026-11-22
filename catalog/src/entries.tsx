@@ -36,6 +36,7 @@ import { declarationAiEntries } from "./declaration-ai";
 import { teacherAiAttachmentsEntries } from "./teacher-ai-attachments";
 import { accessDeniedEntries } from "./access-denied";
 import { portableRecordEntries } from "./portable-record";
+import { eventDisputeEntries } from "./event-dispute";
 import { practiceBadgeEntries } from "./practice-badge";
 import { provenanceShareEntries } from "./provenance-share";
 import { problemReportEntries } from "./problem-report";
@@ -272,6 +273,7 @@ export const ENTRIES = {
   ...teacherAiAttachmentsEntries,
   ...accessDeniedEntries,
   ...portableRecordEntries,
+  ...eventDisputeEntries,
   ...practiceBadgeEntries,
   ...provenanceShareEntries,
   ...problemReportEntries,
