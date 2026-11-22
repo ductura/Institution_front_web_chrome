@@ -1,44 +1,51 @@
-/* Form elements of WEB-05, on the measures of TextField.module.css. */
+/* Form elements of WEB-05 on the prototype's .field / .input / .tag / .skel (VIZ-0). */
 /* One column that may shrink below its content, so a long option or label reflows at 320 px (WCAG 1.4.10, WEB-1805). */
-.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-width: 360px; }
-.label { color: var(--ink); font-weight: 600; }
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-1); min-width: 0; }
+.label { font-size: var(--fs-sm); color: var(--ink-3); }
 .input {
-  min-height: 44px; max-width: 100%; padding: 0 12px; font: inherit; color: var(--ink);
+  min-width: 0; min-height: var(--target); max-width: 100%; padding: var(--space-1h) var(--space-2h); font: inherit; color: var(--ink);
   background: var(--field); border: 1px solid var(--field-rule); border-radius: var(--radius-control);
 }
-.area { padding: 10px 12px; line-height: 1.5; resize: vertical; }
+.area { min-height: 88px; line-height: var(--lh-ui); resize: vertical; }
 .input::placeholder { color: var(--field-placeholder); opacity: 1; }
-.input[aria-invalid="true"] { border: 2px solid var(--ink); background: var(--error-soft); }
+.input[aria-invalid="true"] { border-color: var(--field-invalid); border-width: var(--field-invalid-width); }
 .input[aria-busy="true"] { cursor: progress; }
-.input:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); }
-.note { margin: 0; color: var(--ink-3); }
-.note[data-error] { color: var(--ink); font-weight: 600; }
+.input:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); border-color: var(--rule-2); }
+.note { margin: 0; color: var(--ink-3); font-size: var(--fs-sm); }
+.note[data-error] {
+  color: var(--err-ink); font-weight: var(--err-weight);
+  border-left: var(--err-bar) solid var(--warn); padding-left: var(--err-pad);
+}
 
-.check { display: inline-flex; gap: 10px; align-items: center; min-height: 44px; color: var(--ink); cursor: pointer; }
+.check { display: inline-flex; gap: var(--space-2); align-items: center; min-height: var(--target); color: var(--ink); cursor: pointer; }
 .box { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
-.box[aria-invalid="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+.box[aria-invalid="true"] { outline: var(--field-invalid-width) solid var(--field-invalid); outline-offset: 2px; }
 /* The error mark above is an outline too and outranks the global :focus-visible
    ring, so without this an invalid box looks the same focused or not (WCAG 2.4.7). */
 .box[aria-invalid="true"]:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }
 .box:disabled, .box:disabled + span { cursor: not-allowed; color: var(--ink-3); }
 
+/* The prototype's .tag: 12.5 px, 600, square 4 px corners, a 1 px --rule edge. */
 .tag {
-  display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px;
-  font-size: 12px; font-weight: 600; color: var(--ink); background: var(--well); border: 1px solid var(--rule-2);
+  display: inline-block; padding: 1px var(--space-1h); border: 1px solid var(--rule); border-radius: var(--radius-sm);
+  font-size: var(--fs-sm); font-weight: 600; color: var(--ink-2); white-space: nowrap;
 }
-.tag[data-tone="accent"] { border-color: var(--accent); }
-.tag[data-tone="warn"] { border-color: var(--warn); }
+.tag[data-tone="open"] { border-style: dashed; }
+.tag[data-tone="warn"] { border-color: var(--warn); color: var(--ink); }
+.tag[data-tone="accent"] { border-color: var(--accent); color: var(--ink); }
 
-.skeleton { display: grid; gap: 8px; max-width: 360px; }
-.bar { display: block; height: 12px; border-radius: var(--radius-sm); background: var(--well); animation: pulse 1.6s ease-in-out infinite; }
-.bar:last-child:not(:first-of-type) { width: 60%; }
-@keyframes pulse { 50% { opacity: 0.5; } }
+/* The prototype's .skel: 12 px bars on --well, breathing from .55 to 1. */
+.skeleton { display: grid; gap: var(--space-2); }
+.bar { display: block; width: 80%; height: 12px; border-radius: var(--radius-sm); background: var(--well); animation: skel 1.4s ease-in-out infinite alternate; }
+.bar:nth-child(3n + 3) { width: 60%; }
+.bar:nth-child(3n + 4) { width: 40%; }
+@keyframes skel { from { opacity: 0.55; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .bar { animation: none; } }
 .hidden {
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
 }
 
-.details { max-width: 520px; border: 1px solid var(--rule-2); border-radius: var(--radius-control); }
-.summary { min-height: 44px; padding: 0 12px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.details { border: 1px solid var(--rule-2); border-radius: var(--radius); background: var(--card); }
+.summary { min-height: var(--target); padding: 0 var(--space-3); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
 .details[open] > .summary { border-bottom: 1px solid var(--rule-2); }
-.detailsBody { padding: 10px 12px; }
+.detailsBody { padding: var(--space-2h) var(--space-3); display: grid; gap: var(--space-2); }
