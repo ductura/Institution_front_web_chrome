@@ -2,6 +2,8 @@ name: CI
 on:
   push: { branches: [main, "migracija/kopija-ductus-front"] }
   pull_request:
+  # Full e2e matrix once a day (a pull request runs chromium only).
+  schedule: [{ cron: "17 3 * * *" }]
 permissions:
   contents: read
 # A newer push to the same PR or branch cancels the older run, so runners are
@@ -10,7 +12,54 @@ concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  # Which jobs a change needs (Daniel, 22. 11. 2026: skip what a change cannot
+  # touch). A push to the base, a change to a root file (package.json, the
+  # lockfiles, pnpm-workspace.yaml, playwright and tsconfig), to .github/ (this
+  # file included), or a diff that cannot be read, runs EVERY job. Otherwise a
+  # job runs when a path it reads changed. src/ feeds ui (pnpm -r runs the
+  # tests of every workspace package) and app (it imports src/), so a change
+  # there runs both.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      test: ${{ steps.paths.outputs.test }}
+      client: ${{ steps.paths.outputs.client }}
+      ui: ${{ steps.paths.outputs.ui }}
+      app: ${{ steps.paths.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0, persist-credentials: false }
+      - name: Which jobs does this change need
+        id: paths
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # changes:begin
+          set -uo pipefail
+          all() { for j in test client ui app; do echo "$j=true" >> "$GITHUB_OUTPUT"; done; echo "changes: running every job ($1)"; exit 0; }
+          [ "$EVENT" = "pull_request" ] || all "not a pull request"
+          [ -n "$BASE" ] || all "no base sha"
+          files="$(git diff --name-only "$BASE" HEAD)" || all "diff failed"
+          [ -n "$files" ] || all "empty diff"
+          # Root files, .github/, the lockfiles and the workspace file.
+          # Root markdown files are documentation: they need no job.
+          if grep -Ev '^[^/]+\.md$' <<< "$files" | grep -Eq '^([^/]+|\.github/.*)$'; then all "root file or .github/"; fi
+          hit() { if grep -Eq "$1" <<< "$files"; then echo true; else echo false; fi; }
+          t=false
+          if grep -Ev '^src/client/' <<< "$files" | grep -Eq '^(src/|test/|tests/|e2e/|locales/|config/|public/|scripts/)'; then t=true; fi
+          c="$(hit '^(src/client/|packages/editor-core/)')"
+          u="$(hit '^(packages/|catalog/|src/|scripts/forbidden-terms/|locales/)')"
+          a="$(hit '^(packages/|src/|locales/)')"
+          printf 'test=%s\nclient=%s\nui=%s\napp=%s\n' "$t" "$c" "$u" "$a" | tee -a "$GITHUB_OUTPUT"
+          # changes:end
   test:
+    needs: changes
+    if: ${{ needs.changes.outputs.test == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,15 +69,25 @@ jobs:
       - name: Testovi pomoćnih funkcija
         run: npm run test:helpers
       # e2e matrica (DAN-755): svi preglednici matrice; chrome i msedge su
-      # pravi Google Chrome i Microsoft Edge, obvezni u CI-ju.
+      # pravi Google Chrome i Microsoft Edge, obvezni u CI-ju. Na pull
+      # requestu samo chromium (Daniel, 22. 11. 2026: brži CI); puna matrica
+      # na push (baza, main) i na noćnom rasporedu.
       - name: Instalacija preglednika
+        if: ${{ github.event_name != 'pull_request' }}
         run: npx playwright install --with-deps chromium chrome msedge firefox webkit
+      - name: Instalacija preglednika (pull request, samo chromium)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npx playwright install --with-deps chromium
       - name: Funkcionalni testovi
+        env:
+          DUCTURA_PR_CHROMIUM_ONLY: ${{ github.event_name == 'pull_request' }}
         run: npm run test:functional
       - uses: actions/upload-artifact@v4
         if: failure()
         with: { name: playwright-report, path: test-results/ }
   client:
+    needs: changes
+    if: ${{ needs.changes.outputs.client == 'true' }}
     # src/client (DAN-752, web 2.c3): the client generated from @ductura/contracts.
     # Its own package and lockfile, so only this job reads GitHub Packages; the
     # job token, read only, is passed to the install step only.
@@ -66,6 +125,8 @@ jobs:
   # @ductura/ui and its catalogue (DAN-750, web 2.c1): typecheck, unit tests,
   # visual baselines and axe. Moved from ui.yml so ci-ok can need it (DAN-885).
   ui:
+    needs: changes
+    if: ${{ needs.changes.outputs.ui == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -103,6 +164,8 @@ jobs:
   # built and served by dev-server.mjs under /app/web/ and /app/chrome/, over a
   # fake institution server (page.route), with axe.
   app:
+    needs: changes
+    if: ${{ needs.changes.outputs.app == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -129,7 +192,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: ${{ always() }}
-    needs: [test, client, ui, app]
+    needs: [changes, test, client, ui, app]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
@@ -145,8 +208,16 @@ jobs:
             echo "::error::needs must be a non-empty JSON object"
             exit 1
           fi
-          problems="$(jq -r 'to_entries[] | ((.value | objects | .result) // "missing") as $r
-            | select($r != "success") | "job \(.key) result: \($r)"' <<< "$NEEDS")"
+          # A job may be skipped only when `changes` said, in its own output,
+          # that the job is not needed ("false"). Everything that is not
+          # success (failure, cancelled, an unexpected skip, a missing result)
+          # fails, and so does `changes` itself.
+          problems="$(jq -r '. as $n | to_entries[] | .key as $k
+            | ((.value | objects | .result) // "missing") as $r
+            | ((($n.changes | objects | .result) // "") == "success") as $changed
+            | ((($n.changes | objects | .outputs | objects | .[$k]) // "") == "false") as $notNeeded
+            | select($r != "success" and ($r != "skipped" or $k == "changes" or ($changed | not) or ($notNeeded | not)))
+            | "job \($k) result: \($r)"' <<< "$NEEDS")"
           if [ -n "$problems" ]; then
             while IFS= read -r line; do echo "::error::$line"; done <<< "$problems"
             exit 1

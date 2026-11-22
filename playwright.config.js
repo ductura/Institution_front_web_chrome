@@ -8,6 +8,10 @@ const ci = Boolean(process.env.CI);
 // DUCTURA_BRANDED=1; inače se ta dva projekta ne registriraju (nema preskakanja).
 const branded = ci || process.env.DUCTURA_BRANDED === '1';
 
+// Na pull requestu CI vrti samo projekt chromium (brži CI); puna matrica ide na
+// push na bazu i main te na noćnom rasporedu. Bez varijable matrica je cijela.
+const chromiumOnly = process.env.DUCTURA_PR_CHROMIUM_ONLY === 'true';
+
 const matrix = [
   { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   { name: 'chrome', branded: true, use: { ...devices['Desktop Chrome'], channel: 'chrome' } },
@@ -30,5 +34,5 @@ export default defineConfig({
   fullyParallel: false,
   use: { baseURL: 'http://127.0.0.1:5173', trace: 'retain-on-failure' },
   webServer: { command: 'node dev-server.mjs', url: 'http://127.0.0.1:5173', reuseExistingServer: !ci },
-  projects: matrix.filter((p) => branded || !p.branded).map(({ name, use }) => ({ name, use })),
+  projects: matrix.filter((p) => (branded || !p.branded) && (!chromiumOnly || p.name === 'chromium')).map(({ name, use }) => ({ name, use })),
 });
