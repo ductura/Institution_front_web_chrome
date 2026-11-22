@@ -72,7 +72,7 @@ describe("submitDecision over a synthetic transport (B-6)", () => {
   it("\"Odbij\" → \"Odbij zahtjev\" sends the trimmed reason, then drops the request and reads the page again", async () => {
     const { call, calls } = transport({ ok: true, status: 200, body: { decision: "decline" } });
     const { seen, deps: d } = deps(call);
-    expect(await submitDecision(d, ONE, "decline", "  Tema je izvan mog područja.  ")).toEqual({ tone: "status", text: t.declined, drop: true });
+    expect(await submitDecision(d, ONE, "decline", "  Tema je izvan mog područja.  ")).toEqual({ tone: "status", text: t.declinedWithReason, drop: true });
     expect(calls).toEqual([["teacher.mentorship-request-decision.post",
       { params: undefined, query: undefined, body: { requestId: ONE.requestId, decision: "decline", reason: "Tema je izvan mog područja." } }]]);
     expect(seen).toEqual({ refresh: 1, signIn: 0 });
@@ -131,6 +131,13 @@ describe("MentorshipRequests", () => {
     expect(html).toContain(`aria-label="${t.approve}: Iva Izmišljena"`);
     expect(html).toContain(`aria-label="${t.decline}: ${t.unnamed}"`);
     expect(shown).not.toContain(t.approved);
+  });
+
+  it("tells the student sees the reason only when one was typed (N-16)", () => {
+    const ok = { kind: "odluceno", requestId: "x", decision: "decline" } as const;
+    expect(decisionNote(ok, "decline", true)?.text).toBe("Zahtjev je odbijen. Student vidi odgovor i razlog.");
+    expect(decisionNote(ok, "decline", false)?.text).toBe("Zahtjev je odbijen. Student vidi odgovor.");
+    expect(t.empty).toBe("Nema zahtjeva na čekanju.");
   });
 
   it("says when there is no request", () => {

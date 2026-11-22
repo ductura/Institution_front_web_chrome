@@ -1,0 +1,40 @@
+// N-06 "Rad" (WEB-2150, PARITET N-06 br. 10): interface text exactly as in the prototype
+// (Ductura_nastavnik.html, screen "rad") and INVENTAR-nastavnik. Dorada (dd-h) is another task.
+export const workFrameMessages = {
+  backToCourses: "Natrag na kolegije",
+  noName: "Ime studenta nije dostupno",
+  workKind: "Rad",
+  titleUnavailable: "Naziv zadatka nije dostupan",
+  loading: "Učitavam rad s poslužitelja…",
+  error: "Rad trenutačno nije moguće učitati. Tekst rada i zapis time nisu zahvaćeni.",
+  retry: "Pokušaj ponovno",
+  notStarted: "Rad još nije započet. Student još nije potvrdio obavijest o zadatku, pa nema teksta ni zapisa.",
+  linksLabel: "Pogledi na rad",
+  linkSubmission: "Što je student predao",
+  linkSummary: "Sažetak procesa",
+  linkReplay: "Reprodukcija",
+  linkCompare: "Usporedba verzija",
+  linkConsultations: "Konzultacije",
+  prev: "Prethodni rad",
+  next: "Sljedeći rad",
+  steps: "Drugi radovi",
+  seqLabel: "Slijed rada",
+  seqEmpty: "Još ništa nije poslano na pregled ni predano.",
+  seqSubmitted: (when: string, version: number): string => `Predano ${when} · verzija ${version}`,
+  submitted: (when: string, due: string, late: boolean, version: number, gaps: boolean): string =>
+    `Predano ${when}${late ? `, nakon roka (rok ${due})` : ` · rok ${due}`} · verzija ${version} · ${gaps ? "zapis ima praznine" : "zapis je cjelovit"}`,
+  submittedBare: (late: boolean): string => `Predano${late ? ", nakon roka" : ""} · vrijeme, rok i verzija nisu dostupni`,
+  live: "U pisanju · prikaz se osvježava dok student piše",
+  lastChange: (when: string): string => ` · zadnja promjena ${when}`,
+  dueLine: (due: string): string => ` · rok ${due}`,
+  extended: (until: string): string => ` · rok produljen do ${until}`,
+  notSubmitted: (due: string, last: string | null): string =>
+    `Nije predano · rok ${due} je prošao · prikazan je zadnji tekst koji je poslužitelj primio${last === null ? "" : ` (${last})`}`,
+  pending: "Predaja je zabilježena, potvrda još nije potpisana.",
+  gaps: (from: string, to: string): string =>
+    `Zapis ima praznine. Od verzije ${from} do verzije ${to} poslužitelj je primio obje verzije, ali ne i odsječke između njih, pa promjene u tom rasponu nisu zabilježene pojedinačno. Tekst predane verzije je potpun.`,
+  gapsPlain: "Zapis ima praznine. Poslužitelj je primio obje verzije, ali ne i odsječke između njih, pa promjene u tom rasponu nisu zabilježene pojedinačno. Tekst predane verzije je potpun.",
+  gapsLink: "Otvori sažetak procesa",
+  notSubmittedBanner: "Rad nije predan do roka. Rok možete produljiti; produljenje se bilježi.",
+  extensionLink: "Produljenje roka",
+} as const;

@@ -2,17 +2,19 @@
 import type { HistoryCall, HistoryEvent } from "./contract";
 
 export const ASSIGNMENT = "00000000-0000-4000-8000-0000000000a1";
-const STUDENT_A = "5e4d3c2b-1a09-4f8e-8d7c-6b5a4f3e2d01";
-const STUDENT_B = "5e4d3c2b-1a09-4f8e-8d7c-6b5a4f3e2d02";
+export const STUDENT = "5e4d3c2b-1a09-4f8e-8d7c-6b5a4f3e2d01";
+const FIRST = "00000000-0000-4000-8000-0000000000e1";
+const SECOND = "00000000-0000-4000-8000-0000000000e3";
 const ok = (body: unknown) => ({ ok: true as const, status: 200, body });
 
-export const FAKE_EVENTS: readonly HistoryEvent[] = [
-  { eventId: "00000000-0000-4000-8000-0000000000e1", studentId: STUDENT_A, kind: "submitted", revision: 7, at: "2026-12-01T09:00:00.000Z" },
-  { eventId: "00000000-0000-4000-8000-0000000000e2", studentId: STUDENT_A, kind: "withdrawn", revision: 7, at: "2026-12-01T10:00:00.000Z" },
-  { eventId: "00000000-0000-4000-8000-0000000000e3", studentId: STUDENT_B, kind: "submitted", revision: 3, at: "2026-12-01T10:00:00.000Z" },
+/** As the server sends them: a submission, its withdrawal and a later submission after the deadline. */
+export const FAKE_EVENTS: readonly (HistoryEvent & { receipt: null })[] = [
+  { kind: "submission", id: FIRST, attempt: 1, submissionId: FIRST, revision: 7, at: "2026-12-01T09:00:00.000Z", afterDeadline: false, receipt: null },
+  { kind: "withdrawal", id: "00000000-0000-4000-8000-0000000000e2", attempt: 1, submissionId: FIRST, revision: 7, at: "2026-12-01T10:00:00.000Z", receipt: null },
+  { kind: "submission", id: SECOND, attempt: 2, submissionId: SECOND, revision: 8, at: "2026-12-01T10:00:00.000Z", afterDeadline: true, receipt: null },
 ];
 
-export function fakeHistoryServer(events: readonly HistoryEvent[] = FAKE_EVENTS, opts: { enabled?: boolean; forbidSave?: boolean } = {}) {
+export function fakeHistoryServer(events: readonly unknown[] = FAKE_EVENTS, opts: { enabled?: boolean; forbidSave?: boolean } = {}) {
   let enabled = opts.enabled ?? true;
   const call: HistoryCall = async (id, input) => {
     if (id === "teacher.submission-history.get") return ok({ events });

@@ -1,0 +1,7 @@
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0; padding: 0; list-style: none; }
+.chip, .tag { border: 1px solid var(--rule, currentColor); border-radius: 999px; padding: 0.1rem 0.6rem; font-size: 0.8125rem; color: var(--ink); background: var(--paper-soft, transparent); }
+.tag { margin-left: 0.5rem; }
+.meta { margin: 0.25rem 0 0; font-size: 0.875rem; color: var(--ink); }
+.skeleton { display: grid; gap: 0.75rem; }
+.bar { height: 4.5rem; border-radius: 6px; background: var(--paper-soft, #e6e2d8); }
+.retry { cursor: pointer; }

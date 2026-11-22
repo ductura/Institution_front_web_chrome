@@ -1,6 +1,6 @@
-import { StudentPage } from "../../../../src/host/pages";
+import { MyCoursesPage } from "../../../../src/host/student/courses/CoursesPages";
 
-/** S02 the student's courses (student.assignments.get). */
+/** E-3 "Moji kolegiji" (WEB-2103): student.assignments.get with groups, type and mentor. */
 export default function Page() {
-  return <StudentPage view="courses" />;
+  return <MyCoursesPage />;
 }

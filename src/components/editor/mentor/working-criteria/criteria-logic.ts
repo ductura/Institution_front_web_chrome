@@ -4,6 +4,9 @@ import {
 
 import { workingCriteriaHr as t } from "./messages.hr";
 
+/** The criterion's text, from its id (the server's label is only a message key). */
+export const criterionTitle = (criterion: WorkingCriterion): string => t.criteria[criterion.id];
+
 /** How many criteria carry an assessment: the "X od 6" of the heading. */
 export const doneCount = (criteria: readonly WorkingCriterion[]): number =>
   criteria.filter((c) => c.assessment !== null).length;
@@ -25,7 +28,7 @@ export function noteChange(criterion: WorkingCriterion, text: string): Criterion
 
 /** The list with the saved criterion in its place; the order of the six never changes. */
 export const withSaved = (criteria: readonly WorkingCriterion[], saved: WorkingCriterion): WorkingCriterion[] =>
-  criteria.map((c) => (c.criterionId === saved.criterionId ? saved : c));
+  criteria.map((c) => (c.id === saved.id ? saved : c));
 
 /** What the card says after a write that did not save. A success is shown only from the server's answer (B-6). */
 export function failureText(outcome: Exclude<CriterionWrite, { kind: "saved" }>): string {
