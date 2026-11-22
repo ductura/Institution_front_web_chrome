@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { appHref } from "../../../../../src/components/index.ts";
-import EnrollForm from "../../../../../src/components/student/upis/EnrollForm.tsx";
+import EnrolForm from "./enrol/EnrolForm";
 import styles from "../../../../../src/components/student/upis/Enroll.module.css";
 import { courseHref, noticeHref, readCourse, type CourseRead } from "../../../../../src/components/student/upis/course-read.ts";
 import { createApi, leaveFor, signInHref } from "../../../../../src/client/api.ts";
@@ -32,7 +32,7 @@ export function EnrollPage() {
     <div className={`page ${styles.screen}`}>
       <section className={styles.card}>
         <h1>{t.student.enroll.heading}</h1>
-        <EnrollForm signInHref={signInHref(appHref(base, "/upis"))} navigate={go} />
+        <EnrolForm signInHref={signInHref(appHref(base, "/upis"))} navigate={go} />
       </section>
     </div>
   );

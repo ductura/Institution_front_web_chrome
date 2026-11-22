@@ -1,8 +1,6 @@
-import { PendingPage } from "../../../src/host/pages";
+import { WorkIndex } from "../../../src/host/student/work/index";
 
-// TREBA API: student.assignment-work.get with live.document.get/put and evidence.*; src/client has no module for the work editor yet.
-// Source: Ductus src/app/rad/page.tsx, copied to src/app/rad/.
-/** "Radni prostor": the work editor. */
+/** "Radni prostor": the work in progress, or the list of them (E-7; WEB-2105). */
 export default function Page() {
-  return <PendingPage />;
+  return <WorkIndex />;
 }

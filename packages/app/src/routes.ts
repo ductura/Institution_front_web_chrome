@@ -11,6 +11,7 @@ import type { SessionRole } from "../../../src/client/api.ts";
 import type { Base } from "./bases";
 import { studentDataExportMessages } from "./host/institution/student-data-export/messages.hr";
 import { studentDataDownloadMessages } from "./host/public/student-data-download/messages.hr";
+import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { hostText } from "./text";
 
@@ -89,6 +90,8 @@ export const PAGES: readonly Page[] = [
   { path: "/rad/[assignmentId]/dnevnik-pristupa", label: t.accessLog.context, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/reprodukcija", label: t.replay.titleStudent, kind: "pending", roles: ["student"] },
   { path: "/nastavnik/kolegiji", label: t.teacherCourses.title, kind: "teacherCourses", roles: ["teacher"], current: "/nastavnik" },
+  // WEB-2143: N-04 "Popis studenata", reached from the course card (N-01).
+  { path: "/nastavnik/kolegiji/[courseId]/studenti", label: courseStudentsMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/rad/[id]", label: t.liveView.context, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/reprodukcija", label: t.replay.titleTeacher, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/predaja", label: workText.receipt.title, kind: "pending", roles: ["teacher"] },

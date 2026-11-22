@@ -1,0 +1,40 @@
+/* E-6: the three columns of the prototype (.up-cols) and the faculty rule (details). */
+.cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 28px;
+}
+
+.cols > section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cols h2 {
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.faculty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.faculty summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.faculty h3 {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
