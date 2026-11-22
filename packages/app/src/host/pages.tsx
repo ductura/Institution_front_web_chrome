@@ -17,6 +17,7 @@ import { hostText } from "../text";
 import { useHost } from "./context";
 import { teacherShellHr } from "./teacher/shell/messages.hr";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
+import { courseStudentsMessages } from "./teacher/n04/messages.hr";
 import { startWorkAction } from "./student/start-work/action";
 import SignInScreen from "./signin/SignInScreen";
 import { signInViewOf } from "./signin/sign-in-view";
@@ -146,7 +147,10 @@ export function TeacherCoursesPage() {
   const tc = t.teacherCourses;
   return <TeacherPage title={tc.title} lead={tc.lead} loading={teacherShellHr.loadingCourses} read={read} retry={retry} unavailable={tc.unavailable} retryLabel={tc.retry}
     ready={(courses) => <TeacherCourses courses={courses}
-      courseDetails={(course) => <CourseTeachingTeam courseId={course.id} courseName={course.name} />} />} />;
+      courseDetails={(course) => <>
+        <p><a href={appHref(base, `/nastavnik/kolegiji/${encodeURIComponent(course.id)}/studenti`)}>{courseStudentsMessages.link}</a></p>
+        <CourseTeachingTeam courseId={course.id} courseName={course.name} />
+      </>} />} />;
 }
 
 /** N-16 "Radovi uz mentora" over teacher.mentorships.get. */
