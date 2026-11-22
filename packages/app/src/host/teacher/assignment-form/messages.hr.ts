@@ -21,6 +21,7 @@ export const assignmentFormHr = {
     label: "Probni zadatak (bez ocjene)",
     hint: "Student i nastavnik vide oznaku „Probni”. Probni zadatak nema polje ocjene.",
     off: "Zadatak se vrednuje kao i obično.",
+    fixed: "Vrsta zadatka određuje se pri objavi. Nova verzija je ne mijenja.",
   },
   groups: {
     legend: "Grupe",

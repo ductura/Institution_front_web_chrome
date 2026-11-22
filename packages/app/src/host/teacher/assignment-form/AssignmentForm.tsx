@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionRow, Button, Checkbox, FieldGrid, FormSection as Section, Notice, OptionGroup, Select, SummaryList, TextArea, TextField } from "@ductura/ui";
+import { ActionRow, Button, FieldGrid, FormSection as Section, Notice, OptionGroup, Select, SummaryList, TextArea, TextField } from "@ductura/ui";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -15,14 +15,15 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { checkForm, errorSummary, withPractice, type FormErrors } from "./form-checks";
 import { ImportAllowedField } from "./ImportAllowedField";
+import { PracticeField } from "./PracticeField";
 import { assignmentFormHr as f } from "./messages.hr";
 import { publishHr } from "../publish/messages.hr";
 import { CheckListLink, PublishDone } from "../publish/PublishDone";
 import { isUncertain, publishOutcome } from "../publish/publish-outcome";
 
 type Course = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
-/** `practice` is the practice-assignment flag (WEB-1901); the server stores it and returns it, no grade field exists for it. */
-type PracticeBody = NonNullable<ReturnType<typeof assignmentBody>> & { practice?: true };
+/** `isPractice` is the contract's practice-assignment flag (WEB-1901); the server stores it and returns it, no grade field exists for it. */
+type PracticeBody = NonNullable<ReturnType<typeof assignmentBody>> & { isPractice?: true };
 type Publish = (courseId: string, body: PracticeBody, requestKey: string) => Promise<AssignmentCreation>;
 type FormDraft = AssignmentDraft & { practice?: boolean };
 type Phase = "form" | "review" | "publishing" | "published";
@@ -138,8 +139,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
             onChange={(event) => set("workType", event.target.value as WorkType)} />
           <TextArea label={f.fields.description} rows={4} value={draft.instructions} maxLength={20_000}
             {...invalid("instructions")} onChange={(event) => set("instructions", event.target.value)} />
-          <Checkbox label={f.practice.label} checked={draft.practice === true} hint={draft.practice === true ? f.practice.hint : f.practice.off}
-            onChange={(event) => set("practice", event.target.checked)} />
+          <PracticeField checked={draft.practice === true} onChange={(value) => set("practice", value)} />
         </Section>
 
         <Section id="zs-2" title={f.sections.schedule}>
