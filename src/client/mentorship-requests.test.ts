@@ -1,5 +1,5 @@
-// WEB-30 (N-16, B-6): mentorship requests for the teacher over invented
-// answers until contract 3.2.0 (TODO(ugovor)). All data is invented.
+// WEB-30 (N-16, B-6), LOK-WEB-5: mentorship requests for the teacher in the
+// server's shape (openapi v1). All data is invented.
 import { describe, expect, it } from "vitest";
 import {
   decideMentorshipRequest, decisionSendable, readMentorshipRequests, REASON_MAX, type MentorshipCall,
@@ -7,10 +7,13 @@ import {
 
 const REQUEST = "2d8b3e4a-6c7f-4a01-9c3d-4e5f6a7b8c9d";
 const OTHER = "3e9c4f5b-7d80-4b12-8d4e-5f6a7b8c9d0e";
+// As the server sends it, and as the client gives it to the page.
 const request = {
-  requestId: REQUEST, studentName: "Iva Izmišljena", title: "Izmišljeni naslov završnog rada",
+  requestId: REQUEST, student: { givenName: "Iva", familyName: "Izmišljena" },
   workType: "bachelor_thesis", requestedAt: "2026-11-10T08:00:00Z",
 };
+const shown = { requestId: REQUEST, studentName: "Iva Izmišljena", workType: "bachelor_thesis", requestedAt: "2026-11-10T08:00:00Z" };
+const NO_INPUT = { params: undefined, query: undefined };
 
 function answer(status: number, body: unknown, calls: Parameters<MentorshipCall>[] = []): MentorshipCall {
   return async (...call) => {
@@ -21,13 +24,13 @@ function answer(status: number, body: unknown, calls: Parameters<MentorshipCall>
 
 const nepoznato = { kind: "nepoznato" };
 
-describe("readMentorshipRequests (TODO(ugovor))", () => {
-  it("one call, the list as given; an empty list is empty", async () => {
+describe("readMentorshipRequests", () => {
+  it("one call; the student's two names become one, an unnamed one stays null; an empty list is empty", async () => {
     const calls: Parameters<MentorshipCall>[] = [];
-    const nameless = { ...request, requestId: OTHER, studentName: null };
+    const nameless = { ...request, requestId: OTHER, student: null };
     expect(await readMentorshipRequests(answer(200, { requests: [request, nameless] }, calls)))
-      .toEqual({ kind: "ready", requests: [request, nameless] });
-    expect(calls).toEqual([["teacher.mentorship-requests.get", {}]]);
+      .toEqual({ kind: "ready", requests: [shown, { ...shown, requestId: OTHER, studentName: null }] });
+    expect(calls).toEqual([["teacher.mentorship-requests.get", NO_INPUT]]);
     expect(await readMentorshipRequests(answer(200, { requests: [] }))).toEqual({ kind: "ready", requests: [] });
   });
 
@@ -35,6 +38,9 @@ describe("readMentorshipRequests (TODO(ugovor))", () => {
     ["an unknown field on the list", { requests: [], more: true }],
     ["an unknown field on a request", { requests: [{ ...request, email: "iva@example.invalid" }] }],
     ["an unknown work type", { requests: [{ ...request, workType: "short_paper" }] }],
+    ["a seminar paper (not a server work type)", { requests: [{ ...request, workType: "seminar_paper" }] }],
+    ["the old flat name with a title", { requests: [shown] }],
+    ["a student without a family name", { requests: [{ ...request, student: { givenName: "Iva" } }] }],
     ["a time that is not a date", { requests: [{ ...request, requestedAt: "jučer" }] }],
     ["the same request twice", { requests: [request, request] }],
   ])("%s is nepoznato, never shown", async (_name, body) => {
@@ -48,17 +54,17 @@ describe("readMentorshipRequests (TODO(ugovor))", () => {
   });
 });
 
-describe("decideMentorshipRequest (TODO(ugovor), B-6)", () => {
+describe("decideMentorshipRequest (B-6)", () => {
   it("approve sends no reason; odluceno only from the server's answer", async () => {
     const calls: Parameters<MentorshipCall>[] = [];
-    const outcome = await decideMentorshipRequest(answer(200, { requestId: REQUEST, decision: "approve" }, calls), { requestId: REQUEST, decision: "approve" });
-    expect(calls).toEqual([["teacher.mentorship-request-decision.post", { body: { requestId: REQUEST, decision: "approve" } }]]);
+    const outcome = await decideMentorshipRequest(answer(200, { decision: "approve", mentorshipId: OTHER }, calls), { requestId: REQUEST, decision: "approve" });
+    expect(calls).toEqual([["teacher.mentorship-request-decision.post", { ...NO_INPUT, body: { requestId: REQUEST, decision: "approve" } }]]);
     expect(outcome).toEqual({ kind: "odluceno", requestId: REQUEST, decision: "approve" });
   });
 
   it("decline with and without a reason up to 600 characters", async () => {
     const calls: Parameters<MentorshipCall>[] = [];
-    const ok = answer(200, { requestId: REQUEST, decision: "decline" }, calls);
+    const ok = answer(200, { decision: "decline" }, calls);
     const reason = "r".repeat(REASON_MAX);
     expect(await decideMentorshipRequest(ok, { requestId: REQUEST, decision: "decline", reason }))
       .toEqual({ kind: "odluceno", requestId: REQUEST, decision: "decline" });
@@ -85,9 +91,11 @@ describe("decideMentorshipRequest (TODO(ugovor), B-6)", () => {
   });
 
   it.each([
-    ["another request", { requestId: OTHER, decision: "approve" }],
-    ["the other decision", { requestId: REQUEST, decision: "decline" }],
-    ["an unknown field", { requestId: REQUEST, decision: "approve", mentorshipId: OTHER }],
+    ["the other decision", { decision: "decline" }],
+    ["an approval without a mentorship", { decision: "approve" }],
+    ["a malformed mentorship id", { decision: "approve", mentorshipId: "nije-id" }],
+    ["the old answer with the request id", { requestId: REQUEST, decision: "approve" }],
+    ["an unknown field", { decision: "approve", mentorshipId: OTHER, more: true }],
     ["no body", null],
   ])("an answer naming %s is nepoznato, never a success", async (_name, body) => {
     expect(await decideMentorshipRequest(answer(200, body), { requestId: REQUEST, decision: "approve" })).toEqual(nepoznato);
@@ -95,7 +103,7 @@ describe("decideMentorshipRequest (TODO(ugovor), B-6)", () => {
 
   it.each([
     [401, { kind: "session-expired" }],
-    [404, { kind: "greska", code: "not_found" }],
+    [404, nepoznato],
     [409, { kind: "vec-odluceno" }],
     [422, { kind: "greska", code: "invalid" }],
     [403, nepoznato],
@@ -103,7 +111,7 @@ describe("decideMentorshipRequest (TODO(ugovor), B-6)", () => {
     [503, nepoznato],
     [201, nepoznato],
   ])("%i reads %o", async (status, expected) => {
-    const body = { requestId: REQUEST, decision: "approve" };
+    const body = { decision: "approve", mentorshipId: OTHER };
     expect(await decideMentorshipRequest(answer(status, body), { requestId: REQUEST, decision: "approve" })).toEqual(expected);
   });
 

@@ -775,7 +775,6 @@ export const hr = {
     approved: "Zahtjev je odobren. Rad je u popisu radova uz mentora.",
     declined: "Zahtjev je odbijen.",
     alreadyDecided: "O ovom je zahtjevu već odlučeno ili ga je student povukao.",
-    notFound: "Zahtjev više nije dostupan.",
     invalid: "Razlog nije valjan. Skratite ga i pokušajte ponovno.",
     unknown: "Nije poznato je li odluka zabilježena. Osvježite stranicu prije novog pokušaja.",
   },

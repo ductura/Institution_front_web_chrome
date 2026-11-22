@@ -721,7 +721,6 @@ const en = {
     approved: "The request is approved. The work is in the list of mentored works.",
     declined: "The request is declined.",
     alreadyDecided: "This request has already been decided or the student withdrew it.",
-    notFound: "The request is no longer available.",
     invalid: "The reason is not valid. Shorten it and try again.",
     unknown: "It is not known whether the decision was recorded. Reload the page before trying again.",
   },

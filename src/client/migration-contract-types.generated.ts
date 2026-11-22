@@ -8,6 +8,7 @@
 // Faza 3 (WEB-2003): submission withdrawal routes from Institution_server e299665f (API 1.76.0).
 // Faza 3 (WEB-2007): work comparison route from Institution_server 7aab1437 (API 1.76.0).
 // Faza 3 (WEB-2008): teaching team view from Institution_server 34b0a9a1 (#607, SRV-2007, API 1.78.0).
+// LOK-WEB-5: teacher mentorship request routes from Institution_server d8b7fc40 (API 1.79.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -422,6 +423,20 @@ export type MigrationOperations = {
     body: undefined;
     success: { status: 200; body: { "requestId": string; "state": "withdrawn" }; headers: { "cache-control"?: string } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "conflict" | "unavailable";
+  };
+  "teacher.mentorship-requests.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "requests": ({ "requestId": string; "student": { "givenName": string; "familyName": string } | null; "workType": "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "requestedAt": string })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "unavailable";
+  };
+  "teacher.mentorship-request-decision.post": {
+    params: undefined;
+    query: undefined;
+    body: { "requestId": string; "decision": "approve" } | { "requestId": string; "decision": "decline"; "reason"?: string };
+    success: { status: 200; body: { "decision": "approve"; "mentorshipId": string } | { "decision": "decline" }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "forbidden" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "conflict" | "unavailable" | "unsupported_media_type" | "invalid_json" | "invalid_input";
   };
   "teacher.submissions-bulk-link.post": {
     params: { "assignmentId": string };
