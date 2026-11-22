@@ -39,6 +39,35 @@ Za VS-1.13 stog radi bez nadzornika `pnpm lokalno` (`e2e/sistem/stog-bez-nadzora
 
 ## Ishod
 
-Ishod zadnjeg prolaza upisuje se ovdje iz `vs-run.json` (artifact `sistem` workflowa).
+Ishod zadnjeg zabilježenog prolaza, iz `vs-run.json` (artifact `sistem`; kopija u `e2e/vs-run/vs-run.json`): [run 45066207023](https://github.com/ductura/Institution_front_web_chrome/actions/runs/45066207023), 22. 11. 2026., sve tvrdnje i sva četiri scenarija **PROLAZ** (`ok: true`).
 
-<!-- ISHOD -->
+| Repo | Puni SHA |
+| --- | --- |
+| Institution_front_web_chrome (web) | `a5c7b9c201fac344b82e7b9af7da2dee6cb109a5` |
+| Institution_server | `f41a5c6075c61512aed290fac68c06888aa80d8d` |
+| Preloader | `73d0462f11a0775c51a66232a545932ef5597907` |
+
+Host `packages/app`, ulaz `http://localhost:8000/` → `http://localhost:8000/app/web/`. PID servera prije i poslije ponovnog pokretanja: 4542 → 4905. Svjež kontekst: `browser.newContext()`, na početku bez baza lokalnog dnevnika.
+
+| Vrijednost | Prije ponovnog pokretanja | Poslije (svjež kontekst) |
+| --- | --- | --- |
+| documentId | `91e64ee6-2808-4ede-86b4-bb9fba1f4ea9` | `91e64ee6-2808-4ede-86b4-bb9fba1f4ea9` |
+| revizija | 1 | 1 |
+| tekst | „U izmišljenom vrtu nastaje kompost (VS-1 87a5dc60-…).” | isti |
+| hash (SHA-256, računa test) | `1520b4a55829b25db9f8e001a82178cbe770524947f8e5d134d1de6ec85347ee` | isti |
+
+| Tvrdnja | Ishod | Dokaz iz prolaza |
+| --- | --- | --- |
+| VS-1.1 | PROLAZ | ulaz na `/` (Preloader) i povratak u `/app/web/` |
+| VS-1.2 | PROLAZ | prijava kroz simulator AAI@EduHr (D-09), `/api/v1/me` = student |
+| VS-1.3 | PROLAZ | `packages/app` poslužuje `/app/web/rad/<id>` |
+| VS-1.4 | PROLAZ | vlastiti rad iz seeda otvoren u editoru (uređiv) |
+| VS-1.5 | PROLAZ | jedinstvena izmišljena rečenica upisana u editor |
+| VS-1.6 | PROLAZ | „Spremljeno na uređaju” i zapis u IndexedDB prije odgovora poslužitelja |
+| VS-1.7 | PROLAZ | HTTP 200, `committed`, revizija 1, potpis Ed25519 provjeren; „Spremljeno na poslužitelju” nakon odgovora |
+| VS-1.8 | PROLAZ | nakon osvježavanja rečenica u editoru |
+| VS-1.9 | PROLAZ | novi kontekst: isti `documentId`, revizija, tekst i hash |
+| VS-1.10 | PROLAZ | ponovljeni zahtjev (isti `clientTransactionId`, isti bajtovi): HTTP 200 `duplicate`, revizija ostaje 1 |
+| VS-1.11 | PROLAZ | `demo-student-2`: `evidence/open` HTTP 404, isti commit HTTP 404 |
+| VS-1.12 | PROLAZ | tri puna SHA-a i host zapisani u `vs-run.json` |
+| VS-1.13 | PROLAZ | PID 4542 → 4905; svjež kontekst kroz API kao student vraća iste četiri vrijednosti |
