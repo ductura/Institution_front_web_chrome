@@ -22,6 +22,7 @@ import { submitText as t } from "./messages.hr";
 import StepLink from "../steps/StepLink";
 import { clockOf, dayOf } from "../steps/time";
 import { atOf, fill, nextOf, thousands, wordCount, type Answer, type Next, type SubmitStage } from "./model";
+import { routerPath } from "../../../../bases";
 
 const OUTCOME_ID = "submission-outcome";
 const WHY_ID = "submission-why";
@@ -85,8 +86,8 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
     if (step.go === null) {
       setNext(step);
       requestAnimationFrame(() => document.getElementById(OUTCOME_ID)?.focus());
-    } else if (step.go === "receipt") router.push(href(`${idPath}/predaja/potvrda`));
-    else if (step.go === "notice") router.push(href(`/zadatak/${encodeURIComponent(assignmentId)}`));
+    } else if (step.go === "receipt") router.push(routerPath(href(`${idPath}/predaja/potvrda`)));
+    else if (step.go === "notice") router.push(routerPath(href(`/zadatak/${encodeURIComponent(assignmentId)}`)));
     else goToSignIn(href(here));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignmentId, idPath, here, base, router]);
@@ -97,7 +98,7 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
     setNext(null);
     const read = await readWork(assignmentId);
     if (mine !== ticket.current) return;
-    if (read.kind === "notice") router.push(href(`/zadatak/${encodeURIComponent(assignmentId)}`));
+    if (read.kind === "notice") router.push(routerPath(href(`/zadatak/${encodeURIComponent(assignmentId)}`)));
     else if (read.kind === "signIn") goToSignIn(href(here));
     else setWork(read);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,7 +134,7 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
   const offline = !online;
   // The tag beside the title: "Bez veze", or the extended deadline (prototype `submitPanel`).
   const panelTag = offline ? t.offlineTag : untilDay !== null ? fill(t.extendedTag, { until: untilDay }) : undefined;
-  const goBack = () => router.push(href(`${idPath}/predaja/pregled`));
+  const goBack = () => router.push(routerPath(href(`${idPath}/predaja/pregled`)));
 
   return (
     <div ref={root} style={{ display: "contents" }}>

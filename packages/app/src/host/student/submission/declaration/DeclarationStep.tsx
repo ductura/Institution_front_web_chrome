@@ -11,6 +11,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { readConfirmed, useSessionTag, writeConfirmed } from "../../../../../../../src/components/predaja/Declaration.tsx";
 import { confirmationKey, stepHref } from "../../../../../../../src/components/predaja/flow.ts";
+import { routerPath } from "../../../../bases";
 import StepLink from "../steps/StepLink";
 import { chatDialogText as d, declarationStepText as t } from "./messages.hr";
 import {
@@ -63,7 +64,7 @@ export default function DeclarationStep({ assignmentId, workState, read, onRetry
   const chosen = form ?? ready?.declared?.form ?? "used";
   const target = ready ? mismatchTarget(ready.recorded, chosen) : null;
   const proceed = canProceed(view, confirmed);
-  const back = () => router.push(hrefOf(stepHref(assignmentId, "tekst")));
+  const back = () => router.push(routerPath(hrefOf(stepHref(assignmentId, "tekst"))));
   const later = () => setTodo(true);
 
   // The prototype's loading and error panels are titled "Izjava"; the full one carries the whole title.
@@ -144,7 +145,7 @@ export default function DeclarationStep({ assignmentId, workState, read, onRetry
         <StepActions>
           {!closed && (
             <Button aria-disabled={!proceed || undefined} aria-describedby={proceed ? undefined : why}
-              onClick={() => { if (proceed) router.push(hrefOf(stepHref(assignmentId, "pregled", tag ?? undefined))); }}>{t.next}</Button>
+              onClick={() => { if (proceed) router.push(routerPath(hrefOf(stepHref(assignmentId, "pregled", tag ?? undefined)))); }}>{t.next}</Button>
           )}
           <Button tone="secondary" onClick={back}>{t.back}</Button>
         </StepActions>
