@@ -69,6 +69,7 @@ describe("navFor", () => {
       { href: "/ustanova/kolegiji", label: "Kolegiji" },
       { href: "/ustanova/pravila", label: "Pravila fakulteta" },
       { href: "/ustanova/cuvanje", label: "Čuvanje podataka" },
+      { href: "/ustanova/izvoz-podataka", label: "Izvoz podataka studenta" },
     ]);
     expect(navFor("teacher").concat(navFor("student")).some((item) => item.href.startsWith("/ustanova"))).toBe(false);
   });

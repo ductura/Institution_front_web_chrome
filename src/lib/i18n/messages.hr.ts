@@ -105,6 +105,8 @@ export const hr = {
       facultyRules: "Pravila fakulteta",
       // WEB-1301 (A-05): data classes and legal holds, /ustanova/cuvanje.
       dataRetention: "Čuvanje podataka",
+      // WEB-1302 (SRV-1308): the student data export, /ustanova/izvoz-podataka.
+      studentDataExport: "Izvoz podataka studenta",
     },
     role: { teacher: "Nastavnik", student: "Student", admin: "Administrator" },
     demoNote: "Nijedan stvarni osobni podatak.",

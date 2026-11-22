@@ -46,6 +46,8 @@ const nav = (t: Messages): Record<ShellRole, readonly NavItem[]> => ({
     { href: "/ustanova/pravila", label: t.shell.nav.facultyRules },
     // WEB-1301 (A-05): the data classes and the legal holds.
     { href: "/ustanova/cuvanje", label: t.shell.nav.dataRetention },
+    // WEB-1302 (SRV-1308): the registry office's requests, started by the administrator.
+    { href: "/ustanova/izvoz-podataka", label: t.shell.nav.studentDataExport },
   ],
 });
 
