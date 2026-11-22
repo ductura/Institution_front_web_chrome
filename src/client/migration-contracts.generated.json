@@ -9509,5 +9509,462 @@
         "unavailable"
       ]
     }
+  },
+  "student.submission-withdrawal.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/submission/withdrawal",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the state, with no receipts before a first withdrawal",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "withdrawable",
+                "receipts"
+              ],
+              "properties": {
+                "withdrawable": {
+                  "type": "boolean"
+                },
+                "receipts": {
+                  "maxItems": 1000,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "withdrawalId",
+                      "assignmentId",
+                      "revision",
+                      "withdrawnAt",
+                      "signature"
+                    ],
+                    "properties": {
+                      "withdrawalId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "assignmentId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "revision": {
+                        "minimum": 1,
+                        "maximum": 9007199254740991,
+                        "type": "integer"
+                      },
+                      "withdrawnAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                        "type": "string"
+                      },
+                      "signature": {
+                        "minLength": 1,
+                        "maxLength": 512,
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.submission-withdrawal.post": {
+    "path": "/api/v1/student/assignments/{assignmentId}/submission/withdrawal",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "withdrawn, with the signed receipt",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "status",
+                "receipt"
+              ],
+              "properties": {
+                "status": {
+                  "const": "withdrawn",
+                  "type": "string"
+                },
+                "receipt": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "payload",
+                    "payloadDigestSha256",
+                    "signature"
+                  ],
+                  "properties": {
+                    "payload": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "receiptSchema",
+                        "withdrawalId",
+                        "submissionId",
+                        "submissionReceiptSha256",
+                        "evidenceDomainId",
+                        "principalId",
+                        "assignmentId",
+                        "withdrawnAt",
+                        "dueAt",
+                        "signedAt"
+                      ],
+                      "properties": {
+                        "receiptSchema": {
+                          "const": "ductus-submission-withdrawal-receipt-v1",
+                          "type": "string"
+                        },
+                        "withdrawalId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "submissionId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "submissionReceiptSha256": {
+                          "pattern": "^[0-9a-f]{64}$",
+                          "type": "string"
+                        },
+                        "evidenceDomainId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "principalId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "assignmentId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "withdrawnAt": {
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                          "type": "string"
+                        },
+                        "dueAt": {
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                          "type": "string"
+                        },
+                        "signedAt": {
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "payloadDigestSha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    "signature": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "algorithm",
+                        "keyId",
+                        "keyVersion",
+                        "signatureEncoding",
+                        "signatureBase64Url"
+                      ],
+                      "properties": {
+                        "algorithm": {
+                          "const": "Ed25519",
+                          "type": "string"
+                        },
+                        "keyId": {
+                          "minLength": 1,
+                          "maxLength": 2048,
+                          "pattern": "\\S",
+                          "type": "string"
+                        },
+                        "keyVersion": {
+                          "minLength": 1,
+                          "maxLength": 256,
+                          "pattern": "\\S",
+                          "type": "string"
+                        },
+                        "signatureEncoding": {
+                          "const": "raw",
+                          "type": "string"
+                        },
+                        "signatureBase64Url": {
+                          "pattern": "^[A-Za-z0-9_-]{86}$",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "not_allowed",
+        "refused",
+        "not_started",
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.submission-withdrawal.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/submission-withdrawal",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the switch",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "allowed",
+                "changedAt"
+              ],
+              "properties": {
+                "allowed": {
+                  "type": "boolean"
+                },
+                "changedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.submission-withdrawal.post": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/submission-withdrawal",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "allowed"
+      ],
+      "properties": {
+        "allowed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the switch in force",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "allowed",
+                "changedAt"
+              ],
+              "properties": {
+                "allowed": {
+                  "type": "boolean"
+                },
+                "changedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }

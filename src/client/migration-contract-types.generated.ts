@@ -5,6 +5,7 @@
 // WEB-1302B: student data export routes from Institution_server d92115c (API 1.75.0).
 // Faza 3 (WEB-2001, WEB-2002): consultation slots and student mentorship routes from Institution_server 9e67d7ca (API 1.75.0).
 // Faza 3 (WEB-2004, WEB-2005): bulk download, submission package and PDF export routes from Institution_server 9e67d7ca (API 1.75.0).
+// Faza 3 (WEB-2003): submission withdrawal routes from Institution_server e299665f (API 1.76.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -454,5 +455,33 @@ export type MigrationOperations = {
     body: undefined;
     success: { status: 200; body: { "filename": "rad.pdf"; "pdfBase64": string; "outputSha256": string; "format": "pdf"; "reportHash": null; "docxBase64": string; "noticeKey": "workExport.plainPdf" } | { "filename": "rad.pdf"; "pdfBase64": string; "outputSha256": string; "format": "pdfa-2u"; "reportHash": string }; headers: { "cache-control"?: string } };
     errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
+  };
+  "student.submission-withdrawal.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "withdrawable": boolean; "receipts": ({ "withdrawalId": string; "assignmentId": string; "revision": number; "withdrawnAt": string; "signature": string })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "student.submission-withdrawal.post": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "status": "withdrawn"; "receipt": { "payload": { "receiptSchema": "ductus-submission-withdrawal-receipt-v1"; "withdrawalId": string; "submissionId": string; "submissionReceiptSha256": string; "evidenceDomainId": string; "principalId": string; "assignmentId": string; "withdrawnAt": string; "dueAt": string; "signedAt": string }; "payloadDigestSha256": string; "signature": { "algorithm": "Ed25519"; "keyId": string; "keyVersion": string; "signatureEncoding": "raw"; "signatureBase64Url": string } } }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "not_allowed" | "refused" | "not_started" | "conflict" | "unavailable";
+  };
+  "teacher.submission-withdrawal.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "allowed": boolean; "changedAt": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.submission-withdrawal.post": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: { "allowed": boolean };
+    success: { status: 200; body: { "allowed": boolean; "changedAt": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
   };
 };
