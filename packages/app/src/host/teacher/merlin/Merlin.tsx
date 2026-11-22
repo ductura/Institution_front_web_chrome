@@ -86,7 +86,7 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
   const ended = status.kind === "view" && status.view.kind !== "priprema";
   const rows = data.rows.map((row, i) => ({ key: String(i), cells: rowCells(row) }));
   const options = data.assignments === null ? [] : data.assignments.map((a) => ({ value: a.id, label: a.title ?? text.taskUnnamed }));
-  const selectField = options.length > 1 ? (
+  const selectField = options.some((option) => option.value === assignmentId) ? (
     <div style={{ maxWidth: 420 }}>
       <Select label={text.taskLabel} options={options} value={assignmentId} onChange={(event) => onChoose?.(event.target.value)} />
     </div>
