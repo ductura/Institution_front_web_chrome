@@ -49,6 +49,17 @@ export async function dismissGuide(page: Page) {
   if (await skip.isVisible()) await skip.click();
 }
 
+/**
+ * The seed's assignment as the home page links it: to the work while it is
+ * written, to the receipt once it is submitted (/app/web/rad/<id>/predaja/potvrda).
+ */
+export async function openDemoAssignment(page: Page) {
+  await page.getByRole('link', { name: /Seminarski rad: kućno kompostiranje/ }).first().click();
+  const under = new RegExp(`^${appBase}/rad/([^/]+)(?:/|$)`);
+  await expect(page).toHaveURL((url) => url.origin === webOrigin && under.test(url.pathname));
+  return { assignmentId: new URL(page.url()).pathname.match(under)![1]!, path: new URL(page.url()).pathname };
+}
+
 /** The assignment id in a work path from openDemoWork. */
 export const assignmentOf = (workPath: string) => workPath.slice(app('/rad/').length);
 

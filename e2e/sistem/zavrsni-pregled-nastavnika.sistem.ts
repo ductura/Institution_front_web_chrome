@@ -7,7 +7,7 @@ import { isNodeId } from '../../packages/editor-core/src/document/document/schem
 import { fastPathHostText } from '../../packages/app/src/host/teacher/n05/messages.hr';
 import { messagesHr as t } from '../../src/lib/i18n/messages.hr';
 import { app, webOrigin } from './stog';
-import { assignmentOf, describePageOnFailure, openDemoWork, signInDemoStudent, signInThroughPreloader } from './student';
+import { describePageOnFailure, openDemoAssignment, signInDemoStudent, signInThroughPreloader } from './student';
 
 describePageOnFailure();
 
@@ -47,7 +47,7 @@ function postFromBrowser(page: Page, path: string, data: object) {
 test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi kolegij nema pristup', async ({ page, browser }) => {
   const { assignmentId, documentId, artifactSha256 } = await test.step('Pronađi spremljenu potvrdu iz INT-03', async () => {
     await signInDemoStudent(page);
-    const assignmentId = assignmentOf(await openDemoWork(page));
+    const { assignmentId } = await openDemoAssignment(page);
     const response = await page.request.get(`/api/v1/student/assignments/${assignmentId}/submission`);
     await expect(response).toBeOK();
     const submission = await response.json();
