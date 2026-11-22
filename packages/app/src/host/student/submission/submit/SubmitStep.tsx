@@ -22,6 +22,8 @@ import { submitText as t } from "./messages.hr";
 import StepLink from "../steps/StepLink";
 import { clockOf, dayOf } from "../steps/time";
 import { atOf, fill, nextOf, thousands, wordCount, type Answer, type Next, type SubmitStage } from "./model";
+import { submitConfirmed, type Confirmed, type NewerChoice } from "./newer-local";
+import { deviceHasNewer, sendLatestFromDevice } from "./local-hold";
 import { routerPath } from "../../../../bases";
 
 const OUTCOME_ID = "submission-outcome";
@@ -74,6 +76,11 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
   const [dialog, setDialog] = useState(false);
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
+  // INT-16: the warning of a newer version on this device, in the same dialog; `notSent` after a send that did not arrive.
+  const [newer, setNewer] = useState<{ readonly confirmed: Confirmed; readonly notSent: boolean } | null>(null);
+  const [sendingLatest, setSendingLatest] = useState(false);
+  const choose = useRef<((choice: NewerChoice | null) => void) | null>(null);
+  const latestButton = useRef<HTMLButtonElement>(null);
   const [next, setNext] = useState<Extract<Next, { go: null }> | null>(null);
   const idPath = `/rad/${encodeURIComponent(assignmentId)}`;
   const here = `${idPath}/predaja/slanje`;
@@ -113,8 +120,33 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
   const submit = async () => {
     if (ready === null || !online || sending) return;
     setSending(true);
-    const outcome: SubmitOutcome | null = await send({ assignmentId, documentId: ready.documentId, revision: ready.revision });
-    whileShown(shown, (answer: SubmitOutcome) => { setSending(false); setDialog(false); follow(answer); })(outcome);
+    // Only a revision the server confirmed is submitted (INT-16); a newer one on this device is named first.
+    const result = await submitConfirmed({ documentId: ready.documentId, revision: ready.revision }, {
+      hasNewer: deviceHasNewer,
+      ask: (confirmed, notSent) => new Promise<NewerChoice | null>((resolve) => {
+        setSending(false);
+        setSendingLatest(false);
+        setNewer({ confirmed, notSent });
+        choose.current = resolve;
+        requestAnimationFrame(() => latestButton.current?.focus());
+      }),
+      sendLatest: (confirmed) => { setSendingLatest(true); return sendLatestFromDevice(assignmentId, confirmed); },
+      submit: (target) => { setSending(true); return send({ assignmentId, documentId: target.documentId, revision: target.revision }); },
+    });
+    choose.current = null;
+    if (result.kind === "cancelled") {
+      if (shown.current) { setNewer(null); setSending(false); setDialog(false); }
+      return;
+    }
+    const outcome: SubmitOutcome | null = result.answer;
+    whileShown(shown, (answer: SubmitOutcome) => { setSending(false); setSendingLatest(false); setNewer(null); setDialog(false); follow(answer); })(outcome);
+  };
+  const pick = (choice: NewerChoice | null) => {
+    const resolve = choose.current;
+    if (resolve === null) return;
+    choose.current = null;
+    if (choice !== null) setSending(true);
+    resolve(choice);
   };
   const check = async () => {
     if (checking) return;
@@ -126,7 +158,11 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
   const canSend = ready !== null && confirmed && online && !sending && (next === null || next.retry);
   const why = !online ? t.offline : !confirmed ? t.declarationMissing : undefined;
   const words = ready === null ? 0 : wordCount(ready.nodes);
-  const closeDialog = () => { if (!sending) setDialog(false); };
+  const closeDialog = () => {
+    if (sending) return;
+    if (choose.current !== null) pick(null);
+    else setDialog(false);
+  };
   useBackdropClose(root, dialog, closeDialog);
   const dueText = dueAt === null ? t.stageUnavailable : atOf(stage.kind === "extended" ? stage.until : stage.kind === "closed" ? stage.dueAt : dueAt);
   const untilDay = stage.kind === "extended" ? dayOf(stage.until) ?? stage.until : null;
@@ -203,18 +239,35 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
           </StepActions>
         </StepPanel>
       )}
-      <Dialog open={dialog} title={t.dialogTitle} onClose={closeDialog} dismissible={!sending}
-        actions={(
-          <>
-            <Button busy={sending} onClick={() => void submit()}>{sending ? t.inProgress : t.submit}</Button>
-            <Button tone="secondary" busy={sending} onClick={closeDialog}>{t.cancel}</Button>
-          </>
-        )}>
-        <p className="note">{fill(t.dialogText, { title })}</p>
-        <p className="note">{t.noLonger}</p>
-        {stage.kind === "closed" && <p className="note">{t.dialogLate}</p>}
-        {sending && <p className="note" role="status"><StepSpinner /> {t.inProgress}</p>}
-      </Dialog>
+      {newer === null ? (
+        <Dialog open={dialog} title={t.dialogTitle} onClose={closeDialog} dismissible={!sending}
+          actions={(
+            <>
+              <Button busy={sending} onClick={() => void submit()}>{sending ? t.inProgress : t.submit}</Button>
+              <Button tone="secondary" busy={sending} onClick={closeDialog}>{t.cancel}</Button>
+            </>
+          )}>
+          <p className="note">{fill(t.dialogText, { title })}</p>
+          <p className="note">{t.noLonger}</p>
+          {stage.kind === "closed" && <p className="note">{t.dialogLate}</p>}
+          {sending && <p className="note" role="status"><StepSpinner /> {t.inProgress}</p>}
+        </Dialog>
+      ) : (
+        // INT-16: a warning, not a stop. The first choice is the default and takes the focus.
+        <Dialog open={dialog} title={t.newer.title} onClose={closeDialog} dismissible={!sending}
+          error={newer.notSent && !sending ? fill(t.newer.notSent, { n: newer.confirmed.revision }) : undefined}
+          actions={(
+            <>
+              <Button ref={latestButton} busy={sending} onClick={() => pick("latest")}>{t.newer.latest}</Button>
+              <Button tone="secondary" busy={sending} onClick={() => pick("confirmed")}>{fill(t.newer.confirmed, { n: newer.confirmed.revision })}</Button>
+              <Button tone="secondary" busy={sending} onClick={closeDialog}>{t.cancel}</Button>
+            </>
+          )}>
+          <p className="note">{t.newer.text}</p>
+          {stage.kind === "closed" && <p className="note">{t.dialogLate}</p>}
+          {sending && <p className="note" role="status"><StepSpinner /> {sendingLatest ? t.newer.sendingLatest : t.inProgress}</p>}
+        </Dialog>
+      )}
     </div>
   );
 }
