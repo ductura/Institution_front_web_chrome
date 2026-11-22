@@ -126,7 +126,8 @@ test("access and receipt errors show a retry and recover after a fresh read", as
   allow();
   await page.getByRole("button", { name: t.teacherLiveWork.retry }).click();
 
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(n07Messages.error);
+  // The N-07 page also holds the (empty) toast region, itself an alert.
+  await expect(page.getByRole("main").getByRole("alert").filter({ hasText: n07Messages.error })).toBeVisible();
   failReceipt = false;
   await page.getByRole("button", { name: n07Messages.retry }).click();
   await expect(page.getByText(/\bPredano\b/)).toBeVisible();
