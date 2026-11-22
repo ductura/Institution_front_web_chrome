@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { createApi } from "./api";
-import { readTimeMachineComparison, readTimeMachineVersions, type CompareCall } from "./time-machine";
+import { readTimeMachineComparison, readTimeMachineVersions } from "./time-machine";
 
 const baseUrl = "https://ductura.example.invalid";
 const versionsBody = { versions: [
@@ -27,22 +27,32 @@ describe("time machine client", () => {
       await expect(readTimeMachineVersions("d", api)).resolves.toEqual({ kind });
     }
   });
-  const ok = (body: unknown): CompareCall => async () => ({ ok: true, body });
-  it("reads a closed comparison and rejects unknown shapes", async () => {
-    const blocks = [{ op: "changed", words: [{ op: "removed", text: "a" }, { op: "added", text: "b" }] }];
-    await expect(readTimeMachineComparison(ok({ blocks }), "d", 1, 2)).resolves.toEqual({ kind: "ready", blocks });
-    await expect(readTimeMachineComparison(ok({ blocks: [{ op: "x", words: [] }] }), "d", 1, 2)).resolves.toEqual({ kind: "unavailable" });
-    await expect(readTimeMachineComparison(ok({ blocks: [{ op: "same", words: [{ op: "same", text: 1 }] }] }), "d", 1, 2)).resolves.toEqual({ kind: "unavailable" });
+  const answering = (body: unknown, status = 200) => vi.fn<typeof fetch>(async () => Response.json(body, { status }));
+  it("reads a comparison through the generated client and keeps only the blocks", async () => {
+    const blocks = [
+      { kind: "heading", level: 2, change: "unchanged", text: "Uvod" },
+      { kind: "paragraph", change: "removed", text: "stara rečenica" },
+      { kind: "paragraph", change: "added", text: "nova rečenica" },
+    ];
+    const fetchImpl = answering({ from: 1, to: 2, blocks });
+    await expect(readTimeMachineComparison("izmišljeni rad/1", 1, 2, createApi({ baseUrl, fetchImpl }))).resolves.toEqual({ kind: "ready", blocks });
+    const [url, init] = fetchImpl.mock.calls[0]!;
+    expect(String(url)).toBe(`${baseUrl}/api/v1/works/${encodeURIComponent("izmišljeni rad/1")}/compare?from=1&to=2`);
+    expect(init?.method).toBe("GET");
   });
   it("sends older first and refuses a same or reversed pair without a call", async () => {
-    const call = vi.fn(ok({ blocks: [] }));
-    await readTimeMachineComparison(call, "d", 1, 3);
-    expect(call.mock.calls[0]![1].query).toEqual({ from: "1", to: "3" });
-    await expect(readTimeMachineComparison(call, "d", 3, 3)).resolves.toEqual({ kind: "unavailable" });
-    await expect(readTimeMachineComparison(call, "d", 3, 1)).resolves.toEqual({ kind: "unavailable" });
-    expect(call).toHaveBeenCalledTimes(1);
+    const fetchImpl = answering({ from: 1, to: 3, blocks: [] });
+    const api = createApi({ baseUrl, fetchImpl });
+    await readTimeMachineComparison("d", 1, 3, api);
+    expect(String(fetchImpl.mock.calls[0]![0])).toContain("from=1&to=3");
+    await expect(readTimeMachineComparison("d", 3, 3, api)).resolves.toEqual({ kind: "unavailable" });
+    await expect(readTimeMachineComparison("d", 3, 1, api)).resolves.toEqual({ kind: "unavailable" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
-  it("maps 404 to notFound", async () => {
-    await expect(readTimeMachineComparison(async () => ({ ok: false, status: 404 }), "d", 1, 2)).resolves.toEqual({ kind: "notFound" });
+  it("maps 401 to signedOut, 404 to notFound and the rest to unavailable", async () => {
+    for (const [status, code, kind] of [[401, "unauthorized", "signedOut"], [404, "not_found", "notFound"], [503, "unavailable", "unavailable"]] as const) {
+      const api = createApi({ baseUrl, fetchImpl: answering({ code }, status) });
+      await expect(readTimeMachineComparison("d", 1, 2, api)).resolves.toEqual({ kind });
+    }
   });
 });

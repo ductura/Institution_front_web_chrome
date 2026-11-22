@@ -4,28 +4,32 @@ type Version = {
   savedMinute: string;
 };
 
-export type Comparison = {
-  from: Pick<Version, "revision" | "kind">;
-  to: Pick<Version, "revision" | "kind">;
-  blocks: readonly {
-    op: "same" | "added" | "removed" | "changed";
-    words: readonly { op: "same" | "added" | "removed"; text: string }[];
-  }[];
-  counts: { addedWords: number; removedWords: number };
-  truncated: boolean;
-};
+type Block = { kind: "paragraph" | "bulletItem" | "quote" | "heading"; level?: number; change: "unchanged" | "removed" | "added"; text: string };
+/** The server's comparison of two submitted revisions: its blocks of text, each unchanged, removed or added. */
+export type Comparison = { from: number; to: number; blocks: readonly Block[] };
 
 type Result<T> = { ok: true; body: T } | { ok: false; status: number };
 type VersionsPage = { versions: readonly Version[]; nextBeforeRevision: number | null };
 
-/** The two createApi operations this view needs. WEB's contract bump supplies the implementation. */
+/** The two createApi operations this view needs, with the shapes of the generated contract. */
 export interface ComparisonApi {
   (id: "work.versions.get", input: {
-    params: { documentId: string }; query: { beforeRevision?: string }; body: undefined;
+    params: { documentId: string }; query: undefined; body: undefined;
   }): Promise<Result<VersionsPage>>;
   (id: "work.compare.get", input: {
     params: { documentId: string }; query: { from: string; to: string }; body: undefined;
   }): Promise<Result<Comparison>>;
+}
+
+const words = (text: string) => text.split(/\s+/).filter((word) => word !== "").length;
+/** The words added and removed, counted from the blocks the server sent. */
+export function countWords(comparison: Comparison): { addedWords: number; removedWords: number } {
+  let addedWords = 0, removedWords = 0;
+  for (const { change, text } of comparison.blocks) {
+    if (change === "added") addedWords += words(text);
+    if (change === "removed") removedWords += words(text);
+  }
+  return { addedWords, removedWords };
 }
 
 type Failed = { kind: "not-found" | "error" };
@@ -35,26 +39,21 @@ function failed(status: number): Failed {
   return { kind: status === 404 ? "not-found" : "error" };
 }
 
+/**
+ * The submitted versions of the newest page the server sends. The contract of work.versions.get has no query
+ * schema (no `beforeRevision`), so older pages cannot be asked for yet; `nextBeforeRevision` is left unread.
+ * TODO(ugovor): page back when the contract names the query.
+ */
 export async function readSubmittedVersions(
   client: ComparisonApi, documentId: string, signal?: AbortSignal, limit = Infinity,
 ): Promise<Read<Version[]>> {
-  const submitted = new Map<number, Version>();
-  let beforeRevision: number | null = null;
   try {
-    do {
-      signal?.throwIfAborted();
-      const page: Result<VersionsPage> = await client("work.versions.get", {
-        params: { documentId }, query: beforeRevision === null ? {} : { beforeRevision: String(beforeRevision) }, body: undefined,
-      });
-      if (!page.ok) return failed(page.status);
-      for (const version of page.body.versions) {
-        if (version.kind === "submission") submitted.set(version.revision, version);
-      }
-      const next: number | null = page.body.nextBeforeRevision;
-      if (next !== null && beforeRevision !== null && next >= beforeRevision) return failed(0);
-      beforeRevision = next;
-    } while (beforeRevision !== null && submitted.size < limit);
-    return { kind: "ready", value: [...submitted.values()].sort((a, b) => b.revision - a.revision).slice(0, limit) };
+    signal?.throwIfAborted();
+    const page = await client("work.versions.get", { params: { documentId }, query: undefined, body: undefined });
+    if (!page.ok) return failed(page.status);
+    const submitted = page.body.versions.filter((version) => version.kind === "submission");
+    return { kind: "ready", value: [...new Map(submitted.map((version) => [version.revision, version])).values()]
+      .sort((a, b) => b.revision - a.revision).slice(0, limit) };
   } catch {
     return failed(0);
   }
@@ -70,8 +69,7 @@ export async function readComparison(
     });
     if (!result.ok) return failed(result.status);
     const { body } = result;
-    if (body.from.revision !== from || body.to.revision !== to ||
-        body.from.kind !== "submission" || body.to.kind !== "submission") return failed(0);
+    if (body.from !== from || body.to !== to) return failed(0);
     return { kind: "ready", value: body };
   } catch {
     return failed(0);

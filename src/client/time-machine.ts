@@ -2,35 +2,20 @@
  * The student's reads for "Povijest verzija" (WEB-1504; plan M7.6).
  *
  * - work.versions.get: the saved versions of a work (checkpoints and submissions), read through createApi.
- * - work.compare.get: the difference between two versions.
+ * - work.compare.get: the difference between two versions, as the server's blocks of text.
  *
  * Neither read carries duration, pace or the size of a change into the result (PRODUCT §5): a version is
- * its kind, revision and saved minute, a comparison is its blocks of words. Restoring a version is not
+ * its kind, revision and saved minute, a comparison is its blocks. Restoring a version is not
  * here. Any answer outside the closed shape is `unavailable`.
  *
- * TODO(ugovor): work.compare.get is not in the generated contract of this base, so the caller passes its
- * transport (`CompareCall`); only tests call it, with invented answers. When the contract has it, it
- * moves to createApi and the shape below gives way to the contract's.
+ * Both reads go through createApi with the generated contract (Faza 3, WEB-2007).
  */
 import { createApi } from "./api";
 
 export type TimeMachineVersion = { kind: "checkpoint" | "submission"; revision: number; savedMinute: string };
-export type TimeMachineBlock = {
-  op: "same" | "added" | "removed" | "changed";
-  words: { op: "same" | "added" | "removed"; text: string }[];
-};
+export type TimeMachineBlock = { kind: "paragraph" | "bulletItem" | "quote" | "heading"; level?: number; change: "unchanged" | "removed" | "added"; text: string };
 export type VersionsResult = { kind: "ready"; versions: TimeMachineVersion[] } | { kind: "signedOut" | "unavailable" };
 export type CompareResult = { kind: "ready"; blocks: TimeMachineBlock[] } | { kind: "signedOut" | "notFound" | "unavailable" };
-
-/** TODO(ugovor): the transport of a route that is not in the published contract yet. */
-export type CompareCall = (
-  id: "work.compare.get",
-  input: { params: { documentId: string }; query: { from: string; to: string } },
-) => Promise<{ ok: true; body: unknown } | { ok: false; status: number }>;
-
-const OPS: ReadonlySet<unknown> = new Set(["same", "added", "removed"]);
-const BLOCK_OPS: ReadonlySet<unknown> = new Set(["same", "added", "removed", "changed"]);
-const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 export async function readTimeMachineVersions(documentId: string, api = createApi()): Promise<VersionsResult> {
   try {
@@ -42,28 +27,19 @@ export async function readTimeMachineVersions(documentId: string, api = createAp
   }
 }
 
-export async function readTimeMachineComparison(
-  call: CompareCall, documentId: string, from: number, to: number,
-): Promise<CompareResult> {
+export async function readTimeMachineComparison(documentId: string, from: number, to: number, api = createApi()): Promise<CompareResult> {
   if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to) || from < 1 || to <= from) return { kind: "unavailable" };
   try {
-    const result = await call("work.compare.get", { params: { documentId }, query: { from: String(from), to: String(to) } });
+    const result = await api("work.compare.get", { params: { documentId }, query: { from: String(from), to: String(to) }, body: undefined });
     if (!result.ok) {
       return { kind: result.status === 401 ? "signedOut" : result.status === 404 ? "notFound" : "unavailable" };
     }
-    const body = result.body;
-    if (!isObject(body) || !Array.isArray(body.blocks)) return { kind: "unavailable" };
-    const blocks: TimeMachineBlock[] = [];
-    for (const block of body.blocks) {
-      if (!isObject(block) || !BLOCK_OPS.has(block.op) || !Array.isArray(block.words)) return { kind: "unavailable" };
-      const words: TimeMachineBlock["words"] = [];
-      for (const word of block.words) {
-        if (!isObject(word) || !OPS.has(word.op) || typeof word.text !== "string") return { kind: "unavailable" };
-        words.push({ op: word.op as "same" | "added" | "removed", text: word.text });
-      }
-      blocks.push({ op: block.op as TimeMachineBlock["op"], words });
-    }
-    return { kind: "ready", blocks };
+    return {
+      kind: "ready",
+      blocks: result.body.blocks.map((block) => ({
+        kind: block.kind, change: block.change, text: block.text, ...(block.kind === "heading" ? { level: block.level } : {}),
+      })),
+    };
   } catch {
     return { kind: "unavailable" };
   }

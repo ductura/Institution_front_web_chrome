@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createApi, type ApiOperationId, type Input } from "./api";
+import contracts from "./migration-contracts.generated.json" with { type: "json" };
 import vectors from "./migration-contract-vectors.generated.json" with { type: "json" };
 
 const BASE_URL = "https://ductura.example.invalid";
@@ -14,7 +15,11 @@ function responding(vector: Vector, body: unknown = vector.response.body) {
 }
 
 function inputFor(vector: Vector) {
-  return { params: vector.request.params, query: undefined, body: vector.request.body } as Input<ApiOperationId>;
+  const { params, body } = vector.request;
+  // A query is sent only for an operation whose contract has a query schema (WEB-2007); the others take none.
+  const hasQuery = "query" in (contracts as Record<string, object>)[vector.route]!;
+  const query = hasQuery && "query" in vector.request ? vector.request.query : undefined;
+  return { params, query, body } as Input<ApiOperationId>;
 }
 
 describe("WEB-07 temporary API contracts", () => {
