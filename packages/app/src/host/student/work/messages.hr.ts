@@ -13,5 +13,16 @@ export const workText = {
   /** E-7 `prazno`: the footer of a work not started yet. */
   newWork: "Novi rad, još ništa nije upisano",
   placeholder: "Počnite pisati…",
+  /** E-7 `ucitavanje`, `greska`, `bez-mreze` and `predano`: the canvas notes and the bar's words. */
+  loading: "Učitavanje…",
+  errorBanner: "Rad trenutačno nije moguće otvoriti. Tekst spremljen na ovom uređaju ostaje netaknut.",
+  errorStatus: "Greška pri otvaranju",
+  offlineLead: "Bez mreže.",
+  offlineBody: "Tekst se i dalje sprema na ovom uređaju i čeka slanje na poslužitelj kad se veza vrati.",
+  offlineNet: "Bez mreže",
+  submittedLead: "Predano {at}.",
+  submittedBody: "Rad je predan, pa se ovdje više ne može pisati.",
+  submittedStatus: "Predano {at}",
+  courseLine: "{course} · rok {due}",
   notStarted: "Rad još nije započet. Započnite ga da biste mogli pisati.",
 } as const;

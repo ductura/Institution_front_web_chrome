@@ -6,6 +6,7 @@ import { citationRange, insertCitation } from "@/components/editor/citations/cit
 import { documentCitations, documentSources, sourceLabel } from "@/components/editor/sources/proofs/proof-sources";
 import type { Source } from "@/components/editor/triggers/items";
 import { MAX_DOCUMENT_SOURCES } from "@/domain/document/schema";
+import { plainCitePlaces } from "../marks/marks-model";
 
 /** What the "@" menu needs of one note of a source: only a note with a page can become a citation. */
 export type MentionNote = { readonly sourceId: string; readonly id: string; readonly page: string | null; readonly text: string };
@@ -36,6 +37,15 @@ export function plainCitationPlaces(doc: EditorState["doc"]): number[] {
     return false;
   });
   return places;
+}
+
+/** One place of a citation without a source: a "[izvor]" marker (can be linked or filled) or a citation typed as text, "(Autor, 2020)" (only shown). */
+export type UnsourcedPlace = { readonly pos: number; readonly marker: boolean };
+
+/** The same marks as the text marks of MarksHost (one source of truth for the counter): "[izvor]" markers and typed citations, in text order. */
+export function unsourcedCitationPlaces(doc: EditorState["doc"]): UnsourcedPlace[] {
+  const typed = plainCitePlaces(doc).map((p): UnsourcedPlace => ({ pos: p.from, marker: false }));
+  return [...plainCitationPlaces(doc).map((pos): UnsourcedPlace => ({ pos, marker: true })), ...typed].sort((a, b) => a.pos - b.pos);
 }
 
 /** The next place after the cursor, wrapping to the first; null when there is none. */

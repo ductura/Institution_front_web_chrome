@@ -21,9 +21,9 @@ describe("submissions rows (WEB-1502)", () => {
     expect(submittedAt(late)).toBe("—");
   });
 
-  it("opens only a row whose receipt is bound", () => {
+  it("opens every submitted row, late or without a time", () => {
     expect(canOpen(onTime)).toBe(true);
-    expect(canOpen(late)).toBe(false);
+    expect(canOpen(late)).toBe(true);
   });
 
   it("names each failure", () => {
@@ -41,8 +41,8 @@ describe("submissions rows (WEB-1502)", () => {
 describe("submitted version read only", () => {
   it("reads the blocks of the fake submitted version", async () => {
     const port = fakeSubmissionsPort();
-    const read = await port.open("a", onTime.submissionId as string);
-    expect(port.opened).toEqual([onTime.submissionId]);
+    const read = await port.open("a", onTime.studentId);
+    expect(port.opened).toEqual([onTime.studentId]);
     expect(read.kind === "ready" && documentBlocks(read.version.document)).toEqual({
       kind: "ready",
       blocks: [{ kind: "heading", text: "Izmišljeni naslov" }, { kind: "paragraph", text: "Izmišljeni odlomak predanog rada." }],
@@ -50,7 +50,7 @@ describe("submitted version read only", () => {
   });
 
   it("drops an answer for a version no longer open", () => {
-    const other = { ...late, submissionId: "00000000-0000-4000-8000-0000000000c2" };
+    const other = late;
     const ready = { kind: "nepoznato" } as const;
     expect(answeredPanel({ assignmentId: "a", row: other, read: "loading" }, "a", onTime, ready)).toEqual({ assignmentId: "a", row: other, read: "loading" });
     expect(answeredPanel(null, "a", onTime, ready)).toBeNull();

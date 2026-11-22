@@ -25,6 +25,8 @@ const SKIP_TOP = new Set(["e2e", "dist", "test-results", "playwright-report"]);
 const SKIP_SRC = new Set(["_cekanje"]);
 const SOURCE = /\.(?:[cm]?[jt]sx?|html?|xhtml|svg|css|svelte|vue)$/;
 const TEST = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
+/** A stylesheet: "global alias" reads `top;` in `vertical-align: top;` as the window alias, so it is not checked there. */
+const STYLESHEET = /\.css$/;
 const CONFIG = /^(?:catalog|packages\/[^/]+|src\/[^/]+)\/(?:vite|vitest|playwright)\.config\.[cm]?[jt]s$/;
 
 /** The client itself. */
@@ -125,8 +127,9 @@ export function normalise(text: string): string {
     .replace(/(["'`])\s*,\s*(["'`])/g, "$1/$2");
 }
 
+// An "import" inside a string literal (a generated enum value: "kind": "import" | "ai-transfer") is not a statement.
 function bareImports(text: string): string[] {
-  const found = [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
+  const found = [...text.matchAll(/(?:\bfrom\s*|(?<!["'`])\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
   return found.map((m) => m[1] ?? "").filter((spec) => !spec.startsWith(".") && !spec.startsWith("/"));
 }
 
@@ -134,7 +137,8 @@ function bareImports(text: string): string[] {
 export function directCalls(text: string, file = ""): string[] {
   const plain = normalise(text);
   const config = CONFIG.test(file);
-  const broken = RULES.filter(([name, rule]) => !(config && name === "test file import") && (rule.test(text) || rule.test(plain)))
+  const broken = RULES.filter(([name, rule]) => !(config && name === "test file import") && !(STYLESHEET.test(file) && name === "global alias")
+    && (rule.test(text) || rule.test(plain)))
     .map(([name]) => name);
   const allowed = config ? new Set([...BARE_IMPORTS, ...CONFIG_IMPORTS]) : BARE_IMPORTS;
   for (const spec of bareImports(plain)) {

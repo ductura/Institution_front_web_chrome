@@ -14,9 +14,6 @@
  "src/app/upis/page.tsx": [
   "API URL"
  ],
- "src/components/admin/FacultyRules.module.css": [
-  "global alias"
- ],
  "src/components/admin/TeacherRoles.tsx": [
   "form submit"
  ],
@@ -56,14 +53,8 @@
  "src/components/fonts/woff2-codepoints.ts": [
   "import node:zlib"
  ],
- "src/components/how-it-works/HowItWorks.module.css": [
-  "global alias"
- ],
  "src/components/how-it-works/access.ts": [
   "API URL"
- ],
- "src/components/replay/ReplayView.module.css": [
-  "global alias"
  ],
  "src/components/replay/replay-view.ts": [
   "import  and up to change "
@@ -146,12 +137,6 @@
   "import );\n  const parsed = ",
   "import );\n  }\n  if (version === 4) {\n    const parsedMark = markV4(own.mark, "
  ],
- "packages/editor-core/src/document/forensics/evidence-segment-v2.ts": [
-  "import  ||\n    event.source === ",
-  "import ) {\n    return isUuidV4(value.importId) && isSha256(value.importManifestSha256);\n  }\n  if (value.source === ",
-  "import , [",
-  "import ; importId: string; importManifestSha256: string })\n  | (EvidenceEventBaseV4 & { source: "
- ],
  "packages/editor-core/src/document/forensics/golden-vectors/load.ts": [
   "import node:crypto",
   "import node:fs"
@@ -191,9 +176,6 @@
   "import fake-indexeddb",
   "import node:crypto",
   "import vitest"
- ],
- "packages/ui/src/table/table.module.css": [
-  "global alias"
  ],
  "src/components/editor/rich/blocks/FormulaDialog.tsx": [
   "test file import",

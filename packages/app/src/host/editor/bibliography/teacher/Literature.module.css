@@ -1,0 +1,13 @@
+/* The teacher's literature card in the editor side panel (prototype editor.css: .muted, .row, .card, .rpd). VIZ-E4. */
+.root { display: block; font: 400 13.5px / 1.5 var(--ff-ui); color: var(--ink); }
+.root p { margin: 0 0 8px; }
+.muted { color: var(--ink-3); font-size: 12px; }
+.alert { color: var(--error); background: var(--error-soft); border-radius: var(--radius-sm); padding: 6px 8px; font-size: 12.5px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+.rpd { border-top: 1px solid var(--rule-2); margin-top: 10px; }
+.rpd > summary { cursor: pointer; list-style: none; padding: 11px 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.rpd > summary::-webkit-details-marker { display: none; }
+.rpd > summary::before { content: "▸"; font-size: 10px; width: 10px; }
+.rpd[open] > summary::before { content: "▾"; }
+.rpd[open] { padding-bottom: 6px; }
+.list { margin: 0 0 8px; padding-left: 16px; color: var(--ink-2); font-size: 12.5px; }

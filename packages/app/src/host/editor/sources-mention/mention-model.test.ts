@@ -6,7 +6,7 @@ import { createEditorExtensionsV2, tiptapToCanonicalV2 } from "@/editor";
 import { triggerItems } from "@/components/editor/triggers/items";
 import {
   addSourceAt, addSourceTransaction, citationCount, editSourceTransaction, linkPlaceTransaction, listedSources, mentionSources,
-  nextPlace, placeExcerpt, plainCitationPlaces, removeSourceTransaction, sourceDraftOf,
+  nextPlace, placeExcerpt, plainCitationPlaces, unsourcedCitationPlaces, removeSourceTransaction, sourceDraftOf,
 } from "./mention-model";
 
 const ID = "00000000-0000-4000-8000-00000000c0a1";
@@ -160,4 +160,11 @@ describe("the citations left as \"[izvor]\" and the sources of the list", () => 
     expect(editSourceTransaction(after, NEW, draft)).toBeNull();
     expect(sourceDraftOf([{ id: ID }], ID)).toBeNull();
   });
+});
+
+it("counts typed citations with the '[izvor]' markers, as the text marks do", () => {
+  const state = stateWith("Pčele (Horvat, 2020) i [izvor] kraj.");
+  const places = unsourcedCitationPlaces(state.doc);
+  expect(places.map((p) => p.marker)).toEqual([false, true]);
+  expect(places.map((p) => p.pos)).toEqual([...places.map((p) => p.pos)].sort((a, b) => a - b));
 });

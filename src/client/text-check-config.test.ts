@@ -6,7 +6,7 @@ import vectors from "./migration-contract-vectors.generated.json" with { type: "
 import { fetchTextCheckConfig } from "./text-check-config";
 
 const ID = "4b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d01";
-const ready = vectors.find((v) => v.route === "student.text-check-config.get" && v.name === "ready")!;
+const ready = vectors.find((v) => v.route === "student.text-check-config.get" && v.name === "profile-set")!;
 const answer = (status: number, body: unknown) => vi.fn(async (_url: URL | RequestInfo, _init?: RequestInit) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
 const options = (fetchImpl: ReturnType<typeof answer>) => ({ baseUrl: "https://ductura.example.invalid", fetchImpl });

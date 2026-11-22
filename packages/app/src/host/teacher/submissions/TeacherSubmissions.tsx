@@ -37,9 +37,9 @@ export default function TeacherSubmissions(
     return () => { active = false; };
   }, [port, assignmentId, attempt]);
 
-  const open = async (row: SubmittedRow & { submissionId: string }) => {
+  const open = async (row: SubmittedRow) => {
     setPanel({ assignmentId, row, read: "loading" });
-    const next = await port.open(assignmentId, row.submissionId).catch((): VersionRead => ({ kind: "nepoznato" }));
+    const next = await port.open(assignmentId, row.studentId).catch((): VersionRead => ({ kind: "nepoznato" }));
     setPanel((current) => answeredPanel(current, assignmentId, row, next));
   };
 
