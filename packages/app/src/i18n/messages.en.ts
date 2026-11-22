@@ -53,6 +53,8 @@ export const profileEn: ProfileMessages = {
 
 export const pageLabelsEn = {
   consultations: "Consultations",
+  studentDataExport: "Student data export",
+  studentDataDownload: "Export of my data",
 };
 
 export const accessDeniedEn = {

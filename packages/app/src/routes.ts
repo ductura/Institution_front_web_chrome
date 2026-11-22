@@ -9,6 +9,8 @@ import { messagesHr as workText } from "../../../src/lib/i18n/messages.hr.ts";
 import type { SessionRole } from "../../../src/client/api.ts";
 
 import type { Base } from "./bases";
+import { studentDataExportMessages } from "./host/institution/student-data-export/messages.hr";
+import { studentDataDownloadMessages } from "./host/public/student-data-download/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { hostText } from "./text";
 
@@ -97,12 +99,17 @@ export const PAGES: readonly Page[] = [
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
   // WEB-1804 (M11.5): interface language, name and notifications, for everyone signed in.
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },
+  // WEB-1302: the registry office requests a student's data export, the administrator starts it;
+  // open to everyone signed in, since the registry office has no role of its own and the server decides.
+  { path: "/ustanova/izvoz-podataka", label: studentDataExportMessages.title, kind: "pending", roles: [] },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.
   { path: "/nema-ovlasti", label: accessDeniedHr.pageTitle, kind: "pending", roles: [], public: true },
   // WEB-1805 (M11.6, F-03): the accessibility statement; public, as the law asks.
   { path: "/pristupacnost", label: t.shell.accessibilityStatement, kind: "pending", roles: [], public: true },
+  // WEB-1302: the student's one-time download; public, the token in the link is the only key.
+  { path: "/izvoz-podataka/[token]", label: studentDataDownloadMessages.labels.title, kind: "pending", roles: [], public: true },
 ];
 
 /** The public page of a route, or null when the route needs the session. */
