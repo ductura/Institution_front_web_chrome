@@ -50,6 +50,8 @@ export const profileHr = {
 /** Labels of pages whose screens have no English table yet (routes.ts takes them from the screens' own Croatian tables). */
 export const pageLabelsHr = {
   consultations: "Konzultacije",
+  studentDataExport: "Izvoz podataka studenta",
+  studentDataDownload: "Izvoz mojih podataka",
 };
 
 /** M1.8: the no-access and session-ended screen. English: `accessDeniedEn` in ./messages.en.ts. */
