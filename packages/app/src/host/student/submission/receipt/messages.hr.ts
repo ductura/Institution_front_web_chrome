@@ -39,4 +39,6 @@ export const receiptText = {
   error: "Potvrdu trenutačno nije moguće učitati. Ako je rad predan, predaja i vrijeme predaje time se ne mijenjaju.",
   retry: "Pokušaj ponovno",
   check: "Provjeri stanje predaje",
+  portfolioOpen: "Izvoz za portfelj",
+  portfolioClose: "Zatvori izvoz za portfelj",
 } as const;
