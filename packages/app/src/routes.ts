@@ -56,6 +56,8 @@ export function pathMatches(path: string, route: string): boolean {
   return want.length === have.length && want.every((w, i) => (/^\[\w+\]$/.test(w) ? (have[i] ?? "") !== "" : w === have[i]));
 }
 
+/** In the administrator's navigation, but open to every signed-in account (the registry office has no role); listed once below. */
+const STUDENT_DATA_EXPORT_PATH = "/ustanova/izvoz-podataka";
 const ROLES: readonly ShellRole[] = ["student", "teacher", "admin"];
 const KINDS: Readonly<Record<string, PageKind>> = {
   "/zadaci": "studentHome",
@@ -69,7 +71,7 @@ const KINDS: Readonly<Record<string, PageKind>> = {
  * reached from it, and "Kako Ductura radi" for everyone.
  */
 export const PAGES: readonly Page[] = [
-  ...ROLES.flatMap((role) => navFor(role).map((item) => ({
+  ...ROLES.flatMap((role) => navFor(role).filter((item) => item.href !== STUDENT_DATA_EXPORT_PATH).map((item) => ({
     path: item.href, label: item.label, kind: KINDS[item.href] ?? "pending", roles: [role], current: item.href,
   }))),
   { path: "/zadatak/[id]", label: t.student.title, kind: "pending", roles: ["student", "teacher"] },
@@ -101,7 +103,7 @@ export const PAGES: readonly Page[] = [
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },
   // WEB-1302: the registry office requests a student's data export, the administrator starts it;
   // open to everyone signed in, since the registry office has no role of its own and the server decides.
-  { path: "/ustanova/izvoz-podataka", label: studentDataExportMessages.title, kind: "pending", roles: [] },
+  { path: STUDENT_DATA_EXPORT_PATH, label: studentDataExportMessages.title, kind: "pending", roles: [], current: STUDENT_DATA_EXPORT_PATH },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.

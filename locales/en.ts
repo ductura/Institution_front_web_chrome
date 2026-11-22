@@ -55,6 +55,8 @@ const en = {
       facultyRules: "Faculty rules",
       // WEB-1301 (A-05): data classes and legal holds, /ustanova/cuvanje.
       dataRetention: "Data retention",
+      // WEB-1302 (SRV-1308): the student data export, /ustanova/izvoz-podataka.
+      studentDataExport: "Student data export",
     },
     role: { teacher: "Teacher", student: "Student", admin: "Administrator" },
     demoNote: "No real personal data.",
