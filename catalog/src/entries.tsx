@@ -837,8 +837,8 @@ const roster = (result: Roster) => <CourseStudents result={result} />;
 
 // Invented mentorship requests (WEB-32, N-16).
 const requests: (RequestsRead & { kind: "ready" })["requests"] = [
-  { requestId: "70000000-0000-4000-8000-000000000101", studentName: "Vesna Žbunić", title: "Izmišljeni završni rad", workType: "bachelor_thesis", requestedAt: "2026-11-02T09:00:00Z" },
-  { requestId: "70000000-0000-4000-8000-000000000102", studentName: null, title: "Izmišljeni diplomski rad", workType: "master_thesis", requestedAt: "2026-11-05T13:30:00Z" },
+  { requestId: "70000000-0000-4000-8000-000000000101", studentName: "Vesna Žbunić", workType: "bachelor_thesis", requestedAt: "2026-11-02T09:00:00Z" },
+  { requestId: "70000000-0000-4000-8000-000000000102", studentName: null, workType: "master_thesis", requestedAt: "2026-11-05T13:30:00Z" },
 ];
 /** The first button pressed once on mount: a state that lives inside the screen. */
 const pressFirst = (box: HTMLDivElement | null) => {
