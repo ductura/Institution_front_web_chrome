@@ -74,7 +74,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
-            renderPdf={(version) => <PdfExport version={version} here={`/rad/${assignmentId}`} />}
+            renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />

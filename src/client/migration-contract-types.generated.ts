@@ -3,6 +3,7 @@
 // HOST-T2: institution.assignment.get from API 1.38.0; the work-language GET is provisional.
 // WEB-1604: work.source-notes.get from Institution_server 093f9b7 (API 1.52.0).
 // WEB-1302B: student data export routes from Institution_server d92115c (API 1.75.0).
+// WEB-2005: work.export-pdf.get from Institution_server 9e67d7c (API 1.75.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -368,5 +369,12 @@ export type MigrationOperations = {
     body: undefined;
     success: { status: 200; body: undefined; headers: {  } };
     errorCode: "not_allowed" | "unavailable";
+  };
+  "work.export-pdf.get": {
+    params: { "assignmentId": string; "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "filename": "rad.pdf"; "pdfBase64": string; "outputSha256": string; "format": "pdf"; "reportHash": null; "docxBase64": string; "noticeKey": "workExport.plainPdf" } | { "filename": "rad.pdf"; "pdfBase64": string; "outputSha256": string; "format": "pdfa-2u"; "reportHash": string }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
   };
 };

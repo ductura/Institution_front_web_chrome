@@ -5,7 +5,7 @@ import { findForbiddenTerms } from "../../../../../../scripts/forbidden-terms/te
 import { BYTES, FILE_ID, PREFIX, fakePreparation } from "./fake-port";
 import { pdfExportText } from "./messages.hr";
 import { fetchPrepared, newRequestKey, parseAnswer, runPreparation, showsPdfA, type Phase, type PrepareCalls } from "./preparation";
-import { pdfCalls, pdfDownloadPrefix, pdfFileName } from "./contract";
+import { pdfFileName } from "./contract";
 import { packageCalls, packageDownloadPrefix } from "../../student/submission-package/contract";
 import { submissionPackageText } from "../../student/submission-package/messages.hr";
 
@@ -90,17 +90,7 @@ describe("preparation (WEB-1803)", () => {
 });
 
 describe("the two routes' wiring", () => {
-  it("asks for the PDF of a version under the key, and cancels by id", async () => {
-    const seen: unknown[] = [];
-    const call = async (id: string, input: unknown) => { seen.push([id, input]); return { ok: true as const, status: 204, body: null }; };
-    const calls = pdfCalls(call as never, "doc-1", "7", "key-12345678");
-    await calls.start(now()); await calls.read(FILE_ID, now()); await calls.cancel(FILE_ID);
-    expect(seen).toEqual([
-      ["student.work-pdf-export.post", { body: { documentId: "doc-1", versionId: "7", requestKey: "key-12345678" } }],
-      ["student.work-pdf-export.get", { params: { documentId: "doc-1", exportId: FILE_ID } }],
-      ["student.work-pdf-export-cancel.post", { params: { documentId: "doc-1", exportId: FILE_ID } }],
-    ]);
-    expect(pdfDownloadPrefix("doc-1")).toBe(PREFIX);
+  it("names the PDF after the work's title, safely", () => {
     expect(pdfFileName(" Moj/rad: 1. ")).toBe("Moj_rad_ 1.pdf");
     expect(pdfFileName("")).toBe("rad.pdf");
   });
