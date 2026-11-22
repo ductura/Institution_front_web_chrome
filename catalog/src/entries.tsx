@@ -38,6 +38,7 @@ import { accessDeniedEntries } from "./access-denied";
 import { portableRecordEntries } from "./portable-record";
 import { studentDataExportEntries } from "./student-data-export";
 import { practiceBadgeEntries } from "./practice-badge";
+import { submissionStepEntries } from "./submission-step";
 import { provenanceShareEntries } from "./provenance-share";
 import { problemReportEntries } from "./problem-report";
 import { eventDisputeEntries } from "./event-dispute";
@@ -291,6 +292,7 @@ export const ENTRIES = {
   ...portableRecordEntries,
   ...studentDataExportEntries,
   ...practiceBadgeEntries,
+  ...submissionStepEntries,
   ...provenanceShareEntries,
   ...problemReportEntries,
   ...eventDisputeEntries,

@@ -4,7 +4,7 @@ import { expect, it } from "vitest";
 
 import type { ReceiptRead } from "../../../../../../../src/components/predaja/ReceiptPanel";
 import ReceiptScreen from "./ReceiptScreen";
-import { fingerprintGroups, receiptView, when, zone } from "./model";
+import { fingerprintGroups, receiptView, when, zoned } from "./model";
 
 const HEX = "0123456789abcdef".repeat(4);
 const receipt = (afterDeadline: boolean, evidenceRecord = "continuous"): ReceiptRead => ({
@@ -17,16 +17,17 @@ const receipt = (afterDeadline: boolean, evidenceRecord = "continuous"): Receipt
 const html = (read: ReceiptRead) => renderToStaticMarkup(createElement(ReceiptScreen, { read, retryHref: "/r", workHref: "/w", homeHref: "/" }));
 
 it("zone and time are Zagreb's, with the offset", () => {
-  expect(zone("2026-11-12T20:15:00Z")).toBe("(UTC+1)");
-  expect(zone("2026-07-12T20:15:00Z")).toBe("(UTC+2)");
-  expect(when("2026-11-12T20:15:00Z")).toMatch(/12\. studenoga 2026\. u 21:15/);
+  expect(zoned("2026-11-12T20:15:00Z")).toBe("12. 11. 2026. u 21:15 (UTC+1)");
+  expect(zoned("2026-07-12T20:15:00Z")).toBe("12. 7. 2026. u 22:15 (UTC+2)");
+  expect(when("2026-11-12T20:15:00Z")).toBe("12. 11. 2026. u 21:15");
 });
 
 it("puno: title, rows, UTC values and the fingerprint in groups of four", () => {
   const v = receiptView(receipt(false));
-  expect(v.kind === "potvrdeno" && v.title).toMatch(/^Predano 12\. studenoga 2026\. u 21:15$/);
+  expect(v.kind === "potvrdeno" && v.title).toBe("Predano 12. 11. 2026. u 21:15");
   const out = html(receipt(false));
-  expect(out).toContain("Vrijeme predaje (UTC+1)");
+  expect(out).toContain("Vrijeme predaje");
+  expect(out).toContain("12. 11. 2026. u 21:15 (UTC+1)");
   expect(out).toContain("2026-11-12T20:15:00.123456Z");
   expect(out).toContain("Otisak predanog teksta");
   expect(out).toContain("Kopiraj otisak");

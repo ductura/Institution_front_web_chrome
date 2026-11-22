@@ -1,6 +1,6 @@
 // WEB-2106: which panel a step shows for the assignment as the server gave it.
 // A plain module so the decision is tested without rendering.
-export type StepKind = "declaration" | "beforeSubmit";
+export type StepKind = "declaration" | "beforeSubmit" | "submit";
 
 /** The checked assignment a step stands on (what `useChecked` reads). */
 export type StepWork =
