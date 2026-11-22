@@ -5,20 +5,14 @@
 // handler SRV-29) and N-13 "Produljenje roka" (WEB-1113 over SRV-1108). A read
 // that fails is said as such, never shown as an empty list.
 import { appHref, readTeacherCourses, type TeacherCoursesCall } from "../../../../../src/components/index.ts";
-import DeadlineExtensions, { type ExtensionsRead } from "../../../../../src/components/teacher/deadline-extensions/DeadlineExtensions.tsx";
-import { extensionsHref } from "../../../../../src/components/teacher/links.ts";
 import { createApi } from "../../../../../src/client/api.ts";
-import { readDeadlineExtensions, readExtensionStudents, type ExtensionStudent } from "../../../../../src/client/deadline-extensions.ts";
+import { readDeadlineExtensions, readExtensionStudents, recordDeadlineExtension } from "../../../../../src/client/deadline-extensions.ts";
 import { readAssignmentOverview, type TeacherCall } from "../../../../../src/client/teacher-reads.ts";
-import { messagesHr } from "../../../../../src/lib/i18n/messages.hr.ts";
 
-import { TeacherPage, useTeacherRead, type TeacherRead } from "../pages";
 import N17Overview from "./n17/Overview";
 import type { N17Port, N17Read } from "./n17/model";
-import { teacherShellHr } from "./shell/messages.hr";
-import { useHost } from "../context";
-
-const extensions = messagesHr.deadlineExtensions;
+import N13Extensions from "./n13/Extensions";
+import type { N13Port, N13Read } from "./n13/model";
 
 /** N-17 reads teacher.courses.get and then the overview of every assignment; one failed assignment fails only its card. */
 const n17Port: N17Port = {
@@ -39,22 +33,30 @@ export function AssignmentOverviewPage() {
   return <N17Overview port={n17Port} />;
 }
 
-type Extensions = { read: ExtensionsRead; students: readonly ExtensionStudent[] | null };
-
-/** N-13 "Produljenje roka" for one assignment (WEB-1113). */
-export function DeadlineExtensionsPage({ assignmentId }: { assignmentId: string }) {
-  const { base } = useHost();
-  const [read, retry] = useTeacherRead<Extensions>(base, async (): Promise<TeacherRead<Extensions>> => {
+/** N-13 reads the extensions, the students and the task facts of teacher.courses.get; a part that fails is "unavailable", never empty. */
+const n13Port: N13Port = {
+  async read(assignmentId): Promise<N13Read> {
     const client = createApi();
-    const [list, students] = await Promise.all([readDeadlineExtensions(client, assignmentId), readExtensionStudents(client, assignmentId)]);
+    const [list, students, courses] = await Promise.all([
+      readDeadlineExtensions(client, assignmentId), readExtensionStudents(client, assignmentId),
+      readTeacherCourses(createApi() as unknown as TeacherCoursesCall),
+    ]);
     if (list.kind === "session-expired") return { kind: "signedOut" };
-    const extensionsRead: ExtensionsRead = list.kind === "ready" ? { kind: "ready", extensions: list.extensions } : { kind: "unavailable" };
-    return { kind: "ready", value: { read: extensionsRead, students } };
-  });
-  return (
-    <TeacherPage title={extensions.title} lead={extensions.lead} loading={teacherShellHr.loadingExtensions} read={read} retry={retry}
-      unavailable={extensions.unavailable} retryLabel={extensions.retry}
-      ready={(value) => <DeadlineExtensions assignmentId={assignmentId} read={value.read} students={value.students}
-        onRecorded={retry} returnTo={appHref(base, extensionsHref(assignmentId))} />} />
-  );
+    const course = courses.kind === "ready" ? courses.courses.find((c) => c.assignments.some((a) => a.id === assignmentId)) : undefined;
+    const task = course?.assignments.find((a) => a.id === assignmentId);
+    return {
+      kind: "ready",
+      data: {
+        context: { task: task?.title ?? null, course: course?.name ?? null, dueAt: task?.dueAt ?? null },
+        extensions: list.kind === "ready" ? list.extensions : null,
+        students,
+      },
+    };
+  },
+  record: (assignmentId, draft) => recordDeadlineExtension(createApi(), assignmentId, draft),
+};
+
+/** N-13 "Produljenje roka" for one assignment (WEB-2162), see ./n13. */
+export function DeadlineExtensionsPage({ assignmentId }: { assignmentId: string }) {
+  return <N13Extensions assignmentId={assignmentId} port={n13Port} />;
 }
