@@ -29,6 +29,8 @@ import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 import PortableRecord from "../portable-record/PortableRecord";
 import SubmissionPackage from "../submission-package/SubmissionPackage";
+import { stepsText } from "./steps/messages.hr";
+import StepsShell from "./steps/StepsShell";
 import WithdrawSubmission from "./withdraw/WithdrawSubmission";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -38,7 +40,7 @@ type Step = "" | "izjava" | "pregled" | "slanje" | "potvrda";
 
 /** What the checked assignment allows a step to show. */
 type Checked =
-  | { readonly kind: "ready"; readonly title: string; readonly workState: string; readonly stage: Stage }
+  | { readonly kind: "ready"; readonly course: string; readonly title: string; readonly workState: string; readonly stage: Stage }
   | { readonly kind: "unavailable" };
 
 type Shown<T> = { kind: "loading" } | { kind: "notFound" } | { kind: "ready"; value: T };
@@ -52,12 +54,14 @@ function stepPath(assignmentId: string, step: Step): string {
  * The check every step makes, then `then` with what it allows. Sign-in, the
  * notice and not found are decided here, as on the copied pages.
  */
-function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignmentId: string) => Promise<T | null>): Shown<T> {
+function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignmentId: string) => Promise<T | null>): Shown<T> & { reload: () => void } {
   const { base } = useHost();
   const router = useRouter();
   const [shown, setShown] = useState<Shown<T>>({ kind: "loading" });
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let live = true;
+    setShown({ kind: "loading" });
     const assignmentId = assignmentIdOf(raw);
     if (assignmentId === null) {
       setShown({ kind: "notFound" });
@@ -75,7 +79,7 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const checked: Checked = read.kind === "ready"
-        ? { kind: "ready", title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()) }
+        ? { kind: "ready", course: read.course, title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()) }
         : { kind: "unavailable" };
       const value = await then(checked, assignmentId);
       if (live && value !== null) setShown({ kind: "ready", value });
@@ -83,13 +87,13 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
     return () => {
       live = false;
     };
-  }, [raw, base]);
-  return shown;
+  }, [raw, base, attempt]);
+  return { ...shown, reload: () => setAttempt((n) => n + 1) };
 }
 
-function Shown<T>({ shown, children }: { shown: Shown<T>; children: (value: T) => ReactNode }) {
+function Shown<T>({ shown, loading = hostText.loading, children }: { shown: Shown<T>; loading?: string; children: (value: T) => ReactNode }) {
   if (shown.kind === "notFound") notFound();
-  if (shown.kind === "loading") return <p role="status">{hostText.loading}</p>;
+  if (shown.kind === "loading") return <p role="status">{loading}</p>;
   return <>{children(shown.value)}</>;
 }
 
@@ -116,15 +120,13 @@ export function DeclarationStepPage({ assignmentId }: { assignmentId: string }) 
   const hrefOf = useHrefOf();
   const shown = useChecked(assignmentId, "izjava", async (checked, id) => ({ checked, id }));
   return (
-    <Shown shown={shown}>
-      {({ checked, id }) => checked.kind === "ready"
-        ? <Declaration assignmentId={id} recorded={{ kind: "error" }} hrefOf={hrefOf} />
-        : (
-          <div className="page declaration">
-            <h1>{t.declaration.title}</h1>
-            <p role="status">{t.student.unavailable}</p>
-          </div>
-        )}
+    <Shown shown={shown} loading={stepsText.loadingRecorded}>
+      {({ checked, id }) => (
+        <StepsShell step="declaration" work={checked} workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
+          receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
+          <Declaration assignmentId={id} recorded={{ kind: "error" }} hrefOf={hrefOf} />
+        </StepsShell>
+      )}
     </Shown>
   );
 }
@@ -134,10 +136,14 @@ export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignment
   const hrefOf = useHrefOf();
   const shown = useChecked(assignmentId, "pregled", async (checked, id) => ({ checked, id }));
   return (
-    <Shown shown={shown}>
+    <Shown shown={shown} loading={stepsText.loadingWork}>
       {({ checked, id }) => (
-        <BeforeSubmit assignmentId={id} summary={{ kind: "unavailable" }} declaredFor={declaredFor} hrefOf={hrefOf}
-          stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }} />
+        <StepsShell step="beforeSubmit" work={checked} workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
+          receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
+          <p>{stepsText.intro}</p>
+          <BeforeSubmit assignmentId={id} summary={{ kind: "unavailable" }} declaredFor={declaredFor} hrefOf={hrefOf}
+            stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }} />
+        </StepsShell>
       )}
     </Shown>
   );
