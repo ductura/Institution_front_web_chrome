@@ -53,7 +53,7 @@ export function ConsultRecords({ documentId, role, revision }: { documentId: str
 
   if (load.kind === "loading") return <p role="status" className={styles.muted}>{t.loading}</p>;
   if (load.kind === "unavailable") {
-    return <div className={styles.card}><p role="alert" className={styles.error}>{t.unavailable}</p><Button onClick={() => void read()}>{consultHr.slots.retry}</Button></div>;
+    return <div className={styles.card}><p role="alert" className={styles.error}>{t.unavailable}</p><Button size="dense" tone="secondary" onClick={() => void read()}>{consultHr.slots.retry}</Button></div>;
   }
   const writer = canWriteRecords(role);
   return (
@@ -72,7 +72,7 @@ export function ConsultRecords({ documentId, role, revision }: { documentId: str
               <label>{t.noteLabel}
                 <textarea className={styles.field} value={note.draft} disabled={note.busy} onChange={(e) => setNotes((all) => ({ ...all, [r.id]: { ...note, draft: e.target.value } }))} />
               </label>
-              <Button disabled={note.busy || note.draft.trim() === ""} onClick={() => void saveNote(r)}>{t.noteAdd}</Button>
+              <Button size="dense" disabled={note.busy || note.draft.trim() === ""} onClick={() => void saveNote(r)}>{t.noteAdd}</Button>
               {note.error ? <p role="alert" className={styles.error}>{note.error}</p> : null}
             </li>
           );
@@ -86,12 +86,12 @@ export function ConsultRecords({ documentId, role, revision }: { documentId: str
             <label>{t.agreementLabel}<textarea className={styles.field} value={form.agreement} disabled={form.busy} onChange={(e) => setForm((f) => ({ ...f, agreement: e.target.value }))} /></label>
             <p className={styles.muted}>{t.agreementHint}</p>
             <div className={styles.row}>
-              <Button disabled={form.busy} onClick={() => void saveRecord()}>{form.busy ? consultHr.slots.sending : t.save}</Button>
-              <Button disabled={form.busy} onClick={() => setForm((f) => ({ ...f, open: false, error: null }))}>{consultHr.slots.cancel}</Button>
+              <Button size="dense" disabled={form.busy} onClick={() => void saveRecord()}>{form.busy ? consultHr.slots.sending : t.save}</Button>
+              <Button size="dense" tone="secondary" disabled={form.busy} onClick={() => setForm((f) => ({ ...f, open: false, error: null }))}>{consultHr.slots.cancel}</Button>
             </div>
             {form.error ? <p role="alert" className={styles.error}>{form.error}</p> : null}
           </div>
-        ) : <Button onClick={() => setForm((f) => ({ ...f, open: true }))}>{t.add}</Button>
+        ) : <Button size="dense" tone="secondary" onClick={() => setForm((f) => ({ ...f, open: true }))}>{t.add}</Button>
       ) : null}
     </section>
   );

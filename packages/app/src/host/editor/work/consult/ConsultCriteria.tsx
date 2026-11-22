@@ -63,7 +63,7 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
     return (
       <div className={styles.card}>
         <p role="alert" className={styles.error}>{text}</p>
-        {load.kind === "unavailable" && call ? <Button onClick={() => void read()}>{t.retry}</Button> : null}
+        {load.kind === "unavailable" && call ? <Button size="dense" tone="secondary" onClick={() => void read()}>{t.retry}</Button> : null}
       </div>
     );
   }
@@ -81,7 +81,7 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
               {editable ? (
                 <div className={styles.seg} role="group" aria-label={t.assessmentGroup.replace("{title}", title)}>
                   {ASSESSMENTS.map((a) => (
-                    <Button key={a} aria-pressed={c.assessment === a} disabled={row.busy} onClick={() => void send(c, assessmentChange(c, a), {})}>{t.assessments[a]}</Button>
+                    <Button size="dense" tone="secondary" key={a} aria-pressed={c.assessment === a} disabled={row.busy} onClick={() => void send(c, assessmentChange(c, a), {})}>{t.assessments[a]}</Button>
                   ))}
                 </div>
               ) : c.assessment !== null ? <span>{t.assessments[c.assessment]}</span> : null}
@@ -94,15 +94,15 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
                   </label>
                   <p className={styles.muted}>{t.noteHint.replace("{max}", String(NOTE_MAX))}</p>
                   <div className={styles.row}>
-                    <Button disabled={row.busy} onClick={() => {
+                    <Button size="dense" disabled={row.busy} onClick={() => {
                       const input = noteChange(c, row.draft);
                       if (input === null) patch(c.id, { error: t.errors.invalid }); else void send(c, input, { editing: false });
                     }}>{row.busy ? t.saving : t.saveNote}</Button>
-                    <Button disabled={row.busy} onClick={() => patch(c.id, { editing: false, error: null })}>{t.cancel}</Button>
+                    <Button size="dense" tone="secondary" disabled={row.busy} onClick={() => patch(c.id, { editing: false, error: null })}>{t.cancel}</Button>
                   </div>
                 </div>
               ) : editable ? (
-                <Button disabled={row.busy} onClick={() => patch(c.id, { editing: true, draft: c.note ?? "", error: null })}>{c.note === null ? t.addNote : t.editNote}</Button>
+                <Button size="dense" tone="secondary" disabled={row.busy} onClick={() => patch(c.id, { editing: true, draft: c.note ?? "", error: null })}>{c.note === null ? t.addNote : t.editNote}</Button>
               ) : null}
               {row.error ? <p role="alert" className={styles.error}>{row.error}</p> : null}
             </li>

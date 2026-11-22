@@ -8,6 +8,7 @@
 // requesting or withdrawing a proof have no route in the contract: their
 // buttons are off and say "nedostupno". A collaborator only reads.
 import { Button, Card, DataTable, Details, Dialog, Tag, type DataTableColumn } from "@ductura/ui";
+import styles from "./Literature.module.css";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import { readWorkLiterature, type LiteratureRead } from "./literature-read";
@@ -85,10 +86,10 @@ export function LiteratureView({ state, role, submitted, seen, overview, message
   const literature = state?.kind === "ready" ? state.literature : null;
   const rows = useMemo(() => (literature ? overviewRows(literature, seen) : []), [literature, seen]);
 
-  if (state === null) return <p role="status">{t.loading}</p>;
-  if (state.kind === "signedOut") return <p role="alert">{t.signedOut}</p>;
+  if (state === null) return <p role="status" className={styles.muted}>{t.loading}</p>;
+  if (state.kind === "signedOut") return <p role="alert" className={styles.alert}>{t.signedOut}</p>;
   if (state.kind === "unavailable") {
-    return <div><p role="alert">{t.unavailable}</p><Button tone="quiet" onClick={onRetry}>{t.retry}</Button></div>;
+    return <div className={styles.root}><p role="alert" className={styles.alert}>{t.unavailable}</p><Button tone="secondary" size="dense" onClick={onRetry}>{t.retry}</Button></div>;
   }
 
   const columns: DataTableColumn<OverviewRow>[] = [
@@ -101,30 +102,30 @@ export function LiteratureView({ state, role, submitted, seen, overview, message
   const requests = literature?.requests ?? [];
 
   return (
-    <div>
-      {state.kind === "ready" ? <p>{t.basis(hrDay(state.savedMinute))}</p> : <p role="status">{t.noVersion}</p>}
-      {!teacher && <p>{t.readOnly}</p>}
-      {teacher && submitted && <p>{t.submitted}</p>}
-      <div role="group" aria-label={t.heading}>
-        {sends && <Button tone="quiet" disabled aria-describedby={`${noteId}-rec`}>{t.recommend}</Button>}
-        <Button tone="quiet" disabled={literature === null} onClick={() => onOverview(true)}>{t.overview}</Button>
+    <div className={styles.root}>
+      {state.kind === "ready" ? <p className={styles.muted}>{t.basis(hrDay(state.savedMinute))}</p> : <p role="status" className={styles.muted}>{t.noVersion}</p>}
+      {!teacher && <p className={styles.muted}>{t.readOnly}</p>}
+      {teacher && submitted && <p className={styles.muted}>{t.submitted}</p>}
+      <div className={styles.row} role="group" aria-label={t.heading}>
+        {sends && <Button tone="secondary" size="dense" disabled aria-describedby={`${noteId}-rec`}>{t.recommend}</Button>}
+        <Button tone="secondary" size="dense" disabled={literature === null} onClick={() => onOverview(true)}>{t.overview}</Button>
       </div>
-      {sends && <p id={`${noteId}-rec`}>{t.recommendUnavailable}</p>}
+      {sends && <p id={`${noteId}-rec`} className={styles.muted}>{t.recommendUnavailable}</p>}
 
       {literature && <Card title={t.requests}>
         <p>{requests.length > 0 ? t.requestsWaiting(requests.length) : t.requestsNone}</p>
-        {requests.length > 0 && <ul>{requests.map((r, i) => <li key={`${r.rq}:${i}`}>{t.requestPlace(r.label, r.page)}</li>)}</ul>}
-        {sends && <p>{t.requestUnavailable}</p>}
+        {requests.length > 0 && <ul className={styles.list}>{requests.map((r, i) => <li key={`${r.rq}:${i}`}>{t.requestPlace(r.label, r.page)}</li>)}</ul>}
+        {sends && <p className={styles.muted}>{t.requestUnavailable}</p>}
       </Card>}
 
-      <Details summary={t.recommended}><p>{t.recommendUnavailable}</p></Details>
-      <Details summary={t.mandatory}>
-        <p id={`${noteId}-ob`}>{t.mandatoryUnavailable}</p>
-        {sends && <Button tone="quiet" disabled aria-describedby={`${noteId}-ob`}>{t.mandatoryAdd}</Button>}
+      <Details className={styles.rpd} summary={t.recommended}><p className={styles.muted}>{t.recommendUnavailable}</p></Details>
+      <Details className={styles.rpd} summary={t.mandatory}>
+        <p id={`${noteId}-ob`} className={styles.muted}>{t.mandatoryUnavailable}</p>
+        {sends && <Button tone="secondary" size="dense" disabled aria-describedby={`${noteId}-ob`}>{t.mandatoryAdd}</Button>}
       </Details>
 
       <Dialog open={overview} title={t.overview} onClose={() => onOverview(false)} actions={<>
-        {teacher && <Button tone="quiet" disabled={literature === null} onClick={onMarkSeen}>{t.markSeen}</Button>}
+        {teacher && <Button tone="secondary" size="dense" disabled={literature === null} onClick={onMarkSeen}>{t.markSeen}</Button>}
         <Button onClick={() => onOverview(false)}>{t.close}</Button>
       </>}>
         <p>{overviewSummary(rows, seen)}</p>
