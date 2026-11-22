@@ -19,7 +19,7 @@ export type CompareResult = { kind: "ready"; blocks: TimeMachineBlock[] } | { ki
 
 export async function readTimeMachineVersions(documentId: string, api = createApi()): Promise<VersionsResult> {
   try {
-    const result = await api("work.versions.get", { params: { documentId }, query: undefined, body: undefined });
+    const result = await api("work.versions.get", { params: { documentId }, query: {}, body: undefined });
     if (!result.ok) return { kind: result.status === 401 ? "signedOut" : "unavailable" };
     return { kind: "ready", versions: result.body.versions.map(({ kind, revision, savedMinute }) => ({ kind, revision, savedMinute })) };
   } catch {

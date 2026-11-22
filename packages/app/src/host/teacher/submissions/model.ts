@@ -63,9 +63,9 @@ export function failureMessage(read: SubmissionsRead | VersionRead): string {
   }
 }
 
-/** Opening a version is recorded by the server, so a row opens only when its receipt is bound. */
-export function canOpen(row: SubmittedRow): row is SubmittedRow & { submissionId: string } {
-  return row.submissionId !== null;
+/** Every submitted row opens: the detail is read by student, and the server records the opening. */
+export function canOpen(row: SubmittedRow): boolean {
+  return Number.isInteger(row.revision);
 }
 
 /** A read kept with the assignment it was made for. */
@@ -81,5 +81,5 @@ export function forAssignment<T extends ForAssignment<object>>(state: T | null, 
 
 /** The panel after a version read answers: an answer for a row no longer open (another opened, or closed) is dropped. */
 export function answeredPanel(panel: VersionPanel, assignmentId: string, row: SubmittedRow, read: VersionRead): VersionPanel {
-  return forAssignment(panel, assignmentId)?.row.submissionId === row.submissionId ? { assignmentId, row, read } : panel;
+  return forAssignment(panel, assignmentId)?.row.studentId === row.studentId ? { assignmentId, row, read } : panel;
 }

@@ -1,27 +1,24 @@
 "use client";
 
-import { Checkbox } from "@ductura/ui";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
+import { createFakeRhythmPort } from "../../../../client/input-rhythm-fake";
+import type { RhythmPort } from "../../../../client/input-rhythm";
+import { RhythmSetting } from "../../rhythm/RhythmSetting";
 import { whatIsRecordedHr as t } from "../../../../lib/i18n/messages.hr";
 import styles from "./WhatIsRecorded.module.css";
-import { readRhythm, rhythmKey, writeRhythm } from "./rhythm";
 
-type Props = { rhythm?: boolean; onRhythmChange?: (value: boolean) => void };
+type Props = {
+  /** Where the rhythm setting of the work is read from; the fake adapter until SRV-0910. */
+  port?: RhythmPort;
+  documentId?: string;
+  /** Only a teacher changes the rhythm setting (P-1); a student sees it read-only. */
+  canChange?: boolean;
+  onChange?: (on: boolean) => void;
+};
 
-export function useRhythmSetting() {
-  const [value, setValue] = useState(true);
-  useEffect(() => setValue(readRhythm(() => localStorage.getItem(rhythmKey))), []);
-  return [value, (next: boolean) => {
-    setValue(next);
-    writeRhythm(next, (v) => localStorage.setItem(rhythmKey, v));
-  }] as const;
-}
-
-export function WhatIsRecorded({ rhythm, onRhythmChange }: Props) {
-  const [own, setOwn] = useRhythmSetting();
-  const checked = rhythm ?? own;
-  const change = onRhythmChange ?? setOwn;
+export function WhatIsRecorded({ port, documentId = "current", canChange = false, onChange }: Props) {
+  const fallback = useMemo(() => createFakeRhythmPort(), []);
   return (
     <div className={styles.root} data-testid="what-is-recorded">
       <dl className={styles.list}>
@@ -30,7 +27,7 @@ export function WhatIsRecorded({ rhythm, onRhythmChange }: Props) {
         <div>
           <dt>{t.rhythm.heading}</dt>
           <dd>{t.rhythm.text}</dd>
-          <dd><Checkbox label={t.rhythm.toggle} checked={checked} onChange={() => change(!checked)} /></dd>
+          <dd><RhythmSetting port={port ?? fallback} documentId={documentId} canChange={canChange} onChange={onChange} /></dd>
         </div>
         <div><dt>{t.not.heading}</dt><dd>{t.not.text}</dd></div>
         <div><dt>{t.who.heading}</dt><dd>{t.who.text}</dd></div>

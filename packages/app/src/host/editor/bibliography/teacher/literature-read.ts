@@ -19,7 +19,7 @@ export type LiteratureRead =
 
 export async function readWorkLiterature(documentId: string, call: Call = createApi()): Promise<LiteratureRead> {
   try {
-    const list = await call("work.versions.get", { params: { documentId }, query: undefined, body: undefined });
+    const list = await call("work.versions.get", { params: { documentId }, query: {}, body: undefined });
     if (!list.ok) return { kind: list.status === 401 ? "signedOut" : "unavailable" };
     const newest = [...list.body.versions].sort((a, b) => b.revision - a.revision)[0];
     if (!newest) return { kind: "noVersion" };
