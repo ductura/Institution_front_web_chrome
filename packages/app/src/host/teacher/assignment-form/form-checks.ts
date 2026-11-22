@@ -1,24 +1,19 @@
-import type { WizardErrors } from "@ductura/ui";
-
 import { parseWordRange, type AssignmentDraft } from "@/components/teacher/assignment-create";
 import { zagrebInstant } from "@/lib/i18n/zagreb";
 
-import { wizardHr } from "./messages.hr";
+import { assignmentFormHr } from "./messages.hr";
 
-const e = wizardHr.errors;
+const e = assignmentFormHr.errors;
 
-/** Step 1: the title is required and at most 160 characters; the description is capped like the server. */
-export function checkBasics(draft: AssignmentDraft): WizardErrors {
-  const errors: Record<string, string> = {};
+export type FormField = "title" | "instructions" | "opensAt" | "dueAt" | "wordMax";
+export type FormErrors = Partial<Record<FormField, string>>;
+
+/** All checks of the one form (zs-1 and zs-2) in the order the fields appear. */
+export function checkForm(draft: AssignmentDraft): FormErrors {
+  const errors: FormErrors = {};
   const title = draft.title.trim();
   if (!title || Array.from(title).length > 160) errors.title = e.title;
   if (Array.from(draft.instructions).length > 20_000) errors.instructions = e.instructions;
-  return errors;
-}
-
-/** Step 2: both times, the deadline after the start, and a valid optional word range. */
-export function checkSchedule(draft: AssignmentDraft): WizardErrors {
-  const errors: Record<string, string> = {};
   const opensAt = zagrebInstant(draft.opensAt);
   const dueAt = zagrebInstant(draft.dueAt);
   if (!opensAt) errors.opensAt = e.opensAt;
@@ -26,6 +21,12 @@ export function checkSchedule(draft: AssignmentDraft): WizardErrors {
   else if (opensAt && dueAt <= opensAt) errors.dueAt = e.dueBeforeOpen;
   if (!parseWordRange(draft.wordMin, draft.wordMax)) errors.wordMax = e.words;
   return errors;
+}
+
+/** The text of the summary box `#wz-err`: every error, in field order. */
+export function errorSummary(errors: FormErrors): string {
+  const order: FormField[] = ["title", "instructions", "opensAt", "dueAt", "wordMax"];
+  return order.flatMap((field) => errors[field] ?? []).join(" ");
 }
 
 /**
