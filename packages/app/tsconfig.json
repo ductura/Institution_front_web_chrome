@@ -63,5 +63,5 @@
       ]
     }
   },
-  "include": ["app","src","e2e","next.config.ts","vitest.config.ts","playwright.config.ts","../ui/src/css-modules.d.ts"]
+  "include": ["app","src","e2e","next.config.ts","vitest.config.ts","playwright.config.ts","playwright.viz.config.ts","../ui/src/css-modules.d.ts"]
 }
