@@ -34,6 +34,8 @@ export const assignmentFactsMessages = {
   notOpenedLine: "Rad nije otvoren",
   notStarted: "Rad nije započet",
   openWork: "Otvori rad",
+  deadlinePassed: "rok je prošao",
+  fastPath: "Brz put kroz radove",
   interruptedTitle: (title: string | null): string =>
     title === null ? "Objava zadatka prekinuta je i ishod nije poznat." : `Objava zadatka „${title}” prekinuta je i ishod nije poznat.`,
   interruptedBody: "Prije ponovne objave provjerite popis zadataka: ako je zadatak objavljen, pojavit će se ovdje.",

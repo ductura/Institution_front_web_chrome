@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Select, Skeleton, TextField } from "@ductura/ui";
+import { Button, Select, TextField } from "@ductura/ui";
 
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { goToSignIn } from "../../../../../../src/client/api";
@@ -63,15 +63,21 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
 
   return (
     <div className="page">
-      <h1>{text.title}</h1>
-      {data !== null && <p>{leadText(data.context)}</p>}
-      {read === null && <Skeleton label={text.loading} />}
-      {read?.kind === "signedOut" && <p role="status">{text.loading}</p>}
+      <div className="pagehead">
+        <h1>{text.title}</h1>
+        {data !== null && <p className="lede">{leadText(data.context)}</p>}
+      </div>
+      {(read === null || read.kind === "signedOut") && (
+        <section className="card" aria-busy="true">
+          <p className="note" role="status">{text.loading}</p>
+          <div className="skel w80" /><div className="skel w60" /><div className="skel w40" />
+        </section>
+      )}
       {read?.kind === "unavailable" && (
-        <div>
-          <p role="alert">{text.unavailable}</p>
-          <button type="button" className="btn" onClick={() => setAttempt((n) => n + 1)}>{text.retry}</button>
-        </div>
+        <section className="card">
+          <p className="note" role="alert">{text.unavailable}</p>
+          <div className="sb-acts"><Button tone="secondary" onClick={() => setAttempt((n) => n + 1)}>{text.retry}</Button></div>
+        </section>
       )}
       {data !== null && (
         <>
@@ -108,17 +114,17 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
               onChange={(e) => setReasonId(e.target.value)}
             />
             <div className="sb-acts">
-              <Button type="button" onClick={() => void submit()} disabled={busy}>{busy ? text.saving : text.save}</Button>
+              <Button onClick={() => void submit()} busy={busy}>{busy ? text.saving : text.save}</Button>
               <a className="btn secondary" href={appHref(base, "/nastavnik")}>{text.cancel}</a>
             </div>
           </div>
           <section className="card" aria-labelledby="pl-h">
             <h2 id="pl-h">{text.listTitle}</h2>
             {data.extensions === null ? (
-              <div>
-                <p role="alert">{text.listUnavailable}</p>
-                <button type="button" className="btn" onClick={() => setAttempt((n) => n + 1)}>{text.retry}</button>
-              </div>
+              <>
+                <p className="note" role="alert">{text.listUnavailable}</p>
+                <div className="sb-acts"><Button tone="secondary" onClick={() => setAttempt((n) => n + 1)}>{text.retry}</Button></div>
+              </>
             ) : data.extensions.length === 0 ? <p className="note">{text.empty}</p> : (
               <>
                 <ul className="list">

@@ -1,6 +1,6 @@
 import {
   AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, Chip, CodeField, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  EditorOnboarding, EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
+  EditorOnboarding, EditorOutline, ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
   PillTag, SideShell, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup, type ShortcutListGroup,
 } from "@ductura/ui";
@@ -38,6 +38,7 @@ import { accessDeniedEntries } from "./access-denied";
 import { portableRecordEntries } from "./portable-record";
 import { studentDataExportEntries } from "./student-data-export";
 import { practiceBadgeEntries } from "./practice-badge";
+import { formPartsEntries } from "./form-parts";
 import { provenanceShareEntries } from "./provenance-share";
 import { problemReportEntries } from "./problem-report";
 import { eventDisputeEntries } from "./event-dispute";
@@ -291,6 +292,7 @@ export const ENTRIES = {
   ...portableRecordEntries,
   ...studentDataExportEntries,
   ...practiceBadgeEntries,
+  ...formPartsEntries,
   ...provenanceShareEntries,
   ...problemReportEntries,
   ...eventDisputeEntries,
