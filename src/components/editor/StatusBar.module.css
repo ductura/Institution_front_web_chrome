@@ -1,14 +1,23 @@
-/* WEB-14: the status bar of the editor page, 30 px, in the shell's chrome. */
+/* VIZ-S3 (S: E-7): the prototype's `.ed-status`, `.ed-save`, `.ed-words` and `.ed-net`. */
 .bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
-  height: 30px;
-  padding: 0 16px;
-  border-top: 1px solid var(--rule);
+  gap: 6px 16px;
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 6px 16px;
+  border-top: 1px solid var(--rule-2);
   background: var(--chrome);
   color: var(--ink-2);
   font-family: var(--ff-ui);
-  font-size: 12px;
-  overflow: hidden;
+  font-size: 12.5px;
+}
+.bar [role="status"] { gap: 8px; color: var(--ink); }
+/* The length goes to the right edge; on a narrow screen it follows on its own line. */
+.scope { margin-left: auto; }
+.net { color: var(--ink); font-weight: 600; }
+@media (max-width: 640px) {
+  .bar { padding: 6px 12px; }
+  .scope { margin-left: 0; }
 }

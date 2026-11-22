@@ -152,5 +152,15 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
     return shell(undefined, <section className="card"><h1>{t.home.welcome}</h1><p className="note">{hostText.noRole}</p></section>);
   }
   const { page } = resolved;
+  // VIZ-S3 (S: E-7): the student's workspace has no shell in the prototype (`shell: 'none'`):
+  // the page is the whole window, with its own top bar and status bar.
+  if (role === "student" && page.path === "/rad/[assignmentId]") {
+    return (
+      <EditorSignOutSlot>
+        <RecoveryOffer base={base} />
+        <StudentToasts><HostContext value={{ base, page, role }}>{children}</HostContext></StudentToasts>
+      </EditorSignOutSlot>
+    );
+  }
   return shell(page.current, <HostContext value={{ base, page, role }}>{children}</HostContext>);
 }
