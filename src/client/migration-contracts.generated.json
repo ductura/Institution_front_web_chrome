@@ -33463,5 +33463,3518 @@
         "unavailable"
       ]
     }
+  },
+  "student.course-literature.get": {
+    "path": "/api/v1/student/courses/{courseId}/required-literature",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the required literature, possibly empty",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "sources"
+              ],
+              "properties": {
+                "sources": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "record",
+                      "doi",
+                      "isbn",
+                      "undated",
+                      "createdAt",
+                      "updatedAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "record": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "place",
+                              "publisher"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "book",
+                                "type": "string"
+                              },
+                              "place": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "publisher": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "journal"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "article",
+                                "type": "string"
+                              },
+                              "journal": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,500}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "volume": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "issue": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "pages": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "editors",
+                              "bookTitle",
+                              "place",
+                              "publisher"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "chapter",
+                                "type": "string"
+                              },
+                              "editors": {
+                                "minItems": 1,
+                                "maxItems": 20,
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "kind",
+                                    "family",
+                                    "given"
+                                  ],
+                                  "properties": {
+                                    "kind": {
+                                      "const": "person",
+                                      "type": "string"
+                                    },
+                                    "family": {
+                                      "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                      "type": "string"
+                                    },
+                                    "given": {
+                                      "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "bookTitle": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "place": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "publisher": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "pages": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "url",
+                              "accessed"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "web",
+                                "type": "string"
+                              },
+                              "url": {
+                                "pattern": "^https?://[\\x21-\\x7e]*(?![\\s\\S])",
+                                "maxLength": 2048,
+                                "type": "string"
+                              },
+                              "accessed": {
+                                "pattern": "^(?:\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|02-(?:0[1-9]|1\\d|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)-02-29)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "doi": {
+                        "anyOf": [
+                          {
+                            "pattern": "^10\\.[0-9]{4,9}/[!-@\\[-~]{1,300}(?![\\s\\S])",
+                            "maxLength": 300,
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "isbn": {
+                        "anyOf": [
+                          {
+                            "pattern": "^(?:[0-9]{9}[0-9X]|97[89][0-9]{10})(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "undated": {
+                        "type": "boolean"
+                      },
+                      "createdAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.source-proof-requests.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/source-proof-requests",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the requests, possibly empty",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "proofRequests"
+              ],
+              "properties": {
+                "proofRequests": {
+                  "maxItems": 1000,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "sourceId",
+                      "instruction",
+                      "dueAt",
+                      "createdAt",
+                      "closedAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "sourceId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "instruction": {
+                        "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|\\n|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "dueAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "closedAt": {
+                        "anyOf": [
+                          {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.course-literature.delete": {
+    "path": "/api/v1/teacher/courses/{courseId}/required-literature/{sourceId}",
+    "method": "DELETE",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId",
+        "sourceId"
+      ],
+      "properties": {
+        "courseId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "sourceId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "204": {
+        "description": "removed"
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.course-literature.put": {
+    "path": "/api/v1/teacher/courses/{courseId}/required-literature/{sourceId}",
+    "method": "PUT",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId",
+        "sourceId"
+      ],
+      "properties": {
+        "courseId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "sourceId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "record"
+      ],
+      "properties": {
+        "record": {
+          "additionalProperties": true,
+          "type": "object",
+          "properties": {}
+        },
+        "doi": {
+          "anyOf": [
+            {
+              "pattern": "^10\\.[0-9]{4,9}/[!-@\\[-~]{1,300}(?![\\s\\S])",
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "isbn": {
+          "anyOf": [
+            {
+              "pattern": "^(?:[0-9]{9}[0-9X]|97[89][0-9]{10})(?![\\s\\S])",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "undated": {
+          "type": "boolean"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the saved source",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "record",
+                "doi",
+                "isbn",
+                "undated",
+                "createdAt",
+                "updatedAt"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "record": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "authors",
+                        "year",
+                        "title",
+                        "type",
+                        "place",
+                        "publisher"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "authors": {
+                          "minItems": 1,
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "family",
+                                  "given"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "person",
+                                    "type": "string"
+                                  },
+                                  "family": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "given": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "organization",
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "acronym": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "year": {
+                          "minimum": 1000,
+                          "maximum": 9999,
+                          "type": "integer"
+                        },
+                        "title": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "book",
+                          "type": "string"
+                        },
+                        "place": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "publisher": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "authors",
+                        "year",
+                        "title",
+                        "type",
+                        "journal"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "authors": {
+                          "minItems": 1,
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "family",
+                                  "given"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "person",
+                                    "type": "string"
+                                  },
+                                  "family": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "given": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "organization",
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "acronym": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "year": {
+                          "minimum": 1000,
+                          "maximum": 9999,
+                          "type": "integer"
+                        },
+                        "title": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "article",
+                          "type": "string"
+                        },
+                        "journal": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,500}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "volume": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "issue": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "pages": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "authors",
+                        "year",
+                        "title",
+                        "type",
+                        "editors",
+                        "bookTitle",
+                        "place",
+                        "publisher"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "authors": {
+                          "minItems": 1,
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "family",
+                                  "given"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "person",
+                                    "type": "string"
+                                  },
+                                  "family": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "given": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "organization",
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "acronym": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "year": {
+                          "minimum": 1000,
+                          "maximum": 9999,
+                          "type": "integer"
+                        },
+                        "title": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "chapter",
+                          "type": "string"
+                        },
+                        "editors": {
+                          "minItems": 1,
+                          "maxItems": 20,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "family",
+                              "given"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "const": "person",
+                                "type": "string"
+                              },
+                              "family": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "given": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "bookTitle": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "place": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "publisher": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "pages": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "authors",
+                        "year",
+                        "title",
+                        "type",
+                        "url",
+                        "accessed"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "authors": {
+                          "minItems": 1,
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "family",
+                                  "given"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "person",
+                                    "type": "string"
+                                  },
+                                  "family": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "given": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "organization",
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "acronym": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "year": {
+                          "minimum": 1000,
+                          "maximum": 9999,
+                          "type": "integer"
+                        },
+                        "title": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "web",
+                          "type": "string"
+                        },
+                        "url": {
+                          "pattern": "^https?://[\\x21-\\x7e]*(?![\\s\\S])",
+                          "maxLength": 2048,
+                          "type": "string"
+                        },
+                        "accessed": {
+                          "pattern": "^(?:\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|02-(?:0[1-9]|1\\d|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)-02-29)(?![\\s\\S])",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "doi": {
+                  "anyOf": [
+                    {
+                      "pattern": "^10\\.[0-9]{4,9}/[!-@\\[-~]{1,300}(?![\\s\\S])",
+                      "maxLength": 300,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "isbn": {
+                  "anyOf": [
+                    {
+                      "pattern": "^(?:[0-9]{9}[0-9X]|97[89][0-9]{10})(?![\\s\\S])",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "undated": {
+                  "type": "boolean"
+                },
+                "createdAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.course-literature.get": {
+    "path": "/api/v1/teacher/courses/{courseId}/required-literature",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the required literature, possibly empty",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "canWrite",
+                "sources"
+              ],
+              "properties": {
+                "canWrite": {
+                  "type": "boolean"
+                },
+                "sources": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "record",
+                      "doi",
+                      "isbn",
+                      "undated",
+                      "createdAt",
+                      "updatedAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "record": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "place",
+                              "publisher"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "book",
+                                "type": "string"
+                              },
+                              "place": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "publisher": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "journal"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "article",
+                                "type": "string"
+                              },
+                              "journal": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,500}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "volume": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "issue": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "pages": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "editors",
+                              "bookTitle",
+                              "place",
+                              "publisher"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "chapter",
+                                "type": "string"
+                              },
+                              "editors": {
+                                "minItems": 1,
+                                "maxItems": 20,
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "kind",
+                                    "family",
+                                    "given"
+                                  ],
+                                  "properties": {
+                                    "kind": {
+                                      "const": "person",
+                                      "type": "string"
+                                    },
+                                    "family": {
+                                      "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                      "type": "string"
+                                    },
+                                    "given": {
+                                      "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "bookTitle": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "place": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "publisher": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "pages": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "url",
+                              "accessed"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "web",
+                                "type": "string"
+                              },
+                              "url": {
+                                "pattern": "^https?://[\\x21-\\x7e]*(?![\\s\\S])",
+                                "maxLength": 2048,
+                                "type": "string"
+                              },
+                              "accessed": {
+                                "pattern": "^(?:\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|02-(?:0[1-9]|1\\d|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)-02-29)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "doi": {
+                        "anyOf": [
+                          {
+                            "pattern": "^10\\.[0-9]{4,9}/[!-@\\[-~]{1,300}(?![\\s\\S])",
+                            "maxLength": 300,
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "isbn": {
+                        "anyOf": [
+                          {
+                            "pattern": "^(?:[0-9]{9}[0-9X]|97[89][0-9]{10})(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "undated": {
+                        "type": "boolean"
+                      },
+                      "createdAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.literature-seen.put": {
+    "path": "/api/v1/teacher/works/{documentId}/literature-seen",
+    "method": "PUT",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the mark",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "seenAt"
+              ],
+              "properties": {
+                "seenAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.source-guidance.get": {
+    "path": "/api/v1/teacher/works/{documentId}/source-guidance",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the guidance",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "canWrite",
+                "sources",
+                "proofRequests",
+                "literatureSeenAt"
+              ],
+              "properties": {
+                "canWrite": {
+                  "type": "boolean"
+                },
+                "sources": {
+                  "maxItems": 500,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "record",
+                      "doi",
+                      "isbn",
+                      "undated",
+                      "requirement",
+                      "createdAt",
+                      "updatedAt",
+                      "proofCount"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "record": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "place",
+                              "publisher"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "book",
+                                "type": "string"
+                              },
+                              "place": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "publisher": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "journal"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "article",
+                                "type": "string"
+                              },
+                              "journal": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,500}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "volume": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "issue": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "pages": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "editors",
+                              "bookTitle",
+                              "place",
+                              "publisher"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "chapter",
+                                "type": "string"
+                              },
+                              "editors": {
+                                "minItems": 1,
+                                "maxItems": 20,
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "kind",
+                                    "family",
+                                    "given"
+                                  ],
+                                  "properties": {
+                                    "kind": {
+                                      "const": "person",
+                                      "type": "string"
+                                    },
+                                    "family": {
+                                      "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                      "type": "string"
+                                    },
+                                    "given": {
+                                      "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "bookTitle": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "place": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "publisher": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "pages": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "authors",
+                              "year",
+                              "title",
+                              "type",
+                              "url",
+                              "accessed"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "authors": {
+                                "minItems": 1,
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "family",
+                                        "given"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "person",
+                                          "type": "string"
+                                        },
+                                        "family": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "given": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "type": "object",
+                                      "required": [
+                                        "kind",
+                                        "name"
+                                      ],
+                                      "properties": {
+                                        "kind": {
+                                          "const": "organization",
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        },
+                                        "acronym": {
+                                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "year": {
+                                "minimum": 1000,
+                                "maximum": 9999,
+                                "type": "integer"
+                              },
+                              "title": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "web",
+                                "type": "string"
+                              },
+                              "url": {
+                                "pattern": "^https?://[\\x21-\\x7e]*(?![\\s\\S])",
+                                "maxLength": 2048,
+                                "type": "string"
+                              },
+                              "accessed": {
+                                "pattern": "^(?:\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|02-(?:0[1-9]|1\\d|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)-02-29)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "doi": {
+                        "anyOf": [
+                          {
+                            "pattern": "^10\\.[0-9]{4,9}/[!-@\\[-~]{1,300}(?![\\s\\S])",
+                            "maxLength": 300,
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "isbn": {
+                        "anyOf": [
+                          {
+                            "pattern": "^(?:[0-9]{9}[0-9X]|97[89][0-9]{10})(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "undated": {
+                        "type": "boolean"
+                      },
+                      "requirement": {
+                        "anyOf": [
+                          {
+                            "const": "recommended",
+                            "type": "string"
+                          },
+                          {
+                            "const": "required",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "createdAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "proofCount": {
+                        "minimum": 0,
+                        "maximum": 200,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "proofRequests": {
+                  "maxItems": 1000,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "sourceId",
+                      "instruction",
+                      "dueAt",
+                      "createdAt",
+                      "closedAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "sourceId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "instruction": {
+                        "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|\\n|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "dueAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "closedAt": {
+                        "anyOf": [
+                          {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "literatureSeenAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.source-proof-image.get": {
+    "path": "/api/v1/teacher/works/{documentId}/sources/{sourceId}/proofs/{proofId}/image",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId",
+        "sourceId",
+        "proofId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "sourceId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "proofId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the JPEG bytes of the excerpt",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "image/jpeg": {
+            "schema": {
+              "type": "string",
+              "contentMediaType": "image/jpeg"
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.source-proof-request.delete": {
+    "path": "/api/v1/teacher/works/{documentId}/sources/{sourceId}/proof-request",
+    "method": "DELETE",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId",
+        "sourceId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "sourceId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "204": {
+        "description": "closed"
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.source-proof-request.put": {
+    "path": "/api/v1/teacher/works/{documentId}/sources/{sourceId}/proof-request",
+    "method": "PUT",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId",
+        "sourceId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "sourceId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "instruction",
+        "dueAt"
+      ],
+      "properties": {
+        "instruction": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|\\n|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "dueAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the open request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "sourceId",
+                "instruction",
+                "dueAt",
+                "createdAt",
+                "closedAt"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "sourceId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "instruction": {
+                  "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|\\n|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                  "type": "string"
+                },
+                "dueAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                },
+                "createdAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                },
+                "closedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.source-proofs.get": {
+    "path": "/api/v1/teacher/works/{documentId}/sources/{sourceId}/proofs",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId",
+        "sourceId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "sourceId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "proofs, possibly empty",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "proofs"
+              ],
+              "properties": {
+                "proofs": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "page",
+                      "note",
+                      "imagePath"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "page": {
+                        "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,30}(?<!\\s)(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "note": {
+                        "anyOf": [
+                          {
+                            "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|\\n|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,2000}(?<!\\s)(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "imagePath": {
+                        "pattern": "^/api/v1/teacher/works/[^/]{1,256}/sources/[0-9a-f-]{36}/proofs/[0-9a-f-]{36}/image(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.source-recommendation.delete": {
+    "path": "/api/v1/teacher/works/{documentId}/source-recommendations/{sourceId}",
+    "method": "DELETE",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId",
+        "sourceId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "sourceId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "204": {
+        "description": "removed"
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.source-recommendation.put": {
+    "path": "/api/v1/teacher/works/{documentId}/source-recommendations/{sourceId}",
+    "method": "PUT",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId",
+        "sourceId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "sourceId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "record",
+        "requirement"
+      ],
+      "properties": {
+        "record": {
+          "additionalProperties": true,
+          "type": "object",
+          "properties": {}
+        },
+        "doi": {
+          "anyOf": [
+            {
+              "pattern": "^10\\.[0-9]{4,9}/[!-@\\[-~]{1,300}(?![\\s\\S])",
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "isbn": {
+          "anyOf": [
+            {
+              "pattern": "^(?:[0-9]{9}[0-9X]|97[89][0-9]{10})(?![\\s\\S])",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "undated": {
+          "type": "boolean"
+        },
+        "requirement": {
+          "anyOf": [
+            {
+              "const": "recommended",
+              "type": "string"
+            },
+            {
+              "const": "required",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the saved source",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "record",
+                "doi",
+                "isbn",
+                "undated",
+                "requirement",
+                "createdAt",
+                "updatedAt"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "record": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "authors",
+                        "year",
+                        "title",
+                        "type",
+                        "place",
+                        "publisher"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "authors": {
+                          "minItems": 1,
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "family",
+                                  "given"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "person",
+                                    "type": "string"
+                                  },
+                                  "family": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "given": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "organization",
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "acronym": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "year": {
+                          "minimum": 1000,
+                          "maximum": 9999,
+                          "type": "integer"
+                        },
+                        "title": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "book",
+                          "type": "string"
+                        },
+                        "place": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "publisher": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "authors",
+                        "year",
+                        "title",
+                        "type",
+                        "journal"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "authors": {
+                          "minItems": 1,
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "family",
+                                  "given"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "person",
+                                    "type": "string"
+                                  },
+                                  "family": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "given": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "organization",
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "acronym": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "year": {
+                          "minimum": 1000,
+                          "maximum": 9999,
+                          "type": "integer"
+                        },
+                        "title": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "article",
+                          "type": "string"
+                        },
+                        "journal": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,500}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "volume": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "issue": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "pages": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "authors",
+                        "year",
+                        "title",
+                        "type",
+                        "editors",
+                        "bookTitle",
+                        "place",
+                        "publisher"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "authors": {
+                          "minItems": 1,
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "family",
+                                  "given"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "person",
+                                    "type": "string"
+                                  },
+                                  "family": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "given": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "organization",
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "acronym": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "year": {
+                          "minimum": 1000,
+                          "maximum": 9999,
+                          "type": "integer"
+                        },
+                        "title": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "chapter",
+                          "type": "string"
+                        },
+                        "editors": {
+                          "minItems": 1,
+                          "maxItems": 20,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "family",
+                              "given"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "const": "person",
+                                "type": "string"
+                              },
+                              "family": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "given": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "bookTitle": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "place": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "publisher": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "pages": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "authors",
+                        "year",
+                        "title",
+                        "type",
+                        "url",
+                        "accessed"
+                      ],
+                      "properties": {
+                        "id": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "authors": {
+                          "minItems": 1,
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "family",
+                                  "given"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "person",
+                                    "type": "string"
+                                  },
+                                  "family": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "given": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "kind": {
+                                    "const": "organization",
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,300}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  },
+                                  "acronym": {
+                                    "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,50}(?<!\\s)(?![\\s\\S])",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "year": {
+                          "minimum": 1000,
+                          "maximum": 9999,
+                          "type": "integer"
+                        },
+                        "title": {
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\u00ad\\u061c\\u180e\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u206f\\ufeff\\uD800-\\uDFFF]){1,1000}(?<!\\s)(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "web",
+                          "type": "string"
+                        },
+                        "url": {
+                          "pattern": "^https?://[\\x21-\\x7e]*(?![\\s\\S])",
+                          "maxLength": 2048,
+                          "type": "string"
+                        },
+                        "accessed": {
+                          "pattern": "^(?:\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|02-(?:0[1-9]|1\\d|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)-02-29)(?![\\s\\S])",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "doi": {
+                  "anyOf": [
+                    {
+                      "pattern": "^10\\.[0-9]{4,9}/[!-@\\[-~]{1,300}(?![\\s\\S])",
+                      "maxLength": 300,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "isbn": {
+                  "anyOf": [
+                    {
+                      "pattern": "^(?:[0-9]{9}[0-9X]|97[89][0-9]{10})(?![\\s\\S])",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "undated": {
+                  "type": "boolean"
+                },
+                "requirement": {
+                  "anyOf": [
+                    {
+                      "const": "recommended",
+                      "type": "string"
+                    },
+                    {
+                      "const": "required",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "createdAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
