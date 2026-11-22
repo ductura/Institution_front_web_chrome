@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 import { mentorshipRequestText as s } from "../src/host/student/mentorship-request/messages.hr";
 import { messagesHr } from "../../../src/lib/i18n/messages.hr";

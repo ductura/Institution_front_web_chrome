@@ -48,45 +48,45 @@ export function MentorCard(p: MentorCardProps) {
 
   return (
     <div className={styles.card} data-mentor-card="">
-      <div className={styles.row}>
-        <h3>{t.title}</h3>
+      <div className={styles.head}>
+        <h3 className={styles.title}>{t.title}</h3>
         {badge !== null && <span className={styles.badge} role="status">{badge}</span>}
       </div>
-      <section aria-label={t.stateLabel}>
-        <h4>{t.stateLabel}</h4>
+      <section className={styles.stat} aria-label={t.stateLabel}>
+        <p className={styles.sub}>{t.stateLabel}</p>
         {p.state === undefined ? <p role="status">{t.stateLoading}</p> : view === null ? <p role="status">{t.stateUnavailable}</p> : (
           <>
-            <p role="status"><strong>{view.headline}</strong></p>
-            {view.sub !== null && view.sub !== "" && <p className={styles.muted}>{view.sub}</p>}
+            <h4 role="status">{view.headline}</h4>
+            {view.sub !== null && view.sub !== "" && <p className={styles.line}>{view.sub}</p>}
             {view.request !== null && <p className={styles.req}>{view.request}</p>}
             {canAct && view.actions.length > 0 && (
               <div className={styles.row}>
-                {view.actions.map((a, i) => <Button key={a} tone={i === 0 ? "primary" : "quiet"} onClick={() => p.onAction?.(a)}>{t.actions[a]}</Button>)}
+                {view.actions.map((a, i) => <Button key={a} size="dense" tone={i === 0 ? "primary" : "secondary"} onClick={() => p.onAction?.(a)}>{t.actions[a]}</Button>)}
               </div>
             )}
           </>
         )}
-        {next !== null && <p className={styles.muted}>{next}</p>}
+        {next !== null && <p className={styles.line}>{next}</p>}
       </section>
       {p.consult}
-      <Details summary={t.prep.title}>
+      <Details className={styles.rpd} summary={t.prep.title}>
         {text === null ? <p>{p.prep === undefined ? t.stateLoading : t.prep.unavailable}</p> : (
           <>
             <p className={styles.muted}>{t.prep.intro}</p>
             <textarea className={styles.field} rows={9} readOnly aria-label={t.prep.title} value={text} />
             {p.onCopyPrep && (
-              <Button tone="quiet" onClick={() => { void p.onCopyPrep?.(text).then((ok) => setCopied(ok)); }}>{t.prep.copy}</Button>
+              <Button tone="secondary" size="dense" onClick={() => { void p.onCopyPrep?.(text).then((ok) => setCopied(ok)); }}>{t.prep.copy}</Button>
             )}
             {copied && <p role="status">{t.prep.copied}</p>}
           </>
         )}
       </Details>
-      <Details summary={t.how.title}>
+      <Details className={styles.rpd} summary={t.how.title}>
         <p>{p.howText === undefined ? t.stateLoading : p.howText === null ? t.how.unavailable : p.howText.trim() === "" ? t.how.empty : p.howText}</p>
       </Details>
-      <div className={styles.row}>
+      <div className={styles.abs}>
         <span>{t.abs.title}: {absStatus(p.words)} · {t.abs.where}</span>
-        {p.onOpenAbstract && <Button tone="quiet" onClick={p.onOpenAbstract}>{t.abs.open}</Button>}
+        {p.onOpenAbstract && <Button tone="secondary" size="dense" onClick={p.onOpenAbstract}>{t.abs.open}</Button>}
       </div>
     </div>
   );

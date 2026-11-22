@@ -25,10 +25,10 @@ describe("fetchRetention", () => {
   });
 
   it("reads the contract's ready vector", async () => {
-    const vector = contractVectors.find((v) => v.route === "institution.retention.get" && v.name === "ready")!;
+    const vector = contractVectors.find((v) => v.route === "institution.retention.get" && v.name === "dry-run")!;
     const out = await fetchRetention({ baseUrl: BASE, fetchImpl: reply(200, vector.response.body) });
     expect(out.kind).toBe("ok");
-    expect(out.kind === "ok" ? out.classes.map((c) => c.key) : []).toEqual(["versions", "access-log", "receipts"]);
+    expect(out.kind === "ok" ? out.classes.map((c) => c.key) : []).toEqual(["sessions", "live-state", "versions", "change-times", "access-log", "receipts"]);
   });
 
   it("reads an empty list and a class without storage (null candidates)", async () => {

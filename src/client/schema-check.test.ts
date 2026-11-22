@@ -63,6 +63,29 @@ describe("schema check against the contract", () => {
   });
 });
 
+describe("schema check rules: multipleOf, uniqueItems, default", () => {
+  it("checks multipleOf", () => {
+    expect(matchesSchema({ type: "integer", multipleOf: 5 }, 10)).toBe(true);
+    expect(matchesSchema({ type: "integer", multipleOf: 5 }, 12)).toBe(false);
+    expect(matchesSchema({ type: "number", multipleOf: 0.1 }, 0.3)).toBe(true);
+  });
+
+  it("checks uniqueItems by JSON equality", () => {
+    expect(matchesSchema({ type: "array", uniqueItems: true }, [1, 2, { a: 1 }])).toBe(true);
+    expect(matchesSchema({ type: "array", uniqueItems: true }, [{ a: 1 }, { a: 1 }])).toBe(false);
+  });
+
+  it("checks maxProperties", () => {
+    expect(matchesSchema({ type: "object", maxProperties: 0 }, {})).toBe(true);
+    expect(matchesSchema({ type: "object", maxProperties: 0 }, { a: 1 })).toBe(false);
+  });
+
+  it("treats default as an annotation only", () => {
+    expect(matchesSchema({ type: "boolean", default: false }, true)).toBe(true);
+    expect(matchesSchema({ type: "boolean", default: false }, "x")).toBe(false);
+  });
+});
+
 describe("schema check rules", () => {
   it("throws on a keyword it does not know, so it never checks loosely", () => {
     expect(() => matchesSchema({ type: "string", enum: ["a"] }, "b")).toThrow(UnsupportedSchemaError);
@@ -70,7 +93,7 @@ describe("schema check rules", () => {
     expect(() => matchesSchema({ type: "string", format: "email" }, "a@b")).toThrow(UnsupportedSchemaError);
     expect(() => matchesSchema({ type: "decimal" }, 1)).toThrow(UnsupportedSchemaError);
     expect(() => matchesSchema({ allOf: [true] } as Schema, 1)).toThrow(UnsupportedSchemaError);
-    expect(() => matchesSchema({ type: "array", uniqueItems: true }, [1])).toThrow(UnsupportedSchemaError);
+    expect(() => matchesSchema(({ type: "array", contains: true } as Schema), [1])).toThrow(UnsupportedSchemaError);
   });
 
   it("checks minItems and maxItems on arrays only", () => {
