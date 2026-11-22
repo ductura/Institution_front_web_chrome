@@ -16,6 +16,8 @@ import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 import { hostText } from "../../text";
 import { nextPath } from "../../bases";
 import { useHost } from "../context";
+import { studentToastText } from "./toast/messages.hr";
+import { useStudentToast } from "./toast/StudentToasts";
 
 /** A navigation of a screen (written without the base) under the host's base. */
 function useGo() {
@@ -28,11 +30,17 @@ function useGo() {
 export function EnrollPage() {
   const { base } = useHost();
   const go = useGo();
+  const toast = useStudentToast();
+  // PD-7: after enrolment (the form's replace-navigation to the course) a toast says so.
+  const navigate = (href: string, replace = false) => {
+    if (replace && href.startsWith(courseHref(""))) toast(studentToastText.enrolled);
+    go(href, replace);
+  };
   return (
     <div className={`page ${styles.screen}`}>
       <section className={styles.card}>
         <h1>{t.student.enroll.heading}</h1>
-        <EnrollForm signInHref={signInHref(appHref(base, "/upis"))} navigate={go} />
+        <EnrollForm signInHref={signInHref(appHref(base, "/upis"))} navigate={navigate} />
       </section>
     </div>
   );

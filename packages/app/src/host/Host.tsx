@@ -17,6 +17,7 @@ import { EditorSignOutSlot } from "./editor/save-status/SignOutSlot";
 import { RecoveryOffer } from "./editor/save-status/RecoveryOffer";
 import ProblemReportHelp from "./ProblemReportHelp";
 import SignOut from "./SignOut";
+import { StudentToasts } from "./student/toast/StudentToasts";
 import ShellNotifications from "./shell/notifications/ShellNotifications";
 
 /**
@@ -118,7 +119,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
         ownMain={ownMain}
       >
         {role === "student" && <RecoveryOffer base={base} />}
-        {body}
+        {role === "student" ? <StudentToasts>{body}</StudentToasts> : body}
       </AppShell>
     </EditorSignOutSlot>
   );
