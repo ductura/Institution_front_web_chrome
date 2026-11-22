@@ -2,6 +2,8 @@ name: CI
 on:
   push: { branches: [main, "migracija/kopija-ductus-front"] }
   pull_request:
+  # Full e2e matrix once a day (a pull request runs chromium only).
+  schedule: [{ cron: "17 3 * * *" }]
 permissions:
   contents: read
 # A newer push to the same PR or branch cancels the older run, so runners are
@@ -67,10 +69,18 @@ jobs:
       - name: Testovi pomoćnih funkcija
         run: npm run test:helpers
       # e2e matrica (DAN-755): svi preglednici matrice; chrome i msedge su
-      # pravi Google Chrome i Microsoft Edge, obvezni u CI-ju.
+      # pravi Google Chrome i Microsoft Edge, obvezni u CI-ju. Na pull
+      # requestu samo chromium (Daniel, 22. 11. 2026: brži CI); puna matrica
+      # na push (baza, main) i na noćnom rasporedu.
       - name: Instalacija preglednika
+        if: ${{ github.event_name != 'pull_request' }}
         run: npx playwright install --with-deps chromium chrome msedge firefox webkit
+      - name: Instalacija preglednika (pull request, samo chromium)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npx playwright install --with-deps chromium
       - name: Funkcionalni testovi
+        env:
+          DUCTURA_PR_CHROMIUM_ONLY: ${{ github.event_name == 'pull_request' }}
         run: npm run test:functional
       - uses: actions/upload-artifact@v4
         if: failure()
