@@ -51,6 +51,7 @@ export const profileHr = {
 export const pageLabelsHr = {
   consultations: "Konzultacije",
   versionComparison: "Usporedba verzija",
+  processSummary: "Sažetak procesa",
   studentDataExport: "Izvoz podataka studenta",
   studentDataDownload: "Izvoz mojih podataka",
   merlinExport: "Izvoz za Merlin",
