@@ -20,7 +20,7 @@ import migrationContracts from "./migration-contracts.generated.json" with { typ
 import type { MigrationOperations } from "./migration-contract-types.generated";
 import { matchesSchema, type Schema } from "./schema-check";
 
-type ResponseSpec = { readonly content?: Readonly<Record<string, { readonly schema?: Schema }>> };
+type ResponseSpec = { readonly description?: string; readonly headers?: unknown; readonly content?: Readonly<Record<string, { readonly schema?: Schema }>> };
 type BodySchema = { readonly properties?: object; readonly anyOf?: readonly BodySchema[]; readonly additionalProperties?: unknown };
 type Operation = {
   readonly operationId: string;
