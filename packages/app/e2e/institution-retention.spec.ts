@@ -11,9 +11,10 @@ const hold = (id: string, over: object = {}) => ({
   id, subject: `Izmišljeni predmet ${id.slice(-1)}`, caseReference: `IZM-2026-00${id.slice(-1)}`,
   placedAt: "2026-11-20T09:00:00.000Z", placedByName: "Ana Izmišljena", own: false, ...over,
 });
+// The server's shape (LOK-WEB-3); the page names a class from its catalogue by `key`.
 const CLASSES = { classes: [
-  { classId: "DATA-CLASS-01", name: "Izmišljeni radni tekst", retentionDays: 365, mode: "delete" },
-  { classId: "DATA-CLASS-02", name: "Izmišljeni zapis pristupa", retentionDays: null, mode: "dry_run" },
+  { key: "versions", label: "retention.versions", retentionDays: 365, mode: "execute", candidates: 12, lastRunAt: "2026-11-20T03:00:00.000Z" },
+  { key: "access-log", label: "retention.accessLog", retentionDays: null, mode: "dry-run", candidates: 0, lastRunAt: null },
 ] };
 const FORBIDDEN = { error: "forbidden", code: "forbidden", messageKey: "errors.forbidden", status: 403 };
 
@@ -51,10 +52,10 @@ test("the data classes card shows period and mode, with no deleting control", as
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Čuvanje podataka");
   const table = page.getByRole("table", { name: /Klase podataka, rokovi i način čuvanja/ });
   await expect(table.getByRole("row")).toHaveCount(3);
-  await expect(table.getByRole("row", { name: /Izmišljeni radni tekst/ })).toContainText("365 dana");
-  await expect(table.getByRole("row", { name: /Izmišljeni radni tekst/ })).toContainText("Briše se");
-  await expect(table.getByRole("row", { name: /Izmišljeni zapis pristupa/ })).toContainText("Rok još nije određen");
-  await expect(table.getByRole("row", { name: /Izmišljeni zapis pristupa/ })).toContainText("Probni prolaz");
+  await expect(table.getByRole("row", { name: /Verzije rada/ })).toContainText("365 dana");
+  await expect(table.getByRole("row", { name: /Verzije rada/ })).toContainText("Briše se");
+  await expect(table.getByRole("row", { name: /Zapis pristupa/ })).toContainText("Rok još nije određen");
+  await expect(table.getByRole("row", { name: /Zapis pristupa/ })).toContainText("Probni prolaz");
   await expect(table.locator("button, input, select, textarea")).toHaveCount(0);
   expect(await serious(page)).toEqual([]);
 });
