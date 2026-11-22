@@ -50,6 +50,7 @@ export const profileHr = {
 /** Labels of pages whose screens have no English table yet (routes.ts takes them from the screens' own Croatian tables). */
 export const pageLabelsHr = {
   consultations: "Konzultacije",
+  versionComparison: "Usporedba verzija",
   studentDataExport: "Izvoz podataka studenta",
   studentDataDownload: "Izvoz mojih podataka",
 };
