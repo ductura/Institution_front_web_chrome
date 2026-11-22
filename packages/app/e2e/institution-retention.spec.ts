@@ -3,7 +3,7 @@
 // reason). Holds come in the server's shape (LOK-WEB-4); a refused release of an own hold (403)
 // shows the catalogue text. A 403 never shows a raw code. Invented data only.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 const ME = (role: string) => ({ role, displayName: "Ana Izmišljena", institution: { slug: "izm", displayName: "Izmišljeni fakultet za testove" } });
 const ID1 = "b1301000-0000-4000-8000-000000000001";
