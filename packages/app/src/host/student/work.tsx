@@ -41,6 +41,7 @@ import { MarksHost } from "../editor/marks/MarksHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
+import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
 import { Banner, ErrorCard, FrameStatus, LoadingCard, OfflineBanner, courseLine, momentHr } from "./work/frame";
@@ -113,8 +114,9 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             }}
             leftSections={{ ...leftSectionsFor(assignmentId), chapter: <ChapterPanel workId={assignmentId} /> }}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
-            sessionControls={({ scope, session }) => <>
+            sessionControls={({ scope, session, documentId }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
+              <DirectEditSettingHost documentId={documentId} here={here} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
               <RulesHost role="student" />
               <MarksHost />
@@ -145,8 +147,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               : frame.variant === "prazno"
                 ? <FrameStatus chip={<SaveState state="LOCAL_DURABLE" label={workText.newWork} />} length={length} withNet />
                 : <StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
-            aside={frame.variant === "predano" && <ReadOnlyMentor role="student" submitted
-              documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />}
+            aside={frame.variant === "predano" && <>
+              <ReadOnlyMentor role="student" submitted documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />
+              {receipt?.documentId === undefined ? null : <DirectEditSettingHost documentId={receipt.documentId} here={here} submitted />}
+            </>}
           >
             {sheetBody(frame.variant, assignmentId, title)}
           </EditorPage>

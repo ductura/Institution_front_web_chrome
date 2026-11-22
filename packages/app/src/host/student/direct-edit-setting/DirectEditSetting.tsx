@@ -1,27 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@ductura/ui";
+import { goToSignIn } from "@/client/api";
 
-import { changeDirectEdit, changeMessage, directEditBadge, type DirectEditPort, type DirectEditState } from "./model";
+import {
+  afterChange, changeDirectEdit, changeMessage, directEditBadge, type DirectEditPort, type DirectEditState, type SettingShown,
+} from "./model";
 import { directEditSettingMessages as text } from "./messages.hr";
+import { directEditPort } from "./port";
 
-type Shown =
-  | { kind: "loading" }
-  | { kind: "unavailable" }
-  | { kind: "signedOut" }
-  | { kind: "ready"; state: DirectEditState };
+/** One port for the page: the setting reads again only when the work changes, not on every render. */
+const serverPort = directEditPort();
+
+/** The setting as drawn: the mark, and the switch only while the work is not submitted. */
+export function DirectEditView(
+  { state, busy, note, submitted, onChange }:
+  { state: DirectEditState; busy: boolean; note: string | null; submitted: boolean; onChange: (enabled: boolean) => void },
+) {
+  const { enabled } = state;
+  return (
+    <section aria-label={text.title}>
+      <h2>{text.title}</h2>
+      <p>{text.description}</p>
+      <p data-direct-edit-badge={enabled ? "on" : "off"}>{directEditBadge(enabled)}</p>
+      {submitted
+        ? <p>{text.submittedLocked}</p>
+        : <Button disabled={busy} onClick={() => onChange(!enabled)}>{enabled ? text.revoke : text.enable}</Button>}
+      <p role="status" aria-live="polite">{note}</p>
+    </section>
+  );
+}
 
 /**
  * The student's work settings: allow or revoke the teacher's direct edits (WEB-1703; M6.4).
  * The mark below the switch is the one the teacher sees too. After a submission the setting
- * is fixed, so the buttons are off. A change shows as done only after the server names it.
+ * is fixed and shown read-only. A change shows as done only after the server names it.
  */
 export default function DirectEditSetting(
-  { assignmentId, port, submitted = false, onSignedOut }:
-  { assignmentId: string; port: DirectEditPort; submitted?: boolean; onSignedOut?: () => void },
+  { documentId, port, submitted = false, onSignedOut }:
+  { documentId: string; port: DirectEditPort; submitted?: boolean; onSignedOut?: () => void },
 ) {
-  const [shown, setShown] = useState<Shown>({ kind: "loading" });
+  const [shown, setShown] = useState<SettingShown>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -29,21 +49,22 @@ export default function DirectEditSetting(
   useEffect(() => {
     let active = true;
     setShown({ kind: "loading" });
-    void port.read(assignmentId).then((read) => {
+    void port.read(documentId).then((read) => {
       if (!active) return;
       if (read.kind === "signedOut") onSignedOut?.();
       setShown(read.kind === "ready" ? read : { kind: read.kind });
     }).catch(() => { if (active) setShown({ kind: "unavailable" }); });
     return () => { active = false; };
-  }, [assignmentId, port, attempt, onSignedOut]);
+  }, [documentId, port, attempt, onSignedOut]);
 
   const change = async (enabled: boolean) => {
+    if (submitted || busy) return;
     setBusy(true);
     setNote(text.saving);
-    const result = await changeDirectEdit(port, assignmentId, enabled);
+    const result = await changeDirectEdit(port, documentId, enabled);
     setBusy(false);
     setNote(changeMessage(result, enabled));
-    if (result.kind === "recorded") setShown({ kind: "ready", state: result.state });
+    setShown((current) => afterChange(current, result));
     if (result.kind === "signedOut") onSignedOut?.();
   };
 
@@ -56,17 +77,11 @@ export default function DirectEditSetting(
       </section>
     );
   }
-  const { enabled } = shown.state;
-  return (
-    <section aria-label={text.title}>
-      <h2>{text.title}</h2>
-      <p>{text.description}</p>
-      <p data-direct-edit-badge={enabled ? "on" : "off"}>{directEditBadge(enabled)}</p>
-      <Button disabled={busy || submitted} onClick={() => void change(!enabled)}>
-        {enabled ? text.revoke : text.enable}
-      </Button>
-      {submitted ? <p>{text.submittedLocked}</p> : null}
-      <p role="status" aria-live="polite">{note}</p>
-    </section>
-  );
+  return <DirectEditView state={shown.state} busy={busy} note={note} submitted={submitted} onChange={(next) => void change(next)} />;
+}
+
+/** The setting as the student's workspace mounts it: the real port, and sign-in again on 401. */
+export function DirectEditSettingHost({ documentId, here, submitted = false }: { documentId: string; here: string; submitted?: boolean }) {
+  const signedOut = useCallback(() => goToSignIn(here), [here]);
+  return <DirectEditSetting documentId={documentId} port={serverPort} submitted={submitted} onSignedOut={signedOut} />;
 }

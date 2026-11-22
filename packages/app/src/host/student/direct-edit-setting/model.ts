@@ -1,8 +1,8 @@
 // Pure rules of the student's direct-edit setting (WEB-1703; plan M6.4, D-34). The student
 // allows and revokes the teacher's direct edits on one work; the mark is shown to both roles.
 // A change counts as recorded only when the server's answer names the new state (B-6).
-// No server route exists yet: DirectEditPort is the smallest contract the plan implies, a probe
-// answer stands in for it in the tests, and the page that mounts this passes the real port.
+// port.ts is the real DirectEditPort over work.direct-edit.get/put; fake-port.ts stands in for
+// it in the tests of both roles.
 import { directEditSettingMessages as text } from "./messages.hr";
 
 export type DirectEditState = { readonly enabled: boolean; readonly changedAt: string | null };
@@ -18,9 +18,24 @@ export type DirectEditWrite =
   | { readonly kind: "rejected" }
   | { readonly kind: "unknown" };
 
+/** A work is named by its document (the routes' documentId). */
 export interface DirectEditPort {
-  read(assignmentId: string): Promise<DirectEditRead>;
-  write(assignmentId: string, enabled: boolean): Promise<DirectEditWrite>;
+  read(documentId: string): Promise<DirectEditRead>;
+  write(documentId: string, enabled: boolean): Promise<DirectEditWrite>;
+}
+
+export type SettingShown =
+  | { readonly kind: "loading" }
+  | { readonly kind: "unavailable" }
+  | { readonly kind: "signedOut" }
+  | { readonly kind: "ready"; readonly state: DirectEditState };
+
+/**
+ * What the setting shows after a change: the server's state when it recorded one, otherwise
+ * what was shown before. A revocation reads "off" only once the server has confirmed it.
+ */
+export function afterChange(shown: SettingShown, result: DirectEditWrite): SettingShown {
+  return result.kind === "recorded" ? { kind: "ready", state: result.state } : shown;
 }
 
 /** The label both roles see on the work. */
