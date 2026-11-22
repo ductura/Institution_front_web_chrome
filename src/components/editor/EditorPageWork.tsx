@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
+import type { Editor } from "@tiptap/react";
 
 import { signInHref } from "@/client/api";
 import { openWork, type OpenOutcome } from "@/client/evidence-ingest";
@@ -43,6 +44,10 @@ import type { LeftSections } from "./layout-prefs/LeftPanel";
 import { SubmissionRehearsal } from "./submission-rehearsal/SubmissionRehearsal";
 import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/WorkPrintExport";
 import { TriggerPopover } from "./triggers/TriggerPopover";
+
+/** What a host section is given: the live editor and the ids of the work. */
+export type HostSectionContext = { editor: Editor | null; assignmentId: string; documentId: string };
+export type HostSections = { review?: (ctx: HostSectionContext) => ReactNode; work?: (ctx: HostSectionContext) => ReactNode };
 
 export type OpenRead =
   | { readonly kind: "opening" }
@@ -112,6 +117,7 @@ export default function EditorPageWork({
   renderPdf,
   triggers,
   literature,
+  hostSections,
   leftSections,
 }: {
   assignmentId: string;
@@ -126,6 +132,8 @@ export default function EditorPageWork({
   triggers?: (work: { documentId: string }) => ReactNode;
   /** The host's list of the work's sources above the proofs in the sources card (WEB-2123). */
   literature?: (work: { documentId: string }) => ReactNode;
+  /** Cards the host adds to the right panel (WEB-2121): the Pregled card and the revision actions. */
+  hostSections?: HostSections;
   /** The host's sections of the left panel (WEB-2126). */
   leftSections?: LeftSections;
 }) {
@@ -150,14 +158,14 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} leftSections={leftSections} triggers={triggers} literature={literature} />
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} triggers={triggers} literature={literature} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, leftSections, triggers, literature }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, hostSections, leftSections, triggers, literature }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -171,6 +179,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   triggers?: (work: { documentId: string }) => ReactNode;
   /** The host's list of the work's sources above the proofs in the sources card (WEB-2123). */
   literature?: (work: { documentId: string }) => ReactNode;
+  hostSections?: HostSections;
   leftSections?: LeftSections;
 }) {
   const editor = useLocalEditor();
@@ -190,11 +199,13 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
       rightSections={{ sources: <>{literature?.({ documentId })}<EditorSourceProofs assignmentId={assignmentId} documentId={documentId} /></>,
         comments: <CommentPanel documentId={documentId} session={session} />,
+        review: hostSections?.review?.({ editor, assignmentId, documentId }),
         assistant: <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
           sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer} />}
         <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />
+        {hostSections?.work?.({ editor, assignmentId, documentId })}
       </>}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
