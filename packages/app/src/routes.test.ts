@@ -120,6 +120,7 @@ describe("publicPage", () => {
     expect(publicPage("/prijava")).toMatchObject({ label: "Prijava" });
     expect(publicPage("/nema-ovlasti")).toMatchObject({ label: "Nema ovlasti" });
     expect(publicPage("/izvoz-podataka/izmisljeni-token")).toMatchObject({ label: "Izvoz mojih podataka" });
+    expect(publicPage("/provjera")).toMatchObject({ label: "Provjera potvrde" });
     expect(publicPage("/izvoz-podataka")).toBeNull();
     expect(publicPage("/ustanova/izvoz-podataka")).toBeNull();
     expect(publicPage("/zadaci")).toBeNull();

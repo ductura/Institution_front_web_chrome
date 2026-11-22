@@ -55,6 +55,7 @@ export const pageLabelsHr = {
   studentDataDownload: "Izvoz mojih podataka",
   merlinExport: "Izvoz za Merlin",
   courseStudents: "Popis studenata",
+  receiptCheck: "Provjera potvrde",
 };
 
 /** M1.8: the no-access and session-ended screen. English: `accessDeniedEn` in ./messages.en.ts. */
