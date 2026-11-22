@@ -17,34 +17,59 @@ import { editorWorkRead } from "../../../../../src/components/editor/EditorPage.
 import EditorPageWork from "../../../../../src/components/editor/EditorPageWork.tsx";
 import { ReadOnlyMentor } from "../../../../../src/components/editor/mentor/work-state/ReadOnlyMentor.tsx";
 import { readSubmittedWork } from "../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
-import StatusBar from "../../../../../src/components/editor/StatusBar.tsx";
+import StatusBar, { scopeLine, type ScopeRange } from "../../../../../src/components/editor/StatusBar.tsx";
 import WorkspaceTopBar from "../../../../../src/components/editor/WorkspaceTopBar.tsx";
 import { workspaceFrame, type WorkspaceVariant } from "../../../../../src/components/editor/workspace-variant.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../src/client/api.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
+import statusStyles from "../../../../../src/components/editor/StatusBar.module.css";
 
 import { hostText } from "../../text";
 import { nextPath } from "../../bases";
 import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { ImportHost } from "../editor/import/ImportHost";
+import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
+import { StartWork } from "./start-work/StartWork";
+import { readWordRange } from "./work/requirements";
+import { workText } from "./work/messages.hr";
 import { unavailableTransport } from "../../../../../src/client/import.ts";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
 
 /** What the sheet holds when no editor is mounted. */
-function sheetBody(variant: WorkspaceVariant): ReactNode {
+function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: string | null): ReactNode {
   if (variant === "greska") return <SheetNote>{t.student.unavailable}</SheetNote>;
   if (variant === "predano") return <SheetNote>{t.editor.submittedReadOnly}</SheetNote>;
-  if (variant === "prazno") return <SheetNote>{t.workspace.notStarted}</SheetNote>;
+  // WEB-2105: E-7 `prazno`: the empty sheet with its placeholder, and the way to start (the server decides).
+  if (variant === "prazno") {
+    return (
+      <>
+        <SheetNote>{workText.notStarted}</SheetNote>
+        <p aria-hidden="true">{workText.placeholder}</p>
+        <StartWork assignmentId={assignmentId} title={title ?? ""} />
+      </>
+    );
+  }
   return (
     <SheetNote>
       {t.workspace.documentNotEditable} <span className="soon">{t.workspace.soon}</span>
     </SheetNote>
+  );
+}
+
+/** E-7 `prazno`: "Novi rad, još ništa nije upisano" and the range; no save state is claimed (B-6). */
+function NewWorkStatus({ length }: { length: { words: number | null; range: ScopeRange } }) {
+  const scope = scopeLine(length.words, length.range);
+  return (
+    <footer className={statusStyles.bar} aria-label={t.workspace.status}>
+      <span role="status">{workText.newWork}</span>
+      {scope === null ? null : <span>{scope}</span>}
+    </footer>
   );
 }
 
@@ -59,16 +84,17 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
     const here = appHref(base, `/rad/${assignmentId}`);
     void (async () => {
       const client = createApi();
-      const [assignments, work] = await Promise.all([
+      const [assignments, work, wordRange] = await Promise.all([
         client("student.assignments.get", NONE).catch(() => UNREACHED),
         client("student.assignment-work.get", NONE).catch(() => UNREACHED),
+        readWordRange(assignmentId),
       ]);
       if (!live) return;
       const read = editorWorkRead(assignmentId, assignments as never, work as never);
       if (read.kind === "signedOut") return goToSignIn(here);
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
-      const frame = workspaceFrame(read);
+      const frame = workspaceFrame(read, undefined, { kind: "ready", wordRange });
       const title = read.kind === "ready" ? read.title : null;
       const topBar = <WorkspaceTopBar assignmentId={assignmentId} title={title} />;
       const length = { words: null, range: frame.range };
@@ -81,6 +107,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
+              <RulesHost role="student" />
             </>} />,
         });
       }
@@ -97,11 +124,13 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             course={read.kind === "ready" ? read.course : null}
             title={title}
             topBar={topBar}
-            status={<StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
+            status={frame.variant === "prazno"
+              ? <NewWorkStatus length={length} />
+              : <StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
             aside={frame.variant === "predano" && <ReadOnlyMentor role="student" submitted
               documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />}
           >
-            {sheetBody(frame.variant)}
+            {sheetBody(frame.variant, assignmentId, title)}
           </EditorPage>
         ),
       });

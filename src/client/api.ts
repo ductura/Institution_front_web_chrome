@@ -419,7 +419,7 @@ export type Session = {
 export type SessionRead =
   | { readonly kind: "signedIn"; readonly session: Session }
   | { readonly kind: "signedOut" }
-  | { readonly kind: "unavailable" };
+  | { readonly kind: "unavailable"; readonly noRole?: true };
 
 const ROLE_ORDER: readonly SessionRole[] = ["institution_admin", "teacher", "student", "network_engineer"];
 const ROLE_ALIASES: Readonly<Record<string, SessionRole>> = { admin: "institution_admin" };
@@ -461,8 +461,9 @@ export function parseSession(body: unknown): Session | null {
 
 /**
  * One read of the session: 200 with a JSON object is signed in, 401 signed
- * out, anything else (a broken connection included) unavailable. Same origin,
- * with the session cookie.
+ * out, anything else (a broken connection included) unavailable; 403 is
+ * unavailable too, marked `noRole` (signed in through AAI@EduHr, no role: E-1
+ * "bezuloge"). Same origin, with the session cookie.
  */
 export async function readSession(options: ApiOptions = {}): Promise<SessionRead> {
   const baseUrl = options.baseUrl ?? globalThis.location.origin;
@@ -475,6 +476,7 @@ export async function readSession(options: ApiOptions = {}): Promise<SessionRead
       headers: { accept: "application/json" },
     });
     if (res.status === 401) return { kind: "signedOut" };
+    if (res.status === 403) return { kind: "unavailable", noRole: true };
     if (res.status !== 200 || !res.headers.get("content-type")?.startsWith("application/json")) return { kind: "unavailable" };
     const session = parseSession(await res.json());
     return session === null ? { kind: "unavailable" } : { kind: "signedIn", session };
