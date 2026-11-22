@@ -16,3 +16,14 @@
 .pill[data-tone="me"] { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
 .pill[data-tone="new"] { background: var(--accent); color: var(--accent-ink); }
 @media (max-width: 640px) { .chip { min-height: 34px; } }
+
+/* The white sheet sets no --hover, --selected or --warn-soft of its own (it has no raised or
+   selected surface, FE-D2), so inside it chips and pills use the sheet's own well and inks
+   rather than inheriting the dark shell's surfaces (axe color-contrast in the catalog). */
+:global(.sheet[data-sheet-theme="light"]) .chip:hover { background: var(--well); }
+:global(.sheet[data-sheet-theme="light"]) .chip[aria-pressed="true"] { background: var(--well); }
+:global(.sheet[data-sheet-theme="light"]) .pill[data-tone="warn"] {
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1px var(--warn);
+  color: var(--cmt-ink);
+}
