@@ -9121,6 +9121,56 @@
       ]
     }
   },
+  "teacher.submissions-bulk.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/submissions-bulk/{format}",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId",
+        "format"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        },
+        "format": {
+          "anyOf": [
+            {
+              "const": "pdf",
+              "type": "string"
+            },
+            {
+              "const": "docx",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {}
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "410": [
+        "not_allowed"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
   "student.submission-package-link.post": {
     "path": "/api/v1/student/submissions/{submissionId}/package-link",
     "method": "POST",
@@ -9234,6 +9284,56 @@
       ],
       "422": [
         "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.submission-package.get": {
+    "path": "/api/v1/student/submissions/{submissionId}/package/{kind}",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "submissionId",
+        "kind"
+      ],
+      "properties": {
+        "submissionId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "const": "package",
+              "type": "string"
+            },
+            {
+              "const": "referada",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {}
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "410": [
+        "not_allowed"
       ],
       "503": [
         "unavailable"
