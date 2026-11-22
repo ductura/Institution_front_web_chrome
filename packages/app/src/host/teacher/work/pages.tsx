@@ -12,8 +12,6 @@ import { ReceiptPanel, studentReceiptRead, type ReceiptRead } from "@/components
 import ReplayView from "@/components/replay/ReplayView";
 import { appHref } from "@/components/shell/nav";
 import { anchorForSelection, placeAnchor, placeThreads } from "@/components/teacher/comment-place";
-import { ConsultationRecords } from "@/components/teacher/consultation-records/ConsultationRecords";
-import { consultationMessages } from "@/components/teacher/consultation-records/messages.hr";
 import LiveText, { liveStopped, openMarks, useLiveView } from "@/components/teacher/LiveText";
 import { liveWorkHref, SUMMARY_ANCHOR } from "@/components/teacher/LiveWorkFrame";
 import RecordLimits from "@/components/teacher/RecordLimits";
@@ -28,6 +26,8 @@ import { hostText } from "../../../text";
 import { useHost } from "../../context";
 import AiDeclarationSection from "../ai-declaration/AiDeclarationSection";
 import MobileReview from "../mobile-review/MobileReview";
+import { N12Consultations } from "../n12/N12Consultations";
+import { n12Messages as consultationMessages } from "../n12/messages.hr";
 import WorkFrame from "../n06/WorkFrame";
 import { FallbackPanel, PreSubmitPanel } from "../pre-submit/PreSubmitPanel";
 import { showFallback } from "../pre-submit/model";
@@ -94,8 +94,9 @@ function OpenWork({ documentId, path, view, session }: {
   const workHref = appHref(base, path);
   if (ended) return <WorkStatus title={title}><p role="status">{t.liveView.connection.signedOut}</p></WorkStatus>;
   if (view === "consultations") {
-    // ConsultationRecords uses Next Link and router, which supply basePath themselves.
-    return <ConsultationRecords key={documentId} documentId={documentId} workHref={workHref.slice("/app".length)} />;
+    // N-12 (WEB-2161). The router adds the basePath itself, so it gets the path without "/app".
+    return <N12Consultations key={documentId} documentId={documentId} workHref={workHref}
+      appPath={`${workHref.slice("/app".length)}/konzultacije`} />;
   }
   if (view === "comparison") {
     return <N11Compare key={documentId} port={n11Port} documentId={documentId} signInHref={workHref}
