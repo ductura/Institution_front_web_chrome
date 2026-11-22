@@ -293,8 +293,6 @@ test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje 
     }
   });
 
-  await page.close();
-
   const restart: Restart = await test.step('VS-1.13 (A06): Institution_server se stvarno gasi i ponovno podiže (novi PID)', async () =>
     restartServer(testInfo.outputPath('institution-server-nakon-ponovnog-pokretanja.log')));
 

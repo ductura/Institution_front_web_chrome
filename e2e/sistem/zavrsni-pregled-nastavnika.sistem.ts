@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { createTextAnchor } from '../../packages/editor-core/src/document/collaboration/anchor';
 import { isNodeId } from '../../packages/editor-core/src/document/document/schema';
+import { fastPathHostText } from '../../packages/app/src/host/teacher/n05/messages.hr';
 import { messagesHr as t } from '../../src/lib/i18n/messages.hr';
 import { app, webOrigin } from './stog';
 import { assignmentOf, describePageOnFailure, openDemoWork, signInDemoStudent, signInThroughPreloader } from './student';
@@ -69,8 +70,8 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       const assignment = teacherPage.getByRole('listitem').filter({ has: teacherPage.getByText(title, { exact: true }) });
       await assignment.getByRole('link', { name: t.fastPath.title, exact: true }).click();
       await expect(teacherPage).toHaveURL(fastPath);
-      const submitted = teacherPage.getByRole('navigation', { name: t.fastPath.studentsLabel }).getByRole('button', { name: studentName });
-      await expect(submitted.getByText(t.fastPath.work.submitted, { exact: true })).toBeVisible();
+      const submitted = teacherPage.getByRole('navigation', { name: t.fastPath.studentsLabel }).getByRole('link', { name: studentName });
+      await expect(submitted.getByText(fastPathHostText.work.submitted, { exact: true })).toBeVisible();
       await submitted.click();
       const openWork = teacherPage.getByRole('link', { name: t.fastPath.openWork, exact: true });
       await expect(openWork).toHaveAttribute('href', workPath);
@@ -122,7 +123,7 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       ]);
       expect(foreignList.status()).toBe(200);
       expect(await foreignList.json()).toEqual({ kind: 'ok', students: [] });
-      await expect(otherPage.getByText(t.fastPath.empty, { exact: true })).toBeVisible();
+      await expect(otherPage.getByText(fastPathHostText.emptyText, { exact: true })).toBeVisible();
       await expect(otherPage.getByRole('link', { name: t.fastPath.openWork, exact: true })).toHaveCount(0);
 
       const [denied] = await Promise.all([
