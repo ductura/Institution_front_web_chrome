@@ -1,5 +1,5 @@
 import {
-  AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
+  AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CodeField, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
   EditorOnboarding, EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
   SideShell, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup, type ShortcutListGroup,
@@ -443,6 +443,13 @@ export const ENTRIES = {
     greška: () => <TextField label="Naslov rada" defaultValue="" error="Upišite naslov rada." />,
     puno: () => <TextField label="Naslov rada" defaultValue="Javne politike u lokalnoj zajednici" hint="Najviše 120 znakova." />,
     onemogućeno: () => <TextField label="Naslov rada" disabled defaultValue="Javne politike u lokalnoj zajednici" />,
+  },
+  CodeField: {
+    prazno: () => <CodeField label="Kod kolegija" placeholder="KOD-KOLEGIJA" hint="Kod Vam daje nastavnik. Razmaci, crtice i velika ili mala slova nisu bitni." action={<Button disabled>Upiši</Button>} />,
+    učitavanje: () => <CodeField label="Kod kolegija" busy defaultValue="KOL-D-2026" hint="Upisivanje u kolegij…" action={<Button busy>Upisivanje…</Button>} />,
+    greška: () => <CodeField label="Kod kolegija" defaultValue="K7" error="Kod ima od 8 do 32 slova i brojke. Provjerite ga i upišite ponovno." hint="Kod Vam daje nastavnik. Razmaci, crtice i velika ili mala slova nisu bitni." action={<Button>Upiši</Button>} />,
+    puno: () => <CodeField label="Kod kolegija" defaultValue="KOL-D-2026" hint="Kod Vam daje nastavnik. Razmaci, crtice i velika ili mala slova nisu bitni." action={<Button>Upiši</Button>} />,
+    onemogućeno: () => <CodeField label="Kod kolegija" disabled defaultValue="KOL-D-2026" action={<Button disabled>Upiši</Button>} />,
   },
   SaveState: {
     prazno: () => <SaveState state="EDITING" />,
