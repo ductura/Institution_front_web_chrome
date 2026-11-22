@@ -143,6 +143,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/review/ReviewPanel.tsx", // WEB-1102: Pregled card, not mounted in the right panel yet; awaits its entry with the mount.
   "editor/submission-rehearsal/SubmissionRehearsal.tsx", // WEB-1105: landed without a catalogue entry; awaits its lane.
   "editor/find-replace/FindReplaceBar.tsx", // WEB-1605: needs a live editor; its FindBar is catalogued in @ductura/ui.
+  "editor/student-milestones/StudentMilestones.tsx", // WEB-1521: not mounted yet (needs the mentor work context); awaits its entry with the mount.
 ]);
 
 describe("every component has a catalogue entry with all five states (web.md §6 B5)", () => {
