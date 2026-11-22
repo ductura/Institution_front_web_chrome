@@ -54,6 +54,7 @@ export const profileEn: ProfileMessages = {
 export const pageLabelsEn = {
   consultations: "Consultations",
   versionComparison: "Version comparison",
+  processSummary: "Process summary",
   studentDataExport: "Student data export",
   studentDataDownload: "Export of my data",
   merlinExport: "Export for Merlin",
