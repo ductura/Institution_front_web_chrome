@@ -45,5 +45,5 @@ export { readMentorCandidates, readMyMentorshipRequests };
 
 /** The status as text; a colour is never the only carrier. */
 export function statusText(request: StudentMentorshipRequest): string {
-  return t.status[request.status];
+  return t.status[request.state];
 }
