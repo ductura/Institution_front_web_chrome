@@ -23,8 +23,8 @@ describe("N-06 frame model", () => {
     expect(sequence({ ...base, state: "nije_predano", receipt: null })).toEqual([]);
   });
   it("submission and compare links only for a submitted work", () => {
-    expect(links(base, "/w").map((l) => l.key)).toEqual(["submission", "summary", "replay", "compare", "consultations"]);
-    expect(links({ ...base, state: "nije_predano" }, "/w").map((l) => l.key)).toEqual(["summary", "replay", "consultations"]);
+    expect(links(base, "/w").map((l) => l.key)).toEqual(["submission", "summary", "replay", "compare", "interview", "consultations"]);
+    expect(links({ ...base, state: "nije_predano" }, "/w").map((l) => l.key)).toEqual(["summary", "replay", "interview", "consultations"]);
   });
   it("gaps banner spans the earliest to the latest gap, none without gaps", () => {
     expect(gapsBanner([])).toBeNull();

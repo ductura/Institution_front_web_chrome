@@ -54,6 +54,7 @@ export function links(facts: Facts, workPath: string): readonly Link[] {
     { key: "summary", label: text.linkSummary, path: `${workPath}/sazetak` },
     { key: "replay", label: text.linkReplay, path: `${workPath}/reprodukcija` },
     ...(submitted ? [{ key: "compare", label: text.linkCompare, path: `${workPath}/usporedba` }] : []),
+    { key: "interview", label: text.linkInterview, path: `${workPath}/priprema-razgovora` },
     { key: "consultations", label: text.linkConsultations, path: `${workPath}/konzultacije` },
   ];
 }

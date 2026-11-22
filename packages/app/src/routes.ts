@@ -5,6 +5,7 @@ import { HOW_IT_WORKS_HREF, homeHref, navFor, type ShellRole } from "../../../sr
 import { messagesHr as t } from "../../../locales/hr.ts";
 import { consultationMessages } from "../../../src/components/teacher/consultation-records/messages.hr.ts";
 import { n11Messages } from "./host/teacher/n11/messages.hr.ts";
+import { interviewMessages } from "./host/teacher/interview/messages.hr.ts";
 import { n10Messages } from "./host/teacher/n10/messages.hr.ts";
 import { messagesHr as workText } from "../../../src/lib/i18n/messages.hr.ts";
 
@@ -102,6 +103,7 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/rad/[id]/predaja", label: workText.receipt.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/usporedba", label: n11Messages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/sazetak", label: n10Messages.title, kind: "pending", roles: ["teacher"] },
+  { path: "/nastavnik/rad/[id]/priprema-razgovora", label: interviewMessages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/konzultacije", label: consultationMessages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/zadatak/novi", label: t.teacher.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/zadatak/[assignmentId]/uredi", label: t.teacher.newVersion.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },

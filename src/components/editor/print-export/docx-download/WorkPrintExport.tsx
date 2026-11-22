@@ -48,8 +48,17 @@ function OpenWorkPrintExport({ documentId, title, onClose, renderPdf }: {
 /** The host draws the PDF download for a saved version (WEB-1803). */
 export type RenderPdf = (version: { documentId: string; versionId: string; title: string }) => ReactNode;
 
-export function WorkPrintExport({ documentId, title, renderPdf }: { documentId: string; title: string; renderPdf?: RenderPdf }) {
-  const [open, setOpen] = useState(false);
+export function WorkPrintExport({ documentId, title, renderPdf, open: controlled, onOpenChange }: {
+  documentId: string;
+  title: string;
+  renderPdf?: RenderPdf;
+  /** The page may own the state, so the rehearsal's "Kako će izgledati ispis" opens this dialog. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const setOpen = onOpenChange ?? setOwn;
   return <>
     <Button tone="quiet" onClick={() => setOpen(true)}>{t.title}</Button>
     {open && <OpenWorkPrintExport key={documentId} documentId={documentId} title={title} onClose={() => setOpen(false)} renderPdf={renderPdf} />}

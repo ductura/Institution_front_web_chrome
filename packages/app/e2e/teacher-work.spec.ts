@@ -8,6 +8,8 @@ import { canonicalizeJcs } from "../../editor-core/src/document/forensics/jcs";
 import { REVISION_ZERO_JCS } from "../../editor-core/src/document/document/revision-zero";
 import { mentorWorkHr } from "../../../src/components/editor/mentor/work-state/messages.hr";
 import { messagesHr as t } from "../../../src/lib/i18n/messages.hr";
+import { n07Messages } from "../src/host/teacher/n07/messages.hr";
+import { preSubmitMessages } from "../src/host/teacher/pre-submit/messages.hr";
 // The host's own N-08 comments panel (WEB-2154), N-09 replay page (WEB-2159), N-10 summary page (WEB-2157), N-12 consultations (#398) and N-06 frame (WEB-2150) texts.
 import { teacherCommentsMessages as comments } from "../src/host/teacher/comments/messages.hr";
 import { n09Messages as replay } from "../src/host/teacher/n09/messages.hr";
@@ -99,8 +101,9 @@ test("teacher opens the live text, replay, signed receipt and consultations unde
   await expect(page).toHaveURL(`${work}/predaja`);
   await expect(page.getByText("Iva Izmišljena")).toBeVisible();
   await expect(page.getByText(/\bPredano\b/)).toBeVisible();
-  await page.getByRole("link", { name: t.receipt.summary, exact: true }).click();
-  // WEB-2157 (#410): the process summary is its own N-10 page under the work, no longer an anchor on it.
+  // N-07 (WEB-2155): "Prije predaje" links to the N-10 summary page (WEB-2157, #410), its own page under the work.
+  await expect(page.getByRole("link", { name: preSubmitMessages.fullSummary, exact: true })).toHaveAttribute("href", `${work}/sazetak`);
+  await page.getByRole("link", { name: preSubmitMessages.fullSummary, exact: true }).click();
   await expect(page).toHaveURL(`${work}/sazetak`);
   await expect(page.getByRole("heading", { level: 1, name: summary.title })).toBeVisible();
   await page.getByRole("link", { name: summary.backToWork }).click();
@@ -136,9 +139,10 @@ test("access and receipt errors show a retry and recover after a fresh read", as
   allow();
   await page.getByRole("button", { name: t.teacherLiveWork.retry }).click();
 
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(t.receipt.error);
+  // The N-07 page also holds the (empty) toast region, itself an alert.
+  await expect(page.getByRole("main").getByRole("alert").filter({ hasText: n07Messages.error })).toBeVisible();
   failReceipt = false;
-  await page.getByRole("link", { name: t.receipt.retry }).click();
+  await page.getByRole("button", { name: n07Messages.retry }).click();
   await expect(page.getByText(/\bPredano\b/)).toBeVisible();
 });
 
