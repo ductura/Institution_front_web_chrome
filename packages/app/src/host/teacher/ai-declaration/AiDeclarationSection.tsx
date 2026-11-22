@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Dialog, EntryList, TeacherAiAttachments, type TeacherAiAttachmentsState } from "@ductura/ui";
+import { ActionRow, Button, Dialog, EntryList, TeacherAiAttachments, type TeacherAiAttachmentsState } from "@ductura/ui";
 
 import type { DeclarationPort, TeacherDeclarationRead } from "../../../../../../src/client/declaration.ts";
 import { teacherAiLabels } from "../work/ai-attachments/messages.hr";
@@ -51,11 +51,11 @@ export default function AiDeclarationSection({ port = unavailableDeclarationPort
             {ready.conversations.map((c, i) => (
               <li key={c.conversationId} className="item">
                 <span className="title">{c.title}</span>
-                <div className="sb-acts">
+                <ActionRow>
                   <Button tone="secondary" size="small" onClick={(event) => { opener.current = event.currentTarget; setOpenIndex(i); }}>
                     {text.review}
                   </Button>
-                </div>
+                </ActionRow>
               </li>
             ))}
           </ul>

@@ -60,3 +60,18 @@ export function EntryList({ entries }: { entries: readonly EntryData[] }) {
     </ol>
   );
 }
+
+/** Fields side by side while 220 px each fit (prototype `.grid2`), one column otherwise. */
+export function FieldGrid({ children }: { children: ReactNode }) {
+  return <div className={styles.grid}>{children}</div>;
+}
+
+/** Buttons in a row that wraps; each takes the full width on a narrow screen (prototype `.sb-acts`). */
+export function ActionRow({ children }: { children: ReactNode }) {
+  return <div className={styles.actions}>{children}</div>;
+}
+
+/** The prototype's `.banner`: a quiet band with an accent edge, amber for a warning. */
+export function Notice({ tone = "info", children }: { tone?: "info" | "warn"; children: ReactNode }) {
+  return <div className={styles.notice} data-tone={tone} role="status">{children}</div>;
+}

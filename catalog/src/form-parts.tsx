@@ -1,4 +1,4 @@
-import { EntryList, FormSection, OptionGroup, SummaryList } from "@ductura/ui";
+import { ActionRow, Button, EntryList, FieldGrid, Notice, FormSection, OptionGroup, SummaryList } from "@ductura/ui";
 import type { ReactNode } from "react";
 
 import type { CatalogState } from "./coverage";
@@ -21,6 +21,27 @@ const TURNS = [
 ];
 
 export const formPartsEntries = {
+  FieldGrid: {
+    prazno: () => <><p>Nema polja.</p><FieldGrid>{null}</FieldGrid></>,
+    učitavanje: () => <FieldGrid><p>Otvaranje…</p><p>Rok…</p></FieldGrid>,
+    greška: () => <FieldGrid><p role="alert">Polja se nisu mogla prikazati.</p></FieldGrid>,
+    puno: () => <FieldGrid><p>Najmanje riječi: 3000</p><p>Najviše riječi: 5000</p></FieldGrid>,
+    onemogućeno: () => <FieldGrid><p>Rok: 10. 12. 2026.</p></FieldGrid>,
+  } satisfies Record<CatalogState, () => ReactNode>,
+  ActionRow: {
+    prazno: () => <><p>Nema radnji.</p><ActionRow>{null}</ActionRow></>,
+    učitavanje: () => <ActionRow><Button busy>Objava u tijeku…</Button></ActionRow>,
+    greška: () => <ActionRow><Button>Pokušaj ponovno</Button></ActionRow>,
+    puno: () => <ActionRow><Button>Objavi zadatak</Button><Button tone="secondary">Natrag na obrazac</Button></ActionRow>,
+    onemogućeno: () => <ActionRow><Button disabled>Objavi zadatak</Button></ActionRow>,
+  } satisfies Record<CatalogState, () => ReactNode>,
+  Notice: {
+    prazno: () => <Notice><p>Nema obavijesti.</p></Notice>,
+    učitavanje: () => <Notice><p>Provjera objave u tijeku…</p></Notice>,
+    greška: () => <Notice tone="warn"><p><b>Objava zadatka prekinuta je i ishod nije poznat.</b> Provjerite popis zadataka.</p></Notice>,
+    puno: () => <Notice><p>Zadatak je objavljen.</p></Notice>,
+    onemogućeno: () => <Notice><p>Samo za čitanje.</p></Notice>,
+  } satisfies Record<CatalogState, () => ReactNode>,
   EntryList: {
     prazno: () => <><p>Još nema zapisanih razgovora.</p><EntryList entries={[]} /></>,
     učitavanje: () => <EntryList entries={[{ id: "l", who: "Razgovor", text: "Učitavanje…" }]} />,

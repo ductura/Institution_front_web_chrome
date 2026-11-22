@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, FormSection as Section, OptionGroup, Select, SummaryList, TextArea, TextField } from "@ductura/ui";
+import { ActionRow, Button, Checkbox, FieldGrid, FormSection as Section, Notice, OptionGroup, Select, SummaryList, TextArea, TextField } from "@ductura/ui";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -112,10 +112,10 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
           <SummaryList rows={rows} />
           <p className="note">{publishHr.reviewNote}</p>
           {failure && <p className="note" role="alert">{failure}</p>}
-          <div className="sb-acts">
+          <ActionRow>
             <Button type="button" onClick={() => void confirm()}>{f.publish}</Button>
-            <Button type="button" tone="quiet" onClick={() => setPhase("form")}>{f.backToForm}</Button>
-          </div>
+            <Button type="button" tone="secondary" onClick={() => setPhase("form")}>{f.backToForm}</Button>
+          </ActionRow>
         </section>
       </>
     );
@@ -143,7 +143,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
         </Section>
 
         <Section id="zs-2" title={f.sections.schedule}>
-          <div className="grid2">
+          <FieldGrid>
             <TextField label={f.fields.opens} type="datetime-local" value={draft.opensAt} hint={f.fields.opensHint}
               {...invalid("opensAt")} onChange={(event) => set("opensAt", event.target.value)} />
             <TextField label={f.fields.due} type="datetime-local" value={draft.dueAt} hint={f.fields.dueHint}
@@ -152,7 +152,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
               onChange={(event) => set("wordMin", event.target.value)} />
             <TextField label={f.fields.wordMax} inputMode="numeric" value={draft.wordMax}
               {...invalid("wordMax")} onChange={(event) => set("wordMax", event.target.value)} />
-          </div>
+          </FieldGrid>
           {/* The create route has no `groupIds` yet: the group is shown, not sent (f.groups.unavailable). */}
           <OptionGroup legend={f.groups.legend} name="groups" kind="checkbox" value={["all"]} disabled
             options={[{ value: "all", label: setup.groups }]} />
@@ -183,10 +183,10 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
         </Section>
 
         <p className="meta">{f.submitHint}</p>
-        <div className="sb-acts">
+        <ActionRow>
           <Button type="button" onClick={toReview}>{f.review}</Button>
           <a className="btn secondary" href={cancelHref}>{f.cancel}</a>
-        </div>
+        </ActionRow>
       </div>
     </>
   );

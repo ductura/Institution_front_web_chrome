@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionRow, Notice } from "@ductura/ui";
 import { useContext } from "react";
 
 import { appHref } from "../../../../../../src/components/shell/nav";
@@ -11,10 +12,10 @@ import { publishHr } from "./messages.hr";
 export function PublishDone() {
   const host = useContext(HostContext);
   return (
-    <div className="banner">
+    <Notice>
       <p>{publishHr.published}</p>
-      {host && <div className="acts"><a className="btn secondary" href={appHref(host.base, "/nastavnik/kolegiji")}>{publishHr.toCourses}</a></div>}
-    </div>
+      {host && <ActionRow><a className="btn secondary" href={appHref(host.base, "/nastavnik/kolegiji")}>{publishHr.toCourses}</a></ActionRow>}
+    </Notice>
   );
 }
 
@@ -25,9 +26,9 @@ export function CheckListLink({ courseId, title }: { courseId?: string; title?: 
   // The course list shows the banner "prekinuto" for this assignment (WEB-2145).
   const query = new URLSearchParams({ objava: "prekinuta", ...(courseId ? { kolegij: courseId } : {}), ...(title ? { zadatak: title } : {}) });
   return (
-    <div className="banner warn" role="status">
+    <Notice tone="warn">
       <p><b>{publishHr.uncertainTitle}</b> {publishHr.uncertainBody}</p>
-      <div className="acts"><a className="btn secondary" href={appHref(host.base, `/nastavnik/kolegiji?${query.toString()}`)}>{publishHr.checkList}</a></div>
-    </div>
+      <ActionRow><a className="btn secondary" href={appHref(host.base, `/nastavnik/kolegiji?${query.toString()}`)}>{publishHr.checkList}</a></ActionRow>
+    </Notice>
   );
 }
