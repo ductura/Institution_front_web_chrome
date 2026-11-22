@@ -215,6 +215,15 @@
   --field-placeholder: #5c5a54;
   --error-soft: #f7e4dd;
   color-scheme: light;
+  /* Pills and chips on the white sheet must not inherit the dark shell (axe, catalog): light-theme values. */
+  --hover: #ecebe5;
+  --selected: #ecebe5;
+  --synced: #355b81;
+  --synced-soft: #e3edf6;
+  --error: #9c3f33;
+  --warn-soft: #f3e6cf;
+  /* Warning text on the paper (--warn is for marks only). */
+  --warn-ink: #7a5420;
 }
 
 * {
