@@ -7,8 +7,11 @@ import { goToSignIn } from "../../../../../../src/client/api";
 import { Kv, WorkPage, WorkPanel, workPageStyles as styles } from "../n07/WorkPage";
 import {
   assistantAnchor, assistantTransfers, at, characters, charactersGenitive, duration, loadSummary, minutesGenitive, pasteAnchor,
-  period, segmentLine, sessionLine, sessionsCount, sessionsGenitive, versionLines, type N10Port, type N10Read,
+  period, segmentLine, sessionLine, sessionsCount, sessionsGenitive, versionLines, type N10Port, type N10Read, type ThresholdRow,
+  type ThresholdState,
 } from "./model";
+import { originText } from "../origin-map/messages.hr";
+import type { OriginKind } from "../origin-map/contract";
 import ProvenanceMap from "../provenance/ProvenanceMap";
 import { n10Messages as text } from "./messages.hr";
 
@@ -42,6 +45,30 @@ function Section({ title, observed = true, children }: { title: string; observed
 /** A listed item (`.item`): the line with its tag on the `.sb-ev` row, then the notes and the jump link. */
 function Entry({ line, children }: { line: string; children: ReactNode }) {
   return <li className="item"><div className={styles.ev}><span>{line}</span><Observed /></div>{children}</li>;
+}
+
+const KIND_LABEL: Record<OriginKind, string> = {
+  typed: originText.kindTyped,
+  assistant_inserted: originText.kindAssistantInserted,
+  assistant_match: originText.kindAssistantMatch,
+  imported_file: originText.kindImportedFile,
+  pasted_known: originText.kindPastedKnown,
+  pasted_unknown: originText.kindPastedUnknown,
+};
+const STATE_LABEL: Record<ThresholdState, string> = { in_line: text.rulesInLine, for_review: text.rulesForReview, exceeded: text.rulesExceeded };
+
+/** P-1 rule 12: one of three labels per kind, in the order of the closed list; no threshold, no number, no ranking. */
+function FacultyRules({ rows }: { rows: readonly ThresholdRow[] }) {
+  return (
+    <Section title={text.rulesTitle} observed={false}>
+      <p className="note">{text.rulesNotice}</p>
+      <ul className="list" data-rules>{rows.map((row) => (
+        <li key={row.origin} className="item" data-origin={row.origin}>
+          <div className={styles.ev}><span>{KIND_LABEL[row.origin]}</span><Tag>{STATE_LABEL[row.state]}</Tag></div>
+        </li>
+      ))}</ul>
+    </Section>
+  );
 }
 
 function Sections({ read, anchors }: { read: Extract<N10Read, { kind: "ready" }>; anchors: ReadonlySet<string> }) {
@@ -106,6 +133,7 @@ function Sections({ read, anchors }: { read: Extract<N10Read, { kind: "ready" }>
       <Section title={text.notesTitle} observed={false}>
         <Unavailable />
       </Section>
+      {read.thresholds === undefined ? null : <FacultyRules rows={read.thresholds} />}
       <Section title={text.stateTitle}>
         <p>{hasGaps ? text.stateGaps : text.stateComplete}</p>
         <p className="meta">{text.stateUnchanged}</p>
