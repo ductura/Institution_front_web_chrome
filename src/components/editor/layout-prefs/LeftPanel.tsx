@@ -18,7 +18,7 @@ const w = messagesHr.workspace;
 const headingKey = (heading: NumberedHeading) => heading.id ?? `pos-${heading.pos}`;
 const headingLabel = (heading: NumberedHeading) => `${heading.number}. ${heading.title || messagesHr.outline.untitledHeading}`;
 
-export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread", ReactNode>>;
+export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "chapter", ReactNode>>;
 
 type Outline = { headings: NumberedHeading[]; current: NumberedHeading | undefined; words?: readonly number[] };
 
@@ -114,8 +114,9 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
 
   return <>
     <div className={styles.panelHeading}><span>{t.variants.left[layout]}</span>{settings}</div>
-    {layout === "b" ? <PanelTabs label={w.structureLabel} tabs={[{ id: "structure", label: w.structure, content: outline }, ...content]} /> : <>
+    {layout === "b" ? <PanelTabs label={w.structureLabel} tabs={[{ id: "structure", label: w.structure, content: <>{outline}{sections.chapter}</> }, ...content]} /> : <>
       {layout === "c" ? <ChapterCards outline={data} go={go} label={label} /> : outline}
+      {sections.chapter}
       {content.map(({ id, label, content: section }) => <Details key={id} summary={label}>{section}</Details>)}
     </>}
   </>;
