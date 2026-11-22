@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DiffView, Skeleton } from "@ductura/ui";
+import { Button, DiffView } from "@ductura/ui";
 
 import { goToSignIn } from "../../../../../../src/client/api";
 import {
@@ -9,15 +9,20 @@ import {
   type N11Compare, type N11Port, type N11Version, type N11Versions,
 } from "./model";
 import { n11Messages as text } from "./messages.hr";
+import { Kv, WorkPage, WorkPanel, workPageStyles as styles } from "../n07/WorkPage";
+
+const Lines = ({ message }: { message: string }) => (
+  <><p className="note" role="status">{message}</p><div className="skel w80" /><div className="skel w60" /><div className="skel w40" /></>
+);
 
 const wrap = { whiteSpace: "pre-wrap", overflowWrap: "anywhere" } as const;
 
 function Failure({ message, retry }: { message: string; retry: () => void }) {
   return (
-    <div>
-      <p role="alert">{message}</p>
-      <button type="button" className="btn" onClick={retry}>{text.retry}</button>
-    </div>
+    <>
+      <p className="note" role="alert">{message}</p>
+      <div className={styles.acts}><Button tone="secondary" onClick={retry}>{text.retry}</Button></div>
+    </>
   );
 }
 
@@ -35,7 +40,7 @@ function Result({ port, documentId, from, to, signInHref }: { port: N11Port; doc
     return () => { live = false; };
   }, [port, documentId, from, to, attempt, signInHref]);
 
-  if (read === null) return <Skeleton label={text.loadingComparison} />;
+  if (read === null) return <Lines message={text.loadingComparison} />;
   if (read.kind === "signedOut") return <p role="status">{text.loadingComparison}</p>;
   if (read.kind !== "ready") {
     return <Failure message={read.kind === "notFound" ? text.notFound : text.compareError} retry={() => setAttempt((n) => n + 1)} />;
@@ -43,13 +48,15 @@ function Result({ port, documentId, from, to, signInHref }: { port: N11Port; doc
   const { added, removed } = countWords(read.blocks);
   return (
     <>
-      <div className="sb-kv"><span>{text.addedLabel}</span><b>{text.words(added)}</b></div>
-      <div className="sb-kv"><span>{text.removedLabel}</span><b>{text.words(removed)}</b></div>
+      <Kv label={text.addedLabel}>{text.words(added)}</Kv>
+      <Kv label={text.removedLabel}>{text.words(removed)}</Kv>
       <p className="meta">{text.wordsNote}</p>
-      {!hasChanges(read.blocks) && <p role="status">{text.noChanges}</p>}
-      {read.blocks.map(({ change, text: t }, index) => change === "unchanged"
-        ? <p key={index} style={wrap}>{t}</p>
-        : <DiffView key={index} parts={[{ kind: change, text: t }]} />)}
+      {!hasChanges(read.blocks) && <p className="note" role="status">{text.noChanges}</p>}
+      <div className={`sheet ${styles.paper} ${styles.cmp}`}>
+        {read.blocks.map(({ change, text: t }, index) => change === "unchanged"
+          ? <p key={index} style={wrap}>{t}</p>
+          : <DiffView key={index} parts={[{ kind: change, text: t }]} />)}
+      </div>
     </>
   );
 }
@@ -60,7 +67,7 @@ function Picker({ port, documentId, submitted, replayHref, signInHref }: {
   const [from, setFrom] = useState(defaultFrom(submitted));
   const newest = submitted[0];
   if (newest === undefined || from === null) {
-    return <><p role="status">{text.empty}</p><p><a href={replayHref}>{text.emptyAction}</a></p></>;
+    return <><p className="note" role="status">{text.empty}</p><a href={replayHref}>{text.emptyAction}</a></>;
   }
   return (
     <>
@@ -81,7 +88,7 @@ function Picker({ port, documentId, submitted, replayHref, signInHref }: {
  * N-11 "Usporedba verzija" (WEB-2160): the newest submitted version against one chosen older submitted version,
  * the previous one by default. Counts in words, no colour, no threshold. A failed read says so with a button.
  */
-export default function N11Compare({ port, documentId, replayHref, signInHref }: { port: N11Port; documentId: string; replayHref: string; signInHref: string }) {
+export default function N11Compare({ port, documentId, replayHref, signInHref, workHref = signInHref }: { port: N11Port; documentId: string; replayHref: string; signInHref: string; workHref?: string }) {
   const [read, setRead] = useState<N11Versions | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -95,15 +102,16 @@ export default function N11Compare({ port, documentId, replayHref, signInHref }:
     return () => { live = false; };
   }, [port, documentId, attempt, signInHref]);
 
+  const pending = read === null || read.kind === "signedOut";
   return (
-    <div className="page">
-      <h1>{text.title}</h1>
-      {read === null && <Skeleton label={text.loadingVersions} />}
-      {read?.kind === "signedOut" && <p role="status">{text.loadingVersions}</p>}
-      {read?.kind === "unavailable" && <Failure message={text.versionsError} retry={() => setAttempt((n) => n + 1)} />}
-      {read?.kind === "ready" && (
-        <Picker key={documentId} port={port} documentId={documentId} submitted={submittedVersions(read.versions)} replayHref={replayHref} signInHref={signInHref} />
-      )}
-    </div>
+    <WorkPage back={workHref} backLabel={text.backToWork}>
+      <WorkPanel id={read?.kind === "ready" && submittedVersions(read.versions).length > 1 ? "cp-h" : "pg-h"} title={text.title} busy={pending}>
+        {pending && <Lines message={text.loadingVersions} />}
+        {read?.kind === "unavailable" && <Failure message={text.versionsError} retry={() => setAttempt((n) => n + 1)} />}
+        {read?.kind === "ready" && (
+          <Picker key={documentId} port={port} documentId={documentId} submitted={submittedVersions(read.versions)} replayHref={replayHref} signInHref={signInHref} />
+        )}
+      </WorkPanel>
+    </WorkPage>
   );
 }

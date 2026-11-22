@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Card, Checkbox } from "@ductura/ui";
+import { Button } from "@ductura/ui";
+
+import { WorkPanel, workPageStyles as styles } from "../n07/WorkPage";
 
 import { provenanceText as t } from "./messages.hr";
 import { DEFAULT_SWITCHES, legendItems, typedShown, type MapSwitches, type ProvenanceState } from "./model";
@@ -30,32 +32,41 @@ export function ProvenanceMapView({ state, switches, onSwitches, onRetry }: {
   state: ProvenanceState; switches: MapSwitches; onSwitches: (next: MapSwitches) => void; onRetry: () => void;
 }) {
   const ready = state.kind === "marked" || state.kind === "noMarks";
+  const typedOn = typedShown(switches);
   return (
-    <Card title={t.title} busy={state.kind === "loading"}>
-      <p>{t.intro}</p>
-      <p><strong>{t.whoTyped}</strong></p>
+    <WorkPanel id="km-h" title={t.title} level={2} busy={state.kind === "loading"}>
+      <p className="note">{t.intro}</p>
+      <p><b>{t.whoTyped}</b></p>
       {ready ? (
         <>
-          <Checkbox label={t.switchOrigin} data-sw="origin" checked={switches.origin}
-            onChange={(event) => onSwitches({ ...switches, origin: event.currentTarget.checked })} />
-          <Checkbox label={t.switchTyped} data-sw="typed" hint={t.typedHint} checked={typedShown(switches)}
-            disabled={!switches.origin} onChange={(event) => onSwitches({ ...switches, typed: event.currentTarget.checked })} />
-          <ul aria-label={t.legendLabel} data-legend>
-            {legendItems(switches).map((item) => <li key={item.key} data-mark={item.key}>{item.label}</li>)}
+          <label className={styles.switch}>
+            <input type="checkbox" data-sw="origin" checked={switches.origin}
+              onChange={(event) => onSwitches({ ...switches, origin: event.currentTarget.checked })} /> {t.switchOrigin}
+          </label>
+          <label className={styles.switch}>
+            <input type="checkbox" data-sw="typed" checked={typedOn} disabled={!switches.origin}
+              onChange={(event) => onSwitches({ ...switches, typed: event.currentTarget.checked })} /> {t.switchTyped}
+          </label>
+          <p className="meta">{t.typedHint}</p>
+          <ul className={styles.legend} aria-label={t.legendLabel} data-legend>
+            {legendItems(switches).map((item) => (
+              <li key={item.key} data-mark={item.key}><span className={`${styles.sw} ${styles[item.key]}`} aria-hidden="true" />{item.label}</li>
+            ))}
           </ul>
-          {state.kind === "noMarks" ? <p>{t.noMarks}</p> : (
-            <div data-map-text data-origin={switches.origin ? "on" : "off"} data-typed={typedShown(switches) ? "on" : "off"}>
-              <p role="status">{t.textUnavailable}</p>
+          {state.kind === "noMarks" ? <p className="note">{t.noMarks}</p> : (
+            <div data-map-text data-origin={switches.origin ? "on" : "off"} data-typed={typedOn ? "on" : "off"}
+              className={`sheet ${styles.paper} ${switches.origin ? "" : styles.off} ${typedOn ? styles.typedOn : ""}`}>
+              <p className="note" role="status">{t.textUnavailable}</p>
             </div>
           )}
         </>
       ) : state.kind === "unavailable" ? (
         <>
-          <p role="alert">{t.unavailable}</p>
-          <Button onClick={onRetry}>{t.retry}</Button>
+          <p className="note" role="alert">{t.unavailable}</p>
+          <div className={styles.acts}><Button tone="secondary" onClick={onRetry}>{t.retry}</Button></div>
         </>
-      ) : state.kind === "notFound" ? <p role="alert">{t.notFound}</p>
-        : state.kind === "signedOut" ? <p role="alert">{t.signedOut}</p> : null}
-    </Card>
+      ) : state.kind === "notFound" ? <p className="note" role="alert">{t.notFound}</p>
+        : state.kind === "signedOut" ? <p className="note" role="alert">{t.signedOut}</p> : null}
+    </WorkPanel>
   );
 }

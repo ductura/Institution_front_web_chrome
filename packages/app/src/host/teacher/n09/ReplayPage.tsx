@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from "@ductura/ui";
+import { Button } from "@ductura/ui";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { ReplayPlayer } from "@/client/replay-record/replay-player";
@@ -19,6 +19,7 @@ import { messagesHr } from "@/lib/i18n/messages.hr";
 import { n09Messages as m } from "./messages.hr";
 import { followingStep, parseSpeed, playable, precedingStep, sourceTag, stepDelay, SPEEDS, type Speed } from "./model";
 import styles from "./Replay.module.css";
+import { WorkPage, WorkPanel, workPageStyles as page } from "../n07/WorkPage";
 
 const t = messagesHr.replay;
 type Player = Extract<ReplayPlayer, { ok: true }>;
@@ -111,7 +112,7 @@ function N09Player({ player }: { player: Player }) {
     setPlaying(true);
   };
   const scopeButton = (label: string, on: boolean, act: () => void) =>
-    <button type="button" className={on ? "btn" : `btn ${replayStyles.secondary}`} aria-pressed={on} onClick={act}>{label}</button>;
+    <button type="button" className={on ? "btn" : "btn secondary"} aria-pressed={on} onClick={act}>{label}</button>;
   const prev = precedingStep(steps, n);
   const spoken = change === null ? t.startLive : describeChange(n, change.kind, parts);
 
@@ -119,15 +120,15 @@ function N09Player({ player }: { player: Player }) {
     <div className={replayStyles.player}>
       <div className={styles.ctl} role="group" aria-label={m.controlsLabel}>
         <button type="button" className="btn" aria-pressed={playing} disabled={steps.length === 0} onClick={toggle}>{playing ? m.stop : m.play}</button>
-        <button type="button" className={`btn ${replayStyles.secondary}`} disabled={prev === null} onClick={() => seek(prev)}>{m.previous}</button>
-        <button type="button" className={`btn ${replayStyles.secondary}`} disabled={next === null} onClick={() => seek(next)}>{m.next}</button>
-        <label className={styles.field}><span>{m.speed}</span>
-          <select className={replayStyles.select} value={speed} onChange={(e) => setSpeed(parseSpeed(e.currentTarget.value))}>
+        <button type="button" className={"btn secondary"} disabled={prev === null} onClick={() => seek(prev)}>{m.previous}</button>
+        <button type="button" className={"btn secondary"} disabled={next === null} onClick={() => seek(next)}>{m.next}</button>
+        <label className={page.inline}><span className="lbl">{m.speed}</span>
+          <select className="input" value={speed} onChange={(e) => setSpeed(parseSpeed(e.currentTarget.value))}>
             {SPEEDS.map((s) => <option key={s} value={s}>{`${s}×`}</option>)}
           </select>
         </label>
-        <label className={styles.field}><span>{m.jump}</span>
-          <select className={replayStyles.select} disabled aria-describedby="rp-jump-note" value="">
+        <label className={page.inline}><span className="lbl">{m.jump}</span>
+          <select className="input" disabled aria-describedby="rp-jump-note" value="">
             <option value="">{m.jumpUnavailable}</option>
           </select>
         </label>
@@ -189,7 +190,7 @@ function N09Player({ player }: { player: Player }) {
             return (
               <li key={`${g.gap}-${g.beforeIndex}`}><span>{words.text}</span>
                 {words.target !== null && words.target >= 1 && (
-                  <button type="button" className={`btn ${replayStyles.secondary}`} onClick={() => { setScoped(null); seek(words.target); }}>{fill(t.goTo, { n: words.target })}</button>
+                  <button type="button" className={"btn secondary"} onClick={() => { setScoped(null); seek(words.target); }}>{fill(t.goTo, { n: words.target })}</button>
                 )}
               </li>
             );
@@ -200,23 +201,34 @@ function N09Player({ player }: { player: Player }) {
   );
 }
 
-/** N-09 page body: intro, the state of the reading, the player and the foot line the prototype carries. */
-export default function ReplayPage({ documentId, session }: { documentId: string; session: SessionMark | null }) {
+/** N-09 page (prototype `reprodukcija`): the work page frame, the panel `rp-h`, the state of the reading, the player and the foot line. */
+export default function ReplayPage({ documentId, session, workHref }: { documentId: string; session: SessionMark | null; workHref: string }) {
   const { outcome, retry } = useReplay(documentId, session);
-  let body: ReactNode;
-  if (outcome.kind === "loading") body = <Skeleton label={m.loading} />;
-  else if (outcome.kind === "ok") {
+  let panel: ReactNode;
+  if (outcome.kind === "loading") {
+    panel = (
+      <WorkPanel id="pg-h" title={m.title} busy>
+        <p className="note" role="status">{m.loading}</p><div className="skel w80" /><div className="skel w60" /><div className="skel w40" />
+      </WorkPanel>
+    );
+  } else if (outcome.kind === "ok") {
     const { player } = outcome;
-    body = player.total === 0 && !player.entries.some((e) => e.entry === "gap")
-      ? <p className="note">{m.empty}</p> : <N09Player key={documentId} player={player} />;
+    panel = player.total === 0 && !player.entries.some((e) => e.entry === "gap")
+      ? <WorkPanel id="pg-h" title={m.title}><p className="note">{m.empty}</p></WorkPanel>
+      : (
+        <WorkPanel id="rp-h" title={m.title}>
+          <p className="note">{m.intro}</p>
+          <N09Player key={documentId} player={player} />
+          <p className="meta">{m.foot}</p>
+        </WorkPanel>
+      );
   } else if (outcome.kind === "unavailable") {
-    body = <div role="alert"><p>{m.error}</p><button type="button" className="btn" onClick={retry}>{m.retry}</button></div>;
-  } else body = <p role="alert">{outcome.kind === "notFound" ? t.notFound : t.signedOut}</p>;
-  return (
-    <div className={replayStyles.replay}>
-      <p className="note">{m.intro}</p>
-      {body}
-      <p className="meta">{m.foot}</p>
-    </div>
-  );
+    panel = (
+      <WorkPanel id="pg-h" title={m.title}>
+        <p className="note" role="alert">{m.error}</p>
+        <div className={page.acts}><Button tone="secondary" onClick={retry}>{m.retry}</Button></div>
+      </WorkPanel>
+    );
+  } else panel = <WorkPanel id="pg-h" title={m.title}><p className="note" role="alert">{outcome.kind === "notFound" ? t.notFound : t.signedOut}</p></WorkPanel>;
+  return <WorkPage back={workHref} backLabel={m.backToWork}>{panel}</WorkPage>;
 }

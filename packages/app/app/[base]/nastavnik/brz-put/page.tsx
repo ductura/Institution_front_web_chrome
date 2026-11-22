@@ -1,8 +1,14 @@
-import { PendingPage } from "../../../../src/host/pages";
+import { Suspense } from "react";
 
-// TREBA API: teacher.access.get and teacher.fast-path.post; src/client has no module for them yet.
-// Source: Ductus src/app/nastavnik/brz-put/page.tsx, copied to src/app/nastavnik/brz-put/.
-/** "Brz put": the teacher's quick view of a submitted work. */
+import FastPathPage from "../../../../src/host/teacher/n05/FastPathPage";
+
+// Source: Ductus src/app/nastavnik/brz-put/page.tsx. The works come from teacher.fast-path.post through
+// src/components/teacher/fast-path/read.ts (WEB-2142).
+/** "Brz put": the works of one assignment, one after another, read only. */
 export default function Page() {
-  return <PendingPage />;
+  return (
+    <Suspense>
+      <FastPathPage />
+    </Suspense>
+  );
 }

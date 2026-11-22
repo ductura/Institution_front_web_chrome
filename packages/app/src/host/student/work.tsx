@@ -33,6 +33,7 @@ import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
+import { StatusExtras, useRehearsalSupplements } from "../editor/status/StatusExtras";
 import { PregledHost } from "../editor/right/PregledHost";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
@@ -103,6 +104,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
+            statusExtra={<StatusExtras />} useSupplements={useRehearsalSupplements}
             triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
             literature={() => <LiteratureList />}
             hostSections={{

@@ -293,8 +293,9 @@ test("a teacher's Ductus pages open at their addresses, and /nastavnik/kolegiji 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Moji kolegiji");
 
   await page.goto("/app/web/nastavnik/brz-put");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page.getByText("Ovaj prikaz još nije spojen na poslužitelj ustanove.")).toBeVisible();
+  // Brz put is mounted (WEB-2142): without ?zadatak= it asks for an assignment.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Brz put");
+  await expect(page.getByRole("status")).toBeVisible();
   await axe(page);
   expect(errors).toEqual([]);
 });
