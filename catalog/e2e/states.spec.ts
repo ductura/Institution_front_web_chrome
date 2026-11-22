@@ -43,7 +43,7 @@ const SEMANTICS: Record<Component, Record<CatalogState, (c: Locator) => Promise<
       await b.focus();
       await expect(b).toBeFocused();
     },
-    greška: async (c) => { await expect(c.getByRole("button", { name: "Pokušajte ponovno" })).toBeEnabled(); },
+    greška: async (c) => { await expect(c.getByRole("button", { name: "Pokušaj ponovno" })).toBeEnabled(); },
     puno: async (c) => { await expect(c.getByRole("button", { name: "Predaj rad" })).toBeEnabled(); },
     onemogućeno: async (c) => { await expect(c.getByRole("button", { name: "Predaj rad" })).toBeDisabled(); },
   },
@@ -84,13 +84,17 @@ const SEMANTICS: Record<Component, Record<CatalogState, (c: Locator) => Promise<
     },
   },
   Card: {
-    prazno: async (c) => { await expect(c.getByRole("region", { name: "Moji radovi" })).toContainText("Još nema radova."); },
+    prazno: async (c) => {
+      await expect(c.getByRole("region", { name: "Još nemate kolegija." })).toContainText("Ovdje će se prikazati Vaši kolegiji i njihovi zadaci.");
+    },
     učitavanje: async (c) => {
       const r = c.getByRole("region", { name: "Moji radovi" });
       await expect(r).toHaveAttribute("aria-busy", "true");
       await expect(r).toContainText("Učitavanje…");
     },
-    greška: async (c) => { await expect(c.getByRole("alert")).toHaveText("Popis se nije učitao. Pokušajte ponovno."); },
+    greška: async (c) => {
+      await expect(c.getByRole("alert")).toHaveText("Podatke nije bilo moguće učitati. To ne znači da nema kolegija ili radova.");
+    },
     puno: async (c) => {
       await expect(c.getByRole("region", { name: "Seminarski rad" })).toContainText("Uvod u temu i plan poglavlja.");
     },

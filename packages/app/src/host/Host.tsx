@@ -27,8 +27,8 @@ import { shellMessagesFor } from "./teacher/shell/messages";
  * The institution front (#2028 c.6993786629 §3.3), as the layout of
  * app/[base]/: reads the session once, sends a signed-out browser to AAI@EduHr
  * sign-in (D-09), and shows the page of the path for the session's role inside
- * the prototypes' shell (VIZ-0: no top bar, so no breadcrumb and no
- * institution line, as in the prototypes). Links of the app open through the
+ * the prototypes' shell (VIZ-0: no top bar, so no breadcrumb; the
+ * institution's name moves to the side bar's foot). Links of the app open through the
  * Next router, without a reload.
  */
 export default function Host({ base, children }: { base: Base; children: ReactNode }) {
@@ -128,6 +128,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
           current={current === undefined ? undefined : link(current)}
           menuLabel={ui.sideShell.menu}
           themeLabel={shellText.shell.theme}
+          context={signedIn?.institution ?? null}
           links={[
             { href: link(HOW_IT_WORKS_HREF), label: shellText.shell.howItWorks },
             { href: link("/pristupacnost"), label: shellText.shell.accessibilityStatement },
