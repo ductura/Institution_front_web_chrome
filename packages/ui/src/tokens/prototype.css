@@ -83,12 +83,15 @@
   --main-gap: 24px;
   --dialog-w: 480px;
 
-  /* The error mark (student default; teacher below). */
-  --err-ink: var(--error);
+  /*
+   * The error mark (student default; teacher below). --err-ink and
+   * --field-invalid stay undefined here: a var() in a custom property is
+   * resolved where it is declared, so a root value would carry the shell's
+   * --error into the white sheet. Callers write var(--err-ink, var(--error)).
+   */
   --err-weight: 400;
   --err-bar: 0px;
   --err-pad: 0px;
-  --field-invalid: var(--error);
   --field-invalid-width: 1px;
 }
 
@@ -105,7 +108,8 @@
   --main-pad-top: 24px;
   --main-gap: 20px;
   --dialog-w: 520px;
-  --err-ink: var(--ink);
+  /* currentColor is resolved where it is used: the ink of the surface, shell or sheet. */
+  --err-ink: currentColor;
   --err-weight: 600;
   --err-bar: 3px;
   --err-pad: 8px;
@@ -259,7 +263,7 @@ input[type="radio"] {
 }
 
 .input[aria-invalid="true"] {
-  border-color: var(--field-invalid);
+  border-color: var(--field-invalid, var(--error));
   border-width: var(--field-invalid-width);
 }
 
@@ -281,7 +285,7 @@ textarea.input {
 }
 
 .err {
-  color: var(--err-ink);
+  color: var(--err-ink, var(--error));
   font-size: var(--fs-sm);
   font-weight: var(--err-weight);
   border-left: var(--err-bar) solid var(--warn);
@@ -470,6 +474,98 @@ textarea.input {
 .pagehead .lede {
   flex-basis: 100vw;
   max-width: 68ch;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: var(--space-4);
+  }
+
+  .pagehead h1 {
+    font-size: var(--fs-display-sm);
+  }
+}
+
+/* Ductura_nastavnik.html: .banner, .opt, fieldset/legend (inside a card), .sb-acts, .sb-spin (VIZ-N6). */
+.banner {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2h) var(--space-3h);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--well);
+}
+
+.banner.warn {
+  border-left-color: var(--warn);
+}
+
+.opt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2h);
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  cursor: pointer;
+}
+
+.opt input {
+  margin-top: var(--space-0);
+}
+
+.card fieldset {
+  display: grid;
+  gap: var(--space-0);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2h) var(--space-3);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+}
+
+.card legend {
+  padding: 0 var(--space-1);
+  font-weight: 600;
+}
+
+.sb-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sb-state {
+  display: grid;
+  gap: var(--space-0);
+  min-width: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--rule-2);
+}
+
+.sb-state > .sb-h {
+  font-weight: 600;
+}
+
+.sb-spin {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: d-spin 0.8s linear infinite;
+}
+
+@keyframes d-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .sb-acts .btn {
+    flex: 1 1 auto;
+  }
 }
 
 @media (max-width: 640px) {
