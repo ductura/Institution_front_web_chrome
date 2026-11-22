@@ -10,7 +10,7 @@ import type { AddressInfo } from "node:net";
 import { createClient, validateInput, type OperationId } from "@ductura/contracts";
 import { answerFake, createFakeServer, FAKE_VECTOR_HEADER, ROUTE_TABLE, VECTORS, type FakeVector } from "@ductura/test-fakes/fake-server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createApi, RESPONSES, type Input } from "./api";
+import { acceptedByExtract, AHEAD_OF_PACKAGE, createApi, RESPONSES, type Input } from "./api";
 import migrationVectors from "./migration-contract-vectors.generated.json" with { type: "json" };
 
 const server = createFakeServer();
@@ -108,8 +108,9 @@ describe("contract vectors through the generated client", () => {
   for (const vector of VECTORS) {
     const id = vector.route as OperationId;
     const input = inputOf(vector);
+    // The package is behind the server on a few operations (AHEAD_OF_PACKAGE): api sends what the extract accepts.
     const sendable = vector.request.rawBody === undefined
-      && (["params", "query", "body"] as const).every((part) => validateInput(id, part, input[part]));
+      && ((["params", "query", "body"] as const).every((part) => validateInput(id, part, input[part])) || (AHEAD_OF_PACKAGE.has(vector.route) && acceptedByExtract(vector.route, input)));
 
     it(`${vector.route} ${vector.name}: the generated client reads the answer`, async () => {
       const sent = { count: 0 };

@@ -1,0 +1,71 @@
+name: viz-usporedba
+# Izvještaj, ne vrata (pokreće se ručno): nije u needs od ci-ok i nikad ne pada zbog razlike
+# (VIZ-CI, Daniel 22. 11. 2026.: pisci sami vide izgled). Gradi aplikaciju,
+# snima zaslone koje PR dira i njihove prototipe (docs/prototip/, kopija u
+# ovom repou, pa bez tokena) na 390, 768, 1100 i 1280 px i računa razliku.
+on:
+  # Bez pull_request: ci.yml mora biti jedini workflow na PR-u (test/unit/ci-ok.test.js).
+  # Pisac ga pokreće na svojoj grani: gh workflow run viz-usporedba.yml --ref <grana>
+  workflow_dispatch:
+    inputs:
+      sve: { description: "Snimi sve zaslone iz tests/prototip/mapa.json", type: boolean, default: true }
+permissions:
+  contents: read
+concurrency:
+  group: viz-usporedba-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  usporedba:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Čak i kad korak ne uspije, posao ostaje zelen: izvještaj se ne smije miješati s vratima.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0, persist-credentials: false }
+      # Node 24 čita TypeScript izravno: snimac uvozi lažni server iz e2e/a11y.
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm install -g pnpm@10.33.0
+      - run: pnpm install --frozen-lockfile
+      - name: Install src/client
+        working-directory: src/client
+        run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+      - name: Build
+        run: pnpm run build
+      - name: Browser
+        run: pnpm --filter @ductura/app exec playwright install --with-deps chromium
+      - name: Install the comparison tool
+        working-directory: tests/prototip
+        run: npm ci --ignore-scripts
+      - name: Tests of the comparison tool
+        working-directory: tests/prototip
+        run: node --test snimi.test.mjs
+      - name: Changed files
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            git diff --name-only "$BASE...$HEAD" > "$RUNNER_TEMP/promijenjeno.txt"
+          else
+            : > "$RUNNER_TEMP/promijenjeno.txt"
+          fi
+          cat "$RUNNER_TEMP/promijenjeno.txt"
+      - name: Start the app over the fake institution server
+        run: |
+          cd packages/app
+          INSTITUTION_SERVER_URL=http://127.0.0.1:9 nohup pnpm exec next start -p 5191 > "$RUNNER_TEMP/next.log" 2>&1 &
+          for i in $(seq 1 60); do curl -fs http://127.0.0.1:5191/app/web/ > /dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/next.log"; exit 1
+      - name: Capture, compare, summarise
+        env:
+          VIZ_URL: http://127.0.0.1:5191
+          VIZ_OUT: ${{ github.workspace }}/viz-out
+          VIZ_PROMIJENJENO: ${{ github.event_name == 'pull_request' && format('{0}/promijenjeno.txt', runner.temp) || '' }}
+          VIZ_SVE: ${{ github.event_name == 'workflow_dispatch' && inputs.sve && '1' || '' }}
+        run: node tests/prototip/snimi.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: viz-usporedba, path: viz-out/, if-no-files-found: ignore }

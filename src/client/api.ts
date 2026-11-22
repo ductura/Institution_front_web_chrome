@@ -59,6 +59,18 @@ for (const [id, route] of MIGRATION_ROUTES) {
 /** Responses of every operation of the contract, by operationId, then status. */
 export const RESPONSES: ReadonlyMap<string, Readonly<Record<string, ResponseSpec>>> = responses;
 
+/**
+ * Operations the server's extract is ahead of the published package on, where the package refuses an input the server
+ * takes (a general comment, anchor null; access-log and login with no query). Their refused inputs go by the extract's route; remove with the package bump.
+ */
+/** True when the extract's route for the operation takes this input (the package may refuse it). */
+export function acceptedByExtract(id: string, input: { readonly params?: unknown; readonly query?: unknown; readonly body?: unknown }): boolean {
+  const route = MIGRATION_ROUTES.get(id);
+  return route !== undefined && acceptsPart(route.query, input.query) && acceptsPart(route.params, input.params) && acceptsPart(route.body, input.body);
+}
+
+export const AHEAD_OF_PACKAGE: ReadonlySet<string> = new Set(["collaboration.comments.post", "student.access-log.get", "auth.login.get"]);
+
 const PARTS = ["params", "query", "body"] as const;
 type Part = (typeof PARTS)[number];
 
@@ -272,8 +284,15 @@ export function errorBody(result: { readonly ok: boolean }): unknown {
   return !result.ok && Object.hasOwn(result, "body") ? (result as { body?: unknown }).body : undefined;
 }
 
+function isEmptyObject(value: unknown): boolean {
+  return typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length === 0;
+}
+
 function acceptsPart(schema: Schema | undefined, part: unknown): boolean {
-  return schema === undefined ? part === undefined : matchesSchema(schema, part);
+  // No schema: no part, or an empty query where the generated types ask for an object (institution.retention.get).
+  if (schema === undefined) return part === undefined || (isEmptyObject(part));
+  // An absent part is an empty object for a schema that requires nothing (a query with only optional names).
+  return matchesSchema(schema, part === undefined ? {} : part);
 }
 
 function migrationError(route: MigrationRoute, status: number, body: unknown): string {
@@ -302,7 +321,7 @@ async function callMigrationRoute<Id extends ApiOperationId>(
   const params = wire.params as Record<string, string> | undefined;
   const path = route.path.replace(/\{(\w+)\}/g, (_, name: string) => encodeURIComponent(params?.[name] ?? ""));
   const url = new URL(path, baseUrl);
-  if (route.query !== undefined) {
+  if (route.query !== undefined && wire.query !== undefined) {
     // acceptsPart checked the query against the schema above: an object of string values named by the contract.
     for (const [name, value] of Object.entries(wire.query as Record<string, string>)) url.searchParams.set(name, value);
   }
@@ -358,6 +377,11 @@ export function createApi(options: ApiOptions = {}) {
       return callMigrationRoute(id, route, wire, baseUrl, transport);
     }
     const publishedId = id as OperationId;
+    const ahead = AHEAD_OF_PACKAGE.has(id) ? MIGRATION_ROUTES.get(id) : undefined;
+    if (ahead !== undefined && !PARTS.every((part) => validateInput(publishedId, part, wire[part]))
+      && acceptedByExtract(id, wire)) {
+      return callMigrationRoute(id, ahead, wire, baseUrl, transport);
+    }
     if (!PARTS.every((part) => onlyNamed(names[part], wire[part]) && validateInput(publishedId, part, wire[part]))) {
       return { ok: false, status: 0, code: "client_rejected" };
     }

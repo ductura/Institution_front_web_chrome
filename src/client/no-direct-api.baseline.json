@@ -137,12 +137,6 @@
   "import );\n  const parsed = ",
   "import );\n  }\n  if (version === 4) {\n    const parsedMark = markV4(own.mark, "
  ],
- "packages/editor-core/src/document/forensics/evidence-segment-v2.ts": [
-  "import  ||\n    event.source === ",
-  "import ) {\n    return isUuidV4(value.importId) && isSha256(value.importManifestSha256);\n  }\n  if (value.source === ",
-  "import , [",
-  "import ; importId: string; importManifestSha256: string })\n  | (EvidenceEventBaseV4 & { source: "
- ],
  "packages/editor-core/src/document/forensics/golden-vectors/load.ts": [
   "import node:crypto",
   "import node:fs"

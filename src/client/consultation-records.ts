@@ -34,7 +34,7 @@ export async function readConsultationVersions(documentId: string, beforeRevisio
       if (beforeRevision !== null) url.searchParams.set("beforeRevision", String(beforeRevision));
       return transport(url, init);
     },
-  })("work.versions.get", { params: { documentId }, query: undefined, body: undefined }));
+  })("work.versions.get", { params: { documentId }, query: {}, body: undefined }));
   if (answer?.nextBeforeRevision != null && beforeRevision !== null && answer.nextBeforeRevision >= beforeRevision) {
     return null;
   }

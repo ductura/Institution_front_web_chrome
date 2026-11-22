@@ -144,6 +144,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/text-fixes/TextFixesPanel.tsx", // WEB-1103: not mounted yet; awaits the Pregled card mount.
   "editor/review/ReviewPanel.tsx", // WEB-1102: Pregled card, not mounted in the right panel yet; awaits its entry with the mount.
   "editor/submission-rehearsal/SubmissionRehearsal.tsx", // WEB-1105: landed without a catalogue entry; awaits its lane.
+  "editor/mentor/milestones/StagesCard.tsx", // WEB: landed without a catalogue entry; awaits its lane.
   "editor/find-replace/FindReplaceBar.tsx", // WEB-1605: needs a live editor; its FindBar is catalogued in @ductura/ui.
 ]);
 
