@@ -22,3 +22,7 @@ VS-1, INT-03 i INT-04 koriste isti demo rad. VS-1 ide prije nepovratne predaje u
 INT-04 koristi nastavničke ekrane na Next.js frontu iz `pnpm stog:gore`. Komentar provjerava kroz API jer taj front na prikazu rada još nema obrazac za komentiranje.
 
 Za spremanje su potrebni pohrana evidencije i registrirani razvojni ključ za potpis potvrde. Ako commit vrati `503` u fazi `storage` ili `signing`, u pokretaču INT-01 provjeri te ovisnosti. `pnpm stog:zdravlje` provjerava dostupnost servisa i vezu s bazom.
+
+## CI: workflow `Sistem` (INT-08)
+
+`.github/workflows/sistem.yml` (workflow_dispatch + push na `migracija/kopija-ductus-front`; nije required check i ne ulazi u `ci-ok`) na GitHub runneru kloni `ductura/Institution_server` (javni repo, bez tajni), diže PostgreSQL (Docker compose), migracije, seed, lažni OIDC i server (`pnpm lokalno --izvor=http://localhost:3000`, isti koraci kao `pnpm stog:gore`), gradi i pokreće ovaj front (`next build` + `next start`), učita `seed-int04.sql` i pokreće `pnpm test:sistem`. Artifact `sistem` sadrži `vs-run.json` (SHA-ovi oba repoa, ishod po scenariju), `tablica.md`, dnevnike stoga i Playwright tragove. Front se ne pokreće kroz `stog:gore` jer `next dev` na ovom frontu ne odgovara ni na jedan zahtjev (nalaz u PR-u INT-08).
