@@ -1,0 +1,28 @@
+/* N-06 "rad" as the prototype's .rd-head / .rd-two / .banner / .thread (Ductura_nastavnik.html, "N-06/N-07 rad"). */
+.head { display: grid; gap: 10px; padding: 14px 16px; min-width: 0; }
+.head h1 { font-size: 24px; margin: 0; }
+.head p, .head ol { margin: 0; }
+.links { display: flex; flex-wrap: wrap; gap: 0 14px; }
+.links a { display: inline-flex; align-items: center; min-height: 44px; }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.two { display: grid; gap: 16px; min-width: 0; }
+.main { min-width: 0; }
+.aside { min-width: 0; display: grid; gap: 16px; align-content: start; }
+.aside > section, .aside > div {
+  background: var(--card); border: 1px solid var(--rule-2); border-radius: var(--radius); padding: 0;
+  min-width: 0; overflow-wrap: anywhere;
+}
+.aside > section > h2, .aside > div > h2 {
+  margin: 0; padding: 12px 16px; font-size: 19px; border-bottom: 1px solid var(--rule-2);
+}
+.aside > section > :not(h2), .aside > div > :not(h2) { margin-left: 16px; margin-right: 16px; }
+.aside > section > h2 + *, .aside > div > h2 + * { margin-top: 14px; }
+.aside > section > :last-child, .aside > div > :last-child { margin-bottom: 16px; }
+.aside > section, .aside > div { display: grid; gap: 12px; }
+.aside article { display: grid; gap: 8px; border: 1px solid var(--rule-2); border-radius: 6px; padding: 10px 12px; background: var(--card); }
+.aside article header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+@media (min-width: 1050px) {
+  .two { grid-template-columns: minmax(0, 1fr) 330px; align-items: start; }
+  .two > aside { position: sticky; top: 72px; }
+}
+@media (max-width: 640px) { .head h1 { font-size: 20px; } }
