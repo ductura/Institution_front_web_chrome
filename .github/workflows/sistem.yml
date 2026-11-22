@@ -10,6 +10,8 @@ name: Sistem
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["graditelj/INT-08-prolaz-dokaz"]
 
 permissions:
   contents: read
