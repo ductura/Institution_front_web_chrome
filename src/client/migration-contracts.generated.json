@@ -9001,5 +9001,513 @@
         "unavailable"
       ]
     }
+  },
+  "teacher.submissions-bulk-link.post": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/submissions-bulk-link",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "format"
+      ],
+      "properties": {
+        "format": {
+          "anyOf": [
+            {
+              "const": "pdf",
+              "type": "string"
+            },
+            {
+              "const": "docx",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the link",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "format",
+                "downloadPath",
+                "expiresAt"
+              ],
+              "properties": {
+                "format": {
+                  "anyOf": [
+                    {
+                      "const": "pdf",
+                      "type": "string"
+                    },
+                    {
+                      "const": "docx",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "downloadPath": {
+                  "pattern": "^/api/v1/teacher/assignments/[0-9a-f-]{36}/submissions-bulk/(pdf|docx)\\?token=\\d{1,15}\\.[A-Za-z0-9_-]{43}$",
+                  "type": "string"
+                },
+                "expiresAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.submissions-bulk.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/submissions-bulk/{format}",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId",
+        "format"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        },
+        "format": {
+          "anyOf": [
+            {
+              "const": "pdf",
+              "type": "string"
+            },
+            {
+              "const": "docx",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "ZIP bytes (application/zip); the contract format has no binary body",
+        "headers": {
+          "content-disposition": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "x-content-sha256": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "410": [
+        "not_allowed"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.submission-package-link.post": {
+    "path": "/api/v1/student/submissions/{submissionId}/package-link",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "submissionId"
+      ],
+      "properties": {
+        "submissionId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "const": "package",
+              "type": "string"
+            },
+            {
+              "const": "referada",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the link",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "kind",
+                "downloadPath",
+                "expiresAt"
+              ],
+              "properties": {
+                "kind": {
+                  "anyOf": [
+                    {
+                      "const": "package",
+                      "type": "string"
+                    },
+                    {
+                      "const": "referada",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "downloadPath": {
+                  "pattern": "^/api/v1/student/submissions/[0-9a-f-]{36}/package/(package|referada)\\?token=\\d{1,15}\\.[A-Za-z0-9_-]{43}$",
+                  "type": "string"
+                },
+                "expiresAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.submission-package.get": {
+    "path": "/api/v1/student/submissions/{submissionId}/package/{kind}",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "submissionId",
+        "kind"
+      ],
+      "properties": {
+        "submissionId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "const": "package",
+              "type": "string"
+            },
+            {
+              "const": "referada",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "ZIP or PDF bytes; the contract format has no binary body",
+        "headers": {
+          "content-disposition": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "x-content-sha256": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "410": [
+        "not_allowed"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.export-pdf.get": {
+    "path": "/api/v1/assignments/{assignmentId}/works/{documentId}/export/pdf",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId",
+        "documentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        },
+        "documentId": {
+          "minLength": 1,
+          "maxLength": 512,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "Generated work export",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "filename",
+                    "pdfBase64",
+                    "outputSha256",
+                    "format",
+                    "reportHash",
+                    "docxBase64",
+                    "noticeKey"
+                  ],
+                  "properties": {
+                    "filename": {
+                      "const": "rad.pdf",
+                      "type": "string"
+                    },
+                    "pdfBase64": {
+                      "pattern": "^JVBERi0[A-Za-z0-9+/]*={0,2}$",
+                      "type": "string"
+                    },
+                    "outputSha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    "format": {
+                      "const": "pdf",
+                      "type": "string"
+                    },
+                    "reportHash": {
+                      "type": "null"
+                    },
+                    "docxBase64": {
+                      "pattern": "^UEsD[A-Za-z0-9+/]*={0,2}$",
+                      "type": "string"
+                    },
+                    "noticeKey": {
+                      "const": "workExport.plainPdf",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "filename",
+                    "pdfBase64",
+                    "outputSha256",
+                    "format",
+                    "reportHash"
+                  ],
+                  "properties": {
+                    "filename": {
+                      "const": "rad.pdf",
+                      "type": "string"
+                    },
+                    "pdfBase64": {
+                      "pattern": "^JVBERi0[A-Za-z0-9+/]*={0,2}$",
+                      "type": "string"
+                    },
+                    "outputSha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    "format": {
+                      "const": "pdfa-2u",
+                      "type": "string"
+                    },
+                    "reportHash": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
