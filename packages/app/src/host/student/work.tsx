@@ -28,6 +28,7 @@ import { nextPath } from "../../bases";
 import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { ImportHost } from "../editor/import/ImportHost";
+import { ReviewCardHost, RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import PdfExport from "../editor/export/PdfExport";
 import { unavailableTransport } from "../../../../../src/client/import.ts";
 
@@ -74,6 +75,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
+            hostSections={{
+              review: ({ editor, assignmentId: id, documentId }) => <ReviewCardHost editor={editor} assignmentId={id} documentId={documentId} />,
+              work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
+            }}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />

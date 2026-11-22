@@ -1,0 +1,20 @@
+/** Interface text of the review and revision cards of the work page (WEB-2121). */
+export const reviewHostHr = {
+  cardTitle: "Pregled",
+  configLoading: "Učitavam postavke provjera…",
+  roundNotice: "Runda {n} čeka Vaš pregled.",
+  roundOpen: "Pregled runde",
+  send: "Pošalji doradu",
+  sendHint: "Mentor će vidjeti što se promijenilo od njegova pregleda.",
+  sendUnavailable: "Slanje dorade trenutačno nije dostupno.",
+  returnOpen: "Vrati na doradu",
+  returnUnavailable: "Vraćanje na doradu trenutačno nije dostupno.",
+  compareOpen: "Usporedi s …",
+  compareTitle: "Usporedi s …",
+  compareNone: "Za usporedbu su potrebne dvije poslane verzije.",
+  compareUnavailable: "Usporedba trenutačno nije dostupna.",
+  retry: "Pokušaj ponovno",
+  close: "Zatvori",
+  sent: "Dorada je poslana nastavniku.",
+  returned: "Rad je vraćen na doradu.",
+} as const;

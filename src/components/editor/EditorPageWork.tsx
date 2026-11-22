@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
+import type { Editor } from "@tiptap/react";
 
 import { signInHref } from "@/client/api";
 import { openWork, type OpenOutcome } from "@/client/evidence-ingest";
@@ -42,6 +43,10 @@ import { EditorPanelLayout } from "./SidePanels";
 import { SubmissionRehearsal } from "./submission-rehearsal/SubmissionRehearsal";
 import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/WorkPrintExport";
 import { TriggerPopover } from "./triggers/TriggerPopover";
+
+/** What a host section is given: the live editor and the ids of the work. */
+export type HostSectionContext = { editor: Editor | null; assignmentId: string; documentId: string };
+export type HostSections = { review?: (ctx: HostSectionContext) => ReactNode; work?: (ctx: HostSectionContext) => ReactNode };
 
 export type OpenRead =
   | { readonly kind: "opening" }
@@ -109,6 +114,7 @@ export default function EditorPageWork({
   length,
   sessionControls,
   renderPdf,
+  hostSections,
 }: {
   assignmentId: string;
   course: string;
@@ -118,6 +124,8 @@ export default function EditorPageWork({
   sessionControls?: (work: Extract<OpenRead, { kind: "ready" }>) => ReactNode;
   /** The host's PDF download in the print preview (WEB-1803). */
   renderPdf?: RenderPdf;
+  /** Cards the host adds to the right panel (WEB-2121): the Pregled card and the revision actions. */
+  hostSections?: HostSections;
 }) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
@@ -140,14 +148,14 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} />
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
     </>
   );
 }
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, hostSections }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -158,6 +166,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   session: SessionMark;
   saveSummary: boolean;
   renderPdf?: RenderPdf;
+  hostSections?: HostSections;
 }) {
   const editor = useLocalEditor();
   const signedOut = useLocalSignedOut();
@@ -176,11 +185,13 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} />}
       rightSections={{ sources: <EditorSourceProofs assignmentId={assignmentId} documentId={documentId} />,
         comments: <CommentPanel documentId={documentId} session={session} />,
+        review: hostSections?.review?.({ editor, assignmentId, documentId }),
         assistant: <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
           sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer} />}
         <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />
+        {hostSections?.work?.({ editor, assignmentId, documentId })}
       </>}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
