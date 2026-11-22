@@ -5,7 +5,8 @@
 // that mounts the view passes the port; the help kinds and limits are the contract's (OD-4, OD-12).
 // The client comes through the declaration adapter, so this file names no API module itself.
 import {
-  browserTransport, createApi, linkedUploads, nextDraft, putDraft, readStudentState, responseMatches, type Call,
+  browserTransport, createApi, createDeclarationPort, createDeclarationSession, printoutName, readStudentState, responseMatches,
+  writeDraft, type Call, type DeclarationPort, type DeclarationPortOptions, type DeclarationSession,
 } from "./declaration";
 import migrationContracts from "./migration-contracts.generated.json" with { type: "json" };
 
@@ -85,20 +86,22 @@ export const PRINTOUT_LIMITS: AttachmentLimits = {
   maxBytes: PRINTOUT_MAX_BYTES,
 };
 const HELP_KINDS: readonly HumanHelpKind[] = ["none", "proofreading", "content", "other"];
-const EXTENSION: Readonly<Record<string, string>> = { "application/pdf": ".pdf", "text/plain": ".txt" };
 const UPLOAD = migrationContracts["student.declaration-attachments.post"];
 
 export type StatementPortOptions = {
   readonly baseUrl?: string;
   /** Transport of the printout upload, for tests; api.ts's browserTransport by default. */
   readonly transport?: typeof browserTransport;
+  /** Shared with the view's DeclarationPort, so both write on the version the view read. */
+  readonly session?: DeclarationSession;
 };
 
 /** The real StatementPort over declaration-v1. */
 export function createStatementPort(call: Call = createApi(), options: StatementPortOptions = {}): StatementPort {
+  const session = options.session ?? createDeclarationSession();
   return {
     async read(assignmentId) {
-      const read = await readStudentState(call, assignmentId);
+      const read = await readStudentState(call, session, assignmentId);
       if (read.kind !== "ok") return read;
       const state = read.state;
       const statementText = state.currentForm?.text ?? state.formText;
@@ -112,22 +115,18 @@ export function createStatementPort(call: Call = createApi(), options: Statement
         helpKinds: HELP_KINDS,
         limits: PRINTOUT_LIMITS,
         humanHelp: help === null ? null : first === undefined ? { kind: "none", text: "" } : { kind: FROM_WIRE[first.kind], text: first.text },
-        attachment: upload === undefined ? null : { name: `${upload.externalAttachmentId}${EXTENSION[upload.format] ?? ""}`, bytes: upload.byteLength },
+        attachment: upload === undefined ? null : { name: printoutName(upload.externalAttachmentId, upload.format), bytes: upload.byteLength },
         submitted: state.submitted || state.state === "bound",
       };
     },
 
     async saveHumanHelp(assignmentId, help) {
-      const read = await readStudentState(call, assignmentId);
-      if (read.kind !== "ok") return read;
       const text = help.text.trim();
       if (help.kind !== "none" && text === "") return { kind: "rejected" };
       const humanHelp = help.kind === "none"
         ? { received: false, entries: [] }
         : { received: true, entries: [{ kind: TO_WIRE[help.kind], text }] };
-      const body = nextDraft(read.state, { humanHelp, ai: { externalAttachmentIds: linkedUploads(read.state) } });
-      if (body === null) return { kind: read.state.submitted || read.state.state === "bound" ? "readOnly" : "unavailable" };
-      const write = await putDraft(call, assignmentId, body);
+      const write = await writeDraft(call, session, assignmentId, { humanHelp });
       if (write.kind === "refused") return { kind: "rejected" };
       return { kind: write.kind };
     },
@@ -147,7 +146,11 @@ export function createStatementPort(call: Call = createApi(), options: Statement
         if (res.status !== 200 || !res.headers.get("content-type")?.startsWith("application/json")) return { kind: "unavailable" };
         const bytes = await res.arrayBuffer();
         const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
-        return responseMatches("student.declaration-attachments.post", 200, body, bytes.byteLength) ? { kind: "saved" } : { kind: "unavailable" };
+        if (!responseMatches("student.declaration-attachments.post", 200, body, bytes.byteLength)) return { kind: "unavailable" };
+        // Linked to the draft by the view's next write, after what the draft already names.
+        const id = (body as { externalAttachmentId: string }).externalAttachmentId;
+        session.uploaded.set(assignmentId, [...(session.uploaded.get(assignmentId) ?? []), id]);
+        return { kind: "saved" };
       } catch {
         return { kind: "unavailable" };
       }
@@ -155,8 +158,8 @@ export function createStatementPort(call: Call = createApi(), options: Statement
   };
 }
 
-/** A 409 of the upload by its code: a version conflict, a submitted work or a refused attachment. */
-async function conflictOf(res: Response): Promise<"conflict" | "readOnly" | "rejected"> {
+/** A 409 of the upload by its code: a conflict, a submitted work, a refused attachment; anything else is unknown. */
+async function conflictOf(res: Response): Promise<"conflict" | "readOnly" | "rejected" | "unavailable"> {
   let code: unknown;
   try {
     code = (JSON.parse(await res.text()) as { code?: unknown }).code;
@@ -165,5 +168,13 @@ async function conflictOf(res: Response): Promise<"conflict" | "readOnly" | "rej
   }
   if (code === "already_submitted") return "readOnly";
   if (code === "too_many_attachments" || code === "attachments_too_large") return "rejected";
-  return "conflict";
+  return code === "conflict" ? "conflict" : "unavailable";
+}
+
+/** Both ports of one view's declaration step, on one session: each writes on the version the view read. */
+export function createDeclarationStepPorts(
+  call: Call = createApi(), options: Omit<DeclarationPortOptions & StatementPortOptions, "session"> = {},
+): { readonly declaration: DeclarationPort; readonly statement: StatementPort } {
+  const session = createDeclarationSession();
+  return { declaration: createDeclarationPort(call, { ...options, session }), statement: createStatementPort(call, { ...options, session }) };
 }

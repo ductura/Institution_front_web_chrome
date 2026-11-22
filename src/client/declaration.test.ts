@@ -125,12 +125,16 @@ describe("fake declaration", () => {
 // The real adapter over declaration-v1 (PIL-K-IZJAVA-PORT), against a recorded transport.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createApi } from "./api";
-import { createDeclarationPort } from "./declaration";
+import { createDeclarationPort, createDeclarationSession } from "./declaration";
 import contracts from "./migration-contracts.generated.json" with { type: "json" };
 import { matchesSchema, type Schema } from "./schema-check";
+import { createDeclarationStepPorts } from "./statement";
 
 const ASSIGNMENT = "00000000-0000-4000-8000-0000000000a1";
+const CONVERSATION = "00000000-0000-4000-8000-0000000000b1";
+const PRINTOUT = "00000000-0000-4000-8000-0000000000c1";
 const FORM = { formId: "test-izjava", formVersion: 1, formSha256: "a".repeat(64) };
 const STATE = {
   state: "draft", submitted: false, currentRevision: 2, version: 4, formText: "Izmišljeni obrazac.",
@@ -138,11 +142,13 @@ const STATE = {
   draft: {
     baseVersion: 3, revision: 2, form: FORM, ownWork: { confirmed: false },
     humanHelp: { received: true, entries: [{ kind: "language", text: "Izmišljena lektura." }] },
-    ai: { use: "used", declaredTools: [{ toolLabel: "Izmišljeni alat", purposeText: "Lektura", phaseText: "Pisanje" }], attachments: [], externalAttachmentIds: [] },
+    ai: { use: "used", declaredTools: [{ toolLabel: "Izmišljeni alat", purposeText: "Lektura", phaseText: "Pisanje" }], attachments: [], externalAttachmentIds: [PRINTOUT] },
     confirm: false,
   },
   payload: null, declarationSha256: null, uploads: [],
 };
+const DRAFT_SCHEMA = (contracts["student.declaration.get"].responses["200"].content["application/json"].schema.properties.draft.anyOf[0]) as Schema;
+const ATTACHMENT = { conversationId: CONVERSATION, reason: "transfer" as const, throughSeq: 2, messagesSha256: "c".repeat(64) };
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const error = (status: number, code: string) => json(status, { error: code, code, messageKey: "errors.x", status, requestId: "00000000-0000-4000-8000-000000000000" });
 
@@ -157,42 +163,78 @@ function server(answer: (method: string, body: unknown) => Response) {
   return { sent, call: createApi({ baseUrl: "https://ductura.example.invalid", fetchImpl }) };
 }
 
+/** A server that keeps one declaration and refuses a write on any version but the current one. */
+function versionedServer() {
+  let state = { ...STATE };
+  return server((method, body) => {
+    if (method === "GET") return json(200, state);
+    const put = body as { baseVersion: number; confirm: boolean; humanHelp: typeof STATE.draft.humanHelp };
+    if (put.baseVersion !== state.version) return error(409, "declaration_conflict");
+    state = { ...state, version: state.version + 1, state: put.confirm ? "confirmed" : "draft", draft: { ...state.draft, humanHelp: put.humanHelp } };
+    return json(200, state);
+  });
+}
+
 describe("declaration adapter (PIL-K-IZJAVA-PORT)", () => {
-  it("confirms with a body the contract accepts, on top of the version it read", async () => {
+  it("confirms with a body the contract and its draft schema accept, on the version the view read", async () => {
     const s = server((method) => (method === "GET" ? json(200, STATE) : json(200, { ...STATE, state: "confirmed", version: 5 })));
     const port = createDeclarationPort(s.call);
-    const attachment = { conversationId: "c-1", reason: "transfer" as const, throughSeq: 2, messagesSha256: "c".repeat(64) };
-    expect(await port.confirm(ASSIGNMENT, [attachment])).toEqual({ kind: "confirmed" });
-    const put = s.sent.find((r) => r.method === "PUT");
+    await port.readStudent(ASSIGNMENT);
+    expect(await port.confirm(ASSIGNMENT, [ATTACHMENT])).toEqual({ kind: "confirmed" });
+    expect(s.sent.map((r) => r.method)).toEqual(["GET", "PUT"]);
+    const put = s.sent[1];
     expect(put?.path).toBe(`/api/v1/student/assignments/${ASSIGNMENT}/declaration`);
     expect(matchesSchema(contracts["student.declaration.put"].body as Schema, put?.body)).toBe(true);
+    expect(matchesSchema(DRAFT_SCHEMA, put?.body)).toBe(true);
     expect(put?.body).toMatchObject({
       baseVersion: 4, revision: 2, form: FORM, ownWork: { confirmed: true }, confirm: true,
-      humanHelp: STATE.draft.humanHelp,
-      ai: { use: "used", attachments: [{ conversationId: "c-1", throughSeq: 2, messagesSha256: "c".repeat(64) }] },
+      humanHelp: STATE.draft.humanHelp, ai: { use: "used", attachments: [], externalAttachmentIds: [PRINTOUT] },
     });
+  });
+
+  it("writes nothing without a read: there is no version to write on", async () => {
+    const s = server(() => json(200, STATE));
+    expect(await createDeclarationPort(s.call).confirm(ASSIGNMENT, [])).toEqual({ kind: "unavailable" });
+    expect(s.sent).toEqual([]);
   });
 
   it("a 409 for the version is a conflict, never a quiet success (B-6)", async () => {
     for (const code of ["declaration_conflict", "stale_revision", "conflict"]) {
       const s = server((method) => (method === "GET" ? json(200, STATE) : error(409, code)));
-      expect(await createDeclarationPort(s.call).confirm(ASSIGNMENT, []), code).toEqual({ kind: "conflict" });
+      const port = createDeclarationPort(s.call);
+      await port.readStudent(ASSIGNMENT);
+      expect(await port.confirm(ASSIGNMENT, []), code).toEqual({ kind: "conflict" });
     }
     const stale = server((method) => (method === "GET" ? json(200, STATE) : error(409, "attachment_stale")));
-    const attachment = { conversationId: "c-1", reason: "transfer" as const, throughSeq: 2, messagesSha256: "c".repeat(64) };
-    expect(await createDeclarationPort(stale.call).confirm(ASSIGNMENT, [attachment])).toEqual({ kind: "stale", conversationIds: ["c-1"] });
+    const port = createDeclarationPort(stale.call);
+    await port.readStudent(ASSIGNMENT);
+    expect(await port.confirm(ASSIGNMENT, [ATTACHMENT])).toEqual({ kind: "stale", conversationIds: [CONVERSATION] });
   });
 
-  it("401 is signedOut for every read and the confirmation", async () => {
+  it("two views that read the same version: the second to write gets a conflict", async () => {
+    const s = versionedServer();
+    const first = createDeclarationStepPorts(s.call);
+    const second = createDeclarationStepPorts(s.call);
+    await first.statement.read(ASSIGNMENT);
+    await second.declaration.readStudent(ASSIGNMENT);
+    expect(await first.statement.saveHumanHelp(ASSIGNMENT, { kind: "content", text: "Izmišljena pomoć." })).toEqual({ kind: "saved" });
+    expect(await second.declaration.confirm(ASSIGNMENT, [])).toEqual({ kind: "conflict" });
+    // The first view writes on the version its own save returned: its confirmation goes through.
+    expect(await first.declaration.confirm(ASSIGNMENT, [])).toEqual({ kind: "confirmed" });
+    expect(s.sent.filter((r) => r.method === "GET")).toHaveLength(2);
+  });
+
+  it("401 is signedOut for every read; a signed-out view writes nothing", async () => {
     const s = server(() => error(401, "unauthorized"));
     const port = createDeclarationPort(s.call, { teacherTarget: () => ({ assignmentId: ASSIGNMENT, studentId: ASSIGNMENT }) });
     expect(await port.readStudent(ASSIGNMENT)).toEqual({ kind: "signedOut" });
-    expect(await port.confirm(ASSIGNMENT, [])).toEqual({ kind: "signedOut" });
     expect(await port.readTeacher("s-1")).toEqual({ kind: "signedOut" });
-    expect(s.sent.some((r) => r.method === "PUT")).toBe(false);
+    const session = createDeclarationSession();
+    session.states.set(ASSIGNMENT, STATE as never);
+    expect(await createDeclarationPort(s.call, { session }).confirm(ASSIGNMENT, [])).toEqual({ kind: "signedOut" });
   });
 
-  it("reads the declared tools, and the teacher's bound declaration", async () => {
+  it("reads the declared tools, and the teacher's bound declaration with its printouts", async () => {
     const s = server(() => json(200, STATE));
     expect(await createDeclarationPort(s.call).readStudent(ASSIGNMENT))
       .toEqual({ kind: "ready", uses: [{ purpose: "Lektura", provider: "Izmišljeni alat", phase: "Pisanje" }], conversations: [] });
@@ -201,10 +243,22 @@ describe("declaration adapter (PIL-K-IZJAVA-PORT)", () => {
     expect(await createDeclarationPort(none.call, target).readTeacher("s-1")).toEqual({ kind: "pending" });
     expect(none.sent[0]?.path).toBe(`/api/v1/teacher/assignments/${ASSIGNMENT}/students/${ASSIGNMENT}/declaration`);
     expect(await createDeclarationPort(none.call).readTeacher("s-1")).toEqual({ kind: "unavailable" });
+    const bound = server(() => json(200, { state: "bound", declarationSha256: "b".repeat(64), payload: {
+      declarationSchema: "ductura-declaration-v1", declarationId: "d1000000-0000-4000-8000-000000000001", declarationVersion: 1,
+      principalId: ASSIGNMENT, assignmentId: ASSIGNMENT, assignmentVersion: 1, documentId: "izmisljeni-dokument-1", revision: 3,
+      form: FORM, ownWork: { confirmed: true }, humanHelp: { received: false, entries: [] },
+      ai: { use: "used", declaredTools: STATE.draft.ai.declaredTools, recorded: [], attachments: [
+        { externalAttachmentId: PRINTOUT, format: "application/pdf", byteLength: 10, contentSha256: "d".repeat(64), reason: "external_upload" },
+      ] },
+      confirmedAt: "2026-11-20T10:00:00.000000Z",
+    } }));
+    expect(await createDeclarationPort(bound.call, target).readTeacher("s-1")).toMatchObject({
+      kind: "ready", external: [{ id: PRINTOUT, title: `${PRINTOUT}.pdf` }],
+    });
   });
 
   it("declaration-fake.ts stays for tests and the catalogue: no app source imports it", () => {
-    const root = new URL("../../", import.meta.url).pathname;
+    const root = fileURLToPath(new URL("../../", import.meta.url));
     const found: string[] = [];
     const walk = (dir: string): void => {
       for (const name of readdirSync(dir)) {

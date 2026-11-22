@@ -85,8 +85,9 @@ export interface DeclarationPort {
 }
 
 // ---------------------------------------------------------------------------
-// The adapter over declaration-v1. Every write is a whole draft on top of the version just read
-// (baseVersion); a 409 for that version is a conflict, never a quiet success (B-6).
+// The adapter over declaration-v1. A write is a whole draft on top of the version the view read
+// (baseVersion), never on a fresh read: a 409 for that version is a conflict, never a quiet
+// success (B-6). The view's two ports (the AI part and the statement) share one session.
 
 export type Call = ReturnType<typeof createApi>;
 /** Re-exported for statement.ts, the other half of the declaration step. */
@@ -100,17 +101,28 @@ type WireAi = NonNullable<StudentState["draft"]>["ai"];
 /** The 409 codes that mean "someone wrote first": the read is no longer the current version. */
 export const VERSION_CONFLICTS: ReadonlySet<string> = new Set(["declaration_conflict", "conflict", "stale_revision", "form_outdated"]);
 
+/** What one view read, by assignment, and the printouts it uploaded since its last saved draft. */
+export type DeclarationSession = {
+  readonly states: Map<string, StudentState>;
+  readonly uploaded: Map<string, readonly string[]>;
+};
+
+export function createDeclarationSession(): DeclarationSession {
+  return { states: new Map(), uploaded: new Map() };
+}
+
 export type StudentRead =
   | { readonly kind: "ok"; readonly state: StudentState }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
 
-/** The student's declaration as the server holds it; 401 is signedOut, any other failure unavailable. */
-export async function readStudentState(call: Call, assignmentId: string): Promise<StudentRead> {
+/** The student's declaration as the server holds it, kept as the version the view writes on. */
+export async function readStudentState(call: Call, session: DeclarationSession, assignmentId: string): Promise<StudentRead> {
   try {
     const result = await call("student.declaration.get", { params: { assignmentId }, query: undefined, body: undefined });
-    if (result.ok) return { kind: "ok", state: result.body };
-    return { kind: result.status === 401 ? "signedOut" : "unavailable" };
+    if (!result.ok) return { kind: result.status === 401 ? "signedOut" : "unavailable" };
+    session.states.set(assignmentId, result.body);
+    return { kind: "ok", state: result.body };
   } catch {
     return { kind: "unavailable" };
   }
@@ -119,14 +131,14 @@ export async function readStudentState(call: Call, assignmentId: string): Promis
 const NO_HELP: WireHelp = { received: false, entries: [] };
 const NO_AI: WireAi = { use: null, declaredTools: [], attachments: [], externalAttachmentIds: [] };
 
+type Change = { readonly ownWork?: boolean; readonly humanHelp?: WireHelp; readonly ai?: Partial<Omit<WireAi, "attachments">>; readonly confirm?: boolean };
+
 /**
  * The next whole draft on top of `state`, or null when the server gives nothing to write on
- * (no current form or revision, or the work is submitted). The change replaces only its parts.
+ * (no current form or revision, or the work is submitted). The change replaces only its parts;
+ * ai.attachments is always empty, as declaration-v1 has it (maxItems 0).
  */
-export function nextDraft(
-  state: StudentState,
-  change: { readonly ownWork?: boolean; readonly humanHelp?: WireHelp; readonly ai?: Partial<WireAi>; readonly confirm?: boolean },
-): PutBody | null {
+export function nextDraft(state: StudentState, change: Change): PutBody | null {
   const form = state.currentForm;
   if (state.submitted || state.state === "bound" || form === null || state.currentRevision === null || state.currentRevision < 1) return null;
   const draft = state.draft;
@@ -138,15 +150,19 @@ export function nextDraft(
     form: { formId: form.formId, formVersion: form.formVersion, formSha256: form.formSha256 },
     ownWork: { confirmed: change.ownWork ?? draft?.ownWork.confirmed ?? false },
     humanHelp: { received: help.received, entries: help.entries },
-    ai: { use: ai.use, declaredTools: ai.declaredTools, attachments: ai.attachments, externalAttachmentIds: ai.externalAttachmentIds },
+    ai: { use: ai.use, declaredTools: ai.declaredTools, attachments: [], externalAttachmentIds: ai.externalAttachmentIds },
     confirm: change.confirm ?? false,
   };
 }
 
-/** The printout the declaration carries: the latest upload (the port holds one), else what the draft names. */
-export function linkedUploads(state: StudentState): string[] {
-  const upload = state.uploads.at(-1);
-  return upload === undefined ? [...(state.draft?.ai.externalAttachmentIds ?? [])] : [upload.externalAttachmentId];
+/** The draft's printouts with this view's new uploads added after them, each once. */
+export function linkedUploads(state: StudentState, uploaded: readonly string[] = []): string[] {
+  return [...new Set([...(state.draft?.ai.externalAttachmentIds ?? []), ...uploaded])];
+}
+
+/** The file name a printout is shown under: the contract keeps no original name. */
+export function printoutName(id: string, format: "application/pdf" | "text/plain"): string {
+  return `${id}${format === "application/pdf" ? ".pdf" : ".txt"}`;
 }
 
 export type DraftWrite =
@@ -154,15 +170,28 @@ export type DraftWrite =
   | { readonly kind: "conflict" | "signedOut" | "readOnly" | "rejected" | "unavailable" }
   | { readonly kind: "refused"; readonly code: string };
 
-/** One PUT of a whole draft. A version 409 is a conflict; other 409s keep their code (`refused`). */
-export async function putDraft(call: Call, assignmentId: string, body: PutBody): Promise<DraftWrite> {
+/**
+ * One PUT of a whole draft on the version this view read; with nothing read there is nothing to
+ * write on. A saved draft becomes the view's version. A version 409 is a conflict; other 409s keep
+ * their code (`refused`).
+ */
+export async function writeDraft(call: Call, session: DeclarationSession, assignmentId: string, change: Change): Promise<DraftWrite> {
+  const state = session.states.get(assignmentId);
+  if (state === undefined) return { kind: "unavailable" };
+  const uploaded = session.uploaded.get(assignmentId) ?? [];
+  const body = nextDraft(state, { ...change, ai: { ...change.ai, externalAttachmentIds: linkedUploads(state, uploaded) } });
+  if (body === null) return { kind: state.submitted || state.state === "bound" ? "readOnly" : "unavailable" };
   let result: ApiResult<"student.declaration.put">;
   try {
     result = await call("student.declaration.put", { params: { assignmentId }, query: undefined, body });
   } catch {
     return { kind: "unavailable" };
   }
-  if (result.ok) return { kind: "saved", state: result.body };
+  if (result.ok) {
+    session.states.set(assignmentId, result.body);
+    session.uploaded.delete(assignmentId);
+    return { kind: "saved", state: result.body };
+  }
   if (result.status === 401) return { kind: "signedOut" };
   if (result.status === 0 || result.status === 422) return { kind: "rejected" };
   if (result.status === 409) {
@@ -178,13 +207,16 @@ export type DeclarationTarget = { readonly assignmentId: string; readonly studen
 export type DeclarationPortOptions = {
   /** Which student's declaration a teacher's submission id names; without it the teacher read is unavailable. */
   readonly teacherTarget?: (submissionId: string) => DeclarationTarget | null;
+  /** Shared with the view's StatementPort, so both write on the version the view read. */
+  readonly session?: DeclarationSession;
 };
 
 /** The real DeclarationPort over declaration-v1 (PIL-K-IZJAVA-PORT). */
 export function createDeclarationPort(call: Call = createApi(), options: DeclarationPortOptions = {}): DeclarationPort {
+  const session = options.session ?? createDeclarationSession();
   return {
     async readStudent(assignmentId) {
-      const read = await readStudentState(call, assignmentId);
+      const read = await readStudentState(call, session, assignmentId);
       if (read.kind !== "ok") return read;
       const ai = read.state.draft?.ai ?? read.state.payload?.ai ?? null;
       const uses = (ai?.declaredTools ?? []).map((t) => ({ purpose: t.purposeText, provider: t.toolLabel, phase: t.phaseText }));
@@ -194,20 +226,11 @@ export function createDeclarationPort(call: Call = createApi(), options: Declara
     },
 
     async confirm(assignmentId, attachments) {
-      const read = await readStudentState(call, assignmentId);
-      if (read.kind !== "ok") return read;
-      const tools = read.state.draft?.ai.declaredTools ?? [];
-      const body = nextDraft(read.state, {
-        ownWork: true,
-        ai: {
-          use: read.state.draft?.ai.use ?? (tools.length > 0 || attachments.length > 0 ? "used" : "not_used"),
-          attachments: attachments.map((a) => ({ conversationId: a.conversationId, throughSeq: a.throughSeq, messagesSha256: a.messagesSha256 })),
-          externalAttachmentIds: linkedUploads(read.state),
-        },
-        confirm: true,
-      });
-      if (body === null) return { kind: "unavailable" };
-      const write = await putDraft(call, assignmentId, body);
+      const draft = session.states.get(assignmentId)?.draft ?? null;
+      const tools = draft?.ai.declaredTools ?? [];
+      // The reviewed conversations are not sent: declaration-v1 keeps ai.attachments empty.
+      const use = draft?.ai.use ?? (tools.length > 0 || attachments.length > 0 ? "used" : "not_used");
+      const write = await writeDraft(call, session, assignmentId, { ownWork: true, ai: { use }, confirm: true });
       switch (write.kind) {
         case "saved":
           return write.state.state === "confirmed" || write.state.state === "bound" ? { kind: "confirmed" } : { kind: "unavailable" };
@@ -215,7 +238,7 @@ export function createDeclarationPort(call: Call = createApi(), options: Declara
         case "signedOut":
           return { kind: write.kind };
         case "refused":
-          // The error body's conversationIds do not travel through createApi: the sent ones are named.
+          // The error body's conversationIds do not travel through createApi: every reviewed one is named.
           return write.code === "attachment_stale" ? { kind: "stale", conversationIds: attachments.map((a) => a.conversationId) } : { kind: "unavailable" };
         default:
           return { kind: "unavailable" };
@@ -243,7 +266,7 @@ export function createDeclarationPort(call: Call = createApi(), options: Declara
         uses: payload.ai.declaredTools.map((t) => ({ purpose: t.purposeText, provider: t.toolLabel, phase: t.phaseText })),
         transfers: [],
         conversations: [],
-        external: [],
+        external: payload.ai.attachments.map((a) => ({ id: a.externalAttachmentId, title: printoutName(a.externalAttachmentId, a.format) })),
       };
     },
   };

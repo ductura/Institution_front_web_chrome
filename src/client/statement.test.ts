@@ -30,10 +30,12 @@ describe("statement client (WEB-1503)", () => {
 import { createApi } from "./api";
 import contracts from "./migration-contracts.generated.json" with { type: "json" };
 import { matchesSchema, type Schema } from "./schema-check";
+import { createDeclarationSession } from "./declaration";
 import { createStatementPort, PRINTOUT_MAX_BYTES } from "./statement";
 
 const ASSIGNMENT = "00000000-0000-4000-8000-0000000000a1";
 const UPLOAD_ID = "00000000-0000-4000-8000-0000000000c1";
+const EARLIER_ID = "00000000-0000-4000-8000-0000000000c0";
 const FORM = { formId: "test-izjava", formVersion: 1, formSha256: "a".repeat(64) };
 const STATE = {
   state: "none", submitted: false, currentRevision: 1, version: 0, formText: null,
@@ -43,7 +45,7 @@ const STATE = {
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const error = (status: number, code: string) => json(status, { error: code, code, messageKey: "errors.x", status, requestId: "00000000-0000-4000-8000-000000000000" });
 
-function server(answer: (method: string) => Response) {
+function server(answer: (method: string) => Response, session = createDeclarationSession()) {
   const sent: { method: string; path: string; type: string | null; body: unknown }[] = [];
   const fetchImpl: typeof fetch = async (input, init) => {
     const method = init?.method ?? "GET";
@@ -51,7 +53,7 @@ function server(answer: (method: string) => Response) {
     sent.push({ method, path: new URL(String(input)).pathname, type, body: typeof init?.body === "string" ? JSON.parse(init.body) : init?.body });
     return answer(method);
   };
-  const options = { baseUrl: "https://ductura.example.invalid", transport: fetchImpl };
+  const options = { baseUrl: "https://ductura.example.invalid", transport: fetchImpl, session };
   return { sent, port: createStatementPort(createApi({ baseUrl: options.baseUrl, fetchImpl }), options) };
 }
 const file = (name: string, type: string, size: number) => new File([new Uint8Array(size)], name, { type });
@@ -67,26 +69,48 @@ describe("statement adapter (PIL-K-IZJAVA-PORT)", () => {
 
   it("saves the help as the same PUT, with baseVersion and a body the contract accepts", async () => {
     const s = server((method) => (method === "GET" ? json(200, STATE) : json(200, { ...STATE, state: "draft", version: 1 })));
+    await s.port.read(ASSIGNMENT);
     expect(await s.port.saveHumanHelp(ASSIGNMENT, { kind: "proofreading", text: " Izmišljena lektura " })).toEqual({ kind: "saved" });
     const put = s.sent.find((r) => r.method === "PUT");
     expect(matchesSchema(contracts["student.declaration.put"].body as Schema, put?.body)).toBe(true);
     expect(put?.body).toMatchObject({
       baseVersion: 0, revision: 1, form: FORM, confirm: false,
       humanHelp: { received: true, entries: [{ kind: "language", text: "Izmišljena lektura" }] },
-      ai: { externalAttachmentIds: [UPLOAD_ID] },
+      ai: { attachments: [], externalAttachmentIds: [] },
     });
+  });
+
+  it("adds a new printout to the ones the draft already names, and links it once", async () => {
+    const withEarlier = { ...STATE, state: "draft", draft: {
+      baseVersion: 0, revision: 1, form: FORM, ownWork: { confirmed: false }, humanHelp: { received: false, entries: [] },
+      ai: { use: null, declaredTools: [], attachments: [], externalAttachmentIds: [EARLIER_ID] }, confirm: false,
+    } };
+    const uploaded = { externalAttachmentId: UPLOAD_ID, format: "text/plain", byteLength: 1, contentSha256: "e".repeat(64) };
+    const s = server((method) => (method === "GET" ? json(200, withEarlier) : method === "POST" ? json(200, uploaded) : json(200, withEarlier)));
+    await s.port.read(ASSIGNMENT);
+    expect(await s.port.attachPrintout(ASSIGNMENT, file("a.txt", "text/plain", 1))).toEqual({ kind: "saved" });
+    expect(await s.port.saveHumanHelp(ASSIGNMENT, { kind: "none", text: "" })).toEqual({ kind: "saved" });
+    expect(s.sent.at(-1)?.body).toMatchObject({ ai: { externalAttachmentIds: [EARLIER_ID, UPLOAD_ID] } });
+    // Saved: the next write takes the list from the draft the server returned, not twice.
+    await s.port.saveHumanHelp(ASSIGNMENT, { kind: "none", text: "" });
+    expect(s.sent.at(-1)?.body).toMatchObject({ ai: { externalAttachmentIds: [EARLIER_ID] } });
   });
 
   it("a 409 for the version is a conflict, never a quiet success (B-6)", async () => {
     const s = server((method) => (method === "GET" ? json(200, STATE) : error(409, "declaration_conflict")));
+    await s.port.read(ASSIGNMENT);
     expect(await s.port.saveHumanHelp(ASSIGNMENT, { kind: "none", text: "" })).toEqual({ kind: "conflict" });
     const upload = server(() => error(409, "conflict"));
     expect(await upload.port.attachPrintout(ASSIGNMENT, file("a.pdf", "application/pdf", 10))).toEqual({ kind: "conflict" });
+    const unknown = server(() => error(409, "something_new"));
+    expect(await unknown.port.attachPrintout(ASSIGNMENT, file("a.pdf", "application/pdf", 10))).toEqual({ kind: "unavailable" });
   });
 
   it("401 is signedOut for the read, the save and the upload", async () => {
-    const s = server(() => error(401, "unauthorized"));
+    const session = createDeclarationSession();
+    const s = server(() => error(401, "unauthorized"), session);
     expect(await s.port.read(ASSIGNMENT)).toEqual({ kind: "signedOut" });
+    session.states.set(ASSIGNMENT, STATE as never);
     expect(await s.port.saveHumanHelp(ASSIGNMENT, { kind: "none", text: "" })).toEqual({ kind: "signedOut" });
     expect(await s.port.attachPrintout(ASSIGNMENT, file("a.txt", "text/plain", 10))).toEqual({ kind: "signedOut" });
   });
