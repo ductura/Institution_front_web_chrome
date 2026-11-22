@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 import { assignmentSetupMessages as wizard } from "../../../src/components/teacher/TeacherSetup/messages.hr";
 import type { TeacherCourse } from "../../../src/components/teacher/teacher-courses-read";
