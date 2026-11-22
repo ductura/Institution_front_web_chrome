@@ -68,7 +68,7 @@ export function checkDraft(draft: RuleDraft, say: { purposesWithProhibited: stri
 
 export async function readRules(options?: ApiOptions): Promise<RulesRead> {
   try {
-    const answer = await createApi(options)(READ, { params: undefined, query: undefined, body: undefined });
+    const answer = await createApi(options)(READ, { params: undefined, query: {}, body: undefined });
     if (answer.ok) return { kind: "ready", rules: answer.body.rules };
     if (answer.status === 401 || answer.status === 403) return { kind: "denied" };
   } catch {
