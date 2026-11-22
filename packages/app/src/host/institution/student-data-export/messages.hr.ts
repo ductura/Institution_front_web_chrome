@@ -29,7 +29,7 @@ export const studentDataExportMessages = {
     empty: "Nema zahtjeva za izvoz.",
     loading: "Učitavanje zahtjeva…",
     retry: "Pokušaj ponovno",
-    states: { requested: "Čeka odobrenje", approved: "Odobren, priprema se", ready: "Spreman za preuzimanje", downloaded: "Preuzet", expired: "Istekao" },
+    states: { requested: "Zatražen", approved: "Odobren", ready: "Spreman", downloaded: "Preuzet", expired: "Istekao" },
     requestedAt: (at: string) => `Zatraženo: ${at}`,
     expiresAt: (at: string) => `Poveznica vrijedi do: ${at}`,
     approve: "Pokreni izvoz",
