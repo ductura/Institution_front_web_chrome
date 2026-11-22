@@ -67,7 +67,7 @@ test("the teacher's page says the requests are unavailable and shows no success"
   await page.route("**/api/v1/teacher/mentorships", (route) => route.fulfill({ json: { works: [] } }));
   await page.route("**/api/v1/teacher/mentorship-requests", (route) => route.fulfill({ status: 503, json: { code: "unavailable" } }));
   await page.goto("/app/web/nastavnik/mentorstva");
-  await expect(page.getByRole("heading", { name: "Moji studenti" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Radovi uz mentora" })).toBeVisible();
   await expect(page.getByText(messagesHr.mentorshipRequests.unavailable)).toBeVisible();
-  await expect(page.getByText("Još nemate odobrenih studenata.")).toBeVisible();
+  await expect(page.getByText("Nemate mentorstava")).toBeVisible();
 });
