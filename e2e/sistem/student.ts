@@ -68,10 +68,13 @@ export const assignmentOf = (workPath: string) => workPath.slice(app('/rad/').le
  * what the shipped screen showed without opening the trace.
  */
 export function describePageOnFailure() {
-  test.afterEach(async ({ page }, testInfo) => {
+  test.afterEach(async ({ browser }, testInfo) => {
     if (testInfo.status === testInfo.expectedStatus) return;
-    const snapshot = await page.locator('body').ariaSnapshot({ timeout: 5_000 }).catch((error) => String(error));
-    console.log(`--- ${testInfo.title}: ${page.url()}\n${snapshot}`);
-    await testInfo.attach('aria-snapshot', { body: snapshot, contentType: 'text/plain' });
+    // Every open page of every context: a test may work in a context of its own.
+    for (const [index, open] of browser.contexts().flatMap((context) => context.pages()).entries()) {
+      const snapshot = await open.locator('body').ariaSnapshot({ timeout: 5_000 }).catch((error) => String(error));
+      console.log(`--- ${testInfo.title} [${index}]: ${open.url()}\n${snapshot}`);
+      await testInfo.attach(`aria-snapshot-${index}`, { body: snapshot, contentType: 'text/plain' });
+    }
   });
 }

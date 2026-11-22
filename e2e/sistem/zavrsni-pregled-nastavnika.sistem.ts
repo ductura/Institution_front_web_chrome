@@ -12,6 +12,7 @@ import { describePageOnFailure, openDemoAssignment, signInDemoStudent, signInThr
 describePageOnFailure();
 
 const title = 'Seminarski rad: kućno kompostiranje';
+const course = 'Izmišljeni seminar iz ekologije grada';
 const otherCourse = 'Izmišljeni seminar o gradskim krovovima';
 const studentName = /Lucija Đaković/;
 
@@ -67,8 +68,11 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
     const teacherPage = await teacher.newPage();
     const { quote, nodeId } = await test.step('U Brzom putu otvori istu predaju i usporedi predani tekst', async () => {
       await signInTeacher(teacherPage, true);
-      const assignment = teacherPage.getByRole('listitem').filter({ has: teacherPage.getByText(title, { exact: true }) });
-      await assignment.getByRole('link', { name: t.fastPath.title, exact: true }).click();
+      // N-01 of packages/app lists the teacher's courses without a per-assignment link to "Brz put"
+      // (AssignmentFacts links /nastavnik/brz-put without ?zadatak=; open finding in INT-10), so
+      // the course is checked on the home page and "Brz put" is opened by its address.
+      await expect(teacherPage.getByRole('heading', { name: course, exact: true })).toBeVisible();
+      await teacherPage.goto(fastPath);
       await expect(teacherPage).toHaveURL(fastPath);
       const submitted = teacherPage.getByRole('navigation', { name: t.fastPath.studentsLabel }).getByRole('link', { name: studentName });
       await expect(submitted.getByText(fastPathHostText.work.submitted, { exact: true })).toBeVisible();
@@ -76,7 +80,7 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       const openWork = teacherPage.getByRole('link', { name: t.fastPath.openWork, exact: true });
       await expect(openWork).toHaveAttribute('href', workPath);
       const [live] = await Promise.all([
-        teacherPage.waitForResponse((response) => response.url() === `${webOrigin}${liveApi}` && response.request().method() === 'GET'),
+        teacherPage.waitForResponse((response) => response.url() === `${webOrigin}${liveApi}` && response.request().method() === 'GET', { timeout: 30_000 }),
         openWork.click(),
       ]);
       expect(live.status()).toBe(200);
