@@ -84,3 +84,4 @@ export {
 } from "./components/wizard";
 export { RetentionClasses, type RetentionClass, type RetentionClassesLabels, type RetentionClassesProps, type RetentionClassesState, type RetentionMode } from "./components/retention-classes";
 export { LegalHolds, type LegalHold, type LegalHoldsLabels, type LegalHoldsProps, type LegalHoldsState } from "./components/legal-hold";
+export { EventDispute, codePointCount, counterText, type EventDisputeKind, type EventDisputeLabels, type EventDisputeMark, type EventDisputeProps, type EventDisputeResult } from "./components/event-dispute";

@@ -1,0 +1,7 @@
+.root { display: grid; gap: 8px; margin-top: 6px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.marks { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.mark { display: grid; gap: 2px; padding: 6px 10px; color: var(--ink); background: var(--card); border: 1px solid var(--raised-rule); border-radius: var(--radius-sm); }
+.markText { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.counter { margin: 0; color: var(--ink-3); font-size: 14px; }
+.status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
