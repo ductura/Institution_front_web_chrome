@@ -39,6 +39,7 @@ import { portableRecordEntries } from "./portable-record";
 import { practiceBadgeEntries } from "./practice-badge";
 import { provenanceShareEntries } from "./provenance-share";
 import { problemReportEntries } from "./problem-report";
+import { eventDisputeEntries } from "./event-dispute";
 import { assistantTransferEntries } from "./assistant-transfer";
 import { assistantThreadEntry } from "./assistant-thread";
 import { wizardEntries } from "./wizard";
@@ -275,6 +276,7 @@ export const ENTRIES = {
   ...practiceBadgeEntries,
   ...provenanceShareEntries,
   ...problemReportEntries,
+  ...eventDisputeEntries,
   CheckActionList: {
     prazno: () => <CheckActionList findings={[]} labels={CHECK_LABELS} onAction={nothing} />,
     učitavanje: () => <RouteLoading label="Učitavanje provjera…" />,
