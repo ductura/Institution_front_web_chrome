@@ -39,7 +39,7 @@ describe("marks model (WEB-2129)", () => {
   it("stacks gutter dots at one height by 11 px and skips marks without a place", () => {
     const dots = gutterDots(allPlaces(doc, [{ from: 9, to: 12 }]), (pos) => (pos === 2 ? null : 40));
     expect(dots.map((d) => [d.kind, d.offset])).toEqual([["hole", 0], ["cmt", 11]]);
-    expect(dots.every((d) => d.top === 40)).toBe(true);
+    expect(dots.every((d) => d.y === 40)).toBe(true);
   });
   it("draws the gutter only wider than 1050 px", () => {
     expect(showGutter(1050)).toBe(false);

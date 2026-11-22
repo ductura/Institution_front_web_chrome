@@ -73,7 +73,7 @@ export function nextPlace(places: readonly Place[], kind: MarkKind, from: number
   return same.find((p) => p.from > from) ?? same[0] ?? null;
 }
 
-export type Dot = { readonly kind: "cmt" | "hole"; readonly top: number; readonly offset: number; readonly place: Place };
+export type Dot = { readonly kind: "cmt" | "hole"; readonly y: number; readonly offset: number; readonly place: Place };
 
 /** Gutter dots (comment, hole) at the height of the mark; dots at one height stack leftwards by 11 px. */
 export function gutterDots(places: readonly Place[], topOf: (pos: number) => number | null): Dot[] {
@@ -81,12 +81,12 @@ export function gutterDots(places: readonly Place[], topOf: (pos: number) => num
   const dots: Dot[] = [];
   for (const p of places) {
     if (p.kind !== "cmt" && p.kind !== "hole") continue;
-    const top = topOf(p.from);
-    if (top === null) continue;
-    const row = Math.round(top);
+    const y = topOf(p.from);
+    if (y === null) continue;
+    const row = Math.round(y);
     const index = used.get(row) ?? 0;
     used.set(row, index + 1);
-    dots.push({ kind: p.kind, top, offset: index * 11, place: p });
+    dots.push({ kind: p.kind, y, offset: index * 11, place: p });
   }
   return dots;
 }

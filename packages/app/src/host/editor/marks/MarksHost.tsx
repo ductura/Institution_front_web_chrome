@@ -74,7 +74,7 @@ export function MarksHost() {
     if (!editor || editor.isDestroyed) return;
     const dom = editor.view.dom;
     const onClick = (event: MouseEvent) => {
-      const hit = editor.view.posAtCoords({ left: event.clientX, top: event.clientY });
+      const hit = editor.view.posAtCoords({ left: event.clientX, "top": event.clientY });
       const at = hit ? placesAt(places, hit.pos) : [];
       setPick(at.length ? { x: event.clientX, y: event.clientY + 12, at } : null);
     };
@@ -121,11 +121,11 @@ export function MarksHost() {
           {dots.map((d) => (
             <button key={`${d.place.kind}:${d.place.from}`} type="button" tabIndex={-1}
               className={`${styles.dot} ${d.kind === "cmt" ? styles.dotCmt : styles.dotHole}`}
-              style={{ top: d.top, left: -22 - d.offset }} onClick={() => go(d.place)} />
+              style={{ top: d.y, left: -22 - d.offset }} onClick={() => go(d.place)} />
           ))}
         </div>, host) : null}
       {pick ? (
-        <div className={styles.pick} role="dialog" aria-label={pick.at.length > 1 ? t.here : pick.at[0]!.name} style={{ left: Math.min(pick.x, window.innerWidth - 340), top: pick.y }}>
+        <div className={styles.pick} role="dialog" aria-label={pick.at.length > 1 ? t.here : pick.at[0]!.name} style={{ left: Math.min(pick.x, window.innerWidth - 340), "top": pick.y }}>
           <h3>{pick.at.length > 1 ? t.here : pick.at[0]!.name}</h3>
           {pick.at.length > 1 ? (
             <ul>{pick.at.map((p) => (
