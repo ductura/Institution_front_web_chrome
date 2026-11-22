@@ -38,7 +38,6 @@ import N11Compare from "../n11/Compare";
 import N11Entry from "../n11/Entry";
 import { n11Messages } from "../n11/messages.hr";
 import { n11Port } from "../n11/port";
-import { RevisionSection } from "../revision";
 import N07ReceiptPage from "../n07/ReceiptPage";
 import SummaryPage from "../n10/SummaryPage";
 import { n10Messages } from "../n10/messages.hr";
@@ -154,8 +153,8 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   };
 
   return (
-    <MobileReview><div className="page">
-      <WorkFrame documentId={documentId} gaps={gaps}
+    <MobileReview>
+      <WorkFrame documentId={documentId} current={current} gaps={gaps}
         text={<>
           {elementsState.elements !== null
             ? <div ref={textRef}><TextElementsView elements={elementsState.elements} /></div>
@@ -180,7 +179,6 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               onReload={() => void comments.load()} onShow={({ nodeId, start, end }) => {
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
-            <RevisionSection documentId={documentId} current={current} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
             <TeacherBibliographyHost documentId={documentId} submitted={view.submitted} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
@@ -188,6 +186,6 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
           </>}
           <RecordLimits />
         </>} />
-    </div></MobileReview>
+    </MobileReview>
   );
 }

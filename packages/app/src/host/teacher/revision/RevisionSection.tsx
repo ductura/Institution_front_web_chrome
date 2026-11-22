@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, DatePicker, Dialog, TextArea } from "@ductura/ui";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import type { RevisionRequest } from "@/client/revision-requests";
 import { zagrebWall } from "@/lib/i18n/zagreb";
@@ -28,8 +28,12 @@ type Read = { kind: "loading" } | { kind: "unavailable" } | { kind: "ready"; req
  * mandatory deadline and the doradaBanner with its four states. Success toasts appear only after the server
  * confirmed (B-6); a failure stays as an inline `role="alert"`.
  */
-export default function RevisionSection({ documentId, current, port = revisionPort }: {
+export type RevisionSlots = { action: ReactNode; banner: ReactNode; dialog: ReactNode };
+
+export default function RevisionSection({ documentId, current, port = revisionPort, children }: {
   documentId: string; current: () => boolean; port?: RevisionPort;
+  /** The frame places the button in the heading actions and the banner under the heading, as the prototype does. */
+  children: (slots: RevisionSlots) => ReactNode;
 }) {
   const [read, setRead] = useState<Read>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -51,9 +55,12 @@ export default function RevisionSection({ documentId, current, port = revisionPo
   }, [documentId, port, current, attempt]);
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
 
-  if (read.kind === "loading") return <p role="status">{t.loading}</p>;
+  if (read.kind === "loading") return <>{children({ action: null, banner: <p role="status">{t.loading}</p>, dialog: null })}</>;
   if (read.kind === "unavailable") {
-    return <div><p role="alert">{t.unavailable}</p><Button onClick={() => { setRead({ kind: "loading" }); reload(); }}>{t.retry}</Button></div>;
+    return <>{children({ action: null, dialog: null, banner: (
+      <div className="banner"><p role="alert">{t.unavailable}</p>
+        <div className="acts"><Button tone="quiet" onClick={() => { setRead({ kind: "loading" }); reload(); }}>{t.retry}</Button></div></div>
+    ) })}</>;
   }
   const banner = bannerOf(read.requests);
   const request = read.requests.find((r) => r.id === banner?.requestId);
@@ -64,8 +71,8 @@ export default function RevisionSection({ documentId, current, port = revisionPo
     setBusy(false);
     if (outcome.o === "ok") reload(); else setFailure(outcome.o);
   };
-  return (
-    <section aria-label={t.ask}>
+  const banners = (
+    <>
       {banner !== null && (
         <div className="banner" role="status">
           <p><b>{banner.head}</b></p>
@@ -73,19 +80,22 @@ export default function RevisionSection({ documentId, current, port = revisionPo
           <p className="meta">{t.statesNote}</p>
           {banner.canClose && request && (
             <div className="acts">
-              <Button disabled={busy} onClick={() => void act(() => port.accept(request), t.accepted)}>{t.accept}</Button>
-              <Button tone="quiet" disabled={busy} onClick={() => void act(() => port.reopen(request), t.reopened)}>{t.reopen}</Button>
+              <Button size="small" disabled={busy} onClick={() => void act(() => port.accept(request), t.accepted)}>{t.accept}</Button>
+              <Button tone="quiet" size="small" disabled={busy} onClick={() => void act(() => port.reopen(request), t.reopened)}>{t.reopen}</Button>
             </div>
           )}
         </div>
       )}
       {failure !== null && <p role="alert">{t.errors[failure]}</p>}
-      {read.submitted && <Button onClick={() => setOpen(true)}>{t.ask}</Button>}
-      {open && <AskDialog documentId={documentId} port={port} onClose={() => setOpen(false)}
-        onSent={() => { setOpen(false); toasts.show(t.sent); reload(); }} />}
       <TeacherToastRegion toasts={toasts.toasts} onDismiss={toasts.dismiss} />
-    </section>
+    </>
   );
+  return <>{children({
+    action: read.submitted ? <Button onClick={() => setOpen(true)}>{t.ask}</Button> : null,
+    banner: banners,
+    dialog: open ? <AskDialog documentId={documentId} port={port} onClose={() => setOpen(false)}
+      onSent={() => { setOpen(false); toasts.show(t.sent); reload(); }} /> : null,
+  })}</>;
 }
 
 function AskDialog({ documentId, port, onClose, onSent }: {

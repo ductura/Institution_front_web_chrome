@@ -10,8 +10,8 @@ export { styles as workPageStyles };
  * The frame of the prototype's work pages (`.sb-wrap`, `.sb-bar`, `.sb-page`): a sticky bar with the way back and
  * the page below it. N-07, N-09, N-10 and N-11 share it; the markup follows Ductura_nastavnik.html `page()`.
  */
-export function WorkPage({ back, backLabel, crumb, two = false, children }: {
-  back: string; backLabel: string; crumb?: ReactNode; two?: boolean; children: ReactNode;
+export function WorkPage({ back, backLabel, crumb, two = false, wide = false, children }: {
+  back: string; backLabel: string; crumb?: ReactNode; two?: boolean; wide?: boolean; children: ReactNode;
 }) {
   return (
     <div className={styles.wrap}>
@@ -19,7 +19,7 @@ export function WorkPage({ back, backLabel, crumb, two = false, children }: {
         <a className="btn ghost" href={back}>{backLabel}</a>
         {crumb !== undefined && <p className={styles.crumb}>{crumb}</p>}
       </header>
-      <div className={`${styles.page}${two ? ` ${styles.two}` : ""}`} id="sadrzaj" tabIndex={-1}>{children}</div>
+      <div className={`${styles.page}${two ? ` ${styles.two}` : ""}${wide ? ` ${styles.wide}` : ""}`} id="sadrzaj" tabIndex={-1}>{children}</div>
     </div>
   );
 }

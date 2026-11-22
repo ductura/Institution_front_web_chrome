@@ -9,6 +9,7 @@ export const workFrameMessages = {
   error: "Rad trenutačno nije moguće učitati. Tekst rada i zapis time nisu zahvaćeni.",
   retry: "Pokušaj ponovno",
   notStarted: "Rad još nije započet. Student još nije potvrdio obavijest o zadatku, pa nema teksta ni zapisa.",
+  sheetLabel: "Tekst rada",
   linksLabel: "Pogledi na rad",
   linkSubmission: "Što je student predao",
   linkSummary: "Sažetak procesa",
