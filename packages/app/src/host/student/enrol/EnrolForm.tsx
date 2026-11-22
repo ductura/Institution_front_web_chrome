@@ -2,17 +2,16 @@
 
 // E-5 as the prototype has it: the seven states are inline (no dialogs), the
 // code can arrive in ?kod (R-10) and the field takes the focus (R-17).
-import { Button, TextField } from "@ductura/ui";
+import { Button, CodeField } from "@ductura/ui";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { courseHref } from "../../../../../../src/components/student/upis/course-read.ts";
 import { enroll, type EnrollResult } from "../../../../../../src/components/student/upis/enroll.ts";
-import { enrollError } from "../../../../../../src/components/student/upis/EnrollForm.tsx";
-import styles from "../../../../../../src/components/student/upis/Enroll.module.css";
 import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
 
+import styles from "./Enrol.module.css";
 import { enrolText } from "./messages.hr";
-import { codeFromQuery } from "./model";
+import { codeFromQuery, enrolError } from "./model";
 
 const e = t.student.enroll;
 
@@ -47,41 +46,57 @@ export default function EnrolForm({ signInHref, navigate }: {
     setSending(false);
   }
 
-  if (result?.kind === "enrolled") return <p className={styles.status} role="status">{e.opening}</p>;
-  const error = enrollError(result);
+  const heading = <h1 id="up-h">{e.heading}</h1>;
+  if (result?.kind === "enrolled") {
+    return <section className={styles.card}>{heading}<p className={styles.meta} role="status">{e.opening}</p></section>;
+  }
   const courseId = result && "courseId" in result ? result.courseId : null;
+  // PD-5: the card is only the sentence and the button; the heading stays for assistive technology.
+  if (result?.kind === "alreadyEnrolled" && courseId) {
+    return (
+      <section className={styles.card}>
+        <h1 className={styles.hidden}>{e.heading}</h1>
+        <p className={styles.note} role="status">{enrolText.alreadyEnrolled}</p>
+        <Button onClick={() => navigate(courseHref(courseId))}>{enrolText.openAssignment}</Button>
+      </section>
+    );
+  }
+  // PD-6: enrolled, but no open assignment yet.
+  if (result?.kind === "noAssignment") {
+    return (
+      <section className={styles.card}>
+        <h1 className={styles.hidden}>{e.heading}</h1>
+        <p className={styles.note} role="status">{enrolText.noAssignment}</p>
+        <a className={styles.link} href="#" onClick={(event) => { event.preventDefault(); setResult(null); setCode(""); }}>{enrolText.another}</a>
+      </section>
+    );
+  }
+  const error = enrolError(result);
   return (
-    <form ref={form} className={styles.form} onSubmit={submit} aria-busy={sending || undefined}>
-      <TextField
-        className={styles.field}
-        label={e.label}
-        hint={e.hint}
-        error={error ?? undefined}
-        busy={sending}
-        autoComplete="off"
-        autoCapitalize="characters"
-        spellCheck={false}
-        maxLength={64}
-        value={code}
-        onChange={(event) => setCode(event.target.value)}
-      />
-      <Button type="submit" busy={sending} disabled={!sending && !code.trim()}>
-        {sending ? e.sending : e.submit}
-      </Button>
-      {sending ? <p className={styles.status} role="status">{enrolText.sendingStatus}</p> : null}
-      {result?.kind === "signedOut" ? <p><a href={signInHref}>{t.student.signIn}</a></p> : null}
-      {result?.kind === "alreadyEnrolled" && courseId ? (
-        <div className={styles.links}>
-          <p className={styles.status} role="status">{enrolText.alreadyEnrolled}</p>
-          <Button onClick={() => navigate(courseHref(courseId))}>{enrolText.openAssignment}</Button>
-        </div>
-      ) : null}
-      {result?.kind === "noAssignment" ? (
-        <div className={styles.links}>
-          <p className={styles.status} role="status">{enrolText.noAssignment}</p>
-          <Button tone="quiet" onClick={() => { setResult(null); setCode(""); }}>{enrolText.another}</Button>
-        </div>
-      ) : null}
-    </form>
+    <section className={styles.card} aria-labelledby="up-h" aria-busy={sending || undefined}>
+      {heading}
+      <form ref={form} className={styles.form} onSubmit={submit} noValidate>
+        <CodeField
+          label={e.label}
+          hint={e.hint}
+          error={error ?? undefined}
+          busy={sending}
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          maxLength={64}
+          placeholder="KOD-KOLEGIJA"
+          value={code}
+          onChange={(event) => setCode(event.target.value)}
+          action={(
+            <Button type="submit" busy={sending} disabled={!sending && !code.trim()}>
+              {sending ? e.sending : e.submit}
+            </Button>
+          )}
+        />
+        {sending ? <p className={styles.meta} role="status">{enrolText.sendingStatus}</p> : null}
+        {result?.kind === "signedOut" ? <p><a href={signInHref}>{t.student.signIn}</a></p> : null}
+      </form>
+    </section>
   );
 }

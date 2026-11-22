@@ -29,8 +29,15 @@ import { nextPath } from "../../bases";
 import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
 import { ImportHost } from "../editor/import/ImportHost";
+import { ReviewCardHost, RevisionActionsHost } from "../editor/work/review/ReviewHost";
+import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
+import { SourcesMention } from "../editor/sources-mention/SourcesMention";
+import { LiteratureList } from "../editor/sources-mention/LiteratureList";
+import { MarksHost } from "../editor/marks/MarksHost";
+import { ChapterPanel } from "../editor/left/ChapterPanel";
+import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
@@ -94,17 +101,27 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const frame = workspaceFrame(read, undefined, { kind: "ready", wordRange });
       const title = read.kind === "ready" ? read.title : null;
-      const topBar = <WorkspaceTopBar assignmentId={assignmentId} title={title} />;
+      const bar = <WorkspaceTopBar assignmentId={assignmentId} title={title} />;
+      // WEB-2136: view mode, "samo naslovi" and panel widths, only where the panels are (the full editor).
+      const topBar = frame.variant === "puno" ? <ShellView>{bar}</ShellView> : bar;
       const length = { words: null, range: frame.range };
       if (read.kind === "ready" && frame.variant === "puno") {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
+            triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
+            literature={() => <LiteratureList />}
+            hostSections={{
+              review: ({ editor, assignmentId: id, documentId }) => <ReviewCardHost editor={editor} assignmentId={id} documentId={documentId} />,
+              work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
+            }}
+            leftSections={{ ...leftSectionsFor(assignmentId), chapter: <ChapterPanel workId={assignmentId} /> }}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
               <RulesHost role="student" />
+              <MarksHost />
             </>} />,
         });
       }

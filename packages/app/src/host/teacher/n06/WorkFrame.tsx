@@ -62,7 +62,7 @@ export default function WorkFrame({ documentId, gaps, deadlinePassed = null, sta
         </nav>
         <nav className="acts" aria-label={text.steps}>{step(facts.previousId, text.prev, "prev")}{step(facts.nextId, text.next, "next")}</nav>
       </section>
-      {gapText !== null && <div className="banner" role="status"><p>{gapText}</p><a href="#sazetak-procesa">{text.gapsLink}</a></div>}
+      {gapText !== null && <div className="banner" role="status"><p>{gapText}</p><a href={appHref(base, `${workPath}/sazetak`)}>{text.gapsLink}</a></div>}
       {showNotSubmittedBanner(facts, deadlinePassed) && (
         <div className="banner" role="status"><p>{text.notSubmittedBanner}</p><a href={appHref(base, extensionPath(facts.assignmentId))}>{text.extensionLink}</a></div>
       )}
