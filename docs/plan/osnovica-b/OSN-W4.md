@@ -28,7 +28,10 @@ Jedan redak po Ductusovom slučaju iz `content-security-policy.test.ts`:
 - politika API odgovora (`API_CONTENT_SECURITY_POLICY`): preneseno.
 - middleware: nov nonce i politika na zahtjevu (za Next) i odgovoru, `/api/*`, `_next/static/` i `favicon.ico` izvan matchera: preneseno (`src/middleware.ts`; provjereno ručno s `next start`, vidi PR).
 
-Nije u opsegu (otvoreno):
+Domaćin:
 
 - `packages/app` (domaćin pod `/app/web/`, `pnpm build`): njegova gradnja također preuzima `src/middleware.ts` (izlaz gradnje pokazuje `ƒ Proxy (Middleware)`), pa politika vrijedi i za domaćina. Njegova inline skripta teme u `app/layout.tsx` imala je drugi tekst, a time i drugi hash, pa ju je politika odbijala (CI `app`, e2e provjere konzole). Popravljena je stranica, a ne politika: layout sada koristi THEME_SCRIPT. Jedina statička ruta domaćina je `/_not-found`. Do nje se ne dolazi ispod `/app/web/` ni `/app/chrome/`, jer tamo nepostojeće putanje prikazuje `[[...path]]`.
+
+Nije u opsegu (otvoreno):
+
 - Statička politika API odgovora (`next.config.ts` u Ductusu postavlja `API_CONTENT_SECURITY_POLICY` i `STATIC_CONTENT_SECURITY_POLICY` kao zaglavlja): konstante su prenesene, `next.config.ts` nije na putanjama ovog zadatka.
