@@ -5,11 +5,14 @@
 import { Button, StepActions, StepDetails, StepKv, StepLine, StepLoading, StepPanel, StepSection, ToastRegion, Tag, useToasts } from "@ductura/ui";
 import type { ReactNode } from "react";
 
+import type { EventDisputesPort } from "../../../../../../../src/client/event-disputes.ts";
 import type { SubmissionNote } from "../../../../../../../src/client/submission.ts";
 import type { NotesRead, SummaryRead } from "../../../../../../../src/components/predaja/BeforeSubmit.tsx";
 import type { NoteAdded } from "../../../../../../../src/components/predaja/NoteDialog.tsx";
 
+import { EventDisputeSlot, EventDisputesProvider } from "../../event-dispute/EventDisputes";
 import { summaryText as t } from "./messages.hr";
+import { summaryEventId, type SummaryEventSection } from "./model";
 import NoteForm from "./NoteForm";
 import { noteText, panelSections } from "./panel-model";
 
@@ -29,6 +32,11 @@ export type SummaryPanelProps = {
   readonly onRetry: () => void;
   readonly onAddNote: (text: string) => Promise<NoteAdded>;
   readonly onNoteAdded: (note: SubmissionNote) => void;
+  /**
+   * The supplements and disputes of the summary's events (WEB-1305, R-08): read once for the work's
+   * document and shown under each session, paste and gap. Without it the events stand alone.
+   */
+  readonly disputes?: { readonly port: EventDisputesPort; readonly documentId: string };
 };
 
 const observed = <Tag>{t.observed}</Tag>;
@@ -51,6 +59,11 @@ function Notes({ notes, submitted, online, onAddNote, onNoteAdded, noteOpen = fa
         <ToastRegion toasts={toasts} onDismiss={dismiss} label={t.notes.toastLabel} closeLabel={t.notes.toastClose} />
     </StepSection>
   );
+}
+
+/** One event and, when the panel reads marks, its supplements and disputes under it. */
+function Event({ section, index, marked, children }: { section: SummaryEventSection; index: number; marked: boolean; children: ReactNode }) {
+  return <>{children}{marked && <EventDisputeSlot eventId={summaryEventId(section, index)} role="student" />}</>;
 }
 
 function Part({ title, tag, children }: { title: string; tag?: ReactNode; children: ReactNode }) {
@@ -78,8 +91,10 @@ export default function SummaryPanel(props: SummaryPanelProps) {
     );
   }
   const s = panelSections(summary.summary, { submitted });
-  return (
-    <StepPanel id="sb-sum-h" level={2} title={t.title} tag={kind}>
+  const { disputes } = props;
+  const marked = disputes !== undefined;
+  const body = (
+    <>
       {s.intro && <p className="note">{s.intro}</p>}
       <Part title={t.period.title} tag={observed}>
         {s.period.kind === "none" ? <p>{s.period.text}</p> : s.period.rows.map((row) => <StepKv key={row.label} label={row.label}>{row.value}</StepKv>)}
@@ -87,7 +102,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
       <Part title={t.sessions.title} tag={observed}>
         <StepKv label={t.sessions.label}>{s.sessions.value}</StepKv>
         <p className="meta">{s.sessions.meta}</p>
-        {s.sessions.list.length > 0 && <StepDetails summary={t.sessions.list}><ul className="facts">{s.sessions.list.map((line, i) => <li key={i}>{line}</li>)}</ul></StepDetails>}
+        {s.sessions.list.length > 0 && <StepDetails summary={t.sessions.list}><ul className="facts">{s.sessions.list.map((line, i) => <li key={i}><Event section="sessions" index={i} marked={marked}>{line}</Event></li>)}</ul></StepDetails>}
       </Part>
       <Part title={t.editing.title} tag={observed}>
         <StepKv label={s.editing.label}>{s.editing.value}</StepKv>
@@ -100,9 +115,11 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         {s.pastes.items.length === 0 ? <p>{t.pastes.none}</p> : (
           <ul className="list">{s.pastes.items.map((line, i) => (
             <li key={i} className="item">
-              <StepLine tag={observed}>{line}</StepLine>
-              <span className="note">{t.pastes.origin}</span>
-              <a href={workHref}>{t.pastes.place}</a>
+              <Event section="pastes" index={i} marked={marked}>
+                <StepLine tag={observed}>{line}</StepLine>
+                <span className="note">{t.pastes.origin}</span>
+                <a href={workHref}>{t.pastes.place}</a>
+              </Event>
             </li>
           ))}</ul>
         )}
@@ -113,7 +130,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         <p className="meta">{t.assistant.meta}</p>
       </Part>
       <Part title={t.gaps.title} tag={observed}>
-        {s.gaps.items.length === 0 ? <p>{t.gaps.none}</p> : <ul className="facts">{s.gaps.items.map((line, i) => <li key={i}>{line}</li>)}</ul>}
+        {s.gaps.items.length === 0 ? <p>{t.gaps.none}</p> : <ul className="facts">{s.gaps.items.map((line, i) => <li key={i}><Event section="gaps" index={i} marked={marked}>{line}</Event></li>)}</ul>}
         {s.gaps.hint && <p className="meta">{s.gaps.hint}</p>}
       </Part>
       <Part title={t.declaration.title}>
@@ -129,6 +146,12 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         <p className="meta">{t.provenance.meta}</p>
         <a href={workHref}>{t.provenance.link}</a>
       </Part>
+    </>
+  );
+  return (
+    <StepPanel id="sb-sum-h" level={2} title={t.title} tag={kind}>
+      {disputes === undefined ? body
+        : <EventDisputesProvider port={disputes.port} documentId={disputes.documentId}>{body}</EventDisputesProvider>}
     </StepPanel>
   );
 }

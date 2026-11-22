@@ -18,7 +18,7 @@ const ports = (work: StepWork | Error, outcome: SummaryOutcome | Error = { kind:
 describe("readStepSummary", () => {
   it("reads the summary of the document evidence.open named", async () => {
     const { p, asked } = ports({ kind: "ready", documentId: "doc-1" });
-    expect(await readStepSummary("a-1", p)).toEqual({ kind: "ready", summary: SUMMARY });
+    expect(await readStepSummary("a-1", p)).toEqual({ kind: "ready", summary: SUMMARY, documentId: "doc-1" });
     expect(asked).toEqual(["doc-1"]);
   });
   it("sends an ended session to sign-in, from either read", async () => {
