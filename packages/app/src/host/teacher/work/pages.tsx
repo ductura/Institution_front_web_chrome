@@ -9,7 +9,6 @@ import type { SessionMark } from "@/client/session-marks";
 import { readTeacherWorkAccess, readTeacherWorkReceipt } from "@/client/teacher-work";
 import { ReadOnlyMentor } from "@/components/editor/mentor/work-state/ReadOnlyMentor";
 import { ReceiptPanel, studentReceiptRead, type ReceiptRead } from "@/components/predaja/ReceiptPanel";
-import ReplayView from "@/components/replay/ReplayView";
 import { appHref } from "@/components/shell/nav";
 import { anchorForSelection, placeAnchor, placeThreads } from "@/components/teacher/comment-place";
 import LiveText, { liveStopped, openMarks, useLiveView } from "@/components/teacher/LiveText";
@@ -29,6 +28,7 @@ import MobileReview from "../mobile-review/MobileReview";
 import { N12Consultations } from "../n12/N12Consultations";
 import { n12Messages as consultationMessages } from "../n12/messages.hr";
 import WorkFrame from "../n06/WorkFrame";
+import ReplayPage from "../n09/ReplayPage";
 import { FallbackPanel, PreSubmitPanel } from "../pre-submit/PreSubmitPanel";
 import { showFallback } from "../pre-submit/model";
 import { useTeacherRead } from "../../pages";
@@ -109,7 +109,7 @@ function OpenWork({ documentId, path, view, session }: {
     return (
       <WorkStatus title={title}>
         <p><a href={workHref}>{consultationMessages.backToWork}</a></p>
-        <ReplayView documentId={documentId} session={session} student={false} />
+        <ReplayPage documentId={documentId} session={session} />
       </WorkStatus>
     );
   }
