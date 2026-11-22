@@ -6033,33 +6033,6 @@
     }
   },
   {
-    "route": "student.submission-package.get",
-    "name": "unavailable",
-    "request": {
-      "params": {
-        "submissionId": "c4a1e9d2-7b3f-4a65-8e0c-1f2d3b4c5a69",
-        "kind": "package"
-      },
-      "query": {
-        "token": "1763800000000.AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-aBcDe"
-      },
-      "headers": {
-        "cookie": "__Host-ductus_session=izmisljeni-token-studentice-a-0000000000001"
-      }
-    },
-    "response": {
-      "status": 503,
-      "contentType": "application/json",
-      "body": {
-        "error": "unavailable",
-        "code": "unavailable",
-        "messageKey": "errors.unavailable",
-        "status": 503,
-        "requestId": "00000000-0000-4000-8000-000000000715"
-      }
-    }
-  },
-  {
     "route": "teacher.submissions-bulk-link.post",
     "name": "pdf-link",
     "request": {
@@ -6348,33 +6321,6 @@
         "messageKey": "errors.unavailable",
         "status": 503,
         "requestId": "00000000-0000-4000-8000-00000000190e"
-      }
-    }
-  },
-  {
-    "route": "teacher.submissions-bulk.get",
-    "name": "unavailable",
-    "request": {
-      "params": {
-        "assignmentId": "5e2b7c41-9d3a-4f08-b6e1-2c7a9f0d3b58",
-        "format": "pdf"
-      },
-      "query": {
-        "token": "1763800000000.AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-aBcDe"
-      },
-      "headers": {
-        "cookie": "__Host-ductus_session=izmisljeni-token-nastavnika-000000000000001"
-      }
-    },
-    "response": {
-      "status": 503,
-      "contentType": "application/json",
-      "body": {
-        "error": "unavailable",
-        "code": "unavailable",
-        "messageKey": "errors.unavailable",
-        "status": 503,
-        "requestId": "00000000-0000-4000-8000-000000001914"
       }
     }
   },
