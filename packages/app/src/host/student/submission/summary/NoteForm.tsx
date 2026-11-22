@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, TextArea } from "@ductura/ui";
+import { Button, StepActions, StepDecl, TextArea } from "@ductura/ui";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { NOTE_MAX, type SubmissionNote } from "../../../../../../../src/client/submission.ts";
@@ -50,14 +50,14 @@ export default function NoteForm({ online, onAdd, onAdded, onCancel }: NoteFormP
   }
 
   return (
-    <form onSubmit={(event) => void submit(event)} noValidate>
+    <StepDecl own onSubmit={(event) => void submit(event)}>
       <TextArea ref={field} label={t.label} name="note" maxLength={NOTE_MAX} value={text} busy={sending}
         error={error} hint={online ? t.hint : t.offline}
         onChange={(event) => { setText(event.currentTarget.value); if (error !== undefined) setError(undefined); }} />
-      <p>
-        <Button type="submit" disabled={!online} busy={sending}>{sending ? t.sending : t.add}</Button>
-        <Button type="button" tone="quiet" onClick={onCancel}>{t.cancel}</Button>
-      </p>
-    </form>
+      <StepActions>
+        <Button type="submit" aria-disabled={!online || undefined} busy={sending}>{sending ? t.sending : t.add}</Button>
+        <Button type="button" tone="secondary" onClick={onCancel}>{t.cancel}</Button>
+      </StepActions>
+    </StepDecl>
   );
 }

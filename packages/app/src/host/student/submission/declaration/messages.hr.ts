@@ -1,5 +1,6 @@
 // E-9 "Izjava" and PD-2 "Razgovor N" (WEB-2107): the copy of docs/prototip/INVENTAR-student.md.
 export const declarationStepText = {
+  shortTitle: "Izjava",
   title: "Izjava o korištenju generativne umjetne inteligencije",
   meta: "po čl. 9 i 15 pravilnika fakulteta",
   recorded: "Zabilježeno u Ducturi",

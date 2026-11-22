@@ -40,6 +40,7 @@ export const summaryText = {
   pastes: {
     title: "Lijepljenja",
     item: "{at} · {n}",
+    when: "{day}, odsječak oko {clock}",
     forms: { one: "znak", few: "znaka", many: "znakova" },
     origin: "Izvor nije opažen.",
     place: "Prikaži mjesto u radu",
@@ -90,4 +91,28 @@ export const summaryText = {
     meta: "Isti događaji mogu se prikazati kao oznake u tekstu rada, na mjestu gdje su nastali.",
     link: "Prikaži oznake u tekstu",
   },
+} as const;
+
+/** E-8, the checks panel on the left (prototype `pregled`; the texts the host already had, with the prototype's labels). */
+export const checksText = {
+  title: "Prije predaje",
+  offlineTag: "Bez veze",
+  declaration: "Izjava",
+  declarationConfirmed: "Potvrđena",
+  declarationMissing: "Još nije potvrđena.",
+  openDeclaration: "Otvori izjavu",
+  conversations: "Razgovori uz izjavu",
+  conversationsUnavailable: "Broj priloženih razgovora trenutačno nije dostupan.",
+  placeholders: "Mjesta za izvor koja ste ostavili u tekstu",
+  placeholdersInfo: "Pregledajte otvorena mjesta za izvor u tekstu. Ovaj redak samo obavještava.",
+  pasted: "Zalijepljeno (izvor nije opažen)",
+  form: "Pravila oblika",
+  formNotRun: "Provjera oblika još nije pokrenuta.",
+  addNote: "Dodaj napomenu (nije obavezna)",
+  next: "Dalje",
+  toDeclaration: "Natrag na izjavu",
+  back: "Natrag",
+  closed: "Rok za predaju je prošao",
+  unavailable: "Podatke o zadatku trenutačno nije moguće učitati.",
+  offline: "Nema veze s poslužiteljem. Predaja traži vezu; tekst je spremljen na uređaju i šalje se čim se veza vrati.",
 } as const;

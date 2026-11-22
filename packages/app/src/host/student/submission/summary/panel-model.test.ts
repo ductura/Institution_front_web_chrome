@@ -28,15 +28,15 @@ describe("panelSections", () => {
   it("before the submission: the intro, the range so far and the note hint beside a gap", () => {
     const s = panelSections(SUMMARY, { submitted: false });
     expect(s.intro).toBe(t.beforeSubmit);
-    expect(s.period).toEqual({ kind: "rows", rows: [{ label: "Do sada", value: "20. listopada 2026. do 5. studenoga 2026." }] });
+    expect(s.period).toEqual({ kind: "rows", rows: [{ label: "Do sada", value: "20. 10. do 5. 11. 2026." }] });
     expect(s.sessions.value).toBe("2 sesije");
     expect(s.sessions.meta).toBe("Sesija je niz promjena bez prekida duljeg od 30 minuta (prag P-01, postavka fakulteta). Raspon praznine nije uračunat.");
-    expect(s.sessions.list).toEqual(["20. listopada 2026., 18:05 do 19:40", "5. studenoga 2026., 19:00 do 21:05"]);
+    expect(s.sessions.list).toEqual(["20. 10. 2026., 18:05 do 19:40", "5. 11. 2026., 19:00 do 21:05"]);
     expect(s.editing).toEqual({ label: "Zbroj trajanja 2 sesije", value: "3 h 40 min" });
-    expect(s.pastes.items).toEqual(["20. listopada 2026., 18:30 do 18:35 · 640 znakova"]);
+    expect(s.pastes.items).toEqual(["20. 10. 2026., odsječak oko 18:33 · 640 znakova"]);
     expect(s.pastes.meta).toContain("dulje od 200 znakova (prag P-02, postavka fakulteta)");
     expect(s.pastes.meta).toContain("Bez zbroja i bez udjela u radu.");
-    expect(s.gaps.items).toEqual([expect.stringMatching(/^Od verzije 20\. listopada 2026\. u 19:40 do verzije 5\. studenoga 2026\. u 19:00\. /)]);
+    expect(s.gaps.items).toEqual([expect.stringMatching(/^Od verzije 20\. 10\. 2026\. u 19:40 do verzije 5\. 11\. 2026\. u 19:00\. /)]);
     expect(s.gaps.hint).toBe(t.gaps.noteHint);
     expect(s.record).toEqual({ state: t.record.hasGaps, unchanged: undefined });
   });
@@ -45,8 +45,8 @@ describe("panelSections", () => {
     const s = panelSections(COMPLETE, { submitted: true });
     expect(s.intro).toBeUndefined();
     expect(s.period).toEqual({ kind: "rows", rows: [
-      { label: t.period.first, value: "20. listopada 2026. u 18:05" },
-      { label: t.period.last, value: "5. studenoga 2026. u 21:05" },
+      { label: t.period.first, value: "20. 10. 2026. u 18:05" },
+      { label: t.period.last, value: "5. 11. 2026. u 21:05" },
     ] });
     expect(s.sessions.meta).not.toContain(t.sessions.gapNotCounted.trim());
     expect(s.gaps).toEqual({ items: [], hint: undefined });
@@ -63,7 +63,7 @@ describe("panelSections", () => {
     expect(durationText(485)).toBe("8 h 05 min");
     expect(durationText(45)).toBe("45 min");
     expect(noteText({ id: "n-1", text: "Izmišljena napomena", createdAt: "2026-11-01T10:00:00.000Z" }))
-      .toBe("Izmišljena napomena · 1. studenoga 2026. u 11:00");
+      .toBe("Izmišljena napomena · 1. 11. 2026. u 11:00");
   });
 });
 
@@ -98,17 +98,15 @@ describe("SummaryPanel", () => {
     expect(render()).toContain(t.declaration.missing);
     expect(render({ confirmed: true })).toContain(t.declaration.confirmed);
     expect(render()).toContain(t.notes.none);
-    expect(render()).toContain(t.notes.open);
     const note = { id: "n-1", text: "Izmišljena napomena", createdAt: "2026-11-01T10:00:00.000Z" };
     const listed = render({ notes: { kind: "ready", notes: [note] } });
-    expect(listed).toContain("Izmišljena napomena · 1. studenoga 2026. u 11:00");
+    expect(listed).toContain("Izmišljena napomena · 1. 11. 2026. u 11:00");
     expect(listed).toContain(t.declared);
     expect(render({ notes: { kind: "unavailable" } })).toContain(t.notes.unavailable);
   });
 
   it("a submitted work has no note form and says the record is unchanged", () => {
     const html = render({ submitted: true, summary: { kind: "ready", summary: COMPLETE } });
-    expect(html).not.toContain(t.notes.open);
     expect(html).not.toContain(t.beforeSubmit);
     expect(html).toContain(t.record.unchanged);
   });

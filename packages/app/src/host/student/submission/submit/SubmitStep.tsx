@@ -4,7 +4,7 @@
 // src/components/student/Submission.tsx (evidence.open.post, submission.submit.post), now with the
 // transport of "Provjeri stanje predaje" (readSubmittedWork), the extended deadline (C-15), the states
 // of the prototype, aria-disabled instead of disabled, and a backdrop click that closes PD-3 (R-30).
-import { Button, Dialog, Steps } from "@ductura/ui";
+import { Button, Dialog, StepActions, StepKv, StepLoading, StepNav, StepPanel, StepSpinner } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -14,12 +14,14 @@ import { readSubmissionState, submitWork, type LocalCall, type SubmitInput, type
 import { readConfirmed, useSessionTag } from "../../../../../../../src/components/predaja/Declaration";
 import { confirmationKey } from "../../../../../../../src/components/predaja/flow";
 import { oneAtATime, readWork, whileShown } from "../../../../../../../src/components/student/Submission";
-import { Text, type WorkRead } from "../../../../../../../src/components/student/SubmissionView";
+import type { WorkRead } from "../../../../../../../src/components/student/SubmissionView";
 import { SERVER_PREFIX } from "../../../../../../../src/client/api";
 import { appHref } from "../../../../../../../src/components/index";
 import { useHost } from "../../../context";
 import { submitText as t } from "./messages.hr";
-import { dateOf, fill, nextOf, wordCount, type Answer, type Next, type SubmitStage } from "./model";
+import StepLink from "../steps/StepLink";
+import { clockOf, dayOf } from "../steps/time";
+import { atOf, fill, nextOf, thousands, wordCount, type Answer, type Next, type SubmitStage } from "./model";
 
 const OUTCOME_ID = "submission-outcome";
 const WHY_ID = "submission-why";
@@ -125,65 +127,92 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
   const words = ready === null ? 0 : wordCount(ready.nodes);
   const closeDialog = () => { if (!sending) setDialog(false); };
   useBackdropClose(root, dialog, closeDialog);
-  const until = stage.kind === "extended" ? dateOf(stage.until) : null;
+  const dueText = dueAt === null ? t.stageUnavailable : atOf(stage.kind === "extended" ? stage.until : stage.kind === "closed" ? stage.dueAt : dueAt);
+  const untilDay = stage.kind === "extended" ? dayOf(stage.until) ?? stage.until : null;
+  const lines = next === null ? [] : next.text;
+  const offline = !online;
+  // The tag beside the title: "Bez veze", or the extended deadline (prototype `submitPanel`).
+  const panelTag = offline ? t.offlineTag : untilDay !== null ? fill(t.extendedTag, { until: untilDay }) : undefined;
+  const goBack = () => router.push(href(`${idPath}/predaja/pregled`));
 
   return (
-    <div className="page submission" ref={root}>
-      <Steps currentStep={4} />
-      <h1>{t.title}</h1>
-      {stage.kind === "extended" && until && <p role="note"><strong>{fill(t.extendedTag, { until: until.date })}</strong> {fill(t.extendedNote, { until: until.date, time: until.time })}</p>}
-      {stage.kind === "closed" && <p role="note">{fill(t.lateNote, { due: dateOf(stage.dueAt).date })}</p>}
-      {stage.kind === "unavailable" && <p role="note">{t.stageUnavailable}</p>}
-      {!online && <p role="status"><strong>{t.offlineTag}</strong> {t.offline}</p>}
-      {work.kind === "loading" && <p role="status">{t.loading}</p>}
+    <div ref={root} style={{ display: "contents" }}>
+      <div><StepNav current={4} /></div>
+      {work.kind === "loading" && <StepPanel title={t.panelTitle} busy><StepLoading message={t.loading} /></StepPanel>}
       {work.kind === "unavailable" && (
-        <>
-          <p role="alert">{t.loadError}</p>
-          <p><Button tone="quiet" onClick={() => void load()}>{t.retry}</Button></p>
-        </>
+        <StepPanel title={t.panelTitle}>
+          <p className="note" role="alert">{t.loadError}</p>
+          <StepActions><Button tone="secondary" onClick={() => void load()}>{t.retry}</Button></StepActions>
+        </StepPanel>
       )}
-      {work.kind === "empty" && <p role="status">{t.empty}</p>}
-      {ready !== null && (
-        <section aria-labelledby="submission-facts">
-          <h2 id="submission-facts">{t.textTitle} ({t.revision}: {ready.revision})</h2>
-          <dl>
-            <dt>{t.due}</dt><dd>{dueAt === null ? t.stageUnavailable : dateOf(stage.kind === "extended" ? stage.until : stage.kind === "closed" ? stage.dueAt : dueAt).date}</dd>
-            <dt>{t.words}</dt><dd>{words}</dd>
-            <dt>{t.conversations}</dt><dd>{t.conversationsUnavailable}</dd>
-          </dl>
-          <p>{t.timeNote}</p>
-          <p>{t.serverNote}</p>
-          <div className="manuscript" role="document" aria-label={t.textTitle}><Text nodes={ready.nodes} /></div>
-        </section>
+      {/* A failure the student cannot repeat from here is a panel of its own (prototype odbijeno, nedovrseno, nepoznato). */}
+      {next !== null && !next.retry && (
+        <StepPanel title={next.title ?? t.panelTitle}>
+          {lines.map((line, i) => <p key={line} className="note" id={i === 0 ? OUTCOME_ID : undefined} tabIndex={i === 0 ? -1 : undefined}
+            role={i === lines.length - 1 ? "alert" : undefined}>{line}</p>)}
+          <StepActions>
+            {next.offer === "check" && <Button tone="secondary" busy={checking} onClick={() => void check()}>{checking ? t.checking : t.check}</Button>}
+            {next.offer === "reload" && <Button tone="secondary" onClick={() => void load()}>{t.reload}</Button>}
+          </StepActions>
+          {next.offer === "workspace" && <StepLink href={href(idPath)}>{t.openWorkspace}</StepLink>}
+        </StepPanel>
       )}
-      {sending && <p role="status">{t.inProgress}</p>}
-      {next !== null && (
-        <div id={OUTCOME_ID} tabIndex={-1} role="alert">
-          {next.title && <h2>{next.title}</h2>}
-          {next.text.map((line) => <p key={line}>{line}</p>)}
-        </div>
+      {(work.kind === "empty" || ready !== null) && (next === null || next.retry) && (
+        <StepPanel title={t.title} tag={panelTag} busy={sending}>
+          {work.kind === "empty" && <p className="note" role="status">{t.empty}</p>}
+          {ready !== null && offline && (
+            <>
+              <StepKv label={t.due}>{dueText}</StepKv>
+              <p className="note" role="status" id={WHY_ID}>{t.offline}</p>
+            </>
+          )}
+          {ready !== null && !offline && stage.kind === "closed" && (
+            <>
+              <p className="note">{fill(t.lateNote, { due: atOf(stage.dueAt) })}</p>
+              <p className="note">{t.noLonger}</p>
+            </>
+          )}
+          {ready !== null && !offline && stage.kind === "extended" && untilDay !== null && (
+            <>
+              <p className="note">{fill(t.extendedNote, { until: untilDay, time: clockOf(stage.until) ?? "" })}</p>
+              <p className="note">{t.noLonger}</p>
+            </>
+          )}
+          {ready !== null && !offline && stage.kind !== "closed" && stage.kind !== "extended" && (
+            <>
+              <StepKv label={t.due}>{dueText}</StepKv>
+              <StepKv label={t.words}>{thousands(words)}</StepKv>
+              <StepKv label={t.conversations}>{t.conversationsUnavailable}</StepKv>
+              {stage.kind === "unavailable" && <p className="note" role="note">{t.stageUnavailable}</p>}
+              <p className="note">{t.timeNote}</p>
+            </>
+          )}
+          {next !== null && next.retry && lines.map((line, i) => (
+            <p key={line} className="note" id={i === 0 ? OUTCOME_ID : undefined} tabIndex={i === 0 ? -1 : undefined} role={i === lines.length - 1 ? "alert" : undefined}>{line}</p>
+          ))}
+          {next?.retry && next.offer === "workspace" && <StepLink href={href(idPath)}>{t.openWorkspace}</StepLink>}
+          {!offline && !confirmed && ready !== null && (
+            <p className="note" id={WHY_ID}>{t.declarationMissing} <StepLink href={href(`${idPath}/predaja/izjava`)}>{t.openDeclaration}</StepLink></p>
+          )}
+          {sending && <p className="note" role="status" id={WHY_ID}><StepSpinner /> {t.inProgress}</p>}
+          <StepActions>
+            <Button aria-disabled={!canSend || undefined} aria-describedby={why || sending ? WHY_ID : undefined}
+              onClick={() => { if (canSend) setDialog(true); }}>{sending ? t.inProgress : t.submit}</Button>
+            <Button tone="secondary" onClick={goBack}>{t.back}</Button>
+          </StepActions>
+        </StepPanel>
       )}
-      {next?.offer === "check" && <p><Button tone="quiet" busy={checking} onClick={() => void check()}>{checking ? t.checking : t.check}</Button></p>}
-      {next?.offer === "reload" && <p><Button tone="quiet" onClick={() => void load()}>{t.reload}</Button></p>}
-      {next?.offer === "workspace" && <p><a href={href(idPath)}>{t.openWorkspace}</a></p>}
-      <p>
-        <Button aria-disabled={!canSend || undefined} aria-describedby={why ? WHY_ID : undefined}
-          onClick={() => { if (canSend) setDialog(true); }}>{t.submit}</Button>
-        <Button tone="quiet" onClick={() => router.push(href(`${idPath}/predaja/pregled`))}>{t.back}</Button>
-      </p>
-      {!confirmed && <p id={WHY_ID}>{t.declarationMissing} <a href={href(`${idPath}/predaja/izjava`)}>{t.openDeclaration}</a></p>}
-      {confirmed && why && <p id={WHY_ID}>{why}</p>}
       <Dialog open={dialog} title={t.dialogTitle} onClose={closeDialog} dismissible={!sending}
         actions={(
           <>
-            <Button busy={sending} onClick={() => void submit()}>{sending ? t.sending : t.submit}</Button>
-            <Button tone="quiet" busy={sending} onClick={closeDialog}>{t.cancel}</Button>
+            <Button busy={sending} onClick={() => void submit()}>{sending ? t.inProgress : t.submit}</Button>
+            <Button tone="secondary" busy={sending} onClick={closeDialog}>{t.cancel}</Button>
           </>
         )}>
-        <p>{fill(t.dialogText, { title, revision: t.revision, n: ready?.revision ?? 0, conversations: "" })}</p>
-        <p>{fill(t.dialogWords, { n: words })} {t.dialogNoLonger}</p>
-        {stage.kind === "closed" && <p>{t.dialogLate}</p>}
-        {sending && <p role="status">{t.sending}</p>}
+        <p className="note">{fill(t.dialogText, { title })}</p>
+        <p className="note">{t.noLonger}</p>
+        {stage.kind === "closed" && <p className="note">{t.dialogLate}</p>}
+        {sending && <p className="note" role="status"><StepSpinner /> {t.inProgress}</p>}
       </Dialog>
     </div>
   );
