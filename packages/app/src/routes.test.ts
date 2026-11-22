@@ -105,6 +105,15 @@ describe("the teacher's pages of Ductus app/", () => {
     expect(resolve("/nastavnik/rad/r1", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
     expect(resolve("/nastavnik/zadatak/z1", "teacher")).toEqual({ kind: "notFound" });
   });
+
+  it("open the submissions of one assignment to a teacher only (PIL-D2-PREDAJE)", () => {
+    expect(PAGES.some((p) => p.path === "/nastavnik/zadatak/[assignmentId]/predaje")).toBe(true);
+    expect(resolve("/nastavnik/zadatak/z1/predaje", "teacher")).toMatchObject({ kind: "page", page: { label: "Predaje zadatka", current: "/nastavnik" } });
+    expect(resolve("/nastavnik/zadatak/z1/predaje", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
+    expect(resolve("/nastavnik/zadatak/z1/predaje", "admin")).toEqual({ kind: "redirect", to: "/ustanova" });
+    expect(resolve("/nastavnik/zadatak/z1/predaje", null)).toEqual({ kind: "redirect", to: "/" });
+    expect(internalRoute("/app/web/nastavnik/zadatak/z1/predaje", "/app/web")).toBe("/nastavnik/zadatak/z1/predaje");
+  });
 });
 
 describe("the student data export (WEB-1302)", () => {

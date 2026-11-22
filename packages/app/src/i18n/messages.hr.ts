@@ -56,6 +56,7 @@ export const pageLabelsHr = {
   studentDataExport: "Izvoz podataka studenta",
   studentDataDownload: "Izvoz mojih podataka",
   merlinExport: "Izvoz za Merlin",
+  assignmentSubmissions: "Predaje zadatka",
   courseStudents: "Popis studenata",
   receiptCheck: "Provjera potvrde",
 };

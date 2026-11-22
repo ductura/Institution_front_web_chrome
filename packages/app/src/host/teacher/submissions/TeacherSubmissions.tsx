@@ -59,8 +59,8 @@ export default function TeacherSubmissions(
   if (read !== null && read.kind !== "ready") {
     return (
       <div>
-        <p role="alert">{failureMessage(read)}</p>
-        <Button tone="quiet" onClick={() => { setList(null); setAttempt((n) => n + 1); }}>{text.retry}</Button>
+        <p role="alert">{failureMessage(read, "list")}</p>
+        {read.kind !== "greska" && <Button tone="quiet" onClick={() => { setList(null); setAttempt((n) => n + 1); }}>{text.retry}</Button>}
       </div>
     );
   }

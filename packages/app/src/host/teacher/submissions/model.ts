@@ -54,11 +54,14 @@ export function lateTag(row: SubmittedRow): string | null {
   return row.late ? text.late : null;
 }
 
-/** The message of a read that is not ready. */
-export function failureMessage(read: SubmissionsRead | VersionRead): string {
+/**
+ * The message of a read that is not ready. A list refused or not found (403 and 404 alike) says
+ * only that the assignment is not among the teacher's: nothing about it is shown, nor retried.
+ */
+export function failureMessage(read: SubmissionsRead | VersionRead, scope: "list" | "version" = "version"): string {
   switch (read.kind) {
     case "session-expired": return text.signedOut;
-    case "greska": return text.notFound;
+    case "greska": return scope === "list" ? text.noAccess : text.notFound;
     default: return text.unavailable;
   }
 }
