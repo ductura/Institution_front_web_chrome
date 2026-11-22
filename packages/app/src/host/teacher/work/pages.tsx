@@ -39,6 +39,7 @@ import N11Compare from "../n11/Compare";
 import N11Entry from "../n11/Entry";
 import { n11Messages } from "../n11/messages.hr";
 import { n11Port } from "../n11/port";
+import { RevisionSection } from "../revision";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
 const VIEWS = {
@@ -157,6 +158,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               onReload={() => void comments.load()} onShow={({ nodeId, start, end }) => {
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
+            <RevisionSection documentId={documentId} current={current} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
             <ProvenanceMap documentId={documentId} />
