@@ -195,6 +195,9 @@
  "packages/ui/src/table/table.module.css": [
   "global alias"
  ],
+ "packages/ui/src/tokens/prototype.css": [
+  "global alias"
+ ],
  "src/components/editor/rich/blocks/FormulaDialog.tsx": [
   "test file import",
   "import katex/dist/katex.min.css"
