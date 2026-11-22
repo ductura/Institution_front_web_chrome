@@ -3,8 +3,8 @@
 import { Checkbox } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
-import type { RhythmPort } from "@/client/input-rhythm";
-import { inputRhythmHr as t } from "@/lib/i18n/messages.hr";
+import type { RhythmPort } from "../../../client/input-rhythm";
+import { inputRhythmHr as t } from "../../../lib/i18n/messages.hr";
 
 /**
  * "Bilježi ritam tipkanja" for the dialog "Što Ductura bilježi dok pišeš" and the settings

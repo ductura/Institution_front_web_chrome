@@ -3,8 +3,8 @@
 import { useCallback, useState } from "react";
 
 import { WorkMessages } from "../messages/WorkMessages";
-import { WorkMilestones } from "./WorkMilestones";
-import { workMilestonesHr as t } from "./messages.hr";
+import { StagesCard } from "./StagesCard";
+import { stagesHr as t } from "./stages-messages.hr";
 import type { MentorAccess } from "./useMentorRead";
 
 type Props = Omit<MentorAccess, "onSessionEnd"> & {
@@ -23,7 +23,7 @@ function WorkMentorContent({ documentId, role, current, mayEditDue = false }: Pr
 
   const access = { documentId, current, onSessionEnd };
   return <>
-    <WorkMilestones {...access} mayEditDue={role === "teacher" && mayEditDue} />
+    <StagesCard {...access} mentor={role === "teacher" && mayEditDue} />
     <WorkMessages {...access} role={role} />
   </>;
 }

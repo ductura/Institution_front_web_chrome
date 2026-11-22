@@ -16,6 +16,7 @@ import { VersionComparison } from "../../../../../../../src/components/editor/di
 import { readSubmittedVersions, type ComparisonApi } from "../../../../../../../src/components/editor/diff/comparison-read.ts";
 
 import { LIVE_PORT, compareOptions, roundNotice, roundOf, type RevisionPort, type RoundView } from "./review-model";
+import styles from "./Review.module.css";
 import { reviewHostHr as t } from "./messages.hr";
 
 type Editor = ComponentProps<typeof ReviewPanel>["editor"];
@@ -62,10 +63,10 @@ function Compare({ documentId }: { documentId: string }) {
     // `client` is a fresh closure each render; the attempt asks again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId, attempt]);
-  if (state === "loading") return <p role="status">…</p>;
-  if (state === "none") return <p role="status">{t.compareNone}</p>;
+  if (state === "loading") return <p role="status" className={styles.status}>…</p>;
+  if (state === "none") return <p role="status" className={styles.status}>{t.compareNone}</p>;
   if (state === "error") {
-    return <div><p role="alert">{t.compareUnavailable}</p><Button tone="quiet" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button></div>;
+    return <div><p role="alert" className={styles.alert}>{t.compareUnavailable}</p><Button tone="secondary" size="dense" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button></div>;
   }
   return <VersionComparison client={client} documentId={documentId} replayHref="" />;
 }
@@ -83,16 +84,18 @@ export function RevisionActionsHost({ documentId, role, today, port = LIVE_PORT 
   const [done, setDone] = useState<string | null>(null);
   const notice = roundNotice(view, role, t.roundNotice);
   const close = () => setDialog(null);
-  const unavailable = (text: string) => <p role="status">{text}</p>;
+  const unavailable = (text: string) => <p role="status" className={styles.status}>{text}</p>;
   return (
-    <section aria-label={t.cardTitle}>
-      {notice && <p role="status">{notice} <Button tone="quiet" onClick={() => setDialog("compare")}>{t.roundOpen}</Button></p>}
-      {role === "student" && (port.send
-        ? <Button onClick={() => setDialog("send")}>{t.send}</Button> : unavailable(t.sendUnavailable))}
-      {role === "teacher" && (port.returnForRevision
-        ? <Button onClick={() => setDialog("return")}>{t.returnOpen}</Button> : unavailable(t.returnUnavailable))}
-      <Button tone="quiet" onClick={() => setDialog("compare")}>{t.compareOpen}</Button>
-      {done && <p role="status">{done}</p>}
+    <section className={styles.card} aria-label={t.cardTitle}>
+      {notice && <p role="status" className={styles.notice}>{notice} <Button tone="ghost" size="dense" onClick={() => setDialog("compare")}>{t.roundOpen}</Button></p>}
+      <div className={styles.row}>
+        {role === "student" && (port.send
+          ? <Button size="dense" onClick={() => setDialog("send")}>{t.send}</Button> : unavailable(t.sendUnavailable))}
+        {role === "teacher" && (port.returnForRevision
+          ? <Button size="dense" onClick={() => setDialog("return")}>{t.returnOpen}</Button> : unavailable(t.returnUnavailable))}
+        <Button tone="secondary" size="dense" onClick={() => setDialog("compare")}>{t.compareOpen}</Button>
+      </div>
+      {done && <p role="status" className={styles.status}>{done}</p>}
       {port.send && <SendRevisionDialog documentId={documentId} open={dialog === "send"} onClose={close}
         summary={{ textChanged: true, resolved: 0, stillOpen: view.kind === "student-turn" ? view.open : 0 }}
         post={port.send} onSent={() => { close(); setDone(t.sent); }} />}

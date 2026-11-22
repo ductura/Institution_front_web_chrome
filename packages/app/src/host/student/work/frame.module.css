@@ -1,0 +1,28 @@
+/* VIZ-S3 (S: E-7): the prototype's `.ed-banner` and `.ed-load`. */
+.banner {
+  display: grid;
+  gap: 8px;
+  box-sizing: border-box;
+  max-width: 720px;
+  margin: 0 auto 12px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--well);
+  color: var(--ink);
+  font-family: var(--ff-ui);
+  font-size: 14px;
+}
+.banner p { margin: 0; }
+.load {
+  box-sizing: border-box;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 56px 72px;
+  border-radius: 6px;
+  background: var(--card);
+}
+@media (max-width: 640px) {
+  .banner { margin: 0 12px 12px; }
+  .load { padding: 32px 20px; border-radius: 0; }
+}

@@ -138,12 +138,13 @@ describe("WEB-30 teacher reads (TODO(ugovor))", () => {
 
   it("overview reads the contract vector's body (LOK-WEB-2)", async () => {
     const vector = contractVectors.find((v) => v.route === "teacher.assignment-overview.get" && v.response.status === 200);
-    const body = vector?.response.body as { students: { studentId: string; givenName: string; familyName: string; groupName: string }[] };
+    const body = vector?.response.body as { students: { studentId: string; givenName: string; familyName: string; groupName: string; submitted: boolean; requestedMinute: string | null; afterDeadline: boolean; evidenceRecord: string | null }[] };
     const [first] = body.students;
-    const read = await readAssignmentOverview(answer(200, body), ASSIGNMENT);
+    const read = await readAssignmentOverview(answer(200, { ...body, students: [first] }), ASSIGNMENT);
     expect(read).toEqual({ kind: "ready", rows: [{
       studentId: first?.studentId, name: `${first?.givenName} ${first?.familyName}`, group: first?.groupName,
-      submitted: false, requestedMinute: null, afterDeadline: false, evidenceRecord: null,
+      submitted: first?.submitted, requestedMinute: first?.requestedMinute?.replace(":00.000Z", "Z") ?? null,
+      afterDeadline: first?.afterDeadline, evidenceRecord: first?.evidenceRecord,
     }] });
   });
 

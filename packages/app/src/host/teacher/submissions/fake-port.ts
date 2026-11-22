@@ -2,8 +2,8 @@
 import type { SubmittedRow, TeacherSubmissionsPort } from "../../../../../../src/client/teacher-submissions.ts";
 
 export const FAKE_ROWS: readonly SubmittedRow[] = [
-  { studentId: "5e4d3c2b-1a09-4f8e-8d7c-6b5a4f3e2d01", revision: 42, late: false, requestedMinute: "2026-12-15T21:30:00.000Z", submissionId: "00000000-0000-4000-8000-0000000000c1" },
-  { studentId: "5e4d3c2b-1a09-4f8e-8d7c-6b5a4f3e2d02", revision: 7, late: true, requestedMinute: null, submissionId: null },
+  { studentId: "5e4d3c2b-1a09-4f8e-8d7c-6b5a4f3e2d01", revision: 42, late: false, requestedMinute: "2026-12-15T21:30:00.000Z" },
+  { studentId: "5e4d3c2b-1a09-4f8e-8d7c-6b5a4f3e2d02", revision: 7, late: true, requestedMinute: null },
 ];
 
 const DOCUMENT = JSON.stringify({
@@ -19,11 +19,11 @@ export function fakeSubmissionsPort(rows: readonly SubmittedRow[] = FAKE_ROWS): 
   return {
     opened,
     async list() { return { kind: "ready", rows: [...rows] }; },
-    async open(_assignmentId, submissionId) {
-      opened.push(submissionId);
-      const row = rows.find((r) => r.submissionId === submissionId);
+    async open(_assignmentId, studentId) {
+      opened.push(studentId);
+      const row = rows.find((r) => r.studentId === studentId);
       if (!row) return { kind: "greska", code: "not_found" };
-      return { kind: "ready", version: { studentId: row.studentId, submissionId, revision: row.revision, late: row.late, document: DOCUMENT } };
+      return { kind: "ready", version: { studentId, revision: row.revision, late: row.late, document: DOCUMENT } };
     },
   };
 }

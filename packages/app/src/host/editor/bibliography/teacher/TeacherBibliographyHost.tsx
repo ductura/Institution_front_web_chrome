@@ -13,6 +13,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 
 import * as live from "./guidance";
 import type { Guidance, GuidanceRead, ProofsRead, Requirement, WriteResult } from "./guidance";
+import styles from "./Literature.module.css";
 import { readWorkLiterature, type LiteratureRead } from "./literature-read";
 import { hrDate, hrDay, overviewRows, overviewSummary, readSeen, writeSeen, type LitSeen, type OverviewRow } from "./literature-model";
 import { bibliographyTeacherHr as t } from "./messages.hr";
@@ -146,10 +147,10 @@ export function LiteratureView({ state, role, submitted, seen, overview, message
   const literature = state?.kind === "ready" ? state.literature : null;
   const rows = useMemo(() => (literature ? overviewRows(literature, seen) : []), [literature, seen]);
 
-  if (state === null) return <p role="status">{t.loading}</p>;
-  if (state.kind === "signedOut") return <p role="alert">{t.signedOut}</p>;
+  if (state === null) return <p role="status" className={styles.muted}>{t.loading}</p>;
+  if (state.kind === "signedOut") return <p role="alert" className={styles.alert}>{t.signedOut}</p>;
   if (state.kind === "unavailable") {
-    return <div><p role="alert">{t.unavailable}</p><Button tone="quiet" onClick={onRetry}>{t.retry}</Button></div>;
+    return <div className={styles.root}><p role="alert" className={styles.alert}>{t.unavailable}</p><Button tone="secondary" size="dense" onClick={onRetry}>{t.retry}</Button></div>;
   }
 
   const columns: DataTableColumn<OverviewRow>[] = [
@@ -167,16 +168,16 @@ export function LiteratureView({ state, role, submitted, seen, overview, message
   const recommending = dialogue?.kind === "recommend" ? dialogue.requirement : null;
 
   return (
-    <div>
-      {state.kind === "ready" ? <p>{t.basis(hrDay(state.savedMinute))}</p> : <p role="status">{t.noVersion}</p>}
-      {!teacher && <p>{t.readOnly}</p>}
-      {teacher && submitted && <p>{t.submitted}</p>}
+    <div className={styles.root}>
+      {state.kind === "ready" ? <p className={styles.muted}>{t.basis(hrDay(state.savedMinute))}</p> : <p role="status" className={styles.muted}>{t.noVersion}</p>}
+      {!teacher && <p className={styles.muted}>{t.readOnly}</p>}
+      {teacher && submitted && <p className={styles.muted}>{t.submitted}</p>}
       {message && !overview && <p role="status">{message}</p>}
-      {problem && !overview && !dialogue && <p role="alert">{problem}</p>}
-      <div role="group" aria-label={t.heading}>
-        {teacher && !submitted && <Button ref={anchor} tone="quiet" disabled={!sends} aria-describedby={`${noteId}-rec`}
+      {problem && !overview && !dialogue && <p role="alert" className={styles.alert}>{problem}</p>}
+      <div className={styles.row} role="group" aria-label={t.heading}>
+        {teacher && !submitted && <Button ref={anchor} tone="secondary" size="dense" disabled={!sends} aria-describedby={`${noteId}-rec`}
           onClick={() => onDialogue({ kind: "recommend", requirement: "recommended" })}>{t.recommend}</Button>}
-        <Button tone="quiet" disabled={literature === null} onClick={() => onOverview(true)}>{t.overview}</Button>
+        <Button tone="secondary" size="dense" disabled={literature === null} onClick={() => onOverview(true)}>{t.overview}</Button>
       </div>
       {teacher && !submitted && !sends && <p id={`${noteId}-rec`}>{t.recommendUnavailable}</p>}
 
@@ -185,21 +186,21 @@ export function LiteratureView({ state, role, submitted, seen, overview, message
         {requests.length > 0 && <ul>{requests.map((r, i) => <li key={`${r.rq}:${i}`}>{t.requestPlace(r.label, r.page)}</li>)}</ul>}
         {openRequests.length > 0 && <ul>{openRequests.map((r) => <li key={r.id}>
           {t.requestOpen(labelOf(r.sourceId), hrDay(r.dueAt), r.instruction)}
-          {sends && <> <Button tone="quiet" onClick={() => onWithdraw(r.sourceId)}>{t.withdraw}</Button></>}
+          {sends && <> <Button tone="secondary" size="dense" onClick={() => onWithdraw(r.sourceId)}>{t.withdraw}</Button></>}
         </li>)}</ul>}
       </Card>}
 
-      {([["recommended", t.recommended], ["required", t.mandatory]] as const).map(([requirement, heading]) => <Details key={requirement} summary={heading}>
+      {([["recommended", t.recommended], ["required", t.mandatory]] as const).map(([requirement, heading]) => <Details className={styles.rpd} key={requirement} summary={heading}>
         {listed(requirement).length === 0 ? <p>{requirement === "recommended" ? t.recommendedNone : t.mandatoryNone}</p>
-          : <ul>{listed(requirement).map((s) => <li key={s.id}>{s.label}{sends && <> <Button tone="quiet" onClick={() => onRemove(s.id)}>{t.remove}</Button></>}</li>)}</ul>}
-        {requirement === "required" && teacher && !submitted && <Button tone="quiet" disabled={!sends}
+          : <ul>{listed(requirement).map((s) => <li key={s.id}>{s.label}{sends && <> <Button tone="secondary" size="dense" onClick={() => onRemove(s.id)}>{t.remove}</Button></>}</li>)}</ul>}
+        {requirement === "required" && teacher && !submitted && <Button tone="secondary" size="dense" disabled={!sends}
           onClick={() => onDialogue({ kind: "recommend", requirement: "required" })}>{t.mandatoryAdd}</Button>}
       </Details>)}
 
-      {sources.length > 0 && <Details summary={t.workSources}>
+      {sources.length > 0 && <Details className={styles.rpd} summary={t.workSources}>
         <ul>{sources.map((s) => <li key={s.id}>{s.label}{" "}
-          <Button tone="quiet" onClick={() => onDialogue({ kind: "proofs", sourceId: s.id })}>{t.proofsOf(s.proofCount)}</Button>
-          {sends && <> <Button tone="quiet" onClick={() => onDialogue({ kind: "request", sourceId: s.id })}>{t.request}</Button></>}
+          <Button tone="secondary" size="dense" onClick={() => onDialogue({ kind: "proofs", sourceId: s.id })}>{t.proofsOf(s.proofCount)}</Button>
+          {sends && <> <Button tone="secondary" size="dense" onClick={() => onDialogue({ kind: "request", sourceId: s.id })}>{t.request}</Button></>}
         </li>)}</ul>
       </Details>}
 
@@ -222,7 +223,7 @@ export function LiteratureView({ state, role, submitted, seen, overview, message
       </Dialog>
 
       <Dialog open={overview} title={t.overview} onClose={() => onOverview(false)} actions={<>
-        {teacher && <Button tone="quiet" disabled={literature === null} onClick={onMarkSeen}>{t.markSeen}</Button>}
+        {teacher && <Button tone="secondary" size="dense" disabled={literature === null} onClick={onMarkSeen}>{t.markSeen}</Button>}
         <Button onClick={() => onOverview(false)}>{t.close}</Button>
       </>}>
         <p>{overviewSummary(rows, seen)}</p>
@@ -254,6 +255,6 @@ function RequestForm({ sourceLabel, today, problem, onCancel, onSend }: {
     <TextArea label={t.instruction} value={instruction} maxLength={1000} onChange={(e) => setInstruction(e.currentTarget.value)} />
     <TextField type="date" label={t.due} value={day} onChange={(e) => setDay(e.currentTarget.value)} error={error || undefined} />
     {problem && <p role="alert">{problem}</p>}
-    <Button onClick={submit}>{t.requestSend}</Button> <Button tone="quiet" onClick={onCancel}>{t.cancel}</Button>
+    <Button onClick={submit}>{t.requestSend}</Button> <Button tone="secondary" size="dense" onClick={onCancel}>{t.cancel}</Button>
   </div>;
 }

@@ -2,6 +2,9 @@
 
 // N-18 "Izvoz za Merlin" in the host (WEB-2163): reads only through src/client (merlin-export.ts, teacher
 // reads). A failed read is said as such with "Pokušaj ponovno", never shown as an empty list.
+import { Button } from "@ductura/ui";
+import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
+import { hostText } from "../../../text";
 import { createApi, goToSignIn, leaveFor } from "../../../../../../src/client/api.ts";
 import {
   merlinCsvPath, readMerlinPackage, readMerlinRoster, requestMerlinPackage,
@@ -9,7 +12,7 @@ import {
 import { readTeacherCourses, type TeacherCoursesCall } from "../../../../../../src/components/index.ts";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
-import { TeacherPage, useTeacherRead, type TeacherRead } from "../../pages";
+import { useTeacherRead, type TeacherRead } from "../../pages";
 import Merlin from "./Merlin";
 import { merlinMessages as text } from "./messages.hr";
 import { merlinHref, type AssignmentChoice, type MerlinData, type MerlinPort } from "./model";
@@ -44,10 +47,25 @@ export function MerlinExportPage({ assignmentId }: { assignmentId: string }) {
     return { kind: "ready", value: { rows: roster.rows, extensionReasons: roster.extensionReasons, assignments } };
   });
   const here = appHref(base, merlinHref(assignmentId));
+  // The prototype's side page (sideState): .pagehead, then a card for loading or an error, never a bare line.
   return (
-    <TeacherPage title={text.title} lead={text.lead} loading={text.loading} read={read} retry={retry}
-      unavailable={text.unavailable} retryLabel={text.retry}
-      ready={(data) => <Merlin assignmentId={assignmentId} data={data} port={clientPort(here)}
-        onChoose={(id) => leaveFor(appHref(base, merlinHref(id)))} />} />
+    <div className="page">
+      <div className="pagehead">
+        <h1>{text.title}</h1>
+        <p className="lede">{text.lead}</p>
+      </div>
+      {read === null || read.kind === "signedOut" || read.kind === "notTeacher" ? (
+        <section className="card" aria-busy={read === null ? "true" : undefined}>
+          <p className="note" role="status">{read === null ? text.loading : read.kind === "signedOut" ? hostText.signingIn : t.teacher.signedOut}</p>
+          {read === null && <><div className="skel w80" /><div className="skel w60" /><div className="skel w40" /></>}
+        </section>
+      ) : read.kind === "unavailable" ? (
+        <section className="card">
+          <p className="note" role="alert">{text.unavailable}</p>
+          <div className="sb-acts"><Button tone="secondary" onClick={retry}>{text.retry}</Button></div>
+        </section>
+      ) : <Merlin assignmentId={assignmentId} data={read.value} port={clientPort(here)}
+        onChoose={(id) => leaveFor(appHref(base, merlinHref(id)))} />}
+    </div>
   );
 }

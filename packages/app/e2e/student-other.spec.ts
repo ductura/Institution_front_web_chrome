@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 // HOST-S5: "Moji radovi", the access log and the replay in the host, with an invented /api/v1.
 const ID = "6e2f3a41-5b6c-4d7e-8f90-a1b2c3d4e5f6";

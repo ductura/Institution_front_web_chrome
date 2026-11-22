@@ -21,6 +21,7 @@ export { BLOCKED_TEXT, SAVE_STATES, saveStateContent, type SaveStateName, type S
 export { Select, type SelectOption, type SelectProps } from "./components/Select";
 export { Skeleton, type SkeletonProps } from "./components/Skeleton";
 export { Tag, type TagProps } from "./components/Tag";
+export { Chip, PillTag, type ChipProps, type PillTagProps } from "./components/Chip";
 export { PRACTICE_BADGE_LABEL, PracticeBadge, type PracticeBadgeProps } from "./components/practice-badge";
 export { TextArea, type TextAreaProps } from "./components/TextArea";
 export { TextField, type TextFieldProps } from "./components/TextField";
@@ -30,6 +31,7 @@ export { ToastRegion, useToasts, type ToastRegionProps } from "./components/Toas
 export { MAX_TOASTS, TOAST_TIMEOUT_MS, type ToastItem, type ToastTone } from "./components/toast-queue";
 export { readTheme, saveTheme, THEME_KEY, themeOf, toggleTheme, type ShellTheme } from "./theme/theme";
 export { Icon, ICON_NAMES, type IconName, type IconProps } from "./icons/icons";
+export { ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, type EntryData, type OptionChoice, type OptionGroupProps, type SummaryRowData } from "./components/form-parts";
 export { Fingerprint, type FingerprintProps } from "./fingerprint";
 export { KeyValueList, type KeyValueItem, type KeyValueListProps } from "./key-value";
 export { Steps, type StepNumber, type StepsProps } from "./steps";
