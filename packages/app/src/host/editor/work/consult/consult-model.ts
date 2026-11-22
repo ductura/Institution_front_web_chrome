@@ -48,6 +48,9 @@ export const IDLE_FORM: Form = { open: false, draft: "", busy: false, error: nul
 export const afterSlotWrite = (form: Form, outcome: SlotWrite): Form =>
   outcome.kind === "saved" ? IDLE_FORM : { ...form, busy: false, error: slotFailure(outcome) };
 
+/** The criterion's text, from its id (the server's label is only a message key). */
+export const criterionTitle = (c: WorkingCriterion): string => t.criteria.names[c.id];
+
 export const doneCount = (criteria: readonly WorkingCriterion[]): number => criteria.filter((c) => c.assessment !== null).length;
 export const criteriaHeading = (criteria: readonly WorkingCriterion[]): string =>
   t.criteria.title.replace("{done}", String(doneCount(criteria))).replace("{total}", String(criteria.length));
@@ -63,7 +66,7 @@ export function noteChange(c: WorkingCriterion, text: string): CriterionInput | 
 }
 
 export const withCriterion = (criteria: readonly WorkingCriterion[], saved: WorkingCriterion): WorkingCriterion[] =>
-  criteria.map((c) => (c.criterionId === saved.criterionId ? saved : c));
+  criteria.map((c) => (c.id === saved.id ? saved : c));
 
 export function criterionFailure(outcome: Exclude<CriterionWrite, { kind: "saved" }>): string {
   if (outcome.kind === "session-expired") return t.criteria.errors.signedOut;

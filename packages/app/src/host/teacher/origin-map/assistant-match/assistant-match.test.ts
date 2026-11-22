@@ -68,7 +68,8 @@ describe("WEB-1230 assistant match", () => {
     }));
     expect(section).toContain(matchText.neutral);
     expect(section).toContain("data-assistant-match");
-    const texts = [...Object.values(matchText), ...Object.values(noticeText)].filter((v): v is string => typeof v === "string");
+    const values: unknown[] = [...Object.values(matchText), ...Object.values(noticeText)];
+    const texts = values.filter((v): v is string => typeof v === "string");
     for (const text of texts) {
       expect(findForbiddenTerms(text)).toEqual([]);
       expect(text.toLowerCase()).not.toMatch(/prepis|plagij|varan|sumnj/);
