@@ -25,7 +25,11 @@ export const SUPPORTED_KEYWORDS: ReadonlySet<string> = new Set([
   "minItems",
   "maxItems",
   "minProperties",
+  "maxProperties",
   "patternProperties",
+  "default",
+  "multipleOf",
+  "uniqueItems",
 ]);
 
 const SUPPORTED_FORMATS: ReadonlySet<string> = new Set(["date-time"]);
@@ -103,10 +107,15 @@ export function matchesSchema(schema: Schema, value: unknown): boolean {
   if (typeof value === "number") {
     if (typeof s.minimum === "number" && value < s.minimum) return false;
     if (typeof s.maximum === "number" && value > s.maximum) return false;
+    if (typeof s.multipleOf === "number" && s.multipleOf > 0) {
+      const quotient = value / s.multipleOf;
+      if (Math.abs(quotient - Math.round(quotient)) > 1e-9) return false;
+    }
   }
   if (Array.isArray(value)) {
     if (typeof s.minItems === "number" && value.length < s.minItems) return false;
     if (typeof s.maxItems === "number" && value.length > s.maxItems) return false;
+    if (s.uniqueItems === true && value.some((item, i) => value.findIndex((other) => sameJson(item, other)) !== i)) return false;
     if (s.items !== undefined && !value.every((item) => matchesSchema(s.items as Schema, item))) return false;
   }
   if (isPlainObject(value)) {
@@ -115,6 +124,7 @@ export function matchesSchema(schema: Schema, value: unknown): boolean {
       .map(([pattern, sub]) => [new RegExp(pattern, "u"), sub] as const);
     const names = Object.keys(value);
     if (typeof s.minProperties === "number" && names.length < s.minProperties) return false;
+    if (typeof s.maxProperties === "number" && names.length > s.maxProperties) return false;
     for (const name of (s.required ?? []) as string[]) if (!Object.hasOwn(value, name)) return false;
     for (const name of names) {
       // A name in properties or matching a pattern meets each of those schemas;

@@ -15,10 +15,11 @@ import type { Base } from "../bases";
 import { internalRoute, routeOf } from "../routes";
 import { hostText } from "../text";
 import { useHost } from "./context";
-import { AssignmentCards } from "./teacher/assignment-card/AssignmentCards";
+import { AssignmentCards, NewCourseLink } from "./teacher/assignment-card/AssignmentCards";
 import { CourseTasks, InterruptedPublish } from "./teacher/assignment-facts/AssignmentFacts";
 import { assignmentCardMessages as card } from "./teacher/assignment-card/messages.hr";
 import { teacherShellHr } from "./teacher/shell/messages.hr";
+import { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { startWorkAction } from "./student/start-work/action";
 import { HomePage } from "./student/home/HomePage";
@@ -92,7 +93,7 @@ function CoursesPage() {
     assignmentAction={startWorkAction} />;
 }
 
-export type TeacherRead<T> = { kind: "ready"; value: T } | { kind: "signedOut" } | { kind: "notTeacher" } | { kind: "unavailable" };
+export { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";
 
 /** One read per visit and per "Pokušaj ponovno"; a signed-out answer goes to sign-in. */
 export function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>>): [TeacherRead<T> | null, () => void] {
@@ -114,36 +115,6 @@ export function useTeacherRead<T>(base: Base, read: () => Promise<TeacherRead<T>
   return [result, () => setAttempt((n) => n + 1)];
 }
 
-/** The page heading, its lead and one state of a teacher's read. */
-export function TeacherPage<T>({ title, lead, loading = hostText.loading, read, retry, unavailable, retryLabel, ready, notice }: {
-  title: string; lead: string; loading?: string; read: TeacherRead<T> | null; retry: () => void;
-  unavailable: string; retryLabel: string; ready: (value: T) => ReactNode;
-  /** Above the body and kept across a new read (N-01 banner "prekinuto", WEB-2145). */
-  notice?: ReactNode;
-}) {
-  let body: ReactNode;
-  if (read === null || read.kind === "signedOut") body = <p role="status">{read === null ? loading : hostText.signingIn}</p>;
-  else if (read.kind === "notTeacher") body = <p role="status">{t.teacher.signedOut}</p>;
-  else if (read.kind === "unavailable") {
-    body = (
-      <>
-        <p role="alert">{unavailable}</p>
-        <p><button type="button" className="btn" onClick={retry}>{retryLabel}</button></p>
-      </>
-    );
-  } else body = ready(read.value);
-  return (
-    <div className="page">
-      <header>
-        <h1>{title}</h1>
-        <p>{lead}</p>
-      </header>
-      {notice}
-      {body}
-    </div>
-  );
-}
-
 const coursesCall = () => createApi() as unknown as TeacherCoursesCall;
 const mentorshipsCall = () => createApi() as unknown as MentoredWorksCall;
 
@@ -156,6 +127,7 @@ export function TeacherCoursesPage() {
   });
   return <TeacherPage title={card.title} lead={card.lead} loading={card.loading} read={read} retry={retry}
     unavailable={card.unavailable} retryLabel={card.retry} notice={<InterruptedPublish onChecked={retry} />}
+    actions={(courses) => (courses.length > 0 ? <NewCourseLink /> : null)}
     ready={(courses) => <AssignmentCards courses={courses} here={appHref(base, "/nastavnik")}
       tasks={(course) => <CourseTasks course={course} />}
       extra={(course) => <CourseTeachingTeam courseId={course.id} courseName={course.name} />} />} />;

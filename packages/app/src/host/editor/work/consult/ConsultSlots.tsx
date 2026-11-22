@@ -76,7 +76,7 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
     return (
       <div className={styles.card}>
         <p role="alert" className={styles.error}>{text}</p>
-        {load.kind === "unavailable" ? <Button onClick={() => void read()}>{t.retry}</Button> : null}
+        {load.kind === "unavailable" ? <Button size="dense" tone="secondary" onClick={() => void read()}>{t.retry}</Button> : null}
       </div>
     );
   }
@@ -92,20 +92,20 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
             <li key={slot.id} className={styles.item}>
               <b>{statusText(role, slot)}</b>
               <p className={styles.muted}>{lineText(slot)}</p>
-              {actions.includes("confirm") ? <Button disabled={form.busy} onClick={() => void act(slot, "confirm")}>{t.confirm}</Button> : null}
-              {actions.includes("accept") ? <Button disabled={form.busy} onClick={() => void act(slot, "accept")}>{t.accept.replace("{time}", timeText(slot.startsAt))}</Button> : null}
-              {actions.includes("counter") && !form.open ? <Button disabled={form.busy} onClick={() => patch(slot.id, { open: true, error: null })}>{t.propose}</Button> : null}
+              {actions.includes("confirm") ? <Button size="dense" disabled={form.busy} onClick={() => void act(slot, "confirm")}>{t.confirm}</Button> : null}
+              {actions.includes("accept") ? <Button size="dense" disabled={form.busy} onClick={() => void act(slot, "accept")}>{t.accept.replace("{time}", timeText(slot.startsAt))}</Button> : null}
+              {actions.includes("counter") && !form.open ? <Button size="dense" tone="secondary" disabled={form.busy} onClick={() => patch(slot.id, { open: true, error: null })}>{t.propose}</Button> : null}
               {form.open ? (
                 <div className={styles.card}>
                   <label>{t.proposeLabel}
                     <input className={styles.field} type="datetime-local" value={form.draft} disabled={form.busy} onChange={(e) => patch(slot.id, { draft: e.target.value })} />
                   </label>
                   <div className={styles.row}>
-                    <Button disabled={form.busy} onClick={() => {
+                    <Button size="dense" disabled={form.busy} onClick={() => {
                       const iso = localToIso(form.draft);
                       if (iso === null) patch(slot.id, { error: t.needTime }); else void act(slot, "counter", iso);
                     }}>{form.busy ? t.sending : t.proposeSend}</Button>
-                    <Button disabled={form.busy} onClick={() => patch(slot.id, { open: false, error: null })}>{t.cancel}</Button>
+                    <Button size="dense" tone="secondary" disabled={form.busy} onClick={() => patch(slot.id, { open: false, error: null })}>{t.cancel}</Button>
                   </div>
                 </div>
               ) : null}
@@ -121,12 +121,12 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
               <input className={styles.field} type="datetime-local" value={request.draft} disabled={request.busy} onChange={(e) => setRequest((f) => ({ ...f, draft: e.target.value }))} />
             </label>
             <div className={styles.row}>
-              <Button disabled={request.busy} onClick={() => void sendRequest()}>{request.busy ? t.sending : t.requestSend}</Button>
-              <Button disabled={request.busy} onClick={() => setRequest(IDLE_FORM)}>{t.cancel}</Button>
+              <Button size="dense" disabled={request.busy} onClick={() => void sendRequest()}>{request.busy ? t.sending : t.requestSend}</Button>
+              <Button size="dense" tone="secondary" disabled={request.busy} onClick={() => setRequest(IDLE_FORM)}>{t.cancel}</Button>
             </div>
             {request.error ? <p role="alert" className={styles.error}>{request.error}</p> : null}
           </div>
-        ) : <Button onClick={() => setRequest({ ...IDLE_FORM, open: true })}>{t.requestTitle}</Button>
+        ) : <Button size="dense" tone="secondary" onClick={() => setRequest({ ...IDLE_FORM, open: true })}>{t.requestTitle}</Button>
       ) : null}
     </section>
   );

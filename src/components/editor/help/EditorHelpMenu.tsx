@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { useEditorOnboarding } from "../../../../packages/app/src/host/student/onboarding/useEditorOnboarding";
 import { editorHelpHr } from "../../../lib/i18n/messages.hr";
 import ToolbarMenu, { type MenuItem } from "../ToolbarMenu";
+import styles from "./EditorHelp.module.css";
 import type { EditorHelpView } from "./EditorHelp";
 
 const views = {
@@ -30,9 +31,12 @@ export function EditorHelpMenu({ onSelect }: { onSelect: (view: EditorHelpView) 
           return "close-return";
         }} />
     </div>
-    <EditorOnboarding locale={onboarding.locale} mode={onboarding.mode} onClose={() => {
-      onboarding.close();
-      menu.current?.querySelector<HTMLButtonElement>("button")?.focus();
-    }} />
+    {/* The guide hangs below the toolbar: inside the 44 px bar it overflowed upward over the header and covered "Predaja rada". */}
+    <div className={styles.guideAnchor}>
+      <EditorOnboarding locale={onboarding.locale} mode={onboarding.mode} onClose={() => {
+        onboarding.close();
+        menu.current?.querySelector<HTMLButtonElement>("button")?.focus();
+      }} />
+    </div>
   </>;
 }

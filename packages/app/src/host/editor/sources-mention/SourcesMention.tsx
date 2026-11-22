@@ -10,7 +10,7 @@ import { QuickSource } from "@/components/editor/sources/quick-source/QuickSourc
 import { documentSources } from "@/components/editor/sources/proofs/proof-sources";
 import { TriggerPopover } from "@/components/editor/triggers/TriggerPopover";
 import { loadNotebook } from "../source-notebook/notebook";
-import { addSourceAt, jumpTo, mentionSources, nextPlace, plainCitationPlaces, type MentionNote } from "./mention-model";
+import { addSourceAt, jumpTo, mentionSources, nextPlace, unsourcedCitationPlaces, type MentionNote } from "./mention-model";
 import { sourcesMentionHr as t } from "./messages.hr";
 
 /** Notes are read for the first sources only: a long bibliography must not start hundreds of requests (as the notebook). */
@@ -23,7 +23,7 @@ const NONE: Read = { key: "none", sources: [], places: [], editable: false };
 function readOf(editor: LocalEditor): Read {
   if (!editor || editor.isDestroyed) return NONE;
   const sources = Array.isArray(editor.state.doc.attrs.sources) ? (editor.state.doc.attrs.sources as unknown[]) : [];
-  const places = plainCitationPlaces(editor.state.doc);
+  const places = unsourcedCitationPlaces(editor.state.doc).map((p) => p.pos);
   return { key: JSON.stringify([sources, places, editor.isEditable]), sources, places, editable: editor.isEditable };
 }
 

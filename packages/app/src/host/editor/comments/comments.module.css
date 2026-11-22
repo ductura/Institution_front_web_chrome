@@ -1,12 +1,42 @@
-.root { display: grid; gap: 0.6rem; }
-.row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
-.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
-.card { display: grid; gap: 0.35rem; border: 1px solid var(--rule-2); border-radius: 4px; padding: 0.6rem; overflow-wrap: anywhere; }
-.active { border-color: var(--ink); }
-.quote { margin: 0; font-style: italic; }
-.tag { border: 1px solid var(--rule-2); border-radius: 4px; padding: 0 0.35rem; font-size: 0.85em; }
-.mine { border-color: var(--ink); font-weight: 600; }
-.muted { color: var(--ink-2, var(--ink)); margin: 0; }
-.error { color: var(--ink); background: var(--error-soft); padding: 0.4rem 0.5rem; margin: 0; }
-.field { display: block; width: 100%; font: inherit; }
-.reply { margin: 0; padding-inline-start: 0.6rem; border-inline-start: 2px solid var(--rule-2); white-space: pre-wrap; }
+/* Comments card in the editor side panel (prototype editor.css: .card, .meta, .q, .reply, .rptools, .c2*). VIZ-E4. */
+.root { display: block; font: 400 13.5px / 1.5 var(--ff-ui); color: var(--ink); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ptitle { margin: 0 6px 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+.bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 2px; }
+.list { list-style: none; margin: 0; padding: 0; }
+.card { background: var(--card); border: 1px solid var(--rule-2); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 8px; overflow-wrap: anywhere; }
+.active { border-color: var(--accent); }
+.meta { color: var(--ink-3); font-size: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.quote { font-family: var(--ff-display); font-size: 14px; color: var(--ink-2); margin: 6px 0; padding: 4px 8px; background: var(--well); border-radius: var(--radius-sm); }
+.quote.jump { display: block; width: 100%; text-align: left; border: 0; cursor: pointer; }
+.body { margin: 0; white-space: pre-wrap; }
+.reply { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--rule-2); font-size: 13px; white-space: pre-wrap; }
+.also { margin-top: 8px; }
+.sub { font-size: 11.5px; color: var(--ink-3); margin: 8px 0 3px; }
+.actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.muted { color: var(--ink-3); font-size: 12px; margin: 0 0 8px; }
+.error { color: var(--error); background: var(--error-soft); border-radius: var(--radius-sm); padding: 6px 8px; margin: 0 0 8px; font-size: 12.5px; }
+.field { display: block; width: 100%; font: inherit; font-size: 13px; line-height: 1.45; min-height: 64px; resize: vertical; padding: 7px 9px; background: var(--field); border: 1px solid var(--field-rule); border-radius: var(--radius-control); color: var(--ink); }
+.field::placeholder { color: var(--field-placeholder); }
+.label { display: block; font-size: 12px; color: var(--ink-2); margin: 8px 0 3px; }
+.note { margin-top: 10px; background: var(--well); border-color: var(--rule-2); }
+.note p { margin: 4px 0 6px; color: var(--ink-2); }
+.praise { border-style: dashed; }
+.more { margin-left: auto; position: relative; }
+.more > summary { cursor: pointer; list-style: none; font-size: 12.5px; color: var(--ink-2); padding: 6px 8px; border-radius: var(--radius-sm); }
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary:hover { background: var(--hover); }
+.more[open] > summary { background: var(--selected); }
+.menu { position: absolute; right: 0; top: 100%; z-index: 5; min-width: 210px; background: var(--raised); border: 1px solid var(--rule-2); border-radius: var(--radius); box-shadow: var(--lift); padding: 6px; display: flex; flex-direction: column; }
+.menu > button { text-align: left; padding: 8px; border-radius: var(--radius-sm); border: 0; background: none; color: var(--ink); font: inherit; font-size: 12.5px; cursor: pointer; }
+.menu > button:hover { background: var(--hover); }
+.print { border: 1px solid var(--rule-2); border-radius: var(--radius); padding: 12px 14px; max-height: 54vh; overflow: auto; background: var(--card); }
+.printItem { padding: 8px 0; border-bottom: 1px solid var(--rule-2); }
+.printItem:last-child { border-bottom: 0; }
+.printItem blockquote { margin: 6px 0; padding: 4px 10px; font-family: var(--ff-display); background: var(--well); border-radius: var(--radius-sm); }
+.printItem p { margin: 4px 0; }
+.kind { display: flex; background: var(--well); border-radius: var(--radius); padding: 2px; margin-bottom: 6px; flex-wrap: wrap; }
+.kind button { flex: 1; height: 30px; padding: 0 6px; border: 0; background: none; border-radius: var(--radius-sm); font-size: 12px; color: var(--ink-2); cursor: pointer; }
+.kind button[aria-pressed="true"] { background: var(--chrome); color: var(--ink); font-weight: 500; }
+@media (max-width: 640px) { .kind button { height: 38px; } .actions button { min-height: 34px; } }

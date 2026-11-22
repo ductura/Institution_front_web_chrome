@@ -45,7 +45,7 @@ const consistent = (classes: readonly WireClass[]): boolean =>
 export async function fetchRetention(options: ApiOptions = {}): Promise<RetentionOutcome> {
   let result: ApiResult<"institution.retention.get">;
   try {
-    result = await createApi(options)("institution.retention.get", { params: undefined, query: undefined, body: undefined });
+    result = await createApi(options)("institution.retention.get", { params: undefined, query: {}, body: undefined });
   } catch {
     return { kind: "unavailable" };
   }
