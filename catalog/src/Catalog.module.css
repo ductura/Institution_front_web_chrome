@@ -59,3 +59,9 @@
 .component:global(#SideShell) .state dd { display: block; border: 1px solid var(--rule); }
 .component:global(#SideShell) .state dd > div { min-height: 380px; }
 .component:global(#SideShell) aside { position: static; align-self: stretch; height: auto; }
+
+/* VIZ-S4: the step frame and panel draw on --chrome; on the white sheet the ink is dark, so they sit on the paper. */
+.component:global(#StepFrame) .sheet,
+.component:global(#StepPanel) .sheet {
+  --chrome: var(--sheet);
+}

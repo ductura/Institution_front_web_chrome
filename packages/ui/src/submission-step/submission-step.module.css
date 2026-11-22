@@ -41,6 +41,7 @@
 .state > .label { font-weight: 600; }
 .state h3 { font: 600 13.5px/1.4 var(--ff-ui); letter-spacing: 0; margin: 0; }
 .places { margin: 0; padding-left: 18px; }
+.places a { display: inline-flex; align-items: center; min-height: 32px; }
 
 .kv { display: flex; justify-content: space-between; gap: 12px; }
 .kv b { font: 500 13.5px/1.4 var(--ff-mono); text-align: right; }
@@ -67,7 +68,7 @@
 
 @media (max-width: 640px) {
   .page { padding: 16px var(--gutter-r) 40px var(--gutter-l); gap: 16px; }
-  .panel ul a:not(:global(.btn)) { min-height: 44px; }
+  .panel ul a:not(:global(.btn)), .places a { min-height: 44px; }
   .acts :global(.btn) { flex: 1 1 auto; }
   .kv { flex-direction: column; gap: 0; }
   .kv b { text-align: left; }
