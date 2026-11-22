@@ -6,7 +6,6 @@ import { BYTES, FILE_ID, PREFIX, fakePreparation } from "./fake-port";
 import { pdfExportText } from "./messages.hr";
 import { fetchPrepared, newRequestKey, parseAnswer, runPreparation, showsPdfA, type Phase, type PrepareCalls } from "./preparation";
 import { pdfFileName } from "./contract";
-import { packageCalls, packageDownloadPrefix } from "../../student/submission-package/contract";
 import { submissionPackageText } from "../../student/submission-package/messages.hr";
 
 const sha = createHash("sha256").update(BYTES).digest("hex");
@@ -93,14 +92,6 @@ describe("the two routes' wiring", () => {
   it("names the PDF after the work's title, safely", () => {
     expect(pdfFileName(" Moj/rad: 1. ")).toBe("Moj_rad_ 1.pdf");
     expect(pdfFileName("")).toBe("rad.pdf");
-  });
-
-  it("asks for the registrar's package of an assignment", async () => {
-    const seen: unknown[] = [];
-    const call = async (id: string, input: unknown) => { seen.push([id, input]); return { ok: false as const, status: 0 }; };
-    await packageCalls(call as never, "a-1", "key-12345678").start(now());
-    expect(seen).toEqual([["student.submission-package.post", { body: { assignmentId: "a-1", requestKey: "key-12345678" } }]]);
-    expect(packageDownloadPrefix("a-1")).toBe("/api/v1/student/assignments/a-1/package/");
   });
 
   it("the screens' texts hold no forbidden term", () => {

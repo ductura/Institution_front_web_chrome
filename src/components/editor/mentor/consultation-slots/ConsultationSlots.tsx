@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   readConsultationSlots, requestConsultationSlot, updateConsultationSlot,
-  type ConsultationSlot, type SlotAction, type SlotsCall, type SlotWrite,
+  type ConsultationSlot, type SlotAction, type SlotsApi, type SlotWrite,
 } from "@/client/consultation-slots";
 
 import styles from "./ConsultationSlots.module.css";
@@ -61,17 +61,17 @@ export function SlotsView({ load, role, request, forms, onRequestOpen, onRequest
       {load.slots.length === 0 ? <p className={styles.muted}>{t.empty}</p> : null}
       <ul className={styles.list}>
         {load.slots.map((slot) => {
-          const form = forms[slot.slotId] ?? IDLE_FORM;
+          const form = forms[slot.id] ?? IDLE_FORM;
           const actions = actionsFor(role, slot);
           return (
-            <li key={slot.slotId} className={styles.item}>
+            <li key={slot.id} className={styles.item}>
               <b>{statusText(role, slot)}</b>
               <p className={styles.muted}>{lineText(slot)}</p>
               {actions.includes("confirm") ? <Button disabled={form.busy} onClick={() => onAct(slot, "confirm")}>{t.confirm}</Button> : null}
               {actions.includes("accept") ? (
                 <Button disabled={form.busy} onClick={() => onAct(slot, "accept")}>{t.accept.replace("{time}", timeText(slot.startsAt))}</Button>
               ) : null}
-              {actions.includes("propose") && !form.open ? (
+              {actions.includes("counter") && !form.open ? (
                 <Button disabled={form.busy} onClick={() => onProposeDraft(slot, form.draft)}>{t.propose}</Button>
               ) : null}
               {form.open ? (
@@ -118,7 +118,7 @@ export default function ConsultationSlots({ documentId, role, call, onSessionEnd
   documentId: string;
   role: Role;
   /** Without a transport (TODO(ugovor)) the card says the slots are unavailable. */
-  call: SlotsCall | null;
+  call: SlotsApi | null;
   onSessionEnd?: () => void;
 }) {
   const [load, setLoad] = useState<SlotsLoad>({ kind: "loading" });
@@ -148,7 +148,7 @@ export default function ConsultationSlots({ documentId, role, call, onSessionEnd
   };
 
   const act = async (slot: ConsultationSlot, action: SlotAction, startsAt?: string) => {
-    const id = slot.slotId;
+    const id = slot.id;
     if (!call || inFlight.current.has(id)) return;
     inFlight.current.add(id);
     patch(id, { busy: true, error: null });
@@ -173,9 +173,9 @@ export default function ConsultationSlots({ documentId, role, call, onSessionEnd
   };
 
   const sendProposal = (slot: ConsultationSlot) => {
-    const iso = localToIso(forms[slot.slotId]?.draft ?? "");
-    if (iso === null) patch(slot.slotId, { error: t.needTime });
-    else void act(slot, "propose", iso);
+    const iso = localToIso(forms[slot.id]?.draft ?? "");
+    if (iso === null) patch(slot.id, { error: t.needTime });
+    else void act(slot, "counter", iso);
   };
 
   return (
@@ -185,8 +185,8 @@ export default function ConsultationSlots({ documentId, role, call, onSessionEnd
       onRequestSend={() => void sendRequest()}
       onRequestCancel={() => setRequest(IDLE_FORM)}
       onAct={(slot, action) => void act(slot, action)}
-      onProposeDraft={(slot, value) => patch(slot.slotId, { open: true, draft: value, error: null })}
+      onProposeDraft={(slot, value) => patch(slot.id, { open: true, draft: value, error: null })}
       onProposeSend={sendProposal}
-      onProposeCancel={(slot) => patch(slot.slotId, { open: false, error: null })} />
+      onProposeCancel={(slot) => patch(slot.id, { open: false, error: null })} />
   );
 }

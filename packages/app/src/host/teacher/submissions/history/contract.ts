@@ -1,11 +1,13 @@
 // The teacher's history of submissions and withdrawals, and the switch in the assignment settings
-// (WEB-1903; plan P-D3). TODO(ugovor): the routes are not in @ductura/contracts yet; the caller
-// passes the transport and createApi answers "client_rejected", so the screen says "unavailable",
-// never "no history". The switch changes only on the server's answer (B-6).
+// (WEB-1903; plan P-D3). WEB-2003: the switch uses the server's operations
+// teacher.submission-withdrawal.get and .post (contract excerpt). TODO(ugovor): the history read
+// teacher.submission-history.get is not in the excerpt yet; the caller passes the transport, so a
+// rejected call reads as "unavailable", never "no history". The switch changes only on the server's
+// answer (B-6).
 import { matchesSchema, type Schema } from "../../../../../../../src/client/schema-check";
 
 export type HistoryCall = (
-  id: "teacher.submission-history.get" | "teacher.assignment-withdrawal-setting.get" | "teacher.assignment-withdrawal-setting.post",
+  id: "teacher.submission-history.get" | "teacher.submission-withdrawal.get" | "teacher.submission-withdrawal.post",
   input: { readonly params?: Readonly<Record<string, string>>; readonly body?: unknown },
 ) => Promise<{ ok: true; status: number; body: unknown } | { ok: false; status: number; code: string }>;
 
@@ -47,7 +49,7 @@ const EVENT: Schema = closed({
   at: { type: "string", format: "date-time" },
 });
 const HISTORY: Schema = closed({ events: { type: "array", items: EVENT } });
-const SETTING: Schema = closed({ enabled: { type: "boolean" } });
+const SETTING: Schema = closed({ allowed: { type: "boolean" }, changedAt: { anyOf: [{ type: "string", format: "date-time" }, { type: "null" }] } });
 
 export async function readSubmissionHistory(call: HistoryCall, assignmentId: string): Promise<HistoryRead> {
   if (!matchesSchema(UUID, assignmentId)) return { kind: "greska", code: "not_found" };
@@ -68,10 +70,10 @@ export async function readSubmissionHistory(call: HistoryCall, assignmentId: str
 export async function readWithdrawalSetting(call: HistoryCall, assignmentId: string): Promise<SettingRead> {
   if (!matchesSchema(UUID, assignmentId)) return UNKNOWN;
   try {
-    const result = await call("teacher.assignment-withdrawal-setting.get", { params: { assignmentId } });
+    const result = await call("teacher.submission-withdrawal.get", { params: { assignmentId } });
     if (!result.ok) return result.status === 401 ? { kind: "session-expired" } : UNKNOWN;
     return result.status === 200 && matchesSchema(SETTING, result.body)
-      ? { kind: "ready", enabled: (result.body as { enabled: boolean }).enabled }
+      ? { kind: "ready", enabled: (result.body as { allowed: boolean }).allowed }
       : UNKNOWN;
   } catch {
     return UNKNOWN;
@@ -82,10 +84,10 @@ export async function readWithdrawalSetting(call: HistoryCall, assignmentId: str
 export async function saveWithdrawalSetting(call: HistoryCall, assignmentId: string, enabled: boolean): Promise<SettingOutcome> {
   if (!matchesSchema(UUID, assignmentId)) return { kind: "greska", code: "not_found" };
   try {
-    const result = await call("teacher.assignment-withdrawal-setting.post", { body: { assignmentId, enabled } });
+    const result = await call("teacher.submission-withdrawal.post", { params: { assignmentId }, body: { allowed: enabled } });
     if (result.ok) {
       if (result.status !== 200 || !matchesSchema(SETTING, result.body)) return UNKNOWN;
-      return (result.body as { enabled: boolean }).enabled === enabled ? { kind: "spremljeno", enabled } : UNKNOWN;
+      return (result.body as { allowed: boolean }).allowed === enabled ? { kind: "spremljeno", enabled } : UNKNOWN;
     }
     if (result.status === 401) return { kind: "session-expired" };
     if (result.status === 403) return { kind: "greska", code: "forbidden" };

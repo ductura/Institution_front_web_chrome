@@ -21,6 +21,7 @@ import { Button } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
 import { browserTransport, SESSION_PATH } from "@/client/api";
+import { readTeacherWorkFrame } from "@/client/teacher-work";
 import type { SessionMark } from "@/client/session-marks";
 import { sessionTagOf } from "@/components/editor/EditorPage.scope";
 import { WorkMentorSections } from "@/components/editor/mentor/milestones/WorkMentorSections";
@@ -84,11 +85,20 @@ function LiveBody({ documentId, session, frame }: {
   );
 }
 
-export default function LiveWorkView({ documentId, frame }: {
+export default function LiveWorkView({ documentId, frame: given }: {
   documentId: string;
-  /** TODO(ugovor) teacher.work.get: null until the route is in the contract. */
-  frame: LiveWorkFrameData | null;
+  /** Overrides the read of teacher.work.get (tests); otherwise the view reads the frame itself. */
+  frame?: LiveWorkFrameData | null;
 }) {
+  const [read, setRead] = useState<LiveWorkFrameData | null>(null);
+  useEffect(() => {
+    if (given !== undefined) return;
+    let live = true;
+    setRead(null);
+    void readTeacherWorkFrame(documentId).then((value) => { if (live) setRead(value); });
+    return () => { live = false; };
+  }, [documentId, given]);
+  const frame = given === undefined ? read : given;
   // undefined while the session route is read, null without a valid mark.
   const [session, setSession] = useState<SessionMark | null | undefined>(undefined);
   const [attempt, setAttempt] = useState(0);
