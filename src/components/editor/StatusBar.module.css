@@ -1,23 +1,10 @@
-/* VIZ-S3 (S: E-7): the prototype's `.ed-status`, `.ed-save`, `.ed-words` and `.ed-net`. */
+/* VIZ-E1: the prototype's `.status` (editor.css, INVENTAR-editor §1.5). The 30 px row, its ground and its top rule are Layout's `.status`; this is its content. */
 .bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 16px;
-  box-sizing: border-box;
-  min-height: 32px;
-  padding: 6px 16px;
-  border-top: 1px solid var(--rule-2);
-  background: var(--chrome);
-  color: var(--ink-2);
-  font-family: var(--ff-ui);
-  font-size: 12.5px;
+  flex: 1; min-width: 0; min-height: 30px; display: flex; align-items: center; gap: 14px;
+  font-family: var(--ff-ui); font-size: 12px; color: var(--ink-2); white-space: nowrap;
 }
 .bar [role="status"] { gap: 8px; color: var(--ink); }
-/* The length goes to the right edge; on a narrow screen it follows on its own line. */
+.bar button { color: inherit; font-size: 12px; text-decoration: underline; text-decoration-color: var(--link-rule); text-underline-offset: 3px; }
+/* The length goes to the right edge. */
 .scope { margin-left: auto; }
 .net { color: var(--ink); font-weight: 600; }
-@media (max-width: 640px) {
-  .bar { padding: 6px 12px; }
-  .scope { margin-left: 0; }
-}

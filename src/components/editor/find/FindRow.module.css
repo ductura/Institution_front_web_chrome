@@ -1,0 +1,65 @@
+/* VIZ-E1: the prototype's `.find` (editor.css; INVENTAR-editor §1.4). */
+.find {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--rule-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  font-family: var(--ff-ui);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.find::-webkit-scrollbar { display: none; }
+.in {
+  flex: none;
+  width: 170px;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  background: var(--field);
+  color: var(--ink);
+  border: 1px solid var(--field-rule);
+  border-radius: var(--radius-control);
+  font: inherit;
+}
+.in::placeholder { color: var(--field-placeholder); }
+.sel {
+  flex: none;
+  height: 32px;
+  padding: 0 8px;
+  background: var(--field);
+  color: var(--ink);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius-control);
+  font: inherit;
+}
+.btn, .case, .x {
+  flex: none;
+  height: 32px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn { height: 28px; }
+.case { height: 28px; padding: 0 8px; border-color: var(--rule-2); color: var(--ink-2); }
+.case[aria-pressed="true"] { background: var(--selected); color: var(--ink); border-color: var(--rule); }
+.x { width: 36px; padding: 0; border-color: transparent; color: var(--ink-2); font-size: 14px; }
+.btn:hover:not(:disabled), .case:hover, .x:hover { background: var(--hover); color: var(--ink); }
+.btn:disabled { opacity: .45; cursor: default; }
+.msg { flex: none; color: var(--ink-3); white-space: nowrap; }
+.grow { flex: 1; }
+.find :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (max-width: 640px) {
+  .in { width: 130px; height: 40px; }
+  .sel, .x { height: 40px; }
+  .btn { height: 34px; }
+  .case { height: 34px; }
+}

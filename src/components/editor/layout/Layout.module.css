@@ -1,6 +1,6 @@
 /* WEB-6A (E§1, INVENTAR 1.5 and 1.6): the editor's regions and their breakpoints. */
 .app { display: flex; flex-direction: column; height: 100dvh; background: var(--ground); color: var(--ink); }
-.top { flex: none; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 14px; background: var(--chrome); border-bottom: 1px solid var(--rule-2); }
+.top { position: relative; flex: none; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 14px; background: var(--chrome); border-bottom: 1px solid var(--rule-2); }
 .tools { position: relative; flex: none; display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 10px; overflow: visible; background: var(--chrome); border-bottom: 1px solid var(--rule-2); }
 .body { flex: 1; min-height: 0; display: flex; }
 .rail { flex: none; width: var(--rail-w, 288px); overflow-y: auto; padding: 14px 10px; background: var(--chrome); border-right: 1px solid var(--rule-2); }

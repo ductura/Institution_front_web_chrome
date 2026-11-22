@@ -5,7 +5,7 @@ import { useEditorState } from "@tiptap/react";
 import { Button, CommandPalette, ShortcutsDialog } from "@ductura/ui";
 
 import { useLocalEditor, useLocalSignedOut } from "../LocalDocument";
-import { FindReplaceBar } from "../find-replace/FindReplaceBar";
+import { FindRow } from "../find/FindRow";
 import { editorCommandsHr as t } from "./messages.hr";
 import { paletteActions } from "./palette";
 import { editorShortcut, shortcutGroups } from "./shortcuts";
@@ -68,7 +68,7 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
           {t.palette}
         </Button> : null}
       </div>
-      {editor && finding ? <div data-find-replace=""><FindReplaceBar editor={editor} onClose={closeFind} /></div> : null}
+      {editor && finding ? <div data-find-replace=""><FindRow editor={editor} onClose={closeFind} /></div> : null}
       <CommandPalette open={!!editor && dialog === "palette"} commands={actions} onClose={close}
         onRun={(id) => actions.find((action) => action.id === id && !action.disabled)?.run?.()} />
       <ShortcutsDialog open={!!editor && dialog === "shortcuts"} groups={shortcutGroups(snapshot?.editable ?? false)} onClose={close} />

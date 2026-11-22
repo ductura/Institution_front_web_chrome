@@ -1,15 +1,20 @@
-import { createElement } from "react";
+import { createElement, useContext } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { TopBarSlot } from "../../../../../../src/components/editor/WorkspaceTopBar.tsx";
 import { ShellView } from "./ShellView";
 
+/** What the top bar does with the shell: it draws the slot between the title and the actions. */
+const Bar = () => createElement("header", null, useContext(TopBarSlot));
+const draw = (props: { teacherHref?: string } = {}) => renderToStaticMarkup(createElement(ShellView, props, createElement(Bar)));
+
 // Server rendering runs no effects: the first draw is the default view.
-const html = renderToStaticMarkup(createElement(ShellView));
+const html = draw();
 
 describe("ShellView (first draw)", () => {
   it("shows the teacher's view as unavailable, with the reason, while it has no route", () => {
-    expect(html).toMatch(/<button[^>]*disabled[^>]*>Kako vidi nastavnik<\/button>/);
+    expect(html).toMatch(/<button[^>]*aria-label="Kako vidi nastavnik"[^>]*disabled[^>]*>|<button[^>]*disabled[^>]*aria-label="Kako vidi nastavnik"/);
     expect(html).toContain("Pogled nastavnika još nije spojen na poslužitelj ustanove.");
   });
   it("draws the outline view off, without its banner", () => {
@@ -20,7 +25,9 @@ describe("ShellView (first draw)", () => {
     expect(html.match(/>Uska</g)).toHaveLength(2);
     expect(html.match(/aria-pressed="true"[^>]*>Srednja</g)).toHaveLength(2);
   });
-  it("links to the teacher's view when it has a route", () => {
-    expect(renderToStaticMarkup(createElement(ShellView, { teacherHref: "/x" }))).toContain('href="/x"');
+  it("offers the teacher's view when it has a route", () => {
+    const live = draw({ teacherHref: "/x" });
+    expect(live).not.toContain("Pogled nastavnika još nije spojen");
+    expect(live).toMatch(/<button[^>]*aria-label="Kako vidi nastavnik"(?![^>]*disabled)[^>]*>/);
   });
 });
