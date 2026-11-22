@@ -1,0 +1,18 @@
+/* The editor side panel's .chip and .tag (prototype editor.css, VIZ-E4): pills of 12 / 11.5 px. */
+.chip {
+  border: 1px solid var(--rule-2); border-radius: 999px; padding: 2px 11px; min-height: 28px;
+  font: 400 12px / 1.5 var(--ff-ui); color: var(--ink-2); background: transparent; cursor: pointer;
+}
+.chip:hover { background: var(--hover); }
+.chip[aria-pressed="true"] { background: var(--selected); border-color: var(--rule); color: var(--ink); font-weight: 500; }
+.chip:disabled { opacity: 0.45; cursor: default; }
+.pill {
+  display: inline-block; font: 400 11.5px / 1.5 var(--ff-ui); border-radius: 999px; padding: 1px 8px;
+  background: var(--well); color: var(--ink-2); white-space: nowrap;
+}
+.pill[data-tone="warn"] { background: var(--warn-soft); color: var(--warn); }
+.pill[data-tone="err"] { background: var(--error-soft); color: var(--error); }
+.pill[data-tone="ok"] { background: var(--synced-soft); color: var(--synced); }
+.pill[data-tone="me"] { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.pill[data-tone="new"] { background: var(--accent); color: var(--accent-ink); }
+@media (max-width: 640px) { .chip { min-height: 34px; } }

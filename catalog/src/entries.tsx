@@ -1,7 +1,7 @@
 import {
-  AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, CodeField, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
+  AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, Chip, CodeField, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
   EditorOnboarding, EditorOutline, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
-  SideShell, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
+  PillTag, SideShell, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup, type ShortcutListGroup,
 } from "@ductura/ui";
 import { useRef, useState } from "react";
@@ -443,6 +443,20 @@ export const ENTRIES = {
     greška: () => <TextField label="Naslov rada" defaultValue="" error="Upišite naslov rada." />,
     puno: () => <TextField label="Naslov rada" defaultValue="Javne politike u lokalnoj zajednici" hint="Najviše 120 znakova." />,
     onemogućeno: () => <TextField label="Naslov rada" disabled defaultValue="Javne politike u lokalnoj zajednici" />,
+  },
+  Chip: {
+    prazno: () => <Chip>Na Vama 0</Chip>,
+    učitavanje: () => <Chip disabled>Učitavanje…</Chip>,
+    greška: () => <Chip pressed>Mora se popraviti 2</Chip>,
+    puno: () => <><Chip pressed>Na Vama 3</Chip> <Chip>Čeka mentora 1</Chip> <Chip>Novo 2</Chip></>,
+    onemogućeno: () => <Chip disabled>Pohvala 1</Chip>,
+  },
+  PillTag: {
+    prazno: () => <PillTag>riješeno</PillTag>,
+    učitavanje: () => <PillTag>Učitavanje…</PillTag>,
+    greška: () => <PillTag tone="err">tekst je obrisan</PillTag>,
+    puno: () => <><PillTag tone="warn">mora se popraviti</PillTag> <PillTag tone="ok">riješeno</PillTag> <PillTag tone="me">na Vama</PillTag> <PillTag tone="new">novo</PillTag></>,
+    onemogućeno: () => <PillTag>zatvoreno</PillTag>,
   },
   CodeField: {
     prazno: () => <CodeField label="Kod kolegija" placeholder="KOD-KOLEGIJA" hint="Kod Vam daje nastavnik. Razmaci, crtice i velika ili mala slova nisu bitni." action={<Button disabled>Upiši</Button>} />,
