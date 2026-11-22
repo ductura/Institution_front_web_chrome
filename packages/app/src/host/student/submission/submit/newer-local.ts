@@ -21,7 +21,7 @@ export type NewerLocalDeps<T> = {
   /** Sends the newest version and resolves with the revision the server confirmed for it; null when it did not arrive. */
   readonly sendLatest: (confirmed: Confirmed) => Promise<Confirmed | null>;
   /** The submission of exactly this confirmed revision. */
-  readonly submit: (target: Confirmed) => Promise<T>;
+  readonly submitRevision: (target: Confirmed) => Promise<T>;
 };
 
 export type NewerLocalOutcome<T> =
@@ -46,16 +46,16 @@ async function newerOf(hasNewer: (documentId: string) => Promise<boolean>, docum
  */
 export async function submitConfirmed<T>(confirmed: Confirmed, deps: NewerLocalDeps<T>): Promise<NewerLocalOutcome<T>> {
   if (!(await newerOf(deps.hasNewer, confirmed.documentId))) {
-    return { kind: "submitted", target: confirmed, answer: await deps.submit(confirmed) };
+    return { kind: "submitted", target: confirmed, answer: await deps.submitRevision(confirmed) };
   }
   // The warning stays until the student chooses something that can be submitted, or goes back.
   for (let notSent = false; ; notSent = true) {
     const choice = await deps.ask(confirmed, notSent);
     if (choice === null) return { kind: "cancelled" };
-    if (choice === "confirmed") return { kind: "submitted", target: confirmed, answer: await deps.submit(confirmed) };
+    if (choice === "confirmed") return { kind: "submitted", target: confirmed, answer: await deps.submitRevision(confirmed) };
     const latest = await deps.sendLatest(confirmed).catch(() => null);
     if (latest !== null && latest.documentId === confirmed.documentId && Number.isInteger(latest.revision) && latest.revision >= confirmed.revision) {
-      return { kind: "submitted", target: latest, answer: await deps.submit(latest) };
+      return { kind: "submitted", target: latest, answer: await deps.submitRevision(latest) };
     }
   }
 }

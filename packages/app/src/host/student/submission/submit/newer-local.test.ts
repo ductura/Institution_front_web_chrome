@@ -14,7 +14,7 @@ function deps(over: Partial<NewerLocalDeps<string>> & { answers?: (NewerChoice |
     hasNewer: vi.fn(over.hasNewer ?? (async () => true)),
     ask: vi.fn(over.ask ?? (async () => answers.shift() ?? null)),
     sendLatest: vi.fn(over.sendLatest ?? (async () => V8)),
-    submit: vi.fn(over.submit ?? (async (target: Confirmed) => `predano V${target.revision}`)),
+    submitRevision: vi.fn(over.submitRevision ?? (async (target: Confirmed) => `predano V${target.revision}`)),
   };
 }
 
@@ -24,8 +24,8 @@ describe("submitConfirmed (INT-16)", () => {
     const result = await submitConfirmed(V7, d);
     expect(d.ask).not.toHaveBeenCalled();
     expect(d.sendLatest).not.toHaveBeenCalled();
-    expect(d.submit).toHaveBeenCalledTimes(1);
-    expect(d.submit).toHaveBeenCalledWith(V7);
+    expect(d.submitRevision).toHaveBeenCalledTimes(1);
+    expect(d.submitRevision).toHaveBeenCalledWith(V7);
     expect(result).toEqual({ kind: "submitted", target: V7, answer: "predano V7" });
   });
 
@@ -33,7 +33,7 @@ describe("submitConfirmed (INT-16)", () => {
     const d = deps({ hasNewer: async () => { throw new Error("blocked"); } });
     await submitConfirmed(V7, d);
     expect(d.ask).not.toHaveBeenCalled();
-    expect(d.submit).toHaveBeenCalledWith(V7);
+    expect(d.submitRevision).toHaveBeenCalledWith(V7);
   });
 
   it("'Pošalji najprije zadnju verziju pa predaj' sends first and submits the revision the server confirmed for it", async () => {
@@ -41,9 +41,9 @@ describe("submitConfirmed (INT-16)", () => {
     const result = await submitConfirmed(V7, d);
     expect(d.ask).toHaveBeenCalledWith(V7, false);
     expect(d.sendLatest).toHaveBeenCalledWith(V7);
-    expect(d.sendLatest.mock.invocationCallOrder[0]).toBeLessThan(d.submit.mock.invocationCallOrder[0] ?? 0);
-    expect(d.submit).toHaveBeenCalledTimes(1);
-    expect(d.submit).toHaveBeenCalledWith(V8);
+    expect(d.sendLatest.mock.invocationCallOrder[0]).toBeLessThan(d.submitRevision.mock.invocationCallOrder[0] ?? 0);
+    expect(d.submitRevision).toHaveBeenCalledTimes(1);
+    expect(d.submitRevision).toHaveBeenCalledWith(V8);
     expect(result).toEqual({ kind: "submitted", target: V8, answer: "predano V8" });
   });
 
@@ -51,8 +51,8 @@ describe("submitConfirmed (INT-16)", () => {
     const d = deps({ answers: ["confirmed"] });
     const result = await submitConfirmed(V7, d);
     expect(d.sendLatest).not.toHaveBeenCalled();
-    expect(d.submit).toHaveBeenCalledTimes(1);
-    expect(d.submit).toHaveBeenCalledWith(V7);
+    expect(d.submitRevision).toHaveBeenCalledTimes(1);
+    expect(d.submitRevision).toHaveBeenCalledWith(V7);
     expect(result).toEqual({ kind: "submitted", target: V7, answer: "predano V7" });
   });
 
@@ -60,29 +60,29 @@ describe("submitConfirmed (INT-16)", () => {
     const d = deps({ answers: ["latest", null], sendLatest: async () => null });
     const result = await submitConfirmed(V7, d);
     expect(d.ask).toHaveBeenNthCalledWith(2, V7, true);
-    expect(d.submit).not.toHaveBeenCalled();
+    expect(d.submitRevision).not.toHaveBeenCalled();
     expect(result).toEqual({ kind: "cancelled" });
   });
 
   it("after a failed send the confirmed revision can still be chosen", async () => {
     const d = deps({ answers: ["latest", "confirmed"], sendLatest: async () => { throw new Error("offline"); } });
     await submitConfirmed(V7, d);
-    expect(d.submit).toHaveBeenCalledTimes(1);
-    expect(d.submit).toHaveBeenCalledWith(V7);
+    expect(d.submitRevision).toHaveBeenCalledTimes(1);
+    expect(d.submitRevision).toHaveBeenCalledWith(V7);
   });
 
   it("never submits a revision of another document or an older one", async () => {
     for (const wrong of [{ documentId: "doc-other", revision: 9 }, { documentId: V7.documentId, revision: 6 }]) {
       const d = deps({ answers: ["latest", null], sendLatest: async () => wrong });
       await submitConfirmed(V7, d);
-      expect(d.submit).not.toHaveBeenCalled();
+      expect(d.submitRevision).not.toHaveBeenCalled();
     }
   });
 
   it("going back from the warning submits nothing", async () => {
     const d = deps({ answers: [null] });
     expect(await submitConfirmed(V7, d)).toEqual({ kind: "cancelled" });
-    expect(d.submit).not.toHaveBeenCalled();
+    expect(d.submitRevision).not.toHaveBeenCalled();
   });
 });
 

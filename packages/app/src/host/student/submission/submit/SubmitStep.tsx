@@ -131,7 +131,7 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
         requestAnimationFrame(() => latestButton.current?.focus());
       }),
       sendLatest: (confirmed) => { setSendingLatest(true); return sendLatestFromDevice(assignmentId, confirmed); },
-      submit: (target) => { setSending(true); return send({ assignmentId, documentId: target.documentId, revision: target.revision }); },
+      submitRevision: (target) => { setSending(true); return send({ assignmentId, documentId: target.documentId, revision: target.revision }); },
     });
     choose.current = null;
     if (result.kind === "cancelled") {
