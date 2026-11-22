@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { createTextAnchor } from '../../packages/editor-core/src/document/collaboration/anchor';
 import { isNodeId } from '../../packages/editor-core/src/document/document/schema';
+import { teacherCommentsMessages as commentText } from '../../packages/app/src/host/teacher/comments/messages.hr';
 import { fastPathHostText } from '../../packages/app/src/host/teacher/n05/messages.hr';
 import { messagesHr as t } from '../../src/lib/i18n/messages.hr';
 import { app, webOrigin } from './stog';
@@ -15,6 +16,15 @@ const title = 'Seminarski rad: kućno kompostiranje';
 const course = 'Izmišljeni seminar iz ekologije grada';
 const otherCourse = 'Izmišljeni seminar o gradskim krovovima';
 const studentName = /Lucija Đaković/;
+/** How the thread should name the revision it belongs to (INT-15); no screen shows it yet. */
+const revisionV1 = 'uz verziju V1';
+
+/** Set by INT-04 once the teacher's comment from the form is on screen; INT-15 reopens it. */
+let commentedInUi: { workPath: string; comment: string } | null = null;
+
+function commentsPanel(page: Page) {
+  return page.getByRole('region', { name: commentText.title, exact: true });
+}
 
 async function signInTeacher(page: Page, courseTeacher: boolean) {
   await signInThroughPreloader(page, courseTeacher ? 'demo-teacher' : async (oidc) => {
@@ -117,6 +127,42 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       ]));
     });
 
+    await test.step('Kroz obrazac na prikazu rada komentiraj predanu V1 i vidi komentar u niti', async () => {
+      const uiComment = `Navedite izvor za udio lišća u kompostu (${randomUUID()}).`;
+      const paragraph = teacherPage.getByRole('document', { name: t.liveView.documentLabel })
+        .locator(`p[data-node-id="${nodeId}"]`);
+      // The panel opens the form for the passage marked in the text (mouseup on the document).
+      await paragraph.evaluate((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const selection = window.getSelection();
+        if (!selection) throw new Error('Preglednik nema odabira teksta.');
+        selection.removeAllRanges();
+        selection.addRange(range);
+        element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      });
+      const panel = commentsPanel(teacherPage);
+      const form = panel.getByRole('form', { name: commentText.newTitle, exact: true });
+      await expect(form).toBeVisible();
+      await expect(form).toContainText(quote.trim().slice(0, 30));
+      const [created] = await Promise.all([
+        teacherPage.waitForResponse((response) => response.url() === `${webOrigin}/api/v1/comments/create`
+          && response.request().method() === 'POST'),
+        (async () => {
+          await form.getByRole('textbox', { name: commentText.newLabel, exact: true }).fill(uiComment);
+          await form.getByRole('button', { name: commentText.newSubmit, exact: true }).click();
+        })(),
+      ]);
+      expect(created.status()).toBe(200);
+      expect(created.request().postDataJSON()).toMatchObject({ documentId, body: uiComment, anchor: { nodeId } });
+      await expect(panel.getByRole('status').filter({ hasText: commentText.added })).toBeVisible();
+      const thread = panel.getByRole('article').filter({ hasText: uiComment });
+      await expect(thread).toHaveCount(1);
+      await expect(thread.getByText(uiComment, { exact: true })).toBeVisible();
+      await expect(thread.getByText(new RegExp(`^${commentText.own} · `))).toBeVisible();
+      commentedInUi = { workPath, comment: uiComment };
+    });
+
     await test.step('Drugi nastavnik iz iste ustanove ne vidi predaju ni kroz popis ni izravnim otvaranjem', async () => {
       const otherPage = await other.newPage();
       await signInTeacher(otherPage, false);
@@ -147,4 +193,26 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
   } finally {
     await Promise.all([teacher.close(), other.close()]);
   }
+});
+
+test('INT-15: komentar nastavnika iz obrasca prikazan je uz reviziju V1', async ({ page }) => {
+  const opened = await test.step('Ponovno otvori rad i nađi komentar iz INT-04', async () => {
+    const earlier = commentedInUi;
+    if (earlier === null) throw new Error('Prvo mora proći korak obrasca u INT-04 u istom pokretanju.');
+    const { workPath, comment } = earlier;
+    await signInTeacher(page, true);
+    await page.goto(workPath);
+    await expect(page).toHaveURL(workPath);
+    const thread = commentsPanel(page).getByRole('article').filter({ hasText: comment });
+    await expect(thread.getByText(comment, { exact: true })).toBeVisible();
+    return thread;
+  });
+
+  await test.step('Nit komentara navodi reviziju V1', async () => {
+    // Expected failure from here on only: collaboration.comments.post (create and list) carries no
+    // revision, so neither the server nor the panel can tie the comment to V1. The steps above must
+    // still pass. Remove this line once the contract and the panel name the revision.
+    test.fail(true, 'PITANJE INT-15: collaboration.comments.post ne nosi reviziju komentara (create ni list).');
+    await expect(opened.getByText(revisionV1, { exact: false })).toBeVisible({ timeout: 5_000 });
+  });
 });
