@@ -12,6 +12,8 @@ import type { SessionRole } from "../../../src/client/api.ts";
 import type { Base } from "./bases";
 import { studentDataExportMessages } from "./host/institution/student-data-export/messages.hr";
 import { studentDataDownloadMessages } from "./host/public/student-data-download/messages.hr";
+import { publicVerificationHr } from "../../../src/components/public-verification/messages.hr.ts";
+import { VERIFY_PATH } from "./host/public/verify/model";
 import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
@@ -120,6 +122,8 @@ export const PAGES: readonly Page[] = [
   { path: "/pristupacnost", label: t.shell.accessibilityStatement, kind: "pending", roles: [], public: true },
   // WEB-1302: the student's one-time download; public, the token in the link is the only key.
   { path: "/izvoz-podataka/[token]", label: studentDataDownloadMessages.labels.title, kind: "pending", roles: [], public: true },
+  // WEB-2111 (R-41, V-5, C-6): the check of a receipt; public, anyone holding the receipt checks it.
+  { path: VERIFY_PATH, label: publicVerificationHr.title, kind: "pending", roles: [], public: true },
 ];
 
 /** The public page of a route, or null when the route needs the session. */

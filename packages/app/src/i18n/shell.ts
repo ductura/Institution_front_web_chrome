@@ -38,6 +38,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/pristupacnost": (c) => c.t.shell.accessibilityStatement,
   "/ustanova/izvoz-podataka": (c) => c.app.pages.studentDataExport,
   "/izvoz-podataka/[token]": (c) => c.app.pages.studentDataDownload,
+  "/provjera": (c) => c.app.pages.receiptCheck,
 };
 
 /**
