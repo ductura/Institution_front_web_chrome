@@ -5,9 +5,9 @@
  * confirmed slot.
  *
  * Server operations (generated contract extract):
- *   work.consultation-slots.get  (GET)
- *   work.consultation-slots.post  (POST)
- *   work.consultation-slots.patch  (PATCH)
+ *   work.consultation-slots.get   GET   .../works/{documentId}/consultation-slots
+ *   work.consultation-slots.post  POST  .../consultation-slots {startsAt}
+ *   work.consultation-slots.patch PATCH .../consultation-slots/{slotId} {action, startsAt?}
  *
  * A write counts as done only when the answer names the same slot and carries
  * the state the action leads to (B-6): anything else is "nepoznato" and the
@@ -48,9 +48,9 @@ export const validStartsAt = (value: string): boolean =>
   matchesSchema({ type: "string", format: "date-time" }, value) && !Number.isNaN(Date.parse(value));
 
 /** GET. At most one answer per slot id; anything else is unknown, never a short list. Never throws. */
-export async function readConsultationSlots(call: SlotsApi, documentId: string): Promise<SlotsRead> {
+export async function readConsultationSlots(client: SlotsApi, documentId: string): Promise<SlotsRead> {
   try {
-    const result = await call("work.consultation-slots.get", { params: { documentId }, query: undefined, body: undefined });
+    const result = await client("work.consultation-slots.get", { params: { documentId }, query: undefined, body: undefined });
     if (!result.ok) {
       if (result.status === 401) return { kind: "session-expired" };
       return result.status === 404 ? { kind: "greska", code: "not_found" } : UNKNOWN;
@@ -71,10 +71,10 @@ function failure(result: { ok: false; status: number; code: string }): SlotWrite
 }
 
 /** POST: the student asks for a slot. Saved only from a `requested` slot with the time asked. */
-export async function requestConsultationSlot(call: SlotsApi, documentId: string, startsAt: string): Promise<SlotWrite> {
+export async function requestConsultationSlot(client: SlotsApi, documentId: string, startsAt: string): Promise<SlotWrite> {
   if (!validStartsAt(startsAt)) return { kind: "greska", code: "invalid" };
   try {
-    const result = await call("work.consultation-slots.post", { params: { documentId }, query: undefined, body: { startsAt } });
+    const result = await client("work.consultation-slots.post", { params: { documentId }, query: undefined, body: { startsAt } });
     if (!result.ok) return failure(result);
     const slot = result.body;
     return slot.state === "requested" && Date.parse(slot.startsAt) === Date.parse(startsAt) ? { kind: "saved", slot } : UNKNOWN;
@@ -85,14 +85,14 @@ export async function requestConsultationSlot(call: SlotsApi, documentId: string
 
 /** PATCH. Only `counter` carries a time; the others are sent without a body time. Never throws. */
 export async function updateConsultationSlot(
-  call: SlotsApi, documentId: string, slotId: string, action: SlotAction, startsAt?: string,
+  client: SlotsApi, documentId: string, slotId: string, action: SlotAction, startsAt?: string,
 ): Promise<SlotWrite> {
   const sendable = matchesSchema(UUID, slotId)
     && (action === "counter" ? startsAt !== undefined && validStartsAt(startsAt) : startsAt === undefined);
   if (!sendable) return { kind: "greska", code: "invalid" };
   const body = action === "counter" ? { action, startsAt: startsAt as string } : { action };
   try {
-    const result = await call("work.consultation-slots.patch", { params: { documentId, slotId }, query: undefined, body });
+    const result = await client("work.consultation-slots.patch", { params: { documentId, slotId }, query: undefined, body });
     if (!result.ok) return failure(result);
     const slot = result.body;
     if (slot.id !== slotId || slot.state !== RESULT[action]) return UNKNOWN;
