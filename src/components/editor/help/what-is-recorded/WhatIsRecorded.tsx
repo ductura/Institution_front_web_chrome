@@ -2,9 +2,9 @@
 
 import { useMemo } from "react";
 
-import { createFakeRhythmPort } from "@/client/input-rhythm-fake";
-import type { RhythmPort } from "@/client/input-rhythm";
-import { RhythmSetting } from "../../rhythm";
+import { createFakeRhythmPort } from "../../../../client/input-rhythm-fake";
+import type { RhythmPort } from "../../../../client/input-rhythm";
+import { RhythmSetting } from "../../rhythm/RhythmSetting";
 import { whatIsRecordedHr as t } from "../../../../lib/i18n/messages.hr";
 import styles from "./WhatIsRecorded.module.css";
 
