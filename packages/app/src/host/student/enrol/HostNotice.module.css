@@ -1,0 +1,50 @@
+/* E-6: the three columns of the prototype (.up-cols) and the faculty rule (details). */
+.cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 28px;
+}
+
+.cols > section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cols h2 {
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.faculty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.faculty summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.faculty h3 {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* E-6 on the prototype's `.main.narrow` and `.up-hero` (VIZ-S2). */
+.narrow { max-width: 640px; margin-inline: auto; }
+.hero { display: grid; gap: 6px; text-align: center; }
+.hero h1 { margin: 0; font-size: 40px; font-weight: 400; }
+.hero h1 em { font-style: italic; color: var(--accent); }
+.eyebrow { margin: 0; color: var(--ink-3); font-size: var(--fs-sm); }
+.lead { display: grid; gap: 6px; }
+.lead h2 { margin: 0; font-size: 22px; }
+@media (max-width: 640px) { .hero h1 { font-size: 30px; } }

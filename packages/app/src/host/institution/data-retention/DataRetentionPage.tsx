@@ -1,26 +1,32 @@
 "use client";
 
-import { LegalHolds, PanelTabs, RetentionClasses, formatDateTime, type LegalHoldsState, type RetentionClassesState } from "@ductura/ui";
+import { LegalHolds, PanelTabs, RetentionClasses, formatDateTime, type LegalHoldSubjectType, type LegalHoldsState, type RetentionClassesState } from "@ductura/ui";
 import { useCallback, useEffect, useState } from "react";
 
 import { fetchLegalHolds, placeLegalHold, releaseLegalHold, type FailedKind, type LegalHoldActionOutcome } from "@/client/legal-holds";
-import { fetchRetention } from "@/client/retention";
+import { fetchRetention, type RetentionClassRow } from "@/client/retention";
 
 import { useHost } from "../../context";
 import { retentionMessages as t } from "./messages.hr";
 
 /** The catalogue text for an answer: the page never shows a raw server code. */
-const say = (kind: FailedKind | "invalid" | "stale"): string =>
-  ({ signedOut: t.errors.unauthorized, denied: t.errors.forbidden, unavailable: t.errors.unavailable, invalid: t.errors.invalid, stale: t.errors.stale })[kind];
+const say = (kind: FailedKind | "invalid" | "stale" | "missingSubject"): string =>
+  ({
+    signedOut: t.errors.unauthorized, denied: t.errors.forbidden, unavailable: t.errors.unavailable,
+    invalid: t.errors.invalid, stale: t.errors.stale, missingSubject: t.errors.missingSubject,
+  })[kind];
 
 const classLabels = t.classes;
 const holdLabels = t.holds;
+
+/** A class as the table shows it: named from the catalogue by its key, never by the server's message key. */
+const shown = (c: RetentionClassRow) => ({ classId: c.key, name: t.classNames[c.key], retentionDays: c.retentionDays, mode: c.mode });
 
 function useClasses() {
   const [state, setState] = useState<RetentionClassesState>({ kind: "loading" });
   const load = useCallback(() => {
     setState({ kind: "loading" });
-    void fetchRetention().then((out) => setState(out.kind === "ok" ? { kind: "ready", classes: out.classes } : { kind: "error", message: say(out.kind) }));
+    void fetchRetention().then((out) => setState(out.kind === "ok" ? { kind: "ready", classes: out.classes.map(shown) } : { kind: "error", message: say(out.kind) }));
   }, []);
   useEffect(load, [load]);
   return [state, load] as const;
@@ -35,7 +41,15 @@ function useHolds() {
   const read = useCallback(async () => {
     const out = await fetchLegalHolds();
     setState(out.kind === "ok"
-      ? { kind: "ready", holds: out.holds.map((h) => ({ ...h, placedAt: formatDateTime(h.placedAt, "hr") })) }
+      ? {
+          kind: "ready",
+          // The read names neither the placer nor whether the hold is the reader's own (LOK-SRV-2):
+          // the row shows only the time, and a refused release of an own hold answers 403.
+          holds: out.holds.map((h) => ({
+            id: h.id, subject: `${holdLabels.subjectTypes[h.subjectType]}: ${h.subjectId}`,
+            caseReference: h.caseReference, placedAt: formatDateTime(h.placedAt, "hr"), own: false,
+          })),
+        }
       : { kind: "error", message: say(out.kind) });
   }, []);
   const load = useCallback(() => {
@@ -44,21 +58,21 @@ function useHolds() {
   }, [read]);
   useEffect(load, [load]);
 
-  const act = async (call: () => Promise<LegalHoldActionOutcome>, done: string) => {
+  const act = async (call: () => Promise<LegalHoldActionOutcome>, done: string, denied: string = t.errors.forbidden) => {
     setBusy(true);
     setActionError(undefined);
     setNote("");
     const out = await call();
     if (out.kind === "ok") setNote(done);
-    else setActionError(say(out.kind));
+    else setActionError(out.kind === "denied" ? denied : say(out.kind));
     // A stale answer means the list is out of date; an ok answer changed it. Read it again either way.
     if (out.kind === "ok" || out.kind === "stale") await read();
     setBusy(false);
   };
   return {
     state, busy, actionError, note, load,
-    place: (input: { subject: string; caseReference: string }) => void act(() => placeLegalHold(input), holdLabels.placed),
-    release: (id: string, reason: string) => void act(() => releaseLegalHold(id, reason), holdLabels.released),
+    place: (input: { subjectType: LegalHoldSubjectType; subjectId: string; caseReference: string }) => void act(() => placeLegalHold(input), holdLabels.placed),
+    release: (id: string, reason: string) => void act(() => releaseLegalHold(id, reason), holdLabels.released, t.errors.releaseForbidden),
   };
 }
 

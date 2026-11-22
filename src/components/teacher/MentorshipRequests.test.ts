@@ -1,5 +1,5 @@
-// WEB-32 (N-16, B-6): the card of mentorship requests over invented requests
-// only, until contract 3.2.0 (TODO(ugovor)); no real call.
+// WEB-32 (N-16, B-6), LOK-WEB-5: the card of mentorship requests over invented
+// requests in the server's shape; no real call.
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -16,7 +16,7 @@ const t = messagesHr.mentorshipRequests;
 const text = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 const request = (n: number, studentName: string | null): MentorshipRequest => ({
   requestId: `2d8b3e4a-6c7f-4a01-9c3d-4e5f6a7b8c${String(n).padStart(2, "0")}`,
-  studentName, title: `Izmišljeni naslov ${n}`, workType: "bachelor_thesis", requestedAt: "2026-11-10T08:00:00Z",
+  studentName, workType: "bachelor_thesis", requestedAt: "2026-11-10T08:00:00Z",
 });
 const HERE = "/nastavnik/mentorstva";
 
@@ -31,7 +31,7 @@ describe("decisionNote (B-6)", () => {
   });
 
   it("keeps the request on an unknown outcome or an error, and never says it was decided", () => {
-    for (const outcome of [{ kind: "nepoznato" }, { kind: "greska", code: "not_found" }, { kind: "greska", code: "invalid" }] as const) {
+    for (const outcome of [{ kind: "nepoznato" }, { kind: "greska", code: "invalid" }] as const) {
       const note = decisionNote(outcome, "approve");
       expect(note?.drop).toBe(false);
       expect(note?.tone).toBe("alert");
@@ -70,28 +70,28 @@ const ONE = request(1, "Iva Izmišljena");
 
 describe("submitDecision over a synthetic transport (B-6)", () => {
   it("\"Odbij\" → \"Odbij zahtjev\" sends the trimmed reason, then drops the request and reads the page again", async () => {
-    const { call, calls } = transport({ ok: true, status: 200, body: { requestId: ONE.requestId, decision: "decline" } });
+    const { call, calls } = transport({ ok: true, status: 200, body: { decision: "decline" } });
     const { seen, deps: d } = deps(call);
-    expect(await submitDecision(d, ONE, "decline", "  Tema je izvan mog područja.  ")).toEqual({ tone: "status", text: t.declined, drop: true });
+    expect(await submitDecision(d, ONE, "decline", "  Tema je izvan mog područja.  ")).toEqual({ tone: "status", text: t.declinedWithReason, drop: true });
     expect(calls).toEqual([["teacher.mentorship-request-decision.post",
-      { body: { requestId: ONE.requestId, decision: "decline", reason: "Tema je izvan mog područja." } }]]);
+      { params: undefined, query: undefined, body: { requestId: ONE.requestId, decision: "decline", reason: "Tema je izvan mog područja." } }]]);
     expect(seen).toEqual({ refresh: 1, signIn: 0 });
   });
 
   it("a blank reason is not sent, and approve never sends one", async () => {
-    const declined = transport({ ok: true, status: 200, body: { requestId: ONE.requestId, decision: "decline" } });
+    const declined = transport({ ok: true, status: 200, body: { decision: "decline" } });
     await submitDecision(deps(declined.call).deps, ONE, "decline", "   ");
-    expect(declined.calls[0]?.[1]).toEqual({ body: { requestId: ONE.requestId, decision: "decline" } });
-    const approved = transport({ ok: true, status: 200, body: { requestId: ONE.requestId, decision: "approve" } });
+    expect(declined.calls[0]?.[1]).toEqual({ params: undefined, query: undefined, body: { requestId: ONE.requestId, decision: "decline" } });
+    const approved = transport({ ok: true, status: 200, body: { decision: "approve", mentorshipId: ONE.requestId } });
     const { seen, deps: d } = deps(approved.call);
     expect(await submitDecision(d, ONE, "approve", "ostatak iz polja")).toEqual({ tone: "status", text: t.approved, drop: true });
-    expect(approved.calls[0]?.[1]).toEqual({ body: { requestId: ONE.requestId, decision: "approve" } });
+    expect(approved.calls[0]?.[1]).toEqual({ params: undefined, query: undefined, body: { requestId: ONE.requestId, decision: "approve" } });
     expect(seen.refresh).toBe(1);
   });
 
   it.each([
     ["503", { ok: false, status: 503, code: "unavailable" } as const],
-    ["an answer for another decision", { ok: true, status: 200, body: { requestId: ONE.requestId, decision: "approve" } } as const],
+    ["an answer for another decision", { ok: true, status: 200, body: { decision: "approve", mentorshipId: ONE.requestId } } as const],
     ["a broken connection", new TypeError("Failed to fetch")],
   ])("%s keeps the request, says nothing of success and reads nothing again", async (_name, answer) => {
     const { call } = transport(answer);
@@ -120,17 +120,24 @@ describe("submitDecision over a synthetic transport (B-6)", () => {
 });
 
 describe("MentorshipRequests", () => {
-  it("draws each request with its student, title, type and both decisions", () => {
+  it("draws each request with its student, type and both decisions; no title (the server sends none)", () => {
     const html = renderToStaticMarkup(h(MentorshipRequestsView, {
       read: { kind: "ready", requests: [request(1, "Iva Izmišljena"), request(2, null)] }, here: HERE, call: null,
     }));
     const shown = text(html);
     expect(shown).toContain(t.title);
-    expect(shown).toContain("Iva Izmišljena Izmišljeni naslov 1 Završni rad · Zahtjev poslan");
-    expect(shown).toContain(`${t.unnamed} Izmišljeni naslov 2`);
+    expect(shown).toContain("Iva Izmišljena Završni rad · Zahtjev poslan");
+    expect(shown).toContain(`${t.unnamed} Završni rad · Zahtjev poslan`);
     expect(html).toContain(`aria-label="${t.approve}: Iva Izmišljena"`);
     expect(html).toContain(`aria-label="${t.decline}: ${t.unnamed}"`);
     expect(shown).not.toContain(t.approved);
+  });
+
+  it("tells the student sees the reason only when one was typed (N-16)", () => {
+    const ok = { kind: "odluceno", requestId: "x", decision: "decline" } as const;
+    expect(decisionNote(ok, "decline", true)?.text).toBe("Zahtjev je odbijen. Student vidi odgovor i razlog.");
+    expect(decisionNote(ok, "decline", false)?.text).toBe("Zahtjev je odbijen. Student vidi odgovor.");
+    expect(t.empty).toBe("Nema zahtjeva na čekanju.");
   });
 
   it("says when there is no request", () => {

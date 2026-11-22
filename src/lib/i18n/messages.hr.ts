@@ -749,7 +749,7 @@ export const hr = {
     open: "Otvori rad",
     // The state as text only, never a colour (D-128).
     state: {
-      not_started: "Student još nije započeo rad.",
+      not_started: "Rad nije započet.",
       in_progress: "U pisanju",
       submitted: "Predano",
     },
@@ -757,25 +757,25 @@ export const hr = {
   // WEB-32 (N-16): the card of mentorship requests; a note only after the server's answer (B-6).
   mentorshipRequests: {
     title: "Zahtjevi za mentorstvo",
-    empty: "Nema novih zahtjeva za mentorstvo.",
+    empty: "Nema zahtjeva na čekanju.",
     unavailable: "Zahtjevi za mentorstvo trenutačno nisu dostupni. Pokušajte ponovno.",
     retry: "Pokušaj ponovno",
     unnamed: "Ime nije dostupno",
-    sentOn: "Zahtjev poslan {date}",
+    sentOn: "Zahtjev poslan {date}.",
     approve: "Odobri",
     approving: "Odobrava se…",
     decline: "Odbij",
     dialogTitle: "Odbiti zahtjev za mentorstvo?",
-    dialogLead: "Zahtjev studenta {name} nestat će s popisa.",
-    reason: "Razlog (neobvezno)",
-    reasonHint: "Najviše {max} znakova. Razlog se ne prikazuje studentu.",
+    dialogLead: "{name}",
+    reason: "Razlog odbijanja (neobavezno)",
+    reasonHint: "Razlog nije obavezan. Preporučujemo da ga upišete zbog studenta. Student će vidjeti razlog.",
     cancel: "Odustani",
     confirmDecline: "Odbij zahtjev",
     declining: "Odbija se…",
-    approved: "Zahtjev je odobren. Rad je u popisu radova uz mentora.",
-    declined: "Zahtjev je odbijen.",
+    approved: "Zahtjev je odobren; mentorstvo je nastalo.",
+    declined: "Zahtjev je odbijen. Student vidi odgovor.",
+    declinedWithReason: "Zahtjev je odbijen. Student vidi odgovor i razlog.",
     alreadyDecided: "O ovom je zahtjevu već odlučeno ili ga je student povukao.",
-    notFound: "Zahtjev više nije dostupan.",
     invalid: "Razlog nije valjan. Skratite ga i pokušajte ponovno.",
     unknown: "Nije poznato je li odluka zabilježena. Osvježite stranicu prije novog pokušaja.",
   },
@@ -2531,4 +2531,11 @@ export const whatIsRecordedHr = {
   not: { heading: "Što ne bilježi", text: "Koje tipke pritišćeš, koliko brzo tipkaš kao broj, ništa izvan Ducture." },
   who: { heading: "Tko vidi", text: "Ti i tvoj nastavnik ili mentor, isto i u isto vrijeme." },
   note: "Ništa od ovoga nije ocjena ni tvrdnja o autorstvu.",
+} as const;
+
+/** WEB-0910: the rhythm setting beside the dialog "Što Ductura bilježi dok pišeš". */
+export const inputRhythmHr = {
+  toggle: "Bilježi ritam tipkanja",
+  teacherOnly: "Ritam unosa može isključiti samo nastavnik.",
+  unknown: "Postavka ritma trenutačno nije dostupna.",
 } as const;

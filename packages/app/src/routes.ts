@@ -4,6 +4,8 @@
 import { HOW_IT_WORKS_HREF, homeHref, navFor, type ShellRole } from "../../../src/components/index.ts";
 import { messagesHr as t } from "../../../locales/hr.ts";
 import { consultationMessages } from "../../../src/components/teacher/consultation-records/messages.hr.ts";
+import { n11Messages } from "./host/teacher/n11/messages.hr.ts";
+import { n10Messages } from "./host/teacher/n10/messages.hr.ts";
 import { messagesHr as workText } from "../../../src/lib/i18n/messages.hr.ts";
 
 import type { SessionRole } from "../../../src/client/api.ts";
@@ -11,6 +13,10 @@ import type { SessionRole } from "../../../src/client/api.ts";
 import type { Base } from "./bases";
 import { studentDataExportMessages } from "./host/institution/student-data-export/messages.hr";
 import { studentDataDownloadMessages } from "./host/public/student-data-download/messages.hr";
+import { publicVerificationHr } from "../../../src/components/public-verification/messages.hr.ts";
+import { VERIFY_PATH } from "./host/public/verify/model";
+import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
+import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { hostText } from "./text";
 
@@ -89,15 +95,21 @@ export const PAGES: readonly Page[] = [
   { path: "/rad/[assignmentId]/dnevnik-pristupa", label: t.accessLog.context, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/reprodukcija", label: t.replay.titleStudent, kind: "pending", roles: ["student"] },
   { path: "/nastavnik/kolegiji", label: t.teacherCourses.title, kind: "teacherCourses", roles: ["teacher"], current: "/nastavnik" },
+  // WEB-2143: N-04 "Popis studenata", reached from the course card (N-01).
+  { path: "/nastavnik/kolegiji/[courseId]/studenti", label: courseStudentsMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/rad/[id]", label: t.liveView.context, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/reprodukcija", label: t.replay.titleTeacher, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/predaja", label: workText.receipt.title, kind: "pending", roles: ["teacher"] },
+  { path: "/nastavnik/rad/[id]/usporedba", label: n11Messages.title, kind: "pending", roles: ["teacher"] },
+  { path: "/nastavnik/rad/[id]/sazetak", label: n10Messages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/konzultacije", label: consultationMessages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/zadatak/novi", label: t.teacher.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/zadatak/[assignmentId]/uredi", label: t.teacher.newVersion.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/zadatak/[assignmentId]/rad/[documentId]/jezik", label: t.teacher.workLanguageException.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // HOST-T3: N-13 "Produljenje roka" (WEB-1113), reached from the overview page (N-17).
   { path: "/nastavnik/zadatak/[assignmentId]/produljenje", label: hostText.deadlineExtensions, kind: "pending", roles: ["teacher"], current: "/nastavnik/zbirni" },
+  // WEB-2163: N-18 "Izvoz za Merlin", reached from the course card (N-01).
+  { path: "/nastavnik/zadatak/[assignmentId]/merlin", label: merlinMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
   // WEB-1804 (M11.5): interface language, name and notifications, for everyone signed in.
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },
@@ -112,6 +124,8 @@ export const PAGES: readonly Page[] = [
   { path: "/pristupacnost", label: t.shell.accessibilityStatement, kind: "pending", roles: [], public: true },
   // WEB-1302: the student's one-time download; public, the token in the link is the only key.
   { path: "/izvoz-podataka/[token]", label: studentDataDownloadMessages.labels.title, kind: "pending", roles: [], public: true },
+  // WEB-2111 (R-41, V-5, C-6): the check of a receipt; public, anyone holding the receipt checks it.
+  { path: VERIFY_PATH, label: publicVerificationHr.title, kind: "pending", roles: [], public: true },
 ];
 
 /** The public page of a route, or null when the route needs the session. */

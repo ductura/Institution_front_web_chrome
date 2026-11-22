@@ -15,6 +15,7 @@ export { Popover, type PopoverProps } from "./components/popover";
 export { SourceForm, type SourceFormAction, type SourceFormProps } from "./components/source-form/SourceForm";
 export { type SourceAuthor, type SourceDraft, type SourcePerson, type SourceType } from "./components/source-form/source-fields";
 export { RouteLoading } from "./components/RouteLoading";
+export { SideShell, type SideShellItem, type SideShellProps } from "./components/side-shell";
 export { SaveState, type SaveStateProps } from "./components/SaveState";
 export { BLOCKED_TEXT, SAVE_STATES, saveStateContent, type SaveStateName, type SaveTone } from "./components/save-state";
 export { Select, type SelectOption, type SelectProps } from "./components/Select";
@@ -23,6 +24,7 @@ export { Tag, type TagProps } from "./components/Tag";
 export { PRACTICE_BADGE_LABEL, PracticeBadge, type PracticeBadgeProps } from "./components/practice-badge";
 export { TextArea, type TextAreaProps } from "./components/TextArea";
 export { TextField, type TextFieldProps } from "./components/TextField";
+export { CodeField, type CodeFieldProps } from "./components/CodeField";
 export { Timeline, type TimelineProps } from "./components/timeline/Timeline";
 export { ToastRegion, useToasts, type ToastRegionProps } from "./components/Toast";
 export { MAX_TOASTS, TOAST_TIMEOUT_MS, type ToastItem, type ToastTone } from "./components/toast-queue";
@@ -83,6 +85,6 @@ export {
   type WizardErrors, type WizardLabels, type WizardOutcome, type WizardProps, type WizardState, type WizardStep, type WizardStepContext,
 } from "./components/wizard";
 export { RetentionClasses, type RetentionClass, type RetentionClassesLabels, type RetentionClassesProps, type RetentionClassesState, type RetentionMode } from "./components/retention-classes";
-export { LegalHolds, type LegalHold, type LegalHoldsLabels, type LegalHoldsProps, type LegalHoldsState } from "./components/legal-hold";
+export { LegalHolds, type LegalHold, type LegalHoldSubjectType, type LegalHoldsLabels, type LegalHoldsProps, type LegalHoldsState } from "./components/legal-hold";
 export { StudentDataDownload, StudentDataExportList, StudentDataExportRequest, type ExportRow, type ExportState, type IdentityDocument, type StudentDataDownloadLabels, type StudentDataDownloadState, type StudentDataExportLabels, type StudentDataExportListProps, type StudentDataExportListState, type StudentDataExportRequestProps } from "./components/student-data-export";
 export { EventDispute, codePointCount, counterText, type EventDisputeKind, type EventDisputeLabels, type EventDisputeMark, type EventDisputeProps, type EventDisputeResult } from "./components/event-dispute";

@@ -1,0 +1,11 @@
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.item { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.muted { color: var(--ink-soft, var(--ink)); font-size: 0.875em; margin: 0; }
+.bar { block-size: 6px; border-radius: 3px; background: var(--rule, rgba(0, 0, 0, 0.12)); overflow: hidden; }
+.bar > span { display: block; block-size: 100%; background: var(--accent, var(--ink)); }
+.chip { display: inline-block; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--rule, currentColor); font-size: 0.8125em; }
+.menu { display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--rule, rgba(0, 0, 0, 0.2)); border-radius: 6px; padding: 4px; }
+.sheet { border-block-start: 1px solid var(--rule, rgba(0, 0, 0, 0.15)); padding-block-start: 10px; }
+.live { min-block-size: 1.2em; margin: 0; font-size: 0.875em; }

@@ -1,0 +1,75 @@
+/* VIZ-0: the prototype's loading state (.skel inside .item frames, E-2 "učitavanje"). */
+.screen {
+  max-width: var(--main-w);
+  padding: var(--main-pad-top) var(--space-6) var(--space-9);
+}
+
+.screen > * {
+  max-width: none;
+}
+
+.column {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.item {
+  display: grid;
+  gap: var(--space-1h);
+  padding: var(--space-2h) var(--space-3);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.bar {
+  display: block;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--well);
+  animation: skel 1.4s ease-in-out infinite alternate;
+}
+
+.w40 {
+  width: 40%;
+}
+
+.w60 {
+  width: 60%;
+}
+
+.w80 {
+  width: 80%;
+}
+
+@keyframes skel {
+  from {
+    opacity: 0.55;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    animation: none;
+  }
+}
+
+/* The status is read out and hidden from sight, as the prototype's offscreen label. */
+.screen > [role="status"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .screen {
+    padding: var(--space-5) var(--gutter-r) var(--space-8) var(--gutter-l);
+  }
+}

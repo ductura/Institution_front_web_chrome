@@ -9,9 +9,11 @@
  * `approve`, a blank or a longer one is not sent. Until P-6 the reason is
  * kept by the server only and never shown to the student.
  *
- * TODO(ugovor): both routes come with @ductura/contracts 3.2.0 (SRV-27,
- * SRV-32). Until then the shapes are local, the caller passes the transport
- * (`MentorshipCall`) and only tests call them, with invented answers.
+ * Both routes are in the migration contract in the server's shape (LOK-WEB-5,
+ * openapi v1): the list names the student by given and family name (or not at
+ * all) and carries no title; the decision answer repeats the decision and, for
+ * an approval, gives the new mentorship's id. The caller passes the transport
+ * (`MentorshipCall`): the page gives the contract client, tests a fake.
  */
 
 import { matchesSchema, type Schema } from "./schema-check";
@@ -19,13 +21,13 @@ import type { Read } from "./submission";
 
 export type MentorshipCall = (
   id: "teacher.mentorship-requests.get" | "teacher.mentorship-request-decision.post",
-  input: { readonly body?: DecisionInput },
+  input: { readonly params: undefined; readonly query: undefined; readonly body?: DecisionInput },
 ) => Promise<{ ok: true; status: number; body: unknown } | { ok: false; status: number; code: string }>;
 
 export type MentorshipRequest = {
   readonly requestId: string;
+  /** "Given Family", or null when the server does not name the student. */
   readonly studentName: string | null;
-  readonly title: string;
   readonly workType: string;
   readonly requestedAt: string;
 };
@@ -37,7 +39,7 @@ export type DecisionOutcome =
   /** 409: already decided or withdrawn; the list is read again. */
   | { readonly kind: "vec-odluceno" }
   | { readonly kind: "session-expired" }
-  | { readonly kind: "greska"; readonly code: "not_found" | "invalid" }
+  | { readonly kind: "greska"; readonly code: "invalid" }
   /** 408, 503, a broken connection, any other shape: the decision may be recorded. */
   | { readonly kind: "nepoznato" };
 
@@ -45,36 +47,40 @@ export const REASON_MAX = 600;
 
 const UNKNOWN = { kind: "nepoznato" } as const;
 const UUID = { type: "string", pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" } as const;
-const TEXT = { type: "string", minLength: 1, maxLength: 256 } as const;
+const NAME = { type: "string", minLength: 1, maxLength: 255 } as const;
 const closed = (properties: Record<string, Schema>): Schema =>
   ({ type: "object", additionalProperties: false, required: Object.keys(properties), properties });
-const WORK_TYPES = ["seminar_paper", "bachelor_thesis", "master_thesis", "specialist_thesis", "doctoral_thesis"];
+const WORK_TYPES = ["bachelor_thesis", "master_thesis", "specialist_thesis", "doctoral_thesis"];
 const DECISION = { anyOf: [{ const: "approve" }, { const: "decline" }] } as const;
 
-// TODO(ugovor): local shapes until 3.2.0 (SRV-27).
+// openapi v1: teacher.mentorship-requests.get and teacher.mentorship-request-decision.post.
 const REQUESTS: Schema = closed({
   requests: {
     type: "array",
     items: closed({
       requestId: UUID,
-      studentName: { anyOf: [{ type: "null" }, TEXT] },
-      title: TEXT,
+      student: { anyOf: [{ type: "null" }, closed({ givenName: NAME, familyName: NAME })] },
       workType: { anyOf: WORK_TYPES.map((c) => ({ const: c })) },
       requestedAt: { type: "string", format: "date-time" },
     }),
   },
 });
-const DECIDED: Schema = closed({ requestId: UUID, decision: DECISION });
+const DECIDED: Schema = { anyOf: [closed({ decision: { const: "approve" }, mentorshipId: UUID }), closed({ decision: { const: "decline" } })] };
+type WireRequest = Omit<MentorshipRequest, "studentName"> & { student: { givenName: string; familyName: string } | null };
 const REASON = { type: "string", minLength: 1, maxLength: REASON_MAX } as const;
 
-/** teacher.mentorship-requests.get (TODO(ugovor)). */
+/** teacher.mentorship-requests.get. */
 export async function readMentorshipRequests(call: MentorshipCall): Promise<Read<{ kind: "ready"; requests: MentorshipRequest[] }>> {
   try {
-    const result = await call("teacher.mentorship-requests.get", {});
+    const result = await call("teacher.mentorship-requests.get", { params: undefined, query: undefined });
     if (!result.ok) return result.status === 401 ? { kind: "session-expired" } : UNKNOWN;
     if (result.status !== 200 || !matchesSchema(REQUESTS, result.body)) return UNKNOWN;
-    const { requests } = result.body as { requests: MentorshipRequest[] };
-    return new Set(requests.map((r) => r.requestId)).size === requests.length ? { kind: "ready", requests } : UNKNOWN;
+    const wire = (result.body as { requests: WireRequest[] }).requests;
+    if (new Set(wire.map((r) => r.requestId)).size !== wire.length) return UNKNOWN;
+    const requests = wire.map(({ student, ...rest }): MentorshipRequest => ({
+      ...rest, studentName: student === null ? null : `${student.givenName} ${student.familyName}`,
+    }));
+    return { kind: "ready", requests };
   } catch {
     return UNKNOWN;
   }
@@ -87,25 +93,23 @@ export function decisionSendable(input: DecisionInput): boolean {
   return input.decision === "decline" && matchesSchema(REASON, input.reason) && input.reason.trim() !== "";
 }
 
-/** teacher.mentorship-request-decision.post (TODO(ugovor)). Never throws. */
+/** teacher.mentorship-request-decision.post. Never throws. */
 export async function decideMentorshipRequest(call: MentorshipCall, input: DecisionInput): Promise<DecisionOutcome> {
   if (!decisionSendable(input)) return { kind: "greska", code: "invalid" };
   const body: DecisionInput = input.reason === undefined
     ? { requestId: input.requestId, decision: input.decision }
     : { requestId: input.requestId, decision: input.decision, reason: input.reason };
   try {
-    const result = await call("teacher.mentorship-request-decision.post", { body });
+    const result = await call("teacher.mentorship-request-decision.post", { params: undefined, query: undefined, body });
     if (result.ok) {
       if (result.status !== 200 || !matchesSchema(DECIDED, result.body)) return UNKNOWN;
-      const answer = result.body as { requestId: string; decision: Decision };
-      return answer.requestId === body.requestId && answer.decision === body.decision
-        ? { kind: "odluceno", requestId: answer.requestId, decision: answer.decision }
-        : UNKNOWN;
+      // The answer names no request; the same decision as the one sent is the success.
+      const answer = result.body as { decision: Decision };
+      return answer.decision === body.decision ? { kind: "odluceno", requestId: body.requestId, decision: answer.decision } : UNKNOWN;
     }
     if (result.status === 401) return { kind: "session-expired" };
+    // The server has no 404: another teacher's or an unknown request is a 409 like a decided one.
     if (result.status === 409) return { kind: "vec-odluceno" };
-    // Another teacher's, an unknown and a malformed id are the same 404.
-    if (result.status === 404) return { kind: "greska", code: "not_found" };
     if (result.status === 422) return { kind: "greska", code: "invalid" };
     return UNKNOWN;
   } catch {

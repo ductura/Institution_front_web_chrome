@@ -8,7 +8,6 @@ import { decideMentorshipRequest, readMentorshipRequests } from "../../../../../
 import { readMentoredWorks } from "../../../../../../src/components/teacher/mentored-works-read";
 import { studentsOf } from "../../teacher/mentorships/model";
 
-const TITLE = "Izmišljeni naslov završnog rada";
 const NEW = { workType: "bachelor_thesis", teacherId: FAKE_TEACHERS[0].teacherId } as const;
 
 async function mine(server: ReturnType<typeof fakeMentorshipServer>) {
@@ -27,7 +26,7 @@ describe("WEB-1404 mentorship flow over an invented server", () => {
     const server = fakeMentorshipServer();
     expect((await sendRequest(server.student, NEW))?.note).toEqual({ tone: "status", text: t.sent });
     const [open] = await theirs(server);
-    expect(open?.title).toBe(TITLE);
+    expect(open?.studentName).toBe("Iva Izmišljena");
     expect(studentsOf(await worksOf(server))).toEqual([]);
 
     expect(await decideMentorshipRequest(server.teacher, { requestId: open!.requestId, decision: "approve" }))

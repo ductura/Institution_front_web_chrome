@@ -1,0 +1,63 @@
+/* The states of E-1 that the shared sign-in screen does not draw (paritet
+   2101): the moving bar of "preusmjeravanje" and the actions of the error
+   cards. Tokens only. */
+.bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--rule);
+  overflow: clip;
+}
+
+.bar span {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: var(--accent);
+  animation: slide 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(150%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar span { animation: none; }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.plain {
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 1px solid var(--rule-2);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.plain:hover {
+  background: var(--hover);
+}
+
+.homeLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}

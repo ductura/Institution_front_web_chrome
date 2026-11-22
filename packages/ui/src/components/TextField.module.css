@@ -1,17 +1,21 @@
-.field { display: grid; gap: 6px; max-width: 360px; }
-.label { color: var(--ink); font-weight: 600; }
+/* The prototype's .field / .input (VIZ-0): a quiet 12.5 px label over a 44 px field. */
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-1); min-width: 0; }
+.label { font-size: var(--fs-sm); color: var(--ink-3); }
 .input {
-  min-height: 44px; padding: 0 12px; font: inherit; color: var(--ink);
+  min-width: 0; min-height: var(--target); padding: var(--space-1h) var(--space-2h); font: inherit; color: var(--ink);
   background: var(--field); border: 1px solid var(--field-rule); border-radius: var(--radius-control);
 }
 .input::placeholder { color: var(--field-placeholder); opacity: 1; }
-/* The white sheet has no --error of its own, so error text and edge use --ink on
-   --error-soft (as Ductus .sync-chip error does); the message carries the meaning. */
-.input[aria-invalid="true"] { border: 2px solid var(--ink); background: var(--error-soft); }
+/* Student: --error edge; teacher: 2 px --warn edge ([data-shell-role="teacher"], prototype.css). */
+.input[aria-invalid="true"] { border-color: var(--field-invalid); border-width: var(--field-invalid-width); }
 .input[aria-busy="true"] { cursor: progress; }
-.input:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); }
-.note { margin: 0; color: var(--ink-3); }
-.note[data-error] { color: var(--ink); font-weight: 600; }
+.input:disabled { cursor: not-allowed; background: var(--well); color: var(--ink-3); border-color: var(--rule-2); }
+.note { margin: 0; color: var(--ink-3); font-size: var(--fs-sm); }
+/* The prototype's .err: the message carries the meaning, the colour or bar only points at it. */
+.note[data-error] {
+  color: var(--err-ink); font-weight: var(--err-weight);
+  border-left: var(--err-bar) solid var(--warn); padding-left: var(--err-pad);
+}
 /* WCAG 2.4.7: Chromium gives a date or time field an inner calendar button that
    takes a Tab stop of its own, and while it has focus the field no longer matches
    :focus-visible, so the global ring disappears. A text field shows the ring on

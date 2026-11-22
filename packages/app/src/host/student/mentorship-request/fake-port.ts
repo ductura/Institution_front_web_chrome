@@ -7,7 +7,7 @@ import type { StudentMentorshipCall, StudentMentorshipRequest } from "../../../.
 import type { MentorshipCall } from "../../../../../../src/client/mentorship-requests";
 import type { MentoredWorksCall } from "../../../../../../src/components/teacher/mentored-works-read";
 
-// The teacher's side still shows a title (its routes are not in this task); the student's contract has none.
+// The mentored works still show a title; neither request contract has one.
 const FAKE_TITLE = "Izmišljeni naslov završnog rada";
 type Stored = { -readonly [K in keyof StudentMentorshipRequest]: StudentMentorshipRequest[K] } & { studentName: string; title: string; reason?: string };
 const ok = (body: unknown, status = 200) => ({ ok: true as const, status, body });
@@ -17,6 +17,8 @@ export const FAKE_TEACHERS = [
   { teacherId: "10000000-0000-4000-8000-000000000001", name: { givenName: "Marko", familyName: "Izmišljeni" }, department: "Izmišljeni odsjek" },
   { teacherId: "10000000-0000-4000-8000-000000000002", name: { givenName: "Ana", familyName: "Izmišljena" }, department: null },
 ] as const;
+
+const nameParts = (name: string) => ({ givenName: name.split(" ")[0] ?? "", familyName: name.split(" ").slice(1).join(" ") });
 
 export function fakeMentorshipServer(studentName = "Iva Izmišljena") {
   const rows: Stored[] = [];
@@ -54,25 +56,25 @@ export function fakeMentorshipServer(studentName = "Iva Izmišljena") {
     if (call === "teacher.mentorship-requests.get") {
       return ok({
         requests: rows.filter((r) => r.state === "requested").map((r) => ({
-          requestId: r.requestId, studentName: r.studentName, title: r.title, workType: r.workType, requestedAt: r.requestedAt,
+          requestId: r.requestId, student: nameParts(r.studentName), workType: r.workType, requestedAt: r.requestedAt,
         })),
       });
     }
     const body = input.body as { requestId: string; decision: "approve" | "decline"; reason?: string };
     const row = find(body.requestId);
-    if (row === undefined) return fail(404, "not_found");
-    if (row.state !== "requested") return fail(409, "conflict");
+    // Like the server: an unknown request is a 409, the same as a decided one.
+    if (row === undefined || row.state !== "requested") return fail(409, "conflict");
     row.state = body.decision === "approve" ? "approved" : "declined";
     row.endedAt = clock();
     row.mentorshipId = body.decision === "approve" ? row.requestId : null;
     if (body.reason !== undefined) row.reason = body.reason;
-    return ok({ requestId: row.requestId, decision: body.decision });
+    return ok(body.decision === "approve" ? { decision: "approve", mentorshipId: row.requestId } : { decision: "decline" });
   };
 
   const works: MentoredWorksCall = async () => ok({
     works: rows.filter((r) => r.state === "approved").map((r) => ({
       mentorshipId: r.requestId, assignmentId: r.requestId, documentId: null,
-      student: { givenName: r.studentName.split(" ")[0] ?? "", familyName: r.studentName.split(" ").slice(1).join(" ") },
+      student: nameParts(r.studentName),
       title: r.title, workType: r.workType as "bachelor_thesis", workState: "not_started" as const,
     })),
   }) as never;

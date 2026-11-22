@@ -1,9 +1,10 @@
 // The teacher's history of submissions and withdrawals, and the switch in the assignment settings
 // (WEB-1903; plan P-D3). WEB-2003: the switch uses the server's operations
-// teacher.submission-withdrawal.get and .post (contract excerpt). TODO(ugovor): the history read
-// teacher.submission-history.get is not in the excerpt yet; the caller passes the transport, so a
-// rejected call reads as "unavailable", never "no history". The switch changes only on the server's
-// answer (B-6).
+// teacher.submission-withdrawal.get and .post (contract excerpt). LOK-WEB-21: the history read is
+// teacher.submission-history.get for one student, checked against the contract's own answer schema;
+// a rejected call reads as "unavailable", never "no history". The switch changes only on the
+// server's answer (B-6).
+import migrationContracts from "../../../../../../../src/client/migration-contracts.generated.json" with { type: "json" };
 import { matchesSchema, type Schema } from "../../../../../../../src/client/schema-check";
 
 export type HistoryCall = (
@@ -11,13 +12,17 @@ export type HistoryCall = (
   input: { readonly params?: Readonly<Record<string, string>>; readonly body?: unknown },
 ) => Promise<{ ok: true; status: number; body: unknown } | { ok: false; status: number; code: string }>;
 
+/** One entry of the server's history; receipts stay with the server's evidence, not on screen. */
 export type HistoryEvent = {
-  readonly eventId: string;
-  readonly studentId: string;
-  readonly kind: "submitted" | "withdrawn";
+  readonly kind: "submission" | "withdrawal";
+  readonly id: string;
+  readonly attempt: number;
+  readonly submissionId: string;
   readonly revision: number;
-  /** Minute of the record, `YYYY-MM-DDTHH:MM:00.000Z`. */
+  /** Record time, `YYYY-MM-DDTHH:MM:SS.sssZ`. */
   readonly at: string;
+  /** Present on a submission only. */
+  readonly afterDeadline?: boolean;
 };
 
 export type HistoryRead =
@@ -41,30 +46,28 @@ const UNKNOWN = { kind: "nepoznato" } as const;
 const UUID: Schema = { type: "string", pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" };
 const closed = (properties: Record<string, Schema>): Schema =>
   ({ type: "object", additionalProperties: false, required: Object.keys(properties), properties });
-const EVENT: Schema = closed({
-  eventId: UUID,
-  studentId: UUID,
-  kind: { anyOf: [{ const: "submitted" }, { const: "withdrawn" }] },
-  revision: { type: "integer", minimum: 1 },
-  at: { type: "string", format: "date-time" },
-});
-const HISTORY: Schema = closed({ events: { type: "array", items: EVENT } });
+const HISTORY = migrationContracts["teacher.submission-history.get"].responses["200"].content["application/json"].schema as Schema;
 const SETTING: Schema = closed({ allowed: { type: "boolean" }, changedAt: { anyOf: [{ type: "string", format: "date-time" }, { type: "null" }] } });
 
-export async function readSubmissionHistory(call: HistoryCall, assignmentId: string): Promise<HistoryRead> {
-  if (!matchesSchema(UUID, assignmentId)) return { kind: "greska", code: "not_found" };
+export async function readSubmissionHistory(call: HistoryCall, assignmentId: string, studentId: string): Promise<HistoryRead> {
+  if (!matchesSchema(UUID, assignmentId) || !matchesSchema(UUID, studentId)) return { kind: "greska", code: "not_found" };
   try {
-    const result = await call("teacher.submission-history.get", { params: { assignmentId } });
+    const result = await call("teacher.submission-history.get", { params: { assignmentId, studentId } });
     if (!result.ok) {
       if (result.status === 401) return { kind: "session-expired" };
       return result.status === 404 ? { kind: "greska", code: "not_found" } : UNKNOWN;
     }
     if (result.status !== 200 || !matchesSchema(HISTORY, result.body)) return UNKNOWN;
-    const { events } = result.body as { events: HistoryEvent[] };
-    return new Set(events.map((e) => e.eventId)).size === events.length ? { kind: "ready", events } : UNKNOWN;
+    const events = (result.body as { events: (HistoryEvent & { receipt: unknown })[] }).events.map(toEvent);
+    return new Set(events.map((e) => e.id)).size === events.length ? { kind: "ready", events } : UNKNOWN;
   } catch {
     return UNKNOWN;
   }
+}
+
+function toEvent({ kind, id, attempt, submissionId, revision, at, afterDeadline }: HistoryEvent): HistoryEvent {
+  const base = { kind, id, attempt, submissionId, revision, at };
+  return kind === "submission" ? { ...base, afterDeadline } : base;
 }
 
 export async function readWithdrawalSetting(call: HistoryCall, assignmentId: string): Promise<SettingRead> {
