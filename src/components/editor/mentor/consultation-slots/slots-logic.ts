@@ -6,8 +6,8 @@ export type Role = "student" | "teacher";
 
 /** What the person may do with a slot: the teacher answers a request, the student takes a proposal. */
 export function actionsFor(role: Role, slot: ConsultationSlot): readonly SlotAction[] {
-  if (role === "teacher" && slot.status === "requested") return ["confirm", "propose"];
-  if (role === "student" && slot.status === "proposed") return ["accept"];
+  if (role === "teacher" && slot.state === "requested") return ["confirm", "counter"];
+  if (role === "student" && slot.state === "countered") return ["accept"];
   return [];
 }
 
@@ -22,10 +22,10 @@ export function localToIso(value: string): string | null {
 export const timeText = (iso: string): string =>
   new Intl.DateTimeFormat("hr-HR", { dateStyle: "long", timeStyle: "short" }).format(new Date(iso));
 
-export const statusText = (role: Role, slot: ConsultationSlot): string => t.status[slot.status][role];
+export const statusText = (role: Role, slot: ConsultationSlot): string => t.status[slot.state][role];
 
 export function lineText(slot: ConsultationSlot): string {
-  const line = slot.status === "confirmed" ? t.confirmedLine : slot.status === "proposed" ? t.proposedLine : t.requestedLine;
+  const line = slot.state === "confirmed" ? t.confirmedLine : slot.state === "countered" ? t.proposedLine : t.requestedLine;
   return line.replace("{time}", timeText(slot.startsAt));
 }
 
@@ -33,8 +33,8 @@ export const headingText = (slots: readonly ConsultationSlot[]): string => t.tit
 
 /** The list with the server's slot in its place (or added first); the others are untouched. */
 export function withSlot(slots: readonly ConsultationSlot[], saved: ConsultationSlot): ConsultationSlot[] {
-  return slots.some((s) => s.slotId === saved.slotId)
-    ? slots.map((s) => (s.slotId === saved.slotId ? saved : s))
+  return slots.some((s) => s.id === saved.id)
+    ? slots.map((s) => (s.id === saved.id ? saved : s))
     : [saved, ...slots];
 }
 

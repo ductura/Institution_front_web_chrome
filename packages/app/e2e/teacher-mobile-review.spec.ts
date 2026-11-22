@@ -20,6 +20,7 @@ const signed = vectors.find((v) => v.route === "teacher.submission-receipt.get"
   && "state" in v.response.body && v.response.body.state === "potvrdeno")!.response.body;
 if (!("receipt" in signed) || !signed.receipt) throw new Error("Missing signed receipt vector");
 const documentId = signed.receipt.payload.documentId;
+if (typeof documentId !== "string") throw new Error("Missing documentId in signed receipt vector");
 const workBody = vectors.find((v) => v.route === "teacher.work.get" && v.name === "submitted-work")!.response.body;
 const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "teacher-without-name")!.response.body;
 const profileBody = { ...profile, roles: ["teacher"] };
