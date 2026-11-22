@@ -82,7 +82,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
   const heading = <p className="lede">{f.intro}</p>;
 
   if (phase === "published") {
-    return <section aria-label={`${course.name} · ${course.academicYear}`} className="card"><div role="status"><PublishDone /></div></section>;
+    return <section aria-label={`${course.name} · ${course.academicYear}`} className="card"><PublishDone /></section>;
   }
 
   if (phase === "publishing") {
