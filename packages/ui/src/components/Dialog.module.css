@@ -1,19 +1,28 @@
 /*
- * The shared dialog (WEB-04): measures of the web's dialog base (Z-08,
- * src/components/shell/Dialog.module.css, design demo-tok-v2 "Odjava") on the
- * tokens of this package. Raised surface in the shell; inline (not modal) it
- * sits on --card, which both sheets set under their own ink.
+ * The shared dialog (WEB-04) on the prototype's .dialog (VIZ-0): a raised
+ * surface on a --rule edge, 10 px corners, 16 px inside with 12 px between
+ * its parts, the --lift shadow, centred on the curtain; 480 px wide for the
+ * student, 520 px for the teacher (--dialog-w). The title is Newsreader 19 px
+ * (.sb-dlg-host .dialog h2). Inline (not modal) it sits on --card, which both
+ * sheets set under their own ink.
  */
 .dialog {
-  width: 440px;
+  width: min(var(--dialog-w), calc(100vw - 32px));
   max-width: calc(100vw - 32px);
-  margin: 80px auto auto;
-  padding: 0;
-  border: 1px solid var(--raised-rule);
-  border-radius: var(--radius-lg);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: var(--space-4);
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-card);
   background: var(--raised);
   color: var(--ink);
   box-shadow: var(--lift);
+}
+
+.dialog[open] {
+  display: grid;
+  gap: var(--space-3);
 }
 
 .dialog::backdrop {
@@ -24,43 +33,48 @@
   position: static;
   width: auto;
   max-width: 100%;
+  max-height: none;
   margin: 0;
   background: var(--card);
   box-shadow: none;
 }
 
 .body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 16px;
-  font-size: 13px;
-  line-height: 1.55;
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
 .title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-family: var(--ff-display);
+  font-size: var(--fs-title-sm);
+  font-weight: 500;
+  line-height: var(--lh-heading);
+  letter-spacing: var(--tracking-display);
 }
 
-.body p {
-  margin: 0;
-}
-
-/* The text says what failed; the border only points at it. */
+/* The prototype's .err: the text says what failed; colour or bar only points at it. */
 .error {
-  padding: 8px 10px;
-  border: 1px solid var(--error);
-  border-radius: var(--radius-control);
-  background: var(--error-soft);
+  margin: 0;
+  color: var(--err-ink);
+  font-size: var(--fs-sm);
+  font-weight: var(--err-weight);
+  border-left: var(--err-bar) solid var(--warn);
+  padding-left: var(--err-pad);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--rule-2);
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-1);
+}
+
+@media (max-width: 640px) {
+  .actions > * {
+    flex: 1 1 auto;
+  }
 }

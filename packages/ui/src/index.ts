@@ -15,6 +15,7 @@ export { Popover, type PopoverProps } from "./components/popover";
 export { SourceForm, type SourceFormAction, type SourceFormProps } from "./components/source-form/SourceForm";
 export { type SourceAuthor, type SourceDraft, type SourcePerson, type SourceType } from "./components/source-form/source-fields";
 export { RouteLoading } from "./components/RouteLoading";
+export { SideShell, type SideShellItem, type SideShellProps } from "./components/side-shell";
 export { SaveState, type SaveStateProps } from "./components/SaveState";
 export { BLOCKED_TEXT, SAVE_STATES, saveStateContent, type SaveStateName, type SaveTone } from "./components/save-state";
 export { Select, type SelectOption, type SelectProps } from "./components/Select";
