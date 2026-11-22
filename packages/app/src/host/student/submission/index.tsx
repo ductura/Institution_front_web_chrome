@@ -16,7 +16,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { appHref } from "../../../../../../src/components/index.ts";
 import { assignmentIdOf, editorWorkRead } from "../../../../../../src/components/editor/EditorPage.read.ts";
 import { readSubmittedWork } from "../../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
-import BeforeSubmit from "../../../../../../src/components/predaja/BeforeSubmit.tsx";
 import { studentReceiptRead, type ReceiptRead } from "../../../../../../src/components/predaja/ReceiptPanel.tsx";
 import { stageOf, type Stage } from "../../../../../../src/components/predaja/stage.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../../src/client/api.ts";
@@ -29,7 +28,11 @@ import PortableRecord from "../portable-record/PortableRecord";
 import SubmissionPackage from "../submission-package/SubmissionPackage";
 import DeclarationStep from "./declaration/DeclarationStep";
 import { unavailableReader, type DeclarationReader, type DeclarationRead } from "./declaration/model";
+import { stepsText } from "./steps/messages.hr";
+import StepsShell from "./steps/StepsShell";
 import ReceiptScreen from "./receipt/ReceiptScreen";
+import BeforeSubmitStep from "./summary/BeforeSubmitStep";
+import { VERIFY_PATH } from "../../public/verify/model";
 import WithdrawSubmission from "./withdraw/WithdrawSubmission";
 import SubmitStep from "./submit/SubmitStep";
 import { extendedDueOf, submitStageOf } from "./submit/model";
@@ -41,7 +44,7 @@ type Step = "" | "izjava" | "pregled" | "slanje" | "potvrda";
 
 /** What the checked assignment allows a step to show. */
 type Checked =
-  | { readonly kind: "ready"; readonly title: string; readonly workState: string; readonly stage: Stage; readonly dueAt: string; readonly extendedDueAt: string | null }
+  | { readonly kind: "ready"; readonly course: string; readonly title: string; readonly workState: string; readonly stage: Stage; readonly dueAt: string; readonly extendedDueAt: string | null }
   | { readonly kind: "unavailable" };
 
 type Shown<T> = { kind: "loading" } | { kind: "notFound" } | { kind: "ready"; value: T };
@@ -55,12 +58,14 @@ function stepPath(assignmentId: string, step: Step): string {
  * The check every step makes, then `then` with what it allows. Sign-in, the
  * notice and not found are decided here, as on the copied pages.
  */
-function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignmentId: string) => Promise<T | null>): Shown<T> {
+function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignmentId: string) => Promise<T | null>): Shown<T> & { reload: () => void } {
   const { base } = useHost();
   const router = useRouter();
   const [shown, setShown] = useState<Shown<T>>({ kind: "loading" });
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let live = true;
+    setShown({ kind: "loading" });
     const assignmentId = assignmentIdOf(raw);
     if (assignmentId === null) {
       setShown({ kind: "notFound" });
@@ -78,7 +83,7 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const checked: Checked = read.kind === "ready"
-        ? { kind: "ready", title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()), dueAt: read.dueAt, extendedDueAt: extendedDueOf(assignments.ok ? assignments.body : null, assignmentId) }
+        ? { kind: "ready", course: read.course, title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()), dueAt: read.dueAt, extendedDueAt: extendedDueOf(assignments.ok ? assignments.body : null, assignmentId) }
         : { kind: "unavailable" };
       const value = await then(checked, assignmentId);
       if (live && value !== null) setShown({ kind: "ready", value });
@@ -86,13 +91,13 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
     return () => {
       live = false;
     };
-  }, [raw, base]);
-  return shown;
+  }, [raw, base, attempt]);
+  return { ...shown, reload: () => setAttempt((n) => n + 1) };
 }
 
-function Shown<T>({ shown, children }: { shown: Shown<T>; children: (value: T) => ReactNode }) {
+function Shown<T>({ shown, loading = hostText.loading, children }: { shown: Shown<T>; loading?: string; children: (value: T) => ReactNode }) {
   if (shown.kind === "notFound") notFound();
-  if (shown.kind === "loading") return <p role="status">{hostText.loading}</p>;
+  if (shown.kind === "loading") return <p role="status">{loading}</p>;
   return <>{children(shown.value)}</>;
 }
 
@@ -129,28 +134,35 @@ export function DeclarationStepPage({ assignmentId, reader = unavailableReader }
     return () => { live = false; };
   }, [id, reader, attempt]);
   return (
-    <Shown shown={shown}>
-      {({ checked, id: assignment }) => checked.kind === "ready"
-        ? <DeclarationStep assignmentId={assignment} workState={checked.workState} read={read} hrefOf={hrefOf} onRetry={() => setAttempt((n) => n + 1)} />
-        : (
-          <div className="page declaration">
-            <h1>{t.declaration.title}</h1>
-            <p role="status">{t.student.unavailable}</p>
-          </div>
-        )}
+    <Shown shown={shown} loading={stepsText.loadingRecorded}>
+      {({ checked, id: assignment }) => (
+        <StepsShell step="declaration" work={checked} workHref={hrefOf(stepPath(assignment, "").replace(/\/predaja$/, ""))}
+          receiptHref={hrefOf(stepPath(assignment, "potvrda"))} onRetry={shown.reload}>
+          {checked.kind === "ready"
+            ? <DeclarationStep assignmentId={assignment} workState={checked.workState} read={read} hrefOf={hrefOf} onRetry={() => setAttempt((n) => n + 1)} />
+            : null}
+        </StepsShell>
+      )}
     </Shown>
   );
 }
 
-/** Step 3, "Prije predaje"; `declaredFor` is the `?izjava=` step 2 handed over. */
+/** Step 3, "Prije predaje", with the summary and notes from the server; `declaredFor` is the `?izjava=` step 2 handed over. */
 export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignmentId: string; declaredFor?: string }) {
+  const { base } = useHost();
   const hrefOf = useHrefOf();
   const shown = useChecked(assignmentId, "pregled", async (checked, id) => ({ checked, id }));
   return (
-    <Shown shown={shown}>
+    <Shown shown={shown} loading={stepsText.loadingWork}>
       {({ checked, id }) => (
-        <BeforeSubmit assignmentId={id} summary={{ kind: "unavailable" }} declaredFor={declaredFor} hrefOf={hrefOf}
-          stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }} />
+        <StepsShell step="beforeSubmit" work={checked} workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
+          receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
+          <p>{stepsText.intro}</p>
+          <BeforeSubmitStep assignmentId={id} declaredFor={declaredFor} hrefOf={hrefOf}
+            workHref={hrefOf(stepPath(id, "").replace(/\/predaja$/, ""))}
+            stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }}
+            onSignIn={() => goToSignIn(appHref(base, stepPath(id, "pregled")))} />
+        </StepsShell>
       )}
     </Shown>
   );
@@ -196,7 +208,7 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
         <div className="page receipt-page">
           <Steps currentStep={5} />
           <h1>{t.receipt.title}</h1>
-          <ReceiptScreen read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))} workHref={hrefOf(`/rad/${encodeURIComponent(id)}`)} homeHref={hrefOf("/")} />
+          <ReceiptScreen read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))} workHref={hrefOf(`/rad/${encodeURIComponent(id)}`)} homeHref={hrefOf("/")} checkHref={hrefOf(VERIFY_PATH)} />
           {receipt.kind === "potvrdeno" ? <PortableRecord submissionId={receipt.receipt.payload.submissionId} /> : null}
           {receipt.kind === "potvrdeno" ? <SubmissionPackage assignmentId={id} submissionId={receipt.receipt.payload.submissionId} /> : null}
           <WithdrawSubmission assignmentId={id} />

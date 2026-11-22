@@ -1,0 +1,16 @@
+/* The prototype's E-5 code field (.up-center .field, .up-row, .input.code, .err, .meta): VIZ-S2. */
+.field { display: grid; justify-items: center; gap: var(--space-1); width: 100%; min-width: 0; text-align: center; }
+.label { font-size: var(--fs-sm); color: var(--ink-3); }
+.row { display: flex; gap: var(--space-2); width: 100%; max-width: 440px; }
+.row > :not(input) { flex: none; }
+.input {
+  flex: 1; width: 0; min-width: 0; min-height: var(--target); padding: var(--space-1h) var(--space-2h);
+  font: 15px var(--ff-mono); letter-spacing: 0.08em; text-transform: uppercase; text-align: center; color: var(--ink);
+  background: var(--field); border: 1px solid var(--field-rule); border-radius: var(--radius-control);
+}
+.input::placeholder { color: var(--field-placeholder); opacity: 1; }
+.input[aria-invalid="true"] { border-color: var(--field-invalid); border-width: var(--field-invalid-width); }
+.input[aria-busy="true"] { cursor: progress; }
+.error { margin: 0; color: var(--error); font-size: var(--fs-sm); }
+.hint { margin: 0; color: var(--ink-3); font-size: var(--fs-sm); }
+@media (max-width: 640px) { .row { max-width: none; } }

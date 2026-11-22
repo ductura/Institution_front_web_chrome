@@ -22,16 +22,22 @@ export type ErrorScreenProps = {
  * caller's catalogue (src/components/shell/ErrorScreen.ts in the web).
  */
 export function ErrorScreen({ title, body, onRetry, retryLabel, homeLabel, homeHref = "/" }: ErrorScreenProps) {
+  // VIZ-0: the prototype's error card (E-2 "greška"): a centred page column, a
+  // card with the title, the note and the actions; the second action outlined.
   return h(
     "main",
-    { id: "sadrzaj", tabIndex: -1, className: "page" },
-    h("h1", null, title),
-    h("p", { role: onRetry ? "alert" : undefined }, body),
+    { id: "sadrzaj", tabIndex: -1, className: `page ${styles.screen}` },
     h(
-      "p",
-      { className: styles.actions },
-      onRetry ? h("button", { type: "button", className: "btn", onClick: onRetry }, retryLabel) : null,
-      h("a", { className: onRetry ? `btn ${styles.quiet}` : "btn", href: homeHref }, homeLabel),
+      "div",
+      { className: styles.card },
+      h("h1", { className: styles.title }, title),
+      h("p", { role: onRetry ? "alert" : undefined, className: styles.body }, body),
+      h(
+        "p",
+        { className: styles.actions },
+        onRetry ? h("button", { type: "button", className: "btn", onClick: onRetry }, retryLabel) : null,
+        h("a", { className: onRetry ? "btn secondary" : "btn", href: homeHref }, homeLabel),
+      ),
     ),
   );
 }
