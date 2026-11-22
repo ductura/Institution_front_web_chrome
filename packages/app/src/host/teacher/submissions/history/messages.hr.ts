@@ -1,10 +1,11 @@
 export const historyText = {
   title: "Povijest predaja i povlačenja",
   caption: "Predaje i povlačenja rada, od najnovijeg",
-  student: "Student",
   event: "Događaj",
   submitted: "Predano",
   withdrawn: "Povučeno",
+  afterDeadline: "(nakon roka)",
+  attempt: "Pokušaj",
   revision: "Revizija",
   time: "Vrijeme",
   empty: "Još nema predaja ni povlačenja.",
