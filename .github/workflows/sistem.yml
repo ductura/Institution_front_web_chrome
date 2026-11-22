@@ -1,0 +1,106 @@
+# Faza 3, završni prolaz (INT-08): pravi stog na runneru i sistemski testovi
+# INT-02..05 (e2e/sistem). Institution_server s grane migracija/kopija-ductus-backend
+# diže `pnpm stog:gore` (INT-01): PostgreSQL u Dockeru s migracijama i seedom,
+# lažni OIDC (samo lokalno i u CI-ju, D-09), server i ovaj front na :3000.
+# Nije obvezna provjera i nije u ci-ok: samo workflow_dispatch, jer test ci-ok
+# drugim workflowima ne dopušta pull_request ni push. Ručno se pokreće kad je
+# datoteka poznata na zadanoj grani (gh workflow run sistem.yml --ref <grana>).
+# Pad se ne skriva: bez retryja i skipa. Oba repoa su javna, bez tajni i PAT-a.
+name: Sistem
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sistem-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sistem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: web, persist-credentials: false }
+      - uses: actions/checkout@v4
+        with:
+          repository: ductura/Institution_server
+          ref: migracija/kopija-ductus-backend
+          path: Institution_server
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm install -g pnpm@10.33.0
+
+      - name: Install web
+        run: pnpm install --frozen-lockfile
+      - name: Install src/client
+        working-directory: web/src/client
+        run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+      - name: Install server
+        working-directory: Institution_server
+        run: pnpm install --frozen-lockfile
+      - name: Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Stog gore (pnpm stog:gore)
+        working-directory: Institution_server
+        env:
+          STOG_FRONT_DIR: ${{ github.workspace }}/web
+        run: |
+          nohup pnpm stog:gore > "$RUNNER_TEMP/stog.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/stog.pid"
+          for i in $(seq 1 120); do
+            if pnpm --silent stog:zdravlje > /dev/null 2>&1; then
+              echo "Stog je zdrav nakon $((i * 5)) s."
+              # Zagrijavanje next dev: globalSetup (stog.ts) čeka samo 10 s po zahtjevu.
+              curl -fsS --retry 10 --retry-all-errors --max-time 120 -o /dev/null http://localhost:3000/
+              curl -fsS --retry 10 --retry-all-errors --max-time 120 -o /dev/null http://localhost:3000/api/v1/health
+              exit 0
+            fi
+            if ! kill -0 "$(cat "$RUNNER_TEMP/stog.pid")" 2>/dev/null; then
+              echo "stog:gore je izašao prije zdravlja"; tail -150 "$RUNNER_TEMP/stog.log"; exit 1
+            fi
+            sleep 5
+          done
+          echo "Stog nije zdrav nakon 600 s"; tail -150 "$RUNNER_TEMP/stog.log"; exit 1
+
+      - name: Fixture INT-04 (seed-int04.sql)
+        run: docker compose -f ../Institution_server/compose.yaml exec -T postgres-main psql -v ON_ERROR_STOP=1 -U ductus -d ductus < e2e/sistem/seed-int04.sql
+
+      - name: Sistemski testovi (pnpm test:sistem)
+        id: testovi
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/sistem-report.json
+        run: pnpm test:sistem --reporter=list,json
+
+      - name: Tablica PROLAZ/PAD i vs-run.json
+        if: always()
+        env:
+          SISTEM_REPORT: ${{ runner.temp }}/sistem-report.json
+          SISTEM_OUT: ${{ runner.temp }}/vs-run.json
+          SISTEM_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node e2e/sistem/sazetak.mjs >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dnevnik stoga
+        if: always()
+        run: |
+          cp "$RUNNER_TEMP/stog.log" "$RUNNER_TEMP/stog-ispis.log" 2>/dev/null || true
+          kill -INT "$(cat "$RUNNER_TEMP/stog.pid" 2>/dev/null)" 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sistem-prolaz
+          path: |
+            ${{ runner.temp }}/vs-run.json
+            ${{ runner.temp }}/sistem-report.json
+            ${{ runner.temp }}/stog-ispis.log
+            web/test-results/sistem/
+          if-no-files-found: warn
