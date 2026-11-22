@@ -26,6 +26,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { hostText } from "../../../text";
 import { useHost } from "../../context";
+import AiDeclarationSection from "../ai-declaration/AiDeclarationSection";
 import MobileReview from "../mobile-review/MobileReview";
 import WorkFrame from "../n06/WorkFrame";
 import { FallbackPanel, PreSubmitPanel } from "../pre-submit/PreSubmitPanel";
@@ -199,6 +200,7 @@ function Receipt({ documentId, workHref, current }: { documentId: string; workHr
           {submitted && showFallback(read.kind) && <FallbackPanel fallback={{ kind: "unavailable" }} />}
         </div>
       )}
+      {result?.kind === "ready" && <AiDeclarationSection submissionId={documentId} />}
     </WorkStatus>
   );
 }
