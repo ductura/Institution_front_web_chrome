@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { CATALOG_STATES } from "../src/coverage";
 
 const COMPONENTS = [
-  "Button", "TextField", "SaveState", "Card", "Icon", "Dialog", "ToastRegion", "Checkbox", "Select", "TextArea", "Tag", "Skeleton", "Details",
+  "Button", "TextField", "CodeField", "SaveState", "Card", "Icon", "Dialog", "ToastRegion", "Checkbox", "Select", "TextArea", "Tag", "Skeleton", "Details",
   "ErrorScreen", "RouteLoading",
 ];
 const ADDITIONAL_COMPONENTS = ["DataTable", "Fingerprint", "KeyValueList", "StateTag", "Steps"];
