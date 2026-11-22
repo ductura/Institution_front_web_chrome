@@ -24,6 +24,7 @@ export { Tag, type TagProps } from "./components/Tag";
 export { PRACTICE_BADGE_LABEL, PracticeBadge, type PracticeBadgeProps } from "./components/practice-badge";
 export { TextArea, type TextAreaProps } from "./components/TextArea";
 export { TextField, type TextFieldProps } from "./components/TextField";
+export { CodeField, type CodeFieldProps } from "./components/CodeField";
 export { Timeline, type TimelineProps } from "./components/timeline/Timeline";
 export { ToastRegion, useToasts, type ToastRegionProps } from "./components/Toast";
 export { MAX_TOASTS, TOAST_TIMEOUT_MS, type ToastItem, type ToastTone } from "./components/toast-queue";
