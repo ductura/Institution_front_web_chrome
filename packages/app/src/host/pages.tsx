@@ -18,6 +18,7 @@ import { hostText } from "../text";
 import { useHost } from "./context";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { startWorkAction } from "./student/start-work/action";
+import { HomePage } from "./student/home/HomePage";
 
 // The pages the host shows, one per route of app/[base]/. Each reads the
 // institution server only through src/client.
@@ -57,8 +58,12 @@ export function SignInPage() {
   return <RouteLoading label={hostText.signingIn} />;
 }
 
-/** S01 and S02 over student.assignments.get, read once per visit. */
+/** S01 (E-2, WEB-2102) is its own page; S02 over student.assignments.get, read once per visit. */
 export function StudentPage({ view }: { view: "home" | "courses" }) {
+  return view === "home" ? <HomePage /> : <CoursesPage />;
+}
+
+function CoursesPage() {
   const { base } = useHost();
   const [read, setRead] = useState<MyAssignmentsRead | null>(null);
   useEffect(() => {
@@ -71,7 +76,7 @@ export function StudentPage({ view }: { view: "home" | "courses" }) {
     };
   }, []);
   if (read === null) return <p role="status">{hostText.loading}</p>;
-  return <StudentHome read={read} enroll={null} view={view} signIn={(returnTo) => signInHref(appHref(base, returnTo))}
+  return <StudentHome read={read} enroll={null} view="courses" signIn={(returnTo) => signInHref(appHref(base, returnTo))}
     assignmentAction={startWorkAction} />;
 }
 

@@ -24,14 +24,16 @@ export function enrollError(result: EnrollResult | null): string | null {
  * that does not exist, an expired code, already enrolled (PD-5), a course
  * without an assignment (PD-6) and the enrollment, which opens the notice.
  */
-export default function EnrollForm({ signInHref, navigate }: {
+export default function EnrollForm({ signInHref, navigate, initialCode = "" }: {
+  /** E-2 R-10: the code the home carried over; the field starts filled and takes the focus (R-17). */
+  initialCode?: string;
   signInHref: string;
   /** Where the form goes next; by default the Next router (the app host passes one that adds its base). */
   navigate?: (href: string, replace?: boolean) => void;
 }) {
   const router = useRouter();
   const go = navigate ?? ((href: string, replace = false) => (replace ? router.replace(href) : router.push(href)));
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<EnrollResult | null>(null);
   const busy = useRef(false);
@@ -73,6 +75,7 @@ export default function EnrollForm({ signInHref, navigate }: {
         autoCapitalize="characters"
         spellCheck={false}
         maxLength={64}
+        autoFocus={initialCode === "" ? undefined : true}
         value={code}
         onChange={(event) => setCode(event.target.value)}
       />
