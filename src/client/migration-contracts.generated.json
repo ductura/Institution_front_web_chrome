@@ -9928,5 +9928,160 @@
         "unavailable"
       ]
     }
+  },
+  "work.compare.get": {
+    "path": "/api/v1/works/{documentId}/compare",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the difference between the two revisions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "from",
+                "to",
+                "blocks"
+              ],
+              "properties": {
+                "from": {
+                  "minimum": 1,
+                  "maximum": 9007199254740991,
+                  "type": "integer"
+                },
+                "to": {
+                  "minimum": 1,
+                  "maximum": 9007199254740991,
+                  "type": "integer"
+                },
+                "blocks": {
+                  "maxItems": 10000,
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "change",
+                          "text"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "anyOf": [
+                              {
+                                "const": "paragraph",
+                                "type": "string"
+                              },
+                              {
+                                "const": "bulletItem",
+                                "type": "string"
+                              },
+                              {
+                                "const": "quote",
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "change": {
+                            "anyOf": [
+                              {
+                                "const": "unchanged",
+                                "type": "string"
+                              },
+                              {
+                                "const": "removed",
+                                "type": "string"
+                              },
+                              {
+                                "const": "added",
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "level",
+                          "change",
+                          "text"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "heading",
+                            "type": "string"
+                          },
+                          "level": {
+                            "minimum": 1,
+                            "maximum": 3,
+                            "type": "integer"
+                          },
+                          "change": {
+                            "anyOf": [
+                              {
+                                "const": "unchanged",
+                                "type": "string"
+                              },
+                              {
+                                "const": "removed",
+                                "type": "string"
+                              },
+                              {
+                                "const": "added",
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
