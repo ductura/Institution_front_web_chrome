@@ -111,7 +111,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
             }}
-            leftSections={{ ...leftSectionsFor(assignmentId), chapter: <ChapterPanel workId={assignmentId} /> }}
+            leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <ChapterPanel workId={assignmentId} /> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />

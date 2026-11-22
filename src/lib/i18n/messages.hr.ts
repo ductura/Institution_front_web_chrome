@@ -40,7 +40,7 @@ export const editorPanelLayoutsHr = {
   },
   leftSections: {
     requirements: "Zahtjevi", figures: "Prikazi i fusnote", stash: "Odloženo",
-    progress: "Napredak", deadlines: "Rokovi", thread: "Nit rada",
+    progress: "Napredak", deadlines: "Rokovi", thread: "Nit rada", history: "Povijest dokumenta",
   },
   allChapters: "‹ Sva poglavlja",
   subchapters: "Potpoglavlja",

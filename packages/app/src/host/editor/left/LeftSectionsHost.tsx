@@ -16,6 +16,7 @@ import {
 } from "./left-model";
 import { leftHr as t } from "./messages.hr";
 import { useDeviceValue, useWorkSnapshot } from "./use-left";
+import { HistorySection } from "./HistorySection";
 import styles from "./Left.module.css";
 
 type Props = { workId: string };
@@ -208,11 +209,14 @@ function Thread({ workId }: Props) {
   );
 }
 
-/** The six sections, keyed as the left panel expects them. */
-export function leftSectionsFor(workId: string): Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread", ReactNode> {
+type SectionKey = "requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "history";
+
+/** The sections, keyed as the left panel expects them; "Povijest dokumenta" once the work's document is known. */
+export function leftSectionsFor(workId: string, documentId?: string): Partial<Record<SectionKey, ReactNode>> {
   return {
     requirements: <Requirements />, figures: <Figures />, stash: <Stash workId={workId} />,
     progress: <Progress />, deadlines: <Deadlines workId={workId} />, thread: <Thread workId={workId} />,
+    ...(documentId ? { history: <HistorySection documentId={documentId} /> } : {}),
   };
 }
 
