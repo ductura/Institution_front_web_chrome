@@ -2532,3 +2532,10 @@ export const whatIsRecordedHr = {
   who: { heading: "Tko vidi", text: "Ti i tvoj nastavnik ili mentor, isto i u isto vrijeme." },
   note: "Ništa od ovoga nije ocjena ni tvrdnja o autorstvu.",
 } as const;
+
+/** WEB-0910: the rhythm setting beside the dialog "Što Ductura bilježi dok pišeš". */
+export const inputRhythmHr = {
+  toggle: "Bilježi ritam tipkanja",
+  teacherOnly: "Ritam unosa može isključiti samo nastavnik.",
+  unknown: "Postavka ritma trenutačno nije dostupna.",
+} as const;
