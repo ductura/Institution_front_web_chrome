@@ -43,7 +43,7 @@ function useHolds() {
     setState(out.kind === "ok"
       ? {
           kind: "ready",
-          // The read names neither the placer nor whether the hold is the reader's own (LOK-SRV-1):
+          // The read names neither the placer nor whether the hold is the reader's own (LOK-SRV-2):
           // the row shows only the time, and a refused release of an own hold answers 403.
           holds: out.holds.map((h) => ({
             id: h.id, subject: `${holdLabels.subjectTypes[h.subjectType]}: ${h.subjectId}`,
