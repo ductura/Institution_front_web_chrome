@@ -8,10 +8,11 @@ import { canonicalizeJcs } from "../../editor-core/src/document/forensics/jcs";
 import { REVISION_ZERO_JCS } from "../../editor-core/src/document/document/revision-zero";
 import { mentorWorkHr } from "../../../src/components/editor/mentor/work-state/messages.hr";
 import { messagesHr as t } from "../../../src/lib/i18n/messages.hr";
+// The host's own N-08 comments panel (WEB-2154), N-09 replay page (WEB-2159), N-12 consultations (#398) and N-06 frame (WEB-2150) texts.
 import { teacherCommentsMessages as comments } from "../src/host/teacher/comments/messages.hr";
 import { n09Messages as replay } from "../src/host/teacher/n09/messages.hr";
+import { n12Messages as consultationMessages } from "../src/host/teacher/n12/messages.hr";
 import { workFrameMessages as frame } from "../src/host/teacher/n06/messages.hr";
-import { n12Messages as consultations } from "../src/host/teacher/n12/messages.hr";
 
 const assignmentId = "00000000-0000-4000-8000-0000000000a1";
 const studentId = "00000000-0000-4000-8000-0000000000e1";
@@ -83,21 +84,20 @@ test("teacher opens the live text, replay, signed receipt and consultations unde
   await expect(page.getByRole("link", { name: mentorWorkHr.receipt, exact: true })).toHaveAttribute("href", `${work}/predaja`);
   await page.getByRole("link", { name: t.replay.titleTeacher }).click();
   await expect(page).toHaveURL(`${work}/reprodukcija`);
-  // WEB-2159 (N-09): the replay page says why there is nothing to play.
   await expect(page.getByText(replay.empty)).toBeVisible();
-  await page.getByRole("link", { name: t.replay.backToWork }).click();
+  await page.getByRole("link", { name: consultationMessages.backToWork }).click();
   await page.getByRole("link", { name: t.receipt.title }).click();
   await expect(page).toHaveURL(`${work}/predaja`);
   await expect(page.getByText("Iva Izmišljena")).toBeVisible();
   await expect(page.getByText(/\bPredano\b/)).toBeVisible();
   await page.getByRole("link", { name: t.receipt.summary, exact: true }).click();
   await expect(page).toHaveURL(`${work}#sazetak-procesa`);
-  // WEB-2150 (N-06): the work views are one navigation; N-12 (#398) has its own texts.
-  await page.getByRole("navigation", { name: frame.linksLabel }).getByRole("link", { name: consultations.title, exact: true }).click();
+  // WEB-2150 (#385): the N-06 frame names the same views in its own navigation.
+  await page.getByRole("navigation", { name: frame.linksLabel }).getByRole("link", { name: consultationMessages.title, exact: true }).click();
   await expect(page).toHaveURL(`${work}/konzultacije`);
-  await expect(page.getByText(consultations.empty)).toBeVisible();
-  await expect(page.getByRole("link", { name: consultations.backToWork })).toHaveAttribute("href", work);
-  await page.getByRole("button", { name: consultations.new }).click();
+  await expect(page.getByText(consultationMessages.empty)).toBeVisible();
+  await expect(page.getByRole("link", { name: consultationMessages.backToWork })).toHaveAttribute("href", work);
+  await page.getByRole("button", { name: consultationMessages.new }).click();
   await expect(page).toHaveURL(`${work}/konzultacije?novi=1`);
   expect(seen).toContain("/api/v1/comments/list");
   expect(seen).toContain(receiptPath);
@@ -148,7 +148,6 @@ test("the anchored comment is shown after the server confirms and returns it", a
   await page.route("**/api/v1/comments/list", (route) => route.fulfill({ json: { comments: recorded ? [recorded] : [] } }));
   try {
     await page.goto(work);
-    // WEB-2154: the comments panel uses the prototype texts.
     await expect(page.getByText(comments.empty)).toBeVisible();
     await page.getByText(text).evaluate((element) => {
       const range = document.createRange();

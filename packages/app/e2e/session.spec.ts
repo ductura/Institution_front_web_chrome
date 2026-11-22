@@ -17,11 +17,9 @@ const ready = assignments.vectors.find((v) => v.name === "ready")!.response.body
 // Bodies of the teacher.courses.get "courses" and teacher.mentorships.get "works" vectors of @ductura/test-fakes 3.0.1.
 const teacher = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", import.meta.url), "utf8")) as Record<string, unknown>;
 
-// Response bodies of the contract vectors (src/client), so the fakes keep the contract's shape.
-const vectors = JSON.parse(readFileSync(new URL("../../../src/client/migration-contract-vectors.generated.json", import.meta.url), "utf8")) as {
-  route: string; name: string; response: { body: unknown };
-}[];
-const vector = (route: string, name: string) => vectors.find((v) => v.route === route && v.name === name)!.response.body;
+/** The teaching-team view of a course the teacher holds alone (institution.teaching-team-view.get, holder). */
+const TEAM_HOLDER_ID = "5e4d3c2b-1a09-4f8e-8d7c-6b5a49382701";
+const HOLDER_VIEW = { role: "holder", holderId: TEAM_HOLDER_ID, assistants: [], students: [], groups: [] };
 
 type Me = { status: number; body?: unknown };
 
@@ -38,18 +36,14 @@ async function fakeServer(page: Page, me: Me) {
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ locale: null }) }));
   await page.route("**/api/v1/student/assignments", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ready) }));
-  // LOK-WEB-24: the student home reads the work state and each assignment's
-  // requirements, and the teacher home the course team and its view; unfaked they reached the
-  // dead proxy (127.0.0.1:9) and logged a 500. A test may still route them itself.
+  // WEB-2102/WEB-2103/WEB-2105: the student's pages also read the state of each work; none is started here.
   await page.route("**/api/v1/student/assignment-work", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ assignments: [] }) }));
-  await page.route("**/api/v1/student/assignments/*/requirements", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(vector("student.assignment-requirements.get", "without-bounds")) }));
-  await page.route("**/api/v1/courses/*/team", (route) => route.request().method() === "GET"
-    ? route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(vector("institution.teaching-team.get", "success")) })
-    : route.fallback());
+  // WEB-2144: each course card reads the caller's role from the teaching-team view; here the teacher holds the course alone.
   await page.route("**/api/v1/courses/*/team/view", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(vector("institution.teaching-team-view.get", "success-holder")) }));
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(HOLDER_VIEW) }));
+  await page.route("**/api/v1/courses/*/team", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ holderId: TEAM_HOLDER_ID, assistantIds: [] }) }));
   await page.route("**/api/v1/teacher/courses", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(teacher["teacher.courses.get"]) }));
   await page.route("**/api/v1/teacher/mentorships", (route) =>
@@ -236,8 +230,7 @@ test("a teacher's read: 403 asks for a teacher account, 503 offers a retry that 
   await page.route("**/api/v1/teacher/mentorships", (route) =>
     route.fulfill({ status: 403, contentType: "application/json", body: "{\"code\":\"forbidden\",\"error\":\"forbidden\"}" }));
   await page.goto("/app/web/nastavnik");
-  // Next keeps an empty role="alert" route announcer outside <main>. The course
-  // card (N-01, WEB-2144) says the list is not shown empty while it cannot be read.
+  // Next keeps an empty role="alert" route announcer outside <main>.
   await expect(page.getByRole("main").getByRole("alert")).toHaveText("Popis kolegija trenutačno nije dostupan. Pokušajte ponovno; popis se ne prikazuje prazan dok se ne učita.");
   await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
   await expect.poll(() => courses).toBe(2);
@@ -255,13 +248,14 @@ test("a teacher's read answering 401 sends the browser to sign-in", async ({ pag
   expect(new URL(seen.login.at(-1)!).searchParams.get("returnTo")).toBe("/app/web/nastavnik");
 });
 
-test("a student's Ductus pages open at their addresses", async ({ page }) => {
+test("a student's Ductus pages open at their addresses; the workspace without a work in progress points to Moji zadaci", async ({ page }) => {
   const errors = errorsOf(page);
   const seen = await fakeServer(page, { status: 200, body: { role: "student", institution: { displayName: INSTITUTION } } });
-  // Radni prostor is connected (WEB-2105): with no work in progress it says so.
   await page.goto("/app/chrome/rad");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radni prostor");
+  // WEB-2105 (#359) connected /rad: it reads the works, and none is in progress here.
   await expect(page.getByText("Nemate rad u tijeku. Rad započnite na kartici zadatka.")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: "Moji zadaci" })).toHaveAttribute("href", "/app/chrome/zadaci");
   await axe(page);
 
   // Moji radovi is connected (HOST-S5): it reads an empty list.

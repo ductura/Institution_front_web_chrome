@@ -20,6 +20,7 @@ import { assignmentCardMessages as card } from "./teacher/assignment-card/messag
 import { teacherShellHr } from "./teacher/shell/messages.hr";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
 import { startWorkAction } from "./student/start-work/action";
+import { HomePage } from "./student/home/HomePage";
 import SignInScreen from "./signin/SignInScreen";
 import { signInViewOf } from "./signin/sign-in-view";
 
@@ -68,8 +69,12 @@ export function SignInPage() {
   return <SignInScreen view={leaving ? "redirecting" : signInViewOf(query)} href={href} onStart={start} />;
 }
 
-/** S01 and S02 over student.assignments.get, read once per visit. */
+/** S01 (E-2, WEB-2102) is its own page; S02 over student.assignments.get, read once per visit. */
 export function StudentPage({ view }: { view: "home" | "courses" }) {
+  return view === "home" ? <HomePage /> : <CoursesPage />;
+}
+
+function CoursesPage() {
   const { base } = useHost();
   const [read, setRead] = useState<MyAssignmentsRead | null>(null);
   useEffect(() => {
@@ -82,7 +87,7 @@ export function StudentPage({ view }: { view: "home" | "courses" }) {
     };
   }, []);
   if (read === null) return <p role="status">{hostText.loading}</p>;
-  return <StudentHome read={read} enroll={null} view={view} signIn={(returnTo) => signInHref(appHref(base, returnTo))}
+  return <StudentHome read={read} enroll={null} view="courses" signIn={(returnTo) => signInHref(appHref(base, returnTo))}
     assignmentAction={startWorkAction} />;
 }
 

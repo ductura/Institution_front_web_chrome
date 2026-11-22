@@ -19,6 +19,7 @@ import { SummaryCardBody, useProcessSummary } from "@/components/teacher/Summary
 import { useComments } from "@/components/teacher/TeacherComments";
 import TeacherComments from "../comments/TeacherCommentsPanel";
 import ProposalsPanel from "../proposals/ProposalsPanel";
+import ProvenanceMap from "../provenance/ProvenanceMap";
 import { proposalsPort } from "../proposals/port";
 import type { TextAnchor } from "@/domain/collaboration";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
@@ -158,6 +159,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               }} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
+            <ProvenanceMap documentId={documentId} />
           </>}
           <RecordLimits />
         </>} />

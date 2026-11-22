@@ -1,0 +1,31 @@
+/* WEB-2102 (E-2): the prototype's po-* blocks on the existing tokens only. */
+.wrap { max-width: 960px; margin: 0 auto; padding: 40px clamp(16px, 4vw, 44px) 64px; display: grid; gap: 28px; }
+.hero { display: grid; gap: 8px; }
+.hero h1 { margin: 0; font-family: var(--ff-display); color: var(--ink); }
+.hero em { font-style: italic; color: var(--accent); }
+.lede { margin: 0; color: var(--ink-2); }
+.eyebrow { display: block; font-size: 0.8125rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+.note, .meta { margin: 0; color: var(--ink-2); }
+.card, .course, .continue { display: grid; gap: 12px; padding: 20px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--chrome); color: var(--ink); }
+.card h2, .card h3, .course h2, .section h2 { margin: 0; font-family: var(--ff-display); color: var(--ink); }
+.center { justify-items: start; }
+.continue { border-color: var(--accent); }
+.continue b { font-family: var(--ff-display); font-size: 1.25rem; color: var(--ink); }
+.continue > button { justify-self: start; }
+.section { display: grid; gap: 12px; }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.item { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 20px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--chrome); }
+.itemBody { display: grid; gap: 4px; min-width: 0; }
+.itemActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+.title { font-family: var(--ff-display); color: var(--ink); }
+.when { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--ink-2); font-size: 0.875rem; }
+.tag { padding: 2px 8px; border: 1px solid var(--rule-2); border-radius: var(--radius); color: var(--ink); }
+.near { border-color: var(--accent); }
+.open { border-style: dashed; }
+.code { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.codeInput { min-width: 12rem; padding: 8px 12px; border: 1px solid var(--rule-2); border-radius: var(--radius); background: var(--chrome); color: var(--ink); font: inherit; text-transform: uppercase; letter-spacing: 0.04em; }
+.codeInput:focus-visible { outline: var(--focus-width) solid var(--accent); outline-offset: var(--focus-offset); }
+.steps { display: grid; gap: 12px; }
+.step { display: grid; gap: 2px; }
+.step h3 { margin: 0; font-size: 1rem; }
+@media (max-width: 560px) { .item { flex-direction: column; align-items: stretch; } .itemActions { justify-content: flex-start; } }

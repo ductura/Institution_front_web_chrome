@@ -30,7 +30,7 @@ export default function WorkFrame({ documentId, gaps, deadlinePassed = null, sta
   }, [documentId, attempt]);
 
   const workPath = liveWorkHref(documentId) ?? "";
-  const back = <p className={styles.back}><a href={appHref(base, "/nastavnik/kolegiji")}>{text.backToCourses}</a></p>;
+  const back = <p><a href={appHref(base, "/nastavnik/kolegiji")}>{text.backToCourses}</a></p>;
   if (read === null) return <div>{back}<Skeleton label={text.loading} /></div>;
   if (read.kind !== "ready") {
     return (
