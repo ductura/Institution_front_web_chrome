@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { webOrigin } from './stog';
+import { app, webOrigin } from './stog';
 import { describePageOnFailure, dismissGuide, journalHolds, openDemoWork, signInDemoStudent } from './student';
 
 // INT-20 (A10). Two tabs of one browser share the cookie, the session record and
@@ -19,10 +19,12 @@ describePageOnFailure();
 
 const COMMIT = `${webOrigin}/api/v1/evidence/commit`;
 
+/** "Odjava" from the student's home page; the work's own sheet has no account place. */
 async function signOut(page: Page) {
+  await page.getByRole('link', { name: '← Moji zadaci' }).click();
+  await expect(page).toHaveURL((url) => url.origin === webOrigin && url.pathname === app('/zadaci'));
   await page.getByRole('button', { name: 'Odjava', exact: true }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Odjava' });
-  // With text that is only on the device the editor offers export first; the test leaves without it.
   await dialog.getByRole('button', { name: /^Odjavi se/ }).first().click();
   await expect(page).toHaveURL((url) => url.origin === webOrigin && url.pathname === '/');
 }

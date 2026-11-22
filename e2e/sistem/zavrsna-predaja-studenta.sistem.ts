@@ -4,7 +4,7 @@ import { expect, test, type Response } from '@playwright/test';
 
 import { canonicalizeJcs } from '../../packages/editor-core/src/document/forensics/jcs';
 import { webOrigin } from './stog';
-import { UNCONFIRMED_V2, assignmentOf, describePageOnFailure, dismissGuide, openDemoWork, signInDemoStudent } from './student';
+import { UNCONFIRMED_V2, journalHolds, assignmentOf, describePageOnFailure, dismissGuide, openDemoWork, signInDemoStudent } from './student';
 
 describePageOnFailure();
 
@@ -120,7 +120,8 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
       expect(Buffer.from(document, 'base64').toString('utf8')).toContain(UNCONFIRMED_V2);
     }
     await expect(editor).toContainText(unconfirmed);
-    await expect(statusBar.getByRole('status')).toHaveText('Spremljeno na uređaju', { timeout: 30_000 });
+    // While the commit is held the chip says "Sprema se…"; the device's journal is the evidence.
+    await expect.poll(() => journalHolds(page, unconfirmed), { message: 'V2 u lokalnom dnevniku (IndexedDB)' }).toBe(true);
   });
 
   const work = await test.step('Potvrda Izjave i pregled spremljenih odlomaka prije predaje', async () => {
