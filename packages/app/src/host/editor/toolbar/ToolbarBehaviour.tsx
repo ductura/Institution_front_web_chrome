@@ -39,7 +39,7 @@ function useToolTip(wrap: RefObject<HTMLDivElement | null>, lookup: (label: stri
     timers.current.show = window.setTimeout(() => {
       const box = button.getBoundingClientRect();
       rect.current = { left: box.left, width: box.width, bottom: box.bottom };
-      setTip({ tip: info, left: box.left, top: box.bottom + 8 });
+      setTip({ top: box.bottom + 8, tip: info, left: box.left });
       warm.current = true;
     }, showDelay(input, warm.current));
   }, [lookup]);
@@ -82,7 +82,7 @@ function useToolTip(wrap: RefObject<HTMLDivElement | null>, lookup: (label: stri
   }, [wrap, show, hide]);
 
   return tip === null ? null : (
-    <div ref={tipRef} role="tooltip" className={styles.tip} style={{ left: tip.left, top: tip.top }}>
+    <div ref={tipRef} role="tooltip" className={styles.tip} style={{ top: tip.top, left: tip.left }}>
       <span className={styles.tipName}>{tip.tip.name}</span>
       {tip.tip.shortcut ? <span className={styles.kbd}>{tip.tip.shortcut}</span> : null}
       {tip.tip.description ? <p className={styles.tipText}>{tip.tip.description}</p> : null}
