@@ -73,10 +73,6 @@ test('INT-20: odjava u kartici A, kartica B ne vidi lokalni dnevnik ni opseg kar
       await expect(tabB.getByText(sentence)).toBeHidden({ timeout: 15_000 });
     });
 
-    // Expected to fail until INT-20b: placed here so the steps above must still pass for real.
-    // Remove together with the INT-20b fix; Playwright reports the unexpected pass.
-    test.fail(true, 'čeka INT-20b');
-
     await test.step('B nakon osvježavanja: traži prijavu, bez rečenice i bez rada', async () => {
       await tabB.reload();
       await tabB.waitForLoadState('networkidle');
