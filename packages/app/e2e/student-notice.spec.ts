@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 const ID = "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60";
 const PATH = `/zadatak/${ID}`;

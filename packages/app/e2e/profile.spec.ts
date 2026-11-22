@@ -3,7 +3,7 @@
 // profile.interface-locale.post and the whole shell changes language at once,
 // with no new sign-in; dates and numbers follow it. Invented people only.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures/test";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const ME = { role: "student", displayName: "Iva Izmišljena", institution: { slug: "izm", displayName: "Izmišljeni fakultet za testove" } };

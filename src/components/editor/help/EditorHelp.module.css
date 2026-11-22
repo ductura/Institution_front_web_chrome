@@ -41,3 +41,11 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
 }
+
+.guideAnchor {
+  position: absolute;
+  top: 100%;
+  right: 10px;
+  z-index: 20;
+  width: min(420px, calc(100vw - 20px));
+}
