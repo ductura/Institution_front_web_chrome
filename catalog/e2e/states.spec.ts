@@ -26,7 +26,7 @@ async function open(page: Page, theme: (typeof THEMES)[number], width: number) {
 
 /** The <dd> holding one state of one component on one surface. */
 function cell(page: Page, name: Component | Screen, surface: (typeof SURFACES)[number], state: CatalogState): Locator {
-  return page.getByRole("region", { name })
+  return page.getByRole("region", { name, exact: true })
     .locator("div", { has: page.locator(":scope > p", { hasText: new RegExp(`^${surface}$`) }) })
     .locator("dl > div", { has: page.locator(":scope > dt", { hasText: new RegExp(`^${state}$`) }) })
     .locator(":scope > dd");
