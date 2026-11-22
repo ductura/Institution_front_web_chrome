@@ -15,6 +15,7 @@ export const workFrameMessages = {
   linkReplay: "Reprodukcija",
   linkCompare: "Usporedba verzija",
   linkConsultations: "Konzultacije",
+  linkInterview: "Pripremi razgovor",
   prev: "Prethodni rad",
   next: "Sljedeći rad",
   steps: "Drugi radovi",
