@@ -82,6 +82,11 @@ export type EvidenceSessionDeps = {
 export type EvidenceSnapshot = SaverSnapshot & {
   closedBy: "submission" | null;
   /**
+   * INT-11: a receipt passed the Ed25519 check in this page session and the
+   * shown state is SYNCED. The status bar reads this, never the state alone.
+   */
+  receiptVerified: boolean;
+  /**
    * The server refused the last row and nothing sends it again by itself
    * (3d-2c2 §3): a refusal for good (`meta.refusedLocalSeq`), or a 426 or an
    * unreadable answer the drain holds for a manual retry. Only a reload sends
@@ -183,7 +188,8 @@ export class EvidenceSession {
     const refused = !this.closedBy && this.owed > 0 && (this.refused || this.manualOnly);
     const submitted = this.closedBy === "submission" || this.work?.submitted === true;
     const stopped = !this.closedBy && this.stopped !== null;
-    return { state: this.state(), failure, capacity: "ok", closedBy: this.closedBy, refused, submitted, stopped, unconfirmed: this.unconfirmed() };
+    const state = this.state();
+    return { state, receiptVerified: this.syncedHere && state === "SYNCED", failure, capacity: "ok", closedBy: this.closedBy, refused, submitted, stopped, unconfirmed: this.unconfirmed() };
   }
 
   /** Read only; see `EvidenceSnapshot.unconfirmed`. */
