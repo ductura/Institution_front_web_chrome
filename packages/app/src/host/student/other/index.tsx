@@ -58,7 +58,7 @@ export function MyWorksPage({ filter }: { filter: WorksFilter }) {
 }
 
 /** What the assignment and its work allow the two pages to read. */
-type WorkDocument =
+export type WorkDocument =
   | { readonly kind: "invalid" }
   | { readonly kind: "notFound" }
   | { readonly kind: "notStarted" }
@@ -69,7 +69,7 @@ type WorkDocument =
  * The work's document, as far as the contract gives it read-only. Signed out
  * goes to AAI@EduHr back to `suffix`; a notice not yet acknowledged comes first.
  */
-function useWorkDocument(raw: string, suffix: string): WorkDocument | null {
+export function useWorkDocument(raw: string, suffix: string): WorkDocument | null {
   const { base } = useHost();
   const router = useRouter();
   const [shown, setShown] = useState<WorkDocument | null>(null);

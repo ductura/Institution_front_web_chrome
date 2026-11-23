@@ -49,6 +49,7 @@ export const profileHr = {
 
 /** Labels of pages whose screens have no English table yet (routes.ts takes them from the screens' own Croatian tables). */
 export const pageLabelsHr = {
+  originComposition: "Podrijetlo teksta",
   consultations: "Konzultacije",
   versionComparison: "Usporedba verzija",
   processSummary: "Sažetak procesa",
