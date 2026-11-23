@@ -888,3 +888,12 @@ li .pgb, blockquote .pgb { width:calc(100% + var(--pg-ml) + var(--pg-mr) + 1.6em
 .nf2-m b { display:block; font-size:12px; font-weight:600; color:var(--ink-2); }
 .nf2-m.a { background:var(--well); }
 @media (max-width:640px) { .nf2-cv > summary { min-height:44px; padding-top:10px; } }
+/* NF-6: mentorstvo i konzultacije (mentor4.js) */
+.tag.nf6t { margin-left:6px; vertical-align:middle; }
+.nf6-load { display:flex; align-items:center; gap:8px; }
+.nf6-dot { width:10px; height:10px; border-radius:50%; background:var(--ink-2); flex:none; }
+.nf6-err { border-color:var(--error); }
+.nf6-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 12px; padding:6px 0; border-top:1px solid var(--rule); }
+.nf6-lbl { min-width:0; }
+.nf6-row .seg button { min-height:32px; }
+@media (max-width:640px) { .nf6-row .seg button { min-height:44px; } #m2Msg { min-height:44px; } }
