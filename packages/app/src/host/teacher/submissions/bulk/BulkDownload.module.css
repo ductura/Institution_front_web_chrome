@@ -1,0 +1,13 @@
+/* VIZ-WCAG-MOB (2.5.8): each format option is a target of at least 24 px, with space between the two. */
+.formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+.format {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+}

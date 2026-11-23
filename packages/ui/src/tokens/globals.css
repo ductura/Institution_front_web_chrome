@@ -369,7 +369,9 @@ main:focus {
 
 /* On the header's grid: same width and side padding, so both start on one line. */
 .page {
-  max-width: 1200px;
+  /* VIZ-WCAG-MOB (1.4.10): the page is a grid item with auto margins, so without the 100% cap a wide child
+     (a table in its scroll box) widens it past a 320 px viewport. */
+  max-width: min(1200px, 100%);
   margin: 0 auto;
   padding: 48px 24px 64px;
   display: flex;
