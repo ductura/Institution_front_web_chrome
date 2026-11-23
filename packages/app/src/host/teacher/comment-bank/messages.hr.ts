@@ -1,5 +1,5 @@
 export const commentBankMessages = {
-  title: "Komentari uz rad",
+  title: "Banka i skice komentara",
   draftsTitle: "Skice komentara",
   draftsNote: "Skice vidite samo vi. Student ih ne vidi dok ih ne objavite.",
   noDrafts: "Nema skica komentara.",
