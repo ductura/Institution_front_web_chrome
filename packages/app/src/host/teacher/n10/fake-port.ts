@@ -1,6 +1,6 @@
 // In-memory stand-in for the N-10 reads (WEB-2157); invented times and sizes only, no real person or text.
 import type { ProcessSummaryV1 } from "../../../../../../src/client/process-summary";
-import type { DetailsOutcome, N10Port, N10Version, SummaryDetails, VersionsOutcome } from "./model";
+import type { DetailsOutcome, N10Port, N10Version, SummaryDetails, ThresholdRow, ThresholdsOutcome, VersionsOutcome } from "./model";
 
 export const FAKE_SUMMARY: ProcessSummaryV1 = {
   summaryFormat: "ductus-process-summary-v1",
@@ -40,14 +40,23 @@ export const FAKE_VERSIONS: readonly N10Version[] = [
   { kind: "submission", revision: 4, savedMinute: "2026-11-05T20:14:00.000Z" },
 ];
 
+/** Invented faculty rules, one kind in each of the three states (P-1 demo: unknown origin and assistant). */
+export const FAKE_THRESHOLDS: readonly ThresholdRow[] = [
+  { origin: "assistant_inserted", state: "in_line" },
+  { origin: "pasted_known", state: "for_review" },
+  { origin: "pasted_unknown", state: "exceeded" },
+];
+
 export function fakeN10Port(
   summary: ProcessSummaryV1 | "signedOut" | "notFound" | "unavailable" = FAKE_SUMMARY,
   details: DetailsOutcome = { kind: "ok", details: FAKE_DETAILS },
   versions: VersionsOutcome = { kind: "ready", versions: FAKE_VERSIONS },
+  thresholds: ThresholdsOutcome = { kind: "ok", rows: [] },
 ): N10Port {
   return {
     summary: async () => (typeof summary === "string" ? { kind: summary } : { kind: "ok", summary }),
     details: async () => details,
     versions: async () => versions,
+    thresholds: async () => thresholds,
   };
 }
