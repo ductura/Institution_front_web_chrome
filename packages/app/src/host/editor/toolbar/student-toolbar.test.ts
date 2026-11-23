@@ -3,11 +3,14 @@
 // each of its tools gives the very document the copied toolbar's tool gave, labels and shortcuts stay, and the
 // V2 schema's missing numbered list is not offered.
 import { Editor } from "@tiptap/core";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createEditorExtensionsV3, NODE_ID_ATTRIBUTE } from "../../../../../editor-core/src/editor/schema";
 import { BLOCK_STYLES, stateOf, TOOLS } from "../../../../../../src/components/editor/EditorToolbarFor.tsx";
-import { KEPT_LABELS, toolbarCommands, toolbarStateOf } from "./StudentToolbar";
+import { EditorToolbarHost } from "./EditorToolbarHost";
+import { KEPT_LABELS, KEPT_TOOLBAR_LABEL, toolbarCommands, toolbarStateOf } from "./StudentToolbar";
 import { toolbarGroups } from "./toolbar-model";
 
 const ID = "00000000-0000-4000-8000-000000000001";
@@ -88,5 +91,14 @@ describe("student toolbar over the editor", () => {
       if (tool.keys) expect(action!.shortcut, tool.label).toBe(tool.keys.replace("Ctrl", "Control"));
     }
     for (const style of BLOCK_STYLES) expect(shown.some((a) => a.label === style.label), style.label).toBe(true);
+  });
+
+  it("keeps the copied toolbar's own name for the bar", () => {
+    const e = editorWith();
+    expect(KEPT_TOOLBAR_LABEL).toBe("Oblikovanje teksta");
+    const html = renderToStaticMarkup(createElement(EditorToolbarHost, {
+      state: toolbarStateOf(stateOf(e)), commands: toolbarCommands(e), label: KEPT_TOOLBAR_LABEL, labels: KEPT_LABELS, omit: ["numberedList"],
+    }));
+    expect(html).toContain('role="toolbar" aria-label="Oblikovanje teksta"');
   });
 });

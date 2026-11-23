@@ -48,6 +48,9 @@ export function toolbarStateOf(s: EditorState): ToolbarState {
 }
 
 /** The names the copied toolbar gave its tools, kept (the @ductura/ui bar names the headings and the quote differently). */
+/** The copied toolbar's accessible name, kept for the bar (WEB-15 finds the bar by it). */
+export const KEPT_TOOLBAR_LABEL = t.toolbar.label;
+
 export const KEPT_LABELS = {
   heading1: t.toolbar.heading1, heading2: t.toolbar.heading2, heading3: t.toolbar.heading3, quote: t.toolbar.quote,
 } as const;
@@ -125,7 +128,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   ];
   return (
     <>
-      <EditorToolbarHost state={toolbarStateOf(state)} commands={toolbarCommands(editor)} labels={KEPT_LABELS} omit={["numberedList"]} />
+      <EditorToolbarHost state={toolbarStateOf(state)} commands={toolbarCommands(editor)} label={KEPT_TOOLBAR_LABEL} labels={KEPT_LABELS} omit={["numberedList"]} />
       <Menu label={t.toolbar.insert} items={insert} onSelect={(id) => {
         if (id === "footnote") v3.openInsert?.("footnote");
         else if (id === "xref") v3.openInsert?.("crossReference");

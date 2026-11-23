@@ -192,14 +192,14 @@ test.describe('editor, val 1 (WEB-14, WEB-15) u isporučenom packages/app', () =
       await expect(tool(page, name)).toHaveAttribute('aria-pressed', 'false');
     }
 
-    // The style menu names the current style; each heading makes the line a heading.
-    const style = toolbarOf(page).locator('[data-roving="blockStyle"]');
+    // The block style buttons (PIL-K-TRAKA, WEB #527): the pressed one names the current style, the others
+    // are not pressed, and each heading makes the line a heading.
+    const STYLES = ['Naslov rada', 'Poglavlje', 'Potpoglavlje', 'Odlomak'] as const;
     const heading = editor.locator('h1, h2, h3, h4', { hasText: text });
-    for (const name of ['Naslov rada', 'Poglavlje', 'Potpoglavlje', 'Odlomak']) {
+    for (const name of STYLES) {
       await selectParagraph(page, text);
-      await style.click();
-      await page.getByRole('menuitemradio', { name, exact: true }).click();
-      await expect(style).toHaveText(new RegExp(`^${name}`));
+      await tool(page, name).click();
+      for (const other of STYLES) await expect(tool(page, other)).toHaveAttribute('aria-pressed', String(other === name));
       await expect(heading).toHaveCount(name === 'Odlomak' ? 0 : 1);
     }
 
