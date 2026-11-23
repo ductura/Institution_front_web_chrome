@@ -183,10 +183,11 @@ describe("F-8 3d-2a: journal v3", () => {
       meta: { documentId: "stari-dokument", localSeq: 1, state: "LOCAL_DURABLE" },
     });
     expect(await journal.hasPendingLogout()).toBe(true);
-    // Version 4 (3d-2b) added the store of kept copies.
-    expect(raw(journal).verno).toBe(4);
+    // Version 4 (3d-2b) added the store of kept copies, version 5 (PIL-K-V3-BEZ-MREZE) that of openings.
+    expect(raw(journal).verno).toBe(5);
     expect(await raw(journal).table("timings").count()).toBe(0);
     expect(await raw(journal).table("salvage").count()).toBe(0);
+    expect(await raw(journal).table("works").count()).toBe(0);
   });
 
   it("9: an owed segment blocks logout; the timing record does not, and goes with the database", async () => {

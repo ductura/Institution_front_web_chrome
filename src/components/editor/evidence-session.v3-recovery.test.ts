@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { Editor } from "@tiptap/core";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { OpenedWork, OpenOutcome } from "@/client/evidence-ingest";
 import { drainJournalFor } from "@/client/evidence-session-deps";
@@ -27,7 +27,8 @@ import { sheetCandidate } from "./LocalDocument";
  * v1 work does (take the server's version, keep the local text as a copy),
  * through the session and the journal's `adoptServerEvidence` and
  * `readSalvage` under a verified v3 opening; and a v3 work opened again
- * without a network stays "unavailable". Real recorder, headless editors,
+ * without a network opens from its stored verified opening
+ * (PIL-K-V3-BEZ-MREZE) and only from it. Real recorder, headless editors,
  * journal on fake-indexeddb, the kit's commit route with an invented key.
  * Every id, key and text is invented.
  */
@@ -417,24 +418,138 @@ describe("PIL-K-V3-OPORAVAK: no text is lost to a write the take overtakes (revi
   });
 });
 
-describe("PIL-K-V3-OPORAVAK: a v3 work opened again without a network", () => {
-  it("stays unavailable: nothing is read, written or shown from the stored v3 record", async () => {
-    const journal = openJournal();
-    const zero = revisionZero(3);
-    const first = sessionFor(journal, 3, [opened(zero)]).session;
-    await typed(first, 3, "Tekst spremljen na uređaju");
-    first.close();
-    const before = await everything(journal);
+/** A network that is off until `goOnline()`, which calls every `online` listener. */
+function switchable() {
+  let online = false;
+  const listeners = new Set<() => void>();
+  return {
+    network: { online: () => online, onOnline: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; } },
+    goOnline: () => { online = true; for (const listener of [...listeners]) listener(); },
+  };
+}
 
-    // The reload: the open route cannot be reached.
+/** A v3 work typed and saved on this device with the server's answer, then closed (the tab before the reload). */
+async function savedV3(text = "Tekst spremljen na uređaju") {
+  const journal = openJournal();
+  const first = sessionFor(journal, 3, [opened(revisionZero(3))]).session;
+  const doc = await typed(first, 3, text);
+  first.close();
+  return { journal, doc };
+}
+
+describe("PIL-K-V3-BEZ-MREZE: a v3 work opened again without a network", () => {
+  it("opens from its stored verified opening after the reload, shows the saved text and writes on", async () => {
+    const { journal, doc } = await savedV3();
+    const runners: unknown[] = [];
+    const { session, opens } = sessionFor(journal, 3, [{ status: "unavailable" }], {
+      createRunner: (...args) => { runners.push(args); throw new Error("no runner without a network"); },
+      // As the browser adapters do (evidence-session-deps.ts): the profile the record keeps.
+      storedProfile: (meta) => meta?.evidenceProfileId ?? null,
+    });
+    const result = await session.load();
+    expect(result.kind).toBe("ready");
+    expect(canonicalizeJcs((result as { document: SheetDocument }).document)).toBe(canonicalizeJcs(doc));
+    expect(session.snapshot()).toMatchObject({ failure: null, state: "LOCAL_DURABLE" });
+    expect(opens).toHaveLength(1);
+    expect(runners).toEqual([]);
+    // Typing on goes into the same v3 chain, under the opening read from the device.
+    const verified = (await journal.readVerifiedWork(DOC))!;
+    const owed = (await read(journal, verified)).pending.length;
+    const editor = new Editor({
+      element: null, extensions: createEditorExtensionsV3(),
+      content: canonicalToTiptapV3((result as { document: CanonicalDocumentV3 }).document),
+    });
+    editor.view.updateState(editor.state.reconfigure({ plugins: editor.extensionManager.plugins }));
+    editors.push(editor);
+    editor.on("transaction", ({ transaction, appendedTransactions }) => {
+      session.record([transaction, ...appendedTransactions], undefined, Date.parse(NOW) + 5_000);
+    });
+    editor.view.dispatch(editor.state.tr.insertText(" i nastavak bez mreže"));
+    session.edit();
+    await session.propose(sheetCandidate(editor, 3)!.doc);
+    await session.settled();
+    const after = await read(journal, verified);
+    expect(after.pending).toHaveLength(owed + 1);
+    expect(after.snapshot?.document).toMatchObject({ schemaVersion: 3 });
+    expect(await session.salvage()).toEqual([]);
+  });
+
+  it("a record without a stored opening (made before version 5) stays unavailable and nothing is written", async () => {
+    const { journal } = await savedV3();
+    await raw(journal).table("works").delete(DOC);
+    const before = await everything(journal);
     const { session, opens } = sessionFor(journal, 3, [{ status: "unavailable" }]);
     expect(await session.load()).toEqual({ kind: "unavailable" });
     expect(session.snapshot()).toMatchObject({ failure: "unavailable" });
     expect(opens).toHaveLength(1);
     expect(await session.salvage()).toBeNull();
     expect(await everything(journal)).toEqual(before);
-    // No core API gives a verified opening from the record itself: the read
-    // without one refuses the v3 snapshot, so nothing is shown from it.
     await expect(journal.readEvidence(DOC)).rejects.toMatchObject({ code: "invalid_input" });
+  });
+
+  it.each<[string, (row: Record<string, unknown>) => Record<string, unknown>]>([
+    ["bytes that do not match the stored hash", (row) => ({ ...row, document: encoder.encode(REVISION_ZERO_JCS) })],
+    ["a forged revision zero proof", (row) => ({ ...row, revisionZeroHash: "0".repeat(64) })],
+    ["the opening claimed as another schema", (row) => ({ ...row, schemaVersion: 1, revisionZeroHash: REVISION_ZERO_SHA256 })],
+  ])("a stored opening with %s is unavailable and nothing is written", async (_label, change) => {
+    const { journal } = await savedV3();
+    const works = raw(journal).table("works");
+    await works.put(change(await works.get(DOC)));
+    const before = await everything(journal);
+    const { session } = sessionFor(journal, 3, [{ status: "unavailable" }]);
+    expect(await session.load()).toEqual({ kind: "unavailable" });
+    expect(session.snapshot()).toMatchObject({ failure: "unavailable" });
+    expect(await everything(journal)).toEqual(before);
+  });
+
+  it("an answer of the server that refuses (not only no answer) is never replaced by the stored opening", async () => {
+    const { journal } = await savedV3();
+    for (const status of ["not_found", "unauthenticated", "not_accepting", "upgrade_required"] as const) {
+      const { session } = sessionFor(journal, 3, [{ status }]);
+      expect(await session.load()).toEqual({ kind: "unavailable" });
+      session.close();
+    }
+  });
+
+  it("once the network comes, the server's verified answer takes the stored opening's place", async () => {
+    const { journal } = await savedV3();
+    const { network, goOnline } = switchable();
+    const runners: { verified?: VerifiedWorkOpening }[] = [];
+    const zero = revisionZero(3);
+    const { session, opens } = sessionFor(journal, 3, [{ status: "unavailable" }, opened(zero)], {
+      network,
+      createRunner: (work, verified) => {
+        runners.push({ verified });
+        return createDrainRunner<QueuedTransaction>({
+          journal: drainJournalFor(journal, verified!),
+          transport: createEvidenceTransport(server(0).fetchImpl, undefined, verified),
+          verifyFor: evidenceVerifierFor(work),
+        });
+      },
+    });
+    expect((await session.load()).kind).toBe("ready");
+    expect(runners).toEqual([]);
+    goOnline();
+    await vi.waitFor(() => expect(runners).toHaveLength(1));
+    expect(opens).toHaveLength(2);
+    const fromServer = (await verifyWorkOpening(DOC, zero))!;
+    expect({ ...runners[0]!.verified }).toEqual({ ...fromServer });
+    await vi.waitFor(() => expect(session.snapshot().state).toBe("SYNCED"));
+  });
+
+  it("once the network comes, a server answer not verified as this v3 work halts the session (unavailable)", async () => {
+    const { journal } = await savedV3();
+    const { network, goOnline } = switchable();
+    const runners: unknown[] = [];
+    const notV3 = revisionZero(1);
+    const { session } = sessionFor(journal, 3, [{ status: "unavailable" }, opened(notV3)], {
+      network, createRunner: (...args) => { runners.push(args); throw new Error("never"); },
+    });
+    expect((await session.load()).kind).toBe("ready");
+    const before = await everything(journal);
+    goOnline();
+    await vi.waitFor(() => expect(session.snapshot().failure).toBe("unavailable"));
+    expect(runners).toEqual([]);
+    expect(await everything(journal)).toEqual(before);
   });
 });
