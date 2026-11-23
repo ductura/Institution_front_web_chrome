@@ -15,7 +15,14 @@ type Request = { kind: AcademicAtom; document: Node } & (
   | { mode: "read"; pos: number; node: Node }
 );
 
-export function useV3EditorDialogs(editor: Editor | null, confirmedWorkSchemaVersion: number | undefined) {
+/** The footnote dialog to open; the host passes its own (PIL-K-FUSNOTA), the old one is the default. */
+export type FootnoteDialogComponent = typeof FootnoteDialog;
+
+export function useV3EditorDialogs(
+  editor: Editor | null,
+  confirmedWorkSchemaVersion: number | undefined,
+  Footnote: FootnoteDialogComponent = FootnoteDialog,
+) {
   const [request, setRequest] = useState<Request | null>(null);
   const active = editor && !editor.isDestroyed && supportsAcademicAtoms(editor.schema, confirmedWorkSchemaVersion)
     ? editor : null;
@@ -58,6 +65,11 @@ export function useV3EditorDialogs(editor: Editor | null, confirmedWorkSchemaVer
 
   if (!active || !request) return { openInsert, dialog: null };
   const close = () => setRequest(null);
+  // Closing a footnote returns the caret to the text, so writing continues where it was left.
+  const closeToEditor = () => {
+    close();
+    requestAnimationFrame(() => { if (!active.isDestroyed) active.view.focus(); });
+  };
   const writable = () => !active.isDestroyed && active.isEditable && active.state.doc === request.document;
   const insert = (attrs: Attrs) => {
     if (request.mode !== "insert" || !writable()) return false;
@@ -81,7 +93,7 @@ export function useV3EditorDialogs(editor: Editor | null, confirmedWorkSchemaVer
   let dialog: ReactNode = null;
   if (request.kind === "footnote") {
     if (request.mode === "insert") {
-      dialog = <FootnoteDialog mode="insert" onSave={(text) => insert({ text })} onClose={close} />;
+      dialog = <Footnote mode="insert" onSave={(text) => insert({ text })} onClose={closeToEditor} />;
     } else {
       let number = 0;
       request.document.nodesBetween(0, request.pos + 1, (node) => {
@@ -91,8 +103,8 @@ export function useV3EditorDialogs(editor: Editor | null, confirmedWorkSchemaVer
       if (typeof text === "string") {
         const note = { number, text };
         dialog = writable()
-          ? <FootnoteDialog mode="edit" note={note} onSave={(next) => change({ text: next })} onRemove={() => change()} onClose={close} />
-          : <FootnoteDialog mode="read" note={note} onClose={close} />;
+          ? <Footnote mode="edit" note={note} onSave={(next) => change({ text: next })} onRemove={() => change()} onClose={closeToEditor} />
+          : <Footnote mode="read" note={note} onClose={closeToEditor} />;
       }
     }
   } else if (request.mode === "insert") {
