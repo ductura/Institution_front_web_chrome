@@ -1,7 +1,8 @@
 /**
  * The browser side of the student's submission (WEB-22, S: PO-17; B-6, B-8).
  *
- * submission.submit.post goes through createApi under `ductus-protocol: 1`
+ * submission.submit-second.post (the v2 route, SRV #646; PIL-K-IZJAVA-VRATA)
+ * goes through createApi under `ductus-protocol: 1`
  * and sends exactly the document and the revision the student sees, never a
  * time, a hash or text. Every answer maps onto one closed table:
  *
@@ -16,10 +17,9 @@
  *   receipt, the document sent); `none` or any other revision or document is
  *   `nepoznato`, so the page never says the work is not submitted;
  * - 409 `declaration_required` is `izjava` (PIL-K-IZJAVA-VRATA): a warning that
- *   sends the student to step 2, not an error. TODO(ugovor): it is the answer of
- *   submission.submit-second.post (the v2 submission route, SRV #646), which is
- *   not in the WEB extract yet; until it is, this route's 503 for the same case
- *   stays `nepoznato`, and steps 3 and 4 open sending only on the server's gate;
+ *   sends the student to step 2, not an error. The extract declares no error
+ *   body for v2, so a 409 body is kept only when it is exactly one of the 409
+ *   shapes of submission.submit.post, or `{ status: "declaration_required" }`;
  * - 401 is `session-expired`, the shell's flow for an ended session;
  * - the declared refusals the inventory does not map (`stale_revision`,
  *   `not_acknowledged`, `not_open`, 404, 413, 426 and the refusals of the
@@ -39,7 +39,9 @@
 import { browserTransport, createApi, errorBody, RESPONSES, type ApiOptions, type ApiResult } from "./api";
 import { matchesSchema, type Schema } from "./schema-check";
 
-type SubmitSuccess = Extract<ApiResult<"submission.submit.post">, { ok: true }>;
+/** The route the student submits through: v2 checks the declaration (409 declaration_required). */
+const SUBMIT_ROUTE = "submission.submit-second.post";
+type SubmitSuccess = Extract<ApiResult<typeof SUBMIT_ROUTE>, { ok: true }>;
 export type SubmissionReceipt = SubmitSuccess["body"]["receipt"];
 
 export type BlockedReason = "segment_unsigned" | "record_discontinuous" | "no_evidence";
@@ -91,7 +93,7 @@ function schemaAt(id: string, status: string): Schema {
   return schema;
 }
 
-const SUBMITTED = schemaAt("submission.submit.post", "200");
+const SUBMITTED = schemaAt(SUBMIT_ROUTE, "200");
 // The one receipt shape (SignedSubmissionReceiptV2), read from the contract, never written here.
 const RECEIPT = ((SUBMITTED as { properties?: Record<string, Schema> }).properties?.receipt ?? false);
 // The receipt's time shape, and a real calendar date and time (schema-check's date-time).
@@ -124,6 +126,8 @@ const REFUSALS: Readonly<Record<string, SubmitError>> = {
   client_rejected: "client_rejected",
 };
 const UNKNOWN = { kind: "nepoznato" } as const;
+// The 409 bodies v2 sends: the v1 route's declared ones, and the declaration's (its vectors).
+const REFUSED: Schema = { oneOf: [schemaAt("submission.submit.post", "409"), closed({ status: { const: "declaration_required" } })] };
 /** The server's 409 when the assignment asks for a declaration that is not confirmed (SRV #646). */
 export const DECLARATION_REQUIRED = "declaration_required";
 const EXPIRED = { kind: "session-expired" } as const;
@@ -201,12 +205,13 @@ export async function submitWork(input: SubmitInput, deps: SubmitDeps = {}): Pro
       return response;
     };
     const api = createApi({ ...deps.api, fetchImpl: measured, protocol: "1" });
-    const result = await api("submission.submit.post", {
+    const result = await api(SUBMIT_ROUTE, {
       params: undefined, query: undefined, body: { documentId: sent.documentId, revision: sent.revision },
     });
     // A 401 whose body is not JSON reaches here as status 0: it is still the end of the session.
     if (!result.ok && result.status === 0 && answered === 401) return EXPIRED;
-    outcome = submitOutcomeFrom(result, errorBody(result), sent);
+    const body = errorBody(result);
+    outcome = submitOutcomeFrom(result, result.status === 409 && matchesSchema(REFUSED, body) ? body : undefined, sent);
   } catch {
     // A 401 whose body broke off after the headers is still the end of the session; anything else may be submitted.
     return answered === 401 ? EXPIRED : UNKNOWN;

@@ -1,7 +1,7 @@
 "use client";
 
 // WEB-2109 (PARITET Predaja E-10 / PD-3): step 4 in the host. Same server calls as
-// src/components/student/Submission.tsx (evidence.open.post, submission.submit.post), now with the
+// src/components/student/Submission.tsx (evidence.open.post; the submission now on submission.submit-second.post), with the
 // transport of "Provjeri stanje predaje" (readSubmittedWork), the extended deadline (C-15), the states
 // of the prototype, aria-disabled instead of disabled, and a backdrop click that closes PD-3 (R-30).
 // PIL-K-IZJAVA-VRATA: the declaration is read from the server (student.declaration.get), never from this

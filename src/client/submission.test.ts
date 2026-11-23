@@ -1,34 +1,34 @@
 // WEB-22 (S: PO-17, B-6, B-8): the closed outcome table of the submission,
-// every vector of submission.submit.post through createApi against the fake
-// server of @ductura/test-fakes, and the reads that wait for contract 3.1.0
-// (TODO(ugovor)) over invented answers. All data is invented.
-import { answerFake, FAKE_VECTOR_HEADER, VECTORS, type FakeVector } from "@ductura/test-fakes/fake-server";
+// every vector of submission.submit-second.post (PIL-K-IZJAVA-VRATA, the v2
+// route of the extract) through createApi, and the reads that wait for contract
+// 3.1.0 (TODO(ugovor)) over invented answers. All data is invented.
 import { describe, expect, it } from "vitest";
+import vectors from "./migration-contract-vectors.generated.json" with { type: "json" };
 import {
   addNote, NOTE_MAX, readNotes, readRequirements, readSubmissionState, submitOutcomeFrom, submitWork,
   type LocalCall, type SubmissionReceipt, type SubmitInput,
 } from "./submission";
 
 const BASE = "https://ductura.example.invalid";
-const SUBMIT = VECTORS.filter((v) => v.route === "submission.submit.post");
+type FakeVector = {
+  readonly route: string;
+  readonly name: string;
+  readonly request: { readonly headers?: Readonly<Record<string, string>> };
+  readonly response: { readonly status: number; readonly contentType: string; readonly headers: Readonly<Record<string, string>>; readonly body: unknown };
+};
+const SUBMIT = (vectors as readonly FakeVector[]).filter((v) => v.route === "submission.submit-second.post");
 const RECEIPT = (SUBMIT.find((v) => v.name === "submitted")?.response.body as { receipt: SubmissionReceipt }).receipt;
 const ASSIGNMENT = RECEIPT.payload.assignmentId;
 const SENT: SubmitInput = { assignmentId: ASSIGNMENT, documentId: RECEIPT.payload.documentId, revision: RECEIPT.payload.revision };
 
 type Sent = { url: string; method: string; headers: Headers; body: string };
 
-/** Answers every request as the fake server answers `vector`; the vector's own bytes stand in for the body. */
+/** Answers every request with the recorded answer of `vector` (the server's, from the extract's vectors). */
 function fakeOf(vector: FakeVector, sent: Sent[]): typeof fetch {
   return async (input, init) => {
-    const headers = new Headers(init?.headers);
-    sent.push({ url: String(input), method: init?.method ?? "GET", headers: new Headers(headers), body: String(init?.body ?? "") });
-    for (const [name, value] of Object.entries(vector.request.headers ?? {})) headers.set(name, value);
-    headers.set(FAKE_VECTOR_HEADER, vector.name);
-    const bytes = new TextEncoder().encode(vector.request.rawBody ?? JSON.stringify(vector.request.body));
-    if (!headers.has("content-length")) headers.set("content-length", String(bytes.byteLength));
-    const answer = answerFake({ method: init?.method ?? "GET", url: String(input), headers: Object.fromEntries(headers), body: bytes });
-    const list = Object.entries(answer.headers).flatMap(([n, v]) => (Array.isArray(v) ? v : [v]).map((x) => [n, x] as [string, string]));
-    return new Response(answer.body === "" ? null : answer.body, { status: answer.status, headers: list });
+    sent.push({ url: String(input), method: init?.method ?? "GET", headers: new Headers(init?.headers), body: String(init?.body ?? "") });
+    const { status, contentType, headers, body } = vector.response;
+    return new Response(JSON.stringify(body), { status, headers: { ...headers, "content-type": contentType } });
   };
 }
 
@@ -67,6 +67,7 @@ const EXPECTED: Readonly<Record<string, object>> = {
   "already-requested": { kind: "stanje", revision: 6, state: { kind: "ceka", revision: 6, requestedAt: REQUESTED_AT } },
   "not-acknowledged": { kind: "greska", code: "not_acknowledged" },
   "not-open": { kind: "greska", code: "not_open" },
+  "declaration-required": { kind: "izjava" },
   "unavailable-signing": { kind: "nepoznato" },
   "unavailable-verification": { kind: "nepoznato" },
 };
@@ -92,7 +93,7 @@ describe("submitWork", () => {
     const sent: Sent[] = [];
     await submitWork(SENT, { api: { baseUrl: BASE, fetchImpl: fakeOf(ok, sent) } });
     expect(sent).toHaveLength(1);
-    expect(sent[0]?.url).toBe(`${BASE}/api/v1/submission`);
+    expect(sent[0]?.url).toBe(`${BASE}/api/v1/submission/v2`);
     expect(sent[0]?.method).toBe("POST");
     expect(sent[0]?.headers.get("ductus-protocol")).toBe("1");
     expect(JSON.parse(sent[0]?.body ?? "")).toEqual({ documentId: SENT.documentId, revision: SENT.revision });
