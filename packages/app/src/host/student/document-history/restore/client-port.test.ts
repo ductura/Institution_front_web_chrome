@@ -112,6 +112,13 @@ describe("restore real port (PIL-D7-OBNOVA)", () => {
     expect(during.applied).toHaveLength(1);
   });
 
+  it("INT-21: the receipt of a pending restore is the editor's own, asked again", async () => {
+    const said: ("confirmed" | "waiting")[] = ["waiting", "confirmed"];
+    const port = clientRestorePort(fakeEditor({ confirmed: async () => said.shift() ?? "waiting" }), createApi({ baseUrl, fetchImpl: serving([3]) }));
+    expect(await port.receipt?.()).toBe("waiting");
+    expect(await port.receipt?.()).toBe("confirmed");
+  });
+
   it("no receipt in time is pending, never saved", async () => {
     expect(await clientRestorePort(fakeEditor({ confirmed: async () => "waiting" }), createApi({ baseUrl, fetchImpl: serving([3]) })).restore("rad-1", 1, 3))
       .toEqual({ kind: "pending" });
