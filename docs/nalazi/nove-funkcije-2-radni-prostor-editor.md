@@ -336,7 +336,7 @@ Otvoreno za provjeru u pregledniku (nije moguće iz ovog pregleda): mobitel (2.4
 
 ## 6. Provedba u prototipu (Danielova odluka 23. 11. 2026.: svih 26 prijedloga u pilotu)
 
-Prototip: `docs/prototip/editor/nf2.js` (v0.28), `editor.css` (kraj datoteke), `index.html`; popis stavki, stanja i poslužiteljskih ovisnosti: `docs/prototip/INVENTAR-editor.md` §2.8 i §5.1. Odluke: Asistent u pilotu isključen (kartica pokazuje pravila uporabe alata i iskreno stanje), numerirani popis u pilotu, vodič „Prvi koraci” uz prvi rad, „Predaja rada” i prebacivač lista u zaglavlju (INVENTAR §1.2), zapisnik konzultacija i „Dokle sam stao” u pilotu.
+Prototip: `docs/prototip/editor/nf2.js` (v0.28), `editor.css` (kraj datoteke), `index.html`; popis stavki, stanja i poslužiteljskih ovisnosti: `docs/prototip/INVENTAR-editor.md` §2.8 i §5.1. Odluke: Asistent u pilotu **radi** (promjena odluke NF-2 br. 1, vidi niže; kartica radi kao pomoćnik uz pravila uporabe alata), numerirani popis u pilotu, vodič „Prvi koraci” uz prvi rad, „Predaja rada” i prebacivač lista u zaglavlju (INVENTAR §1.2), zapisnik konzultacija i „Dokle sam stao” u pilotu.
 
 | P-n | INVENTAR ID | Element prototipa |
 |---|---|---|
@@ -349,7 +349,7 @@ Prototip: `docs/prototip/editor/nf2.js` (v0.28), `editor.css` (kraj datoteke), `
 | P-7 | NF2-P7 | „Dohvati podatke” u dijalogu „Brzi izvor” (`quick`, `nf2Look`) |
 | P-8 | NF2-P8 | Blok „Zatražene potvrde i preporučeni izvori” u kartici Izvori (`RP.HK.srcTop`) |
 | P-9 | NF2-P9 | Kartica Asistent: „Pravila za ovaj zadatak” |
-| P-10 | NF2-P10 | Kartica Asistent: „isključen u pilotu”, bez modela i pružatelja |
+| P-10 | NF2-P10, ASIST-1 do ASIST-9 | Kartica Asistent radi (simulirani odgovori, zapis razgovora, prilog izjavi), bez modela i pružatelja |
 | P-11 | NF2-P11 | Redak izjave u kartici Rad i Predajnom paketu čita stanje; odjeljak „Što je zabilježeno u Ducturi” |
 | P-12 | NF2-P12 | Dijalog `nf2decl` „Izjava o korištenju alata” |
 | P-13 | NF2-P13 | Traka o podudaranju + dijalog `nf2expl` „Objasni, ako želiš” |
@@ -366,3 +366,14 @@ Prototip: `docs/prototip/editor/nf2.js` (v0.28), `editor.css` (kraj datoteke), `
 | P-24 | NF2-P24 | Napomena o postavci ustanove u dijalogu „Dodaci editora” (`X.more2.modsExtra`) |
 | P-25 | NF2-P25 | `/tablica`, `/slika` „nije u pilotu” uz „Ograničenja pilota” |
 | P-26 | NF2-P26 | Traka „Rad je otvoren na drugom uređaju…” (`N.other`) |
+
+### Promjena odluke NF-2 br. 1: Asistent u pilotu radi (23. 11. 2026.)
+
+Daniel je promijenio odluku NF-2 br. 1: **Asistent (OC-1) u pilotu radi** (prije: isključen). Ovaj nalaz je do tada u odjeljku 5 (pitanje 1) i u P-9/P-10 polazio od isključenog asistenta; to više ne vrijedi.
+
+- **Što je promijenjeno u prototipu (nf2.js, odjeljak 4):** kartica Asistent radi kao pomoćnik. Pravila za ovaj zadatak (P-9) ostaju. Stanja: radi, učitavanje odgovora, greška, zabranjeno zadatkom (`aiPolicy` = prohibited), samo sažimanje (`aiSummaryOnly`), ograničenje uporabe. Odabiru se u dijalogu „Stanja radnog prostora”, skupina „Asistent (P-9, P-10)”, ili adresom `#nf2=asistent_radi` (i `asistent_ucitavanje`, `asistent_greska`, `asistent_zabranjeno`, `asistent_sazimanje`, `asistent_ogranicenje`). Odgovori su simulirani i izmišljeni; ništa se ne šalje.
+- **Jasna oznaka:** „Odgovore daje Asistent, a ne Vi. Ductura bilježi razgovor s Asistentom …”. Razgovori se bilježe, student ih vidi i može ih priložiti izjavi („Priloži izjavi”); izjava prikazuje stvarne brojke i priložene razgovore; nastavnik vidi samo priložene (veza s NF-3 PR-21).
+- **Nikad pružatelj ni model:** odluka Q-10 nije donesena, pa kartica piše samo „Asistent”. Raniji assist.js/assist2.js imenuju pružatelje; ostaju u kodu, ali se ne prikazuju.
+- **Podudaranje (P-13)** ostaje kako jest (traka i „Objasni, ako želiš”).
+- **Poslužiteljske ovisnosti** (INVENTAR-editor §2.8 ASIST-1 do ASIST-9, §5.1): postoje `student.assistant-request.post`, `student.assistant-conversation.get`, `student.notice.get`, `student.declaration-attachments.post`; **nedostaju** polje `aiSummaryOnly` u obavijesti, popis grešaka, ograničenje uporabe, popis razgovora za zadatak i čitanje prekidača OC-1. Granica od 10 upita je pretpostavka prototipa.
+- **Otvoreno (nije dirano, izvan trake ovog zadatka):** studentski prototip `docs/prototip/Ductura_student.html` (radi NF-3-PROTO) ne sadrži doslovni tekst „asistent isključen” (pretraga „asistent”, „isključen”, „nije uključen”, „OC-1”: nijedan pogodak). Pod „AI pomoćnik” stoje reci koje treba uskladiti s uključenim Asistentom i s pravilom „nikad pružatelj ni model”: redak 802 (zapis bilježi „prijenos iz AI pomoćnika”), 1172 i 1261 (popis prijenosa iz AI pomoćnika; „Razgovori se nastavniku prikazuju samo kao prilog izjavi”, što odgovara ASIST-8) i 1180 (primjer „Pružatelj A, model …” u zapisu; izmišljena oznaka, ali sadrži riječ model). Odluku o izmjeni donosi NF-3-PROTO.
