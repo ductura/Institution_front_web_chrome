@@ -4,7 +4,7 @@ import { useContext } from "react";
 import { createPortal } from "react-dom";
 
 import { LocalLogout } from "@/components/editor/LocalDocument";
-import { leaveFor, LOGOUT_PATH } from "@/client/api";
+import { LOGOUT_PATH } from "@/client/api";
 import { browserMarkStore, hasEnded, type SessionMark } from "@/client/session-marks";
 
 import styles from "../../SignOut.module.css";
@@ -22,7 +22,6 @@ export function EditorSessionControls({ scope, session, assignmentId }: {
     <LocalLogout
       buttonClassName={styles.signOut}
       action={LOGOUT_PATH}
-      afterSignOut={() => leaveFor("/")}
       unsavedWarning={exitCopyHr.warning}
       renderTrigger={(trigger) => target ? createPortal(trigger, target) : null}
       keepCopy={(text) => {

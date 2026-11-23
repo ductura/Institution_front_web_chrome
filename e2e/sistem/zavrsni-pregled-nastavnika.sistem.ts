@@ -26,6 +26,14 @@ function commentsPanel(page: Page) {
   return page.getByRole('region', { name: commentText.title, exact: true });
 }
 
+/**
+ * The comment's own paragraph: the panel writes "Vi · <when> <body>" in one
+ * paragraph, so the body alone is no element of its own to find by exact text.
+ */
+function commentBody(thread: ReturnType<Page['getByRole']>, body: string) {
+  return thread.getByRole('paragraph').filter({ hasText: body });
+}
+
 async function signInTeacher(page: Page, courseTeacher: boolean) {
   await signInThroughPreloader(page, courseTeacher ? 'demo-teacher' : async (oidc) => {
     await oidc.getByLabel('Domena ustanove').fill('demo.ductus.test');
@@ -158,8 +166,8 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       await expect(panel.getByRole('status').filter({ hasText: commentText.added })).toBeVisible();
       const thread = panel.getByRole('article').filter({ hasText: uiComment });
       await expect(thread).toHaveCount(1);
-      await expect(thread.getByText(uiComment, { exact: true })).toBeVisible();
-      await expect(thread.getByText(new RegExp(`^${commentText.own} · `))).toBeVisible();
+      await expect(commentBody(thread, uiComment)).toHaveText(new RegExp(`^${commentText.own} · `));
+      await expect(commentBody(thread, uiComment)).toBeVisible();
       commentedInUi = { workPath, comment: uiComment };
     });
 
@@ -204,7 +212,7 @@ test('INT-15: komentar nastavnika iz obrasca prikazan je uz reviziju V1', async 
     await page.goto(workPath);
     await expect(page).toHaveURL(workPath);
     const thread = commentsPanel(page).getByRole('article').filter({ hasText: comment });
-    await expect(thread.getByText(comment, { exact: true })).toBeVisible();
+    await expect(commentBody(thread, comment)).toBeVisible();
     return thread;
   });
 

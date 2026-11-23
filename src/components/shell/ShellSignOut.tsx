@@ -3,14 +3,15 @@
 import { Button, Dialog } from "@ductura/ui";
 import { useRef, useState } from "react";
 
-import { leaveFor, signOut } from "@/client/api";
+import { followLogoutNatively, signOut } from "@/client/api";
 import { clearSubmissionStorage } from "@/components/predaja/storage";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 /**
  * WEB-08 (A-6): "Odjava" in the shell opens the shared dialog (WEB-04); on
  * confirmation auth.logout.post ends the Ductura session and the AAI@EduHr
- * session, and the browser goes to "/". Without the server's confirmation
+ * session: after the route confirmed, the browser follows it natively on to
+ * the provider's logout and back to "/" (INT-20c). Without the server's confirmation
  * nothing has ended: the dialog says so and offers it again (F-285).
  */
 export default function ShellSignOut({ className }: { className?: string }) {
@@ -29,7 +30,7 @@ export default function ShellSignOut({ className }: { className?: string }) {
     setFailed(false);
     if (await signOut()) {
       clearSubmissionStorage();
-      leaveFor("/");
+      followLogoutNatively();
       return;
     }
     setBusy(false);

@@ -7,7 +7,7 @@ export function fakeRestorePort(answer?: RestoreOutcome): RestorePort & { readon
     calls,
     async restore(documentId, fromRevision, baseRevision) {
       calls.push([documentId, fromRevision, baseRevision]);
-      return answer ?? { kind: "saved", revision: baseRevision + 1 };
+      return answer ?? { kind: "saved" };
     },
   };
 }
