@@ -86,7 +86,7 @@ describe("restore own text", () => {
 
   it("holds no forbidden term and no duration or pace wording (PRODUCT §5)", () => {
     const m = restoreMessages;
-    const strings: string[] = [...Object.values(m).filter((v) => typeof v === "string") as string[], m.done(1), m.version(1, "2026-11-20T09:15:00.000Z"), m.replayStep(1), m.restoredVersion(1), m.restoredPending(1)];
+    const strings: string[] = [...Object.values(m).filter((v) => typeof v === "string") as string[], m.done(1), m.version(1, "2026-11-20T09:15:00.000Z"), m.replayStep(1), m.restoredVersion(1), m.restoredPending(1), m.confirmedLater(1)];
     for (const s of strings) expect(findForbiddenTerms(s, "hr")).toEqual([]);
     expect(strings.join(" ")).not.toMatch(/trajanj|ritam|brzin/i);
   });

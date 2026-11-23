@@ -75,7 +75,7 @@ export default function RestoreVersion({
         {result?.kind === "saved" ? <p role="status">{text.done(from)}</p> : null}
         {result?.kind === "stale" ? <p role="alert">{text.stale}</p> : null}
         {result?.kind === "signedOut" ? <p role="alert">{text.signedOut}</p> : null}
-        {result?.kind === "pending" ? <p role="status">{text.pending}</p> : null}
+        {/* "pending" is announced by RestoreHost, which also says when the receipt comes (INT-21). */}
         {result?.kind === "unavailable" ? <><p role="alert">{text.unavailable}</p><Button disabled={busy} onClick={() => void run()}>{text.retry}</Button></> : null}
       </div>
     </section>

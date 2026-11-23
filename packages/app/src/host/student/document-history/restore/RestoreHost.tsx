@@ -29,6 +29,8 @@ export default function RestoreHost({ documentId, history, port, onRestored }: {
   // (INT-21). Client-only: the evidence contract has no place for them yet.
   const [restored, setRestored] = useState<readonly RestoredLabel[]>([]);
   const next = useRef(0);
+  // The waiting and the later receipt are said here, in one status area that outlives the list.
+  const [announced, setAnnounced] = useState<string | null>(null);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -47,25 +49,34 @@ export default function RestoreHost({ documentId, history, port, onRestored }: {
   const record = (from: number, confirmed: boolean) => {
     const at = next.current++;
     setRestored((labels) => recordRestored(labels, at, from, confirmed));
+    setAnnounced(confirmed ? null : text.pending);
     if (confirmed) return;
     // Pending: the label turns confirmed when the server's receipt comes, and the list is read again.
+    // No upper bound on purpose: each ask already waits on its own (CONFIRM_WITHIN_MS), and the text
+    // stays in the sheet and the journal, so the page keeps asking while it is open.
     void awaitRestoreReceipt(real, () => mounted.current).then((ok) => {
       if (!ok || !mounted.current) return;
       setRestored((labels) => confirmRestored(labels, at));
+      setAnnounced(text.confirmedLater(from));
       setRound((n) => n + 1);
       onRestored?.(from);
     });
   };
 
-  const labels = restored.length > 0 ? (
-    <ul aria-label={text.title}>
-      {restored.map((r) => (
-        <li key={r.at} data-restored-from={r.from} data-confirmed={r.confirmed}>
-          {r.confirmed ? text.restoredVersion(r.from) : text.restoredPending(r.from)}
-        </li>
-      ))}
-    </ul>
-  ) : null;
+  const labels = (
+    <>
+      <p role="status">{announced}</p>
+      {restored.length > 0 ? (
+        <ul aria-label={text.restoredList}>
+          {restored.map((r) => (
+            <li key={r.at} data-restored-from={r.from} data-confirmed={r.confirmed}>
+              {r.confirmed ? text.restoredVersion(r.from) : text.restoredPending(r.from)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </>
+  );
 
   // Without a list there is nothing to restore; the history above already says why.
   if (versions === null) return labels;

@@ -19,7 +19,7 @@ export function HistorySection({ documentId, port }: { documentId: string; port?
   return (
     <div className={styles.stack}>
       <VersionHistory key={round} documentId={documentId} port={real} />
-      <RestoreHost documentId={documentId} history={real} onRestored={() => setRound((n) => n + 1)} />
+      <RestoreHost key={documentId} documentId={documentId} history={real} onRestored={() => setRound((n) => n + 1)} />
       <TimeMachine documentId={documentId} port={real} />
     </div>
   );
