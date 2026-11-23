@@ -38198,5 +38198,413 @@
         "unavailable"
       ]
     }
+  },
+  "teacher.course-input-rhythm.get": {
+    "path": "/api/v1/teacher/courses/{courseId}/input-rhythm",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the state of the course's switch",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "enabled",
+                "changedBy",
+                "changedAt"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "source": {
+                  "anyOf": [
+                    {
+                      "const": "assignment",
+                      "type": "string"
+                    },
+                    {
+                      "const": "course",
+                      "type": "string"
+                    },
+                    {
+                      "const": "default",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "changedBy": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "role",
+                        "name"
+                      ],
+                      "properties": {
+                        "role": {
+                          "anyOf": [
+                            {
+                              "const": "teacher",
+                              "type": "string"
+                            },
+                            {
+                              "const": "mentor",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "name": {
+                          "anyOf": [
+                            {
+                              "minLength": 1,
+                              "maxLength": 511,
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "changedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.course-input-rhythm.put": {
+    "path": "/api/v1/teacher/courses/{courseId}/input-rhythm",
+    "method": "PUT",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the new state of the course's switch",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "enabled",
+                "changedBy",
+                "changedAt"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "source": {
+                  "anyOf": [
+                    {
+                      "const": "assignment",
+                      "type": "string"
+                    },
+                    {
+                      "const": "course",
+                      "type": "string"
+                    },
+                    {
+                      "const": "default",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "changedBy": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "role",
+                        "name"
+                      ],
+                      "properties": {
+                        "role": {
+                          "anyOf": [
+                            {
+                              "const": "teacher",
+                              "type": "string"
+                            },
+                            {
+                              "const": "mentor",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "name": {
+                          "anyOf": [
+                            {
+                              "minLength": 1,
+                              "maxLength": 511,
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "changedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.input-rhythm.delete": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/input-rhythm",
+    "method": "DELETE",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the state that now holds",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "enabled",
+                "changedBy",
+                "changedAt"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "source": {
+                  "anyOf": [
+                    {
+                      "const": "assignment",
+                      "type": "string"
+                    },
+                    {
+                      "const": "course",
+                      "type": "string"
+                    },
+                    {
+                      "const": "default",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "changedBy": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "role",
+                        "name"
+                      ],
+                      "properties": {
+                        "role": {
+                          "anyOf": [
+                            {
+                              "const": "teacher",
+                              "type": "string"
+                            },
+                            {
+                              "const": "mentor",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "name": {
+                          "anyOf": [
+                            {
+                              "minLength": 1,
+                              "maxLength": 511,
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "changedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
