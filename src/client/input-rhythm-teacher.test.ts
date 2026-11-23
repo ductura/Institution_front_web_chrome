@@ -92,6 +92,17 @@ describe("assignment switch", () => {
     }
   });
 
+  it("reads the level the refreshed contract (#524) lets the server name on GET and PUT", async () => {
+    const by = { role: "teacher", name: null } as const;
+    const own = { enabled: false, source: "assignment", changedBy: by, changedAt: "2026-11-23T09:00:00.000Z" };
+    const followed = { enabled: false, source: "course", changedBy: by, changedAt: "2026-11-22T10:00:00.000Z" };
+    expect(await assignmentRhythmPort(apiAnswering(200, own).call, TASK).read()).toMatchObject({ kind: "ready", state: { source: "assignment" } });
+    expect(await assignmentRhythmPort(apiAnswering(200, followed).call, TASK).read()).toMatchObject({ kind: "ready", state: { source: "course", enabled: false } });
+    expect(await assignmentRhythmPort(apiAnswering(200, { ...own, enabled: true }).call, TASK).set(true)).toMatchObject({ kind: "ready", state: { source: "assignment", enabled: true } });
+    // A level outside the contract is not a level.
+    expect(await assignmentRhythmPort(apiAnswering(200, { ...own, source: "faculty" }).call, TASK).read()).toEqual({ kind: "unavailable" });
+  });
+
   it("negative control: a dated answer without a source is not read as the assignment's own setting", async () => {
     const dated = { enabled: false, changedBy: { role: "teacher", name: null }, changedAt: "2026-11-22T10:00:00.000Z" };
     expect(await assignmentRhythmPort(apiAnswering(200, dated).call, TASK).read()).toEqual({ kind: "unavailable" });

@@ -1,7 +1,7 @@
 import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
-import type { OriginComposition, OriginKind, OriginSegment, OriginShare } from "./contract";
-import { ORIGIN_KINDS } from "./contract";
-import { originText as t } from "./messages.hr";
+import type { OriginComposition, OriginKind, OriginSegment, OriginShare } from "./origin";
+import { ORIGIN_KINDS } from "./origin";
+import { originText as t } from "./origin-messages.hr";
 
 const LABELS: Record<OriginKind, string> = {
   typed: t.kindTyped,

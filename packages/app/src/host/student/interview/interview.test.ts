@@ -37,9 +37,9 @@ function port(...responses: (Response | Error)[]) {
   }
   return { transport, port: studentInterviewPortWith({ baseUrl: ORIGIN, fetchImpl: transport }) };
 }
-const html = (read: InterviewRead, attach = false) => {
+const html = (read: InterviewRead) => {
   const p = studentInterviewPortWith({ baseUrl: ORIGIN, fetchImpl: vi.fn<typeof fetch>() });
-  return renderToStaticMarkup(createElement(StudentInterview, { port: attach ? { ...p, attachNote: async () => ({ kind: "saved" as const }) } : p, documentId: DOCUMENT, initial: read }));
+  return renderToStaticMarkup(createElement(StudentInterview, { port: p, documentId: DOCUMENT, initial: read }));
 };
 
 describe("PIL-K-RAZGOVOR student interview", () => {
@@ -106,12 +106,16 @@ describe("PIL-K-RAZGOVOR student interview", () => {
     expect(explanationError("a".repeat(2001))).toBe(text.errors.tooLong.replace("{max}", "2000"));
   });
 
-  it("hides the note field while the port has no route for notes", async () => {
+  it("offers the note field only to an invited student before the interview is held", async () => {
     const { port: real } = port(json(200, PREPARATION));
     const read = await real.read(DOCUMENT);
-    expect(real.attachNote).toBeUndefined();
-    expect(html(read)).not.toContain('type="file"');
-    expect(html(read, true)).toContain('type="file"');
+    if (read.kind !== "ready") throw new Error("expected ready");
+    expect(real.attachNote).toBeDefined();
+    expect(html(read)).toContain('type="file"');
+    expect(html({ ...read, heldAt: "2026-11-25" })).not.toContain('type="file"');
+    expect(html({ kind: "notInvited" })).not.toContain('type="file"');
+    const { attachNote: _absent, ...withoutNotes } = real;
+    expect(renderToStaticMarkup(createElement(StudentInterview, { port: withoutNotes, documentId: DOCUMENT, initial: read }))).not.toContain('type="file"');
   });
 
   it("is a student page of PAGES", () => {
