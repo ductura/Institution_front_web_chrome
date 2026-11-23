@@ -11,7 +11,7 @@ import { gradeMessages as text } from "./messages.hr";
 const ID = "00000000-0000-4000-8000-0000000000b1";
 const ACTIONS = createElement("button", { type: "button" }, "Preuzmi sve predaje");
 const gate = (read: Parameters<typeof GradeGate>[0]["read"]) =>
-  renderToStaticMarkup(createElement(GradeGate, { read, onRetry: () => {} }, ACTIONS));
+  renderToStaticMarkup(createElement(GradeGate, { read, onRetry: () => {}, children: ACTIONS }));
 
 describe("grade route of an assignment (PIL-D1-BEZ-OCJENE)", () => {
   it("reads 409 practice_assignment as a practice assignment, not as an error", async () => {
