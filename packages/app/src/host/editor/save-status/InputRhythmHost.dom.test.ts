@@ -15,6 +15,8 @@ import { InputRhythmHost, writableEditor } from "./InputRhythmHost";
 function spyPort(on: boolean) {
   const port = {
     recording: vi.fn(async () => on),
+    setting: vi.fn(async () => ({ kind: "unavailable" }) as const),
+    erase: vi.fn(async () => ({ kind: "unavailable" }) as const),
     send: vi.fn(async () => undefined),
   } satisfies RhythmPort;
   return port;

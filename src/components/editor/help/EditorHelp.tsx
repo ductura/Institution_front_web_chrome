@@ -43,9 +43,11 @@ type Props = {
   notice?: Notice;
   /** The work surface still passes this from the previous first-run hint. */
   fresh?: boolean;
+  /** The open work: "Što Ductura bilježi" reads its rhythm setting (PIL-P1-RITAM-PREKIDAC). */
+  documentId?: string;
 };
 
-export function EditorHelpDialogs({ view, onClose, help, counts, notice }: Props) {
+export function EditorHelpDialogs({ view, onClose, help, counts, notice, documentId }: Props) {
   const close = <Button tone="quiet" onClick={onClose}>{t.close}</Button>;
   return <>
     <Dialog open={view === "writing"} title={t.settingsTitle} actions={close} onClose={onClose}>
@@ -77,7 +79,7 @@ export function EditorHelpDialogs({ view, onClose, help, counts, notice }: Props
       </>}
     </Dialog>
     <Dialog open={view === "recorded"} title={t.recorded} actions={close} onClose={onClose}>
-      <WhatIsRecorded />
+      <WhatIsRecorded documentId={documentId} />
     </Dialog>
   </>;
 }
