@@ -63,11 +63,9 @@ async function run(Dialog: ComponentType<never>) {
   const inserted = JSON.stringify(editor.getJSON());
   const focusAfterInsert = editor.view.dom.contains(document.activeElement);
 
-  const pos = editor.state.doc.content.size; // find the atom
   let at = -1;
   editor.state.doc.descendants((node, p) => { if (node.type.name === "footnote") at = p; });
   expect(at).toBeGreaterThan(-1);
-  void pos;
   await act(async () => {
     editor!.view.dispatch(editor!.state.tr.setSelection(NodeSelection.create(editor!.state.doc, at)));
     editor!.view.dom.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
@@ -97,6 +95,53 @@ describe("footnote dialog in the editor", () => {
     const after = await run(FootnoteDialogHost as never);
     expect(after.focusAfterInsert).toBe(true);
     expect(after.focusAfterEdit).toBe(true);
+  });
+});
+
+/** Opens the insert dialog on a focused editor, types, dismisses it with `dismiss`; returns what is left. */
+async function openThenDismiss(dismiss: () => Promise<void>) {
+  const element = document.createElement("div");
+  document.body.append(element);
+  editor = new Editor({
+    element, extensions: createEditorExtensionsV3(),
+    content: { type: "doc", content: [{ type: "paragraph", attrs: { [NODE_ID_ATTRIBUTE]: ID }, content: [{ type: "text", text: "Izmišljeni odlomak." }] }] },
+  });
+  editor.commands.setTextSelection(5);
+  editor.view.focus();
+  const before = JSON.stringify(editor.getJSON());
+  let open: ((kind: "footnote" | "crossReference") => boolean) | undefined;
+  const Harness = () => {
+    const v3 = useV3EditorDialogs(editor, 3, FootnoteDialogHost as never);
+    open = v3.openInsert;
+    return createElement("div", null, v3.dialog);
+  };
+  mount = document.createElement("div");
+  document.body.append(mount);
+  const root = createRoot(mount);
+  await act(async () => { root.render(createElement(Harness)); });
+  await act(async () => { open!("footnote"); });
+  expect(document.querySelector("dialog")).toBeTruthy();
+  await type("Izmišljena napomena koja se ne umeće.");
+  await dismiss();
+  const result = {
+    dialogGone: document.querySelector("dialog") === null,
+    unchanged: JSON.stringify(editor.getJSON()) === before,
+    focusInEditor: editor.view.dom.contains(document.activeElement),
+  };
+  await act(async () => { root.unmount(); });
+  return result;
+}
+
+describe("dismissing the footnote dialog", () => {
+  it("Odustani closes it, inserts nothing and returns the focus to the editor", async () => {
+    expect(await openThenDismiss(() => click("Odustani"))).toEqual({ dialogGone: true, unchanged: true, focusInEditor: true });
+  });
+
+  it("Escape closes it, inserts nothing and returns the focus to the editor", async () => {
+    const escape = async () => {
+      await act(async () => { document.querySelector("dialog")!.dispatchEvent(new Event("cancel", { bubbles: false, cancelable: true })); });
+    };
+    expect(await openThenDismiss(escape)).toEqual({ dialogGone: true, unchanged: true, focusInEditor: true });
   });
 });
 

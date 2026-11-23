@@ -83,11 +83,13 @@ function useEditorSnapshot(editor: Editor | null): EditorState {
 }
 
 /** The student's toolbar, bound to the local document. */
-export function StudentToolbar({ workPartsKey, footnoteDialog }: { workPartsKey: string; footnoteDialog?: FootnoteDialogComponent }) {
+export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSchemaVersion }: {
+  workPartsKey: string; footnoteDialog?: FootnoteDialogComponent; confirmedWorkSchemaVersion?: number;
+}) {
   const editor = useLocalEditor();
   const state = useEditorSnapshot(editor);
   const theme = useSheetTheme();
-  const v3 = useV3EditorDialogs(editor, undefined, footnoteDialog);
+  const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
   const [dialog, setDialog] = useState<"parts" | "citation" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
