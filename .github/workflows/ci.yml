@@ -142,9 +142,13 @@ jobs:
     if: ${{ needs.changes.outputs.ui == 'true' }}
     name: ui (${{ matrix.part }}${{ matrix.leg && format(' {0}/3', matrix.leg) || '' }})
     runs-on: ubuntu-latest
-    # The behaviour tests (and on push the baselines) run as three Playwright
-    # shards: one job of them took 8 of the 9 minutes of a PR's ci-ok.
-    # Sharding splits the same filtered set, so every test still runs once.
+    # The behaviour tests run in three legs: one job of them took 8 of the 9
+    # minutes of a PR's ci-ok. Ten "every state" tests of states.spec.ts take
+    # about 2.5 minutes each and sit next to each other, so a Playwright shard
+    # would get nine of them; the legs split them by width instead (4, 4 and
+    # the 360 px pair with every other behaviour test). The coverage check below
+    # proves each behaviour test runs in exactly one leg. On push the baselines
+    # run as three Playwright shards.
     strategy:
       fail-fast: false
       matrix:
@@ -161,6 +165,8 @@ jobs:
       AXE_ANY: "WCAG 2.2 AA violations"
       AXE_DARK: "dark shell has no WCAG 2.2 AA violations"
       AXE_LIGHT: "light shell has no WCAG 2.2 AA violations"
+      STATES_1: "shell at (1440|1024) px: every state of every component"
+      STATES_2: "shell at (768|390) px: every state of every component"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -195,6 +201,14 @@ jobs:
             echo "::error::the ui parts do not cover every catalogue test exactly once"
             exit 1
           fi
+          leg1=$(count --grep-invert "$BASELINES|$AXE_ANY" --grep "$STATES_1")
+          leg2=$(count --grep-invert "$BASELINES|$AXE_ANY" --grep "$STATES_2")
+          leg3=$(count --grep-invert "$BASELINES|$AXE_ANY|$STATES_1|$STATES_2")
+          echo "behaviour $behaviour = leg 1 $leg1 + leg 2 $leg2 + leg 3 $leg3"
+          if [ "$leg1" -eq 0 ] || [ "$leg2" -eq 0 ] || [ $((leg1 + leg2 + leg3)) -ne "$behaviour" ]; then
+            echo "::error::the behaviour legs do not cover every behaviour test exactly once"
+            exit 1
+          fi
       - name: Playwright version
         if: matrix.part != 'checks'
         id: pw
@@ -218,7 +232,15 @@ jobs:
       # become required again with VIZ-0.
       - name: Behaviour tests of the catalogue
         if: matrix.part == 'behaviour'
-        run: pnpm --filter @ductura/catalog run test:visual --grep-invert "$BASELINES|$AXE_ANY" --shard="${{ matrix.leg }}/3"
+        run: |
+          set -euo pipefail
+          case "${{ matrix.leg }}" in
+            1) set -- --grep-invert "$BASELINES|$AXE_ANY" --grep "$STATES_1" ;;
+            2) set -- --grep-invert "$BASELINES|$AXE_ANY" --grep "$STATES_2" ;;
+            3) set -- --grep-invert "$BASELINES|$AXE_ANY|$STATES_1|$STATES_2" ;;
+            *) echo "::error::unknown behaviour leg"; exit 1 ;;
+          esac
+          pnpm --filter @ductura/catalog run test:visual "$@"
       - name: Axe tests of the catalogue (dark shell)
         if: matrix.part == 'axe-dark'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_DARK"
