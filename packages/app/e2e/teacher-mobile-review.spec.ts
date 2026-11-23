@@ -119,9 +119,12 @@ async function expectTargets(page: Page) {
   const small = await page.evaluate(() => {
     const controls = document.querySelectorAll<HTMLElement>("a[href], button, input:not([type=hidden]), textarea, select, summary, [role=button]");
     return [...controls].flatMap((el) => {
-      // An input inside its own label (the @ductura/ui Checkbox, WEB-05) is tapped through that label, so the
-      // label is the target that must reach 24 px; the box itself only draws the state.
-      const wrapping = el instanceof HTMLInputElement ? [...(el.labels ?? [])].find((label) => label.contains(el)) : undefined;
+      // A checkbox or radio inside its own label (the @ductura/ui Checkbox, WEB-05) is tapped through that label,
+      // so the label is the target that must reach 24 px; the box itself only draws the state. Any other input
+      // (text, search, ...) is the target itself and is measured as such.
+      const wrapping = el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")
+        ? [...(el.labels ?? [])].find((label) => label.contains(el))
+        : undefined;
       const box = (wrapping ?? el).getBoundingClientRect();
       if (box.width === 0 && box.height === 0) return [];
       return box.width < 24 || box.height < 24

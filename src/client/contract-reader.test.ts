@@ -1,7 +1,9 @@
 // The client's reader against every vector of migration-contract-vectors.generated.json (ZEL-W19).
 // When the server changes a contract, the extract and its vectors are regenerated and this file fails in
-// CI before the merge, not in the app. For each vector with a JSON answer the reader (createApi in api.ts,
-// answer, refuse a field of the wrong type and refuse an answer that lacks a required field.
+// CI before the merge, not in the app. For each vector with a JSON answer the reader (createApi in api.ts)
+// must accept the valid answer, refuse a field of the wrong type and refuse an answer that lacks a required
+// field. Every vector with an object answer must make at least one such negative check, or be listed in
+// NO_MUTABLE_FIELDS below, so a field behind $ref/anyOf/oneOf is never skipped without a trace.
 import { describe, expect, it } from "vitest";
 import { createApi, RESPONSES, type ApiOperationId, type Input } from "./api";
 import vectors from "./migration-contract-vectors.generated.json" with { type: "json" };
@@ -33,6 +35,71 @@ function schemaOf(vector: Vector): Json | undefined {
   return spec?.content?.["application/json"]?.schema as Json | undefined;
 }
 
+/** Vectors (`route name`) whose answer has no field this test can mutate (fields behind $ref/anyOf/oneOf, or an empty object). */
+// 47 answers are a top-level anyOf (no `properties` to mutate) and 2 have properties without a plain type/const.
+const NO_MUTABLE_FIELDS = new Set<string>([
+  "auth.webauthn-challenge.post assertion",
+  "auth.webauthn-challenge.post registration",
+  "collaboration.comments.post created",
+  "collaboration.comments.post created-general",
+  "collaboration.comments.post listed",
+  "collaboration.comments.post replied",
+  "collaboration.revision-requests.post accepted-without-range",
+  "collaboration.revision-requests.post applied",
+  "collaboration.revision-requests.post created",
+  "collaboration.revision-requests.post listed",
+  "course.aggregate.get course-aggregate",
+  "course.aggregate.get suppressed",
+  "institution.teaching-team-view.get success-assistant",
+  "institution.teaching-team-view.get success-holder",
+  "live.document.get state",
+  "live.document.get submitted",
+  "profile.staff-affiliation.get confirmed",
+  "profile.staff-affiliation.get missing",
+  "public.verification.post match",
+  "public.verification.post no-match",
+  "student.assistant-request.post ai-disabled",
+  "student.assistant-request.post budget-exceeded",
+  "student.assistant-request.post completed",
+  "student.assistant-request.post forbidden",
+  "student.assistant-request.post idempotency-conflict",
+  "student.assistant-request.post in-progress",
+  "student.assistant-request.post provider-failed",
+  "student.assistant-request.post purpose-not-allowed",
+  "student.assistant-request.post request-outcome-unknown",
+  "student.submission.get ceka",
+  "student.submission.get none",
+  "student.submission.get potvrdeno",
+  "teacher.declaration.get bound-declaration",
+  "teacher.declaration.get no-live-submission",
+  "teacher.mentorship-request-decision.post approve",
+  "teacher.mentorship-request-decision.post decline-with-reason",
+  "teacher.mentorship-request-decision.post decline-without-reason",
+  "teacher.merlin-package.get expired",
+  "teacher.merlin-package.get failed",
+  "teacher.merlin-package.get queued",
+  "teacher.merlin-package.get ready",
+  "teacher.submission-receipt.get ceka",
+  "teacher.submission-receipt.get none",
+  "teacher.submission-receipt.get potvrdeno",
+  "work.comment-drafts.post reply-created",
+  "work.comment-drafts.post thread-created",
+  "work.export-pdf.get ordinary",
+  "work.version.get diff",
+  "work.version.get snapshot",
+]);
+
+/** The negative checks one object answer supports: fields with a plain type/const, and required fields present. */
+function negativeChecks(vector: Vector, body: Json): { wrongType: string[]; missing: string[] } {
+  const schema = schemaOf(vector);
+  const properties = isObject(schema?.properties) ? schema.properties : {};
+  const required = Array.isArray(schema?.required) ? (schema.required as string[]) : [];
+  return {
+    wrongType: Object.keys(body).filter((key) => key in properties && isObject(properties[key]) && ("type" in properties[key] || "const" in properties[key])),
+    missing: required.filter((key) => key in body),
+  };
+}
+
 const multipart = (v: Vector) => (v.request as { headers?: Record<string, string> }).headers?.["content-type"]?.startsWith("multipart/") === true;
 const successes = vectors.filter((v) => v.response.status < 400 && (v.response as { contentType?: string }).contentType?.startsWith("application/json") === true);
 
@@ -61,16 +128,17 @@ describe("client reader against the migration vectors", () => {
 
     if (isObject(body)) {
       it(`${id} ${vector.name}: refuses a wrong type and a missing required field`, async () => {
-        const schema = schemaOf(vector);
-        const properties = isObject(schema?.properties) ? schema.properties : {};
-        const required = Array.isArray(schema?.required) ? (schema.required as string[]) : [];
-        for (const key of Object.keys(body)) {
-          if (key in properties && isObject(properties[key]) && ("type" in properties[key] || "const" in properties[key])) {
-            expect(await read({ ...body, [key]: otherType(body[key]) }), `${key} of the wrong type`).toEqual({ ok: false, status, code: "unexpected" });
-          }
+        const { wrongType, missing } = negativeChecks(vector, body);
+        const label = `${id} ${vector.name}`;
+        if (NO_MUTABLE_FIELDS.has(label)) {
+          expect(wrongType.length + missing.length, `${label} is listed as unmutable but has fields to mutate`).toBe(0);
+          return;
         }
-        for (const key of required) {
-          if (!(key in body)) continue;
+        expect(wrongType.length + missing.length, `${label} has no field to mutate: fix the vector or list it in NO_MUTABLE_FIELDS`).toBeGreaterThan(0);
+        for (const key of wrongType) {
+          expect(await read({ ...body, [key]: otherType(body[key]) }), `${key} of the wrong type`).toEqual({ ok: false, status, code: "unexpected" });
+        }
+        for (const key of missing) {
           const { [key]: _removed, ...rest } = body;
           expect(await read(rest), `${key} missing`).toEqual({ ok: false, status, code: "unexpected" });
         }
@@ -78,12 +146,21 @@ describe("client reader against the migration vectors", () => {
     }
   }
 
+  it("lists only vectors that exist in NO_MUTABLE_FIELDS", () => {
+    const known = new Set(successes.map((v) => `${v.route} ${v.name}`));
+    expect([...NO_MUTABLE_FIELDS].filter((label) => !known.has(label)), "stale NO_MUTABLE_FIELDS entries").toEqual([]);
+  });
+
   it("refuses an answer that is not an object where the contract gives one", async () => {
-    for (const vector of successes.filter((v) => !multipart(v) && isObject(v.response.body) && schemaOf(v)?.type === "object")) {
+    const objectVectors = successes.filter((v) => !multipart(v) && isObject(v.response.body) && schemaOf(v)?.type === "object");
+    let count = 0;
+    for (const vector of objectVectors) {
+      count += 1;
       const { status } = vector.response;
       const contentType = (vector.response as { contentType?: string }).contentType ?? "application/json";
       const result = await createApi({ baseUrl: BASE_URL, fetchImpl: answering(status, "nope", contentType) })(vector.route as ApiOperationId, inputOf(vector));
       expect(result, `${vector.route} ${vector.name}`).toEqual({ ok: false, status, code: "unexpected" });
     }
+    expect(count).toBeGreaterThan(0);
   });
 });
