@@ -10,8 +10,11 @@ import { browserTransport, goToSignIn } from "../../../../../../../src/client/ap
 import { downloadBlob } from "../../../../../../../src/components/editor/EarlierDraft";
 import { fetchRecord } from "../../portable-record/model";
 import { verifyHref } from "../../../public/verify/model";
+import PortfolioExport from "../../portfolio/PortfolioExport";
+import type { PortfolioPort } from "../../portfolio/model";
+import { browserPortfolioPort } from "../../portfolio/port";
 import StepLink from "../steps/StepLink";
-import { fingerprintGroups, receiptView, type Row } from "./model";
+import { fingerprintGroups, receiptPath, receiptView, type Row } from "./model";
 import { receiptText as t } from "./messages.hr";
 
 export type ReceiptScreenProps = {
@@ -28,6 +31,8 @@ export type ReceiptScreenProps = {
   readonly summary?: ReactNode;
   /** The kind of work, the tag beside the title, when the server names it. */
   readonly kind?: string;
+  /** The list of submitted versions for "Izvoz za portfelj"; made only when the section is opened. */
+  readonly portfolioPort?: () => PortfolioPort;
 };
 
 const kvs = (rows: readonly Row[]) => rows.map((r) => <StepKv key={r.id} label={r.label}>{r.value}</StepKv>);
@@ -54,9 +59,16 @@ function RecordDownload({ submissionId, onProblem }: { submissionId: string; onP
   return <StepLink href="#potvrda" onClick={() => { if (!busy) void run(); }}>{busy ? t.pdfLoading : t.pdf}</StepLink>;
 }
 
+/** "Izvoz za portfelj" on this page; after sign-in the student comes back to this receipt (`here`). */
+function Portfolio({ make, here }: { make: () => PortfolioPort; here: string }) {
+  const [port] = useState(make);
+  return <StepPanel id="sb-portfolio" level={2} title={t.portfolioOpen}><PortfolioExport port={port} here={here} /></StepPanel>;
+}
+
 /** E-11 in every variant of the prototype; "Predano" only with the signed receipt (B-6). */
-export default function ReceiptScreen({ read, retryHref, onRetry, workHref, homeHref, checkHref, summary, kind }: ReceiptScreenProps) {
+export default function ReceiptScreen({ read, retryHref, onRetry, workHref, homeHref, checkHref, summary, kind, portfolioPort = browserPortfolioPort }: ReceiptScreenProps) {
   const [open, setOpen] = useState(false);
+  const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const { toasts, show, dismiss } = useToasts();
   const view = receiptView(read);
@@ -93,6 +105,7 @@ export default function ReceiptScreen({ read, retryHref, onRetry, workHref, home
     );
   }
   const submissionId = read.kind === "potvrdeno" ? read.receipt.payload.submissionId : "";
+  const here = read.kind === "potvrdeno" ? receiptPath(read.receipt.payload.assignmentId) : "/";
   const copy = async () => {
     try { await navigator.clipboard.writeText(view.fingerprint); show(t.copiedToast); } catch { show(t.copyFailed); }
   };
@@ -122,9 +135,13 @@ export default function ReceiptScreen({ read, retryHref, onRetry, workHref, home
         <StepQr>{t.qrNote}</StepQr>
         <RecordDownload submissionId={submissionId} onProblem={setProblem} />
         {problem !== null && <p className="note" role="alert">{problem}</p>}
+        <StepLink href="#potvrda" aria-expanded={portfolioOpen} aria-controls="sb-portfolio" onClick={() => setPortfolioOpen(!portfolioOpen)}>
+          {portfolioOpen ? t.portfolioClose : t.portfolioOpen}
+        </StepLink>
         {home}
         <ToastRegion toasts={toasts} onDismiss={dismiss} label={t.toastLabel} closeLabel={t.toastClose} />
       </StepPanel>
+      {portfolioOpen && <Portfolio make={portfolioPort} here={here} />}
       {open && (summary ?? (
         <StepPanel id="sb-sum-h" level={2} title={t.summaryOpenedTitle} tag={kind}>
           <p className="note" role="status">{t.summaryUnavailable}</p>

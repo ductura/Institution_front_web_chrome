@@ -2,11 +2,11 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// WEB-1707: who-opened reaches the server only through its port (src/client), never
+// PIL-K-ROKOVI: the mentorships page reaches the server only through src/client (createApi), never
 // through a network primitive of its own.
 const FORBIDDEN = /\bfetch\s*\(|XMLHttpRequest|\bWebSocket\b|\bEventSource\b|sendBeacon|\baxios\b|["'`]\/?api\/|<form\b/;
 
-describe("no direct API in WEB-1707 module", () => {
+describe("no direct API in the mentorships module", () => {
   it("source files hold no network primitive and no API URL", () => {
     const files = readdirSync(import.meta.dirname).filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f));
     expect(files.length).toBeGreaterThanOrEqual(3);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { studentsOf } from "./model";
+import { mentorshipsOf, studentsOf } from "./model";
 
 const work = (id: string, student: { givenName: string; familyName: string } | null) => ({
   mentorshipId: id, assignmentId: id, documentId: null, student, title: "Izmišljeni rad",
@@ -15,5 +15,16 @@ describe("studentsOf", () => {
   });
   it("is empty for no works", () => {
     expect(studentsOf([])).toEqual([]);
+  });
+});
+
+describe("mentorshipsOf (PIL-K-ROKOVI)", () => {
+  it("is one key-dates card per mentorship, in the works list order by family name", () => {
+    const ana = { givenName: "Ana", familyName: "Zmišljena" };
+    const iva = { givenName: "Iva", familyName: "Izmišljena" };
+    const rows = mentorshipsOf([work("a", ana), work("b", iva), work("b", iva), work("c", null)]);
+    expect(rows.map((r) => r.mentorshipId)).toEqual(["b", "a", "c"]);
+    expect(rows[0]!.name).toBe("Iva Izmišljena");
+    expect(rows[2]!.name).not.toBe("");
   });
 });
