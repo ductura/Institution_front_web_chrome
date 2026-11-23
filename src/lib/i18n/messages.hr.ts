@@ -1285,6 +1285,10 @@ export const hr = {
     signIn: "Prijavi se",
     signInFirst: "Prijavite se da vidite rad.",
     invalid: "Ova poveznica ne vodi do rada.",
+    // INT-26: what an atom of a v3 text reads as, in its place, as in the version history.
+    footnote: "fusnota",
+    citationUnknown: "navod",
+    crossReference: "upućivanje",
     connection: {
       loading: "Povezivanje…",
       live: "Veza radi",

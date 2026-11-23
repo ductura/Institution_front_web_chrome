@@ -1,11 +1,14 @@
+import { readFileSync } from "node:fs";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CanonicalDocument } from "../../packages/editor-core/src/document/document";
-import { validateDocument } from "../../packages/editor-core/src/document/document";
+import { validateDocument, validateVersionedDocument } from "../../packages/editor-core/src/document/document";
+import { verifyVersionedDocumentSnapshot } from "../../packages/editor-core/src/document/document/snapshot";
 import { canonicalizeJcs } from "../../packages/editor-core/src/document/forensics/jcs";
 
 import {
-  createLivePublisher, LIVE_PUBLISH_GAP_MS, type NetworkSource,
+  createLivePublisher, LIVE_PUBLISH_GAP_MS, livePublishAllowed, type LiveDocument, type NetworkSource,
 } from "./live-publisher";
 
 // Invented text only.
@@ -719,5 +722,102 @@ describe("live publisher held by the teacher view (#882)", () => {
     s.publisher.offer(doc("abc"));
     await s.time.advance(LIVE_PUBLISH_GAP_MS);
     expect(s.calls).toHaveLength(0);
+  });
+});
+
+// INT-26: a v3 sheet publishes its v3 document through the same publisher,
+// under the same gate and timing, and a v1 document goes out byte for byte as
+// before. Invented text only.
+describe("live publisher, document v3 (INT-26)", () => {
+  const P = "33333333-3333-4333-8333-333333333333";
+  function v3Doc(text: string, note: string): LiveDocument {
+    const result = validateVersionedDocument({
+      schemaVersion: 3,
+      sources: [],
+      nodes: [{
+        id: P, type: "paragraph",
+        children: [{ type: "text", text, marks: [] }, { type: "footnote", text: note }],
+      }],
+    });
+    if (!result.ok || result.doc.schemaVersion !== 3) throw new Error("Invalid synthetic v3 document");
+    return result.doc;
+  }
+
+  it("sends the v3 document as its exact JCS bytes, which the versioned check accepts", async () => {
+    const s = setup();
+    const v3 = v3Doc("Izmišljena rečenica o kompostu.", "Izmišljena bilješka.");
+    s.publisher.offer(v3);
+    s.publisher.start();
+    await s.time.advance(0);
+    expect(s.calls).toHaveLength(1);
+    const body = s.calls[0]!.init.body as string;
+    expect(body).toBe(
+      `{"nodes":[{"children":[{"marks":[],"text":"Izmišljena rečenica o kompostu.","type":"text"},`
+      + `{"text":"Izmišljena bilješka.","type":"footnote"}],"id":"${P}","type":"paragraph"}],"schemaVersion":3,"sources":[]}`,
+    );
+    const snapshot = await verifyVersionedDocumentSnapshot(new TextEncoder().encode(body));
+    expect(snapshot.ok && snapshot.document.schemaVersion).toBe(3);
+    expect(s.calls[0]!.init.headers).toEqual({ "content-type": "application/json", "if-none-match": "*" });
+  });
+
+  it("keeps the v1 bytes unchanged", async () => {
+    const s = setup();
+    s.publisher.offer(validDoc("Izmišljena rečenica."));
+    s.publisher.start();
+    await s.time.advance(0);
+    expect(s.calls[0]!.init.body).toBe(
+      `{"nodes":[{"children":[{"marks":[],"text":"Izmišljena rečenica.","type":"text"}],"id":"${TOKEN_A}","type":"paragraph"}],"schemaVersion":1}`,
+    );
+  });
+
+  /** One fixed story of offers and answers; what went out, when, and under which precondition. */
+  async function story(make: (text: string) => LiveDocument) {
+    const s = setup();
+    const out: { at: number; precondition: string; body: string }[] = [];
+    const record = () => {
+      const call = s.calls[out.length]!;
+      const headers = call.init.headers as Record<string, string>;
+      out.push({ at: s.time.now(), precondition: headers["if-match"] ?? `none:${headers["if-none-match"]}`, body: String(call.init.body) });
+    };
+    s.publisher.offer(make("Prvo."));
+    s.publisher.start();
+    await s.time.advance(0);
+    record();
+    s.publisher.offer(make("Drugo."));
+    s.publisher.offer(make("Treće."));
+    s.calls[0]!.resolve(answer(200, TOKEN_B));
+    await s.time.advance(LIVE_PUBLISH_GAP_MS);
+    record();
+    // A conflict takes the token and sends the last state once more.
+    s.calls[1]!.resolve(answer(409, TOKEN_A));
+    await s.time.advance(LIVE_PUBLISH_GAP_MS);
+    record();
+    s.calls[2]!.resolve(answer(200, TOKEN_B));
+    // The same state again sends nothing.
+    s.publisher.offer(make("Treće."));
+    await s.time.advance(5 * LIVE_PUBLISH_GAP_MS);
+    expect(s.calls).toHaveLength(3);
+    return out.map((o) => ({ ...o, body: o.body === canonicalizeJcs(make("Treće.")) ? "last" : o.body === canonicalizeJcs(make("Prvo.")) ? "first" : "other" }));
+  }
+
+  it("publishes v3 with the same timing, merging and conflict rule as v1", async () => {
+    const v1 = await story((text) => validDoc(text));
+    const v3 = await story((text) => v3Doc(text, "Bilješka."));
+    expect(v1.map((o) => o.body)).toEqual(["first", "last", "last"]);
+    expect(v3).toEqual(v1);
+  });
+
+  it("the gate does not read the version: signed in, notice acknowledged, not submitted", () => {
+    const cases = [true, false].flatMap((signedIn) => [true, false].flatMap((noticeAcknowledged) =>
+      [true, false].map((submitted) => ({ signedIn, noticeAcknowledged, submitted }))));
+    for (const gate of cases) {
+      expect(livePublishAllowed(gate), JSON.stringify(gate)).toBe(gate.signedIn && gate.noticeAcknowledged && !gate.submitted);
+    }
+    // The page asks only this gate, for the v1 and the v3 sheet alike.
+    const page = readFileSync(new URL("../components/editor/LocalDocument.tsx", import.meta.url), "utf8");
+    const made = page.slice(page.indexOf("publisher = livePublishAllowed("), page.indexOf("publisherRef.current = publisher;"));
+    expect(made).toContain("livePublishAllowed({ signedIn: markTag !== null, noticeAcknowledged: livePublish, submitted })");
+    expect(made).not.toMatch(/sheet|schemaVersion/);
+    expect(page.match(/createLivePublisher\(/g)).toHaveLength(1);
   });
 });

@@ -9,11 +9,28 @@
 import {
   ANCHOR_QUOTE_MAX, createTextAnchor, isTextAnchorInput, resolveTextAnchor, type TextAnchor,
 } from "@/domain/collaboration";
-import type { CanonicalDocument, DocumentNode, Mark, NodeId } from "@/domain/document";
+import type {
+  CanonicalDocument, CanonicalDocumentV3, DocumentNode, DocumentNodeV3, InlineNodeV3, Mark, NodeId,
+} from "@/domain/document";
 
 export type TextRange = { readonly nodeId: NodeId; readonly start: number; readonly end: number };
 
-export const blockText = (node: DocumentNode): string => node.children.map((child) => child.text).join("");
+/** The document of the live view: v1, or v3 with its atoms (INT-26). */
+export type LiveTextDocument = CanonicalDocument | CanonicalDocumentV3;
+/** One block of it; v3 has the same four block types, only its inline children differ. */
+export type LiveBlock = DocumentNode | DocumentNodeV3;
+/** An inline node of v3 that is not text: a footnote, a citation or a cross reference. */
+export type LiveAtom = Exclude<InlineNodeV3, { type: "text" }>;
+
+const inlines = (node: LiveBlock): readonly InlineNodeV3[] => node.children;
+
+/**
+ * The text of a block: its text nodes only (INT-26). An atom is no part of
+ * it, so an anchor counts the same characters in v1 and v3, and the label the
+ * view draws for an atom never moves one. For v1 this is every child.
+ */
+export const blockText = (node: LiveBlock): string =>
+  inlines(node).map((child) => (child.type === "text" ? child.text : "")).join("");
 
 /**
  * The anchor for a selection inside one block, or null when it cannot be a
@@ -21,7 +38,7 @@ export const blockText = (node: DocumentNode): string => node.children.map((chil
  * ANCHOR_QUOTE_MAX code points. Surrounding white space is left out of the quote.
  */
 export function anchorForSelection(
-  doc: CanonicalDocument, nodeId: string, start: number, end: number,
+  doc: LiveTextDocument, nodeId: string, start: number, end: number,
 ): TextAnchor | null {
   const node = doc.nodes.find((n) => n.id === nodeId);
   if (!node) return null;
@@ -40,7 +57,7 @@ export function anchorForSelection(
  * Where an anchor stands in the document now: only `exact` and `moved` give a
  * place; anything else is no place, never a guessed one (attack 7).
  */
-export function placeAnchor(doc: CanonicalDocument | null, anchor: TextAnchor | null): TextRange | null {
+export function placeAnchor(doc: LiveTextDocument | null, anchor: TextAnchor | null): TextRange | null {
   if (!doc || !anchor) return null;
   const node = doc.nodes.find((n) => n.id === anchor.nodeId);
   if (!node) return null;
@@ -55,24 +72,34 @@ export function placeAnchor(doc: CanonicalDocument | null, anchor: TextAnchor | 
  * saying the place cannot be found would be untrue.
  */
 export function placeThreads<T extends { readonly anchor: TextAnchor | null }>(
-  doc: CanonicalDocument | null, threads: readonly T[],
+  doc: LiveTextDocument | null, threads: readonly T[],
 ): { thread: T; range: TextRange | null; pending: boolean }[] {
   return threads.map((thread) => ({ thread, range: placeAnchor(doc, thread.anchor), pending: doc === null }));
 }
 
-export type Segment = { readonly text: string; readonly marks: readonly Mark[]; readonly marked: boolean };
+export type TextSegment = { readonly text: string; readonly marks: readonly Mark[]; readonly marked: boolean };
+/** An atom of a v3 block in its place among the texts; it takes no offset (INT-26). */
+export type AtomSegment = { readonly atom: LiveAtom };
+export type Segment = TextSegment | AtomSegment;
 
 /**
  * The inline texts of a block cut at the edges of `ranges`, each piece saying
- * whether it lies in one of them. Joined, the pieces are the block's text, so
- * marking a comment never changes what is shown.
+ * whether it lies in one of them. Joined, the text pieces are the block's
+ * text, so marking a comment never changes what is shown. A v3 atom stands
+ * between them as its own segment and is never marked.
  */
-export function blockSegments(node: DocumentNode, ranges: readonly { start: number; end: number }[]): Segment[] {
+export function blockSegments(node: DocumentNode, ranges: readonly { start: number; end: number }[]): TextSegment[];
+export function blockSegments(node: LiveBlock, ranges: readonly { start: number; end: number }[]): Segment[];
+export function blockSegments(node: LiveBlock, ranges: readonly { start: number; end: number }[]): Segment[] {
   const inRange = (at: number) => ranges.some((r) => r.start <= at && at < r.end);
   const cuts = new Set(ranges.flatMap((r) => [r.start, r.end]));
   const out: Segment[] = [];
   let at = 0;
-  for (const child of node.children) {
+  for (const child of inlines(node)) {
+    if (child.type !== "text") {
+      out.push({ atom: child });
+      continue;
+    }
     let piece = "";
     let marked = inRange(at);
     for (const ch of child.text) {
