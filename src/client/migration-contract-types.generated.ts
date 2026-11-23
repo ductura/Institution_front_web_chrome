@@ -18,6 +18,7 @@
 // Faza 3: work.interview-notes.post from Institution_server e0835008 (API 1.95.0).
 // Faza 3: student.declaration.get, student.declaration.put, teacher.input-rhythm.get, teacher.input-rhythm.put, work.assistant-match.get, work.input-rhythm-setting.get from Institution_server f371e946 (API 1.96.0).
 // Faza 3: teacher.course-input-rhythm.get, teacher.course-input-rhythm.put, teacher.input-rhythm.delete from Institution_server e0835008 (API 1.95.0).
+// Faza 3: collaboration.comments.post from Institution_server ffb96c57 (API 1.97.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -596,8 +597,8 @@ export type MigrationOperations = {
   "collaboration.comments.post": {
     params: { "action": "create" | "reply" | "resolve" | "reopen" | "delete" | "list" };
     query: undefined;
-    body: { "anchor": { "nodeId": string; "quote": string; "prefix": string; "suffix": string; "startHint": number; "endHint": number }; "body": string; "documentId": string } | { "body": string; "threadId": string } | { "threadId": string } | { "commentId": string } | { "documentId": string } | { "anchor": null; "body": string; "documentId": string };
-    success: { status: 200; body: { "id": string } | { "comments": ({ "threadId": string; "commentId": string; "position": number; "authorRole": "teacher" | "student"; "isOwn": boolean; "body": string; "anchor": { [key: string]: unknown } | null; "state": "open" | "answered" | "resolved"; "createdWindow": string; "deletedWindow": null } | { "threadId": string; "commentId": string; "position": number; "authorRole": "teacher" | "student"; "isOwn": boolean; "body": null; "anchor": { [key: string]: unknown } | null; "state": "open" | "answered" | "resolved"; "createdWindow": string; "deletedWindow": string })[] }; headers: {  } } | { status: 204; body: undefined; headers: {  } };
+    body: { "anchor": { "nodeId": string; "quote": string; "prefix": string; "suffix": string; "startHint": number; "endHint": number }; "body": string; "documentId": string; "revision"?: number } | { "body": string; "threadId": string } | { "threadId": string } | { "commentId": string } | { "documentId": string } | { "anchor": null; "body": string; "documentId": string; "revision"?: number };
+    success: { status: 200; body: { "id": string } | { "comments": ({ "threadId": string; "commentId": string; "position": number; "authorRole": "teacher" | "student"; "isOwn": boolean; "body": string; "anchor": { [key: string]: unknown } | null; "state": "open" | "answered" | "resolved"; "createdWindow": string; "deletedWindow": null; "revision"?: number | null } | { "threadId": string; "commentId": string; "position": number; "authorRole": "teacher" | "student"; "isOwn": boolean; "body": null; "anchor": { [key: string]: unknown } | null; "state": "open" | "answered" | "resolved"; "createdWindow": string; "deletedWindow": string; "revision"?: number | null })[] }; headers: {  } } | { status: 204; body: undefined; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "forbidden" | "conflict" | "not_found" | "unavailable";
   };
   "collaboration.revision-requests.post": {
