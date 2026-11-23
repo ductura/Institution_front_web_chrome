@@ -8,6 +8,11 @@ export const when = atOf;
 /** "5. 11. 2026. u 21:14 (UTC+1)": the prototype's zoned(). */
 export const zoned = zonedOf;
 
+/** The receipt page of a work, without the base: where a sign-in started on it comes back to. */
+export function receiptPath(assignmentId: string): string {
+  return `/rad/${encodeURIComponent(assignmentId)}/predaja/potvrda`;
+}
+
 export type Row = { readonly id: string; readonly label: string; readonly value: string };
 
 export type ReceiptView =
