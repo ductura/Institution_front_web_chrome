@@ -1,6 +1,6 @@
 /* WEB-6A (E§1, INVENTAR 1.5 and 1.6): the editor's regions and their breakpoints. */
 .app { display: flex; flex-direction: column; height: 100dvh; background: var(--ground); color: var(--ink); }
-.top { flex: none; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 14px; background: var(--chrome); border-bottom: 1px solid var(--rule-2); }
+.top { position: relative; flex: none; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 14px; background: var(--chrome); border-bottom: 1px solid var(--rule-2); }
 /* INT-13: min-height, not height: a toolbar that wraps on a narrow window grows the row
    instead of hanging over the sheet (axe colour-contrast at 400 px). */
 .tools { position: relative; flex: none; display: flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 10px; overflow: visible; background: var(--chrome); border-bottom: 1px solid var(--rule-2); }

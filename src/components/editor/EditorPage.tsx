@@ -5,10 +5,13 @@ import type { ReactNode } from "react";
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
 import { useSheetTheme } from "../shell/useSheetTheme";
 
+import { EditorShellFrame } from "./layout/EditorShell";
+
 import styles from "./EditorPage.module.css";
 
 /**
- * The editor page (WEB-14, E§1): the course and assignment above, one sheet
+ * The editor page (WEB-14, VIZ-E1, E§1): the prototype's frame (48 px top bar, tools,
+ * stage, 30 px status bar), one sheet
  * of paper up to 820 px wide with the work's title, and the status bar below.
  * `children` is what the sheet holds (the editor, or why there is none);
  * `status` is the StatusBar; `toolbar`, when the editor is mounted, sits
@@ -44,24 +47,20 @@ export default function EditorPage({
 }) {
   const theme = useSheetTheme();
   return (
-    <div className={styles.page}>
-      {topBar ?? (
-        <p className={styles.context}>{course !== null && title !== null ? `${course} / ${title}` : t.workspace.title}</p>
+    <EditorShellFrame
+      header={topBar ?? <p className={styles.context}>{course !== null && title !== null ? `${course} / ${title}` : t.workspace.title}</p>}
+      tools={toolbar}
+      status={status}
+    >
+      {banner}
+      {stand ?? (
+        <article className={`sheet ${styles.sheet}`} data-sheet-theme={theme} aria-label={t.workspace.documentLabel}>
+          {heading ? <h1 className={styles.title}>{title ?? t.workspace.documentUntitled}</h1> : null}
+          {children}
+        </article>
       )}
-      {/* Always rendered, so the grid keeps its rows with or without a toolbar. */}
-      <div className={styles.toolbar}>{toolbar}</div>
-      <main id="sadrzaj" className={styles.area}>
-        {banner}
-        {stand ?? (
-          <article className={`sheet ${styles.sheet}`} data-sheet-theme={theme} aria-label={t.workspace.documentLabel}>
-            {heading ? <h1 className={styles.title}>{title ?? t.workspace.documentUntitled}</h1> : null}
-            {children}
-          </article>
-        )}
-        {aside}
-      </main>
-      {status}
-    </div>
+      {aside}
+    </EditorShellFrame>
   );
 }
 

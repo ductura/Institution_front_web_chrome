@@ -1,6 +1,6 @@
 import {
   AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, Chip, CodeField, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  EditorOnboarding, EditorOutline, ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
+  EditorOnboarding, EditorOutline, ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SegmentedControl, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
   PillTag, SideShell, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup, type ShortcutListGroup,
 } from "@ductura/ui";
@@ -590,6 +590,13 @@ export const ENTRIES = {
       </ul>
     </>),
     onemogućeno: () => sideShell("teacher", "bocna-5", <div className="card"><h2>Moji kolegiji</h2><p className="note">Navigacija je dostupna, kolegiji se još ne prikazuju.</p></div>),
+  },
+  SegmentedControl: {
+    prazno: () => <SegmentedControl label="Prikaz" value={null} options={[{ value: "write", label: "Pisanje" }, { value: "teacher", label: "Kako vidi nastavnik" }]} />,
+    učitavanje: () => <SegmentedControl label="Prikaz" value="write" options={[{ value: "write", label: "Pisanje", disabled: true }, { value: "teacher", label: "Kako vidi nastavnik", disabled: true }]} />,
+    greška: () => <SegmentedControl label="Prikaz" value="write" options={[{ value: "write", label: "Pisanje" }, { value: "teacher", label: "Kako vidi nastavnik", disabled: true }]} />,
+    puno: () => <SegmentedControl label="Prikaz" value="teacher" options={[{ value: "write", label: "Pisanje" }, { value: "teacher", label: "Kako vidi nastavnik", ariaLabel: "Kako vidi nastavnik" }]} />,
+    onemogućeno: () => <SegmentedControl label="Prikaz" value="write" options={[{ value: "write", label: "Pisanje", disabled: true }, { value: "teacher", label: "Kako vidi nastavnik", disabled: true }]} />,
   },
   PanelTabs: {
     prazno: () => <PanelTabs label="Ploče" tabs={[{ id: "komentari", label: "Komentari", content: <p>Još nema komentara.</p> }]} />,

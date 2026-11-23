@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext, useContext, type ReactNode } from "react";
 import { Button } from "@ductura/ui";
 
 import { useOnline } from "../../client/online-status";
@@ -21,12 +22,20 @@ export type WorkspaceTopBarProps = {
   readonly inert?: boolean;
 };
 
+/**
+ * What the shell puts between the title and the actions (the view switch
+ * "Pisanje / Kako vidi nastavnik" and the layout menu, prototype `.seg`). The
+ * host provides it; without a provider the bar has nothing there.
+ */
+export const TopBarSlot = createContext<ReactNode>(null);
+
 const OFFLINE_NOTE = "radni-prostor-bez-mreze";
 
 /**
- * The top bar as it renders for one network state and sheet theme (WEB-23,
- * S: E-7, prototype `.ed-top`): "← Moji zadaci", the title with its course
- * line, one switch that names the sheet it would show ("Bijeli list" on the
+ * The top bar as it renders for one network state and sheet theme (VIZ-E1,
+ * prototype `.top`, INVENTAR-editor §1.2): the mark "Ductura" (it leads to
+ * "Moji zadaci"), the title with its course line as a pill, the shell's view
+ * switch, one switch that names the sheet it would show ("Bijeli list" on the
  * dark sheet, "Tamni list" on the white one; `aria-pressed` is true while the
  * sheet is white) and "Predaja rada". "Predaja rada" opens the submission
  * screen; it does not submit. Without a network it is a disabled button with
@@ -43,23 +52,22 @@ export function WorkspaceTopBarView({
   onTheme,
 }: WorkspaceTopBarProps & { online: boolean; theme: SheetTheme; onTheme: (theme: SheetTheme) => void }) {
   const light = theme === "light";
+  const slot = useContext(TopBarSlot);
   return (
     <header className={styles.bar} aria-label={t.workspace.barLabel}>
-      <a className={styles.back} href="/zadaci">{t.workspace.backToAssignments}</a>
-      <div className={styles.heading}>
+      <a className={styles.mark} href="/zadaci" title={t.workspace.backToAssignments} aria-label={`Ductura: ${t.workspace.backToAssignments.replace("← ", "")}`}>
+        Ductu<b>ra</b>
+      </a>
+      <span className={styles.crumb}>
         <b>{title ?? t.workspace.title}</b>
-        {subtitle ? <span>{subtitle}</span> : null}
-      </div>
+        {subtitle ? <i>{subtitle}</i> : null}
+      </span>
+      <span className={styles.grow} />
+      {slot}
       <div className={styles.actions} role="group" aria-label={t.workspace.sheetTheme}>
-        <Button
-          tone="secondary"
-          size="small"
-          className={styles.theme}
-          aria-pressed={light}
-          onClick={() => onTheme(light ? "dark" : "light")}
-        >
+        <button type="button" className={styles.theme} aria-pressed={light} onClick={() => onTheme(light ? "dark" : "light")}>
           {light ? t.workspace.sheetThemeDark : t.workspace.sheetThemeLight}
-        </Button>
+        </button>
         {readOnly ? null : inert ? (
           <Button size="small" className={styles.primary} aria-disabled="true">{t.workspace.submitWork}</Button>
         ) : online ? (

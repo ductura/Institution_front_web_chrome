@@ -6,6 +6,7 @@ export const shellHr = {
   teacher: "Kako vidi nastavnik",
   teacherShort: "Nastavnik",
   teacherUnavailable: "Pogled nastavnika još nije spojen na poslužitelj ustanove.",
+  viewMenu: "Raspored",
   outlineOnly: "Samo naslovi",
   outlineOnlyTitle: "Samo naslovi i svrhe poglavlja",
   outlineBanner: "Prikaz samo naslova. Pisanje je isključeno dok je ovaj prikaz uključen.",
