@@ -4,17 +4,20 @@ import { useEffect } from "react";
 
 import { createRhythmRecorder, originOfInput, type OriginKind, type RhythmPayload, type RhythmPort } from "@/client/input-rhythm";
 
+import { onRhythmErased } from "./erased";
+
 const FLUSH_MS = 10_000;
 
 /**
  * Reads the teacher's switch again and sends `payload` only while it is on (PIL-P1-RITAM-PREKIDAC).
  * `onSetting` hands the answer to the recorder, so an "off" holds from this moment; with it off the
- * payload is dropped, never sent later. Resolves true when it was sent.
+ * payload is dropped, never sent later. `stillWanted` is asked just before the send: false (the
+ * student deleted the rhythm meanwhile) drops it as well. Resolves true when it was sent.
  */
-export async function sendIfOn(port: RhythmPort, documentId: string, payload: RhythmPayload, onSetting: (on: boolean) => void): Promise<boolean> {
+export async function sendIfOn(port: RhythmPort, documentId: string, payload: RhythmPayload, onSetting: (on: boolean) => void, stillWanted: () => boolean = () => true): Promise<boolean> {
   const on = await port.recording(documentId);
   onSetting(on);
-  if (!on) return false;
+  if (!on || !stillWanted()) return false;
   await port.send(documentId, payload);
   return true;
 }
@@ -32,6 +35,14 @@ export function useInputRhythm(dom: HTMLElement | null, documentId: string, port
     const recorder = createRhythmRecorder(now, false);
     const counts = new Map<OriginKind, number>();
     let alive = true;
+    // A confirmed delete drops what is measured and not yet sent, also a send already on its way.
+    let erasures = 0;
+    const offErased = onRhythmErased((erased) => {
+      if (erased !== documentId) return;
+      erasures += 1;
+      recorder.take();
+      counts.clear();
+    });
 
     void port.recording(documentId).then((on) => { if (alive) recorder.setEnabled(on); }, () => { /* stays off */ });
 
@@ -51,7 +62,8 @@ export function useInputRhythm(dom: HTMLElement | null, documentId: string, port
       const origins = [...counts].map(([kind, codePoints]) => ({ kind, codePoints }));
       counts.clear();
       if (bursts.length === 0 && origins.length === 0) return;
-      void sendIfOn(port, documentId, { origins, bursts }, (on) => { if (alive) recorder.setEnabled(on); })
+      const at = erasures;
+      void sendIfOn(port, documentId, { origins, bursts }, (on) => { if (alive) recorder.setEnabled(on); }, () => at === erasures)
         .catch(() => { /* a later flush carries the next ones */ });
     };
     const onHidden = () => { if (document.visibilityState === "hidden") { recorder.breakBurst(); flush(); } };
@@ -61,6 +73,7 @@ export function useInputRhythm(dom: HTMLElement | null, documentId: string, port
     const timer = window.setInterval(flush, FLUSH_MS);
     return () => {
       alive = false;
+      offErased();
       dom.removeEventListener("beforeinput", onBeforeInput as EventListener);
       document.removeEventListener("visibilitychange", onHidden);
       window.clearInterval(timer);

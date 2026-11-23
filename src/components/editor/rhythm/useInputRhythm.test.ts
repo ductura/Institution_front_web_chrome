@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createRhythmRecorder, type RhythmPayload, type RhythmPort } from "../../../client/input-rhythm";
 import { createFakeRhythmPort } from "../../../client/input-rhythm-fake";
+import { onRhythmErased, rhythmErased } from "./erased";
 import { sendIfOn } from "./useInputRhythm";
 
 // PIL-P1-RITAM-PREKIDAC: a teacher's "off" holds from the moment it is read, before every send.
@@ -36,4 +37,22 @@ describe("sending the rhythm only while the switch is on", () => {
     expect(await sendIfOn(port, "doc-1", PAYLOAD, () => {})).toBe(false);
     expect(port.send).not.toHaveBeenCalled();
   });
+
+  it("negative control: a delete meanwhile drops the payload even with the switch on", async () => {
+    const port = createFakeRhythmPort();
+    expect(await sendIfOn(port, "doc-1", PAYLOAD, () => {}, () => false)).toBe(false);
+    expect(port.sent).toEqual([]);
+  });
 });
+
+describe("the erase signal", () => {
+  it("reaches every listener with the work's id and stops after unsubscribe", () => {
+    const heard: string[] = [];
+    const off = onRhythmErased((id) => heard.push(id));
+    rhythmErased("doc-1");
+    off();
+    rhythmErased("doc-2");
+    expect(heard).toEqual(["doc-1"]);
+  });
+});
+

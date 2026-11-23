@@ -2538,6 +2538,7 @@ export const inputRhythmHr = {
   toggle: "Bilježi ritam tipkanja",
   teacherOnly: "Ritam unosa može isključiti samo nastavnik.",
   unknown: "Postavka ritma trenutačno nije dostupna.",
+  signedOut: "Sesija je istekla. Prijavi se ponovno pa opet otvori ovaj prozor.",
   on: "Bilježi ritam tipkanja: uključeno.",
   off: "Bilježi ritam tipkanja: isključeno.",
   levels: {

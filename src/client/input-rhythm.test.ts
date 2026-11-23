@@ -6,6 +6,8 @@ import {
   BURST_BREAK_MS, createRhythmPort, createRhythmRecorder, explainPaste, MAX_GAPS_PER_BURST, ORIGIN_KINDS, originOfInput, thinGaps,
 } from "./input-rhythm";
 import { createFakeRhythmPort } from "./input-rhythm-fake";
+import { createApi } from "./api";
+import vectors from "./migration-contract-vectors.generated.json" with { type: "json" };
 
 function clock() {
   let t = 1_700_000_000_000;
@@ -146,53 +148,82 @@ describe("rhythm port over the server", () => {
     })).resolves.toBeUndefined();
     expect(n).toBe(2);
   });
-
-  // PIL-P1-RITAM-PREKIDAC: the setting the student sees and "Obriši zabilježeni ritam".
-  it("reads the setting with its level: the server's source, else default only when undated", async () => {
-    const teacher = { role: "teacher", name: "Iva Izmišljena" } as const;
-    for (const [body, level] of [
-      [{ enabled: true, changedBy: null, changedAt: null }, "default"],
-      [{ enabled: false, source: "course", changedBy: teacher, changedAt: "2026-11-23T08:00:00.000Z" }, "course"],
-      [{ enabled: false, source: "assignment", changedBy: teacher, changedAt: "2026-11-23T08:00:00.000Z" }, "assignment"],
-      [{ enabled: false, changedBy: teacher, changedAt: "2026-11-23T08:00:00.000Z" }, null],
-      [{ enabled: false, source: "elsewhere", changedBy: teacher, changedAt: "2026-11-23T08:00:00.000Z" }, null],
-    ] as const) {
-      const { call } = answering(() => ok(body));
-      const answer = await createRhythmPort(call).setting("doc-1");
-      expect(answer).toEqual({ kind: "ready", state: { enabled: body.enabled, level, changedBy: body.changedBy, changedAt: body.changedAt } });
-    }
-  });
-
-  it("negative control: a refused, malformed or failed setting is never shown as on", async () => {
-    for (const [answer, kind] of [
-      [{ ok: false, status: 401, code: "session_expired" }, "signedOut"],
-      [{ ok: false, status: 404, code: "not_found" }, "unavailable"],
-      [{ ok: false, status: 0, code: "unexpected" }, "unavailable"],
-      [ok({ enabled: "true", changedBy: null, changedAt: null }), "unavailable"],
-    ] as const) {
-      const { call } = answering(() => answer);
-      expect(await createRhythmPort(call).setting("doc-1")).toEqual({ kind });
-      expect(await createRhythmPort(call).recording("doc-1")).toBe(false);
-    }
-    const thrown = createRhythmPort((async () => { throw new TypeError("offline"); }) as unknown as Call);
-    expect(await thrown.setting("doc-1")).toEqual({ kind: "unavailable" });
-  });
-
-  it("erases through work.input-rhythm.delete and reports only the count the server confirmed", async () => {
-    const { call, calls } = answering(() => ok({ deleted: 7 }));
-    expect(await createRhythmPort(call).erase("doc-1")).toEqual({ kind: "deleted", count: 7 });
-    expect(calls).toEqual([{ id: "work.input-rhythm.delete", input: { params: { documentId: "doc-1" }, query: undefined, body: undefined } }]);
-    for (const [answer, kind] of [
-      [{ ok: false, status: 401, code: "session_expired" }, "signedOut"],
-      [{ ok: false, status: 503, code: "unavailable" }, "unavailable"],
-      [ok({ deleted: -1 }), "unavailable"],
-      [ok({}), "unavailable"],
-    ] as const) {
-      const refused = answering(() => answer);
-      expect(await createRhythmPort(refused.call).erase("doc-1")).toEqual({ kind });
-    }
-    const thrown = createRhythmPort((async () => { throw new TypeError("offline"); }) as unknown as Call);
-    expect(await thrown.erase("doc-1")).toEqual({ kind: "unavailable" });
-  });
 });
 
+// PIL-P1-RITAM-PREKIDAC: the setting the student sees and "Obriši zabilježeni ritam", through the real
+// createApi and the contract's own vectors; every name, id and date in them is invented.
+describe("rhythm setting and erase through createApi", () => {
+  const BASE_URL = "https://ductura.example.invalid";
+  const DOC = "izmisljeni-rad-0001";
+  type Vector = { route: string; name: string; response: { status: number; body?: unknown } };
+  const vector = (route: string, name: string) => {
+    const found = (vectors as Vector[]).find((v) => v.route === route && v.name === name);
+    if (found === undefined) throw new Error(`no vector ${route} ${name}`);
+    return found.response;
+  };
+  const api = (status: number, body: unknown) => {
+    const fetchImpl = vi.fn(async (_url: URL | RequestInfo, _init?: RequestInit) =>
+      new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
+    return { call: createApi({ baseUrl: BASE_URL, fetchImpl }), fetchImpl };
+  };
+  const fromVector = (route: string, name: string) => { const r = vector(route, name); return api(r.status, r.body); };
+  const teacher = { role: "teacher", name: "Izmišljena Nastavnica" } as const;
+
+  it("reads the default, and a dated setting without source has no claimed level", async () => {
+    const { call, fetchImpl } = fromVector("work.input-rhythm-setting.get", "default");
+    expect(await createRhythmPort(call).setting(DOC)).toEqual({ kind: "ready", state: { enabled: true, level: "default", changedBy: null, changedAt: null } });
+    const [url, init] = fetchImpl.mock.calls[0]!;
+    expect(String(url)).toBe(`${BASE_URL}/api/v1/works/${DOC}/input-rhythm/setting`);
+    expect(init?.method).toBe("GET");
+    const off = await createRhythmPort(fromVector("work.input-rhythm-setting.get", "off").call).setting(DOC);
+    expect(off).toEqual({ kind: "ready", state: { enabled: false, level: null, changedBy: teacher, changedAt: "2026-11-22T10:00:00.000Z" } });
+  });
+
+  it("names the level the server sends as source (SRV #652)", async () => {
+    for (const source of ["assignment", "course", "default"] as const) {
+      const body = { enabled: false, source, changedBy: teacher, changedAt: "2026-11-23T08:00:00.000Z" };
+      const answer = await createRhythmPort(api(200, body).call).setting(DOC);
+      expect(answer).toEqual({ kind: "ready", state: { enabled: false, level: source, changedBy: teacher, changedAt: body.changedAt } });
+    }
+  });
+
+  it("negative control: 401 is signedOut, 404 and 503 the same unavailable, a body outside the contract never on", async () => {
+    expect(await createRhythmPort(fromVector("work.input-rhythm-setting.get", "unauthorized").call).setting(DOC)).toEqual({ kind: "signedOut" });
+    for (const name of ["not-found", "unavailable"]) {
+      expect(await createRhythmPort(fromVector("work.input-rhythm-setting.get", name).call).setting(DOC)).toEqual({ kind: "unavailable" });
+    }
+    for (const body of [
+      { enabled: "true", changedBy: null, changedAt: null },
+      { enabled: true, source: "elsewhere", changedBy: null, changedAt: null },
+      { enabled: true, changedBy: null, changedAt: null, keys: ["a"] },
+    ]) {
+      const port = createRhythmPort(api(200, body).call);
+      expect(await port.setting(DOC)).toEqual({ kind: "unavailable" });
+      expect(await port.recording(DOC)).toBe(false);
+    }
+    const offline = createApi({ baseUrl: BASE_URL, fetchImpl: vi.fn(async () => { throw new TypeError("offline"); }) });
+    expect(await createRhythmPort(offline).setting(DOC)).toEqual({ kind: "unavailable" });
+  });
+
+  it("erases with one DELETE and reports only the count the server confirmed", async () => {
+    const { call, fetchImpl } = fromVector("work.input-rhythm.delete", "deleted");
+    expect(await createRhythmPort(call).erase(DOC)).toEqual({ kind: "deleted", count: 2 });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchImpl.mock.calls[0]!;
+    expect(String(url)).toBe(`${BASE_URL}/api/v1/works/${DOC}/input-rhythm`);
+    expect(init?.method).toBe("DELETE");
+    expect(await createRhythmPort(fromVector("work.input-rhythm.delete", "nothing").call).erase(DOC)).toEqual({ kind: "deleted", count: 0 });
+  });
+
+  it("negative control: a refused, malformed or failed erase is never reported as deleted", async () => {
+    expect(await createRhythmPort(fromVector("work.input-rhythm.delete", "unauthorized").call).erase(DOC)).toEqual({ kind: "signedOut" });
+    for (const name of ["not-found", "unavailable", "cross-site"]) {
+      expect(await createRhythmPort(fromVector("work.input-rhythm.delete", name).call).erase(DOC)).toEqual({ kind: "unavailable" });
+    }
+    for (const body of [{ deleted: -1 }, {}, { deleted: 1.5 }]) {
+      expect(await createRhythmPort(api(200, body).call).erase(DOC)).toEqual({ kind: "unavailable" });
+    }
+    const offline = createApi({ baseUrl: BASE_URL, fetchImpl: vi.fn(async () => { throw new TypeError("offline"); }) });
+    expect(await createRhythmPort(offline).erase(DOC)).toEqual({ kind: "unavailable" });
+  });
+});

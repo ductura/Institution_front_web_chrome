@@ -90,7 +90,55 @@ describe("rhythm setting for the student", () => {
     await act(async () => button(el, t.erase.button).click());
     await act(async () => button(el, t.erase.cancel).click());
     expect(p.erase).not.toHaveBeenCalled();
-    expect(byTestId(el, "rhythm-erase-outcome")).toBeNull();
+    expect(byTestId(el, "rhythm-erase-outcome")).toBe("");
+    expect(document.activeElement).toBe(button(el, t.erase.button));
+  });
+
+  it("moves focus to the question's Odustani, keeps the live region from the start and returns focus after the outcome", async () => {
+    const p = port({ kind: "ready", state: { enabled: true, level: "default", changedBy: null, changedAt: null } });
+    const el = await render(<RhythmSetting port={p} documentId="doc-1" />);
+    const region = el.querySelector('[data-testid="rhythm-erase-outcome"]');
+    expect(region?.getAttribute("role")).toBe("status");
+    expect(region?.textContent).toBe("");
+    expect(document.activeElement).toBe(document.body);
+    await act(async () => button(el, t.erase.button).click());
+    expect(document.activeElement).toBe(button(el, t.erase.cancel));
+    await act(async () => button(el, t.erase.confirm).click());
+    expect(el.querySelector('[data-testid="rhythm-erase-outcome"]')).toBe(region);
+    expect(region?.textContent).toBe("Zabilježeni ritam je obrisan (3).");
+    expect(document.activeElement).toBe(button(el, t.erase.button));
+  });
+
+  it("tells the recorder of the same work to drop what it has not sent, before the delete goes out", async () => {
+    const { onRhythmErased } = await import("./erased");
+    const heard: string[] = [];
+    const off = onRhythmErased((id) => heard.push(id));
+    const p = port({ kind: "ready", state: { enabled: true, level: "default", changedBy: null, changedAt: null } }, async () => {
+      expect(heard).toEqual(["doc-1"]);
+      return { kind: "deleted", count: 1 };
+    });
+    const el = await render(<RhythmSetting port={p} documentId="doc-1" />);
+    await act(async () => button(el, t.erase.button).click());
+    expect(heard).toEqual([]);
+    await act(async () => button(el, t.erase.confirm).click());
+    off();
+    expect(heard).toEqual(["doc-1"]);
+  });
+
+  it("says an ended session as such, without a redirect, and offers nothing else", async () => {
+    const el = await render(<RhythmSetting port={port({ kind: "signedOut" })} documentId="doc-1" />);
+    const alert = el.querySelector('[data-testid="rhythm-setting-signed-out"]');
+    expect(alert?.textContent).toBe(t.signedOut);
+    expect(alert?.getAttribute("role")).toBe("alert");
+    expect(byTestId(el, "rhythm-setting-unknown")).toBeNull();
+    expect(el.querySelector("a, button")).toBeNull();
+  });
+
+  it("negative control: 404 and 503 (unavailable) never say the session ended", async () => {
+    const el = await render(<RhythmSetting port={port({ kind: "unavailable" })} documentId="doc-1" />);
+    expect(byTestId(el, "rhythm-setting-unknown")).toBe(t.unknown);
+    expect(el.textContent).not.toContain(t.signedOut);
+    expect(el.querySelector('[data-testid="rhythm-setting-signed-out"]')).toBeNull();
   });
 
   it("negative control: an unconfirmed delete is never reported as done", async () => {
@@ -106,6 +154,9 @@ describe("rhythm setting for the student", () => {
     expect(eraseText({ kind: "signedOut" })).toBe(t.erase.signedOut);
     expect(setByText({ enabled: true, level: "default", changedBy: null, changedAt: null })).toBeNull();
     expect(setByText({ enabled: false, level: null, changedBy: { role: "mentor", name: null }, changedAt: null })).toBe("Zadnja promjena: mentor.");
+    // The faculty's calendar day: 23:30 UTC on 23. 11. is already 24. 11. in Zagreb.
+    expect(setByText({ enabled: false, level: "course", changedBy: TEACHER, changedAt: "2026-11-23T23:30:00.000Z" }))
+      .toBe("Zadnja promjena: nastavnik Iva Izmišljena, 24. 11. 2026.");
     expect(findForbiddenTerms(JSON.stringify(t), "hr")).toEqual([]);
   });
 });

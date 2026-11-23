@@ -10,7 +10,7 @@
 // - the start of a burst on the minute, never to the second.
 // The recorder has no method that takes a key or text, so there is nothing to leave out.
 
-import { createApi } from "./api";
+import { createApi, type ApiResult } from "./api";
 
 /** The closed list of origins of a change (SRV-0910 a). Order is the display order. */
 export const ORIGIN_KINDS = [
@@ -191,30 +191,29 @@ export interface RhythmPort {
 }
 
 type Call = ReturnType<typeof createApi>;
-type Result = { readonly ok: boolean; readonly status: number; readonly body?: unknown };
+type SettingResult = ApiResult<"work.input-rhythm-setting.get">;
+type EraseResult = ApiResult<"work.input-rhythm.delete">;
 
-const LEVELS: readonly RhythmLevel[] = ["assignment", "course", "default"];
 const UNAVAILABLE = { kind: "unavailable" } as const;
 
-function refused(result: Result): { readonly kind: "signedOut" } | typeof UNAVAILABLE {
+function refused(result: { readonly status: number }): { readonly kind: "signedOut" } | typeof UNAVAILABLE {
   return result.status === 401 ? { kind: "signedOut" } : UNAVAILABLE;
 }
 
 /**
- * The setting from an answer of work.input-rhythm-setting.get. The level is the server's `source`
- * when it names one (SRV #652); the extract of this route has none yet, so an undated answer is the
- * default and a dated one has no level the screen could claim.
+ * The setting from an answer of work.input-rhythm-setting.get (createApi has checked it against the
+ * contract). The level is the server's `source` (SRV #652); an answer without one is the default
+ * when undated, and a dated one has no level the screen could claim.
  */
-export function settingOf(result: Result): RhythmSettingAnswer {
+export function settingOf(result: SettingResult): RhythmSettingAnswer {
   if (!result.ok) return refused(result);
-  const body = result.body as { enabled?: unknown; source?: unknown; changedBy?: RhythmSettingState["changedBy"]; changedAt?: unknown } | undefined;
-  if (typeof body?.enabled !== "boolean") return UNAVAILABLE;
-  const changedAt = typeof body.changedAt === "string" ? body.changedAt : null;
-  const named = LEVELS.find((level) => level === body.source);
-  return {
-    kind: "ready",
-    state: { enabled: body.enabled, level: named ?? (changedAt === null ? "default" : null), changedBy: body.changedBy ?? null, changedAt },
-  };
+  const { enabled, source, changedBy, changedAt } = result.body;
+  return { kind: "ready", state: { enabled, level: source ?? (changedAt === null ? "default" : null), changedBy, changedAt } };
+}
+
+/** The count from an answer of work.input-rhythm.delete: only what the server confirmed. */
+export function erasedOf(result: EraseResult): RhythmEraseAnswer {
+  return result.ok ? { kind: "deleted", count: result.body.deleted } : refused(result);
 }
 
 /**
@@ -239,10 +238,7 @@ export function createRhythmPort(call: Call = createApi()): RhythmPort {
     },
     async erase(documentId) {
       try {
-        const result = await call("work.input-rhythm.delete", { params: { documentId }, query: undefined, body: undefined });
-        if (!result.ok) return refused(result);
-        const deleted = (result.body as { deleted?: unknown } | undefined)?.deleted;
-        return typeof deleted === "number" && Number.isInteger(deleted) && deleted >= 0 ? { kind: "deleted", count: deleted } : UNAVAILABLE;
+        return erasedOf(await call("work.input-rhythm.delete", { params: { documentId }, query: undefined, body: undefined }));
       } catch {
         return UNAVAILABLE;
       }
