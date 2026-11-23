@@ -37,6 +37,10 @@ const LINK: Schema = {
 
 const FILE_ROUTE = migrationContracts["teacher.submissions-bulk.get"];
 const TOKEN = new RegExp(FILE_ROUTE.query.properties.token.pattern);
+/** The downloadPath pattern of the link route's 201 answer, checked as the contract states it. */
+const LINK_PATH = new RegExp(
+  migrationContracts["teacher.submissions-bulk-link.post"].responses["201"].content["application/json"].schema.properties.downloadPath.pattern,
+);
 
 /** The path of the file of one assignment and format (teacher.submissions-bulk.get), without the token. */
 export const bulkFilePath = (assignmentId: string, format: BulkFormat): string =>
@@ -44,8 +48,8 @@ export const bulkFilePath = (assignmentId: string, format: BulkFormat): string =
 
 /** A link the screen may render: exactly the file path of this assignment and format, with the token the server gives. */
 export function isBulkHref(href: string, assignmentId: string, format: BulkFormat): boolean {
-  const path = bulkFilePath(assignmentId, format);
-  return href.startsWith(`${path}?token=`) && TOKEN.test(href.slice(path.length + "?token=".length));
+  const path = bulkFilePath(assignmentId.toLowerCase(), format);
+  return LINK_PATH.test(href) && href.startsWith(`${path}?token=`) && TOKEN.test(href.slice(path.length + "?token=".length));
 }
 
 function parse(body: unknown, assignmentId: string, format: BulkFormat): BulkLink | null {
@@ -56,8 +60,10 @@ function parse(body: unknown, assignmentId: string, format: BulkFormat): BulkLin
 }
 
 /** Asks the server for a link to the file. Success only from a 201 answer that names this assignment and format. */
-export async function requestBulkLink(call: BulkCall, assignmentId: string, format: BulkFormat): Promise<BulkRequest> {
-  if (!matchesSchema(UUID, assignmentId) || !BULK_FORMATS.includes(format)) return { kind: "greska", code: "not_found" };
+export async function requestBulkLink(call: BulkCall, rawId: string, format: BulkFormat): Promise<BulkRequest> {
+  if (!matchesSchema(UUID, rawId) || !BULK_FORMATS.includes(format)) return { kind: "greska", code: "not_found" };
+  // The contract's downloadPath names the assignment in lower case only ([0-9a-f-]), so the id is asked and compared so.
+  const assignmentId = rawId.toLowerCase();
   try {
     const result = await call("teacher.submissions-bulk-link.post", { params: { assignmentId }, body: { format } });
     if (result.ok) {
