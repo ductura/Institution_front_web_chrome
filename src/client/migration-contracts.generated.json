@@ -37638,5 +37638,337 @@
         "unavailable"
       ]
     }
+  },
+  "submission.submit-second.post": {
+    "path": "/api/v1/submission/v2",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "documentId",
+        "revision"
+      ],
+      "properties": {
+        "documentId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "type": "integer"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "submitted",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "status",
+                "receipt"
+              ],
+              "properties": {
+                "status": {
+                  "const": "submitted",
+                  "type": "string"
+                },
+                "receipt": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "payload",
+                    "payloadDigestSha256",
+                    "signature"
+                  ],
+                  "properties": {
+                    "payload": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "receiptSchema",
+                        "submissionId",
+                        "evidenceDomainId",
+                        "principalId",
+                        "assignmentId",
+                        "assignmentVersion",
+                        "documentId",
+                        "evidencePackageId",
+                        "revision",
+                        "artifactSha256",
+                        "evidenceHeadSegmentHash",
+                        "evidenceRecord",
+                        "requestedAt",
+                        "dueAt",
+                        "afterDeadline",
+                        "signedAt"
+                      ],
+                      "properties": {
+                        "receiptSchema": {
+                          "const": "ductus-submission-receipt-v2",
+                          "type": "string"
+                        },
+                        "submissionId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "evidenceDomainId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "principalId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "assignmentId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "assignmentVersion": {
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "type": "integer"
+                        },
+                        "documentId": {
+                          "minLength": 1,
+                          "maxLength": 256,
+                          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF])+(?<!\\s)$",
+                          "type": "string"
+                        },
+                        "evidencePackageId": {
+                          "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$",
+                          "type": "string"
+                        },
+                        "revision": {
+                          "minimum": 1,
+                          "maximum": 9007199254740991,
+                          "type": "integer"
+                        },
+                        "artifactSha256": {
+                          "pattern": "^[0-9a-f]{64}$",
+                          "type": "string"
+                        },
+                        "evidenceHeadSegmentHash": {
+                          "pattern": "^[0-9a-f]{64}$",
+                          "type": "string"
+                        },
+                        "evidenceRecord": {
+                          "anyOf": [
+                            {
+                              "const": "continuous",
+                              "type": "string"
+                            },
+                            {
+                              "const": "with_gaps",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "requestedAt": {
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                          "type": "string"
+                        },
+                        "dueAt": {
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                          "type": "string"
+                        },
+                        "afterDeadline": {
+                          "type": "boolean"
+                        },
+                        "signedAt": {
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "payloadDigestSha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    "signature": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "algorithm",
+                        "keyId",
+                        "keyVersion",
+                        "signatureEncoding",
+                        "signatureBase64Url"
+                      ],
+                      "properties": {
+                        "algorithm": {
+                          "const": "Ed25519",
+                          "type": "string"
+                        },
+                        "keyId": {
+                          "minLength": 1,
+                          "maxLength": 2048,
+                          "pattern": "\\S",
+                          "type": "string"
+                        },
+                        "keyVersion": {
+                          "minLength": 1,
+                          "maxLength": 256,
+                          "pattern": "\\S",
+                          "type": "string"
+                        },
+                        "signatureEncoding": {
+                          "const": "raw",
+                          "type": "string"
+                        },
+                        "signatureBase64Url": {
+                          "pattern": "^[A-Za-z0-9_-]{86}$",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "bad_request"
+      ],
+      "401": [
+        "unauthenticated"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "timeout"
+      ],
+      "409": [
+        "blocked",
+        "stale_revision",
+        "already_requested",
+        "not_acknowledged",
+        "not_open",
+        "declaration_required"
+      ],
+      "413": [
+        "too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid"
+      ],
+      "426": [
+        "upgrade_required"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.comments.publish-selected.post": {
+    "path": "/api/v1/works/{documentId}/comments/publish-selected",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "draftIds"
+      ],
+      "properties": {
+        "draftIds": {
+          "minItems": 1,
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the number of comments published",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "published"
+              ],
+              "properties": {
+                "published": {
+                  "minimum": 1,
+                  "maximum": 100000,
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }

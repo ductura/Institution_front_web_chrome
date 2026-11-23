@@ -21,6 +21,7 @@ import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { originText } from "./host/teacher/origin-map/messages.hr";
+import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
 import { hostText } from "./text";
 
 export { BASES, type Base } from "./bases";
@@ -124,6 +125,8 @@ export const PAGES: readonly Page[] = [
   // WEB-1302: the registry office requests a student's data export, the administrator starts it;
   // open to everyone signed in, since the registry office has no role of its own and the server decides.
   { path: STUDENT_DATA_EXPORT_PATH, label: studentDataExportMessages.title, kind: "pending", roles: [], current: STUDENT_DATA_EXPORT_PATH },
+  // PIL-P1-PRAGOVI-ADMIN (P-1 rule 12): the faculty's thresholds per origin kind, next to the faculty rules.
+  { path: "/ustanova/pragovi", label: thresholdMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova/pravila" },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.

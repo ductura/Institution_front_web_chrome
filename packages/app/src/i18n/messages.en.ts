@@ -63,6 +63,7 @@ export const pageLabelsEn = {
   assignmentSubmissions: "Assignment submissions",
   courseStudents: "Student list",
   receiptCheck: "Receipt check",
+  originThresholds: "Thresholds per origin kind",
 };
 
 export const accessDeniedEn = {

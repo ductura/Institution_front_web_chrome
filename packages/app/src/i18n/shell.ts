@@ -43,6 +43,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/ustanova/izvoz-podataka": (c) => c.app.pages.studentDataExport,
   "/izvoz-podataka/[token]": (c) => c.app.pages.studentDataDownload,
   "/provjera": (c) => c.app.pages.receiptCheck,
+  "/ustanova/pragovi": (c) => c.app.pages.originThresholds,
 };
 
 /**
