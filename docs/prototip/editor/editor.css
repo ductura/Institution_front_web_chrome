@@ -859,3 +859,22 @@ li .pgb, blockquote .pgb { width:calc(100% + var(--pg-ml) + var(--pg-mr) + 1.6em
 .m3diff { max-height:46vh; overflow:auto; font-family:var(--ff-display); font-size:14.5px; line-height:1.6; border-top:1px solid var(--rule-2); padding-top:8px; } .m3diff p { margin:0 0 8px; padding:2px 6px; border-radius:3px; } .m3diff .same { color:var(--ink-3); } .m3diff .add, .m3diff ins { background:color-mix(in srgb, var(--p-typed) 24%, transparent); text-decoration:none; } .m3diff .del, .m3diff del { background:color-mix(in srgb, var(--error) 20%, transparent); text-decoration:line-through; } .m3diff h5 { margin:12px 0 6px; font-size:14px; }
 .m3cr { padding:8px 0; border-top:1px solid var(--rule-2); } .m3cr b { display:block; margin-bottom:6px; font-weight:500; } .m3cr p { margin:6px 0 2px; font-size:12.5px; color:var(--ink-2); } .m3cr .seg { display:inline-flex; }
 @media (max-width:760px) { .m3grid, .m3in { grid-template-columns:1fr; } .m3log > div { grid-template-columns:28px 96px 1fr; } .m3log .h { display:none; } .m3head .n { font-size:24px; } }
+
+/* ---------- NF-2 (nf2.js, v0.28): stanja, zaglavlje, opseg, izjava, povijest ---------- */
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+.dot.err { background:var(--error); }
+.dot.ok { background:var(--synced); }
+.nf2h { display:flex; align-items:center; gap:8px; flex:none; }
+.nf2-sub { display:flex; align-items:center; gap:8px; }
+.nf2-sub .btn[disabled] { opacity:.6; }
+.nf2-sub .s { display:none; }
+.nf2n { display:inline-block; min-width:18px; margin-left:6px; padding:0 5px; border-radius:999px; background:var(--sheet); color:var(--ink); font-size:11.5px; font-weight:600; text-align:center; line-height:18px; }
+.nf2-note { font-size:12px; color:var(--ink-2); white-space:nowrap; }
+.nf2-rng { color:var(--ink-2); }
+.nf2-pur { display:flex; gap:8px; align-items:baseline; padding:2px 0; }
+.nf2-y { color:var(--synced); font-weight:600; width:14px; }
+.nf2-n { color:var(--ink-3); font-weight:600; width:14px; }
+@media (max-width:1050px) { .nf2-opt, .nf2-note { display:none; } }
+@media (max-width:640px) { .nf2-sub .w { display:none; } .nf2-sub .s { display:inline; } .nf2h { gap:4px; } }
+@media (max-width:480px) { .top { gap:4px; padding:0 6px; } .top .mark { font-size:15px; } .top .seg button { padding:0 7px; } .nf2-sub .btn { padding:0 9px; } .nf2n { margin-left:4px; } }
+@media (max-width:640px) { .tools .tb, .tools .tb.ic { min-width:44px; height:44px; } .tools .sel { height:44px; } }
