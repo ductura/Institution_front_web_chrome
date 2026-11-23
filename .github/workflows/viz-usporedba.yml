@@ -1,25 +1,30 @@
 name: viz-usporedba
-# Izvještaj, ne vrata (pokreće se ručno): nije u needs od ci-ok i nikad ne pada zbog razlike
-# (VIZ-CI, Daniel 22. 11. 2026.: pisci sami vide izgled). Gradi aplikaciju,
-# snima zaslone koje PR dira i njihove prototipe (docs/prototip/, kopija u
-# ovom repou, pa bez tokena) na 390, 768, 1100 i 1280 px i računa razliku.
+# Jedan prolaz usporedbe s prototipom (VIZ-PRAG): alat packages/app/e2e/viz
+# (pnpm viz) zamjenjuje stari snimac tests/prototip. Gradi aplikaciju, snima
+# svaki ekran iz e2e/a11y/screens.ts i njegov prototip (docs/prototip/, kopija
+# u ovom repou, pa bez tokena) na 390, 768, 1100 i 1280 px i računa razliku.
+# Zadano je izvještaj, ne vrata: nije u needs od ci-ok. Kad se brojke smire,
+# ulaz `vrata` uključuje prag (zadano 2 %, ulaz `prag`): svaki ekran i širina
+# iznad praga ruši korak i ovaj workflow.
 on:
   # Bez pull_request: ci.yml mora biti jedini workflow na PR-u (test/unit/ci-ok.test.js).
   # Pisac ga pokreće na svojoj grani: gh workflow run viz-usporedba.yml --ref <grana>
   workflow_dispatch:
     inputs:
-      sve: { description: "Snimi sve zaslone iz tests/prototip/mapa.json", type: boolean, default: true }
+      vrata: { description: "Ruši provjeru kad ekran ili širina prijeđe prag", type: boolean, default: false }
+      prag: { description: "Najveći dopušteni udio različitih piksela u %", type: string, default: "2" }
+      tema: { description: "Tema koja se uspoređuje (light ili dark)", type: string, default: "light" }
 permissions:
   contents: read
 concurrency:
-  group: viz-usporedba-${{ github.event.pull_request.number || github.ref }}
+  group: viz-usporedba-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   usporedba:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Čak i kad korak ne uspije, posao ostaje zelen: izvještaj se ne smije miješati s vratima.
-    continue-on-error: true
+    # Bez vrata posao ostaje zelen čak i kad korak ne uspije: izvještaj se ne miješa s vratima.
+    continue-on-error: ${{ !inputs.vrata }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0, persist-credentials: false }
@@ -35,37 +40,32 @@ jobs:
         run: pnpm run build
       - name: Browser
         run: pnpm --filter @ductura/app exec playwright install --with-deps chromium
-      - name: Install the comparison tool
-        working-directory: tests/prototip
-        run: npm ci --ignore-scripts
-      - name: Tests of the comparison tool
-        working-directory: tests/prototip
-        run: node --test snimi.test.mjs
-      - name: Changed files
-        env:
-          EVENT: ${{ github.event_name }}
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [ "$EVENT" = pull_request ]; then
-            git diff --name-only "$BASE...$HEAD" > "$RUNNER_TEMP/promijenjeno.txt"
-          else
-            : > "$RUNNER_TEMP/promijenjeno.txt"
-          fi
-          cat "$RUNNER_TEMP/promijenjeno.txt"
+      - name: Tests of the gate
+        run: node --test packages/app/e2e/viz/prag.test.ts
       - name: Start the app over the fake institution server
         run: |
           cd packages/app
           INSTITUTION_SERVER_URL=http://127.0.0.1:9 nohup pnpm exec next start -p 5191 > "$RUNNER_TEMP/next.log" 2>&1 &
           for i in $(seq 1 60); do curl -fs http://127.0.0.1:5191/app/web/ > /dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/next.log"; exit 1
-      - name: Capture, compare, summarise
+      - name: Capture, compare, gate
+        working-directory: packages/app
         env:
           VIZ_URL: http://127.0.0.1:5191
-          VIZ_OUT: ${{ github.workspace }}/viz-out
-          VIZ_PROMIJENJENO: ${{ github.event_name == 'pull_request' && format('{0}/promijenjeno.txt', runner.temp) || '' }}
-          VIZ_SVE: ${{ github.event_name == 'workflow_dispatch' && inputs.sve && '1' || '' }}
-        run: node tests/prototip/snimi.mjs
+          VIZ_THEME: ${{ inputs.tema }}
+          VIZ_PRAG: ${{ inputs.vrata && inputs.prag || '' }}
+        run: pnpm run viz
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Usporedba s prototipom"
+            if [ -f packages/app/viz-out/pali.txt ]; then
+              echo; echo "Iznad praga:"; echo '```'; cat packages/app/viz-out/pali.txt; echo '```'
+            else
+              echo; echo "Izvještaj je u artefaktu viz-usporedba (index.html)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: viz-usporedba, path: viz-out/, if-no-files-found: ignore }
+        with: { name: viz-usporedba, path: packages/app/viz-out/, if-no-files-found: ignore }

@@ -10,7 +10,9 @@ import { test } from "@playwright/test";
 import { PAIRS } from "./pairs";
 
 const OUT = resolve(import.meta.dirname, "../../viz-out");
-const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? "D:/Ductura/_prototipovi");
+// The prototypes are in the repository (docs/prototip); VIZ_PROTOTIPOVI points elsewhere.
+const PROTOTIPOVI_ZADANO = resolve(import.meta.dirname, "../../../../docs/prototip");
+const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? PROTOTIPOVI_ZADANO);
 const FILES = ["Ductura_student.html", "Ductura_nastavnik.html", "editor/index.html"];
 
 export type Stavka = { readonly file: string; readonly hash: string; readonly naslov: string; readonly stanja: readonly string[]; readonly par: string | null };
