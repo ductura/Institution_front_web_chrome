@@ -3,7 +3,7 @@
  *
  * Turns a finished text into a sequence of key actions with the timing,
  * typos, corrections and pauses of a person typing it. It never touches a
- * browser: `ai-typist.spec.ts` plays the plan through trusted key events.
+ * browser: the red-team browser test plays the plan through trusted key events.
  * Seeded, so a run can be repeated exactly.
  */
 
