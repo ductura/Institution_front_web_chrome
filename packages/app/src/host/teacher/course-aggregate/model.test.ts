@@ -31,6 +31,21 @@ describe("course aggregate (WEB-1706)", () => {
     expect(measureView("submitted", -1, 10).shown).toBe(false);
   });
 
+  it("never leaves a single hidden measure that the total and the shown ones would give away", () => {
+    for (let students = MIN_STUDENTS; students <= 40; students++) {
+      for (let submitted = 0; submitted <= students; submitted++) {
+        for (let inProgress = 0; submitted + inProgress <= students; inProgress++) {
+          const counts = { submitted, inProgress, notStarted: students - submitted - inProgress };
+          const view = aggregateView({ kind: "ready", data: { students, counts } });
+          if (view.kind !== "ready") throw new Error("expected ready");
+          const hidden = view.measures.filter((m) => !m.shown);
+          expect(hidden.length === 1, JSON.stringify(counts)).toBe(false);
+          for (const m of view.measures) if (m.shown) expect(m.count).toBe(counts[m.key]);
+        }
+      }
+    }
+  });
+
   it("carries no name, no scale and no ranking in its view", async () => {
     const view = await loadAggregate(fakeCourseAggregatePort(), ID, FAKE_ASSIGNMENTS);
     const json = JSON.stringify(view);

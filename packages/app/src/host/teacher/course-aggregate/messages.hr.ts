@@ -2,7 +2,6 @@ export const courseAggregateMessages = {
   title: "Zbirni pregled kolegija",
   courseTitle: (course: string): string => `${course}: zbirni pregled`,
   lead: "Udjeli studenata po stanju rada, za cijeli kolegij. Bez imena, ocjena i poretka.",
-  link: "Zbirni pregled",
   note: "Pregled prikazuje samo udjele za cijeli kolegij. Ne sadrži imena, ocjene ni poredak.",
   measureSubmitted: "Predano",
   measureInProgress: "U pisanju",

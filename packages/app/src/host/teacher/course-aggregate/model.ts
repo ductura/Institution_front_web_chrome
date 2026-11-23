@@ -1,7 +1,8 @@
 // Pure rules of the course aggregate (WEB-1706; plan M6.10, N-17, D-242). The view shows shares of a
 // closed list of measures for the whole course: no names, no scale, no ranking. Below the threshold
 // the whole view is replaced by the "suppressed" state; a measure whose count or whose complement
-// is below the threshold is hidden too, because the complement would give a small group away.
+// is below the threshold is hidden too, because the complement would give a small group away, and a
+// lone hidden measure takes a second one with it (withSecondarySuppression), so it cannot be worked out.
 // The real port (./port.ts, PIL-K-ZBIRNO) reads course.aggregate.get; its measures are the stages the
 // route gives (not started, in progress, submitted). This module makes no network call.
 // P-D1 (PIL-D1-BEZ-OCJENE): a practice assignment never enters the aggregate. The port is asked only for
@@ -79,6 +80,18 @@ export function chartAlt(measures: readonly MeasureView[]): string {
   return text.chartAlt(measures.map((m) => (m.shown ? text.chartPart(m.label, m.percent) : text.chartPartHidden(m.label))));
 }
 
+/**
+ * The measures split the students without overlap (each student is in exactly one stage) and the total is
+ * shown, so a single hidden measure would be the total minus the shown ones. When exactly one is hidden,
+ * the smallest shown one is hidden too (secondary suppression): two hidden measures give only their sum.
+ */
+export function withSecondarySuppression(measures: readonly MeasureView[]): readonly MeasureView[] {
+  if (measures.filter((m) => !m.shown).length !== 1) return measures;
+  const shown = measures.filter((m): m is Extract<MeasureView, { shown: true }> => m.shown);
+  const smallest = shown.reduce<(typeof shown)[number] | undefined>((min, m) => (min === undefined || m.count < min.count ? m : min), undefined);
+  return smallest === undefined ? measures : measures.map((m) => (m === smallest ? { key: m.key, label: m.label, shown: false } : m));
+}
+
 /** Turns a port answer into the view; a count below the threshold never reaches the screen. */
 export function aggregateView(read: AggregateRead, practiceLeftOut = 0): AggregateView {
   if (read.kind !== "ready") return { kind: read.kind };
@@ -86,7 +99,7 @@ export function aggregateView(read: AggregateRead, practiceLeftOut = 0): Aggrega
   if (!Number.isInteger(students) || students < 0) return { kind: "unavailable" };
   if (students === 0) return { kind: "empty" };
   if (students < MIN_STUDENTS) return { kind: "suppressed" };
-  const measures = MEASURES.map((key) => measureView(key, counts[key], students));
+  const measures = withSecondarySuppression(MEASURES.map((key) => measureView(key, counts[key], students)));
   return { kind: "ready", students, measures, chartAlt: chartAlt(measures), practiceLeftOut };
 }
 

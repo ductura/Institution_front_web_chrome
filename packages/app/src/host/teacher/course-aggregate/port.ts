@@ -4,7 +4,7 @@
 // asked: teacher.courses.get lists them and institution.assignment.get gives each one's `isPractice`
 // (P-D1). A course with practice assignments only never reaches the route (loadAggregate, model.ts).
 // An answer whose numbers do not add up is "unavailable", never a guessed share.
-import { createApi, goToSignIn } from "../../../../../../src/client/api";
+import { createApi, goToSignIn, type ApiResult } from "../../../../../../src/client/api";
 import { readAssignmentVersion } from "../../../../../../src/client/teacher-assignment";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { readTeacherCourses, type TeacherCoursesCall } from "../../../../../../src/components/teacher/teacher-courses-read";
@@ -13,10 +13,8 @@ import { aggregatePath, type AggregateRead, type CourseAggregatePort, type Cours
 
 export type AggregateCall = ReturnType<typeof createApi>;
 
-type Wire = { status: "suppressed" } | {
-  status: "available"; started: number; submitted: number;
-  stages: { notStarted: number; inProgress: number; submitted: number };
-};
+/** The 200 body of course.aggregate.get, as the generated contract types give it. */
+type Wire = Extract<ApiResult<"course.aggregate.get">, { ok: true }>["body"];
 
 /** The route's answer as the model's read; totals that contradict the stages are "unavailable". */
 export function aggregateOfWire(body: Wire): AggregateRead {
