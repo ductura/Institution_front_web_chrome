@@ -1,6 +1,5 @@
-// The view's model of E-9 "Izjava" and PD-2 "Razgovor N" (WEB-2107). There is no server route for
-// the declaration yet (declaration-v1), so the data comes through a reader the caller gives; the
-// host passes one that answers "error", and only tests and the catalogue pass a fake.
+// The view's model of E-9 "Izjava" and PD-2 "Razgovor N" (WEB-2107). The host reads it from
+// declaration-v1 through step-ports.ts (PIL-K-IZJAVA); only tests and the catalogue pass a fake.
 import { chatDialogText, declarationStepText as t } from "./messages.hr";
 
 export type RecordedItem =
@@ -48,9 +47,6 @@ export type DeclarationRead =
 
 export type DeclarationReader = (assignmentId: string) => Promise<DeclarationRead>;
 
-/** The host's reader until declaration-v1 has a route: the block cannot load (§5 rule 11). */
-export const unavailableReader: DeclarationReader = async () => ({ kind: "error" });
-
 export const ANSWER_MAX_LENGTH = 1000;
 
 /** What the page shows: the work's state first, then what was read. */
@@ -85,9 +81,28 @@ export function entryLabel(entry: ChatEntry): string {
   return `${who} · ${entry.time}`;
 }
 
-/** "Dalje" is open only once the declaration is confirmed (R-32). */
-export function canProceed(view: StepView, confirmed: boolean): boolean {
-  return confirmed && (view === "full" || view === "empty" || view === "error");
+/** Where the confirmation stands: `saved` only once the server holds it (step-ports.ts). */
+export type ConfirmState = "none" | "sending" | "saved" | "conflict" | "stale" | "refused" | "technical";
+
+/**
+ * "Dalje" is open only once the server holds the confirmation (R-32). A technical error never stops
+ * a submission (PRODUCT §5 rule 11): a confirmation that could not reach the server opens it too,
+ * shown as not saved.
+ */
+export function canProceed(view: StepView, confirm: ConfirmState): boolean {
+  return (confirm === "saved" || confirm === "technical") && (view === "full" || view === "empty" || view === "error");
+}
+
+/** The line under the confirmation for each state; null when there is nothing to say. */
+export function confirmLine(confirm: ConfirmState): { readonly role: "status" | "alert"; readonly text: string } | null {
+  switch (confirm) {
+    case "none": case "saved": return null;
+    case "sending": return { role: "status", text: t.confirming };
+    case "conflict": return { role: "alert", text: t.conflict };
+    case "stale": return { role: "alert", text: t.stale };
+    case "refused": return { role: "alert", text: t.confirmRefused };
+    case "technical": return { role: "alert", text: t.confirmTechnical };
+  }
 }
 
 export function recordedLine(item: RecordedItem): { readonly line: string; readonly who: string } {

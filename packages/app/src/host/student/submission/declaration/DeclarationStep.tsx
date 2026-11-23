@@ -2,22 +2,25 @@
 
 // Step 2 of the submission, E-9 "Izjava", with the PD-2 dialog "Razgovor N" (WEB-2107).
 // What Ductura recorded and what the student declares stand in separate blocks (D-40, D-44). The
-// confirmation stays in this browser for this sign-in, as for step 3 (flow.ts).
+// declaration is read and confirmed on the server (declaration-v1, PIL-K-IZJAVA) through the
+// step's ports; the human help and the printout are edited in StudentStatement on the same read.
 import {
   Button, Dialog, Select, StepActions, StepCheck, StepDecl, StepEntry, StepKv, StepLoading, StepNav, StepPanel, StepSub, Tag, TextArea,
 } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { readConfirmed, useSessionTag, writeConfirmed } from "../../../../../../../src/components/predaja/Declaration.tsx";
+import { useSessionTag, writeConfirmed } from "../../../../../../../src/components/predaja/Declaration.tsx";
 import { confirmationKey, stepHref } from "../../../../../../../src/components/predaja/flow.ts";
 import { routerPath } from "../../../../bases";
+import StudentStatement from "../../statement/StudentStatement";
 import StepLink from "../steps/StepLink";
 import { chatDialogText as d, declarationStepText as t } from "./messages.hr";
 import {
-  ANSWER_MAX_LENGTH, canProceed, chatTitle, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
-  type Chat, type DeclarationRead, type FormChoice,
+  ANSWER_MAX_LENGTH, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
+  type Chat, type ConfirmState, type DeclarationRead, type FormChoice,
 } from "./model";
+import type { StepPorts, StepRead } from "./step-ports";
 
 /** PD-2: the exact conversation, closed by its button, Escape or a click on the backdrop. */
 export function ChatDialog({ chat, onClose }: { chat: Chat | null; onClose: () => void }) {
@@ -43,29 +46,66 @@ export function ChatDialog({ chat, onClose }: { chat: Chat | null; onClose: () =
 export type DeclarationStepProps = {
   readonly assignmentId: string;
   readonly workState: string;
-  readonly read: DeclarationRead;
-  readonly onRetry: () => void;
+  /** Both halves of the step on one session (createStepPorts). */
+  readonly ports: StepPorts;
   readonly hrefOf: (path: string) => string;
+  /** Signed out: AAI@EduHr sign-in, back to this step. */
+  readonly onSignIn: () => void;
 };
 
-export default function DeclarationStep({ assignmentId, workState, read, onRetry, hrefOf }: DeclarationStepProps) {
+const FAILED_READ: StepRead = { kind: "read", view: { kind: "error" }, statement: { kind: "unavailable" }, confirmed: false };
+
+export default function DeclarationStep({ assignmentId, workState, ports, hrefOf, onSignIn }: DeclarationStepProps) {
   const router = useRouter();
   const tag = useSessionTag();
   const key = tag === null ? null : confirmationKey(tag, assignmentId);
-  const [confirmed, setConfirmed] = useState(false);
-  useEffect(() => setConfirmed(readConfirmed(key)), [key]);
+  const [step, setStep] = useState<StepRead | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [confirm, setConfirm] = useState<ConfirmState>("none");
+  const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<FormChoice | null>(null);
   const [answer, setAnswer] = useState("");
   const [chat, setChat] = useState<Chat | null>(null);
   const [todo, setTodo] = useState(false);
   const why = useId();
+  // Both halves are read together: one answer of the server, one version to write on.
+  const reload = () => setAttempt((n) => n + 1);
+  useEffect(() => {
+    let live = true;
+    void ports.read(assignmentId).then((next) => {
+      if (!live) return;
+      if (next.kind === "signedOut") return onSignIn();
+      setStep(next);
+      // What the server holds decides; an alert about a failed write stays until the next try.
+      setConfirm((current) => (next.confirmed ? "saved" : current === "saved" ? "none" : current));
+    }, () => { if (live) setStep(FAILED_READ); });
+    return () => { live = false; };
+  }, [ports, assignmentId, attempt]);
+  // Step 3 still reads the confirmation for this sign-in from the browser: mirror only what the server holds.
+  const held = step?.kind === "read" && step.confirmed;
+  useEffect(() => { if (step !== null) writeConfirmed(key, held); }, [key, step, held]);
+
+  const read: DeclarationRead = step?.kind === "read" ? step.view : { kind: "loading" };
   const view = stepView(workState, read);
   const ready = read.kind === "ready" ? read : null;
   const chosen = form ?? ready?.declared?.form ?? "used";
   const target = ready ? mismatchTarget(ready.recorded, chosen) : null;
-  const proceed = canProceed(view, confirmed);
+  const proceed = canProceed(view, confirm);
+  const line = confirmLine(confirm);
   const back = () => router.push(routerPath(hrefOf(stepHref(assignmentId, "tekst"))));
   const later = () => setTodo(true);
+
+  const send = async (next: boolean) => {
+    // A confirmation the server holds is withdrawn only by changing the declaration.
+    if (!next) { if (confirm !== "saved" && confirm !== "sending") setConfirm("none"); return; }
+    if (confirm === "sending" || confirm === "saved") return;
+    setConfirm("sending");
+    const outcome = await ports.confirm(assignmentId);
+    if (outcome === "signedOut") return onSignIn();
+    setConfirm(outcome);
+    // Saved, conflict and stale read both halves again: the step shows what the server now holds.
+    if (outcome === "saved" || outcome === "conflict" || outcome === "stale") reload();
+  };
 
   // The prototype's loading and error panels are titled "Izjava"; the full one carries the whole title.
   if (view === "loading") return <><div><StepNav current={2} /></div><StepPanel title={t.shortTitle} busy><StepLoading message={t.loading} /></StepPanel></>;
@@ -78,17 +118,18 @@ export default function DeclarationStep({ assignmentId, workState, read, onRetry
         {view === "error" && (
           <>
             <p className="note" role="alert">{t.error}</p>
-            <StepActions><Button tone="secondary" onClick={onRetry}>{t.retry}</Button></StepActions>
+            <StepActions><Button tone="secondary" onClick={reload}>{t.retry}</Button></StepActions>
           </>
         )}
         {ready && (
           <>
             <StepDecl title={t.recorded} tag={<Tag>{t.recordedTag}</Tag>}>
               {ready.recorded.length === 0 ? <p className="note">{t.emptyRecorded}</p> : ready.recorded.map((item, index) => {
-                const { line, who } = recordedLine(item);
-                return <StepEntry key={index} who={who}>{line}</StepEntry>;
+                const { line: entry, who } = recordedLine(item);
+                return <StepEntry key={index} who={who}>{entry}</StepEntry>;
               })}
               {ready.recorded.length > 0 && !closed && <StepLink href="#izjava" onClick={later}>{t.addNote}</StepLink>}
+              {todo && <p className="note" role="status">{t.notDone}</p>}
             </StepDecl>
             <StepDecl title={t.declared} tag={<Tag tone="open">{t.declaredTag}</Tag>} own>
               {ready.declared === null ? <p className="note">{t.emptyDeclared}</p> : (
@@ -99,8 +140,14 @@ export default function DeclarationStep({ assignmentId, workState, read, onRetry
                   <StepKv label={t.humanHelp}>{ready.declared.humanHelp.text}</StepKv>
                 </>
               )}
-              {!closed && <StepLink href="#izjava" onClick={later}>{ready.declared === null ? t.fillDeclaration : t.editDeclaration}</StepLink>}
-              {todo && <p className="note" role="status">{t.notDone}</p>}
+              {!closed && (
+                <StepLink href="#izjava" onClick={() => setEditing((open) => !open)}>
+                  {editing ? t.closeEdit : ready.declared === null ? t.fillDeclaration : t.editDeclaration}
+                </StepLink>
+              )}
+              {(editing || closed) && step?.kind === "read" && (
+                <StudentStatement port={ports.statement} assignmentId={assignmentId} read={step.statement} onReload={reload} onSignIn={onSignIn} />
+              )}
             </StepDecl>
             {ready.chats.length === 0 ? <p className="note">{t.emptyChats}</p> : (
               <>
@@ -136,16 +183,18 @@ export default function DeclarationStep({ assignmentId, workState, read, onRetry
         )}
         {!closed && (
           <>
-            <StepCheck id="sb-confirm" checked={confirmed} describedBy={proceed ? undefined : why}
-              onChange={(next) => { setConfirmed(next); writeConfirmed(key, next); }}>{t.confirm}</StepCheck>
-            {!confirmed && <p className="meta" id={why}>{t.why}</p>}
+            <StepCheck id="sb-confirm" checked={confirm === "saved" || confirm === "sending" || confirm === "technical"}
+              describedBy={proceed ? undefined : why} onChange={(next) => void send(next)}>{t.confirm}</StepCheck>
+            {confirm === "saved" && <p className="meta" role="status">{t.confirmSaved}</p>}
+            {line !== null && <p className="note" role={line.role}>{line.text}</p>}
+            {!proceed && <p className="meta" id={why}>{t.why}</p>}
           </>
         )}
         {closed && <p className="note" role="status">{t.submitted}</p>}
         <StepActions>
           {!closed && (
             <Button aria-disabled={!proceed || undefined} aria-describedby={proceed ? undefined : why}
-              onClick={() => { if (proceed) router.push(routerPath(hrefOf(stepHref(assignmentId, "pregled", tag ?? undefined)))); }}>{t.next}</Button>
+              onClick={() => { if (proceed) router.push(routerPath(hrefOf(stepHref(assignmentId, "pregled", held ? tag ?? undefined : undefined)))); }}>{t.next}</Button>
           )}
           <Button tone="secondary" onClick={back}>{t.back}</Button>
         </StepActions>

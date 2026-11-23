@@ -11,7 +11,7 @@
 // the server on every visit.
 import { StepFrame } from "@ductura/ui";
 import { notFound, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { appHref } from "../../../../../../src/components/index.ts";
 import { assignmentIdOf, editorWorkRead } from "../../../../../../src/components/editor/EditorPage.read.ts";
@@ -25,7 +25,7 @@ import { useHost } from "../../context";
 import PortableRecord from "../portable-record/PortableRecord";
 import SubmissionPackage from "../submission-package/SubmissionPackage";
 import DeclarationStep from "./declaration/DeclarationStep";
-import { unavailableReader, type DeclarationReader, type DeclarationRead } from "./declaration/model";
+import { createStepPorts, type StepPorts } from "./declaration/step-ports";
 import { stepsText } from "./steps/messages.hr";
 import StepsShell, { StepsLoading } from "./steps/StepsShell";
 import { atOf } from "./steps/time";
@@ -145,28 +145,24 @@ function opened(checked: Checked, id: string): Promise<Opened> {
     : Promise.resolve({ checked, id, requestedAt: null });
 }
 
-/** Step 2, "Izjava" (E-9, WEB-2107). The declaration has no server route yet, so `reader` answers "error" (§5 rule 11). */
-export function DeclarationStepPage({ assignmentId, reader = unavailableReader }: { assignmentId: string; reader?: DeclarationReader }) {
+/**
+ * Step 2, "Izjava" (E-9, WEB-2107), on declaration-v1 (PIL-K-IZJAVA): one createDeclarationStepPorts
+ * for both halves of the step, kept for as long as the page is open.
+ */
+export function DeclarationStepPage({ assignmentId, ports: given }: { assignmentId: string; ports?: StepPorts }) {
+  const { base } = useHost();
   const hrefOf = useHrefOf();
   const workHref = useWorkHref(assignmentId);
   const shown = useChecked(assignmentId, "izjava", opened);
-  const [attempt, setAttempt] = useState(0);
-  const [read, setRead] = useState<DeclarationRead>({ kind: "loading" });
-  const id = shown.kind === "ready" ? shown.value.id : null;
-  useEffect(() => {
-    if (id === null) return;
-    let live = true;
-    setRead({ kind: "loading" });
-    void reader(id).then((next) => { if (live) setRead(next); }, () => { if (live) setRead({ kind: "error" }); });
-    return () => { live = false; };
-  }, [id, reader, attempt]);
+  const ports = useMemo(() => given ?? createStepPorts(), [given]);
   return (
     <Shown shown={shown} loading={{ title: stepsText.declarationTitle, message: stepsText.loadingRecorded, label: stepsText.declarationTitle, workHref }}>
       {({ checked, id: assignment, requestedAt }) => (
         <StepsShell step="declaration" work={checked} workHref={workHref} label={stepsText.declarationTitle}
           receiptHref={hrefOf(stepPath(assignment, "potvrda"))} requestedAt={requestedAt} onRetry={shown.reload}>
           {checked.kind === "ready"
-            ? <DeclarationStep assignmentId={assignment} workState={checked.workState} read={read} hrefOf={hrefOf} onRetry={() => setAttempt((n) => n + 1)} />
+            ? <DeclarationStep assignmentId={assignment} workState={checked.workState} ports={ports} hrefOf={hrefOf}
+                onSignIn={() => goToSignIn(appHref(base, stepPath(assignment, "izjava")))} />
             : null}
         </StepsShell>
       )}

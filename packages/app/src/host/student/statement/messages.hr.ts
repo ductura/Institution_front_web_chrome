@@ -11,7 +11,7 @@ export const statementMessages = {
   },
   helpText: "Opišite pomoć",
   save: "Spremi izjavu",
-  saved: "Izjava o pomoći je spremljena.",
+  saved: "Izjava o pomoći je spremljena na poslužitelju.",
   printoutTitle: "Ispis razgovora iz vanjskog alata",
   printoutNote: "Priložite ispis razgovora ako ste koristili alat izvan Ducture.",
   printoutLabel: "Datoteka s ispisom",
@@ -23,6 +23,7 @@ export const statementMessages = {
   retry: "Pokušaj ponovno",
   failed: "Izjavu nije bilo moguće spremiti. Pokušaj ponovno.",
   rejected: "Poslužitelj nije prihvatio izjavu.",
+  conflict: "Izjava se u međuvremenu promijenila. Učitana je verzija s poslužitelja; Vaš unos je zadržan, provjerite ga i spremite ponovno.",
   errors: {
     format: "Ovaj format nije dopušten. Dopušteni su: {formats}.",
     tooLarge: "Datoteka je prevelika. Najveća dopuštena veličina je {size}.",

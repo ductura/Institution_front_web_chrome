@@ -4,7 +4,7 @@ import { findForbiddenTerms } from "../../../../../../../scripts/forbidden-terms
 import { FAKE_CHATS, FAKE_READS, fakeReader } from "./fake-port";
 import { chatDialogText, declarationStepText } from "./messages.hr";
 import {
-  canProceed, chatTitle, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView, unavailableReader,
+  canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
 } from "./model";
 
 describe("E-9 variants (WEB-2107)", () => {
@@ -18,8 +18,7 @@ describe("E-9 variants (WEB-2107)", () => {
     expect(stepView("in_progress", FAKE_READS.greska)).toBe("error");
   });
 
-  it("host reader says the block cannot load, a fake gives each variant", async () => {
-    expect(await unavailableReader("x")).toEqual({ kind: "error" });
+  it("a fake gives each variant", async () => {
     expect(await fakeReader("puno")("x")).toBe(FAKE_READS.puno);
   });
 
@@ -32,12 +31,23 @@ describe("E-9 variants (WEB-2107)", () => {
     expect(mismatchText("T")).toBe("Zapis bilježi prijenos iz AI pomoćnika na T. Provjerite odabrani obrazac.");
   });
 
-  it("opens 'Dalje' only after the confirmation, and never while loading or submitted", () => {
-    expect(canProceed("full", false)).toBe(false);
-    expect(canProceed("full", true)).toBe(true);
-    expect(canProceed("error", true)).toBe(true); // §5 rule 11
-    expect(canProceed("loading", true)).toBe(false);
-    expect(canProceed("submitted", true)).toBe(false);
+  it("opens 'Dalje' only once the server holds the confirmation, and never while loading or submitted", () => {
+    for (const state of ["none", "sending", "conflict", "stale", "refused"] as const) expect(canProceed("full", state), state).toBe(false);
+    expect(canProceed("full", "saved")).toBe(true);
+    expect(canProceed("empty", "saved")).toBe(true);
+    // §5 rule 11: a technical error never stops a submission; the line says it is not saved.
+    expect(canProceed("error", "technical")).toBe(true);
+    expect(canProceed("full", "technical")).toBe(true);
+    expect(confirmLine("technical")).toEqual({ role: "alert", text: declarationStepText.confirmTechnical });
+    expect(canProceed("loading", "saved")).toBe(false);
+    expect(canProceed("submitted", "saved")).toBe(false);
+  });
+
+  it("a failed confirmation stays on screen as an alert, never as saved", () => {
+    expect(confirmLine("saved")).toBeNull();
+    expect(confirmLine("sending")?.role).toBe("status");
+    for (const state of ["conflict", "stale", "refused", "technical"] as const) expect(confirmLine(state)?.role, state).toBe("alert");
+    expect(confirmLine("stale")?.text).toContain("Ponovno pregledajte sve");
   });
 });
 
