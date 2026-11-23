@@ -46,6 +46,7 @@ describe("PIL-P1-PODUDARANJE-KARTA: read", () => {
     const json = (status: number, code: string) => Response.json({ code }, { status });
     expect(await reader({ match: json(401, "unauthorized"), parts: parts() }).read(DOCUMENT)).toEqual({ kind: "signedOut" });
     expect(await reader({ match: json(404, "not_found"), parts: parts() }).read(DOCUMENT)).toEqual({ kind: "notFound" });
+    expect(await reader({ match: json(403, "forbidden"), parts: parts() }).read(DOCUMENT)).toEqual({ kind: "notFound" });
     expect(await reader({ match: Response.json({ findings: [] }), parts: json(503, "unavailable") }).read(DOCUMENT)).toEqual({ kind: "unavailable" });
     expect(await reader({ match: Response.json({ findings: [{ ...FAKE_FINDING, runWords: 7 }] }), parts: parts() }).read(DOCUMENT)).toEqual({ kind: "unavailable" });
     expect(await reader({ match: Response.json({ findings: [{ ...FAKE_FINDING, copied: true }] }), parts: parts() }).read(DOCUMENT)).toEqual({ kind: "unavailable" });
@@ -62,6 +63,8 @@ describe("PIL-P1-PODUDARANJE-KARTA: model", () => {
     expect(shareLabel(0.4)).toBe(`${LABEL} · manje od 1 %`);
     const second = { ...FAKE_FINDING, messageId: "00000000-0000-4000-8000-00000000a002", runWords: 21 };
     expect(matchRows([FAKE_FINDING, second]).map((row) => row.words)).toEqual(["11 riječi", "21 riječ"]);
+    const keys = matchRows([FAKE_FINDING, FAKE_FINDING]).map((row) => row.key);
+    expect(new Set(keys).size).toBe(2);
   });
 });
 
@@ -103,5 +106,7 @@ describe("PIL-P1-PODUDARANJE-KARTA: view", () => {
       expect(findForbiddenTerms(text, "hr")).toEqual([]);
       expect(text.toLowerCase()).not.toMatch(/prepis|plagij|varan|sumnj/);
     }
+    // The student and the teacher read the same intro: it names nobody in the third person.
+    expect(matchText.intro.toLowerCase()).not.toMatch(/student|nastavni/);
   });
 });

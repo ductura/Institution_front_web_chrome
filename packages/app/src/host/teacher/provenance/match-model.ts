@@ -37,10 +37,11 @@ export function shareLabel(percent: number): string {
 
 export type MatchRow = { readonly key: string; readonly words: string; readonly recorded: string; readonly attached: string };
 
-/** One row per finding, in the server's order, never sorted or counted by size. */
+/** One row per finding, in the server's order, never sorted or counted by size. The key carries the position: the
+ * contract does not make a segment and a message unique together. */
 export function matchRows(findings: readonly MatchFinding[]): readonly MatchRow[] {
-  return findings.map((f) => ({
-    key: `${f.segmentRef}:${f.messageId}`,
+  return findings.map((f, index) => ({
+    key: `${index}:${f.segmentRef}:${f.messageId}`,
     words: t.words(f.runWords),
     recorded: formatDateTimeHr(f.recordedAt),
     attached: formatDateTimeHr(f.attachedAt),

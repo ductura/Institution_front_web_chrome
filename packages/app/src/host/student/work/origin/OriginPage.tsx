@@ -13,6 +13,7 @@ import { messagesHr as t } from "../../../../../../../src/lib/i18n/messages.hr.t
 
 import type { OriginRead } from "../../../teacher/provenance/origin";
 import AssistantMatchSection from "../../../teacher/provenance/AssistantMatchSection";
+import type { MatchCall } from "../../../teacher/provenance/contract";
 import { originText } from "../../../teacher/provenance/origin-messages.hr";
 import { hostText } from "../../../../text";
 import { useHost } from "../../../context";
@@ -20,7 +21,8 @@ import { useWorkDocument } from "../../other";
 import { OriginView } from "./OriginView";
 import { readOrigin, type OriginReadCall } from "./read";
 
-export default function OriginPage({ assignmentId: raw, call = readOrigin }: { assignmentId: string; call?: OriginReadCall }) {
+/** `matchCall` is the port of the assistant match section, as in ProvenanceMap; tests give a fake one. */
+export default function OriginPage({ assignmentId: raw, call = readOrigin, matchCall }: { assignmentId: string; call?: OriginReadCall; matchCall?: MatchCall }) {
   const { base } = useHost();
   const work = useWorkDocument(raw, "podrijetlo");
   const [read, setRead] = useState<OriginRead | null>(null);
@@ -51,8 +53,16 @@ export default function OriginPage({ assignmentId: raw, call = readOrigin }: { a
   } else if (work.kind !== "document") {
     body = <p role="alert">{originText.unavailable}</p>;
   } else {
-    // PIL-P1-PODUDARANJE-KARTA: the same assistant match section as in the teacher's map (P-1 rule 2.2).
-    body = <><OriginView read={read} onRetry={retry} />{read?.kind === "ready" && <AssistantMatchSection documentId={work.documentId} />}</>;
+    // PIL-P1-PODUDARANJE-KARTA: the same assistant match section as in the teacher's map (P-1 rule 2.2), on the
+    // same condition: every answer of the composition (the map's marked and noMarks). The share of the match is
+    // the section's own line, so the composition list leaves it out and the line is on the page once.
+    const composed = read?.kind === "ready" || read?.kind === "empty";
+    body = (
+      <>
+        <OriginView read={read} onRetry={retry} omit={composed ? "assistant_match" : undefined} />
+        {composed && <AssistantMatchSection documentId={work.documentId} call={matchCall} level={2} />}
+      </>
+    );
   }
   return <div className="page"><h1>{originText.title}</h1>{back}{body}</div>;
 }
