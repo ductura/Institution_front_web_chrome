@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button, TextArea } from "@ductura/ui";
 
 import { interviewMessages as text } from "./messages.hr";
-import { afterSend, attachNote, explanationError, orderedQuestions, sendExplanation, shownDate } from "./model";
+import { afterAttach, afterSend, attachNote, canAttach, explanationError, orderedQuestions, sendExplanation, shownDate } from "./model";
 import type { InterviewPort, InterviewRead } from "./port";
 
 type Ready = Extract<InterviewRead, { kind: "ready" }>;
@@ -17,7 +17,7 @@ type Ready = Extract<InterviewRead, { kind: "ready" }>;
  */
 export default function StudentInterview({ port, documentId, onChooseSlot, onSignedOut, onNotFound, initial = null }: {
   port: InterviewPort; documentId: string; onChooseSlot?: () => void; onSignedOut?: () => void; onNotFound?: () => void;
-  /** A read already in hand (the tests); the page then reads again only on retry or after a note. */
+  /** A read already in hand (the tests); the page then reads again only on retry. */
   initial?: InterviewRead | null;
 }) {
   const [read, setRead] = useState<InterviewRead | null>(initial);
@@ -25,6 +25,7 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | undefined>();
+  const [attaching, setAttaching] = useState(false);
   const [notice, setNotice] = useState<{ tone: "status" | "alert"; message: string } | null>(null);
 
   useEffect(() => {
@@ -67,11 +68,19 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
   };
 
   const attach = async (file: File | undefined) => {
-    if (!file) return;
+    if (!file || attaching) return;
+    setNotice(null);
+    setAttaching(true);
     const result = await attachNote(port, documentId, file);
+    setAttaching(false);
     if (result.kind === "invalid") { setFileError(result.message); return; }
     setFileError(undefined);
-    if (result.kind === "saved") setAttempt((n) => n + 1); else setNotice({ tone: "alert", message: text.failed });
+    if (result.kind === "signedOut") { onSignedOut?.(); return; }
+    const next = afterAttach(shown, result);
+    setRead(next.read);
+    setNotice({ tone: next.saved ? "status" : "alert", message: next.message });
+    // A held interview (409) ends the action: read the server's held state again.
+    if (result.kind === "held") setAttempt((n) => n + 1);
   };
 
   const box = (key: string, questionId: string | null, label: string) => {
@@ -118,18 +127,19 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
       {read.explanations.filter((e) => e.questionId === null).map((e) => <p key={e.id}>{e.text}</p>)}
       {box("general", null, text.explanationGeneral)}
 
-      {port.attachNote !== undefined && (
+      {port.attachNote !== undefined && canAttach(read) && (
         <>
           <label>
             {text.attachNote}
-            <input type="file" accept=".pdf,.txt,.md" aria-invalid={fileError ? true : undefined}
+            <input type="file" accept=".pdf,.txt" disabled={attaching} aria-invalid={fileError ? true : undefined}
               onChange={(event) => { void attach(event.target.files?.[0]); event.target.value = ""; }} />
           </label>
           <p>{text.attachNoteHint}</p>
-          {read.attachments.map((name) => <p key={name}>{text.attached}: {name}</p>)}
+          {attaching && <p role="status">{text.attaching}</p>}
           {fileError && <p role="alert">{fileError}</p>}
         </>
       )}
+      {read.attachments.map((name) => <p key={name}>{text.attached}: {name}</p>)}
       {/* Live regions present from the first render, so the outcome of a send is announced when written into them. */}
       <p role="status">{notice?.tone === "status" ? notice.message : ""}</p>
       <p role="alert">{notice?.tone === "alert" ? notice.message : ""}</p>

@@ -70,3 +70,13 @@ export const readInterviewAsStudent = (documentId: string, options?: ApiOptions)
 /** One explanation, up to 2000 characters; the answer is the explanation as the server stored it. */
 export const sendInterviewExplanation = (documentId: string, input: { questionId: string | null; text: string }, options?: ApiOptions) =>
   run(() => createApi(options)("work.interview-explanations.post", { params: { documentId }, ...none, body: input }), "notInvited");
+
+// PIL-K-RAZGOVOR-PRILOG (SRV #644): the owning student's note to the preparation, after the invitation.
+export type InterviewNoteInput = Input<"work.interview-notes.post">["body"];
+export type InterviewNote = Body<ApiResult<"work.interview-notes.post">>;
+/** The contract's limit of one note in bytes (work.interview-notes.post, byteSize maximum). */
+export const INTERVIEW_NOTE_MAX_BYTES = 1_048_576;
+
+/** One note, a UTF-8 text or a PDF in Base64; 403 before the invitation, 409 once the interview is held. */
+export const attachInterviewNote = (documentId: string, body: InterviewNoteInput, options?: ApiOptions) =>
+  run(() => createApi(options)("work.interview-notes.post", { params: { documentId }, ...none, body }), "notInvited");
