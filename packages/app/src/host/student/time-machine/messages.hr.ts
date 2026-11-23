@@ -28,6 +28,10 @@ export const timeMachineMessages = {
   historyTextFailed: "Tekst ove verzije nije se učitao.",
   historyUnreadable: "Tekst ove verzije ne može se ovdje prikazati.",
   historyBlank: "Ova verzija nema teksta.",
+  historyOlder: "Prikazane su samo najnovije verzije. Postoje i starije verzije koje ovdje nisu navedene.",
+  footnote: (note: string): string => ` [fusnota: ${note}]`,
+  citation: (source: string, locator: string): string => ` [${source}${locator === "" ? "" : `, ${locator}`}]`,
+  citationUnknown: "navod",
   historyShown: (label: string) => `Prikazana: ${label}`,
   version: (kind: "checkpoint" | "submission", revision: number, minute: string) =>
     `${kind === "submission" ? "Predaja" : "Verzija"} ${revision} · ${formatMinute.format(new Date(minute))}`,
