@@ -60,6 +60,7 @@ export const pageLabelsHr = {
   assignmentSubmissions: "Predaje zadatka",
   courseStudents: "Popis studenata",
   receiptCheck: "Provjera potvrde",
+  originThresholds: "Pragovi po vrsti podrijetla",
 };
 
 /** M1.8: the no-access and session-ended screen. English: `accessDeniedEn` in ./messages.en.ts. */
