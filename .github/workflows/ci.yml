@@ -140,12 +140,21 @@ jobs:
   ui:
     needs: changes
     if: ${{ needs.changes.outputs.ui == 'true' }}
-    name: ui (${{ matrix.part }})
+    name: ui (${{ matrix.part }}${{ matrix.leg && format(' {0}/3', matrix.leg) || '' }})
     runs-on: ubuntu-latest
+    # The behaviour tests (and on push the baselines) run as three Playwright
+    # shards: one job of them took 8 of the 9 minutes of a PR's ci-ok.
+    # Sharding splits the same filtered set, so every test still runs once.
     strategy:
       fail-fast: false
       matrix:
-        part: [checks, behaviour, axe-dark, axe-light]
+        include:
+          - { part: checks }
+          - { part: behaviour, leg: 1 }
+          - { part: behaviour, leg: 2 }
+          - { part: behaviour, leg: 3 }
+          - { part: axe-dark }
+          - { part: axe-light }
     # One place for the filters: the parts below and the coverage check use them.
     env:
       BASELINES: "matches its baselines"
@@ -209,7 +218,7 @@ jobs:
       # become required again with VIZ-0.
       - name: Behaviour tests of the catalogue
         if: matrix.part == 'behaviour'
-        run: pnpm --filter @ductura/catalog run test:visual --grep-invert "$BASELINES|$AXE_ANY"
+        run: pnpm --filter @ductura/catalog run test:visual --grep-invert "$BASELINES|$AXE_ANY" --shard="${{ matrix.leg }}/3"
       - name: Axe tests of the catalogue (dark shell)
         if: matrix.part == 'axe-dark'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_DARK"
@@ -220,11 +229,11 @@ jobs:
         id: baselines
         if: matrix.part == 'behaviour' && github.event_name == 'push'
         continue-on-error: true
-        run: pnpm --filter @ductura/catalog run test:visual --grep "matches its baselines"
+        run: pnpm --filter @ductura/catalog run test:visual --grep "$BASELINES" --shard="${{ matrix.leg }}/3"
       - uses: actions/upload-artifact@v4
         if: failure() || steps.baselines.outcome == 'failure'
         with:
-          name: catalog-report-${{ matrix.part }}
+          name: catalog-report-${{ matrix.part }}${{ matrix.leg }}
           path: catalog/test-results/
 
   # The institution front's host (#2028 c.6993786629 §1, §3.3): packages/app
