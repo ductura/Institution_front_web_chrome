@@ -66,4 +66,6 @@ export const commentsHr = {
   copied: "Komentari su u međuspremniku.",
   copyFailed: "Stavljanje u međuspremnik nije uspjelo.",
   noteScope: "Komentari su odvojeni od teksta: tekst rada se ne mijenja.",
+  deleted: "Komentar je obrisan.",
+  submittedNote: "Rad je predan: komentare možete samo čitati.",
 } as const;

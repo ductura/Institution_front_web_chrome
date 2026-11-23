@@ -28,7 +28,7 @@ import EditorPage, { SheetNote } from "./EditorPage";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
 import EditorCommands from "./commands/EditorCommands";
-import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalSaveRead, useLocalSavingOnDevice, useLocalSignedOut } from "./LocalDocument";
+import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalSaveRead, useLocalSavingOnDevice, useLocalSignedOut, useLocalSubmitted } from "./LocalDocument";
 import { EditorHelpDialogs, useEditorHelp, type EditorHelpView } from "./help/EditorHelp";
 import { EditorHelpMenu } from "./help/EditorHelpMenu";
 import { EditorNotices } from "./help/EditorNotices";
@@ -45,9 +45,20 @@ import type { LeftSections } from "./layout-prefs/LeftPanel";
 import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/WorkPrintExport";
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
-/** What a host section is given: the live editor and the ids of the work. */
-export type HostSectionContext = { editor: Editor | null; assignmentId: string; documentId: string };
-export type HostSections = { review?: (ctx: HostSectionContext) => ReactNode; work?: (ctx: HostSectionContext) => ReactNode };
+/** What a host section is given: the live editor, the ids of the work and the state of its session. */
+export type HostSectionContext = {
+  editor: Editor | null; assignmentId: string; documentId: string;
+  session: SessionMark; submitted: boolean; signedOut: boolean;
+};
+/**
+ * `comments` is the host's Comments card (PIL-K-KOMENTARI-EDITOR); when the host gives one, the
+ * old CommentPanel is not rendered at all.
+ */
+export type HostSections = {
+  review?: (ctx: HostSectionContext) => ReactNode;
+  work?: (ctx: HostSectionContext) => ReactNode;
+  comments?: (ctx: HostSectionContext) => ReactNode;
+};
 
 export type OpenRead =
   | { readonly kind: "opening" }
@@ -200,6 +211,8 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   const supplements = useRows();
   const [printOpen, setPrintOpen] = useState(false);
   const signedOut = useLocalSignedOut();
+  const submitted = useLocalSubmitted();
+  const ctx: HostSectionContext = { editor, assignmentId, documentId, session, submitted, signedOut };
   const { phase } = useLocalSaveRead();
   const savingLocally = useLocalSavingOnDevice();
   const online = useOnline();
@@ -214,15 +227,15 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       </div></EditorCommands>}
       status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} liveWords={Boolean(statusExtra)}>{statusExtra}</StatusBarLive>}
       rightSections={{ sources: <>{literature?.({ documentId })}<EditorSourceProofs assignmentId={assignmentId} documentId={documentId} /></>,
-        comments: <CommentPanel documentId={documentId} session={session} />,
-        review: hostSections?.review?.({ editor, assignmentId, documentId }),
+        comments: hostSections?.comments ? hostSections.comments(ctx) : <CommentPanel documentId={documentId} session={session} />,
+        review: hostSections?.review?.(ctx),
         assistant: <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
           sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer}
           supplements={supplements} onPrintPreview={() => setPrintOpen(true)} />}
         <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />
-        {hostSections?.work?.({ editor, assignmentId, documentId })}
+        {hostSections?.work?.(ctx)}
       </>}>
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
