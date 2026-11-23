@@ -4,6 +4,8 @@ Izrađeno 19. 11. 2026. na zadatak orkestratora, prema Danielovoj odluci od isto
 
 **Dopuna 23. 11. 2026. (zadatak NF-1-PROTO, Danielova odluka 23. 11. 2026.: svih 17 prijedloga P-1 do P-17 iz `docs/nalazi/nove-funkcije-1-student-zadaci.md` ide u pilot).** Prototip i ovaj inventar sada sadrže i njih. Dopune su označene „NF-1” i prijedlogom (P-n); tablica P-n → ID inventara → element prototipa nalazi se na kraju pregleda NF-1. Nove stavke imaju ID-eve E-0a, E-2a i slične (dopune postojećeg ekrana), E-12, E-13, PD-9, R-43 do R-54, PO-26 do PO-33 i N-15 do N-20. Oznake u prototipu koje nisu dio proizvoda (npr. izbornik „zvonce” u traci prototipa) i dalje se ne inventariziraju. Izmišljeni su svi podaci (osobe, e-adresa, kolegiji, naslovi). Poslužiteljska polja i rute označene su točno kako stoje u izvatku ugovora `src/client/migration-contracts.generated.json`; što u njemu ne postoji, označeno je NEMA i opisano kao zahtjev, ne kao postojeća ruta. Aplikacija se ne mijenja; gradnja čeka zatvaranje pariteta studenta (PAR2-S).
 
+**Dopuna 23. 11. 2026. (zadatak NF-3-PROTO, Danielova odluka 23. 11. 2026.: svih 21 prijedlog PR-1 do PR-21 iz `docs/nalazi/nove-funkcije-3-predaja.md` ide u pilot).** Prototip (`Ductura_student.html`, ekrani E-7, E-8 do E-11, prozori PD-2, PD-3 i novi PD-10, PD-11) i ovaj inventar sada sadrže i njih. Dopune su označene „NF-3” i prijedlogom (PR-n); tablica PR-n → ID inventara → element prototipa nalazi se u nalazu (odjeljak „Ishod”) i na kraju ovog dokumenta. Dopune NF-1 se ne diraju. Nove stavke imaju ID-eve E-7a, E-7b, E-8a do E-8d, E-9a do E-9c, E-10a do E-10c, E-11a do E-11e, PD-10, PD-11, R-55 do R-72, PO-34 do PO-44 i N-21 do N-27. Odgovori vlasnika koji vrijede za ovaj dio: (1) na potvrdi (E-11) student u pilotu dobiva **samo PDF s QR kodom**, a paket za referadu i prenosivi zapis mu se ne prikazuju; (2) pitanje nastavnika uz izjavu (R-33, PR-20) je u pilotu; (3) zadatak smije zabraniti predaju nakon roka, a nastavnik iznimno smije odobriti kasnu predaju pojedinom studentu, pa se studentu prikazuju oba stanja (zabranjeno nakon roka i iznimno odobreno, s rokom iznimke). **Pomoćnik (asistent) je u pilotu isključen:** zabilježeni prijenosi, razgovori i prilozi (PR-21, PD-2) prikazuju pošteno prazno stanje dok se ne odluči Q-10; stari prikaz s razgovorima ostaje samo kao stanje `razgovori` ekrana E-9 („nakon Q-10, nije u pilotu”). Tekst označen „za pravni pregled” (PR-14) čeka pravni pregled prije gradnje. Poslužiteljske stavke (PR-20, PR-21, zabrana kasne predaje i iznimka, PR-13, PR-16) opisane su u §4 točno prema izvatku ugovora; što ga nema, označeno je NEMA i nije izmišljeno. Izmišljeni su svi podaci (rok iznimke 12. 11. 2026., rok dorade 20. 11. 2026., naslovi, napomene). Aplikacija se ne mijenja.
+
 Izvori, svi samo čitani:
 - prototip `D:\Ductura\_prototipovi\Ductura_student.html` (1302 retka s ugrađenim JS-om);
 - kartice `Ductura_student_kartice.html` (polazište, provjereno prema kodu);
@@ -366,6 +368,16 @@ Varijante: `puno`, `prazno` (novi rad), `ucitavanje`, `greska`, `bez-mreze`, `pr
   - `words()` ne broji `.ed-notes`;
   - tisućice se odvajaju točkom.
 
+**NF-3 dopune E-7** (varijanta `dorada`):
+- **E-7a Banner „predano” s radnjama (PR-1, G-21).** Uz „Predano X. Rad je predan, pa se ovdje više ne može pisati.” stoje:
+  - poveznica „Otvori potvrdu o predaji” (na E-11);
+  - gumb „Povuci predaju” (`data-act=withdraw`, R-55) samo dok rok traje (isti izvor kao E-11b: `student.submission-withdrawal.get`); otvara PD-11 na E-11.
+- **E-7b Dorada kao jedna cjelina (PR-16, G-24).** Kad je rad vraćen na doradu:
+  - oznaka „Dorada do {rok}” uz gumb, a gumb se zove „Predaj doradu” (vodi u iste korake 2 do 5);
+  - banner „Rad je kod Vas: dorada.” s rokom dorade i komentarom nastavnika (do 2000 znakova);
+  - „Pošalji doradu” je `aria-disabled` s razlogom „Slanje dorade trenutačno nije dostupno.” (port `send: null`; ne izmišlja se operacija, PO-40).
+- „Predaja rada” i broj blokada (P-17, NF-2) drži NF-2-PROTO; ovdje se mijenja samo naziv gumba u stanju `dorada`.
+
 ### E-8 Prije predaje (`pregled`, S-30, korak 3)
 
 Varijante: `puno`, `zatvoreno`, `bezmreze`, `predano`, `prazno`, `ucitavanje`, `greska`.
@@ -400,6 +412,21 @@ Varijante: `puno`, `zatvoreno`, `bezmreze`, `predano`, `prazno`, `ucitavanje`, `
 - **`prazno`:** nema praznina ni otvorenih mjesta.
 - **`ucitavanje`:** „Učitavam stanje rada s poslužitelja.”
 - **`greska`:** „Stanje rada trenutačno nije moguće učitati, pa se ne vidi je li rad predan… ako je predaja zabilježena, ovdje će stajati potvrda.”
+
+**NF-3 dopune E-8** (varijante `neaktualna`, `izjavaprazna`, `nakonroka`, `zabranjeno`, `iznimka`, `novijalokalno`, `napomenagreska`):
+- **E-8a „Što još fali” (PR-2).** Novi redak iznad „Izjava”: „Ništa ne blokira predaju.” ili popis „Potvrda izjave (blokira predaju).”; meta „Mjesta za izvor, lijepljenja i pravila oblika ne zaustavljaju predaju.” (PRODUCT §5).
+- **Redak „Izjava” (PR-2, PR-5).** Pet stanja iz `student.declaration.get` riječima: `none` „Izjava još nije ispunjena.”, `draft` „Izjava je ispunjena, ali još nije potvrđena.”, `confirmed` „Potvrđena {vrijeme}.”, `stale` „Tekst rada se promijenio nakon potvrde. Izjavu treba potvrditi ponovno.”, `bound` „Predana s radom.” Poveznica „Otvori izjavu” (u `stale` „Potvrdi izjavu ponovno”) otvara PD-10 (R-56) umjesto odlaska na E-9; zatvaranje vraća na ovaj korak. Poruka o nepotvrđenoj izjavi stoji jednom (G-8).
+- **„Dalje” (PR-3).** Uvijek je prisutan; kad izjava nije potvrđena, predaja nije otvorena ili nije odabrana verzija, `aria-disabled` s razlogom `#sb-why-d` (ne zamjenjuje se drugim gumbom).
+- **„Razgovori uz izjavu” (PR-21).** U pilotu „Nema razgovora za prilaganje.” (nije „nedostupno”); „Priloženo 2” samo u stanju `razgovori`.
+- **„Pravila oblika” (PR-3, C-19).** „Provjera oblika nije dostupna u pilotu.” umjesto „Provjera oblika još nije pokrenuta.”
+- **Mjesta za izvor i lijepljenja (PR-3).** Popis s poveznicom na mjesto u radu, ili „Nema otvorenih mjesta za izvor.” i „Oznaka podrijetla dodana uz sva zalijepljena mjesta.” (već u E-8; ovdje potvrđeno kao zahtjev, vidi N-13).
+- **E-8b Rok i kasna predaja (PR-17, odgovor 3).** Traka na koraku 3, a ne tek na 4:
+  - `nakonroka`: „Rok je prošao {rok}. Predaja je moguća i bit će označena kao predaja nakon roka.”;
+  - `iznimka`: „…Zadatak ne dopušta predaju nakon roka, ali je nastavnik za Vas iznimno odobrio kasnu predaju do {rok iznimke}. Predaja će biti označena kao predaja nakon roka.” uz oznaku ploče „Iznimka do {datum}”;
+  - `zabranjeno` (`not_open`): „Predaja za ovaj zadatak više nije otvorena. Rok je bio {rok}. Obratite se nastavniku kolegija.” (`role=alert`), „Dalje” onemogućen; meta objašnjava da nastavnik iznimno smije odobriti kasnu predaju pojedinom studentu. Bez tona kazne i bez posljedica (PRODUCT §5).
+- **E-8c Novija verzija na uređaju (PR-10, G-15, `newer-local.ts`).** `novijalokalno`: „Na uređaju je novija verzija” s izborom `radio` „Pošalji najprije zadnju verziju pa predaj” ili „Predaj potvrđenu verziju V3”; „Dalje” je onemogućen („Odaberite koju verziju predajete.”) dok izbor nije napravljen. Predaje se uvijek samo ono što je poslužitelj potvrdio.
+- **E-8d Napomena uz rad (PR-6, PD-4).** Ispod obrasca meta „Vidi je nastavnik uz sažetak.”; stanje `napomenagreska` (`role=alert`): „Nije potvrđeno je li napomena dodana. Osvježite stranicu prije novog pokušaja.”; „Napomena je dodana.” samo nakon odgovora poslužitelja.
+- **Desni stupac (PD-1, PR-21).** Odjeljak „AI pomoćnik”: „U pilotu pomoćnik nije uključen. Nema zabilježenih prijenosa teksta.” (bez razgovora); u odjeljku „Izjava” blok „Zabilježeno u Ducturi”: „U ovom radu nije zabilježen razgovor s AI pomoćnikom.” Stari prikaz s prijenosom samo u stanju `razgovori`.
 
 ### E-9 Izjava (`izjava`, S-31, korak 2)
 
@@ -440,6 +467,14 @@ Varijante: `puno`, `nesklad`, `prazno`, `ucitavanje`, `greska`.
 - **`ucitavanje`:** „Učitavam zabilježene stavke i priloge.”
 - **`greska`:** „Zabilježene stavke trenutačno nije moguće učitati. Izjavu zato još nije moguće potvrditi.”
 
+**NF-3 dopune E-9** (varijante `neaktualna`, `bezpitanja`, `razgovori`; `prazno` znači „izjava nije ispunjena”; rad predan):
+- **E-9a Pošteno prazno stanje (PR-4, PR-21, G-4, G-5).** Blok „Zabilježeno u Ducturi”: „U ovom radu nije zabilježen razgovor s AI pomoćnikom.” i objašnjenje „U pilotu pomoćnik nije uključen; ovdje se bilježi samo ono što napravi sama Ductura. Alate izvan Ducture navedite u „Vašoj izjavi”. Nema razgovora za prilaganje.” Bez imena modela i pružatelja. Uklonjeno iz pilota (vidi se samo u stanju `razgovori`): blok „Prilozi”, „Pregledaj razgovor” (R-31, PD-2), „Dodaj objašnjenje” (R-35), zapis o prijenosu iz modela M-2.
+- **Stanje izjave riječima (PR-2).** Pod naslovom `role=status` „Potvrđena {vrijeme}.” itd., ista pet stanja kao na E-8. Potvrdni okvir je onemogućen u stanju `none` („Potvrda je moguća kad ispunite izjavu.”); u `stale` piše „Potvrđujem izjavu ponovno”.
+- **„Uredi izjavu” i „Ispuni izjavu” (R-35, PR-5).** Sada otvaraju PD-10 (R-56) umjesto obavijesti „nije dio prototipa”.
+- **Pitanje nastavnika (PR-20, odgovor 2, R-33).** U pilotu: „Pitanje nastavnika”, tekst pitanja, polje „Odgovor (nije obavezan)” i meta „Odgovor vidi nastavnik uz izjavu.” Pitanje je izmišljeno („Kako ste provjerili izvore koje navodite u radu?”). Stanje `bezpitanja`: zadatak nema pitanje, blok se ne prikazuje. Server: PO-34 (nema u ugovoru).
+- **E-9b Predan rad i ispravak izjave (PR-14, „za pravni pregled”).** Uz „Izjava je predana s radom i više se ne mijenja.” odjeljak „Ispravak izjave” s oznakom „za pravni pregled” i metom „Tekst ovog odjeljka čeka pravni pregled.”: student smije dodati „Napomenu uz izjavu” (do 600 znakova, `aria-invalid` pri praznom, R-57) koju nastavnik vidi uz sažetak; potvrđena izjava se ne mijenja. Uz to pokazuje na povlačenje dok rok traje (E-11b). Odabrana je opcija (b) iz nalaza; (a) je već na E-11b, (c) je stanje `stale` (E-9). Odluka je vlasnikova; tekst je označen za pravni pregled.
+- **E-9c Zastarjela izjava (PR-5, G-6).** Stanje `neaktualna`: `role=status` „Tekst rada se promijenio nakon potvrde. Izjavu treba potvrditi ponovno.” uz „Potvrđujem izjavu ponovno”.
+
 ### E-10 Predaja (`predaja`, S-31, korak 4)
 
 Varijante: `puno`, `nakonroka`, `produljen`, `bezmreze`, `utijeku`, `odbijeno`, `nedovrseno`, `nepoznato`, `ucitavanje`, `greska`.
@@ -472,6 +507,24 @@ Varijante: `puno`, `nakonroka`, `produljen`, `bezmreze`, `utijeku`, `odbijeno`, 
   - upozorenje „Potvrda nije stigla, pa ishod predaje nije poznat. Prije ponovnog pokušaja otvorite ovu stranicu ponovno…”;
   - gumb „Provjeri stanje predaje” (`data-act=check`).
 - **`ucitavanje`** i **`greska`:** u istom obrascu kao E-8.
+
+**NF-3 dopune E-10** (varijante `neaktualna`, `izjavaprazna`, `bezizjave`, `zabranjeno`, `iznimka`, `novijalokalno`, `odbijenospremno`, `prekid`, `bezzapisa`, `zastarjelo`, `nedovrsenozamjenski`, `nepoznatobezvremena`, `nepoznatoprobl`):
+- **Vrata (PR-2, PR-5).** `none` i `draft`: „Predaja je moguća kad potvrdite izjavu.” + „Otvori izjavu”; `stale`: „Tekst rada se promijenio nakon potvrde pa izjavu treba potvrditi ponovno.” + „Potvrdi izjavu ponovno”; obje poveznice otvaraju PD-10 (R-56). `bezizjave`: redak „Izjava: nije potrebna za ovaj zadatak”, predaja se ne zaustavlja izjavom.
+- **E-10a Kasna predaja i iznimka (PR-7, PR-17, odgovor 3).** Isti tekstovi i oznake kao E-8b; `iznimka` dodaje redak „Rok iznimke”; `zabranjeno` je zasebna ploča „Predaja nije otvorena” s „Otvori radni prostor” i „Natrag”, bez gumba „Predaj rad”.
+- **Razgovori (PR-7, PR-21).** Redak „Razgovori uz izjavu 2” samo u stanju `razgovori`.
+- **E-10b Odbijena i nedovršena predaja u zasebnoj ploči (PR-8, G-12, G-13).** Ploča „Predaja nije prihvaćena” / „Predaja nije dovršena” bez dijaloga „Predati rad?”; `role=alert`:
+  - `odbijeno` (`segment_unsigned`): „…poslužitelj još nije potvrdio cijeli zapis ove verzije teksta. Ostavite radni prostor otvoren s vezom…”, „Rad nije predan. Tekst je spremljen na uređaju.”, gumbi „Otvori radni prostor” i „Pokušaj ponovno” (`aria-disabled` s razlogom „…kad stanje u radnom prostoru bude „Spremljeno na poslužitelju”.”);
+  - `odbijenospremno`: ista ploča kad je stanje u radnom prostoru „Spremljeno na poslužitelju”; „Pokušaj ponovno” je omogućen (R-58);
+  - `prekid` (`record_discontinuous`): „…zapis ove verzije teksta na poslužitelju nije cjelovit.”;
+  - `bezzapisa` (`no_evidence`): „…na poslužitelju nema zapisa ovog rada.”;
+  - `zastarjelo` (409 `stale_revision`): „Na poslužitelju je novija verzija teksta. Osvježite i pokušajte ponovno.” + „Učitaj ponovno”;
+  - `nedovrseno` (`record_mismatch`): naslov „Predaja nije dovršena”, „…tekst sastavljen iz zapisa ne podudara se s tekstom na poslužitelju.”, „Vrijeme Vašeg zahtjeva ({vrijeme}) je zabilježeno i ostaje vrijeme predaje.”, „Zamjenski postupak trenutačno nije dostupan. Obratite se nastavniku kolegija.”;
+  - `nedovrsenozamjenski`: isto, ali „Fakultet će nastaviti predaju zamjenskim postupkom koji je naveo poslužitelj.” (samo kad ga poslužitelj navodi, odluka 2156; naziv postupka ne izmišlja se).
+- **E-10c Slaba mreža i nepoznat ishod (PR-9, G-14, G-16).** Jedna istinita poruka, bez „Predaj rad” dok se stanje ne pročita:
+  - `nepoznato`: „Predaja ovog rada već je zatražena {vrijeme}.” + „Potvrda nije stigla, pa ishod predaje nije poznat…” + `role=status` „Stanje se ponovno čita kad se veza vrati i još jednom nakon 10 s. Pokušaj 1 od 3.”;
+  - `nepoznatobezvremena`: „Odgovor poslužitelja nije stigao, pa ishod predaje nije poznat. Rad je možda predan.”;
+  - `nepoznatoprobl` (ni treći pokušaj): „Stanje predaje nije moguće pročitati ni nakon trećeg pokušaja. Rad je možda predan; tekst rada nije zahvaćen.” + „Javi problem” (R-59, `support.problem-report.post`, bez sadržaja rada).
+  - Gumb „Provjeri stanje predaje” (R-38) ostaje.
 
 ### E-11 Potvrda o predaji (`potvrda`, S-32, korak 5)
 
@@ -506,6 +559,19 @@ Varijante: `puno`, `ceka`, `nakonroka`, `praznine`, `prazno`, `ucitavanje`, `gre
 - **`prazno`:** „Ovaj rad još nije predan, pa potvrde nema.”
 - **`ucitavanje`:** „Učitavam potvrdu s poslužitelja.”
 - **`greska`:** „Potvrdu trenutačno nije moguće učitati. Ako je rad predan, predaja i vrijeme predaje time se ne mijenjaju.”
+
+**NF-3 dopune E-11** (varijante `povlacenjemoguce`, `povlacenjezabranjeno`, `povucena`, `povijest`, `preuzimanjegreska`):
+- **E-11d „Što je predano” (PR-11, G-18).** Popis: „Verzija teksta: V4”, „Riječi: 5.120”, „Izjava: potvrđena {vrijeme}” (ili „nije bila potrebna”), „Napomene uz rad: n”. Bez postotaka (Ustav v1.6).
+- **Sažetak procesa (PR-11, PR-18, R-40).** „Otvori sažetak procesa” otvara PD-1 uz pomak, fokus na naslov ploče i `role=status` „Sažetak procesa je otvoren ispod.”; za predani rad uz „Zapis je neizmijenjen od primitka na poslužitelj.”
+- **Otisak (PR-18).** Vidljivo 16 skupina po 4 znaka (`aria-hidden`), a čitač zaslona čita cijeli niz od 64 znaka (`.sb-vh`), ne „16 riječi”.
+- **E-11a „Sačuvaj potvrdu” (PR-12, odgovor 1, G-19).** Jedan odjeljak: „Za Vas, mentora i osobnu pohranu: PDF s QR kodom i otiskom teksta.” + „Preuzmi zapis (PDF s QR kodom)” (R-42). **Paket za referadu (`student.submission-package-link.post`, `student.submission-package.get`) i prenosivi zapis (`student.portable-record.get`) studentu se u pilotu ne prikazuju.** Greška (`preuzimanjegreska`, `role=alert`): „Zapis trenutačno nije moguće preuzeti. Pokušajte ponovno.”
+- **E-11b Povlačenje s razlogom (PR-13, P-D3, G-20, G-22).** Odjeljak „Povlačenje predaje”:
+  - moguće: „Dok rok traje, predaju možete povući i predati ponovno. Rok: {rok}.” + „Povuci predaju” (R-60, PD-11);
+  - rok istekao: „Povlačenje predaje više nije moguće: rok je istekao {rok}.” (iz `dueAt`/`extendedDueAt`);
+  - isključeno (`povlacenjezabranjeno`): „Nastavnik ili fakultet ne dopušta povlačenje za ovaj zadatak.” (iz `withdrawalAllowed=false`, PO-38);
+  - ne nagađa se drugi razlog.
+- **E-11e Predaja povučena (PR-13).** Ploča „Predaja je povučena” (`role=status`): „Rad možete ponovno mijenjati do {rok}. Zatim ga predajte iznova.”, gumb „Otvori radni prostor”, „Potvrde povlačenja” s retkom „Revizija n, povučeno {vrijeme}” i „Preuzmi potvrdu” (R-61), meta „Nastavnik u povijesti vidi i predaju i povlačenje.” Editor se nakon povlačenja ponovno otvara za pisanje.
+- **E-11c „Moje predaje” (PR-15, G-23).** Popis iz `student.submission-history.get`: „Predaja n · {vrijeme}” (+ „· nakon roka”), „Trenutno važeća predaja.” + „Otvori potvrdu o predaji”, ili „Povučena {vrijeme}.” + „Preuzmi potvrdu povlačenja”; novija predaja je prva. Samo čitanje. Stanje `povijest` pokazuje dvije predaje od kojih je prva povučena.
 
 ### E-12 Postavke obavijesti (`postavke`, S-06, uska) (NF-1, P-17)
 
@@ -614,6 +680,10 @@ Ista je za studenta i nastavnika (PRODUCT §5 pravilo 5). Prikazuje se na E-8 (d
   - Escape ne zatvara.
 - Zarobljavanje fokusa radi kao kod PD-2.
 
+**NF-3 uz PD-2 i PD-3:**
+- **PD-2 (PR-21).** Dijalog „Razgovor N” u pilotu nema pozivatelja (pomoćnik je isključen, Q-10 odgođen); vidi se samo u stanju `razgovori` ekrana E-9. Ne gradi se u pilotu.
+- **PD-3 (PR-7, G-11).** Tekst se gradi iz stvarnih podataka: „Predaje se tekst rada „naslov” spremljen na poslužitelju” + „, s izjavom” samo ako zadatak izjavu traži i potvrđena je + „ i dva priložena razgovora” samo ako ih ima + „. Riječi: 5.120.” Kod kasne predaje: „Rok je prošao, pa će potvrda navesti da je rad predan nakon roka.” (za iznimku „…nastavnik je za Vas iznimno odobrio kasnu predaju do {rok iznimke}…”) i potvrdni okvir `#sb-late-ok` „Razumijem da će predaja biti označena kao predaja nakon roka.”; „Predaj rad” je `aria-disabled` (`aria-describedby=sb-late-why`) dok okvir nije označen. Bez posljedica u tekstu. Fokus: na „Predaj rad” kad je omogućen, inače na potvrdni okvir.
+
 ### PD-4 Obrazac „Napomena uz rad” (`noteForm()`, unutar PD-1)
 
 - `form data-submit=addNote`;
@@ -656,6 +726,23 @@ Nemodalni dijalog `#nf-panel` (`role=dialog`, `aria-labelledby=nf-h`, `tabindex=
 - **Stanja** (u prototipu bira ih izbornik trake): `puno`, `prazno` („Nema novih obavijesti. Ovdje će se prikazati nova verzija zadatka, podsjetnici na rok, komentari i potvrde predaje.”), `ucitavanje` (kostur, `role=status`), `greska` (`role=alert`: „Obavijesti trenutačno nisu dostupne. To ne znači da ih nema.”, gumb „Pokušaj ponovno”).
 - **Starije obavijesti:** gumb „Starije obavijesti” učitava sljedeću stranicu (ugovor: do 50 po stranici, parametar `before`, `nextBefore`).
 - Obavijesti postoje samo u aplikaciji (zvonce) osim ako student u E-12 izričito uključi e-poštu ili push.
+
+### PD-10 Dijalog „Izjava o korištenju generativne umjetne inteligencije” (`dialog:'decl'`, na E-8, E-9, E-10) (NF-3, PR-5)
+
+- Izjava kao dijalog ch-h (odluka 2165, P-12 iz NF-2): otvara se s koraka 2, 3 i 4 (R-56); zatvaranje (Zatvori, Escape, zastor) vraća na isti korak i fokus na element koji ga je otvorio.
+- `role=dialog`, `aria-modal=true`, `aria-labelledby=sb-dlg-h`; fokus u prvo polje; Tab kruži unutar dijaloga (`trapDialog`).
+- h2 „Izjava o korištenju generativne umjetne inteligencije”, meta „po čl. 9 i 15 pravilnika fakulteta. Po zatvaranju ostajete na istom koraku predaje.”
+- U stanju `stale`: `role=status` „Tekst rada se promijenio nakon potvrde. Izjavu treba potvrditi ponovno.”
+- Polja: „Vanjski alati”, „Svrha”, „Faza rada” (izbornik: priprema, pisanje, završna obrada), „Ljudska pomoć: vrsta” (zatvoren skup `humanHelp {kind,text}`, OD-12; popis vrsta u prototipu je izmišljen) i „Ljudska pomoć: opis”; potvrdni okvir „Potvrđujem izjavu” (u `stale` „Potvrđujem izjavu ponovno”).
+- Gumbi „Spremi izjavu” (R-62) i „Zatvori”. Spremanje s potvrdom: „Izjava je potvrđena.”; bez potvrde: „Izjava je spremljena, ali još nije potvrđena.” (toast PD-7). Potvrda uklanja stanje `stale`.
+- Nema polja o razgovorima ni prilozima (pilot).
+
+### PD-11 Dijalog „Povući predaju?” (`dialog:'withdraw'`, na E-11) (NF-3, PR-13, P-D3)
+
+- Otvaraju ga R-60 (s E-11) i R-55 (iz banera E-7a); isti atributi i zarobljavanje fokusa kao PD-3.
+- h2 „Povući predaju?”; „Povlačenje se bilježi: zapisuju se vrijeme i revizija koju povlačite, a nastavnik u povijesti vidi i predaju i povlačenje.”; „Dok rok traje, rad možete ponovno mijenjati i predati iznova. Rok: {rok}.”
+- Gumbi „Povuci predaju” (R-63) i „Natrag”. Tijekom slanja (`wdSending`) „Povlačenje u tijeku…” (`role=status`), oba gumba `aria-disabled`, Escape i zastor ne zatvaraju.
+- Ishod: ploča E-11e i toast „Predaja je povučena. Potvrdu povlačenja možete preuzeti.” Greške: „Nije poznato je li povlačenje zabilježeno. Osvježite stanje prije novog pokušaja.” (iz aplikacije, ne prikazuje se u prototipu).
 
 ---
 
@@ -785,6 +872,27 @@ Radnji je ukupno 54 (R-1 do R-42 i NF-1 R-43 do R-54). Uz svaku je zapisano što
 - **R-53 Odjava iz obavijesti** (`data-act=odjava`, E-13): `odjavljivanje`, nakon 700 ms `uspjeh`; isključuje e-poštu (PO-33) (P-17).
 - **R-54 Ponovno čitanje postavki** (`data-act=ponovno`, E-12 `greska`): vraća na `puno` (P-17).
 
+### NF-3 Predaja i potvrda
+
+- **R-55 Povuci predaju iz banera** (`data-act=withdraw`, E-7a): vodi na E-11 i otvara PD-11; vidljiv samo dok rok traje (PR-1).
+- **R-56 Otvori izjavu u dijalogu** (`data-act=declOpen`, E-8, E-9, E-10): otvara PD-10 (PR-5).
+- **R-57 Dodaj napomenu uz izjavu** (`data-submit=addDeclNote`, E-9b): prazan tekst postavlja `aria-invalid`; inače se dodaje redak i toast „Napomena uz izjavu je dodana.” Napomene se samo dodaju (PR-14).
+- **R-58 Pokušaj ponovno / Učitaj ponovno** (`data-act=retry`, E-10b): vraća na ploču „Predati rad?”; omogućen samo kad je stanje u radnom prostoru „Spremljeno na poslužitelju” (PR-8).
+- **R-59 Javi problem** (`data-act=report`, E-10c, `nepoznatoprobl`): toast „Prijava problema je poslana. Ne sadrži tekst rada.” (PR-9, `support.problem-report.post`).
+- **R-60 Povuci predaju** (`data-act=wdAsk`, E-11b): otvara PD-11 (PR-13).
+- **R-61 Preuzmi potvrdu povlačenja** (`data-act=wdPdf`, E-11c, E-11e): u prototipu samo obavijest (PR-13, PR-15).
+- **R-62 Spremi izjavu** (`data-submit=saveDecl`, PD-10): sprema četiri retka; s potvrdnim okvirom izjava postaje potvrđena i stanje `stale` nestaje (PR-5).
+- **R-63 Potvrdi povlačenje** (`data-act=wdDo`, PD-11): `wdSending`, nakon 900 ms predaja se uklanja, bilježi se povlačenje, prikazuje E-11e; editor se otvara za pisanje (PR-13).
+- **R-64 Odaberi verziju** (`input[name=sb-ver]`, E-8c, E-10): „Pošalji najprije zadnju verziju pa predaj” ili „Predaj potvrđenu verziju V3”; omogućuje „Dalje” i „Predaj rad” (PR-10).
+- **R-65 Potvrdi kasnu predaju** (`#sb-late-ok`, PD-3): omogućuje „Predaj rad” (PR-7, PR-17).
+- **R-66 Dodaj napomenu, neuspjeh** (stanje `napomenagreska`): `role=alert`, napomena se ne prikazuje kao dodana (PR-6).
+- **R-67 Otvori sažetak procesa, nadopuna R-40** (PR-11, PR-18): fokus na naslov ploče, `role=status` najava.
+- **R-68 Provjeri stanje predaje, nadopuna R-38** (PR-9): ponovno čitanje `student.submission.get` pri povratku veze i nakon 10 s (do 3 pokušaja); potvrđeno vodi na E-11.
+- **R-69 Pošalji doradu** (E-7b): `aria-disabled`, nedostupno (PR-16); ne izmišlja se operacija.
+- **R-70 Otvori potvrdu o predaji** (banner E-7a, popis E-11c): `data-go=potvrda` (PR-1, PR-15).
+- **R-71 Odgovori na pitanje nastavnika, nadopuna R-33** (`#sb-ans`, PR-20): sprema u `S().form`; u aplikaciji traži polje u declaration-v1 (PO-34).
+- **R-72 Kopiraj otisak, nadopuna R-39** (PR-18): kopira 64 znaka; čitač zaslona čita cijeli niz.
+
 ### Stanja učitavanja, greške, praznog prikaza i rada bez mreže
 
 | Ekran | Učitavanje | Greška | Prazno | Bez mreže | Ostalo |
@@ -803,6 +911,17 @@ Radnji je ukupno 54 (R-1 do R-42 i NF-1 R-43 do R-54). Uz svaku je zapisano što
 | E-12 (NF-1) | da | `greska`, `greskaspremanja`, `pushblokiran` | `puno` (sve isključeno) | — | `spremanje`, `spremljeno`, `bezadrese` |
 | E-13 (NF-1) | `odjavljivanje` | `greska`, `istekla` | — | — | `uspjeh` |
 | PD-9 (NF-1) | da | da | `prazno` | — | `puno` (starije obavijesti) |
+
+NF-3 dopune stanja (uz gornju tablicu; „puno” je pilotski prikaz bez pomoćnika):
+
+| Ekran | Učitavanje | Greška | Prazno | Bez mreže | Ostalo (NF-3) |
+|---|---|---|---|---|---|
+| E-7 | da | da | `prazno` | `bez-mreze` | `predano` (E-7a s radnjama), `dorada` (E-7b) |
+| E-8 | da | da, `napomenagreska` | `prazno`, `zatvoreno` | `bezmreze` | `neaktualna`, `izjavaprazna`, `nakonroka`, `zabranjeno`, `iznimka`, `novijalokalno` |
+| E-9 | da | da | `prazno` (izjava nije ispunjena) | — | `neaktualna`, `bezpitanja`, `razgovori` (nakon Q-10), `nesklad` (nakon Q-10); rad predan s E-9b |
+| E-10 | da, `utijeku` | `odbijeno`, `odbijenospremno`, `prekid`, `bezzapisa`, `zastarjelo`, `nedovrseno`, `nedovrsenozamjenski`, `nepoznato`, `nepoznatobezvremena`, `nepoznatoprobl` | — | `bezmreze` | `nakonroka`, `produljen`, `neaktualna`, `izjavaprazna`, `bezizjave`, `zabranjeno`, `iznimka`, `novijalokalno` |
+| E-11 | da | da, `preuzimanjegreska` | `prazno` | — | `ceka`, `nakonroka`, `praznine`, `povlacenjemoguce`, `povlacenjezabranjeno`, `povucena`, `povijest` |
+| PD-10, PD-11 | — | — | — | — | `stale` (PD-10), `wdSending` (PD-11) |
 
 ---
 
@@ -849,12 +968,24 @@ Oznake statusa:
 | PO-31 | NF-1 (P-17). E-adresa studenta za e-poštu (E-12) | `profile.me.get` GET `/api/v1/me`: `{institution, roles, displayName, journalScope, sessionTag}` | NEMA polja. Adresa se ne vraća. Treba potvrditi isporučuje li AAI@EduHr atribut e-pošte i smije li se čuvati (N-20); bez toga vrijedi stanje `bezadrese`. |
 | PO-32 | NF-1 (P-17). Slanje e-pošte i push obavijesti | — | NEMA. Serverski posao slanja (predložak samo s naslovom zadatka, nazivom kolegija, rokom i poveznicom; bez ičega iz rada), pretplata za push (krajnja točka i ključevi preglednika), evidencija pristanka i povlačenja. Pregled privatnosti i DPIA prije uključenja za stvarne studente. |
 | PO-33 | NF-1 (P-17). Odjava iz poruke (E-13) | — | NEMA. Javna ruta bez prijave s jednokratnim tokenom iz poruke: odgovori uspjeh, `istekla` (token istekao ili iskorišten) i 503. Povlačenje pristanka mora raditi i bez prijave. |
+| PO-34 | NF-3 (PR-20, R-33, odgovor 2). Pitanje nastavnika uz izjavu i odgovor studenta (E-9) | `student.declaration.get` GET i `.put` PUT `/api/v1/student/assignments/{assignmentId}/declaration` (declaration-v1: `state`, `version`, `currentForm`, `draft`, `payload`, `declarationSha256`, `uploads`; tijelo PUT: `baseVersion`, `revision`, `form`, `ownWork`, `humanHelp{received, entries[{kind,text}]}`, `ai{use, declaredTools, attachments, externalAttachmentIds}`, `confirm`) | NEMA polja za pitanje ni odgovor. Traži SRV zadatak: pitanje (tekst, postavlja nastavnik uz zadatak, dio 5) i odgovor studenta (do utvrđene granice) u declaration-v1; ne izmišlja se ime polja. Preslikavanje četiriju redaka „Vaše izjave” (Svrha, Faza rada) na `ai.declaredTools` i `humanHelp.entries` provjeriti (N-24). |
+| PO-35 | NF-3 (PR-21, PD-2). Razgovori i prilozi uz izjavu | `student.declaration-attachments.post` (ugovor postoji); declaration-v1 `attachments` je prazan (`maxItems 0`) | UGOVOR, ali u pilotu bez priloga; razgovori i zabilježeni prijenosi NEMA (Q-10, pomoćnik isključen). Ništa se ne gradi dok Daniel ne odluči o pomoćniku. |
+| PO-36 | NF-3 (odgovor 3, PR-17). Zabrana predaje nakon roka na razini zadatka | `submission.submit.post` i `submission.submit-second.post`: 409 `not_open` | Odbijanje POSTOJI u ugovoru (nakon pokušaja). Polje koje student može pročitati prije predaje (zadatak dopušta ili ne dopušta kasnu predaju) NEMA: `student.assignments.get` ga ne daje, `teacher.declaration-required.*` je nastavnička ruta i nije to. Traži SRV zadatak; ne izmišlja se ime polja (N-21). Do tada `zabranjeno` se prikazuje tek nakon odgovora 409 `not_open`. |
+| PO-37 | NF-3 (odgovor 3). Iznimno odobrena kasna predaja i rok iznimke | `teacher.deadline-extension.post` (nastavnik), `teacher.deadline-extensions.get`, `student.deadline-history.get` (`extensions[{scope one\|all, previousDueAt, dueAt, reasonId, createdAt}]`), `extendedDueAt` iz PO-4 | UGOVOR (kao PO-27). Student vidi rok iznimke iz `extendedDueAt`. Ugovor ne razlikuje „iznimku uz zabranu kasne predaje” od običnog produljenja roka (N-22). |
+| PO-38 | NF-3 (PR-13, P-D3). Povlačenje predaje i razlog nemogućnosti | `student.submission-withdrawal.get` GET `/api/v1/student/assignments/{assignmentId}/submission/withdrawal`: `{withdrawable, receipts[{withdrawalId, assignmentId, revision, withdrawnAt, signature}]}`; `student.submission-withdrawal.post` POST: 200 `{status:"withdrawn", receipt}`; `student.submission-history.get`: `{withdrawalAllowed, dueAt, events}` | UGOVOR. **Razlog ne traži novo polje:** `withdrawalAllowed=false` znači da povlačenje nije dopušteno za zadatak („Nastavnik ili fakultet ne dopušta…”); `withdrawable=false` uz `withdrawalAllowed=true` je rok istekao (iz `dueAt`/`extendedDueAt`) ili je predaja već povučena (iz događaja povijesti). Ostali razlozi se ne nagađaju. |
+| PO-39 | NF-3 (PR-15). Povijest pokušaja predaje | `student.submission-history.get` GET `/api/v1/student/assignments/{assignmentId}/submission/history`: `events[]` vrste `submission` (`attempt`, `submissionId`, `revision`, `at`, `afterDeadline`, `receipt`) i `withdrawal` (`attempt`, `submissionId`, `revision`, `at`, `receipt`), do 2000 | UGOVOR; student je danas ne zove (poziva ga samo nastavnička povijest). |
+| PO-40 | NF-3 (PR-16). Dorada: komentar, rok, slanje | `notifications.returned-for-revision.list.get` GET `/api/v1/notifications/returned-for-revision` s `?before`: `{notifications[≤50]{id, targetId, documentId, comment ≤2000, revisionDueAt\|null, createdAt, readAt}, nextBefore}`; `work.return-for-revision.post`, `work.milestones.request-revision.post`, `collaboration.revision-requests.post` (nastavnička strana) | UGOVOR za prikaz (komentar, rok). Označavanje pročitanim: u izvatku je samo `notifications.read.post` za obavijesti zvonca; za ove obavijesti nije jasno vrijedi li (N-26). „Pošalji doradu” (student → mentor) NEMA: port `send: null`, ne izmišlja se. |
+| PO-41 | NF-3 (PR-6, PD-4). Napomena uz rad | `student.submission-notes.get` i `.post` POST `/api/v1/student/submission-notes`: tijelo `{assignmentId, text ≤600}`, 201 `{id, text, createdAt}` | UGOVOR (kao PO-15, koji je tada bio NEMA). Oblik `createdAt` (3 decimale) provjeriti u klijentu prije gradnje (G-9). |
+| PO-42 | NF-3 (PR-9, PR-11). Stanje predaje, ponovno čitanje | `student.submission.get`: `none`, `ceka {revision, requestedAt}`, `potvrdeno {receipt}`; `support.problem-report.post` | UGOVOR (stanje), IMA (prijava problema). Ponovno čitanje „nakon 10 s i pri povratku veze” je ponašanje klijenta, ne novo polje. |
+| PO-43 | NF-3 (PR-12, odgovor 1). Što student smije preuzeti u pilotu | `student.receipt-pdf.get` (PDF s QR kodom) | UGOVOR. U pilotu studentu **samo** ovo; `student.portable-record.get`, `student.submission-package-link.post` i `student.submission-package.get` postoje u ugovoru, ali se studentu ne prikazuju (odgovor 1). |
+| PO-44 | NF-3 (PR-14). Napomena uz izjavu nakon predaje | `student.submission-notes.post` (opcija (b) iz nalaza) | UGOVOR ima samo `{assignmentId, text}`: ne razlikuje napomenu uz rad od napomene uz izjavu, a nije jasno prima li ruta napomenu nakon predaje (N-23). Tekst je označen „za pravni pregled”. |
 
-Zbroj: 33 podatka (25 + NF-1 PO-26 do PO-33).
+Zbroj: 44 podatka (25 + NF-1 PO-26 do PO-33 + NF-3 PO-34 do PO-44).
 - IMA: 8 (PO-1, PO-2, PO-3, PO-9, PO-10, PO-11, PO-23, PO-25).
 - Samo UGOVOR: PO-6, PO-8, PO-17, PO-18, PO-24, PO-27 (NF-1).
 - UGOVOR i DJELOMIČNO: PO-4, PO-5, PO-13, PO-26 (NF-1).
 - NEMA: PO-7, PO-12, PO-14, PO-15, PO-16, PO-19, PO-20, PO-21, PO-22; NF-1: PO-28, PO-29, PO-30, PO-31, PO-32, PO-33.
+- NF-3 (PR-1 do PR-21): samo UGOVOR (postoji u izvatku, handler ili klijent još ne): PO-36 (samo odbijanje `not_open`), PO-37, PO-38, PO-39, PO-41, PO-42, PO-43; djelomično PO-40 (prikaz da, slanje dorade NEMA); NEMA: PO-34 (pitanje i odgovor uz izjavu), PO-35 (razgovori, Q-10), PO-36 (čitljivo polje „zadatak zabranjuje kasnu predaju”); PO-44 neodređeno (N-23). Novo od servera traže: PO-34 (PR-20), PO-36 (zabrana kasne predaje), PO-40 (slanje dorade, PR-16); razlog nemogućeg povlačenja (PR-13) NE traži novo polje (`withdrawalAllowed`, PO-38). Ostali prijedlozi (PR-1 do PR-12, PR-14, PR-15, PR-17 do PR-19) ne traže novo polje ni rutu.
 - NF-1 (P-1 do P-17) traži od servera redom: PO-28 (P-6), PO-29 (P-16), PO-30 do PO-33 (P-17) i provjeru PO-26 (P-1, P-2). Ostali prijedlozi (P-3, P-4, P-5, P-7, P-8, P-9, P-10, P-11, P-12, P-13, P-14, P-15) ne traže novo polje ni rutu.
 
 ---
@@ -1005,12 +1136,20 @@ Svaki val gradi server i web zajedno. Svaki završava nečim što Daniel može k
 19. **N-19 Odbijena prijava.** Ugovor razlikuje `login_refused` (403) od `provider_unavailable`, ali ne daje uzrok odbijanja. Tekst E-1a zato ne tvrdi uzrok. Potvrditi s poslužiteljem. (P-15)
 20. **N-20 Izvor e-adrese.** Daje li AAI@EduHr atribut e-pošte i smije li ga Ductura čuvati i koristiti za obavijesti? `profile.me.get` ga ne vraća. (P-17)
 
+21. **N-21 Zabrana predaje nakon roka.** Student mora vidjeti „zabranjeno nakon roka” prije pokušaja, a ugovor to javlja tek kao 409 `not_open` nakon pokušaja. Koje polje uz `student.assignments.get` (ili `student.notice.get`) nosi pravilo zadatka? Prototip ne izmišlja ime. (PR-17, odgovor 3)
+22. **N-22 Iznimka i produljenje roka.** Je li „iznimno odobrena kasna predaja pojedinom studentu” isto što i produljenje roka s `scope = one` (`teacher.deadline-extension.post`)? Navodi li potvrda tada „nakon roka” prema izvornom roku ili prema roku iznimke? Prototip pokazuje „nakon roka” uz rok iznimke. (odgovor 3)
+23. **N-23 Napomena uz izjavu nakon predaje.** `student.submission-notes.post` nema vrstu napomene; prima li ruta napomenu nakon predaje i smije li se označiti da se odnosi na izjavu? Odluka (b) iz PR-14 čeka pravni pregled teksta. (PR-14)
+24. **N-24 Retci izjave i declaration-v1.** Preslikavanje „Svrha” i „Faza rada” na polja `ai.declaredTools` i `humanHelp.entries` nije vidljivo iz izvatka; popis vrsta ljudske pomoći je u prototipu izmišljen. Stvarni zatvoreni skup je u declaration-v1 (OD-12). (PR-5)
+25. **N-25 „Zadatak ne traži izjavu”.** Student ne čita `declarationRequired` (nastavnička ruta `teacher.declaration-required.get|put`). Odakle student zna da izjava nije potrebna (stanje `bezizjave`)? (PR-7)
+26. **N-26 Obavijest o doradi označena pročitanom.** `notifications.read.post` u izvatku je vezan uz obavijesti zvonca; vrijedi li i za `notifications.returned-for-revision.list.get` (ima `readAt`)? (PR-16)
+27. **N-27 Povlačenje: razlog „već povučeno”.** Razlikuje li se u ugovoru od isteka roka? Prototip ga izvodi iz događaja povijesti (PO-39). (PR-13)
+
 ---
 
 Brojevi:
-- 14 ekrana (ljuska i 13 registriranih; NF-1 dodaje E-12 i E-13) s 89 stanja (71 + 18 iz NF-1: E-1 1, E-4 1, E-5 1, E-6 2, E-12 8, E-13 5); uz to 4 stanja ploče zvonca PD-9;
-- 9 prozora i dijaloga, od toga 2 modalna (NF-1 dodaje PD-9, nemodalan);
-- 54 radnje;
-- 33 podatka: 8 ima handler, 6 samo ugovor, 4 djelomično, 15 nema ništa;
+- 14 ekrana (ljuska i 13 registriranih; NF-1 dodaje E-12 i E-13) s 89 stanja (71 + 18 iz NF-1: E-1 1, E-4 1, E-5 1, E-6 2, E-12 8, E-13 5) i NF-3 dodaje 29 novih stanja (E-7 1, E-8 7, E-9 3, E-10 13, E-11 5; izmijenjen je i sadržaj postojećih stanja, vidi tablicu „NF-3 dopune stanja”); uz to 4 stanja ploče zvonca PD-9;
+- 11 prozora i dijaloga, od toga 4 modalna (NF-1 dodaje PD-9, nemodalan; NF-3 dodaje PD-10 i PD-11, oba modalna);
+- 72 radnje (NF-3 dodaje R-55 do R-72);
+- 44 podatka: NF-3 dodaje PO-34 do PO-44 (vidi §4);
 - 7 valova;
-- 20 otvorenih pitanja.
+- 27 otvorenih pitanja (NF-3 dodaje N-21 do N-27).

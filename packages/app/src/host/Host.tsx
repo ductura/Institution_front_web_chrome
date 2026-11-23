@@ -88,7 +88,9 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   useEffect(() => {
     const shown = open ?? (resolved?.kind === "page" ? resolved.page : null);
     const page = shown === null ? null : navLabel(shown, role, { ...catalogues, t: shellMessagesFor(t, role) });
-    const title = page === null ? t.app.name : `${page} · ${t.app.name}`;
+    // WCAG 2.4.2: a path no page has keeps a title of its own too, the error's heading.
+    const heading = page ?? (resolved?.kind === "notFound" ? t.errorPage.notFoundTitle : null);
+    const title = heading === null ? t.app.name : `${heading} · ${t.app.name}`;
     // WCAG 2.4.2 (WEB-1805): Next streams the root layout's title after hydration on
     // public pages and on pages with async params, and would put back the bare app name.
     const keep = () => {
