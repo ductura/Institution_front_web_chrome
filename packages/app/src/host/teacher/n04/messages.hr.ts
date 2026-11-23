@@ -28,6 +28,7 @@ export const courseStudentsMessages = {
   writing: "U pisanju",
   notSubmitted: "Nije predano",
   unconfirmed: "Obavijest o zadatku još nije potvrđena",
+  unknownState: "Stanje rada nije poznato",
   awaitsRevision: (deadline: string): string => `Čeka doradu, rok za doradu ${deadline}.`,
   awaitsRevisionNoDeadline: "Čeka doradu.",
   at: "u",
