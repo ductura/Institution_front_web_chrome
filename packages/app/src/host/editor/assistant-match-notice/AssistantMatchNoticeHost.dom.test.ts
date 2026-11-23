@@ -5,9 +5,11 @@ import { act, createElement as h } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createAssistantMatchCall } from "@/client/assistant-match";
+import { Schema } from "@tiptap/pm/model";
 
-import { AssistantMatchNoticeHost } from "./AssistantMatchNoticeHost";
+import { createAssistantMatchCall, type SegmentPort } from "@/client/assistant-match";
+
+import { AssistantMatchNoticeHost, type EditorWatch } from "./AssistantMatchNoticeHost";
 import { noticeText } from "./messages.hr";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -29,7 +31,9 @@ describe("AssistantMatchNoticeHost", () => {
     document.body.append(host);
     root = createRoot(host);
     const call = createAssistantMatchCall(route as never);
-    await act(async () => { root?.render(h(AssistantMatchNoticeHost, { documentId: DOC, call })); });
+    // No editor beside the notice: it only reads.
+    const useWatch = (): EditorWatch => ({ editor: null, opened: false, synced: false, submitted: false, signedOut: false });
+    await act(async () => { root?.render(h(AssistantMatchNoticeHost, { documentId: DOC, call, segments: vi.fn<SegmentPort>(), useWatch })); });
   };
 
   it("shows the notice when the server has recorded a match, and asks for no explanation", async () => {
@@ -58,5 +62,79 @@ describe("AssistantMatchNoticeHost", () => {
     await mount(server({ ok: true, status: 200, headers: {}, body: { findings: [FINDING] } }));
     expect(host.textContent?.toLowerCase()).not.toMatch(/prepis/u);
     for (const text of Object.values(noticeText)) expect(text.toLowerCase()).not.toMatch(/prepis/u);
+  });
+});
+
+// PIL-P1-PODUDARANJE-PROVJERA-WEB: the host sends a changed paragraph after its save is confirmed
+// and, when the server answers with a match, reads the notice again. The editor is a stand-in with
+// a real document; the paragraphs are invented.
+describe("AssistantMatchNoticeHost sends the changed paragraph", () => {
+  const schema = new Schema({
+    nodes: {
+      doc: { content: "paragraph+" },
+      paragraph: { content: "text*", attrs: { nodeId: { default: null } } },
+      text: {},
+    },
+  });
+  const OPENED = "Izmišljeni odlomak s kojim se rad otvorio ima dovoljno riječi.";
+  const TYPED = "Izmišljeni odlomak koji je student upravo napisao ima dovoljno riječi.";
+  const docOf = (text: string) => schema.nodes.doc!.create(null, [
+    schema.nodes.paragraph!.create({ nodeId: "p-1" }, schema.text(text)),
+  ]);
+
+  let root: Root | undefined;
+  let host: HTMLElement;
+  afterEach(() => { act(() => root?.unmount()); root = undefined; document.body.innerHTML = ""; });
+
+  function stage(over: Partial<EditorWatch> & { editable?: boolean } = {}) {
+    const editor = { isDestroyed: false, isEditable: over.editable ?? true, state: { doc: docOf(OPENED) } };
+    let watch: EditorWatch = { editor: editor as unknown as EditorWatch["editor"], opened: true, synced: false, submitted: false, signedOut: false, ...over };
+    const route = vi.fn(async () => ({ ok: true, status: 200, headers: {}, body: { findings: [] as unknown[] } }));
+    const segments = vi.fn<SegmentPort>(async () => ({ kind: "checked", matches: 1 }));
+    const call = createAssistantMatchCall(route as never);
+    const render = () => root?.render(h(AssistantMatchNoticeHost, { documentId: DOC, call, segments, useWatch: () => watch }));
+    return {
+      route,
+      segments,
+      mount: async () => {
+        host = document.createElement("div");
+        document.body.append(host);
+        root = createRoot(host);
+        await act(async () => { render(); });
+      },
+      /** The student typed, then the server confirmed the save. */
+      typeAndSave: async () => {
+        editor.state = { doc: docOf(TYPED) };
+        watch = { ...watch, synced: false };
+        await act(async () => { render(); });
+        route.mockResolvedValue({ ok: true, status: 200, headers: {}, body: { findings: [FINDING] } });
+        watch = { ...watch, synced: true };
+        await act(async () => { render(); });
+      },
+    };
+  }
+
+  it("after the save is confirmed sends the paragraph with its block id, then shows the match", async () => {
+    const s = stage();
+    await s.mount();
+    expect(s.segments).not.toHaveBeenCalled();
+    expect(host.innerHTML).toBe("");
+    await s.typeAndSave();
+    expect(s.segments).toHaveBeenCalledTimes(1);
+    expect(s.segments).toHaveBeenCalledWith(DOC, { ref: "p-1", text: TYPED });
+    expect(s.route).toHaveBeenCalledTimes(2);
+    expect(host.querySelector("[data-match='p-1']")?.textContent).toContain(noticeText.title);
+  });
+
+  it.each([
+    ["a submitted work", { submitted: true }],
+    ["a replay or read-only editor", { editable: false }],
+    ["an ended session", { signedOut: true }],
+  ] as const)("sends nothing from %s", async (_, over) => {
+    const s = stage(over);
+    await s.mount();
+    await s.typeAndSave();
+    expect(s.segments).not.toHaveBeenCalled();
+    expect(s.route).toHaveBeenCalledTimes(1);
   });
 });

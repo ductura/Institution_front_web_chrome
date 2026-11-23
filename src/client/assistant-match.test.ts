@@ -2,7 +2,7 @@
 // Invented ids only.
 import { describe, expect, it, vi } from "vitest";
 
-import { createAssistantMatchCall, segmentsOf, type MatchFinding } from "./assistant-match";
+import { changedSegments, createAssistantMatchCall, createSegmentPort, MAX_SEGMENT_TEXT, segmentsOf, sendable, type MatchFinding } from "./assistant-match";
 
 const DOC = "0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d01";
 const finding = (segmentRef: string, runWords: number, attachedAt: string, conversationId = "c-1"): MatchFinding => ({
@@ -49,5 +49,61 @@ describe("the match port over the server", () => {
     const answer = await createAssistantMatchCall(call as never)("work.assistant-match.explain", { params: { documentId: DOC, segmentId: "p-1" }, body: { text: "x" } });
     expect(answer).toEqual({ ok: false, status: 404, code: "not_found" });
     expect(call).not.toHaveBeenCalled();
+  });
+});
+
+describe("the paragraphs the editor sends (PIL-P1-PODUDARANJE-PROVJERA-WEB)", () => {
+  const LONG = "Ovo je izmišljeni odlomak od najmanje osam riječi za provjeru.";
+
+  it("a paragraph shorter than eight words can never match and is not sent", () => {
+    expect(sendable({ ref: "p-1", text: "Samo sedam riječi u ovom kratkom odlomku." })).toBeNull();
+    expect(sendable({ ref: "p-1", text: LONG })).toEqual({ ref: "p-1", text: LONG });
+  });
+
+  it("a block id the route would refuse is not sent", () => {
+    expect(sendable({ ref: "", text: LONG })).toBeNull();
+    expect(sendable({ ref: "x".repeat(129), text: LONG })).toBeNull();
+    expect(sendable({ ref: "p\u0007", text: LONG })).toBeNull();
+  });
+
+  it("a longer paragraph is cut to the route's limit of characters, never inside a character", () => {
+    const text = `${LONG} ${"😀".repeat(MAX_SEGMENT_TEXT)}`;
+    const cut = sendable({ ref: "p-1", text });
+    expect(Array.from(cut?.text ?? "")).toHaveLength(MAX_SEGMENT_TEXT);
+    expect(cut?.text.endsWith("😀")).toBe(true);
+  });
+
+  it("only the paragraphs whose text changed since they were last known", () => {
+    const known = new Map([["p-1", LONG], ["p-2", LONG]]);
+    const changed = `${LONG} I još jedna rečenica.`;
+    expect(changedSegments([
+      { ref: "p-1", text: LONG },
+      { ref: "p-2", text: changed },
+      { ref: "p-3", text: LONG },
+      { ref: "p-4", text: "Kratko." },
+    ], known)).toEqual([{ ref: "p-2", text: changed }, { ref: "p-3", text: LONG }]);
+  });
+
+  it("posts the block id and its text, and counts the matches of the answer", async () => {
+    const call = vi.fn(async () => ({ ok: true as const, status: 200 as const, headers: {}, body: { matches: [{ messageId: "m-1", conversationId: "c-1", runWords: 9 }] } }));
+    const answer = await createSegmentPort(call as never)(DOC, { ref: "p-1", text: LONG });
+    expect(call).toHaveBeenCalledWith("work.assistant-match.post", { params: { documentId: DOC }, query: undefined, body: { segmentRef: "p-1", text: LONG } });
+    expect(answer).toEqual({ kind: "checked", matches: 1 });
+  });
+
+  it("answers a paragraph that cannot match without a request", async () => {
+    const call = vi.fn();
+    expect(await createSegmentPort(call as never)(DOC, { ref: "p-1", text: "Kratko." })).toEqual({ kind: "checked", matches: 0 });
+    expect(call).not.toHaveBeenCalled();
+  });
+
+  it("reads a refusal as signed out, off or failed, and never throws", async () => {
+    const answer = (result: unknown) => createSegmentPort(vi.fn(async () => result) as never)(DOC, { ref: "p-1", text: LONG });
+    expect(await answer({ ok: false, status: 401, code: "unauthorized" })).toEqual({ kind: "signedOut" });
+    expect(await answer({ ok: false, status: 404, code: "not_found" })).toEqual({ kind: "off" });
+    expect(await answer({ ok: false, status: 503, code: "unavailable" })).toEqual({ kind: "failed" });
+    expect(await answer({ ok: false, status: 0, code: "network" })).toEqual({ kind: "failed" });
+    const thrown = createSegmentPort(vi.fn(async () => { throw new Error("offline"); }) as never);
+    expect(await thrown(DOC, { ref: "p-1", text: LONG })).toEqual({ kind: "failed" });
   });
 });

@@ -12,25 +12,29 @@ type Status = "idle" | "sending" | "saved" | "failed" | "rejected" | "signedOut"
  * The student's notice at the moment the server attaches the conversation automatically (WEB-1230), with the
  * option to explain the match. Behind the faculty flag: while the flag is off the component renders nothing.
  * The notice never blocks writing or submitting and is not a verdict. `explainable` is false while the
- * server has no route that stores the explanation: then no field asks for one.
+ * server has no route that stores the explanation: then no field asks for one. A change of `revision`
+ * reads again (the editor sent a paragraph and the server answered with a match); a closed item comes
+ * back only for a newer attachment of its segment.
  */
-export default function AssistantMatchNotice({ call, documentId, explainable = true }: { call: MatchCall; documentId: string; explainable?: boolean }) {
+export default function AssistantMatchNotice({ call, documentId, explainable = true, revision = 0 }: { call: MatchCall; documentId: string; explainable?: boolean; revision?: number }) {
   const [read, setRead] = useState<MatchRead | null>(null);
   const [matches, setMatches] = useState<readonly AssistantMatch[]>([]);
-  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
+  const [dismissed, setDismissed] = useState<ReadonlyMap<string, string>>(new Map());
 
   useEffect(() => {
     let active = true;
     void readAssistantMatch(call, documentId).then((answer) => {
       if (!active) return;
+      // A read again that does not reach the server keeps what the notice already shows.
+      if (revision > 0 && answer.kind === "unavailable") return;
       setRead(answer);
       setMatches(answer.kind === "ready" ? answer.state.matches : []);
     });
     return () => { active = false; };
-  }, [call, documentId]);
+  }, [call, documentId, revision]);
 
   if (read === null || read.kind !== "ready") return null;
-  const open = matches.filter((m) => !dismissed.has(m.segmentId));
+  const open = matches.filter((m) => dismissed.get(m.segmentId) !== m.attachedAt);
   if (open.length === 0) return null;
   return (
     <div data-assistant-match-notice>
@@ -42,7 +46,7 @@ export default function AssistantMatchNotice({ call, documentId, explainable = t
           documentId={documentId}
           explainable={explainable}
           onSaved={(next) => setMatches((all) => all.map((x) => (x.segmentId === next.segmentId ? next : x)))}
-          onDismiss={() => setDismissed((s) => new Set(s).add(m.segmentId))}
+          onDismiss={() => setDismissed((s) => new Map(s).set(m.segmentId, m.attachedAt))}
         />
       ))}
     </div>

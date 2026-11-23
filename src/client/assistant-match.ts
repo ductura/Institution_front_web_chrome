@@ -57,3 +57,78 @@ export function createAssistantMatchCall(call: Call = createApi()): MatchCall {
     return { ok: true, status: result.status, body: { enabled: true, matches: segmentsOf(result.body.findings) } };
   };
 }
+
+// PIL-P1-PODUDARANJE-PROVJERA-WEB: what the student's editor sends, over work.assistant-match.post
+// ({ segmentRef, text }). A finding exists only for a paragraph the server has seen, so the editor
+// sends each paragraph the student changed once the change is saved on the server, with the block's
+// own id as `segmentRef`. Nothing else leaves: no key, no timing, no other paragraph.
+
+/** The rule counts this many words in a row (P-1 rule 13); a shorter paragraph can never match. */
+export const MIN_SEGMENT_WORDS = 8;
+/** The route's limits: `text` up to 40 000 characters, `segmentRef` up to 128 without control characters. */
+export const MAX_SEGMENT_TEXT = 40_000;
+const SEGMENT_REF = /^[^\u0000-\u001f\u007f-\u009f]{1,128}$/u;
+
+/** One paragraph of the work: the id of its block and its text. */
+export type Segment = { readonly ref: string; readonly text: string };
+
+function wordsIn(text: string): number {
+  return text.split(/\s+/u).filter((w) => w.length > 0).length;
+}
+
+/** The paragraph as it may be sent, or null when it cannot match or the route would refuse it. */
+export function sendable(segment: Segment): Segment | null {
+  if (!SEGMENT_REF.test(segment.ref)) return null;
+  if (wordsIn(segment.text) < MIN_SEGMENT_WORDS) return null;
+  const chars = Array.from(segment.text);
+  return chars.length <= MAX_SEGMENT_TEXT ? segment : { ref: segment.ref, text: chars.slice(0, MAX_SEGMENT_TEXT).join("") };
+}
+
+/**
+ * The paragraphs to send: those whose text differs from what was last sent (or, for a paragraph not
+ * sent yet, from the text the work opened with), that could match and that the route accepts.
+ */
+export function changedSegments(current: readonly Segment[], known: ReadonlyMap<string, string>): readonly Segment[] {
+  const out: Segment[] = [];
+  for (const segment of current) {
+    if (known.get(segment.ref) === segment.text) continue;
+    const ready = sendable(segment);
+    if (ready !== null) out.push(ready);
+  }
+  return out;
+}
+
+/** The server's answer to one paragraph, as the editor needs it. */
+export type SegmentCheck =
+  | { readonly kind: "checked"; readonly matches: number }
+  | { readonly kind: "signedOut" }
+  /** No such work for this person, or the route is absent: stop sending for this work. */
+  | { readonly kind: "off" }
+  /** Unreached, refused or unavailable: send again after the next save. */
+  | { readonly kind: "failed" };
+
+export type SegmentPort = (documentId: string, segment: Segment) => Promise<SegmentCheck>;
+
+/**
+ * The real port over work.assistant-match.post. A paragraph that cannot match is answered here,
+ * without a request; a longer one is cut to the route's limit. It never throws into writing or saving.
+ */
+export function createSegmentPort(call: Call = createApi()): SegmentPort {
+  return async (documentId, segment) => {
+    const body = sendable(segment);
+    if (body === null) return { kind: "checked", matches: 0 };
+    try {
+      const result = await call("work.assistant-match.post", {
+        params: { documentId },
+        query: undefined,
+        body: { segmentRef: body.ref, text: body.text },
+      });
+      if (result.ok) return { kind: "checked", matches: result.body.matches.length };
+      if (result.status === 401) return { kind: "signedOut" };
+      if (result.status === 404) return { kind: "off" };
+      return { kind: "failed" };
+    } catch {
+      return { kind: "failed" };
+    }
+  };
+}
