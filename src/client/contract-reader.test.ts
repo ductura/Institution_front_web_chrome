@@ -42,6 +42,7 @@ const NO_MUTABLE_FIELDS = new Set<string>([
   "auth.webauthn-challenge.post registration",
   "collaboration.comments.post created",
   "collaboration.comments.post created-general",
+  "collaboration.comments.post created-general-without-revision",
   "collaboration.comments.post listed",
   "collaboration.comments.post replied",
   "collaboration.revision-requests.post accepted-without-range",

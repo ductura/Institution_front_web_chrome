@@ -10694,6 +10694,12 @@
             "documentId": {
               "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
               "type": "string"
+            },
+            "revision": {
+              "minimum": 1,
+              "maximum": 9007199254740991,
+              "description": "The revision of the work the thread is written on: required of a teacher, optional for the owning student. It must exist for the document and be one the caller may read (a teacher's: up to the newest standing submission, or the current revision before there is one; not only the newest); otherwise 422.",
+              "type": "integer"
             }
           }
         },
@@ -10773,6 +10779,12 @@
             "documentId": {
               "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
               "type": "string"
+            },
+            "revision": {
+              "minimum": 1,
+              "maximum": 9007199254740991,
+              "description": "The revision of the work the thread is written on: required of a teacher, optional for the owning student. It must exist for the document and be one the caller may read (a teacher's: up to the newest standing submission, or the current revision before there is one; not only the newest); otherwise 422.",
+              "type": "integer"
             }
           }
         }
@@ -10889,6 +10901,19 @@
                               },
                               "deletedWindow": {
                                 "type": "null"
+                              },
+                              "revision": {
+                                "description": "The revision of the work the thread was written on; a reply has its thread's. Null for a thread written before revisions were recorded.",
+                                "anyOf": [
+                                  {
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991,
+                                    "type": "integer"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
                               }
                             }
                           },
@@ -10973,6 +10998,19 @@
                               "deletedWindow": {
                                 "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
                                 "type": "string"
+                              },
+                              "revision": {
+                                "description": "The revision of the work the thread was written on; a reply has its thread's. Null for a thread written before revisions were recorded.",
+                                "anyOf": [
+                                  {
+                                    "minimum": 1,
+                                    "maximum": 9007199254740991,
+                                    "type": "integer"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
                               }
                             }
                           }
@@ -38601,6 +38639,283 @@
       ],
       "413": [
         "body_too_large"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.declaration-required.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/declaration-required",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the switch",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "required",
+                "changedAt"
+              ],
+              "properties": {
+                "required": {
+                  "type": "boolean"
+                },
+                "changedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.declaration-required.put": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/declaration-required",
+    "method": "PUT",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "required"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the switch in force",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "required",
+                "changedAt"
+              ],
+              "properties": {
+                "required": {
+                  "type": "boolean"
+                },
+                "changedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.assistant-match-explanation.post": {
+    "path": "/api/v1/works/{documentId}/assistant-match/explanation",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "segmentRef",
+        "messageId",
+        "text"
+      ],
+      "properties": {
+        "segmentRef": {
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]{1,128}$",
+          "type": "string"
+        },
+        "messageId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "maxLength": 2000,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the explanation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "text",
+                "writtenAt"
+              ],
+              "properties": {
+                "text": {
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                "writtenAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
       ],
       "503": [
         "unavailable"
