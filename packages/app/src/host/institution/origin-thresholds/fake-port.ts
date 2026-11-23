@@ -7,7 +7,7 @@ export const DEMO_THRESHOLDS: readonly OriginThreshold[] = [
   { origin: "assistant_inserted", thresholdPercent: 10, strictness: "hard" },
 ];
 
-type Options = { thresholds?: readonly OriginThreshold[]; status?: number; body?: unknown; throws?: boolean };
+type Options = { thresholds?: readonly OriginThreshold[]; status?: number; code?: string; body?: unknown; throws?: boolean };
 
 /** Holds the thresholds like the server: a put replaces the kind's row, a delete removes it. */
 export function fakeThresholdServer(opts: Options = {}) {
@@ -16,7 +16,7 @@ export function fakeThresholdServer(opts: Options = {}) {
   const call: ThresholdCall = async (id, input) => {
     calls.push({ id, params: input.params, body: input.body });
     if (opts.throws === true) throw new Error("offline");
-    if (opts.status !== undefined) return { ok: false as const, status: opts.status, code: "error" };
+    if (opts.status !== undefined) return { ok: false as const, status: opts.status, code: opts.code ?? "error" };
     const origin = input.params?.origin;
     if (id === "institution.origin-thresholds.get") return { ok: true as const, status: 200, body: opts.body ?? { thresholds: rows } };
     if (id === "institution.origin-threshold.delete") {
