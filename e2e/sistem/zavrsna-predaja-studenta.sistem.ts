@@ -131,7 +131,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     await page.getByRole('link', { name: 'Predaja rada', exact: true }).focus();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(`${submissionPath}/izjava`);
-    await expect(page.getByRole('heading', { name: 'Izjava', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Izjava o korištenju generativne umjetne inteligencije', level: 1 })).toBeVisible();
     const next = page.getByRole('button', { name: 'Dalje', exact: true });
     await expect(next).toBeDisabled();
     // PIL-K-IZJAVA: the declaration is filled and saved on the server before it can be confirmed.
