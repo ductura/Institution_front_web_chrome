@@ -54,7 +54,7 @@ export type Line = {
   readonly go: null;
   readonly title?: string;
   readonly text: readonly string[];
-  readonly offer?: "check" | "reload" | "workspace";
+  readonly offer?: "check" | "reload" | "workspace" | "declaration";
   readonly retry: boolean;
 };
 export type Next = { readonly go: "receipt" | "notice" | "signIn" } | Line;
@@ -84,6 +84,8 @@ export function nextOf(answer: Answer, known: Known = { requestedAt: null, alter
     case "predano": return { go: "receipt" };
     case "session-expired": return { go: "signIn" };
     case "odbijeno": return { go: null, text: [t.blocked[answer.reason]], offer: "workspace", retry: true };
+    // PIL-K-IZJAVA-VRATA: 409 declaration_required is a warning with the way to step 2, not a technical error.
+    case "izjava": return { go: null, title: t.declarationRequiredTitle, text: [t.declarationRequired], offer: "declaration", retry: true };
     case "nedovrseno":
       return { go: null, title: t.incompleteTitle, retry: false,
         text: known.alternative ? [known.requestedAt === null ? t.incompleteText : t.incompleteText.replace("Vrijeme Vašeg zahtjeva", `Vrijeme Vašeg zahtjeva (${whenOf(known.requestedAt)})`)] : [t.incompleteUnavailable] };

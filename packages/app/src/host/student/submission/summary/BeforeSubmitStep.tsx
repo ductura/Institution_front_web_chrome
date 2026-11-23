@@ -3,7 +3,8 @@
 // Step 3, E-8 "Prije predaje" (WEB-25, WEB-2108, VIZ-S4): the checks panel on the left and the process
 // summary (PD-1) on the right, as in the student prototype (`pregled`). The checks inform; only an
 // unconfirmed declaration sends the student back to step 2 (C-3); pastes, gaps in the record and the form
-// check never hold the submission (PRODUCT §5 rule 11).
+// check never hold the submission (PRODUCT §5 rule 11). Whether the declaration is confirmed is read from the
+// server (PIL-K-IZJAVA-VRATA), never from this browser; a failed read does not open the next step.
 import { Button, StepActions, StepNav, StepPanel, StepSection } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
@@ -13,8 +14,7 @@ import { createEventDisputes } from "../../../../../../../src/client/event-dispu
 import { useOnline } from "../../../../../../../src/client/online-status.ts";
 import { fetchProcessSummary } from "../../../../../../../src/client/process-summary.ts";
 import { loadNotes, pastedText, saveNote, type NotesRead, type SummaryRead } from "../../../../../../../src/components/predaja/BeforeSubmit.tsx";
-import { readConfirmed, useSessionTag } from "../../../../../../../src/components/predaja/Declaration.tsx";
-import { confirmationKey, isDeclared, stepHref } from "../../../../../../../src/components/predaja/flow.ts";
+import { stepHref } from "../../../../../../../src/components/predaja/flow.ts";
 import type { Stage } from "../../../../../../../src/components/predaja/stage.ts";
 import { readWork } from "../../../../../../../src/components/student/Submission.tsx";
 
@@ -23,6 +23,7 @@ import { stepsText } from "../steps/messages.hr";
 import { atOf } from "../steps/time";
 import { checksText as c } from "./messages.hr";
 import SummaryPanel from "./SummaryPanel";
+import { opensSending, serverGate, useDeclarationGate, type GateRead } from "./declaration-gate";
 import { notesCall, readStepSummary, type ClientAnswer, type NotesClient, type SummaryPorts } from "./model";
 import { routerPath } from "../../../../bases";
 
@@ -42,14 +43,17 @@ export type BeforeSubmitStepProps = {
   readonly stage: Stage;
   /** The kind of work ("Seminarski rad"), the tag beside both titles, when the server names it. */
   readonly kind?: string;
+  /** Ignored (PIL-K-IZJAVA-VRATA): step 2's hand-off in the address no longer opens anything; the server decides. */
   readonly declaredFor?: string;
   readonly hrefOf: (path: string) => string;
   /** The work's page, where the summary's links to places in the text lead. */
   readonly workHref: string;
   readonly onSignIn: () => void;
+  /** The declaration's gate; the server's by default, a recorded one in tests. */
+  readonly declarationGate?: GateRead;
 };
 
-export default function BeforeSubmitStep({ assignmentId, stage, kind, declaredFor, hrefOf, workHref, onSignIn }: BeforeSubmitStepProps) {
+export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, workHref, onSignIn, declarationGate = serverGate }: BeforeSubmitStepProps) {
   const router = useRouter();
   const online = useOnline();
   const hint = useId();
@@ -58,14 +62,13 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, declaredFo
   const [attempt, setAttempt] = useState(0);
   const [notes, setNotes] = useState<NotesRead>({ kind: "loading" });
   const [noteOpen, setNoteOpen] = useState(false);
-  // The declaration as step 2 left it in this tab, read after the first render so the server's markup matches.
-  const tag = useSessionTag();
-  const [kept, setKept] = useState(false);
-  useEffect(() => setKept(tag !== null && readConfirmed(confirmationKey(tag, assignmentId))), [tag, assignmentId]);
-  const confirmed = isDeclared(tag, kept, declaredFor);
+  // The declaration as the server holds it for the current revision (PIL-K-IZJAVA-VRATA).
+  const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
+  const confirmed = opensSending(gate);
   // The latest sign-in callback, so a new one from the page does not read the summary again.
   const signIn = useRef(onSignIn);
   useEffect(() => { signIn.current = onSignIn; });
+  useEffect(() => { if (gate.kind === "signedOut") signIn.current(); }, [gate.kind]);
   useEffect(() => {
     let live = true;
     setSummary({ kind: "loading" });
@@ -88,7 +91,9 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, declaredFo
 
   const retry = () => setAttempt((n) => n + 1);
   const submitted = stage.kind === "submitted";
-  const nextHint = !online ? c.offline : confirmed ? undefined : c.declarationMissing;
+  const declarationText = gate.kind === "loading" ? c.declarationChecking : gate.kind === "unavailable" ? c.declarationUnavailable
+    : gate.kind === "not_required" ? c.declarationNotRequired : confirmed ? c.declarationConfirmed : c.declarationMissing;
+  const nextHint = !online ? c.offline : confirmed ? undefined : declarationText;
   const go = (step: "izjava" | "slanje" | "potvrda") => router.push(routerPath(hrefOf(stepHref(assignmentId, step))));
   const openNote = () => {
     if (!online || notes.kind !== "ready") return;
@@ -105,7 +110,9 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, declaredFo
         {stage.kind === "unavailable" && <p className="note" role="alert">{c.unavailable}</p>}
         {!online && !submitted && <p className="note" role="status" id="sb-off">{c.offline}</p>}
         <StepSection label={c.declaration}>
-          {confirmed ? <span>{c.declarationConfirmed}</span> : <><span>{c.declarationMissing}</span><StepLink href={hrefOf(stepHref(assignmentId, "izjava"))}>{c.openDeclaration}</StepLink></>}
+          <span>{declarationText}</span>
+          {gate.kind === "missing" && <StepLink href={hrefOf(stepHref(assignmentId, "izjava"))}>{c.openDeclaration}</StepLink>}
+          {gate.kind === "unavailable" && <Button tone="secondary" onClick={readGate}>{c.declarationRetry}</Button>}
         </StepSection>
         <StepSection label={c.conversations}><span>{c.conversationsUnavailable}</span></StepSection>
         <StepSection label={c.placeholders}><span>{c.placeholdersInfo}</span></StepSection>
