@@ -18,7 +18,7 @@ const w = messagesHr.workspace;
 const headingKey = (heading: NumberedHeading) => heading.id ?? `pos-${heading.pos}`;
 const headingLabel = (heading: NumberedHeading) => `${heading.number}. ${heading.title || messagesHr.outline.untitledHeading}`;
 
-export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "chapter", ReactNode>>;
+export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "history" | "chapter", ReactNode>>;
 
 type Outline = { headings: NumberedHeading[]; current: NumberedHeading | undefined; words?: readonly number[] };
 

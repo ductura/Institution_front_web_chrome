@@ -19,9 +19,44 @@ export type CompareRead =
   | { readonly kind: "ready"; readonly blocks: readonly CompareBlock[] }
   | { readonly kind: "signedOut" | "notFound" | "unavailable" };
 
+export type VersionRead =
+  | { readonly kind: "ready"; readonly revision: number; readonly document: string }
+  | { readonly kind: "signedOut" | "notFound" | "unavailable" };
+
 export interface TimeMachinePort {
   versions(documentId: string): Promise<VersionsRead>;
   compare(documentId: string, from: number, to: number): Promise<CompareRead>;
+  /** One saved version's canonical document, only for reading (PIL-D7-POVIJEST). */
+  version(documentId: string, revision: number): Promise<VersionRead>;
+}
+
+export type TextBlock = { readonly kind: "heading" | "paragraph"; readonly text: string };
+export type VersionText = { readonly kind: "ready"; readonly blocks: readonly TextBlock[] } | { readonly kind: "unreadable" };
+
+const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+const childrenOf = (node: Record<string, unknown>): unknown[] =>
+  Array.isArray(node.children) ? node.children : Array.isArray(node.content) ? node.content : [];
+const textOf = (node: unknown): string =>
+  !isObject(node) ? "" : node.type === "text" && typeof node.text === "string" ? node.text : childrenOf(node).map(textOf).join("");
+
+/**
+ * The text of a saved version, block by block, as plain text: headings stay headings, every other
+ * block is a paragraph. Nothing is counted or measured; a document that is not JSON with a list of
+ * nodes is unreadable rather than shown in part.
+ */
+export function versionText(document: string): VersionText {
+  let parsed: unknown;
+  try { parsed = JSON.parse(document); } catch { return { kind: "unreadable" }; }
+  if (!isObject(parsed)) return { kind: "unreadable" };
+  const nodes = Array.isArray(parsed.nodes) ? parsed.nodes : isObject(parsed.doc) ? childrenOf(parsed.doc) : null;
+  if (nodes === null) return { kind: "unreadable" };
+  const blocks: TextBlock[] = [];
+  for (const node of nodes) {
+    if (!isObject(node)) return { kind: "unreadable" };
+    const text = textOf(node).trim();
+    if (text !== "") blocks.push({ kind: node.type === "heading" ? "heading" : "paragraph", text });
+  }
+  return { kind: "ready", blocks };
 }
 
 /** Newest first, one entry per revision. */
