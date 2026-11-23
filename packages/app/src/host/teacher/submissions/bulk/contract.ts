@@ -42,9 +42,12 @@ const TOKEN = new RegExp(FILE_ROUTE.query.properties.token.pattern);
 export const bulkFilePath = (assignmentId: string, format: BulkFormat): string =>
   FILE_ROUTE.path.replace("{assignmentId}", encodeURIComponent(assignmentId)).replace("{format}", format);
 
-/** A link the screen may render: exactly the file path of this assignment and format, with the token the server gives. */
+/**
+ * A link the screen may render: exactly the file path of this assignment and format, with the token the server gives.
+ * The contract's downloadPath names the assignment in lower case, so an id the client holds in upper case still matches.
+ */
 export function isBulkHref(href: string, assignmentId: string, format: BulkFormat): boolean {
-  const path = bulkFilePath(assignmentId, format);
+  const path = bulkFilePath(assignmentId.toLowerCase(), format);
   return href.startsWith(`${path}?token=`) && TOKEN.test(href.slice(path.length + "?token=".length));
 }
 

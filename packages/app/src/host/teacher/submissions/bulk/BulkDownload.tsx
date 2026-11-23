@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Button } from "@ductura/ui";
 
 import { BULK_FORMATS, type BulkCall, type BulkFormat, type BulkLink } from "./contract";
@@ -23,10 +23,16 @@ export default function BulkDownload(
   const [format, setFormat] = useState<BulkFormat>("pdf");
   const [state, setState] = useState<{ assignmentId: string; link: BulkLink; started: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const [note, setNote] = useState<{ assignmentId: string; text: string } | null>(null);
   const [, setTick] = useState(0);
+  const shown = useRef(assignmentId);
+  const section = useRef<HTMLElement>(null);
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  const againRef = useRef<HTMLButtonElement>(null);
+  const focusNext = useRef(false);
   const current = state?.assignmentId === assignmentId ? state : null;
   const link = current?.link ?? null;
+  shown.current = assignmentId;
 
   useEffect(() => {
     setBusy(false);
@@ -39,9 +45,23 @@ export default function BulkDownload(
     if (link === null) return;
     const ms = msUntilExpiry(link, now());
     if (ms === 0) return;
-    const timer = setTimeout(() => setTick((n) => n + 1), ms);
+    const timer = setTimeout(() => {
+      // The link that held focus goes away; focus moves to the new request, not to the page.
+      const active = document.activeElement;
+      focusNext.current = active === null || active === document.body || section.current?.contains(active) === true;
+      setTick((n) => n + 1);
+    }, ms);
     return () => clearTimeout(timer);
   }, [link, now]);
+
+  const view = link === null ? null : viewOf(link, now());
+
+  // The control the teacher was on leaves the page: the link takes focus when it arrives, the new request when it expires.
+  useEffect(() => {
+    if (!focusNext.current) return;
+    focusNext.current = false;
+    (view?.kind === "ready" ? linkRef.current : againRef.current)?.focus();
+  }, [view?.kind, link]);
 
   async function request() {
     if (busy) return;
@@ -50,9 +70,18 @@ export default function BulkDownload(
     const asked = assignmentId;
     const outcome = await port.requestLink(asked, format);
     setBusy(false);
+    // An answer for an assignment the screen no longer shows is dropped, a link and a refusal alike.
+    if (shown.current !== asked) return;
     if (outcome.kind === "poveznica") {
-      setState((cur) => (cur === null || cur.assignmentId === asked ? { assignmentId: asked, link: outcome.link, started: false } : cur));
-    } else if (outcome.kind !== "session-expired") setNote(requestFailure(outcome));
+      focusNext.current = true;
+      setState({ assignmentId: asked, link: outcome.link, started: false });
+    } else if (outcome.kind !== "session-expired") setNote({ assignmentId: asked, text: requestFailure(outcome) });
+  }
+
+  function choose(value: BulkFormat) {
+    setFormat(value);
+    // A link is for one format: another format needs its own request.
+    setState((cur) => (cur !== null && cur.link.format !== value ? null : cur));
   }
 
   function follow(event: MouseEvent<HTMLAnchorElement>) {
@@ -61,40 +90,40 @@ export default function BulkDownload(
       return;
     }
     event.preventDefault();
+    focusNext.current = true;
     setTick((n) => n + 1);
   }
 
-  const view = link === null ? null : viewOf(link, now());
-  const again = <Button tone="quiet" onClick={() => void request()} disabled={busy}>{t.requestAgain}</Button>;
+  const status = busy ? t.requesting
+    : view?.kind === "ready" ? (current?.started === true ? t.started : t.ready)
+      : view?.kind === "expired" ? t.expired : "";
+  const shownNote = note?.assignmentId === assignmentId ? note.text : null;
   return (
-    <section aria-labelledby="bulk-download-h">
+    <section aria-labelledby="bulk-download-h" ref={section}>
       <h3 id="bulk-download-h">{t.title}</h3>
       <p>{t.idle}</p>
       <fieldset disabled={busy}>
         <legend>{t.formatLegend}</legend>
         {BULK_FORMATS.map((value) => (
           <label key={value}>
-            <input type="radio" name="bulk-format" value={value} checked={format === value} onChange={() => setFormat(value)} /> {FORMAT_LABEL[value]}
+            <input type="radio" name="bulk-format" value={value} checked={format === value} onChange={() => choose(value)} /> {FORMAT_LABEL[value]}
           </label>
         ))}
       </fieldset>
+      {/* One live region that stays in the page; only its text changes, so a screen reader hears each state. */}
+      <p role="status">{status}</p>
       {view?.kind === "ready" ? (
         <>
-          <p role="status">{current?.started === true ? t.started : t.ready}</p>
-          <a href={view.href} download onClick={follow}>{t.download}</a>
+          <a ref={linkRef} href={view.href} download onClick={follow}>{t.download} ({FORMAT_LABEL[link?.format ?? format]})</a>
           <p>{t.expiresAt} {view.until}.</p>
-          {current?.started === true && again}
+          {current?.started === true && <Button tone="quiet" ref={againRef} onClick={() => void request()} disabled={busy}>{t.requestAgain}</Button>}
         </>
       ) : view?.kind === "expired" ? (
-        <>
-          <p role="status">{t.expired}</p>
-          <Button onClick={() => void request()} disabled={busy}>{t.requestAgain}</Button>
-        </>
+        <Button ref={againRef} onClick={() => void request()} disabled={busy}>{t.requestAgain}</Button>
       ) : (
         <Button onClick={() => void request()} disabled={busy}>{t.action}</Button>
       )}
-      {busy && <p role="status">{t.requesting}</p>}
-      {note !== null && <p role="alert">{note}</p>}
+      {shownNote !== null && <p role="alert">{shownNote}</p>}
     </section>
   );
 }

@@ -14,6 +14,6 @@ export const bulkText = {
   expired: "Poveznica je istekla. Zatraži novu.",
   requestAgain: "Zatraži novu poveznicu",
   notFound: "Zadatak nije pronađen.",
-  forbidden: "Predaje može preuzeti samo nastavnik zadatka.",
+  forbidden: "Zahtjev nije prihvaćen. Osvježi stranicu i pokušaj ponovno.",
   requestUnknown: "Poveznicu trenutačno nije moguće dobiti. Pokušaj ponovno.",
 } as const;

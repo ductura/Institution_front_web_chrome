@@ -4,7 +4,7 @@ import { findForbiddenTerms } from "../../../../../../../scripts/forbidden-terms
 import { bulkFilePath, isBulkHref, requestBulkLink } from "./contract";
 import { ASSIGNMENT, TOKEN, fakeBulkServer } from "./fake-port";
 import { bulkText } from "./messages.hr";
-import { requestFailure, viewOf } from "./model";
+import { mayFollow, msUntilExpiry, requestFailure, viewOf } from "./model";
 
 const NOW = new Date("2026-12-01T10:00:00.000Z");
 const answer = (body: unknown, status = 201) => async () => ({ ok: true as const, status, body });
@@ -44,6 +44,8 @@ describe("bulk download of submissions (WEB-1902, WEB-2004)", () => {
   it("accepts only the file path of this assignment with a token", () => {
     const other = "00000000-0000-4000-8000-0000000000b2";
     expect(isBulkHref(good.downloadPath, ASSIGNMENT, "pdf")).toBe(true);
+    // PIL-D2-ZIP: the contract's path names the id in lower case; an id held in upper case still matches.
+    expect(isBulkHref(good.downloadPath, ASSIGNMENT.toUpperCase(), "pdf")).toBe(true);
     expect(isBulkHref(good.downloadPath, other, "pdf")).toBe(false);
     expect(isBulkHref(`${bulkFilePath(ASSIGNMENT, "pdf")}?token=x`, ASSIGNMENT, "pdf")).toBe(false);
     expect(isBulkHref(bulkFilePath(ASSIGNMENT, "pdf"), ASSIGNMENT, "pdf")).toBe(false);
@@ -56,6 +58,15 @@ describe("bulk download of submissions (WEB-1902, WEB-2004)", () => {
     const gone = await requestBulkLink(async () => ({ ok: false, status: 404, code: "not_found" }), ASSIGNMENT, "pdf");
     expect(requestFailure(gone)).toBe(bulkText.notFound);
     expect(await requestBulkLink(fakeBulkServer().call, "not-an-id", "pdf")).toEqual({ kind: "greska", code: "not_found" });
+  });
+
+  it("PIL-D2-ZIP: a link is followed only before its expiry, and one timer fires at that expiry", () => {
+    const link = { format: "pdf", href: good.downloadPath, expiresAt: "2026-12-01T12:00:00.000Z" } as const;
+    expect(mayFollow(link, new Date("2026-12-01T11:59:59.999Z"))).toBe(true);
+    expect(mayFollow(link, new Date("2026-12-01T12:00:00.000Z"))).toBe(false);
+    expect(msUntilExpiry(link, new Date("2026-12-01T11:59:00.000Z"))).toBe(60_000);
+    expect(msUntilExpiry(link, new Date("2026-12-01T12:00:01.000Z"))).toBe(0);
+    expect(msUntilExpiry({ ...link, expiresAt: "2099-12-01T12:00:00.000Z" }, NOW)).toBe(2_147_483_647);
   });
 
   it("holds no forbidden term in its copy", () => {
