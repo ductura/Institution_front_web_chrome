@@ -54,11 +54,14 @@ export function lateTag(row: SubmittedRow): string | null {
   return row.late ? text.late : null;
 }
 
-/** The message of a read that is not ready. */
-export function failureMessage(read: SubmissionsRead | VersionRead): string {
+/**
+ * The message of a read that is not ready. A list refused or not found (403 and 404 alike) says
+ * only that the assignment is not among the teacher's: nothing about it is shown, nor retried.
+ */
+export function failureMessage(read: SubmissionsRead | VersionRead, scope: "list" | "version" = "version"): string {
   switch (read.kind) {
     case "session-expired": return text.signedOut;
-    case "greska": return text.notFound;
+    case "greska": return scope === "list" ? text.noAccess : text.notFound;
     default: return text.unavailable;
   }
 }
@@ -82,4 +85,19 @@ export function forAssignment<T extends ForAssignment<object>>(state: T | null, 
 /** The panel after a version read answers: an answer for a row no longer open (another opened, or closed) is dropped. */
 export function answeredPanel(panel: VersionPanel, assignmentId: string, row: SubmittedRow, read: VersionRead): VersionPanel {
   return forAssignment(panel, assignmentId)?.row.studentId === row.studentId ? { assignmentId, row, read } : panel;
+}
+
+/** Whether a list failure offers "Pokušaj ponovno": a refusal or a missing assignment is final, never retried. */
+export function canRetry(read: SubmissionsRead): boolean {
+  return read.kind !== "greska";
+}
+
+/** While one version is being read, no other opening is asked: each opening is recorded by the server. */
+export function isOpening(panel: VersionPanel): boolean {
+  return panel !== null && panel.read === "loading";
+}
+
+/** The accessible name of a row's open button, naming the student (the visible text is the same in every row). */
+export function openLabel(student: string): string {
+  return `${text.open}: ${student}`;
 }

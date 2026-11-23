@@ -15,7 +15,7 @@ import { createApi } from "./api";
 
 export type TimeMachineVersion = { kind: "checkpoint" | "submission"; revision: number; savedMinute: string };
 export type TimeMachineBlock = { kind: "paragraph" | "bulletItem" | "quote" | "heading"; level?: number; change: "unchanged" | "removed" | "added"; text: string };
-export type VersionsResult = { kind: "ready"; versions: TimeMachineVersion[] } | { kind: "signedOut" | "unavailable" };
+export type VersionsResult = { kind: "ready"; versions: TimeMachineVersion[]; more?: true } | { kind: "signedOut" | "unavailable" };
 export type VersionResult = { kind: "ready"; revision: number; document: string } | { kind: "signedOut" | "notFound" | "unavailable" };
 export type CompareResult = { kind: "ready"; blocks: TimeMachineBlock[] } | { kind: "signedOut" | "notFound" | "unavailable" };
 
@@ -23,7 +23,12 @@ export async function readTimeMachineVersions(documentId: string, api = createAp
   try {
     const result = await api("work.versions.get", { params: { documentId }, query: {}, body: undefined });
     if (!result.ok) return { kind: result.status === 401 ? "signedOut" : "unavailable" };
-    return { kind: "ready", versions: result.body.versions.map(({ kind, revision, savedMinute }) => ({ kind, revision, savedMinute })) };
+    return {
+      kind: "ready",
+      versions: result.body.versions.map(({ kind, revision, savedMinute }) => ({ kind, revision, savedMinute })),
+      // One page only: older versions exist when the server names where the next page starts.
+      ...(result.body.nextBeforeRevision !== null ? { more: true as const } : {}),
+    };
   } catch {
     return { kind: "unavailable" };
   }

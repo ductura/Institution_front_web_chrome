@@ -100,7 +100,8 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
     onJump();
     requestAnimationFrame(() => { if (!editor.isDestroyed) editor.view.focus(); });
   };
-  const content = Object.entries(t.leftSections).map(([key, label]) => ({
+  // "Povijest dokumenta" is a group only for a caller that gives it; others get no empty group.
+  const content = Object.entries(t.leftSections).filter(([key]) => key !== "history" || sections.history !== undefined).map(([key, label]) => ({
     id: key, label, content: sections[key as keyof LeftSections] ?? <p className="rail-empty">{t.emptyGroup}</p>,
   }));
   const outline = data.headings.length ? <nav aria-label={messagesHr.outline.label}>

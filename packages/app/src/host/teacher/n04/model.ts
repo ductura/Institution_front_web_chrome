@@ -1,12 +1,13 @@
 // Pure rules of N-04 "Popis studenata" (WEB-2143; INVENTAR-nastavnik 3.3, PARITET N-04). One row per
 // student with a line per assignment: state in words, time, version and the state of the record.
-// "Čeka doradu" is text only (D-128 O-3), never a colour. No server route exists yet: the port is the
-// smallest contract the prototype implies, and a missing field is left out, never invented.
+// "Čeka doradu" is text only (D-128 O-3), never a colour. The real port (./port.ts, PIL-K-N04) reads
+// teacher.course-students.get; a field the route does not give is left out, never invented.
 // This module makes no network call.
 import { compareHr } from "../../../../../editor-core/src/document/text/compare-hr";
 import { courseStudentsMessages as text } from "./messages.hr";
 
-export type WorkStatus = "submitted" | "writing" | "not_submitted" | "unconfirmed";
+/** `unknown`: a state this screen does not know, said neutrally (never guessed). */
+export type WorkStatus = "submitted" | "writing" | "not_submitted" | "unconfirmed" | "unknown";
 export type EvidenceRecord = "continuous" | "with_gaps";
 /** Request for a revision: only `open` and `reopened` wait for the student. */
 export type RevisionState = "open" | "reopened" | "accepted" | "closed";
@@ -44,7 +45,7 @@ export interface CourseStudentsPort {
   read(courseId: string): Promise<RosterRead>;
 }
 
-/** Until the server has the route: the honest answer is "unavailable". */
+/** Without a port the honest answer is "unavailable"; the route mounts the real one (./port.ts). */
 export const unavailablePort: CourseStudentsPort = { read: async () => ({ kind: "unavailable" }) };
 
 const ZAGREB = new Intl.DateTimeFormat("hr-HR", {
@@ -76,8 +77,24 @@ export function stateLine(work: RosterWork): string {
     }
     case "writing": return text.writing;
     case "not_submitted": return text.notSubmitted;
-    default: return text.unconfirmed;
+    case "unconfirmed": return text.unconfirmed;
+    default: return text.unknownState;
   }
+}
+
+/** The route's `workState` in this screen's words; anything else is `unknown`, never a guess. */
+export function workStatusOf(state: unknown): WorkStatus {
+  switch (state) {
+    case "submitted": return "submitted";
+    case "in_progress": return "writing";
+    case "not_started": return "not_submitted";
+    default: return "unknown";
+  }
+}
+
+/** This screen's own path: where sign-in returns after a 401. */
+export function rosterPath(courseId: string): string {
+  return `/nastavnik/kolegiji/${encodeURIComponent(courseId)}/studenti`;
 }
 
 /** "Čeka doradu …" only for a request that still waits for the student; null otherwise. */

@@ -57,3 +57,13 @@ export async function attachFile(port: StatementPort, id: string, read: Statemen
   try { return await port.attachPrintout(id, file); }
   catch { return { kind: "unavailable" }; }
 }
+
+/** The line a write leaves: only `saved` reads as saved; every other answer stays as an alert. */
+export function writeNotice(write: StatementWrite): { readonly tone: "status" | "alert"; readonly message: string } {
+  switch (write.kind) {
+    case "saved": return { tone: "status", message: text.saved };
+    case "conflict": return { tone: "alert", message: text.conflict };
+    case "rejected": case "readOnly": return { tone: "alert", message: text.rejected };
+    default: return { tone: "alert", message: text.failed };
+  }
+}

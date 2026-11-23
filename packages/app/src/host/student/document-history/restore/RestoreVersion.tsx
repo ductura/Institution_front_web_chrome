@@ -11,7 +11,7 @@ import { restoreMessages as text } from "./messages.hr";
 export default function RestoreVersion({
   documentId, versions, port, onRestored, onRecorded, onStale,
 }: {
-  documentId: string; versions: readonly Version[]; port: RestorePort; onRestored?: (fromRevision: number) => void;
+  documentId: string; versions: readonly Version[]; port: RestorePort; onRestored?: () => void;
   /** A restore is in the sheet, confirmed or waiting for the receipt; the caller keeps its label (INT-21). */
   onRecorded?: (fromRevision: number, confirmed: boolean) => void;
   /** The list is older than the server's head: the caller reads it again (PIL-D7-OBNOVA). */
@@ -43,7 +43,7 @@ export default function RestoreVersion({
       setPicked("");
       onRecorded?.(revision, outcome.kind === "saved");
     }
-    if (outcome.kind === "saved") onRestored?.(revision);
+    if (outcome.kind === "saved") onRestored?.();
     if (outcome.kind === "stale") onStale?.();
   };
 

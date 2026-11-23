@@ -22,6 +22,11 @@ import { applyRestoredDocument } from "./restore-editor";
  * wired to a real EvidenceSession, journal and drain the way LocalDocument wires them, gives one
  * covered segment and a verified receipt, never `stopped` or a save outside the evidence. The helpers
  * follow src/components/editor/evidence-session.equivalence.test.ts. Every id, key and text is invented.
+ *
+ * What this test is not: it does not mount LocalDocumentProvider (that needs IndexedDB, Web Locks and
+ * a signing server in a browser). It follows the provider's wiring instead: `onUpdate` calls
+ * `session.edit()` and schedules the flush, `transaction` calls `session.record`, and the flush builds
+ * the canonical candidate and proposes it, but only when an update was reported (`dirty`).
  */
 
 const PROFILE = "profil-izmisljeni";
@@ -100,6 +105,8 @@ function sheetFor(session: EvidenceSession) {
   editor.on("transaction", ({ transaction, appendedTransactions }) => {
     session.record([transaction, ...appendedTransactions], undefined, (at += 100));
   });
+  /** The provider's flush runs only after `onUpdate`; a command that emits no update proposes nothing. */
+  const flush = async () => (updates === 0 ? null : save());
   const save = async () => {
     const candidate = tiptapToCanonical(editor.getJSON());
     if (!candidate.ok) throw new Error("not canonical");
@@ -107,7 +114,7 @@ function sheetFor(session: EvidenceSession) {
     await session.settled();
     return candidate.doc;
   };
-  return { editor, save, updates: () => updates };
+  return { editor, save, flush, updates: () => updates };
 }
 
 describe("restore through the editor's save path (PIL-D7-OBNOVA)", () => {
@@ -122,7 +129,7 @@ describe("restore through the editor's save path (PIL-D7-OBNOVA)", () => {
     expect(applyRestoredDocument(sheet.editor, VERSION_1)).toBe(true);
     // emitUpdate: the provider's onUpdate fires, so the change is proposed like typing.
     expect(sheet.updates()).toBe(1);
-    const saved = await sheet.save();
+    const saved = (await sheet.flush())!;
 
     // Version 1's text, block for block. The heading keeps its id; the paragraph's old id is one the
     // head no longer has, and the identity plugin gives it a fresh, unique one.
@@ -144,14 +151,28 @@ describe("restore through the editor's save path (PIL-D7-OBNOVA)", () => {
     expect(state).toMatchObject({ state: "SYNCED", receiptVerified: true, stopped: false, unconfirmed: false });
   });
 
-  it("control: without emitUpdate the provider would never propose, so nothing would be saved", async () => {
-    const { session, net } = setup();
+  it("control: the same change without emitUpdate is never proposed, so nothing is committed", async () => {
+    const { session, journal, net } = setup();
     await session.load();
     await session.settled();
+    const saveSegment = vi.spyOn(journal, "saveSegment");
     const sheet = sheetFor(session);
     sheet.editor.commands.setContent(canonicalToTiptap(VERSION_1), { emitUpdate: false });
     expect(sheet.updates()).toBe(0);
+    // The provider's flush has nothing to send; the real flush path runs and finds the sheet clean.
+    expect(await sheet.flush()).toBeNull();
+    await session.settled();
+    expect(saveSegment).not.toHaveBeenCalled();
     expect(net.calls).toHaveLength(0);
+    expect(session.snapshot().state).not.toBe("SYNCED");
+    // And the same command with emitUpdate commits: the difference above is the flag, nothing else.
+    const other = setup();
+    await other.session.load();
+    await other.session.settled();
+    const again = sheetFor(other.session);
+    applyRestoredDocument(again.editor, VERSION_1);
+    await again.flush();
+    expect(other.net.calls).toHaveLength(1);
   });
 
   it("a sheet that is not writable takes nothing", async () => {

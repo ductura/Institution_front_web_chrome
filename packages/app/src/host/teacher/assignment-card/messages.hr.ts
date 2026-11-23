@@ -32,6 +32,7 @@ export const assignmentCardMessages = {
   extension: "Produljenje roka",
   overview: "Zbirni pregled",
   merlin: "Izvoz za Merlin",
+  submissions: "Predaje",
   newCode: "Novi kod za upis",
   due: "Rok",
   dialogTitle: "Izdati novi kod za upis?",

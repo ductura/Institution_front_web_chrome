@@ -6,7 +6,7 @@ import { Button, Notice } from "@ductura/ui";
 import { orderVersions, versionText, type TimeMachinePort, type Version, type VersionText } from "./model";
 import { timeMachineMessages as text } from "./messages.hr";
 
-type Versions = readonly Version[] | "unavailable" | "signedOut" | null;
+type Versions = { readonly list: readonly Version[]; readonly more: boolean } | "unavailable" | "signedOut" | null;
 type Read = VersionText | "loading" | "failed" | "signedOut";
 type Shown = { revision: number; read: Read } | null;
 
@@ -24,7 +24,7 @@ export default function VersionHistory({ documentId, port }: { documentId: strin
     setVersions(null);
     setShown(null);
     void port.versions(documentId)
-      .then((read) => { if (active) setVersions(read.kind === "ready" ? orderVersions(read.versions) : read.kind); })
+      .then((read) => { if (active) setVersions(read.kind === "ready" ? { list: orderVersions(read.versions), more: read.more === true } : read.kind); })
       .catch(() => { if (active) setVersions("unavailable"); });
     return () => { active = false; };
   }, [documentId, port, attempt]);
@@ -41,7 +41,7 @@ export default function VersionHistory({ documentId, port }: { documentId: strin
     setShown((now) => (now?.revision === revision ? { revision, read: next } : now));
   };
 
-  const list = Array.isArray(versions) ? (versions as readonly Version[]) : null;
+  const list = versions !== null && typeof versions === "object" ? versions.list : null;
   const label = (v: Version) => text.version(v.kind, v.revision, v.savedMinute);
   const chosen = list?.find((v) => v.revision === shown?.revision);
 
@@ -57,28 +57,34 @@ export default function VersionHistory({ documentId, port }: { documentId: strin
         ) : list!.length === 0 ? <p>{text.historyEmpty}</p> : (
           <>
             <p>{text.historyIntro}</p>
+            {versions !== null && typeof versions === "object" && versions.more ? <p data-older-versions>{text.historyOlder}</p> : null}
             <ul>
               {list!.map((v) => (
                 <li key={v.revision}>
-                  <Button tone="quiet" aria-pressed={shown?.revision === v.revision} onClick={() => void open(v.revision)}>{label(v)}</Button>
+                  <Button tone="quiet" aria-current={shown?.revision === v.revision ? "true" : undefined} onClick={() => void open(v.revision)}>{label(v)}</Button>
                 </li>
               ))}
             </ul>
-            <div aria-live="polite">
+            {/* The one live region says only the state; the text itself is read in its own article. */}
+            <p role="status" data-version-state>
               {shown === null ? null
-                : shown.read === "loading" ? <p role="status">{text.historyLoadingText}</p>
-                : shown.read === "signedOut" ? <p role="alert">{text.signedOut}</p>
-                : shown.read === "failed" ? <p role="alert">{text.historyTextFailed}</p>
-                : shown.read.kind === "unreadable" ? <p role="alert">{text.historyUnreadable}</p>
-                : (
-                  <article aria-label={chosen ? text.historyShown(label(chosen)) : text.historyTitle} data-version-text={shown.revision}>
-                    <Notice>{text.historyReadOnly}</Notice>
-                    {chosen ? <p><strong>{text.historyShown(label(chosen))}</strong></p> : null}
-                    {shown.read.blocks.length === 0 ? <p>{text.historyBlank}</p>
-                      : shown.read.blocks.map((b, i) => (b.kind === "heading" ? <h4 key={i}>{b.text}</h4> : <p key={i}>{b.text}</p>))}
-                  </article>
-                )}
-            </div>
+                : shown.read === "loading" ? text.historyLoadingText
+                : shown.read === "signedOut" ? text.signedOut
+                : shown.read === "failed" ? text.historyTextFailed
+                : shown.read.kind === "unreadable" ? text.historyUnreadable
+                : chosen ? text.historyShown(label(chosen)) : null}
+            </p>
+            {shown !== null && typeof shown.read === "object" && shown.read.kind === "ready" ? (
+              <article aria-label={chosen ? text.historyShown(label(chosen)) : text.historyTitle} data-version-text={shown.revision}>
+                <Notice>{text.historyReadOnly}</Notice>
+                {shown.read.blocks.length === 0 ? <p>{text.historyBlank}</p>
+                  : shown.read.blocks.map((b, i) => {
+                    // The version's own headings sit below this panel's: level 1 to 3 become h4 to h6.
+                    const Heading = (`h${(b.level ?? 1) + 3}`) as "h4" | "h5" | "h6";
+                    return b.kind === "heading" ? <Heading key={i}>{b.text}</Heading> : <p key={i}>{b.text}</p>;
+                  })}
+              </article>
+            ) : null}
           </>
         )}
     </section>

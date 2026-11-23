@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { createApi } from "../../../../../../../src/client/api.ts";
+import { createEventDisputes } from "../../../../../../../src/client/event-disputes.ts";
 import { useOnline } from "../../../../../../../src/client/online-status.ts";
 import { fetchProcessSummary } from "../../../../../../../src/client/process-summary.ts";
 import { loadNotes, pastedText, saveNote, type NotesRead, type SummaryRead } from "../../../../../../../src/components/predaja/BeforeSubmit.tsx";
@@ -33,6 +34,8 @@ const client: NotesClient = {
 };
 // One transport for the page's life: the step reads the notes again whenever it changes.
 const NOTES = notesCall(client);
+// The supplements and disputes of the summary's events (WEB-1305): one read per work.
+const DISPUTES = createEventDisputes(createApi());
 
 export type BeforeSubmitStepProps = {
   readonly assignmentId: string;
@@ -51,6 +54,7 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, declaredFo
   const online = useOnline();
   const hint = useId();
   const [summary, setSummary] = useState<SummaryRead>({ kind: "loading" });
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [notes, setNotes] = useState<NotesRead>({ kind: "loading" });
   const [noteOpen, setNoteOpen] = useState(false);
@@ -68,7 +72,11 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, declaredFo
     void readStepSummary(assignmentId, PORTS).then((read) => {
       if (!live) return;
       if (read.kind === "signIn") signIn.current();
-      else setSummary(read);
+      else {
+        setSummary(read);
+        // The same document keeps the same marks: a repeated read of the summary does not read them again.
+        if (read.kind === "ready") setDocumentId(read.documentId);
+      }
     });
     return () => { live = false; };
   }, [assignmentId, attempt]);
@@ -113,7 +121,8 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, declaredFo
         {nextHint && <p className="meta" id={hint}>{nextHint}</p>}
       </StepPanel>
       <SummaryPanel summary={summary} notes={notes} submitted={submitted} confirmed={confirmed} kind={kind}
-        online={online} workHref={workHref} onRetry={retry} noteOpen={noteOpen} onNoteOpen={setNoteOpen}
+        online={online} workHref={workHref} onRetry={retry}
+        disputes={documentId === null ? undefined : { port: DISPUTES, documentId }} noteOpen={noteOpen} onNoteOpen={setNoteOpen}
         onAddNote={(text) => saveNote(NOTES, assignmentId, text)}
         onNoteAdded={(note) => setNotes((now) => now.kind === "ready" ? { kind: "ready", notes: [...now.notes, note] } : now)} />
     </>

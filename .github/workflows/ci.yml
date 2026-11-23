@@ -21,6 +21,13 @@ jobs:
   # job runs when a path it reads changed. src/ feeds ui (pnpm -r runs the
   # tests of every workspace package) and app (it imports src/), so a change
   # there runs both.
+  #
+  # These rules only fit checks that read the paths they list. A check that
+  # reads the whole repository (the index, every tracked file, the lockfiles)
+  # can be broken by a change in any path, so it must not hide behind these
+  # rules: give it its own job with no `if`, listed in ALWAYS_ON in
+  # test/unit/ci-ok.test.js, like `line-endings`, or make every path it reads
+  # turn its job on here (ZEL-W20a, review of #435).
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -63,6 +70,28 @@ jobs:
           a="$(hit '^(packages/|src/|locales/)')"
           printf 'test=%s\nclient=%s\nui=%s\napp=%s\n' "$t" "$c" "$u" "$a" | tee -a "$GITHUB_OUTPUT"
           # changes:end
+  # No CRLF in the index (DAN-952), on EVERY pull request (ZEL-W20a): a CRLF
+  # file can come in any path, also docs/, packages/, catalog/ or a .md file
+  # that `changes` sends to no job. So this job has no `if` and does not need
+  # `changes`; ci-ok needs it, and a skipped or failed run fails ci-ok. Node's
+  # own test runner and git only, no install.
+  line-endings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: No tracked text file has CRLF in the index
+        shell: bash
+        run: |
+          # line-endings:begin
+          set -euo pipefail
+          node --test test/unit/gitattributes.test.js
+          # line-endings:end
   test:
     needs: changes
     if: ${{ needs.changes.outputs.test == 'true' }}
@@ -140,18 +169,33 @@ jobs:
   ui:
     needs: changes
     if: ${{ needs.changes.outputs.ui == 'true' }}
-    name: ui (${{ matrix.part }})
+    name: ui (${{ matrix.part }}${{ matrix.leg && format(' {0}/3', matrix.leg) || '' }})
     runs-on: ubuntu-latest
+    # The behaviour tests run in three legs: one job of them took 8 of the 9
+    # minutes of a PR's ci-ok. Ten "every state" tests of states.spec.ts take
+    # about 2.5 minutes each and sit next to each other, so a Playwright shard
+    # would get nine of them; the legs split them by width instead (4, 4 and
+    # the 360 px pair with every other behaviour test). The coverage check below
+    # proves each behaviour test runs in exactly one leg. On push the baselines
+    # run as three Playwright shards.
     strategy:
       fail-fast: false
       matrix:
-        part: [checks, behaviour, axe-dark, axe-light]
+        include:
+          - { part: checks }
+          - { part: behaviour, leg: 1 }
+          - { part: behaviour, leg: 2 }
+          - { part: behaviour, leg: 3 }
+          - { part: axe-dark }
+          - { part: axe-light }
     # One place for the filters: the parts below and the coverage check use them.
     env:
       BASELINES: "matches its baselines"
       AXE_ANY: "WCAG 2.2 AA violations"
       AXE_DARK: "dark shell has no WCAG 2.2 AA violations"
       AXE_LIGHT: "light shell has no WCAG 2.2 AA violations"
+      STATES_1: "shell at (1440|1024) px: every state of every component"
+      STATES_2: "shell at (768|390) px: every state of every component"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -186,6 +230,14 @@ jobs:
             echo "::error::the ui parts do not cover every catalogue test exactly once"
             exit 1
           fi
+          leg1=$(count --grep-invert "$BASELINES|$AXE_ANY" --grep "$STATES_1")
+          leg2=$(count --grep-invert "$BASELINES|$AXE_ANY" --grep "$STATES_2")
+          leg3=$(count --grep-invert "$BASELINES|$AXE_ANY|$STATES_1|$STATES_2")
+          echo "behaviour $behaviour = leg 1 $leg1 + leg 2 $leg2 + leg 3 $leg3"
+          if [ "$leg1" -eq 0 ] || [ "$leg2" -eq 0 ] || [ $((leg1 + leg2 + leg3)) -ne "$behaviour" ]; then
+            echo "::error::the behaviour legs do not cover every behaviour test exactly once"
+            exit 1
+          fi
       - name: Playwright version
         if: matrix.part != 'checks'
         id: pw
@@ -209,7 +261,15 @@ jobs:
       # become required again with VIZ-0.
       - name: Behaviour tests of the catalogue
         if: matrix.part == 'behaviour'
-        run: pnpm --filter @ductura/catalog run test:visual --grep-invert "$BASELINES|$AXE_ANY"
+        run: |
+          set -euo pipefail
+          case "${{ matrix.leg }}" in
+            1) set -- --grep-invert "$BASELINES|$AXE_ANY" --grep "$STATES_1" ;;
+            2) set -- --grep-invert "$BASELINES|$AXE_ANY" --grep "$STATES_2" ;;
+            3) set -- --grep-invert "$BASELINES|$AXE_ANY|$STATES_1|$STATES_2" ;;
+            *) echo "::error::unknown behaviour leg"; exit 1 ;;
+          esac
+          pnpm --filter @ductura/catalog run test:visual "$@"
       - name: Axe tests of the catalogue (dark shell)
         if: matrix.part == 'axe-dark'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_DARK"
@@ -220,11 +280,11 @@ jobs:
         id: baselines
         if: matrix.part == 'behaviour' && github.event_name == 'push'
         continue-on-error: true
-        run: pnpm --filter @ductura/catalog run test:visual --grep "matches its baselines"
+        run: pnpm --filter @ductura/catalog run test:visual --grep "$BASELINES" --shard="${{ matrix.leg }}/3"
       - uses: actions/upload-artifact@v4
         if: failure() || steps.baselines.outcome == 'failure'
         with:
-          name: catalog-report-${{ matrix.part }}
+          name: catalog-report-${{ matrix.part }}${{ matrix.leg }}
           path: catalog/test-results/
 
   # The institution front's host (#2028 c.6993786629 §1, §3.3): packages/app
@@ -281,7 +341,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: ${{ always() }}
-    needs: [changes, test, client, ui, app]
+    needs: [changes, line-endings, test, client, ui, app]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

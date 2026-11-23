@@ -7,7 +7,7 @@ import type {
   SubmittedRow, TeacherSubmissionsPort, VersionRead,
 } from "../../../../../../src/client/teacher-submissions.ts";
 import {
-  answeredPanel, canOpen, documentBlocks, failureMessage, forAssignment, lateTag, submittedAt,
+  answeredPanel, canOpen, canRetry, documentBlocks, failureMessage, forAssignment, isOpening, lateTag, openLabel, submittedAt,
   type DocumentBlock, type ListState, type VersionPanel,
 } from "./model";
 import { submissionsMessages as text } from "./messages.hr";
@@ -37,7 +37,9 @@ export default function TeacherSubmissions(
     return () => { active = false; };
   }, [port, assignmentId, attempt]);
 
+  const opening = isOpening(panel);
   const open = async (row: SubmittedRow) => {
+    if (opening) return;
     setPanel({ assignmentId, row, read: "loading" });
     const next = await port.open(assignmentId, row.studentId).catch((): VersionRead => ({ kind: "nepoznato" }));
     setPanel((current) => answeredPanel(current, assignmentId, row, next));
@@ -51,7 +53,7 @@ export default function TeacherSubmissions(
     {
       id: "open", header: text.open,
       cell: (row) => (canOpen(row)
-        ? <Button tone="quiet" onClick={() => void open(row)}>{text.open}</Button>
+        ? <Button tone="quiet" busy={opening} aria-label={openLabel(nameOf(row))} onClick={() => void open(row)}>{text.open}</Button>
         : text.pending),
     },
   ];
@@ -59,8 +61,8 @@ export default function TeacherSubmissions(
   if (read !== null && read.kind !== "ready") {
     return (
       <div>
-        <p role="alert">{failureMessage(read)}</p>
-        <Button tone="quiet" onClick={() => { setList(null); setAttempt((n) => n + 1); }}>{text.retry}</Button>
+        <p role="alert">{failureMessage(read, "list")}</p>
+        {canRetry(read) && <Button tone="quiet" onClick={() => { setList(null); setAttempt((n) => n + 1); }}>{text.retry}</Button>}
       </div>
     );
   }
