@@ -30,7 +30,7 @@ export function StepFrame({ backHref, onBack, course, title, label, wide = false
           {course !== "" && <><b>{course}</b>{text.separator}</>}{title}{label ? `${text.separator}${label}` : ""}
         </p>
       </header>
-      <div className={cx(styles.page, wide && styles.two)} id="sadrzaj" tabIndex={-1}>{children}</div>
+      <main className={cx(styles.page, wide && styles.two)} id="sadrzaj" tabIndex={-1}>{children}</main>
     </div>
   );
 }

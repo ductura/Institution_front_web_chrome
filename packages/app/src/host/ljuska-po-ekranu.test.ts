@@ -11,7 +11,9 @@ describe("frame per screen (prototype shell: side | none, narrow)", () => {
 
   it("leaves the shell out only where the prototype says none and the page draws its own frame", () => {
     expect(withoutShell("/rad/abc", "student")).toBe(true);
-    expect(withoutShell("/rad/abc/predaja/pregled", "student")).toBe(false);
+    // VIZ-S4b: the four steps of the submission (S-30, S-31, S-32) are the whole window, as in the prototype.
+    for (const step of ["", "/izjava", "/pregled", "/slanje", "/potvrda"]) expect(withoutShell(`/rad/abc/predaja${step}`, "student"), step).toBe(true);
+    expect(withoutShell("/rad/abc/predaja/pregled", "teacher")).toBe(false);
     expect(withoutShell("/zadaci", "student")).toBe(false);
     expect(withoutShell("/nastavnik/rad/5", "teacher")).toBe(false);
     expect(withoutShell("/rad/abc", null)).toBe(false);
