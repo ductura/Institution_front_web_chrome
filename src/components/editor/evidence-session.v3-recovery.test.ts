@@ -41,6 +41,7 @@ afterEach(async () => {
 
 const encoder = new TextEncoder();
 const NOW = "2026-11-23T12:00:00.000Z";
+const V3_PROOF = { documentId: DOC, sha256: REVISION_ZERO_V3_SHA256 };
 type Version = 1 | 3;
 
 function revisionZero(version: Version, over: Partial<OpenedWork> = {}): OpenedWork {
@@ -211,6 +212,42 @@ describe("PIL-K-V3-OPORAVAK: a v3 work leaves CONFLICT as a v1 work does", () =>
     expect(await session.salvage()).toHaveLength(1);
   });
 
+  it("typing in a session halted by CONFLICT neither blocks the take nor stops the evidence it takes (review c.7099657848)", async () => {
+    const { serverWork, otherDocument } = await inConflict(3);
+    const base = openJournal();
+    let during: (() => Promise<void>) | null = null;
+    const { session } = sessionFor(base, 3, [opened(revisionZero(3)), opened(serverWork)], {
+      journal: hooked(base, () => during),
+      createRunner: (work, verified) => createDrainRunner<QueuedTransaction>({
+        journal: drainJournalFor(base, verified!),
+        transport: createEvidenceTransport(server(0, () => conflict("chain_conflict", 2)).fetchImpl, undefined, verified),
+        verifyFor: evidenceVerifierFor(work),
+        now: () => 0, jitter: () => 0.5,
+      }),
+      network: { online: () => true, onOnline: () => () => {} },
+    });
+    const local = await typed(session, 3, "Moj izmišljeni uvod");
+    await session.settled();
+    expect(session.snapshot().state).toBe("CONFLICT");
+    // Text the halted session holds and never writes: not a pending write.
+    session.edit();
+    await session.propose(local);
+    during = async () => {
+      during = null;
+      session.edit();
+      await session.propose(local);
+    };
+    expect(await session.adoptServer(true)).toMatchObject({ kind: "adopted" });
+    const verified = (await verifyWorkOpening(DOC, serverWork, V3_PROOF))!;
+    const after = await base.readEvidence(DOC, verified);
+    expect(after.meta).not.toHaveProperty("evidenceStopped");
+    expect(after.pending).toHaveLength(0);
+    expect(jcsUtf8Bytes(after.snapshot!.document)).toEqual(otherDocument);
+    const copies = await base.readSalvage(DOC, verified);
+    expect(copies).toHaveLength(1);
+    expect(canonicalizeJcs(copies[0]!.document)).toBe(canonicalizeJcs(local));
+  });
+
   it("refuses, writing nothing, when the server's new answer is not verified as this v3 work", async () => {
     const { journal, serverWork } = await inConflict(3);
     const unverified = [
@@ -263,8 +300,6 @@ describe("PIL-K-V3-OPORAVAK: a v3 work leaves CONFLICT as a v1 work does", () =>
     expect(copies![0]!.document.schemaVersion).toBe(1);
   });
 });
-
-const V3_PROOF = { documentId: DOC, sha256: REVISION_ZERO_V3_SHA256 };
 
 describe("PIL-K-V3-OPORAVAK: RECOVERY_REQUIRED and the author's word", () => {
   it("a v3 work leaves RECOVERY_REQUIRED; only the diverged row owed needs no confirmation", async () => {
@@ -323,6 +358,22 @@ async function stoppedRecord(
   return { journal, session, write, first };
 }
 
+/** `journal` for a session, whose take runs `during()` after the journal's call began. */
+function hooked(journal: AtomicDexieJournal, during: () => (() => Promise<void>) | null) {
+  return {
+    readEvidence: journal.readEvidence.bind(journal),
+    startEvidence: journal.startEvidence.bind(journal),
+    saveSegment: journal.saveSegment.bind(journal),
+    saveUncovered: journal.saveUncovered.bind(journal),
+    readSalvage: journal.readSalvage.bind(journal),
+    adoptServerEvidence: async (...args: Parameters<AtomicDexieJournal["adoptServerEvidence"]>) => {
+      const taking = journal.adoptServerEvidence(...args);
+      await during()?.();
+      return taking;
+    },
+  } as unknown as EvidenceSessionDeps["journal"];
+}
+
 describe("PIL-K-V3-OPORAVAK: no text is lost to a write the take overtakes (review c.7099383404)", () => {
   it("a text proposed while the server is asked is written first and the take is refused", async () => {
     let propose: (() => Promise<unknown>) | null = null;
@@ -349,20 +400,8 @@ describe("PIL-K-V3-OPORAVAK: no text is lost to a write the take overtakes (revi
 
   it("a text proposed while the journal takes the server's version stays in the journal; the earlier one is the copy", async () => {
     let during: (() => Promise<void>) | null = null;
-    const hooked = (journal: AtomicDexieJournal) => ({
-      readEvidence: journal.readEvidence.bind(journal),
-      startEvidence: journal.startEvidence.bind(journal),
-      saveSegment: journal.saveSegment.bind(journal),
-      saveUncovered: journal.saveUncovered.bind(journal),
-      readSalvage: journal.readSalvage.bind(journal),
-      adoptServerEvidence: async (...args: Parameters<AtomicDexieJournal["adoptServerEvidence"]>) => {
-        const taking = journal.adoptServerEvidence(...args);
-        await during?.();
-        return taking;
-      },
-    }) as unknown as EvidenceSessionDeps["journal"];
     const base = openJournal();
-    const { journal, session, write, first } = await stoppedRecord({ journal: hooked(base) }, base);
+    const { journal, session, write, first } = await stoppedRecord({ journal: hooked(base, () => during) }, base);
     expect(journal).toBe(base);
     let late: SheetDocument | null = null;
     during = async () => { during = null; late = await write(" za vrijeme preuzimanja", false); };

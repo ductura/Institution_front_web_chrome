@@ -657,6 +657,10 @@ export class EvidenceSession {
     // write or drain step starts from here until the journal answered.
     this.adopting = true;
     this.clearTimer();
+    // Review c.7099657848: only a record stopped at entry, in a session that
+    // still writes, keeps a late text without evidence; a halted session
+    // (CONFLICT, RECOVERY_REQUIRED) writes none and its held text is stale.
+    const keepsLate = this.stopped !== null && !this.halted;
     let result: AdoptResult = { kind: "unavailable" };
     try {
       await this.settled();
@@ -673,7 +677,7 @@ export class EvidenceSession {
       }
       if (this.closed) return result;
       // A text proposed meanwhile is written first (in `finally`); the author decides again.
-      if (this.flight || this.next || this.unsaved) return (result = { kind: "refused", code: "pending_write" });
+      if (keepsLate && (this.flight || this.next || this.unsaved)) return (result = { kind: "refused", code: "pending_write" });
       const decidedAt = this.now().toISOString();
       let meta: SyncMeta;
       try {
@@ -692,7 +696,7 @@ export class EvidenceSession {
       // this device over it, without evidence, as text written after a stop.
       const late = this.next as Candidate | null; // set meanwhile by `propose`
       this.next = null;
-      if (late && !this.closed) {
+      if (late && keepsLate && !this.closed) {
         try {
           await this.saveUncovered(late.doc, this.stopped ?? "gap");
         } catch (error) {
