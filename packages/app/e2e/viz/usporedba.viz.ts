@@ -12,14 +12,13 @@ import { test } from "@playwright/test";
 
 import { axe, setTheme } from "../a11y/check";
 import { otvori } from "./otvori";
-import { PAIRS, SCENARIJ, VIZ_OUT, WIDTHS } from "./pairs";
+import { PAIRS, SCENARIJ, THEME, VIZ_OUT, WIDTHS } from "./pairs";
 import { razlika } from "./razlika";
 
 const OUT = VIZ_OUT;
 // The prototypes are in the repository (docs/prototip); VIZ_PROTOTIPOVI points elsewhere.
 const PROTOTIPOVI_ZADANO = resolve(import.meta.dirname, "../../../../docs/prototip");
 const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? PROTOTIPOVI_ZADANO);
-const THEME = process.env.VIZ_THEME === "dark" ? "dark" : "light";
 /** Content that changes between runs (dates, generated names) is painted over in both shots. */
 const MASK = "[data-viz-mask]";
 

@@ -13,7 +13,7 @@ on:
     inputs:
       vrata: { description: "Ruši provjeru kad ekran ili širina prijeđe prag", type: boolean, default: false }
       prag: { description: "Najveći dopušteni udio različitih piksela u %", type: string, default: "2" }
-      tema: { description: "Tema koja se uspoređuje (light ili dark)", type: string, default: "light" }
+      tema: { description: "Tema koja se uspoređuje: light, dark ili obje (isti prag i iste širine)", type: string, default: "obje" }
 permissions:
   contents: read
 concurrency:
@@ -41,30 +41,37 @@ jobs:
       - name: Browser
         run: pnpm --filter @ductura/app exec playwright install --with-deps chromium
       - name: Tests of the gate
-        run: node --test packages/app/e2e/viz/prag.test.ts
+        run: node --test packages/app/e2e/viz/prag.test.ts packages/app/e2e/viz/tablica.test.ts
       - name: Start the app over the fake institution server
         run: |
           cd packages/app
           INSTITUTION_SERVER_URL=http://127.0.0.1:9 nohup pnpm exec next start -p 5191 > "$RUNNER_TEMP/next.log" 2>&1 &
           for i in $(seq 1 60); do curl -fs http://127.0.0.1:5191/app/web/ > /dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/next.log"; exit 1
+      # One pass per theme (VIZ-TAMNA): light shots go to viz-out/, dark ones to
+      # viz-out/dark/. Both passes run even when the first fails the gate; the
+      # table of both themes (viz-out/tablica.md) is written by the last pass.
       - name: Capture, compare, gate
         working-directory: packages/app
         env:
           VIZ_URL: http://127.0.0.1:5191
-          VIZ_THEME: ${{ inputs.tema }}
+          VIZ_TEMA: ${{ inputs.tema }}
           VIZ_PRAG: ${{ inputs.vrata && inputs.prag || '' }}
-        run: pnpm run viz
+        run: |
+          case "$VIZ_TEMA" in light) teme="light";; dark) teme="dark";; *) teme="light dark";; esac
+          status=0
+          for t in $teme; do VIZ_THEME=$t pnpm run viz || status=1; done
+          exit $status
       - name: Summary
         if: always()
         run: |
           {
             echo "## Usporedba s prototipom"
-            if [ -f packages/app/viz-out/pali.txt ]; then
-              echo; echo "Iznad praga:"; echo '```'; cat packages/app/viz-out/pali.txt; echo '```'
-            else
-              echo; echo "Izvještaj je u artefaktu viz-usporedba (index.html)."
-            fi
+            for f in packages/app/viz-out/pali.txt packages/app/viz-out/dark/pali.txt; do
+              if [ -f "$f" ]; then echo; echo "Iznad praga ($f):"; echo '```'; cat "$f"; echo '```'; fi
+            done
+            echo; echo "Izvještaj je u artefaktu viz-usporedba (index.html, dark/index.html)."
+            if [ -f packages/app/viz-out/tablica.md ]; then echo; cat packages/app/viz-out/tablica.md; fi
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
