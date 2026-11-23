@@ -42,6 +42,7 @@ import { MarksHost } from "../editor/marks/MarksHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
+import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
@@ -109,7 +110,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
-            statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost} useSupplements={useRehearsalSupplements}
+            statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
+            toolbar={(ctx) => <StudentToolbar {...ctx} />} useSupplements={useRehearsalSupplements}
             triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
             literature={() => <LiteratureList />}
             hostSections={{

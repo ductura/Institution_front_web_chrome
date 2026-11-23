@@ -12,7 +12,8 @@ export type BlockStyle = "paragraph" | "heading1" | "heading2" | "heading3";
 export type ToolbarState = {
   canUndo: boolean;
   canRedo: boolean;
-  block: BlockStyle;
+  /** The one block style of the selection, or null when it has none (inside a list item or a quote). */
+  block: BlockStyle | null;
   bold: boolean;
   italic: boolean;
   bulletList: boolean;
