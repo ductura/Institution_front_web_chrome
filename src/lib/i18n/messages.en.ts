@@ -1221,6 +1221,10 @@ const en = {
     signIn: "Sign in",
     signInFirst: "Sign in to see the work.",
     invalid: "This link does not lead to a work.",
+    // INT-26: what an atom of a v3 text reads as, in its place, as in the version history.
+    footnote: "footnote",
+    citationUnknown: "citation",
+    crossReference: "cross-reference",
     connection: {
       loading: "Connecting…",
       live: "Connection is working",

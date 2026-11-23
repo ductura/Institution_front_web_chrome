@@ -18,10 +18,15 @@
  * last answer while the page is visible, and after a failure a back-off from
  * two seconds doubling up to thirty. These are client constants, not the
  * thresholds P-01 to P-04, and the page never shows them.
+ *
+ * Document v3 (INT-26): a v3 sheet publishes its v3 document, so the reader
+ * accepts exactly v1 and v3, each by its own validator and still only from
+ * the exact JCS bytes whose SHA-256 is the ETag. A v2 document stays
+ * unavailable here, as before (the host's text elements read it).
  */
 
-import type { CanonicalDocument } from "../../packages/editor-core/src/document/document";
-import { verifyDocumentSnapshot } from "../../packages/editor-core/src/document/document/snapshot";
+import type { LiveDocument } from "./live-publisher";
+import { verifyVersionedDocumentSnapshot } from "../../packages/editor-core/src/document/document/snapshot";
 
 import { browserTransport, createApi, type ApiResult, type ProtocolVersion } from "./api";
 
@@ -31,7 +36,7 @@ const LIVE_PROTOCOL = "1" satisfies ProtocolVersion;
 type Transport = typeof browserTransport;
 
 export type LiveRead =
-  | { kind: "state"; hash: string; document: CanonicalDocument; submitted: boolean }
+  | { kind: "state"; hash: string; document: LiveDocument; submitted: boolean }
   | { kind: "unchanged"; submitted: boolean }
   | { kind: "empty" }
   | { kind: "signedOut" | "notFound" | "unavailable" };
@@ -92,9 +97,11 @@ export async function readLiveState(
   switch (answer.status) {
     case 200: {
       if (etag === null || answer.bytes === null) return { kind: "unavailable" };
-      const snapshot = await verifyDocumentSnapshot(answer.bytes);
+      const snapshot = await verifyVersionedDocumentSnapshot(answer.bytes);
       if (!snapshot.ok || snapshot.sha256 !== etag) return { kind: "unavailable" };
-      return { kind: "state", hash: snapshot.sha256, document: snapshot.document, submitted };
+      const document = snapshot.document;
+      if (document.schemaVersion !== 1 && document.schemaVersion !== 3) return { kind: "unavailable" };
+      return { kind: "state", hash: snapshot.sha256, document, submitted };
     }
     // A 304 means "the document you hold": only true when one was named and it is that one.
     case 304: return knownHash !== null && etag === knownHash ? { kind: "unchanged", submitted } : { kind: "unavailable" };
@@ -107,7 +114,7 @@ export type LiveConnection = "loading" | "live" | "retrying" | "paused" | "signe
 
 export type LiveView = {
   /** The last document accepted from the route; kept through failures. */
-  readonly document: CanonicalDocument | null;
+  readonly document: LiveDocument | null;
   readonly hash: string | null;
   /** True once the route said the student has published nothing yet. */
   readonly empty: boolean;
