@@ -1,0 +1,610 @@
+<!doctype html><html lang="hr"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}/* NF-5 pregled rada: oznake su riječima, ne samo bojom; ispis; mobitel. */
+.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+.pg-panel { display:grid; gap:20px; min-width:0; }
+.pg-print { display:none; }
+.pg-panel .pv-l { white-space:normal; display:inline-block; max-width:100%; }
+.sum th[scope="row"] { text-align:left; font-weight:600; }
+.sb-body .sum table { width:100%; border-collapse:collapse; }
+.sb-body .sum th, .sb-body .sum td { text-align:left; vertical-align:top; padding:8px 10px; border-bottom:1px solid var(--rule-2); }
+.sb-body .sum thead th { font-size:12.5px; color:var(--ink-3); }
+.sb-body .sum caption { text-align:left; padding:0 0 6px; }
+@media (max-width:759px) { .sb-body .sum th[scope="row"] { display:block; padding:2px 12px; } .sb-body .sum th[scope="row"]::before { content:attr(data-label) ": "; color:var(--ink-3); font-size:12.5px; } }
+@media print {
+  #proto-bar, .proto-note, .sb-bar, #toast, .sb-page > *:not(.pg-print) { display:none !important; }
+  body { display:block; height:auto; background:#fff; color:#000; }
+  #stage { overflow:visible; }
+  .pg-print { display:block !important; color:#000; background:#fff; font:12pt/1.5 var(--ff-display); }
+  .pg-print h1 { font-size:18pt; } .pg-print h2 { font-size:14pt; margin:14pt 0 4pt; }
+  .pg-print .pv-paste { border-bottom:2px dashed #000; } .pg-print .pv-ai { border-bottom:4px double #000; } .pg-print .pv-l { color:#000; border-color:#000; }
+}
+</style></head><body>
+<title>Ductura administracija</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+<style>/* Ductura nastavnički prototip: tokeni "papir i grafit" (D-188), isti kao studentski prototip. */
+:root {
+  --ground:#242422; --sheet:#2e2e2b; --chrome:#292a28; --ink:#faf9f5; --ink-2:#dedbd3; --ink-3:#c9c5bb;
+  --rule:#8c887f; --rule-2:#5a5853; --hover:#3a3a36; --raised:#2e2e2b; --raised-rule:#b3aea3; --card:#33332f;
+  --selected:#3a3a36; --well:#3a3a36; --ink-muted:#8c887f; --warn:#e9c58b; --warn-soft:#3a2f22;
+  --accent:#c8aa6e; --accent-hover:#dcc28a; --accent-ink:#242422; --accent-soft:#3a3a36; --link-rule:#b3aea3;
+  --field:#2a2a27; --field-rule:#a6a196; --field-placeholder:#bcb7ac;
+  --synced:#a2c6e5; --synced-soft:#24303a;
+  --cmt:#e9c58b; --cmt-ink:#e9c58b; --cmt-bg:#e9c58b26;
+  --proto-bg:#1b1b1a; --proto-ink:#c9c5bb; --proto-rule:#5a5853; --proto-field:#2a2a27; --proto-field-ink:#faf9f5; --proto-accent:#c8aa6e;
+  --scrim:#0008; --lift:0 1px 1px #0007, 0 12px 34px -10px #000a;
+  --ff-ui:"Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --ff-display:"Newsreader", Georgia, serif;
+  --ff-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  --gutter-l:max(16px, env(safe-area-inset-left, 0px)); --gutter-r:max(16px, env(safe-area-inset-right, 0px));
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --ground:#f3f2ee; --chrome:#faf9f6; --raised:#faf9f6; --hover:#ecebe5; --selected:#ecebe5; --rule:#cfccc4; --rule-2:#e2e0d9;
+    --well:#ecebe5; --ink:#242422; --ink-2:#55534d; --ink-3:#5c5a54; --accent:#806529; --accent-ink:#fcfbf8; --accent-soft:#efe9dc;
+    --warn:#7a5420; --synced:#355b81; --sheet:#fcfbf8; --ink-muted:#5c5a54; --accent-hover:#6b5420;
+    --warn-soft:#f3e6cf; --synced-soft:#e3edf6; --cmt:#7a5420; --cmt-ink:#7a5420; --cmt-bg:#e9c58b40;
+    --card:#fcfbf8; --raised-rule:#85827a; --link-rule:#8a7550; --field:#fcfbf8; --field-rule:#85827a; --field-placeholder:#5c5a54;
+    --lift:0 1px 1px #0001, 0 12px 34px -10px #0002; color-scheme:light;
+  }
+}
+:root[data-theme="light"] {
+  --ground:#f3f2ee; --chrome:#faf9f6; --raised:#faf9f6; --hover:#ecebe5; --selected:#ecebe5; --rule:#cfccc4; --rule-2:#e2e0d9;
+  --well:#ecebe5; --ink:#242422; --ink-2:#55534d; --ink-3:#5c5a54; --accent:#806529; --accent-ink:#fcfbf8; --accent-soft:#efe9dc;
+  --warn:#7a5420; --synced:#355b81; --sheet:#fcfbf8; --ink-muted:#5c5a54; --accent-hover:#6b5420;
+  --warn-soft:#f3e6cf; --synced-soft:#e3edf6; --cmt:#7a5420; --cmt-ink:#7a5420; --cmt-bg:#e9c58b40;
+  --card:#fcfbf8; --raised-rule:#85827a; --link-rule:#8a7550; --field:#fcfbf8; --field-rule:#85827a; --field-placeholder:#5c5a54;
+  --lift:0 1px 1px #0001, 0 12px 34px -10px #0002; color-scheme:light;
+}
+/* List rada je uvijek gotovo bijeli papir. */
+.sheet { --sheet:#fcfbf8; --ink:#242422; --ink-2:#55534d; --ink-3:#5c5a54; --rule:#cfccc4; --rule-2:#f1efea; --accent:#806529; --accent-ink:#fcfbf8;
+  --well:#efede7; --card:#fcfbf8; --cmt:#b8862a; --cmt-ink:#8a6420; --cmt-bg:#b8862a26; --link-rule:#8a7550; color-scheme:light;
+  background:var(--sheet); color:var(--ink); }
+
+*,*::before,*::after { box-sizing:border-box; }
+html { height:100vh; height:100dvh; }
+body { margin:0; height:100vh; height:100dvh; background:var(--ground); color:var(--ink); font:13.5px/1.5 var(--ff-ui); display:grid; grid-template-rows:auto minmax(0,1fr); -webkit-text-size-adjust:none; }
+h1,h2,h3,h4 { font-family:var(--ff-display); font-weight:500; letter-spacing:-0.015em; margin:0; line-height:1.15; }
+p { margin:0; } ul,ol { margin:0; }
+button, input, select, textarea { font:inherit; color:inherit; }
+button { cursor:pointer; }
+a { color:var(--accent); text-decoration:underline; text-decoration-color:var(--link-rule); text-underline-offset:3px; }
+:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+[hidden] { display:none !important; }
+input[type="checkbox"], input[type="radio"] { accent-color:var(--accent); width:18px; height:18px; margin:0; flex:none; }
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+
+/* Traka prototipa i bilješka prototipa: nisu dio sučelja proizvoda. */
+#proto-bar { display:flex; gap:6px 10px; flex-wrap:wrap; align-items:center; padding:6px var(--gutter-r) 6px var(--gutter-l); background:var(--proto-bg); color:var(--proto-ink); border-bottom:1px dashed var(--proto-rule); font:11.5px/1.3 var(--ff-mono); }
+#proto-bar b { color:var(--proto-accent); font-weight:500; text-transform:uppercase; letter-spacing:.06em; }
+#proto-bar label { display:inline-flex; gap:5px; align-items:center; min-width:0; }
+#proto-bar select, #proto-bar button { font:11.5px var(--ff-mono); background:var(--proto-field); color:var(--proto-field-ink); border:1px solid var(--proto-rule); border-radius:4px; min-height:30px; padding:0 6px; max-width:46vw; }
+#stage { min-height:0; overflow:auto; position:relative; display:flex; flex-direction:column; }
+#stage > .shell, #stage > .sb-wrap { flex:1 0 auto; }
+.proto-note { font:11.5px/1.45 var(--ff-mono); color:var(--ink-2); border:1px dashed var(--rule); border-radius:4px; padding:4px 8px; margin:8px var(--gutter-r) 0 var(--gutter-l); overflow-wrap:anywhere; }
+.proto-note b { font-weight:500; color:var(--ink); }
+
+/* Zajednički dijelovi */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; font:600 13.5px/1.1 var(--ff-ui); min-height:44px; padding:0 14px; border-radius:5px; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); text-decoration:none; text-align:center; }
+.btn:hover { background:var(--accent-hover); border-color:var(--accent-hover); }
+.btn.secondary { background:transparent; color:var(--ink); border-color:var(--rule); }
+.btn.secondary:hover { background:var(--hover); border-color:var(--rule); }
+.btn.ghost { background:transparent; color:var(--ink); border-color:transparent; text-decoration:underline; text-decoration-color:var(--link-rule); text-underline-offset:3px; }
+.btn.small { padding:0 10px; }
+.btn[aria-disabled="true"], .btn:disabled { background:var(--well); color:var(--ink-3); border-color:var(--rule-2); cursor:not-allowed; }
+.btn[aria-pressed="true"] { background:var(--well); border-color:var(--ink-2); }
+.input { min-height:44px; padding:6px 10px; border:1px solid var(--field-rule); border-radius:5px; background:var(--field); color:var(--ink); min-width:0; }
+.input::placeholder { color:var(--field-placeholder); }
+.input[aria-invalid="true"] { border-color:var(--warn); border-width:2px; }
+textarea.input { min-height:88px; resize:vertical; }
+.field { display:grid; gap:4px; min-width:0; } .field label, .field .lbl { font-size:12.5px; color:var(--ink-3); }
+.err { color:var(--ink); font-size:12.5px; font-weight:600; border-left:3px solid var(--warn); padding-left:8px; }
+.eyebrow, .meta { color:var(--ink-3); font-size:12.5px; }
+.note, .lede { color:var(--ink-2); }
+.mono { font-family:var(--ff-mono); }
+.tag { display:inline-block; font-size:12.5px; font-weight:600; color:var(--ink-2); border:1px solid var(--rule); border-radius:4px; padding:1px 6px; white-space:nowrap; }
+.tag.open { border-style:dashed; }
+.card { background:var(--card); border:1px solid var(--rule-2); border-radius:10px; padding:24px; display:grid; gap:12px; min-width:0; }
+.card.center { text-align:center; justify-items:center; }
+.list { display:grid; gap:8px; margin:0; padding:0; list-style:none; }
+.item { background:var(--card); border:1px solid var(--rule-2); border-radius:6px; padding:10px 12px; display:grid; gap:6px; min-width:0; }
+.item .title { font-weight:600; }
+.item a.rowlink { display:flex; align-items:center; min-height:44px; text-decoration:none; color:var(--ink); }
+.panel { background:var(--chrome); border:1px solid var(--rule-2); border-radius:10px; overflow:clip; min-width:0; }
+.skel { height:12px; border-radius:4px; background:var(--well); animation:skel 1.4s ease-in-out infinite alternate; max-width:520px; }
+.skel.w40{width:160px} .skel.w60{width:240px} .skel.w80{width:320px}
+@keyframes skel { from{opacity:.55} to{opacity:1} }
+.facts { margin:0; padding-left:18px; color:var(--ink-2); display:grid; gap:2px; }
+.scrim { position:fixed; inset:0; background:var(--scrim); z-index:40; }
+.dialog { background:var(--raised); border:1px solid var(--rule); border-radius:10px; padding:16px; display:grid; gap:12px; box-shadow:var(--lift); }
+#toast { position:fixed; left:0; right:0; margin:0 auto; width:fit-content; bottom:max(16px, env(safe-area-inset-bottom, 0px)); z-index:60; background:var(--raised); color:var(--ink); border:1px solid var(--rule); border-radius:6px; padding:10px 14px; box-shadow:var(--lift); max-width:calc(100vw - 32px); }
+.tbl { overflow-x:auto; border:1px solid var(--rule-2); border-radius:6px; }
+.tbl table { border-collapse:collapse; min-width:600px; width:max-content; max-width:none; }
+.tbl th, .tbl td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--rule-2); vertical-align:top; }
+.tbl th { font-weight:600; color:var(--ink-3); font-size:12.5px; background:var(--chrome); }
+.tbl tr:last-child td { border-bottom:0; }
+.seg { display:flex; flex-wrap:wrap; gap:6px; }
+.acts { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+
+/* Ljuska: bočna traka 64 px (D-202); ispod 800 px gornja crta s "Izbornik". */
+.shell { display:grid; grid-template-columns:64px minmax(0,1fr); }
+.side { background:var(--chrome); border-right:1px solid var(--rule-2); padding:14px 4px; display:flex; flex-direction:column; gap:14px; position:sticky; top:0; align-self:start; height:calc(100vh - 44px); height:calc(100dvh - 44px); }
+.side .brand { display:grid; place-items:center; min-height:44px; color:var(--ink); text-decoration:none; font:500 24px/1 var(--ff-display); }
+.side .brand .word { display:none; }
+.side nav { display:grid; gap:4px; }
+.side nav a { display:grid; place-items:center; text-align:center; min-height:44px; padding:6px 2px; border-radius:5px; color:var(--ink-2); text-decoration:none; font-size:11px; line-height:1.2; }
+.side nav a:hover { background:var(--hover); }
+.side nav a[aria-current="page"] { background:var(--well); color:var(--ink); font-weight:600; }
+.side-foot { margin-top:auto; display:grid; gap:6px; }
+.side-foot .btn { padding:0 2px; font-size:11px; }
+.side .menu { display:none; }
+.main { max-width:960px; margin:0 auto; padding:24px 24px 56px; display:grid; gap:20px; align-content:start; min-width:0; }
+.main > * { min-width:0; }
+.main.narrow { max-width:680px; }
+.pagehead { display:flex; justify-content:space-between; align-items:flex-end; gap:8px 16px; flex-wrap:wrap; }
+.pagehead h1 { font-size:30px; }
+.pagehead .lede { flex-basis:100vw; max-width:68ch; }
+@media (max-width:800px) {
+  .shell { grid-template-columns:minmax(0,1fr); grid-template-rows:auto 1fr; }
+  .side { flex-direction:row; flex-wrap:wrap; justify-content:space-between; align-items:center; border-right:0; border-bottom:1px solid var(--rule-2); padding:8px var(--gutter-r) 8px var(--gutter-l); height:auto; z-index:5; }
+  .side nav, .side-foot { display:none; flex-basis:100vw; }
+  .side[data-open="true"] nav { display:grid; }
+  .side[data-open="true"] nav a { place-items:center start; padding:6px 10px; font-size:13.5px; }
+  .side[data-open="true"] .side-foot { display:flex; margin:0; }
+  .side[data-open="true"] .side-foot .btn { padding:0 12px; font-size:13.5px; }
+  .side .brand .mark { display:none; } .side .brand .word { display:inline; font-size:19px; }
+  .side .menu { display:inline-flex; }
+}
+@media (max-width:640px) { .main { padding:16px var(--gutter-r) 40px var(--gutter-l); } .card { padding:16px; } .pagehead h1 { font-size:24px; } }
+
+/* Stranice rada (bez bočne trake): traka s povratkom, kao u studentskom prototipu. */
+.sb-wrap { display:grid; grid-template-rows:auto 1fr; }
+.sb-bar { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:4px 12px; flex-wrap:wrap; padding:6px var(--gutter-r) 6px var(--gutter-l); background:var(--chrome); border-bottom:1px solid var(--rule-2); }
+.sb-bar .btn { min-height:44px; padding:0 10px; }
+.sb-crumb { color:var(--ink-3); font-size:12.5px; min-width:0; overflow-wrap:anywhere; flex:1 1 200px; }
+.sb-crumb b { color:var(--ink-2); font-weight:600; }
+.sb-page { max-width:760px; margin:0 auto; padding:24px 24px 56px; display:grid; gap:20px; align-content:start; min-width:0; }
+.sb-page > * { min-width:0; }
+.sb-page.sb-two, .sb-page.wide { max-width:1160px; }
+@media (min-width:1050px) { .sb-two { grid-template-columns:minmax(0,440px) minmax(0,1fr); align-items:start; } .sb-two > .sb-stick { position:sticky; top:72px; } .sb-two > .span { grid-column:1 / -1; } }
+.sb-top { display:flex; justify-content:space-between; align-items:center; gap:8px 12px; flex-wrap:wrap; padding:12px 16px; border-bottom:1px solid var(--rule-2); }
+.sb-top h1, .sb-top h2 { font-size:19px; min-width:0; }
+.sb-body { padding:14px 16px 16px; display:grid; gap:12px; min-width:0; }
+.sb-panel a:not(.btn) { display:inline-flex; align-items:center; min-height:44px; min-width:44px; justify-self:start; }
+.sb-state { display:grid; gap:2px; border-top:1px solid var(--rule-2); padding-top:8px; min-width:0; }
+.sb-state > .sb-h { font-weight:600; }
+.sb-state h3 { font:600 13.5px/1.4 var(--ff-ui); letter-spacing:0; }
+.sb-state ul.sb-places { margin:0; padding-left:18px; }
+.sb-kv { display:flex; justify-content:space-between; gap:12px; }
+.sb-kv b { font:500 13.5px/1.4 var(--ff-mono); text-align:right; }
+.sb-ev { display:flex; justify-content:space-between; align-items:baseline; gap:4px 8px; flex-wrap:wrap; }
+.sb-acts { display:flex; flex-wrap:wrap; gap:8px; }
+.sb-mono { font:12.5px/1.5 var(--ff-mono); overflow-wrap:anywhere; }
+.sb-decl { border:1px solid var(--rule-2); border-radius:6px; padding:10px 12px; display:grid; gap:6px; background:var(--card); min-width:0; }
+.sb-decl.own { border-style:dashed; border-color:var(--rule); background:transparent; }
+.sb-decl h3 { font:600 13.5px/1.4 var(--ff-ui); letter-spacing:0; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.sb-body > h2, .sb-body > h3.sb-sub { font:500 16px/1.3 var(--ff-display); }
+.sb-entry { border-left:2px solid var(--rule); padding:2px 0 2px 10px; display:grid; gap:2px; }
+.sb-entry .sb-who { font-size:12.5px; color:var(--ink-3); }
+.sb-quote { margin:0; padding-left:10px; border-left:2px solid var(--rule); color:var(--ink-2); font-family:var(--ff-display); }
+.sb-check { display:flex; gap:10px; align-items:center; min-height:44px; cursor:pointer; }
+.sb-body details summary, .card details summary { cursor:pointer; padding:10px 0; min-height:44px; }
+.sb-qr { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.sb-qr svg { width:96px; height:96px; flex:none; background:var(--sheet); border:1px solid var(--rule-2); border-radius:4px; padding:6px; color:var(--ink); }
+.sb-qr .meta { max-width:36ch; }
+.sb-dlg-host { position:fixed; inset:0; z-index:41; display:grid; place-items:center; padding:16px var(--gutter-r) 16px var(--gutter-l); pointer-events:none; }
+.sb-dlg-host .dialog { pointer-events:auto; width:min(520px, calc(100vw - 32px)); max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); overflow:auto; }
+.sb-dlg-host .dialog h2 { font-size:19px; }
+.sb-spin { display:inline-block; width:12px; height:12px; border:2px solid currentColor; border-right-color:transparent; border-radius:999px; animation:sb-spin .8s linear infinite; }
+@keyframes sb-spin { to { transform:rotate(360deg); } }
+@media (max-width:640px) {
+  .sb-page { padding:16px var(--gutter-r) 40px var(--gutter-l); gap:16px; }
+  .sb-acts .btn, .acts .btn { flex:1 1 auto; }
+  .sb-kv { flex-direction:column; gap:0; }
+  .sb-kv b { text-align:left; }
+}
+
+/* N-01 kolegiji */
+.course h2 { font-size:22px; }
+.course .kv { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px 16px; }
+.course .kv div { display:grid; gap:0; } .course .kv span { color:var(--ink-3); font-size:12.5px; }
+.task { border-top:1px solid var(--rule-2); padding-top:12px; display:grid; gap:8px; }
+.task h3, .task h2 { font:600 15px/1.35 var(--ff-ui); letter-spacing:0; }
+.sub-row { display:flex; justify-content:space-between; align-items:center; gap:4px 12px; flex-wrap:wrap; border:1px solid var(--rule-2); border-radius:6px; padding:6px 6px 6px 12px; background:var(--ground); }
+.sub-row .who { font-weight:600; }
+.sub-row .facts-line { color:var(--ink-2); flex:1 1 260px; min-width:0; }
+.code-once { font:500 22px/1.2 var(--ff-mono); letter-spacing:.08em; border:1px dashed var(--accent); border-radius:6px; padding:10px 14px; justify-self:start; }
+
+/* N-03 zadatak: jedan obrazac u odjeljcima */
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; }
+.opt { display:flex; gap:10px; align-items:flex-start; min-height:44px; padding:8px 0; cursor:pointer; }
+.opt input { margin-top:2px; }
+fieldset { border:1px solid var(--rule-2); border-radius:6px; padding:10px 12px; margin:0; display:grid; gap:2px; min-width:0; }
+legend { font-weight:600; padding:0 4px; }
+
+/* N-05 brz put */
+.fp { display:grid; gap:16px; }
+@media (min-width:1000px) { .fp { grid-template-columns:260px minmax(0,1fr); align-items:start; } }
+.fp-list a { display:flex; flex-direction:column; justify-content:center; min-height:44px; padding:6px 10px; border-radius:5px; color:var(--ink); text-decoration:none; border:1px solid transparent; }
+.fp-list a[aria-current="true"] { background:var(--well); border-color:var(--rule); font-weight:600; }
+.fp-list a span { font-weight:400; color:var(--ink-3); font-size:12.5px; }
+.tabs { display:flex; gap:4px; border-bottom:1px solid var(--rule-2); flex-wrap:wrap; }
+.tabs button { min-height:44px; padding:0 12px; background:transparent; border:0; border-bottom:2px solid transparent; color:var(--ink-2); }
+.tabs button[aria-selected="true"] { color:var(--ink); font-weight:600; border-bottom-color:var(--accent); }
+
+/* N-06/N-07 rad */
+.rd-head { display:grid; gap:10px; padding:14px 16px; }
+.rd-head h1 { font-size:24px; }
+.rd-links { display:flex; flex-wrap:wrap; gap:0 14px; }
+.rd-links a { display:inline-flex; align-items:center; min-height:44px; }
+.rd-two { display:grid; gap:16px; }
+@media (min-width:1050px) { .rd-two { grid-template-columns:minmax(0,1fr) 330px; align-items:start; } .rd-two > aside { position:sticky; top:72px; } }
+.banner { background:var(--well); border-left:3px solid var(--accent); border-radius:6px; padding:10px 14px; display:grid; gap:8px; }
+.banner.warn { border-left-color:var(--warn); }
+.ed-sheet { border-radius:6px; padding:48px 64px 56px; font:16.5px/1.7 var(--ff-display); box-shadow:var(--lift); min-width:0; }
+.ed-sheet h1 { font:500 24px/1.3 var(--ff-display); text-align:center; margin:0 0 6px; }
+.ed-sheet .ed-sub { text-align:center; color:var(--ink-2); font-size:14px; margin:0 0 28px; }
+.ed-sheet h2 { font:600 18px/1.4 var(--ff-display); margin:24px 0 8px; }
+.ed-sheet p { margin:0 0 12px; text-align:justify; hyphens:auto; }
+.ed-sheet blockquote { margin:12px 0 12px 24px; padding-left:14px; border-left:2px solid var(--rule); color:var(--ink-2); }
+.ed-sheet .ed-cite { background:var(--well); border-radius:3px; padding:0 3px; }
+.ed-sheet .ed-open { border:1px dashed var(--rule); border-radius:3px; padding:0 4px; color:var(--ink-2); font-size:14px; }
+.ed-sheet .ed-mark { background:var(--cmt-bg); border-bottom:2px solid var(--cmt); }
+.ed-sheet sup { color:var(--accent); font-size:11px; }
+.ed-sheet .ed-notes { border-top:1px solid var(--rule); margin-top:28px; padding-top:8px; font-size:13.5px; color:var(--ink-2); }
+.ed-sheet del { text-decoration:line-through; text-decoration-thickness:2px; }
+.ed-sheet ins { text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px; }
+.ed-sheet .sug-lbl { font:600 11px/1 var(--ff-ui); color:var(--ink-2); border:1px solid var(--rule); border-radius:3px; padding:1px 4px; margin:0 2px; vertical-align:2px; }
+.thread { display:grid; gap:8px; border:1px solid var(--rule-2); border-radius:6px; padding:10px 12px; background:var(--card); }
+.thread.done { border-style:dashed; }
+@media (max-width:640px) { .ed-sheet { padding:28px 18px 32px; border-radius:0; } .ed-sheet p { text-align:left; } .rd-head h1 { font-size:20px; } }
+
+/* N-10 karta podrijetla: oblik crte i tekst, ne samo boja. */
+.pv-legend { display:grid; gap:6px; margin:0; padding:0; list-style:none; }
+.pv-legend li { display:flex; gap:10px; align-items:center; }
+.pv-sw { display:inline-block; width:36px; height:12px; flex:none; }
+.pv-paste, .pv-sw.paste { border-bottom:2px dashed var(--ink); }
+.pv-ai, .pv-sw.ai { border-bottom:4px double var(--ink); }
+.pv-imp, .pv-sw.imp { border-bottom:2px dotted var(--ink); }
+.pv-teach, .pv-sw.teach { text-decoration:underline wavy var(--ink-2); text-underline-offset:4px; }
+.pv-sw.teach { border-bottom:0; }
+.pv-sw.open { border:1px dashed var(--ink-2); border-radius:3px; height:16px; }
+.pv-sw.typed { border-left:3px solid var(--ink-3); }
+.pv-l { font:600 11px/1 var(--ff-ui); color:var(--ink-2); border:1px solid var(--rule); border-radius:3px; padding:1px 4px; margin-left:4px; vertical-align:2px; white-space:nowrap; }
+.pv-off .pv-paste, .pv-off .pv-ai, .pv-off .pv-imp { border-bottom:0; }
+.pv-off .pv-l { display:none; }
+.pv-typed-on p.pv-t { border-left:3px solid var(--ink-3); padding-left:10px; }
+.switch { display:flex; gap:10px; align-items:center; min-height:44px; cursor:pointer; }
+
+/* N-09 reprodukcija */
+.rp-ctl { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; }
+.rp-range { display:flex; gap:10px; align-items:center; }
+.rp-range input { flex:1 1 auto; min-width:0; min-height:44px; accent-color:var(--accent); }
+.rp-text .rp-new { background:var(--cmt-bg); border-bottom:2px solid var(--cmt); }
+.rp-gap { border:1px dashed var(--rule); border-radius:4px; padding:8px 10px; font:13px/1.5 var(--ff-ui); color:var(--ink-2); }
+
+/* N-11 usporedba */
+.cmp ins { text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px; }
+.cmp del { text-decoration:line-through; text-decoration-thickness:2px; }
+.cmp .w { font:600 11px/1 var(--ff-ui); color:var(--ink-2); margin:0 3px; }
+
+/* NF-4 (23. 11. 2026.): samo raspored i prototipne napomene; boje i razmaci iz postojećih tokena. */
+.srv { font:11.5px/1.45 var(--ff-mono); color:var(--ink-2); border:1px dashed var(--rule); border-radius:4px; padding:4px 8px; margin:0; overflow-wrap:anywhere; }
+.srv b { font-weight:500; color:var(--ink); }
+.flt { margin:12px 0; }
+.sum .acts .btn { min-height:44px; }
+.item .acts .btn, .sum .acts .btn { min-height:44px; }
+.item .acts { margin-top:6px; }
+@media (max-width:759px) {
+  .sum table { display:block; min-width:0; width:100%; }
+  .sum thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .sum tbody { display:grid; gap:12px; padding:8px; }
+  .sum tr { display:grid; gap:4px; border:1px solid var(--rule-2); border-radius:6px; padding:8px 0; }
+  .sum td { display:grid; grid-template-columns:7.5em 1fr; gap:8px; border-bottom:0; padding:2px 12px; }
+  .sum td::before { content:attr(data-label); color:var(--ink-3); font-size:12.5px; font-weight:600; }
+}
+</style>
+<style>/* NF-7 administracija: samo raspored i prototipne napomene; boje i razmaci iz postojećih tokena. */
+.srv { font:11.5px/1.45 var(--ff-mono); color:var(--ink-2); border:1px dashed var(--rule); border-radius:4px; padding:4px 8px; margin:0; overflow-wrap:anywhere; }
+.srv b { font-weight:500; color:var(--ink); }
+.nf7 { font:11.5px/1 var(--ff-mono); color:var(--ink-3); }
+.kpi { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; }
+.kpi > div { border:1px solid var(--rule-2); border-radius:6px; padding:10px 12px; display:grid; gap:2px; background:var(--card); }
+.kpi b { font:500 24px/1.2 var(--ff-display); color:var(--ink); }
+.kpi span { color:var(--ink-3); font-size:12.5px; }
+.cards3 { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; }
+.cards3 .card { padding:16px; }
+.tag.wait { white-space:normal; border-style:dashed; color:var(--warn); border-color:var(--warn); }
+.tbl td.num, .tbl th.num { text-align:right; }
+@media (max-width:759px) {
+  .rt table { display:block; min-width:0; width:100%; }
+  .rt thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .rt tbody { display:grid; gap:12px; padding:8px; }
+  .rt tr { display:grid; gap:4px; border:1px solid var(--rule-2); border-radius:6px; padding:8px 0; }
+  .rt td { display:grid; grid-template-columns:7.5em 1fr; gap:8px; border-bottom:0; padding:2px 12px; }
+  .rt td::before { content:attr(data-label); color:var(--ink-3); font-size:12.5px; font-weight:600; }
+}
+</style>
+<div id="proto-bar"><b>Prototip</b><label>ekran <select id="proto-view" aria-label="Ekran prototipa"></select></label><label>stanje <select id="proto-variant" aria-label="Stanje ekrana"></select></label><label>uloga <select id="proto-role" aria-label="Uloga u prototipu"><option value="admin">administrator fakulteta (institution_admin)</option><option value="op">operater (network_engineer)</option></select></label><button type="button" data-core="theme">tema ◐</button><button type="button" id="proto-reset">ispočetka</button></div>
+<div id="stage"></div><div id="toast" role="status" hidden></div>
+<script>/* Jezgra prototipa (ista kao nastavnička): usmjerivač po #imenu, stanje, ljuska, traka prototipa. NF-7: dvije uloge. */
+(function () {
+  var screens = {}, order = [], START = 'mjerila';
+  var App = window.App = {
+    data: { admin: 'Administrator A', operator: 'Operater A', faculty: 'Fakultet A', today: '23. 11. 2026.' },
+    state: { variant: {}, role: 'admin', dlg: null, imp: 'prazno', reports: 'svi', exp: 'otvoren' },
+    register: function (name, def) { screens[name] = def; order.push(name); },
+    go: function (name) { if (location.hash === '#' + name) render(); else location.hash = name; },
+    rerender: function () { render(); },
+    variant: function () { var n = current(); return App.state.variant[n] || 'puno'; },
+    toast: function (msg) {
+      var t = document.getElementById('toast'); t.textContent = msg; t.hidden = false;
+      clearTimeout(App._tt); App._tt = setTimeout(function () { t.hidden = true; }, 3200);
+    },
+    setTheme: function (th) { document.documentElement.setAttribute('data-theme', th); try { localStorage.setItem('ductura-administracija-tema', th); } catch (e) {} },
+    effectiveTheme: function () {
+      var a = document.documentElement.getAttribute('data-theme'); if (a) return a;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    },
+    list: function () { return order.map(function (n) { return { name: n, variants: (screens[n].variants || [{ id: 'puno' }]).map(function (v) { return v.id; }) }; }); }
+  };
+  function current() { var n = location.hash.replace('#', ''); return screens[n] ? n : START; }
+  /* Navigacija po ulozi: operater (network_engineer) i administrator fakulteta (institution_admin). */
+  var NAV = {
+    admin: [['mjerila', 'Mjerila pilota'], ['postavke', 'Postavke fakulteta'], ['uvoz', 'Uvoz popisa'], ['izvoz', 'Zahtjevi izvoza'], ['prijave', 'Prijave problema'], ['dnevnik', 'Dnevnik radnji'], ['asistent', 'Asistent']],
+    op: [['mjerila', 'Mjerila pilota'], ['prijave', 'Prijave problema'], ['dnevnik', 'Dnevnik radnji']]
+  };
+  var LATER = ['OA-4 Zahtjev za brisanje ili ispravak · nakon pilota', 'OA-8 Obavijest o prekidu upisuje operater · nakon pilota', 'OA-11 Nova akademska godina · nakon pilota'];
+  function roleName() { return App.state.role === 'op' ? 'Operater A · network_engineer' : 'Administrator A · institution_admin'; }
+  function shell(name, inner) {
+    var role = App.state.role, navName = screens[name].nav || name, items = NAV[role];
+    return '<div class="shell"><aside class="side" data-open="false">' +
+      '<a class="brand" href="#mjerila" aria-label="Ductura, početna administracije"><span class="mark" aria-hidden="true">D</span><span class="word">Ductura</span></a>' +
+      '<button class="btn small secondary menu" type="button" data-core="menu" aria-expanded="false">Izbornik</button>' +
+      '<nav aria-label="Glavna navigacija">' + items.map(function (n) {
+        return '<a href="#' + n[0] + '"' + (n[0] === navName ? ' aria-current="page"' : '') + '>' + n[1] + '</a>';
+      }).join('') + '</nav>' +
+      '<div class="side-foot"><button class="btn small secondary" type="button" data-core="theme" aria-label="Promijeni svijetlu ili tamnu temu">◐</button>' +
+      '<button class="btn small secondary" type="button" data-core="logout">Odjava</button></div></aside>' +
+      '<main class="main' + (screens[name].narrow ? ' narrow' : '') + '" id="sadrzaj" tabindex="-1">' + inner + '</main></div>';
+  }
+  function note(def) {
+    var n = def.note; if (!n) return '';
+    return '<p class="proto-note" aria-label="Bilješka prototipa">bilješka prototipa · <b>' + n[0] + '</b> · ' + n[1] + ' · ' + n[2] + '</p>';
+  }
+  function ctx() { return { variant: App.variant(), state: App.state, data: App.data }; }
+  function trap(stage) {
+    var dlg = stage.querySelector('.dialog[role="dialog"]'); if (!dlg) return;
+    var first = dlg.querySelector('textarea, input, .btn:not([aria-disabled="true"])') || dlg; first.focus();
+    dlg.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); App.state.dlg = null; render(); return; }
+      if (e.key === 'Tab') {
+        var f = dlg.querySelectorAll('button, a[href], textarea, input, select'); if (!f.length) return;
+        var a = f[0], z = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
+        else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
+      }
+    });
+  }
+  function render() {
+    var name = current(), def = screens[name], stage = document.getElementById('stage'), c = ctx();
+    var html = def.render(c);
+    stage.setAttribute('data-view', name);
+    stage.innerHTML = note(def) + (def.shell === 'side' ? shell(name, html) : html);
+    stage.scrollTop = 0;
+    if (def.after) def.after(stage, c);
+    trap(stage);
+    var sv = document.getElementById('proto-view'), ss = document.getElementById('proto-variant');
+    sv.innerHTML = order.map(function (n) { return '<option value="' + n + '"' + (n === name ? ' selected' : '') + '>' + (screens[n].title || n) + '</option>'; }).join('') +
+      LATER.map(function (t) { return '<option disabled>' + t + '</option>'; }).join('');
+    var vs = def.variants || [{ id: 'puno', label: 'puno' }];
+    ss.innerHTML = vs.map(function (v) { return '<option value="' + v.id + '"' + (v.id === c.variant ? ' selected' : '') + '>' + v.label + '</option>'; }).join('');
+    document.getElementById('proto-role').value = App.state.role;
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-go],[data-act],[data-core]'); if (!el) return;
+    if (el.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+    var core = el.getAttribute('data-core');
+    if (core === 'theme') { App.setTheme(App.effectiveTheme() === 'light' ? 'dark' : 'light'); return; }
+    if (core === 'logout') { App.toast('Odjava u prototipu nije izvedena.'); return; }
+    if (core === 'menu') { var s = el.closest('.side'), o = s.getAttribute('data-open') !== 'true'; s.setAttribute('data-open', o); el.setAttribute('aria-expanded', o); return; }
+    if (core === 'retry') { e.preventDefault(); App.state.variant[current()] = 'puno'; render(); return; }
+    if (core === 'close') { e.preventDefault(); App.state.dlg = null; render(); return; }
+    var act = el.getAttribute('data-act');
+    if (act) { var def = screens[current()]; if (def.actions && def.actions[act]) { e.preventDefault(); def.actions[act](el, ctx(), e); } return; }
+    var go = el.getAttribute('data-go');
+    if (go) { e.preventDefault(); var gv = el.getAttribute('data-variant'); if (gv) App.state.variant[go] = gv; App.go(go); }
+  });
+  window.addEventListener('hashchange', render);
+  document.addEventListener('DOMContentLoaded', function () {
+    try { var th = localStorage.getItem('ductura-administracija-tema'); if (th === 'light' || th === 'dark') document.documentElement.setAttribute('data-theme', th); } catch (e) {}
+    document.getElementById('proto-view').addEventListener('change', function (e) { App.go(e.target.value); });
+    document.getElementById('proto-variant').addEventListener('change', function (e) { App.state.variant[current()] = e.target.value; render(); });
+    document.getElementById('proto-role').addEventListener('change', function (e) { App.state.role = e.target.value; var n = current(); if (!allowed(n)) location.hash = START; render(); });
+    document.getElementById('proto-reset').addEventListener('click', function () { location.hash = START; location.reload(); });
+    render();
+  });
+  function allowed(n) { var d = screens[n]; return !d.roles || d.roles.indexOf(App.state.role) >= 0; }
+
+  /* ---------- zajednički obrazac OA-12 ---------- */
+  function loadingBody(msg) { return '<p class="note" role="status">' + msg + '</p><div class="skel w80"></div><div class="skel w60"></div><div class="skel w40"></div>'; }
+  function errorBody(msg) { return '<p class="note" role="alert">' + msg + '</p><div class="sb-acts"><button class="btn secondary" type="button" data-core="retry">Pokušaj ponovno</button></div>'; }
+  function head(title, lede, oa) {
+    return '<div class="pagehead"><h1>' + title + '</h1><p class="meta">' + App.data.faculty + ' · ' + roleName() + ' · <span class="nf7">NF-7 ' + oa + '</span></p>' + (lede ? '<p class="lede">' + lede + '</p>' : '') + '</div>';
+  }
+  function std(extra) {
+    return [{ id: 'puno', label: 'puno' }].concat(extra || [], [{ id: 'prazno', label: 'prazno' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' }]);
+  }
+  function sideState(v, title, lede, oa, loadMsg, errMsg) {
+    if (v === 'ucitavanje') return '<div data-nf7="' + oa + '">' + head(title, lede, oa) + '<section class="card" aria-busy="true">' + loadingBody(loadMsg) + '</section></div>';
+    if (v === 'greska') return '<div data-nf7="' + oa + '">' + head(title, lede, oa) + '<section class="card">' + errorBody(errMsg) + '</section></div>';
+    return null;
+  }
+  function empty(oa, title, msg) { return '<section class="card center" data-nf7="' + oa + '"><h2>' + title + '</h2><p class="note">' + msg + '</p></section>'; }
+  function srv(txt) { return '<p class="srv" aria-label="Poslužiteljska ovisnost"><b>poslužitelj</b> · ' + txt + '</p>'; }
+  function dialog(id, title, body) {
+    return '<div class="scrim" data-core="close"></div><div class="sb-dlg-host"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="' + id + '" tabindex="-1"><h2 id="' + id + '">' + title + '</h2>' + body + '</div></div>';
+  }
+  function td(lbl, inner, cls) { return '<td role="cell" data-label="' + lbl + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + inner + '</td>'; }
+  function table(cap, cols, rows) {
+    return '<div class="tbl rt"><table><caption class="sr-only">' + cap + '</caption><thead><tr>' + cols.map(function (c) { return '<th scope="col">' + c + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+  }
+  var WAIT = '<span class="tag wait">Rok još nije određen (čeka odluku)</span>';
+
+  /* ---------- OA-1 mjerila pilota ---------- */
+  App.register('mjerila', {
+    title: 'OA-1 Mjerila pilota', shell: 'side', variants: std(),
+    note: ['OA-1', 'pilot · Daniel 23. 11. 2026. t. 1', 'operater (network_engineer) dobiva ovaj zaslon umjesto „Račun bez uloge”; zbirni brojevi bez identiteta, skupine ispod praga 5 nisu prikazane'],
+    render: function (c) {
+      var v = c.variant, t = 'Mjerila pilota', l = 'Zbirni pokazatelji pilota na razini fakulteta. Nema imena, nema podataka po osobi.';
+      var s = sideState(v, t, l, 'OA-1', 'Učitavanje mjerila…', 'Mjerila trenutačno nisu dostupna. Pokušajte ponovno.'); if (s) return s;
+      if (v === 'prazno') return head(t, l, 'OA-1') + empty('OA-1', 'Još nema mjerila', 'Brojevi se pojavljuju kad prvi student otvori rad.') + srv('postoji: <b>ops.pilot-metrics.get</b>');
+      return '<div data-nf7="OA-1">' + head(t, l, 'OA-1') +
+        '<section class="card" aria-labelledby="m-h"><h2 id="m-h">Pilot do danas</h2><div class="kpi">' +
+        '<div><b>3</b><span>kolegija u pilotu</span></div><div><b>18</b><span>upisanih studenata</span></div><div><b>11</b><span>otvorenih radova</span></div><div><b>6</b><span>predanih radova</span></div><div><b>2</b><span>otvorene prijave problema</span></div></div>' +
+        '<p class="note">Skupine manje od 5 prikazane su kao „nije prikazano (manje od 5)”. Ništa se ne rangira i ne uspoređuje po osobi.</p></section>' +
+        '<section class="card" aria-labelledby="m-s"><h2 id="m-s">Skupine ispod praga</h2><p class="note">Kolegij C: <span class="tag">nije prikazano (manje od 5)</span></p></section></div>' + srv('postoji: <b>ops.pilot-metrics.get</b>');
+    }
+  });
+
+  /* ---------- OA-2 postavke fakulteta + čuvanje podataka ---------- */
+  App.register('postavke', {
+    title: 'OA-2 Postavke fakulteta', shell: 'side', variants: std(), roles: ['admin'],
+    note: ['OA-2 · OA-12', 'pilot · Daniel 23. 11. 2026. t. 5', 'rokovi čuvanja nisu određeni: tko ih određuje još nije odlučeno, zato „čeka odluku”; obrasci fakulteta samo čitanje'],
+    render: function (c) {
+      var v = c.variant, t = 'Postavke fakulteta', l = 'Pravila, pragovi, čuvanje podataka i obrasci fakulteta na jednom mjestu. Ovdje se samo čita.';
+      var s = sideState(v, t, l, 'OA-2', 'Učitavanje postavki…', 'Postavke trenutačno nisu dostupne. Pokušajte ponovno.'); if (s) return s;
+      if (v === 'prazno') return head(t, l, 'OA-2') + empty('OA-2', 'Pravila još nisu objavljena', 'Dok vlasnik ne objavi pravila fakulteta, nastavnici rade s privremenim pravilima.') + srv('postoji: <b>institution.config.get</b>, <b>institution.faculty-rules.get</b>');
+      return '<div data-nf7="OA-2">' + head(t, l, 'OA-2') + '<div class="cards3">' +
+        '<section class="card" aria-labelledby="p-1"><h2 id="p-1">Pravila</h2><p class="note">Citatni stil: FPZG · jezik rada: hrvatski (zadano), engleski</p><p class="meta">Na snazi od 1. 10. 2026. · verzija 2</p></section>' +
+        '<section class="card" aria-labelledby="p-2"><h2 id="p-2">Pragovi podrijetla</h2><p class="note">Pragovi fakulteta nemaju zadane vrijednosti. Postavljeno: 1 od 3 vrste rada.</p><p class="meta">Zadnja promjena: 12. 10. 2026.</p></section>' +
+        '<section class="card" aria-labelledby="p-3"><h2 id="p-3">Obrasci fakulteta</h2><p class="note">Izjava o pomoći pri pisanju: verzionirana datoteka (samo čitanje).</p></section></div>' +
+        '<section class="card" aria-labelledby="p-4"><h2 id="p-4">Čuvanje podataka</h2><p class="note">Rokovi čuvanja moraju biti određeni prije pilota. Do odluke prikazuju se kao neodređeni.</p>' +
+        table('Klase podataka i rokovi čuvanja', ['Klasa podataka', 'Rok čuvanja', 'Način'], [
+          '<tr>' + td('Klasa podataka', 'Zapis pisanja') + td('Rok čuvanja', WAIT) + td('Način', '<span class="tag">probni</span>') + '</tr>',
+          '<tr>' + td('Klasa podataka', 'Predani radovi') + td('Rok čuvanja', WAIT) + td('Način', '<span class="tag">probni</span>') + '</tr>',
+          '<tr>' + td('Klasa podataka', 'Dnevnik pristupa') + td('Rok čuvanja', WAIT) + td('Način', '<span class="tag">probni</span>') + '</tr>']) +
+        '<p class="note">Brisanje i ispravak podataka u pilotu idu izvan aplikacije; studentima je to objašnjeno u uputi „Moja prava”. <a href="#prava" data-go="prava">Pogledaj uputu</a></p></section>' +
+        '</div>' + srv('postoji: <b>institution.config.get</b>, <b>institution.faculty-rules.get</b>, <b>institution.origin-thresholds.get</b>, <b>institution.retention.get</b>; obrasci fakulteta: provjeriti (OD-11)');
+    }
+  });
+
+  /* ---------- OA-3 dnevnik radnji ---------- */
+  App.register('dnevnik', {
+    title: 'OA-3 Dnevnik radnji', shell: 'side', variants: std(),
+    note: ['OA-3', 'pilot · Daniel 23. 11. 2026. t. 4', 'samo čitanje; bez osobnih podataka studenata; polja at, actorRole, kind samo kao prijedlog (SRV-ADMIN-3)'],
+    render: function (c) {
+      var v = c.variant, t = 'Dnevnik radnji', l = 'Što su radili administrator i operater. Samo čitanje, bez podataka o studentima.';
+      var s = sideState(v, t, l, 'OA-3', 'Učitavanje dnevnika…', 'Dnevnik trenutačno nije dostupan. Pokušajte ponovno.'); if (s) return s;
+      if (v === 'prazno') return head(t, l, 'OA-3') + empty('OA-3', 'Još nema zapisanih radnji', 'Radnje se pojavljuju čim netko potvrdi ulogu ili objavi pravilo.') + srv('nedostaje, <b>SRV-ADMIN-3</b>');
+      var R = function (d, u, r) { return '<tr>' + td('Vrijeme', d) + td('Uloga', u) + td('Radnja', r) + '</tr>'; };
+      return '<div data-nf7="OA-3">' + head(t, l, 'OA-3') + '<section class="card">' +
+        table('Dnevnik radnji', ['Vrijeme', 'Uloga', 'Radnja'], [
+          R('20. 11. 2026. u 10:12', 'administrator fakulteta', 'Uloga potvrđena (nastavnik)'),
+          R('18. 11. 2026. u 14:03', 'administrator fakulteta', 'Pravilo objavljeno (verzija 2)'),
+          R('17. 11. 2026. u 09:40', 'administrator fakulteta', 'Izvoz zatražen'),
+          R('17. 11. 2026. u 09:55', 'administrator fakulteta', 'Izvoz odobren'),
+          R('12. 11. 2026. u 16:20', 'operater', 'Prag promijenjen')]) + '</section></div>' + srv('nedostaje, <b>SRV-ADMIN-3</b> (nova operacija čitanja)');
+    }
+  });
+
+  /* ---------- OA-5 Moja prava (studentska pomoć) ---------- */
+  App.register('prava', {
+    title: 'OA-5 Moja prava (pomoć)', shell: 'side', variants: std(), nav: 'postavke',
+    note: ['OA-5', 'pilot · Daniel 23. 11. 2026. t. 2', 'statični tekst u studentskoj pomoći; oznaka „čeka pravni pregled”; brisanje i ispravak idu izvan aplikacije'],
+    render: function (c) {
+      var v = c.variant, t = 'Moja prava', l = 'Što možete tražiti o svojim podacima i kome se javiti.';
+      var s = sideState(v, t, l, 'OA-5', 'Učitavanje upute…', 'Uputa trenutačno nije dostupna. Pokušajte ponovno.'); if (s) return s;
+      if (v === 'prazno') return head(t, l, 'OA-5') + empty('OA-5', 'Uputa još nije objavljena', 'Tekst čeka pravni pregled.');
+      return '<div data-nf7="OA-5">' + head(t, l, 'OA-5') + '<section class="card"><p><span class="tag open">čeka pravni pregled</span></p>' +
+        '<h2>Uvid i izvoz</h2><p class="note">Uvid u svoje podatke i izvoz tražite kroz referadu fakulteta. Administrator fakulteta provjerava identitet i odobrava izvoz.</p>' +
+        '<h2>Ispravak i brisanje</h2><p class="note">U pilotu se ispravak i brisanje podataka rješavaju izvan aplikacije. Javite se administratoru fakulteta (koordinatoru).</p>' +
+        '<h2>Koliko traje</h2><p class="note">Rok odgovora još nije određen (čeka odluku).</p></section></div>' + srv('statični tekst; nema poslužiteljske ovisnosti');
+    }
+  });
+
+  /* ---------- OA-6 zahtjevi izvoza ---------- */
+  App.register('izvoz', {
+    title: 'OA-6 Zahtjevi izvoza', shell: 'side', variants: std([{ id: 'dupli', label: 'dupli zahtjev' }]), roles: ['admin'],
+    note: ['OA-6', 'pilot · po preporuci pregleda', 'stanja: čeka odobrenje, odobren, preuzet, istekao; upozorenje na dupli zahtjev; stanja iz `state` provjeriti'],
+    render: function (c) {
+      var v = c.variant, t = 'Zahtjevi izvoza podataka', l = 'Zahtjevi studenata za izvoz vlastitih podataka i njihovo stanje.';
+      var s = sideState(v, t, l, 'OA-6', 'Učitavanje zahtjeva…', 'Zahtjevi trenutačno nisu dostupni. Pokušajte ponovno.'); if (s) return s;
+      if (v === 'prazno') return head(t, l, 'OA-6') + empty('OA-6', 'Nema zahtjeva', 'Zahtjev se pojavi kad ga administrator zabilježi.') + srv('postoji: <b>institution.student-data-exports.get</b>');
+      var R = function (s0, st, d) { return '<tr>' + td('Student', s0) + td('Stanje', '<span class="tag">' + st + '</span>') + td('Datum', d) + '</tr>'; };
+      return '<div data-nf7="OA-6">' + head(t, l, 'OA-6') +
+        (v === 'dupli' ? '<div class="banner warn" role="alert"><p><b>Za ovog studenta već postoji otvoren zahtjev.</b> Student A ima zahtjev u stanju „čeka odobrenje”. Novi zahtjev nije zabilježen.</p></div>' : '') +
+        '<section class="card"><div class="acts"><button class="btn" type="button" data-act="novi">Zabilježi zahtjev</button></div>' +
+        table('Zahtjevi izvoza', ['Student', 'Stanje', 'Datum'], [R('Student A', 'čeka odobrenje', '20. 11. 2026.'), R('Student B', 'odobren', '14. 11. 2026.'), R('Student C', 'preuzet', '10. 11. 2026.'), R('Student D', 'istekao', '28. 10. 2026.')]) + '</section></div>' +
+        srv('postoji: <b>institution.student-data-exports.get|post</b>, <b>institution.student-data-exports-approve.post</b>; potpuni skup stanja: provjeriti');
+    },
+    actions: { novi: function () { App.state.variant.izvoz = 'dupli'; App.rerender(); } }
+  });
+
+  /* ---------- OA-7 prijave problema ---------- */
+  var REP = [
+    ['Tehnički', 'operater', 'Rad se ne sprema (v1.4)', 'zaprimljeno', '22. 11. 2026.'],
+    ['Kolegij ili zadatak', 'nastavnik', 'Pitanje o roku zadatka', 'zaprimljeno', '21. 11. 2026.'],
+    ['Račun i uloge', 'administrator fakulteta', 'Račun bez uloge', 'riješeno', '19. 11. 2026.']
+  ];
+  App.register('prijave', {
+    title: 'OA-7 Prijave problema', shell: 'side', variants: std(),
+    note: ['OA-7', 'pilot · Daniel 23. 11. 2026. t. 8', 'rješava onaj kome prijava pripada po vrsti: tehnički problem operater, kolegij ili zadatak nastavnik, račun i uloge administrator fakulteta; stanje „zaprimljeno/riješeno”'],
+    render: function (c) {
+      var v = c.variant, t = 'Prijave problema', l = 'Prijave koje su podnijeli studenti, usmjerene onome tko ih rješava.';
+      var s = sideState(v, t, l, 'OA-7', 'Učitavanje prijava…', 'Prijave trenutačno nisu dostupne. Pokušajte ponovno.'); if (s) return s;
+      if (v === 'prazno') return head(t, l, 'OA-7') + empty('OA-7', 'Nema prijava', 'Prijave se pojavljuju kad ih student pošalje iz pomoći.') + srv('nedostaje, <b>SRV-ADMIN-7</b>');
+      var role = App.state.role, own = role === 'op' ? 'operater' : 'administrator fakulteta';
+      var rows = REP.map(function (r) {
+        return '<tr>' + td('Kategorija', r[0]) + td('Usmjereno', r[1] + (r[1] === own ? ' <span class="tag">vaša</span>' : '')) + td('Opis', r[2]) + td('Stanje', '<span class="tag">' + r[3] + '</span>') + td('Datum', r[4]) + '</tr>';
+      });
+      return '<div data-nf7="OA-7">' + head(t, l, 'OA-7') + '<section class="card">' + table('Prijave problema', ['Kategorija', 'Usmjereno', 'Opis', 'Stanje', 'Datum'], rows) +
+        '<p class="note">Opis prikazuje samo ono što je student upisao. Prijava ima dva stanja: zaprimljeno i riješeno.</p></section></div>' + srv('nedostaje, <b>SRV-ADMIN-7</b> (čitanje i stanje); postoji samo slanje: <b>support.problem-report.post</b>');
+    }
+  });
+
+  /* ---------- OA-9 asistent (samo čitanje) ---------- */
+  App.register('asistent', {
+    title: 'OA-9 Asistent na fakultetu', shell: 'side', variants: std(), roles: ['admin'],
+    note: ['OA-9', 'pilot · Daniel 23. 11. 2026. t. 6', 'prekidač ostaje u konfiguraciji, administrator ga samo vidi; bez pružatelja, modela, kvote i kvačica (Q-10)'],
+    render: function (c) {
+      var v = c.variant, t = 'Asistent na fakultetu', l = 'Je li asistent uključen i što pravila dopuštaju po vrsti rada. Student vidi isto. Samo čitanje.';
+      var s = sideState(v, t, l, 'OA-9', 'Učitavanje postavki asistenta…', 'Postavke asistenta trenutačno nisu dostupne. Pokušajte ponovno.'); if (s) return s;
+      if (v === 'prazno') return head(t, l, 'OA-9') + empty('OA-9', 'Pravila asistenta još nisu postavljena', 'Nastavnik postavlja pravila po zadatku.') + srv('postoji: <b>institution.faculty-rules.get</b>');
+      var R = function (k, p, u) { return '<tr>' + td('Vrsta rada', k) + td('Asistent', p) + td('Dopuštene uporabe', u) + '</tr>'; };
+      return '<div data-nf7="OA-9">' + head(t, l, 'OA-9') + '<section class="card"><p><b>Asistent je uključen za Fakultet A.</b> Prekidač se mijenja u konfiguraciji, ne na ovom zaslonu.</p>' +
+        table('Pravila asistenta po vrsti rada', ['Vrsta rada', 'Asistent', 'Dopuštene uporabe'], [R('Esej', 'dopušten', 'objašnjenje, povratna informacija'), R('Seminarski rad', 'dopušten', 'objašnjenje'), R('Završni rad', 'nije dopušten', 'nijedna')]) + '</section></div>' +
+        srv('pravila po vrsti rada postoje: <b>institution.faculty-rules.get</b>; polje „asistent uključen na fakultetu” za čitanje: nedostaje, <b>SRV-ADMIN-9</b>');
+    }
+  });
+
+  /* ---------- OA-10 uvoz popisa ---------- */
+  App.register('uvoz', {
+    title: 'OA-10 Uvoz popisa studenata', shell: 'side', roles: ['admin'],
+    variants: std([{ id: 'pregled', label: 'pregled prije potvrde' }, { id: 'potvrdeno', label: 'uvezeno' }]),
+    note: ['OA-10', 'pilot · Daniel 23. 11. 2026. t. 3', 'uvoz iz Merlina ili ISVU-a uz pregled prije potvrde; upis kodom ostaje kao druga mogućnost; format datoteke nije određen'],
+    render: function (c) {
+      var v = c.variant, t = 'Uvoz popisa studenata', l = 'Učitajte popis iz Merlina ili ISVU-a, pregledajte što će se dogoditi i tek tada potvrdite.';
+      var s = sideState(v, t, l, 'OA-10', 'Učitavanje popisa…', 'Popis nije moguće učitati. Pokušajte ponovno.'); if (s) return s;
+      var alt = '<section class="card"><h2>Upis kodom</h2><p class="note">Studenti se i dalje mogu upisati kodom za upis koji dobije nastavnik. Uvoz popisa je druga mogućnost.</p></section>';
+      var pick = '<section class="card"><h2>Odaberite datoteku</h2><div class="field"><label for="uv-f">Datoteka s popisom</label><input class="input" id="uv-f" type="file" aria-describedby="uv-h"><p class="meta" id="uv-h">Merlin ili ISVU. Format se određuje kad poslužitelj bude gotov.</p></div><div class="acts"><button class="btn" type="button" data-act="pregled">Pregledaj popis</button></div></section>';
+      if (v === 'prazno') return '<div data-nf7="OA-10">' + head(t, l, 'OA-10') + pick + alt + srv('nedostaje, <b>SRV-ADMIN-10</b>; format datoteke nije određen') + '</div>';
+      if (v === 'potvrdeno') return '<div data-nf7="OA-10">' + head(t, l, 'OA-10') + '<div class="banner" role="status"><p><b>Popis je uvezen.</b> Upisano je 14 novih studenata. 3 već upisana i 2 neodgovarajuća nisu promijenjena.</p></div>' + alt + srv('nedostaje, <b>SRV-ADMIN-10</b>') + '</div>';
+      var R = function (k, n, d) { return '<tr>' + td('Što će se dogoditi', k) + td('Broj', n, 'num') + td('Pojedinosti', d) + '</tr>'; };
+      return '<div data-nf7="OA-10">' + head(t, l, 'OA-10') + pick +
+        '<section class="card" aria-labelledby="uv-p"><h2 id="uv-p">Pregled prije potvrde</h2><p class="note">Datoteka: popis-kolegij-a.csv (izmišljeni podaci). Ništa još nije upisano.</p>' +
+        table('Pregled uvoza', ['Što će se dogoditi', 'Broj', 'Pojedinosti'], [R('Novi', 14, 'bit će upisani na Kolegij A'), R('Već upisani', 3, 'ostaju kakvi jesu'), R('Neodgovarajući', 2, 'redak nije moguće upisati; ispravite datoteku')]) +
+        '<div class="acts"><button class="btn" type="button" data-act="potvrdi">Potvrdi uvoz</button><button class="btn secondary" type="button" data-act="odustani">Odustani</button></div></section>' + alt + srv('nedostaje, <b>SRV-ADMIN-10</b>; ne izmišljati polja ni format') +
+        (App.state.dlg === 'uvoz' ? dialog('uv-d', 'Upisati 14 studenata?', '<p class="note">Upis se ne može automatski poništiti. Provjerite pregled prije potvrde.</p><div class="acts"><button class="btn" type="button" data-act="da">Upiši</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div>') : '') + '</div>';
+    },
+    actions: {
+      pregled: function () { App.state.variant.uvoz = 'pregled'; App.rerender(); },
+      potvrdi: function () { App.state.dlg = 'uvoz'; App.rerender(); },
+      odustani: function () { App.state.variant.uvoz = 'prazno'; App.rerender(); },
+      da: function () { App.state.dlg = null; App.state.variant.uvoz = 'potvrdeno'; App.rerender(); App.toast('Popis je uvezen.'); }
+    }
+  });
+})();
+</script>
+</body></html>
