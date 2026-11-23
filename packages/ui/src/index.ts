@@ -63,4 +63,6 @@ export {
   ProvenanceShare, SHARE_CATEGORIES, shareIsConsistent,
   type AiMatchRecord, type MatchSpan, type ProvenanceBlock, type ProvenanceShareLabels, type ProvenanceShareProps,
   type ProvenanceShareState, type ShareCategory, type ShareEntry, type ShareRecord,
+  RhythmView, MAX_RHYTHM_INTERVALS, rhythmIsConsistent,
+  type RhythmBurst, type RhythmRecord, type RhythmViewLabels, type RhythmViewState,
 } from "./components/provenance-share";

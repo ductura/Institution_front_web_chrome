@@ -1,4 +1,7 @@
-import { ProvenanceShare, SHARE_CATEGORIES, type ProvenanceShareLabels, type ProvenanceShareState, type ShareRecord } from "@ductura/ui";
+import {
+  ProvenanceShare, RhythmView, SHARE_CATEGORIES,
+  type ProvenanceShareLabels, type ProvenanceShareState, type RhythmBurst, type RhythmViewLabels, type RhythmViewState, type ShareRecord,
+} from "@ductura/ui";
 import type { ReactNode } from "react";
 
 import type { CatalogState } from "./coverage";
@@ -50,6 +53,35 @@ const READY: ProvenanceShareState = {
   },
 };
 
+const RHYTHM_LABELS: RhythmViewLabels = {
+  title: "Ritam unosa",
+  notice: "Prikazuje samo kako je tekst unesen. Ne pokazuje tko je autor teksta.",
+  off: "Bilježenje ritma isključeno je za ovaj zadatak.",
+  empty: "Nema zabilježenih naleta tipkanja.",
+  burst: "Nalet {n}",
+  duration: "trajanje",
+  chars: "znakova",
+  longestPause: "najdulja stanka",
+  seconds: "s",
+  graph: "Razmaci između unosa u naletu {n}",
+  loading: "Učitavam ritam unosa.",
+  none: "Za ovu predaju nema zapisa ritma.",
+  error: "Ritam unosa trenutačno nije moguće prikazati.",
+};
+
+// Invented gaps between inputs (ms) of two bursts.
+const gaps = (seed: number, n: number, pauseAt: number[]) =>
+  Array.from({ length: n }, (_, i) => (pauseAt.includes(i) ? 1400 + seed * 100 : 90 + ((i * 37 + seed * 11) % 160)));
+const burst = (intervalsMs: number[]): RhythmBurst => ({
+  durationMs: intervalsMs.reduce((a, b) => a + b, 0),
+  chars: intervalsMs.length + 1,
+  longestPauseMs: Math.max(...intervalsMs),
+  intervalsMs,
+});
+const BURSTS = [burst(gaps(1, 64, [20, 41])), burst(gaps(2, 38, [12]))];
+
+const rhythm = (state: RhythmViewState) => <RhythmView labels={RHYTHM_LABELS} state={state} />;
+
 const view = (state: ProvenanceShareState) => <ProvenanceShare labels={LABELS} state={state} onRetry={() => undefined} />;
 
 export const provenanceShareEntries = {
@@ -69,5 +101,18 @@ export const provenanceShareEntries = {
     ),
     puno: () => view(READY),
     onemogućeno: () => view({ kind: "disabled" }),
+  } satisfies Record<CatalogState, () => ReactNode>,
+  // P-1 rhythm of input (PRIJEDLOG): invented bursts, provisional labels; demo only until the legal opinion (N-3).
+  RhythmView: {
+    prazno: () => (
+      <div style={{ display: "grid", gap: 24 }}>
+        {rhythm({ kind: "none" })}
+        {rhythm({ kind: "ready", rhythm: { recorded: true, bursts: [], notice: "not_authorship_evidence" } })}
+      </div>
+    ),
+    učitavanje: () => rhythm({ kind: "loading" }),
+    greška: () => rhythm({ kind: "error" }),
+    puno: () => rhythm({ kind: "ready", rhythm: { recorded: true, bursts: BURSTS, notice: "not_authorship_evidence" } }),
+    onemogućeno: () => rhythm({ kind: "ready", rhythm: { recorded: false, bursts: [], notice: "not_authorship_evidence" } }),
   } satisfies Record<CatalogState, () => ReactNode>,
 };
