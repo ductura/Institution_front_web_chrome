@@ -188,5 +188,9 @@ test("the anchored comment is shown after the server confirms and returns it", a
   } finally {
     finish();
   }
-  await expect(page.getByText(comment, { exact: true })).toBeVisible();
+  // The thread the server returned, not the new comment's own text box: that
+  // box holds the same text until the answer, so an exact match on the page
+  // passed only while it was still there (ZEL-CI-WEB, flaky under load).
+  await expect(page.getByRole("form", { name: comments.newTitle })).toHaveCount(0);
+  await expect(page.getByRole("article").getByText(comment)).toBeVisible();
 });

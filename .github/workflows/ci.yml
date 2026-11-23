@@ -103,6 +103,19 @@ jobs:
       - run: npm install
       - name: Testovi pomoćnih funkcija
         run: npm run test:helpers
+      # Preglednici iz predmemorije, kao u ui i app (ZEL-CI-WEB): ključ je
+      # verzija Playwrighta i skup preglednika. Koraci instalacije ostaju isti;
+      # s predmemorijom `playwright install` ne preuzima ponovno, a --with-deps
+      # i dalje postavlja sistemske pakete. Chrome i Edge nisu u ovoj mapi i
+      # instaliraju se kao i prije.
+      - name: Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('./package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
+      - name: Browser cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-root-${{ github.event_name == 'pull_request' && 'chromium' || 'matrix' }}
       # e2e matrica (DAN-755): svi preglednici matrice; chrome i msedge su
       # pravi Google Chrome i Microsoft Edge, obvezni u CI-ju. Na pull
       # requestu samo chromium (Daniel, 22. 11. 2026: brži CI); puna matrica
@@ -161,11 +174,14 @@ jobs:
 
   # @ductura/ui and its catalogue (DAN-750, web 2.c1): typecheck, unit tests,
   # visual baselines and axe. Moved from ui.yml so ci-ok can need it (DAN-885).
-  # The ui job runs as four parts of one matrix job, each on its own runner:
+  # The ui job runs as parts of one matrix job, each on its own runner:
   # axe is CPU-bound (#461), so the six full-page checks were serial on one
   # runner and the job took 12 to 15 minutes. The checks, rules, themes and
   # widths are unchanged; only where they run changes. ci-ok needs `ui`, whose
-  # result is success only when every part succeeded.
+  # result is success only when every part succeeded. The checks are two parts
+  # (ZEL-CI-WEB): `checks` (typecheck and the coverage check of the parts) and
+  # `unit` (the unit tests of every workspace package); only the browser parts
+  # (`browser: true`) install a browser.
   ui:
     needs: changes
     if: ${{ needs.changes.outputs.ui == 'true' }}
@@ -183,11 +199,12 @@ jobs:
       matrix:
         include:
           - { part: checks }
-          - { part: behaviour, leg: 1 }
-          - { part: behaviour, leg: 2 }
-          - { part: behaviour, leg: 3 }
-          - { part: axe-dark }
-          - { part: axe-light }
+          - { part: unit }
+          - { part: behaviour, leg: 1, browser: true }
+          - { part: behaviour, leg: 2, browser: true }
+          - { part: behaviour, leg: 3, browser: true }
+          - { part: axe-dark, browser: true }
+          - { part: axe-light, browser: true }
     # One place for the filters: the parts below and the coverage check use them.
     env:
       BASELINES: "matches its baselines"
@@ -212,7 +229,7 @@ jobs:
         if: matrix.part == 'checks'
         run: pnpm -r run typecheck
       - name: Unit tests (tokens, provenance, save state, catalogue coverage)
-        if: matrix.part == 'checks'
+        if: matrix.part == 'unit'
         run: pnpm -r run test
       # Every blocking catalogue test must run in exactly one part: a new axe
       # test outside both shell filters would otherwise run nowhere.
@@ -239,26 +256,22 @@ jobs:
             exit 1
           fi
       - name: Playwright version
-        if: matrix.part != 'checks'
+        if: matrix.browser
         id: pw
         run: echo "version=$(grep -m1 -oP "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
       - name: Browser cache
-        if: matrix.part != 'checks'
+        if: matrix.browser
         id: pw-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
       - name: Browser
-        if: matrix.part != 'checks' && steps.pw-cache.outputs.cache-hit != 'true'
+        if: matrix.browser && steps.pw-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @ductura/catalog exec playwright install --with-deps chromium
       - name: Browser system dependencies (browser cached)
-        if: matrix.part != 'checks' && steps.pw-cache.outputs.cache-hit == 'true'
+        if: matrix.browser && steps.pw-cache.outputs.cache-hit == 'true'
         run: pnpm --filter @ductura/catalog exec playwright install-deps chromium
-      # Daniel (22. 11. 2026): while the features are still being built, the
-      # pixel baselines only report and do not block ci-ok, and run only on
-      # pushes to the base, not on PRs; behaviour and axe still block. They
-      # become required again with VIZ-0.
       - name: Behaviour tests of the catalogue
         if: matrix.part == 'behaviour'
         run: |
@@ -276,15 +289,62 @@ jobs:
       - name: Axe tests of the catalogue (light shell)
         if: matrix.part == 'axe-light'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_LIGHT"
-      - name: Visual baselines of the catalogue (report only)
-        id: baselines
-        if: matrix.part == 'behaviour' && github.event_name == 'push'
-        continue-on-error: true
-        run: pnpm --filter @ductura/catalog run test:visual --grep "$BASELINES" --shard="${{ matrix.leg }}/3"
       - uses: actions/upload-artifact@v4
-        if: failure() || steps.baselines.outcome == 'failure'
+        if: failure()
         with:
           name: catalog-report-${{ matrix.part }}${{ matrix.leg }}
+          path: catalog/test-results/
+
+  # Daniel (22. 11. 2026): while the features are still being built, the pixel
+  # baselines of the catalogue only report and do not block ci-ok, and run only
+  # on pushes to the base, not on PRs; behaviour and axe still block. They
+  # become required again with VIZ-0. A job of its own outside ci-ok's needs
+  # (ZEL-CI-WEB), so ci-ok does not wait for a check that cannot fail it; it
+  # still runs on every push, as three Playwright shards. Listed in REPORT_ONLY
+  # in test/unit/ci-ok.test.js.
+  ui-baselines:
+    if: ${{ github.event_name == 'push' }}
+    name: ui-baselines (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1/3", "2/3", "3/3"]
+    env:
+      BASELINES: "matches its baselines"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.33.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Install src/client
+        working-directory: src/client
+        run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+      - name: Playwright version
+        id: pw
+        run: echo "version=$(grep -m1 -oP "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
+      - name: Browser cache
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
+      - name: Browser
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @ductura/catalog exec playwright install --with-deps chromium
+      - name: Browser system dependencies (browser cached)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter @ductura/catalog exec playwright install-deps chromium
+      - name: Visual baselines of the catalogue (report only)
+        id: baselines
+        continue-on-error: true
+        run: pnpm --filter @ductura/catalog run test:visual --grep "$BASELINES" --shard="${{ matrix.shard }}"
+      - uses: actions/upload-artifact@v4
+        if: steps.baselines.outcome == 'failure'
+        with:
+          name: catalog-baselines-${{ strategy.job-index }}
           path: catalog/test-results/
 
   # The institution front's host (#2028 c.6993786629 §1, §3.3): packages/app
@@ -312,7 +372,12 @@ jobs:
       - name: Install src/client
         working-directory: src/client
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+      # The one build of the e2e (ZEL-CI-WEB): in CI the Playwright webServer
+      # only starts it (packages/app/playwright.config.ts). The rewrites read
+      # the server URL at build time, so it is the same fake one as there.
       - name: Build
+        env:
+          INSTITUTION_SERVER_URL: http://127.0.0.1:9
         run: pnpm run build
       - name: Playwright version
         id: pw
