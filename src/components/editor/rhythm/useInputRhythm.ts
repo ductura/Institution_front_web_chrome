@@ -2,15 +2,29 @@
 
 import { useEffect } from "react";
 
-import { createRhythmRecorder, originOfInput, type OriginKind, type RhythmPort } from "@/client/input-rhythm";
+import { createRhythmRecorder, originOfInput, type OriginKind, type RhythmPayload, type RhythmPort } from "@/client/input-rhythm";
 
 const FLUSH_MS = 10_000;
+
+/**
+ * Reads the teacher's switch again and sends `payload` only while it is on (PIL-P1-RITAM-PREKIDAC).
+ * `onSetting` hands the answer to the recorder, so an "off" holds from this moment; with it off the
+ * payload is dropped, never sent later. Resolves true when it was sent.
+ */
+export async function sendIfOn(port: RhythmPort, documentId: string, payload: RhythmPayload, onSetting: (on: boolean) => void): Promise<boolean> {
+  const on = await port.recording(documentId);
+  onSetting(on);
+  if (!on) return false;
+  await port.send(documentId, payload);
+  return true;
+}
 
 /**
  * Watches the editor's DOM and sends the origin of each input and the rhythm of typing through
  * `port` (WEB-0910). It reads only `inputType`, never `data` or a key, changes nothing and
  * calls no `preventDefault`. Without a port, or with the setting off, it records no rhythm;
- * the origin is still counted (rhythm is the only part the teacher can turn off).
+ * the origin is still counted (rhythm is the only part the teacher can turn off). The setting is
+ * read when the editor opens and again before each send, so a teacher's "off" holds from then on.
  */
 export function useInputRhythm(dom: HTMLElement | null, documentId: string, port: RhythmPort | null, now: () => number = () => Date.now()): void {
   useEffect(() => {
@@ -30,12 +44,15 @@ export function useInputRhythm(dom: HTMLElement | null, documentId: string, port
       const length = kind === "typed" ? 1 : 0; // pasted length is counted by the segment, not here
       counts.set(kind, (counts.get(kind) ?? 0) + length);
     };
+    // The teacher's switch is read again before every send (PIL-P1-RITAM-PREKIDAC): off holds from
+    // that moment, and what was measured but not yet sent is dropped, never sent after the switch.
     const flush = () => {
       const bursts = recorder.take();
       const origins = [...counts].map(([kind, codePoints]) => ({ kind, codePoints }));
       counts.clear();
       if (bursts.length === 0 && origins.length === 0) return;
-      void port.send(documentId, { origins, bursts }).catch(() => { /* a later flush carries the next ones */ });
+      void sendIfOn(port, documentId, { origins, bursts }, (on) => { if (alive) recorder.setEnabled(on); })
+        .catch(() => { /* a later flush carries the next ones */ });
     };
     const onHidden = () => { if (document.visibilityState === "hidden") { recorder.breakBurst(); flush(); } };
 

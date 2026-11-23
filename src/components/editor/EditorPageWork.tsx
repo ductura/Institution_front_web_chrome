@@ -240,7 +240,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
-      <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help}
+      <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId}
         fresh={phase === "ready" && editor?.isEmpty}
         notice={{ course, title, length: length?.range ?? undefined, instructions: null }} />
     </EditorPanelLayout>

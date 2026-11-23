@@ -146,4 +146,53 @@ describe("rhythm port over the server", () => {
     })).resolves.toBeUndefined();
     expect(n).toBe(2);
   });
+
+  // PIL-P1-RITAM-PREKIDAC: the setting the student sees and "Obriši zabilježeni ritam".
+  it("reads the setting with its level: the server's source, else default only when undated", async () => {
+    const teacher = { role: "teacher", name: "Iva Izmišljena" } as const;
+    for (const [body, level] of [
+      [{ enabled: true, changedBy: null, changedAt: null }, "default"],
+      [{ enabled: false, source: "course", changedBy: teacher, changedAt: "2026-11-23T08:00:00.000Z" }, "course"],
+      [{ enabled: false, source: "assignment", changedBy: teacher, changedAt: "2026-11-23T08:00:00.000Z" }, "assignment"],
+      [{ enabled: false, changedBy: teacher, changedAt: "2026-11-23T08:00:00.000Z" }, null],
+      [{ enabled: false, source: "elsewhere", changedBy: teacher, changedAt: "2026-11-23T08:00:00.000Z" }, null],
+    ] as const) {
+      const { call } = answering(() => ok(body));
+      const answer = await createRhythmPort(call).setting("doc-1");
+      expect(answer).toEqual({ kind: "ready", state: { enabled: body.enabled, level, changedBy: body.changedBy, changedAt: body.changedAt } });
+    }
+  });
+
+  it("negative control: a refused, malformed or failed setting is never shown as on", async () => {
+    for (const [answer, kind] of [
+      [{ ok: false, status: 401, code: "session_expired" }, "signedOut"],
+      [{ ok: false, status: 404, code: "not_found" }, "unavailable"],
+      [{ ok: false, status: 0, code: "unexpected" }, "unavailable"],
+      [ok({ enabled: "true", changedBy: null, changedAt: null }), "unavailable"],
+    ] as const) {
+      const { call } = answering(() => answer);
+      expect(await createRhythmPort(call).setting("doc-1")).toEqual({ kind });
+      expect(await createRhythmPort(call).recording("doc-1")).toBe(false);
+    }
+    const thrown = createRhythmPort((async () => { throw new TypeError("offline"); }) as unknown as Call);
+    expect(await thrown.setting("doc-1")).toEqual({ kind: "unavailable" });
+  });
+
+  it("erases through work.input-rhythm.delete and reports only the count the server confirmed", async () => {
+    const { call, calls } = answering(() => ok({ deleted: 7 }));
+    expect(await createRhythmPort(call).erase("doc-1")).toEqual({ kind: "deleted", count: 7 });
+    expect(calls).toEqual([{ id: "work.input-rhythm.delete", input: { params: { documentId: "doc-1" }, query: undefined, body: undefined } }]);
+    for (const [answer, kind] of [
+      [{ ok: false, status: 401, code: "session_expired" }, "signedOut"],
+      [{ ok: false, status: 503, code: "unavailable" }, "unavailable"],
+      [ok({ deleted: -1 }), "unavailable"],
+      [ok({}), "unavailable"],
+    ] as const) {
+      const refused = answering(() => answer);
+      expect(await createRhythmPort(refused.call).erase("doc-1")).toEqual({ kind });
+    }
+    const thrown = createRhythmPort((async () => { throw new TypeError("offline"); }) as unknown as Call);
+    expect(await thrown.erase("doc-1")).toEqual({ kind: "unavailable" });
+  });
 });
+

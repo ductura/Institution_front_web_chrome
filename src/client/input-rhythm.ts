@@ -1,6 +1,7 @@
 // Rhythm of entry and the kind of origin of an input (P-1, WEB-0910), behind a port.
-// `createRhythmPort` is the real adapter over work.input-rhythm-setting.get and
-// work.input-rhythm.post (PIL-P1-RITAM-EDITOR); input-rhythm-fake.ts stays for tests and the demo.
+// `createRhythmPort` is the real adapter over work.input-rhythm-setting.get, work.input-rhythm.post
+// (PIL-P1-RITAM-EDITOR) and work.input-rhythm.delete (PIL-P1-RITAM-PREKIDAC); input-rhythm-fake.ts
+// stays for tests and the demo.
 //
 // What is kept, by construction (P-1 rule 4, Constitution v1.7 to v1.9):
 // - gaps in milliseconds between inputs inside one burst, nothing else: no key, no character,
@@ -155,32 +156,95 @@ export type RhythmPayload = {
   readonly bursts: readonly RhythmBurst[];
 };
 
+/** The level the setting of a work comes from (Daniel 23. 11. 2026.: per course, an assignment may override it). */
+export type RhythmLevel = "assignment" | "course" | "default";
+
+/** The setting of one work as the student sees it: never a switch, only what it is and who set it. */
+export type RhythmSettingState = {
+  readonly enabled: boolean;
+  /** Null when the answer does not say and cannot be told from it (a dated change without `source`). */
+  readonly level: RhythmLevel | null;
+  readonly changedBy: { readonly role: "teacher" | "mentor"; readonly name: string | null } | null;
+  readonly changedAt: string | null;
+};
+export type RhythmSettingAnswer =
+  | { readonly kind: "ready"; readonly state: RhythmSettingState }
+  | { readonly kind: "signedOut" }
+  | { readonly kind: "unavailable" };
+/** "Obriši zabilježeni ritam": how many bursts the server deleted, never more than it confirmed. */
+export type RhythmEraseAnswer =
+  | { readonly kind: "deleted"; readonly count: number }
+  | { readonly kind: "signedOut" }
+  | { readonly kind: "unavailable" };
+
 /**
- * The port of SRV-0910. `recording()` is the faculty's setting for this work: only a teacher
- * changes it (not the student), so there is no write method here for the student's side.
+ * The port of SRV-0910. The setting is the teacher's (per course, an assignment may override it):
+ * only a teacher changes it, so there is no write method for it here. The student may read it and
+ * delete what was recorded of their own work.
  */
 export interface RhythmPort {
+  /** True only when the server says exactly `enabled: true`; anything else, a failure included, is off. */
   recording(documentId: string): Promise<boolean>;
+  setting(documentId: string): Promise<RhythmSettingAnswer>;
+  erase(documentId: string): Promise<RhythmEraseAnswer>;
   send(documentId: string, payload: RhythmPayload): Promise<void>;
 }
 
 type Call = ReturnType<typeof createApi>;
+type Result = { readonly ok: boolean; readonly status: number; readonly body?: unknown };
+
+const LEVELS: readonly RhythmLevel[] = ["assignment", "course", "default"];
+const UNAVAILABLE = { kind: "unavailable" } as const;
+
+function refused(result: Result): { readonly kind: "signedOut" } | typeof UNAVAILABLE {
+  return result.status === 401 ? { kind: "signedOut" } : UNAVAILABLE;
+}
 
 /**
- * The port over the server (SRV-0910 as merged). `recording` is the switch of the work: any
- * answer other than an exact `enabled: true` reads as off, so nothing is recorded on doubt.
- * `send` posts each burst on its own as `{ gapsMs }`, the only field the route takes: the
- * origins stay in the browser (the route has none) and neither throws, so a failed send never
- * reaches the writing or the save of the text.
+ * The setting from an answer of work.input-rhythm-setting.get. The level is the server's `source`
+ * when it names one (SRV #652); the extract of this route has none yet, so an undated answer is the
+ * default and a dated one has no level the screen could claim.
+ */
+export function settingOf(result: Result): RhythmSettingAnswer {
+  if (!result.ok) return refused(result);
+  const body = result.body as { enabled?: unknown; source?: unknown; changedBy?: RhythmSettingState["changedBy"]; changedAt?: unknown } | undefined;
+  if (typeof body?.enabled !== "boolean") return UNAVAILABLE;
+  const changedAt = typeof body.changedAt === "string" ? body.changedAt : null;
+  const named = LEVELS.find((level) => level === body.source);
+  return {
+    kind: "ready",
+    state: { enabled: body.enabled, level: named ?? (changedAt === null ? "default" : null), changedBy: body.changedBy ?? null, changedAt },
+  };
+}
+
+/**
+ * The port over the server (SRV-0910 as merged). Nothing here throws: a failure is `unavailable`
+ * (or `false` for `recording`), so nothing is recorded on doubt. `send` posts each burst on its
+ * own as `{ gapsMs }`, the only field the route takes: the origins stay in the browser (the route
+ * has none), and a failed send never reaches the writing or the save of the text.
  */
 export function createRhythmPort(call: Call = createApi()): RhythmPort {
+  const setting = async (documentId: string): Promise<RhythmSettingAnswer> => {
+    try {
+      return settingOf(await call("work.input-rhythm-setting.get", { params: { documentId }, query: undefined, body: undefined }));
+    } catch {
+      return UNAVAILABLE;
+    }
+  };
   return {
+    setting,
     async recording(documentId) {
+      const answer = await setting(documentId);
+      return answer.kind === "ready" && answer.state.enabled === true;
+    },
+    async erase(documentId) {
       try {
-        const result = await call("work.input-rhythm-setting.get", { params: { documentId }, query: undefined, body: undefined });
-        return result.ok && result.body.enabled === true;
+        const result = await call("work.input-rhythm.delete", { params: { documentId }, query: undefined, body: undefined });
+        if (!result.ok) return refused(result);
+        const deleted = (result.body as { deleted?: unknown } | undefined)?.deleted;
+        return typeof deleted === "number" && Number.isInteger(deleted) && deleted >= 0 ? { kind: "deleted", count: deleted } : UNAVAILABLE;
       } catch {
-        return false;
+        return UNAVAILABLE;
       }
     },
     async send(documentId, payload) {
