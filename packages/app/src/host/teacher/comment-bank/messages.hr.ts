@@ -19,5 +19,9 @@ export const commentBankMessages = {
   failed: "Radnja nije zabilježena. Pokušajte ponovno.",
   unknown: "Nije poznato je li radnja zabilježena. Osvježite stranicu pa provjerite skice.",
   signedOut: "Sesija je istekla. Prijavite se ponovno.",
+  needAnchor: "Označite dio teksta rada pa zabilježite skicu.",
+  remove: "Ukloni iz banke",
+  removed: "Komentar je uklonjen iz banke.",
+  kinds: { must: "Obavezno", sugg: "Prijedlog", q: "Pitanje", praise: "Pohvala" },
   retry: "Pokušaj ponovno",
 } as const;

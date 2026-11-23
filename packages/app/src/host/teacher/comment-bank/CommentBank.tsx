@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@ductura/ui";
 
 import {
-  draftMessage, publishDraftGroup, publishMessage, saveDraftComment, searchBank,
-  type BankEntry, type CommentBankPort, type DraftCommentsPort, type WorkComment,
+  draftMessage, publishDraftGroup, publishMessage, removeBankEntry, removeMessage, saveDraftComment, searchBank,
+  type BankEntry, type CommentBankPort, type DraftAnchor, type DraftCommentsPort, type WorkComment,
 } from "./model";
 import { commentBankMessages as text } from "./messages.hr";
 
@@ -15,8 +15,9 @@ import { commentBankMessages as text } from "./messages.hr";
  * the drafts are published as one group.
  */
 export default function CommentBank(
-  { assignmentId, drafts: draftsPort, bank: bankPort, onPublished }:
-  { assignmentId: string; drafts: DraftCommentsPort; bank: CommentBankPort; onPublished?: (ids: readonly string[]) => void },
+  { assignmentId, drafts: draftsPort, bank: bankPort, anchor, onPublished }:
+  { assignmentId: string; drafts: DraftCommentsPort; bank: CommentBankPort; anchor?: DraftAnchor | null;
+    onPublished?: (ids: readonly string[]) => void },
 ) {
   const [drafts, setDrafts] = useState<readonly WorkComment[]>([]);
   const [entries, setEntries] = useState<readonly BankEntry[] | null>(null);
@@ -39,10 +40,19 @@ export default function CommentBank(
 
   const save = async () => {
     setBusy(true);
-    const result = await saveDraftComment(draftsPort, assignmentId, body);
+    const result = await saveDraftComment(draftsPort, assignmentId, body, anchor ?? undefined);
     setBusy(false);
     setNote(draftMessage(result));
     if (result.kind === "saved") { setDrafts((current) => [...current, result.draft]); setBody(""); }
+  };
+
+  const remove = async (entryId: string) => {
+    setBusy(true);
+    const result = await removeBankEntry(bankPort, entryId);
+    setBusy(false);
+    setNote(removeMessage(result));
+    // The entry leaves the list only after the server confirmed it.
+    if (result.kind === "removed") setEntries((current) => (current === null ? current : current.filter((entry) => entry.id !== entryId)));
   };
 
   const publish = async () => {
@@ -72,7 +82,8 @@ export default function CommentBank(
               {shown.map((entry) => (
                 <li key={entry.id}>
                   <strong>{entry.title}</strong>: {entry.body}{" "}
-                  <Button onClick={() => setBody(entry.body)}>{text.pick}</Button>
+                  <Button onClick={() => setBody(entry.body)}>{text.pick}</Button>{" "}
+                  <Button disabled={busy} onClick={() => void remove(entry.id)}>{text.remove}</Button>
                 </li>
               ))}
             </ul>
@@ -80,7 +91,8 @@ export default function CommentBank(
         </>
       )}
       <label>{text.field}<textarea value={body} onChange={(event) => setBody(event.target.value)} /></label>
-      <Button disabled={busy || body.trim() === ""} onClick={() => void save()}>{text.saveDraft}</Button>
+      {!anchor && <p>{text.needAnchor}</p>}
+      <Button disabled={busy || !anchor || body.trim() === ""} onClick={() => void save()}>{text.saveDraft}</Button>
       <h3>{text.draftsTitle}</h3>
       <p>{text.draftsNote}</p>
       {drafts.length === 0 ? <p>{text.noDrafts}</p> : (

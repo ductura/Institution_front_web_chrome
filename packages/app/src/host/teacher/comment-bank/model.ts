@@ -1,8 +1,8 @@
 // Pure rules of deferred comments and the comment bank (WEB-1704; plan M6.7, D-51, N-03).
 // The teacher saves comments as drafts and publishes a group. A draft is the teacher's alone:
 // nothing here lets a draft reach the student's list. A publication counts as recorded only when
-// the answer names exactly the drafts that were sent (B-6). No server route exists yet: the ports
-// are the smallest contract the plan implies and a probe answer stands in for them in the tests.
+// the answer names exactly the drafts that were sent (B-6). The real ports (port.ts) call the
+// generated client; the fake ports stay for tests.
 // This module makes no network call; the page that mounts it passes the real ports.
 import { commentBankMessages as text } from "./messages.hr";
 
@@ -16,6 +16,19 @@ export type WorkComment = {
 };
 
 export type BankEntry = { readonly id: string; readonly title: string; readonly body: string };
+
+/** Where in the text a new draft is anchored; the server takes no draft without one. */
+export type DraftAnchor = {
+  readonly nodeId: string; readonly quote: string; readonly prefix: string; readonly suffix: string;
+  readonly startHint: number; readonly endHint: number;
+};
+
+/** A bank entry is removed only when the server confirmed it (204); anything else leaves it listed. */
+export type BankRemove =
+  | { readonly kind: "removed" }
+  | { readonly kind: "signedOut" }
+  | { readonly kind: "rejected" }
+  | { readonly kind: "unknown" };
 
 export type DraftsRead =
   | { readonly kind: "ready"; readonly drafts: readonly WorkComment[] }
@@ -40,13 +53,14 @@ export type BankRead =
 
 export interface DraftCommentsPort {
   listDrafts(assignmentId: string): Promise<DraftsRead>;
-  saveDraft(assignmentId: string, body: string): Promise<DraftSave>;
+  saveDraft(assignmentId: string, body: string, anchor?: DraftAnchor): Promise<DraftSave>;
   /** Publishes the named drafts as one group; the answer names what was published. */
   publishDrafts(assignmentId: string, ids: readonly string[]): Promise<PublishResult>;
 }
 
 export interface CommentBankPort {
   read(): Promise<BankRead>;
+  remove(entryId: string): Promise<BankRemove>;
 }
 
 /** The only comments a student is ever shown: drafts are filtered out here and nowhere else. */
@@ -68,11 +82,13 @@ export function searchBank(entries: readonly BankEntry[], query: string): readon
 }
 
 /** Saves a draft; an empty text is never sent, and an answer that does not repeat the text is unknown. */
-export async function saveDraftComment(port: DraftCommentsPort, assignmentId: string, body: string): Promise<DraftSave> {
+export async function saveDraftComment(
+  port: DraftCommentsPort, assignmentId: string, body: string, anchor?: DraftAnchor,
+): Promise<DraftSave> {
   if (body.trim() === "") return { kind: "rejected" };
   let result: DraftSave;
   try {
-    result = await port.saveDraft(assignmentId, body);
+    result = await port.saveDraft(assignmentId, body, anchor);
   } catch {
     return { kind: "unknown" };
   }
@@ -98,6 +114,24 @@ export async function publishDraftGroup(
     if (!same) return { kind: "unknown" };
   }
   return result;
+}
+
+/** Removes a bank entry; the caller drops it from the list only on "removed" (the server's answer). */
+export async function removeBankEntry(port: CommentBankPort, entryId: string): Promise<BankRemove> {
+  try {
+    return await port.remove(entryId);
+  } catch {
+    return { kind: "unknown" };
+  }
+}
+
+export function removeMessage(result: BankRemove): string {
+  switch (result.kind) {
+    case "removed": return text.removed;
+    case "signedOut": return text.signedOut;
+    case "rejected": return text.failed;
+    case "unknown": return text.unknown;
+  }
 }
 
 export function draftMessage(result: DraftSave): string {

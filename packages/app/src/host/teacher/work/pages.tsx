@@ -47,6 +47,8 @@ import { interviewMessages } from "../interview/messages.hr";
 import { interviewPort } from "../interview/port";
 import ChangesSinceReview from "../changes-since-review/ChangesSinceReview";
 import { changesPort } from "../changes-since-review/port";
+import CommentBank from "../comment-bank/CommentBank";
+import { commentBankPort, draftCommentsPort } from "../comment-bank/port";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
 const VIEWS = {
@@ -181,6 +183,9 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               onReload={() => void comments.load()} onShow={({ nodeId, start, end }) => {
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
+            {/* WEB-1704 (M6.7): deferred comments and the bank; a draft is anchored to the text selected in the work. */}
+            <CommentBank key={documentId} assignmentId={documentId} drafts={draftCommentsPort} bank={commentBankPort}
+              anchor={placeAnchor(view.document, draft) ? draft : null} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
             {/* WEB-1704 (M6.7): changes since the last review, read from the server; marking only with a route. */}
             <ChangesSinceReview key={documentId} documentId={documentId} port={changesPort} />
