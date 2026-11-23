@@ -7,7 +7,7 @@ import type { DeclarationPort, TeacherDeclarationRead } from "../../../../../../
 import { teacherAiLabels } from "./messages.hr";
 
 function toState(read: TeacherDeclarationRead): TeacherAiAttachmentsState {
-  return read.kind === "unavailable" ? { kind: "error" } : read;
+  return read.kind === "unavailable" || read.kind === "signedOut" ? { kind: "error" } : read;
 }
 
 /**
