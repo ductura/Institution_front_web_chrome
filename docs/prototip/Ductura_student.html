@@ -888,6 +888,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
 .ed-canvas { overflow:auto; min-height:0; padding:24px 16px 48px; }
 .ed-banner { max-width:720px; margin:0 auto 12px; background:var(--well); border-left:3px solid var(--accent); border-radius:6px; padding:10px 14px; display:grid; gap:8px; }
 .ed-banner p { margin:0; }
+.ed-banner-acts { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }  /* NF-3 PR-1, PR-16 */
 .ed-app .sheet.ed-sheet { max-width:720px; width:100%; margin:0 auto; border-radius:6px; padding:56px 72px 64px; min-height:60vh;
   font:16.5px/1.7 'Newsreader', var(--ff-display); box-shadow:var(--lift, none); outline:none; }
 .ed-sheet:focus-visible { box-shadow:0 0 0 2px var(--accent); }
@@ -957,6 +958,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     '<div class="ed-notes" contenteditable="false"><p><sup>1</sup> Pojam se ovdje koristi u užem smislu, kako ga opisuje Autor C (2018: 22).</p></div>';
 
   var EMPTY = '<p class="ed-ph" data-ph="Počnite pisati…"><br></p>';
+  var REVISION_DUE = '20. 11. 2026., 23:59';   // NF-3: izmišljen rok dorade
 
   App.register('rad', {
     title: 'Radni prostor',
@@ -964,7 +966,8 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     variants: [
       { id: 'puno', label: 'puno' }, { id: 'prazno', label: 'prazno (novi rad)' },
       { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' },
-      { id: 'bez-mreze', label: 'bez mreže' }, { id: 'predano', label: 'predano (samo čitanje)' }
+      { id: 'bez-mreze', label: 'bez mreže' }, { id: 'predano', label: 'predano (samo čitanje)' },
+      { id: 'dorada', label: 'NF-3 vraćeno na doradu' }
     ],
     render: function (ctx) {
       clear();
@@ -978,7 +981,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
           '<div class="ed-title"><b>' + esc(t.title) + '</b><span>' + esc(t.course) + ' · ' + esc(t.kind) + ' · rok ' + esc(t.due) + '</span></div>' +
           '<div class="ed-actions">' +
             '<button class="btn small secondary" type="button" data-act="sheet" aria-pressed="' + (theme === 'light') + '">' + (theme === 'light' ? 'Tamni list' : 'Bijeli list') + '</button>' +
-            (ro ? '' : '<button class="btn small ed-primary" type="button" data-act="review"' + (v === 'ucitavanje' || v === 'greska' ? ' aria-disabled="true"' : '') + '>Predaja rada</button>') +
+            (ro ? '' : (v === 'dorada' ? '<span class="tag">Dorada do ' + esc(REVISION_DUE) + '</span>' : '') + '<button class="btn small ed-primary" type="button" data-act="review"' + (v === 'ucitavanje' || v === 'greska' ? ' aria-disabled="true"' : '') + '>' + (v === 'dorada' ? 'Predaj doradu' : 'Predaja rada') + '</button>') +
           '</div>' +
         '</header>' +
         '<p class="ed-proto mono">Prototip: uređivač je ovdje samo zamjena; stvarni uređivač već postoji u proizvodu</p>';
@@ -991,7 +994,14 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
         body = '<div class="ed-banner" role="alert"><p>Rad trenutačno nije moguće otvoriti. Tekst spremljen na ovom uređaju ostaje netaknut.</p><div><button class="btn small secondary" type="button" data-act="retry">Pokušaj ponovno</button></div></div>';
         save = '<span class="ed-save"><span class="dot ed-err"></span>Greška pri otvaranju</span>';
       } else {
-        if (ro) banner = '<div class="ed-banner" role="status"><p><b>Predano ' + esc(at) + '.</b> Rad je predan, pa se ovdje više ne može pisati.</p></div>';
+        /* NF-3 (PR-1): banner „predano” nosi radnje; povlačenje samo dok rok traje (isti `student.submission-withdrawal.get`). */
+        if (ro) banner = '<div class="ed-banner" role="status"><p><b>Predano ' + esc(at) + '.</b> Rad je predan, pa se ovdje više ne može pisati.</p>' +
+          '<div class="ed-banner-acts"><a class="btn small secondary" href="#potvrda" data-go="potvrda">Otvori potvrdu o predaji</a>' +
+          (t.iso >= App.data.todayIso ? '<button class="btn small secondary" type="button" data-act="withdraw">Povuci predaju</button>' : '') + '</div></div>';
+        /* NF-3 (PR-16): dorada kao jedna cjelina: rok, komentar nastavnika i „Predaj doradu”; slanje dorade nije dostupno. */
+        if (v === 'dorada') banner = '<div class="ed-banner" role="status"><p><b>Rad je kod Vas: dorada.</b> Rok dorade: ' + esc(REVISION_DUE) + '.</p>' +
+          '<p class="note">Komentar nastavnika: „Molim Vas da proširite odjeljak 3. Metoda i navedete kriterije kodiranja objava.”</p>' +
+          '<div class="ed-banner-acts"><button class="btn small secondary" type="button" aria-disabled="true" aria-describedby="ed-send-why">Pošalji doradu</button><span class="meta" id="ed-send-why">Slanje dorade trenutačno nije dostupno.</span></div></div>';
         if (v === 'bez-mreze') banner = '<div class="ed-banner" role="status"><p><b>Bez mreže.</b> Tekst se i dalje sprema na ovom uređaju i čeka slanje na poslužitelj kad se veza vrati.</p></div>';
         body = banner + '<article class="sheet ed-sheet" data-sheet-theme="' + theme + '" aria-label="Tekst rada"' +
           (ro ? ' contenteditable="false" aria-readonly="true"' : ' contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true"') + '>' +
@@ -1008,6 +1018,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     },
     actions: {
       review: function () { App.go('izjava'); },
+      withdraw: function (el, ctx) { if (!App.state.submitted[ctx.task.id]) App.state.submitted[ctx.task.id] = '5. 11. 2026., 21:14'; App.state.sbWd = true; App.go('potvrda'); },   // NF-3 PR-1: otvara dijalog „Povući predaju?” na koraku 5
       retry: function () { App.state.variant.rad = 'puno'; App.rerender(); },
       sheet: function () { App.state.sheetTheme = App.state.sheetTheme === 'light' ? 'dark' : 'light'; App.rerender(); }
     },
@@ -1079,6 +1090,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
 .sb-dlg-host .dialog { pointer-events:auto; width:100%; max-width:480px; max-height:calc(100% - 32px); overflow:auto; }
 .sb-dlg-host .dialog h2 { font-size:19px; }
 .sb-dlg-host .dialog .sb-acts { padding-top:4px; }
+.sb-vh { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }  /* NF-3 PR-18: cijeli otisak za čitač zaslona */
 .sb-spin { display:inline-block; width:12px; height:12px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:sb-spin .8s linear infinite; }
 @keyframes sb-spin { to { transform:rotate(360deg); } }
 @media (max-width:640px) {
@@ -1093,7 +1105,8 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
 (function () {
   /* ---------- pomoćno ---------- */
   function S() {
-    return App.state.sb || (App.state.sb = { declared: {}, check: {}, notes: {}, noteOpen: false, dialog: null, sending: false, showSum: false, form: {} });
+    return App.state.sb || (App.state.sb = { declared: {}, check: {}, notes: {}, noteOpen: false, dialog: null, sending: false, showSum: false, form: {},
+      data: {}, declNotes: {}, ver: {}, lateOk: false, withdrawn: {}, hist: {}, opener: '' });
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function parse(s) {
@@ -1119,8 +1132,34 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   }
   var SERVER_NOW = function () { return App.data.today + ', 21:14'; };
   var FALLBACK_SUB = '5. 11. 2026., 21:14';
+  var EXC = { d: 12, m: 11, y: 2026, h: 23, mi: 59 };   // NF-3 (odgovor 3): rok iznimke za pojedinog studenta (izmišljeno)
+  var REVISION_DUE = '20. 11. 2026., 23:59';
   function dueP(task) { return parse(task.due); }
   function isLate(task, subP) { var d = dueP(task); return !!(d && subP && key(subP) > key(d)); }
+  function screenName() { return location.hash.replace('#', ''); }
+
+  /* NF-3 (PR-21, odgovor: pomoćnik je u pilotu isključen): razgovori i zabilježeni prijenosi vide se samo u stanju „razgovori”. */
+  function chatsOn() { return App.state.variant.izjava === 'razgovori'; }
+
+  /* NF-3 (PR-2): jedno stanje izjave za sve korake (none, draft, confirmed, stale, bound), kao `student.declaration.get`. */
+  function declState(t, v, scr) {
+    if (App.state.submitted[t.id]) return 'bound';
+    if (v === 'neaktualna') return 'stale';
+    if (S().declared[t.id]) return 'confirmed';
+    if ((scr === 'izjava' && v === 'prazno') || v === 'izjavaprazna') return 'none';
+    return 'draft';
+  }
+  function declWords(st, t) {
+    if (st === 'confirmed') return 'Potvrđena ' + S().declared[t.id] + '.';
+    if (st === 'stale') return 'Tekst rada se promijenio nakon potvrde. Izjavu treba potvrditi ponovno.';
+    if (st === 'draft') return 'Izjava je ispunjena, ali još nije potvrđena.';
+    if (st === 'bound') return 'Predana s radom.';
+    return 'Izjava još nije ispunjena.';
+  }
+  var DEF = { tools: 'nijedan', purpose: 'sažimanje literature', phase: 'priprema', helpKind: 'lektura', helpText: 'lektura kolege' };
+  var HELP = { nema: 'nema', lektura: 'lektura', savjet: 'savjetovanje', drugo: 'drugo' };   // izmišljen zatvoren skup; stvarni daje declaration-v1 (OD-12)
+  function dd(id) { var d = S().data[id] || {}; return { tools: d.tools || DEF.tools, purpose: d.purpose || DEF.purpose, phase: d.phase || DEF.phase, helpKind: d.helpKind || DEF.helpKind, helpText: d.helpText === undefined ? DEF.helpText : d.helpText }; }
+  function declReq(v) { return v !== 'bezizjave'; }   // NF-3 (PR-7): zadatak ne traži uvijek izjavu (`declarationRequired`)
 
   function bar(task, label) {
     return '<header class="sb-bar"><a class="btn ghost" href="#rad" data-go="rad">Natrag na rad</a>' +
@@ -1135,15 +1174,13 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   function panel(id, title, tag, body, extra, h) {
     h = h || 'h1';
     return '<section class="panel sb-panel' + (extra || '') + '" aria-labelledby="' + id + '"' + (/sb-busy/.test(extra || '') ? ' aria-busy="true"' : '') + '>' +
-      '<div class="sb-top"><' + h + ' id="' + id + '">' + title + '</' + h + '>' + (tag ? '<span class="tag">' + tag + '</span>' : '') + '</div>' +
+      '<div class="sb-top"><' + h + ' id="' + id + '"' + (h === 'h2' ? ' tabindex="-1"' : '') + '>' + title + '</' + h + '>' + (tag ? '<span class="tag">' + tag + '</span>' : '') + '</div>' +
       '<div class="sb-body">' + body + '</div></section>';
   }
   function loadingBody(msg) { return '<p class="note" role="status">' + msg + '</p><div class="skel w80"></div><div class="skel w60"></div><div class="skel w40"></div>'; }
   function page(task, label, inner, two) {
     return '<div class="sb-wrap">' + bar(task, label) + '<div class="sb-page' + (two ? ' sb-two' : '') + '" id="sadrzaj" tabindex="-1">' + inner + '</div></div>';
   }
-  function decltime(task) { var v = S().declared[task.id]; return v ? 'Potvrđena ' + v : null; }
-  function isDeclared(task) { return !!S().declared[task.id]; }
 
   /* ---------- sažetak procesa (S-33), isti za studenta i nastavnika ---------- */
   function summary(task, o) {
@@ -1167,18 +1204,26 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     h += '<section class="sb-state"><h3>Lijepljenja</h3><ul class="list"><li class="item"><div class="sb-ev"><span>22. 10. 2026., odsječak oko 10:35 · 640 znakova</span>' + obs + '</div>' +
       '<span class="note">Izvor nije opažen.</span><a href="#rad" data-go="rad">Prikaži mjesto u radu</a></li></ul>' +
       '<p class="meta">Popisano je svako lijepljenje dulje od 200 znakova (prag P-02, postavka fakulteta). Vrijeme je zaokruženo na odsječak zapisa. Bez zbroja i bez udjela u radu.</p></section>';
-    h += '<section class="sb-state"><h3>AI pomoćnik</h3><ul class="list"><li class="item"><div class="sb-ev"><span>28. 10. 2026. u 10:05 · Pružatelj A, model M-2 · svrha: sažimanje literature · 96 znakova</span>' + obs + '</div>' +
-      '<blockquote class="sb-quote">Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</blockquote><a href="#rad" data-go="rad">Prikaži mjesto u radu</a></li></ul>' +
-      '<p class="meta">Popisano je svako prenošenje teksta iz AI pomoćnika u rad. Razgovori se nastavniku prikazuju samo kao prilog izjavi.</p></section>';
+    if (chatsOn()) {
+      h += '<section class="sb-state"><h3>AI pomoćnik</h3><ul class="list"><li class="item"><div class="sb-ev"><span>28. 10. 2026. u 10:05 · Pružatelj A, model M-2 · svrha: sažimanje literature · 96 znakova</span>' + obs + '</div>' +
+        '<blockquote class="sb-quote">Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</blockquote><a href="#rad" data-go="rad">Prikaži mjesto u radu</a></li></ul>' +
+        '<p class="meta">Popisano je svako prenošenje teksta iz AI pomoćnika u rad. Razgovori se nastavniku prikazuju samo kao prilog izjavi.</p></section>';
+    } else {
+      /* NF-3 (PR-21): u pilotu pomoćnik nije uključen, pa je odjeljak pošteno prazan. */
+      h += '<section class="sb-state"><h3>AI pomoćnik</h3><p>U pilotu pomoćnik nije uključen. Nema zabilježenih prijenosa teksta.</p></section>';
+    }
     h += '<section class="sb-state"><div class="sb-ev"><h3>Praznine u zapisu</h3>' + obs + '</div>' +
       (o.gaps ? '<ul class="facts"><li>Od verzije 26. 10. 2026. u 21:45 do verzije 28. 10. 2026. u 10:50. Poslužitelj je primio obje verzije, ali ne i odsječke između njih, pa promjene u tom rasponu nisu zabilježene pojedinačno.</li></ul>' +
         (o.submitted ? '' : '<p class="meta">Uz prazninu možete dodati napomenu. Nastavnik je vidi uz sažetak.</p>')
         : '<p>Zapis nema praznina.</p>') + '</section>';
-    var dtime = decltime(task) || (o.submitted ? 'Potvrđena ' + fmt(addMin(dt, -4)) : null);
+    var dtime = (S().declared[task.id] ? 'Potvrđena ' + S().declared[task.id] : null) || (o.submitted ? 'Potvrđena ' + fmt(addMin(dt, -4)) : null);
+    var dv = dd(task.id);
     h += '<section class="sb-state"><h3>Izjava o korištenju generativne umjetne inteligencije</h3>' +
       (dtime ? '<p class="meta">' + dtime + ' · po čl. 9 i 15 pravilnika fakulteta</p>' +
-        '<div class="sb-decl"><div class="sb-dh"><span>Zabilježeno u Ducturi</span>' + obs + '</div><div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Pružatelj A, model M-2 · svrha: sažimanje literature</span></div></div>' +
-        '<div class="sb-decl own"><div class="sb-dh"><span>Izjava studenta</span>' + decl + '</div><div class="sb-kv"><span>Vanjski alati</span><b>nijedan</b></div><div class="sb-kv"><span>Svrha</span><b>sažimanje literature</b></div><div class="sb-kv"><span>Faza rada</span><b>priprema</b></div><div class="sb-kv"><span>Ljudska pomoć</span><b>lektura kolege</b></div></div>'
+        (chatsOn()
+          ? '<div class="sb-decl"><div class="sb-dh"><span>Zabilježeno u Ducturi</span>' + obs + '</div><div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Pružatelj A, model M-2 · svrha: sažimanje literature</span></div></div>'
+          : '<div class="sb-decl"><div class="sb-dh"><span>Zabilježeno u Ducturi</span>' + obs + '</div><p class="note">U ovom radu nije zabilježen razgovor s AI pomoćnikom.</p></div>') +
+        '<div class="sb-decl own"><div class="sb-dh"><span>Izjava studenta</span>' + decl + '</div><div class="sb-kv"><span>Vanjski alati</span><b>' + esc(dv.tools) + '</b></div><div class="sb-kv"><span>Svrha</span><b>' + esc(dv.purpose) + '</b></div><div class="sb-kv"><span>Faza rada</span><b>' + esc(dv.phase) + '</b></div><div class="sb-kv"><span>Ljudska pomoć</span><b>' + esc(dv.helpText || HELP[dv.helpKind]) + '</b></div></div>'
         : '<p>Izjava još nije potvrđena. Potvrđujete je u koracima predaje.</p>') + '</section>';
     h += '<section class="sb-state" id="sb-notes"><h3>Napomene studenta</h3>' +
       (notes.length ? notes.map(function (n) { return '<div class="sb-ev"><span>' + esc(n.text) + ' <span class="meta">· ' + n.at + '</span></span>' + decl + '</div>'; }).join('') : '<p class="meta">Nema napomena.</p>') +
@@ -1191,14 +1236,69 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   }
   function noteForm() {
     if (!S().noteOpen) return '';
+    /* NF-3 (PR-6): jasno tko vidi napomenu; neuspjeh se ne tvrdi kao uspjeh. */
     return '<form class="sb-decl own" data-submit="addNote"><div class="field"><label for="sb-note">Napomena uz rad (nije obavezna)</label>' +
       '<textarea class="input" id="sb-note" name="note" maxlength="600"></textarea></div>' +
-      '<p class="meta">Prije konačne predaje uz rad možete dodati napomenu. Napomene se samo dodaju.</p>' +
+      (S().noteErr ? '<p class="note" role="alert">Nije potvrđeno je li napomena dodana. Osvježite stranicu prije novog pokušaja.</p>' : '') +
+      '<p class="meta">Prije konačne predaje uz rad možete dodati napomenu. Napomene se samo dodaju. Vidi je nastavnik uz sažetak.</p>' +
       '<div class="sb-acts"><button class="btn" type="submit">Dodaj napomenu</button><button class="btn secondary" type="button" data-act="noteCancel">Odustani</button></div></form>';
   }
   function summaryPanel(task, o, h) {
     return panel('sb-sum-h', 'Sažetak procesa', esc(task.kind), '', '', h).replace('<div class="sb-body"></div>', '<div class="sb-body sb-sum">' + summary(task, o) + '</div>');
   }
+
+  /* ---------- NF-3: rok, kasna predaja, iznimka (odgovor 3) ---------- */
+  function timing(t, v) {
+    var d = dueP(t);
+    if (v === 'zabranjeno') return { kind: 'zabranjeno', d: d };
+    if (v === 'iznimka') return { kind: 'iznimka', d: d, ex: EXC };
+    if (v === 'nakonroka' || (v === 'puno' && isLate(t, parse(SERVER_NOW())))) return { kind: 'nakonroka', d: d };
+    if (v === 'produljen') return { kind: 'produljen', d: d };
+    return { kind: 'redovno', d: d };
+  }
+  function lateNote(tm) {
+    if (tm.kind === 'nakonroka') return '<p class="note" id="sb-late">Rok je prošao ' + fmt(tm.d) + '. Predaja je moguća i bit će označena kao predaja nakon roka.</p>';
+    if (tm.kind === 'iznimka') return '<p class="note" id="sb-late">Rok je prošao ' + fmt(tm.d) + '. Zadatak ne dopušta predaju nakon roka, ali je nastavnik za Vas iznimno odobrio kasnu predaju do ' + fmt(tm.ex) + '. Predaja će biti označena kao predaja nakon roka.</p>';
+    if (tm.kind === 'zabranjeno') return '<p class="note" role="alert" id="sb-late">Predaja za ovaj zadatak više nije otvorena. Rok je bio ' + fmt(tm.d) + '. Obratite se nastavniku kolegija.</p>' +
+      '<p class="meta">Zadatak ne dopušta predaju nakon roka. Nastavnik može iznimno odobriti kasnu predaju pojedinom studentu; tada ovdje stoji rok iznimke.</p>';
+    return '';
+  }
+
+  /* ---------- NF-3 (PR-10): novija verzija na uređaju ---------- */
+  function newerLocal(t) {
+    var c = S().ver[t.id];
+    return '<div class="sb-state" id="sb-newer"><span class="sb-h">Na uređaju je novija verzija</span>' +
+      '<p class="note">Poslužitelj je potvrdio verziju V3, a na uređaju je novija verzija V4 koja još nije stigla na poslužitelj. Predaje se uvijek samo ono što je poslužitelj potvrdio.</p>' +
+      '<label class="sb-check"><input type="radio" name="sb-ver" value="send"' + (c === 'send' ? ' checked' : '') + '> Pošalji najprije zadnju verziju pa predaj</label>' +
+      '<label class="sb-check"><input type="radio" name="sb-ver" value="v3"' + (c === 'v3' ? ' checked' : '') + '> Predaj potvrđenu verziju V3</label></div>';
+  }
+
+  /* zajedničke radnje dijaloga (PD-2, PD-3, PD-10, PD-11) */
+  function closeDlg() {
+    var dl = S().dialog; if (!dl || S().sending || S().wdSending) return;
+    S().dialog = null; S().lateOk = false; App.rerender();
+    var f = dl.kind === 'chat' ? document.querySelector('[data-act="chat"][data-n="' + dl.n + '"]') : (S().opener ? document.querySelector(S().opener) : null);
+    if (f) f.focus();
+  }
+  function openDlg(kind, opener, extra) {
+    var d = { kind: kind, screen: screenName() }; for (var k in (extra || {})) d[k] = extra[k];
+    S().dialog = d; S().opener = opener || ''; S().lateOk = false; App.rerender();
+  }
+  var SHARED = {
+    close: closeDlg, noop: function () {},
+    declOpen: function () { openDlg('decl', '[data-act="declOpen"]'); },
+    saveDecl: function (form, ctx) {
+      var id = ctx.task.id, f = form.elements, conf = !!f.confirm.checked, scr = screenName();
+      S().data[id] = { tools: f.tools.value.trim() || DEF.tools, purpose: f.purpose.value.trim() || DEF.purpose, phase: f.phase.value, helpKind: f.helpKind.value, helpText: f.helpText.value.trim() };
+      if (conf) { S().declared[id] = App.data.today + ' u 21:10'; if (App.state.variant[scr] === 'neaktualna' || App.state.variant[scr] === 'izjavaprazna') App.state.variant[scr] = 'puno'; if (scr === 'izjava' && App.state.variant.izjava === 'prazno') App.state.variant.izjava = 'puno'; }
+      else { delete S().declared[id]; if (scr === 'izjava' && App.state.variant.izjava === 'prazno') App.state.variant.izjava = 'puno'; }
+      var op = S().opener; S().dialog = null; App.rerender();
+      App.toast(conf ? 'Izjava je potvrđena.' : 'Izjava je spremljena, ali još nije potvrđena.');
+      var fo = op ? document.querySelector(op) : null; if (fo) fo.focus();
+    },
+    todo: function () { App.toast('Dodavanje objašnjenja uz zabilježeni razgovor čeka odluku o pomoćniku (Q-10).'); }
+  };
+  function merge(own, scr) { var o = {}, k; for (k in SHARED) o[k] = SHARED[k]; for (k in own) o[k] = own[k]; return o; }
 
   /* ---------- S-30 Pregled prije predaje ---------- */
   App.register('pregled', {
@@ -1207,7 +1307,11 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     variants: [
       { id: 'puno', label: 'puno (stanje toka)' }, { id: 'zatvoreno', label: 'sve zatvoreno' },
       { id: 'bezmreze', label: 'bez mreže' }, { id: 'predano', label: 'već predano' },
-      { id: 'prazno', label: 'prazno (rad nije započet)' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' }
+      { id: 'prazno', label: 'prazno (rad nije započet)' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' },
+      { id: 'neaktualna', label: 'NF-3 izjava zastarjela (tekst promijenjen)' }, { id: 'izjavaprazna', label: 'NF-3 izjava nije ispunjena' },
+      { id: 'nakonroka', label: 'NF-3 nakon roka' }, { id: 'zabranjeno', label: 'NF-3 zabranjena predaja nakon roka' },
+      { id: 'iznimka', label: 'NF-3 iznimno odobrena kasna predaja' }, { id: 'novijalokalno', label: 'NF-3 novija verzija na uređaju' },
+      { id: 'napomenagreska', label: 'NF-3 napomena: neuspjelo dodavanje' }
     ],
     render: function (ctx) {
       var t = ctx.task, v = ctx.variant, st = ctx.state, kind = esc(t.kind);
@@ -1222,82 +1326,125 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
         return page(t, 'Predaja', panel('sb-h', 'Predaja', kind,
           '<p class="note">Predaja ovog rada već je zatražena ' + fmt(sp) + '.</p><a href="#potvrda" data-go="potvrda">Otvori potvrdu o predaji</a>'));
       }
-      var closed = v === 'zatvoreno', offline = v === 'bezmreze', dt = isDeclared(t);
+      var closed = v === 'zatvoreno', offline = v === 'bezmreze';
+      var ds = declState(t, v, 'pregled'), tm = timing(t, v), blocked = tm.kind === 'zabranjeno';
+      var ok = ds === 'confirmed';
       var b = steps(3) + '<p class="note">Popis pokazuje je li sve priloženo. Ne ocjenjuje rad.</p>';
       if (offline) b += '<p class="note" role="status" id="sb-off">Nema veze s poslužiteljem. Predaja traži vezu; tekst je spremljen na uređaju i šalje se čim se veza vrati.</p>';
-      b += '<div class="sb-state"><span class="sb-h">Izjava</span>' + (dt ? '<span>Potvrđena</span>' : '<span>Još nije potvrđena.</span><a href="#izjava" data-go="izjava">Otvori izjavu</a>') + '</div>';
-      b += '<div class="sb-state"><span class="sb-h">Razgovori uz izjavu</span><span>Priloženo 2</span></div>';
+      b += lateNote(tm);   // NF-3 (PR-17): rok je jasan već na koraku 3, ne tek na koraku 4
+      /* NF-3 (PR-2): „Što još fali” iz istih provjera kao korak 4 (ista stanja izjave kao `student.declaration.get`). */
+      b += '<div class="sb-state"><span class="sb-h">Što još fali</span>' +
+        (ok ? '<span>Ništa ne blokira predaju.</span>' : '<ul class="sb-places"><li>Potvrda izjave (blokira predaju).</li></ul>') +
+        '<span class="meta">Mjesta za izvor, lijepljenja i pravila oblika ne zaustavljaju predaju.</span></div>';
+      b += '<div class="sb-state"><span class="sb-h">Izjava</span><span>' + esc(declWords(ds, t)) + '</span>' +
+        (ds === 'confirmed' ? '' : '<a href="#izjava" data-act="declOpen">' + (ds === 'stale' ? 'Potvrdi izjavu ponovno' : 'Otvori izjavu') + '</a>') + '</div>';
+      /* NF-3 (PR-21): pošteno prazno stanje dok se ne odluči Q-10 (u stanju „razgovori” na koraku 2 vraća se „Priloženo 2”). */
+      b += '<div class="sb-state"><span class="sb-h">Razgovori uz izjavu</span>' + (chatsOn() ? '<span>Priloženo 2</span>' : '<span>Nema razgovora za prilaganje.</span>') + '</div>';
       b += '<div class="sb-state"><span class="sb-h">Mjesta za izvor koja ste ostavili u tekstu</span>' + (closed ? '<span>Nema otvorenih mjesta za izvor.</span>' :
         '<ul class="sb-places"><li><a href="#rad" data-go="rad">2. Teorijski okvir, odlomak 4</a></li><li><a href="#rad" data-go="rad">3. Analiza, odlomak 2</a></li></ul>') + '</div>';
       b += '<div class="sb-state"><span class="sb-h">Zalijepljeno (izvor nije opažen)</span>' + (closed ? '<span>Oznaka podrijetla dodana uz sva zalijepljena mjesta.</span>' :
         '<ul class="sb-places"><li><a href="#rad" data-go="rad">1. Uvod, odlomak 3</a></li></ul><span class="meta">Možete dodati oznaku podrijetla. Nije obavezno.</span>') + '</div>';
-      b += '<div class="sb-state"><span class="sb-h">Pravila oblika</span><span>Provjera oblika još nije pokrenuta.</span></div>';
+      b += '<div class="sb-state"><span class="sb-h">Pravila oblika</span><span>Provjera oblika nije dostupna u pilotu.</span></div>';   // NF-3 (PR-3, C-19): bez dvosmislenog „nije pokrenuta”
+      if (v === 'novijalokalno') b += newerLocal(t);
       b += '<a href="#sb-notes" data-act="noteOpen">Dodaj napomenu (nije obavezna)</a>';
-      b += '<div class="sb-acts"><button class="btn" type="button" data-go="predaja">Dalje</button><button class="btn secondary" type="button" data-go="izjava">Natrag</button></div>';
-      var left = panel('sb-h', 'Prije predaje', offline ? 'Bez veze' : kind, b, ' sb-stick');
-      return page(t, 'Prije predaje', left + summaryPanel(t, { gaps: true }, 'h2'), true);
+      var needVer = v === 'novijalokalno' && !S().ver[t.id];
+      var why = blocked ? 'Predaja za ovaj zadatak više nije otvorena.' : !ok ? 'Dalje je moguće kad potvrdite izjavu.' : needVer ? 'Odaberite koju verziju predajete.' : '';
+      b += (why ? '<p class="meta" id="sb-why-d">' + why + '</p>' : '') +
+        '<div class="sb-acts"><button class="btn" type="button"' + (why ? ' aria-disabled="true" aria-describedby="sb-why-d"' : ' data-go="predaja"') + '>Dalje</button><button class="btn secondary" type="button" data-go="izjava">Natrag</button></div>';
+      var tag = offline ? 'Bez veze' : tm.kind === 'iznimka' ? 'Iznimka do ' + day(tm.ex) : kind;
+      var left = panel('sb-h', 'Prije predaje', tag, b, ' sb-stick');
+      return page(t, 'Prije predaje', left + summaryPanel(t, { gaps: true }, 'h2'), true) + dialog(t);
     },
-    actions: {
+    actions: merge({
       retry: function () { App.state.variant.pregled = 'puno'; App.rerender(); },
       noteOpen: function () { S().noteOpen = true; S().focusNote = true; App.rerender(); },
-      noteCancel: function () { S().noteOpen = false; App.rerender(); },
+      noteCancel: function () { S().noteOpen = false; S().noteErr = false; App.rerender(); },
       addNote: function (form, ctx) {
         var txt = form.note.value.trim(); if (!txt) { form.note.setAttribute('aria-invalid', 'true'); form.note.focus(); return; }
+        if (ctx.variant === 'napomenagreska') { S().noteErr = true; S().focusNote = true; App.rerender(); return; }   // NF-3 (PR-6): neuspjeh bez obećanja
         var n = S().notes; (n[ctx.task.id] = n[ctx.task.id] || []).push({ text: txt, at: App.data.today + ' u 21:08' });
-        S().noteOpen = false; App.rerender(); App.toast('Napomena je dodana.');
+        S().noteOpen = false; S().noteErr = false; App.rerender(); App.toast('Napomena je dodana.');
       }
-    },
+    }, 'pregled'),
     after: function (stage) {
       if (S().focusNote) { S().focusNote = false; var n = stage.querySelector('#sb-note'); if (n) { n.scrollIntoView({ block: 'center' }); n.focus(); } }
+      bindVer(stage); trapDialog(stage);
     }
   });
+  function bindVer(stage) {
+    var r = stage.querySelectorAll('input[name="sb-ver"]');
+    for (var i = 0; i < r.length; i++) r[i].addEventListener('change', function (e) {
+      S().ver[App.state.current] = e.target.value; App.rerender();
+      var f = document.querySelector('input[name="sb-ver"][value="' + e.target.value + '"]'); if (f) f.focus();
+    });
+  }
 
   /* ---------- S-31 Izjava i konačna predaja ---------- */
+  function declBlock(t, st, withLink) {
+    var dv = dd(t.id);
+    if (st === 'none') return '<div class="sb-decl own"><h3>Vaša izjava <span class="tag open">izjavljeno</span></h3><p class="note">Izjava još nije ispunjena.</p>' + (withLink ? '<a href="#izjava" data-act="declOpen">Ispuni izjavu</a>' : '') + '</div>';
+    return '<div class="sb-decl own"><h3>Vaša izjava <span class="tag open">izjavljeno</span></h3>' +
+      '<div class="sb-kv"><span>Vanjski alati</span><b>' + esc(dv.tools) + '</b></div><div class="sb-kv"><span>Svrha</span><b>' + esc(dv.purpose) + '</b></div>' +
+      '<div class="sb-kv"><span>Faza rada</span><b>' + esc(dv.phase) + '</b></div><div class="sb-kv"><span>Ljudska pomoć</span><b>' + esc((HELP[dv.helpKind] || '') + (dv.helpText ? ': ' + dv.helpText : '')) + '</b></div>' +
+      (withLink ? '<a href="#izjava" data-act="declOpen">Uredi izjavu</a>' : '') + '</div>';
+  }
   function declPanel(t, v) {
-    var id = t.id, checked = isDeclared(t);
+    var id = t.id, st = declState(t, v, 'izjava'), checked = st === 'confirmed';
     if (v === 'nesklad') {
       return panel('sb-h', 'Izjava o korištenju generativne umjetne inteligencije', '',
         '<div class="field"><label for="sb-form">Obrazac izjave</label><select class="input" id="sb-form"><option>Generativnu umjetnu inteligenciju nisam koristio ni koristila</option><option>Generativnu umjetnu inteligenciju koristio sam ili koristila uz izjavu</option></select></div>' +
-        '<p class="note" role="status">Zapis bilježi prijenos iz AI pomoćnika na 2. Teorijski okvir, odlomak 1. Provjerite odabrani obrazac.</p>' + checkbox(checked));
+        '<p class="note" role="status">Zapis bilježi prijenos iz AI pomoćnika na 2. Teorijski okvir, odlomak 1. Provjerite odabrani obrazac.</p>' + checkbox(checked, st));
     }
-    if (v === 'prazno') {
-      return panel('sb-h', 'Izjava o korištenju generativne umjetne inteligencije', '',
-        '<div class="sb-decl"><h3>Zabilježeno u Ducturi <span class="tag">zabilježeno</span></h3><p class="note">U ovom radu nije zabilježen razgovor s AI pomoćnikom.</p></div>' +
-        '<div class="sb-decl own"><h3>Vaša izjava <span class="tag open">izjavljeno</span></h3><p class="note">Izjava još nije ispunjena.</p><a href="#izjava" data-act="todo">Ispuni izjavu</a></div>' +
-        '<p class="note">Nema razgovora za prilaganje.</p><div class="sb-acts"><button class="btn secondary" type="button" data-go="rad">Natrag</button></div>');
+    var rec;
+    if (chatsOn()) {
+      rec = '<div class="sb-decl"><h3>Zabilježeno u Ducturi <span class="tag">zabilježeno</span></h3>' +
+        '<div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Model M-2 · 2. Teorijski okvir, odlomak 1</span></div>' +
+        '<div class="sb-entry"><span>Razgovor s AI pomoćnikom bez prijenosa, 31. 10. 2026.</span><span class="sb-who">Model M-2</span></div>' +
+        '<a href="#izjava" data-act="todo">Dodaj objašnjenje</a></div>';
+    } else {
+      /* NF-3 (PR-4, PR-21): pošteno prazno stanje i objašnjenje; bez imena modela i pružatelja. */
+      rec = '<div class="sb-decl"><h3>Zabilježeno u Ducturi <span class="tag">zabilježeno</span></h3><p class="note">U ovom radu nije zabilježen razgovor s AI pomoćnikom.</p>' +
+        '<p class="meta">U pilotu pomoćnik nije uključen; ovdje se bilježi samo ono što napravi sama Ductura. Alate izvan Ducture navedite u „Vašoj izjavi”. Nema razgovora za prilaganje.</p></div>';
     }
-    var ans = S().form[id] || '';
-    return panel('sb-h', 'Izjava o korištenju generativne umjetne inteligencije', '',
-      '<p class="meta">po čl. 9 i 15 pravilnika fakulteta</p>' +
-      '<div class="sb-decl"><h3>Zabilježeno u Ducturi <span class="tag">zabilježeno</span></h3>' +
-      '<div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Model M-2 · 2. Teorijski okvir, odlomak 1</span></div>' +
-      '<div class="sb-entry"><span>Razgovor s AI pomoćnikom bez prijenosa, 31. 10. 2026.</span><span class="sb-who">Model M-2</span></div>' +
-      '<a href="#izjava" data-act="todo">Dodaj objašnjenje</a></div>' +
-      '<div class="sb-decl own"><h3>Vaša izjava <span class="tag open">izjavljeno</span></h3>' +
-      '<div class="sb-kv"><span>Vanjski alati</span><b>nijedan</b></div><div class="sb-kv"><span>Svrha</span><b>sažimanje literature</b></div>' +
-      '<div class="sb-kv"><span>Faza rada</span><b>priprema</b></div><div class="sb-kv"><span>Ljudska pomoć</span><b>lektura kolege</b></div>' +
-      '<a href="#izjava" data-act="todo">Uredi izjavu</a></div>' +
-      '<h3 class="sb-sub">Prilozi</h3><p class="note">Uz izjavu se prilaže cijeli razgovor, točno kako je zabilježen. Pregledajte ga prije potvrde.</p>' +
-      '<ul class="list"><li class="item"><span class="title">Razgovor 1 · 28. 10. 2026.</span><span class="meta">Obvezno: iz ovog razgovora prenesen je tekst.</span><div class="sb-acts"><button class="btn secondary small" type="button" data-act="chat" data-n="1">Pregledaj razgovor</button></div></li>' +
-      '<li class="item"><span class="title">Razgovor 2 · 31. 10. 2026.</span><div class="sb-acts"><button class="btn secondary small" type="button" data-act="chat" data-n="2">Pregledaj razgovor</button></div></li></ul>' +
-      '<h3 class="sb-sub">Pitanje nastavnika</h3><p class="note">Kako ste provjerili sažetke literature koje ste dobili?</p>' +
-      '<div class="field"><label for="sb-ans">Odgovor (nije obavezan)</label><textarea class="input" id="sb-ans">' + esc(ans) + '</textarea></div>' + checkbox(checked));
+    var b = '<p class="meta">po čl. 9 i 15 pravilnika fakulteta</p>' +
+      '<p class="note" role="status" id="sb-dstate">' + esc(declWords(st, t)) + '</p>' + rec + declBlock(t, st, true);
+    if (chatsOn()) {
+      b += '<h3 class="sb-sub">Prilozi</h3><p class="note">Uz izjavu se prilaže cijeli razgovor, točno kako je zabilježen. Pregledajte ga prije potvrde.</p>' +
+        '<ul class="list"><li class="item"><span class="title">Razgovor 1 · 28. 10. 2026.</span><span class="meta">Obvezno: iz ovog razgovora prenesen je tekst.</span><div class="sb-acts"><button class="btn secondary small" type="button" data-act="chat" data-n="1">Pregledaj razgovor</button></div></li>' +
+        '<li class="item"><span class="title">Razgovor 2 · 31. 10. 2026.</span><div class="sb-acts"><button class="btn secondary small" type="button" data-act="chat" data-n="2">Pregledaj razgovor</button></div></li></ul>';
+    }
+    /* NF-3 (PR-20, odgovor 2): pitanje nastavnika uz izjavu je u pilotu; server za to polje nema (INVENTAR PO-34). */
+    if (v !== 'bezpitanja') {
+      b += '<h3 class="sb-sub">Pitanje nastavnika</h3><p class="note">Kako ste provjerili izvore koje navodite u radu?</p>' +
+        '<div class="field"><label for="sb-ans">Odgovor (nije obavezan)</label><textarea class="input" id="sb-ans" aria-describedby="sb-ans-m">' + esc(S().form[id] || '') + '</textarea></div>' +
+        '<p class="meta" id="sb-ans-m">Odgovor vidi nastavnik uz izjavu.</p>';
+    }
+    return panel('sb-h', 'Izjava o korištenju generativne umjetne inteligencije', '', b + checkbox(checked, st));
   }
-  function checkbox(c) {
-    return '<label class="sb-check"><input type="checkbox" id="sb-confirm"' + (c ? ' checked' : '') + '> Potvrđujem izjavu</label>' +
-      (c ? '' : '<p class="meta" id="sb-why-d">Dalje je moguće kad potvrdite izjavu.</p>') +
+  function checkbox(c, st) {
+    var none = st === 'none';
+    return '<label class="sb-check"><input type="checkbox" id="sb-confirm"' + (c ? ' checked' : '') + (none ? ' disabled aria-describedby="sb-why-d"' : '') + '> ' + (st === 'stale' ? 'Potvrđujem izjavu ponovno' : 'Potvrđujem izjavu') + '</label>' +
+      (c ? '' : '<p class="meta" id="sb-why-d">' + (none ? 'Potvrda je moguća kad ispunite izjavu.' : 'Dalje je moguće kad potvrdite izjavu.') + '</p>') +
       '<div class="sb-acts"><button class="btn" type="button"' + (c ? ' data-go="pregled"' : ' aria-disabled="true" aria-describedby="sb-why-d"') + '>Dalje</button><button class="btn secondary" type="button" data-go="rad">Natrag</button></div>';
   }
 
   function submitPanel(t, v, st) {
-    var d = dueP(t), kind = esc(t.kind), late = v === 'nakonroka' || (v === 'puno' && isLate(t, parse(SERVER_NOW())));
+    var tm = timing(t, v), d = tm.d, kind = esc(t.kind), late = tm.kind === 'nakonroka' || tm.kind === 'iznimka';
     var offline = v === 'bezmreze' || (v === 'puno' && typeof navigator !== 'undefined' && navigator.onLine === false);
-    var sending = v === 'utijeku' || S().sending, ok = isDeclared(t) || v === 'utijeku';
+    var sending = v === 'utijeku' || S().sending, ds = declState(t, v, 'predaja'), req = declReq(v);
+    var ok = !req || ds === 'confirmed' || v === 'utijeku';
     var b = '', tag = kind;
+    if (tm.kind === 'zabranjeno') {   // NF-3 (PR-17, odgovor 3): `not_open`, bez tona kazne i bez gumba „Predaj rad”
+      return panel('sb-h', 'Predaja nije otvorena', kind, lateNote(tm) + '<div class="sb-acts"><a class="btn secondary" href="#rad" data-go="rad">Otvori radni prostor</a><button class="btn secondary" type="button" data-go="pregled">Natrag</button></div>');
+    }
     if (offline) {
       tag = 'Bez veze';
       b += '<div class="sb-kv"><span>Rok</span><b>' + fmt(d) + '</b></div>' +
         '<p class="note" role="status" id="sb-why">Nema veze s poslužiteljem. Predaja traži vezu; tekst je spremljen na uređaju i šalje se čim se veza vrati.</p>';
+    } else if (tm.kind === 'iznimka') {
+      tag = 'Iznimka do ' + day(tm.ex);
+      b += lateNote(tm) + '<div class="sb-kv"><span>Rok iznimke</span><b>' + fmt(tm.ex) + '</b></div>' +
+        '<p class="note">Vrijeme predaje je trenutak kad zahtjev za predaju stigne na poslužitelj, ne trenutak klika. Nakon predaje tekst ovog rada više nije moguće mijenjati.</p>';
     } else if (late) {
       b += '<p class="note">Rok je bio ' + fmt(d) + '. Vrijeme predaje bit će trenutak kad zahtjev za predaju stigne na poslužitelj, ne trenutak klika. Predaja će biti označena kao predaja nakon roka.</p>' +
         '<p class="note">Nakon predaje tekst ovog rada više nije moguće mijenjati.</p>';
@@ -1306,19 +1453,61 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       b += '<p class="note">Rok je produljen do 15. 11. 2026. u 23:59.</p><p class="note">Nakon predaje tekst ovog rada više nije moguće mijenjati.</p>';
     } else {
       b += '<div class="sb-kv"><span>Rok</span><b>' + fmt(d) + '</b></div><div class="sb-kv"><span>Riječi u predanom tekstu</span><b>5.120</b></div>' +
-        '<div class="sb-kv"><span>Razgovori uz izjavu</span><b>2</b></div>' +
+        (chatsOn() ? '<div class="sb-kv"><span>Razgovori uz izjavu</span><b>2</b></div>' : '') +   // NF-3 (PR-7, PR-21): samo ako ih ima
+        (req ? '' : '<div class="sb-kv"><span>Izjava</span><b>nije potrebna za ovaj zadatak</b></div>') +
         '<p class="note">Vrijeme predaje je trenutak kad zahtjev za predaju stigne na poslužitelj, ne trenutak klika. Nakon predaje tekst ovog rada više nije moguće mijenjati.</p>';
     }
-    var dis = offline || !ok || sending;
-    if (!offline && !ok) b += '<p class="note" id="sb-why">Predaja je moguća kad potvrdite izjavu. <a href="#izjava" data-go="izjava">Otvori izjavu</a></p>';
+    if (v === 'novijalokalno') b += newerLocal(t);
+    var needVer = v === 'novijalokalno' && !S().ver[t.id];
+    var dis = offline || !ok || sending || needVer;
+    if (!offline && !ok) b += '<p class="note" id="sb-why">' + (ds === 'stale' ? 'Tekst rada se promijenio nakon potvrde pa izjavu treba potvrditi ponovno.' : 'Predaja je moguća kad potvrdite izjavu.') + ' <a href="#izjava" data-act="declOpen">' + (ds === 'stale' ? 'Potvrdi izjavu ponovno' : 'Otvori izjavu') + '</a></p>';
+    else if (needVer) b += '<p class="note" id="sb-why">Odaberite koju verziju predajete.</p>';
     if (sending) b += '<p class="note" role="status" id="sb-why"><span class="sb-spin" aria-hidden="true"></span> Predaja u tijeku…</p>';
     b += '<div class="sb-acts"><button class="btn" type="button" data-act="ask"' + (dis ? ' aria-disabled="true" aria-describedby="sb-why"' : '') + '>' +
       (sending ? 'Predaja u tijeku…' : 'Predaj rad') + '</button><button class="btn secondary" type="button" data-go="pregled">Natrag</button></div>';
     return panel('sb-h', 'Predati rad?', tag, b, sending ? ' sb-busy' : '', 'h1');
   }
+
+  /* NF-3 (PR-8, PR-9): ishodi slanja u zasebnoj ploči „Predaja”, svaki s vlastitim radnjama. */
+  function outcomePanel(t, v) {
+    var now = fmt(parse(SERVER_NOW())), work = '<a class="btn secondary" href="#rad" data-go="rad">Otvori radni prostor</a>';
+    var retryOff = '<button class="btn secondary" type="button" aria-disabled="true" aria-describedby="sb-why-r">Pokušaj ponovno</button><p class="meta" id="sb-why-r">Pokušaj ponovno je moguće kad stanje u radnom prostoru bude „Spremljeno na poslužitelju”.</p>';
+    if (v === 'odbijeno') return panel('sb-h', 'Predaja nije prihvaćena', '',
+      '<p class="note" role="alert">Predaja nije prihvaćena: poslužitelj još nije potvrdio cijeli zapis ove verzije teksta. Ostavite radni prostor otvoren s vezom; predaju možete pokušati čim se stanje u radnom prostoru promijeni u „spremljeno na poslužitelju”.</p>' +
+      '<p class="note">Rad nije predan. Tekst je spremljen na uređaju.</p><div class="sb-acts">' + work + retryOff + '</div>');
+    if (v === 'odbijenospremno') return panel('sb-h', 'Predaja nije prihvaćena', '',
+      '<p class="note" role="alert">Predaja nije prihvaćena: poslužitelj još nije potvrdio cijeli zapis ove verzije teksta.</p>' +
+      '<p class="note" role="status">Stanje u radnom prostoru je „Spremljeno na poslužitelju”. Predaju možete pokušati ponovno.</p><p class="note">Rad nije predan.</p>' +
+      '<div class="sb-acts">' + work + '<button class="btn" type="button" data-act="retry">Pokušaj ponovno</button></div>');
+    if (v === 'prekid') return panel('sb-h', 'Predaja nije prihvaćena', '',
+      '<p class="note" role="alert">Predaja nije prihvaćena: zapis ove verzije teksta na poslužitelju nije cjelovit.</p><p class="note">Rad nije predan. Tekst je spremljen na uređaju.</p><div class="sb-acts">' + work + retryOff + '</div>');
+    if (v === 'bezzapisa') return panel('sb-h', 'Predaja nije prihvaćena', '',
+      '<p class="note" role="alert">Predaja nije prihvaćena: na poslužitelju nema zapisa ovog rada.</p><p class="note">Rad nije predan. Tekst je spremljen na uređaju.</p><div class="sb-acts">' + work + retryOff + '</div>');
+    if (v === 'zastarjelo') return panel('sb-h', 'Predaja nije prihvaćena', '',
+      '<p class="note" role="alert">Na poslužitelju je novija verzija teksta. Osvježite i pokušajte ponovno.</p><p class="note">Rad nije predan.</p>' +
+      '<div class="sb-acts"><button class="btn" type="button" data-act="retry">Učitaj ponovno</button>' + work + '</div>');
+    if (v === 'nedovrseno' || v === 'nedovrsenozamjenski') return panel('sb-h', 'Predaja nije dovršena', '',
+      '<p class="note" role="alert">Predaja nije dovršena: tekst sastavljen iz zapisa ne podudara se s tekstom na poslužitelju.</p>' +
+      '<p class="note">Vrijeme Vašeg zahtjeva (' + now + ') je zabilježeno i ostaje vrijeme predaje.</p>' +
+      '<p class="note">' + (v === 'nedovrsenozamjenski' ? 'Fakultet će nastaviti predaju zamjenskim postupkom koji je naveo poslužitelj. Obratite se nastavniku kolegija.' : 'Zamjenski postupak trenutačno nije dostupan. Obratite se nastavniku kolegija.') + '</p>');
+    /* nepoznato: PR-9, jedna istinita poruka, stanje se ponovno čita, „Predaj rad” se ne nudi dok stanje nije pročitano */
+    var known = v === 'nepoznato' || v === 'nepoznatoprobl';
+    var head = v === 'nepoznatobezvremena'
+      ? '<p class="note">Odgovor poslužitelja nije stigao, pa ishod predaje nije poznat. Rad je možda predan.</p>'
+      : '<p class="note">Predaja ovog rada već je zatražena ' + now + '.</p>';
+    var tail = v === 'nepoznatoprobl'
+      ? '<p class="note" role="alert">Stanje predaje nije moguće pročitati ni nakon trećeg pokušaja. Rad je možda predan; tekst rada nije zahvaćen.</p>'
+      : '<p class="note" role="alert">Potvrda nije stigla, pa ishod predaje nije poznat. Prije ponovnog pokušaja otvorite ovu stranicu ponovno: ako je predaja zabilježena, ovdje će stajati potvrda.</p>' +
+        '<p class="meta" role="status">Stanje se ponovno čita kad se veza vrati i još jednom nakon 10 s. Pokušaj 1 od 3. Dok se stanje ne pročita, predaja se ne nudi.</p>';
+    return panel('sb-h', 'Predaja', '', head + tail + '<div class="sb-acts"><button class="btn secondary" type="button" data-act="check">Provjeri stanje predaje</button>' +
+      (v === 'nepoznatoprobl' ? '<button class="btn secondary" type="button" data-act="report">Javi problem</button>' : '') + '</div>' +
+      (v === 'nepoznatoprobl' ? '<p class="meta">Prijava problema ne sadrži tekst Vašeg rada.</p>' : ''));
+  }
+
+  /* ---------- dijalozi: PD-2 razgovor, PD-3 predaja, PD-10 izjava, PD-11 povlačenje ---------- */
   function dialog(t) {
-    var dl = S().dialog; if (!dl) return '';
-    var inner;
+    var dl = S().dialog; if (!dl || dl.screen !== screenName()) return '';
+    var inner, v = App.variant();
     if (dl.kind === 'chat') {
       inner = dl.n === 1
         ? '<h2 id="sb-dlg-h">Razgovor 1 · 28. 10. 2026.</h2><p class="meta">Točno kako je zabilježen i kako će ga vidjeti nastavnik.</p>' +
@@ -1329,26 +1518,59 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
           '<div class="sb-entry"><span class="sb-who">Vi · 19:22</span><span>Koja su dva najčešća prigovora prvom pristupu?</span></div>' +
           '<div class="sb-entry"><span class="sb-who">AI pomoćnik, model M-2 · 19:23</span><span>Najčešće se navodi da zanemaruje interese sudionika i da teško objašnjava promjenu pravila.</span></div>';
       inner += '<div class="sb-acts"><button class="btn secondary" type="button" data-act="close">Zatvori</button></div>';
+    } else if (dl.kind === 'decl') {
+      /* PD-10 (NF-3, PR-5): izjava kao dijalog ch-h; zatvaranje vraća na isti korak. */
+      var st = declState(t, v, screenName()), dv = dd(t.id), opt = function (m, sel) { return Object.keys(m).map(function (k) { return '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + m[k] + '</option>'; }).join(''); };
+      var PH = ['priprema', 'pisanje', 'završna obrada'];
+      inner = '<h2 id="sb-dlg-h">Izjava o korištenju generativne umjetne inteligencije</h2><p class="meta">po čl. 9 i 15 pravilnika fakulteta. Po zatvaranju ostajete na istom koraku predaje.</p>' +
+        (st === 'stale' ? '<p class="note" role="status">Tekst rada se promijenio nakon potvrde. Izjavu treba potvrditi ponovno.</p>' : '') +
+        '<form data-submit="saveDecl"><div class="field"><label for="sb-d-tools">Vanjski alati</label><input class="input" id="sb-d-tools" name="tools" value="' + esc(dv.tools) + '" maxlength="200"></div>' +
+        '<div class="field"><label for="sb-d-purpose">Svrha</label><input class="input" id="sb-d-purpose" name="purpose" value="' + esc(dv.purpose) + '" maxlength="200"></div>' +
+        '<div class="field"><label for="sb-d-phase">Faza rada</label><select class="input" id="sb-d-phase" name="phase">' + PH.map(function (k) { return '<option' + (k === dv.phase ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field"><label for="sb-d-hk">Ljudska pomoć: vrsta</label><select class="input" id="sb-d-hk" name="helpKind">' + opt(HELP, dv.helpKind) + '</select></div>' +
+        '<div class="field"><label for="sb-d-ht">Ljudska pomoć: opis</label><input class="input" id="sb-d-ht" name="helpText" value="' + esc(dv.helpText) + '" maxlength="200"></div>' +
+        '<label class="sb-check"><input type="checkbox" name="confirm" id="sb-d-confirm"' + (st === 'confirmed' ? ' checked' : '') + '> ' + (st === 'stale' ? 'Potvrđujem izjavu ponovno' : 'Potvrđujem izjavu') + '</label>' +
+        '<div class="sb-acts"><button class="btn" type="submit">Spremi izjavu</button><button class="btn secondary" type="button" data-act="close">Zatvori</button></div></form>';
+    } else if (dl.kind === 'withdraw') {
+      /* PD-11 (NF-3, PR-13): povlačenje; vrijeme i revizija se bilježe, nastavnik vidi i predaju i povlačenje. */
+      var wd = S().wdSending;
+      inner = '<h2 id="sb-dlg-h">Povući predaju?</h2>' +
+        '<p class="note">Povlačenje se bilježi: zapisuju se vrijeme i revizija koju povlačite, a nastavnik u povijesti vidi i predaju i povlačenje.</p>' +
+        '<p class="note">Dok rok traje, rad možete ponovno mijenjati i predati iznova. Rok: ' + fmt(dueP(t)) + '.</p>' +
+        (wd ? '<p class="note" role="status"><span class="sb-spin" aria-hidden="true"></span> Povlačenje u tijeku…</p>' : '') +
+        '<div class="sb-acts"><button class="btn" type="button" data-act="wdDo"' + (wd ? ' aria-disabled="true"' : '') + '>' + (wd ? 'Povlačenje u tijeku…' : 'Povuci predaju') + '</button>' +
+        '<button class="btn secondary" type="button" data-act="close"' + (wd ? ' aria-disabled="true"' : '') + '>Natrag</button></div>';
     } else {
-      var sending = S().sending;
+      var sending = S().sending, tm = timing(t, v), lateD = tm.kind === 'nakonroka' || tm.kind === 'iznimka';
+      var withDecl = declReq(v) && declState(t, v, 'predaja') === 'confirmed';
+      var gate = lateD && !S().lateOk;
+      /* PD-3 (NF-3, PR-7): tekst iz stvarnih podataka; „s izjavom” samo ako je zadatak traži i potvrđena je; razgovori samo ako ih ima. */
       inner = '<h2 id="sb-dlg-h">Predati rad?</h2>' +
-        '<p class="note">Predaje se tekst rada „' + esc(t.title) + '” spremljen na poslužitelju, s izjavom i dva priložena razgovora.</p>' +
+        '<p class="note">Predaje se tekst rada „' + esc(t.title) + '” spremljen na poslužitelju' + (withDecl ? ', s izjavom' : '') + (chatsOn() ? ' i dva priložena razgovora' : '') + '. Riječi: 5.120.</p>' +
         '<p class="note">Nakon predaje tekst ovog rada više nije moguće mijenjati.</p>' +
+        (lateD ? '<p class="note">' + (tm.kind === 'iznimka' ? 'Rok je prošao; nastavnik je za Vas iznimno odobrio kasnu predaju do ' + fmt(tm.ex) + '. Potvrda će navesti da je rad predan nakon roka.' : 'Rok je prošao, pa će potvrda navesti da je rad predan nakon roka.') + '</p>' +
+          '<label class="sb-check"><input type="checkbox" id="sb-late-ok"' + (S().lateOk ? ' checked' : '') + '> Razumijem da će predaja biti označena kao predaja nakon roka.</label>' +
+          (gate ? '<p class="meta" id="sb-late-why">Predaja je moguća kad potvrdite ovu rečenicu.</p>' : '') : '') +
         (sending ? '<p class="note" role="status"><span class="sb-spin" aria-hidden="true"></span> Predaja u tijeku…</p>' : '') +
-        '<div class="sb-acts"><button class="btn" type="button" data-act="submit"' + (sending ? ' aria-disabled="true"' : '') + '>' + (sending ? 'Predaja u tijeku…' : 'Predaj rad') + '</button>' +
+        '<div class="sb-acts"><button class="btn" type="button" data-act="submit"' + (sending ? ' aria-disabled="true"' : gate ? ' aria-disabled="true" aria-describedby="sb-late-why"' : '') + '>' + (sending ? 'Predaja u tijeku…' : 'Predaj rad') + '</button>' +
         '<button class="btn secondary" type="button" data-act="close"' + (sending ? ' aria-disabled="true"' : '') + '>Natrag</button></div>';
     }
-    return '<div class="scrim" data-act="' + (S().sending ? 'noop' : 'close') + '"></div><div class="sb-dlg-host"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="sb-dlg-h" tabindex="-1">' + inner + '</div></div>';
+    var busy = S().sending || S().wdSending;
+    return '<div class="scrim" data-act="' + (busy ? 'noop' : 'close') + '"></div><div class="sb-dlg-host"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="sb-dlg-h" tabindex="-1">' + inner + '</div></div>';
   }
 
   function trapDialog(stage) {
       var dlg = stage.querySelector('.dialog[role="dialog"]');
       if (dlg) {
-        var first = dlg.querySelector('.btn:not([aria-disabled="true"])') || dlg; first.focus();
+        var first = dlg.querySelector('input:not([disabled]), .btn:not([aria-disabled="true"])') || dlg;
+        if (S().dialog && S().dialog.kind === 'submit') first = dlg.querySelector('[data-act="submit"]:not([aria-disabled="true"])') || dlg.querySelector('input') || first;
+        first.focus();
+        var lo = dlg.querySelector('#sb-late-ok');
+        if (lo) lo.addEventListener('change', function () { S().lateOk = lo.checked; App.rerender(); var n = document.getElementById('sb-late-ok'); if (n) n.focus(); });
         dlg.addEventListener('keydown', function (e) {
-          if (e.key === 'Escape') { e.preventDefault(); if (!S().sending) { var c = dlg.querySelector('[data-act="close"]'); if (c) c.click(); } }
+          if (e.key === 'Escape') { e.preventDefault(); if (!S().sending && !S().wdSending) { var c = dlg.querySelector('[data-act="close"]'); if (c) c.click(); } }
           if (e.key === 'Tab') {
-            var f = dlg.querySelectorAll('button, a[href], textarea, input'); if (!f.length) return;
+            var f = dlg.querySelectorAll('button, a[href], textarea, input:not([disabled]), select'); if (!f.length) return;
             var a = f[0], z = f[f.length - 1];
             if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
             else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
@@ -1363,34 +1585,45 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     title: 'S-31 Izjava',
     shell: 'none',
     variants: [
-      { id: 'puno', label: 'puno (stanje toka)' }, { id: 'nesklad', label: 'izjava i zapis se ne slažu' }, { id: 'prazno', label: 'prazno (ništa zabilježeno)' },
-      { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška učitavanja' }
+      { id: 'puno', label: 'puno (izjava ispunjena, pilot bez pomoćnika)' }, { id: 'nesklad', label: 'izjava i zapis se ne slažu (nakon Q-10)' }, { id: 'prazno', label: 'prazno (izjava nije ispunjena)' },
+      { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška učitavanja' },
+      { id: 'neaktualna', label: 'NF-3 izjava zastarjela (tekst promijenjen)' }, { id: 'bezpitanja', label: 'NF-3 zadatak bez pitanja nastavnika' },
+      { id: 'razgovori', label: 'NF-3 s razgovorima (nakon Q-10, nije u pilotu)' }
     ],
     render: function (ctx) {
       var t = ctx.task, v = ctx.variant, st = ctx.state;
       if (v === 'ucitavanje') return page(t, 'Izjava', panel('sb-h', 'Izjava', '', loadingBody('Učitavam zabilježene stavke i priloge.'), ' sb-busy'));
       if (v === 'greska') return page(t, 'Izjava', panel('sb-h', 'Izjava', '',
         '<p class="note" role="alert">Zabilježene stavke trenutačno nije moguće učitati. Izjavu zato još nije moguće potvrditi.</p><div class="sb-acts"><button class="btn secondary" type="button" data-act="retry">Pokušaj ponovno</button></div>'));
-      if (v === 'puno' && st.submitted[t.id]) return page(t, 'Predaja', panel('sb-h', 'Predaja', esc(t.kind),
-        '<p class="note">Predaja ovog rada već je zatražena ' + fmt(parse(st.submitted[t.id])) + '. Izjava je predana s radom i više se ne mijenja.</p><a href="#potvrda" data-go="potvrda">Otvori potvrdu o predaji</a>'));
-      if (v === 'puno' && !st.started[t.id]) return NOTSTARTED(t);
+      if (st.submitted[t.id]) {
+        /* NF-3 (PR-14, „za pravni pregled”): ispravak izjave nakon predaje kao napomena uz izjavu; potvrđena izjava se ne mijenja. */
+        var notes = S().declNotes[t.id] || [];
+        return page(t, 'Predaja', panel('sb-h', 'Predaja', esc(t.kind),
+          '<p class="note">Predaja ovog rada već je zatražena ' + fmt(parse(st.submitted[t.id])) + '. Izjava je predana s radom i više se ne mijenja.</p><a href="#potvrda" data-go="potvrda">Otvori potvrdu o predaji</a>' +
+          '<div class="sb-decl own" id="sb-correct"><h3>Ispravak izjave <span class="tag open">za pravni pregled</span></h3>' +
+          '<p class="meta">Tekst ovog odjeljka čeka pravni pregled.</p>' +
+          '<p class="note">Ako ste u izjavi nešto propustili, uz predani rad možete dodati napomenu uz izjavu. Vidi je nastavnik uz sažetak; potvrđena izjava se time ne mijenja. Dok rok traje, možete i povući predaju i predati je ponovno.</p>' +
+          (notes.length ? '<ul class="list">' + notes.map(function (n) { return '<li class="item"><span>' + esc(n.text) + '</span><span class="meta">' + n.at + '</span></li>'; }).join('') + '</ul>' : '<p class="meta">Nema napomena uz izjavu.</p>') +
+          '<form data-submit="addDeclNote"><div class="field"><label for="sb-cnote">Napomena uz izjavu (nije obavezna)</label><textarea class="input" id="sb-cnote" name="note" maxlength="600"></textarea></div>' +
+          '<div class="sb-acts"><button class="btn" type="submit">Dodaj napomenu uz izjavu</button></div></form></div>'));
+      }
+      if (!st.started[t.id]) return NOTSTARTED(t);
       return page(t, 'Izjava', '<div>' + steps(2) + '</div>' + declPanel(t, v)) + dialog(t);
     },
-    actions: {
+    actions: merge({
       retry: function () { App.state.variant.izjava = 'puno'; App.rerender(); },
-      todo: function () { App.toast('Uređivanje izjave nije dio ovog prototipa.'); },
-      chat: function (el) { S().dialog = { kind: 'chat', n: +el.getAttribute('data-n') }; App.rerender(); },
-      close: function () {
-        var dl = S().dialog; S().dialog = null; App.rerender();
-        var f = dl && dl.kind === 'chat' ? document.querySelector('[data-act="chat"][data-n="' + dl.n + '"]') : null;
-        if (f) f.focus();
+      chat: function (el) { openDlg('chat', '', { n: +el.getAttribute('data-n') }); },
+      addDeclNote: function (form, ctx) {
+        var txt = form.note.value.trim(); if (!txt) { form.note.setAttribute('aria-invalid', 'true'); form.note.focus(); return; }
+        var n = S().declNotes; (n[ctx.task.id] = n[ctx.task.id] || []).push({ text: txt, at: App.data.today + ' u 21:16' });
+        App.rerender(); App.toast('Napomena uz izjavu je dodana.');
       }
-    },
+    }, 'izjava'),
     after: function (stage, ctx) {
       var id = ctx.task.id, box = stage.querySelector('#sb-confirm');
       if (box) box.addEventListener('change', function () {
         S().check[id] = box.checked;
-        if (box.checked) S().declared[id] = App.data.today + ' u 21:10'; else delete S().declared[id];
+        if (box.checked) { S().declared[id] = App.data.today + ' u 21:10'; if (App.state.variant.izjava === 'neaktualna') App.state.variant.izjava = 'puno'; } else delete S().declared[id];
         App.rerender();
         var b = document.getElementById('sb-confirm'); if (b) b.focus();
       });
@@ -1408,7 +1641,14 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       { id: 'nakonroka', label: 'nakon roka' }, { id: 'produljen', label: 'produljen rok' }, { id: 'bezmreze', label: 'bez mreže' },
       { id: 'utijeku', label: 'predaja u tijeku' }, { id: 'odbijeno', label: 'greška predaje: zapis nije potvrđen' },
       { id: 'nedovrseno', label: 'predaja nije dovršena' }, { id: 'nepoznato', label: 'ishod nepoznat' },
-      { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška učitavanja' }
+      { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška učitavanja' },
+      { id: 'neaktualna', label: 'NF-3 izjava zastarjela' }, { id: 'izjavaprazna', label: 'NF-3 izjava nije ispunjena' }, { id: 'bezizjave', label: 'NF-3 zadatak ne traži izjavu' },
+      { id: 'zabranjeno', label: 'NF-3 zabranjena predaja nakon roka (not_open)' }, { id: 'iznimka', label: 'NF-3 iznimno odobrena kasna predaja' },
+      { id: 'novijalokalno', label: 'NF-3 novija verzija na uređaju' },
+      { id: 'odbijenospremno', label: 'NF-3 odbijeno: spremljeno na poslužitelju' }, { id: 'prekid', label: 'NF-3 odbijeno: zapis nije cjelovit' },
+      { id: 'bezzapisa', label: 'NF-3 odbijeno: nema zapisa' }, { id: 'zastarjelo', label: 'NF-3 odbijeno: novija verzija na poslužitelju' },
+      { id: 'nedovrsenozamjenski', label: 'NF-3 nedovršeno: zamjenski postupak naveden' },
+      { id: 'nepoznatobezvremena', label: 'NF-3 nepoznato: vrijeme zahtjeva nije poznato' }, { id: 'nepoznatoprobl', label: 'NF-3 nepoznato: ni treći pokušaj' }
     ],
     render: function (ctx) {
       var t = ctx.task, v = ctx.variant, st = ctx.state;
@@ -1416,44 +1656,34 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       if (v === 'greska') return page(t, 'Predaja', panel('sb-h', 'Predaja', '',
         '<p class="note" role="alert">Stanje rada trenutačno nije moguće učitati, pa se ne vidi je li rad predan. Tekst rada nije zahvaćen. Prije nove predaje pokušajte ponovno: ako je predaja zabilježena, ovdje će stajati potvrda.</p>' +
         '<div class="sb-acts"><button class="btn secondary" type="button" data-act="retry">Pokušaj ponovno</button></div>'));
-      if (v === 'odbijeno') return page(t, 'Predaja', panel('sb-h', 'Predaja', '',
-        '<p class="note" role="alert">Poslužitelj još nije potvrdio cijeli zapis ove verzije teksta. Ostavite radni prostor otvoren s vezom; predaju možete pokušati čim se stanje u radnom prostoru promijeni u „spremljeno na poslužitelju”.</p>' +
-        '<p class="note">Rad nije predan. Tekst je spremljen na uređaju.</p><a href="#rad" data-go="rad">Otvori radni prostor</a>'));
-      if (v === 'nedovrseno') return page(t, 'Predaja', panel('sb-h', 'Predaja nije dovršena: zamjenski postupak', '',
-        '<p class="note" role="alert">Predaja nije dovršena: tekst sastavljen iz zapisa ne podudara se s tekstom na poslužitelju. Vrijeme Vašeg zahtjeva (' + fmt(parse(SERVER_NOW())) + ') je zabilježeno i ostaje vrijeme predaje. Fakultet će nastaviti predaju zamjenskim postupkom: Obratite se nastavniku kolegija.</p>'));
-      if (v === 'nepoznato') return page(t, 'Predaja', panel('sb-h', 'Predaja', '',
-        '<p class="note">Predaja ovog rada već je zatražena ' + fmt(parse(SERVER_NOW())) + '.</p>' +
-        '<p class="note" role="alert">Potvrda nije stigla, pa ishod predaje nije poznat. Prije ponovnog pokušaja otvorite ovu stranicu ponovno: ako je predaja zabilježena, ovdje će stajati potvrda.</p>' +
-        '<div class="sb-acts"><button class="btn secondary" type="button" data-act="check">Provjeri stanje predaje</button></div>'));
-      if (v === 'puno' && st.submitted[t.id]) return page(t, 'Predaja', panel('sb-h', 'Predaja', esc(t.kind),
+      if (/^(odbijeno|odbijenospremno|prekid|bezzapisa|zastarjelo|nedovrseno|nedovrsenozamjenski|nepoznato|nepoznatobezvremena|nepoznatoprobl)$/.test(v)) return page(t, 'Predaja', outcomePanel(t, v));
+      if (st.submitted[t.id]) return page(t, 'Predaja', panel('sb-h', 'Predaja', esc(t.kind),
         '<p class="note">Predaja ovog rada već je zatražena ' + fmt(parse(st.submitted[t.id])) + '. Izjava je predana s radom i više se ne mijenja.</p><a href="#potvrda" data-go="potvrda">Otvori potvrdu o predaji</a>'));
       if (v === 'puno' && !st.started[t.id]) return page(t, 'Predaja', panel('sb-h', 'Predaja', '',
         '<p class="note">Rad još nije započet. Započnite ga u radnom prostoru.</p><a href="#rad" data-go="rad">Otvori radni prostor</a>'));
       var body = '<div>' + steps(4) + '</div>' + submitPanel(t, v, st);
       return page(t, 'Predaja', body) + dialog(t);
     },
-    actions: {
+    actions: merge({
       retry: function () { App.state.variant.predaja = 'puno'; App.rerender(); },
       check: function () { App.toast('Stanje predaje provjerava se na poslužitelju.'); },
-      ask: function () { S().dialog = { kind: 'submit' }; App.rerender(); },
-      noop: function () {},
-      close: function () {
-        if (S().sending) return;
-        S().dialog = null; App.rerender();
-        var f = document.querySelector('[data-act="ask"]'); if (f) f.focus();
-      },
+      report: function () { App.toast('Prijava problema je poslana. Ne sadrži tekst rada.'); },
+      ask: function () { openDlg('submit', '[data-act="ask"]'); },
       submit: function (el, ctx) {
         if (S().sending) return;
+        var tm = timing(ctx.task, ctx.variant); if ((tm.kind === 'nakonroka' || tm.kind === 'iznimka') && !S().lateOk) return;
         var id = ctx.task.id; S().sending = true; App.rerender();
         setTimeout(function () {
-          S().sending = false; S().dialog = null;
-          App.state.submitted[id] = SERVER_NOW();
+          S().sending = false; S().dialog = null; S().lateOk = false;
+          var now = SERVER_NOW(), h = S().hist[id] = S().hist[id] || [];
+          h.push({ attempt: h.length + 1, at: now, late: tm.kind === 'nakonroka' || tm.kind === 'iznimka', current: true });
+          App.state.submitted[id] = now;
           App.state.variant.potvrda = 'puno';
           App.go('potvrda');
         }, 900);
       }
-    },
-    after: function (stage) { trapDialog(stage); }
+    }, 'predaja'),
+    after: function (stage) { bindVer(stage); trapDialog(stage); }
   });
 
   /* ---------- S-32 Potvrda predaje ---------- */
@@ -1468,19 +1698,51 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     return '<svg viewBox="0 0 21 21" aria-hidden="true" focusable="false" fill="currentColor" shape-rendering="crispEdges">' +
       finder(0, 0) + finder(14, 0) + finder(0, 14) + '<path d="' + cells + '"/></svg>';
   }
+  /* NF-3 (PR-13): razlog zašto povlačenje nije moguće; samo ono što klijent zna (rok iz `dueAt`, `withdrawalAllowed` iz povijesti). */
+  function withdrawal(t, v, sp) {
+    var d = dueP(t);
+    if (v === 'povlacenjezabranjeno') return { ok: false, why: 'Nastavnik ili fakultet ne dopušta povlačenje za ovaj zadatak.' };
+    if (v === 'povlacenjemoguce') return { ok: true };
+    if (key(parse(SERVER_NOW())) > key(d)) return { ok: false, why: 'Povlačenje predaje više nije moguće: rok je istekao ' + fmt(d) + '.' };
+    return { ok: true };
+  }
+  function histList(t, v, sp, late) {
+    var h = S().hist[t.id], rows;
+    if (v === 'povijest') rows = [{ attempt: 1, at: fmt(addMin(sp, -2300)), late: false, wd: fmt(addMin(sp, -1100)) }, { attempt: 2, at: fmt(sp), late: late, current: true }];
+    else rows = (h && h.length ? h : [{ attempt: 1, at: fmt(sp), late: late, current: true }]).map(function (r) { return { attempt: r.attempt, at: r.at && r.at.indexOf('u ') < 0 ? fmt(parse(r.at)) : r.at, late: r.late, current: r.current, wd: r.wd }; });
+    return '<h3 class="sb-sub">Moje predaje</h3><ul class="list">' + rows.slice().reverse().map(function (r) {
+      return '<li class="item"><span class="title">Predaja ' + r.attempt + ' · ' + r.at + (r.late ? ' · nakon roka' : '') + '</span>' +
+        (r.current ? '<span class="meta">Trenutno važeća predaja.</span><a href="#potvrda" data-go="potvrda">Otvori potvrdu o predaji</a>'
+          : '<span class="meta">Povučena ' + r.wd + '.</span><a href="#potvrda" data-act="wdPdf">Preuzmi potvrdu povlačenja</a>') + '</li>';
+    }).join('') + '</ul>';
+  }
   App.register('potvrda', {
     title: 'S-32 Potvrda predaje',
     shell: 'none',
     variants: [
       { id: 'puno', label: 'puno (stanje toka)' }, { id: 'ceka', label: 'potvrda čeka potpis' }, { id: 'nakonroka', label: 'nakon roka' },
       { id: 'praznine', label: 'zapis ima praznine' }, { id: 'prazno', label: 'prazno (rad nije predan)' },
-      { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' }
+      { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' },
+      { id: 'povlacenjemoguce', label: 'NF-3 povlačenje moguće (rok traje)' }, { id: 'povlacenjezabranjeno', label: 'NF-3 povlačenje isključeno' },
+      { id: 'povucena', label: 'NF-3 predaja povučena' }, { id: 'povijest', label: 'NF-3 više predaja (jedna povučena)' },
+      { id: 'preuzimanjegreska', label: 'NF-3 preuzimanje potvrde nije uspjelo' }
     ],
     render: function (ctx) {
       var t = ctx.task, v = ctx.variant, st = ctx.state, kind = esc(t.kind);
+      if (App.state.sbWd) { App.state.sbWd = false; if (st.submitted[t.id]) { S().dialog = { kind: 'withdraw', screen: 'potvrda' }; S().opener = '[data-act="wdAsk"]'; } }
       if (v === 'ucitavanje') return page(t, 'Potvrda', panel('sb-h', 'Potvrda predaje', '', loadingBody('Učitavam potvrdu s poslužitelja.'), ' sb-busy'));
       if (v === 'greska') return page(t, 'Potvrda', panel('sb-h', 'Potvrda predaje', '',
         '<p class="note" role="alert">Potvrdu trenutačno nije moguće učitati. Ako je rad predan, predaja i vrijeme predaje time se ne mijenjaju.</p><div class="sb-acts"><button class="btn secondary" type="button" data-act="retry">Pokušaj ponovno</button></div>'));
+      var wdr = S().withdrawn[t.id];
+      if (v === 'povucena' || (v === 'puno' && !st.submitted[t.id] && wdr)) {
+        /* NF-3 (PR-13): nakon povlačenja jasan sljedeći korak i vrijeme do roka. */
+        var wat = wdr ? wdr.at : fmt(parse(SERVER_NOW()));
+        return page(t, 'Potvrda', panel('sb-h', 'Predaja je povučena', kind,
+          '<p class="note" role="status">Predaja je povučena. Rad možete ponovno mijenjati do ' + fmt(dueP(t)) + '. Zatim ga predajte iznova.</p>' +
+          '<div class="sb-acts"><a class="btn" href="#rad" data-go="rad">Otvori radni prostor</a></div>' +
+          '<h3 class="sb-sub">Potvrde povlačenja</h3><ul class="list"><li class="item"><span class="title">Revizija 4, povučeno ' + wat + '</span><a href="#potvrda" data-act="wdPdf">Preuzmi potvrdu</a></li></ul>' +
+          '<p class="meta">Nastavnik u povijesti vidi i predaju i povlačenje.</p>'));
+      }
       if (v === 'prazno' || (v === 'puno' && !st.submitted[t.id])) return page(t, 'Potvrda', panel('sb-h', 'Potvrda predaje', '',
         '<p class="note">Ovaj rad još nije predan, pa potvrde nema.</p><a href="#rad" data-go="rad">Otvori radni prostor</a>'));
       var sp = parse(st.submitted[t.id] || FALLBACK_SUB), d = dueP(t);
@@ -1496,25 +1758,40 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       }
       var gaps = v === 'praznine' || v === 'puno';
       var hx = hex(t.id + fmt(sp)), grouped = hx.match(/.{4}/g).join(' ');
+      var dtime = S().declared[t.id] || fmt(addMin(sp, -4)), nNotes = (S().notes[t.id] || []).length;
+      var wd = withdrawal(t, v, sp);
       var b = '<div class="sb-kv"><span>Vrijeme predaje</span><b>' + zoned(sp) + '</b></div>' +
         '<div class="sb-kv"><span>Rok</span><b>' + zoned(d) + '</b></div>' +
         '<div class="sb-kv"><span>Potpisivanje potvrde započelo</span><b>' + zoned(signed) + '</b></div>' +
         '<details><summary>Točne vrijednosti iz potvrde (UTC)</summary><p class="sb-mono">requestedAt ' + iso(sp, 7, '482193') + '<br>dueAt ' + iso(d, 59, '000000') + '<br>signedAt ' + iso(signed, 9, '106457') + '</p></details>' +
-        '<h3 class="sb-sub">Otisak predanog teksta</h3><p class="sb-mono">' + grouped + '</p>' +
+        '<h3 class="sb-sub">Otisak predanog teksta</h3><p class="sb-mono" id="sb-hash"><span aria-hidden="true">' + grouped + '</span><span class="sb-vh">' + hx + '</span></p>' +   // NF-3 (PR-18): čitač čita cijeli niz, ne 16 riječi
         '<p class="meta">Niz znakova izračunan iz točnog predanog teksta. Ako se tekst promijeni i za jedan znak, otisak više nije isti.</p>' +
         '<div class="sb-acts"><button class="btn secondary" type="button" data-act="copy" data-hash="' + hx + '">Kopiraj otisak</button></div>' +
+        /* NF-3 (PR-11): što je predano */
+        '<div class="sb-state" id="sb-given"><h3 class="sb-sub">Što je predano</h3><ul class="facts"><li>Verzija teksta: V4</li><li>Riječi: 5.120</li>' +
+        '<li>Izjava: ' + (declReq(v) ? 'potvrđena ' + esc(dtime) : 'nije bila potrebna') + '</li><li>Napomene uz rad: ' + nNotes + '</li></ul></div>' +
         (gaps ? '<p class="note">Zapis ima praznine.</p>' : '') +
         '<a href="#potvrda" data-act="sum" aria-expanded="' + (S().showSum ? 'true' : 'false') + '" aria-controls="sb-sum-h">Otvori sažetak procesa</a>' +
+        (S().showSum ? '<p class="meta" role="status">Sažetak procesa je otvoren ispod.</p>' : '') +
         '<p class="note">Potpis potvrde provjerava se na stranici Provjera potvrde, bez prijave.</p>' +
         '<a href="#potvrda" data-act="verify">Provjera potvrde</a>' +
         '<div class="sb-qr">' + qr(t.id) + '<p class="meta">QR kod je u preuzetom zapisu. Ovdje je samo uzorak bez sadržaja.</p></div>' +
-        '<a href="#potvrda" data-act="pdf">Preuzmi zapis (PDF s QR kodom)</a>' + foot;
+        /* NF-3 (PR-12, odgovor 1): student u pilotu dobiva samo PDF s QR kodom; paket za referadu i prenosivi zapis se ne prikazuju. */
+        '<div class="sb-state" id="sb-save"><h3 class="sb-sub">Sačuvaj potvrdu</h3>' +
+        '<p class="note">Za Vas, mentora i osobnu pohranu: PDF s QR kodom i otiskom teksta.</p>' +
+        (v === 'preuzimanjegreska' ? '<p class="note" role="alert">Zapis trenutačno nije moguće preuzeti. Pokušajte ponovno.</p>' : '') +
+        '<a href="#potvrda" data-act="pdf">Preuzmi zapis (PDF s QR kodom)</a></div>' +
+        /* NF-3 (PR-13): povlačenje s razlogom */
+        '<div class="sb-state" id="sb-wd"><h3 class="sb-sub">Povlačenje predaje</h3>' +
+        (wd.ok ? '<p class="note">Dok rok traje, predaju možete povući i predati ponovno. Rok: ' + fmt(d) + '.</p><div class="sb-acts"><button class="btn secondary" type="button" data-act="wdAsk">Povuci predaju</button></div>'
+               : '<p class="note" role="status">' + esc(wd.why) + '</p>') + '</div>' +
+        histList(t, v, sp, late) + foot;   // NF-3 (PR-15): povijest pokušaja
       var title = 'Predano ' + fmt(sp) + (late ? ', nakon roka' : '');
       var out = steps(5) + panel('sb-h', title, kind, b);
       if (S().showSum) out += summaryPanel(t, { submitted: st.submitted[t.id] || FALLBACK_SUB, gaps: gaps }, 'h2');
-      return page(t, 'Potvrda', out);
+      return page(t, 'Potvrda', out) + dialog(t);
     },
-    actions: {
+    actions: merge({
       retry: function () { App.state.variant.potvrda = 'puno'; App.rerender(); },
       copy: function (el) {
         var h = el.getAttribute('data-hash');
@@ -1523,11 +1800,28 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       },
       verify: function () { App.toast('Provjera potvrde otvara se na stranici /provjera. U prototipu nije izvedena.'); },
       pdf: function () { App.toast('Preuzimanje zapisa (PDF s QR kodom) u prototipu nije izvedeno.'); },
+      wdPdf: function () { App.toast('Preuzimanje potvrde povlačenja u prototipu nije izvedeno.'); },
+      wdAsk: function () { openDlg('withdraw', '[data-act="wdAsk"]'); },
+      wdDo: function (el, ctx) {
+        if (S().wdSending) return;
+        var id = ctx.task.id; S().wdSending = true; App.rerender();
+        setTimeout(function () {
+          S().wdSending = false; S().dialog = null;
+          var now = fmt(parse(SERVER_NOW())), h = S().hist[id] = S().hist[id] || [{ attempt: 1, at: App.state.submitted[id], late: false }];
+          h[h.length - 1].current = false; h[h.length - 1].wd = now;
+          S().withdrawn[id] = { at: now };
+          delete App.state.submitted[id]; S().showSum = false;
+          App.state.variant.potvrda = 'puno';
+          App.toast('Predaja je povučena. Potvrdu povlačenja možete preuzeti.');
+          App.rerender();
+        }, 900);
+      },
       sum: function () {
         S().showSum = !S().showSum; App.rerender();
-        if (S().showSum) { var h = document.getElementById('sb-sum-h'); if (h) h.scrollIntoView({ block: 'start' }); }
+        if (S().showSum) { var h = document.getElementById('sb-sum-h'); if (h) { h.scrollIntoView({ block: 'start' }); h.focus(); } }   // NF-3 (PR-18): fokus i najava
       }
-    }
+    }, 'potvrda'),
+    after: function (stage) { trapDialog(stage); }
   });
 })();
 </script>
