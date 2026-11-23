@@ -57,7 +57,7 @@ import {
   type SheetSchemaVersion,
 } from "@/editor";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
-import { createLivePublisher, type LivePublisher } from "@/client/live-publisher";
+import { createLivePublisher, livePublishAllowed, type LivePublisher } from "@/client/live-publisher";
 import { followLogoutNatively, postLogout } from "@/client/logout-request";
 import { signInHref } from "@/client/api";
 import {
@@ -344,8 +344,8 @@ export function LocalDocumentProvider({
     setInvalid(false);
     setWords(candidate.words);
     void saver.propose(candidate.doc);
-    // A v3 sheet has no publisher (it is never made for one).
-    publisherRef.current?.offer(candidate.doc as CanonicalDocument);
+    // The same candidate the journal takes, v1 or v3 (INT-26).
+    publisherRef.current?.offer(candidate.doc);
   });
 
   const editor = useEditor({
@@ -558,14 +558,15 @@ export function LocalDocumentProvider({
         }
         setPhase("ready");
         // Only a signed-in person who acknowledged the notice publishes; the
-        // local demo journal never does, nor a submitted work (O2, #756).
+        // local demo journal never does, nor a submitted work (O2, #756). A v3
+        // sheet publishes under exactly these rules (INT-26): the gate does not
+        // read the version.
         const submitted = saver.snapshot().closedBy === "submission";
-        // The live view reads v1 documents only: a v3 sheet publishes nothing.
-        publisher = markTag === null || !livePublish || submitted || sheet === 3
-          ? null : createLivePublisher({ documentId, current: () => !ended(), held: () => heldRef.current });
+        publisher = livePublishAllowed({ signedIn: markTag !== null, noticeAcknowledged: livePublish, submitted })
+          ? createLivePublisher({ documentId, current: () => !ended(), held: () => heldRef.current }) : null;
         publisherRef.current = publisher;
         const own = publisher;
-        if (own && result.document) own.offer(result.document as CanonicalDocument);
+        if (own && result.document) own.offer(result.document);
         // The teacher view holds it from the start: what was offered waits.
         if (!heldRef.current) own?.start();
         locked = {

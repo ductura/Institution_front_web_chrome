@@ -19,9 +19,14 @@
  * only different bytes actually sent do. 401 and 404 (no session, notice not
  * confirmed, no right to publish) stop publishing until the page loads again.
  * These are client constants, not the thresholds P-01 to P-04.
+ *
+ * Document v3 (INT-26): a v3 sheet publishes its v3 document through this
+ * same publisher, under the same gate (`livePublishAllowed`, which does not
+ * read the version) and the same timing; the bytes are its JCS text exactly
+ * as for v1, so a v1 document goes out byte for byte as before.
  */
 
-import type { CanonicalDocument } from "../../packages/editor-core/src/document/document";
+import type { CanonicalDocument, CanonicalDocumentV3 } from "../../packages/editor-core/src/document/document";
 import { canonicalizeJcs } from "../../packages/editor-core/src/document/forensics/jcs";
 
 import { cookieTransport, createApi, type ApiOptions, type Input } from "./api";
@@ -29,6 +34,23 @@ import { cookieTransport, createApi, type ApiOptions, type Input } from "./api";
 export const LIVE_PUBLISH_GAP_MS = 1000;
 export const LIVE_PUBLISH_RETRY_FIRST_MS = 2000;
 export const LIVE_PUBLISH_RETRY_MAX_MS = 30_000;
+
+/** What a sheet publishes: the v1 document, or the v3 one of a confirmed v3 work (INT-26). */
+export type LiveDocument = CanonicalDocument | CanonicalDocumentV3;
+
+/**
+ * Whether a tab may publish at all (O2, #756): only a signed-in person who
+ * acknowledged the notice, and never a submitted work. The document's version
+ * is deliberately not an input: a v3 work publishes under exactly the rules of
+ * a v1 one (INT-26).
+ */
+export function livePublishAllowed(gate: {
+  readonly signedIn: boolean;
+  readonly noticeAcknowledged: boolean;
+  readonly submitted: boolean;
+}): boolean {
+  return gate.signedIn && gate.noticeAcknowledged && !gate.submitted;
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -64,7 +86,7 @@ export type LivePublisherOptions = {
 
 export type LivePublisher = {
   /** The document as it is now; only the last one offered is ever sent. */
-  offer(document: CanonicalDocument): void;
+  offer(document: LiveDocument): void;
   /** Lets requests go out; may be called again after `stop`. */
   start(): void;
   /** No request starts after this, and one in flight is aborted. */
