@@ -7,26 +7,34 @@ import { readMentorshipRequests } from "../../../../../../src/client/mentorship-
 import { type RequestsRead } from "../../../../../../src/components/teacher/MentorshipRequests";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { messagesHr as t } from "../../../../../../locales/hr";
+import { useMemo } from "react";
 import { useHost } from "../../context";
 import { useTeacherRead } from "../../pages";
 import { teacherShellHr } from "../shell/messages.hr";
 import { RequestsCard } from "../n16/RequestsCard";
 import { WorksList } from "../n16/WorksList";
 import { TeacherPage } from "../shell/TeacherPage";
+import KeyDates from "../key-dates/KeyDates";
+import { keyDatesPort, type KeyDatesCall } from "../key-dates/contract";
+import { keyDatesMessages } from "../key-dates/messages.hr";
+import { mentorshipsOf } from "./model";
 
 const HREF = "/nastavnik/mentorstva";
 const requestsCall = () => createApi() as unknown as MentorshipCall;
 const worksCall = () => createApi() as unknown as MentoredWorksCall;
+const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
 
 /**
  * N-16 (WEB-1404): the requests of students (approve or decline), "Moji studenti"
  * (the students whose request was approved) and their works. The requests read
  * through the contract client (LOK-WEB-5); a failed read says "unavailable",
- * never "none". After a decision the page reads again.
+ * never "none". After a decision the page reads again. PIL-K-ROKOVI: each mentorship has its
+ * key-dates card (mentorship.key-dates.get), read on its own; its failure never hides the page.
  */
-export default function MentorshipsPage({ requests = requestsCall, works = worksCall }:
-  { requests?: () => MentorshipCall; works?: () => MentoredWorksCall }) {
+export default function MentorshipsPage({ requests = requestsCall, works = worksCall, keyDates = keyDatesCall }:
+  { requests?: () => MentorshipCall; works?: () => MentoredWorksCall; keyDates?: () => KeyDatesCall }) {
   const { base } = useHost();
+  const datesPort = useMemo(() => keyDatesPort(keyDates), [keyDates]);
   const here = appHref(base, HREF);
   const [read, retry] = useTeacherRead<{ asked: RequestsRead; works: MentoredWork[] }>(base, async () => {
     const [list, mentored] = await Promise.all([readMentorshipRequests(requests()), readMentoredWorks(works())]);
@@ -43,6 +51,9 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
       ready={(value) => (
         <>
           <WorksList works={value.works} base={base} />
+          {mentorshipsOf(value.works).map((m) => (
+            <KeyDates key={m.mentorshipId} mentorshipId={m.mentorshipId} port={datesPort} title={keyDatesMessages.forStudent(m.name)} />
+          ))}
           <RequestsCard read={value.asked} here={here} call={requests()} onDecided={retry} />
         </>
       )} />
