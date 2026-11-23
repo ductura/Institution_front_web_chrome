@@ -21,7 +21,7 @@ function placed(
     range: { nodeId, start, end }, pending: false,
     thread: {
       id: `nit-${number}`, number, state,
-      anchor: { nodeId, startHint: start, endHint: end, quote, prefix: "", suffix: "" },
+      anchor: { nodeId, startHint: start, endHint: end, quote, prefix: "", suffix: "" }, revision: null,
       comments: [{
         id: `komentar-${number}`, body: `Dopunite primjer ${number}.`, isOwn: true, role: "teacher",
         createdWindow: "2026-11-20T10:00:00.000Z", deletedWindow: null,
