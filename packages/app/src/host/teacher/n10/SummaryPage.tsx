@@ -36,7 +36,7 @@ const Unavailable = () => <p className="meta">{text.unavailable}</p>;
 function Section({ title, observed = true, children }: { title: string; observed?: boolean; children: ReactNode }) {
   return (
     <section className={styles.state}>
-      {observed ? <div className={styles.ev}><h3>{title}</h3><Observed /></div> : <h3>{title}</h3>}
+      {observed ? <div className={styles.ev}><h2>{title}</h2><Observed /></div> : <h2>{title}</h2>}
       {children}
     </section>
   );

@@ -55,9 +55,9 @@ describe("N-10 SummaryPage", () => {
 
   it("draws every section of the prototype, in order", async () => {
     const host = await show(fakeN10Port());
-    const titles = [...host.querySelectorAll("h3")].map((e) => e.textContent);
+    const titles = [...host.querySelectorAll("h2")].map((e) => e.textContent);
     expect(titles).toEqual(["Razdoblje rada", "Sesije", "Aktivno vrijeme uređivanja", "Verzije", "Lijepljenja", "AI pomoćnik",
-      "Praznine u zapisu", "Napomene studenta", "Stanje zapisa"]);
+      "Praznine u zapisu", "Napomene studenta", "Stanje zapisa", "Karta podrijetla"]);
     const text = host.textContent ?? "";
     expect(text).toContain("Isti sažetak vide student i nastavnik.");
     expect(text).toContain("20. 10. 2026. u 18:05");

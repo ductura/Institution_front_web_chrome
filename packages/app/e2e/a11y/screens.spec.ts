@@ -27,10 +27,12 @@ for (const screen of SCREENS) {
         const shown = [...document.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6")]
           .filter((h) => h.getClientRects().length > 0 && getComputedStyle(h).visibility !== "hidden");
         const found: string[] = [];
+        // A region before the page's h1 (the editor's first-steps guide in its bar)
+        // may open at h2, as axe's heading-order allows; every later step is checked.
         let last = 0;
         for (const h of shown) {
           const level = Number(h.tagName[1]);
-          if (level > last + 1) found.push(`h${last} → ${h.tagName.toLowerCase()} „${h.textContent?.trim().slice(0, 40)}”`);
+          if (level > Math.max(last, 1) + 1) found.push(`h${last} → ${h.tagName.toLowerCase()} „${h.textContent?.trim().slice(0, 40)}”`);
           last = level;
         }
         return found;

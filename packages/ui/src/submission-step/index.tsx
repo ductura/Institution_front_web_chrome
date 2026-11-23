@@ -124,9 +124,9 @@ export function StepActions({ children }: { children: ReactNode }) {
   return <div className={styles.acts}>{children}</div>;
 }
 
-/** A sub-heading inside a panel (prototype `h3.sb-sub`). */
+/** A sub-heading inside a panel (prototype `h3.sb-sub`); an h2, as the panel title is the page's h1 (WCAG 1.3.1). */
 export function StepSub({ children }: { children: ReactNode }) {
-  return <h3 className={styles.sub}>{children}</h3>;
+  return <h2 className={styles.sub}>{children}</h2>;
 }
 
 /** A hexadecimal or ISO value in the monospace face. */

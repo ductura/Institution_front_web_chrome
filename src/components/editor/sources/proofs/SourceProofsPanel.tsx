@@ -197,7 +197,7 @@ export function SourceProofsPanel({ sources, citations, editable, deps }: Source
 
   return (
     <section className={styles.panel} aria-labelledby={headingId}>
-      <h3 id={headingId} className={styles.count}>{t.heading}</h3>
+      <h2 id={headingId} className={styles.count}>{t.heading}</h2>
       <p className={styles.muted}>{editable ? t.intro : t.readOnly}</p>
       {citations.length > 0 && (
         <p className={styles.summary}>{t.summary.replace("{n}", String(citedWithProof(citations, allProofs))).replace("{m}", String(citations.length))}</p>
@@ -245,7 +245,7 @@ function SourceBox({ source, load, editable, deps, onRetry, onPick, onPaste, onO
 }) {
   return (
     <li className={styles.source} onPaste={onPaste}>
-      <h4>{source.label}</h4>
+      <h3>{source.label}</h3>
       {load.kind === "loading" && <p className={styles.muted} role="status">{t.loading}</p>}
       {load.kind === "unavailable" && (
         <div><p className={styles.error} role="alert">{t.unavailable}</p><Button tone="quiet" onClick={onRetry}>{t.retry}</Button></div>
