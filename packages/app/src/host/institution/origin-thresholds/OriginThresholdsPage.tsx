@@ -8,7 +8,7 @@ import { createApi } from "../../../../../../src/client/api";
 import { useHost } from "../../context";
 import {
   ORIGIN_KINDS, STRICTNESS, deleteThreshold, parsePercent, putThreshold, readThresholds,
-  type OriginKind, type OriginThreshold, type Refusal, type ThresholdCall,
+  type OriginKind, type OriginThreshold, type Refusal, type ThresholdCall, type ThresholdWrite, type WriteRefusal,
 } from "./contract";
 import { thresholdMessages as t } from "./messages.hr";
 
@@ -27,26 +27,39 @@ export function checkDraft(draft: Draft): FieldErrors {
   };
 }
 
-const draftOf = (row: OriginThreshold | undefined): Draft =>
-  row === undefined ? { percent: "", strictness: "" } : { percent: String(row.thresholdPercent), strictness: row.strictness };
+const draftOf = (percent: number | undefined, strictness: string | undefined): Draft =>
+  percent === undefined ? { percent: "", strictness: "" } : { percent: String(percent), strictness: strictness ?? "" };
 
-function KindCard({ origin, row, call, onChanged }: { origin: OriginKind; row: OriginThreshold | undefined; call: () => ThresholdCall; onChanged: () => Promise<void> }) {
-  const [draft, setDraft] = useState<Draft>(() => draftOf(row));
+type KindProps = {
+  origin: OriginKind;
+  row: OriginThreshold | undefined;
+  call: () => ThresholdCall;
+  /** Reads the list again after a confirmed change. */
+  onChanged: () => Promise<void>;
+  /** Reads the list from scratch, for a change the client could not confirm. */
+  onReload: () => void;
+};
+
+function KindCard({ origin, row, call, onChanged, onReload }: KindProps) {
+  const percent = row?.thresholdPercent;
+  const strictness = row?.strictness;
+  const [draft, setDraft] = useState<Draft>(() => draftOf(percent, strictness));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
-  const [actionError, setActionError] = useState<string | undefined>();
+  const [failed, setFailed] = useState<WriteRefusal | undefined>();
   const [note, setNote] = useState("");
-  useEffect(() => setDraft(draftOf(row)), [row]);
+  // Only a change of this kind's own threshold resets its fields: a read caused by another card keeps what is typed here.
+  useEffect(() => setDraft(draftOf(percent, strictness)), [percent, strictness]);
 
-  const act = async (write: () => Promise<{ kind: string }>, done: string) => {
+  const act = async (write: () => Promise<ThresholdWrite>, done: string) => {
     setBusy(true);
-    setActionError(undefined);
+    setFailed(undefined);
     setNote("");
     const out = await write();
     if (out.kind === "saved") {
       setNote(done);
       await onChanged();
-    } else setActionError(say(out.kind as Refusal));
+    } else setFailed(out.kind);
     setBusy(false);
   };
   const save = () => {
@@ -55,9 +68,10 @@ function KindCard({ origin, row, call, onChanged }: { origin: OriginKind; row: O
     if (Object.keys(found).length > 0) return;
     void act(() => putThreshold(call(), origin, draft.percent, draft.strictness), t.saved);
   };
+  const kind = t.kinds[origin];
 
   return (
-    <Card title={t.kinds[origin]}>
+    <Card title={kind}>
       <SummaryList rows={[{ id: "current", label: t.current, value: row === undefined ? t.none : t.shown(row.thresholdPercent, row.strictness) }]} />
       <FieldGrid>
         <TextField label={t.percent} hint={t.percentHint} error={errors.percent} inputMode="numeric" busy={busy}
@@ -67,12 +81,14 @@ function KindCard({ origin, row, call, onChanged }: { origin: OriginKind; row: O
           value={draft.strictness} onChange={(event) => setDraft({ ...draft, strictness: event.target.value })} />
       </FieldGrid>
       <ActionRow>
-        <Button busy={busy} onClick={save}>{t.save}</Button>
+        <Button busy={busy} aria-label={`${t.save}: ${kind}`} onClick={save}>{t.save}</Button>
         {row !== undefined && (
-          <Button tone="secondary" busy={busy} onClick={() => void act(() => deleteThreshold(call(), origin), t.removed)}>{t.remove}</Button>
+          <Button tone="secondary" busy={busy} aria-label={`${t.remove}: ${kind}`}
+            onClick={() => void act(() => deleteThreshold(call(), origin), t.removed)}>{t.remove}</Button>
         )}
       </ActionRow>
-      {actionError !== undefined && <p role="alert">{actionError}</p>}
+      {failed !== undefined && <p role="alert">{say(failed)}</p>}
+      {failed === "unconfirmed" && <ActionRow><Button tone="secondary" onClick={onReload}>{t.reload}</Button></ActionRow>}
       <p role="status">{note}</p>
     </Card>
   );
@@ -80,27 +96,45 @@ function KindCard({ origin, row, call, onChanged }: { origin: OriginKind; row: O
 
 function AdminForm({ call }: { call: () => ThresholdCall }) {
   const [state, setState] = useState<Loaded>({ kind: "loading" });
-  const read = useCallback(async () => {
-    const out = await readThresholds(call());
-    setState(out.kind === "ready" ? { kind: "ready", rows: out.thresholds } : { kind: "error", message: say(out.kind) });
-  }, [call]);
+  const [stale, setStale] = useState<string | undefined>();
   const load = useCallback(() => {
     setState({ kind: "loading" });
-    void read();
-  }, [read]);
+    setStale(undefined);
+    void readThresholds(call()).then((out) =>
+      setState(out.kind === "ready" ? { kind: "ready", rows: out.thresholds } : { kind: "error", message: say(out.kind) }));
+  }, [call]);
+  // After a confirmed change: a failed read keeps the cards and says the list is not current, never that nothing changed.
+  const refresh = useCallback(async () => {
+    const out = await readThresholds(call());
+    if (out.kind === "ready") {
+      setState({ kind: "ready", rows: out.thresholds });
+      setStale(undefined);
+    } else setStale(out.kind === "unavailable" ? t.errors.staleAfterSave : say(out.kind));
+  }, [call]);
   useEffect(load, [load]);
 
   if (state.kind === "loading") return <Card title={t.title} busy />;
   if (state.kind === "error") {
     return (
-      <Card title={t.title} error={state.message}>
-        <Button tone="secondary" onClick={load}>{t.retry}</Button>
-      </Card>
+      <>
+        <Card title={t.title} error={state.message} />
+        <ActionRow><Button tone="secondary" onClick={load}>{t.retry}</Button></ActionRow>
+      </>
     );
   }
-  return ORIGIN_KINDS.map((origin) => (
-    <KindCard key={origin} origin={origin} row={state.rows.find((row) => row.origin === origin)} call={call} onChanged={read} />
-  ));
+  return (
+    <>
+      {stale !== undefined && (
+        <>
+          <Notice tone="warn">{stale}</Notice>
+          <ActionRow><Button tone="secondary" onClick={load}>{t.reload}</Button></ActionRow>
+        </>
+      )}
+      {ORIGIN_KINDS.map((origin) => (
+        <KindCard key={origin} origin={origin} row={state.rows.find((row) => row.origin === origin)} call={call} onChanged={refresh} onReload={load} />
+      ))}
+    </>
+  );
 }
 
 const serverCall = () => createApi() as unknown as ThresholdCall;

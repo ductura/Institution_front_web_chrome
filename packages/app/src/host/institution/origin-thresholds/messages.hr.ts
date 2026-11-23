@@ -32,12 +32,15 @@ export const thresholdMessages = {
   remove: "Ukloni prag",
   saved: "Prag je spremljen na poslužitelju.",
   removed: "Prag je uklonjen. Vrsta je opet bez praga.",
-  loading: "Učitavanje pragova…",
   retry: "Pokušaj ponovno",
+  reload: "Ponovno učitaj pragove",
   errors: {
     signedOut: "Prijava nije valjana. Prijavite se ponovno.",
     denied: "Pragove fakulteta vidi i mijenja samo administrator ustanove.",
     invalid: "Poslužitelj nije prihvatio ove vrijednosti. Provjerite polja i pokušajte ponovno.",
-    unavailable: "Poslužitelj trenutačno nije dostupan. Ništa nije promijenjeno; pokušajte ponovno.",
+    notSent: "Vrijednosti nisu poslane jer ne odgovaraju obrascu. Provjerite polja.",
+    unavailable: "Pragovi trenutačno nisu učitani jer poslužitelj nije odgovorio. Pokušajte ponovno.",
+    unconfirmed: "Promjena nije potvrđena. Ponovno učitajte pragove i provjerite stanje.",
+    staleAfterSave: "Promjena je potvrđena, ali pragovi nisu ponovno učitani. Ponovno učitajte pragove.",
   },
 } as const;

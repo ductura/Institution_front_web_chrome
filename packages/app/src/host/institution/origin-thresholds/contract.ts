@@ -21,10 +21,17 @@ export type ThresholdCall = (
   input: { readonly params: Readonly<Record<string, string>> | undefined; readonly query: undefined; readonly body: unknown },
 ) => Promise<{ ok: true; status: number; body?: unknown } | { ok: false; status: number; code: string }>;
 
-/** A refusal the page names with its own text; it never shows a raw server code. */
-export type Refusal = "signedOut" | "denied" | "invalid" | "unavailable";
-export type ThresholdsRead = { readonly kind: "ready"; readonly thresholds: readonly OriginThreshold[] } | { readonly kind: Exclude<Refusal, "invalid"> };
-export type ThresholdWrite = { readonly kind: "saved" } | { readonly kind: Refusal };
+/** Why a read gave no list; the page names each with its own text and never shows a raw server code. */
+export type ReadRefusal = "signedOut" | "denied" | "unavailable";
+/**
+ * Why a write is not confirmed. signedOut, denied and invalid are the server's own refusals (401, 403, 422);
+ * notSent: the client refused the input before sending it; unconfirmed: the answer cannot tell whether the
+ * server wrote the change (dropped connection, 5xx, an unreadable success), so the page asks for a reload.
+ */
+export type WriteRefusal = "signedOut" | "denied" | "invalid" | "notSent" | "unconfirmed";
+export type Refusal = ReadRefusal | WriteRefusal;
+export type ThresholdsRead = { readonly kind: "ready"; readonly thresholds: readonly OriginThreshold[] } | { readonly kind: ReadRefusal };
+export type ThresholdWrite = { readonly kind: "saved" } | { readonly kind: WriteRefusal };
 
 const KIND: Schema = { anyOf: ORIGIN_KINDS.map((value): Schema => ({ const: value })) };
 const STRICT: Schema = { anyOf: STRICTNESS.map((value): Schema => ({ const: value })) };
@@ -57,17 +64,20 @@ export function parsePercent(typed: string): number | null {
   return value <= 100 ? value : null;
 }
 
-const refusal = (status: number): Refusal =>
-  status === 401 ? "signedOut" : status === 403 ? "denied" : status === 422 || status === 0 ? "invalid" : "unavailable";
+const readRefusal = (status: number): ReadRefusal => (status === 401 ? "signedOut" : status === 403 ? "denied" : "unavailable");
+const writeRefusal = (status: number, code: string): WriteRefusal =>
+  status === 401 ? "signedOut" : status === 403 ? "denied" : status === 422 ? "invalid"
+    : status === 0 && code === "client_rejected" ? "notSent" : "unconfirmed";
 
-/** The thresholds the faculty wrote, in the order of ORIGIN_KINDS; an answer outside the contract is unusable as a whole. */
+/**
+ * The thresholds the faculty wrote, in the order of ORIGIN_KINDS; an answer outside the contract is unusable as a
+ * whole. The percent is held to a whole number although the extract types the read as `number`: the put accepts
+ * only integers, so a fraction can only come from a fault, and the page refuses it rather than show it rounded.
+ */
 export async function readThresholds(call: ThresholdCall): Promise<ThresholdsRead> {
   try {
     const result = await call("institution.origin-thresholds.get", { params: undefined, query: undefined, body: undefined });
-    if (!result.ok) {
-      const kind = refusal(result.status);
-      return { kind: kind === "invalid" ? "unavailable" : kind };
-    }
+    if (!result.ok) return { kind: readRefusal(result.status) };
     if (result.status !== 200 || !matchesSchema(READ_SCHEMA, result.body)) return { kind: "unavailable" };
     const rows = (result.body as { thresholds: OriginThreshold[] }).thresholds;
     if (new Set(rows.map((row) => row.origin)).size !== rows.length) return { kind: "unavailable" };
@@ -81,24 +91,24 @@ export async function readThresholds(call: ThresholdCall): Promise<ThresholdsRea
 /** Sets the threshold of one kind. An invalid percent or strictness is refused here, before anything is sent. */
 export async function putThreshold(call: ThresholdCall, origin: OriginKind, typedPercent: string, strictness: string): Promise<ThresholdWrite> {
   const thresholdPercent = parsePercent(typedPercent);
-  if (thresholdPercent === null || !(STRICTNESS as readonly string[]).includes(strictness) || !ORIGIN_KINDS.includes(origin)) return { kind: "invalid" };
+  if (thresholdPercent === null || !(STRICTNESS as readonly string[]).includes(strictness) || !ORIGIN_KINDS.includes(origin)) return { kind: "notSent" };
   try {
     const result = await call("institution.origin-threshold.put", { params: { origin }, query: undefined, body: { thresholdPercent, strictness } });
-    if (!result.ok) return { kind: refusal(result.status) };
-    return result.status === 200 ? { kind: "saved" } : { kind: "unavailable" };
+    if (!result.ok) return { kind: writeRefusal(result.status, result.code) };
+    return result.status === 200 ? { kind: "saved" } : { kind: "unconfirmed" };
   } catch {
-    return { kind: "unavailable" };
+    return { kind: "unconfirmed" };
   }
 }
 
 /** Removes the threshold of one kind: the kind is "bez praga" again. */
 export async function deleteThreshold(call: ThresholdCall, origin: OriginKind): Promise<ThresholdWrite> {
-  if (!ORIGIN_KINDS.includes(origin)) return { kind: "invalid" };
+  if (!ORIGIN_KINDS.includes(origin)) return { kind: "notSent" };
   try {
     const result = await call("institution.origin-threshold.delete", { params: { origin }, query: undefined, body: undefined });
-    if (!result.ok) return { kind: refusal(result.status) };
-    return result.status === 204 ? { kind: "saved" } : { kind: "unavailable" };
+    if (!result.ok) return { kind: writeRefusal(result.status, result.code) };
+    return result.status === 204 ? { kind: "saved" } : { kind: "unconfirmed" };
   } catch {
-    return { kind: "unavailable" };
+    return { kind: "unconfirmed" };
   }
 }
