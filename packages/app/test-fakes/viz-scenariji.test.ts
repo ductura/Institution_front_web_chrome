@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { FIKSNI_DATUM, generatedServer, imeScenarija, SCENARIJI, T1, type Answer } from "./viz-scenariji";
+import { generatedServer } from "../e2e/viz/server";
+import { FIKSNI_DATUM, imeScenarija, SCENARIJI, T1, type Answer } from "./viz-scenariji";
 
 const body = (r: unknown) => JSON.parse((r as Answer).body ?? "null") as Record<string, any>;
 

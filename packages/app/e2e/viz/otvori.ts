@@ -3,8 +3,9 @@
 // "today", so the shots of the app and of the prototype use the same data and date.
 import { expect, type Page } from "@playwright/test";
 
-import { FIKSNI_DATUM, generatedServer, type Scenarij } from "../../test-fakes/viz-scenariji";
+import { FIKSNI_DATUM, type Scenarij } from "../../test-fakes/viz-scenariji";
 import type { Screen } from "../a11y/screens";
+import { generatedServer } from "./server";
 
 export async function otvori(page: Page, screen: Screen, scenarij: Scenarij) {
   const server = generatedServer(scenarij);

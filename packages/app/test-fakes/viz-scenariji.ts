@@ -5,8 +5,6 @@
 // Invented people, courses and texts only. The "puno" data is the state "puno"
 // of the prototype (docs/prototip/Ductura_student.html and Ductura_nastavnik.html:
 // Student A, Kolegij A, B and C, the tasks t1 to t3, today 5. 11. 2026.).
-import { readFileSync } from "node:fs";
-
 export const SCENARIJI = ["puno", "prazno", "ucitavanje", "greska", "dugi-tekst"] as const;
 export type Scenarij = (typeof SCENARIJI)[number];
 export type VizRole = "student" | "teacher" | "institution_admin" | null;
@@ -118,9 +116,8 @@ const DOPUNA: Readonly<Record<string, (body: Record<string, unknown>) => Record<
   "teacher.input-rhythm.get": (body) => ({ source: "course", ...body }),
 };
 
-type Contract = Record<string, { path: string; method: string; responses?: Record<string, unknown> }>;
-type Vector = { route: string; name: string; response?: { status: number; body?: unknown; contentType?: string } };
-const read = <T>(path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")) as T;
+export type Contract = Record<string, { path: string; method: string; responses?: Record<string, unknown> }>;
+export type Vector = { route: string; name: string; response?: { status: number; body?: unknown; contentType?: string } };
 
 const size = (v: Vector) => JSON.stringify(v.response?.body ?? null).length;
 
@@ -167,9 +164,3 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
     },
   };
 }
-
-export const generatedServer = (scenarij: Scenarij) => vizServer(
-  read<Contract>("../../../src/client/migration-contracts.generated.json"),
-  read<Vector[]>("../../../src/client/migration-contract-vectors.generated.json"),
-  scenarij,
-);
