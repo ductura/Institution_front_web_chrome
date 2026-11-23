@@ -20241,6 +20241,9 @@
                       }
                     }
                   }
+                },
+                "declarationRequired": {
+                  "type": "boolean"
                 }
               }
             }
@@ -21080,6 +21083,9 @@
                       }
                     }
                   }
+                },
+                "declarationRequired": {
+                  "type": "boolean"
                 }
               }
             }
@@ -36389,6 +36395,22 @@
                 "enabled": {
                   "type": "boolean"
                 },
+                "source": {
+                  "anyOf": [
+                    {
+                      "const": "assignment",
+                      "type": "string"
+                    },
+                    {
+                      "const": "course",
+                      "type": "string"
+                    },
+                    {
+                      "const": "default",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "changedBy": {
                   "anyOf": [
                     {
@@ -36503,6 +36525,22 @@
               "properties": {
                 "enabled": {
                   "type": "boolean"
+                },
+                "source": {
+                  "anyOf": [
+                    {
+                      "const": "assignment",
+                      "type": "string"
+                    },
+                    {
+                      "const": "course",
+                      "type": "string"
+                    },
+                    {
+                      "const": "default",
+                      "type": "string"
+                    }
+                  ]
                 },
                 "changedBy": {
                   "anyOf": [
@@ -36664,6 +36702,32 @@
                       "attachedAt": {
                         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
                         "type": "string"
+                      },
+                      "explanation": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "text",
+                              "writtenAt"
+                            ],
+                            "properties": {
+                              "text": {
+                                "minLength": 1,
+                                "maxLength": 2000,
+                                "type": "string"
+                              },
+                              "writtenAt": {
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     }
                   }
@@ -36834,6 +36898,22 @@
               "properties": {
                 "enabled": {
                   "type": "boolean"
+                },
+                "source": {
+                  "anyOf": [
+                    {
+                      "const": "assignment",
+                      "type": "string"
+                    },
+                    {
+                      "const": "course",
+                      "type": "string"
+                    },
+                    {
+                      "const": "default",
+                      "type": "string"
+                    }
+                  ]
                 },
                 "changedBy": {
                   "anyOf": [
