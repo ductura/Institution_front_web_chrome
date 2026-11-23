@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import StudentDeclaration from "../../packages/app/src/host/student/declaration/StudentDeclaration.tsx";
-import TeacherAiAttachmentsPanel from "../../packages/app/src/host/teacher/work/ai-attachments/TeacherAiAttachmentsPanel.tsx";
+import AiDeclarationSection from "../../packages/app/src/host/teacher/ai-declaration/AiDeclarationSection.tsx";
 import type { DeclarationPort } from "../../src/client/declaration.ts";
 import { createFakeDeclaration } from "../../src/client/declaration-fake.ts";
 import styles from "./Catalog.module.css";
@@ -45,7 +45,7 @@ const newPort = () => createFakeDeclaration({
 });
 
 /**
- * Both host containers on one fake (WEB-1209): what the student confirms is what the teacher
+ * Both host containers on one fake (WEB-1209; the teacher's is N-07's AiDeclarationSection): what the student confirms is what the teacher
  * reads. Not a component entry, so it stays out of the coverage and screenshot lists.
  */
 export function DeclarationFlow() {
@@ -68,7 +68,7 @@ export function DeclarationFlow() {
         <StudentDeclaration port={port} submissionId={SUBMISSION} />
       </div>
       <div className={`sheet ${styles.sheet}`} data-sheet-theme="light" data-flow="teacher">
-        <TeacherAiAttachmentsPanel key={confirmations} port={port} submissionId={SUBMISSION} />
+        <AiDeclarationSection key={confirmations} port={port} submissionId={SUBMISSION} />
       </div>
     </section>
   );
