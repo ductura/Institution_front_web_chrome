@@ -16,6 +16,7 @@
 // Faza 3: submission.submit-second.post from Institution_server f309d2d2 (API 1.93.0).
 // Faza 3: work.comments.publish-selected.post from Institution_server 0f5aa9aa (API 1.94.0).
 // Faza 3: work.interview-notes.post from Institution_server e0835008 (API 1.95.0).
+// Faza 3: teacher.course-input-rhythm.get, teacher.course-input-rhythm.put, teacher.input-rhythm.delete from Institution_server e0835008 (API 1.95.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -1689,5 +1690,26 @@ export type MigrationOperations = {
     body: { "fileName": string; "mediaType": "text/plain" | "application/pdf"; "contentBase64": string };
     success: { status: 201; body: { "id": string; "fileName": string; "mediaType": "text/plain" | "application/pdf"; "byteSize": number; "sha256": string; "createdAt": string }; headers: {  } };
     errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "unsupported_media_type" | "invalid_input" | "conflict";
+  };
+  "teacher.course-input-rhythm.get": {
+    params: { "courseId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "enabled": boolean; "source"?: "assignment" | "course" | "default"; "changedBy": { "role": "teacher" | "mentor"; "name": string | null } | null; "changedAt": string | null }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.course-input-rhythm.put": {
+    params: { "courseId": string };
+    query: undefined;
+    body: { "enabled": boolean };
+    success: { status: 200; body: { "enabled": boolean; "source"?: "assignment" | "course" | "default"; "changedBy": { "role": "teacher" | "mentor"; "name": string | null } | null; "changedAt": string | null }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "unsupported_media_type" | "invalid_json" | "invalid_input";
+  };
+  "teacher.input-rhythm.delete": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "enabled": boolean; "source"?: "assignment" | "course" | "default"; "changedBy": { "role": "teacher" | "mentor"; "name": string | null } | null; "changedAt": string | null }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable";
   };
 };
