@@ -57,3 +57,24 @@ export function createAssistantMatchCall(call: Call = createApi()): MatchCall {
     return { ok: true, status: result.status, body: { enabled: true, matches: segmentsOf(result.body.findings) } };
   };
 }
+
+// PIL-P1-PODUDARANJE-PROVJERA-WEB: a finding exists only once the student's editor sends a segment
+// to work.assistant-match.post ({segmentRef, text}); the server compares it with the answers of the
+// assistant in the student's own conversations, records each match once and attaches the
+// conversation. With the faculty switch off it answers no match and stores nothing.
+export type SegmentToCheck = { readonly segmentRef: string; readonly text: string };
+export type SegmentCheckAnswer = { ok: true; matched: number } | { ok: false; status: number; code: string };
+export type SegmentCheck = (documentId: string, segment: SegmentToCheck) => Promise<SegmentCheckAnswer>;
+
+/** The real check: one segment per call, the answer reduced to how many answers it matched. */
+export function createSegmentCheck(call: Call = createApi()): SegmentCheck {
+  return async (documentId, segment) => {
+    const result = await call("work.assistant-match.post", {
+      params: { documentId },
+      query: undefined,
+      body: { segmentRef: segment.segmentRef, text: segment.text },
+    });
+    if (!result.ok) return { ok: false, status: result.status, code: result.code };
+    return { ok: true, matched: result.body.matches.length };
+  };
+}

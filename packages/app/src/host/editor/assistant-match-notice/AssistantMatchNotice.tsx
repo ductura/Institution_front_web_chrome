@@ -12,9 +12,10 @@ type Status = "idle" | "sending" | "saved" | "failed" | "rejected" | "signedOut"
  * The student's notice at the moment the server attaches the conversation automatically (WEB-1230), with the
  * option to explain the match. Behind the faculty flag: while the flag is off the component renders nothing.
  * The notice never blocks writing or submitting and is not a verdict. `explainable` is false while the
- * server has no route that stores the explanation: then no field asks for one.
+ * server has no route that stores the explanation: then no field asks for one. A new `version` reads
+ * the matches again (the host raises it when a checked segment matched).
  */
-export default function AssistantMatchNotice({ call, documentId, explainable = true }: { call: MatchCall; documentId: string; explainable?: boolean }) {
+export default function AssistantMatchNotice({ call, documentId, explainable = true, version = 0 }: { call: MatchCall; documentId: string; explainable?: boolean; version?: number }) {
   const [read, setRead] = useState<MatchRead | null>(null);
   const [matches, setMatches] = useState<readonly AssistantMatch[]>([]);
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
@@ -27,7 +28,7 @@ export default function AssistantMatchNotice({ call, documentId, explainable = t
       setMatches(answer.kind === "ready" ? answer.state.matches : []);
     });
     return () => { active = false; };
-  }, [call, documentId]);
+  }, [call, documentId, version]);
 
   if (read === null || read.kind !== "ready") return null;
   const open = matches.filter((m) => !dismissed.has(m.segmentId));
