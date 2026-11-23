@@ -2,7 +2,7 @@ import { Button, Dialog, TextArea, replyKeyAction } from "@ductura/ui";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import {
-  changeThreadState, createComment, replyComment,
+  changeThreadState, createRevisionComment, replyComment,
   type CreateOutcome, type ListOutcome, type ReplyOutcome,
 } from "@/client/comments";
 import { limitBody, type TextAnchor } from "@/domain/collaboration";
@@ -15,7 +15,7 @@ import type { PlacedThread } from "@/components/teacher/TeacherComments";
 import styles from "@/components/teacher/LiveWorkView.module.css";
 
 import { COMMENT_TOAST_MS, teacherCommentsMessages as t } from "./messages.hr";
-import { entryWho, threadTitle } from "./model";
+import { entryWho, revisionLabel, threadTitle } from "./model";
 
 const c = messagesHr.comments;
 const tt = messagesHr.teacherComments;
@@ -25,6 +25,7 @@ function ThreadCard({ placed, current, readOnly, onChanged, onShow, onToast }: {
   onChanged: () => void; onShow: (range: TextRange) => void; onToast: (text: string) => void;
 }) {
   const { thread, range, pending } = placed;
+  const revision = revisionLabel(thread.revision);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Exclude<ReplyOutcome, "ok"> | null>(null);
@@ -49,6 +50,7 @@ function ThreadCard({ placed, current, readOnly, onChanged, onShow, onToast }: {
     <article className={styles.thread} aria-label={c.number.replace("{n}", String(thread.number))}>
       <header className={styles.threadHead}>
         <b>{threadTitle(thread.anchor?.quote ?? null)}</b>
+        {revision === null ? null : <span>{revision}</span>}
         <span>{c.state[thread.state]}</span>
       </header>
       {range || pending ? null : <p className={styles.muted}>{c.notPlaced}</p>}
@@ -88,9 +90,14 @@ function ThreadCard({ placed, current, readOnly, onChanged, onShow, onToast }: {
   );
 }
 
-/** The new comment on a marked passage; `anchor` comes from the text on screen. */
-function NewComment({ documentId, anchor, current, onDone }: {
-  documentId: string; anchor: TextAnchor; current: () => boolean; onDone: (created: boolean) => void;
+/**
+ * The new comment on a marked passage; `anchor` comes from the text on screen
+ * and `revision` names that text (INT-15). While the revision is not known no
+ * comment is sent: the server takes none from a teacher without it.
+ */
+function NewComment({ documentId, anchor, revision, current, onDone }: {
+  documentId: string; anchor: TextAnchor; revision: number | null; current: () => boolean;
+  onDone: (created: boolean) => void;
 }) {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -99,8 +106,9 @@ function NewComment({ documentId, anchor, current, onDone }: {
   const publish = async (event: FormEvent) => {
     event.preventDefault();
     if (busy || body.trim() === "") return;
+    if (revision === null) return setError("unavailable");
     setBusy(true);
-    const outcome = await createComment(documentId, body, anchor, current);
+    const outcome = await createRevisionComment(documentId, body, anchor, revision, current);
     setBusy(false);
     if (outcome === "ok") return onDone(true);
     setError(outcome);
@@ -109,6 +117,7 @@ function NewComment({ documentId, anchor, current, onDone }: {
     <form className={styles.newComment} onSubmit={(event) => void publish(event)} aria-labelledby={titleId}>
       <h3 id={titleId}>{t.newTitle}</h3>
       <p className={styles.quote}>„{anchor.quote}”</p>
+      {revision === null ? null : <p className={styles.muted}>{revisionLabel(revision)}</p>}
       <TextArea rows={3} label={t.newLabel} value={body} busy={busy}
         onChange={(event) => setBody(limitBody(event.target.value))} />
       <div className={styles.actions}>
@@ -183,13 +192,15 @@ function ConsultationPrint({ placed, nodeOrder, current }: {
  * Same data and props as the shared `TeacherComments`; the list comes from the server only.
  */
 export default function TeacherCommentsPanel({
-  documentId, outcome, placed, nodeOrder, draft, current, readOnly = false, onReload, onDraftDone, onShow,
+  documentId, outcome, placed, nodeOrder, draft, revision, current, readOnly = false, onReload, onDraftDone, onShow,
 }: {
   documentId: string;
   outcome: ListOutcome | null;
   placed: PlacedThread[];
   nodeOrder: readonly { id: string }[];
   draft: TextAnchor | null;
+  /** The revision of the text on screen (INT-15); null while it is not known. */
+  revision: number | null;
   current: () => boolean;
   readOnly?: boolean;
   onReload: () => void;
@@ -220,7 +231,7 @@ export default function TeacherCommentsPanel({
       <p className={styles.muted}>{t.note}</p>
       {!readOnly && outcome?.kind === "ok" && (draft ? (
         <NewComment key={`${documentId}:${draft.nodeId}:${draft.startHint}:${draft.endHint}:${draft.quote}`}
-          documentId={documentId} anchor={draft} current={current}
+          documentId={documentId} anchor={draft} revision={revision} current={current}
           onDone={(created) => { onDraftDone(); if (created) { setToast(t.added); onReload(); } }} />
       ) : <p className={styles.muted}>{t.hint}</p>)}
       {list}
