@@ -34,6 +34,12 @@ export type CommentThread = {
   readonly state: ThreadState;
   /** Null when the stored anchor is not a valid TextAnchor: shown, never placed. */
   readonly anchor: TextAnchor | null;
+  /**
+   * The revision of the work the thread was written on (INT-15, API 1.97.0); a
+   * reply has its thread's. Null for a thread written before revisions were
+   * recorded, a draft, or a server that does not send it.
+   */
+  readonly revision: number | null;
   readonly comments: readonly ThreadComment[];
 };
 
@@ -51,23 +57,31 @@ const STATES: ReadonlySet<string> = new Set(["open", "answered", "resolved"]);
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** A revision as the contract bounds it: a safe integer from 1. */
+export const isRevision = (value: unknown): value is number =>
+  typeof value === "number" && Number.isSafeInteger(value) && value >= 1;
+
 /**
  * Threads from the body of `list`, whose rows come ordered by thread and
  * position. Null for any row out of shape or out of order.
  */
 export function threadsFromList(value: unknown): CommentThread[] | null {
   if (!isObject(value) || !Array.isArray(value.comments)) return null;
-  const threads: { id: string; state: ThreadState; anchor: TextAnchor | null; comments: ThreadComment[] }[] = [];
+  const threads: {
+    id: string; state: ThreadState; anchor: TextAnchor | null; revision: number | null; comments: ThreadComment[];
+  }[] = [];
   for (const row of value.comments as unknown[]) {
     if (!isObject(row)) return null;
     const { threadId, commentId, position, authorRole, isOwn, body, anchor, state, createdWindow, deletedWindow } = row;
+    const revision = row.revision === undefined ? null : row.revision;
     const standing = deletedWindow === null && typeof body === "string";
     const deleted = body === null && typeof deletedWindow === "string" && !Number.isNaN(Date.parse(deletedWindow));
     if (typeof threadId !== "string" || !UUID.test(threadId) || typeof commentId !== "string" || !UUID.test(commentId)
       || typeof position !== "number" || !Number.isSafeInteger(position) || position < 1
       || typeof authorRole !== "string" || !ROLES.has(authorRole) || typeof isOwn !== "boolean"
       || !(standing || deleted) || typeof state !== "string" || !STATES.has(state)
-      || typeof createdWindow !== "string" || Number.isNaN(Date.parse(createdWindow))) {
+      || typeof createdWindow !== "string" || Number.isNaN(Date.parse(createdWindow))
+      || !(revision === null || isRevision(revision))) {
       return null;
     }
     const comment: ThreadComment = {
@@ -78,9 +92,11 @@ export function threadsFromList(value: unknown): CommentThread[] | null {
     if (position === 1) {
       if (threads.some((t) => t.id === threadId)) return null;
       threads.push({
-        id: threadId, state: state as ThreadState, anchor: isTextAnchorInput(anchor) ? anchor : null, comments: [comment],
+        id: threadId, state: state as ThreadState, anchor: isTextAnchorInput(anchor) ? anchor : null,
+        revision: revision as number | null, comments: [comment],
       });
-    } else if (last?.id === threadId && anchor === null && position === last.comments.length + 1) {
+    } else if (last?.id === threadId && anchor === null && position === last.comments.length + 1
+      && revision === last.revision) {
       last.comments.push(comment);
     } else {
       return null;
@@ -155,6 +171,26 @@ export async function createComment(
   if (!current()) return "signedOut";
   const outcome = writeOutcome(await post("create", { documentId, body: body.normalize("NFC"), anchor }, options), 200);
   // Creating has no conflict of its own: a 409 is not one of its answers.
+  return outcome === "conflict" ? "unavailable" : outcome;
+}
+
+/**
+ * Opens a thread on a revision of the work (INT-15; API 1.97.0): the teacher
+ * names the revision shown, and the server checks that it exists and that the
+ * teacher may read it (422 otherwise). The anchor is made from the text on
+ * screen; null makes it a general comment, which is what a comment on an older
+ * version than the one on screen must be, since the server checks an anchor
+ * against the text the teacher reads now (409).
+ */
+export async function createRevisionComment(
+  documentId: string, body: string, anchor: TextAnchor | null, revision: number,
+  current: () => boolean = () => true, options: ApiOptions = {},
+): Promise<CreateOutcome> {
+  if (!current()) return "signedOut";
+  if (!isRevision(revision)) return "invalid";
+  const outcome = writeOutcome(
+    await post("create", { documentId, body: body.normalize("NFC"), anchor, revision }, options), 200,
+  );
   return outcome === "conflict" ? "unavailable" : outcome;
 }
 
