@@ -18,6 +18,10 @@ const E = "editor/index.html";
 const PROTO: Readonly<Record<string, Proto>> = {
   "student: moji zadaci": { file: S, hash: "pocetna" },
   "student: moji kolegiji": { file: S, hash: "kolegiji" },
+  "student: moji radovi": { file: S, hash: "radovi" },
+  "student: upis kodom": { file: S, hash: "upis" },
+  "student: zadatak": { file: S, hash: "obavijest" },
+  "student: radni prostor": { file: E },
   "student: rad": { file: E },
   "student: predaja, izjava": { file: S, hash: "predaja" },
   "student: predaja, izjava o radu": { file: S, hash: "izjava" },
