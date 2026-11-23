@@ -39,10 +39,14 @@ function linuxListeners(port: number): number[] {
   return [...out.matchAll(/pid=(\d+)/g)].map((match) => Number(match[1]));
 }
 
-/** PIDs listening on `port`, from Get-NetTCPConnection (not netstat's localized text). */
+/**
+ * PIDs listening on `port`, from Get-NetTCPConnection (not netstat's localized
+ * text). With no listener the cmdlet still ends with an error status, so the
+ * command exits 0 explicitly; "nobody listens" is then an empty list.
+ */
 function windowsListeners(port: number): number[] {
   const out = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-    `Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $_.OwningProcess }`],
+    `Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $_.OwningProcess }; exit 0`],
   { encoding: 'utf8', windowsHide: true });
   return out.split(/\s+/u).filter((part) => /^\d+$/u.test(part)).map(Number);
 }
