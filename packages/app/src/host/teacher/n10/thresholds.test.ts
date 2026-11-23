@@ -37,7 +37,7 @@ async function show(port: N10Port) {
   return host;
 }
 const rulesSection = (host: HTMLElement) =>
-  [...host.querySelectorAll("section")].find((s) => s.querySelector("h3")?.textContent === text.rulesTitle) ?? null;
+  [...host.querySelectorAll("section")].find((s) => s.querySelector("h2")?.textContent === text.rulesTitle) ?? null;
 
 afterEach(() => {
   act(() => root?.unmount());

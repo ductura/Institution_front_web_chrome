@@ -56,8 +56,8 @@ afterEach(() => {
 
 const text = () => host!.textContent ?? "";
 const cards = () => [...host!.querySelectorAll<HTMLElement>("section[aria-labelledby]")]
-  .filter((card) => Object.values(t.kinds).includes(card.querySelector("h3")?.textContent as never));
-const card = (origin: OriginKind) => cards().find((c) => c.querySelector("h3")?.textContent === t.kinds[origin])!;
+  .filter((card) => Object.values(t.kinds).includes(card.querySelector("h2")?.textContent as never));
+const card = (origin: OriginKind) => cards().find((c) => c.querySelector("h2")?.textContent === t.kinds[origin])!;
 const button = (scope: HTMLElement, name: string) =>
   [...scope.querySelectorAll("button")].find((b) => b.getAttribute("aria-label") === name || (!b.hasAttribute("aria-label") && b.textContent === name));
 
@@ -94,7 +94,7 @@ describe("PIL-P1-PRAGOVI-ADMIN page in the browser", () => {
   it("reads once for the administrator and shows a card for each of the six kinds, without defaults", async () => {
     const srv = await show("admin");
     expect(srv.ids).toEqual(["institution.origin-thresholds.get"]);
-    expect(cards().map((c) => c.querySelector("h3")!.textContent)).toEqual(Object.values(t.kinds));
+    expect(cards().map((c) => c.querySelector("h2")!.textContent)).toEqual(Object.values(t.kinds));
     expect(card("pasted_unknown").textContent).toContain(t.shown(15, "soft"));
     expect(card("assistant_inserted").textContent).toContain(t.shown(10, "hard"));
     expect(card("typed").textContent).toContain(t.none);

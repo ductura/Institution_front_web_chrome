@@ -97,7 +97,7 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
     return (
       <>
         {selectField}
-        <Card title={text.emptyTitle} center><p className="note">{text.emptyBody}</p></Card>
+        <Card level={2} title={text.emptyTitle} center><p className="note">{text.emptyBody}</p></Card>
       </>
     );
   }
@@ -123,7 +123,7 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
           ) : said.lines.map((line) => <p key={line}>{line}</p>)}
         </div>
       )}
-      <Card title={text.rosterTitle}>
+      <Card level={2} title={text.rosterTitle}>
         {rows.length === 0 ? <p className="note">{text.rosterEmpty}</p> : (
           <div className="tbl" tabIndex={0} role="region" aria-label={text.rosterCaption}>
             <table>
@@ -136,13 +136,13 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
         )}
         <p className="meta">{text.rosterNote}</p>
       </Card>
-      <Card title={text.fingerprintsTitle}>
+      <Card level={2} title={text.fingerprintsTitle}>
         <p className="note">{text.fingerprintsNote}</p>
         <p className="note">{text.fingerprintsMeaning}</p>
         <p className="meta">{text.trail}</p>
       </Card>
       {data.extensionReasons.length > 0 ? (
-        <Card title={text.reasonsTitle}>
+        <Card level={2} title={text.reasonsTitle}>
           <ul>{reasonLines(data.extensionReasons, messagesHr.deadlineExtensions.reasons).map((line, i) => <li key={i}>{line}</li>)}</ul>
           <p>{text.reasonsNote}</p>
         </Card>

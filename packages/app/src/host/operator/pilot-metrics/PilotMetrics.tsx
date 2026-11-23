@@ -71,7 +71,7 @@ export function PilotMetrics({ home }: { home: string }) {
   }, [attempt]);
 
   return (
-    <main className={styles.page}>
+    <main id="sadrzaj" tabIndex={-1} className={styles.page}>
       <a href={home}>{t.home}</a>
       <h1>{t.title}</h1>
       {view.kind === "loading" && <p role="status">{t.loading}</p>}

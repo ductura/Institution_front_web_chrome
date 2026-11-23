@@ -30,7 +30,7 @@ afterEach(() => {
 describe("KeyDates card", () => {
   it("lists the dates in order, in Zagreb time, under the student's name", async () => {
     const host = await show(fakeKeyDatesPort());
-    expect(host.querySelector("h3")?.textContent).toBe("Ključni rokovi: Iva Izmišljena");
+    expect(host.querySelector("h2")?.textContent).toBe("Ključni rokovi: Iva Izmišljena");
     const items = [...host.querySelectorAll("li")].map((li) => li.textContent);
     expect(items).toEqual(["Etapa „Nacrt uvoda”: 2. 11. 2026. u 09:00", "Rok predaje: 14. 12. 2026. u 23:59", "Konzultacije (potvrđene): 20. 1. 2027. u 11:00"]);
   });

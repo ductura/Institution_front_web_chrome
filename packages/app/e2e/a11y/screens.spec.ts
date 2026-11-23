@@ -1,11 +1,13 @@
 // WEB-1805 (M11.6, D-276 NQ01, D-248, F-03): every main screen, for its role,
 // passes axe without a critical or serious finding in both themes and at
 // mobile width (criterion 1) and shows keyboard focus on every Tab stop
-// (criterion 2). It also keeps a title of its own (WCAG 2.4.2) and reflows at
-// 320 px (WCAG 1.4.10). One page load per screen, each check a step, so the
-// pass runs with the app's e2e. Over the fake server of the "puno" scenario
-// (VIZ-WCAG-LAZNI): every read answers from the contract's vectors, so axe sees
-// each screen with its data, not its "cannot be read" state. Invented data only.
+// (criterion 2). It also keeps a title of its own (WCAG 2.4.2), headings that
+// never skip a level (1.3.1), a first Tab stop that skips to the content
+// (2.4.1, VIZ-WCAG N3/N4) and reflows at 320 px (WCAG 1.4.10). One page load
+// per screen, each check a step, so the pass runs with the app's e2e. Over the
+// fake server of the "puno" scenario (VIZ-WCAG-LAZNI): every read answers from
+// the contract's vectors, so axe sees each screen with its data, not its
+// "cannot be read" state. Invented data only.
 import { expect, test } from "@playwright/test";
 
 import { otvori } from "../viz/otvori";
@@ -19,6 +21,41 @@ for (const screen of SCREENS) {
 
     await test.step("title of its own (WCAG 2.4.2)", async () => {
       await expect(page).toHaveTitle(/^.+ · Ductura$/);
+    });
+    await test.step("headings never skip a level (WCAG 1.3.1)", async () => {
+      const skips = await page.evaluate(() => {
+        const shown = [...document.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6")]
+          .filter((h) => h.getClientRects().length > 0 && getComputedStyle(h).visibility !== "hidden");
+        const found: string[] = [];
+        // A region before the page's h1 (the editor's first-steps guide in its bar)
+        // may open at h2, as axe's heading-order allows; every later step is checked.
+        let last = 0;
+        for (const h of shown) {
+          const level = Number(h.tagName[1]);
+          if (level > Math.max(last, 1) + 1) found.push(`h${last} → ${h.tagName.toLowerCase()} „${h.textContent?.trim().slice(0, 40)}”`);
+          last = level;
+        }
+        return found;
+      });
+      expect(skips).toEqual([]);
+    });
+    await test.step("the first Tab stop skips to the content (WCAG 2.4.1)", async () => {
+      // Start from the top of the document, as after a fresh load: a field the
+      // screen focuses on its own would otherwise be where Tab starts.
+      await page.evaluate(() => {
+        const body = document.body;
+        body.tabIndex = -1;
+        body.focus();
+        body.removeAttribute("tabindex");
+        window.scrollTo(0, 0);
+      });
+      await page.keyboard.press("Tab");
+      const skip = page.locator(":focus");
+      await expect(skip).toHaveText("Preskoči na sadržaj");
+      await expect(skip).toHaveAttribute("href", "#sadrzaj");
+      await expect(page.locator("#sadrzaj")).toHaveCount(1);
+      await page.keyboard.press("Enter");
+      await expect(page.locator("#sadrzaj")).toBeFocused();
     });
     await test.step("axe, dark theme, 1250 px", () => axe(page, info, "dark-1250"));
     await test.step("keyboard focus is visible on every Tab stop", async () => {

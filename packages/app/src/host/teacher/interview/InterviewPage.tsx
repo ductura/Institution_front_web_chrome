@@ -105,13 +105,13 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
       <p>{invited && prep.invitedAt !== null ? text.invited(momentHr(prep.invitedAt)) : text.notInvited}</p>
       {notice !== null && <p role="status">{notice}</p>}
 
-      <Card title={text.summaryTitle}>
+      <Card level={2} title={text.summaryTitle}>
         <p>{text.summaryNote}</p>
         <p><a href={summaryHref}>{text.summaryLink}</a></p>
         {originHref !== undefined && <p><a href={originHref}>{text.originLink}</a></p>}
       </Card>
 
-      <Card title={text.explanationsTitle} empty={prep.explanations.length === 0 ? text.explanationsNone : undefined}>
+      <Card level={2} title={text.explanationsTitle} empty={prep.explanations.length === 0 ? text.explanationsNone : undefined}>
         {prep.explanations.length > 0 && (
           <ul>
             {prep.explanations.map((e) => (
@@ -124,7 +124,7 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
         )}
       </Card>
 
-      <Card title={text.partsTitle}>
+      <Card level={2} title={text.partsTitle}>
         <DataTable<InterviewQuestion>
           caption={text.partsCaption}
           rowKey={(q) => q.id}
@@ -149,12 +149,12 @@ export default function InterviewPage({ port, documentId, workHref, summaryHref,
         ) : <Button tone="quiet" onClick={() => setAdding(true)}>{text.addQuestion}</Button>}
       </Card>
 
-      <Card title={text.attachmentsTitle}>
+      <Card level={2} title={text.attachmentsTitle}>
         <p>{text.attachmentsNone}</p>
         <p>{text.attachmentsNote}</p>
       </Card>
 
-      <Card title={text.appointmentTitle}>
+      <Card level={2} title={text.appointmentTitle}>
         <p>{appointmentLine(prep)}</p>
         <TextField label={text.placeLabel} value={place} onChange={(e) => setPlace(e.target.value)} />
         <TextField label={text.atLabel} type="date" value={day} onChange={(e) => setDay(e.target.value)} />

@@ -19,7 +19,7 @@ export function WorkPage({ back, backLabel, crumb, two = false, wide = false, ch
         <a className="btn ghost" href={back}>{backLabel}</a>
         {crumb !== undefined && <p className={styles.crumb}>{crumb}</p>}
       </header>
-      <div className={`${styles.page}${two ? ` ${styles.two}` : ""}${wide ? ` ${styles.wide}` : ""}`} id="sadrzaj" tabIndex={-1}>{children}</div>
+      <div className={`${styles.page}${two ? ` ${styles.two}` : ""}${wide ? ` ${styles.wide}` : ""}`}>{children}</div>
     </div>
   );
 }

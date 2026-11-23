@@ -105,7 +105,8 @@ export function StepDecl({ title, tag, own = false, onSubmit, children }: {
   /** Given, the block is a form (PD-4 "Napomena uz rad"). */
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }) {
-  const heading = title ? <h3>{title}{tag}</h3> : null;
+  // A block of the step's page itself, so h2 under the page's h1 (WCAG 1.3.1, VIZ-WCAG N3).
+  const heading = title ? <h2>{title}{tag}</h2> : null;
   return onSubmit
     ? <form className={cx(styles.decl, own && styles.own)} onSubmit={onSubmit} noValidate>{heading}{children}</form>
     : <div className={cx(styles.decl, own && styles.own)}>{heading}{children}</div>;
@@ -123,9 +124,9 @@ export function StepActions({ children }: { children: ReactNode }) {
   return <div className={styles.acts}>{children}</div>;
 }
 
-/** A sub-heading inside a panel (prototype `h3.sb-sub`). */
+/** A sub-heading inside a panel (prototype `h3.sb-sub`); an h2, as the panel title is the page's h1 (WCAG 1.3.1). */
 export function StepSub({ children }: { children: ReactNode }) {
-  return <h3 className={styles.sub}>{children}</h3>;
+  return <h2 className={styles.sub}>{children}</h2>;
 }
 
 /** A hexadecimal or ISO value in the monospace face. */

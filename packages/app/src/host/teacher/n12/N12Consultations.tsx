@@ -47,7 +47,7 @@ export function N12Consultations({ documentId, workHref, appPath }: {
   const frame = (title: string, body: ReactNode, busy = false) => (
     <div className={styles.wrap}>
       <header className={styles.bar}><a className="btn ghost" href={workHref}>{t.backToWork}</a></header>
-      <div className={styles.page} id="sadrzaj" tabIndex={-1}>
+      <div className={styles.page}>
         <section className={`panel ${styles.panel}`} aria-labelledby="pg-h" aria-busy={busy || undefined}>
           <div className={styles.top}><h1 id="pg-h">{title}</h1></div>
           <div className={styles.body}>{body}</div>
