@@ -51,6 +51,6 @@ export function secondsText(ms: number): string {
  * never scaled against another burst, a person or a norm.
  */
 export function barHeights(burst: RhythmBurst): number[] {
-  const top = burst.longestPauseMs;
-  return burst.intervalsMs.map((ms) => (top === 0 ? 0 : ms / top));
+  const longest = burst.longestPauseMs;
+  return burst.intervalsMs.map((ms) => (longest === 0 ? 0 : ms / longest));
 }
