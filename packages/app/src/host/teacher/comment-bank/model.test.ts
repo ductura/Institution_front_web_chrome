@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { fakeCommentBankPort, fakeDraftCommentsPort, FAKE_BANK } from "./fake-port";
 import {
-  publishDraftGroup, saveDraftComment, searchBank, visibleToStudent, type DraftCommentsPort,
+  draftsAfterPublish, publishDraftGroup, saveDraftComment, searchBank, visibleToStudent, type DraftCommentsPort,
 } from "./model";
 
 const ID = "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60";
@@ -53,5 +53,24 @@ describe("comment bank search (WEB-1704)", () => {
 
   it("reads the bank through its port", async () => {
     expect((await fakeCommentBankPort().read()).kind).toBe("ready");
+  });
+});
+
+describe("drafts after a publication (409 reload)", () => {
+  it("reads the server's drafts again after changed, and clears them after published", async () => {
+    const port = fakeDraftCommentsPort();
+    await saveDraftComment(port, ID, "Izmišljena skica koju je dodala druga kartica");
+    const fresh = await draftsAfterPublish(port, ID, { kind: "changed" });
+    expect(fresh?.map((d) => d.body)).toEqual(["Izmišljena skica koju je dodala druga kartica"]);
+    expect(await draftsAfterPublish(port, ID, { kind: "published", ids: ["d1"] })).toEqual([]);
+  });
+
+  it("keeps the shown list on other outcomes and when the reload fails", async () => {
+    const port = fakeDraftCommentsPort();
+    for (const kind of ["rejected", "unknown", "signedOut"] as const) expect(await draftsAfterPublish(port, ID, { kind })).toBeNull();
+    const failing: DraftCommentsPort = { ...port, listDrafts: async () => ({ kind: "unavailable" }) };
+    expect(await draftsAfterPublish(failing, ID, { kind: "changed" })).toBeNull();
+    const throwing: DraftCommentsPort = { ...port, listDrafts: async () => { throw new Error("mreža"); } };
+    expect(await draftsAfterPublish(throwing, ID, { kind: "changed" })).toBeNull();
   });
 });

@@ -21,7 +21,7 @@ import { courseAggregateMessages } from "./host/teacher/course-aggregate/message
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
-import { originText } from "./host/teacher/origin-map/messages.hr";
+import { originText } from "./host/teacher/provenance/origin-messages.hr";
 import { interviewMessages as studentInterviewText } from "./host/student/interview/messages.hr";
 import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
 import { hostText } from "./text";

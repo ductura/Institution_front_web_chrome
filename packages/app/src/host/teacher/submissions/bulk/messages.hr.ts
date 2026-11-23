@@ -14,6 +14,7 @@ export const bulkText = {
   expired: "Poveznica je istekla. Zatraži novu.",
   requestAgain: "Zatraži novu poveznicu",
   notFound: "Zadatak nije pronađen.",
-  forbidden: "Predaje može preuzeti samo nastavnik zadatka.",
+  // A 403 carries only the origin checks of the request (origin_missing, origin_mismatch, cross_site).
+  forbidden: "Zahtjev nije prošao provjeru. Osvježi stranicu i pokušaj ponovno.",
   requestUnknown: "Poveznicu trenutačno nije moguće dobiti. Pokušaj ponovno.",
 } as const;

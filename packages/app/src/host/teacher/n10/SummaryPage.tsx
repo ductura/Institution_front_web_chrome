@@ -10,8 +10,8 @@ import {
   period, segmentLine, sessionLine, sessionsCount, sessionsGenitive, versionLines, type N10Port, type N10Read, type ThresholdRow,
   type ThresholdState,
 } from "./model";
-import { originText } from "../origin-map/messages.hr";
-import type { OriginKind } from "../origin-map/contract";
+import { originText } from "../provenance/origin-messages.hr";
+import type { OriginKind } from "../provenance/origin";
 import ProvenanceMap from "../provenance/ProvenanceMap";
 import { n10Messages as text } from "./messages.hr";
 

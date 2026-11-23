@@ -27,7 +27,9 @@ export type InterviewRead =
 
 export type InterviewWrite =
   | { readonly kind: "saved"; readonly explanation?: InterviewExplanation }
-  | { readonly kind: "rejected" } | { readonly kind: "signedOut" } | { readonly kind: "unavailable" };
+  | { readonly kind: "rejected" } | { readonly kind: "signedOut" } | { readonly kind: "unavailable" }
+  /** 404: the work is gone for this student; 403: the invitation no longer holds (or the request was refused). */
+  | { readonly kind: "notFound" } | { readonly kind: "notInvited" };
 
 export interface InterviewPort {
   read(documentId: string): Promise<InterviewRead>;
@@ -68,7 +70,7 @@ export const studentInterviewPortWith = (options?: ApiOptions): InterviewPort =>
     const answer = await sendInterviewExplanation(documentId, { questionId: input.questionId, text: input.text }, options);
     switch (answer.kind) {
       case "ok": return { kind: "saved", explanation: explanationOf(answer.value) };
-      case "rejected": case "signedOut": return { kind: answer.kind };
+      case "rejected": case "signedOut": case "notFound": case "notInvited": return { kind: answer.kind };
       default: return { kind: "unavailable" };
     }
   },

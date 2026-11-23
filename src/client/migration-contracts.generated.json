@@ -37970,5 +37970,153 @@
         "unavailable"
       ]
     }
+  },
+  "work.interview-notes.post": {
+    "path": "/api/v1/works/{documentId}/interview/notes",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "fileName",
+        "mediaType",
+        "contentBase64"
+      ],
+      "properties": {
+        "fileName": {
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF/\\\\])+(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "mediaType": {
+          "anyOf": [
+            {
+              "const": "text/plain",
+              "type": "string"
+            },
+            {
+              "const": "application/pdf",
+              "type": "string"
+            }
+          ]
+        },
+        "contentBase64": {
+          "minLength": 4,
+          "maxLength": 1398104,
+          "pattern": "^[A-Za-z0-9+/]+={0,2}(?![\\s\\S])",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the note",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "fileName",
+                "mediaType",
+                "byteSize",
+                "sha256",
+                "createdAt"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "fileName": {
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF/\\\\])+(?<!\\s)(?![\\s\\S])",
+                  "type": "string"
+                },
+                "mediaType": {
+                  "anyOf": [
+                    {
+                      "const": "text/plain",
+                      "type": "string"
+                    },
+                    {
+                      "const": "application/pdf",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "byteSize": {
+                  "minimum": 1,
+                  "maximum": 1048576,
+                  "type": "integer"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "createdAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}Z(?![\\s\\S])",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden",
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
