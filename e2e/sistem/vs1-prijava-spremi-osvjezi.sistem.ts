@@ -265,7 +265,7 @@ test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje 
     const { context: clean, values } = await fresh('VS-1.13');
     try {
       expect(pick(values)).toEqual(pick(before));
-      claims['VS-1.13'] = `PID ${restart.before.pid} → ${restart.after.pid}; novi kontekst: iste četiri vrijednosti kroz API kao student`;
+      claims['VS-1.13'] = `PID ${restart.before.pid} → ${restart.after.pid} (${restart.stop}); novi kontekst: iste četiri vrijednosti kroz API kao student`;
       return pick(values);
     } finally {
       await clean.close();
@@ -277,7 +277,7 @@ test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje 
     shas,
     host: shippedHost,
     entry: `${webOrigin}/ → ${webOrigin}${app('/')}`,
-    restart: { pidBefore: restart.before.pid, pidAfter: restart.after.pid, command: restart.before.argv, stoppedAt: restart.stoppedAt, healthyAt: restart.healthyAt },
+    restart: { pidBefore: restart.before.pid, pidAfter: restart.after.pid, stop: restart.stop, command: restart.before.argv, stoppedAt: restart.stoppedAt, healthyAt: restart.healthyAt },
     freshContext: { kind: 'browser.newContext()', journalsAtStart: 0 },
     before: pick(before),
     after,
