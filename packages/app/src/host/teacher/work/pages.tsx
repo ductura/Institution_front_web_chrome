@@ -45,6 +45,8 @@ import { n10Port } from "../n10/port";
 import InterviewPage from "../interview/InterviewPage";
 import { interviewMessages } from "../interview/messages.hr";
 import { interviewPort } from "../interview/port";
+import ChangesSinceReview from "../changes-since-review/ChangesSinceReview";
+import { changesPort } from "../changes-since-review/port";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
 const VIEWS = {
@@ -180,6 +182,8 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
+            {/* WEB-1704 (M6.7): changes since the last review, read from the server; marking only with a route. */}
+            <ChangesSinceReview key={documentId} documentId={documentId} port={changesPort} />
             <TeacherBibliographyHost documentId={documentId} submitted={view.submitted} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
             <ProvenanceMap documentId={documentId} />

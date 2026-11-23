@@ -141,7 +141,8 @@ export default function EditorPageWork({
   /** Cards the host adds to the right panel (WEB-2121): the Pregled card and the revision actions. */
   hostSections?: HostSections;
   /** The host's sections of the left panel (WEB-2126). */
-  leftSections?: LeftSections;
+  /** The left panel's sections, or a function of the opened work's document (PIL-D7-POVIJEST). */
+  leftSections?: LeftSections | ((work: { documentId: string }) => LeftSections);
 }) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
@@ -191,7 +192,8 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   /** The host's list of the work's sources above the proofs in the sources card (WEB-2123). */
   literature?: (work: { documentId: string }) => ReactNode;
   hostSections?: HostSections;
-  leftSections?: LeftSections;
+  /** The left panel's sections, or a function of the opened work's document (PIL-D7-POVIJEST). */
+  leftSections?: LeftSections | ((work: { documentId: string }) => LeftSections);
 }) {
   const editor = useLocalEditor();
   const useRows = useSupplements ?? noSupplements;
@@ -204,7 +206,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   const help = useEditorHelp();
   const [view, setView] = useState<EditorHelpView | null>(null);
   return (
-    <EditorPanelLayout title={title} leftSections={leftSections} header={topBar ?? <p>{course} / {title}</p>}
+    <EditorPanelLayout title={title} leftSections={typeof leftSections === "function" ? leftSections({ documentId }) : leftSections} header={topBar ?? <p>{course} / {title}</p>}
       tools={<EditorCommands><div className={helpStyles.toolbar}>
         <EditorToolbar workPartsKey={`ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`} />
         <EditorHelpMenu onSelect={setView} />

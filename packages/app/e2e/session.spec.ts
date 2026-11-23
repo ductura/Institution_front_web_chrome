@@ -1,7 +1,8 @@
 // The institution front's session (#2028 c.6993786629 §3.3) over a fake
 // institution server (page.route): 401 sends the browser to AAI@EduHr sign-in
 // with returnTo, 200 opens the role's home with the institution's name, and
-// sign-out posts auth.logout.post and leaves for the preloader. Invented
+// sign-out posts auth.logout.post and then follows it natively on to the
+// provider's logout and the preloader (INT-20c). Invented
 // people, institutions and courses only.
 import { readFileSync } from "node:fs";
 
@@ -25,7 +26,7 @@ type Me = { status: number; body?: unknown };
 
 /** Fakes the institution server: /me, the student's assignments, login and logout. Returns what was asked. */
 async function fakeServer(page: Page, me: Me) {
-  const seen = { me: 0, logout: 0, login: [] as string[], meCredentials: [] as (string | null)[] };
+  const seen = { me: 0, logout: 0, logoutKinds: [] as string[], login: [] as string[], meCredentials: [] as (string | null)[] };
   await page.route("**/api/v1/me", async (route) => {
     seen.me += 1;
     seen.meCredentials.push(route.request().headers()["cookie"] ?? null);
@@ -67,6 +68,7 @@ async function fakeServer(page: Page, me: Me) {
   });
   await page.route("**/api/v1/auth/logout", async (route) => {
     seen.logout += 1;
+    seen.logoutKinds.push(route.request().resourceType());
     expect(route.request().method()).toBe("POST");
     await route.fulfill({ status: 303, headers: { location: "/" } });
   });
@@ -161,7 +163,8 @@ test("Odjava posts auth.logout.post and leaves for the preloader", async ({ page
   await page.getByRole("button", { name: "Odjava" }).click();
   await dialog.getByRole("button", { name: "Odjavi se" }).click();
   await expect(page).toHaveURL((url) => url.pathname === "/");
-  expect(seen.logout).toBe(1);
+  // INT-20c: the confirmed request, then the same route natively, so the browser follows its redirect.
+  expect(seen.logoutKinds).toEqual(["fetch", "document"]);
 });
 
 test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E-1 bezuloge)", async ({ page }) => {
@@ -175,7 +178,8 @@ test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E
   await card.getByRole("button", { name: "Odjava" }).click();
   await page.getByRole("dialog", { name: "Odjava" }).getByRole("button", { name: "Odjavi se" }).click();
   await expect(page).toHaveURL((url) => url.pathname === "/");
-  expect(seen.logout).toBe(1);
+  // INT-20c: the confirmed request, then the same route natively, so the browser follows its redirect.
+  expect(seen.logoutKinds).toEqual(["fetch", "document"]);
 });
 
 test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the button", async ({ page }) => {

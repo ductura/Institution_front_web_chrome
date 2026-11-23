@@ -10,6 +10,7 @@ import { codeOutcome, defaultValidUntil, validUntilInstant } from "../../../../.
 import { extensionsHref, newAssignmentHref } from "../../../../../../src/components/teacher/links";
 import type { TeacherCourse } from "../../../../../../src/components/teacher/teacher-courses-read";
 import { useHost } from "../../context";
+import { submissionsHref } from "../submissions/port";
 import { assignmentCardMessages as t } from "./messages.hr";
 import { codeFieldText, dueText, enrolledText, nextDeadline, roleOf, type CardRole } from "./model";
 import { usePractice } from "./practice";
@@ -39,11 +40,13 @@ function Field({ name, children }: { name: string; children: string }) {
 
 /** The card's own task list (title, deadline, "Probni"), used when no task facts are passed in. */
 function CardTasks({ course }: { course: TeacherCourse }) {
+  const { base } = useHost();
   const practice = usePractice(course.assignments);
   return course.assignments.map((assignment) => (
     <div key={assignment.id} className={styles.task}>
       <h3>{assignment.title}</h3>
       <p className="meta">{t.due} {dueText(assignment.dueAt)} <PracticeBadge practice={practice.get(assignment.id)} /></p>
+      <a className="btn secondary small" href={appHref(base, submissionsHref(assignment.id))} aria-label={`${t.submissions}: ${assignment.title}`}>{t.submissions}</a>
     </div>
   ));
 }

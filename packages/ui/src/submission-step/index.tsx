@@ -139,12 +139,12 @@ export function StepPlaces({ children }: { children: ReactNode }) {
 }
 
 /** A confirmation box with the label beside it (prototype `.sb-check`). */
-export function StepCheck({ id, checked, onChange, children, describedBy }: {
-  id: string; checked: boolean; onChange: (checked: boolean) => void; children: ReactNode; describedBy?: string;
+export function StepCheck({ id, checked, onChange, children, describedBy, disabled }: {
+  id: string; checked: boolean; onChange: (checked: boolean) => void; children: ReactNode; describedBy?: string; disabled?: boolean;
 }) {
   return (
     <label className={styles.check}>
-      <input type="checkbox" id={id} checked={checked} aria-describedby={describedBy} onChange={(event) => onChange(event.currentTarget.checked)} /> {children}
+      <input type="checkbox" id={id} checked={checked} disabled={disabled} aria-describedby={describedBy} onChange={(event) => onChange(event.currentTarget.checked)} /> {children}
     </label>
   );
 }

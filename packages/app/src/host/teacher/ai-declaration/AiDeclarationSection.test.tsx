@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type { DeclarationPort, TeacherDeclarationRead } from "../../../../../../src/client/declaration.ts";
 import AiDeclarationSection from "./AiDeclarationSection";
+import { unavailableDeclarationPort } from "./ports";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -21,7 +22,7 @@ async function show(read: TeacherDeclarationRead | "default") {
     readTeacher: async () => read as TeacherDeclarationRead,
   };
   await act(async () => {
-    root!.render(read === "default" ? <AiDeclarationSection submissionId="s1" /> : <AiDeclarationSection port={port} submissionId="s1" />);
+    root!.render(<AiDeclarationSection port={read === "default" ? unavailableDeclarationPort : port} submissionId="s1" />);
   });
   return host;
 }
@@ -50,7 +51,7 @@ const ready: TeacherDeclarationRead = {
 };
 
 describe("AiDeclarationSection", () => {
-  it("says unavailable without a port and does not invent a declaration", async () => {
+  it("says unavailable on a port with nothing to read and does not invent a declaration", async () => {
     const el = await show("default");
     expect(el.textContent).toContain("Izjava o korištenju generativne umjetne inteligencije");
     expect(el.textContent).toContain("Izjavu i priložene razgovore trenutačno nije moguće učitati.");

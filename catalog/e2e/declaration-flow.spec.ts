@@ -19,7 +19,7 @@ test("what the student confirms on the port is all the teacher receives", async 
   await student.getByRole("button", { name: "Potvrdi izjavu" }).click();
   await expect(student.getByRole("status")).toHaveText("Izjava je potvrđena.");
 
-  await expect(teacher.getByRole("heading", { name: "Priloženi razgovori (1)" })).toBeVisible();
+  await expect(teacher.getByRole("heading", { name: "Razgovori uz izjavu (1)" })).toBeVisible();
   await expect(teacher.getByText("Razgovor 1 · Lektura · 2. 11. 14:05").first()).toBeVisible();
   await expect(teacher.getByText(/Razgovor 3/u)).toHaveCount(0);
   await expect(teacher.getByText(/\(0\)/u)).toHaveCount(0);

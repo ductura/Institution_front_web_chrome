@@ -1,13 +1,19 @@
 // Pure rules of the key-dates card in mentoring (WEB-1707; plan M6.11). A closed list of kinds, sorted by
-// date, shown in Europe/Zagreb time; nothing is counted or timed. No server route exists yet: the port is the
-// smallest contract the plan implies (a probe answer stands in for it in the tests). No network call here.
+// date, shown in Europe/Zagreb time; nothing is counted or timed. The kinds are those of the server route
+// mentorship.key-dates.get (SRV-1705); the real port is in contract.ts. No network call here.
 import { zagrebWall } from "../../../../../../src/components/i18n/zagreb.ts";
 import { keyDatesMessages as text } from "./messages.hr";
 
-export const KINDS = ["opens", "deadline", "extended", "review"] as const;
+export const KINDS = ["deadline", "milestone", "consultation"] as const;
 export type KeyDateKind = (typeof KINDS)[number];
+export const CONSULTATION_STATES = ["requested", "countered", "confirmed"] as const;
+export type ConsultationState = (typeof CONSULTATION_STATES)[number];
 
-export type KeyDateEntry = { readonly id: string; readonly kind: KeyDateKind; /** ISO instant. */ readonly at: string };
+/** One date as the server gives it; `at` is an ISO instant. */
+export type KeyDateEntry =
+  | { readonly id: string; readonly kind: "deadline"; readonly at: string }
+  | { readonly id: string; readonly kind: "milestone"; readonly at: string; readonly title: string }
+  | { readonly id: string; readonly kind: "consultation"; readonly at: string; readonly state: ConsultationState };
 
 export type KeyDatesRead =
   | { readonly kind: "ready"; readonly dates: readonly KeyDateEntry[] }
@@ -26,12 +32,19 @@ export type KeyDatesView =
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
 
-const LABELS: Readonly<Record<KeyDateKind, string>> = {
-  opens: text.kindOpens,
-  deadline: text.kindDeadline,
-  extended: text.kindExtended,
-  review: text.kindReview,
+const CONSULTATION: Readonly<Record<ConsultationState, string>> = {
+  requested: text.consultationRequested,
+  countered: text.consultationCountered,
+  confirmed: text.consultationConfirmed,
 };
+
+/** The label of a known entry, or null for a kind or state outside the closed lists. */
+function labelOf(d: KeyDateEntry): string | null {
+  if (d.kind === "deadline") return text.kindDeadline;
+  if (d.kind === "milestone") return typeof d.title === "string" && d.title.trim() !== "" ? text.kindMilestone(d.title.trim()) : null;
+  if (d.kind === "consultation") return CONSULTATION_STATES.includes(d.state) ? text.kindConsultation(CONSULTATION[d.state]) : null;
+  return null;
+}
 
 const pad2 = (n: number): string => String(n).padStart(2, "0");
 
@@ -48,9 +61,11 @@ export function keyDatesView(read: KeyDatesRead): KeyDatesView {
   const rows: KeyDateRow[] = [];
   for (const d of read.dates) {
     const epoch = Date.parse(d.at);
-    if (!Number.isFinite(epoch) || !KINDS.includes(d.kind) || seen.has(d.id)) continue;
-    seen.add(d.id);
-    rows.push({ id: d.id, kind: d.kind, label: LABELS[d.kind], epoch, when: whenOf(epoch) });
+    const label = KINDS.includes(d.kind) ? labelOf(d) : null;
+    const key = `${d.kind}:${d.id}`;
+    if (!Number.isFinite(epoch) || label === null || seen.has(key)) continue;
+    seen.add(key);
+    rows.push({ id: d.id, kind: d.kind, label, epoch, when: whenOf(epoch) });
   }
   rows.sort((a, b) => a.epoch - b.epoch || KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   return rows.length === 0 ? { kind: "empty" } : { kind: "ready", rows };

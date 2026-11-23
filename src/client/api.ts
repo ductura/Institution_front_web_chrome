@@ -511,7 +511,11 @@ export async function readSession(options: ApiOptions = {}): Promise<SessionRead
   }
 }
 
-/** Leaves the app for an address of the same origin. The only navigation out of the app. */
+/**
+ * Leaves the app for an address of the same origin. Every navigation out of
+ * the app goes here, except the sign-out, which follows the logout route
+ * natively (followLogoutNatively).
+ */
 export function leaveFor(href: string): void {
   globalThis.location.assign(href);
 }
@@ -523,7 +527,8 @@ export function goToSignIn(here: string, leave: (href: string) => void = leaveFo
 
 /**
  * Signs out through auth.logout.post (303 on success). True when the server
- * ended the session; the caller then leaves for the preloader.
+ * ended the session; the caller then calls followLogoutNatively, so the
+ * browser follows the route on to the provider's logout (INT-20c).
  */
 export async function signOut(options: ApiOptions = {}): Promise<boolean> {
   try {

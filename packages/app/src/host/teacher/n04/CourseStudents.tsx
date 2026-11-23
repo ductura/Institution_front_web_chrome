@@ -11,6 +11,7 @@ import {
   type CourseStudentsPort, type RosterData, type RosterRead,
 } from "./model";
 import { courseStudentsMessages as text } from "./messages.hr";
+import { signInWhenSignedOut } from "./port";
 
 /**
  * N-04 "Popis studenata" (WEB-2143): every student across the assignments of the course, alphabetical,
@@ -26,9 +27,13 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
   useEffect(() => {
     let live = true;
     setRead(null);
-    void loadRoster(port, courseId).then((next) => { if (live) setRead(next); });
+    void loadRoster(port, courseId).then((next) => {
+      if (!live) return;
+      signInWhenSignedOut(next, base, courseId);
+      setRead(next);
+    });
     return () => { live = false; };
-  }, [courseId, port, attempt]);
+  }, [courseId, port, attempt, base]);
 
   const data = read?.kind === "ready" ? read.data : null;
   const title = data?.courseName ? text.courseTitle(data.courseName) : text.title;

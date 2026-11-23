@@ -1,61 +1,82 @@
-// Pure rules of "changes since the last review" (WEB-1704; plan M6.7, N-05). The teacher opens
-// the changes made to a work after the time of the last review and marks the work reviewed. The
-// list is shown as the server gives it, oldest first; this module never invents or drops a change.
-// No server route exists yet: ChangesPort is the smallest contract the plan implies. No network
-// call is made here; the page that mounts this passes the real port.
+// Pure rules of "changes since the last review" (WEB-1704; plan M6.7, N-05). The teacher opens the
+// changes made to a work since the revision last marked reviewed and may mark the current revision
+// reviewed. The shapes follow the server contract (work.changes-since-review.get, work.review.post):
+// the blocks are shown exactly as the server gives them, in its order; this module never invents,
+// reorders or drops a block. No network call is made here; the page passes the real port (port.ts),
+// tests pass the fake one (fake-port.ts).
 import { changesMessages as text } from "./messages.hr";
 
-export type ChangeKind = "added" | "removed" | "edited";
+export type BlockChange = "unchanged" | "removed" | "added";
 
-export type WorkChange = {
-  readonly id: string;
-  readonly at: string;
-  readonly author: "student" | "teacher";
-  readonly kind: ChangeKind;
-  readonly text: string;
+export type ChangeBlock =
+  | { readonly kind: "paragraph" | "bulletItem" | "quote"; readonly text: string; readonly change: BlockChange }
+  | { readonly kind: "heading"; readonly level: number; readonly text: string; readonly change: BlockChange };
+
+export type ChangesSnapshot = {
+  readonly reviewedRevision: number | null;
+  readonly currentRevision: number;
+  readonly changed: boolean;
+  readonly blocks: readonly ChangeBlock[];
 };
 
 export type ChangesRead =
-  | { readonly kind: "ready"; readonly reviewedAt: string | null; readonly changes: readonly WorkChange[] }
+  | { readonly kind: "ready"; readonly snapshot: ChangesSnapshot }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
 
 export type ReviewMark =
-  | { readonly kind: "marked"; readonly reviewedAt: string }
+  | { readonly kind: "marked"; readonly reviewedRevision: number; readonly reviewedAt: string }
   | { readonly kind: "signedOut" }
   | { readonly kind: "rejected" }
   | { readonly kind: "unknown" };
 
+/** markReviewed is absent when the contract has no route for it; the card then hides the action. */
 export interface ChangesPort {
-  read(assignmentId: string): Promise<ChangesRead>;
-  markReviewed(assignmentId: string): Promise<ReviewMark>;
+  read(documentId: string): Promise<ChangesRead>;
+  readonly markReviewed?: (documentId: string) => Promise<ReviewMark>;
 }
 
-/** Changes strictly after the last review, in time order; all of them when there was no review. */
-export function changesSince(reviewedAt: string | null, changes: readonly WorkChange[]): readonly WorkChange[] {
-  const limit = reviewedAt === null ? Number.NEGATIVE_INFINITY : Date.parse(reviewedAt);
-  return changes
-    .filter((change) => Date.parse(change.at) > limit)
-    .toSorted((a, b) => Date.parse(a.at) - Date.parse(b.at));
+export type ChangeItem = { readonly key: string; readonly label: string; readonly change: BlockChange; readonly text: string };
+
+/** One item per block, in the server's order: nothing is filtered, sorted or added. */
+export function changeItems(snapshot: ChangesSnapshot): readonly ChangeItem[] {
+  return snapshot.blocks.map((block, index) => ({
+    key: `${index}`,
+    label: changeLabel(block.change),
+    change: block.change,
+    text: block.text,
+  }));
 }
 
-export function kindLabel(kind: ChangeKind): string {
-  return kind === "added" ? text.added : kind === "removed" ? text.removed : text.edited;
+export function changeLabel(change: BlockChange): string {
+  return change === "added" ? text.added : change === "removed" ? text.removed : text.unchanged;
 }
 
-export function authorLabel(author: WorkChange["author"]): string {
-  return author === "teacher" ? text.byTeacher : text.byStudent;
+export function reviewLine(snapshot: ChangesSnapshot): string {
+  const current = `${text.currentRevision} ${snapshot.currentRevision}`;
+  return snapshot.reviewedRevision === null
+    ? `${text.noReview} ${current}.`
+    : `${text.since} ${snapshot.reviewedRevision}. ${current}.`;
 }
 
-/** Marks the work reviewed; the answer counts only when it carries a valid time. */
-export async function markWorkReviewed(port: ChangesPort, assignmentId: string): Promise<ReviewMark> {
+const SERVER_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+/**
+ * Marks the work reviewed. It counts as reviewed only when the server confirmed it with a valid
+ * revision and time; a throwing port or a malformed answer is "unknown", never "marked".
+ */
+export async function markWorkReviewed(port: ChangesPort, documentId: string): Promise<ReviewMark> {
+  if (port.markReviewed === undefined) return { kind: "rejected" };
   let result: ReviewMark;
   try {
-    result = await port.markReviewed(assignmentId);
+    result = await port.markReviewed(documentId);
   } catch {
     return { kind: "unknown" };
   }
-  if (result.kind === "marked" && Number.isNaN(Date.parse(result.reviewedAt))) return { kind: "unknown" };
+  if (result.kind === "marked" && (!Number.isSafeInteger(result.reviewedRevision) || result.reviewedRevision < 1
+    || !SERVER_TIME.test(result.reviewedAt) || Number.isNaN(Date.parse(result.reviewedAt)))) {
+    return { kind: "unknown" };
+  }
   return result;
 }
 
