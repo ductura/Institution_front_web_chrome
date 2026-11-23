@@ -44,7 +44,7 @@ import {
 } from "react";
 
 import type { WorkLanguage } from "@/domain/assignment/work-language";
-import type { CanonicalDocument } from "@/domain/document";
+import { documentWordCount, type CanonicalDocument, type CanonicalDocumentV3 } from "@/domain/document";
 import {
   browserMarkStore, currentSession, endAfterLogout, hasEnded, SESSION_END_CHANNEL, type SessionMark,
 } from "@/client/session-marks";
@@ -53,6 +53,8 @@ import type { SyncState } from "@/domain/sync/states";
 import {
   countWords, NODE_ID_ATTRIBUTE, tiptapToCanonical, startFreshHistory, replaceWithStoredDocument,
   createEditorExtensions, ArrowCollapse, ChapterNumbers, StorableInput, storableDocument, SourceObserver,
+  createEditorExtensionsV3, replaceWithStoredDocumentV3, sheetSchemaVersion, storableDocumentV3, tiptapToCanonicalV3,
+  type SheetSchemaVersion,
 } from "@/editor";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { createLivePublisher, type LivePublisher } from "@/client/live-publisher";
@@ -69,7 +71,7 @@ import {
   createDocumentSaver, evidenceNotice, saveAnnouncement, snapshotSpeaks, stoppedSaved, submittedOf, unconfirmedOf, writingClosed, type DocumentSaver,
   type DocumentSnapshot,
 } from "./document-saver";
-import type { EvidenceSession } from "./evidence-session";
+import type { EvidenceSession, SheetDocument } from "./evidence-session";
 import LogoutDialog from "./LogoutDialog";
 import { endRun } from "./run-refs";
 import { livePublishAction } from "./live-hold";
@@ -198,7 +200,7 @@ export function useLocalUnconfirmed(): { unconfirmed: boolean; now: () => boolea
  * did, the journal would hold ids the editor lacks and a reload would not
  * give the same blocks back, so such a candidate is refused, not written back.
  */
-function sameIds(editor: Editor, doc: CanonicalDocument): boolean {
+function sameIds(editor: Editor, doc: SheetDocument): boolean {
   const { doc: shownDoc } = editor.state;
   if (shownDoc.childCount !== doc.nodes.length) return false;
   let same = true;
@@ -208,8 +210,40 @@ function sameIds(editor: Editor, doc: CanonicalDocument): boolean {
   return same;
 }
 
+/**
+ * What the sheet holds as the document it proposes, or null when it cannot
+ * be stored as shown (PIL-K-SPREMANJE-V3: a v3 sheet projects with the v3
+ * interop; the v1 sheet exactly as before).
+ */
+export function sheetCandidate(editor: Editor, sheet: SheetSchemaVersion): { doc: SheetDocument; words: number } | null {
+  if (sheet === 3) {
+    const candidate = tiptapToCanonicalV3(editor.getJSON());
+    if (!candidate.ok || !sameIds(editor, candidate.doc) || storableDocumentV3(candidate.doc) !== candidate.doc) return null;
+    return { doc: candidate.doc, words: documentWordCount(candidate.doc) };
+  }
+  const candidate = tiptapToCanonical(editor.getJSON());
+  // `StorableInput` keeps unstorable text out of the editor; should any
+  // remain, the journal would hold other text than shown, so it is refused.
+  if (!candidate.ok || !sameIds(editor, candidate.doc) || storableDocument(candidate.doc) !== candidate.doc) return null;
+  return { doc: candidate.doc, words: countWords(candidate.doc) };
+}
+
+/** Loads the stored document into the sheet; false when it is refused, never repaired. */
+export function loadStored(editor: Editor, doc: SheetDocument, sheet: SheetSchemaVersion): boolean {
+  if (sheet === 3) {
+    const v3 = doc as CanonicalDocumentV3;
+    return v3.schemaVersion === 3 && storableDocumentV3(v3) === v3 && replaceWithStoredDocumentV3(editor.view, v3).ok;
+  }
+  const v1 = doc as CanonicalDocument;
+  return storableDocument(v1) === v1 && replaceWithStoredDocument(editor.view, v1).ok;
+}
+
+function wordsOf(doc: SheetDocument, sheet: SheetSchemaVersion): number {
+  return sheet === 3 ? documentWordCount(doc) : countWords(doc as CanonicalDocument);
+}
+
 export function LocalDocumentProvider({
-  scope, documentId, assignmentId = null, session = null, livePublish = false, publishHeld = false, children,
+  scope, documentId, assignmentId = null, session = null, livePublish = false, publishHeld = false, schemaVersion, children,
 }: {
   scope: string;
   documentId: string;
@@ -233,8 +267,18 @@ export function LocalDocumentProvider({
    * restarts the lock run.
    */
   publishHeld?: boolean;
+  /**
+   * The schema version the server confirmed for the work (PIL-K-SPREMANJE-V3).
+   * Only exactly 3, with an assignment, builds the v3 sheet; an absent,
+   * unknown or other version keeps the v1 sheet, journal and evidence.
+   */
+  schemaVersion?: number;
   children: ReactNode;
 }) {
+  const sheet: SheetSchemaVersion = assignmentId ? sheetSchemaVersion(schemaVersion) : 1;
+  // Read by the save flush, which is made once.
+  const sheetRef = useRef(sheet);
+  useLayoutEffect(() => { sheetRef.current = sheet; });
   const [loadPhase, setPhase] = useState<Phase>("loading");
   // A browser without Web Locks or IndexedDB never leaves "loading" by itself:
   // it shows "unavailable" from the first render after hydration (the server
@@ -292,18 +336,16 @@ export function LocalDocumentProvider({
     const saver = saverRef.current;
     if (!dirtyRef.current || !editor || editor.isDestroyed || !saver || !readyRef.current) return;
     dirtyRef.current = false;
-    const candidate = tiptapToCanonical(editor.getJSON());
-    // `StorableInput` keeps unstorable text out of the editor; should any
-    // remain, the journal would hold other text than shown, so it is refused.
-    if (!candidate.ok || !sameIds(editor, candidate.doc) ||
-        storableDocument(candidate.doc) !== candidate.doc) {
+    const candidate = sheetCandidate(editor, sheetRef.current);
+    if (!candidate) {
       setInvalid(true);
       return;
     }
     setInvalid(false);
-    setWords(countWords(candidate.doc));
+    setWords(candidate.words);
     void saver.propose(candidate.doc);
-    publisherRef.current?.offer(candidate.doc);
+    // A v3 sheet has no publisher (it is never made for one).
+    publisherRef.current?.offer(candidate.doc as CanonicalDocument);
   });
 
   const editor = useEditor({
@@ -312,7 +354,8 @@ export function LocalDocumentProvider({
     // The source observer's priority puts it before ArrowCollapse's keydown.
     // ChapterNumbers: heading numbers as decorations, never text (DAN-395).
     // CroatianQuotes: a typed straight quote becomes „ ” or ‚ ’ (WEB-1605).
-    extensions: [...createEditorExtensions(t.editor.placeholder), StorableInput, ArrowCollapse, ChapterNumbers, CroatianQuotes, observer.extension],
+    // PIL-K-SPREMANJE-V3: the v3 schema (footnote, cross reference) only for a confirmed v3 work.
+    extensions: [...(sheet === 3 ? createEditorExtensionsV3(t.editor.placeholder) : createEditorExtensions(t.editor.placeholder)), StorableInput, ArrowCollapse, ChapterNumbers, CroatianQuotes, observer.extension],
     editable: false,
     immediatelyRender: false,
     injectCSS: false, // app/prosemirror.css (DAN-489)
@@ -333,7 +376,7 @@ export function LocalDocumentProvider({
       if (timerRef.current !== null) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => flushRef.current(), DEBOUNCE_MS);
     },
-  });
+  }, [sheet]);
   // Set after each commit, before any timer, listener or effect of it can flush.
   useLayoutEffect(() => { editorRef.current = editor; });
 
@@ -464,7 +507,9 @@ export function LocalDocumentProvider({
       }
       // Only the tab holding the lock opens the work (3d-2c2 §4, one writer).
       // No evidence request leaves a tab whose sign-in has ended (F-154).
-      const { saver, evidence } = createDocumentSaver({ journal, documentId, assignmentId, current: () => !ended() });
+      const { saver, evidence } = createDocumentSaver({
+        journal, documentId, assignmentId, current: () => !ended(), ...(sheet === 3 ? { schemaVersion: 3 as const } : {}),
+      });
       // The cleanup's flush may still emit after `setSnapshot(null)`; what the
       // old saver reports then must not come back as the next lock's notice.
       const unsubscribe = saver.subscribe((next) => {
@@ -493,12 +538,11 @@ export function LocalDocumentProvider({
           // The only way stored ids enter the editor (#226): validated, never
           // re-minted. A refused document is a journal this tab cannot trust,
           // so it stays untouched and the editor stays empty and read-only.
-          if (storableDocument(result.document) !== result.document ||
-              !replaceWithStoredDocument(editor.view, result.document).ok) {
+          if (!loadStored(editor, result.document, sheet)) {
             setPhase("recovery");
             return;
           }
-          setWords(countWords(result.document));
+          setWords(wordsOf(result.document, sheet));
         }
         sheetOwnerRef.current = owner;
         if (result.kind !== "ready") {
@@ -516,11 +560,12 @@ export function LocalDocumentProvider({
         // Only a signed-in person who acknowledged the notice publishes; the
         // local demo journal never does, nor a submitted work (O2, #756).
         const submitted = saver.snapshot().closedBy === "submission";
-        publisher = markTag === null || !livePublish || submitted
+        // The live view reads v1 documents only: a v3 sheet publishes nothing.
+        publisher = markTag === null || !livePublish || submitted || sheet === 3
           ? null : createLivePublisher({ documentId, current: () => !ended(), held: () => heldRef.current });
         publisherRef.current = publisher;
         const own = publisher;
-        if (own && result.document) own.offer(result.document);
+        if (own && result.document) own.offer(result.document as CanonicalDocument);
         // The teacher view holds it from the start: what was offered waits.
         if (!heldRef.current) own?.start();
         locked = {
@@ -569,6 +614,9 @@ export function LocalDocumentProvider({
             await journal.discardAfterSubmission(documentId);
           },
         };
+        // A v3 work's journal is read under its verified opening, which only
+        // the session holds (PIL-K-SPREMANJE-V3); the v1 read above is unchanged.
+        if (sheet === 3 && evidence) locked.held = () => withinHoldLimit<number | null>(() => evidence.heldRows(), null);
         logoutRef.current = locked;
         await new Promise<void>((resolve) => {
           release = resolve;
@@ -618,7 +666,7 @@ export function LocalDocumentProvider({
       window.removeEventListener("storage", recheck);
       window.removeEventListener("pageshow", recheck);
     };
-  }, [editor, scope, documentId, assignmentId, markTag, markAt, livePublish]);
+  }, [editor, scope, documentId, assignmentId, markTag, markAt, livePublish, sheet]);
 
   // A change between writing and the teacher view (#882): the run's own
   // publisher stops at once, an answer in flight included, and starts again

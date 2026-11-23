@@ -25,7 +25,7 @@ import type { Node as PmNode } from "@tiptap/pm/model";
 import type { Transaction } from "@tiptap/pm/state";
 
 import type { OpenedWork, OpenOutcome } from "@/client/evidence-ingest";
-import { validateDocument, type CanonicalDocument } from "@/domain/document";
+import { validateDocument, validateVersionedDocument, type CanonicalDocument, type CanonicalDocumentV3, type VersionedDocument } from "@/domain/document";
 import type { AsyncEvidenceStepReplayerV2 } from "@/domain/forensics/evidence-replay-v2";
 import { replayEvidenceSegmentsV2 } from "@/domain/forensics/evidence-replay-v2";
 import { canonicalizeJcs, type JcsJsonValue } from "@/domain/forensics/jcs";
@@ -36,6 +36,7 @@ import type {
 import { restoreSyncState } from "@/domain/sync/restore";
 import type { SyncState } from "@/domain/sync/states";
 import { CaptureError, EvidenceRecorder, type BuiltSegment, NO_OBSERVATION, recordWithSource, type SourceObservation } from "@/editor";
+import { verifyWorkOpening, type VerifiedWorkOpening } from "@/domain/serverSync/work-opening";
 import type { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
 import {
   failureOf, type LoadResult, type SaverFailure, type SaverSnapshot,
@@ -53,8 +54,19 @@ export type EvidenceSessionDeps = {
   /** `openWork(assignmentId)`; a throw counts as `unavailable`. */
   open: () => Promise<OpenOutcome>;
   replayer: () => AsyncEvidenceStepReplayerV2<PmNode>;
-  /** The drain runner over this journal, verifying receipts with `work`'s keys only. */
-  createRunner: (work: OpenedWork) => DrainRunner;
+  /**
+   * The drain runner over this journal, verifying receipts with `work`'s keys
+   * only; `verified` is given for a v3 work only, whose rows the journal reads
+   * and the transport checks against it.
+   */
+  createRunner: (work: OpenedWork, verified?: VerifiedWorkOpening) => DrainRunner;
+  /**
+   * PIL-K-SPREMANJE-V3: 3 when the page built the sheet with the v3 schema
+   * for a work the server confirmed as v3. Absent is the v1 session, whose
+   * document, journal and evidence stay byte for byte as before. A v3 session
+   * opens only once the server's answer is verified as this v3 work.
+   */
+  schemaVersion?: 3;
   network: NetworkSignal;
   /**
    * Calls back when the commit route answers 409 `not_accepting`: a
@@ -117,8 +129,11 @@ export type EvidenceSnapshot = SaverSnapshot & {
   unconfirmed: boolean;
 };
 
-type Candidate = { doc: CanonicalDocument; gen: number; marks: number };
-type Contents = JournalContents<EvidenceSegmentTransaction>;
+/** What the sheet proposes: a v1 document, or a v3 one for a v3 session. */
+export type SheetDocument = CanonicalDocument | CanonicalDocumentV3;
+
+type Candidate = { doc: SheetDocument; gen: number; marks: number };
+type Contents = JournalContents<EvidenceSegmentTransaction, VersionedDocument>;
 
 const STICKY: ReadonlySet<SyncState> = new Set(["CONFLICT", "RECOVERY_REQUIRED"]);
 const HALTING: ReadonlySet<SaverFailure> = new Set(["corrupt", "stale", "unavailable"]);
@@ -148,6 +163,8 @@ export class EvidenceSession {
   private manualOnly = false;
   private profile: string | null = null;
   private work: OpenedWork | null = null;
+  /** A v3 session's work as verified at load; the journal takes v3 only with it. */
+  private verified: VerifiedWorkOpening | null = null;
   private runner: DrainRunner | null = null;
   private recorder: EvidenceRecorder | null = null;
   private sessionId = "";
@@ -209,13 +226,23 @@ export class EvidenceSession {
    * `startEvidence`, and only for the provider's own document with nothing
    * owed, not stopped and not sticky; otherwise the journal's chain goes on.
    */
-  async load(): Promise<LoadResult> {
+  async load(): Promise<LoadResult<SheetDocument>> {
     if (this.loaded || this.halted) throw new Error("EvidenceSession.load() runs once");
     const { journal } = this.deps;
     let contents: Contents;
     let opened: OpenOutcome;
     try {
-      [contents, opened] = await Promise.all([journal.readEvidence(this.id), this.openSafely()]);
+      if (this.deps.schemaVersion === 3) {
+        // The journal holds a v3 work only under its verified opening, so the
+        // answer comes first; without it nothing is read or written.
+        opened = await this.openSafely();
+        if (this.closed) return { kind: "unavailable" };
+        this.verified = opened.status === "opened" ? await verifiedV3(this.id, opened.work) : null;
+        if (!this.verified) return this.haltLoad("unavailable");
+        contents = await this.readJournal();
+      } else {
+        [contents, opened] = await Promise.all([journal.readEvidence(this.id), this.openSafely()]);
+      }
     } catch (error) {
       return this.haltLoad(failureOf(error));
     }
@@ -227,8 +254,9 @@ export class EvidenceSession {
       const meta = contents.meta;
       if (contents.pending.length === 0 && meta?.evidenceStopped === undefined && !STICKY.has(meta?.state as SyncState)) {
         try {
-          await journal.startEvidence(this.id, opened.work, this.now().toISOString());
-          contents = await journal.readEvidence(this.id);
+          if (this.verified) await journal.startEvidence(this.id, opened.work, this.now().toISOString(), this.verified);
+          else await journal.startEvidence(this.id, opened.work, this.now().toISOString());
+          contents = await this.readJournal();
         } catch (error) {
           // A journal ahead of a late answer keeps its own chain.
           if (!contents.meta?.evidenceHead) return this.haltLoad(failureOf(error));
@@ -238,7 +266,7 @@ export class EvidenceSession {
     if (this.closed) return { kind: "unavailable" };
     const { meta, snapshot } = contents;
     if (!meta?.evidenceHead || !snapshot) return this.haltLoad("unavailable");
-    const document = validateDocument(snapshot.document);
+    const document = this.verified ? validV3(snapshot.document) : validateDocument(snapshot.document);
     if (!document.ok) return this.haltLoad("corrupt", { kind: "recovery", reason: "corrupt", document: null });
     const restored = restoreSyncState(contents as unknown as JournalContents);
     if (STICKY.has(restored)) {
@@ -264,8 +292,8 @@ export class EvidenceSession {
       this.emit();
       return { kind: "ready", document: document.doc };
     }
-    if (this.work) this.runner = this.deps.createRunner(this.work);
-    this.recorder = new EvidenceRecorder();
+    if (this.work) this.runner = this.verified ? this.deps.createRunner(this.work, this.verified) : this.deps.createRunner(this.work);
+    this.recorder = this.verified ? new EvidenceRecorder(undefined, 3) : new EvidenceRecorder();
     this.sessionId = this.newId();
     this.unwatch = this.deps.watchSubmission?.(() => this.closeBySubmission()) ?? (() => {});
     this.unlisten = this.deps.network.onOnline(() => {
@@ -297,7 +325,7 @@ export class EvidenceSession {
     this.emit();
   }
 
-  propose(doc: CanonicalDocument): Promise<void> {
+  propose(doc: SheetDocument): Promise<void> {
     if (!this.loaded) {
       if (this.halted) return Promise.resolve();
       throw new Error("EvidenceSession.propose() before a ready load()");
@@ -412,7 +440,7 @@ export class EvidenceSession {
     let lastDocument: string | null = null;
     for (;;) {
       if (this.ended) return false;
-      const contents = await journal.readEvidence(this.id);
+      const contents = await this.readJournal();
       const { meta, snapshot } = contents;
       if (!meta?.evidenceHead || !snapshot || meta.localSeq !== this.seq) {
         throw Object.assign(new Error("journal moved"), { code: "stale_local_sequence" });
@@ -465,7 +493,9 @@ export class EvidenceSession {
         return this.saveUncovered(candidate.doc, "too_large");
       }
       this.unsaved = built;
-      const result = await journal.saveSegment(this.id, built, this.now().toISOString(), this.seq);
+      const result = this.verified
+        ? await journal.saveSegment(this.id, built, this.now().toISOString(), this.seq, this.verified)
+        : await journal.saveSegment(this.id, built, this.now().toISOString(), this.seq);
       this.unsaved = null;
       this.seq = result.localSeq;
       this.stored = result.meta.state;
@@ -482,11 +512,13 @@ export class EvidenceSession {
     return true;
   }
 
-  private async saveUncovered(doc: CanonicalDocument, reason: EvidenceStop): Promise<boolean> {
+  private async saveUncovered(doc: SheetDocument, reason: EvidenceStop): Promise<boolean> {
     // §4: nothing is written once the session closed.
     if (this.ended) return false;
     this.stopped = reason;
-    const meta = await this.deps.journal.saveUncovered(this.id, doc, reason, this.now().toISOString(), this.seq);
+    const meta = this.verified
+      ? await this.deps.journal.saveUncovered(this.id, doc, reason, this.now().toISOString(), this.seq, this.verified)
+      : await this.deps.journal.saveUncovered(this.id, doc as CanonicalDocument, reason, this.now().toISOString(), this.seq);
     this.seq = meta.localSeq;
     this.stored = meta.state;
     this.syncedHere = false;
@@ -534,7 +566,7 @@ export class EvidenceSession {
 
   private async refresh(): Promise<Contents | null> {
     try {
-      const contents = await this.deps.journal.readEvidence(this.id);
+      const contents = await this.readJournal();
       if (contents.meta) {
         this.stored = contents.meta.state;
         this.refused = contents.meta.refusedLocalSeq !== undefined;
@@ -587,7 +619,17 @@ export class EvidenceSession {
     }
   }
 
-  private haltLoad(failure: SaverFailure, result: LoadResult = { kind: "unavailable" }): LoadResult {
+  /** The journal's contents; a v3 work's only under its verified opening. */
+  private readJournal(): Promise<Contents> {
+    return this.verified ? this.deps.journal.readEvidence(this.id, this.verified) : this.deps.journal.readEvidence(this.id);
+  }
+
+  /** The rows this journal holds for the document, read as the session reads them (sign-out dialog). */
+  async heldRows(): Promise<number> {
+    return (await this.readJournal()).pending.length;
+  }
+
+  private haltLoad(failure: SaverFailure, result: LoadResult<SheetDocument> = { kind: "unavailable" }): LoadResult<SheetDocument> {
     this.halted = true;
     this.failure = failure;
     this.emit();
@@ -610,4 +652,22 @@ export class EvidenceSession {
       }
     }
   }
+}
+
+/**
+ * PIL-K-SPREMANJE-V3: the open answer verified as a v3 work, or null. A
+ * later revision needs the server's revision zero hash (work-opening.ts); an
+ * answer for any other version is never taken into a v3 session.
+ */
+async function verifiedV3(documentId: string, work: OpenedWork): Promise<VerifiedWorkOpening | null> {
+  if (work.schemaVersion !== 3) return null;
+  const proof = work.revisionZeroHash === undefined ? undefined : { documentId, sha256: work.revisionZeroHash };
+  const verified = await verifyWorkOpening(documentId, work, proof);
+  return verified?.schemaVersion === 3 ? verified : null;
+}
+
+/** A stored v3 snapshot, or the refusal `validateDocument` would give for any other. */
+function validV3(document: unknown): { ok: true; doc: CanonicalDocumentV3 } | { ok: false } {
+  const valid = validateVersionedDocument(document);
+  return valid.ok && valid.doc.schemaVersion === 3 ? { ok: true, doc: valid.doc } : { ok: false };
 }

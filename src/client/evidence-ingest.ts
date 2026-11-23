@@ -67,6 +67,8 @@ export type OpenedWork = {
   submitted: boolean;
   /** The server-confirmed schema version of the work's revision zero; absent when the server did not state it. */
   schemaVersion?: 1 | 2 | 3;
+  /** The server's hash of the work's revision zero; a v3 work at a later revision is verified with it (PIL-K-SPREMANJE-V3). */
+  revisionZeroHash?: string;
 };
 
 export type OpenOutcome =
@@ -253,10 +255,12 @@ export function openedWorkFrom(value: unknown): OpenedWork | null {
     return null;
   }
   const schemaVersion = value.schemaVersion;
+  const revisionZeroHash = value.revisionZeroHash;
   return {
     documentId, evidenceProfileId, currentRevision, documentHash, headSegmentHash, lastSequenceTo,
     document, evidenceDomainId: keys.domain, receiptKeys: keys.keys, submitted,
     ...(schemaVersion === 1 || schemaVersion === 2 || schemaVersion === 3 ? { schemaVersion } : {}),
+    ...(typeof revisionZeroHash === "string" ? { revisionZeroHash } : {}),
   };
 }
 

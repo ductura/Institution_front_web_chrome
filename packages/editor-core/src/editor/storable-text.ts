@@ -13,7 +13,10 @@
 import {
   normalizeDocument,
   type CanonicalDocument,
+  type CanonicalDocumentV3,
   type DocumentNode,
+  type DocumentNodeV3,
+  type InlineNodeV3,
 } from "../document/document";
 
 // With the `u` flag a valid pair is one code point outside this range, so the
@@ -45,6 +48,26 @@ export function storableDocument(doc: CanonicalDocument): CanonicalDocument {
       return { ...child, text };
     });
     return { ...node, children };
+  });
+  return changed ? normalizeDocument({ ...doc, nodes }) : doc;
+}
+
+/**
+ * `storableDocument` for a v3 document (PIL-K-SPREMANJE-V3): text runs and
+ * the text of a footnote are made storable; a citation and a cross reference
+ * hold no free text. Returns `doc` itself when nothing changed.
+ */
+export function storableDocumentV3(doc: CanonicalDocumentV3): CanonicalDocumentV3 {
+  let changed = false;
+  const nodes = doc.nodes.map((node): DocumentNodeV3 => {
+    const children = (node.children as readonly InlineNodeV3[]).map((child): InlineNodeV3 => {
+      if (child.type !== "text" && child.type !== "footnote") return child;
+      const text = storableText(child.text);
+      if (text === child.text) return child;
+      changed = true;
+      return { ...child, text };
+    });
+    return { ...node, children } as DocumentNodeV3;
   });
   return changed ? normalizeDocument({ ...doc, nodes }) : doc;
 }
