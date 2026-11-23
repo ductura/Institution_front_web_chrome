@@ -11,7 +11,7 @@
 //
 // Usage (needs gh with rights to re-run workflows):
 //   node scripts/ci/tri-zelena.mjs --run <run id> [--job <regex>] [--repo owner/name]
-//   --job  regex over job names, e.g. '^app \(' or '^ui \(behaviour\)$';
+//   --job  regex over job names, e.g. '^app \(' or '^ui \(behaviour';
 //          without it the whole run is re-run and every job is judged.
 // Exit 0: three green attempts in a row. Exit 1: an attempt was not green.
 import { execFileSync } from "node:child_process";
