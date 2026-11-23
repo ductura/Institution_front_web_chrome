@@ -1,4 +1,4 @@
-// Probe port for the tests and the catalogue until the interview route exists. Invented data.
+// Probe port for the tests and the catalogue; the real one is studentInterviewPort (port.ts). Invented data.
 import type { InterviewExplanation, InterviewPort, InterviewRead } from "./port";
 
 export function fakeInterviewPort(invited = true): InterviewPort & { readonly explained: string[]; readonly notes: string[] } {
@@ -18,7 +18,12 @@ export function fakeInterviewPort(invited = true): InterviewPort & { readonly ex
         slot: null, heldAt: null, explanations, attachments: [...notes],
       };
     },
-    async explain(_id, input) { explained.push(input.text); explanations.push({ id: `e${explanations.length}`, questionId: input.questionId, text: input.text }); return { kind: "saved" }; },
+    async explain(_id, input) {
+      explained.push(input.text);
+      const explanation = { id: `e${explanations.length}`, questionId: input.questionId, text: input.text };
+      explanations.push(explanation);
+      return { kind: "saved", explanation };
+    },
     async attachNote(_id, file) { notes.push(file.name); return { kind: "saved" }; },
   };
 }

@@ -53,6 +53,7 @@ export const profileEn: ProfileMessages = {
 
 export const pageLabelsEn = {
   originComposition: "Origin of the text",
+  studentInterview: "Conversation about the work",
   consultations: "Consultations",
   versionComparison: "Version comparison",
   processSummary: "Process summary",
