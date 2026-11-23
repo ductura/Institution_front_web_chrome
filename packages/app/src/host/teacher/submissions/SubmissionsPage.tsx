@@ -14,6 +14,8 @@ import BulkDownload from "./bulk/BulkDownload";
 import type { BulkCall } from "./bulk/contract";
 import { GradeGate, useGradeRead } from "./grade/GradeGate";
 import type { GradeCall } from "./grade/contract";
+import type { HistoryCall } from "./history/contract";
+import { historyPort } from "./history/port";
 import TeacherSubmissions from "./TeacherSubmissions";
 import { submissionsMessages as text } from "./messages.hr";
 import { clientSubmissionsPort, signInReturn } from "./port";
@@ -25,6 +27,8 @@ export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string 
   // each call type names only the operations its module reads; the client checks each answer against the contract.
   const call = useMemo(() => createApi(), []);
   const port = useMemo(() => clientSubmissionsPort(call as unknown as SubmissionsCall, signIn), [call, signIn]);
+  // PIL-D3-NASTAVNIK: the history and withdrawal switch beside the rows, over the same transport.
+  const history = useMemo(() => historyPort(call as unknown as HistoryCall, signIn), [call, signIn]);
   const grade = useGradeRead(call as unknown as GradeCall, assignmentId, signIn);
   return (
     <div className="page">
@@ -35,7 +39,7 @@ export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string 
       <GradeGate read={grade.read} onRetry={grade.retry}>
         <BulkDownload call={call as unknown as BulkCall} assignmentId={assignmentId} onSignedOut={signIn} />
       </GradeGate>
-      <TeacherSubmissions port={port} assignmentId={assignmentId} />
+      <TeacherSubmissions port={port} assignmentId={assignmentId} history={history} />
     </div>
   );
 }

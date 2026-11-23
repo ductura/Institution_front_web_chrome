@@ -20,4 +20,12 @@ export const historyText = {
   settingUnknown: "Nije poznato je li postavka zapisana. Osvježite stanje prije novog pokušaja.",
   settingUnavailable: "Postavka trenutačno nije dostupna.",
   saving: "Zapisuje se…",
+  // PIL-D3-NASTAVNIK: the history beside each submission row of the teacher's submissions table.
+  column: "Povijest",
+  show: "Prikaži povijest",
+  hide: "Zatvori povijest",
+  settingTitle: "Povlačenje predaje",
 } as const;
+
+/** The accessible name of a row's history button, naming the student (the visible text is the same in every row). */
+export const showHistoryLabel = (student: string): string => `${historyText.show}: ${student}`;

@@ -11,22 +11,31 @@ import {
   type DocumentBlock, type ListState, type VersionPanel,
 } from "./model";
 import { submissionsMessages as text } from "./messages.hr";
+import type { HistoryCall } from "./history/contract";
+import { historyText, showHistoryLabel } from "./history/messages.hr";
+import SubmissionHistory from "./history/SubmissionHistory";
+import WithdrawalSwitch from "./history/WithdrawalSwitch";
 
 /**
  * The submissions of one assignment in its detail (WEB-1502; M7.2): student, revision, time and the
  * server's "after the deadline" tag, and the submitted version read only. A version is read only
  * when the teacher opens it, because the server records each opening.
  * TODO(ugovor): the contract names no student, so the caller may pass names it already holds.
+ * PIL-D3-NASTAVNIK: with `history` (the page's transport, history/port.ts) the screen also shows the
+ * withdrawal switch of the assignment (P-D3) and, beside each row, that student's history of
+ * submissions and withdrawals. A withdrawn submission stays in that history; nothing here removes it.
  */
 export default function TeacherSubmissions(
-  { port, assignmentId, names = {} }:
-  { port: TeacherSubmissionsPort; assignmentId: string; names?: Readonly<Record<string, string>> },
+  { port, assignmentId, names = {}, history }:
+  { port: TeacherSubmissionsPort; assignmentId: string; names?: Readonly<Record<string, string>>; history?: HistoryCall },
 ) {
   const [list, setList] = useState<ListState>(null);
   const [attempt, setAttempt] = useState(0);
   const [openPanel, setPanel] = useState<VersionPanel>(null);
   const read = forAssignment(list, assignmentId)?.read ?? null;
   const panel = forAssignment(openPanel, assignmentId);
+  const [historyOpen, setHistory] = useState<{ assignmentId: string; studentId: string } | null>(null);
+  const historyFor = forAssignment(historyOpen, assignmentId)?.studentId ?? null;
   const nameOf = (row: SubmittedRow) => names[row.studentId] ?? row.studentId;
 
   useEffect(() => {
@@ -56,6 +65,15 @@ export default function TeacherSubmissions(
         ? <Button tone="quiet" busy={opening} aria-label={openLabel(nameOf(row))} onClick={() => void open(row)}>{text.open}</Button>
         : text.pending),
     },
+    ...(history === undefined ? [] : [{
+      id: "history", header: historyText.column,
+      cell: (row: SubmittedRow) => (
+        <Button tone="quiet" aria-label={showHistoryLabel(nameOf(row))} aria-pressed={historyFor === row.studentId}
+          onClick={() => setHistory(historyFor === row.studentId ? null : { assignmentId, studentId: row.studentId })}>
+          {historyText.show}
+        </Button>
+      ),
+    }]),
   ];
 
   if (read !== null && read.kind !== "ready") {
@@ -70,8 +88,20 @@ export default function TeacherSubmissions(
   return (
     <section aria-labelledby="submissions-h">
       <h2 id="submissions-h">{text.title}</h2>
+      {history !== undefined && (
+        <div>
+          <h3>{historyText.settingTitle}</h3>
+          <WithdrawalSwitch call={history} assignmentId={assignmentId} />
+        </div>
+      )}
       <DataTable caption={text.caption} columns={columns} rows={read?.rows ?? []} rowKey={(row) => `${row.studentId}:${row.revision}`}
         empty={text.empty} loading={read === null} loadingLabel={text.loading} />
+      {history !== undefined && historyFor !== null && (
+        <div>
+          <SubmissionHistory call={history} assignmentId={assignmentId} studentId={historyFor} />
+          <Button tone="quiet" onClick={() => setHistory(null)}>{historyText.hide}</Button>
+        </div>
+      )}
       {panel !== null && <SubmittedVersionView panel={panel} student={nameOf(panel.row)} onClose={() => setPanel(null)} />}
     </section>
   );
