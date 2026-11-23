@@ -61,6 +61,11 @@ export default function CommentBank(
     setBusy(false);
     setNote(publishMessage(result));
     if (result.kind === "published") { setDrafts([]); onPublished?.(result.ids); }
+    // Nothing was published: the drafts on the server differ, so the list shown is read again.
+    if (result.kind === "changed") {
+      const read = await draftsPort.listDrafts(assignmentId).catch(() => null);
+      if (read?.kind === "ready") setDrafts(read.drafts);
+    }
   };
 
   const shown = entries === null ? [] : searchBank(entries, query);
