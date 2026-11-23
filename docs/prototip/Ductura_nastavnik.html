@@ -269,6 +269,22 @@ legend { font-weight:600; padding:0 4px; }
 .cmp ins { text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px; }
 .cmp del { text-decoration:line-through; text-decoration-thickness:2px; }
 .cmp .w { font:600 11px/1 var(--ff-ui); color:var(--ink-2); margin:0 3px; }
+
+/* NF-4 (23. 11. 2026.): samo raspored i prototipne napomene; boje i razmaci iz postojećih tokena. */
+.srv { font:11.5px/1.45 var(--ff-mono); color:var(--ink-2); border:1px dashed var(--rule); border-radius:4px; padding:4px 8px; margin:0; overflow-wrap:anywhere; }
+.srv b { font-weight:500; color:var(--ink); }
+.flt { margin:12px 0; }
+.sum .acts .btn { min-height:44px; }
+.item .acts .btn, .sum .acts .btn { min-height:44px; }
+.item .acts { margin-top:6px; }
+@media (max-width:759px) {
+  .sum table { display:block; min-width:0; width:100%; }
+  .sum thead { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .sum tbody { display:grid; gap:12px; padding:8px; }
+  .sum tr { display:grid; gap:4px; border:1px solid var(--rule-2); border-radius:6px; padding:8px 0; }
+  .sum td { display:grid; grid-template-columns:7.5em 1fr; gap:8px; border-bottom:0; padding:2px 12px; }
+  .sum td::before { content:attr(data-label); color:var(--ink-3); font-size:12.5px; font-weight:600; }
+}
 </style>
 <div id="proto-bar"><b>Prototip</b><label>ekran <select id="proto-view" aria-label="Ekran prototipa"></select></label><label>stanje <select id="proto-variant" aria-label="Stanje ekrana"></select></label><button type="button" data-core="theme">tema ◐</button><button type="button" id="proto-reset">ispočetka</button></div>
 <div id="stage"></div><div id="toast" role="status" hidden></div>
@@ -515,6 +531,268 @@ legend { font-weight:600; padding:0 4px; }
       '<div class="ed-notes"><p><sup>1</sup> Pojam se ovdje koristi u užem smislu, kako ga opisuje Autor C (2018: 22).</p></div>';
   }
 
+
+  /* =====================================================================================================
+     NF-4 · Nove funkcije, dio 4: nastavnik, kolegiji i zadaci (NZ-1 … NZ-18), 23. 11. 2026.
+     Daniel: svih 18 prijedloga u pilot; asistent u pilotu radi („samo sažimanje” je stvarna postavka; pružatelj i model
+     se ne imenuju, piše samo „Asistent”); zabranu predaje nakon roka nastavnik smije mijenjati i nakon objave; iznimka kasne
+     predaje: varijanta A (produljenje jednom studentu) i varijanta B (posebna iznimka s vlastitim zapisom; poslužitelj je nema);
+     produljenje se nudi i za zadatak kojem je rok prošao; nastavnik smije isključiti obaveznu izjavu po zadatku.
+     Oznaka u kodu: data-nf4="NZ-n"; oznaka „Poslužitelj:” (.srv) označava što poslužitelj danas nema.
+     ===================================================================================================== */
+  var DECLARATION_QUESTION_MAX = 300; // OD-4: granica kao imenovana konstanta
+  var BASE0 = { rok: '8. 11. 2026. u 23:59', min: '3000', max: '5000', opis: 'Analizirajte izvještavanje dvaju lokalnih medija o kampanji.', ai: 'kolegij', vanj: 'da', late: 'ne', wd: 'da', decl: 'da', q: '' };
+  var TASK_NAME = { t1: 'Seminarski rad „Lokalni mediji i izborna kampanja”', t0: 'Esej „Prikaz članka”' };
+  var DUE_OF = { t1: '8. 11. 2026. u 23:59', t0: '15. 10. 2026. u 23:59' };
+  var REASON_SHORT = { 'Opravdan razlog': 'opravdano', 'Tehnička poteškoća': 'tehnički', 'Dogovor s nastavnikom': 'dogovor', 'Produljenje za sve': 'za sve' };
+  var RULE_TXT = {
+    late: { da: 'Predaja nakon roka je dopuštena; predaja se bilježi uz oznaku „nakon roka”.', ne: 'Nakon roka predaja se ne prima; student vidi da je rok prošao.' },
+    wd: { da: 'Do roka student može povući predaju i predati ponovno; svaka predaja i povlačenje zapisani su s potvrdom.', ne: 'Povući se ne može: predaja je konačna.' },
+    decl: { da: 'Prije predaje student ispunjava izjavu o korištenju alata.', ne: 'Izjava o korištenju alata nije obavezna; student je može preskočiti.' }
+  };
+  var SIGNIF = ['rok', 'min', 'max', 'ai', 'vanj', 'late', 'wd', 'decl'];
+  var LBL = { rok: 'Rok', min: 'Najmanje riječi', max: 'Najviše riječi', ai: 'Asistent', vanj: 'Vanjski alati', late: 'Predaja nakon roka', wd: 'Povlačenje predaje', decl: 'Izjava obavezna', q: 'Pitanje uz izjavu', opis: 'Opis' };
+  function n4() {
+    var s = App.state;
+    return s.n4 || (s.n4 = {
+      base: Object.assign({}, BASE0), ed: null, ver: 1, reset: false, mailSent: null,
+      code: { until: '5. 12. 2026.', revoked: false }, ext: 't1', extFilter: 'svi', bp: 't1', dk: null,
+      zt: 'svi', st: 'svi', gr: 'svi', sort: 'ime',
+      team: [{ who: 'Nastavnik A', role: 'nositelj' }, { who: 'Nastavnik B', role: 'suradnik' }], grp: { g2: 'Nastavnik A', g4: 'Nastavnik B' }
+    });
+  }
+  function mix(a, b) { Object.keys(b).forEach(function (x) { a[x] = b[x]; }); return a; }
+  function keysOf(t) { return t === 't0' ? T0 : T1; }
+  function cbx(name, cur, label, extra) { return '<label class="opt"><input type="checkbox" name="' + name + '" value="da"' + (cur === 'da' ? ' checked' : '') + (extra || '') + '> ' + label + '</label>'; }
+  function srv(id, text) { return '<p class="srv" data-srv="' + id + '"><b>Poslužitelj:</b> ' + text + '</p>'; }
+  function extsFor(t) {
+    var s = App.state; if (!s.extL) s.extL = { t1: [{ who: 'Student D', to: '12. 11. 2026. u 23:59', reason: EXT_REASONS[0], at: '4. 11. 2026. u 9:20', kind: 'produljenje', vis: true }], t0: [] };
+    return s.extL[t];
+  }
+  function exts() { return extsFor(n4().ext || 't1'); }
+  function extOf(k) { var w = W[k], r = null; extsFor(w.task).forEach(function (e) { if (!r && (e.who === w.who || e.who === 'Svi studenti zadatka')) r = e; }); return r; }
+  function stLabel(k) { var w = W[k]; return w.st === 'predano' ? (late(k) ? 'Predano nakon roka' : 'Predano') : w.st === 'uzivo' ? 'Piše' : w.st === 'nije-predano' ? 'Nije predano' : 'Nije započeo'; }
+  function dorOf(k, v) { return App.state.dorada[k] || (v === 'dorada' && k === 'a' ? DORADA_0 : null); }
+  function doradaTxt(d) { return d ? 'zatražena · rok ' + d.rok + ' · ' + d.state : 'nije zatražena'; }
+  function ackOf(k) { // NZ-8: potvrda obavijesti po studentu (model ima phase; poslužitelj polje nije potvrdio)
+    var w = W[k], n = n4();
+    if (w.task === 't0') return { ok: true, txt: 'potvrđena' };
+    if (n.reset) return { ok: false, txt: 'nova verzija ' + n.ver + ': nije potvrđena' };
+    return w.st === 'nije-zapoceto' ? { ok: false, txt: 'nije potvrđena' } : { ok: true, txt: 'potvrđena' };
+  }
+  function ackCount(t) { var c = 0; keysOf(t).forEach(function (k) { if (ackOf(k).ok) c++; }); return c; }
+  function ackLine(t) { var m = keysOf(t).length; return 'Potvrdilo obavijest: ' + ackCount(t) + ' od ' + m + ' ' + studWord(m) + (t === 't1' && n4().reset ? ' · nova verzija ' + n4().ver : '') + '.'; }
+  function doradaLine(t) {
+    var o = 0, c = 0; keysOf(t).forEach(function (k) { var d = App.state.dorada[k]; if (!d) return; if (d.state === 'student navodi da je proveden') c++; else if (d.state === 'otvoren' || d.state === 'ponovno otvoren') o++; });
+    return 'Dorada: ' + o + ' otvorenih, ' + c + ' čeka Vaš pregled.';
+  }
+  function notStarted(t) { var c = 0; keysOf(t).forEach(function (k) { if (W[k].st === 'nije-zapoceto') c++; }); return c; }
+  function extLink(k) { var e = extOf(k); if (!e) return ''; return e.kind === 'iznimka-B'
+    ? '<a href="#produljenje" data-act="goExtFor" data-k="' + k + '">Iznimka: predaja nakon roka dopuštena do ' + e.to + '</a>'
+    : '<a href="#produljenje" data-act="goExtFor" data-k="' + k + '">Rok produljen do ' + e.to + '</a>'; }
+  function taskLine(k, v) {
+    var w = W[k], t = TASKS[w.task], e = extLink(k);
+    return '<b>' + t.kind + ':</b> ' + stLabel(k) + (w.sub ? ' · ' + w.sub + ' · verzija ' + w.ver : w.last ? ' · zadnja promjena ' + w.last : '') +
+      (e ? ' · ' + e : '') + ' · obavijest ' + ackOf(k).txt + ' · dorada ' + doradaTxt(dorOf(k, v));
+  }
+  /* NZ-11: filtri i poredak (samo čitanje) */
+  var ST_OPT = [['svi', 'Sva stanja'], ['nije-zapoceo', 'Nije započeo'], ['pise', 'Piše'], ['predano', 'Predano'], ['nakon-roka', 'Nakon roka (kasno ili nije predano)'], ['dorada', 'Dorada']];
+  function matches(k, v) {
+    var n = n4(), w = W[k], st = n.st;
+    if (n.gr !== 'svi' && w.group !== n.gr) return false;
+    if (st === 'svi') return true;
+    if (st === 'nije-zapoceo') return w.st === 'nije-zapoceto';
+    if (st === 'pise') return w.st === 'uzivo';
+    if (st === 'predano') return w.st === 'predano';
+    if (st === 'nakon-roka') return w.st === 'nije-predano' || (w.st === 'predano' && late(k));
+    if (st === 'dorada') return !!dorOf(k, v);
+    return true;
+  }
+  var RANK = { 'nije-zapoceto': 0, 'nije-predano': 1, uzivo: 2, predano: 3 };
+  function sorted(keys) { var n = n4(); return n.sort === 'stanje' ? keys.slice().sort(function (a, b) { return RANK[W[a].st] - RANK[W[b].st] || (a < b ? -1 : 1); }) : keys.slice(); }
+  function sel(id, label, opts, cur, attr, hid) {
+    return '<div class="field"><label for="' + id + '">' + label + '</label><select class="input" id="' + id + '" ' + attr + (hid ? ' aria-describedby="' + hid + '"' : '') + '>' +
+      opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+  }
+  function filters(withTask) {
+    var n = n4();
+    return '<div class="grid2 flt" role="group" aria-label="Filtri i poredak" data-nf4="NZ-11">' +
+      (withTask ? sel('f-zt', 'Zadatak', [['svi', 'Svi zadaci kolegija'], ['t1', 'Seminarski rad · rok 8. 11. 2026.'], ['t0', 'Esej · rok je prošao']], n.zt, 'data-flt="zt"') : '') +
+      sel('f-st', 'Stanje', ST_OPT, n.st, 'data-flt="st"') +
+      sel('f-gr', 'Grupa', [['svi', 'Sve grupe'], ['Grupa 2', 'Grupa 2 (2)'], ['Grupa 4', 'Grupa 4 (2)']], n.gr, 'data-flt="gr"') +
+      sel('f-so', 'Poredak', [['ime', 'Po prezimenu'], ['stanje', 'Po stanju']], n.sort, 'data-flt="sort"') + '</div>';
+  }
+  function bindFilters(stage) {
+    Array.prototype.forEach.call(stage.querySelectorAll('[data-flt]'), function (s) {
+      s.addEventListener('change', function () { n4()[s.getAttribute('data-flt')] = s.value; var id = s.id; App.rerender(); var x = document.getElementById(id); if (x) x.focus(); });
+    });
+  }
+  /* NZ-5 i NZ-12: radnje na retku studenta (N-04, N-17) i zajednički dijalozi */
+  function rowActs(k, pre) {
+    var w = W[k], d = App.state.dorada[k], out = '<div class="acts" data-nf4="NZ-5 NZ-12">', id = pre + k;
+    if (w.st === 'predano' && !late(k)) out += '<button class="btn secondary small" type="button" aria-disabled="true" aria-describedby="rl-' + id + '">Dopusti predaju nakon roka…</button><span class="meta" id="rl-' + id + '">Student je već predao rad prije roka.</span>';
+    else out += '<button class="btn secondary small" type="button" data-act="askLate" data-k="' + k + '">Dopusti predaju nakon roka…</button>';
+    if (w.st !== 'predano') out += '<button class="btn secondary small" type="button" aria-disabled="true" aria-describedby="rd-' + id + '">Zatraži doradu…</button><span class="meta" id="rd-' + id + '">Dorada se traži za predani rad.</span>';
+    else if (d && (d.state === 'otvoren' || d.state === 'ponovno otvoren')) out += '<button class="btn secondary small" type="button" data-act="withdrawRow" data-k="' + k + '">Povuci zahtjev za doradu</button>';
+    else out += '<button class="btn secondary small" type="button" data-act="askDorada2" data-k="' + k + '">Zatraži doradu…</button>';
+    return out + '</div>';
+  }
+  function doradaDlg(k, act) {
+    var w = W[k];
+    return dialog('dd-h', 'Zatražiti doradu?',
+      '<form class="sb-body" style="padding:0" data-submit="' + act + '" data-nf4="NZ-12"><p class="note">Rad: <b>' + w.who + '</b> · ' + TASK_NAME[w.task] + '</p>' +
+      '<div class="field"><label for="f-dd">Što treba doraditi</label><textarea class="input" id="f-dd" name="dd" aria-describedby="dd-hint"></textarea><span class="meta" id="dd-hint">Student vidi ovaj tekst uz rad. Zahtjev ne mijenja predani rad ni potvrdu o predaji.</span></div>' +
+      '<div class="field"><label for="f-ddr">Rok za doradu</label><input class="input" id="f-ddr" name="ddr" value="12. 11. 2026. u 23:59"></div>' +
+      '<p class="meta">Student vidi: „Zatražena dorada” uz svoj rad, Vaš tekst i rok za doradu. Isti dijalog vrijedi na radu i na retku studenta.</p>' +
+      '<div class="sb-acts"><button class="btn" type="submit">Pošalji zahtjev</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div></form>');
+  }
+  function lateDlg(k) {
+    var w = W[k], t = TASKS[w.task];
+    return dialog('di-h', 'Dopustiti predaju nakon roka?',
+      '<form class="sb-body" style="padding:0" data-submit="saveLate" data-nf4="NZ-5"><p class="note">Student: <b>' + w.who + '</b> · ' + TASK_NAME[w.task] + ' · rok ' + t.due + '</p>' +
+      '<fieldset aria-describedby="lv-h"><legend>Vrsta zapisa</legend>' + radio('lv', 'A', 'A', 'Produljenje roka za ovog studenta (varijanta A)') + radio('lv', 'B', 'A', 'Posebna iznimka s vlastitim zapisom (varijanta B)') +
+      '<p class="meta" id="lv-h">Varijanta A upisuje produljenje za jednog studenta; u popisu se ne razlikuje od običnog produljenja. Varijanta B upisuje iznimku koja se u popisu vodi zasebno.</p></fieldset>' +
+      srv('NZ-5B', 'varijanta B nema ni polje ni operaciju; zapis u ovom prototipu postoji samo lokalno. Varijanta A: teacher.deadline-extension.post, scope „one”.') +
+      '<div class="field"><label for="f-lr">Rok do kad</label><input class="input" id="f-lr" name="rok" value="12. 11. 2026. u 23:59" aria-describedby="lr-h"><span class="meta" id="lr-h">Datum i sat po zagrebačkom vremenu (Europe/Zagreb).</span></div>' +
+      '<div class="field"><label for="f-lz">Razlog</label><select class="input" id="f-lz" name="raz">' + EXT_REASONS.slice(0, 3).map(function (r) { return '<option' + (r === EXT_REASONS[2] ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select><span class="meta">Razlog se bira s popisa, bez slobodnog teksta.</span></div>' +
+      cbx('vis', 'ne', 'Razlog je vidljiv studentu') +
+      '<p class="note">Student vidi novi rok uz zadatak' + ' (i razlog samo ako ste ga označili kao vidljiv). Zapis se ne briše i ne prepravlja; može se samo dopuniti novim zapisom.</p>' +
+      '<div class="sb-acts"><button class="btn" type="submit">Zabilježi</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div></form>');
+  }
+  function rowDialogs() {
+    var s = App.state, n = n4();
+    if (s.dlg === 'iznimka' && n.dk) return lateDlg(n.dk);
+    if (s.dlg === 'dorada2' && n.dk) return doradaDlg(n.dk, 'sendDorada2');
+    return '';
+  }
+  var ROW_ACTS = {
+    askLate: function (el) { n4().dk = el.getAttribute('data-k'); App.state.dlg = 'iznimka'; App.rerender(); },
+    askDorada2: function (el) { n4().dk = el.getAttribute('data-k'); App.state.dlg = 'dorada2'; App.rerender(); },
+    goExtFor: function (el) { var k = el.getAttribute('data-k'), n = n4(); n.ext = W[k].task; n.extFilter = W[k].who; App.state.variant.produljenje = 'puno'; App.go('produljenje'); },
+    withdrawRow: function (el) { var k = el.getAttribute('data-k'); delete App.state.dorada[k]; App.rerender(); App.toast('Zahtjev za doradu je povučen. Student više ne vidi zahtjev.'); },
+    saveLate: function (form) {
+      var n = n4(), k = n.dk, w = W[k], rok = form.rok.value.trim();
+      if (!parse(rok)) { form.rok.setAttribute('aria-invalid', 'true'); form.rok.focus(); App.toast('Upišite rok u obliku „12. 11. 2026. u 23:59”.'); return; }
+      var lv = form.querySelector('input[name="lv"]:checked').value, vis = form.vis.checked;
+      extsFor(w.task).unshift({ who: w.who, to: rok, reason: form.raz.value, at: '5. 11. 2026. u 21:45', kind: lv === 'B' ? 'iznimka-B' : 'iznimka-A', vis: vis });
+      w.ext = rok; App.state.dlg = null; App.rerender();
+      App.toast('Zabilježeno: ' + w.who + ' može predati do ' + rok + (vis ? '. Student vidi i razlog.' : '. Razlog student ne vidi.'));
+    },
+    sendDorada2: function (form) {
+      var k = n4().dk, t = form.dd.value.trim();
+      if (!t) { form.dd.setAttribute('aria-invalid', 'true'); form.dd.focus(); App.toast('Upišite što treba doraditi.'); return; }
+      var r = form.ddr.value.trim(); if (!r) { form.ddr.setAttribute('aria-invalid', 'true'); form.ddr.focus(); App.toast('Upišite rok za doradu.'); return; }
+      App.state.dorada[k] = { state: 'otvoren', at: '5. 11. 2026. u 21:40', rok: r, text: t };
+      App.state.dlg = null; App.rerender(); App.toast('Zahtjev za doradu je poslan. Student ga vidi uz rad.');
+    }
+  };
+  /* NZ-3, NZ-4, NZ-9, NZ-15: zajednički dijelovi obrasca zadatka i „Uredi” */
+  function ruleSet(name, legend, cur, a, b) {
+    var hid = 'ru-' + name;
+    return '<fieldset aria-describedby="' + hid + '"><legend>' + legend + '</legend>' + radio(name, a[0], cur, a[1]) + radio(name, b[0], cur, b[1]) +
+      '<p class="meta" id="' + hid + '" data-student-sees="' + name + '">Student na koraku predaje vidi: ' + RULE_TXT[name][cur] + '</p></fieldset>';
+  }
+  function rulesFs(get) {
+    return '<div data-nf4="NZ-4">' +
+      ruleSet('late', 'Predaja nakon roka', get('late', 'ne'), ['da', 'Dopuštena'], ['ne', 'Nije dopuštena']) +
+      srv('NZ-4a', 'polje za zabranu predaje nakon roka nedostaje (npr. u institution.course-assignments.post i assignment-versions.post); postavka je samo u prototipu, a poslužitelj danas vraća not_open kad je predaja zatvorena.') +
+      ruleSet('wd', 'Povlačenje predaje dok rok traje', get('wd', 'da'), ['da', 'Uključeno (zadano)'], ['ne', 'Isključeno']) +
+      '<p class="meta">Isti prekidač je i na popisu predaja (teacher.submission-withdrawal.post {allowed}).</p>' +
+      ruleSet('decl', 'Izjava o korištenju alata', get('decl', 'da'), ['da', 'Obavezna (zadano)'], ['ne', 'Nije obavezna za ovaj zadatak']) +
+      '<p class="meta">Isključenje vrijedi samo za ovaj zadatak (teacher.declaration-required.put {required}).</p></div>';
+  }
+  function aiFs(get) {
+    var ai = get('ai', 'kolegij');
+    return '<fieldset aria-describedby="ai-h" data-nf4="NZ-3"><legend>Asistent u Ducturi</legend>' +
+      radio('ai', 'kolegij', ai, 'Kao u kolegiju: dopušten za sažimanje literature i objašnjenje pojma, uz izjavu') +
+      radio('ai', 'sazimanje', ai, 'Samo sažimanje literature, uz izjavu') +
+      radio('ai', 'ne', ai, 'Nije dopušten u ovom zadatku') +
+      '<p class="meta" id="ai-h">Asistent u pilotu radi. „Samo sažimanje” znači da Asistent smije samo sažimati literaturu koju je student sam unio; ne piše i ne preoblikuje tekst rada. Student vidi isto pravilo u obavijesti i u izjavi.</p>' +
+      srv('NZ-3', 'aiSummaryOnly i externalToolsAllowed su u ugovoru; obradu polja na poslužitelju treba još potvrditi.') + '</fieldset>';
+  }
+  function vanjFs(get) {
+    var v = get('vanj', 'da');
+    return '<fieldset aria-describedby="vj-h" data-nf4="NZ-3"><legend>Vanjski alati</legend>' + radio('vanj', 'da', v, 'Dopušteni uz izjavu (kao u kolegiju)') + radio('vanj', 'ne', v, 'Nisu dopušteni u ovom zadatku') +
+      '<p class="meta" id="vj-h">Pravilo vrijedi samo za ovaj zadatak i smije samo suziti pravilo kolegija.</p></fieldset>';
+  }
+  function qFs(get) {
+    return '<div class="field" data-nf4="NZ-15"><label for="f-q">Pitanje studentu uz izjavu (nije obavezno)</label><textarea class="input" id="f-q" name="q" maxlength="' + DECLARATION_QUESTION_MAX + '" aria-describedby="q-h">' + esc(get('q', '')) + '</textarea>' +
+      '<span class="meta" id="q-h">Do ' + DECLARATION_QUESTION_MAX + ' znakova. Student ga vidi na koraku „Izjava”; odgovor vidite uz izjavu na pregledu rada. Bez pitanja izjava radi kao i dosad.</span></div>' +
+      srv('NZ-15', 'nema polja za pitanje u zadatku ni za odgovor u izjavi (declaration-v1); potreban je SRV ugovor, prije toga polje je samo u prototipu.');
+  }
+  function mailFs(get, what) {
+    return '<div data-nf4="NZ-9"><p class="note">Studenti uvijek dobivaju obavijest u aplikaciji.</p>' + cbx('mail', get('mail', 'ne'), 'Obavijesti studente i e-poštom', ' aria-describedby="ml-h"') +
+      '<div id="ml-h"><p class="meta">Zadano isključeno. Poruka ' + what + ' sadrži samo: „Novi zadatak u Ducturi. Otvorite aplikaciju.” Bez naslova rada i bez rada. Student se može odjaviti od e-pošte u postavkama.</p>' +
+      '<p class="meta">Nakon slanja vidite „Poslano n studentima”, bez imena.</p></div>' +
+      srv('NZ-9', 'nema rute ni polja za slanje e-pošte ili push poruke (odluka 2147 i DPIA); u prototipu je samo postavka i pregled.') + '</div>';
+  }
+  function showVal(name, val) {
+    if (name === 'ai') return AI_OPT[val];
+    if (name === 'vanj') return EXT_OPT[val];
+    if (name === 'late') return val === 'da' ? 'dopuštena' : 'nije dopuštena';
+    if (name === 'wd') return val === 'da' ? 'uključeno' : 'isključeno';
+    if (name === 'decl') return val === 'da' ? 'obavezna' : 'nije obavezna';
+    if (name === 'q') return val ? '„' + esc(val) + '”' : 'bez pitanja';
+    return esc(val);
+  }
+  /* NZ-7a: što student vidi u obavijesti (bez imena studenata) */
+  function noticePreview(get) {
+    return '<div class="sb-state" data-nf4="NZ-7"><h3>Ovako će student vidjeti obavijest</h3><p class="meta">Iz istih polja kao studentska obavijest; bez imena studenata.</p><ul class="facts">' +
+      '<li>Rok: ' + esc(get('rok', '10. 12. 2026. u 23:59')) + '</li><li>Opseg: ' + esc(get('min', '3000')) + ' do ' + esc(get('max', '5000')) + ' riječi</li>' +
+      '<li>Asistent: ' + AI_OPT[get('ai', 'kolegij')] + '</li><li>Vanjski alati: ' + EXT_OPT[get('vanj', 'da')] + '</li>' +
+      '<li>Izjava o korištenju alata: ' + showVal('decl', get('decl', 'da')) + '</li><li>Predaja nakon roka: ' + showVal('late', get('late', 'ne')) + '</li>' +
+      '<li>Povlačenje predaje dok rok traje: ' + showVal('wd', get('wd', 'da')) + '</li>' + (get('q', '') ? '<li>Pitanje uz izjavu: ' + showVal('q', get('q', '')) + '</li>' : '') + '</ul></div>';
+  }
+  function grpTxt(get) { var a = get('g2', 'da') !== 'ne', b = get('g4', 'da') !== 'ne'; return a && b ? 'grupa 2 i 4' : a ? 'grupe 2' : 'grupe 4'; }
+  function grpCount(get) { return (get('g2', 'da') !== 'ne' ? 2 : 0) + (get('g4', 'da') !== 'ne' ? 2 : 0); }
+  function liveStudentSees(stage) {
+    Array.prototype.forEach.call(stage.querySelectorAll('input[type=radio][name=late],input[type=radio][name=wd],input[type=radio][name=decl]'), function (r) {
+      r.addEventListener('change', function () { var p = stage.querySelector('[data-student-sees="' + r.name + '"]'); if (p) p.textContent = 'Student na koraku predaje vidi: ' + RULE_TXT[r.name][r.value]; });
+    });
+  }
+  /* NZ-13: kod za upis */
+  function codeKv(code) {
+    var c = n4().code;
+    if (c.revoked) return 'Opozvan. Studenti se njime više ne mogu upisati; već upisani ostaju upisani.';
+    return (code ? 'Novi kod izdan; vrijedi do ' + c.until + '; prikazuje se samo sada.' : 'Izdan; vrijedi do ' + c.until + '. Ne prikazuje se ponovno.');
+  }
+  function codeBlock(code) {
+    if (!code || n4().code.revoked) return '';
+    return '<div data-nf4="NZ-13"><p class="code-once" aria-label="Kod za upis">KOL-A-7Q4M</p><div class="acts"><button class="btn secondary small" type="button" data-act="copyCode">Kopiraj kod</button></div>' +
+      '<p class="meta">Zapišite ga sada; poslije se vidi samo sažetak. Poslužitelj čuva samo sažetak koda, pa ga kasnije ne može ponovno prikazati. Dosadašnji kod više ne vrijedi.</p>' +
+      '<p class="note">Uputa studentu: upišite kod na stranici „Upis”. Kod ne ide u CSV ni u obavijest.</p></div>';
+  }
+  function courseActs() {
+    return '<div class="acts" data-nf4="NZ-1 NZ-2 NZ-13 NZ-14"><a class="btn secondary small" href="#studenti" data-go="studenti">Popis studenata</a><a class="btn secondary small" href="#tim" data-go="tim">Nastavni tim i grupe</a>' +
+      '<a class="btn secondary small" href="#novi-zadatak" data-act="addTask">Dodaj zadatak</a>' +
+      '<a class="btn secondary small" href="#produljenje" data-act="pickExt">Produljenje roka…</a><a class="btn secondary small" href="#zbirni" data-act="goSum">Zbirni pregled</a><a class="btn secondary small" href="#izvoz" data-act="pickExp">Izvoz za Merlin…</a>' +
+      '<button class="btn secondary small" type="button" data-act="newCode">Novi kod za upis</button><button class="btn secondary small" type="button" data-act="askRevoke"' + (n4().code.revoked ? ' aria-disabled="true"' : '') + '>Opozovi kod</button></div>';
+  }
+  function taskActs(t) {
+    return '<div class="acts" data-nf4="NZ-1"><a class="btn secondary small" href="#zbirni" data-act="goSum" data-t="' + t + '">Predaje</a>' +
+      (t === 't1' ? '<a class="btn secondary small" href="#uredi" data-go="uredi">Uredi (nova verzija)</a>' : '') +
+      '<button class="btn secondary small" type="button" data-act="copyTask" data-t="' + t + '">Kopiraj zadatak</button>' +
+      '<a class="btn secondary small" href="#produljenje" data-act="pickExt" data-t="' + t + '">Produljenje</a><a class="btn secondary small" href="#izvoz" data-act="pickExp" data-t="' + t + '">Izvoz</a>' +
+      (t === 't1' ? '<a class="btn small" href="#brz-put" data-act="goBp" data-t="t1">Brz put kroz radove</a>' : '') + '</div>';
+  }
+  function taskExtra(t) {
+    return '<p class="note" data-nf4="NZ-8 NZ-12">' + ackLine(t) + ' ' + doradaLine(t) + ' Nije započelo: ' + notStarted(t) + '.</p>';
+  }
+  function mailBanner() {
+    var n = n4(); if (n.mailSent == null) return '';
+    return '<div class="banner" role="status" data-nf4="NZ-9"><p><b>Poslano ' + n.mailSent + ' ' + studWord(n.mailSent) + ' e-poštom.</b> Poruka ne sadrži naslov rada ni rad. Popis primatelja ne prikazuje imena.</p></div>';
+  }
+  var KOL_ACTS = {
+    copyCode: function () { try { if (navigator.clipboard) navigator.clipboard.writeText('KOL-A-7Q4M').catch(function () {}); } catch (e) {} App.toast('Kod za upis je u međuspremniku.'); },
+    askRevoke: function () { App.state.dlg = 'opozovi'; App.rerender(); },
+    revoke: function () { n4().code.revoked = true; App.state.code = null; App.state.dlg = null; App.state.variant.kolegiji = 'puno'; App.rerender(); App.toast('Kod za upis je opozvan.'); },
+    copyTask: function (el) { var t = el.getAttribute('data-t'); App.state.wiz = { f: { nas: TASK_NAME[t].replace(/^[^„]*„|”$/g, '') + ' (kopija)', vrs: TASKS[t].kind, rok: '10. 12. 2026. u 23:59' }, kol: 'Kolegij A' }; App.state.variant['novi-zadatak'] = 'puno'; App.go('novi-zadatak'); App.toast('Zadatak je kopiran u novi nacrt; rok i naslov provjerite prije objave.'); },
+    pickExt: function (el) { var t = el.getAttribute('data-t'); n4().ext = t || null; n4().extFilter = 'svi'; App.state.variant.produljenje = t ? 'puno' : 'izbor'; App.go('produljenje'); },
+    pickExp: function (el) { var t = el.getAttribute('data-t'); App.state.exp = t || ''; App.state.variant.izvoz = t ? 'puno' : 'izbor'; App.go('izvoz'); },
+    goSum: function (el) { var t = el.getAttribute('data-t'); n4().zt = t || 'svi'; App.state.variant.zbirni = 'puno'; App.go('zbirni'); },
+    goBp: function (el) { n4().bp = el.getAttribute('data-t'); App.state.fp = 0; App.go('brz-put'); }
+  };
+
   /* ---------- N-01 Moji kolegiji ---------- */
   function subRows(keys) {
     return keys.map(function (k) {
@@ -526,32 +804,34 @@ legend { font-weight:600; padding:0 4px; }
   App.register('kolegiji', {
     title: 'N-01 Moji kolegiji', shell: 'side',
     note: ['N-01', 'gradi se sada', 'tri koraka: A vrijeme predaje i verzija uz „Predano”, učitavanje, „Otvorilo rad: X od Y studenata”; B imena studenata i popis onih koji nisu otvorili rad; C novi kod za upis; redak zbroja riječima (N-17); otisak ne ide na popis (N-07)'],
-    variants: std([{ id: 'kod', label: 'novi kod za upis izdan' }, { id: 'prekinuto', label: 'objava prekinuta, ishod nije poznat' }]),
+    variants: std([{ id: 'kod', label: 'novi kod za upis izdan' }, { id: 'opozvan', label: 'kod opozvan' }, { id: 'prekinuto', label: 'objava prekinuta, ishod nije poznat' }]),
     render: function (c) {
       var v = c.variant, title = 'Moji kolegiji', lede = 'Kolegiji u kojima predajete, akademska godina 2026./2027. Uz svaki zadatak vidite činjenice o predaji: vrijeme, rok, verziju i stanje zapisa.';
       var s = sideState(v, title, lede, 'Učitavanje kolegija…', 'Popis kolegija trenutačno nije dostupan. Pokušajte ponovno; popis se ne prikazuje prazan dok se ne učita.'); if (s) return s;
       var acts = '<div class="acts"><a class="btn" href="#novi-zadatak" data-go="novi-zadatak" data-variant="prazno">Novi kolegij i zadatak</a></div>';
       if (v === 'prazno') return head(title, lede) + '<section class="card center"><h2>Još nemate kolegija</h2><p class="note">Napravite prvi kolegij, a studenti će se upisati kodom koji dobijete.</p><a class="btn" href="#novi-zadatak" data-go="novi-zadatak" data-variant="prazno">Novi kolegij i zadatak</a></section>';
       var code = v === 'kod' || App.state.code;
-      var h = head(title, lede, acts);
+      var h = head(title, lede, acts) + mailBanner(); if (v === 'opozvan') n4().code.revoked = true;
       if (v === 'prekinuto') h += '<div class="banner warn" role="status"><p><b>Objava zadatka „Analiza izborne kampanje” prekinuta je i ishod nije poznat.</b> Prije ponovne objave provjerite popis zadataka: ako je zadatak objavljen, pojavit će se ovdje.</p><div class="acts"><button class="btn secondary" type="button" data-act="check">Provjeri popis zadataka</button></div></div>';
       h += '<section class="card course" aria-labelledby="k-a"><h2 id="k-a">Kolegij A</h2>' +
-        '<div class="kv"><div><span>Uloga</span>nositelj (Vi)</div><div><span>Upisano</span>4 studenta · grupe 2 i 4</div><div><span>Kod za upis</span>' + (code ? 'Novi kod izdan; prikazuje se samo sada.' : 'Izdan. Ne prikazuje se ponovno.') + '</div><div><span>Sljedeći rok</span>8. 11. 2026. u 23:59</div></div>' +
-        (code ? '<p class="code-once" aria-label="Kod za upis">KOL-A-7Q4M</p><p class="meta">Zapišite ili podijelite kod sada. Poslužitelj čuva samo sažetak koda, pa ga kasnije ne može ponovno prikazati. Dosadašnji kod više ne vrijedi.</p>' : '') +
-        '<div class="acts"><a class="btn secondary small" href="#studenti" data-go="studenti">Popis studenata</a><a class="btn secondary small" href="#novi-zadatak" data-act="addTask">Dodaj zadatak</a><a class="btn secondary small" href="#produljenje" data-go="produljenje">Produljenje roka</a><a class="btn secondary small" href="#zbirni" data-go="zbirni">Zbirni pregled</a><a class="btn secondary small" href="#izvoz" data-go="izvoz">Izvoz za Merlin</a><button class="btn secondary small" type="button" data-act="newCode">Novi kod za upis</button></div>' +
-        '<div class="task"><h3>Seminarski rad „Lokalni mediji i izborna kampanja”</h3><p class="meta">Rok 8. 11. 2026. u 23:59 · objavljen 15. 10. 2026. · studenti po prezimenu</p>' + taskFacts(T1) + subRows(T1) +
-        '<div class="acts"><a class="btn small" href="#brz-put" data-go="brz-put">Brz put kroz radove</a></div></div>' +
-        '<div class="task"><h3>Esej „Prikaz članka”</h3><p class="meta">Rok 15. 10. 2026. u 23:59 · rok je prošao</p>' + taskFacts(T0) + subRows(T0) + '</div></section>';
+        '<div class="kv"><div><span>Uloga</span>nositelj (Vi)</div><div><span>Upisano</span>4 studenta · grupe 2 i 4</div><div><span>Kod za upis</span>' + codeKv(code) + '</div><div><span>Sljedeći rok</span>8. 11. 2026. u 23:59</div></div>' +
+        codeBlock(code) +
+        courseActs() +
+        '<div class="task"><h3>Seminarski rad „Lokalni mediji i izborna kampanja”</h3><p class="meta">Rok 8. 11. 2026. u 23:59 · objavljen 15. 10. 2026. · studenti po prezimenu</p>' + taskFacts(T1) + taskExtra('t1') + subRows(T1) + taskActs('t1') + '</div>' +
+        '<div class="task"><h3>Esej „Prikaz članka”</h3><p class="meta">Rok 15. 10. 2026. u 23:59 · rok je prošao</p>' + taskFacts(T0) + taskExtra('t0') + subRows(T0) + taskActs('t0') + '</div></section>';
       h += '<section class="card course" aria-labelledby="k-b"><h2 id="k-b">Kolegij B</h2><div class="kv"><div><span>Uloga</span>suradnik · nositelj Nastavnik B</div><div><span>Upisano</span>3 studenta</div><div><span>Kod za upis</span>Izdaje nositelj kolegija.</div><div><span>Zadaci</span>nijedan objavljen</div></div></section>';
-      h += App.state.dlg === 'kod' ? dialog('dk-h', 'Izdati novi kod za upis?', '<p class="note">Novi kod prikazuje se jednom, pri izdavanju. Dosadašnji kod prestaje vrijediti; već upisani studenti ostaju upisani.</p><div class="sb-acts"><button class="btn" type="button" data-act="issue">Izdaj novi kod</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div>') : '';
+      h += App.state.dlg === 'kod' ? dialog('dk-h', 'Izdati novi kod za upis?', '<p class="note">Novi kod prikazuje se jednom, pri izdavanju. Dosadašnji kod prestaje vrijediti; već upisani studenti ostaju upisani.</p>' +
+        '<div class="field" data-nf4="NZ-13"><label for="f-kv">Kod vrijedi do</label><select class="input" id="f-kv" aria-describedby="kv-h"><option value="5. 12. 2026.">5. 12. 2026. (30 dana)</option><option value="3. 2. 2027.">3. 2. 2027. (90 dana)</option><option value="31. 1. 2027.">31. 1. 2027. (do kraja semestra)</option></select><span class="meta" id="kv-h">Nakon tog datuma kod se više ne može upisati.</span></div>' +
+        '<div class="sb-acts"><button class="btn" type="button" data-act="issue">Izdaj novi kod</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div>') : '';
+      h += App.state.dlg === 'opozovi' ? dialog('do2-h', 'Opozvati kod za upis?', '<p class="note" data-nf4="NZ-13">Studenti se ovim kodom više neće moći upisati. Već upisani studenti ostaju upisani. Novi kod možete izdati kasnije.</p><div class="sb-acts"><button class="btn" type="button" data-act="revoke">Opozovi kod</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div>') : '';
       return h;
     },
-    actions: {
+    actions: mix({
       newCode: function () { App.state.dlg = 'kod'; App.rerender(); },
       addTask: function () { App.state.wiz = { f: {}, kol: 'Kolegij A' }; App.state.variant['novi-zadatak'] = 'puno'; App.go('novi-zadatak'); },
-      issue: function () { App.state.dlg = null; App.state.code = true; App.rerender(); App.toast('Novi kod za upis je izdan.'); },
+      issue: function () { var kv = document.getElementById('f-kv'); n4().code = { until: kv ? kv.value : '5. 12. 2026.', revoked: false }; App.state.dlg = null; App.state.code = true; App.rerender(); App.toast('Novi kod za upis je izdan.'); },
       check: function () { App.state.variant.kolegiji = 'puno'; App.rerender(); App.toast('Popis zadataka učitan s poslužitelja; zadatak nije objavljen.'); }
-    }
+    }, KOL_ACTS)
   });
 
   /* ---------- N-02/N-03 Novi kolegij i zadatak ---------- */
@@ -578,21 +858,17 @@ legend { font-weight:600; padding:0 4px; }
         '<div class="field"><label for="f-rok">Rok</label><input class="input" id="f-rok" name="rok" value="' + fv('rok', '10. 12. 2026. u 23:59') + '"><span class="meta">Po zagrebačkom vremenu; mora biti nakon otvaranja.</span></div>' +
         '<div class="field"><label for="f-min">Najmanje riječi</label><input class="input" id="f-min" name="min" inputmode="numeric" value="' + fv('min', '3000') + '"></div>' +
         '<div class="field"><label for="f-max">Najviše riječi</label><input class="input" id="f-max" name="max" inputmode="numeric" value="' + fv('max', '5000') + '"></div></div>' +
-        '<fieldset><legend>Grupe</legend><label class="opt"><input type="checkbox" checked> Grupa 2</label><label class="opt"><input type="checkbox" checked> Grupa 4</label></fieldset>') +
+        '<fieldset aria-describedby="gr-h" data-nf4="NZ-3"><legend>Grupe</legend>' + cbx('g2', fraw('g2', 'da'), 'Grupa 2') + cbx('g4', fraw('g4', 'da'), 'Grupa 4') + '<p class="meta" id="gr-h">Zadatak dobivaju samo studenti odabranih grupa (grupe kolegija čitaju se s poslužitelja, groupIds). Barem jedna grupa mora biti odabrana.</p></fieldset>') +
       sec('zs-3', 'Pravila o AI pomoći i alatima',
         '<p class="note">Pravilo kolegija polazi od pravila fakulteta. Pravilo zadatka može ga samo suziti, ne proširiti.</p>' +
-        '<fieldset><legend>AI pomoćnik u Ducturi</legend>' +
-        radio('ai', 'kolegij', ai, 'Kao u kolegiju: dopušten za sažimanje literature i objašnjenje pojma, uz izjavu') +
-        radio('ai', 'sazimanje', ai, 'Samo sažimanje literature, uz izjavu') +
-        radio('ai', 'ne', ai, 'Nije dopušten u ovom zadatku') + '</fieldset>' +
-        '<fieldset><legend>Vanjski alati</legend>' +
-        radio('vanj', 'da', vanj, 'Dopušteni uz izjavu (kao u kolegiju)') +
-        radio('vanj', 'ne', vanj, 'Nisu dopušteni u ovom zadatku') + '</fieldset>' +
+        aiFs(fraw) + vanjFs(fraw) + qFs(fraw) +
         '<p class="meta">Isto pravilo student vidi u obavijesti prije početka rada i u izjavi pri predaji.</p>') +
       sec('zs-4', 'Što se bilježi',
         '<p class="note">Ovo nije postavka zadatka: isto se bilježi u svakom radu, a student to vidi u obavijesti prije početka rada.</p>' +
         '<ul class="facts"><li>tekst rada i svaka promjena, s vremenom primitka na poslužitelj</li><li>sesije: niz promjena bez prekida duljeg od 30 minuta (prag P-01, postavka fakulteta)</li><li>lijepljenja dulja od 200 znakova (prag P-02), bez izvora ako izvor nije opažen</li><li>uvoz datoteke i prijenos teksta iz AI pomoćnika</li><li>poslane verzije, predaja i potvrda s otiskom teksta</li></ul>' +
         '<p class="note">Ductura ne bilježi ništa izvan rada: ni druge prozore, ni zaslon, ni kameru. Ne zna tko je tipkao.</p>') +
+      sec('zs-5', 'Pravila predaje', rulesFs(fraw)) +
+      sec('zs-6', 'Obavijest studentima', mailFs(fraw, 'o novom zadatku')) +
       '<p class="meta">Ovim gumbom ništa se ne objavljuje. Sljedeći je korak „Pregled i objava”, gdje potvrđujete objavu.</p>' +
       '<div class="sb-acts"><button class="btn" type="submit">Pregled i objava</button><a class="btn secondary" href="#kolegiji" data-go="kolegiji">Odustani</a></div></form>';
   }
@@ -601,14 +877,17 @@ legend { font-weight:600; padding:0 4px; }
       '<div class="sb-kv"><span>Kolegij</span><b>' + wzKol() + '</b></div><div class="sb-kv"><span>Naslov</span><b>' + fv('nas', 'Analiza izborne kampanje') + '</b></div>' +
       '<div class="sb-kv"><span>Vrsta rada</span><b>' + fv('vrs', 'Seminarski rad') + '</b></div>' +
       '<div class="sb-kv"><span>Otvaranje</span><b>' + fv('otv', '10. 11. 2026. u 8:00') + '</b></div><div class="sb-kv"><span>Rok</span><b>' + fv('rok', '10. 12. 2026. u 23:59') + '</b></div>' +
-      '<div class="sb-kv"><span>Opseg</span><b>' + fv('min', '3000') + ' do ' + fv('max', '5000') + ' riječi</b></div><div class="sb-kv"><span>Grupe</span><b>2 i 4</b></div>' +
-      '<div class="sb-kv"><span>AI pomoćnik</span><b>' + AI_OPT[fraw('ai', 'kolegij')] + '</b></div><div class="sb-kv"><span>Vanjski alati</span><b>' + EXT_OPT[fraw('vanj', 'da')] + '</b></div>' +
-      '<p class="note">Nakon objave studenti grupa 2 i 4 dobivaju obavijest o zadatku. Rok se kasnije mijenja samo produljenjem, koje se bilježi.</p>' +
+      '<div class="sb-kv"><span>Opseg</span><b>' + fv('min', '3000') + ' do ' + fv('max', '5000') + ' riječi</b></div><div class="sb-kv"><span>Grupe</span><b>' + grpTxt(fraw).replace('grupa ', '').replace('grupe ', '') + '</b></div>' +
+      '<div class="sb-kv"><span>Asistent</span><b>' + AI_OPT[fraw('ai', 'kolegij')] + '</b></div><div class="sb-kv"><span>Vanjski alati</span><b>' + EXT_OPT[fraw('vanj', 'da')] + '</b></div>' +
+      '<div class="sb-kv"><span>Predaja nakon roka</span><b>' + showVal('late', fraw('late', 'ne')) + '</b></div><div class="sb-kv"><span>Povlačenje predaje</span><b>' + showVal('wd', fraw('wd', 'da')) + '</b></div><div class="sb-kv"><span>Izjava o korištenju alata</span><b>' + showVal('decl', fraw('decl', 'da')) + '</b></div>' +
+      '<div class="sb-kv"><span>Pitanje uz izjavu</span><b>' + showVal('q', fraw('q', '')) + '</b></div><div class="sb-kv"><span>Obavijest e-poštom</span><b>' + (fraw('mail', 'ne') === 'da' ? 'uključena (bez naslova rada i bez rada)' : 'isključena') + '</b></div>' +
+      noticePreview(fraw) +
+      '<p class="note">Nakon objave studenti ' + grpTxt(fraw) + ' dobivaju obavijest o zadatku. Rok se kasnije mijenja produljenjem (bilježi se) ili novom verzijom zadatka, kad studenti ponovno potvrđuju obavijest.</p>' +
       '<div class="sb-acts"><button class="btn" type="button" data-act="publish">Objavi zadatak</button><button class="btn secondary" type="button" data-act="edit">Natrag na obrazac</button></div></section>';
   }
   App.register('novi-zadatak', {
     title: 'N-02/N-03 Novi kolegij i zadatak', shell: 'side', nav: 'kolegiji', narrow: true,
-    note: ['N-02/N-03', 'gradi se sada', 'kolegij i zadatak su razdvojeni: kolegij, kod, „Dodaj zadatak”; zadatak je jedan obrazac u odjeljcima, ne čarobnjak u pet koraka (odstupanje od slike N-03, odluka vlasnika); obavezan korak „Pregled i objava”; pravilo zadatka smije samo suziti pravilo kolegija (D-52)'],
+    note: ['N-02/N-03', 'gradi se sada · NF-4 NZ-3, NZ-4, NZ-7, NZ-9, NZ-15', 'kolegij i zadatak su razdvojeni: kolegij, kod, „Dodaj zadatak”; zadatak je jedan obrazac u odjeljcima, ne čarobnjak u pet koraka (odstupanje od slike N-03, odluka vlasnika); obavezan korak „Pregled i objava”; pravilo zadatka smije samo suziti pravilo kolegija (D-52)'],
     variants: [{ id: 'puno', label: 'puno (obrazac zadatka)' }, { id: 'pregled', label: 'Pregled i objava' }, { id: 'prazno', label: 'prazno (novi kolegij)' }, { id: 'kolegij-stvoren', label: 'kolegij stvoren, kod za upis' }, { id: 'pogreske', label: 'pogreške u obrascu' }, { id: 'ucitavanje', label: 'učitavanje (objava u tijeku)' }, { id: 'prekinuto', label: 'objava prekinuta, ishod nije poznat' }, { id: 'greska', label: 'greška objave' }],
     render: function (c) {
       var v = c.variant, st = App.state.wiz;
@@ -629,6 +908,7 @@ legend { font-weight:600; padding:0 4px; }
       if (v === 'pogreske') st.f.nas = '';
       return head('Novi zadatak', 'Jedan obrazac u odjeljcima. Ništa se ne objavljuje prije koraka „Pregled i objava”.') + taskForm(errs);
     },
+    after: function (stage) { liveStudentSees(stage); },
     actions: {
       course: function (form) {
         var n = form.kn.value.trim();
@@ -640,14 +920,15 @@ legend { font-weight:600; padding:0 4px; }
       review: function (form) {
         var s = App.state.wiz;
         Array.prototype.forEach.call(form.querySelectorAll('input[name], textarea[name], select[name]'), function (el) {
-          if (el.type === 'checkbox') return;
+          if (el.type === 'checkbox') { if (el.name) s.f[el.name] = el.checked ? 'da' : 'ne'; return; }
           if (el.type === 'radio') { if (el.checked) s.f[el.name] = el.value; return; }
           s.f[el.name] = el.value;
         });
         if (!String(s.f.nas || '').trim()) { s.errs = { any: 'naslov je obavezan.', nas: true }; App.state.variant['novi-zadatak'] = 'puno'; App.rerender(); var e = document.getElementById('f-nas'); if (e) e.focus(); return; }
+        if (s.f.g2 === 'ne' && s.f.g4 === 'ne') { s.errs = { any: 'odaberite barem jednu grupu.', grp: true }; App.state.variant['novi-zadatak'] = 'puno'; App.rerender(); var g = document.querySelector('input[name=g2]'); if (g) g.focus(); return; }
         s.errs = null; App.state.variant['novi-zadatak'] = 'pregled'; App.rerender();
       },
-      publish: function () { App.state.wiz = { f: {}, kol: 'Kolegij A' }; App.state.variant['novi-zadatak'] = 'puno'; App.toast('Zadatak je objavljen. Studenti grupa 2 i 4 dobivaju obavijest.'); App.go('kolegiji'); }
+      publish: function () { var n = n4(), fw = App.state.wiz.f; n.mailSent = fw.mail === 'da' ? grpCount(function (a, b) { return fw[a] != null ? fw[a] : b; }) : null; App.state.wiz = { f: {}, kol: 'Kolegij A' }; App.state.variant['novi-zadatak'] = 'puno'; App.toast('Zadatak je objavljen. Studenti dobivaju obavijest u aplikaciji.'); App.go('kolegiji'); }
     }
   });
 
@@ -655,31 +936,32 @@ legend { font-weight:600; padding:0 4px; }
   var DORADA_0 = { state: 'otvoren', at: '5. 11. 2026. u 21:40', rok: '12. 11. 2026. u 23:59', text: 'Dopunite izvor za podatke o oglašavanju.' };
   App.register('studenti', {
     title: 'N-04 Popis studenata', shell: 'side', nav: 'kolegiji',
-    note: ['N-04', 'gradi se sada', 'popis po studentu kroz sve zadatke kolegija (ime, grupa, stanje riječima), abecedno; filtar grupe ako poslužitelj vraća grupe; uklanjanje studenta je zaseban korak; bez jantarne, „Čeka doradu” je samo tekst (D-128 O-3)'],
+    note: ['N-04', 'gradi se sada · NF-4 NZ-10, NZ-11, NZ-5, NZ-6, NZ-8, NZ-12', 'popis po studentu kroz sve zadatke kolegija (ime, grupa, stanje riječima, vrijeme i verzija predaje, produljenje roka, potvrda obavijesti, dorada), abecedno; filtri stanja i grupe, poredak po prezimenu ili stanju; radnje na retku: „Dopusti predaju nakon roka…” i „Zatraži doradu…”; uklanjanje studenta je zaseban korak; bez jantarne, „Čeka doradu” je samo tekst (D-128 O-3)'],
     variants: std([{ id: 'dorada', label: 'čeka doradu (samo tekst)' }]),
     render: function (c) {
       var v = c.variant, title = 'Kolegij A: studenti', lede = 'Svaki student kroz sve zadatke kolegija. Popis je abecedan i ne može se poredati po brojevima. Stanje rada piše se riječima.';
       var s = sideState(v, title, lede, 'Učitavanje popisa studenata…', 'Popis studenata trenutačno nije dostupan. Pokušajte ponovno.'); if (s) return s;
-      if (v === 'prazno') return head(title) + '<section class="card center"><h2>Još se nitko nije upisao</h2><p class="note">Izdajte kod za upis i podijelite ga sa studentima. Kod se prikazuje jednom, pri izdavanju.</p><a class="btn" href="#kolegiji" data-go="kolegiji" data-variant="kod">Izdaj novi kod</a></section>';
-      var f = App.state.filter;
-      var keys = T1.filter(function (k) { return f === 'svi' || W[k].group === f; });
-      return head(title, lede) +
-        '<div class="field" style="max-width:280px"><label for="f-gr">Prikaz</label><select class="input" id="f-gr" data-filter><option value="svi"' + (f === 'svi' ? ' selected' : '') + '>Svi (4)</option><option value="Grupa 2"' + (f === 'Grupa 2' ? ' selected' : '') + '>Grupa 2 (2)</option><option value="Grupa 4"' + (f === 'Grupa 4' ? ' selected' : '') + '>Grupa 4 (2)</option></select></div>' +
-        '<ul class="list">' + keys.map(function (k) {
-          var w = W[k], can = w.st !== 'nije-zapoceto';
-          var d = App.state.dorada[k] || (v === 'dorada' && k === 'a' ? DORADA_0 : null);
-          var waits = d && (d.state === 'otvoren' || d.state === 'ponovno otvoren') ? ' Čeka doradu, rok za doradu ' + d.rok + '.' : '';
-          return '<li class="item"><span class="title">' + w.who + ' · ' + w.group + '</span><span class="note">Seminarski rad: ' + subLine(k) + '.' + waits + '</span><span class="note">Esej: ' + subLine(k + '0') + '.</span>' +
-            (can ? '<a class="rowlink" href="#rad" data-go="rad" data-work="' + k + '">Otvori seminarski rad</a>' : '') + '</li>';
-        }).join('') + '</ul>';
+      if (v === 'prazno') return head(title) + '<section class="card center" data-nf4="NZ-1"><h2>Još se nitko nije upisao</h2><p class="note">Izdajte kod za upis i podijelite ga sa studentima. Kod se prikazuje jednom, pri izdavanju.</p><button class="btn" type="button" data-act="issueNew">Izdaj novi kod</button></section>';
+      var all = T1.filter(function (k) { return matches(k, v) || matches(k + '0', v); });
+      var keys = sorted(all), n = n4();
+      var h = head(title, lede) + filters(false) + '<p class="note" role="status">Prikazano ' + keys.length + ' od ' + T1.length + ' ' + studWord(T1.length) + '.</p>';
+      if (!keys.length) return h + '<section class="card center"><h2>Nijedan student ne odgovara filtru</h2><p class="note">Promijenite stanje ili grupu.</p><button class="btn secondary" type="button" data-act="resetFlt">Očisti filtre</button></section>' + rowDialogs();
+      h += '<ul class="list" data-nf4="NZ-10">' + keys.map(function (k) {
+        var w = W[k], can = w.st !== 'nije-zapoceto';
+        return '<li class="item"><span class="title">' + (can ? '<a href="#rad" data-go="rad" data-work="' + k + '">' + w.who + '</a>' : w.who) + ' · ' + w.group + '</span>' +
+          '<span class="note">' + taskLine(k, v) + '</span><span class="note">' + taskLine(k + '0', v) + '</span>' +
+          rowActs(k, 'a') + '</li>';
+      }).join('') + '</ul>';
+      return h + rowDialogs();
     },
-    after: function (stage) {
-      var s = stage.querySelector('[data-filter]');
-      if (s) s.addEventListener('change', function () { App.state.filter = s.value; App.rerender(); var n = document.getElementById('f-gr'); if (n) n.focus(); });
-    }
+    actions: mix({
+      issueNew: function () { App.state.dlg = 'kod'; App.state.variant.kolegiji = 'puno'; App.go('kolegiji'); },
+      resetFlt: function () { var n = n4(); n.st = 'svi'; n.gr = 'svi'; App.rerender(); }
+    }, ROW_ACTS),
+    after: function (stage) { bindFilters(stage); }
   });
 
-  /* ---------- N-16 Radovi uz mentora ---------- */
+/* ---------- N-16 Radovi uz mentora ---------- */
   App.register('mentorstva', {
     title: 'N-16 Radovi uz mentora', shell: 'side',
     note: ['N-16', 'gradi se sada', 'zahtjevi na čekanju s Odobri i Odbij (zaseban korak); razlog odbijanja je neobavezan, a student ga vidi ako ga mentor upiše; uz „Predano” vrijeme predaje i verzija; bez zadnje izmjene, etape i ocjene (D-202); mentorstvo nastaje kad nastavnik odobri zahtjev (D-204)'],
@@ -710,17 +992,17 @@ legend { font-weight:600; padding:0 4px; }
   /* ---------- N-05 Brz put ---------- */
   App.register('brz-put', {
     title: 'N-05 Brz put', shell: 'side',
-    note: ['N-05', 'gradi se sada', '„Otvori rad” je prava poveznica; prethodni i sljedeći; bez točke u boji; broj lijepljenja bez izvora samo u pojedinostima, nikad u popisu i bez poretka; naziv „Predaja u obradi” potvrđen (#1782)'],
+    note: ['N-05', 'gradi se sada · NF-4 NZ-1 (izbornik zadatka; ulaz s kartice zadatka)', '„Otvori rad” je prava poveznica; prethodni i sljedeći; bez točke u boji; broj lijepljenja bez izvora samo u pojedinostima, nikad u popisu i bez poretka; naziv „Predaja u obradi” potvrđen (#1782)'],
     variants: std(),
     render: function (c) {
-      var v = c.variant, title = 'Brz put', lede = 'Seminarski rad „Lokalni mediji i izborna kampanja”, Kolegij A. Radovi jedan za drugim, bez poretka po brojevima.';
+      var v = c.variant, title = 'Brz put', lede = TASK_NAME[n4().bp] + ', Kolegij A. Radovi jedan za drugim, bez poretka po brojevima.';
       var s = sideState(v, title, lede, 'Učitavanje radova…', 'Radovi trenutačno nisu dostupni. Pokušajte ponovno.'); if (s) return s;
       if (v === 'prazno') return head(title, lede) + '<section class="card center"><h2>Nema radova</h2><p class="note">Nijedan student još nije započeo rad u ovom zadatku.</p></section>';
-      var i = App.state.fp, k = T1[i], w = W[k], tab = App.state.fpTab;
-      var list = '<nav class="card fp-list" aria-label="Studenti · po prezimenu" style="padding:12px"><p class="meta">Studenti · po prezimenu</p>' + T1.map(function (kk, j) {
+      var BK = keysOf(n4().bp), i = Math.min(App.state.fp, BK.length - 1), k = BK[i], w = W[k], tab = App.state.fpTab;
+      var list = '<nav class="card fp-list" aria-label="Studenti · po prezimenu" style="padding:12px"><p class="meta">Studenti · po prezimenu</p>' + BK.map(function (kk, j) {
         return '<a href="#brz-put" data-act="pick" data-i="' + j + '"' + (j === i ? ' aria-current="true"' : '') + '>' + W[kk].who + '<span>' + (W[kk].st === 'predano' ? 'Predano' : W[kk].st === 'uzivo' ? 'U pisanju' : 'Obavijest nije potvrđena') + '</span></a>';
       }).join('') + '<p class="meta">Popis se ne može poredati po brojevima.</p></nav>';
-      var stLine = w.st === 'predano' ? 'Predano ' + w.sub + ', prije roka · verzija ' + w.ver : w.st === 'uzivo' ? 'U pisanju.' + (w.ext ? ' Rok produljen do ' + w.ext + '.' : '') : 'Obavijest još nije potvrđena';
+      var stLine = w.st === 'predano' ? 'Predano ' + w.sub + (late(k) ? ', nakon roka' : ', prije roka') + ' · verzija ' + w.ver : w.st === 'nije-predano' ? 'Nije predano · rok je prošao' : w.st === 'uzivo' ? 'U pisanju.' + (w.ext ? ' Rok produljen do ' + w.ext + '.' : '') : 'Obavijest još nije potvrđena';
       var det = '<section class="card" aria-labelledby="fp-h"><h2 id="fp-h">' + w.who + '</h2>' +
         '<div class="sb-kv"><span>Stanje</span><b>' + stLine + '</b></div>' +
         '<div class="sb-kv"><span>Zadnja promjena</span><b>' + (w.sub || w.last || 'nema') + '</b></div>' +
@@ -730,43 +1012,63 @@ legend { font-weight:600; padding:0 4px; }
           '<div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="' + (tab === 'tekst') + '" data-act="tab" data-t="tekst">Tekst rada</button><button type="button" role="tab" aria-selected="' + (tab === 'sazetak') + '" data-act="tab" data-t="sazetak">Sažetak procesa</button></div>' +
           (tab === 'tekst' ? '<div class="sheet ed-sheet" style="padding:24px">' + (k === 'a' ? body({ noSug: true }).split('<h2>2.')[0] + '<p class="meta">…</p>' : '<p>Lokalni mediji u kampanji: radna verzija. Student piše; prikazan je zadnji tekst koji je poslužitelj primio.</p>') + '</div>'
             : '<ul class="facts"><li>6 sesija · aktivno vrijeme uređivanja 8 h 05 min</li><li>1 lijepljenje dulje od 200 znakova, izvor nije opažen</li><li>1 prijenos iz AI pomoćnika · Pružatelj A, model M-2</li><li>Zapis ima praznine (vidi puni sažetak)</li></ul><a href="#sazetak" data-go="sazetak">Otvori puni sažetak procesa</a>')) +
-        '<div class="sb-acts"><button class="btn secondary" type="button" data-act="prev"' + (i === 0 ? ' aria-disabled="true"' : '') + '>Prethodni</button><button class="btn secondary" type="button" data-act="next"' + (i === T1.length - 1 ? ' aria-disabled="true"' : '') + '>Sljedeći</button>' +
+        '<div class="sb-acts"><button class="btn secondary" type="button" data-act="prev"' + (i === 0 ? ' aria-disabled="true"' : '') + '>Prethodni</button><button class="btn secondary" type="button" data-act="next"' + (i === BK.length - 1 ? ' aria-disabled="true"' : '') + '>Sljedeći</button>' +
         (w.st !== 'nije-zapoceto' ? '<a class="btn" href="#rad" data-go="rad" data-work="' + k + '">Otvori rad</a>' : '') + '</div></section>';
-      return head(title, lede) + '<div class="fp">' + list + det + '</div>';
+      return head(title, lede) + '<div data-nf4="NZ-1">' + sel('f-bp', 'Zadatak', [['t1', 'Seminarski rad · rok 8. 11. 2026.'], ['t0', 'Esej · rok je prošao']], n4().bp, 'data-bp') + '</div><div class="fp">' + list + det + '</div>';
     },
+    after: function (stage) { var b = stage.querySelector('[data-bp]'); if (b) b.addEventListener('change', function () { n4().bp = b.value; App.state.fp = 0; App.rerender(); var x = document.getElementById('f-bp'); if (x) x.focus(); }); },
     actions: {
       pick: function (el) { App.state.fp = +el.getAttribute('data-i'); App.rerender(); },
       tab: function (el) { App.state.fpTab = el.getAttribute('data-t'); App.rerender(); },
       prev: function () { App.state.fp = Math.max(0, App.state.fp - 1); App.rerender(); },
-      next: function () { App.state.fp = Math.min(T1.length - 1, App.state.fp + 1); App.rerender(); }
+      next: function () { App.state.fp = Math.min(keysOf(n4().bp).length - 1, App.state.fp + 1); App.rerender(); }
     }
   });
 
   /* ---------- N-17 Zbirni pregled ---------- */
-  function doradaLabel(k) { var d = App.state.dorada[k]; return d ? 'zatražena · ' + d.state : 'nije zatražena'; }
-  function sumTable(keys) {
-    return '<div class="tbl" tabindex="0" role="region" aria-label="Tablica predaja"><table><thead><tr><th scope="col">Student</th><th scope="col">Stanje</th><th scope="col">Vrijeme predaje</th><th scope="col">Nakon roka</th><th scope="col">Stanje zapisa</th><th scope="col">Dorada</th></tr></thead><tbody>' +
+  function sumTable(keys, t, v, pre) {
+    var cols = ['Student', 'Stanje', 'Predaja', 'Nakon roka', 'Rok', 'Obavijest', 'Stanje zapisa', 'Dorada', 'Radnje'];
+    return '<div class="tbl sum" tabindex="0" role="region" aria-label="Tablica predaja: ' + TASK_NAME[t] + '"><table role="table"><thead role="rowgroup"><tr role="row">' + cols.map(function (x) { return '<th scope="col" role="columnheader">' + x + '</th>'; }).join('') + '</tr></thead><tbody role="rowgroup">' +
       keys.map(function (k) {
-        var w = W[k];
-        return '<tr><td><a href="#rad" data-go="rad" data-work="' + k + '">' + w.who + '</a></td><td>' + (w.st === 'predano' ? 'predano' : w.st === 'uzivo' ? 'u pisanju' + (w.ext ? ', rok produljen' : '') : w.st === 'nije-predano' ? 'nije predano' : 'obavijest nije potvrđena') + '</td>' +
-          '<td>' + (w.sub || 'nema') + '</td><td>' + (w.sub ? (late(k) ? 'da' : 'ne') : 'nema') + '</td><td>' + (w.sub ? (w.gaps ? 'ima praznine' : 'cjelovit') : 'nema') + '</td><td>' + doradaLabel(k) + '</td></tr>';
+        var w = W[k], e = extOf(k), d = dorOf(k, v), can = w.st !== 'nije-zapoceto';
+        function td(lbl, inner) { return '<td role="cell" data-label="' + lbl + '">' + inner + '</td>'; }
+        return '<tr role="row">' + td('Student', (can ? '<a href="#rad" data-go="rad" data-work="' + k + '">' + w.who + '</a>' : w.who) + '<br><span class="meta">' + w.group + '</span>') +
+          td('Stanje', stLabel(k) + (w.st === 'uzivo' && e ? ', rok produljen' : '')) +
+          td('Predaja', w.sub ? w.sub + ' · verzija ' + w.ver : 'nema') +
+          td('Nakon roka', w.sub ? (late(k) ? 'da' : 'ne') : 'nema') +
+          td('Rok', e ? extLink(k) : 'Rok ' + TASKS[w.task].due) +
+          td('Obavijest', ackOf(k).txt) +
+          td('Stanje zapisa', w.sub ? (w.gaps ? 'ima praznine' : 'cjelovit') : 'nema') +
+          td('Dorada', doradaTxt(d)) +
+          td('Radnje', rowActs(k, pre)) + '</tr>';
       }).join('') + '</tbody></table></div>';
   }
   App.register('zbirni', {
     title: 'N-17 Zbirni pregled', shell: 'side',
-    note: ['N-17', 'gradi se sada', 'zaseban ekran se gradi; uz njega redak zbroja riječima na Mojim kolegijima i stavka „Zbirni” u navigaciji; EQ1 je zatvoren'],
-    variants: std(),
+    note: ['N-17', 'gradi se sada · NF-4 NZ-2, NZ-8, NZ-10, NZ-11, NZ-12', 'zaseban ekran uz redak zbroja riječima na Mojim kolegijima i stavku „Zbirni” u navigaciji; EQ1 je zatvoren; stvarni podaci po studentu (vrijeme i verzija predaje, produljenje, potvrda obavijesti, dorada), filtri, poredak i kartice ispod 760 px; izbor zadatka kolegija'],
+    variants: std([{ id: 'dorada', label: 'dorada zatražena' }]),
     render: function (c) {
       var v = c.variant, title = 'Zbirni pregled', lede = 'Činjenice o predaji po zadatku, redom po prezimenu. Bez poretka po brojevima i bez ocjene.';
       var s = sideState(v, title, lede, 'Učitavanje zbirnog pregleda…', 'Zbirni pregled trenutačno nije dostupan. Pokušajte ponovno.'); if (s) return s;
-      if (v === 'prazno') return head(title, lede) + '<section class="card center"><h2>Nema objavljenih zadataka</h2><p class="note">Zbirni pregled pojavljuje se kad objavite prvi zadatak.</p><a class="btn" href="#novi-zadatak" data-go="novi-zadatak" data-variant="puno">Dodaj zadatak</a></section>';
-      return head(title, lede) +
-        '<section class="card"><h2>Seminarski rad „Lokalni mediji i izborna kampanja”</h2><p class="meta">Rok 8. 11. 2026. u 23:59 · predano 1, u pisanju 2, obavijest nije potvrđena 1</p>' + sumTable(T1) + '</section>' +
-        '<section class="card"><h2>Esej „Prikaz članka”</h2><p class="meta">Rok 15. 10. 2026. u 23:59 · predano 3 (od toga 1 nakon roka), nije predano 1</p>' + sumTable(T0) + '</section>';
-    }
+      if (v === 'prazno') return head(title, lede) + '<section class="card center" data-nf4="NZ-1"><h2>Nema objavljenih zadataka</h2><p class="note">Zbirni pregled pojavljuje se kad objavite prvi zadatak.</p><a class="btn" href="#novi-zadatak" data-go="novi-zadatak" data-variant="puno">Dodaj zadatak</a></section>';
+      var n = n4(), tasks = n.zt === 'svi' ? ['t1', 't0'] : [n.zt];
+      var h = head(title, lede) + '<p class="meta">Kolegij A · akademska godina 2026./2027.</p>' + filters(true);
+      var shown = 0;
+      tasks.forEach(function (t) {
+        var keys = sorted(keysOf(t).filter(function (k) { return matches(k, v); })); shown += keys.length;
+        var late0 = keysOf(t).filter(function (k) { return late(k); }).length;
+        h += '<section class="card" aria-labelledby="z-' + t + '"><h2 id="z-' + t + '">' + TASK_NAME[t] + '</h2><p class="meta">Rok ' + DUE_OF[t] + (t === 't0' ? ' · rok je prošao' : '') + ' · ' + (t === 't1' ? 'predano 1, u pisanju 2, obavijest nije potvrđena 1' : 'predano 3 (od toga ' + late0 + ' nakon roka), nije predano 1') + '</p>' +
+          '<p class="note" data-nf4="NZ-8 NZ-12 NZ-11">' + ackLine(t) + ' ' + doradaLine(t) + ' Nije započelo: ' + notStarted(t) + '.</p>' +
+          '<div class="acts"><a class="btn secondary small" href="#izvoz" data-act="pickExp" data-t="' + t + '">Izvoz za Merlin</a><a class="btn secondary small" href="#produljenje" data-act="pickExt" data-t="' + t + '">Produljenje</a></div>' +
+          (keys.length ? sumTable(keys, t, v, 'z' + t) : '<p class="note">Nijedan student ne odgovara filtru. <button class="btn secondary small" type="button" data-act="resetFlt">Očisti filtre</button></p>') + '</section>';
+      });
+      return h + rowDialogs();
+    },
+    actions: mix({ resetFlt: function () { var n = n4(); n.st = 'svi'; n.gr = 'svi'; App.rerender(); }, pickExp: KOL_ACTS.pickExp, pickExt: KOL_ACTS.pickExt }, ROW_ACTS),
+    after: function (stage) { bindFilters(stage); }
   });
 
-  /* ---------- N-06/N-07/N-08 Rad ---------- */
+/* ---------- N-06/N-07/N-08 Rad ---------- */
   function workFor(v) {
     var k = App.state.work, w = W[k];
     if (v === 'prijedlog') return 'a';
@@ -817,7 +1119,8 @@ legend { font-weight:600; padding:0 4px; }
     var d = doradaOf(k, v);
     if (!d) return '';
     var acts = d.state === 'student navodi da je proveden'
-      ? '<div class="acts"><button class="btn small" type="button" data-act="accept">Prihvati doradu</button><button class="btn secondary small" type="button" data-act="reopen">Ponovno otvori</button></div>' : '';
+      ? '<div class="acts"><button class="btn small" type="button" data-act="accept">Prihvati doradu</button><button class="btn secondary small" type="button" data-act="reopen">Ponovno otvori</button></div>'
+      : (d.state === 'otvoren' || d.state === 'ponovno otvoren') ? '<div class="acts" data-nf4="NZ-12"><button class="btn secondary small" type="button" data-act="withdrawReq">Povuci zahtjev</button></div>' : '';
     return '<div class="banner" role="status"><p><b>Zahtjev za doradu · ' + d.state + '</b> · zatražen ' + d.at + ' · rok za doradu ' + d.rok + '</p><p class="note">„' + esc(d.text) + '”</p>' +
       '<p class="meta">Stanja zahtjeva: otvoren, student navodi da je proveden, prihvaćen, ponovno otvoren. Isti zahtjev vidi i student.</p>' + acts + '</div>';
   }
@@ -853,14 +1156,12 @@ legend { font-weight:600; padding:0 4px; }
       var aside = '<aside class="panel" aria-labelledby="cm-h"><div class="sb-top"><h2 id="cm-h">Komentari i prijedlozi</h2></div><div class="sb-body">' +
         '<p class="meta">Tekst rada je samo za čitanje. Izmjene u tekstu idu kao prijedlozi (zadano). Isti komentar vidi i student.</p>' + threads(k, true, sugNow) + '</div></aside>';
       var out = bk(hd + ban + '<div class="rd-two"><article class="sheet ed-sheet" aria-label="Tekst rada">' + paper + '</article>' + aside + '</div>');
-      if (App.state.dlg === 'dorada') out += dialog('dd-h', 'Zatražiti doradu?',
-        '<form class="sb-body" style="padding:0" data-submit="sendDorada"><div class="field"><label for="f-dd">Što treba doraditi</label><textarea class="input" id="f-dd" name="dd" aria-describedby="dd-hint"></textarea><span class="meta" id="dd-hint">Student vidi ovaj tekst uz rad. Zahtjev ne mijenja predani rad ni potvrdu o predaji.</span></div>' +
-        '<div class="field"><label for="f-ddr">Rok za doradu</label><input class="input" id="f-ddr" name="ddr" value="12. 11. 2026. u 23:59"></div>' +
-        '<div class="sb-acts"><button class="btn" type="submit">Pošalji zahtjev</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div></form>');
+      if (App.state.dlg === 'dorada') out += doradaDlg(App.state.work, 'sendDorada');
       return out;
     },
     actions: {
       askDorada: function () { App.state.dlg = 'dorada'; App.rerender(); },
+      withdrawReq: function () { delete App.state.dorada[App.state.work]; App.state.variant.rad = 'puno'; App.rerender(); App.toast('Zahtjev za doradu je povučen. Student više ne vidi zahtjev.'); },
       sendDorada: function (form) {
         var t = form.dd.value.trim();
         if (!t) { form.dd.setAttribute('aria-invalid', 'true'); form.dd.focus(); App.toast('Upišite što treba doraditi.'); return; }
@@ -1185,34 +1486,49 @@ legend { font-weight:600; padding:0 4px; }
   var OLD_DUE = '8. 11. 2026. u 23:59';
   /* Popis razloga je primjer: odluka traži kratak popis općih razloga bez slobodnog teksta, a sam popis određuje ADR. */
   var EXT_REASONS = ['Opravdan razlog', 'Tehnička poteškoća', 'Dogovor s nastavnikom', 'Produljenje za sve'];
-  function exts() { return App.state.ext || (App.state.ext = [{ who: 'Student D', to: '12. 11. 2026. u 23:59', reason: EXT_REASONS[0], at: '4. 11. 2026. u 9:20' }]); }
   App.register('produljenje', {
     title: 'N-13 Produljenje roka (gradnja čeka ADR)', shell: 'side', nav: 'kolegiji', narrow: true,
-    note: ['N-13', 'gradi se, ali čeka', 'GRADNJA ČEKA ADR, rok 30. 11. 2026.; ovaj prikaz je oblik funkcije kao ulaz u ADR: jednom studentu ili svima, pokreće samo nastavnik, razlog s kratkog popisa bez slobodnog teksta (popis razloga ovdje je primjer), trag se ne briše'],
-    variants: std([{ id: 'odobreno', label: 'produljenje zabilježeno' }, { id: 'za-sve', label: 'za sve studente' }, { id: 'sukob', label: 'student je već predao' }]),
+    note: ['N-13', 'gradi se, ali čeka · NF-4 NZ-2, NZ-5, NZ-6', 'GRADNJA ČEKA ADR, rok 30. 11. 2026.; ovaj prikaz je oblik funkcije kao ulaz u ADR: jednom studentu ili svima, pokreće samo nastavnik, razlog s kratkog popisa bez slobodnog teksta (popis razloga ovdje je primjer), trag se ne briše; NF-4: izbor zadatka, produljenje i za zadatak kojem je rok prošao, povijest s filtrom po studentu i tekstom „Student vidi”, iznimka kasne predaje (A i B)'],
+    variants: std([{ id: 'izbor', label: 'izbor zadatka' }, { id: 'odobreno', label: 'produljenje zabilježeno' }, { id: 'za-sve', label: 'za sve studente' }, { id: 'sukob', label: 'student je već predao' }]),
     render: function (c) {
-      var v = c.variant, title = 'Produljenje roka', lede = 'Seminarski rad „Lokalni mediji i izborna kampanja”, Kolegij A · rok 8. 11. 2026. u 23:59. Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.';
-      var s = sideState(v, title, lede, 'Učitavanje rokova…', 'Rokove trenutačno nije moguće učitati. Pokušajte ponovno.'); if (s) return s;
-      var L = exts(), all = v === 'za-sve' || App.state.extFor === 'svi';
-      var list = v === 'prazno' ? '<p class="note">Nijedan rok nije produljen.</p>' : '<ul class="list">' + L.map(function (e) { return '<li class="item"><span class="title">' + esc(e.who) + ' · novi rok ' + esc(e.to) + '</span><span class="meta">Stari rok ' + OLD_DUE + ' · razlog: ' + esc(e.reason) + ' · zabilježio Nastavnik A, ' + e.at + '</span></li>'; }).join('') + '</ul><p class="meta">Zapis o produljenju (stari i novi rok, tko i kada) se ne briše.</p>';
+      var v = c.variant, n = n4(), t = v === 'izbor' ? null : (n.ext || 't1'), title = 'Produljenje roka';
+      var lede0 = 'Kolegij A. Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.';
+      var s = sideState(v, title, lede0, 'Učitavanje rokova…', 'Rokove trenutačno nije moguće učitati. Pokušajte ponovno.'); if (s) return s;
+      var chooser = '<div class="field" style="max-width:420px" data-nf4="NZ-2"><label for="f-pt">Zadatak</label><select class="input" id="f-pt" data-ptask><option value=""' + (t ? '' : ' selected') + '>Odaberite zadatak</option><option value="t1"' + (t === 't1' ? ' selected' : '') + '>' + TASK_NAME.t1 + ' · rok 8. 11. 2026.</option><option value="t0"' + (t === 't0' ? ' selected' : '') + '>' + TASK_NAME.t0 + ' · rok je prošao</option></select></div>';
+      if (!t) return head(title, lede0) + chooser + '<section class="card center"><p class="note">Odaberite zadatak da biste vidjeli rokove i produljili rok. Produljenje je moguće i za zadatak kojem je rok prošao.</p></section>';
+      var old = DUE_OF[t], lede = TASK_NAME[t] + ', Kolegij A · rok ' + old + '. Produljenje pokrećete samo Vi; student ga ne traži kroz Ducturu.';
+      var L = exts(), all = v === 'za-sve' || App.state.extFor === 'svi', keys = keysOf(t);
+      var who = n.extFilter, Lf = L.filter(function (e) { return who === 'svi' || e.who === who || e.who === 'Svi studenti zadatka'; });
+      var list;
+      if (v === 'prazno' || !L.length) list = '<p class="note">Nijedan rok nije produljen.</p>';
+      else if (!Lf.length) list = '<p class="note">Za ' + esc(who) + ' nema zapisa.</p>';
+      else list = '<ul class="list" data-nf4="NZ-6">' + Lf.map(function (e) {
+        var seen = e.kind === 'iznimka-A' || e.kind === 'iznimka-B' ? e.vis : true;
+        return '<li class="item"><span class="title">' + esc(e.who) + ' · novi rok ' + esc(e.to) + (e.kind === 'iznimka-A' || e.kind === 'iznimka-B' ? ' <span class="tag open">iznimka' + (e.kind === 'iznimka-B' ? ' (posebna, samo prototip)' : '') + '</span>' : '') + '</span>' +
+          '<span class="meta">Stari rok ' + old + ' · razlog: ' + esc(e.reason) + ' · zabilježio Nastavnik A, ' + e.at + '</span>' +
+          '<span class="meta">Student vidi: Bio ' + old + (seen ? ', razlog: ' + (REASON_SHORT[e.reason] || esc(e.reason)) : '; razlog nije prikazan') + '</span></li>';
+      }).join('') + '</ul><p class="meta">Zapis o produljenju (stari i novi rok, tko i kada) se ne briše. Razlog koji je zabilježio drugi nastavnik kolegija ovdje se ne prikazuje: vidi ga samo nastavnik koji ga je zabilježio i student.</p>';
       var top = '';
-      if (v === 'odobreno') top = '<div class="banner" role="status"><p><b>Produljenje je zabilježeno.</b> Student vidi novi rok uz zadatak. Razlog vidite samo Vi i taj student.</p></div>';
-      if (v === 'sukob') top = '<div class="banner" role="status"><p><b>Student A je predaju zatražio 5. 11. 2026. u 21:14, prije ovog produljenja.</b> Produljenje ne mijenja tu predaju; bilježi se kao dopuna uz nju.</p></div>';
+      if (t === 't0') top += '<div class="banner" role="status" data-nf4="NZ-2"><p><b>Rok ovog zadatka je prošao.</b> Produljenje je i dalje moguće: student koji nije predao može predati do novog roka.</p></div>';
+      if (v === 'odobreno') top += '<div class="banner" role="status"><p><b>Produljenje je zabilježeno.</b> Student vidi novi rok uz zadatak. Razlog vidite samo Vi i taj student.</p></div>';
+      if (v === 'sukob') top += '<div class="banner" role="status"><p><b>Student A je predaju zatražio 5. 11. 2026. u 21:14, prije ovog produljenja.</b> Produljenje ne mijenja tu predaju; bilježi se kao dopuna uz nju.</p></div>';
       var form = '<form class="card" data-submit="save" novalidate><fieldset><legend>Za koga</legend>' +
         '<label class="opt"><input type="radio" name="za" value="jedan"' + (all ? '' : ' checked') + ' data-za> Jedan student</label>' +
-        '<label class="opt"><input type="radio" name="za" value="svi"' + (all ? ' checked' : '') + ' data-za> Svi studenti zadatka (4)</label></fieldset>' +
+        '<label class="opt"><input type="radio" name="za" value="svi"' + (all ? ' checked' : '') + ' data-za> Svi studenti zadatka (' + keys.length + ')</label></fieldset>' +
         (all ? '<p class="note">Novi rok vrijedi za sve studente zadatka. Studenti koji su već predali zadržavaju svoju predaju.</p>' :
-          '<div class="field"><label for="f-ps">Student</label><select class="input" id="f-ps" name="st">' + T1.map(function (k) { return '<option' + ((v === 'sukob' ? k === 'a' : k === 'b') ? ' selected' : '') + '>' + W[k].who + '</option>'; }).join('') + '</select></div>') +
-        '<div class="field"><label for="f-pr">Novi rok</label><input class="input" id="f-pr" name="rok" value="15. 11. 2026. u 23:59" aria-describedby="pr-h"><span class="meta" id="pr-h">Datum i sat po zagrebačkom vremenu (Europe/Zagreb).</span></div>' +
+          '<div class="field"><label for="f-ps">Student</label><select class="input" id="f-ps" name="st">' + keys.map(function (k) { return '<option' + ((v === 'sukob' ? k === 'a' : k === (t === 't0' ? 'd0' : 'b')) ? ' selected' : '') + '>' + W[k].who + '</option>'; }).join('') + '</select></div>') +
+        '<div class="field"><label for="f-pr">Novi rok</label><input class="input" id="f-pr" name="rok" value="' + (t === 't0' ? '20. 11. 2026. u 23:59' : '15. 11. 2026. u 23:59') + '" aria-describedby="pr-h"><span class="meta" id="pr-h">Datum i sat po zagrebačkom vremenu (Europe/Zagreb).</span></div>' +
         '<div class="field"><label for="f-pz">Razlog</label><select class="input" id="f-pz" name="raz" aria-describedby="pz-h">' + EXT_REASONS.map(function (r) { return '<option>' + r + '</option>'; }).join('') + '</select><span class="meta" id="pz-h">Razlog se bira s popisa, bez slobodnog teksta. Vidite ga samo Vi i ' + (all ? 'studenti zadatka' : 'ovaj student') + '.</span></div>' +
         '<div class="sb-acts"><button class="btn" type="submit">Zabilježi produljenje</button><a class="btn secondary" href="#kolegiji" data-go="kolegiji">Odustani</a></div></form>';
-      return head(title, lede) + top + form + '<section class="card" aria-labelledby="pl-h"><h2 id="pl-h">Produljeni rokovi</h2>' + list + '</section>';
+      var flt = '<div class="field" style="max-width:320px" data-nf4="NZ-6"><label for="f-pf">Prikaži zapise za</label><select class="input" id="f-pf" data-pflt><option value="svi"' + (who === 'svi' ? ' selected' : '') + '>Sve studente</option>' + keys.map(function (k) { return '<option' + (who === W[k].who ? ' selected' : '') + '>' + W[k].who + '</option>'; }).join('') + '</select></div>';
+      return head(title, lede) + chooser + top + form + '<section class="card" aria-labelledby="pl-h"><h2 id="pl-h">Produljeni rokovi</h2>' + flt + list + '</section>';
     },
     actions: {
       save: function (form) {
-        var r = form.raz.value;
+        var t = n4().ext || 't1', r = form.raz.value;
         var all = form.querySelector('input[name="za"]:checked').value === 'svi';
-        exts().unshift({ who: all ? 'Svi studenti zadatka' : form.st.value, to: form.rok.value, reason: r, at: '5. 11. 2026. u 21:45' });
+        if (!parse(form.rok.value)) { form.rok.setAttribute('aria-invalid', 'true'); form.rok.focus(); App.toast('Upišite rok u obliku „15. 11. 2026. u 23:59”.'); return; }
+        extsFor(t).unshift({ who: all ? 'Svi studenti zadatka' : form.st.value, to: form.rok.value, reason: r, at: '5. 11. 2026. u 21:45', kind: 'produljenje', vis: true });
         App.state.variant.produljenje = 'odobreno'; App.rerender();
       }
     },
@@ -1220,20 +1536,23 @@ legend { font-weight:600; padding:0 4px; }
       Array.prototype.forEach.call(stage.querySelectorAll('[data-za]'), function (r) {
         r.addEventListener('change', function () { App.state.extFor = r.value; if (App.variant() === 'za-sve') App.state.variant.produljenje = 'puno'; App.rerender(); var x = document.querySelector('[data-za][value="' + r.value + '"]'); if (x) x.focus(); });
       });
+      var pt = stage.querySelector('[data-ptask]'); if (pt) pt.addEventListener('change', function () { n4().ext = pt.value || null; n4().extFilter = 'svi'; if (App.variant() === 'izbor' && pt.value) App.state.variant.produljenje = 'puno'; App.rerender(); var x = document.getElementById('f-pt'); if (x) x.focus(); });
+      var pf = stage.querySelector('[data-pflt]'); if (pf) pf.addEventListener('change', function () { n4().extFilter = pf.value; App.rerender(); var x = document.getElementById('f-pf'); if (x) x.focus(); });
     }
   });
 
-  /* ---------- N-18 Izvoz i paket za Merlin ---------- */
+/* ---------- N-18 Izvoz i paket za Merlin ---------- */
   function fname(k) { return 'prezime-' + W[k].who.slice(-1).toLowerCase() + '_' + (W[k].task === 't0' ? 'prikaz-clanka' : 'lokalni-mediji'); }
   App.register('izvoz', {
     title: 'N-18 Izvoz za Merlin', shell: 'side', nav: 'kolegiji',
-    note: ['N-18', 'gradi se, ali čeka', 'gradi se nakon rada, potvrde predaje i Brzog puta; smije čekati (nije uvjet probe 22. 2. 2027.); jedan paket (.zip) po zadatku, poveznica 24 h; „Preuzmi samo popis”; na ekranu otisak paketa i Kopiraj, otisci datoteka su u CSV-u i u zasebnoj datoteci; CSV stupci po D-286, dopunjeni s dva stupca otiska: „otisak PDF” i „otisak .docx”'],
-    variants: std([{ id: 'priprema', label: 'paket se priprema' }, { id: 'spreman', label: 'paket spreman' }]),
+    note: ['N-18', 'gradi se, ali čeka · NF-4 NZ-2, NZ-16', 'gradi se nakon rada, potvrde predaje i Brzog puta; smije čekati (nije uvjet probe 22. 2. 2027.); jedan paket (.zip) po zadatku, poveznica 24 h; „Preuzmi samo popis”; na ekranu otisak paketa i Kopiraj, otisci datoteka su u CSV-u i u zasebnoj datoteci; CSV stupci po D-286, dopunjeni s dva stupca otiska: „otisak PDF” i „otisak .docx”; NF-4: izbor zadatka s vrstom i „rok je prošao”, upozorenje o imenima studenata, isti izvor s Zbirnog pregleda (CSV ostaje 8 stupaca)'],
+    variants: std([{ id: 'izbor', label: 'izbor zadatka' }, { id: 'priprema', label: 'paket se priprema' }, { id: 'spreman', label: 'paket spreman' }]),
     render: function (c) {
       var v = c.variant, title = 'Izvoz za Merlin', lede = 'Jedan paket (.zip) po zadatku: PDF i .docx svakog predanog rada i CSV popis. Ocjena se upisuje u Merlinu.';
       var s = sideState(v, title, lede, 'Učitavanje predaja…', 'Predaje trenutačno nije moguće učitati. Pokušajte ponovno.'); if (s) return s;
-      var tk = App.state.exp, keys = (tk === 't0' ? T0 : T1);
-      var sel = '<div class="field" style="max-width:420px"><label for="f-ex">Zadatak</label><select class="input" id="f-ex" data-exp><option value="t0"' + (tk === 't0' ? ' selected' : '') + '>Esej „Prikaz članka” · rok je prošao</option><option value="t1"' + (tk === 't1' ? ' selected' : '') + '>Seminarski rad „Lokalni mediji i izborna kampanja”</option></select></div>';
+      var tk = v === 'izbor' ? '' : App.state.exp, keys = (tk === 't0' ? T0 : T1);
+      var sel = '<div class="field" style="max-width:460px" data-nf4="NZ-2 NZ-16"><label for="f-ex">Zadatak</label><select class="input" id="f-ex" data-exp><option value=""' + (tk ? '' : ' selected') + '>Odaberite zadatak</option><option value="t0"' + (tk === 't0' ? ' selected' : '') + '>Esej „Prikaz članka” · esej · rok je prošao</option><option value="t1"' + (tk === 't1' ? ' selected' : '') + '>Seminarski rad „Lokalni mediji i izborna kampanja” · seminarski rad · rok 8. 11. 2026.</option></select></div>';
+      if (!tk) return head(title, lede) + sel + '<section class="card center"><p class="note">Odaberite zadatak za koji pripremate paket.</p></section>';
       if (v === 'prazno') return head(title, lede) + sel + '<section class="card center"><h2>Nema predanih radova</h2><p class="note">Paket se može pripremiti kad bude barem jedan predani rad.</p></section>';
       var csv = '<div class="tbl" tabindex="0" role="region" aria-label="CSV popis"><table><thead><tr><th scope="col">Prezime</th><th scope="col">Ime</th><th scope="col">Predano</th><th scope="col">Vrijeme predaje</th><th scope="col">Nakon roka</th><th scope="col">Naziv datoteke u zipu</th><th scope="col">Otisak PDF</th><th scope="col">Otisak .docx</th></tr></thead><tbody>' +
         keys.map(function (k) { var w = W[k], p = w.st === 'predano'; return '<tr><td>' + w.who.slice(-1) + '</td><td>Student</td><td>' + (p ? 'da' : 'ne') + '</td><td>' + (w.sub || 'nema') + '</td><td>' + (p ? (late(k) ? 'da' : 'ne') : 'nema') + '</td><td class="mono">' + (p ? fname(k) + '.pdf' : 'nema') + '</td><td class="mono">' + (p ? hex('pdf' + k) : 'nema') + '</td><td class="mono">' + (p ? hex('docx' + k) : 'nema') + '</td></tr>'; }).join('') + '</tbody></table></div>';
@@ -1242,8 +1561,10 @@ legend { font-weight:600; padding:0 4px; }
         : v === 'spreman' ? '<div class="banner" role="status"><p><b>Paket je spreman.</b> Jedan paket (.zip) za odabrani zadatak. Poveznica vrijedi 24 h, do 6. 11. 2026. u 21:50.</p>' +
           '<div class="sb-state"><span class="sb-h">Otisak paketa</span><span class="sb-mono">' + zipHash.match(/.{4}/g).join(' ') + '</span><span class="meta">Niz znakova izračunan iz točnog sadržaja paketa. Ako se paket promijeni, otisak više nije isti.</span></div>' +
           '<div class="acts"><button class="btn" type="button" data-act="dl">Preuzmi paket</button><button class="btn secondary" type="button" data-act="copyHash" data-hash="' + zipHash + '">Kopiraj otisak</button></div></div>' : '';
-      return head(title, lede) + sel + status +
-        '<section class="card"><h2>Popis (CSV)</h2>' + csv + '<p class="meta">Svi studenti zadatka, po prezimenu; studenti bez predaje imaju „predano: ne”. Naziv datoteke u zipu je isti u CSV-u i u paketu. Stupci „otisak PDF” i „otisak .docx” su otisci PDF i .docx datoteke rada; studenti bez predaje imaju „nema” u oba.</p></section>' +
+      return head(title, lede) + sel +
+        '<div class="banner" role="note" data-nf4="NZ-16"><p><b>Datoteka sadrži imena studenata.</b> Čuvajte je prema pravilima fakulteta.</p></div>' + status +
+        '<section class="card"><h2>Popis (CSV)</h2>' + csv + '<p class="meta">Svi studenti zadatka, po prezimenu; studenti bez predaje imaju „predano: ne”. Naziv datoteke u zipu je isti u CSV-u i u paketu. Stupci „otisak PDF” i „otisak .docx” su otisci PDF i .docx datoteke rada; studenti bez predaje imaju „nema” u oba. CSV ima 8 stupaca.</p>' +
+        srv('NZ-16', 'poredak po prezimenu poslužitelj treba potvrditi; priprema i preuzimanje paketa nemaju e2e u prototipu.') + '</section>' +
         '<section class="card"><h2>Otisci</h2><p class="note">Otisci pojedinih datoteka nalaze se u CSV popisu i u zasebnoj datoteci u paketu. Na ovom ekranu prikazuje se otisak paketa kad je paket spreman.</p><p class="note">Otisak pokazuje da datoteka nije mijenjana od predaje; ne govori ništa o autorstvu.</p><p class="meta">Priprema i preuzimanje paketa upisuju se u trag.</p></section>' +
         '<div class="acts"><button class="btn" type="button" data-act="prep"' + (v === 'priprema' ? ' aria-disabled="true"' : '') + '>Pripremi paket za Merlin</button><button class="btn secondary" type="button" data-act="csv">Preuzmi samo popis</button></div>';
     },
@@ -1253,12 +1574,126 @@ legend { font-weight:600; padding:0 4px; }
       csv: function () { App.toast('Preuzimanje popisa (CSV) u prototipu nije izvedeno.'); },
       copyHash: function (el) { var h = el.getAttribute('data-hash'); try { if (navigator.clipboard) navigator.clipboard.writeText(h).catch(function () {}); } catch (e) {} App.toast('Otisak paketa je u međuspremniku (64 znaka, bez razmaka).'); }
     },
-    after: function (stage) { var s = stage.querySelector('[data-exp]'); if (s) s.addEventListener('change', function () { App.state.exp = s.value; App.rerender(); var x = document.getElementById('f-ex'); if (x) x.focus(); }); }
+    after: function (stage) { var s = stage.querySelector('[data-exp]'); if (s) s.addEventListener('change', function () { App.state.exp = s.value; if (App.variant() === 'izbor' && s.value) App.state.variant.izvoz = 'puno'; App.rerender(); var x = document.getElementById('f-ex'); if (x) x.focus(); }); }
   });
 
-  /* Odluke od 18. 11. 2026.: N-14 Priprema za razgovor se sada ne gradi (uvjetan, EQ5); N-15 Etape nema zaseban ekran,
+/* Odluke od 18. 11. 2026.: N-14 Priprema za razgovor se sada ne gradi (uvjetan, EQ5); N-15 Etape nema zaseban ekran,
      slijed je u zaglavlju rada; N-AI-ATT AI pomoć u radu čeka Q-10 (15. 12. 2026.) i studentsku izjavu (M9).
      Ti ekrani nisu u prototipu, nemaju stavku navigacije ni poveznicu; u popisu ekrana stoje samo kao napomena (LATER). */
+  /* ---------- NF-4 NZ-4, NZ-7, NZ-9, NZ-15: Uredi zadatak (nova verzija) ---------- */
+  function readEd(form) {
+    var o = {};
+    ['rok', 'min', 'max', 'opis', 'q'].forEach(function (f) { if (form[f]) o[f] = form[f].value.trim(); });
+    ['ai', 'vanj', 'late', 'wd', 'decl'].forEach(function (f) { var r = form.querySelector('input[name="' + f + '"]:checked'); if (r) o[f] = r.value; });
+    o.mail = form.mail && form.mail.checked ? 'da' : 'ne';
+    return o;
+  }
+  function diffList(base, cur) {
+    var out = [];
+    Object.keys(LBL).forEach(function (f) { if (cur[f] != null && String(cur[f]) !== String(base[f] == null ? '' : base[f])) out.push({ f: f, sig: SIGNIF.indexOf(f) >= 0, from: base[f], to: cur[f] }); });
+    return out;
+  }
+  function diffBlock(base, cur, ver) {
+    var d = diffList(base, cur);
+    if (!d.length) return '<p class="note">Još nema promjena u odnosu na verziju ' + ver + '.</p>';
+    return '<ul class="facts">' + d.map(function (x) { return '<li><b>' + LBL[x.f] + ':</b> ' + showVal(x.f, x.from == null ? '' : x.from) + ' → ' + showVal(x.f, x.to) + (x.sig ? ' <span class="tag open">značajna izmjena</span>' : '') + '</li>'; }).join('') + '</ul>';
+  }
+  App.register('uredi', {
+    title: 'NF4-U Uredi zadatak (nova verzija)', shell: 'side', nav: 'kolegiji', narrow: true,
+    note: ['NF4-U', 'gradi se sada · NF-4 NZ-4, NZ-7, NZ-9, NZ-15', 'uređivanje objavljenog zadatka kao nova verzija (assignment-versions.post, expectedVersion); „Pravila predaje” isto kao u obrascu zadatka; usporedba s verzijom n računa klijent; značajna izmjena traži ponovnu potvrdu obavijesti; ekran je novi u prototipu (A-10)'],
+    variants: [{ id: 'puno', label: 'puno (obrazac)' }, { id: 'sukob', label: 'sukob verzija' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' }],
+    render: function (c) {
+      var v = c.variant, n = n4(), title = 'Uredi zadatak', lede = TASK_NAME.t1 + ', Kolegij A · objavljena verzija ' + n.ver + '. Spremanje stvara verziju ' + (n.ver + 1) + '.';
+      var s = sideState(v, title, lede, 'Učitavanje zadatka…', 'Zadatak trenutačno nije moguće učitati. Pokušajte ponovno.'); if (s) return s;
+      if (!n.ed) n.ed = Object.assign({ mail: 'ne' }, n.base);
+      var ed = n.ed, get = function (f, d) { return ed[f] != null ? ed[f] : d; };
+      var top = '';
+      if (v === 'sukob') top = '<div class="banner warn" role="alert" data-nf4="NZ-7"><p><b>Zadatak je u međuvremenu izmijenjen.</b> Netko je zapisao verziju ' + (n.ver + 1) + ' dok ste uređivali verziju ' + n.ver + '. Vaše izmjene nisu zapisane. „Učitaj ponovno” prikazuje najnoviju verziju i briše Vaše neunesene izmjene iz obrasca.</p><div class="acts"><button class="btn secondary" type="button" data-act="reload">Učitaj ponovno</button></div></div>';
+      var form = '<form class="card" data-submit="saveVer" novalidate>' + (n.err ? '<p class="err" role="alert" id="ed-err">' + n.err + '</p>' : '') +
+        '<div class="sb-kv"><span>Kolegij</span><b>Kolegij A</b></div><div class="sb-kv"><span>Zadatak</span><b>' + TASK_NAME.t1 + '</b></div>' +
+        sec('ed-1', 'Rok, opseg i opis',
+          '<div class="grid2"><div class="field"><label for="f-rok">Rok</label><input class="input" id="f-rok" name="rok" value="' + esc(get('rok', BASE0.rok)) + '"' + (n.err ? ' aria-describedby="ed-err"' : '') + '><span class="meta">Po zagrebačkom vremenu.</span></div>' +
+          '<div class="field"><label for="f-min">Najmanje riječi</label><input class="input" id="f-min" name="min" inputmode="numeric" value="' + esc(get('min', '3000')) + '"></div>' +
+          '<div class="field"><label for="f-max">Najviše riječi</label><input class="input" id="f-max" name="max" inputmode="numeric" value="' + esc(get('max', '5000')) + '"></div></div>' +
+          '<div class="field"><label for="f-opis">Opis zadatka</label><textarea class="input" id="f-opis" name="opis">' + esc(get('opis', '')) + '</textarea><span class="meta">Promjena opisa nije značajna izmjena: studenti ne moraju ponovno potvrditi obavijest.</span></div>') +
+        sec('ed-2', 'Pravila o Asistentu i alatima', aiFs(get) + vanjFs(get) + qFs(get)) +
+        sec('ed-3', 'Pravila predaje', rulesFs(get)) +
+        sec('ed-4', 'Obavijest o izmjeni', mailFs(get, 'o izmjeni roka') ) +
+        sec('ed-5', 'Što ste promijenili u odnosu na verziju ' + n.ver, '<div id="df" aria-live="polite" data-nf4="NZ-7">' + diffBlock(n.base, ed, n.ver) + '</div><p class="meta">Usporedba se računa u pregledniku iz učitane verzije; ništa se ne zapisuje dok ne potvrdite.</p>') +
+        sec('ed-6', 'Ovako će student vidjeti obavijest', noticePreview(get)) +
+        '<div class="sb-acts"><button class="btn" type="submit">Spremi kao verziju ' + (n.ver + 1) + '</button><a class="btn secondary" href="#kolegiji" data-go="kolegiji">Odustani</a></div></form>';
+      var dlg = '';
+      if (App.state.dlg === 'znacajno') {
+        var d = diffList(n.base, ed), sig = d.filter(function (x) { return x.sig; }), rules = d.filter(function (x) { return x.f === 'late' || x.f === 'wd' || x.f === 'decl'; });
+        dlg = dialog('dz-h', 'Spremiti značajnu izmjenu?',
+          '<p class="note"><b>Studenti će morati ponovno potvrditi obavijest (verzija ' + (n.ver + 1) + ').</b> Značajna je izmjena koja mijenja rok, opseg, pravilo o Asistentu ili alatima ili pravila predaje.</p>' +
+          '<ul class="facts">' + sig.map(function (x) { return '<li>' + LBL[x.f] + ': ' + showVal(x.f, x.from) + ' → ' + showVal(x.f, x.to) + '</li>'; }).join('') + '</ul>' +
+          (rules.length ? '<p class="note"><b>Ova izmjena mijenja pravila koja su studenti već vidjeli.</b> Student će na koraku predaje vidjeti nova pravila.</p>' : '') +
+          '<div class="sb-acts"><button class="btn" type="button" data-act="confirmVer">Spremi verziju ' + (n.ver + 1) + '</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div>');
+      }
+      return head(title, lede) + top + form + dlg;
+    },
+    actions: {
+      saveVer: function (form) {
+        var n = n4(), cur = readEd(form); n.ed = cur; n.err = null;
+        var d = diffList(n.base, cur);
+        if (!parse(cur.rok)) n.err = 'rok mora biti u obliku „8. 11. 2026. u 23:59”.';
+        else if (+cur.min > +cur.max) n.err = 'najmanji broj riječi ne smije biti veći od najvećeg.';
+        else if ((cur.q || '').length > DECLARATION_QUESTION_MAX) n.err = 'pitanje uz izjavu je predugo (najviše ' + DECLARATION_QUESTION_MAX + ' znakova).';
+        else if (!d.length) n.err = 'nema promjena za spremanje.';
+        if (n.err) { n.err = 'Obrazac ima pogreške: ' + n.err; App.rerender(); var e = document.getElementById('f-rok'); if (e) e.focus(); return; }
+        if (d.some(function (x) { return x.sig; })) { App.state.dlg = 'znacajno'; App.rerender(); return; }
+        ED_SAVE(false);
+      },
+      confirmVer: function () { ED_SAVE(true); },
+      reload: function () { var n = n4(); n.ed = null; n.err = null; App.state.variant.uredi = 'puno'; App.rerender(); App.toast('Učitana je najnovija verzija zadatka.'); }
+    },
+    after: function (stage) {
+      var form = stage.querySelector('form[data-submit="saveVer"]'); if (!form) return;
+      liveStudentSees(stage);
+      function upd() { var n = n4(), cur = readEd(form); n.ed = cur; var df = document.getElementById('df'); if (df) df.innerHTML = diffBlock(n.base, cur, n.ver); }
+      form.addEventListener('input', upd); form.addEventListener('change', upd);
+    }
+  });
+  function ED_SAVE(sig) {
+    var n = n4(), ed = n.ed, mailNow = ed.mail === 'da' && ed.rok !== n.base.rok;
+    n.base = Object.assign({}, ed, { mail: 'ne' }); n.ver += 1; if (sig) n.reset = true; n.mailSent = mailNow ? 4 : n.mailSent;
+    n.ed = null; n.err = null; App.state.dlg = null; App.state.variant.uredi = 'puno'; App.go('kolegiji');
+    App.toast('Verzija ' + n.ver + ' je zapisana na poslužitelju.' + (sig ? ' Potvrdilo 0 od 4 studenta (nova verzija).' : ''));
+  }
+
+  /* ---------- NF-4 NZ-14: Nastavni tim i grupe ---------- */
+  var ROLES = [['nositelj', 'Nositelj kolegija: zadaci, kod za upis, produljenja, izvoz i nastavni tim.'], ['suradnik', 'Suradnik: samo čita i komentira; ne mijenja zadatke ni rokove.'], ['mentor', 'Mentor: vodi radove uz mentora (vidi „Radovi uz mentora”).']];
+  App.register('tim', {
+    title: 'NF4-T Nastavni tim i grupe', shell: 'side', nav: 'kolegiji',
+    note: ['NF4-T', 'gradi se sada · NF-4 NZ-14', 'ulaz s kartice kolegija; uloge nositelj, suradnik, mentor s opisom ovlasti; dodavanje nastavnika i raspored po grupama (institution.teaching-team.post, institution.course-group-teachers.post); ulogu nastavnika u ustanovi daje administrator (A-5), nositelj dodaje samo potvrđenog nastavnika u tim kolegija; mentorstvo se samo spominje (dio 6); ekran je novi u prototipu (A-10)'],
+    variants: std([{ id: 'dodan', label: 'nastavnik dodan' }]),
+    render: function (c) {
+      var v = c.variant, n = n4(), title = 'Kolegij A: nastavni tim i grupe', lede = 'Tko predaje na kolegiju, što smije i koja grupa pripada kojem nastavniku.';
+      var s = sideState(v, title, lede, 'Učitavanje nastavnog tima…', 'Nastavni tim trenutačno nije dostupan. Pokušajte ponovno.'); if (s) return s;
+      if (v === 'prazno') return head(title, lede) + '<section class="card center" data-nf4="NZ-14"><h2>U timu ste samo Vi</h2><p class="note">Dodajte suradnika ili mentora koji je u ustanovi već potvrđen kao nastavnik.</p></section>';
+      var team = n.team.slice(); if (v === 'dodan' && !team.some(function (x) { return x.who === 'Nastavnik C'; })) team.push({ who: 'Nastavnik C', role: 'suradnik' });
+      var names = team.map(function (x) { return x.who; });
+      return head(title, lede) + (v === 'dodan' ? '<div class="banner" role="status"><p><b>Nastavnik C je dodan u tim kolegija kao suradnik.</b></p></div>' : '') +
+        '<section class="card" aria-labelledby="tm-u" data-nf4="NZ-14"><h2 id="tm-u">Uloge</h2><ul class="facts">' + ROLES.map(function (r) { return '<li>' + r[1] + '</li>'; }).join('') + '</ul>' +
+        '<p class="meta">Ulogu nastavnika u ustanovi daje administrator; ovdje birate samo nastavnike koje je administrator već potvrdio. <a href="#mentorstva" data-go="mentorstva">Radovi uz mentora</a></p></section>' +
+        '<section class="card" aria-labelledby="tm-t" data-nf4="NZ-14"><h2 id="tm-t">Nastavni tim</h2><ul class="list">' + team.map(function (x) { return '<li class="item"><span class="title">' + x.who + (x.who === 'Nastavnik A' ? ' (Vi)' : '') + '</span><span class="meta">Uloga: ' + x.role + '</span></li>'; }).join('') + '</ul>' +
+        '<form data-submit="addTeacher"><div class="grid2"><div class="field"><label for="f-tn">Nastavnik</label><select class="input" id="f-tn" name="tn"><option>Nastavnik C</option><option>Nastavnik D</option></select></div>' +
+        '<div class="field"><label for="f-tr">Uloga</label><select class="input" id="f-tr" name="tr"><option value="suradnik">Suradnik</option><option value="mentor">Mentor</option></select></div></div><div class="sb-acts"><button class="btn" type="submit">Dodaj nastavnika</button></div></form></section>' +
+        '<section class="card" aria-labelledby="tm-g" data-nf4="NZ-14"><h2 id="tm-g">Raspored po grupama</h2><form data-submit="setGroups">' +
+        ['g2', 'g4'].map(function (g) { return sel('f-' + g, g === 'g2' ? 'Grupa 2' : 'Grupa 4', names.map(function (x) { return [x, x]; }), n.grp[g], 'name="' + g + '"'); }).join('') +
+        '<div class="sb-acts"><button class="btn" type="submit">Spremi raspored</button></div></form>' +
+        srv('NZ-14', 'rute postoje (institution.teaching-team.post, institution.course-group-teachers.post); tko smije dodavati još treba potvrditi.') + '</section>';
+    },
+    actions: {
+      addTeacher: function (form) {
+        var n = n4(), who = form.tn.value; if (n.team.some(function (x) { return x.who === who; })) { App.toast(who + ' je već u timu.'); return; }
+        n.team.push({ who: who, role: form.tr.value }); App.state.variant.tim = 'puno'; App.rerender(); App.toast(who + ' je dodan u tim kolegija.');
+      },
+      setGroups: function (form) { var n = n4(); n.grp = { g2: form.g2.value, g4: form.g4.value }; App.toast('Raspored po grupama je zapisan.'); }
+    }
+  });
+
 })();
 </script>
 

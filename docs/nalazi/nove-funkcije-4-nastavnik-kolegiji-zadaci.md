@@ -287,3 +287,34 @@ Pitanja na koja ne mogu odgovoriti sama (najviše 8):
 8. **Izjava obavezna (NZ-4c):** smije li nastavnik isključiti obaveznu izjavu u pilotu, ili je izjava uvijek obavezna po fakultetu (OD-11)?
 
 Otvoreno za provjeru u pregledniku (nije moguće iz ovog pregleda): mobitel (§2.4), čitači zaslona (§2.3), slijepe ulice G-1 i G-3, banner „prekinuto”, tekst sukoba verzija zadatka, ponašanje paketa i poveznice 24 h, jesu li nalazi G-1, G-7, G-10 popravljeni nakon revizije od 23. 11., obrada `groupIds`, `externalToolsAllowed` i `aiSummaryOnly` na poslužitelju.
+
+---
+
+## 6. Provedba u prototipu (NF-4, 23. 11. 2026.)
+
+Zadatak `nf4-prototip-nastavnik`. Danielove odluke (doslovno: „1 da 2. asistent u pilotu radi 3. Da 4. Oboje 5. Da 6. Smije isključiti” i „Asistent radi u pilotu i sve stavke NZ idu u pilot”) zatvaraju pitanja 1 do 5 i 8 iz odjeljka 4 i stavljaju svih 18 prijedloga u pilot, uključivo NZ-14, NZ-15 i NZ-9. Provedeno je u `docs/prototip/Ductura_nastavnik.html` (oznaka `data-nf4="NZ-n"` na elementu; `.srv` „Poslužitelj:” označava što poslužitelj nema) i u `docs/prototip/INVENTAR-nastavnik.md` §8 (ID-evi NF4-NZn, stanja, serverska ovisnost). Pružatelj i model se ne imenuju, piše samo „Asistent”.
+
+| NZ | INVENTAR ID | Element u prototipu | Poslužitelj |
+|---|---|---|---|
+| NZ-1 | NF4-NZ1 | kartica zadatka u `kolegiji`: Predaje, Uredi (nova verzija), Kopiraj zadatak, Produljenje, Izvoz, Brz put; izbornik „Zadatak” u `brz-put`; „Izdaj novi kod” iz praznog `studenti` | postoji |
+| NZ-2 | NF4-NZ2 | „Produljenje roka…” i „Izvoz za Merlin…” s kartice kolegija otvaraju izbornik zadatka; produljenje i za prošli rok | postoji |
+| NZ-3 | NF4-NZ3 | grupe kao kućice, „samo sažimanje” i „Vanjski alati” kao postavke, razlozi uz `aria-describedby` | obradu polja potvrditi |
+| NZ-4 | NF4-NZ4 | odjeljak „Pravila predaje” u obrascu i u `uredi`, dijalog „Ova izmjena mijenja pravila koja su studenti već vidjeli” | (a) nedostaje; (b), (c) postoje |
+| NZ-5 | NF4-NZ5 | dijalog `di-h` iz retka studenta, varijante A i B, razlog vidljiv studentu po izboru nastavnika | A postoji; B nedostaje |
+| NZ-6 | NF4-NZ6 | filtar po studentu i redak „Student vidi: Bio …” u `produljenje`, poveznica „Rok produljen do …” | postoji |
+| NZ-7 | NF4-NZ7 | blok „Ovako će student vidjeti obavijest”, usporedba u `uredi`, dijalog značajne izmjene, sukob verzija | postoji |
+| NZ-8 | NF4-NZ8 | „Potvrdilo obavijest: n od m”, stanje po studentu, „nova verzija” | nedostaje potvrda po studentu |
+| NZ-9 | NF4-NZ9 | kućica „Obavijesti studente i e-poštom” (zadano isključeno), banner „Poslano n studentima” | nedostaje ruta i polje |
+| NZ-10 | NF4-NZ10 | stvarni podaci u `studenti` i tablica od 9 stupaca u `zbirni` | dorada skupno nedostaje |
+| NZ-11 | NF4-NZ11 | filtri stanja i grupe, poredak, „Nije započelo n”, kartice ispod 760 px | postoji |
+| NZ-12 | NF4-NZ12 | jedan dijalog `dd-h`, „Povuci zahtjev”, „Dorada: n otvorenih, m čeka Vaš pregled” | skupno čitanje nedostaje |
+| NZ-13 | NF4-NZ13 | rok koda, „Opozovi kod”, „Kopiraj kod”, uputa studentu | postoji |
+| NZ-14 | NF4-NZ14 | novi ekran `tim` | postoji, provjeriti pravo |
+| NZ-15 | NF4-NZ15 | polje „Pitanje studentu uz izjavu” | nedostaje |
+| NZ-16 | NF4-NZ16 | naslov opcije izvoza, fokus, upozorenje o imenima studenata | poredak potvrditi |
+| NZ-17 | NF4-NZ17 | `fieldset`/`legend`, `aria-describedby`, ciljevi dodira 44 px, mjereno na 390 i 1280 px | ne |
+| NZ-18 | NF4-NZ18 | varijanta „puno” svakog novog elementa; lažni poslužitelj u `packages/` nije dirnut | test-fakes: otvoreno |
+
+Provjera: sve varijante svih 16 ekrana prototipa crtaju se bez grešaka u konzoli; skripta s tokovima (kod za upis, iznimka, dorada, filtri, uređivanje s dijalogom, obrazac s pogreškom, izvoz) prolazi; axe (WCAG 2 A/AA, 2.1 AA i najbolje prakse) na 390 i 1280 px u svijetloj i tamnoj temi nije našao pogreške na novim elementima, osim dva nalaza trake prototipa (`#proto-bar`: nedostaje `lang` i landmark), koji postoje i prije NF-4 i nisu proizvod.
+
+Otvoreno: lažni poslužitelj za scenarij VIZ „puno” (NZ-18) u `packages/test-fakes`; e2e izvoza (NZ-16); čitač zaslona (nije izmjereno); postojeći tekstovi prototipa izvan ovog zadatka još imenuju „Pružatelj A, model M-2” (ekrani sažetak, brz put i rad, dio 5) i trebaju se zamijeniti riječju „Asistent”.
