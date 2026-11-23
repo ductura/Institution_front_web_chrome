@@ -20,7 +20,7 @@ import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
-import { originText } from "./host/teacher/origin-map/messages.hr";
+import { originText } from "./host/teacher/provenance/origin-messages.hr";
 import { hostText } from "./text";
 
 export { BASES, type Base } from "./bases";

@@ -1,5 +1,6 @@
-// "Karta podrijetla" (WEB-2158; N-10 km-h): the pure part. The map has no sum and no calculation, so no
-// percent of the server answer ever reaches the screen; it only decides whether the work has any mark at all.
+// "Karta podrijetla" (WEB-2158; N-10 km-h): the pure part. The marks have no sum and no calculation, so no
+// percent of this answer reaches the marks; it only decides whether the work has any mark at all. The one share
+// the map shows is the assistant match's own, in its section (match-model.ts).
 import { provenanceText as t } from "./messages.hr";
 
 /** The origin kinds that put a mark on the map: paste, import and transfer from the assistant (prototype). */

@@ -11,8 +11,9 @@ import { assignmentIdOf } from "../../../../../../../src/components/editor/Edito
 import { goToSignIn } from "../../../../../../../src/client/api.ts";
 import { messagesHr as t } from "../../../../../../../src/lib/i18n/messages.hr.ts";
 
-import type { OriginRead } from "../../../teacher/origin-map/contract";
-import { originText } from "../../../teacher/origin-map/messages.hr";
+import type { OriginRead } from "../../../teacher/provenance/origin";
+import AssistantMatchSection from "../../../teacher/provenance/AssistantMatchSection";
+import { originText } from "../../../teacher/provenance/origin-messages.hr";
 import { hostText } from "../../../../text";
 import { useHost } from "../../../context";
 import { useWorkDocument } from "../../other";
@@ -50,7 +51,8 @@ export default function OriginPage({ assignmentId: raw, call = readOrigin }: { a
   } else if (work.kind !== "document") {
     body = <p role="alert">{originText.unavailable}</p>;
   } else {
-    body = <OriginView read={read} onRetry={retry} />;
+    // PIL-P1-PODUDARANJE-KARTA: the same assistant match section as in the teacher's map (P-1 rule 2.2).
+    body = <><OriginView read={read} onRetry={retry} />{read?.kind === "ready" && <AssistantMatchSection documentId={work.documentId} />}</>;
   }
   return <div className="page"><h1>{originText.title}</h1>{back}{body}</div>;
 }

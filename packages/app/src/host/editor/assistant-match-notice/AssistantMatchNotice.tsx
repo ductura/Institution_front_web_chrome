@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@ductura/ui";
 
-import { explainAssistantMatch, MAX_EXPLANATION_LENGTH, readAssistantMatch, type AssistantMatch, type MatchCall, type MatchRead } from "../../teacher/origin-map/assistant-match/contract";
+import { explainAssistantMatch, MAX_EXPLANATION_LENGTH, readAssistantMatch, type AssistantMatch, type MatchCall, type MatchRead } from "./contract";
 import { noticeText as t } from "./messages.hr";
 
 type Status = "idle" | "sending" | "saved" | "failed" | "rejected" | "signedOut";

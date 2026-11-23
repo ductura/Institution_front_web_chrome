@@ -5,7 +5,10 @@
 // smallest the spec implies; both are listed as assumptions in the pull request. `enabled` mirrors the faculty
 // flag `assistantMatchEnabled`: when it is false the server computes and stores nothing, and this client shows
 // nothing. The answer is held to a closed schema: no claim of copying, no verdict, no score.
-import { matchesSchema, type Schema } from "../../../../../../../src/client/schema-check";
+// PIL-P1-PODUDARANJE-KARTA moved this file here from teacher/origin-map unchanged: the notice is its only user.
+// The extract now has work.assistant-match.get { findings } and .post { segmentRef, text }; binding the notice
+// to them is a separate task (open item in the pull request). The map reads the real route (provenance/contract.ts).
+import { matchesSchema, type Schema } from "../../../../../../src/client/schema-check";
 
 export type MatchCall = (
   id: "work.assistant-match.get" | "work.assistant-match.explain",
