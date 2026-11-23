@@ -6,7 +6,7 @@ import { REVISION_ZERO_V3_JCS, revisionZeroDocumentV3 } from "@/domain/document/
 import { EvidenceRecorder, changeOf } from "../../../packages/editor-core/src/editor/capture";
 import { canonicalToTiptapV3 } from "../../../packages/editor-core/src/editor/interop-v3";
 import { createEditorExtensionsV3 } from "../../../packages/editor-core/src/editor/schema";
-import { sha } from "./replay-record.fixture";
+import { sha256WebCrypto } from "@/domain/forensics/crypto";
 
 /**
  * Synthetic replay records of a work of document v3 (INT-23): invented ids,
@@ -62,7 +62,7 @@ export async function buildRecordV3(plans: V3Edit[][]) {
     at += 60_000;
     const text = new TextDecoder().decode(built.bytes);
     segments.push(text);
-    hashes.push(sha(text));
+    hashes.push(await sha256WebCrypto(text));
     ends.push(state.doc);
   }
   return { segments, hashes, ends, head: hashes.length ? { segmentHash: hashes.at(-1)!, segmentCount: hashes.length } : null };
