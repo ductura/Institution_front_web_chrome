@@ -44,9 +44,9 @@ export function useV3EditorDialogs(
     // The footnote mark is a focusable button (role=button, tabindex=0): Enter and Space open it as a click does.
     const markPos = (event: KeyboardEvent) => {
       const mark = event.target instanceof Element ? event.target.closest("[data-footnote]") : null;
-      const parent = mark?.parentNode;
-      if (!mark || !parent || !view.dom.contains(mark)) return null;
-      return view.posAtDOM(parent, Array.prototype.indexOf.call(parent.childNodes, mark));
+      const holder = mark?.parentNode;
+      if (!mark || !holder || !view.dom.contains(mark)) return null;
+      return view.posAtDOM(holder, Array.prototype.indexOf.call(holder.childNodes, mark));
     };
     const key = (event: KeyboardEvent) => {
       if (event.key !== "Enter" && event.key !== " ") return;
