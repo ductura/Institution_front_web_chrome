@@ -60,6 +60,7 @@ export const pageLabelsHr = {
   merlinExport: "Izvoz za Merlin",
   assignmentSubmissions: "Predaje zadatka",
   courseStudents: "Popis studenata",
+  courseAggregate: "Zbirni pregled kolegija",
   receiptCheck: "Provjera potvrde",
   originThresholds: "Pragovi po vrsti podrijetla",
 };

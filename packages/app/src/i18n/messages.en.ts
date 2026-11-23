@@ -63,6 +63,7 @@ export const pageLabelsEn = {
   merlinExport: "Export for Merlin",
   assignmentSubmissions: "Assignment submissions",
   courseStudents: "Student list",
+  courseAggregate: "Course summary",
   receiptCheck: "Receipt check",
   originThresholds: "Thresholds per origin kind",
 };

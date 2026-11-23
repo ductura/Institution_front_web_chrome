@@ -21,6 +21,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/rad/[assignmentId]/razgovor": (c) => c.app.pages.studentInterview,
   "/nastavnik/kolegiji": (c) => c.t.teacherCourses.title,
   "/nastavnik/kolegiji/[courseId]/studenti": (c) => c.app.pages.courseStudents,
+  "/nastavnik/kolegiji/[courseId]/zbirno": (c) => c.app.pages.courseAggregate,
   "/nastavnik/rad/[id]": (c) => c.t.liveView.context,
   "/nastavnik/rad/[id]/reprodukcija": (c) => c.t.replay.titleTeacher,
   "/nastavnik/rad/[id]/predaja": (c) => c.work.receipt.title,
