@@ -17,6 +17,7 @@ export const courseStudentsMessages = {
   emptyAction: "Izdaj novi kod",
   openSeminar: "Otvori seminarski rad",
   link: "Popis studenata",
+  aggregateLink: "Zbirni pregled kolegija",
   workType: { seminar_paper: "Seminarski rad", essay: "Esej" } as Readonly<Record<string, string>>,
   fallbackWorkType: "Zadatak",
   submittedAt: (when: string): string => `Predano ${when}`,

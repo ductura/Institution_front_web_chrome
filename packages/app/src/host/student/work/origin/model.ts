@@ -1,8 +1,8 @@
 // "Podrijetlo teksta" of the student (PIL-P1-SASTAV-STUDENT; P-1 rule 2.2): the student and the teacher see the same
 // composition. The server answer of work.origin-composition.get is one percent per kind; it is turned into the same
 // OriginComposition the teacher's screen (WEB-0911) renders, so one model and one set of captions serve both.
-import type { OriginComposition, OriginKind, OriginRead } from "../../../teacher/origin-map/contract";
-import { ORIGIN_KINDS } from "../../../teacher/origin-map/contract";
+import type { OriginComposition, OriginKind, OriginRead } from "../../../teacher/provenance/origin";
+import { ORIGIN_KINDS } from "../../../teacher/provenance/origin";
 
 export type OriginPart = { readonly kind: string; readonly percent: number };
 

@@ -284,3 +284,50 @@ describe("declaration adapter (PIL-K-IZJAVA-PORT)", () => {
     expect(found).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// PIL-K-IZJAVA-VRATA: whether steps 3 and 4 may send is read only from the server.
+import { declarationGateFrom, readDeclarationGate } from "./declaration";
+
+/** An invented declaration confirmed for revision 2, as student.declaration.get gives it. */
+const CONFIRMED_STATE = {
+  ...STATE, state: "confirmed", version: 5, draft: null,
+  payload: {
+    declarationSchema: "ductura-declaration-v1", declarationId: "00000000-0000-4000-8000-0000000000d1", declarationVersion: 5,
+    principalId: "00000000-0000-4000-8000-0000000000e1", assignmentId: ASSIGNMENT, assignmentVersion: 1,
+    documentId: "izmisljeni-dokument-1", revision: 2, form: FORM, ownWork: { confirmed: true },
+    humanHelp: { received: false, entries: [] }, ai: { use: "not_used", declaredTools: [], recorded: [], attachments: [] },
+    confirmedAt: "2026-11-20T10:00:00.000000Z",
+  },
+  declarationSha256: "d".repeat(64),
+};
+const NOT_ASKED = { ...STATE, state: "none", currentForm: null, formText: null, draft: null, version: 0 };
+
+describe("declaration gate (PIL-K-IZJAVA-VRATA)", () => {
+  it("is confirmed only for a confirmed declaration of the current revision", async () => {
+    const s = server(() => json(200, CONFIRMED_STATE));
+    expect(await readDeclarationGate(s.call, ASSIGNMENT)).toEqual({ kind: "confirmed" });
+    expect(s.sent).toEqual([{ method: "GET", path: `/api/v1/student/assignments/${ASSIGNMENT}/declaration`, body: undefined }]);
+    const older = server(() => json(200, { ...CONFIRMED_STATE, currentRevision: 3 }));
+    expect(await readDeclarationGate(older.call, ASSIGNMENT)).toEqual({ kind: "missing" });
+  });
+
+  it("a draft, a stale and an empty declaration of an assignment that asks for one are missing", () => {
+    expect(declarationGateFrom(STATE as never)).toEqual({ kind: "missing" });
+    expect(declarationGateFrom({ ...CONFIRMED_STATE, state: "stale" } as never)).toEqual({ kind: "missing" });
+    expect(declarationGateFrom({ ...STATE, state: "none", draft: null } as never)).toEqual({ kind: "missing" });
+  });
+
+  it("an assignment with no form and nothing declared asks for no declaration (OD-6)", async () => {
+    const s = server(() => json(200, NOT_ASKED));
+    expect(await readDeclarationGate(s.call, ASSIGNMENT)).toEqual({ kind: "not_required" });
+  });
+
+  it("a failed or malformed read never opens sending", async () => {
+    for (const answer of [() => error(503, "unavailable"), () => error(404, "not_found"), () => json(200, { state: "confirmed" }), () => { throw new TypeError("offline"); }]) {
+      const s = server(answer);
+      expect(await readDeclarationGate(s.call, ASSIGNMENT)).toEqual({ kind: "unavailable" });
+    }
+    expect(await readDeclarationGate(server(() => error(401, "unauthorized")).call, ASSIGNMENT)).toEqual({ kind: "signedOut" });
+  });
+});

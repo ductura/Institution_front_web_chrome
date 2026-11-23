@@ -11,6 +11,7 @@ import {
   type CourseStudentsPort, type RosterData, type RosterRead,
 } from "./model";
 import { courseStudentsMessages as text } from "./messages.hr";
+import { aggregatePath } from "../course-aggregate/model";
 import { signInWhenSignedOut } from "./port";
 
 /**
@@ -44,6 +45,7 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
   return (
     <TeacherPage title={title} lead={text.lead} loading={text.loading} read={teacherRead} retry={() => setAttempt((n) => n + 1)}
       unavailable={text.unavailable} retryLabel={text.retry}
+      actions={() => <a className="btn secondary" href={appHref(base, aggregatePath(courseId))}>{text.aggregateLink}</a>}
       ready={(roster) => roster.students.length === 0 ? (
         <section className="card center" aria-labelledby="n04-prazno">
           <h2 id="n04-prazno">{text.emptyTitle}</h2>

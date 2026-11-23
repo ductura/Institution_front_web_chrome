@@ -2,8 +2,8 @@
 import type { AggregateData, AggregateRead, CourseAggregatePort, CourseAssignment } from "./model";
 
 export const FAKE_AGGREGATE: AggregateData = {
-  students: 24,
-  counts: { submitted: 18, afterDeadline: 6, continuous: 15, withGaps: 8 },
+  students: 40,
+  counts: { submitted: 30, inProgress: 5, notStarted: 5 },
 };
 
 /** Two invented regular assignments and one invented practice assignment of a course. */

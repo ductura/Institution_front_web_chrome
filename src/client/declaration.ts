@@ -132,6 +132,34 @@ export async function readStudentState(call: Call, session: DeclarationSession, 
   }
 }
 
+/**
+ * Whether steps 3 and 4 may send (PIL-K-IZJAVA-VRATA, PRODUCT §5 rule 11, OD-6): read only from the
+ * server, never from this browser (no sessionStorage, no `?izjava=`). `unavailable` is a failed read
+ * and never opens sending; the server checks the declaration again when the work is submitted.
+ */
+export type DeclarationGate =
+  | { readonly kind: "confirmed" }
+  /** The assignment asks for no declaration: the server holds no form and nothing declared. */
+  | { readonly kind: "not_required" }
+  /** Asked for, and not confirmed for the current revision (none, a draft, or stale). */
+  | { readonly kind: "missing" }
+  | { readonly kind: "signedOut" }
+  | { readonly kind: "unavailable" };
+
+/** The gate as one read of student.declaration.get gives it. */
+export function declarationGateFrom(state: StudentState): DeclarationGate {
+  const settled = state.state === "confirmed" || state.state === "bound";
+  if (settled && state.payload !== null && state.currentRevision !== null && state.payload.revision === state.currentRevision) return { kind: "confirmed" };
+  if (state.state === "none" && state.currentForm === null && state.draft === null && state.payload === null) return { kind: "not_required" };
+  return { kind: "missing" };
+}
+
+/** Reads the gate from the server; anything but a read that matches the contract is `unavailable`. */
+export async function readDeclarationGate(call: Call, assignmentId: string): Promise<DeclarationGate> {
+  const read = await readStudentState(call, createDeclarationSession(), assignmentId);
+  return read.kind === "ok" ? declarationGateFrom(read.state) : read;
+}
+
 const NO_HELP: WireHelp = { received: false, entries: [] };
 const NO_AI: WireAi = { use: null, declaredTools: [], attachments: [], externalAttachmentIds: [] };
 

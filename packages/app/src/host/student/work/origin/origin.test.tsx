@@ -3,8 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { PAGES, resolve } from "../../../../routes";
-import { originText } from "../../../teacher/origin-map/messages.hr";
-import { shareRows } from "../../../teacher/origin-map/model";
+import { originText } from "../../../teacher/provenance/origin-messages.hr";
+import { shareRows } from "../../../teacher/provenance/origin-model";
 import { OriginView } from "./OriginView";
 import { readOfParts } from "./model";
 import { originReader } from "./read";

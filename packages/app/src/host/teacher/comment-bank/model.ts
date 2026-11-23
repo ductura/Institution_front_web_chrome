@@ -43,6 +43,8 @@ export type DraftSave =
 
 export type PublishResult =
   | { readonly kind: "published"; readonly ids: readonly string[] }
+  /** The server's drafts differ from the ones sent: nothing was published, the list is read again. */
+  | { readonly kind: "changed" }
   | { readonly kind: "signedOut" }
   | { readonly kind: "rejected" }
   | { readonly kind: "unknown" };
@@ -116,6 +118,24 @@ export async function publishDraftGroup(
   return result;
 }
 
+/**
+ * The drafts to show after a publication, or null when the list shown stays as it is. Published:
+ * none are left. Changed (409): nothing was published, so the list is read again from the server;
+ * when that read fails the old list stays, with the message.
+ */
+export async function draftsAfterPublish(
+  port: DraftCommentsPort, assignmentId: string, result: PublishResult,
+): Promise<readonly WorkComment[] | null> {
+  if (result.kind === "published") return [];
+  if (result.kind !== "changed") return null;
+  try {
+    const read = await port.listDrafts(assignmentId);
+    return read.kind === "ready" ? read.drafts : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Removes a bank entry; the caller drops it from the list only on "removed" (the server's answer). */
 export async function removeBankEntry(port: CommentBankPort, entryId: string): Promise<BankRemove> {
   try {
@@ -146,6 +166,7 @@ export function draftMessage(result: DraftSave): string {
 export function publishMessage(result: PublishResult): string {
   switch (result.kind) {
     case "published": return text.published;
+    case "changed": return text.draftsChanged;
     case "signedOut": return text.signedOut;
     case "rejected": return text.failed;
     case "unknown": return text.unknown;

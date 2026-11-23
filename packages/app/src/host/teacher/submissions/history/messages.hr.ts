@@ -21,3 +21,11 @@ export const historyText = {
   settingUnavailable: "Postavka trenutačno nije dostupna.",
   saving: "Zapisuje se…",
 } as const;
+
+/** The history mounted beside the submissions table (PIL-D3-NASTAVNIK). */
+export const historyMountText = {
+  column: "Povijest",
+  open: "Povijest",
+  openFor: (student: string) => `Povijest predaja: ${student}`,
+  close: "Zatvori povijest",
+} as const;

@@ -2,8 +2,11 @@
 // closed list of measures for the whole course: no names, no scale, no ranking. Below the threshold
 // the whole view is replaced by the "suppressed" state; a measure whose count or whose complement
 // is below the threshold is hidden too, because the complement would give a small group away.
-// No server route exists yet: the port is the smallest contract the plan implies (a probe answer
-// stands in for it in the tests). This module makes no network call.
+// The measures add up to all the course's students, and that total is known (shown here, and on the N-04
+// list): a hidden measure could be worked out from it and the shown ones. So once any measure is hidden, all
+// are hidden (secondary suppression, withSecondarySuppression); no hidden count can be worked out from the view.
+// The real port (./port.ts, PIL-K-ZBIRNO) reads course.aggregate.get; its measures are the stages the
+// route gives (not started, in progress, submitted). This module makes no network call.
 // P-D1 (PIL-D1-BEZ-OCJENE): a practice assignment never enters the aggregate. The port is asked only for
 // the course's other assignments; a course with practice assignments only has its own state.
 import { courseAggregateMessages as text } from "./messages.hr";
@@ -12,7 +15,7 @@ import { courseAggregateMessages as text } from "./messages.hr";
 export const MIN_STUDENTS = 5;
 
 /** The closed list of measures; nothing outside it is ever shown. */
-export const MEASURES = ["submitted", "afterDeadline", "continuous", "withGaps"] as const;
+export const MEASURES = ["submitted", "inProgress", "notStarted"] as const;
 export type MeasureKey = (typeof MEASURES)[number];
 
 export type AggregateData = {
@@ -27,7 +30,10 @@ export type AggregateRead =
   | { readonly kind: "unavailable" };
 
 export interface CourseAggregatePort {
-  /** The aggregate of the course over exactly these assignments (never a practice one). */
+  /**
+   * The aggregate of the course over exactly these assignments (never a practice one). course.aggregate.get
+   * takes only the course: the real port asks it only when such an assignment exists (see ./port.ts).
+   */
   read(courseId: string, assignmentIds: readonly string[]): Promise<AggregateRead>;
 }
 
@@ -57,9 +63,8 @@ export type AggregateView =
 
 const LABELS: Readonly<Record<MeasureKey, string>> = {
   submitted: text.measureSubmitted,
-  afterDeadline: text.measureAfterDeadline,
-  continuous: text.measureContinuous,
-  withGaps: text.measureWithGaps,
+  inProgress: text.measureInProgress,
+  notStarted: text.measureNotStarted,
 };
 
 const valid = (n: number, max: number): boolean => Number.isInteger(n) && n >= 0 && n <= max;
@@ -70,6 +75,17 @@ export function measureView(key: MeasureKey, count: number, students: number): M
   if (!valid(count, students) || count < MIN_STUDENTS || students - count < MIN_STUDENTS) return { key, label, shown: false };
   const percent = Math.round((count / students) * 100);
   return { key, label, shown: true, count, percent, summary: text.shareOf(count, students, percent) };
+}
+
+/**
+ * Secondary suppression: the measures add up to all students, so a hidden measure could be worked out as the
+ * total minus the shown ones. Hiding only one more (e.g. the smallest shown) is not enough once the rule is
+ * known: with 4, 4 and 5 of 13 the one shown 5 leaves only 4 and 4 for the other two. So once any measure is
+ * hidden, all are hidden.
+ */
+export function withSecondarySuppression(measures: readonly MeasureView[]): readonly MeasureView[] {
+  if (measures.every((m) => m.shown)) return measures;
+  return measures.map((m) => ({ key: m.key, label: m.label, shown: false }));
 }
 
 /** The text alternative of the chart: every measure, read out in the order of the closed list. */
@@ -84,7 +100,7 @@ export function aggregateView(read: AggregateRead, practiceLeftOut = 0): Aggrega
   if (!Number.isInteger(students) || students < 0) return { kind: "unavailable" };
   if (students === 0) return { kind: "empty" };
   if (students < MIN_STUDENTS) return { kind: "suppressed" };
-  const measures = MEASURES.map((key) => measureView(key, counts[key], students));
+  const measures = withSecondarySuppression(MEASURES.map((key) => measureView(key, counts[key], students)));
   return { kind: "ready", students, measures, chartAlt: chartAlt(measures), practiceLeftOut };
 }
 
@@ -101,4 +117,9 @@ export async function loadAggregate(port: CourseAggregatePort, courseId: string,
   } catch {
     return { kind: "unavailable" };
   }
+}
+
+/** This screen's own path: where sign-in returns after a 401. */
+export function aggregatePath(courseId: string): string {
+  return `/nastavnik/kolegiji/${encodeURIComponent(courseId)}/zbirno`;
 }

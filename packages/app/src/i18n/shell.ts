@@ -18,8 +18,10 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/rad/[assignmentId]/dnevnik-pristupa": (c) => c.t.accessLog.context,
   "/rad/[assignmentId]/reprodukcija": (c) => c.t.replay.titleStudent,
   "/rad/[assignmentId]/podrijetlo": (c) => c.app.pages.originComposition,
+  "/rad/[assignmentId]/razgovor": (c) => c.app.pages.studentInterview,
   "/nastavnik/kolegiji": (c) => c.t.teacherCourses.title,
   "/nastavnik/kolegiji/[courseId]/studenti": (c) => c.app.pages.courseStudents,
+  "/nastavnik/kolegiji/[courseId]/zbirno": (c) => c.app.pages.courseAggregate,
   "/nastavnik/rad/[id]": (c) => c.t.liveView.context,
   "/nastavnik/rad/[id]/reprodukcija": (c) => c.t.replay.titleTeacher,
   "/nastavnik/rad/[id]/predaja": (c) => c.work.receipt.title,
@@ -43,6 +45,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/ustanova/izvoz-podataka": (c) => c.app.pages.studentDataExport,
   "/izvoz-podataka/[token]": (c) => c.app.pages.studentDataDownload,
   "/provjera": (c) => c.app.pages.receiptCheck,
+  "/ustanova/pragovi": (c) => c.app.pages.originThresholds,
 };
 
 /**

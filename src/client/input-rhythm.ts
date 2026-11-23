@@ -1,7 +1,6 @@
 // Rhythm of entry and the kind of origin of an input (P-1, WEB-0910), behind a port.
-// SRV-0910 is not merged, so there is no route and no wire shape here: `RhythmPort` is the
-// smallest port the plan and the prototype need, and the fake in input-rhythm-fake.ts is the
-// only adapter.
+// `createRhythmPort` is the real adapter over work.input-rhythm-setting.get and
+// work.input-rhythm.post (PIL-P1-RITAM-EDITOR); input-rhythm-fake.ts stays for tests and the demo.
 //
 // What is kept, by construction (P-1 rule 4, Constitution v1.7 to v1.9):
 // - gaps in milliseconds between inputs inside one burst, nothing else: no key, no character,
@@ -9,6 +8,8 @@
 // - at most MAX_GAPS_PER_BURST gaps per burst, thinned evenly (never the first or last lost);
 // - the start of a burst on the minute, never to the second.
 // The recorder has no method that takes a key or text, so there is nothing to leave out.
+
+import { createApi } from "./api";
 
 /** The closed list of origins of a change (SRV-0910 a). Order is the display order. */
 export const ORIGIN_KINDS = [
@@ -161,4 +162,36 @@ export type RhythmPayload = {
 export interface RhythmPort {
   recording(documentId: string): Promise<boolean>;
   send(documentId: string, payload: RhythmPayload): Promise<void>;
+}
+
+type Call = ReturnType<typeof createApi>;
+
+/**
+ * The port over the server (SRV-0910 as merged). `recording` is the switch of the work: any
+ * answer other than an exact `enabled: true` reads as off, so nothing is recorded on doubt.
+ * `send` posts each burst on its own as `{ gapsMs }`, the only field the route takes: the
+ * origins stay in the browser (the route has none) and neither throws, so a failed send never
+ * reaches the writing or the save of the text.
+ */
+export function createRhythmPort(call: Call = createApi()): RhythmPort {
+  return {
+    async recording(documentId) {
+      try {
+        const result = await call("work.input-rhythm-setting.get", { params: { documentId }, query: undefined, body: undefined });
+        return result.ok && result.body.enabled === true;
+      } catch {
+        return false;
+      }
+    },
+    async send(documentId, payload) {
+      for (const burst of payload.bursts) {
+        if (burst.gapsMs.length === 0) continue;
+        try {
+          await call("work.input-rhythm.post", { params: { documentId }, query: undefined, body: { gapsMs: [...burst.gapsMs] } });
+        } catch {
+          // A later flush carries the next bursts; this one is not kept.
+        }
+      }
+    },
+  };
 }

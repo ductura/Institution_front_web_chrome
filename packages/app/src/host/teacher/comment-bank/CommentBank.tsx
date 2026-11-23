@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@ductura/ui";
 
 import {
-  draftMessage, publishDraftGroup, publishMessage, removeBankEntry, removeMessage, saveDraftComment, searchBank,
+  draftMessage, draftsAfterPublish, publishDraftGroup, publishMessage, removeBankEntry, removeMessage, saveDraftComment, searchBank,
   type BankEntry, type CommentBankPort, type DraftAnchor, type DraftCommentsPort, type WorkComment,
 } from "./model";
 import { commentBankMessages as text } from "./messages.hr";
@@ -26,6 +26,8 @@ export default function CommentBank(
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  // Set synchronously, so a second click before the button re-renders as disabled sends nothing.
+  const publishing = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -56,11 +58,20 @@ export default function CommentBank(
   };
 
   const publish = async () => {
+    if (publishing.current) return;
+    publishing.current = true;
     setBusy(true);
-    const result = await publishDraftGroup(draftsPort, assignmentId, drafts.map((draft) => draft.id));
-    setBusy(false);
-    setNote(publishMessage(result));
-    if (result.kind === "published") { setDrafts([]); onPublished?.(result.ids); }
+    try {
+      const result = await publishDraftGroup(draftsPort, assignmentId, drafts.map((draft) => draft.id));
+      setNote(publishMessage(result));
+      // On a 409 the list is read again before the button opens, so it never sends the stale list.
+      const next = await draftsAfterPublish(draftsPort, assignmentId, result);
+      if (next !== null) setDrafts(next);
+      if (result.kind === "published") onPublished?.(result.ids);
+    } finally {
+      publishing.current = false;
+      setBusy(false);
+    }
   };
 
   const shown = entries === null ? [] : searchBank(entries, query);

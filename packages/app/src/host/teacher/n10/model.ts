@@ -5,7 +5,7 @@ import { countHr } from "../../../../../../src/lib/i18n/hr";
 import { zagrebEpochMs, zagrebWall } from "../../../../../../src/lib/i18n/zagreb";
 import type { ApiResult } from "../../../../../../src/client/api";
 import type { ProcessSummaryV1, SummaryOutcome } from "../../../../../../src/client/process-summary";
-import { ORIGIN_KINDS, type OriginKind } from "../origin-map/contract";
+import { ORIGIN_KINDS, type OriginKind } from "../provenance/origin";
 import { n10Messages as text } from "./messages.hr";
 
 export type Span = { readonly from: string; readonly to: string };

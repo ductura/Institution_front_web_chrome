@@ -17,10 +17,17 @@ export type InterviewOutcome<T> =
   | { readonly kind: "rejected" }
   | { readonly kind: "unavailable" };
 
-async function run<T>(request: () => Promise<{ ok: true; body: T } | { ok: false; status: number }>): Promise<InterviewOutcome<T>> {
+export type InterviewExplanation = Body<ApiResult<"work.interview-explanations.post">>;
+/** The student's read: before the invitation the server answers 403, which is its own state, not an error. */
+export type StudentInterviewOutcome<T> = InterviewOutcome<T> | { readonly kind: "notInvited" };
+
+async function run<T>(request: () => Promise<{ ok: true; body: T } | { ok: false; status: number }>): Promise<InterviewOutcome<T>>;
+async function run<T>(request: () => Promise<{ ok: true; body: T } | { ok: false; status: number }>, forbidden: "notInvited"): Promise<StudentInterviewOutcome<T>>;
+async function run<T>(request: () => Promise<{ ok: true; body: T } | { ok: false; status: number }>, forbidden?: "notInvited"): Promise<StudentInterviewOutcome<T>> {
   try {
     const answer = await request();
     if (answer.ok) return { kind: "ok", value: answer.body };
+    if (answer.status === 403 && forbidden !== undefined) return { kind: forbidden };
     switch (answer.status) {
       case 401: return { kind: "signedOut" };
       case 404: return { kind: "notFound" };
@@ -55,3 +62,21 @@ export const markInterviewHeld = (documentId: string, date: string, options?: Ap
 
 export const readInterviewPdf = (documentId: string, options?: ApiOptions) =>
   run(() => createApi(options)("work.interview-pdf.get", { params: { documentId }, ...none, body: undefined }));
+
+// The student's side (PIL-K-RAZGOVOR): the same read, owner_or_course_teacher, where 403 means not yet invited.
+export const readInterviewAsStudent = (documentId: string, options?: ApiOptions) =>
+  run(() => createApi(options)("work.interview.get", { params: { documentId }, ...none, body: undefined }), "notInvited");
+
+/** One explanation, up to 2000 characters; the answer is the explanation as the server stored it. */
+export const sendInterviewExplanation = (documentId: string, input: { questionId: string | null; text: string }, options?: ApiOptions) =>
+  run(() => createApi(options)("work.interview-explanations.post", { params: { documentId }, ...none, body: input }), "notInvited");
+
+// PIL-K-RAZGOVOR-PRILOG (SRV #644): the owning student's note to the preparation, after the invitation.
+export type InterviewNoteInput = Input<"work.interview-notes.post">["body"];
+export type InterviewNote = Body<ApiResult<"work.interview-notes.post">>;
+/** The contract's limit of one note in bytes (work.interview-notes.post, byteSize maximum). */
+export const INTERVIEW_NOTE_MAX_BYTES = 1_048_576;
+
+/** One note, a UTF-8 text or a PDF in Base64; 403 before the invitation, 409 once the interview is held. */
+export const attachInterviewNote = (documentId: string, body: InterviewNoteInput, options?: ApiOptions) =>
+  run(() => createApi(options)("work.interview-notes.post", { params: { documentId }, ...none, body }), "notInvited");

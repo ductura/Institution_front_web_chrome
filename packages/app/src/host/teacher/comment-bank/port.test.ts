@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { commentBankPortFor, draftCommentsPortFor } from "./port";
-import { publishDraftGroup, removeBankEntry, saveDraftComment, visibleToStudent } from "./model";
+import { publishDraftGroup, publishMessage, removeBankEntry, saveDraftComment, visibleToStudent } from "./model";
 
 const WORK = "d1";
 const C1 = "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60";
@@ -48,21 +48,40 @@ describe("draft comments port (WEB-1704)", () => {
     expect(await saveDraftComment(port, WORK, "Skica", ANCHOR)).toEqual({ kind: "unknown" });
   });
 
+  it("publishes exactly the drafts the teacher saw through publish-selected", async () => {
+    const log: string[] = [];
+    const sent: unknown[] = [];
+    const port = draftCommentsPortFor(() => stub({
+      "work.comments.publish-selected.post": (input) => { sent.push(input.body); return { ok: true, status: 200, body: { published: 2 } }; },
+    }, log));
+    expect(await publishDraftGroup(port, WORK, [C1, T1])).toEqual({ kind: "published", ids: [C1, T1] });
+    expect(log).toEqual(["work.comments.publish-selected.post"]);
+    expect(sent).toEqual([{ draftIds: [C1, T1] }]);
+  });
+
   it("counts a publication only when the answer matches the drafts sent (B-6)", async () => {
     const answer = (published: number) => draftCommentsPortFor(() => stub({
-      "work.comments.publish.post": () => ({ ok: true, status: 200, body: { published } }),
+      "work.comments.publish-selected.post": () => ({ ok: true, status: 200, body: { published } }),
     }));
     expect(await publishDraftGroup(answer(2), WORK, ["a", "b"])).toEqual({ kind: "published", ids: ["a", "b"] });
     expect(await publishDraftGroup(answer(3), WORK, ["a", "b"])).toEqual({ kind: "unknown" });
     expect(await publishDraftGroup(answer(1), WORK, ["a", "b"])).toEqual({ kind: "unknown" });
   });
 
-  it("maps refusals: 401 signed out, 409 unknown, 5xx unknown", async () => {
-    const status = (code: number) => draftCommentsPortFor(() => stub({ "work.comments.publish.post": () => ({ ok: false, status: code }) }));
+  it("reports 409 as changed drafts with nothing published", async () => {
+    const port = draftCommentsPortFor(() => stub({ "work.comments.publish-selected.post": () => ({ ok: false, status: 409 }) }));
+    const result = await publishDraftGroup(port, WORK, ["a"]);
+    expect(result).toEqual({ kind: "changed" });
+    expect(publishMessage(result)).toBe("Nacrti su se u međuvremenu promijenili, osvježi popis");
+  });
+
+  it("maps the other refusals as before: 401 signed out, 4xx rejected, 5xx unknown", async () => {
+    const status = (code: number) => draftCommentsPortFor(() => stub({ "work.comments.publish-selected.post": () => ({ ok: false, status: code }) }));
     expect(await publishDraftGroup(status(401), WORK, ["a"])).toEqual({ kind: "signedOut" });
-    expect(await publishDraftGroup(status(409), WORK, ["a"])).toEqual({ kind: "unknown" });
-    expect(await publishDraftGroup(status(503), WORK, ["a"])).toEqual({ kind: "unknown" });
+    expect(await publishDraftGroup(status(403), WORK, ["a"])).toEqual({ kind: "rejected" });
     expect(await publishDraftGroup(status(404), WORK, ["a"])).toEqual({ kind: "rejected" });
+    expect(await publishDraftGroup(status(422), WORK, ["a"])).toEqual({ kind: "rejected" });
+    expect(await publishDraftGroup(status(503), WORK, ["a"])).toEqual({ kind: "unknown" });
   });
 });
 

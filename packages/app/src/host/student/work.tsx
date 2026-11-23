@@ -28,6 +28,7 @@ import { hostText } from "../../text";
 import { nextPath } from "../../bases";
 import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
+import { AssistantMatchNoticeHost } from "../editor/assistant-match-notice/AssistantMatchNoticeHost";
 import { ImportHost } from "../editor/import/ImportHost";
 import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
@@ -120,8 +121,9 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session, documentId }) => <>
-              <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
+              <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />
               <DirectEditSettingHost documentId={documentId} here={here} />
+              <AssistantMatchNoticeHost documentId={documentId} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
               <RulesHost role="student" />
               <MarksHost />

@@ -17,6 +17,7 @@ import type { GradeCall } from "./grade/contract";
 import TeacherSubmissions from "./TeacherSubmissions";
 import { submissionsMessages as text } from "./messages.hr";
 import { clientSubmissionsPort, signInReturn } from "./port";
+import { clientHistoryCall, type HistoryTransport } from "./history/port";
 
 export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string }) {
   const { base } = useHost();
@@ -25,6 +26,7 @@ export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string 
   // each call type names only the operations its module reads; the client checks each answer against the contract.
   const call = useMemo(() => createApi(), []);
   const port = useMemo(() => clientSubmissionsPort(call as unknown as SubmissionsCall, signIn), [call, signIn]);
+  const history = useMemo(() => clientHistoryCall(call as unknown as HistoryTransport), [call]);
   const grade = useGradeRead(call as unknown as GradeCall, assignmentId, signIn);
   return (
     <div className="page">
@@ -35,7 +37,7 @@ export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string 
       <GradeGate read={grade.read} onRetry={grade.retry}>
         <BulkDownload call={call as unknown as BulkCall} assignmentId={assignmentId} onSignedOut={signIn} />
       </GradeGate>
-      <TeacherSubmissions port={port} assignmentId={assignmentId} />
+      <TeacherSubmissions port={port} assignmentId={assignmentId} history={history} onSignedOut={signIn} />
     </div>
   );
 }

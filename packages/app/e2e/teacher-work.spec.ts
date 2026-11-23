@@ -27,7 +27,13 @@ const signed = vectors.find((v) => v.route === "teacher.submission-receipt.get"
 if (!("receipt" in signed) || !signed.receipt) throw new Error("Missing signed receipt vector");
 const documentId = signed.receipt.payload.documentId;
 if (typeof documentId !== "string") throw new Error("Missing documentId in signed receipt vector");
-const workBody = vectors.find((v) => v.route === "teacher.work.get" && v.name === "submitted-work")!.response.body;
+// teacher.work.get has no vector for the signed receipt's work: take the server's "middle-work" answer and
+// give it that receipt's work, student and assignment (alone in the assignment, so no previous or next work).
+const workBody = {
+  ...vectors.find((v) => v.route === "teacher.work.get" && v.name === "middle-work")!.response.body,
+  documentId, studentId: signed.receipt.payload.principalId, assignmentId: signed.receipt.payload.assignmentId,
+  studentName: "Iva Izmišljena", prevDocumentId: null, nextDocumentId: null,
+};
 const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "teacher-without-name")!.response.body;
 const profileBody = { ...profile, roles: ["teacher"] };
 const originNothingRecorded = vectors.find((v) => v.route === "work.origin-composition.get" && v.name === "nothing-recorded")!.response.body;
@@ -182,5 +188,9 @@ test("the anchored comment is shown after the server confirms and returns it", a
   } finally {
     finish();
   }
-  await expect(page.getByText(comment, { exact: true })).toBeVisible();
+  // The thread the server returned, not the new comment's own text box: that
+  // box holds the same text until the answer, so an exact match on the page
+  // passed only while it was still there (ZEL-CI-WEB, flaky under load).
+  await expect(page.getByRole("form", { name: comments.newTitle })).toHaveCount(0);
+  await expect(page.getByRole("article").getByText(comment)).toBeVisible();
 });

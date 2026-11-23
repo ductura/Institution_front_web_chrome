@@ -1,7 +1,7 @@
 // The one read of the student's "Podrijetlo teksta": work.origin-composition.get from the contract extract, through
 // createApi (the same operation the teacher's map reads); createApi also holds the answer to the generated schema.
 import { createApi, type ApiOptions } from "@/client/api";
-import type { OriginRead } from "../../../teacher/origin-map/contract";
+import type { OriginRead } from "../../../teacher/provenance/origin";
 
 import { readOfParts } from "./model";
 
