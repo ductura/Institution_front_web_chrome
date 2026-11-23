@@ -38,6 +38,7 @@ import { PregledHost } from "../editor/right/PregledHost";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
+import { CommentsHost } from "../editor/comments/CommentsHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
@@ -111,6 +112,9 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
+              // PIL-K-KOMENTARI-EDITOR: the Comments card over the real port, in place of the old CommentPanel.
+              comments: ({ editor, documentId, session, submitted, signedOut }) =>
+                <CommentsHost editor={editor} documentId={documentId} session={session} submitted={submitted} signedOut={signedOut} />,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <ChapterPanel workId={assignmentId} /> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
@@ -150,6 +154,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             aside={frame.variant === "predano" && <>
               <ReadOnlyMentor role="student" submitted documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />
               {receipt?.documentId === undefined ? null : <DirectEditSettingHost documentId={receipt.documentId} here={here} submitted />}
+              {receipt?.documentId === undefined ? null : <CommentsHost editor={null} documentId={receipt.documentId} session={null} submitted />}
             </>}
           >
             {sheetBody(frame.variant, assignmentId, title)}
