@@ -141,7 +141,7 @@ export function UsersPanel() {
   const working = step.kind === "working";
   const unknown = step.kind === "done" && step.outcome === "unknown";
   const open = step.kind === "asking" || working || unknown;
-  const copy = step.kind !== "idle" && step.action === "revoke" ? t.revokeDialog : t.confirmDialog;
+  const copy = step.kind !== "idle" && "revoke" === step.action ? t.revokeDialog : t.confirmDialog;
   const line = step.kind === "done" && !unknown ? outcomeLine(step.action, step.outcome) : null;
   const ask = (action: RoleAction, personId: string, name: string) => setStep({ kind: "asking", action, personId, name });
   const leave = () => setStep({ kind: "idle" });
@@ -209,7 +209,7 @@ export function UsersPanel() {
         ) : (
           <>
             <Button busy={working} onClick={() => void send()}>
-              {step.kind !== "idle" && step.action === "revoke" ? t.revokeAction : t.confirmAction}
+              {step.kind !== "idle" && "revoke" === step.action ? t.revokeAction : t.confirmAction}
             </Button>
             <Button ref={safe} tone="secondary" busy={working} onClick={leave}>{t.cancel}</Button>
           </>
