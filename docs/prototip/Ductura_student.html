@@ -119,7 +119,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
 }
 @media (max-width:640px) { .main { padding:20px var(--gutter-r) 40px var(--gutter-l); } .card { padding:16px; } }
 </style>
-<div id="proto-bar"><b>Prototip</b><label>ekran <select id="proto-view" aria-label="Ekran prototipa"></select></label><label>stanje <select id="proto-variant" aria-label="Stanje ekrana"></select></label><button type="button" data-core="theme">tema ◐</button><button type="button" id="proto-reset">ispočetka</button></div>
+<div id="proto-bar"><b>Prototip</b><label>ekran <select id="proto-view" aria-label="Ekran prototipa"></select></label><label>stanje <select id="proto-variant" aria-label="Stanje ekrana"></select></label><label>zvonce <select id="proto-bell" aria-label="Stanje zvonca obavijesti"></select></label><button type="button" data-core="theme">tema ◐</button><button type="button" id="proto-reset">ispočetka</button></div>
 <div id="stage"></div><div id="toast" role="status" hidden></div>
 <script>/* Jezgra prototipa: usmjerivač po #imenu, stanje, ljuska, traka prototipa. */
 (function () {
@@ -128,22 +128,37 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     data: {
       student: 'Student A', today: '5. 11. 2026.',
       tasks: [
-        { id: 't1', course: 'Kolegij A', kind: 'Seminarski rad', title: 'Lokalni mediji i izborna kampanja', due: '8. 11. 2026., 23:59', near: 'Rok za 3 dana', mentor: 'Nastavnik A' },
-        { id: 't2', course: 'Kolegij B', kind: 'Esej', title: 'Javna rasprava o školskom kurikulu', due: '15. 1. 2027., 23:59', mentor: 'Nastavnik B' },
-        { id: 't3', course: 'Kolegij C', kind: 'Esej', title: 'Esej o povjerenju u institucije', due: '1. 10. 2026., 23:59', mentor: 'Nastavnik C' },
-        { id: 't4', course: 'Kolegij D', kind: 'Seminarski rad', title: 'Pregled literature o lokalnoj samoupravi', due: '20. 12. 2026., 23:59', mentor: 'Nastavnik D', hidden: true }
+        { id: 't1', course: 'Kolegij A', kind: 'Seminarski rad', title: 'Lokalni mediji i izborna kampanja', due: '8. 11. 2026., 23:59', iso: '2026-11-08', near: 'Rok za 3 dana', mentor: 'Nastavnik A', words: '1.200 do 1.600', ext: { prev: '1. 11. 2026., 23:59', reason: 'tehnicki', scope: 'svi' } },
+        { id: 't2', course: 'Kolegij B', kind: 'Esej', title: 'Javna rasprava o školskom kurikulu', due: '15. 1. 2027., 23:59', iso: '2027-01-15', mentor: 'Nastavnik B', words: '1.500 do 2.000' },
+        { id: 't3', course: 'Kolegij C', kind: 'Esej', title: 'Esej o povjerenju u institucije', due: '1. 10. 2026., 23:59', iso: '2026-10-01', mentor: 'Nastavnik C', words: '1.000 do 1.500' },
+        { id: 't4', course: 'Kolegij D', kind: 'Seminarski rad', title: 'Pregled literature o lokalnoj samoupravi', due: '20. 12. 2026., 23:59', iso: '2026-12-20', mentor: 'Nastavnik D', words: '3.000 do 4.000', hidden: true },
+        { id: 't5', course: 'Kolegij B', kind: 'Esej', title: 'Sažetak stručnog članka o medijskoj pismenosti', due: '30. 10. 2026., 23:59', iso: '2026-10-30', mentor: 'Nastavnik B', words: '800 do 1.200' }
       ],
-      enrollCode: 'KOL-D-2026'
+      enrollCode: 'KOL-D-2026',
+      todayIso: '2026-11-05',
+      // NF-1 / P-1, P-2: obavijesti u zvoncu (izmišljeni podaci). Vrste kao u ugovoru notifications.list.get.
+      notifs: [
+        { id: 'n1', kind: 'assignment_version', task: 't2', at: '5. 11. 2026., 9:12', read: false },
+        { id: 'n2', kind: 'deadline_reminder', task: 't1', at: '5. 11. 2026., 8:00', read: false },
+        { id: 'n3', kind: 'comment_posted', task: 't3', at: '3. 11. 2026., 16:40', read: true },
+        { id: 'n4', kind: 'submission_recorded', task: 't3', at: '3. 10. 2026., 14:20', read: true },
+        { id: 'n5', kind: 'course_handover', course: 'Kolegij C', at: '29. 9. 2026., 11:05', read: true },
+        { id: 'n6', kind: 'nova_vrsta_koju_klijent_ne_zna', at: '28. 9. 2026., 10:00', read: false }
+      ]
     },
     state: {
       loggedIn: false,
-      ack: { t1: true, t3: true },          // potvrđena obavijest po zadatku
+      ack: { t1: true, t3: true, t5: true },          // potvrđena obavijest po zadatku
       started: { t1: true, t3: true },      // rad otvoren
       submitted: { t3: '3. 10. 2026., 14:20' }, // vrijeme poslužitelja pri predaji
       enrolledD: false,
       current: 't1',                         // zadatak koji je otvoren
       sheetTheme: 'dark',
-      variant: {}
+      variant: {},
+      bell: 'puno', bellOpen: false,          // NF-1 P-1: stanje zvonca (traka prototipa) i je li ploča otvorena
+      workFilter: 'sve', pollOrder: 'rok',     // NF-1 P-4, P-5
+      attempts: 0,                             // NF-1 P-10: neuspjeli pokušaji upisa
+      notifPrefs: { email: false, push: false, kinds: { version: true, reminder: true, comment: true, submission: false } }
     },
     task: function (id) { id = id || App.state.current; return App.data.tasks.filter(function (t) { return t.id === id; })[0]; },
     visibleTasks: function () { return App.data.tasks.filter(function (t) { return !t.hidden || App.state.enrolledD; }); },
@@ -162,12 +177,13 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   function shell(name, inner) {
     return '<div class="shell"><aside class="side" data-open="false">' +
       '<a class="brand" href="#pocetna" aria-label="Ductura, studentska početna"><span class="mark" aria-hidden="true">D</span><span class="word">Ductura</span></a>' +
+      (App.shellQuick ? App.shellQuick() : '') +
       '<button class="btn small secondary menu" type="button" data-core="menu" aria-expanded="false">Izbornik</button>' +
       '<nav aria-label="Glavna navigacija">' + NAV.map(function (n) {
         return '<a href="#' + n[0] + '"' + (n[0] === name ? ' aria-current="page"' : '') + '>' + n[1] + '</a>';
       }).join('') + '</nav>' +
-      '<div class="side-foot"><button class="btn small secondary" type="button" data-core="theme" aria-label="Promijeni svijetlu ili tamnu temu">◐</button>' +
-      '<button class="btn small secondary" type="button" data-core="logout">Odjava</button></div></aside>' +
+      '<div class="side-foot">' + (App.bellButton ? App.bellButton('') : '') + '<button class="btn small secondary" type="button" data-core="theme" aria-label="Promijeni svijetlu ili tamnu temu">◐</button>' +
+      '<button class="btn small secondary" type="button" data-core="logout">Odjava</button></div></aside>' + (App.bellRoot ? App.bellRoot() : '') +
       '<main class="main' + (screens[name].narrow ? ' narrow' : '') + '" id="sadrzaj" tabindex="-1">' + inner + '</main></div>';
   }
   function ctx() { return { variant: App.variant(), state: App.state, data: App.data, task: App.task() }; }
@@ -207,6 +223,126 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   });
 })();
 </script>
+<!-- nf1: zvonce obavijesti (NF-1 P-1, P-2, P-13) -->
+<style>
+.nf-bell-btn { display:inline-flex; flex-direction:column; gap:2px; line-height:1.15; padding-top:4px; padding-bottom:4px; }
+.nf-badge { display:inline-block; min-width:20px; padding:0 5px; border-radius:10px; background:var(--accent); color:var(--accent-ink); font:600 11px/18px var(--ff-ui); text-align:center; }
+.side .quick { display:none; }
+#nf-root { display:contents; }
+.nf-panel { position:fixed; left:72px; bottom:16px; width:min(380px, calc(100vw - 88px)); max-height:min(70vh, 560px); overflow:auto; z-index:30; align-content:start; }
+.nf-head { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.nf-head h2 { font-size:20px; }
+.nf-list { display:grid; gap:6px; list-style:none; padding:0; margin:0; }
+.nf-item { display:grid; gap:2px; width:100%; text-align:left; min-height:44px; padding:8px 10px; border:1px solid var(--rule-2); border-radius:6px; background:var(--card); color:var(--ink); }
+.nf-item:hover { background:var(--hover); }
+.nf-item b { font-weight:600; display:flex; gap:8px; align-items:flex-start; }
+.nf-item b .dot { margin-top:6px; }
+.nf-item[data-read="true"] b { font-weight:500; }
+.nf-foot { display:flex; gap:8px 16px; flex-wrap:wrap; align-items:center; justify-content:space-between; border-top:1px solid var(--rule-2); padding-top:10px; }
+.nf-foot a { display:inline-flex; align-items:center; min-height:44px; }
+.nf-sr { position:absolute; left:-9999px; }
+@media (max-width:800px) {
+  .side .quick { display:flex; gap:6px; margin-left:auto; margin-right:6px; }
+  .side[data-open="true"] .quick { display:none; }
+  .nf-bell-btn { flex-direction:row; align-items:center; gap:6px; }
+  .nf-panel { left:var(--gutter-l); right:var(--gutter-r); width:auto; top:64px; bottom:auto; max-height:calc(100vh - 80px); }
+}
+</style>
+<script>
+(function () {
+  var KIND_LABEL = { assignment_version: 'Nova verzija zadatka', deadline_reminder: 'Podsjetnik na rok', comment_posted: 'Novi komentar', submission_recorded: 'Predaja zabilježena', course_handover: 'Promjena na kolegiju' };
+  var OLDER = [
+    { id: 'n7', kind: 'deadline_reminder', task: 't3', at: '28. 9. 2026., 8:00', read: true },
+    { id: 'n8', kind: 'assignment_version', task: 't3', at: '21. 9. 2026., 13:30', read: true }
+  ];
+  var more = false, lastFocus = null;
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function known(n) { return !!KIND_LABEL[n.kind]; }      // nepoznata vrsta se preskače, ne ruši popis
+  function items() { return App.data.notifs.concat(more ? OLDER : []).filter(known); }
+  function unread() { return App.state.bell === 'puno' ? items().filter(function (n) { return !n.read; }).length : 0; }
+  function task(n) { return n.task ? App.task(n.task) : null; }
+  function text(n) {
+    var t = task(n);
+    if (n.kind === 'assignment_version') return ['Nova verzija zadatka: ' + t.title, 'Nastavnik je objavio novu verziju uputa. Pročitajte je i potvrdite prije nastavka rada.'];
+    if (n.kind === 'deadline_reminder') return ['Rok za zadatak ' + t.title + ': ' + t.due, t.course + ' · podsjetnik u aplikaciji'];
+    if (n.kind === 'comment_posted') return ['Novi komentar uz rad: ' + t.title, 'Komentar otvorite u radu. Tekst komentara se ne prikazuje u obavijesti.'];
+    if (n.kind === 'submission_recorded') return ['Predaja je zabilježena: ' + t.title, 'Potvrdu o predaji možete otvoriti u radu.'];
+    return ['Promjena na kolegiju ' + n.course, 'Pogledajte popis kolegija i zadataka.'];
+  }
+  function btnLabel() { var u = unread(); return 'Obavijesti' + (u ? ', ' + u + ' nepročitano' + (u === 1 ? '' : 'ih') : ''); }
+  App.bellButton = function (cls) {
+    var u = unread();
+    return '<button class="btn small secondary nf-bell-btn ' + (cls || '') + '" type="button" data-nf="bell" aria-haspopup="dialog" aria-expanded="' + !!App.state.bellOpen + '" aria-controls="nf-panel" aria-label="' + btnLabel() + '"><span aria-hidden="true">Obavijesti</span>' + (u ? '<span class="nf-badge" aria-hidden="true">' + u + '</span>' : '') + '</button>';
+  };
+  App.shellQuick = function () { return '<span class="quick">' + App.bellButton('q') + '<button class="btn small secondary" type="button" data-core="logout">Odjava</button></span>'; };
+  function body() {
+    var b = App.state.bell;
+    if (b === 'ucitavanje') return '<div aria-busy="true" role="status"><span class="nf-sr">Učitavanje obavijesti</span><div class="skel w80"></div><div class="skel w60"></div><div class="skel w40"></div></div>';
+    if (b === 'greska') return '<div role="alert"><p class="note">Obavijesti trenutačno nisu dostupne. To ne znači da ih nema.</p><button class="btn small" type="button" data-nf="retry">Pokušaj ponovno</button></div>';
+    if (b === 'prazno') return '<p class="note" role="status">Nema novih obavijesti. Ovdje će se prikazati nova verzija zadatka, podsjetnici na rok, komentari i potvrde predaje.</p>';
+    var list = items();
+    return '<ul class="nf-list" aria-label="Popis obavijesti">' + list.map(function (n) {
+      var tx = text(n);
+      return '<li><button class="nf-item" type="button" data-nf="open" data-id="' + n.id + '" data-read="' + n.read + '"><b>' + (n.read ? '' : '<span class="dot" aria-hidden="true"></span><span class="nf-sr">Nepročitano: </span>') + esc(tx[0]) + '</b><span class="meta">' + esc(tx[1]) + '</span><span class="meta">' + esc(n.at) + '</span></button></li>';
+    }).join('') + '</ul>' + (more ? '' : '<button class="btn small secondary" type="button" data-nf="older" style="justify-self:start">Starije obavijesti</button>');
+  }
+  App.bellRoot = function () {
+    if (!App.state.bellOpen) return '<div id="nf-root"></div>';
+    return '<div id="nf-root"><section class="dialog nf-panel" id="nf-panel" role="dialog" aria-labelledby="nf-h" tabindex="-1"><div class="nf-head"><h2 id="nf-h">Obavijesti</h2><button class="btn small secondary" type="button" data-nf="close">Zatvori</button></div>' + body() +
+      '<div class="nf-foot"><button class="btn small secondary" type="button" data-nf="readall"' + (App.state.bell === 'puno' && unread() ? '' : ' aria-disabled="true"') + '>Označi sve kao pročitano</button><a href="#postavke" data-go="postavke">Postavke obavijesti</a></div></section></div>';
+  };
+  function refresh(focusPanel) {
+    var root = document.getElementById('nf-root'); if (!root) return;
+    root.outerHTML = App.bellRoot();
+    Array.prototype.forEach.call(document.querySelectorAll('.nf-bell-btn'), function (b) {
+      var q = b.classList.contains('q');
+      b.outerHTML = App.bellButton(q ? 'q' : '');
+    });
+    if (focusPanel) { var p = document.getElementById('nf-panel'); if (p) p.focus({ preventScroll: true }); }
+  }
+  function visibleBell() { return Array.prototype.filter.call(document.querySelectorAll('.nf-bell-btn'), function (b) { return b.offsetParent !== null; })[0]; }
+  function close(restore) {
+    if (!App.state.bellOpen) return;
+    App.state.bellOpen = false; refresh(false);
+    if (restore) { var b = visibleBell(); if (b) b.focus(); }
+  }
+  App.bellClose = close;
+  function open(n) {
+    n.read = true; App.state.bellOpen = false;
+    var t = task(n), st = App.state;
+    if (n.kind === 'assignment_version') { st.current = t.id; st.variant.obavijest = 'promijenjeno'; App.go('obavijest'); }
+    else if (n.kind === 'deadline_reminder') { st.current = t.id; App.go(st.submitted[t.id] ? 'potvrda' : !st.ack[t.id] ? 'obavijest' : 'rad'); }
+    else if (n.kind === 'comment_posted') { st.current = t.id; App.go(st.submitted[t.id] ? 'potvrda' : 'rad'); }
+    else if (n.kind === 'submission_recorded') { st.current = t.id; App.go('potvrda'); }
+    else App.go('kolegiji');
+    refresh(false);
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-nf]');
+    if (!el) { if (App.state.bellOpen && !e.target.closest('#nf-panel') && !e.target.closest('[data-go]')) close(false); return; }
+    if (el.getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+    var a = el.getAttribute('data-nf');
+    if (a === 'bell') { App.state.bellOpen = !App.state.bellOpen; refresh(App.state.bellOpen); if (!App.state.bellOpen) { var b = visibleBell(); if (b) b.focus(); } }
+    else if (a === 'close') close(true);
+    else if (a === 'retry') { App.state.bell = 'ucitavanje'; refresh(false); setTimeout(function () { App.state.bell = 'puno'; syncBar(); refresh(false); }, 600); }
+    else if (a === 'older') { more = true; refresh(false); }
+    else if (a === 'readall') { App.data.notifs.concat(OLDER).forEach(function (n) { n.read = true; }); refresh(false); App.toast('Sve obavijesti su označene kao pročitane.'); }
+    else if (a === 'open') { var id = el.getAttribute('data-id'); App.data.notifs.concat(OLDER).forEach(function (n) { if (n.id === id) open(n); }); }
+  });
+  document.addEventListener('click', function (e) { if (e.target.closest('#nf-panel [data-go]')) { App.state.bellOpen = false; } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(true); });
+  window.addEventListener('hashchange', function () { App.state.bellOpen = false; });
+  var BV = [['puno', 'puno, s nepročitanima'], ['prazno', 'prazno'], ['ucitavanje', 'učitavanje'], ['greska', 'greška']];
+  function syncBar() { var sel = document.getElementById('proto-bell'); if (sel) sel.value = App.state.bell; }
+  document.addEventListener('DOMContentLoaded', function () {
+    var sel = document.getElementById('proto-bell'); if (!sel) return;
+    sel.innerHTML = BV.map(function (v) { return '<option value="' + v[0] + '">' + v[1] + '</option>'; }).join('');
+    sel.value = App.state.bell;
+    sel.addEventListener('change', function (e) { App.state.bell = e.target.value; App.state.bellOpen = true; App.rerender(); });
+  });
+})();
+</script>
+
 <!-- prijava -->
 <style>
 .pj-page { min-height:100%; display:grid; grid-template-rows:auto 1fr auto; }
@@ -245,14 +381,15 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   function help(open) {
     return '<details' + (open ? ' open' : '') + '><summary>Trebate pomoć?</summary>' +
       '<div class="row"><h3>Ne možete se prijaviti računom AAI@EduHr?</h3><span class="meta">Za zaboravljenu korisničku oznaku ili lozinku obratite se službi svoje matične ustanove.</span><a href="#" data-act="pomoc-aai">Službena pomoć AAI@EduHr</a></div>' +
-      '<div class="row"><h3>Prijava je uspjela, ali nemate pristup?</h3><span class="meta">Javite se koordinatoru na svojoj ustanovi.</span></div></details>';
+      '<div class="row"><h3>Prijava je uspjela, ali nemate pristup?</h3><span class="meta">Javite se koordinatoru (administratoru fakulteta) na svojoj ustanovi.</span></div></details>';
   }
   function card(v) {
     if (busy) v = 'preusmjeravanje';
     if (v === 'preusmjeravanje') return '<section class="pj-card" role="status" aria-labelledby="pj-c"><h2 id="pj-c">Preusmjeravamo Vas na AAI@EduHr</h2><div class="pj-bar" aria-hidden="true"><span></span></div><span class="meta">Lozinku upisujete samo kod AAI@EduHr.</span><button class="btn" type="button" disabled>Prijava sustavom AAI@EduHr</button></section>';
     if (v === 'greska') return '<section class="pj-card" role="alert"><h2>Prijava nije dovršena</h2><p class="note">Prijavu nije bilo moguće dovršiti. Pokušajte ponovno; ako se ponovi, javite se koordinatoru na svojoj ustanovi.</p><button class="btn" type="button" data-act="ponovno">Pokušaj ponovno</button><a href="#" data-act="ponovno">Na početnu</a></section>';
     if (v === 'nedostupno') return '<section class="pj-card" role="alert"><h2>Prijava nije dovršena</h2><p class="note">Prijava preko AAI@EduHr trenutačno ne odgovara. Pokušajte ponovno za nekoliko minuta.</p><button class="btn" type="button" data-act="ponovno">Pokušaj ponovno</button></section>';
-    if (v === 'bezuloge') return '<section class="pj-card" role="status"><h2>Prijava je uspjela</h2><p class="note">Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.</p><p class="note">Javite se koordinatoru na svojoj ustanovi.</p><button class="btn secondary" type="button" data-act="ponovno">Odjava</button></section>';
+    if (v === 'odbijeno') return '<section class="pj-card" role="alert"><h2>Prijava je odbijena</h2><p class="note">Vaš račun AAI@EduHr nema pristup ovom prostoru. To nije kvar prijave i ponovni pokušaj ga neće promijeniti.</p><p class="note">Javite se koordinatoru (administratoru fakulteta) na svojoj ustanovi.</p><button class="btn secondary" type="button" data-act="ponovno">Na početnu</button></section>';
+    if (v === 'bezuloge') return '<section class="pj-card" role="status"><h2>Prijava je uspjela</h2><p class="note">Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti. Ulogu dodjeljuje administrator fakulteta.</p><p class="note">Javite se koordinatoru (administratoru fakulteta) na svojoj ustanovi.</p><button class="btn secondary" type="button" data-act="ponovno">Odjava</button></section>';
     var pomoc = v === 'pomoc';
     return '<section class="pj-card" aria-labelledby="pj-c"><span class="eyebrow">Prijava</span><h2 id="pj-c">Vaš akademski <em>identitet.</em></h2>' +
       '<p class="note">Prijavite se korisničkim računom AAI@EduHr, istim kojim se prijavljujete u Studomat i Merlin. Studenti i nastavnici koriste isti ulaz.</p>' +
@@ -264,7 +401,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   }
   App.register('prijava', {
     title: 'S-01 Prijava', shell: 'none',
-    variants: [{id:'zadano',label:'zadano'},{id:'preusmjeravanje',label:'preusmjeravanje'},{id:'greska',label:'greška, odbijena prijava'},{id:'nedostupno',label:'AAI@EduHr ne odgovara'},{id:'bezuloge',label:'nova osoba bez uloge'},{id:'pomoc',label:'pomoć otvorena'}],
+    variants: [{id:'zadano',label:'zadano'},{id:'preusmjeravanje',label:'preusmjeravanje'},{id:'greska',label:'greška, odbijena prijava'},{id:'nedostupno',label:'AAI@EduHr ne odgovara'},{id:'odbijeno',label:'prijava odbijena (račun bez pristupa)'},{id:'bezuloge',label:'nova osoba bez uloge'},{id:'pomoc',label:'pomoć otvorena'}],
     render: function (ctx) {
       if (ctx.variant !== 'zadano' && ctx.variant !== 'puno') stop();
       var v = ctx.variant === 'puno' ? 'zadano' : ctx.variant;
@@ -311,33 +448,50 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
 .po-card h2 { font-size:20px; }
 .po-card .row { text-align:left; width:100%; }
 .po-steps { display:grid; gap:12px; text-align:left; width:100%; }
+.tag.late { border-color:var(--error); color:var(--ink); }
+.po-ext { display:block; margin-top:2px; }
+.po-sec h3 { font:600 13.5px/1.4 var(--ff-ui); letter-spacing:0; color:var(--ink-2); margin-top:8px; }
+.po-tools { display:flex; gap:8px 16px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+.po-tools label { display:inline-flex; gap:8px; align-items:center; color:var(--ink-3); font-size:12.5px; }
+.po-tools .input { min-height:44px; }
+.po-ics { display:grid; gap:6px; justify-items:start; }
 .po-card.card.center .btn { justify-self:center; }
 @media (max-width:640px) { .po-hero h1 { font-size:30px; } .po-task { grid-template-columns:minmax(0,1fr); } .po-task .btn { justify-self:stretch; } .po-continue { padding:16px; } }
 </style>
 <script>
 (function () {
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-  var ST = { pocetna: ['puno','prazno','kolegijbeztaska','ucitavanje','greska'], kolegiji: ['puno','jedan','prazno','ucitavanje','greska','istekla'], radovi: ['puno','prazno','ucitavanje','greska'] };
-  var VL = { puno:'puno', prazno:'nema kolegija', kolegijbeztaska:'kolegij bez zadatka', ucitavanje:'učitavanje', greska:'greška', jedan:'jedan kolegij', istekla:'prijava istekla' };
+  var ST = { pocetna: ['puno','prazno','kolegijbeztaska','ucitavanje','greska'], kolegiji: ['puno','jedan','prazno','ucitavanje','greska','istekla'], radovi: ['puno','bezrezultata','prazno','ucitavanje','greska'] };
+  var VL = { puno:'puno', prazno:'nema kolegija', kolegijbeztaska:'kolegij bez zadatka', ucitavanje:'učitavanje', greska:'greška', jedan:'jedan kolegij', istekla:'prijava istekla', bezrezultata:'filtar bez rezultata' };
   function variants(n) { return ST[n].map(function (id) { return { id: id, label: id === 'prazno' && n === 'kolegiji' ? 'prazno' : VL[id] }; }); }
 
   function kind(t, s) { return s.submitted[t.id] ? 'predano' : !s.ack[t.id] ? 'obavijest' : s.started[t.id] ? 'rad' : 'zadatak'; }
-  function btn(t, s, small) {
-    var k = kind(t, s), c = 'btn' + (small ? ' small' : '');
-    if (k === 'predano') return '<button class="' + c + ' secondary" type="button" data-act="otvori" data-id="' + t.id + '">Otvori rad</button>';
-    if (k === 'obavijest') return '<button class="' + c + ' secondary" type="button" data-act="otvori" data-id="' + t.id + '">Pročitaj upute</button>';
-    return '<button class="' + c + '" type="button" data-act="otvori" data-id="' + t.id + '">' + (k === 'rad' ? 'Otvori rad' : 'Otvori zadatak') + '</button>';
+  /* NF-1 P-13: gumb ima naziv s naslovom zadatka i opis s rokom (jedan naziv po retku, oznake povezane s retkom). */
+  function btn(t, s, small, desc) {
+    var k = kind(t, s), c = 'btn' + (small ? ' small' : ''), d = desc ? ' aria-describedby="' + desc + '"' : '';
+    var lab = k === 'obavijest' ? 'Pročitaj upute' : (k === 'rad' || k === 'predano') ? 'Otvori rad' : 'Otvori zadatak';
+    return '<button class="' + c + (k === 'predano' || k === 'obavijest' ? ' secondary' : '') + '" type="button" data-act="otvori" data-id="' + t.id + '" aria-label="' + lab + ': ' + esc(t.title) + '"' + d + '>' + lab + '</button>';
   }
+  /* NF-1 P-3, P-6, P-7: činjenične oznake roka; nikad tvrdnja o ponašanju studenta. */
+  function isoOf(str) { var m = /(\d+)\. (\d+)\. (\d{4})/.exec(str || ''); return m ? m[3] + '-' + (m[2].length < 2 ? '0' : '') + m[2] + '-' + (m[1].length < 2 ? '0' : '') + m[1] : ''; }
+  function overdue(t, s) { return !s.submitted[t.id] && t.iso < App.data.todayIso; }
+  function afterDue(t, s) { return !!s.submitted[t.id] && isoOf(s.submitted[t.id]) > t.iso; }
+  var REASON = { opravdano: 'opravdani razlog', tehnicki: 'tehnički razlog', dogovor: 'dogovor s nastavnikom' };
+  function extNote(t) { return t.ext ? '<span class="meta po-ext">Prethodni rok: ' + esc(t.ext.prev) + '. Razlog: ' + REASON[t.ext.reason] + '. Vrijedi za ' + (t.ext.scope === 'svi' ? 'sve studente kolegija' : 'samo Vas') + '.</span>' : ''; }
+  function dueTags(t, s) { return (t.near ? '<span class="tag near">' + esc(t.near) + '</span>' : '') + (overdue(t, s) ? '<span class="tag late">Rok je prošao ' + esc(t.due.split(',')[0]) + '</span>' : ''); }
   function when(t, s) {
     var k = kind(t, s);
-    if (k === 'predano') return '<span>Predano ' + esc(s.submitted[t.id]) + '</span>';
-    return '<span>Rok: ' + esc(t.due) + '</span>' + (t.near ? '<span class="tag near">' + esc(t.near) + '</span>' : '') + (k === 'obavijest' ? '<span class="tag open">Prvo pročitajte obavijest</span>' : '');
+    if (k === 'predano') return '<span>Predano ' + esc(s.submitted[t.id]) + '</span>' + (afterDue(t, s) ? '<span class="tag late">Predano nakon roka</span>' : '');
+    return '<span>' + (t.ext ? 'Produljeni rok: ' : 'Rok: ') + esc(t.due) + '</span>' + dueTags(t, s) + (k === 'obavijest' ? '<span class="tag open">Prvo pročitajte obavijest</span>' : '');
   }
   function task(t, s, withCourse) {
-    return '<li class="item po-task"><span>' + (withCourse ? '<span class="eyebrow">' + esc(t.course) + '</span>' : '') + '<span class="title">' + esc(t.title) + '</span><span class="po-when">' + when(t, s) + '</span></span>' + btn(t, s, true) + '</li>';
+    var k = kind(t, s);
+    return '<li class="item po-task"><span>' + (withCourse ? '<span class="eyebrow">' + esc(t.course) + '</span>' : '') + '<span class="title">' + esc(t.title) + '</span><span class="po-when" id="pw-' + t.id + '">' + when(t, s) + '</span>' + (k === 'predano' ? '' : extNote(t)) + '</span>' + btn(t, s, true, 'pw-' + t.id) + '</li>';
   }
+  /* NF-1 P-11: isto pravilo kao pri upisu: bez razmaka i crtica, velika slova, najviše 32 znaka. */
+  function normCode(v) { return String(v || '').replace(/[\s\-]/g, '').toUpperCase().slice(0, 32); }
   function codeForm(id) {
-    return '<form class="po-code" data-submit="kod" novalidate><input class="input code" name="kod" aria-label="Kod kolegija" placeholder="KOD-KOLEGIJA" autocomplete="off" autocapitalize="characters"><button class="btn" type="submit">Upiši</button></form>';
+    return '<form class="po-code" data-submit="kod" novalidate><input class="input code" name="kod" aria-label="Kod kolegija" placeholder="KOD-KOLEGIJA" autocomplete="off" autocapitalize="characters" maxlength="32"><button class="btn" type="submit">Upiši</button></form>';
   }
   function loading() { return '<div class="po-course" aria-busy="true" role="status"><span class="meta" style="position:absolute;left:-9999px">Učitavanje</span><div class="skel w40"></div><div class="item"><div class="skel w80"></div><div class="skel w60"></div></div><div class="item"><div class="skel w80"></div><div class="skel w40"></div></div></div>'; }
   function error() { return '<div class="card po-card" role="alert"><h2>Prikaz trenutačno nije dostupan.</h2><p class="note">Podatke nije bilo moguće učitati. To ne znači da nema kolegija ili radova.</p><button class="btn" type="button" data-act="ponovno" style="justify-self:start">Pokušaj ponovno</button></div>'; }
@@ -356,6 +510,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       '<h3>Što slijedi nakon upisa?</h3><div class="po-steps"><div class="row"><h3>Odaberite zadatak</h3><span class="meta">U svakom kolegiju nastavnik Vam dodjeljuje zadatke.</span></div><div class="row"><h3>Pročitajte upute</h3><span class="meta">Svaki zadatak dolazi s jasnim uputama i očekivanjima.</span></div><div class="row"><h3>Otvorite rad</h3><span class="meta">Nakon što ste spremni, započinjete pisanje u uređivaču.</span></div></div></div>';
   }
 
+  function addDays(iso, n) { var d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
   function pocetna(ctx) {
     var s = ctx.state, v = ctx.variant, tasks = App.visibleTasks();
     var hero = '<div class="po-hero"><span class="eyebrow">' + esc(ctx.data.today) + '</span><h1>Vaš studentski <em>prostor</em></h1><p class="lede">Zadaci na kolegijima.</p></div>';
@@ -363,13 +518,28 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     if (v === 'ucitavanje') body = loading();
     else if (v === 'greska') body = error();
     else if (v === 'prazno') body = noCourses();
-    else if (v === 'kolegijbeztaska') body = '<div class="po-course"><span class="eyebrow">Kolegij</span><h2>Kolegij A</h2><p class="note">U ovom kolegiju zasad nema zadatka.</p></div>' + codeCard();
+    else if (v === 'kolegijbeztaska') body = ['Kolegij A', 'Kolegij B'].map(function (n) { return '<div class="po-course"><span class="eyebrow">Kolegij</span><h2>' + n + '</h2><p class="note">U ovom kolegiju zasad nema zadatka.</p></div>'; }).join('') + codeCard();
     else {
-      var cur = tasks.filter(function (t) { return s.started[t.id] && !s.submitted[t.id] && s.ack[t.id]; })[0] ||
-                tasks.filter(function (t) { return s.started[t.id] && !s.submitted[t.id]; })[0];
+      /* NF-1 P-4: „nastavak rada” je započeti rad s najbližim rokom, ne prvi po redu. */
+      function byDue(a, b) { return a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0; }
+      var cur = tasks.filter(function (t) { return s.started[t.id] && !s.submitted[t.id] && s.ack[t.id]; }).sort(byDue)[0] ||
+                tasks.filter(function (t) { return s.started[t.id] && !s.submitted[t.id]; }).sort(byDue)[0];
       body = '';
       if (cur) body += '<section class="po-continue" aria-labelledby="po-n"><span class="eyebrow">' + esc(cur.kind) + ' · ' + esc(cur.course) + '</span><b id="po-n">' + esc(cur.title) + '</b><span class="meta">Rad je započet, nije predan · Rok: ' + esc(cur.due) + '</span><button class="btn" type="button" data-act="otvori" data-id="' + cur.id + '">Otvori rad</button></section>';
-      body += '<section class="po-sec" aria-labelledby="po-h"><h2 id="po-h">Moji zadaci</h2><ul class="list">' + tasks.map(function (t) { return task(t, s, true); }).join('') + '</ul></section>' + codeCard();
+      var byRok = s.pollOrder !== 'kolegij', soon = addDays(App.data.todayIso, 14), list = '';
+      if (byRok) {
+        [['po-s1', 'Uskoro', function (t) { return !s.submitted[t.id] && t.iso <= soon; }],
+         ['po-s2', 'Kasnije', function (t) { return !s.submitted[t.id] && t.iso > soon; }],
+         ['po-s3', 'Predano', function (t) { return !!s.submitted[t.id]; }]].forEach(function (g) {
+          var part = tasks.filter(g[2]).sort(byDue);
+          if (part.length) list += '<h3 id="' + g[0] + '">' + g[1] + '</h3><ul class="list" aria-labelledby="' + g[0] + '">' + part.map(function (t) { return task(t, s, true); }).join('') + '</ul>';
+        });
+      } else list = '<ul class="list">' + tasks.map(function (t) { return task(t, s, true); }).join('') + '</ul>';
+      var open = tasks.filter(function (t) { return !s.submitted[t.id]; }).length;
+      body += '<section class="po-sec" aria-labelledby="po-h"><div class="po-tools"><h2 id="po-h">Moji zadaci</h2>' +
+        '<label>Poredak <select class="input" data-sel="order" aria-label="Poredak zadataka"><option value="rok"' + (byRok ? ' selected' : '') + '>Po roku</option><option value="kolegij"' + (byRok ? '' : ' selected') + '>Po kolegiju</option></select></label></div>' + list +
+        '<div class="po-ics"><button class="btn secondary" type="button" data-act="ics"' + (open ? '' : ' aria-disabled="true"') + ' aria-describedby="po-ics-n">Dodaj rokove u kalendar</button>' +
+        '<span class="meta" id="po-ics-n">' + (open ? 'Datoteka (.ics) nastaje u Vašem pregledniku i ne šalje se poslužitelju. Sadrži samo naslov zadatka, kolegij i rok. Ako se rok promijeni, kalendar se ne ažurira sam.' : 'Nema rokova za izvoz: svi zadaci su predani.') + '</span></div></section>' + codeCard();
     }
     return '<div class="po-wrap">' + hero + body + '</div>';
   }
@@ -402,9 +572,19 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     if (v === 'ucitavanje') body = loading();
     else if (v === 'greska') body = error();
     else if (v === 'prazno') body = '<div class="card center po-card"><h2>Još nemate radova.</h2><p class="note">Radovi se ovdje prikazuju kad se upišete u kolegij sa zadatkom.</p><button class="btn" type="button" data-act="upis">Upiši kolegij kodom</button></div>';
-    else body = '<ul class="list" aria-label="Popis radova">' + App.visibleTasks().map(function (t) {
-      return '<li class="item po-task"><span><span class="eyebrow">' + esc(t.course) + '</span><span class="title">' + esc(t.title) + '</span><span class="po-when"><span>' + esc(stateText(t, s)) + '</span>' + (s.submitted[t.id] ? '' : '<span>Rok ' + esc(t.due) + '</span>') + '</span></span>' + btn(t, s, true) + '</li>';
-    }).join('') + '</ul>';
+    else {
+      /* NF-1 P-5: filtar po stanju (uz pretragu i godinu iz weba, A-10). */
+      var f = v === 'bezrezultata' ? 'predano-nema' : (s.workFilter || 'sve');
+      var FL = [['sve', 'Sve'], ['zapredati', 'Za predati'], ['predano', 'Predano'], ['obavijest', 'Čeka potvrdu uputa']];
+      var shown = App.visibleTasks().filter(function (t) { var k = kind(t, s); return f === 'sve' || (f === 'zapredati' && (k === 'rad' || k === 'zadatak')) || (f === 'predano' && k === 'predano') || (f === 'obavijest' && k === 'obavijest'); });
+      var tools = '<div class="po-tools"><label>Stanje <select class="input" data-sel="filter" aria-label="Filtar po stanju rada">' + FL.map(function (o) { return '<option value="' + o[0] + '"' + ((f === o[0] || (f === 'predano-nema' && o[0] === 'predano')) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
+        '<span class="meta" role="status">' + (f === 'predano-nema' ? 'Prikazano 0 od ' + App.visibleTasks().length : 'Prikazano ' + shown.length + ' od ' + App.visibleTasks().length) + '</span></div>';
+      if (v === 'bezrezultata') body = tools + '<div class="card center po-card"><p class="note">Nema radova za odabrani filter.</p><button class="btn secondary" type="button" data-act="filtarSve">Prikaži sve radove</button></div>';
+      else body = tools + '<ul class="list" aria-label="Popis radova">' + shown.map(function (t) {
+        return '<li class="item po-task"><span><span class="eyebrow">' + esc(t.course) + '</span><span class="title">' + esc(t.title) + '</span><span class="po-when" id="pr-' + t.id + '"><span>' + esc(stateText(t, s)) + '</span>' +
+          (s.submitted[t.id] ? (afterDue(t, s) ? '<span class="tag late">Predano nakon roka</span>' : '') : '<span>' + (t.ext ? 'Produljeni rok ' : 'Rok ') + esc(t.due) + '</span>' + dueTags(t, s)) + '</span>' + (s.submitted[t.id] ? '' : extNote(t)) + '</span>' + btn(t, s, true, 'pr-' + t.id) + '</li>';
+      }).join('') + '</ul>';
+    }
     return '<div class="po-wrap">' + head + body + '</div>';
   }
 
@@ -414,15 +594,36 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       App.go(s.submitted[id] ? 'potvrda' : !s.ack[id] ? 'obavijest' : 'rad');
     },
     kod: function (form) {
-      var v = (form.elements.kod.value || '').trim().toUpperCase();
+      var v = normCode(form.elements.kod.value);   // NF-1 P-11: isto pravilo kao na upisu
       App.state.pendingCode = v; App.go('upis');
+    },
+    filtarSve: function () { App.state.workFilter = 'sve'; App.state.variant.radovi = 'puno'; App.rerender(); },
+    ics: function (el) {
+      var list = App.visibleTasks().filter(function (t) { return !App.state.submitted[t.id]; });
+      if (!list.length) { App.toast('Nema rokova za izvoz.'); return; }
+      function e(x) { return String(x).replace(/[\\;,]/g, function (c) { return '\\' + c; }); }
+      var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Ductura//student//HR', 'CALSCALE:GREGORIAN'];
+      list.forEach(function (t) { var d = t.iso.replace(/-/g, '') + 'T235900'; L.push('BEGIN:VEVENT', 'UID:' + t.id + '@ductura.invalid', 'DTSTAMP:20261105T080000Z', 'DTSTART:' + d, 'DTEND:' + d, 'SUMMARY:' + e('Rok: ' + t.title + ' (' + t.course + ')'), 'END:VEVENT'); });
+      L.push('END:VCALENDAR');
+      try {
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([L.join('\r\n') + '\r\n'], { type: 'text/calendar' })); a.download = 'ductura-rokovi.ics';
+        document.body.appendChild(a); a.click(); a.remove();
+        App.toast('Datoteka rokova je preuzeta (' + list.length + ').');
+      } catch (err) { App.toast('Datoteku rokova nije moguće napraviti u ovom pregledniku.'); }
     },
     ponovno: function () { var n = location.hash.replace('#', ''); App.state.variant[n] = 'puno'; App.rerender(); },
     upis: function () { App.go('upis'); },
     aai: function () { App.state.loggedIn = false; App.state.variant.prijava = 'zadano'; App.go('prijava'); }
   };
   [['pocetna', 'S-02 Početna', pocetna], ['kolegiji', 'S-03 Moji kolegiji', kolegiji], ['radovi', 'Moji radovi', radovi]].forEach(function (r) {
-    App.register(r[0], { title: r[1], shell: 'side', variants: variants(r[0]), render: r[2], actions: actions });
+    App.register(r[0], { title: r[1], shell: 'side', variants: variants(r[0]), render: r[2], actions: actions, after: function (stage) {
+      Array.prototype.forEach.call(stage.querySelectorAll('[data-sel]'), function (sel) {
+        sel.addEventListener('change', function () {
+          if (sel.getAttribute('data-sel') === 'order') App.state.pollOrder = sel.value; else { App.state.workFilter = sel.value; App.state.variant.radovi = 'puno'; }
+          App.rerender(); var again = document.querySelector('[data-sel="' + sel.getAttribute('data-sel') + '"]'); if (again) again.focus();
+        });
+      });
+    } });
   });
 })();
 </script>
@@ -454,6 +655,13 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
 .up-check input { margin-top:2px; }
 .up-act { display:grid; gap:12px; justify-items:center; text-align:center; }
 .up-hint { color:var(--ink-3); font-size:12.5px; }
+.up-sum { background:var(--well); border-left:3px solid var(--accent); border-radius:6px; padding:10px 14px; display:grid; gap:6px; }
+.up-sum h3 { font:600 13.5px/1.4 var(--ff-ui); letter-spacing:0; }
+.up-diff { width:100%; border-collapse:collapse; text-align:left; font-size:13px; }
+.up-diff caption { text-align:left; font:600 13.5px/1.4 var(--ff-ui); padding-bottom:6px; }
+.up-diff th, .up-diff td { border-top:1px solid var(--rule-2); padding:6px 8px 6px 0; vertical-align:top; }
+.up-diff th { font-weight:600; color:var(--ink-2); }
+.up-diff td.new { color:var(--ink); font-weight:600; }
 @media (max-width:1050px) { .up-cols { grid-template-columns:1fr; } }
 @media (max-width:640px) { .up-hero h1 { font-size:30px; } .up-row { max-width:none; } }
 </style>
@@ -467,16 +675,18 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   var MSG = {
     neispravan: 'Kod ima od 8 do 32 slova i brojke. Provjerite ga i upišite ponovno.',
     istekao: 'Kod ne postoji ili je istekao. Provjerite ga s nastavnikom.',
-    mreza: 'Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.'
+    mreza: 'Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.',
+    previse: 'Previše pokušaja. Pričekajte malo i pokušajte ponovno ili se javite nastavniku.'
   };
-  var SAMPLE = { upisivanje: 'KOL-D-2026', neispravan: 'K7', istekao: 'KOLA-0000-ZZ', mreza: 'KOL-D-2026' };
+  var SAMPLE = { upisivanje: 'KOL-D-2026', neispravan: 'K7', istekao: 'KOLA-0000-ZZ', mreza: 'KOL-D-2026', previse: 'KOLA-0000-ZZ' };
+  window.addEventListener('hashchange', function () { if (location.hash !== '#upis') App.state.attempts = 0; });
 
   function field(v, busy, errKey) {
     var e = errKey ? MSG[errKey] : '';
     return '<form class="up-center" style="display:grid;gap:12px;justify-items:center;width:100%" data-submit="upisi" novalidate>' +
       '<div class="field"><label for="up-kod">Kod kolegija</label>' +
-      '<span class="up-row"><input class="input code" id="up-kod" name="kod" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="KOD-KOLEGIJA" value="' + esc(v) + '"' +
-      (busy ? ' readonly' : '') + (errKey && errKey !== 'mreza' ? ' aria-invalid="true"' : '') +
+      '<span class="up-row"><input class="input code" id="up-kod" name="kod" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="KOD-KOLEGIJA" value="' + esc(v) + '"' +
+      (busy ? ' readonly' : '') + (errKey && errKey !== 'mreza' && errKey !== 'previse' ? ' aria-invalid="true"' : '') +
       ' aria-describedby="up-uputa' + (e ? ' up-greska' : '') + '">' +
       '<button class="btn" type="submit"' + (busy ? ' aria-disabled="true"' : '') + '>' + (busy ? 'Upisivanje…' : 'Upiši') + '</button></span></div>' +
       (e ? '<span class="err" id="up-greska" role="alert">' + e + '</span>' : '') +
@@ -489,7 +699,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     if (v === 'puno' && s.pendingCode) { val = String(s.pendingCode); delete s.pendingCode; }
     if (v === 'puno') return '<section class="card up-center" aria-labelledby="up-h"><h1 id="up-h">Upiši kolegij</h1>' + field(val, false, '') + '</section>';
     if (v === 'upisivanje') return '<section class="card up-center" aria-busy="true" aria-labelledby="up-h"><h1 id="up-h">Upiši kolegij</h1>' + field(val || SAMPLE.upisivanje, true, '') + '<span class="meta" role="status">Upisivanje u kolegij…</span></section>';
-    if (v === 'neispravan' || v === 'istekao' || v === 'mreza')
+    if (v === 'neispravan' || v === 'istekao' || v === 'mreza' || v === 'previse')
       return '<section class="card up-center" aria-labelledby="up-h"><h1 id="up-h">Upiši kolegij</h1>' + field(val || SAMPLE[v], false, v) + '</section>';
     if (v === 'vecupisan')
       return '<section class="card up-center"><h1 class="up-sr" style="position:absolute;left:-9999px">Upiši kolegij</h1><p class="note" role="status">Već ste upisani u ovaj kolegij.</p><button class="btn" type="button" data-act="otvori">Otvori zadatak</button></section>';
@@ -504,7 +714,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     title: 'S-04 Upis kodom', shell: 'side', narrow: true,
     variants: [{ id: 'puno', label: 'zadano' }, { id: 'upisivanje', label: 'upisivanje' }, { id: 'neispravan', label: 'neispravan kod' },
       { id: 'istekao', label: 'istekao ili nepostojeći kod' }, { id: 'vecupisan', label: 'već upisan' },
-      { id: 'mreza', label: 'greška, bez mreže' }, { id: 'bezzadatka', label: 'upisan, kolegij bez zadatka' }],
+      { id: 'mreza', label: 'greška, bez mreže' }, { id: 'previse', label: 'previše pokušaja (3 pogrešna koda)' }, { id: 'bezzadatka', label: 'upisan, kolegij bez zadatka' }],
     render: renderUpis,
     actions: {
       upisi: function (form, ctx) {
@@ -512,14 +722,15 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
         if (ctx.variant === 'upisivanje') return;
         val = raw;
         var n = norm(raw);
+        if ((App.state.attempts || 0) >= 3) { setVar('previse'); return; }
         if (!/^[A-Z0-9]{8,32}$/.test(n)) { setVar('neispravan'); return; }
-        if (n !== norm(App.data.enrollCode)) { setVar('istekao'); return; }
+        if (n !== norm(App.data.enrollCode)) { App.state.attempts = (App.state.attempts || 0) + 1; setVar(App.state.attempts >= 3 ? 'previse' : 'istekao'); return; }
         if (App.state.enrolledD) { setVar('vecupisan'); return; }
         setVar('upisivanje');
         clearTimeout(timer);
         timer = setTimeout(function () {
           if (location.hash !== '#upis') return;
-          App.state.enrolledD = true; App.state.current = 't4';
+          App.state.enrolledD = true; App.state.current = 't4'; App.state.attempts = 0;
           App.state.variant.upis = 'puno'; val = '';
           App.toast('Upisani ste u Kolegij D.');
           App.go('obavijest');
@@ -554,11 +765,28 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   var CONDITION = '2) U svim navedenim slučajevima, konačni sadržaj mora proizaći iz individualnog promišljanja i rada studenta.';
   var DESC = { t2: 'Esej od 1.500 do 2.000 riječi. Analizirajte kako se u javnoj raspravi o školskom kurikulu argumentira na temelju triju izvora.' };
 
+  var EXT_REASON = { opravdano: 'opravdani razlog', tehnicki: 'tehnički razlog', dogovor: 'dogovor s nastavnikom' };
+  /* NF-1 P-16: izmišljeni primjer razlike verzija v1 → v2 (poslužitelj za to nema polje, vidi INVENTAR PO-27). */
+  var PREV_DUE = { t1: '1. 11. 2026., 23:59', t2: '8. 1. 2027., 23:59', t3: '25. 9. 2026., 23:59', t4: '13. 12. 2026., 23:59', t5: '23. 10. 2026., 23:59' };
+  var PREV_WORDS = { t1: '1.000 do 1.400', t2: '1.200 do 1.600', t3: '800 do 1.200', t4: '2.500 do 3.500', t5: '600 do 1.000' };
+  function diff(t) {
+    return '<table class="up-diff"><caption>Što se promijenilo (v1 → v2)</caption><thead><tr><th scope="col">Stavka</th><th scope="col">Bilo (v1)</th><th scope="col">Sada (v2)</th></tr></thead><tbody>' +
+      '<tr><th scope="row">Rok</th><td>' + esc(PREV_DUE[t.id] || '—') + '</td><td class="new">' + esc(t.due) + '</td></tr>' +
+      '<tr><th scope="row">Opseg riječi</th><td>' + esc(PREV_WORDS[t.id] || '—') + '</td><td class="new">' + esc(t.words) + '</td></tr>' +
+      '<tr><th scope="row">Pravilo uporabe alata</th><td>Dopušteno: lektoriranje i jezična provjera.</td><td class="new">Dopušteno: lektoriranje i jezična provjera; pronalaženje literature.</td></tr></tbody></table>';
+  }
   function ul(cls, a) { return '<ul class="facts up-list ' + cls + '">' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; }
 
   function notice(t) {
     var desc = DESC[t.id] || 'Pročitajte upute zadatka i pravila uporabe alata prije nego što počnete pisati.';
-    return '<span class="eyebrow">' + esc(t.course) + '</span><h2 id="up-h2">' + esc(t.title) + '</h2><span class="meta">Rok: ' + esc(t.due) + '</span>' +
+    /* NF-1 P-7: produljeni rok s prethodnim rokom i razlogom (tekst razloga čeka pravni pregled). P-8: sažetak na vrhu. */
+    var ext = t.ext ? '<span class="meta">Rok je produljen. Prethodni rok: ' + esc(t.ext.prev) + '. Razlog: ' + EXT_REASON[t.ext.reason] + '. Vrijedi za ' + (t.ext.scope === 'svi' ? 'sve studente kolegija' : 'samo Vas') + '.</span>' : '';
+    return '<span class="eyebrow">' + esc(t.course) + '</span><h2 id="up-h2">' + esc(t.title) + '</h2><span class="meta">' + (t.ext ? 'Produljeni rok: ' : 'Rok: ') + esc(t.due) + '</span>' + ext +
+      '<section class="up-sum" aria-labelledby="up-sum-h"><h3 id="up-sum-h">Ukratko</h3><ul class="facts">' +
+        '<li>Rok: ' + esc(t.due) + '.</li><li>Opseg: ' + esc(t.words) + ' riječi.</li>' +
+        '<li>Dopušteno: lektoriranje i jezična provjera vlastitog rada; pronalaženje literature.</li>' +
+        '<li>Bilježe se promjene teksta u uređivaču i verzije. Ne bilježe se pritisnute tipke, druge aplikacije, kamera, mikrofon ni zaslon.</li>' +
+        '<li>Potvrda nije privola.</li></ul><span class="meta">Puni tekst obavijesti je ispod.</span></section>' +
       '<p class="note">' + desc + '</p>' +
       '<h3>Uporaba alata u ovom zadatku (FPZG čl. 8)</h3>' +
       '<p class="meta">Pravilo je postavio nastavnik kolegija (' + esc(t.mentor) + '). Razlikuje se od pravila fakulteta.</p>' +
@@ -577,7 +805,8 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
         '<div><h3>Što se ne bilježi</h3><ul class="facts">' +
           '<li>Koja je tipka pritisnuta i koliko je držana. Iz vremena promjena ne računaju se brzina, ritam ni bilo kakva mjera, osim sesija: sesije se određuju prekidom dužim od praga P-01. Reprodukcija neće preskakati ni isticati stanke.</li>' +
           '<li>Druge aplikacije i kartice preglednika, kamera, mikrofon i zaslon.</li>' +
-          '<li>IP adresa i podaci o uređaju.</li></ul></div></div>' +
+          '<li>IP adresa i podaci o uređaju.</li>' +
+          '<li>Otvaranje ove obavijesti. Prije Vaše potvrde ništa se ne bilježi; bilježi se tek potvrda.</li></ul></div></div>' +
       '<div><h3>Što vidi nastavnik (mentor)</h3><ul class="facts">' +
         '<li>Od prvog dana pratit će Vaš rad uživo, dok nastaje, pa i tekst koji ćete kasnije možda obrisati. Ono što napišete bez mreže vidjet će tek kad se veza vrati.</li>' +
         '<li>Nastavnik (mentor) zadatka moći će reproducirati nastanak rada znak po znak, pa i obrisani tekst. Istu reprodukciju svog rada vidjet ćete i Vi.</li>' +
@@ -598,7 +827,10 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     if (v === 'greska') return '<div class="card" role="alert"><p class="note">Zadatak trenutačno nije moguće učitati. Pokušajte ponovno.</p><button class="btn" type="button" data-act="ponovno" style="justify-self:start">Pokušaj ponovno</button></div>';
     if (v === 'nijeotvoren') return BACK + '<div class="card"><h2>Kritički osvrt na izvore</h2><p class="note">Zadatak se otvara 10. 11. 2026., 8:00. Obavijest potvrđujete kad se zadatak otvori.</p></div>';
     if (v === 'bezprava') return '<div class="card" role="alert"><p class="err">Ovaj račun ne može potvrditi obavijest za ovaj zadatak.</p><a class="up-link" href="#kolegiji" data-go="kolegiji">Moji kolegiji i zadaci</a></div>';
-    if (v === 'promijenjeno') return BACK + '<div class="card"><span class="tag open" style="justify-self:start">Nova verzija uputa (v2), još nije potvrđena</span><p class="err" role="alert">Nastavnik je u međuvremenu objavio novu verziju zadatka. Ponovno učitajte stranicu i pročitajte je.</p><button class="btn" type="button" data-act="ponovno" style="justify-self:start">Ponovno učitaj</button></div>';
+    if (v === 'promijenjeno' || v === 'promijenjenobezrazlike' || v === 'razlikaucitava') {
+      var dz = v === 'promijenjeno' ? diff(t) : v === 'razlikaucitava' ? '<div aria-busy="true" role="status"><span class="meta">Učitavanje razlike…</span><div class="skel w80"></div><div class="skel w60"></div></div>' : '<p class="note" role="status">Razlika između verzija trenutačno nije dostupna. Pročitajte novu verziju u cijelosti.</p>';
+      return BACK + '<div class="card"><span class="tag open" style="justify-self:start">Nova verzija uputa (v2), još nije potvrđena</span><p class="err" role="alert">Nastavnik je u međuvremenu objavio novu verziju zadatka. Ponovno učitajte stranicu i pročitajte je.</p>' + dz + '<button class="btn" type="button" data-act="ponovno" style="justify-self:start">Ponovno učitaj</button></div>';
+    }
     var acked = v === 'potvrdeno' || (v === 'puno' && s.ack && s.ack[t.id]);
     if (acked) {
       var at = (s.ackAt && s.ackAt[t.id]) || '5. 11. 2026., 10:42';
@@ -618,7 +850,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     title: 'S-05 Obavijest o zadatku', shell: 'side', narrow: true,
     variants: [{ id: 'puno', label: 'zadano' }, { id: 'neprocitano', label: 'zadano, prije potvrde' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' },
       { id: 'nijeotvoren', label: 'zadatak još nije otvoren' }, { id: 'potvrdeno', label: 'potvrđeno' },
-      { id: 'promijenjeno', label: 'promijenjen tekst obavijesti' }, { id: 'bezprava', label: 'račun bez prava potvrde' }],
+      { id: 'promijenjeno', label: 'promijenjen tekst obavijesti, s razlikom verzija' }, { id: 'razlikaucitava', label: 'promijenjen tekst, razlika se učitava' }, { id: 'promijenjenobezrazlike', label: 'promijenjen tekst, razlika nedostupna' }, { id: 'bezprava', label: 'račun bez prava potvrde' }],
     render: renderObavijest,
     actions: {
       potvrdi: function (el, ctx) {
@@ -1300,4 +1532,102 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
 })();
 </script>
 
+
+<!-- postavke: obavijesti izvan zvonca (NF-1 P-17) -->
+<style>
+.ps-sec h2 { font-size:20px; }
+.ps-sec h3 { font:600 13.5px/1.4 var(--ff-ui); letter-spacing:0; }
+.ps-check { display:flex; gap:10px; align-items:flex-start; min-height:44px; text-align:left; }
+.ps-check input { margin-top:2px; }
+.ps-cols { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+.ps-cols > div { display:grid; gap:6px; align-content:start; min-width:0; }
+.ps-mail { background:var(--sheet); border:1px solid var(--rule); border-radius:6px; padding:12px 14px; display:grid; gap:4px; }
+.ps-mail b { font-weight:600; }
+.nf-solo { min-height:100%; display:grid; place-items:center; padding:24px 16px; }
+.nf-solo .pj-card { width:100%; max-width:460px; }
+@media (max-width:640px) { .ps-cols { grid-template-columns:1fr; } }
+</style>
+<script>
+(function () {
+  var ADDR = 'student.a@example.test';
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var KINDS = [['version', 'Novi zadatak i nova verzija zadatka'], ['reminder', 'Podsjetnik prije roka'], ['comment', 'Novi komentar uz rad'], ['submission', 'Potvrda predaje']];
+  function loading() { return '<div class="card" aria-busy="true"><span class="meta" role="status">Učitavanje postavki…</span><div class="skel w60"></div><div class="skel w80"></div><div class="skel w40"></div></div>'; }
+  function check(id, label, on, dis, desc) { return '<label class="ps-check"><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + (dis ? ' disabled' : '') + (desc ? ' aria-describedby="' + desc + '"' : '') + '>' + label + '</label>'; }
+  function preview() {
+    return '<div class="ps-mail" role="group" aria-label="Primjer poruke"><span class="meta">Primjer poruke (izmišljeni podaci)</span><b>Predmet: Ductura: nova verzija zadatka na kolegiju Kolegij B</b>' +
+      '<span>Kolegij B · Javna rasprava o školskom kurikulu</span><span>Rok: 15. 1. 2027., 23:59</span><span>Otvorite Ducturu za upute.</span>' +
+      '<span class="meta">Obavijesti e-poštom možete isključiti poveznicom „Odjava iz obavijesti” na dnu poruke.</span></div>';
+  }
+  function render(ctx) {
+    var v = ctx.variant, p = ctx.state.notifPrefs;
+    var head = '<div class="po-head"><h1>Postavke obavijesti</h1><p class="lede">Odaberite gdje želite primati obavijesti o zadacima. Obavijesti u aplikaciji, u zvoncu, uvijek su uključene.</p></div>';
+    if (v === 'ucitavanje') return '<div class="po-wrap">' + head + loading() + '</div>';
+    if (v === 'greska') return '<div class="po-wrap">' + head + '<div class="card po-card" role="alert"><h2>Postavke trenutačno nisu dostupne.</h2><p class="note">Podatke nije bilo moguće učitati. Vaše postojeće postavke nisu promijenjene.</p><button class="btn" type="button" data-act="ponovno" style="justify-self:start">Pokušaj ponovno</button></div></div>';
+    var busy = v === 'spremanje', noAddr = v === 'bezadrese', blocked = v === 'pushblokiran';
+    var stat = busy ? '<span class="meta" role="status">Spremanje postavki…</span>' :
+      v === 'greskaspremanja' ? '<span class="err" role="alert">Postavke nisu promijenjene. Pokušajte ponovno. Do tada vrijede prethodne.</span>' :
+      v === 'spremljeno' ? '<span class="ok" role="status">Postavke obavijesti su promijenjene.' + (p.email ? ' E-pošta je uključena.' : '') + '</span>' : '';
+    return '<div class="po-wrap" id="ps-root"' + (busy ? ' aria-busy="true"' : '') + '>' + head +
+      '<section class="card ps-sec" aria-labelledby="ps-e"><h2 id="ps-e">E-pošta</h2>' +
+        (noAddr ? '<p class="note" role="status">Račun AAI@EduHr ne daje e-adresu pa se obavijesti e-poštom ne mogu uključiti. Obavijesti u aplikaciji ostaju uključene.</p>' :
+          '<p class="note">Poruke se šalju na adresu iz Vašeg računa AAI@EduHr: <span class="mono">' + ADDR + '</span>. Adresu ne možete promijeniti ovdje.</p>') +
+        check('ps-email', 'Pristajem da mi Ductura šalje obavijesti na tu e-adresu.', p.email && !noAddr, noAddr || busy, 'ps-email-n') +
+        '<span class="meta" id="ps-email-n">Pristanak je dobrovoljan i možete ga povući u svakom trenutku: ovdje ili poveznicom „Odjava iz obavijesti” u svakoj poruci.</span></section>' +
+      '<section class="card ps-sec" aria-labelledby="ps-p"><h2 id="ps-p">U pregledniku (push)</h2>' +
+        (blocked ? '<p class="err" role="alert">Preglednik ne dopušta obavijesti za ovu stranicu. Dopuštenje promijenite u postavkama preglednika, pa ponovno uključite.</p>' : '<p class="note">Obavijest se prikazuje i kad Ductura nije otvorena. Vrijedi samo za ovaj preglednik; preglednik će zatražiti dopuštenje.</p>') +
+        check('ps-push', 'Prikaži obavijesti u ovom pregledniku.', p.push && !blocked, blocked || busy, '') + '</section>' +
+      '<section class="card ps-sec" aria-labelledby="ps-k"><h2 id="ps-k">Koje obavijesti</h2><p class="meta">Odabir vrijedi za e-poštu i preglednik.</p>' +
+        KINDS.map(function (k) { return check('ps-k-' + k[0], k[1], p.kinds[k[0]], busy, ''); }).join('') + '</section>' +
+      '<section class="card ps-sec" aria-labelledby="ps-s"><h2 id="ps-s">Što poruka sadrži</h2><div class="ps-cols"><div><h3>Sadrži</h3><ul class="facts"><li>Naslov zadatka i naziv kolegija.</li><li>Rok.</li><li>Poveznicu na Ducturu.</li></ul></div>' +
+        '<div><h3>Ne sadrži</h3><ul class="facts"><li>Nijedan dio Vašeg rada ni podatke o tome što ste pisali i kada.</li><li>Tekst komentara nastavnika.</li><li>Ocjene.</li></ul></div></div>' + preview() + '</section>' +
+      '<div class="up-act">' + stat + '<button class="btn" type="button" data-act="spremi"' + (busy ? ' aria-disabled="true"' : '') + '>' + (busy ? 'Spremanje…' : 'Spremi postavke') + '</button><a class="up-link" href="#pocetna" data-go="pocetna">Natrag na Moje zadatke</a></div></div>';
+  }
+  var timer = null;
+  App.register('postavke', {
+    title: 'S-06 Postavke obavijesti', shell: 'side', narrow: true,
+    variants: [{ id: 'puno', label: 'zadano (e-pošta i push isključeni)' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška pri učitavanju' }, { id: 'spremanje', label: 'spremanje' }, { id: 'spremljeno', label: 'postavke promijenjene' }, { id: 'greskaspremanja', label: 'greška pri spremanju' }, { id: 'bezadrese', label: 'račun bez e-adrese' }, { id: 'pushblokiran', label: 'preglednik blokira obavijesti' }],
+    render: render,
+    actions: {
+      ponovno: function () { App.state.variant.postavke = 'puno'; App.rerender(); },
+      spremi: function (el, ctx) {
+        if (ctx.variant === 'spremanje') return;
+        var p = App.state.notifPrefs;
+        p.email = !!(document.getElementById('ps-email') && document.getElementById('ps-email').checked);
+        p.push = !!(document.getElementById('ps-push') && document.getElementById('ps-push').checked);
+        KINDS.forEach(function (k) { var c = document.getElementById('ps-k-' + k[0]); if (c) p.kinds[k[0]] = c.checked; });
+        App.state.variant.postavke = 'spremanje'; App.rerender();
+        clearTimeout(timer);
+        timer = setTimeout(function () { if (location.hash !== '#postavke') return; App.state.variant.postavke = 'spremljeno'; App.rerender(); App.toast('Postavke obavijesti su promijenjene.'); }, 700);
+      }
+    },
+    after: function (stage) {
+      var c = stage.querySelector('#ps-email'), p = stage.querySelector('#ps-push');
+      if (c) c.addEventListener('change', function () { App.state.notifPrefs.email = c.checked; });
+      if (p) p.addEventListener('change', function () { App.state.notifPrefs.push = p.checked; });
+    }
+  });
+
+  /* Javna poveznica „Odjava iz obavijesti” iz poruke e-pošte: bez ljuske, bez prijave (token u poveznici). */
+  function solo(inner) { return '<div class="nf-solo">' + inner + '</div>'; }
+  App.register('odjavaposte', {
+    title: 'S-07 Odjava iz obavijesti e-poštom (poveznica iz poruke)', shell: 'none',
+    variants: [{ id: 'puno', label: 'zadano' }, { id: 'odjavljivanje', label: 'odjavljivanje' }, { id: 'uspjeh', label: 'odjavljeno' }, { id: 'istekla', label: 'poveznica ne vrijedi' }, { id: 'greska', label: 'greška, poslužitelj ne odgovara' }],
+    render: function (ctx) {
+      var v = ctx.variant;
+      if (v === 'odjavljivanje') return solo('<section class="pj-card" role="status" aria-busy="true"><h2>Odjavljujemo Vas</h2><div class="pj-bar" aria-hidden="true"><span></span></div><button class="btn" type="button" disabled>Odjava iz obavijesti</button></section>');
+      if (v === 'uspjeh') return solo('<section class="pj-card" role="status"><h2>Odjavljeni ste</h2><p class="note">Obavijesti e-poštom više se ne šalju na tu adresu. Obavijesti u aplikaciji ostaju uključene.</p><p class="meta">Možete ih ponovno uključiti u postavkama obavijesti nakon prijave.</p><a href="#prijava" data-go="prijava">Prijava sustavom AAI@EduHr</a></section>');
+      if (v === 'istekla') return solo('<section class="pj-card" role="alert"><h2>Poveznica ne vrijedi</h2><p class="note">Poveznica je istekla ili je već iskorištena. Prijavite se i isključite obavijesti e-poštom u postavkama obavijesti.</p><a href="#prijava" data-go="prijava">Prijava sustavom AAI@EduHr</a></section>');
+      if (v === 'greska') return solo('<section class="pj-card" role="alert"><h2>Odjava nije dovršena</h2><p class="note">Poslužitelj trenutačno ne odgovara. Vaše postavke nisu promijenjene. Pokušajte ponovno za nekoliko minuta.</p><button class="btn" type="button" data-act="odjava">Pokušaj ponovno</button></section>');
+      return solo('<section class="pj-card" aria-labelledby="oj-h"><h2 id="oj-h">Odjava iz obavijesti e-poštom</h2><p class="note">Ductura više neće slati obavijesti o zadacima na Vašu e-adresu. Obavijesti u aplikaciji ostaju uključene.</p><button class="btn" type="button" data-act="odjava">Odjava iz obavijesti</button></section>');
+    },
+    actions: {
+      odjava: function () {
+        App.state.variant.odjavaposte = 'odjavljivanje'; App.rerender();
+        setTimeout(function () { if (location.hash !== '#odjavaposte') return; App.state.notifPrefs.email = false; App.state.variant.odjavaposte = 'uspjeh'; App.rerender(); }, 700);
+      }
+    }
+  });
+})();
+</script>
 </body></html>
