@@ -219,6 +219,16 @@ describe("submitWork", () => {
     expect(submitOutcomeFrom({ ...result, code: "not_open" }, { status: "not_open" }, SENT)).toEqual({ kind: "greska", code: "not_open" });
   });
 
+  // PIL-K-IZJAVA-VRATA: the server's 409 declaration_required is a warning that sends the student to step 2.
+  it("reads 409 declaration_required as izjava, not as an unknown outcome or an error", () => {
+    const body = { error: "declaration_required", code: "declaration_required", messageKey: "errors.x", status: 409, requestId: "00000000-0000-4000-8000-000000000000" };
+    expect(submitOutcomeFrom({ ok: false, status: 409, code: "declaration_required" }, body, SENT)).toEqual({ kind: "izjava" });
+    expect(submitOutcomeFrom({ ok: false, status: 409, code: "unexpected" }, body, SENT)).toEqual({ kind: "izjava" });
+    expect(submitOutcomeFrom({ ok: false, status: 409, code: "unexpected" }, { status: "declaration_required" }, SENT)).toEqual({ kind: "izjava" });
+    // The same code on another status is no declaration refusal: the work may be submitted.
+    expect(submitOutcomeFrom({ ok: false, status: 503, code: "unexpected" }, body, SENT)).toEqual({ kind: "nepoznato" });
+  });
+
   it("checks the receipt against what was sent, though the caller changes its input meanwhile", async () => {
     const input = { ...SENT };
     let answer: (r: Response) => void = () => {};

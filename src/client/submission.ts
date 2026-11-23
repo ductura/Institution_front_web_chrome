@@ -15,6 +15,11 @@
  *   when it is `ceka` or `potvrdeno` for the revision the 409 names (and, for a
  *   receipt, the document sent); `none` or any other revision or document is
  *   `nepoznato`, so the page never says the work is not submitted;
+ * - 409 `declaration_required` is `izjava` (PIL-K-IZJAVA-VRATA): a warning that
+ *   sends the student to step 2, not an error. TODO(ugovor): it is the answer of
+ *   submission.submit-second.post (the v2 submission route, SRV #646), which is
+ *   not in the WEB extract yet; until it is, this route's 503 for the same case
+ *   stays `nepoznato`, and steps 3 and 4 open sending only on the server's gate;
  * - 401 is `session-expired`, the shell's flow for an ended session;
  * - the declared refusals the inventory does not map (`stale_revision`,
  *   `not_acknowledged`, `not_open`, 404, 413, 426 and the refusals of the
@@ -64,6 +69,8 @@ export type SubmitOutcome =
   | { readonly kind: "nepoznato" }
   | { readonly kind: "greska"; readonly code: SubmitError; readonly currentRevision?: number }
   | { readonly kind: "session-expired" }
+  /** 409 declaration_required: the assignment asks for a declaration not confirmed for this revision. Not submitted. */
+  | { readonly kind: "izjava" }
   /** 409 already_requested: the server holds `revision`, and the read agrees. */
   | { readonly kind: "stanje"; readonly revision: number; readonly state: Exclude<SubmissionState, { kind: "none" }> };
 
@@ -117,6 +124,8 @@ const REFUSALS: Readonly<Record<string, SubmitError>> = {
   client_rejected: "client_rejected",
 };
 const UNKNOWN = { kind: "nepoznato" } as const;
+/** The server's 409 when the assignment asks for a declaration that is not confirmed (SRV #646). */
+export const DECLARATION_REQUIRED = "declaration_required";
 const EXPIRED = { kind: "session-expired" } as const;
 
 /** True when the receipt is exactly the contract's shape and names this assignment, document and revision. */
@@ -147,6 +156,8 @@ export function submitOutcomeFrom(
   }
   if (result.status === 401) return EXPIRED;
   if (result.status === 409) {
+    // PIL-K-IZJAVA-VRATA: a warning that sends the student to step 2, never a technical error.
+    if (result.code === DECLARATION_REQUIRED || (isObject(kept) && (kept.code === DECLARATION_REQUIRED || kept.status === DECLARATION_REQUIRED))) return { kind: "izjava" };
     if (!isObject(kept)) return UNKNOWN;
     if (kept.status === "blocked") {
       if (kept.reason === "record_mismatch") return { kind: "nedovrseno" };
