@@ -2,7 +2,7 @@
 // Invented ids only.
 import { describe, expect, it, vi } from "vitest";
 
-import { createAssistantMatchCall, segmentsOf, type MatchFinding } from "./assistant-match";
+import { createAssistantMatchCall, createSegmentCheck, segmentsOf, type MatchFinding } from "./assistant-match";
 
 const DOC = "0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d01";
 const finding = (segmentRef: string, runWords: number, attachedAt: string, conversationId = "c-1"): MatchFinding => ({
@@ -49,5 +49,28 @@ describe("the match port over the server", () => {
     const answer = await createAssistantMatchCall(call as never)("work.assistant-match.explain", { params: { documentId: DOC, segmentId: "p-1" }, body: { text: "x" } });
     expect(answer).toEqual({ ok: false, status: 404, code: "not_found" });
     expect(call).not.toHaveBeenCalled();
+  });
+});
+
+describe("createSegmentCheck", () => {
+  it("sends exactly the segment to work.assistant-match.post and counts the matches", async () => {
+    const call = vi.fn(async () => ({
+      ok: true as const,
+      status: 200,
+      body: { matches: [{ messageId: "m1", conversationId: "c1", runWords: 9 }, { messageId: "m2", conversationId: "c1", runWords: 8 }] },
+    }));
+    const check = createSegmentCheck(call as never);
+    const answer = await check("doc-1", { segmentRef: "node-1", text: "Izmišljeni odlomak." });
+    expect(answer).toEqual({ ok: true, matched: 2 });
+    expect(call).toHaveBeenCalledWith("work.assistant-match.post", {
+      params: { documentId: "doc-1" },
+      query: undefined,
+      body: { segmentRef: "node-1", text: "Izmišljeni odlomak." },
+    });
+  });
+
+  it("passes a refusal through", async () => {
+    const call = vi.fn(async () => ({ ok: false as const, status: 422, code: "invalid_input" }));
+    expect(await createSegmentCheck(call as never)("doc-1", { segmentRef: "n", text: "x" })).toEqual({ ok: false, status: 422, code: "invalid_input" });
   });
 });
