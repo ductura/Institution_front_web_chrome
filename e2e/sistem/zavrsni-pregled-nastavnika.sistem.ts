@@ -16,11 +16,15 @@ const title = 'Seminarski rad: kućno kompostiranje';
 const course = 'Izmišljeni seminar iz ekologije grada';
 const otherCourse = 'Izmišljeni seminar o gradskim krovovima';
 const studentName = /Lucija Đaković/;
-/** How the thread names the revision it belongs to (INT-15): the submitted V1 of INT-03. */
-const revisionV1 = commentText.revision.replace('{n}', '1');
+/**
+ * How the thread names the revision it belongs to (INT-15). "V1" of the scenario is the version
+ * INT-03 submitted; its number is that submission's revision as the version list gives it, the
+ * same V{n} the student's submit step shows.
+ */
+const revisionLabel = (revision: number) => commentText.revision.replace('{n}', String(revision));
 
 /** Set by INT-04 once the teacher's comment from the form is on screen; INT-15 reopens it. */
-let commentedInUi: { workPath: string; comment: string } | null = null;
+let commentedInUi: { workPath: string; comment: string; revision: number } | null = null;
 
 function commentsPanel(page: Page) {
   return page.getByRole('region', { name: commentText.title, exact: true });
@@ -185,7 +189,7 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       await expect(thread).toHaveCount(1);
       await expect(commentBody(thread, uiComment)).toHaveText(new RegExp(`^${commentText.own} · `));
       await expect(commentBody(thread, uiComment)).toBeVisible();
-      commentedInUi = { workPath, comment: uiComment };
+      commentedInUi = { workPath, comment: uiComment, revision: submittedRevision };
     });
 
     await test.step('Drugi nastavnik iz iste ustanove ne vidi predaju ni kroz popis ni izravnim otvaranjem', async () => {
@@ -224,16 +228,16 @@ test('INT-15: komentar nastavnika iz obrasca prikazan je uz reviziju V1', async 
   const opened = await test.step('Ponovno otvori rad i nađi komentar iz INT-04', async () => {
     const earlier = commentedInUi;
     if (earlier === null) throw new Error('Prvo mora proći korak obrasca u INT-04 u istom pokretanju.');
-    const { workPath, comment } = earlier;
+    const { workPath, comment, revision } = earlier;
     await signInTeacher(page, true);
     await page.goto(workPath);
     await expect(page).toHaveURL(workPath);
     const thread = commentsPanel(page).getByRole('article').filter({ hasText: comment });
     await expect(commentBody(thread, comment)).toBeVisible();
-    return thread;
+    return { thread, revision };
   });
 
   await test.step('Nit komentara navodi reviziju V1', async () => {
-    await expect(opened.getByText(revisionV1, { exact: false })).toBeVisible({ timeout: 5_000 });
+    await expect(opened.thread.getByText(revisionLabel(opened.revision), { exact: true })).toBeVisible({ timeout: 5_000 });
   });
 });
