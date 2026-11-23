@@ -2,10 +2,11 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { createApi } from "../../../../../../src/client/api";
 import { findForbiddenTerms } from "../../../../../../scripts/forbidden-terms/terms.ts";
 import { PAGES, resolve, type Page } from "../../../routes";
 import { HostContext } from "../../context";
-import { deleteThreshold, parsePercent, putThreshold, readThresholds } from "./contract";
+import { deleteThreshold, parsePercent, putThreshold, readThresholds, type ThresholdCall } from "./contract";
 import { DEMO_THRESHOLDS, fakeThresholdServer } from "./fake-port";
 import { thresholdMessages as t } from "./messages.hr";
 import OriginThresholdsPage, { checkDraft, say } from "./OriginThresholdsPage";
@@ -107,5 +108,31 @@ describe("PIL-P1-PRAGOVI-ADMIN page", () => {
       t.strictnessLabel, t.strictnessPick, t.strictnessMissing, t.strictnessHint, t.save, t.remove, t.saved, t.removed, t.loading,
       t.retry, ...Object.values(t.strictness), ...Object.values(t.kinds), ...Object.values(t.errors)];
     for (const text of texts) expect({ text, terms: findForbiddenTerms(text) }).toEqual({ text, terms: [] });
+  });
+});
+
+describe("PIL-P1-PRAGOVI-ADMIN over the real client (createApi, contract extract)", () => {
+  it("sends the contract's paths, methods and body, and reads the answers", async () => {
+    const sent: { method: string; url: string; body: string | null }[] = [];
+    const replies = [
+      new Response(JSON.stringify({ thresholds: DEMO_THRESHOLDS }), { status: 200, headers: { "content-type": "application/json" } }),
+      new Response(JSON.stringify({ changed: true }), { status: 200, headers: { "content-type": "application/json" } }),
+      new Response(null, { status: 204 }),
+    ];
+    const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init);
+      sent.push({ method: request.method, url: request.url, body: request.method === "GET" || request.method === "DELETE" ? null : await request.text() });
+      return replies.shift()!;
+    }) as typeof fetch;
+    const call = createApi({ baseUrl: "https://izmisljeni.example", fetchImpl }) as unknown as ThresholdCall;
+    expect((await readThresholds(call)).kind).toBe("ready");
+    expect(await putThreshold(call, "assistant_match", "8", "hard")).toEqual({ kind: "saved" });
+    expect(await deleteThreshold(call, "assistant_match")).toEqual({ kind: "saved" });
+    expect(sent.map(({ method, url }) => `${method} ${new URL(url).pathname}`)).toEqual([
+      "GET /api/v1/institution/origin-thresholds",
+      "PUT /api/v1/institution/origin-thresholds/assistant_match",
+      "DELETE /api/v1/institution/origin-thresholds/assistant_match",
+    ]);
+    expect(JSON.parse(sent[1]!.body!)).toEqual({ thresholdPercent: 8, strictness: "hard" });
   });
 });
