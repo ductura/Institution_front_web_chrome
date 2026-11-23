@@ -20,6 +20,15 @@ export const timeMachineMessages = {
   signedOut: "Sesija je istekla. Prijavite se ponovno.",
   checkpoint: "Verzija",
   submission: "Predaja",
+  historyTitle: "Povijest dokumenta",
+  historyIntro: "Verzije vašeg rada na poslužitelju, od najnovije. Odaberite verziju da pročitate njezin tekst.",
+  historyEmpty: "Ovaj rad još nema nijednu verziju na poslužitelju.",
+  historyReadOnly: "Samo za čitanje: ova verzija se ovdje ne može mijenjati.",
+  historyLoadingText: "Učitavanje teksta verzije…",
+  historyTextFailed: "Tekst ove verzije nije se učitao.",
+  historyUnreadable: "Tekst ove verzije ne može se ovdje prikazati.",
+  historyBlank: "Ova verzija nema teksta.",
+  historyShown: (label: string) => `Prikazana: ${label}`,
   version: (kind: "checkpoint" | "submission", revision: number, minute: string) =>
     `${kind === "submission" ? "Predaja" : "Verzija"} ${revision} · ${formatMinute.format(new Date(minute))}`,
 } as const;
