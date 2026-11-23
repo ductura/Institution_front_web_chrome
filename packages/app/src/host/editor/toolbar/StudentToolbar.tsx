@@ -18,12 +18,24 @@ import { EditorWorkParts } from "@/components/editor/parts/EditorWorkParts";
 import { workPartsMessages } from "@/components/editor/parts/messages.hr";
 import { setSheetTheme, useSheetTheme } from "@/components/shell/useSheetTheme";
 import {
-  convertBlock, copyText, glyphOf, insertChar, insertHole, pushRecent, readRecent, SPECIAL_CHARS, writeRecent,
+  convertBlock, glyphOf, insertChar, insertHole, pushRecent, readRecent, SPECIAL_CHARS, writeRecent,
 } from "@/components/editor/toolbar-menu";
+import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
+
+/** "Stavi tekst rada u međuspremnik": text with [n] marks and the footnote list (v3). False when refused. */
+async function copyWorkText(editor: Editor | null): Promise<boolean> {
+  if (!editor || editor.isDestroyed) return false;
+  try {
+    await globalThis.navigator.clipboard.writeText(textWithFootnotes(editor));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const live = (editor: Editor | null): editor is Editor => !!editor && !editor.isDestroyed && editor.isEditable;
 
@@ -135,7 +147,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         else setSheetTheme(id === "light" ? "light" : "dark");
       }} />
       <Menu label={t.toolbar.export} items={[{ id: "copy", label: t.toolbar.exportItems.copy, disabled: !editor || editor.isDestroyed }]}
-        onSelect={(id) => { if (id === "copy") void copyText(editor); }} />
+        onSelect={(id) => { if (id === "copy") void copyWorkText(editor); }} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
       {v3.dialog}
