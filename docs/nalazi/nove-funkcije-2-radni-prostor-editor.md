@@ -331,3 +331,38 @@ Pitanja na koja ne mogu odgovoriti sama (iz ovog repoa se ne vidi):
 8. Je li „zapisnik konzultacija” i „Poruka sebi”/„Dokle sam stao” (INVENTAR §8) u pilotu ili nakon? (Ovdje nije obrađeno jer pripada dijelu o mentoru.)
 
 Otvoreno za provjeru u pregledniku (nije moguće iz ovog pregleda): mobitel (2.4), najave čitača zaslona za žeton spremanja i vodič (2.3), izgled onemogućenih `/` naredbi, ponašanje pri sporoj mreži, „:14” + razmak za stranicu u navodu, DOCX izvoz s pravim poslužiteljem.
+
+---
+
+## 6. Provedba u prototipu (Danielova odluka 23. 11. 2026.: svih 26 prijedloga u pilotu)
+
+Prototip: `docs/prototip/editor/nf2.js` (v0.28), `editor.css` (kraj datoteke), `index.html`; popis stavki, stanja i poslužiteljskih ovisnosti: `docs/prototip/INVENTAR-editor.md` §2.8 i §5.1. Odluke: Asistent u pilotu isključen (kartica pokazuje pravila uporabe alata i iskreno stanje), numerirani popis u pilotu, vodič „Prvi koraci” uz prvi rad, „Predaja rada” i prebacivač lista u zaglavlju (INVENTAR §1.2), zapisnik konzultacija i „Dokle sam stao” u pilotu.
+
+| P-n | INVENTAR ID | Element prototipa |
+|---|---|---|
+| P-1 | NF2-P1 | Traka obavijesti otvaranja rada (nf2.js, `X.hooks.banner`): učitavanje, prazno, greške po uzroku s gumbom |
+| P-2 | NF2-P2 | Statusna traka „Izvan mreže · … čeka slanje: n”, traka „Veza je vraćena”, regija `#nf2live` |
+| P-3 | NF2-P3 | Traka „Sukob” + dijalog `nf2conf` (server: odluka nedostaje, INVENTAR §5.1) |
+| P-4 | NF2-P4 | Ciljevi 44 px na ≤ 640 px (`.tools .tb`); traka i numerirani popis već u toolbar2.js/more2.js |
+| P-5 | NF2-P5 | Zaglavlje „Prečaci” i Ctrl+/ = isti dijalog `tbkeys`; `/` naredbe „nije u pilotu” |
+| P-6 | NF2-P6 | Oznaka opsega u statusnoj traci (`.nf2-rng`) + najava prijelaza |
+| P-7 | NF2-P7 | „Dohvati podatke” u dijalogu „Brzi izvor” (`quick`, `nf2Look`) |
+| P-8 | NF2-P8 | Blok „Zatražene potvrde i preporučeni izvori” u kartici Izvori (`RP.HK.srcTop`) |
+| P-9 | NF2-P9 | Kartica Asistent: „Pravila za ovaj zadatak” |
+| P-10 | NF2-P10 | Kartica Asistent: „isključen u pilotu”, bez modela i pružatelja |
+| P-11 | NF2-P11 | Redak izjave u kartici Rad i Predajnom paketu čita stanje; odjeljak „Što je zabilježeno u Ducturi” |
+| P-12 | NF2-P12 | Dijalog `nf2decl` „Izjava o korištenju alata” |
+| P-13 | NF2-P13 | Traka o podudaranju + dijalog `nf2expl` „Objasni, ako želiš” |
+| P-14 | NF2-P14 | Zaglavlje „Povijest” + dijalog `nf2hist` |
+| P-15 | NF2-P15 | Korak „Vratiti ovu verziju?” s pregledom razlike u `nf2hist` |
+| P-16 | NF2-P16 | Redovi „Potvrde koje traži mentor”, „Zahtjevi fakulteta”, „Obrasci fakulteta” u Predajnom paketu |
+| P-17 | NF2-P17 | Zaglavlje „Predaja rada” + broj blokada (`#nf2Sub`) |
+| P-18 | NF2-P18 | Traka „Slanje je zaustavljeno” + dijalog `nf2prob` |
+| P-19 | NF2-P19 | Dijalog `nf2imp` „Uvezi tekst iz datoteke” |
+| P-20 | NF2-P20 | Vodič „Prvi koraci” (`onb`): završetak, fokus na naslov |
+| P-21 | NF2-P21 | Uloge traka, ponuda oporavka (`role=status`), axe nad novim elementima |
+| P-22 | NF2-P22 | Izvan prototipa (`packages/app/test-fakes`); zamjena: dijalog „Stanja radnog prostora” |
+| P-23 | NF2-P23 | `ACT.copy` poruke; razlog uz jednu verziju u `nf2hist` |
+| P-24 | NF2-P24 | Napomena o postavci ustanove u dijalogu „Dodaci editora” (`X.more2.modsExtra`) |
+| P-25 | NF2-P25 | `/tablica`, `/slika` „nije u pilotu” uz „Ograničenja pilota” |
+| P-26 | NF2-P26 | Traka „Rad je otvoren na drugom uređaju…” (`N.other`) |
