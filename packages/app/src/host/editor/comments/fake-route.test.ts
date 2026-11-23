@@ -44,3 +44,11 @@ export function fakeRoute(opts: { status?: number; teacherOnly?: boolean } = {})
   }) as typeof fetch;
   return { fetchImpl, calls, options: { baseUrl: ORIGIN, fetchImpl } };
 }
+
+// A test file, so the scans for direct calls leave this stand-in alone; it checks itself once.
+import { expect, it } from "vitest";
+it("the stand-in route lists its invented threads", async () => {
+  const route = fakeRoute();
+  const answer = await route.fetchImpl(`${ORIGIN}/x/list`, { method: "POST", body: "{}" });
+  expect(((await answer.json()) as { comments: unknown[] }).comments).toHaveLength(3);
+});

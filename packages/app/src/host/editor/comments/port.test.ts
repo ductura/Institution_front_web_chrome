@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { commentsPort } from "./port";
-import { fakeRoute } from "./fake-route";
+import { fakeRoute } from "./fake-route.test";
 
 const T1 = "aaaaaaaa-0000-4000-8000-000000000001";
 const T2 = "aaaaaaaa-0000-4000-8000-000000000002";

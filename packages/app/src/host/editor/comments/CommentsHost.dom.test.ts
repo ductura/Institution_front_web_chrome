@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CommentsHost } from "./CommentsHost";
 import { commentsHr as t } from "./messages.hr";
-import { ORIGIN, fakeRoute } from "./fake-route";
+import { ORIGIN, fakeRoute } from "./fake-route.test";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
