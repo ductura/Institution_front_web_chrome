@@ -17,6 +17,44 @@ export type RestoreOutcome =
 export interface RestorePort {
   /** Saves the text of `fromRevision` as a new revision on top of `baseRevision` (the save path). */
   restore(documentId: string, fromRevision: number, baseRevision: number): Promise<RestoreOutcome>;
+  /**
+   * After a "pending" restore: waits once more for the server's verified receipt of the sheet. A port
+   * without it leaves the restore marked as waiting for the receipt (INT-21).
+   */
+  receipt?(): Promise<"confirmed" | "signedOut" | "waiting">;
+}
+
+/** A restore made on this page: "vraćeno iz verzije N", confirmed or still waiting for the receipt. */
+export type RestoredLabel = { readonly at: number; readonly from: number; readonly confirmed: boolean };
+
+/** Adds the label of one restore; `at` keeps it apart from another restore of the same version. */
+export function recordRestored(labels: readonly RestoredLabel[], at: number, from: number, confirmed: boolean): readonly RestoredLabel[] {
+  return [...labels, { at, from, confirmed }];
+}
+
+/** The receipt came: only that restore's label turns confirmed, every other label stays as it was. */
+export function confirmRestored(labels: readonly RestoredLabel[], at: number): readonly RestoredLabel[] {
+  return labels.map((label) => (label.at === at ? { ...label, confirmed: true } : label));
+}
+
+/**
+ * Follows a pending restore until the server's receipt comes (INT-21). True only on "confirmed"; a
+ * sign-out, a port without `receipt`, a receipt that throws, or `active` turning false (the page went
+ * away) is false, and the label stays "čeka potvrdu". "waiting" asks again: each ask waits on its own.
+ */
+export async function awaitRestoreReceipt(port: RestorePort, active: () => boolean): Promise<boolean> {
+  if (port.receipt === undefined) return false;
+  while (active()) {
+    let answer: "confirmed" | "signedOut" | "waiting";
+    try {
+      answer = await port.receipt();
+    } catch {
+      return false;
+    }
+    if (!active() || answer === "signedOut") return false;
+    if (answer === "confirmed") return true;
+  }
+  return false;
 }
 
 export type RestoreRecord = { readonly fromRevision: number; readonly newRevision: number; readonly minute: string };

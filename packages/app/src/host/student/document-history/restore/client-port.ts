@@ -64,6 +64,8 @@ export function clientRestorePort(editor: RestoreEditor, call: Call = createApi(
     return confirmed === "confirmed" ? { kind: "saved" } : { kind: "pending" };
   };
   return {
+    // A pending restore's receipt is the editor's: nothing in the sheet is unconfirmed any more.
+    receipt: () => editor.confirmed(),
     // One restore at a time: a second click while the first runs changes nothing.
     async restore(documentId, fromRevision, baseRevision) {
       if (running) return { kind: "unavailable" };
