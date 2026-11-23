@@ -2,6 +2,8 @@
 
 Izrađeno 19. 11. 2026. na zadatak orkestratora, prema Danielovoj odluci od istog dana: „Isto tako, identično funkcionalno sa svim ekranima i prozorima za studente”.
 
+**Dopuna 23. 11. 2026. (zadatak NF-1-PROTO, Danielova odluka 23. 11. 2026.: svih 17 prijedloga P-1 do P-17 iz `docs/nalazi/nove-funkcije-1-student-zadaci.md` ide u pilot).** Prototip i ovaj inventar sada sadrže i njih. Dopune su označene „NF-1” i prijedlogom (P-n); tablica P-n → ID inventara → element prototipa nalazi se na kraju pregleda NF-1. Nove stavke imaju ID-eve E-0a, E-2a i slične (dopune postojećeg ekrana), E-12, E-13, PD-9, R-43 do R-54, PO-26 do PO-33 i N-15 do N-20. Oznake u prototipu koje nisu dio proizvoda (npr. izbornik „zvonce” u traci prototipa) i dalje se ne inventariziraju. Izmišljeni su svi podaci (osobe, e-adresa, kolegiji, naslovi). Poslužiteljska polja i rute označene su točno kako stoje u izvatku ugovora `src/client/migration-contracts.generated.json`; što u njemu ne postoji, označeno je NEMA i opisano kao zahtjev, ne kao postojeća ruta. Aplikacija se ne mijenja; gradnja čeka zatvaranje pariteta studenta (PAR2-S).
+
 Izvori, svi samo čitani:
 - prototip `D:\Ductura\_prototipovi\Ductura_student.html` (1302 retka s ugrađenim JS-om);
 - kartice `Ductura_student_kartice.html` (polazište, provjereno prema kodu);
@@ -48,6 +50,12 @@ Prototip registrira 11 ekrana kroz `App.register(name, def)` s hash usmjeravanje
   - tema aplikacije je `data-theme` na `<html>`;
   - tema lista je zasebna, `.sheet[data-sheet-theme]` (`state.sheetTheme`).
 - Ekrani `prijava` i `rad` nemaju ljusku (`shell:'none'`).
+- **NF-1 E-0a Zvonce obavijesti (P-1, P-2).** Gumb „Obavijesti” `data-nf=bell` u podnožju trake, iznad gumba teme.
+  - Naziv gumba (`aria-label`): „Obavijesti” i broj nepročitanih („Obavijesti, 2 nepročitano”); znak broja je ukras (`aria-hidden`).
+  - `aria-haspopup=dialog`, `aria-expanded`, `aria-controls=nf-panel`.
+  - Broj se računa samo iz obavijesti poznate vrste i samo u stanju `puno`.
+  - Otvara ploču PD-9.
+- **NF-1 E-0b Brze radnje na mobitelu (P-13).** Ispod 800 px gornja traka uz „Izbornik” ima i „Obavijesti” i „Odjava”, pa odjava i zvonce ne traže otvaranje izbornika. Kad je izbornik otvoren, brze radnje se skrivaju (isti gumbi su u podnožju).
 
 ### E-1 Prijava (`prijava`, S-01)
 
@@ -89,6 +97,16 @@ Varijante: `zadano`, `preusmjeravanje`, `greska`, `nedostupno`, `bezuloge`, `pom
   - „Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.”;
   - „Javite se koordinatoru…”;
   - sekundarni gumb „Odjava” (`data-act=ponovno`).
+
+**NF-1 E-1a Odbijena prijava (P-15):**
+- Nova varijanta `odbijeno` („prijava odbijena (račun bez pristupa)”), `role=alert`, za šifru `login_refused` (callback 403).
+  - h2 „Prijava je odbijena”;
+  - „Vaš račun AAI@EduHr nema pristup ovom prostoru. To nije kvar prijave i ponovni pokušaj ga neće promijeniti.”;
+  - „Javite se koordinatoru (administratoru fakulteta) na svojoj ustanovi.”;
+  - sekundarni gumb „Na početnu” (`data-act=ponovno`).
+- Razlikuje se od `nedostupno` (AAI@EduHr ne odgovara; ponovni pokušaj ima smisla) i od `bezuloge`.
+- `bezuloge` sada kaže tko dodjeljuje ulogu: „Ulogu dodjeljuje administrator fakulteta.” i „Javite se koordinatoru (administratoru fakulteta)…”. Isti izraz je u razotkrivanju „Trebate pomoć?”. Odluka A-5: koordinator je administrator fakulteta.
+- Tekst `odbijeno` ne tvrdi uzrok odbijanja jer ga ugovor ne razlikuje (N-19).
 
 ### E-2 Početna, „Moji zadaci” (`pocetna`, S-02)
 
@@ -136,6 +154,29 @@ Varijante: `puno`, `prazno`, `kolegijbeztaska`, `ucitavanje`, `greska`.
   - `autocapitalize=characters`;
 - gumb „Upiši”.
 
+**NF-1 dopune E-2:**
+- **E-2a Oznake roka (P-3).** Uz redak zadatka koji nije predan, a čiji je rok prošao, oznaka `.tag.late` „Rok je prošao {datum}”.
+  - Tekst je činjeničan: opisuje rok, ne ponašanje studenta. Gumb ostaje isti („Otvori zadatak” ili „Započni rad”).
+  - Isto na E-3 i E-4. Oznaka nestaje kad je rad predan.
+  - Podaci: `dueAt` i `extendedDueAt` iz PO-4 (postoje u izvatku).
+- **E-2b Produljeni rok (P-7).** Redak s produljenim rokom piše „Produljeni rok: {rok}” umjesto „Rok: {rok}” i ispod retka: „Prethodni rok: {stari rok}. Razlog: {opravdani razlog | tehnički razlog | dogovor s nastavnikom}. Vrijedi za {sve studente kolegija | samo Vas}.”
+  - Isto na E-3, E-4 i u E-6 (E-6d).
+  - Podaci: PO-27. Tekst razloga ide kroz pravni pregled prije gradnje (što student smije vidjeti o nastavnikovoj odluci).
+- **E-2c Predano nakon roka (P-6).** Uz „Predano {vrijeme}” oznaka „Predano nakon roka” kad je vrijeme predaje iza roka. Bez polja iz PO-28 redak pokazuje samo „Predano” (sadašnje ponašanje aplikacije).
+- **E-2d Poredak i odjeljci (P-4).** Uz naslov „Moji zadaci” izbornik „Poredak” (`data-sel=order`): „Po roku” (zadano) i „Po kolegiju” (dosadašnji redoslijed).
+  - „Po roku” razdvaja popis na odjeljke s naslovom h3: „Uskoro” (rok u idućih 14 dana ili već prošao), „Kasnije” i „Predano”. Prazan odjeljak se ne crta.
+  - Unutar odjeljka zadaci su po roku, najbliži prvi; predani su na dnu.
+- **E-2e Nastavak rada (P-4).** Kartica „nastavak rada” uzima započeti, nepredani rad s najbližim rokom (među onima s potvrđenom obavijesti), a ne prvi po redu.
+- **E-2f Izvoz rokova (P-14).** Ispod popisa gumb „Dodaj rokove u kalendar” (`data-act=ics`) i meta „Datoteka (.ics) nastaje u Vašem pregledniku i ne šalje se poslužitelju. Sadrži samo naslov zadatka, kolegij i rok. Ako se rok promijeni, kalendar se ne ažurira sam.”
+  - Datoteka `ductura-rokovi.ics` ima po jedan događaj (`DTSTART` u 23:59 na dan roka) za svaki nepredani zadatak.
+  - Stanje bez rokova: gumb `aria-disabled`, meta „Nema rokova za izvoz: svi zadaci su predani.”
+  - Nije potrebna nijedna ruta.
+- **E-2g Više kolegija bez zadatka (P-12).** Varijanta `kolegijbeztaska` crta karticu „U ovom kolegiju zasad nema zadatka.” za svaki upisani kolegij (Kolegij A i Kolegij B), a ne samo za prvi, uz karticu koda.
+- **E-2h Pristupačnost retka (P-13).**
+  - Gumb retka ima naziv s naslovom zadatka („Otvori rad: {naslov}”) i `aria-describedby` na redak s rokom i oznakama, pa čitač zaslona čita jedan naziv i povezane oznake.
+  - Ciljevi su najmanje 44 px (`.btn`).
+  - Kod E-5b: polje koda na početnoj ima `maxlength=32` i isto pravilo normalizacije kao E-5.
+
 ### E-3 Moji kolegiji (`kolegiji`, S-03)
 
 Varijante: `puno`, `jedan`, `prazno`, `ucitavanje`, `greska`, `istekla`.
@@ -169,6 +210,10 @@ Varijante: `puno`, `prazno`, `ucitavanje`, `greska`.
   - „Radovi se ovdje prikazuju kad se upišete u kolegij sa zadatkom.”;
   - gumb „Upiši kolegij kodom”.
 - **`ucitavanje`** i **`greska`:** kao na E-2.
+- **NF-1 E-4a Filtar po stanju (P-5):** iznad popisa izbornik „Stanje” (`data-sel=filter`, naziv „Filtar po stanju rada”): „Sve” (zadano), „Za predati” (potvrđena obavijest, nije predano), „Predano”, „Čeka potvrdu uputa”; uz njega `role=status` „Prikazano n od m”.
+  - Nova varijanta `bezrezultata` („filtar bez rezultata”): „Nema radova za odabrani filter.” i gumb „Prikaži sve radove” (`data-act=filtarSve`).
+  - Pretraga i filtar akademske godine postoje u aplikaciji, a prototip ih nema (odluka A-10: zadržati); ovaj filtar im se pridružuje.
+  - Redak ima iste oznake kao E-2 (E-2a, E-2b, E-2c).
 
 ### E-5 Upis kodom (`upis`, S-04, uska)
 
@@ -197,6 +242,12 @@ Varijante: `puno`, `upisivanje`, `neispravan`, `istekao`, `vecupisan`, `mreza`, 
 - **`bezzadatka`:**
   - „Upisani ste u kolegij, ali u njemu zasad nema otvorenog zadatka. Kad ga nastavnik objavi, vratite se na ovu stranicu.”;
   - poveznica „Upiši drugi kolegij” (`data-act=drugi`).
+
+**NF-1 dopune E-5:**
+- **E-5a Previše pokušaja (P-10).** Nova varijanta `previse` („previše pokušaja (3 pogrešna koda)”), greška `#up-greska` `role=alert`: „Previše pokušaja. Pričekajte malo i pokušajte ponovno ili se javite nastavniku.” Bez izmišljenog trajanja čekanja i bez `aria-invalid` (kao `mreza`).
+  - Prototip prelazi u to stanje nakon trećeg pogrešnog koda u istom posjetu ekranu (odgovara greški 429 `too_many_attempts` iz PO-6); brojač se briše izlaskom s ekrana ili uspješnim upisom.
+  - `neispravan` i `istekao` zadržavaju isti tekst za „ne postoji” i „istekao” (preporuka iz pregleda: razdvajanje bi otkrivalo postojanje koda).
+- **E-5b Jedno pravilo koda (P-11).** Kod s početne (R-10) prolazi isto pravilo kao R-15: uklanja razmake i crtice, velika slova, najviše 32 znaka. Polje na E-5 zato prikazuje čist kod („KOLD2026”, ne „KOL-D-2026”). Polje koda ima `maxlength=32` na E-2 i E-5, kao tekst „8 do 32” (ugovor dopušta do 64; klijent normalizira prije slanja).
 
 ### E-6 Obavijest o zadatku (`obavijest`, S-05, uska)
 
@@ -254,6 +305,20 @@ Varijante: `puno`, `neprocitano`, `ucitavanje`, `greska`, `nijeotvoren`, `potvrd
   - upozorenje „Nastavnik je u međuvremenu objavio novu verziju zadatka. Ponovno učitajte stranicu i pročitajte je.”;
   - gumb „Ponovno učitaj”.
 - **`bezprava`:** `.err` „Ovaj račun ne može potvrditi obavijest za ovaj zadatak.” i poveznica natrag.
+
+**NF-1 dopune E-6:**
+- **E-6a Ukratko (P-8).** Iznad punog teksta (ispod naslova i roka) kartica „Ukratko” (`.up-sum`, h3 `#up-sum-h`) s pet redaka:
+  - rok;
+  - opseg riječi (`wordMin` do `wordMax` iz `student.notice.get`; PO-12 time dobiva izvor);
+  - dopušteno (jedan redak iz `aiPurposes`);
+  - što se bilježi i što se ne bilježi (jedna rečenica);
+  - „Potvrda nije privola.”
+  - Puni tekst ostaje ispod; sažetak ne zamjenjuje potvrdu. Tekst je kroz skener zabranjenih izraza (PRODUCT §5).
+- **E-6b Otvaranje obavijesti se ne bilježi (P-9, varijanta a).** Prije potvrde ništa se ne bilježi, kao i dosad u prototipu (R-19). U stupcu „Što se ne bilježi” nova stavka: „Otvaranje ove obavijesti. Prije Vaše potvrde ništa se ne bilježi; bilježi se tek potvrda.” U aplikaciji se zato uklanja automatski poziv `student.notice-read.post` pri učitavanju stranice (rješava nalaz G-2); tekst „Prije potvrde zapis rada ne šalje se na poslužitelj.” zamjenjuje se tekstom prototipa „Prije potvrde ništa se ne šalje na poslužitelj.”
+- **E-6c Razlika verzija (P-16).** Stanje `promijenjeno` iznad gumba „Ponovno učitaj” sada ima tablicu „Što se promijenilo (v1 → v2)” (stupci Stavka, Bilo (v1), Sada (v2); retci Rok, Opseg riječi, Pravilo uporabe alata).
+  - Nove varijante: `razlikaucitava` (kostur, `role=status` „Učitavanje razlike…”) i `promijenjenobezrazlike` (`role=status`: „Razlika između verzija trenutačno nije dostupna. Pročitajte novu verziju u cijelosti.”). Obje zadržavaju oznaku „Nova verzija uputa (v2), još nije potvrđena” i gumb.
+  - Podaci: PO-29 (NEMA).
+- **E-6d Produljeni rok (P-7).** Ispod roka u zaglavlju obavijesti isti redak kao E-2b.
 
 ### E-7 Radni prostor (`rad`, bez ljuske)
 
@@ -442,6 +507,47 @@ Varijante: `puno`, `ceka`, `nakonroka`, `praznine`, `prazno`, `ucitavanje`, `gre
 - **`ucitavanje`:** „Učitavam potvrdu s poslužitelja.”
 - **`greska`:** „Potvrdu trenutačno nije moguće učitati. Ako je rad predan, predaja i vrijeme predaje time se ne mijenjaju.”
 
+### E-12 Postavke obavijesti (`postavke`, S-06, uska) (NF-1, P-17)
+
+Dostupno s poveznice „Postavke obavijesti” u ploči PD-9; nije u navigaciji `NAV`. Varijante: `puno` („zadano”, e-pošta i push isključeni), `ucitavanje`, `greska`, `spremanje`, `spremljeno`, `greskaspremanja`, `bezadrese`, `pushblokiran`.
+
+- **Zaglavlje:** h1 „Postavke obavijesti”, uvod „Odaberite gdje želite primati obavijesti o zadacima. Obavijesti u aplikaciji, u zvoncu, uvijek su uključene.”
+- **Kartica „E-pošta”** (`aria-labelledby=ps-e`):
+  - adresa iz računa AAI@EduHr, samo za čitanje (u prototipu izmišljena `student.a@example.test`);
+  - potvrdni okvir `#ps-email`: „Pristajem da mi Ductura šalje obavijesti na tu e-adresu.” Zadano isključen: nema unaprijed označenog pristanka;
+  - meta (`aria-describedby`): „Pristanak je dobrovoljan i možete ga povući u svakom trenutku: ovdje ili poveznicom „Odjava iz obavijesti” u svakoj poruci.”
+- **Kartica „U pregledniku (push)”:**
+  - uputa: obavijest se prikazuje i kad Ductura nije otvorena, vrijedi samo za ovaj preglednik, a preglednik traži dopuštenje;
+  - potvrdni okvir `#ps-push` „Prikaži obavijesti u ovom pregledniku.”
+- **Kartica „Koje obavijesti”:** četiri potvrdna okvira, vrijede za oba kanala: „Novi zadatak i nova verzija zadatka”, „Podsjetnik prije roka”, „Novi komentar uz rad”, „Potvrda predaje”.
+- **Kartica „Što poruka sadrži”:**
+  - dva stupca: „Sadrži” (naslov zadatka i naziv kolegija; rok; poveznica na Ducturu) i „Ne sadrži” (nijedan dio rada ni podaci o tome što je pisano i kada; tekst komentara nastavnika; ocjene);
+  - ispod njih primjer poruke (`role=group`, „Primjer poruke (izmišljeni podaci)”): predmet „Ductura: nova verzija zadatka na kolegiju Kolegij B”, kolegij i naslov, rok, „Otvorite Ducturu za upute.”, poveznica „Odjava iz obavijesti”.
+- **Radnja:** gumb „Spremi postavke” (R-52) i poveznica „Natrag na Moje zadatke”.
+- **Stanja:**
+  - `ucitavanje`: kostur, `role=status` „Učitavanje postavki…”.
+  - `greska` (`role=alert`): „Postavke trenutačno nisu dostupne.” i „Vaše postojeće postavke nisu promijenjene.”, gumb „Pokušaj ponovno”.
+  - `spremanje`: `aria-busy`, polja onemogućena, gumb „Spremanje…” (`aria-disabled`), `role=status` „Spremanje postavki…”.
+  - `spremljeno` (`role=status`): „Postavke su spremljene.” (uz e-poštu: „E-pošta je uključena.”).
+  - `greskaspremanja` (`role=alert`): „Postavke nisu spremljene. Pokušajte ponovno. Dok se ne spreme, vrijede prethodne.”
+  - `bezadrese`: okvir e-pošte onemogućen, „Račun AAI@EduHr ne daje e-adresu pa se obavijesti e-poštom ne mogu uključiti. Obavijesti u aplikaciji ostaju uključene.”
+  - `pushblokiran` (`role=alert`): „Preglednik ne dopušta obavijesti za ovu stranicu. Dopuštenje promijenite u postavkama preglednika, pa ponovno uključite.”
+- **Pravila privatnosti (pregled prije uključenja za stvarne studente):**
+  - sadržaj poruke je isključivo naslov zadatka, naziv kolegija, rok i poveznica;
+  - pristanak je zasebna, izričita radnja, a povlačenje je jednako lako (okvir ili poveznica u poruci);
+  - za stvarne studente tek nakon pregleda privatnosti i DPIA;
+  - tekst nikad ne tvrdi ništa o autorstvu (PRODUCT §5).
+
+### E-13 Odjava iz obavijesti e-poštom (`odjavaposte`, S-07, bez ljuske) (NF-1, P-17)
+
+Javna stranica na koju vodi poveznica „Odjava iz obavijesti” iz poruke. Radi bez prijave (jednokratni token u poveznici; PO-33). Varijante: `puno`, `odjavljivanje`, `uspjeh`, `istekla`, `greska`.
+
+- **`puno`:** h2 „Odjava iz obavijesti e-poštom”, „Ductura više neće slati obavijesti o zadacima na Vašu e-adresu. Obavijesti u aplikaciji ostaju uključene.”, gumb „Odjava iz obavijesti” (R-53).
+- **`odjavljivanje`** (`role=status`, `aria-busy`): „Odjavljujemo Vas”, traka, gumb onemogućen.
+- **`uspjeh`** (`role=status`): „Odjavljeni ste”, „Obavijesti e-poštom više se ne šalju na tu adresu. Obavijesti u aplikaciji ostaju uključene.”, „Možete ih ponovno uključiti u postavkama obavijesti nakon prijave.”, poveznica „Prijava sustavom AAI@EduHr”.
+- **`istekla`** (`role=alert`): „Poveznica ne vrijedi” (istekla ili već iskorištena), uputa da se student prijavi i isključi obavijesti u postavkama.
+- **`greska`** (`role=alert`): „Odjava nije dovršena”, poslužitelj ne odgovara, postavke nisu promijenjene, gumb „Pokušaj ponovno”.
+
 ---
 
 ## 2. Prozori i dijalozi
@@ -534,11 +640,28 @@ Ista je za studenta i nastavnika (PRODUCT §5 pravilo 5). Prikazuje se na E-8 (d
 
 `showSum` otvara ili zatvara ugrađenu ploču PD-1 i pomiče stranicu do nje.
 
+### PD-9 Ploča „Obavijesti” (zvonce, E-0a) (NF-1, P-1, P-2)
+
+Nemodalni dijalog `#nf-panel` (`role=dialog`, `aria-labelledby=nf-h`, `tabindex=-1`), nad ljuskom: uz traku na širokom ekranu, ispod gornje trake ispod 800 px. Nije modalan: stranica ispod ostaje dostupna.
+- **Otvaranje:** fokus ide na ploču. **Zatvaranje:** gumb „Zatvori”, Escape, klik izvan ploče ili promjena ekrana; fokus se vraća na gumb zvonca (nije pri promjeni ekrana).
+- **Zaglavlje:** h2 „Obavijesti” i gumb „Zatvori”.
+- **Stavka** (gumb `.nf-item`, `data-read`): naslov (nepročitana ima točku i skriveni tekst „Nepročitano: ”), jedna meta s objašnjenjem i vrijeme. Vrste su iz PO-26:
+  - `assignment_version`: „Nova verzija zadatka: {naslov}”; otvara E-6 u stanju `promijenjeno` (E-6c);
+  - `deadline_reminder` (P-2): „Rok za zadatak {naslov}: {rok}” uz „{kolegij} · podsjetnik u aplikaciji”; otvara zadatak (R-9). Ne šalje se izvan aplikacije osim ako je uključen E-12;
+  - `comment_posted`: „Novi komentar uz rad: {naslov}”, „Tekst komentara se ne prikazuje u obavijesti.”; otvara rad;
+  - `submission_recorded`: „Predaja je zabilježena: {naslov}”; otvara potvrdu o predaji (E-11);
+  - `course_handover`: „Promjena na kolegiju {kolegij}”; otvara E-3 (značenje i `targetId` u N-16);
+  - **nepoznata vrsta se preskače** i ne ruši popis ni broj (u prototipu je jedan takav zapis u podacima).
+- **Podnožje:** gumb „Označi sve kao pročitano” (`aria-disabled` kad nema nepročitanih) i poveznica „Postavke obavijesti” (E-12).
+- **Stanja** (u prototipu bira ih izbornik trake): `puno`, `prazno` („Nema novih obavijesti. Ovdje će se prikazati nova verzija zadatka, podsjetnici na rok, komentari i potvrde predaje.”), `ucitavanje` (kostur, `role=status`), `greska` (`role=alert`: „Obavijesti trenutačno nisu dostupne. To ne znači da ih nema.”, gumb „Pokušaj ponovno”).
+- **Starije obavijesti:** gumb „Starije obavijesti” učitava sljedeću stranicu (ugovor: do 50 po stranici, parametar `before`, `nextBefore`).
+- Obavijesti postoje samo u aplikaciji (zvonce) osim ako student u E-12 izričito uključi e-poštu ili push.
+
 ---
 
 ## 3. Radnje
 
-Radnji je ukupno 42. Uz svaku je zapisano što prototip radi. Stanja učitavanja, greške, praznog prikaza i rada bez mreže navedena su posebno, na kraju.
+Radnji je ukupno 54 (R-1 do R-42 i NF-1 R-43 do R-54). Uz svaku je zapisano što prototip radi. Stanja učitavanja, greške, praznog prikaza i rada bez mreže navedena su posebno, na kraju.
 
 ### Ljuska
 
@@ -562,13 +685,13 @@ Radnji je ukupno 42. Uz svaku je zapisano što prototip radi. Stanja učitavanja
 
 ### E-2 do E-4
 
-- **R-9 Otvori zadatak / rad** (`data-act=otvori data-id`):
+- **R-9 Otvori zadatak / rad** (`data-act=otvori data-id`; NF-1: gumb ima naziv „{radnja}: {naslov}” i opis s rokom, E-2h):
   - postavlja `current`;
   - predan rad vodi na E-11;
   - nepotvrđena obavijest vodi na E-6;
   - inače vodi na E-7.
 - **R-10 Upiši kod s početne** (`data-submit=kod`):
-  - sprema `pendingCode` (bez razmaka na rubovima, velikim slovima);
+  - sprema `pendingCode` (NF-1 P-11: bez razmaka i crtica, velikim slovima, najviše 32 znaka, kao `norm()` u R-15);
   - odlazi na E-5, gdje je polje već popunjeno.
 - **R-11 Pokušaj ponovno** (`data-act=ponovno`): ponovno učitavanje.
 - **R-12 Upiši kolegij kodom** (`data-act=upis`): odlazi na E-5.
@@ -580,7 +703,7 @@ Radnji je ukupno 42. Uz svaku je zapisano što prototip radi. Stanja učitavanja
 - **R-15 Upiši** (`data-submit=upisi`), redom:
   1. `norm()` uklanja razmake i crtice i pretvara u velika slova;
   2. kod mora odgovarati `^[A-Z0-9]{8,32}$`, inače stanje `neispravan`;
-  3. kod koji ne postoji daje `istekao`;
+  3. kod koji ne postoji daje `istekao`; NF-1 P-10: treći pogrešan kod u istom posjetu daje `previse`, a dok traje to stanje svaki sljedeći pokušaj ostaje u njemu;
   4. ako je student već upisan, `vecupisan`;
   5. inače `upisivanje`, pa nakon 700 ms:
      - upis se bilježi;
@@ -597,7 +720,7 @@ Radnji je ukupno 42. Uz svaku je zapisano što prototip radi. Stanja učitavanja
 - **R-19 Potvrdi i otvori editor** (`data-act=potvrdi`):
   - postavlja `ack`, `started` i `ackAt` (današnji datum i vrijeme);
   - odlazi na E-7.
-  - Prije potvrde ništa se ne šalje na poslužitelj.
+  - Prije potvrde ništa se ne šalje na poslužitelj. NF-1 P-9 (a): to vrijedi i za samo otvaranje obavijesti; u aplikaciji se ne zove `student.notice-read.post` pri učitavanju (E-6b).
 - **R-20 Otvori rad** (`data-act=otvoriRad`): stanje `potvrdeno`, odlazak na E-7.
 - **R-21 Ponovno učitaj** (stanje `promijenjeno`): ponovno čitanje nove verzije.
 - **R-22 Natrag** (`BACK`): na E-3.
@@ -647,21 +770,39 @@ Radnji je ukupno 42. Uz svaku je zapisano što prototip radi. Stanja učitavanja
 - **R-42 Preuzmi zapis (PDF s QR kodom)** (`data-act=pdf`): u prototipu samo obavijest.
 - Uz to i poveznice „Otvori izjavu”, „Otvori radni prostor”, „Otvori potvrdu o predaji”, „Prikaži mjesto u radu”, „Prikaži oznake u tekstu” i „Na početnu”. Sve su `data-go` ili `data-act` na postojeći ekran.
 
+### NF-1 Zvonce, popis zadataka, postavke i odjava iz poruke
+
+- **R-43 Otvori ili zatvori zvonce** (`data-nf=bell`): otvara ili zatvara PD-9, fokus na ploču; Escape ili „Zatvori” vraća fokus na gumb (E-0a, P-1).
+- **R-44 Otvori obavijest** (`data-nf=open data-id`): označava obavijest pročitanom (`notifications.read.post`), zatvara ploču i vodi prema vrsti (PD-9) (P-1, P-2).
+- **R-45 Označi sve kao pročitano** (`data-nf=readall`): sve poznate obavijesti postaju pročitane, broj nestaje, obavijest „Sve obavijesti su označene kao pročitane.” (toast 3,2 s). U aplikaciji: `notifications.read.post` za svaku nepročitanu (ugovor nema skupnu rutu).
+- **R-46 Starije obavijesti** (`data-nf=older`): sljedeća stranica popisa (`before`) (P-1).
+- **R-47 Ponovno učitaj obavijesti** (`data-nf=retry`, stanje `greska` ploče): kratko stanje `ucitavanje`, pa `puno` (P-1).
+- **R-48 Promijeni poredak zadataka** (`data-sel=order`, E-2d): „Po roku” ili „Po kolegiju”; fokus ostaje na izborniku (P-4).
+- **R-49 Dodaj rokove u kalendar** (`data-act=ics`, E-2f): preuzima `ductura-rokovi.ics` iz preglednika; obavijest „Datoteka rokova je preuzeta (n).”; bez rokova obavijest „Nema rokova za izvoz.” (P-14).
+- **R-50 Promijeni filtar po stanju** (`data-sel=filter`, E-4a) (P-5).
+- **R-51 Prikaži sve radove** (`data-act=filtarSve`, E-4a): filtar na „Sve” (P-5).
+- **R-52 Spremi postavke obavijesti** (`data-act=spremi`, E-12): `spremanje`, nakon 700 ms `spremljeno` i obavijest „Postavke su spremljene.” U aplikaciji: PO-30; za uključenu e-poštu bilježi se vrijeme pristanka (P-17).
+- **R-53 Odjava iz obavijesti** (`data-act=odjava`, E-13): `odjavljivanje`, nakon 700 ms `uspjeh`; isključuje e-poštu (PO-33) (P-17).
+- **R-54 Ponovno čitanje postavki** (`data-act=ponovno`, E-12 `greska`): vraća na `puno` (P-17).
+
 ### Stanja učitavanja, greške, praznog prikaza i rada bez mreže
 
 | Ekran | Učitavanje | Greška | Prazno | Bez mreže | Ostalo |
 |---|---|---|---|---|---|
-| E-1 | `preusmjeravanje` | `greska`, `nedostupno` | — | — | `bezuloge` |
-| E-2 | da | da | `prazno`, `kolegijbeztaska` | — | — |
+| E-1 | `preusmjeravanje` | `greska`, `nedostupno`, `odbijeno` (NF-1) | — | — | `bezuloge` |
+| E-2 | da | da | `prazno`, `kolegijbeztaska` (NF-1: svi kolegiji) | — | — |
 | E-3 | da | da | `prazno`, `jedan` | — | `istekla` |
-| E-4 | da | da | `prazno` | — | — |
-| E-5 | `upisivanje` | `neispravan`, `istekao` | `bezzadatka` | `mreza` | `vecupisan` |
-| E-6 | da | da | — | — | `nijeotvoren`, `promijenjeno`, `bezprava`, `potvrdeno` |
+| E-4 | da | da | `prazno`, `bezrezultata` (NF-1) | — | — |
+| E-5 | `upisivanje` | `neispravan`, `istekao`, `previse` (NF-1) | `bezzadatka` | `mreza` | `vecupisan` |
+| E-6 | da | da | — | — | `nijeotvoren`, `promijenjeno`, `bezprava`, `potvrdeno`; NF-1: `razlikaucitava`, `promijenjenobezrazlike` |
 | E-7 | da | da | `prazno` | `bez-mreze` | `predano` (samo čitanje) |
 | E-8 | da | da | `prazno`, `zatvoreno` | `bezmreze` | `predano` |
 | E-9 | da | da | `prazno` | — | `nesklad` |
 | E-10 | da, i `utijeku` | `odbijeno`, `nedovrseno`, `nepoznato` | — | `bezmreze` | `nakonroka`, `produljen` |
 | E-11 | da | da | `prazno` | — | `ceka`, `nakonroka`, `praznine` |
+| E-12 (NF-1) | da | `greska`, `greskaspremanja`, `pushblokiran` | `puno` (sve isključeno) | — | `spremanje`, `spremljeno`, `bezadrese` |
+| E-13 (NF-1) | `odjavljivanje` | `greska`, `istekla` | — | — | `uspjeh` |
+| PD-9 (NF-1) | da | da | `prazno` | — | `puno` (starije obavijesti) |
 
 ---
 
@@ -679,7 +820,7 @@ Oznake statusa:
 | PO-2 | Šifre neuspjele prijave (`greska`, `nedostupno`) | `sign-in-failure.json`: `/prijava?greska=login_failed\|provider_unavailable`; callback vraća 400 `login_failed`, 403 `login_refused` i 503 | IMA. Ipak `login_refused` nema svoj tekst u `sign-in-failure.json`. |
 | PO-3 | Račun, uloge, ustanova (ljuska, `bezuloge`) | `profile.me.get` GET `/api/v1/me`: `{institution{slug,displayName}, roles[≥1], displayName}`, 401, 403 | IMA. Stanje `bezuloge` mora se preslikati na 403 ili na poseban kod (pitanje N-8). |
 | PO-4 | Kolegiji i zadaci (E-2, E-3, E-4) | `student.assignments.get` GET `/api/v1/student/assignments`: `{courses[{id,name,assignments[{id,title,dueAt,noticeFirst}]}]}` | UGOVOR i DJELOMIČNO. Nedostaju akademska godina, seminarske grupe, vrsta zadatka (Esej, Seminarski rad), mentor i produljeni rok. |
-| PO-5 | Stanje rada po zadatku (`kind()`, `stateText()`) | `student.assignment-work.get` GET `/api/v1/student/assignment-work`: `not_started\|in_progress\|submitted` | UGOVOR i DJELOMIČNO. Nedostaje vrijeme predaje („Predano X”). Potvrda obavijesti dolazi iz `noticeFirst` u PO-4. |
+| PO-5 | Stanje rada po zadatku (`kind()`, `stateText()`) | `student.assignment-work.get` GET `/api/v1/student/assignment-work`: `not_started\|in_progress\|submitted` | UGOVOR i DJELOMIČNO. Nedostaje vrijeme predaje („Predano X”). Potvrda obavijesti dolazi iz `noticeFirst` u PO-4. NF-1 (P-6): vidi PO-28. |
 | PO-6 | Upis kodom (E-5) | `institution.enrollments.post` POST `/api/v1/institution/enrollments`, tijelo `{code ≤64}`, odgovor 200 `{courseId}`; greške 422 `invalid_input`, 422 `refused`, 429 `too_many_attempts`, 403, 503 | UGOVOR. Ugovor ne razlikuje stanja `vecupisan` i `bezzadatka` (pitanje N-3). |
 | PO-7 | Tekst obavijesti, pravila alata, pravilo fakulteta, verzija, otisak, „otvara se od” (E-6) | — | NEMA rute za čitanje obavijesti. Ductus kopija čita je u stranici (`assignment-notice-read`). |
 | PO-8 | Potvrda obavijesti (R-19) | `institution.acknowledgment.post` POST `/api/v1/institution/assignments/{assignmentId}/acknowledgment`, tijelo `{versionNo, fingerprint}`, odgovor 200 `{acknowledgedAt}`; 409 `conflict` i `notice_changed` (stanje `promijenjeno`), 403 (`bezprava`) | UGOVOR. |
@@ -696,16 +837,25 @@ Oznake statusa:
 | PO-19 | Stanje predaje „Provjeri stanje predaje” (`nepoznato`) | — | NEMA. |
 | PO-20 | Javna provjera potvrde `/provjera` | — | NEMA. |
 | PO-21 | PDF zapisa s QR kodom | — | NEMA. |
-| PO-22 | Produljeni rok (`produljen`) | — | NEMA ni u PO-4 ni u potvrdi. Potvrda ima samo `dueAt`. |
+| PO-22 | Produljeni rok (`produljen`) | — | NEMA ni u PO-4 ni u potvrdi. Potvrda ima samo `dueAt`. NF-1 (P-3, P-7): izvadak ugovora sada u PO-4 ima `extendedDueAt`, a povijest je PO-27. |
 | PO-23 | Jezik sučelja (ne vidi se u prototipu) | `profile.interface-locale.get` i `.post` | IMA. |
 | PO-24 | Dnevnik pristupa (u Ductus kopiji, nije u prototipu) | `student.access-log.get` | UGOVOR. |
 | PO-25 | Prijava problema (u Ductus kopiji, nije u prototipu) | `support.problem-report.post` | IMA. |
+| PO-26 | NF-1 (P-1, P-2). Obavijesti zvonca (PD-9, E-0a) | `notifications.list.get` GET `/api/v1/notifications` s `?before=<id>`: `{notifications[≤50]{id, kind, targetId, createdAt, readAt}, nextBefore}`, `kind` je `assignment_version\|course_handover\|comment_posted\|submission_recorded\|deadline_reminder`; `notifications.read.post` POST `/api/v1/notifications/{id}/read`, odgovor 204, greške 401, 403, 404, 503 | UGOVOR (u izvatku) i DJELOMIČNO. Ugovor nema naslov ni tekst: naslov zadatka i rok klijent spaja iz PO-4 preko `targetId`. Postojeći klijent `src/client/notifications.ts` očekuje drugi oblik (`{items, unread}`, vrste `comment\|assignmentVersion\|submission`) i zadano vraća 404, pa se transport preslikava prema ugovoru; nepoznata vrsta se preskače. Skupne rute „sve pročitano” nema (R-45 zove pojedinačnu rutu). Ne zna se tko i kada stvara zapise `assignment_version` i `deadline_reminder`: to je poslužiteljska strana i treba je provjeriti prije gradnje (N-17). |
+| PO-27 | NF-1 (P-7). Povijest produljenja roka (E-2b, E-6d) | `student.deadline-history.get` GET `/api/v1/student/assignments/{assignmentId}/deadline-extensions`: `{extensions[{id, scope one\|all, previousDueAt, dueAt, reasonId justified\|technical\|agreement\|all, createdAt}]}` | UGOVOR (u izvatku); klijent je danas ne zove. Zvati samo za zadatak s `extendedDueAt` (ne za svaki redak). Značenje `reasonId = all` nije jasno (N-15). Tekst razloga ide kroz pravni pregled. |
+| PO-28 | NF-1 (P-6). Vrijeme predaje i „nakon roka” na popisima (E-2c, E-4) | `student.assignment-work.get`: danas samo `{assignmentId, workState}` | NEMA polja. Traži SRV zadatak: **`submittedAt`** (vrijeme poslužitelja) i **`afterDeadline`** (logička vrijednost) uz svaki zadatak sa `workState = submitted`. Poziv `student.submission.get` po retku bio bi N+1. Dok polja nema, popis pokazuje samo „Predano”. |
+| PO-29 | NF-1 (P-16). Razlika verzija obavijesti (E-6c) | `student.notice.get` daje samo trenutačnu verziju (`versionNo`, `dueAt`, `wordMin`, `wordMax`, `aiPurposes` …) | NEMA. Treba ili polje s prethodnom verzijom uz `notice.get` (najmanje `previousVersionNo`, `previousDueAt`, `previousWordMin`, `previousWordMax`, `previousAiPurposes`), ili rutu za čitanje verzije n. Traži SRV zadatak. Do tada vrijedi varijanta `promijenjenobezrazlike`. |
+| PO-30 | NF-1 (P-17). Postavke obavijesti (E-12) | — | NEMA rute. Treba čitanje i spremanje po studentu: pristanak na e-poštu (vrijeme pristanka ili prazno), uključen push, četiri vrste obavijesti (nova verzija, podsjetnik, komentar, potvrda predaje). Traži SRV zadatak i RLS po studentu. |
+| PO-31 | NF-1 (P-17). E-adresa studenta za e-poštu (E-12) | `profile.me.get` GET `/api/v1/me`: `{institution, roles, displayName, journalScope, sessionTag}` | NEMA polja. Adresa se ne vraća. Treba potvrditi isporučuje li AAI@EduHr atribut e-pošte i smije li se čuvati (N-20); bez toga vrijedi stanje `bezadrese`. |
+| PO-32 | NF-1 (P-17). Slanje e-pošte i push obavijesti | — | NEMA. Serverski posao slanja (predložak samo s naslovom zadatka, nazivom kolegija, rokom i poveznicom; bez ičega iz rada), pretplata za push (krajnja točka i ključevi preglednika), evidencija pristanka i povlačenja. Pregled privatnosti i DPIA prije uključenja za stvarne studente. |
+| PO-33 | NF-1 (P-17). Odjava iz poruke (E-13) | — | NEMA. Javna ruta bez prijave s jednokratnim tokenom iz poruke: odgovori uspjeh, `istekla` (token istekao ili iskorišten) i 503. Povlačenje pristanka mora raditi i bez prijave. |
 
-Zbroj: 25 podataka.
+Zbroj: 33 podatka (25 + NF-1 PO-26 do PO-33).
 - IMA: 8 (PO-1, PO-2, PO-3, PO-9, PO-10, PO-11, PO-23, PO-25).
-- Samo UGOVOR: PO-6, PO-8, PO-17, PO-18, PO-24.
-- UGOVOR i DJELOMIČNO: PO-4, PO-5, PO-13.
-- NEMA: PO-7, PO-12, PO-14, PO-15, PO-16, PO-19, PO-20, PO-21, PO-22.
+- Samo UGOVOR: PO-6, PO-8, PO-17, PO-18, PO-24, PO-27 (NF-1).
+- UGOVOR i DJELOMIČNO: PO-4, PO-5, PO-13, PO-26 (NF-1).
+- NEMA: PO-7, PO-12, PO-14, PO-15, PO-16, PO-19, PO-20, PO-21, PO-22; NF-1: PO-28, PO-29, PO-30, PO-31, PO-32, PO-33.
+- NF-1 (P-1 do P-17) traži od servera redom: PO-28 (P-6), PO-29 (P-16), PO-30 do PO-33 (P-17) i provjeru PO-26 (P-1, P-2). Ostali prijedlozi (P-3, P-4, P-5, P-7, P-8, P-9, P-10, P-11, P-12, P-13, P-14, P-15) ne traže novo polje ni rutu.
 
 ---
 
@@ -806,6 +956,13 @@ Svaki val gradi server i web zajedno. Svaki završava nečim što Daniel može k
 - Web: stranica `/provjera`.
 - Klik: s E-11 na provjeru, preuzimanje PDF-a.
 
+**V-7 Nove funkcije NF-1** (E-0a, E-0b, E-1a, E-2a do E-2h, E-4a, E-5a, E-5b, E-6a do E-6d, E-12, E-13, PD-9, R-43 do R-54; PO-26 do PO-33)
+- Daniel 23. 11. 2026.: svih 17 prijedloga ide u pilot (P-9 varijanta a; P-17 uz pregled privatnosti). Gradnja čeka zatvaranje pariteta studenta (PAR2-S), pa zadaci u redu dolaze poslije.
+- Bez novog servera (web): P-3, P-4, P-5, P-8, P-9, P-10, P-11, P-12, P-14, P-15, a P-13 u centralnom prolazu stila.
+- Web nakon preslikavanja ugovora: P-1, P-2 (PO-26), P-7 (PO-27).
+- Traže SRV zadatak prije weba: P-6 (PO-28), P-16 (PO-29), P-17 (PO-30 do PO-33).
+- P-7 prije gradnje: pravni pregled teksta razloga. P-17: pregled privatnosti i DPIA prije uključenja za stvarne studente; do tada samo demo s izmišljenim podacima.
+
 **V-6 Izjava i razgovori** (E-9, PD-2, R-31 do R-35, PO-16)
 - Gradi se tek nakon Danielove odluke o D-194 t. 6 i 7 (Q-10, rok 15. 12. 2026.).
 - Do tada bi se najviše smjela napraviti statička ljuska na lažnom poslužitelju, i to samo uz izričito Danielovo „da” (N-2).
@@ -841,12 +998,19 @@ Svaki val gradi server i web zajedno. Svaki završava nečim što Daniel može k
 13. **N-13 „Pravila oblika”** (E-8). U prototipu piše „Provjera oblika još nije pokrenuta.” Nema ni funkcije ni podatka. Je li to provjera citatnog stila FPZG?
 14. **N-14 Riječi.** Tekst pazi da ništa ne tvrdi otkrivanje varanja. Prototip piše „Izvor nije opažen” i „Ductura ne procjenjuje autorstvo ni korištenje AI-ja”. Zabranjeni izrazi nisu nađeni, ali tekstove treba propustiti kroz skener (PRODUCT §5) prije gradnje.
 
+15. **N-15 Razlog produljenja `all`.** Ugovor `student.deadline-history.get` ima `reasonId` `justified`, `technical`, `agreement` i `all`. Prototip prikazuje prva tri (opravdani razlog, tehnički razlog, dogovor s nastavnikom). Što znači `all` i kako se tada piše redak? Do odgovora: bez retka „Razlog”. (P-7)
+16. **N-16 Vrsta `course_handover`.** Ugovor ne kaže što je `targetId` (zadatak ili kolegij) ni što se točno dogodilo. Prototip pretpostavlja kolegij i tekst „Promjena na kolegiju {kolegij}”. Treba potvrdu s poslužiteljske strane. (P-1)
+17. **N-17 Tko stvara obavijesti.** Stvara li poslužitelj zapise `assignment_version` (pri objavi nove verzije) i `deadline_reminder` (i kada, za koga)? Nije vidljivo iz weba. Bez toga zvonce je prazno, a podsjetnik iz P-2 ne postoji. (P-1, P-2)
+18. **N-18 Potvrda e-adrese.** Treba li uz pristanak u E-12 i potvrda adrese (poruka s poveznicom) prije prve obavijesti? Prototip bilježi samo pristanak. Odlučuje pregled privatnosti. (P-17)
+19. **N-19 Odbijena prijava.** Ugovor razlikuje `login_refused` (403) od `provider_unavailable`, ali ne daje uzrok odbijanja. Tekst E-1a zato ne tvrdi uzrok. Potvrditi s poslužiteljem. (P-15)
+20. **N-20 Izvor e-adrese.** Daje li AAI@EduHr atribut e-pošte i smije li ga Ductura čuvati i koristiti za obavijesti? `profile.me.get` ga ne vraća. (P-17)
+
 ---
 
 Brojevi:
-- 12 ekrana (ljuska i 11 registriranih) sa 71 stanjem;
-- 8 prozora i dijaloga, od toga 2 modalna;
-- 42 radnje;
-- 25 podataka: 8 ima handler, 5 samo ugovor, 3 djelomično, 9 nema ništa;
-- 6 valova;
-- 14 otvorenih pitanja.
+- 14 ekrana (ljuska i 13 registriranih; NF-1 dodaje E-12 i E-13) s 89 stanja (71 + 18 iz NF-1: E-1 1, E-4 1, E-5 1, E-6 2, E-12 8, E-13 5); uz to 4 stanja ploče zvonca PD-9;
+- 9 prozora i dijaloga, od toga 2 modalna (NF-1 dodaje PD-9, nemodalan);
+- 54 radnje;
+- 33 podatka: 8 ima handler, 6 samo ugovor, 4 djelomično, 15 nema ništa;
+- 7 valova;
+- 20 otvorenih pitanja.

@@ -237,3 +237,44 @@ Pitanja koja vas traže odgovor i koja ne mogu odlučiti sama:
 4. Nalazi se `docs/nalazi/paritet-student.md` u drugoj grani? Pregled bi ga trebao usporediti.
 
 Otvoreno za provjeru u pregledniku (nije moguće iz ovog pregleda): mobitel (2.4), redoslijed Tab na obavijesti, izgled s mnogo zadataka.
+
+---
+
+## 6. Ishod: odluka vlasnika i unos u prototip (NF-1-PROTO, 23. 11. 2026.)
+
+Daniel je 23. 11. 2026. svih 17 prijedloga stavio u pilot (plan `ductura/.github`, `docs/plan/NOVE-FUNKCIJE.md`, odjeljak „Odluke · NF-1”). P-9 ide u varijanti (a): prije potvrde ništa se ne bilježi, a automatski `notice-read` pri učitavanju se uklanja. P-17 (obavijest e-poštom ili push) ulazi u pilot uz pregled privatnosti: sadržaj bez osobnih podataka iz rada, pristanak i odjava.
+
+Svih 17 unijeto je u `docs/prototip/Ductura_student.html` i `docs/prototip/INVENTAR-student.md` (dopune označene „NF-1”). Aplikacija se ne mijenja; gradnja čeka zatvaranje pariteta studenta (PAR2-S). Svi podaci u prototipu su izmišljeni.
+
+Prijedlozi koji traže poslužiteljsko polje ili rutu koje u izvatku ugovora ne postoje (opisano u INVENTAR-u, ne izmišlja se da postoje): P-6 (PO-28), P-16 (PO-29), P-17 (PO-30 do PO-33). P-1 i P-2 koriste rute iz izvatka (PO-26), ali traže provjeru stvara li poslužitelj zapise `assignment_version` i `deadline_reminder` (N-17). P-7 koristi postojeću rutu (PO-27), a tekst razloga čeka pravni pregled.
+
+### 6.1 Tablica P-n → ID inventara → element prototipa
+
+Elementi prototipa su ekran (hash), varijanta stanja (izbornik „stanje” u traci prototipa) i oznaka u kodu. Izbornik „zvonce” u traci prototipa bira stanje ploče PD-9.
+
+| P | ID u `INVENTAR-student.md` | Element prototipa |
+|---|---|---|
+| P-1 | E-0a, PD-9, R-43 do R-47, PO-26 | gumb „Obavijesti” u podnožju trake (`data-nf=bell`), ploča `#nf-panel`; stanja zvonca `puno`, `prazno`, `ucitavanje`, `greska`; nepoznata vrsta se preskače |
+| P-2 | PD-9, PO-26 | vrsta `deadline_reminder` u ploči: „Rok za zadatak {naslov}: {rok}” |
+| P-3 | E-2a (isto na E-3, E-4) | oznaka `.tag.late` „Rok je prošao {datum}”; zadatak „Sažetak stručnog članka o medijskoj pismenosti” |
+| P-4 | E-2d, E-2e, R-48 | `#pocetna`: izbornik „Poredak”, odjeljci „Uskoro”, „Kasnije”, „Predano”; kartica „nastavak rada” po najbližem roku |
+| P-5 | E-4a, R-50, R-51 | `#radovi`: izbornik „Stanje”, varijanta `bezrezultata` |
+| P-6 | E-2c, PO-28 | oznaka „Predano nakon roka” uz „Predano {vrijeme}” (zadatak „Esej o povjerenju u institucije”) |
+| P-7 | E-2b, E-6d, PO-27 | redak „Produljeni rok” s „Prethodni rok… Razlog… Vrijedi za…” na E-2, E-3, E-4 i u E-6 (zadatak „Lokalni mediji i izborna kampanja”) |
+| P-8 | E-6a | kartica „Ukratko” (`.up-sum`) na `#obavijest` |
+| P-9 | E-6b, R-19 | stavka „Otvaranje ove obavijesti…” u stupcu „Što se ne bilježi”; meta „Prije potvrde ništa se ne šalje na poslužitelj.” |
+| P-10 | E-5a | `#upis`: varijanta `previse` (nakon trećeg pogrešnog koda) |
+| P-11 | E-5b, R-10 | `#pocetna` obrazac koda → `#upis` polje s čistim kodom, `maxlength=32` |
+| P-12 | E-2g | `#pocetna`, varijanta `kolegijbeztaska`: kartice za Kolegij A i Kolegij B |
+| P-13 | E-0b, E-2h | gornja traka ispod 800 px s „Obavijesti” i „Odjava”; naziv gumba retka s naslovom zadatka i `aria-describedby`. Veličina ciljeva i prijelomi stupaca ostaju u centralnom prolazu stila |
+| P-14 | E-2f, R-49 | `#pocetna`: gumb „Dodaj rokove u kalendar” (preuzima `.ics`) |
+| P-15 | E-1a | `#prijava`: varijanta `odbijeno`; tekst `bezuloge` imenuje administratora fakulteta |
+| P-16 | E-6c, PO-29 | `#obavijest`: varijante `promijenjeno` (tablica razlike), `razlikaucitava`, `promijenjenobezrazlike` |
+| P-17 | E-12, E-13, R-52 do R-54, PO-30 do PO-33 | `#postavke` (osam stanja) i `#odjavaposte` (pet stanja) |
+
+### 6.2 Što je provjereno i što nije
+
+- Prototip je otvoren u Chromiumu u svijetloj i tamnoj temi na 390 i 1280 px. Izvor stranica nije dobio JavaScript grešku ni u jednoj varijanti.
+- Postojeći ekrani bez ljuske (`rad`, `pregled`, `izjava`, `predaja`, `potvrda`) i varijante prijave `preusmjeravanje`, `greska` i `nedostupno` imaju istovjetan HTML prije i poslije izmjene. Na ostalim ekranima razlikuje se samo ono što zadatak traži (zvonce u traci, oznake roka, novi redci i stanja). Veličine i položaji sadržaja na ekranima upis, kolegiji, radovi i početna ostali su isti; razlika je samo u traci prototipa (nije proizvod), koja na mobitelu ima jedan red više zbog izbornika „zvonce”.
+- Nije provjereno čitačem zaslona; nazivi i opisi dolaze iz koda (`aria-label`, `aria-describedby`, `role`), a P-13 (ciljevi na dodir, prijelom stupaca, redoslijed tabulatora) ostaje za centralni prolaz stila.
+- Nije pokrenuta aplikacija ni poslužitelj; za P-1, P-2, P-6, P-7, P-16 i P-17 podaci iz zvonca i povijesti dolaze iz izmišljenih zapisa u prototipu.
