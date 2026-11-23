@@ -146,6 +146,11 @@ describe("client reader against the migration vectors", () => {
     }
   }
 
+  it("lists only vectors that exist in NO_MUTABLE_FIELDS", () => {
+    const known = new Set(successes.map((v) => `${v.route} ${v.name}`));
+    expect([...NO_MUTABLE_FIELDS].filter((label) => !known.has(label)), "stale NO_MUTABLE_FIELDS entries").toEqual([]);
+  });
+
   it("refuses an answer that is not an object where the contract gives one", async () => {
     const objectVectors = successes.filter((v) => !multipart(v) && isObject(v.response.body) && schemaOf(v)?.type === "object");
     let count = 0;
