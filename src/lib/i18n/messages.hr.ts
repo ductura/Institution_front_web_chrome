@@ -1285,6 +1285,10 @@ export const hr = {
     signIn: "Prijavi se",
     signInFirst: "Prijavite se da vidite rad.",
     invalid: "Ova poveznica ne vodi do rada.",
+    // INT-26: what an atom of a v3 text reads as, in its place, as in the version history.
+    footnote: "fusnota",
+    citationUnknown: "navod",
+    crossReference: "upućivanje",
     connection: {
       loading: "Povezivanje…",
       live: "Veza radi",
@@ -2090,6 +2094,11 @@ export const hr = {
     historyPrevious: "Prethodna (promjena {n})",
     historyFirst: "Prva zabilježena (promjena {n})",
     historyDeleted: "odlomak je obrisan",
+    atomFootnote: "[fusnota: {text}]",
+    atomCitation: "[{source}]",
+    atomCitationAt: "[{source}, {locator}]",
+    atomCitationUnknown: "navod",
+    atomCrossReference: "[poveznica]",
     historyNotYet: "još nije zamijenjena",
     historyBy: "promjena {n}",
     historyResumed: "Iz provjerenog nastavka (prije promjene {n})",
@@ -2525,7 +2534,7 @@ export const whatIsRecordedHr = {
   when: { heading: "Kad je otprilike nastalo", text: "Na minutu." },
   rhythm: {
     heading: "Ritam unosa",
-    text: "Razmake između unosa, ne koje tipke. Možeš ga isključiti ovdje:",
+    text: "Razmake između unosa, ne koje tipke. Uključuje ga i isključuje nastavnik, za predmet ili za pojedini zadatak.",
     toggle: "Bilježi ritam tipkanja",
   },
   not: { heading: "Što ne bilježi", text: "Koje tipke pritišćeš, koliko brzo tipkaš kao broj, ništa izvan Ducture." },
@@ -2533,9 +2542,30 @@ export const whatIsRecordedHr = {
   note: "Ništa od ovoga nije ocjena ni tvrdnja o autorstvu.",
 } as const;
 
-/** WEB-0910: the rhythm setting beside the dialog "Što Ductura bilježi dok pišeš". */
+/** WEB-0910, PIL-P1-RITAM-PREKIDAC: the rhythm setting in the dialog "Što Ductura bilježi dok pišeš". */
 export const inputRhythmHr = {
   toggle: "Bilježi ritam tipkanja",
   teacherOnly: "Ritam unosa može isključiti samo nastavnik.",
   unknown: "Postavka ritma trenutačno nije dostupna.",
+  signedOut: "Sesija je istekla. Prijavi se ponovno pa opet otvori ovaj prozor.",
+  on: "Bilježi ritam tipkanja: uključeno.",
+  off: "Bilježi ritam tipkanja: isključeno.",
+  levels: {
+    assignment: "Postavka ovog zadatka.",
+    course: "Postavka predmeta.",
+    default: "Zadana postavka.",
+    unknown: "Postavka nastavnika.",
+  },
+  roles: { teacher: "nastavnik", mentor: "mentor" },
+  setBy: "Zadnja promjena: {who}.",
+  erase: {
+    button: "Obriši zabilježeni ritam",
+    question: "Obrisati sav zabilježeni ritam ovog rada? To se ne može vratiti. Tekst rada ostaje kakav jest.",
+    confirm: "Obriši",
+    cancel: "Odustani",
+    done: "Zabilježeni ritam je obrisan ({count}).",
+    none: "Nije bilo zabilježenog ritma za brisanje.",
+    failed: "Poslužitelj nije potvrdio brisanje. Pokušaj ponovno.",
+    signedOut: "Sesija je istekla. Prijavi se ponovno pa pokušaj opet.",
+  },
 } as const;

@@ -22,6 +22,7 @@
  */
 
 import type { CanonicalDocument, DocumentTransaction, VersionedDocument } from "../document/document";
+import type { DocumentSchemaVersion } from "../document/document/schema";
 import type { AwaitingReceipt } from "./drain";
 import type { LocalSaveFailureReason, SyncState } from "./states";
 
@@ -141,6 +142,30 @@ export type EvidenceOpening = {
   document: Uint8Array;
   /** The evidence profile of the work's package; segments name it (BE-2). */
   evidenceProfileId: string;
+};
+
+/**
+ * PIL-K-V3-BEZ-MREZE (owner decision 23. 11. 2026.): the open answer a
+ * verified work opening was built from, kept beside the record (store
+ * `works`, Dexie version 5) by `startEvidence` and `adoptServerEvidence`
+ * whenever they are given one. `readVerifiedWork` verifies it again from these
+ * bytes, so the work opens without a network; a record without this row (v1,
+ * or made before version 5) opens as before. Never sent anywhere.
+ */
+export type StoredWorkOpening = {
+  documentId: string;
+  currentRevision: number;
+  documentHash: string;
+  headSegmentHash: string | null;
+  lastSequenceTo: number;
+  /** Exact JCS bytes of the opened snapshot, verified against `documentHash` at every read. */
+  document: Uint8Array;
+  evidenceProfileId: string;
+  schemaVersion: DocumentSchemaVersion;
+  /** The revision zero hash the opening was verified with (the server's proof of a later v3 revision). */
+  revisionZeroHash: string;
+  /** ISO-8601 instant of the verified open. */
+  verifiedAt: string;
 };
 
 /**

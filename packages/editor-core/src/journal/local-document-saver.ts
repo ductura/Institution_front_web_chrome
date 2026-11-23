@@ -68,9 +68,10 @@ export type RecoveryReason = "corrupt" | "sticky" | "unsaved" | "stale";
  * also reads `ready` with the journal's text, so step 1b leaves a recovery
  * through `resume()`, never by filling the editor from a new instance.
  */
-export type LoadResult =
-  | { kind: "ready"; document: CanonicalDocument }
-  | { kind: "recovery"; reason: RecoveryReason; document: CanonicalDocument | null }
+/** `D` is wider only for a work whose confirmed schema is v3 (PIL-K-SPREMANJE-V3). */
+export type LoadResult<D = CanonicalDocument> =
+  | { kind: "ready"; document: D }
+  | { kind: "recovery"; reason: RecoveryReason; document: D | null }
   | { kind: "unavailable" };
 
 export type SaverDeps = {

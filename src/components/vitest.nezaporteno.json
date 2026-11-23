@@ -16,7 +16,6 @@
    "student/student-home-read.test.ts",
    "support/problem-report-client.test.ts",
    "support/problem-report-dialog.test.ts",
-   "teacher/LiveText.test.ts",
    "teacher/SummaryCard.test.ts",
    "teacher/teacher-access.test.ts"
   ],

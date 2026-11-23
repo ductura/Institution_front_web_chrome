@@ -1,12 +1,23 @@
-import { EDIT_STEP_FORMAT_V1, parseEditSteps, type EditStepV1 } from "@/domain/document/edit-step";
-import { REVISION_ZERO_SHA256 } from "@/domain/document/revision-zero";
+import {
+  EDIT_STEP_FORMAT_V1,
+  EDIT_STEP_FORMAT_V3,
+  parseEditSteps,
+  type EditStepV1,
+  type EditStepV3,
+} from "@/domain/document/edit-step";
+import { REVISION_ZERO_SHA256, REVISION_ZERO_V3_SHA256 } from "@/domain/document/revision-zero";
 import { sha256WebCrypto } from "@/domain/forensics/crypto";
 import {
   verifyEvidenceChainV2,
   type EvidenceChainHeadV2,
 } from "@/domain/forensics/evidence-chain-v2";
 import { EvidenceContentNotSupportedV2 } from "@/domain/forensics/evidence-replay-v2";
-import type { EvidenceEventV2, EvidenceSegmentV2, EvidenceSourceV2 } from "@/domain/forensics/evidence-segment-v2";
+import type {
+  EvidenceEventV2,
+  EvidenceSegmentV2,
+  EvidenceSourceV2,
+  EvidenceStepFormat,
+} from "@/domain/forensics/evidence-segment-v2";
 import { canonicalizeJcs, type JcsJsonValue } from "@/domain/forensics/jcs";
 
 /**
@@ -114,8 +125,21 @@ export type ReplayTimelineInput = {
 
 const MINUTE_MS = 60_000;
 
-function kindOf(step: EditStepV1): ReplayChangeKind {
+/**
+ * The hash of revision 0 of a work whose steps have `transactionFormat`, or
+ * `null` for a format the replay does not read: a record that starts there has
+ * no history before it (INT-23). Without a revision 0 the record always counts
+ * as starting later, never as complete.
+ */
+export function revisionZeroHashOf(transactionFormat: string): string | null {
+  if (transactionFormat === EDIT_STEP_FORMAT_V1) return REVISION_ZERO_SHA256;
+  if (transactionFormat === EDIT_STEP_FORMAT_V3) return REVISION_ZERO_V3_SHA256;
+  return null;
+}
+
+function kindOf(step: EditStepV1 | EditStepV3): ReplayChangeKind {
   if (step.stepType === "addMark" || step.stepType === "removeMark") return "format";
+  // A source of the work set or removed (v3) changes no text: structure.
   if (step.stepType !== "replace" || step.structure) return "structure";
   const inserts = (step.slice?.content.length ?? 0) > 0;
   if (step.to > step.from) return inserts ? "replace" : "delete";
@@ -137,7 +161,9 @@ export async function buildReplayTimeline<TDocument>(
   input: ReplayTimelineInput,
   replayer: ReplayStepReplayer<TDocument>,
 ): Promise<ReplayTimeline> {
-  const chain = await verifyEvidenceChainV2(input.segments, input.head);
+  // Every segment is checked as a segment of the replayer's step format, the
+  // one format of the record: a segment of any other is no segment of it.
+  const chain = await verifyEvidenceChainV2(input.segments, input.head, replayer.transactionFormat as EvidenceStepFormat);
   if (!chain.ok) {
     return { ok: false, reason: chain.reason === "too_large" || chain.reason === "invalid_segment" ? "invalid_segment" : "chain_mismatch" };
   }
@@ -173,7 +199,7 @@ export async function buildReplayTimeline<TDocument>(
       current = start;
       documents.push(start);
       // A record that does not begin at revision 0 and event 1 has history before it that is not here.
-      if (first.sequenceFrom !== 1 || first.initialDocumentHash !== REVISION_ZERO_SHA256) {
+      if (first.sequenceFrom !== 1 || first.initialDocumentHash !== revisionZeroHashOf(replayer.transactionFormat)) {
         markers.push({ kind: "gap", beforeIndex: 1, resumed: true });
       }
     }
@@ -209,7 +235,10 @@ export async function buildReplayTimeline<TDocument>(
       }
 
       for (const event of segment.events) {
-        const parsed = parseEditSteps(EDIT_STEP_FORMAT_V1, event.steps);
+        // The format check above makes this the format of the segment.
+        const parsed = parseEditSteps(replayer.transactionFormat, event.steps) as
+          | { ok: true; steps: (EditStepV1 | EditStepV3)[] }
+          | { ok: false };
         if (!parsed.ok) return { ok: false, reason: "step_failed" };
         let step = 0;
         for await (const applied of replayer.steps(current as TDocument, event)) {

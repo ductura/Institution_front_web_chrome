@@ -11,6 +11,11 @@
  * here writes to the document (D-34). The connection line speaks about this
  * page's own requests, never about the student (4.12 t. 8). Written with
  * `createElement` like `SummaryCard`, so the unit test renders it.
+ *
+ * Document v3 (INT-26): the text of a v3 work is drawn the same way; a
+ * footnote reads "[fusnota: …]" in its place, as in the version history, a
+ * citation names its source and a cross reference its heading. Such a label
+ * is `data-atom` text, never part of a block's text for comment anchors.
  */
 
 import {
@@ -22,10 +27,10 @@ import { watchSessionEnd, type SessionWatch } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
 import { blockRuns } from "@/components/shell/manuscript-blocks";
 import SheetFrame from "@/components/shell/SheetFrame";
-import type { DocumentNode } from "@/domain/document";
+import type { DocumentNode, DocumentSource } from "@/domain/document";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { blockSegments, type TextRange } from "./comment-place";
+import { blockSegments, blockText, type LiveAtom, type LiveBlock, type LiveTextDocument, type TextRange } from "./comment-place";
 import styles from "./LiveWorkView.module.css";
 import type { PlacedThread } from "./TeacherComments";
 
@@ -47,8 +52,27 @@ export function openMarks(placed: readonly PlacedThread[]): TextRange[] {
   return placed.flatMap((p) => (p.range && p.thread.state !== "resolved" ? [p.range] : []));
 }
 
-function Block({ node, ranges }: { node: DocumentNode; ranges: readonly TextRange[] }) {
+/** How a source is named in a citation: authors and year, as the version history names it. */
+function sourceName(sources: readonly DocumentSource[], sourceId: string): string {
+  const source = sources.find((s) => s.id === sourceId);
+  if (!source) return t.citationUnknown;
+  const names = source.authors.map((a) => (a.kind === "person" ? a.family : a.name)).filter(Boolean).join(", ");
+  return [names, String(source.year)].filter(Boolean).join(" ");
+}
+
+/** The words an atom of a v3 text reads as, in its place (INT-26); the history's own forms. */
+export function atomLabel(atom: LiveAtom, doc: LiveTextDocument): string {
+  if (atom.type === "footnote") return ` [${t.footnote}: ${atom.text}]`;
+  const sources = doc.schemaVersion === 3 ? doc.sources : [];
+  if (atom.type === "citation") return ` [${sourceName(sources, atom.sourceId)}${atom.locator ? `, ${atom.locator}` : ""}]`;
+  const target = doc.nodes.find((n) => n.id === atom.targetId);
+  const heading = target?.type === "heading" ? blockText(target).trim() : "";
+  return heading === "" ? ` [${t.crossReference}]` : ` [${t.crossReference}: ${heading}]`;
+}
+
+function Block({ node, ranges, doc }: { node: LiveBlock; ranges: readonly TextRange[]; doc: LiveTextDocument }) {
   const children = blockSegments(node, ranges).map((segment, i) => {
+    if ("atom" in segment) return h("span", { key: i, "data-atom": segment.atom.type }, atomLabel(segment.atom, doc));
     let content: ReactNode = segment.text;
     if (segment.marks.includes("italic")) content = h("em", null, content);
     if (segment.marks.includes("bold")) content = h("strong", null, content);
@@ -108,10 +132,12 @@ export default function LiveText({ view, marks, heading, textRef, onSelect }: Li
   let text: ReactNode;
   if (stopped) text = placeholder(t.connection[view.connection]);
   else if (view.document) {
-    const block = (node: DocumentNode) =>
-      h(Block, { key: node.id, node, ranges: marks.filter((r) => r.nodeId === node.id) });
+    const doc = view.document;
+    const block = (node: LiveBlock) =>
+      h(Block, { key: node.id, node, ranges: marks.filter((r) => r.nodeId === node.id), doc });
     // Consecutive bullet items are one list, quote paragraphs one block quote (E1).
-    text = blockRuns(view.document.nodes).map((run) =>
+    // A v3 block has the same four types; only its children differ, which Block reads.
+    text = blockRuns(doc.nodes as readonly LiveBlock[] as readonly DocumentNode[]).map((run) =>
       run.kind === "list" ? h("ul", { key: run.items[0]!.id }, ...run.items.map(block))
         : run.kind === "quote" ? h("blockquote", { key: run.items[0]!.id }, ...run.items.map(block))
         : block(run.node));

@@ -50,6 +50,7 @@ import { changesPort } from "../changes-since-review/port";
 import CommentBank from "../comment-bank/CommentBank";
 import { commentBankPort, draftCommentsPort } from "../comment-bank/port";
 import { teacherWorkMessages as workText } from "./messages.hr";
+import { useShownRevision } from "./shown-revision";
 
 const VIEWS = {
   live: { suffix: "", title: t.liveView.context },
@@ -147,6 +148,8 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   // WEB-2153: the shared reader shows only document v1; a v2/v3 text is read here, with citations and footnotes.
   const elementsState = useTextElements(documentId, !stopped && view.document === null && view.connection === "retrying", current);
   const [draft, setDraft] = useState<TextAnchor | null>(null);
+  // INT-15: a new comment names the revision of the text on screen.
+  const revision = useShownRevision(documentId, view.hash, view.submitted, current, !stopped && view.document !== null);
   const placed = stopped || comments.outcome?.kind !== "ok" ? [] : placeThreads(view.document, comments.outcome.threads);
   const gaps = !stopped && summary.outcome?.kind === "ok" ? summary.outcome.summary.gaps.items : [];
   const receiptHref = `${workHref}${VIEWS.receipt.suffix}`;
@@ -179,7 +182,8 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
             <ReadOnlyMentor documentId={documentId} role="teacher" receiptHref={receiptHref} />
             <TeacherComments documentId={documentId} outcome={comments.outcome} placed={placed}
               nodeOrder={view.document?.nodes ?? []} current={current} readOnly={view.document === null}
-              draft={placeAnchor(view.document, draft) ? draft : null} onDraftDone={() => setDraft(null)}
+              draft={placeAnchor(view.document, draft) ? draft : null} revision={revision}
+              onDraftDone={() => setDraft(null)}
               onReload={() => void comments.load()} onShow={({ nodeId, start, end }) => {
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />

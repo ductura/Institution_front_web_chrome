@@ -1,4 +1,3 @@
-import { REVISION_ZERO_SHA256 } from "@/domain/document/revision-zero";
 import type { EvidenceChainHeadV2 } from "@/domain/forensics/evidence-chain-v2";
 import type { EvidenceSegmentV2, EvidenceSourceV2 } from "@/domain/forensics/evidence-segment-v2";
 import type { JcsJsonValue } from "@/domain/forensics/jcs";
@@ -8,6 +7,7 @@ import {
   type ReplayChangeKind,
   type ReplayStepReplayer,
   type ReplayTimelineFailure,
+  revisionZeroHashOf,
 } from "./replay-timeline";
 
 /**
@@ -125,7 +125,9 @@ export async function buildReplayPlayer<TDocument>(
   const firstSegment = record.segments[0];
   if (firstSegment !== undefined) {
     const first = JSON.parse(firstSegment) as EvidenceSegmentV2;
-    startsLater = first.sequenceFrom !== 1 || first.initialDocumentHash !== REVISION_ZERO_SHA256;
+    startsLater =
+      first.sequenceFrom !== 1 ||
+      first.initialDocumentHash !== revisionZeroHashOf(first.captureContext.transactionFormat);
   }
   const gaps: Gap[] = [];
   for (const marker of timeline.markers) {

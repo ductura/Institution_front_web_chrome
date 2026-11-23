@@ -94,6 +94,8 @@ jobs:
         working-directory: Institution_front_web_chrome
         env:
           INSTITUTION_SERVER_URL: http://127.0.0.1:4000
+          # CSP form-action pušta 303 odjave na end_session lažnog OIDC-a (INT-20).
+          OIDC_ISSUER: http://localhost:8090
           NEXT_TELEMETRY_DISABLED: "1"
         run: |
           pnpm build

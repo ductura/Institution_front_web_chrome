@@ -49,12 +49,15 @@ import {
   isNodeId,
   newNodeId,
   validateDocument,
+  validateVersionedDocument,
   type CanonicalDocument,
+  type CanonicalDocumentV3,
   type NodeId,
   type ValidationError,
 } from "../document/document";
 
 import { canonicalToTiptap, NODE_ID_ATTRIBUTE } from "./interop";
+import { canonicalToTiptapV3 } from "./interop-v3";
 
 /** Mints the id of a new block. Injectable so tests stay deterministic. */
 export type NodeIdMinter = () => NodeId;
@@ -571,6 +574,37 @@ export function replaceWithStoredDocument(
   const content = state.schema.nodeFromJSON(canonicalToTiptap(validated.doc)).content;
   const tr = state.tr
     .replaceWith(0, state.doc.content.size, content)
+    .setMeta("addToHistory", false)
+    .setMeta("preventUpdate", true);
+  storedLoads.add(tr);
+  view.dispatch(tr);
+  return { ok: true };
+}
+
+/**
+ * `replaceWithStoredDocument` for a work whose confirmed schema is v3
+ * (PIL-K-SPREMANJE-V3): the editor must be built with
+ * `createEditorExtensionsV3`. Takes only a valid v3 document, never repairs
+ * one, and sets the work's sources on the document node with the content, so
+ * the editor holds exactly what the journal holds. Not an edit either.
+ */
+export function replaceWithStoredDocumentV3(
+  view: Dispatcher,
+  doc: CanonicalDocumentV3,
+): { ok: true } | { ok: false; errors: ValidationError[] } {
+  const validated = validateVersionedDocument(doc);
+  if (!validated.ok) {
+    return { ok: false, errors: validated.errors };
+  }
+  if (validated.doc.schemaVersion !== 3) {
+    return { ok: false, errors: [{ path: "$.schemaVersion", code: "SCHEMA_VERSION_INVALID" }] };
+  }
+  const { state } = view;
+  const json = canonicalToTiptapV3(validated.doc);
+  const content = state.schema.nodeFromJSON(json).content;
+  const tr = state.tr
+    .replaceWith(0, state.doc.content.size, content)
+    .setDocAttribute("sources", json.attrs.sources)
     .setMeta("addToHistory", false)
     .setMeta("preventUpdate", true);
   storedLoads.add(tr);

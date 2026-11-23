@@ -29,6 +29,8 @@ const PUBLIC_NAMES = [
     // v3 (WEB-7F)
     "CROSS_REFERENCE", "CitationV3", "CrossReference", "FOOTNOTE", "Footnote", "V3_EXTENSION_NAMES",
     "canonicalToTiptapV3", "citationAttrs", "createEditorExtensionsV3", "tiptapToCanonicalV3",
+    // v3 sheet (PIL-K-SPREMANJE-V3)
+    "replaceWithStoredDocumentV3", "sheetSchemaVersion", "storableDocumentV3",
     // v4 (WEB-10C)
     "BLOCK_ATOM_FIELDS", "BlockAtomCommands", "Box", "CodeBlock", "DocumentV4", "Formula", "Highlight",
     "ID_CARRYING_TYPES_V4", "Image", "Imported", "InlineFormula", "Lang", "Link", "PageBreak", "ParagraphV4",

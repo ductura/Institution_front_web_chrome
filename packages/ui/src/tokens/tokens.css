@@ -5,6 +5,7 @@
  */
 @import "./globals.css";
 @import "./prototype.css";
+@import "../styles/prototip-raspored.css";
 
 /*
  * Error text follows the sheet, never the shell (WCAG 1.4.3 on the paper).

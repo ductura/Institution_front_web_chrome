@@ -33,6 +33,11 @@ describe("openReadOf", () => {
     expect(openReadOf({ status: "opened", work: work(DOC_A) }, SCOPE, SESSION)).toEqual({ kind: "ready", documentId: DOC_A, scope: SCOPE, session: SESSION });
   });
 
+  it("hands the server-confirmed schema version on, and nothing when the server states none", () => {
+    expect(openReadOf({ status: "opened", work: { ...work(DOC_A), schemaVersion: 3 } }, SCOPE, SESSION)).toMatchObject({ kind: "ready", schemaVersion: 3 });
+    expect(openReadOf({ status: "opened", work: work(DOC_A) }, SCOPE, SESSION)).not.toHaveProperty("schemaVersion");
+  });
+
   it.each([
     ["unauthenticated", "signedOut"],
     ["not_found", "closed"],

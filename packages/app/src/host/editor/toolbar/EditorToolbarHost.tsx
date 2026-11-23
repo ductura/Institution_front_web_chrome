@@ -21,9 +21,19 @@ export type ToolbarBehaviourInput = {
   onContextAction?: (id: ContextAction) => void;
 };
 
-export function EditorToolbarHost({ state, commands, behaviour }: { state: ToolbarState; commands: ToolbarCommands; behaviour?: ToolbarBehaviourInput }) {
-  const groups = toolbarGroups(state, commands);
-  if (!behaviour) return <EditorToolbar groups={groups} />;
+export function EditorToolbarHost({ state, commands, behaviour, label, labels, omit }: {
+  state: ToolbarState; commands: ToolbarCommands; behaviour?: ToolbarBehaviourInput;
+  /** The bar's own accessible name the shell keeps from the toolbar it replaces (PIL-K-TRAKA). */
+  label?: string;
+  /** Accessible names the shell keeps from the toolbar it replaces (PIL-K-TRAKA), by action id. */
+  labels?: Readonly<Record<string, string>>;
+  /** Action ids the shell's editor cannot do (e.g. the numbered list the V2 schema lacks). */
+  omit?: readonly string[];
+}) {
+  const groups = toolbarGroups(state, commands)
+    .map((g) => ({ ...g, actions: g.actions.filter((a) => !omit?.includes(a.id)).map((a) => (labels?.[a.id] ? { ...a, label: labels[a.id]! } : a)) }))
+    .filter((g) => g.actions.length > 0);
+  if (!behaviour) return <EditorToolbar groups={groups} label={label} />;
   return <ToolbarWithBehaviour groups={groups} editable={state.editable} {...behaviour} />;
 }
 

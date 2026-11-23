@@ -5,12 +5,14 @@ import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import type { LiveView } from "@/client/live-reader";
-import type { CanonicalDocument, NodeId } from "@/domain/document";
+import { readLiveState, type LiveView } from "@/client/live-reader";
+import { validateVersionedDocument, type CanonicalDocument, type CanonicalDocumentV3, type NodeId } from "@/domain/document";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import type { TextRange } from "./comment-place";
-import LiveText, { liveStopped, openMarks } from "./LiveText";
+import { canonicalizeJcs } from "../../../packages/editor-core/src/document/forensics/jcs";
+
+import { anchorForSelection, blockText, placeAnchor, type TextRange } from "./comment-place";
+import LiveText, { atomLabel, liveStopped, openMarks } from "./LiveText";
 import type { PlacedThread } from "./TeacherComments";
 
 // #732 item 7: the teacher and the student draw the live text through this one
@@ -153,7 +155,7 @@ describe("LiveText", () => {
 
 describe("openMarks", () => {
   const placed = (id: string, state: "open" | "answered" | "resolved", range: TextRange | null): PlacedThread => ({
-    thread: { id, number: 1, state, anchor: null, comments: [] }, range, pending: false,
+    thread: { id, number: 1, state, anchor: null, revision: null, comments: [] }, range, pending: false,
   });
 
   it("marks every placed thread that is not resolved", () => {
@@ -177,5 +179,95 @@ describe("one place draws the live text", () => {
     expect(code).not.toContain('role="document"');
     expect(code).not.toContain("blockSegments(");
     expect(code).not.toContain("startLiveReader(");
+  });
+});
+
+// INT-26: the live text of a v3 work. Every text, source and id is invented.
+describe("live text of a v3 work (INT-26)", () => {
+  const V3P = "6f708192-a3b4-4cde-8f01-5c6d7e8f9a0b" as NodeId;
+  const V3H = "708192a3-b4c5-4def-9012-6d7e8f9a0b1c" as NodeId;
+  const SRC = "8192a3b4-c5d6-4ef0-8123-7e8f9a0b1c2d";
+  const V3: CanonicalDocumentV3 = (() => {
+    const result = validateVersionedDocument({
+      schemaVersion: 3,
+      sources: [{
+        id: SRC, type: "book", authors: [{ kind: "person", family: "Izmišljenić", given: "Ana" }],
+        year: 2024, title: "Izmišljena knjiga o kompostu", place: "Zagreb", publisher: "Izmišljena naklada",
+      }],
+      nodes: [
+        { type: "heading", level: 1, id: V3H, children: [{ type: "text", text: "Uvod", marks: [] }] },
+        {
+          type: "paragraph", id: V3P, children: [
+            { type: "text", text: "Kompost smanjuje otpad.", marks: [] },
+            { type: "footnote", text: "Prema izmišljenim podacima." },
+            { type: "text", text: " Vidi", marks: [] },
+            { type: "crossReference", targetId: V3H },
+            { type: "citation", sourceId: SRC, locator: "str. 5" },
+          ],
+        },
+      ],
+    });
+    if (!result.ok || result.doc.schemaVersion !== 3) throw new Error("Invalid synthetic v3 document");
+    return result.doc;
+  })();
+  const V3_SHOWN: LiveView = { document: V3, hash: "b".repeat(64), empty: false, connection: "live", submitted: false };
+  const ORIGIN = "https://ductura.test";
+  const sha256 = async (text: string) => [...new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)),
+  )].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const reply = (body: string, etag: string) =>
+    new Response(body, { status: 200, headers: { "content-type": "application/json", etag: `"${etag}"` } });
+
+  it("reads the exact v3 bytes whose hash is the ETag", async () => {
+    const text = canonicalizeJcs(V3);
+    const read = await readLiveState("izmisljeni-rad-3", null, async () => reply(text, await sha256(text)), ORIGIN);
+    expect(read).toMatchObject({ kind: "state", hash: await sha256(text), submitted: false });
+    expect(read.kind === "state" && read.document).toEqual(V3);
+  });
+
+  it("still refuses a v2 document and v3 bytes the ETag does not name", async () => {
+    const v2 = canonicalizeJcs({ ...V3, schemaVersion: 2, nodes: [{ type: "paragraph", id: V3P, children: [] }] });
+    expect(validateVersionedDocument(JSON.parse(v2)).ok).toBe(true);
+    expect(await readLiveState("izmisljeni-rad-3", null, async () => reply(v2, await sha256(v2)), ORIGIN))
+      .toEqual({ kind: "unavailable" });
+    const v3 = canonicalizeJcs(V3);
+    expect(await readLiveState("izmisljeni-rad-3", null, async () => reply(v3, "c".repeat(64)), ORIGIN))
+      .toEqual({ kind: "unavailable" });
+  });
+
+  it("draws a footnote as „[fusnota: …]” in its place, and names the source and the heading", () => {
+    const html = render({ view: V3_SHOWN, marks: [] });
+    expect(html).toContain(
+      `<p data-node-id="${V3P}"><span>Kompost smanjuje otpad.</span>`
+      + `<span data-atom="footnote"> [${t.footnote}: Prema izmišljenim podacima.]</span>`
+      + `<span> Vidi</span><span data-atom="crossReference"> [${t.crossReference}: Uvod]</span>`
+      + `<span data-atom="citation"> [Izmišljenić 2024, str. 5]</span></p>`,
+    );
+    expect(t.footnote).toBe("fusnota");
+    expect(html).toContain(t.note);
+  });
+
+  it("the student and the teacher draw the same v3 markup", () => {
+    const marks: TextRange[] = [{ nodeId: V3P, start: 8, end: 26 }];
+    expect(render({ view: V3_SHOWN, marks })).toBe(render({ view: V3_SHOWN, marks, textRef: { current: null }, onSelect: () => {} }));
+  });
+
+  it("anchors count only the text: an atom's label is never part of a mark or an offset", () => {
+    expect(blockText(V3.nodes[1]!)).toBe("Kompost smanjuje otpad. Vidi");
+    // "otpad. Vid": crosses the footnote, which stays outside the mark.
+    const anchor = anchorForSelection(V3, V3P, 17, 27)!;
+    expect(anchor).not.toBeNull();
+    const range = placeAnchor(V3, anchor)!;
+    expect(range).toEqual({ nodeId: V3P, start: 17, end: 27 });
+    const html = render({ view: V3_SHOWN, marks: [range] });
+    expect(html).toMatch(/<mark[^>]*>otpad\.<\/mark><span data-atom="footnote">/);
+    expect(html).toMatch(/<mark[^>]*> Vid<\/mark><span>i<\/span><span data-atom="crossReference">/);
+    expect(html.match(/<mark/g)).toHaveLength(2);
+  });
+
+  it("an unknown source or a missing heading still says what stands there", () => {
+    const doc = { ...V3, sources: [] } as unknown as CanonicalDocumentV3;
+    expect(atomLabel({ type: "citation", sourceId: SRC as never }, doc)).toBe(` [${t.citationUnknown}]`);
+    expect(atomLabel({ type: "crossReference", targetId: V3P }, V3)).toBe(` [${t.crossReference}]`);
   });
 });

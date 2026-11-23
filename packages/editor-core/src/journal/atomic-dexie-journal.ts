@@ -33,10 +33,12 @@ import { verifyDocumentSnapshot, verifyVersionedDocumentSnapshot } from "../docu
 import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
 import { isEvidenceProfileIdV2 } from "../document/forensics/evidence-segment-v2";
 import { commitRequestFromTransaction } from "../serverSync/contract";
-import { matchesWorkSchema, type VerifiedWorkOpening } from "../serverSync/work-opening";
+import { REVISION_ZERO_SHA256, REVISION_ZERO_V2_SHA256, REVISION_ZERO_V3_SHA256 } from "../document/document/revision-zero";
+import { matchesWorkSchema, verifyWorkOpening, type VerifiedWorkOpening } from "../serverSync/work-opening";
 import type {
   EvidenceOpening, EvidenceSegmentInput, EvidenceSegmentTransaction, EvidenceStop, EvidenceTiming,
   JournalContents, JournalSnapshot, PendingTransaction, QueuedTransaction, SalvageCopy, SyncMeta,
+  StoredWorkOpening,
 } from "../sync/journal-types";
 import {
   ackedRevision, adoptDiscardsNewerRows, awaitingReceiptFor, isDiverged, nextAwaitingReceipt,
@@ -93,6 +95,7 @@ class JournalDatabase extends Dexie {
   control!: Table<JournalControl, string>;
   timings!: Table<EvidenceTiming, string>;
   salvage!: Table<Omit<SalvageCopy<VersionedDocument>, "id"> & { id?: number }, number>;
+  works!: Table<StoredWorkOpening, string>;
   /** Set once ANOTHER connection deletes this database (logout elsewhere). */
   deletedElsewhere = false;
   private everOpened = false;
@@ -135,6 +138,10 @@ class JournalDatabase extends Dexie {
     this.version(3).stores({ timings: "segmentHash,documentId" });
     // F-8 3d-2b: local text kept when the author took the server's version.
     this.version(4).stores({ salvage: "++id,documentId" });
+    // PIL-K-V3-BEZ-MREZE: the verified opening of a work, beside its record.
+    // Additive: every row of version 4 stays as it was, and a record without
+    // an opening opens as before (only with the server's answer, for v3).
+    this.version(5).stores({ works: "documentId" });
   }
 }
 
@@ -281,6 +288,9 @@ async function verifySegment(
  */
 /** The checked fields of an open answer, the only source the journal writes from. */
 type VerifiedOpening = {
+  /** The exact bytes verified, kept for `readVerifiedWork`. */
+  bytes: Uint8Array;
+  documentHash: string;
   currentRevision: number;
   lastSequenceTo: number;
   headSegmentHash: string | null;
@@ -310,13 +320,38 @@ async function verifyOpening(documentId: string, opened: EvidenceOpening, work?:
       !(document instanceof Uint8Array)) {
     throw new JournalError("invalid_input");
   }
-  const verified = await (work ? verifyVersionedDocumentSnapshot : verifyDocumentSnapshot)(new Uint8Array(document));
+  const bytes = new Uint8Array(document);
+  const verified = await (work ? verifyVersionedDocumentSnapshot : verifyDocumentSnapshot)(bytes);
   if (!verified.ok || verified.sha256 !== documentHash) throw new JournalError("invalid_input");
   assertWorkSchema(documentId, verified.document, work);
   if (work && (work.revision !== currentRevision || work.snapshotSha256 !== documentHash)) {
     throw new JournalError("invalid_input");
   }
-  return { currentRevision, lastSequenceTo, headSegmentHash, evidenceProfileId, document: verified.document };
+  return { bytes, documentHash, currentRevision, lastSequenceTo, headSegmentHash, evidenceProfileId, document: verified.document };
+}
+
+/** The revision zero hash of each schema: the proof `verifyWorkOpening` accepted for `work`. */
+const REVISION_ZERO_OF = { 1: REVISION_ZERO_SHA256, 2: REVISION_ZERO_V2_SHA256, 3: REVISION_ZERO_V3_SHA256 } as const;
+
+/** The row `readVerifiedWork` verifies again: the answer `opening` checked under `work`. */
+function storedOpening(documentId: string, opening: VerifiedOpening, work: VerifiedWorkOpening, verifiedAt: string): StoredWorkOpening {
+  return {
+    documentId, currentRevision: opening.currentRevision, documentHash: opening.documentHash,
+    headSegmentHash: opening.headSegmentHash, lastSequenceTo: opening.lastSequenceTo, document: opening.bytes,
+    evidenceProfileId: opening.evidenceProfileId, schemaVersion: work.schemaVersion,
+    revisionZeroHash: REVISION_ZERO_OF[work.schemaVersion], verifiedAt,
+  };
+}
+
+/** A stored opening of the right shape for `documentId`; anything else reads as none. */
+function wellFormedOpening(documentId: string, row: StoredWorkOpening | undefined): row is StoredWorkOpening {
+  return row !== undefined && row !== null && typeof row === "object" && row.documentId === documentId &&
+    validSeq(row.currentRevision) && validSeq(row.lastSequenceTo) &&
+    typeof row.documentHash === "string" && SHA256_HEX.test(row.documentHash) &&
+    (row.headSegmentHash === null || (typeof row.headSegmentHash === "string" && SHA256_HEX.test(row.headSegmentHash))) &&
+    row.document instanceof Uint8Array && isEvidenceProfileIdV2(row.evidenceProfileId) &&
+    (row.schemaVersion === 1 || row.schemaVersion === 2 || row.schemaVersion === 3) &&
+    row.revisionZeroHash === REVISION_ZERO_OF[row.schemaVersion];
 }
 
 /** Nothing on this document is owed to, or missing from, the server. */
@@ -647,7 +682,7 @@ export class AtomicDexieJournal {
     if (!validDocumentId(documentId) || !canonicalUtc(openedAt)) throw new JournalError("invalid_input");
     const opening = await verifyOpening(documentId, opened, work);
     return this.whileUsable(() => this.db.transaction(
-      "rw", this.db.snapshots, this.db.pending, this.db.meta, this.db.control,
+      "rw", [this.db.snapshots, this.db.pending, this.db.meta, this.db.control, this.db.works],
       async () => {
         const [logoutFence, prior, snapshotBefore, rows] = await Promise.all([
           this.db.control.get("logout"),
@@ -676,6 +711,8 @@ export class AtomicDexieJournal {
           documentId, revision: opening.currentRevision, document: opening.document, savedAt: openedAt,
         });
         await this.db.meta.put(meta);
+        // Only under a verified opening; a v1 record stays exactly as before.
+        if (work) await this.db.works.put(storedOpening(documentId, opening, work, openedAt));
         return meta;
       },
     ));
@@ -908,7 +945,7 @@ export class AtomicDexieJournal {
     }
     const opening = await verifyOpening(documentId, opened, work);
     return this.whileUsable(() => this.db.transaction(
-      "rw", [this.db.snapshots, this.db.pending, this.db.meta, this.db.control, this.db.salvage],
+      "rw", [this.db.snapshots, this.db.pending, this.db.meta, this.db.control, this.db.salvage, this.db.works],
       async () => {
         const { prior, snapshot, rows } = await this.readForAnswer(documentId);
         assertWorkSchema(documentId, snapshot.document, work);
@@ -955,9 +992,50 @@ export class AtomicDexieJournal {
           evidenceProfileId: opening.evidenceProfileId,
         };
         await this.db.meta.put(meta);
+        if (work) await this.db.works.put(storedOpening(documentId, opening, work, decidedAt));
         return meta;
       },
     ));
+  }
+
+  /**
+   * PIL-K-V3-BEZ-MREZE: the work's verified opening, read from this device
+   * alone, so a work whose journal holds it only under that opening (v3)
+   * opens again without a network. The stored answer is verified again from
+   * its bytes (`verifyWorkOpening`: their hash, the revision zero proof), and
+   * it must still describe the record beside it: the same schema, a revision
+   * and a head the record has not fallen behind, the same profile. Any
+   * mismatch, damage or absence (a record made before version 5, a v1 work)
+   * is null: the caller opens nothing. The server's answer, once it comes,
+   * takes the place of this one.
+   */
+  async readVerifiedWork(documentId: string): Promise<VerifiedWorkOpening | null> {
+    if (!validDocumentId(documentId)) throw new JournalError("invalid_input");
+    const { row, snapshot, meta } = await this.whileUsable(() =>
+      this.db.transaction("r", this.db.works, this.db.snapshots, this.db.meta, async () => {
+        const [row, snapshot, meta] = await Promise.all([
+          this.db.works.get(documentId), this.db.snapshots.get(documentId), this.db.meta.get(documentId),
+        ]);
+        return { row, snapshot, meta };
+      }));
+    // Web Crypto runs after the transaction (I6).
+    if (!wellFormedOpening(documentId, row) || !snapshot || !meta?.evidenceHead ||
+        snapshot.document?.schemaVersion !== row.schemaVersion || !validSeq(snapshot.revision) ||
+        snapshot.revision < row.currentRevision || !validSeq(meta.evidenceHead.lastSequenceTo) ||
+        meta.evidenceHead.lastSequenceTo < row.lastSequenceTo || meta.evidenceProfileId !== row.evidenceProfileId) {
+      return null;
+    }
+    try {
+      const work = await verifyWorkOpening(documentId, {
+        documentId, currentRevision: row.currentRevision, documentHash: row.documentHash,
+        headSegmentHash: row.headSegmentHash, lastSequenceTo: row.lastSequenceTo,
+        document: new Uint8Array(row.document), evidenceProfileId: row.evidenceProfileId,
+      }, { documentId, sha256: row.revisionZeroHash });
+      return work && work.schemaVersion === row.schemaVersion && work.revision === row.currentRevision &&
+        work.snapshotSha256 === row.documentHash ? work : null;
+    } catch {
+      return null;
+    }
   }
 
   /** The copies kept for `documentId`, newest first. */
@@ -997,10 +1075,11 @@ export class AtomicDexieJournal {
   async discardAfterSubmission(documentId: string): Promise<void> {
     if (!validDocumentId(documentId)) throw new JournalError("invalid_input");
     return this.whileUsable(() => this.db.transaction(
-      "rw", [this.db.pending, this.db.snapshots, this.db.meta, this.db.timings, this.db.control],
+      "rw", [this.db.pending, this.db.snapshots, this.db.meta, this.db.timings, this.db.control, this.db.works],
       async () => {
         if (await this.db.control.get("logout")) throw new JournalError("logout_in_progress");
         await this.db.pending.where("documentId").equals(documentId).delete();
+        await this.db.works.delete(documentId);
         await this.db.timings.where("documentId").equals(documentId).delete();
         await this.db.snapshots.delete(documentId);
         await this.db.meta.delete(documentId);

@@ -17,6 +17,8 @@
 
 import type { EvidenceSessionDeps } from "../components/editor/evidence-session";
 import { createBrowserEditStepsV1Replayer } from "../../packages/editor-core/src/document/forensics/replay/edit-steps-v1-browser-replayer";
+import { createBrowserAcademicReplayer } from "../../packages/editor-core/src/document/forensics/replay/edit-steps-versioned-browser-replayer";
+import type { VerifiedWorkOpening } from "../../packages/editor-core/src/serverSync/work-opening";
 import type { QueuedTransaction } from "../../packages/editor-core/src/sync/journal-types";
 import { createDrainRunner, type DrainJournal } from "../../packages/editor-core/src/sync/runner/drain-runner";
 import { createEvidenceTransport, evidenceVerifierFor } from "../../packages/editor-core/src/sync/runner/evidence-transport";
@@ -145,7 +147,21 @@ export type BrowserEvidenceInput = {
   current: () => boolean;
   fetchImpl?: FetchLike;
   source?: OnlineSource;
+  /** PIL-K-SPREMANJE-V3: 3 for a sheet built with the v3 schema; absent keeps every v1 adapter. */
+  schemaVersion?: 3;
 };
+
+/**
+ * The drain's journal for a v3 work: its rows are read under the verified
+ * opening, as the journal holds a v3 snapshot only under it.
+ */
+export function drainJournalFor(journal: DrainJournal & EvidenceSessionDeps["journal"], verified: VerifiedWorkOpening): DrainJournal {
+  return {
+    beginSend: (documentId, sent) => journal.beginSend(documentId, sent),
+    recordAnswer: (documentId, sent, outcome, state) => journal.recordAnswer(documentId, sent, outcome, state),
+    read: (documentId) => journal.readEvidence(documentId, verified) as ReturnType<DrainJournal["read"]>,
+  } as DrainJournal;
+}
 
 export function browserEvidenceSessionDeps(input: BrowserEvidenceInput): EvidenceSessionDeps {
   const fetchImpl = guardedFetch(input.fetchImpl ?? browserTransport, input.current);
@@ -160,12 +176,15 @@ export function browserEvidenceSessionDeps(input: BrowserEvidenceInput): Evidenc
     journal: input.journal,
     documentId: input.documentId,
     open,
-    replayer: createBrowserEditStepsV1Replayer,
-    createRunner: (work) => createDrainRunner<QueuedTransaction>({
-      journal: input.journal,
-      transport: createEvidenceTransport(closed.fetchImpl, tabCommitProtocol),
+    replayer: input.schemaVersion === 3 ? () => createBrowserAcademicReplayer(3) : createBrowserEditStepsV1Replayer,
+    createRunner: (work, verified) => createDrainRunner<QueuedTransaction>({
+      journal: verified ? drainJournalFor(input.journal, verified) : input.journal,
+      transport: verified
+        ? createEvidenceTransport(closed.fetchImpl, tabCommitProtocol, verified)
+        : createEvidenceTransport(closed.fetchImpl, tabCommitProtocol),
       verifyFor: evidenceVerifierFor(work),
     }),
+    ...(input.schemaVersion === 3 ? { schemaVersion: 3 as const } : {}),
     watchSubmission: closed.watch,
     storedProfile: (meta) => meta?.evidenceProfileId ?? null,
     network: {

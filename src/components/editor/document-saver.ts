@@ -7,14 +7,13 @@
 import type { FetchLike } from "@/client/evidence-ingest";
 import { browserEvidenceSessionDeps } from "@/client/evidence-session-deps";
 import type { OnlineSource } from "@/client/online-status";
-import type { CanonicalDocument } from "@/domain/document";
 import type { SyncState } from "@/domain/sync/states";
 import type { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
 import {
   LocalDocumentSaver, type LoadResult, type SaverSnapshot,
 } from "@/lib/journal/local-document-saver";
 
-import { EvidenceSession, type EvidenceSnapshot } from "./evidence-session";
+import { EvidenceSession, type EvidenceSnapshot, type SheetDocument } from "./evidence-session";
 
 /** A snapshot of either saver; only the evidence session ever sets `closedBy`. */
 export type DocumentSnapshot = SaverSnapshot & Partial<Pick<EvidenceSnapshot, "closedBy" | "receiptVerified" | "refused" | "submitted" | "stopped" | "unconfirmed">>;
@@ -101,9 +100,10 @@ export function snapshotSpeaks(phase: string, stickyLoad: boolean): boolean {
 
 /** What the provider asks of its saver (3d-2c2 §2, the shared surface). */
 export type DocumentSaver = {
-  load(): Promise<LoadResult>;
+  /** A v3 document only from the evidence session of a v3 work (PIL-K-SPREMANJE-V3). */
+  load(): Promise<LoadResult<SheetDocument>>;
   edit(): void;
-  propose(doc: CanonicalDocument): Promise<void>;
+  propose(doc: SheetDocument): Promise<void>;
   settled(): Promise<void>;
   snapshot(): DocumentSnapshot;
   subscribe(listener: (snapshot: DocumentSnapshot) => void): () => void;
@@ -126,6 +126,12 @@ export function createDocumentSaver(input: {
   current: () => boolean;
   fetchImpl?: FetchLike;
   source?: OnlineSource;
+  /**
+   * PIL-K-SPREMANJE-V3: 3 only for a sheet built with the v3 schema, which
+   * the page does only for a work the server confirmed as v3, and only with
+   * an assignment; anything else is the v1 saver as before.
+   */
+  schemaVersion?: 3;
 }): { saver: DocumentSaver; evidence: EvidenceSession | null } {
   const { journal, documentId, assignmentId, current } = input;
   if (!assignmentId) return { saver: new LocalDocumentSaver(journal, documentId), evidence: null };
@@ -133,6 +139,7 @@ export function createDocumentSaver(input: {
     journal, documentId, assignmentId, current,
     ...(input.fetchImpl ? { fetchImpl: input.fetchImpl } : {}),
     ...(input.source ? { source: input.source } : {}),
+    ...(input.schemaVersion === 3 ? { schemaVersion: 3 as const } : {}),
   }));
   return { saver: evidence, evidence };
 }

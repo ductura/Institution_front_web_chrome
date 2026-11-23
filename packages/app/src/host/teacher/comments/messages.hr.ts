@@ -21,6 +21,8 @@ export const teacherCommentsMessages = {
   teacher: "Nastavnik",
   student: "Student",
   emptyBody: "Unesite tekst komentara.",
+  /** INT-15: the revision a thread was written on; a thread without one names none. */
+  revision: "uz verziju V{n}",
 } as const;
 
 /** How long the confirmation stays on screen (prototype toast, 3200 ms). */

@@ -27,6 +27,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import EditorPage, { SheetNote } from "./EditorPage";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
+import type { FootnoteDialogComponent } from "./footnotes/useV3EditorDialogs";
 import EditorCommands from "./commands/EditorCommands";
 import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalSaveRead, useLocalSavingOnDevice, useLocalSignedOut, useLocalSubmitted } from "./LocalDocument";
 import { EditorHelpDialogs, useEditorHelp, type EditorHelpView } from "./help/EditorHelp";
@@ -45,6 +46,13 @@ import type { LeftSections } from "./layout-prefs/LeftPanel";
 import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/WorkPrintExport";
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
+/** A host's toolbar for the tools slot; it is mounted inside the document provider. */
+export type ToolbarSlot = (ctx: {
+  workPartsKey: string; footnoteDialog?: FootnoteDialogComponent;
+  /** The server-confirmed schema version of the work; footnotes open only for 3. */
+  confirmedWorkSchemaVersion?: number;
+}) => ReactNode;
+
 /** What a host section is given: the live editor, the ids of the work and the state of its session. */
 export type HostSectionContext = {
   editor: Editor | null; assignmentId: string; documentId: string;
@@ -62,7 +70,7 @@ export type HostSections = {
 
 export type OpenRead =
   | { readonly kind: "opening" }
-  | { readonly kind: "ready"; readonly documentId: string; readonly scope: string; readonly session: SessionMark }
+  | { readonly kind: "ready"; readonly documentId: string; readonly scope: string; readonly session: SessionMark; readonly schemaVersion?: number }
   | { readonly kind: "signedOut" }
   | { readonly kind: "closed" }
   | { readonly kind: "reload" }
@@ -72,7 +80,8 @@ export type OpenRead =
 export function openReadOf(outcome: OpenOutcome, scope: string, session: SessionMark): OpenRead {
   switch (outcome.status) {
     case "opened":
-      return { kind: "ready", documentId: outcome.work.documentId, scope, session };
+      return { kind: "ready", documentId: outcome.work.documentId, scope, session,
+        ...(outcome.work.schemaVersion === undefined ? {} : { schemaVersion: outcome.work.schemaVersion }) };
     case "unauthenticated":
       return { kind: "signedOut" };
     case "not_found":
@@ -132,6 +141,8 @@ export default function EditorPageWork({
   literature,
   hostSections,
   leftSections,
+  footnoteDialog,
+  toolbar,
 }: {
   assignmentId: string;
   course: string;
@@ -154,6 +165,10 @@ export default function EditorPageWork({
   /** The host's sections of the left panel (WEB-2126). */
   /** The left panel's sections, or a function of the opened work's document (PIL-D7-POVIJEST). */
   leftSections?: LeftSections | ((work: { documentId: string }) => LeftSections);
+  /** The host's footnote dialog in place of the copied one (PIL-K-FUSNOTA). */
+  footnoteDialog?: NonNullable<ComponentProps<typeof EditorToolbar>>["footnoteDialog"];
+  /** The host's toolbar for the tools slot in place of the copied EditorToolbar (PIL-K-TRAKA). */
+  toolbar?: ToolbarSlot;
 }) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
@@ -174,9 +189,10 @@ export default function EditorPageWork({
   return (
     <>
       <SessionObserver tag={read.session.tag} at={read.session.at} />
-      <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
+      {/* The confirmed schema version is part of the key: another version mounts a new sheet (PIL-K-SHEMA-V3). */}
+      <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}:${read.schemaVersion ?? ""}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session} schemaVersion={read.schemaVersion}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} triggers={triggers} literature={literature}
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} schemaVersion={read.schemaVersion} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} footnoteDialog={footnoteDialog} toolbar={toolbar} triggers={triggers} literature={literature}
           statusExtra={statusExtra} useSupplements={useSupplements} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
@@ -186,7 +202,7 @@ export default function EditorPageWork({
 
 const noSupplements = (): SubmissionRehearsalProps["supplements"] => undefined;
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, hostSections, leftSections, triggers, literature, statusExtra, useSupplements }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, schemaVersion, saveSummary, renderPdf, hostSections, leftSections, footnoteDialog, toolbar, triggers, literature, statusExtra, useSupplements }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -195,6 +211,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   documentId: string;
   scope: string;
   session: SessionMark;
+  schemaVersion?: number;
   saveSummary: boolean;
   renderPdf?: RenderPdf;
   statusExtra?: ReactNode;
@@ -205,6 +222,10 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   hostSections?: HostSections;
   /** The left panel's sections, or a function of the opened work's document (PIL-D7-POVIJEST). */
   leftSections?: LeftSections | ((work: { documentId: string }) => LeftSections);
+  /** The host's footnote dialog in place of the copied one (PIL-K-FUSNOTA). */
+  footnoteDialog?: NonNullable<ComponentProps<typeof EditorToolbar>>["footnoteDialog"];
+  /** The host's toolbar for the tools slot in place of the copied EditorToolbar (PIL-K-TRAKA). */
+  toolbar?: ToolbarSlot;
 }) {
   const editor = useLocalEditor();
   const useRows = useSupplements ?? noSupplements;
@@ -221,7 +242,11 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   return (
     <EditorPanelLayout title={title} leftSections={typeof leftSections === "function" ? leftSections({ documentId }) : leftSections} header={topBar ?? <p>{course} / {title}</p>}
       tools={<EditorCommands><div className={helpStyles.toolbar}>
-        <EditorToolbar workPartsKey={`ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`} />
+        {(() => {
+          const workPartsKey = `ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`;
+          return toolbar ? toolbar({ workPartsKey, footnoteDialog, confirmedWorkSchemaVersion: schemaVersion })
+            : <EditorToolbar footnoteDialog={footnoteDialog} workPartsKey={workPartsKey} confirmedWorkSchemaVersion={schemaVersion} />;
+        })()}
         <EditorHelpMenu onSelect={setView} />
         {!signedOut && <WorkPrintExport documentId={documentId} title={title} renderPdf={renderPdf} open={printOpen} onOpenChange={setPrintOpen} />}
       </div></EditorCommands>}
@@ -240,7 +265,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
       <LocalEditor />
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
-      <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help}
+      <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId}
         fresh={phase === "ready" && editor?.isEmpty}
         notice={{ course, title, length: length?.range ?? undefined, instructions: null }} />
     </EditorPanelLayout>

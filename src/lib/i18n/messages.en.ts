@@ -1221,6 +1221,10 @@ const en = {
     signIn: "Sign in",
     signInFirst: "Sign in to see the work.",
     invalid: "This link does not lead to a work.",
+    // INT-26: what an atom of a v3 text reads as, in its place, as in the version history.
+    footnote: "footnote",
+    citationUnknown: "citation",
+    crossReference: "cross-reference",
     connection: {
       loading: "Connecting…",
       live: "Connection is working",
@@ -2008,6 +2012,11 @@ const en = {
     historyPrevious: "Previous (change {n})",
     historyFirst: "First recorded (change {n})",
     historyDeleted: "the paragraph was deleted",
+    atomFootnote: "[footnote: {text}]",
+    atomCitation: "[{source}]",
+    atomCitationAt: "[{source}, {locator}]",
+    atomCitationUnknown: "citation",
+    atomCrossReference: "[cross-reference]",
     historyNotYet: "not replaced yet",
     historyBy: "change {n}",
     historyResumed: "From the verified resumption (before change {n})",

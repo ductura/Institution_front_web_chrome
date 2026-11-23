@@ -41,7 +41,7 @@ const LIGHT = ':root[data-theme="light"]:not(:has(#prijava-kartica, #pocetna-nas
 describe("prototype.css: the prototype parity layer over globals.css", () => {
   it("loads after the ported tokens, so its rules win", () => {
     const imports = ENTRY.split("\n").filter((line) => line.startsWith("@import"));
-    expect(imports).toEqual(['@import "./globals.css";', '@import "./prototype.css";']);
+    expect(imports).toEqual(['@import "./globals.css";', '@import "./prototype.css";', '@import "../styles/prototip-raspored.css";']);
   });
 
   it("has the four origin colours of editor v0.27 in both themes, as marks (3:1 on the ground)", () => {

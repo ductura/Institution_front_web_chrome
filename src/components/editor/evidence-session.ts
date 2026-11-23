@@ -25,24 +25,40 @@ import type { Node as PmNode } from "@tiptap/pm/model";
 import type { Transaction } from "@tiptap/pm/state";
 
 import type { OpenedWork, OpenOutcome } from "@/client/evidence-ingest";
-import { validateDocument, type CanonicalDocument } from "@/domain/document";
+import { validateDocument, validateVersionedDocument, type CanonicalDocument, type CanonicalDocumentV3, type VersionedDocument } from "@/domain/document";
 import type { AsyncEvidenceStepReplayerV2 } from "@/domain/forensics/evidence-replay-v2";
 import { replayEvidenceSegmentsV2 } from "@/domain/forensics/evidence-replay-v2";
 import { canonicalizeJcs, type JcsJsonValue } from "@/domain/forensics/jcs";
 import { MAX_DOCUMENT_SNAPSHOT_BYTES } from "@/domain/document/snapshot";
 import type {
-  EvidenceSegmentTransaction, EvidenceStop, JournalContents, SyncMeta,
+  EvidenceSegmentTransaction, EvidenceStop, JournalContents, SalvageCopy, SyncMeta,
 } from "@/domain/sync/journal-types";
 import { restoreSyncState } from "@/domain/sync/restore";
 import type { SyncState } from "@/domain/sync/states";
 import { CaptureError, EvidenceRecorder, type BuiltSegment, NO_OBSERVATION, recordWithSource, type SourceObservation } from "@/editor";
+import { verifyWorkOpening, type VerifiedWorkOpening } from "@/domain/serverSync/work-opening";
 import type { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
 import {
   failureOf, type LoadResult, type SaverFailure, type SaverSnapshot,
 } from "@/lib/journal/local-document-saver";
 import type { DrainRunner } from "@/lib/sync/drain-runner";
 
-export type EvidenceJournal = Pick<AtomicDexieJournal, "readEvidence" | "startEvidence" | "saveSegment" | "saveUncovered">;
+export type EvidenceJournal = Pick<AtomicDexieJournal, "readEvidence" | "startEvidence" | "saveSegment" | "saveUncovered">
+  /** PIL-K-V3-OPORAVAK: the way out of a sticky state and its kept copies; without them `adoptServer` and `salvage` do nothing. */
+  & Partial<Pick<AtomicDexieJournal, "adoptServerEvidence" | "readSalvage">>
+  /** PIL-K-V3-BEZ-MREZE: the stored verified opening; without it a v3 work opens only with the server's answer. */
+  & Partial<Pick<AtomicDexieJournal, "readVerifiedWork">>;
+
+/**
+ * What `adoptServer` did: the journal took the server's version (the session
+ * is closed, a new one loads it), the server's answer could not be had or
+ * verified for this work (nothing written), or the journal refused it with
+ * its code (nothing written; `confirmation_required` asks the author first).
+ */
+export type AdoptResult =
+  | { kind: "adopted"; meta: SyncMeta }
+  | { kind: "unavailable" }
+  | { kind: "refused"; code: string };
 
 /** Whether the browser reports a network, and a call on each `online` event. */
 export type NetworkSignal = { online(): boolean; onOnline(listener: () => void): () => void };
@@ -53,8 +69,19 @@ export type EvidenceSessionDeps = {
   /** `openWork(assignmentId)`; a throw counts as `unavailable`. */
   open: () => Promise<OpenOutcome>;
   replayer: () => AsyncEvidenceStepReplayerV2<PmNode>;
-  /** The drain runner over this journal, verifying receipts with `work`'s keys only. */
-  createRunner: (work: OpenedWork) => DrainRunner;
+  /**
+   * The drain runner over this journal, verifying receipts with `work`'s keys
+   * only; `verified` is given for a v3 work only, whose rows the journal reads
+   * and the transport checks against it.
+   */
+  createRunner: (work: OpenedWork, verified?: VerifiedWorkOpening) => DrainRunner;
+  /**
+   * PIL-K-SPREMANJE-V3: 3 when the page built the sheet with the v3 schema
+   * for a work the server confirmed as v3. Absent is the v1 session, whose
+   * document, journal and evidence stay byte for byte as before. A v3 session
+   * opens only once the server's answer is verified as this v3 work.
+   */
+  schemaVersion?: 3;
   network: NetworkSignal;
   /**
    * Calls back when the commit route answers 409 `not_accepting`: a
@@ -117,8 +144,11 @@ export type EvidenceSnapshot = SaverSnapshot & {
   unconfirmed: boolean;
 };
 
-type Candidate = { doc: CanonicalDocument; gen: number; marks: number };
-type Contents = JournalContents<EvidenceSegmentTransaction>;
+/** What the sheet proposes: a v1 document, or a v3 one for a v3 session. */
+export type SheetDocument = CanonicalDocument | CanonicalDocumentV3;
+
+type Candidate = { doc: SheetDocument; gen: number; marks: number };
+type Contents = JournalContents<EvidenceSegmentTransaction, VersionedDocument>;
 
 const STICKY: ReadonlySet<SyncState> = new Set(["CONFLICT", "RECOVERY_REQUIRED"]);
 const HALTING: ReadonlySet<SaverFailure> = new Set(["corrupt", "stale", "unavailable"]);
@@ -148,6 +178,8 @@ export class EvidenceSession {
   private manualOnly = false;
   private profile: string | null = null;
   private work: OpenedWork | null = null;
+  /** A v3 session's work as verified at load; the journal takes v3 only with it. */
+  private verified: VerifiedWorkOpening | null = null;
   private runner: DrainRunner | null = null;
   private recorder: EvidenceRecorder | null = null;
   private sessionId = "";
@@ -160,6 +192,8 @@ export class EvidenceSession {
    */
   private unsaved: BuiltSegment | null = null;
   private saving = false;
+  /** `adoptServer` runs: no write or drain step starts until the journal answered. */
+  private adopting = false;
   private flight: Promise<void> | null = null;
   private stepping: Promise<void> | null = null;
   private stepAgain = false;
@@ -209,13 +243,28 @@ export class EvidenceSession {
    * `startEvidence`, and only for the provider's own document with nothing
    * owed, not stopped and not sticky; otherwise the journal's chain goes on.
    */
-  async load(): Promise<LoadResult> {
+  async load(): Promise<LoadResult<SheetDocument>> {
     if (this.loaded || this.halted) throw new Error("EvidenceSession.load() runs once");
     const { journal } = this.deps;
     let contents: Contents;
     let opened: OpenOutcome;
     try {
-      [contents, opened] = await Promise.all([journal.readEvidence(this.id), this.openSafely()]);
+      if (this.deps.schemaVersion === 3) {
+        // The journal holds a v3 work only under its verified opening, so the
+        // answer comes first; without it nothing is read or written.
+        opened = await this.openSafely();
+        if (this.closed) return { kind: "unavailable" };
+        // PIL-K-V3-BEZ-MREZE: the server's answer, when there is one, decides;
+        // only no answer at all opens the work from its stored verified opening.
+        this.verified = opened.status === "opened"
+          ? await verifiedV3(this.id, opened.work)
+          : opened.status === "unavailable" ? await this.storedV3() : null;
+        if (this.closed) return { kind: "unavailable" };
+        if (!this.verified) return this.haltLoad("unavailable");
+        contents = await this.readJournal();
+      } else {
+        [contents, opened] = await Promise.all([journal.readEvidence(this.id), this.openSafely()]);
+      }
     } catch (error) {
       return this.haltLoad(failureOf(error));
     }
@@ -227,8 +276,9 @@ export class EvidenceSession {
       const meta = contents.meta;
       if (contents.pending.length === 0 && meta?.evidenceStopped === undefined && !STICKY.has(meta?.state as SyncState)) {
         try {
-          await journal.startEvidence(this.id, opened.work, this.now().toISOString());
-          contents = await journal.readEvidence(this.id);
+          if (this.verified) await journal.startEvidence(this.id, opened.work, this.now().toISOString(), this.verified);
+          else await journal.startEvidence(this.id, opened.work, this.now().toISOString());
+          contents = await this.readJournal();
         } catch (error) {
           // A journal ahead of a late answer keeps its own chain.
           if (!contents.meta?.evidenceHead) return this.haltLoad(failureOf(error));
@@ -238,16 +288,17 @@ export class EvidenceSession {
     if (this.closed) return { kind: "unavailable" };
     const { meta, snapshot } = contents;
     if (!meta?.evidenceHead || !snapshot) return this.haltLoad("unavailable");
-    const document = validateDocument(snapshot.document);
+    const document = this.verified ? validV3(snapshot.document) : validateDocument(snapshot.document);
     if (!document.ok) return this.haltLoad("corrupt", { kind: "recovery", reason: "corrupt", document: null });
     const restored = restoreSyncState(contents as unknown as JournalContents);
+    // The sequence the way out of a sticky state expects (`adoptServer`).
+    this.seq = meta.localSeq;
     if (STICKY.has(restored)) {
       this.halted = true;
       this.stored = restored;
       this.emit();
       return { kind: "recovery", reason: "sticky", document: document.doc };
     }
-    this.seq = meta.localSeq;
     this.stored = restored;
     this.owed = contents.pending.length;
     // A reload before the work opens still says the stored refusal.
@@ -264,8 +315,8 @@ export class EvidenceSession {
       this.emit();
       return { kind: "ready", document: document.doc };
     }
-    if (this.work) this.runner = this.deps.createRunner(this.work);
-    this.recorder = new EvidenceRecorder();
+    if (this.work) this.runner = this.verified ? this.deps.createRunner(this.work, this.verified) : this.deps.createRunner(this.work);
+    this.recorder = this.verified ? new EvidenceRecorder(undefined, 3) : new EvidenceRecorder();
     this.sessionId = this.newId();
     this.unwatch = this.deps.watchSubmission?.(() => this.closeBySubmission()) ?? (() => {});
     this.unlisten = this.deps.network.onOnline(() => {
@@ -297,7 +348,7 @@ export class EvidenceSession {
     this.emit();
   }
 
-  propose(doc: CanonicalDocument): Promise<void> {
+  propose(doc: SheetDocument): Promise<void> {
     if (!this.loaded) {
       if (this.halted) return Promise.resolve();
       throw new Error("EvidenceSession.propose() before a ready load()");
@@ -365,7 +416,7 @@ export class EvidenceSession {
   }
 
   private startWrites(): void {
-    if (this.flight || this.halted || this.closedBy || !this.next) return;
+    if (this.flight || this.halted || this.closedBy || this.adopting || !this.next) return;
     if (!this.stopped && this.profile === null) return; // O3 a: wait for a successful open
     let settle!: (written: Promise<void>) => void;
     this.flight = new Promise<void>((resolve) => { settle = resolve; });
@@ -374,7 +425,7 @@ export class EvidenceSession {
 
   private async writeQueued(): Promise<void> {
     try {
-      while (this.next && !this.halted && !this.closedBy && (this.stopped || this.profile !== null)) {
+      while (this.next && !this.halted && !this.closedBy && !this.adopting && (this.stopped || this.profile !== null)) {
         const candidate = this.next;
         this.next = null;
         await this.save(candidate);
@@ -412,7 +463,7 @@ export class EvidenceSession {
     let lastDocument: string | null = null;
     for (;;) {
       if (this.ended) return false;
-      const contents = await journal.readEvidence(this.id);
+      const contents = await this.readJournal();
       const { meta, snapshot } = contents;
       if (!meta?.evidenceHead || !snapshot || meta.localSeq !== this.seq) {
         throw Object.assign(new Error("journal moved"), { code: "stale_local_sequence" });
@@ -465,7 +516,9 @@ export class EvidenceSession {
         return this.saveUncovered(candidate.doc, "too_large");
       }
       this.unsaved = built;
-      const result = await journal.saveSegment(this.id, built, this.now().toISOString(), this.seq);
+      const result = this.verified
+        ? await journal.saveSegment(this.id, built, this.now().toISOString(), this.seq, this.verified)
+        : await journal.saveSegment(this.id, built, this.now().toISOString(), this.seq);
       this.unsaved = null;
       this.seq = result.localSeq;
       this.stored = result.meta.state;
@@ -482,11 +535,13 @@ export class EvidenceSession {
     return true;
   }
 
-  private async saveUncovered(doc: CanonicalDocument, reason: EvidenceStop): Promise<boolean> {
+  private async saveUncovered(doc: SheetDocument, reason: EvidenceStop): Promise<boolean> {
     // §4: nothing is written once the session closed.
     if (this.ended) return false;
     this.stopped = reason;
-    const meta = await this.deps.journal.saveUncovered(this.id, doc, reason, this.now().toISOString(), this.seq);
+    const meta = this.verified
+      ? await this.deps.journal.saveUncovered(this.id, doc, reason, this.now().toISOString(), this.seq, this.verified)
+      : await this.deps.journal.saveUncovered(this.id, doc as CanonicalDocument, reason, this.now().toISOString(), this.seq);
     this.seq = meta.localSeq;
     this.stored = meta.state;
     this.syncedHere = false;
@@ -498,7 +553,7 @@ export class EvidenceSession {
       this.stepAgain = true;
       return;
     }
-    if (!this.runner || this.halted || this.closedBy || this.paused || !this.deps.network.online()) return;
+    if (!this.runner || this.halted || this.closedBy || this.paused || this.adopting || !this.deps.network.online()) return;
     this.clearTimer();
     this.stepAgain = false;
     this.stepping = this.stepLoop().finally(() => {
@@ -508,7 +563,7 @@ export class EvidenceSession {
   }
 
   private async stepLoop(): Promise<void> {
-    while (this.runner && !this.halted && !this.closedBy && !this.paused && this.deps.network.online()) {
+    while (this.runner && !this.halted && !this.closedBy && !this.paused && !this.adopting && this.deps.network.online()) {
       let result;
       this.syncing = this.owed > 0;
       if (this.syncing) this.emit();
@@ -534,7 +589,7 @@ export class EvidenceSession {
 
   private async refresh(): Promise<Contents | null> {
     try {
-      const contents = await this.deps.journal.readEvidence(this.id);
+      const contents = await this.readJournal();
       if (contents.meta) {
         this.stored = contents.meta.state;
         this.refused = contents.meta.refusedLocalSeq !== undefined;
@@ -555,13 +610,18 @@ export class EvidenceSession {
    */
   private retryOpen(): void {
     if (this.work || this.opening || this.paused || this.ended || !this.deps.network.online()) return;
-    this.opening = this.openSafely().then((opened) => {
+    this.opening = this.openSafely().then(async (opened) => {
       if (opened.status !== "opened" || this.closed) return;
-      if (opened.work.documentId !== this.id) {
+      // PIL-K-V3-BEZ-MREZE: a v3 work opened from its stored opening is
+      // verified again against the server's answer, which takes its place.
+      const fresh = this.deps.schemaVersion === 3 ? await verifiedV3(this.id, opened.work).catch(() => null) : null;
+      if (this.closed || this.work) return;
+      if (opened.work.documentId !== this.id || (this.deps.schemaVersion === 3 && !fresh)) {
         this.failure = "unavailable";
         this.halted = true;
         return;
       }
+      if (fresh) this.verified = fresh;
       this.work = opened.work;
       if (opened.work.submitted) {
         // O2 also when the first open could not be reached (Codex #818
@@ -570,7 +630,7 @@ export class EvidenceSession {
         return;
       }
       this.profile = opened.work.evidenceProfileId;
-      this.runner = this.deps.createRunner(opened.work);
+      this.runner = fresh ? this.deps.createRunner(opened.work, fresh) : this.deps.createRunner(opened.work);
       this.startWrites();
       this.kick();
     }).finally(() => {
@@ -587,7 +647,118 @@ export class EvidenceSession {
     }
   }
 
-  private haltLoad(failure: SaverFailure, result: LoadResult = { kind: "unavailable" }): LoadResult {
+  /** The stored verified opening of this v3 work (`readVerifiedWork`), or null; never a throw. */
+  private async storedV3(): Promise<VerifiedWorkOpening | null> {
+    try {
+      const stored = await this.deps.journal.readVerifiedWork?.(this.id);
+      return stored?.schemaVersion === 3 ? stored : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** The journal's contents; a v3 work's only under its verified opening. */
+  private readJournal(): Promise<Contents> {
+    return this.verified ? this.deps.journal.readEvidence(this.id, this.verified) : this.deps.journal.readEvidence(this.id);
+  }
+
+  /**
+   * PIL-K-V3-OPORAVAK: leaves CONFLICT or RECOVERY_REQUIRED (or a stopped
+   * record that owes nothing) the one way the journal allows, by taking the
+   * server's version and keeping the local text as a copy (3d-2b,
+   * `adoptServerEvidence`). The server's version is asked for now: a v1
+   * session hands it over as before, a v3 session only once it is verified
+   * again as this v3 work (`verifiedV3`), since the server's revision moved
+   * past the one verified at load. `confirmed` is the author's word.
+   */
+  async adoptServer(confirmed: boolean): Promise<AdoptResult> {
+    const { journal } = this.deps;
+    if (this.closed || this.adopting || !journal.adoptServerEvidence) return { kind: "unavailable" };
+    // Review c.7099383404: a write the take overtook would fail on the sequence
+    // and its text would be neither in the snapshot nor in the copy, so no
+    // write or drain step starts from here until the journal answered.
+    this.adopting = true;
+    this.clearTimer();
+    // Review c.7099657848: only a record stopped at entry, in a session that
+    // still writes, keeps a late text without evidence; a halted session
+    // (CONFLICT, RECOVERY_REQUIRED) writes none and its held text is stale.
+    const keepsLate = this.stopped !== null && !this.halted;
+    let result: AdoptResult = { kind: "unavailable" };
+    try {
+      await this.settled();
+      const opened = await this.openSafely();
+      if (this.closed || opened.status !== "opened" || opened.work.documentId !== this.id) return result;
+      let fresh: VerifiedWorkOpening | null = null;
+      if (this.deps.schemaVersion === 3) {
+        try {
+          fresh = await verifiedV3(this.id, opened.work);
+        } catch {
+          fresh = null;
+        }
+        if (!fresh) return result;
+      }
+      if (this.closed) return result;
+      // A text proposed meanwhile is written first (in `finally`); the author decides again.
+      if (keepsLate && (this.flight || this.next || this.unsaved)) return (result = { kind: "refused", code: "pending_write" });
+      const decidedAt = this.now().toISOString();
+      let meta: SyncMeta;
+      try {
+        meta = fresh
+          ? await journal.adoptServerEvidence(this.id, opened.work, confirmed, decidedAt, this.seq, fresh)
+          : await journal.adoptServerEvidence(this.id, opened.work, confirmed, decidedAt, this.seq);
+      } catch (error) {
+        const code = (error as { code?: unknown } | null)?.code;
+        return (result = { kind: "refused", code: typeof code === "string" ? code : "unknown" });
+      }
+      result = { kind: "adopted", meta };
+      this.seq = meta.localSeq;
+      this.stored = meta.state;
+      this.syncedHere = false;
+      // A text proposed while the journal took the server's version stays on
+      // this device over it, without evidence, as text written after a stop.
+      const late = this.next as Candidate | null; // set meanwhile by `propose`
+      this.next = null;
+      if (late && keepsLate && !this.closed) {
+        try {
+          await this.saveUncovered(late.doc, this.stopped ?? "gap");
+        } catch (error) {
+          this.failure = failureOf(error);
+        }
+      }
+      // Nothing more is written by this session: a new one loads the server's version.
+      this.close();
+      return result;
+    } finally {
+      this.adopting = false;
+      if (result.kind !== "adopted") {
+        this.startWrites();
+        this.kick();
+      }
+      this.emit();
+    }
+  }
+
+  /**
+   * The copies `adoptServer` kept, newest first, read as the session reads
+   * its journal: a v3 session's only under its verified opening. Null when
+   * they cannot be read (no verified v3 opening, a journal error).
+   */
+  async salvage(): Promise<SalvageCopy<VersionedDocument>[] | null> {
+    const { journal } = this.deps;
+    if (!journal.readSalvage || (this.deps.schemaVersion === 3 && !this.verified)) return null;
+    try {
+      return this.verified ? await journal.readSalvage(this.id, this.verified) : await journal.readSalvage(this.id);
+    } catch {
+      return null;
+    }
+  }
+
+  /** The rows this journal holds for the document, read as the session reads them (sign-out dialog). */
+  async heldRows(): Promise<number> {
+    return (await this.readJournal()).pending.length;
+  }
+
+  private haltLoad(failure: SaverFailure, result: LoadResult<SheetDocument> = { kind: "unavailable" }): LoadResult<SheetDocument> {
     this.halted = true;
     this.failure = failure;
     this.emit();
@@ -610,4 +781,22 @@ export class EvidenceSession {
       }
     }
   }
+}
+
+/**
+ * PIL-K-SPREMANJE-V3: the open answer verified as a v3 work, or null. A
+ * later revision needs the server's revision zero hash (work-opening.ts); an
+ * answer for any other version is never taken into a v3 session.
+ */
+async function verifiedV3(documentId: string, work: OpenedWork): Promise<VerifiedWorkOpening | null> {
+  if (work.schemaVersion !== 3) return null;
+  const proof = work.revisionZeroHash === undefined ? undefined : { documentId, sha256: work.revisionZeroHash };
+  const verified = await verifyWorkOpening(documentId, work, proof);
+  return verified?.schemaVersion === 3 ? verified : null;
+}
+
+/** A stored v3 snapshot, or the refusal `validateDocument` would give for any other. */
+function validV3(document: unknown): { ok: true; doc: CanonicalDocumentV3 } | { ok: false } {
+  const valid = validateVersionedDocument(document);
+  return valid.ok && valid.doc.schemaVersion === 3 ? { ok: true, doc: valid.doc } : { ok: false };
 }
