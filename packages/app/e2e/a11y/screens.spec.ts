@@ -3,16 +3,19 @@
 // mobile width (criterion 1) and shows keyboard focus on every Tab stop
 // (criterion 2). It also keeps a title of its own (WCAG 2.4.2) and reflows at
 // 320 px (WCAG 1.4.10). One page load per screen, each check a step, so the
-// pass runs with the app's e2e. Over a fake institution server; invented data only.
+// pass runs with the app's e2e. Over the fake server of the "puno" scenario
+// (VIZ-WCAG-LAZNI): every read answers from the contract's vectors, so axe sees
+// each screen with its data, not its "cannot be read" state. Invented data only.
 import { expect, test } from "@playwright/test";
 
-import { axe, hiddenFocus, open, setTheme } from "./check";
+import { otvori } from "../viz/otvori";
+import { axe, hiddenFocus, setTheme } from "./check";
 import { SCREENS } from "./screens";
 
 for (const screen of SCREENS) {
   test(`${screen.name}: axe A/AA, title, reflow and visible focus`, async ({ page }, info) => {
     await page.setViewportSize({ width: 1250, height: 900 });
-    await open(page, screen);
+    await otvori(page, screen, "puno");
 
     await test.step("title of its own (WCAG 2.4.2)", async () => {
       await expect(page).toHaveTitle(/^.+ · Ductura$/);

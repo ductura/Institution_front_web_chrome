@@ -234,9 +234,12 @@ input[type="radio"] {
   font-weight: 500;
 }
 
+/* Pressed takes the well, so it also takes the ink on it: the accent's ink is
+   meant for the accent and reads 1.36:1 on the dark well (VIZ-WCAG-LAZNI). */
 .btn[aria-pressed="true"] {
   background: var(--well);
   border-color: var(--ink-2);
+  color: var(--ink);
 }
 
 .btn[aria-disabled="true"],

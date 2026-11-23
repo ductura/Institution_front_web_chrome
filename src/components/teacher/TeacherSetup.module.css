@@ -88,7 +88,11 @@
   font-weight: 400;
 }
 
+/* WCAG 2.4.7: Chromium's date or time field has an inner calendar button with a
+   Tab stop of its own, and while it has focus the field no longer matches
+   :focus-visible; :focus-within keeps the ring there, as TextField does. */
 .control:focus-visible,
+.control:focus-within,
 .check input:focus-visible {
   outline: var(--focus-width) solid var(--accent);
   outline-offset: var(--focus-offset);

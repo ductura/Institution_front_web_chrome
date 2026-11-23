@@ -51,6 +51,7 @@ import CommentBank from "../comment-bank/CommentBank";
 import { commentBankPort, draftCommentsPort } from "../comment-bank/port";
 import { teacherWorkMessages as workText } from "./messages.hr";
 import { useShownRevision } from "./shown-revision";
+import linkStyles from "./links.module.css";
 
 const VIEWS = {
   live: { suffix: "", title: t.liveView.context },
@@ -170,7 +171,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               {elementsState.unavailable && <p role="status">{textElementsMessages.unavailable}</p>}
               <LiveText view={view} marks={openMarks(placed)} textRef={textRef} onSelect={select} />
             </>}
-          {!stopped && <ul>
+          {!stopped && <ul className={linkStyles.links}>
             <li><a href={receiptHref}>{VIEWS.receipt.title}</a></li>
             <li><a href={`${workHref}${VIEWS.replay.suffix}`}>{VIEWS.replay.title}</a></li>
             <li><a href={`${workHref}${VIEWS.consultations.suffix}`}>{VIEWS.consultations.title}</a></li>
