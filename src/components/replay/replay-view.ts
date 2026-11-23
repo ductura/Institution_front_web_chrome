@@ -5,11 +5,11 @@
  * only "change n of N" (D-143, D-239).
  */
 
-import type { DocumentNode } from "@/domain/document";
+import type { DocumentNodeV3, InlineNodeV3 } from "@/domain/document";
 import type { ParagraphHistoryEntry, ReplayGap } from "@/client/replay-record/replay-player";
 import type { ReplayChangeKind } from "@/client/replay-record/replay-timeline";
 import type { EvidenceSourceV2 } from "@/domain/forensics/evidence-segment-v2";
-import { tiptapToCanonical } from "@/editor";
+import { tiptapToCanonical, tiptapToCanonicalV3 } from "@/editor";
 import { pluralHr } from "@/lib/i18n/hr";
 import { groupHr } from "@/lib/i18n/length-line";
 import { messagesHr } from "@/lib/i18n/messages.hr";
@@ -24,13 +24,58 @@ export function fill(text: string, values: Readonly<Record<string, string | numb
   });
 }
 
-/** The blocks of the replayed document, or null when the editor's JSON is no canonical document. */
-export function replayBlocks(json: unknown): DocumentNode[] | null {
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** The document's sources when the editor's JSON is of document v3 (its root has them), else null. */
+function v3Sources(json: unknown): unknown[] | null {
+  if (!isObject(json) || !isObject(json.attrs) || !Object.hasOwn(json.attrs, "sources")) return null;
+  return Array.isArray(json.attrs.sources) ? json.attrs.sources : [];
+}
+
+/**
+ * The blocks of the replayed document, or null when the editor's JSON is no
+ * canonical document. A document of v3 (INT-23) is read as v3, so its
+ * citations, footnotes and cross references stay in it; a v1 document as before.
+ */
+export function replayBlocks(json: unknown): DocumentNodeV3[] | null {
+  if (v3Sources(json) !== null) {
+    const result = tiptapToCanonicalV3(json);
+    return result.ok ? result.doc.nodes : null;
+  }
   const result = tiptapToCanonical(json);
   return result.ok ? result.doc.nodes : null;
 }
 
-export const nodeText = (node: DocumentNode): string => node.children.map((child) => child.text).join("");
+/** The sources a citation of the replayed document names; none for a v1 document. */
+export const replaySources = (json: unknown): readonly unknown[] => v3Sources(json) ?? [];
+
+/** The text of a block as the record's paragraph history counts it: its text only, never an atom. */
+export const nodeText = (node: DocumentNodeV3): string =>
+  node.children.map((child) => (child.type === "text" ? child.text : "")).join("");
+
+const str = (value: unknown): string => (typeof value === "string" ? value : "");
+
+/**
+ * How an inline atom of v3 is shown in the replayed text: a footnote with its
+ * words, a citation by its source's authors and year (or only "navod" when the
+ * document names no such source) and locator, a cross reference as a marker.
+ * Never left out, so the text shown is the text recorded. Null for text.
+ */
+export function atomLabel(child: InlineNodeV3, sources: readonly unknown[]): string | null {
+  if (child.type === "text") return null;
+  if (child.type === "footnote") return fill(t.atomFootnote, { text: child.text });
+  if (child.type === "crossReference") return t.atomCrossReference;
+  const source = sources.find((s) => isObject(s) && s.id === child.sourceId);
+  const authors = isObject(source) && Array.isArray(source.authors)
+    ? source.authors.map((a) => (isObject(a) ? str(a.family) || str(a.name) : "")).filter(Boolean).join(", ")
+    : "";
+  const year = isObject(source) && typeof source.year === "number" ? String(source.year) : "";
+  const name = [authors, year].filter(Boolean).join(" ") || t.atomCitationUnknown;
+  return child.locator === undefined || child.locator === ""
+    ? fill(t.atomCitation, { source: name })
+    : fill(t.atomCitationAt, { source: name, locator: child.locator });
+}
 
 /** Characters as a reader counts them: code points, so one emoji is one. */
 export const characters = (text: string): number => Array.from(text).length;
@@ -195,7 +240,7 @@ const shortened = (value: string): string => {
 };
 
 /** A paragraph as the select names it: its place and the start of its text. */
-export function paragraphOption(ordinal: number, node: DocumentNode): string {
+export function paragraphOption(ordinal: number, node: DocumentNodeV3): string {
   return fill(t.paragraphOption, { k: ordinal, text: shortened(nodeText(node)) });
 }
 

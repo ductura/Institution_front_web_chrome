@@ -17,7 +17,8 @@ import type { EvidenceChainHeadV2 } from "../../packages/editor-core/src/documen
 
 import { browserTransport, createApi, type ProtocolVersion } from "./api";
 import { buildReplayPlayer, type ReplayPlayer, type ReplayRecord } from "./replay-record/replay-player";
-import { createBrowserReplayStepsV1 } from "./replay-record/replay-steps";
+import { createBrowserReplayStepsV1, createBrowserReplayStepsV3 } from "./replay-record/replay-steps";
+import type { ReplayStepReplayer } from "./replay-record/replay-timeline";
 
 const REPLAY_PROTOCOL = "1" satisfies ProtocolVersion;
 /** The transport createApi is handed: the browser's by default, a test's own. */
@@ -203,6 +204,34 @@ export async function fetchReplayRecord(
   return { kind: "unavailable" };
 }
 
+/** The step formats the replay reads, each with the replayer of its document schema (INT-23). */
+const STEP_REPLAYERS: Readonly<Record<string, () => ReplayStepReplayer<unknown>>> = {
+  "ductus-edit-steps-v1": createBrowserReplayStepsV1 as () => ReplayStepReplayer<unknown>,
+  "ductus-edit-steps-v3": createBrowserReplayStepsV3 as () => ReplayStepReplayer<unknown>,
+};
+
+/**
+ * The replayer of the work's schema, named by the step format of its first
+ * segment; `null` for a format the replay does not read or a first segment
+ * with no format. Nothing is trusted here: the timeline still checks the
+ * chain, that every segment has this same format and that the start document
+ * is one of this schema, and fails closed otherwise. An empty record is read
+ * as before, with the v1 replayer.
+ */
+export function replayStepsFor(record: Pick<ReplayRecord, "segments">): ReplayStepReplayer<unknown> | null {
+  const first = record.segments[0];
+  if (first === undefined) return STEP_REPLAYERS["ductus-edit-steps-v1"]!();
+  let format: unknown;
+  try {
+    const segment: unknown = JSON.parse(first);
+    const context = isObject(segment) ? segment.captureContext : undefined;
+    format = isObject(context) ? context.transactionFormat : undefined;
+  } catch {
+    return null;
+  }
+  return typeof format === "string" && Object.hasOwn(STEP_REPLAYERS, format) ? STEP_REPLAYERS[format]!() : null;
+}
+
 export type ReplayOutcome =
   | { kind: "ok"; player: Extract<ReplayPlayer, { ok: true }> }
   | { kind: "signedOut" | "notFound" | "unavailable" };
@@ -219,6 +248,8 @@ export async function loadReplay(
 ): Promise<ReplayOutcome> {
   const read = await fetchReplayRecord(documentId, current, fetcher);
   if (read.kind !== "ok") return read;
-  const player = await buildReplayPlayer(read.record, createBrowserReplayStepsV1());
+  const steps = replayStepsFor(read.record);
+  if (steps === null) return { kind: "unavailable" };
+  const player = await buildReplayPlayer(read.record, steps);
   return player.ok ? { kind: "ok", player } : { kind: "unavailable" };
 }

@@ -10,10 +10,10 @@ import SheetFrame from "@/components/shell/SheetFrame";
 import { useReplay } from "@/components/replay/ReplayView";
 import replayStyles from "@/components/replay/ReplayView.module.css";
 import {
-  deletedOption, deletedParagraphs, describeChange, fill, gapWords, historyRows, nodeText, paragraphOption, replayBlocks,
-  stepsOf, type ChangePart,
+  atomLabel, deletedOption, deletedParagraphs, describeChange, fill, gapWords, historyRows, nodeText, paragraphOption, replayBlocks,
+  replaySources, stepsOf, type ChangePart,
 } from "@/components/replay/replay-view";
-import type { DocumentNode } from "@/domain/document";
+import type { DocumentNode, DocumentNodeV3 } from "@/domain/document";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { n09Messages as m } from "./messages.hr";
@@ -24,8 +24,10 @@ import { WorkPage, WorkPanel, workPageStyles as page } from "../n07/WorkPage";
 const t = messagesHr.replay;
 type Player = Extract<ReplayPlayer, { ok: true }>;
 
-function Block({ node, touched }: { node: DocumentNode; touched: boolean }) {
+function Block({ node, touched, sources }: { node: DocumentNodeV3; touched: boolean; sources: readonly unknown[] }) {
   const kids = node.children.map((c, i) => {
+    // A citation, a footnote or a cross reference (v3) is shown, never left out (INT-23).
+    if (c.type !== "text") return <span key={i} data-atom={c.type}>{atomLabel(c, sources)}</span>;
     let content: ReactNode = c.text;
     if (c.marks.includes("italic")) content = <em>{content}</em>;
     if (c.marks.includes("bold")) content = <strong>{content}</strong>;
@@ -38,25 +40,26 @@ function Block({ node, touched }: { node: DocumentNode; touched: boolean }) {
   return <Tag {...props}>{kids}</Tag>;
 }
 
-function Text({ nodes, touched }: { nodes: readonly DocumentNode[]; touched: ReadonlySet<string> }) {
-  const block = (node: DocumentNode) => <Block key={node.id} node={node} touched={touched.has(node.id)} />;
+function Text({ nodes, touched, sources }: { nodes: readonly DocumentNodeV3[]; touched: ReadonlySet<string>; sources: readonly unknown[] }) {
+  const block = (node: DocumentNodeV3) => <Block key={node.id} node={node} touched={touched.has(node.id)} sources={sources} />;
   return (
     <SheetFrame>
       <div className={`manuscript ${replayStyles.text}`} role="document" aria-label={t.sheetLabel}>
-        {blockRuns([...nodes]).map((run) => run.kind === "list" ? <ul key={run.items[0]!.id}>{run.items.map(block)}</ul>
+        {/* blockRuns reads only the block types, which v3 shares with v1. */}
+        {blockRuns([...nodes] as DocumentNode[]).map((run) => run.kind === "list" ? <ul key={run.items[0]!.id}>{run.items.map(block)}</ul>
           : run.kind === "quote" ? <blockquote key={run.items[0]!.id}>{run.items.map(block)}</blockquote> : block(run.node))}
       </div>
     </SheetFrame>
   );
 }
 
-const ordinalIn = (nodes: readonly DocumentNode[] | null, id: string): number | null => {
+const ordinalIn = (nodes: readonly DocumentNodeV3[] | null, id: string): number | null => {
   const i = nodes?.findIndex((node) => node.id === id) ?? -1;
   return i < 0 ? null : i + 1;
 };
 
 /** The player over one verified record; `n` is the change shown (from 1; 0 only for a record with gaps and no change). */
-function N09Player({ player }: { player: Player }) {
+export function N09Player({ player }: { player: Player }) {
   const [n, setN] = useState(player.total);
   const [scoped, setScoped] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -151,7 +154,7 @@ function N09Player({ player }: { player: Player }) {
         const words = gapWords(g.gap, g.beforeIndex);
         return <div key={`${g.gap}-${g.beforeIndex}`} className={replayStyles.gap} role="note"><strong>{t.gapTitle}</strong><span>{words.text}</span>{words.note !== null && <span>{words.note}</span>}</div>;
       })}
-      <Text nodes={nodes} touched={new Set(change?.blockIds ?? [])} />
+      <Text nodes={nodes} touched={new Set(change?.blockIds ?? [])} sources={replaySources(player.documentAt(n))} />
       {shownId !== null && (
         <section className={replayStyles.card} aria-labelledby="replay-history">
           <h2 id="replay-history" className={replayStyles.cardTitle}>{shownOrdinal === null ? t.historyTitleDeleted : fill(t.historyTitle, { k: shownOrdinal })}</h2>

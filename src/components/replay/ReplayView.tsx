@@ -22,13 +22,13 @@ import { watchSessionEnd, type SessionWatch } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
 import { blockRuns } from "@/components/shell/manuscript-blocks";
 import SheetFrame from "@/components/shell/SheetFrame";
-import type { DocumentNode } from "@/domain/document";
+import type { DocumentNode, DocumentNodeV3 } from "@/domain/document";
 import type { ReplayPlayer } from "@/client/replay-record/replay-player";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import {
-  changeAt, deletedOption, deletedParagraphs, describeChange, fill, gapWords, historyRows, nearestStep, nodeText, paragraphOption, replayBlocks,
-  sourceLabel, stepsOf, timelineOf,
+  atomLabel, changeAt, deletedOption, deletedParagraphs, describeChange, fill, gapWords, historyRows, nearestStep, nodeText, paragraphOption,
+  replayBlocks, replaySources, sourceLabel, stepsOf, timelineOf,
   type ChangePart,
 } from "./replay-view";
 import styles from "./ReplayView.module.css";
@@ -74,8 +74,10 @@ export function useReplay(documentId: string, session: SessionMark | null) {
   return { outcome: ended ? ({ kind: "signedOut" } as const) : outcome, retry };
 }
 
-function Block({ node, touched }: { node: DocumentNode; touched: boolean }) {
+function Block({ node, touched, sources }: { node: DocumentNodeV3; touched: boolean; sources: readonly unknown[] }) {
   const children = node.children.map((child, i) => {
+    // A citation, a footnote or a cross reference (v3) is shown, never left out (INT-23).
+    if (child.type !== "text") return h("span", { key: i, "data-atom": child.type }, atomLabel(child, sources));
     let content: ReactNode = child.text;
     if (child.marks.includes("italic")) content = h("em", null, content);
     if (child.marks.includes("bold")) content = h("strong", null, content);
@@ -88,19 +90,20 @@ function Block({ node, touched }: { node: DocumentNode; touched: boolean }) {
   return h(node.level === 1 ? "h2" : node.level === 2 ? "h3" : "h4", props, ...children);
 }
 
-function Text({ nodes, touched }: { nodes: readonly DocumentNode[]; touched: ReadonlySet<string> }) {
-  const block = (node: DocumentNode) => h(Block, { key: node.id, node, touched: touched.has(node.id) });
+function Text({ nodes, touched, sources }: { nodes: readonly DocumentNodeV3[]; touched: ReadonlySet<string>; sources: readonly unknown[] }) {
+  const block = (node: DocumentNodeV3) => h(Block, { key: node.id, node, touched: touched.has(node.id), sources });
   return h(SheetFrame, null, h(
     "div",
     { className: `manuscript ${styles.text}`, role: "document", "aria-label": t.sheetLabel },
-    ...blockRuns([...nodes]).map((run) =>
+    // blockRuns reads only the block types, which v3 shares with v1.
+    ...blockRuns([...nodes] as DocumentNode[]).map((run) =>
       run.kind === "list" ? h("ul", { key: run.items[0]!.id }, ...run.items.map(block))
         : run.kind === "quote" ? h("blockquote", { key: run.items[0]!.id }, ...run.items.map(block))
         : block(run.node)),
   ));
 }
 
-const ordinalIn = (nodes: readonly DocumentNode[] | null, id: string): number | null => {
+const ordinalIn = (nodes: readonly DocumentNodeV3[] | null, id: string): number | null => {
   const i = nodes?.findIndex((node) => node.id === id) ?? -1;
   return i < 0 ? null : i + 1;
 };
@@ -172,7 +175,7 @@ export function ReplayPlayerView({ player }: { player: Player }) {
       const words = gapWords(g.gap, g.beforeIndex);
       return h(GapMark, { key: `${g.gap}-${g.beforeIndex}`, text: words.text, note: words.note });
     }),
-    h(Text, { nodes, touched: new Set(change?.blockIds ?? []) }),
+    h(Text, { nodes, touched: new Set(change?.blockIds ?? []), sources: replaySources(player.documentAt(n)) }),
     shownId === null ? null : h(
       "section",
       { className: styles.card, "aria-labelledby": "replay-history" },
