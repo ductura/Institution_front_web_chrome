@@ -16,6 +16,8 @@ export const courseAggregateMessages = {
   measureSuppressedNote: "Premalo studenata za prikaz ove mjere.",
   loading: "Učitavam zbirni pregled…",
   empty: "Za ovaj kolegij još nema podataka.",
+  practiceLeftOut: "Probni zadaci ne ulaze u ovaj pregled.",
+  practiceOnly: "Kolegij zasad ima samo probne zadatke. Probni zadaci ne ulaze u zbirni pregled.",
   unavailable: "Zbirni pregled trenutačno nije dostupan.",
   signedOut: "Sesija je istekla. Prijavite se ponovno.",
   retry: "Pokušaj ponovno",

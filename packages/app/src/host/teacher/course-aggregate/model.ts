@@ -4,6 +4,8 @@
 // is below the threshold is hidden too, because the complement would give a small group away.
 // No server route exists yet: the port is the smallest contract the plan implies (a probe answer
 // stands in for it in the tests). This module makes no network call.
+// P-D1 (PIL-D1-BEZ-OCJENE): a practice assignment never enters the aggregate. The port is asked only for
+// the course's other assignments; a course with practice assignments only has its own state.
 import { courseAggregateMessages as text } from "./messages.hr";
 
 /** Fewest students for which anything is shown (M6.10). */
@@ -25,7 +27,16 @@ export type AggregateRead =
   | { readonly kind: "unavailable" };
 
 export interface CourseAggregatePort {
-  read(courseId: string): Promise<AggregateRead>;
+  /** The aggregate of the course over exactly these assignments (never a practice one). */
+  read(courseId: string, assignmentIds: readonly string[]): Promise<AggregateRead>;
+}
+
+/** An assignment of the course with the server's flag (`isPractice` of institution.assignment.get). */
+export type CourseAssignment = { readonly assignmentId: string; readonly isPractice?: boolean };
+
+/** The assignments the aggregate covers: all but the practice ones. Only an explicit `true` is practice. */
+export function aggregateScope(assignments: readonly CourseAssignment[]): readonly string[] {
+  return assignments.filter((a) => a.isPractice !== true).map((a) => a.assignmentId);
 }
 
 export type MeasureView =
@@ -33,8 +44,13 @@ export type MeasureView =
   | { readonly key: MeasureKey; readonly label: string; readonly shown: false };
 
 export type AggregateView =
-  | { readonly kind: "ready"; readonly students: number; readonly measures: readonly MeasureView[]; readonly chartAlt: string }
+  | {
+    readonly kind: "ready"; readonly students: number; readonly measures: readonly MeasureView[]; readonly chartAlt: string;
+    /** How many practice assignments were left out, for the note under the view. */
+    readonly practiceLeftOut: number;
+  }
   | { readonly kind: "empty" }
+  | { readonly kind: "practiceOnly" }
   | { readonly kind: "suppressed" }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
@@ -62,20 +78,26 @@ export function chartAlt(measures: readonly MeasureView[]): string {
 }
 
 /** Turns a port answer into the view; a count below the threshold never reaches the screen. */
-export function aggregateView(read: AggregateRead): AggregateView {
+export function aggregateView(read: AggregateRead, practiceLeftOut = 0): AggregateView {
   if (read.kind !== "ready") return { kind: read.kind };
   const { students, counts } = read.data;
   if (!Number.isInteger(students) || students < 0) return { kind: "unavailable" };
   if (students === 0) return { kind: "empty" };
   if (students < MIN_STUDENTS) return { kind: "suppressed" };
   const measures = MEASURES.map((key) => measureView(key, counts[key], students));
-  return { kind: "ready", students, measures, chartAlt: chartAlt(measures) };
+  return { kind: "ready", students, measures, chartAlt: chartAlt(measures), practiceLeftOut };
 }
 
-/** Reads through the port; a failure is "unavailable", never a made-up value. */
-export async function loadAggregate(port: CourseAggregatePort, courseId: string): Promise<AggregateView> {
+/**
+ * Reads through the port over the assignments that are not practice; a failure is "unavailable", never a
+ * made-up value. Without such an assignment nothing is read: "empty", or "practiceOnly" when the course has
+ * practice assignments only.
+ */
+export async function loadAggregate(port: CourseAggregatePort, courseId: string, assignments: readonly CourseAssignment[]): Promise<AggregateView> {
+  const scope = aggregateScope(assignments);
+  if (scope.length === 0) return { kind: assignments.length === 0 ? "empty" : "practiceOnly" };
   try {
-    return aggregateView(await port.read(courseId));
+    return aggregateView(await port.read(courseId, scope), assignments.length - scope.length);
   } catch {
     return { kind: "unavailable" };
   }
