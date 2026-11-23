@@ -3,7 +3,7 @@ import type { AggregateData, AggregateRead, CourseAggregatePort, CourseAssignmen
 
 export const FAKE_AGGREGATE: AggregateData = {
   students: 24,
-  counts: { submitted: 18, afterDeadline: 6, continuous: 15, withGaps: 8 },
+  counts: { submitted: 18, inProgress: 6, notStarted: 0 },
 };
 
 /** Two invented regular assignments and one invented practice assignment of a course. */

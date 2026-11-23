@@ -17,6 +17,7 @@ import { studentDataDownloadMessages } from "./host/public/student-data-download
 import { publicVerificationHr } from "../../../src/components/public-verification/messages.hr.ts";
 import { VERIFY_PATH } from "./host/public/verify/model";
 import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
+import { courseAggregateMessages } from "./host/teacher/course-aggregate/messages.hr";
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
@@ -106,6 +107,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/kolegiji", label: t.teacherCourses.title, kind: "teacherCourses", roles: ["teacher"], current: "/nastavnik" },
   // WEB-2143: N-04 "Popis studenata", reached from the course card (N-01).
   { path: "/nastavnik/kolegiji/[courseId]/studenti", label: courseStudentsMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // PIL-K-ZBIRNO: the course aggregate (N-17), reached from the course roster (N-04).
+  { path: "/nastavnik/kolegiji/[courseId]/zbirno", label: courseAggregateMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/rad/[id]", label: t.liveView.context, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/reprodukcija", label: t.replay.titleTeacher, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/predaja", label: workText.receipt.title, kind: "pending", roles: ["teacher"] },

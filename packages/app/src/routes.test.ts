@@ -116,6 +116,16 @@ describe("the teacher's pages of Ductus app/", () => {
   });
 });
 
+describe("the course aggregate (PIL-K-ZBIRNO)", () => {
+  it("is a page of PAGES for a teacher only, under the course", () => {
+    expect(PAGES.some((p) => p.path === "/nastavnik/kolegiji/[courseId]/zbirno")).toBe(true);
+    expect(resolve("/nastavnik/kolegiji/k1/zbirno", "teacher")).toMatchObject({ kind: "page", page: { label: "Zbirni pregled kolegija", current: "/nastavnik" } });
+    expect(resolve("/nastavnik/kolegiji/k1/zbirno", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
+    expect(resolve("/nastavnik/kolegiji/k1/zbirno", null)).toEqual({ kind: "redirect", to: "/" });
+    expect(internalRoute("/app/web/nastavnik/kolegiji/k1/zbirno", "/app/web")).toBe("/nastavnik/kolegiji/k1/zbirno");
+  });
+});
+
 describe("the student data export (WEB-1302)", () => {
   it("opens for the administrator and for a signed-in account without a role of its own", () => {
     expect(resolve("/ustanova/izvoz-podataka", "admin")).toMatchObject({ kind: "page", page: { label: "Izvoz podataka studenta" } });

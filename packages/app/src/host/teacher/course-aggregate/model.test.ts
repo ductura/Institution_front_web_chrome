@@ -17,7 +17,7 @@ describe("course aggregate (WEB-1706)", () => {
   });
 
   it("has its own state below the threshold and shows no number", () => {
-    const read: AggregateRead = { kind: "ready", data: { students: MIN_STUDENTS - 1, counts: { submitted: 4, afterDeadline: 0, continuous: 3, withGaps: 1 } } };
+    const read: AggregateRead = { kind: "ready", data: { students: MIN_STUDENTS - 1, counts: { submitted: 2, inProgress: 1, notStarted: 1 } } };
     expect(aggregateView(read)).toEqual({ kind: "suppressed" });
     expect(aggregateView({ kind: "suppressed" })).toEqual({ kind: "suppressed" });
     expect(text.suppressedTitle).toBe("Premalo studenata za prikaz");

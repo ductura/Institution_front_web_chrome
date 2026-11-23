@@ -2,8 +2,8 @@
 // closed list of measures for the whole course: no names, no scale, no ranking. Below the threshold
 // the whole view is replaced by the "suppressed" state; a measure whose count or whose complement
 // is below the threshold is hidden too, because the complement would give a small group away.
-// No server route exists yet: the port is the smallest contract the plan implies (a probe answer
-// stands in for it in the tests). This module makes no network call.
+// The real port (./port.ts, PIL-K-ZBIRNO) reads course.aggregate.get; its measures are the stages the
+// route gives (not started, in progress, submitted). This module makes no network call.
 // P-D1 (PIL-D1-BEZ-OCJENE): a practice assignment never enters the aggregate. The port is asked only for
 // the course's other assignments; a course with practice assignments only has its own state.
 import { courseAggregateMessages as text } from "./messages.hr";
@@ -12,7 +12,7 @@ import { courseAggregateMessages as text } from "./messages.hr";
 export const MIN_STUDENTS = 5;
 
 /** The closed list of measures; nothing outside it is ever shown. */
-export const MEASURES = ["submitted", "afterDeadline", "continuous", "withGaps"] as const;
+export const MEASURES = ["submitted", "inProgress", "notStarted"] as const;
 export type MeasureKey = (typeof MEASURES)[number];
 
 export type AggregateData = {
@@ -27,7 +27,10 @@ export type AggregateRead =
   | { readonly kind: "unavailable" };
 
 export interface CourseAggregatePort {
-  /** The aggregate of the course over exactly these assignments (never a practice one). */
+  /**
+   * The aggregate of the course over exactly these assignments (never a practice one). course.aggregate.get
+   * takes only the course: the real port asks it only when such an assignment exists (see ./port.ts).
+   */
   read(courseId: string, assignmentIds: readonly string[]): Promise<AggregateRead>;
 }
 
@@ -57,9 +60,8 @@ export type AggregateView =
 
 const LABELS: Readonly<Record<MeasureKey, string>> = {
   submitted: text.measureSubmitted,
-  afterDeadline: text.measureAfterDeadline,
-  continuous: text.measureContinuous,
-  withGaps: text.measureWithGaps,
+  inProgress: text.measureInProgress,
+  notStarted: text.measureNotStarted,
 };
 
 const valid = (n: number, max: number): boolean => Number.isInteger(n) && n >= 0 && n <= max;
@@ -101,4 +103,9 @@ export async function loadAggregate(port: CourseAggregatePort, courseId: string,
   } catch {
     return { kind: "unavailable" };
   }
+}
+
+/** This screen's own path: where sign-in returns after a 401. */
+export function aggregatePath(courseId: string): string {
+  return `/nastavnik/kolegiji/${encodeURIComponent(courseId)}/zbirno`;
 }
