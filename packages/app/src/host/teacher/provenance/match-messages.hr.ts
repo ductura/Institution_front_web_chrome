@@ -2,7 +2,7 @@
 // "prepisano" or claims authorship; the match is a plain comparison of text.
 export const matchText = {
   heading: "Podudaranje s odgovorom pomoćnika",
-  intro: "Osam ili više riječi zaredom jednako je odgovoru koji je student dobio od pomoćnika u Ducturi. Razgovor je automatski priložen izjavi kao preneseni tekst.",
+  intro: "Osam ili više riječi zaredom jednako je odgovoru pomoćnika u Ducturi. Razgovor je automatski priložen izjavi kao preneseni tekst.",
   neutral: "Ovo je obična usporedba teksta i ništa ne govori o autorstvu.",
   caption: "Priloženi razgovori s pomoćnikom",
   noConversation: "Uz ovaj udio još nema priloženog razgovora.",

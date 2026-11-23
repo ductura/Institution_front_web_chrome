@@ -29,8 +29,12 @@ export function matchOf(findings: readonly MatchFinding[], parts: readonly { rea
   return findings.length === 0 && percent === 0 ? { kind: "none" } : { kind: "ready", percent, findings };
 }
 
-/** „Podudara se s odgovorom pomoćnika · N %”, with „manje od 1 %” for a share that rounds to nothing. */
+/**
+ * „Podudara se s odgovorom pomoćnika · N %”, with „manje od 1 %” for a share above 0 that rounds to nothing.
+ * A share of 0 (findings without a share) has no figure: the line names the kind only.
+ */
 export function shareLabel(percent: number): string {
+  if (percent <= 0) return originText.kindAssistantMatch;
   const value = percent < 1 ? originText.lessThanOne : `${Math.round(percent)} %`;
   return `${originText.kindAssistantMatch} · ${value}`;
 }

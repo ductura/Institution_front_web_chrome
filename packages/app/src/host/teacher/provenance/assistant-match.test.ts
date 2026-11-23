@@ -62,6 +62,7 @@ describe("PIL-P1-PODUDARANJE-KARTA: model", () => {
     expect(matchOf([], fakeParts(2))).toEqual({ kind: "ready", percent: 2, findings: [] });
     expect(shareLabel(4)).toBe(`${LABEL} · 4 %`);
     expect(shareLabel(0.4)).toBe(`${LABEL} · manje od 1 %`);
+    expect(shareLabel(0)).toBe(LABEL);
     const second = { ...FAKE_FINDING, messageId: "00000000-0000-4000-8000-00000000a002", runWords: 21 };
     expect(matchRows([FAKE_FINDING, second]).map((row) => row.words)).toEqual(["11 riječi", "21 riječ"]);
     const keys = matchRows([FAKE_FINDING, FAKE_FINDING]).map((row) => row.key);
@@ -79,6 +80,10 @@ describe("PIL-P1-PODUDARANJE-KARTA: view", () => {
     expect(out).toContain('<h3 id="assistant-match-h"');
     const top = renderToStaticMarkup(createElement(AssistantMatchView, { read: { kind: "ready", percent: 4, findings: [FAKE_FINDING] }, onRetry: () => {}, level: 2 }));
     expect(top).toContain('<h2 id="assistant-match-h"');
+    // A parent that already lists the share (the student's composition) does not get it twice.
+    const listed = renderToStaticMarkup(createElement(AssistantMatchView, { read: { kind: "ready", percent: 4, findings: [FAKE_FINDING] }, onRetry: () => {}, shareListed: true }));
+    expect(listed).not.toContain("data-assistant-match-share");
+    expect(listed).toContain(matchText.colAttached);
   });
 
   it("does not exist while there is nothing: flag off, loading, not found, signed out", () => {

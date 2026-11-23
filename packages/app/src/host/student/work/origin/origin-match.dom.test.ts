@@ -21,7 +21,7 @@ describe("student's Podrijetlo teksta with the assistant match", () => {
   let root: Root | undefined;
   afterEach(() => { act(() => root?.unmount()); document.body.innerHTML = ""; });
 
-  const mount = async (read: OriginRead, match: MatchRead) => {
+  const mount = async (read: OriginRead | null, match: MatchRead) => {
     const { call, calls } = fakeMatchCall(match);
     const host = document.createElement("div");
     document.body.append(host);
@@ -30,10 +30,11 @@ describe("student's Podrijetlo teksta with the assistant match", () => {
     return { host, calls, section: host.querySelector('[data-assistant-match="ready"]') };
   };
 
-  it("composition ready, match found: the share and the attached conversation, under an h2", async () => {
-    const { calls, section } = await mount(readOfParts(parts(4)), { kind: "ready", percent: 4, findings: [FAKE_FINDING] });
+  it("composition ready, match found: the share once and the attached conversation, under an h2", async () => {
+    const { host, calls, section } = await mount(readOfParts(parts(4)), { kind: "ready", percent: 4, findings: [FAKE_FINDING] });
     expect(calls).toEqual([DOCUMENT]);
-    expect(section?.textContent).toContain(`${LABEL} · 4 %`);
+    expect(host.textContent?.split(`${LABEL} · 4 %`)).toHaveLength(2);
+    expect(section?.querySelector("[data-assistant-match-share]")).toBeNull();
     expect(section?.querySelectorAll("tbody tr")).toHaveLength(1);
     expect(section?.querySelector("h2")).not.toBeNull();
   });
@@ -49,11 +50,12 @@ describe("student's Podrijetlo teksta with the assistant match", () => {
     const empty = readOfParts(parts(0).map((p) => ({ ...p, percent: 0 })));
     expect(empty).toEqual({ kind: "empty" });
     const { section } = await mount(empty, { kind: "ready", percent: 0, findings: [FAKE_FINDING] });
-    expect(section?.textContent).toContain(`${LABEL} · manje od 1 %`);
+    expect(section?.querySelector("[data-assistant-match-share]")?.textContent).toBe(LABEL);
+    expect(section?.textContent).not.toContain("%");
   });
 
   it("composition unavailable or not read yet: no section and no read of the match", async () => {
-    for (const read of [{ kind: "unavailable" }, { kind: "notFound" }, { kind: "signedOut" }] as const) {
+    for (const read of [null, { kind: "unavailable" }, { kind: "notFound" }, { kind: "signedOut" }] as const) {
       const { host, calls } = await mount(read, { kind: "ready", percent: 4, findings: [FAKE_FINDING] });
       expect(host.querySelector("[data-assistant-match]")).toBeNull();
       expect(calls).toEqual([]);
