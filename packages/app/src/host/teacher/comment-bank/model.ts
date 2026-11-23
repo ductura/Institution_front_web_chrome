@@ -118,6 +118,24 @@ export async function publishDraftGroup(
   return result;
 }
 
+/**
+ * The drafts to show after a publication, or null when the list shown stays as it is. Published:
+ * none are left. Changed (409): nothing was published, so the list is read again from the server;
+ * when that read fails the old list stays, with the message.
+ */
+export async function draftsAfterPublish(
+  port: DraftCommentsPort, assignmentId: string, result: PublishResult,
+): Promise<readonly WorkComment[] | null> {
+  if (result.kind === "published") return [];
+  if (result.kind !== "changed") return null;
+  try {
+    const read = await port.listDrafts(assignmentId);
+    return read.kind === "ready" ? read.drafts : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Removes a bank entry; the caller drops it from the list only on "removed" (the server's answer). */
 export async function removeBankEntry(port: CommentBankPort, entryId: string): Promise<BankRemove> {
   try {
