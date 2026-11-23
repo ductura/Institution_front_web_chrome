@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Tag } from "@ductura/ui";
+import { Button, PracticeBadge, Tag } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -32,6 +32,7 @@ function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base
           {row.kind === "predano" ? <span>{t.submitted}</span> : <span>{(row.extended ? t.extendedDue : t.due).replace("{due}", dueText(row.dueAt))}</span>}
           {near === null ? null : <Tag tone="warn">{near}</Tag>}
           {row.kind === "obavijest" ? <Tag tone="open">{t.noticeFirst}</Tag> : null}
+          <PracticeBadge practice={row.practice} />
         </span>
       </span>
       <span className={styles.itemActions}>

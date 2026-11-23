@@ -2,7 +2,7 @@
 
 // WEB-2145: the tasks of one N-01 course card with their facts, and the banner of an interrupted publish.
 // Layout only: the classes are those of the course card (assignment-card) and @ductura/ui components.
-import { Skeleton } from "@ductura/ui";
+import { PracticeBadge, Skeleton } from "@ductura/ui";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -13,6 +13,7 @@ import { useHost } from "../../context";
 import cardStyles from "../assignment-card/AssignmentCards.module.css";
 import { assignmentCardMessages as card } from "../assignment-card/messages.hr";
 import { dueText } from "../assignment-card/model";
+import { usePractice } from "../assignment-card/practice";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { assignmentFactsMessages as text } from "./messages.hr";
 import { factsOf, interruptedOf, publishedIn, type AssignmentReads } from "./model";
@@ -66,12 +67,14 @@ function Facts({ reads }: { reads: AssignmentReads }) {
 export function CourseTasks({ course }: { course: TeacherCourse }) {
   const { base } = useHost();
   const [read, retry] = useCourseFacts(course);
+  const practice = usePractice(course.assignments);
   return (
     <>
       {course.assignments.map((assignment, index) => (
         <div key={assignment.id} className={cardStyles.task}>
           <h3>{assignment.title}</h3>
-          <p className="meta">{card.due} {dueText(assignment.dueAt)}{Date.parse(assignment.dueAt) < Date.now() ? ` · ${text.deadlinePassed}` : ""}</p>
+          <p className="meta">{card.due} {dueText(assignment.dueAt)}{Date.parse(assignment.dueAt) < Date.now() ? ` · ${text.deadlinePassed}` : ""}{" "}
+            <PracticeBadge practice={practice.get(assignment.id)} /></p>
           {read === null || read.kind === "signedOut" ? (
             <div><p className="meta">{text.loading}</p><Skeleton label={text.loading} lines={2} /></div>
           ) : read.kind === "unavailable" ? (

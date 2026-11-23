@@ -9,9 +9,11 @@ import { restoreMessages as text } from "./messages.hr";
 
 /** "Vrati raniju verziju" (WEB-1907; P-D7): pick an earlier version, confirm, save it as a new revision. */
 export default function RestoreVersion({
-  documentId, versions, port, onRestored, onStale,
+  documentId, versions, port, onRestored, onRecorded, onStale,
 }: {
   documentId: string; versions: readonly Version[]; port: RestorePort; onRestored?: () => void;
+  /** A restore is in the sheet, confirmed or waiting for the receipt; the caller keeps its label (INT-21). */
+  onRecorded?: (fromRevision: number, confirmed: boolean) => void;
   /** The list is older than the server's head: the caller reads it again (PIL-D7-OBNOVA). */
   onStale?: () => void;
 }) {
@@ -24,9 +26,6 @@ export default function RestoreVersion({
   const running = useRef(false);
   const [result, setResult] = useState<RestoreOutcome | null>(null);
   const [from, setFrom] = useState(0);
-  // This page's restores, so each new revision carries "vraćeno iz verzije N" (PIL-D7-OBNOVA), also
-  // while the server's receipt is pending. Client-only: the evidence contract has no place for it yet.
-  const [restored, setRestored] = useState<readonly { at: number; from: number; confirmed: boolean }[]>([]);
   const options = restorableVersions(versions);
 
   const run = async () => {
@@ -42,7 +41,7 @@ export default function RestoreVersion({
     setFrom(revision);
     if (outcome.kind === "saved" || outcome.kind === "pending") {
       setPicked("");
-      setRestored((list) => [...list, { at: list.length, from: revision, confirmed: outcome.kind === "saved" }]);
+      onRecorded?.(revision, outcome.kind === "saved");
     }
     if (outcome.kind === "saved") onRestored?.();
     if (outcome.kind === "stale") onStale?.();
@@ -76,16 +75,9 @@ export default function RestoreVersion({
         {result?.kind === "saved" ? <p role="status">{text.done(from)}</p> : null}
         {result?.kind === "stale" ? <p role="alert">{text.stale}</p> : null}
         {result?.kind === "signedOut" ? <p role="alert">{text.signedOut}</p> : null}
-        {result?.kind === "pending" ? <p role="status">{text.pending}</p> : null}
+        {/* "pending" is announced by RestoreHost, which also says when the receipt comes (INT-21). */}
         {result?.kind === "unavailable" ? <><p role="alert">{text.unavailable}</p><Button disabled={busy} onClick={() => void run()}>{text.retry}</Button></> : null}
       </div>
-      {restored.length > 0 ? (
-        <ul aria-label={text.title}>
-          {restored.map((r) => (
-            <li key={r.at} data-restored-from={r.from}>{r.confirmed ? text.restoredVersion(r.from) : text.restoredPending(r.from)}</li>
-          ))}
-        </ul>
-      ) : null}
     </section>
   );
 }

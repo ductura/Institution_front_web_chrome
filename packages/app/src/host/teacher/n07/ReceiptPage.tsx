@@ -3,7 +3,7 @@
 import { Button, Details } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
-import { goToSignIn } from "@/client/api";
+import { createApi, goToSignIn } from "@/client/api";
 import { readTeacherWorkReceipt } from "@/client/teacher-work";
 import { appHref } from "@/components/shell/nav";
 import { useProcessSummary } from "@/components/teacher/SummaryCard";
@@ -14,9 +14,11 @@ import { LIVE_PORT, type RevisionPort } from "../../editor/work/review/review-mo
 import AiDeclarationSection from "../ai-declaration/AiDeclarationSection";
 import { FallbackPanel, PreSubmitPanel } from "../pre-submit/PreSubmitPanel";
 import { showFallback } from "../pre-submit/model";
+import { PracticeNotice } from "../submissions/grade/GradeGate";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { fallbackKey, isSubmittedRead, qrCells, receiptView, type ReceiptInput, type ReceiptView, type Row } from "./model";
 import { n07Messages as text } from "./messages.hr";
+import { readWorkPractice, type PracticeCall } from "./practice";
 import { Kv, StateBlock, WorkPage, WorkPanel, workPageStyles as styles } from "./WorkPage";
 
 const rows = (list: readonly Row[]) => list.map(({ id, label, value }) => <Kv key={id} label={label}>{value}</Kv>);
@@ -121,6 +123,15 @@ export default function N07ReceiptPage({ documentId, workHref, current, port = L
     return () => { active = false; };
   }, [documentId, here, attempt, current]);
 
+  // P-D1: a practice assignment is never graded; the receipt says so calmly (no error, no grade action).
+  const [practice, setPractice] = useState(false);
+  useEffect(() => {
+    let active = true;
+    setPractice(false);
+    void readWorkPractice(createApi() as unknown as PracticeCall, documentId).then((next) => { if (active && current()) setPractice(next); });
+    return () => { active = false; };
+  }, [documentId, current]);
+
   const retry = () => { setInput(null); setAttempt((n) => n + 1); };
   const copy = (hex: string) => {
     void navigator.clipboard.writeText(hex)
@@ -145,6 +156,7 @@ export default function N07ReceiptPage({ documentId, workHref, current, port = L
           </div>
         </section>
       )}
+      {practice && <PracticeNotice />}
       {submitted && <PreSubmitPanel outcome={summary.outcome} summaryHref={summaryHref} onReload={() => void summary.load()} />}
       <ReceiptPanel view={view} onRetry={retry} onCopy={copy} verifyHref={(path) => appHref(base, path)} />
       {submitted && showFallback(fallbackKey(view)) && <FallbackPanel fallback={{ kind: "unavailable" }} />}

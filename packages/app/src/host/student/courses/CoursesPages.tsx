@@ -8,7 +8,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
-import { Button, Tag } from "@ductura/ui";
+import { Button, PracticeBadge, Tag } from "@ductura/ui";
 
 import { appHref } from "../../../../../../src/components/index.ts";
 import { createApi, goToSignIn } from "../../../../../../src/client/api.ts";
@@ -18,7 +18,7 @@ import { nextPath, type Base } from "../../../bases";
 import { useHost } from "../../context";
 import { protoDateTime } from "../home/format";
 import { coursesText as t } from "./messages.hr";
-import { effectiveDue, groupLabels, nearTag, ROW_ACTION, rowKind, type RowKind } from "./model";
+import { effectiveDue, groupLabels, nearTag, practiceOf, ROW_ACTION, rowKind, type RowKind } from "./model";
 import { readCourses, type Assignment, type Course, type CoursesCall, type CoursesRead } from "./read";
 import own from "./courses.module.css";
 
@@ -101,6 +101,7 @@ export function TaskItem({ a, course, kind, now, line }: { a: Assignment; course
           {line ?? (kind === "submitted" ? <span>{t.submittedNoTime}</span> : <span>{t.dueLabel.replace("{time}", whenHr(due))}</span>)}
           {line === undefined && near !== null ? <Tag tone="warn">{near}</Tag> : null}
           {line === undefined && kind === "notice" ? <Tag tone="open">{t.noticeFirst}</Tag> : null}
+          <PracticeBadge practice={practiceOf(a)} />
         </span>
       </span>
       <a className={own.open} data-tone={action.primary ? "primary" : "secondary"} aria-label={`${action.label}: ${a.title}`}

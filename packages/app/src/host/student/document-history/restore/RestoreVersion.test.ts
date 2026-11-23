@@ -59,7 +59,11 @@ describe("RestoreVersion: one restore at a time (PIL-D7-OBNOVA)", () => {
 
   it("the retry button is disabled while a retry runs and the port is asked once", async () => {
     const { port, restore, finish } = slowPort();
-    const el = await mount(port);
+    const onRecorded = vi.fn();
+    host = document.createElement("div");
+    document.body.append(host);
+    await act(async () => { createRoot(host!).render(createElement(RestoreVersion, { documentId: "rad-1", versions: FAKE_VERSIONS, port, onRecorded })); });
+    const el = host;
     await pick(el, "2");
     await act(async () => { button(el, text.action).click(); });
     await act(async () => { button(el, text.confirm).click(); });
@@ -70,7 +74,8 @@ describe("RestoreVersion: one restore at a time (PIL-D7-OBNOVA)", () => {
     expect(restore).toHaveBeenCalledTimes(2);
     expect(button(el, text.retry)?.disabled ?? true).toBe(true);
     await act(async () => { finish({ kind: "pending" }); });
-    expect(el.querySelector("[data-restored-from='2']")?.textContent).toBe(text.restoredPending(2));
+    // The label is RestoreHost's now (INT-21): the pending restore reaches it once.
+    expect(onRecorded.mock.calls).toEqual([[2, false]]);
   });
 
   it("a stale answer asks the caller to read the list again", async () => {

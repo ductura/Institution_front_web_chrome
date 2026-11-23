@@ -19,6 +19,8 @@ export const restoreMessages = {
   pending: "Tekst odabrane verzije vraćen je u rad i sprema se. Kad poslužitelj potvrdi spremanje, pojavit će se u povijesti kao nova verzija.",
   restoredVersion: (from: number): string => `Nova verzija · vraćeno iz verzije ${from}`,
   restoredPending: (from: number): string => `Nova verzija · vraćeno iz verzije ${from} · čeka potvrdu poslužitelja`,
+  confirmedLater: (from: number): string => `Poslužitelj je potvrdio spremanje. Verzija ${from} vraćena je kao nova verzija rada.`,
+  restoredList: "Vraćene verzije",
   retry: "Pokušaj ponovno",
   version: (revision: number, minute: string): string => `Verzija ${revision} · ${formatMinute.format(new Date(minute))}`,
   replayStep: (from: number): string => `Vraćena verzija ${from}`,

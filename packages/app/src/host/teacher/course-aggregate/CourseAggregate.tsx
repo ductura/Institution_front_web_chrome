@@ -3,24 +3,26 @@
 import { useEffect, useState } from "react";
 import { Button } from "@ductura/ui";
 
-import { loadAggregate, type AggregateView, type CourseAggregatePort } from "./model";
+import { loadAggregate, type AggregateView, type CourseAggregatePort, type CourseAssignment } from "./model";
 import { courseAggregateMessages as text } from "./messages.hr";
 
 /**
  * The course aggregate (WEB-1706; M6.10, N-17): shares of a closed list of measures, no names and no
  * scale. Below the threshold the suppressed state is shown instead of any number. The chart has a
- * text alternative and the same numbers are also in the list below it.
+ * text alternative and the same numbers are also in the list below it. Practice assignments never enter it (P-D1).
  */
-export default function CourseAggregate({ courseId, port }: { courseId: string; port: CourseAggregatePort }) {
+export default function CourseAggregate(
+  { courseId, assignments, port }: { courseId: string; assignments: readonly CourseAssignment[]; port: CourseAggregatePort },
+) {
   const [view, setView] = useState<AggregateView | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
     setView(null);
-    void loadAggregate(port, courseId).then((next) => { if (active) setView(next); });
+    void loadAggregate(port, courseId, assignments).then((next) => { if (active) setView(next); });
     return () => { active = false; };
-  }, [courseId, port, attempt]);
+  }, [courseId, assignments, port, attempt]);
 
   const retry = <Button onClick={() => setAttempt((n) => n + 1)}>{text.retry}</Button>;
 
@@ -29,6 +31,7 @@ export default function CourseAggregate({ courseId, port }: { courseId: string; 
       <h2>{text.title}</h2>
       {view === null ? <p role="status">{text.loading}</p> : null}
       {view?.kind === "empty" ? <p>{text.empty}</p> : null}
+      {view?.kind === "practiceOnly" ? <p role="status">{text.practiceOnly}</p> : null}
       {view?.kind === "suppressed" ? (
         <div data-state="suppressed" role="status">
           <h3>{text.suppressedTitle}</h3>
@@ -40,6 +43,7 @@ export default function CourseAggregate({ courseId, port }: { courseId: string; 
       {view?.kind === "ready" ? (
         <>
           <p>{text.note}</p>
+          {view.practiceLeftOut > 0 ? <p>{text.practiceLeftOut}</p> : null}
           <h3>{text.chartTitle}</h3>
           <div role="img" aria-label={view.chartAlt} data-chart="aggregate">
             {view.measures.map((m) => (

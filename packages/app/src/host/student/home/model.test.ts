@@ -23,6 +23,12 @@ describe("E-2 rows", () => {
     expect(kindOf(COURSES[1]!.assignments[0]!, states)).toBe("zadatak");
     expect(kindOf(COURSES[1]!.assignments[0]!, null)).toBe("zadatak");
   });
+  it("carries the practice badge only for a row the server marked isPractice: true (P-D1)", () => {
+    const practice = { ...A, id: "p1", isPractice: true } as MyCourse["assignments"][number];
+    const regular = { ...A, id: "r1", isPractice: false } as MyCourse["assignments"][number];
+    const rows = flatRows([{ id: "c", name: "Kolegij P", assignments: [practice, regular, A] }], null);
+    expect(rows.map((r) => [r.id, r.practice])).toEqual([["p1", true], ["r1", false], ["a1", false]]);
+  });
   it("lists every assignment flat with its course, the extended deadline replacing the original", () => {
     const rows = flatRows(COURSES, new Map());
     expect(rows.map((r) => [r.id, r.course])).toEqual([["a1", "Kolegij A"], ["a2", "Kolegij A"], ["a3", "Kolegij A"], ["a4", "Kolegij B"]]);
