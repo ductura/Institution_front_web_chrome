@@ -16,6 +16,7 @@ export const commentBankMessages = {
   bankUnavailable: "Banka komentara trenutačno nije dostupna.",
   draftSaved: "Skica je zabilježena na poslužitelju. Student je ne vidi.",
   published: "Skupina komentara je objavljena. Student ih sada vidi.",
+  draftsChanged: "Nacrti su se u međuvremenu promijenili, osvježi popis",
   failed: "Radnja nije zabilježena. Pokušajte ponovno.",
   unknown: "Nije poznato je li radnja zabilježena. Osvježite stranicu pa provjerite skice.",
   signedOut: "Sesija je istekla. Prijavite se ponovno.",
