@@ -1608,7 +1608,7 @@ legend { font-weight:600; padding:0 4px; }
       if (!n.ed) n.ed = Object.assign({ mail: 'ne' }, n.base);
       var ed = n.ed, get = function (f, d) { return ed[f] != null ? ed[f] : d; };
       var top = '';
-      if (v === 'sukob') top = '<div class="banner warn" role="alert" data-nf4="NZ-7"><p><b>Zadatak je u međuvremenu izmijenjen.</b> Netko je spremio verziju ' + (n.ver + 1) + ' dok ste uređivali verziju ' + n.ver + '. Vaše izmjene nisu spremljene. „Učitaj ponovno” prikazuje najnoviju verziju i briše Vaše nespremljene izmjene iz obrasca.</p><div class="acts"><button class="btn secondary" type="button" data-act="reload">Učitaj ponovno</button></div></div>';
+      if (v === 'sukob') top = '<div class="banner warn" role="alert" data-nf4="NZ-7"><p><b>Zadatak je u međuvremenu izmijenjen.</b> Netko je zapisao verziju ' + (n.ver + 1) + ' dok ste uređivali verziju ' + n.ver + '. Vaše izmjene nisu zapisane. „Učitaj ponovno” prikazuje najnoviju verziju i briše Vaše neunesene izmjene iz obrasca.</p><div class="acts"><button class="btn secondary" type="button" data-act="reload">Učitaj ponovno</button></div></div>';
       var form = '<form class="card" data-submit="saveVer" novalidate>' + (n.err ? '<p class="err" role="alert" id="ed-err">' + n.err + '</p>' : '') +
         '<div class="sb-kv"><span>Kolegij</span><b>Kolegij A</b></div><div class="sb-kv"><span>Zadatak</span><b>' + TASK_NAME.t1 + '</b></div>' +
         sec('ed-1', 'Rok, opseg i opis',
@@ -1619,7 +1619,7 @@ legend { font-weight:600; padding:0 4px; }
         sec('ed-2', 'Pravila o Asistentu i alatima', aiFs(get) + vanjFs(get) + qFs(get)) +
         sec('ed-3', 'Pravila predaje', rulesFs(get)) +
         sec('ed-4', 'Obavijest o izmjeni', mailFs(get, 'o izmjeni roka') ) +
-        sec('ed-5', 'Što ste promijenili u odnosu na verziju ' + n.ver, '<div id="df" aria-live="polite" data-nf4="NZ-7">' + diffBlock(n.base, ed, n.ver) + '</div><p class="meta">Usporedba se računa u pregledniku iz učitane verzije; ništa se ne sprema dok ne potvrdite.</p>') +
+        sec('ed-5', 'Što ste promijenili u odnosu na verziju ' + n.ver, '<div id="df" aria-live="polite" data-nf4="NZ-7">' + diffBlock(n.base, ed, n.ver) + '</div><p class="meta">Usporedba se računa u pregledniku iz učitane verzije; ništa se ne zapisuje dok ne potvrdite.</p>') +
         sec('ed-6', 'Ovako će student vidjeti obavijest', noticePreview(get)) +
         '<div class="sb-acts"><button class="btn" type="submit">Spremi kao verziju ' + (n.ver + 1) + '</button><a class="btn secondary" href="#kolegiji" data-go="kolegiji">Odustani</a></div></form>';
       var dlg = '';
@@ -1659,7 +1659,7 @@ legend { font-weight:600; padding:0 4px; }
     var n = n4(), ed = n.ed, mailNow = ed.mail === 'da' && ed.rok !== n.base.rok;
     n.base = Object.assign({}, ed, { mail: 'ne' }); n.ver += 1; if (sig) n.reset = true; n.mailSent = mailNow ? 4 : n.mailSent;
     n.ed = null; n.err = null; App.state.dlg = null; App.state.variant.uredi = 'puno'; App.go('kolegiji');
-    App.toast('Spremljeno kao verzija ' + n.ver + '.' + (sig ? ' Potvrdilo 0 od 4 studenta (nova verzija).' : ''));
+    App.toast('Verzija ' + n.ver + ' je zapisana na poslužitelju.' + (sig ? ' Potvrdilo 0 od 4 studenta (nova verzija).' : ''));
   }
 
   /* ---------- NF-4 NZ-14: Nastavni tim i grupe ---------- */
@@ -1690,7 +1690,7 @@ legend { font-weight:600; padding:0 4px; }
         var n = n4(), who = form.tn.value; if (n.team.some(function (x) { return x.who === who; })) { App.toast(who + ' je već u timu.'); return; }
         n.team.push({ who: who, role: form.tr.value }); App.state.variant.tim = 'puno'; App.rerender(); App.toast(who + ' je dodan u tim kolegija.');
       },
-      setGroups: function (form) { var n = n4(); n.grp = { g2: form.g2.value, g4: form.g4.value }; App.toast('Raspored po grupama je spremljen.'); }
+      setGroups: function (form) { var n = n4(); n.grp = { g2: form.g2.value, g4: form.g4.value }; App.toast('Raspored po grupama je zapisan.'); }
     }
   });
 
