@@ -9,7 +9,14 @@ export const FAKE_BANK: readonly BankEntry[] = [
 ];
 
 export function fakeCommentBankPort(entries: readonly BankEntry[] = FAKE_BANK): CommentBankPort {
-  return { read: async () => ({ kind: "ready", entries }) };
+  let held = entries;
+  return {
+    read: async () => ({ kind: "ready", entries: held }),
+    async remove(entryId) {
+      held = held.filter((entry) => entry.id !== entryId);
+      return { kind: "removed" };
+    },
+  };
 }
 
 export function fakeDraftCommentsPort(): DraftCommentsPort & {
