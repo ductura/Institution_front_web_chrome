@@ -123,6 +123,19 @@ test("a student lands on Vaš studentski prostor with the institution's name, wi
   expect(errors).toEqual([]);
 });
 
+/** LOK-WEB-8: the administrator's three reads, answering with invented data. */
+async function institutionReads(page: Page) {
+  const A = "11111111-1111-4111-8111-111111111111";
+  await page.route("**/api/v1/institution/teachers", (route) => route.fulfill({ json: {
+    pending: [{ personId: A, name: { givenName: "Ana", familyName: "Izmišljena" }, revokedAt: null }],
+    confirmed: [{ personId: "22222222-2222-4222-8222-222222222222", name: { givenName: "Ivo", familyName: "Primjer" }, confirmedAt: "2026-10-02T08:00:00.000Z", forReview: false }],
+  } }));
+  await page.route("**/api/v1/institution/admin/academic-years", (route) => route.fulfill({ json: { years: ["2026/2027"] } }));
+  await page.route("**/api/v1/institution/admin/courses?*", (route) => route.fulfill({ json: { academicYear: "2026/2027", courses: [
+    { courseId: A, name: "Izmišljeni seminar", students: 7, holder: null, team: [], groups: [] },
+  ] } }));
+}
+
 test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({ page }) => {
   const errors = errorsOf(page);
   await fakeServer(page, { status: 200, body: { roles: ["teacher"], institutionName: INSTITUTION } });
@@ -141,6 +154,7 @@ test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({
 
   await page.unrouteAll({ behavior: "wait" });
   await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
+  await institutionReads(page);
   await page.goto("/app/chrome/zadaci");
   await expect(page).toHaveURL(/\/app\/chrome\/ustanova$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pregled ustanove");
@@ -309,6 +323,7 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   const seen = await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
   // WEB-1406 (#303) put the faculty rules page here in place of the placeholder; no rule is published yet.
   await page.route("**/api/v1/institution/faculty-rules", (route) => route.fulfill({ json: { rules: [] } }));
+  await institutionReads(page);
   await page.goto("/app/web/ustanova/pravila");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pravila fakulteta");
   await expect(page.getByText("Za ovu vrstu rada pravilo još nije objavljeno.")).toBeVisible();
@@ -316,13 +331,14 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Korisnici" }).click();
   await expect(page).toHaveURL(/\/app\/web\/ustanova\/korisnici$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Korisnici");
-  await expect(page.getByRole("status")).toHaveText("Popis korisnika i uloga trenutačno nije dostupan.");
+  await expect(page.getByText("Ana Izmišljena")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Potvrdi ulogu" })).toBeVisible();
   expect(seen.me).toBe(1);
   await page.goto("/app/web/ustanova");
-  await expect(page.getByRole("status")).toHaveText("Pregled ustanove trenutačno nije dostupan.");
+  await expect(page.getByText("Potvrđeni nastavnici")).toBeVisible();
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Kolegiji" }).click();
   await expect(page).toHaveURL(/\/app\/web\/ustanova\/kolegiji$/);
-  await expect(page.getByText("Popis kolegija i akademskih godina trenutačno nije dostupan.")).toBeVisible();
+  await expect(page.getByText("Izmišljeni seminar")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Novi kolegij" })).toBeVisible();
   expect(seen.me).toBe(2);
   expect(errors).toEqual([]);
