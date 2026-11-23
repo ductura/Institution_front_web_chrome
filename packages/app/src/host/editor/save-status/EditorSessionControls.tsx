@@ -10,15 +10,20 @@ import { browserMarkStore, hasEnded, type SessionMark } from "@/client/session-m
 import styles from "../../SignOut.module.css";
 import { exitCopyHr } from "./messages.hr";
 import { copyStorage, keepExitCopy } from "./recovery";
+import { InputRhythmHost } from "./InputRhythmHost";
 import { SignOutSlot } from "./SignOutSlot";
 
-export function EditorSessionControls({ scope, session, assignmentId }: {
+export function EditorSessionControls({ scope, session, assignmentId, documentId }: {
   scope: string;
   session: SessionMark;
   assignmentId: string;
+  /** The work being written; with it the rhythm of entry is recorded (PIL-P1-RITAM-EDITOR). */
+  documentId?: string;
 }) {
   const target = useContext(SignOutSlot)?.target;
   return (
+    <>
+    {documentId === undefined ? null : <InputRhythmHost documentId={documentId} />}
     <LocalLogout
       buttonClassName={styles.signOut}
       action={LOGOUT_PATH}
@@ -29,5 +34,6 @@ export function EditorSessionControls({ scope, session, assignmentId }: {
         return keepExitCopy(copyStorage(), scope, { assignmentId, at: Date.now(), text });
       }}
     />
+    </>
   );
 }

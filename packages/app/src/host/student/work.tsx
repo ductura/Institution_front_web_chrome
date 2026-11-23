@@ -119,7 +119,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <ChapterPanel workId={assignmentId} /> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session, documentId }) => <>
-              <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
+              <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />
               <DirectEditSettingHost documentId={documentId} here={here} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
               <RulesHost role="student" />
