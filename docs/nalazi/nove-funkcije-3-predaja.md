@@ -45,9 +45,9 @@ Rute u aplikaciji (host): `/rad/{id}` (editor), `/rad/{id}/predaja` (ulaz u tok)
 ### 1.3 Korak 2: Izjava o korištenju generativne umjetne inteligencije (E-9)
 
 1. Naslov „Izjava o korištenju generativne umjetne inteligencije”, meta „po čl. 9 i 15 pravilnika fakulteta”.
-2. Blok „Zabilježeno u Ducturi” (oznaka „zabilježeno”): u pilotu uvijek „U ovom radu nije zabilježen razgovor s AI pomoćnikom.” jer asistenta nema (OC-1 isključeno, Q-10 odgođen).
+2. Blok „Zabilježeno u Ducturi” (oznaka „zabilježeno”): u pilotu „U ovom radu nije zabilježen razgovor s Asistentom.” samo dok nema razgovora; inače broj razgovora i priloga (stanje kad je asistent isključen vrijedilo je do 23. 11. 2026.). **Promijenjeno 23. 11. 2026.: asistent u pilotu radi.**
 3. Blok „Vaša izjava” (oznaka „izjavljeno”): četiri retka (Vanjski alati, Svrha, Faza rada, Ljudska pomoć `humanHelp {kind,text}`), „Uredi izjavu” otvara ugrađeno uređivanje; prazno: „Izjava još nije ispunjena.” + „Ispuni izjavu”.
-4. „Prilozi”: u pilotu „Nema razgovora za prilaganje.” (declaration-v1 `attachments maxItems 0`).
+4. „Prilozi”: u pilotu „Razgovori s Asistentom (n)” s „Priloži izjavi” / „Skini s izjave”; „Nema razgovora za prilaganje.” samo bez razgovora (declaration-v1 `attachments maxItems 0` je serverska praznina: **nedostaje**). **Promijenjeno 23. 11. 2026.: asistent u pilotu radi.**
 5. „Pitanje nastavnika” i polje „Odgovor (nije obavezan)” napisani su, ali `question: null`; ne prikazuju se.
 6. Potvrdni okvir „Potvrđujem izjavu”; dok nije označen „Dalje” je `aria-disabled` s razlogom „Dalje je moguće kad potvrdite izjavu.”. Potvrda se piše na poslužitelj (`student.declaration.put`); stanja izjave none, draft, confirmed, stale (tekst se promijenio nakon potvrde), bound (vezana uz predaju).
 7. „Natrag” vodi u editor; nakon potvrde „Dalje” vodi na korak 3. Greška učitavanja blokira potvrdu.
@@ -55,9 +55,9 @@ Rute u aplikaciji (host): `/rad/{id}` (editor), `/rad/{id}/predaja` (ulaz u tok)
 ### 1.4 Korak 3: Prije predaje (E-8) i sažetak procesa (PD-1)
 
 1. Uvod „Popis pokazuje je li sve priloženo. Ne ocjenjuje rad.”
-2. Pet redaka: (1) Izjava „Potvrđena” / „Još nije potvrđena.” + „Otvori izjavu”; (2) „Razgovori uz izjavu” (u pilotu „Broj priloženih razgovora trenutačno nije dostupan.”); (3) mjesta za izvor, (4) lijepljenja, (5) „Pravila oblika: Provjera oblika još nije pokrenuta.”. Redci 3 i 4 su danas statični tekst bez popisa i poveznica („Lijepljenja veća od praga: 1…; manja lijepljenja: 2. Lijepljenja ne zaustavljaju predaju.”).
+2. Pet redaka: (1) Izjava „Potvrđena” / „Još nije potvrđena.” + „Otvori izjavu”; (2) „Razgovori uz izjavu” (u pilotu broj razgovora i priloga uz Asistenta; prije 23. 11. 2026. „Broj priloženih razgovora trenutačno nije dostupan.”); (3) mjesta za izvor, (4) lijepljenja, (5) „Pravila oblika: Provjera oblika još nije pokrenuta.”. Redci 3 i 4 su danas statični tekst bez popisa i poveznica („Lijepljenja veća od praga: 1…; manja lijepljenja: 2. Lijepljenja ne zaustavljaju predaju.”).
 3. Poveznica „Dodaj napomenu (nije obavezna)” otvara obrazac PD-4 (do 600 znakova, `aria-invalid` pri praznom tekstu; napomene se samo dodaju).
-4. Desni stupac, sažetak procesa (PD-1, 11 odjeljaka): razdoblje rada, sesije, aktivno vrijeme uređivanja, verzije, lijepljenja, AI pomoćnik (u pilotu „nije dostupan”), praznine u zapisu, izjava, napomene studenta, stanje zapisa, karta podrijetla. Uvodna rečenica: „Rad još nije predan. Sažetak se dopunjuje dok pišete; nastavnik ga može otvoriti u svakom trenutku.” Uz odjeljke oznake „opaženo” i „izjavljeno”.
+4. Desni stupac, sažetak procesa (PD-1, 11 odjeljaka): razdoblje rada, sesije, aktivno vrijeme uređivanja, verzije, lijepljenja, Asistent (stanje, broj razgovora i priloga; prije 23. 11. 2026. „nije dostupan”), praznine u zapisu, izjava, napomene studenta, stanje zapisa, karta podrijetla. Uvodna rečenica: „Rad još nije predan. Sažetak se dopunjuje dok pišete; nastavnik ga može otvoriti u svakom trenutku.” Uz odjeljke oznake „opaženo” i „izjavljeno”.
 5. Gumbi: „Natrag” (izjava) i „Dalje” (slanje); s nepotvrđenom izjavom „Dalje” zamjenjuje „Natrag na izjavu” (vrata izjave). Bez mreže: „Nema veze s poslužiteljem. Predaja traži vezu; …”, oznaka ploče „Bez veze”, „Dalje” `aria-disabled`.
 
 ### 1.5 Korak 4: Predaja (E-10) i dijalog „Predati rad?” (PD-3)
@@ -112,13 +112,13 @@ Oznake: **G-n** nalaz; uz svaki ekran, element i stanje piše je li provjereno u
 - **G-1 Ulaz iz editora se gubi na uskim zaslonima.** „Predaja rada” je odsječena na 1050 i 400 px (zaglavlje se vodoravno pomiče), a „Proba predaje” je iza ladice kartice Mentor (≤1050 px: dva dodira). Student s mobitela teško pronalazi ulaz (dio 2: G-23, P-17). Preuzeto iz revizije; provjeriti u pregledniku.
 - **G-2 Proba predaje i stvarna predaja se razilaze.** Proba čita lokalnu oznaku izjave i uvijek „Podatak trenutačno nije dostupan.” za tri retka; stvarni koraci čitaju stanje izjave s poslužitelja (`declaration-gate.ts`). Student može vidjeti „Potvrđena.” u probi i „Izjava nije potvrđena” pri predaji (dio 2: G-19, G-24; P-11, P-16). Provjereno u kodu.
 - **G-3 Pet koraka, ali „Tekst” nije korak u ploči.** Traka pokazuje „1 Tekst” bez poveznice u istom okviru; povratak je „Natrag na rad”. Poredak (Izjava prije Prije predaje) nije očit onome tko očekuje „pregled pa izjava”. Provjeriti u pregledniku (je li korak 1 klikabilan).
-- **G-4 Izjava: AI dio je prazan, ali korak izgleda kao da nešto bilježi.** „Zabilježeno u Ducturi” uvijek piše „U ovom radu nije zabilježen razgovor s AI pomoćnikom.”; student koji je koristio vanjski alat vidi samo vlastita četiri retka. Nigdje ne piše zašto je blok prazan (asistent nije uključen), niti što je „zabilježeno” (`viewOf` daje `recorded: []`, declaration-v1 `ai.recorded maxItems 0`). Provjereno u kodu.
+- **G-4 Izjava: AI dio je prazan, ali korak izgleda kao da nešto bilježi.** „Zabilježeno u Ducturi” uvijek piše „U ovom radu nije zabilježen razgovor s AI pomoćnikom.”; student koji je koristio vanjski alat vidi samo vlastita četiri retka. Nigdje ne piše zašto je blok prazan, niti što je „zabilježeno” (`viewOf` daje `recorded: []`, declaration-v1 `ai.recorded maxItems 0`). Provjereno u kodu.
 - **G-5 Izjava: mrtve radnje.** „Pitanje nastavnika” i „Odgovor” (R-33), „Dodaj objašnjenje” (R-35), „Obrazac izjave” (R-34), „Pregledaj razgovor” (R-31) i dijalog „Razgovor N” (PD-2) napisani su, ali u hostu nedohvatljivi (`question: null`, `chats: []`, `recorded: []`). Ugovor nema pitanja ni odgovora; plan ne navodi val. Provjereno u kodu i reviziji.
 - **G-6 Izjava: „Uredi izjavu” i potvrda žive na stranici, ne u dijalogu.** Odluka 2165 kaže dijalog ch-h; danas je stranica koraka. Student koji potvrdi izjavu pa promijeni tekst dobiva stanje `stale`, no ekran ne objašnjava da se potvrda ponavlja. Provjereno u kodu; tekst za `stale` provjeriti u pregledniku.
 - **G-7 Prije predaje: dva retka su samo tekst.** Mjesta za izvor i lijepljenja nemaju popis ni poveznicu na mjesto u tekstu (prototip: dvije poveznice, „Nema otvorenih mjesta za izvor.”, „Oznaka podrijetla dodana uz sva zalijepljena mjesta.”); „Pravila oblika: Provjera oblika još nije pokrenuta.” je dvosmislena (C-19: „nije”). Student ne vidi što bi trebao pogledati. Provjereno u kodu i reviziji.
 - **G-8 Prije predaje: s nepotvrđenom izjavom poruka stoji dvaput.** „Još nije potvrđena.” je i u retku i uz „Natrag na izjavu”; „Dalje” je zamijenjen drugim gumbom (prototip uvijek ima „Dalje”). Mali nalaz; zbunjuje čitač zaslona (dva istovjetna odlomka). Provjereno u reviziji.
 - **G-9 Napomena uz rad: dodavanje je pucalo.** Revizija (23. 11.) je našla da klijent traži `createdAt` sa 6 decimala, a ugovor daje 3: dodavanje napomene javlja „Nije potvrđeno je li napomena dodana. Osvježite stranicu…”, a popis s ijednom napomenom pada u „Napomene trenutačno nije moguće učitati.”. Jesu li to popravili kasniji PR-ovi, nije provjereno; provjeriti prije nego se zadatak otvara.
-- **G-10 Sažetak procesa na koraku 3: greška u VIZ-u, i prazan u pilotu.** Odjeljci „Verzije”, „AI pomoćnik” i „Izjava” (datum potvrde, blok „Izjava studenta”) su „nije dostupan”; PD-1 ima 11 odjeljaka, a student ih u pilotu vidi pet do šest. „Prikaži mjesto u radu” vodi na `/rad/{id}` bez mjesta (i u prototipu). Provjereno u kodu i reviziji.
+- **G-10 Sažetak procesa na koraku 3: greška u VIZ-u, i prazan u pilotu.** Odjeljci „Verzije”, „AI pomoćnik” i „Izjava” (datum potvrde, blok „Izjava studenta”) su „nije dostupan”; PD-1 ima 11 odjeljaka, a student ih u pilotu vidi pet do šest. „Prikaži mjesto u radu” vodi na `/rad/{id}` bez mjesta (i u prototipu). Provjereno u kodu i reviziji. **Promijenjeno 23. 11. 2026.: asistent u pilotu radi.** Odjeljak „Asistent” u sažetku sada pokazuje stanje, razgovore i priloge.
 - **G-11 Predaja: tekstovi „s izjavom” i „razgovori” ne odgovaraju zadatku.** Dijalog uvijek kaže „…spremljen na poslužitelju, s izjavom.” čak i kad zadatak izjavu ne traži; „Razgovori uz izjavu” je „nedostupno” (`dialogConversations` se ne koristi). Student može pomisliti da je priložio nešto što nije. Provjereno u kodu i reviziji.
 - **G-12 Predaja: odbijena predaja ostaje u ploči s omogućenim „Predaj rad”.** Prototip pokazuje zasebnu ploču „Predaja” bez gumba; aplikacija zadržava gumb pa student može odmah ponoviti isti zahtjev, a razlog (`segment_unsigned`) traži da prvo ostane u editoru s vezom. Tekst nema gumba „Otvori radni prostor” uz prvi odlomak osim kao poveznica. Provjereno u kodu i reviziji.
 - **G-13 Predaja: „nedovršeno” nikad ne objašnjava.** `nextOf(answer)` ne dobiva `known`, pa je tekst uvijek „Predaja nije dovršena. Zamjenski postupak trenutačno nije dostupan.” bez vremena zahtjeva i bez rečenice o nepodudaranju teksta; naslov i dalje glasi „zamjenski postupak”. Student ne zna je li zahtjev zabilježen. Provjereno u kodu i reviziji (osim ako je od tada popravljeno).
@@ -189,7 +189,7 @@ Zajedničko što studenti očekuju: (1) jasna posljedica klika („što će se d
 - **Pilot:** prijava samo AAI@EduHr (D-09, D-16); rok funkcija 15. 1. 2027.; sve novo najprije u prototip i INVENTAR-student; pilot je s izmišljenim podacima do pravnog mišljenja i DPIA. Komponente iz `@ductura/ui` bez lokalnog stila; vizualni prolaz je centralan (Daniel 22. 11.), pa prijedlozi ne traže izgled.
 - **Privatnost:** potvrda nosi `principalId`, `evidenceDomainId`, otisak i potpis; paket za referadu i prenosivi zapis sadrže tekst rada, pa poveznice moraju biti jednokratne i kratkotrajne (već jesu: `student.submission-package-link.post`); nijedan novi prijedlog ne smije u poruke, obavijesti ni javnu provjeru staviti sadržaj rada ili imena. Napomena uz rad (PD-4) je izjavljeni sadržaj (do 600 znakova) i vidi je nastavnik; student mora znati tko je vidi. Nema novog bilježenja procesa u ovom dijelu; sadržaj tipki smije se bilježiti samo u polju editora (Ustav v1.9) i ne ulazi u predaju ni izvoz.
 - **Obećanja (B-6):** „Predano” se tvrdi samo uz potpisanu potvrdu; „možda predano” kad odgovor nije stigao; „povučeno” samo uz potpisanu potvrdu povlačenja. Svaki novi tekst o ishodu to mora poštovati.
-- **AI izjava (declaration-v1, #499):** verzionirani obrazac fakulteta (OD-11: samo test-izjava dok fakultet ne objavi svoj), `humanHelp {kind,text}` zatvoren skup (OD-12), granice kao imenovane konstante (OD-4); izjava je dijalog ch-h (2165); „izvornost” smije stajati samo kao doslovni naziv službenog obrasca (B-5); izjava se veže uz verziju teksta (stanje `bound`), pa tekst promijenjen nakon potvrde daje `stale`. Predaja se odbija bez potvrđene izjave samo ako zadatak izjavu traži (`declarationRequired`). Izjava ne tvrdi autorstvo ni nastanak rada. OC-1 isključen, Q-10 odgođen: **ne bira se pružatelj ni model**, a razgovori i prilozi (PD-2, R-31) ostaju bez pozivatelja.
+- **AI izjava (declaration-v1, #499):** verzionirani obrazac fakulteta (OD-11: samo test-izjava dok fakultet ne objavi svoj), `humanHelp {kind,text}` zatvoren skup (OD-12), granice kao imenovane konstante (OD-4); izjava je dijalog ch-h (2165); „izvornost” smije stajati samo kao doslovni naziv službenog obrasca (B-5); izjava se veže uz verziju teksta (stanje `bound`), pa tekst promijenjen nakon potvrde daje `stale`. Predaja se odbija bez potvrđene izjave samo ako zadatak izjavu traži (`declarationRequired`). Izjava ne tvrdi autorstvo ni nastanak rada. OC-1: asistent u pilotu radi (Daniel, 23. 11. 2026., mijenja raniju odluku „isključen”); Q-10 odgođen: **ne bira se pružatelj ni model**, u sučelju stoji samo „Asistent”. Razgovori i prilozi (PD-2, R-31) imaju pozivatelja u koraku Izjava.
 - **Podudaranje s pomoćnikom i postotci:** podudaranje je u pilotu uključeno (22. 11.), uvijek uz napomenu „nije dokaz autorstva”, ne blokira predaju, ne ulazi u ocjenu ni izvoz. Postotak sličnosti s izvorima i udio iz događaja (C-6) ne grade se bez zadatka orkestratora; ovaj dokument ih ne predlaže. Oznaka „za pregled” nikad ne blokira predaju.
 - **Predaja nakon roka i povlačenje:** pravila (kašnjenje, produljenje, povlačenje samo dok rok traje, nastavnik smije isključiti povlačenje, zadano uključeno) su odluke vlasnika i fakulteta; student ih vidi, ne mijenja. Tekst nikad ne govori o posljedicama (ocjena, kazna): to je fakultetsko pravilo.
 - **Zabranjeni izrazi:** svaki novi tekst kroz skener (PRODUCT §5). Posebno oprez: „izvornost” (samo kao naziv obrasca), „plagijat”, „dokaz autorstva” (samo u negaciji), „provjera AI-ja”, „kazna”; tekstovi o roku opisuju zadatak, ne studenta.
@@ -214,7 +214,7 @@ Veličina: S (do ~150 redaka koda), M (150–400), L (više od 400 ili više PR-
 - Korist: G-7, G-8; student zna što pogledati prije slanja. Veličina: M. Rizik: nizak (čitanje postojećih podataka; „Prikaži mjesto u radu” traži sidro u editoru). Server: ne, postoji (podaci u sažetku procesa). Prototip: da (E-8 retci 3 i 4, R-36).
 
 **PR-4 Izjava: pošteno prazno stanje i objašnjenje.**
-- Opis: u bloku „Zabilježeno u Ducturi” rečenica „U pilotu pomoćnik nije uključen; ovdje se bilježi samo ono što napravi sama Ductura. Alate izvan Ducture navedite u „Vašoj izjavi”.”; „Prilozi” bez razgovora skrivaju se ili objašnjavaju; izbacuju se mrtvi elementi (pitanje nastavnika, „Dodaj objašnjenje”) dok ih ugovor ne podrži. Svi tekstovi bez imena modela i pružatelja.
+- Opis: u bloku „Zabilježeno u Ducturi” rečenica „Ovdje se bilježi ono što napravi sama Ductura, uključujući razgovore s Asistentom. Alate izvan Ducture navedite u „Vašoj izjavi”.” (rečenica „U pilotu pomoćnik nije uključen” uklonjena 23. 11. 2026.); „Prilozi” bez razgovora se objašnjavaju; izbacuju se mrtvi elementi (pitanje nastavnika, „Dodaj objašnjenje”) dok ih ugovor ne podrži. Svi tekstovi bez imena modela i pružatelja.
 - Korist: G-4, G-5; korak ne obećava ono što ne postoji. Veličina: S. Rizik: nizak (tekst; pravni pregled). Server: ne. Prototip: da (E-9 puno, `prazno`).
 
 **PR-5 Izjava kao dijalog iz koraka predaje i uvjet „stale”.**
@@ -282,7 +282,7 @@ Veličina: S (do ~150 redaka koda), M (150–400), L (više od 400 ili više PR-
 - Veličina: M do L. Rizik: srednji (novi sadržaj u izjavi, pravno). Server: **da** (novo polje u declaration-v1; ne izmišljam, treba odluku i ugovor). Prototip: da (E-9).
 
 **PR-21 Razgovori uz izjavu i dijalog „Razgovor N” (PD-2).**
-- Opis: odgođeno po planu (val 12, D-194/Q-10); ovdje samo zapisano da ostaje bez pozivatelja i da se ne gradi dok Daniel ne odluči o pomoćniku.
+- Opis: **promijenjeno 23. 11. 2026.: asistent u pilotu radi, PR-21 ulazi u pilot.** Student vidi svoje razgovore s Asistentom, „Priloži izjavi” / „Skini s izjave” po razgovoru, izjava pokazuje broj razgovora i priloga, a nastavnik vidi samo priložene razgovore. Pravila uporabe alata (`aiPolicy`, `aiPurposes`, `aiSummaryOnly`) daju stanja: radi, zabranjeno zadatkom, samo sažimanje, ograničenje uporabe, greška. Pružatelj ni model se ne imenuju (Q-10). (Raniji opis: odgođeno po planu, val 12, D-194/Q-10.)
 - Veličina: L. Rizik: visok. Server: da (prilozi, `student.declaration-attachments.post` postoji, ali `attachments maxItems 0`). Prototip: da.
 
 ---
@@ -298,7 +298,7 @@ Preporuka je moja; odluka je vaša. „Pilot” = ulazi u funkcije pilota 15. 1.
 | PR-9 | Slaba mreža: ponovno čitanje i jedna poruka | M | ne | **za pilot** | „Jesam li predao?” je najveći strah | ☐ pilot ☐ nakon pilota ☐ ne |
 | PR-2 | Proba i koraci isti izvor izjave | S do M | ne | **za pilot** | Proba ne smije proturječiti predaji | ☐ pilot ☐ nakon pilota ☐ ne |
 | PR-7 | Dijalog „Predati rad?”: istinit sažetak | S | ne | **za pilot** | Student ne potvrđuje ono što nije točno | ☐ pilot ☐ nakon pilota ☐ ne |
-| PR-4 | Izjava: pošteno prazno stanje, bez mrtvih elemenata | S | ne | **za pilot** | Asistent isključen; korak mora to reći | ☐ pilot ☐ nakon pilota ☐ ne |
+| PR-4 | Izjava: pošteno prazno stanje, bez mrtvih elemenata | S | ne | **za pilot** | Prazno stanje samo bez razgovora (asistent radi od 23. 11. 2026.) | ☐ pilot ☐ nakon pilota ☐ ne |
 | PR-1 | Ulaz u predaju na svim širinama, banner s radnjama | S do M | ne | **za pilot** (s VIZ-S1) | Ulaz i povlačenje ne smiju nestati | ☐ pilot ☐ nakon pilota ☐ ne |
 | PR-6 | Napomena uz rad pouzdano | S | ne | **za pilot** | Funkcija je pucala; jeftino | ☐ pilot ☐ nakon pilota ☐ ne |
 | PR-11 | Potvrda: što je predano, sažetak procesa koji radi | M | ne | **za pilot** | Potvrda je dokaz; mora govoriti | ☐ pilot ☐ nakon pilota ☐ ne |
@@ -313,7 +313,7 @@ Preporuka je moja; odluka je vaša. „Pilot” = ulazi u funkcije pilota 15. 1.
 | PR-5 | Izjava kao dijalog iz koraka (uz P-12) | M | ne | nakon pilota | Stranica radi; odluka 2165 ide s P-12 | ☐ pilot ☐ nakon pilota ☐ ne |
 | PR-14 | Ispravak izjave nakon predaje | S do M | ne | odluka vlasnika (pravno) | Pravno osjetljivo; za pilot dovoljno povlačenje | ☐ pilot ☐ nakon pilota ☐ ne |
 | PR-20 | Pitanje nastavnika uz izjavu | M do L | da | nakon pilota | Nema ugovora; plan ne navodi val | ☐ pilot ☐ nakon pilota ☐ ne |
-| PR-21 | Razgovori uz izjavu, dijalog „Razgovor N” | L | da | nakon pilota (Q-10) | Čeka odluku o pomoćniku | ☐ pilot ☐ nakon pilota ☐ ne |
+| PR-21 | Razgovori uz izjavu, dijalog „Razgovor N” | L | da | **za pilot** (23. 11. 2026.) | Asistent u pilotu radi (OC-1); Q-10 ne blokira jer se pružatelj ne imenuje | ☐ pilot ☐ nakon pilota ☐ ne |
 
 Pitanja na koja ne mogu odgovoriti sama (iz ovog repoa se ne vidi):
 1. Je li plan `NOVE-FUNKCIJE.md` (dio 3) predviđao temu koje ovdje nema? Plan nije bio dostupan (oblak nema pristup `ductura/.github`).
@@ -339,14 +339,14 @@ Odgovori na pitanja iz odjeljka 5 koji su ušli u prototip:
 - **Pitanje 5:** zadatak smije zabraniti predaju nakon roka, a nastavnik iznimno smije odobriti kasnu predaju pojedinom studentu; student vidi oba stanja, s rokom iznimke (E-8b, E-10a, PO-36, PO-37).
 - **Pitanje 7:** izjava ostaje stranica koraka 2, a uz nju je dijalog ch-h dohvatljiv i s koraka 3 i 4 (PD-10).
 - **Pitanje 2 (djelomično):** razlog nemogućeg povlačenja ne traži novo polje: `student.submission-history.get` ima `withdrawalAllowed`, a `student.submission-withdrawal.get` `withdrawable` (PO-38).
-- Pomoćnik je u pilotu isključen: PR-21 prikazuje pošteno prazno stanje dok se ne odluči Q-10.
+- Asistent u pilotu radi (23. 11. 2026., ranije isključen): PR-21 prikazuje razgovore i priloge; pošteno prazno stanje samo kad razgovora nema.
 
 | PR | ID inventara | Element prototipa (`Ductura_student.html`) | Stanja / napomena |
 |---|---|---|---|
 | PR-1 | E-7a, R-55, R-70 | `rad`: banner „Predano …” s „Otvori potvrdu o predaji” i „Povuci predaju” (`data-act=withdraw`) | `predano`; „Povuci predaju” samo dok rok traje. Broj blokada uz „Predaja rada” drži P-17 (NF-2). |
 | PR-2 | E-8, E-8a, E-9, E-10 | `pregled`: redak „Izjava” i „Što još fali”; `izjava`: `#sb-dstate`; `predaja`: vrata | stanja izjave none, draft, confirmed, stale, bound; `izjavaprazna`, `neaktualna` |
 | PR-3 | E-8 | `pregled`: popis mjesta i lijepljenja, „Provjera oblika nije dostupna u pilotu.”, „Dalje” onemogućen s razlogom | `puno`, `zatvoreno`, `neaktualna` |
-| PR-4 | E-9a | `izjava`: blok „Zabilježeno u Ducturi” s objašnjenjem; bez „Priloga”, „Pregledaj razgovor”, „Dodaj objašnjenje” | `puno`, `prazno` |
+| PR-4 | E-9a | `izjava`: blok „Zabilježeno u Ducturi” s objašnjenjem; „Prilozi” i „Pregledaj razgovor” kad razgovori postoje; „Dodaj objašnjenje” ostaje „nedostaje” | `puno`, `prazno`, `bezrazgovora` |
 | PR-5 | PD-10, R-56, R-62, E-9c | dijalog `dialog:'decl'` iz koraka 2, 3, 4; „Potvrdi izjavu ponovno” | `neaktualna` na E-8, E-9, E-10 |
 | PR-6 | E-8d, R-66, PO-41 | `noteForm()`: meta „Vidi je nastavnik uz sažetak.”, `role=alert` pri neuspjehu | `napomenagreska` |
 | PR-7 | PD-3, R-65, E-10a | dijalog „Predati rad?” iz stvarnih podataka; potvrdni okvir `#sb-late-ok` | `puno`, `nakonroka`, `iznimka`, `bezizjave` |
@@ -363,6 +363,23 @@ Odgovori na pitanja iz odjeljka 5 koji su ušli u prototip:
 | PR-18 | E-11 (otisak, sažetak), PD-3, E-10b | `aria-modal` već u PD-3; `role=alert` na ishodima; otisak `.sb-vh`; fokus na sažetak | nema vlastitog ekrana; axe spec i ciljevi dodira 44 px su zadatak aplikacije |
 | PR-19 | — | nema elementa prototipa | VIZ „puno” je `test-fakes`, ne prototip; prototip već ima sva stanja iznad |
 | PR-20 | E-9, R-71, PO-34 | `izjava`: „Pitanje nastavnika” + „Odgovor (nije obavezan)” + „Odgovor vidi nastavnik uz izjavu.” | `puno`, `bezpitanja`; server: nema polja u declaration-v1 |
-| PR-21 | E-9a, PD-2, E-8, E-10, PO-35 | pošteno prazno stanje: „Nema razgovora za prilaganje.”, odjeljak „AI pomoćnik” u sažetku | `puno` (pilot); `razgovori` (nakon Q-10, nije u pilotu) |
+| PR-21 | E-9a, PD-2, E-8, E-10, PO-35 | razgovori s Asistentom, prilozi, broj razgovora i priloga u izjavi, na koraku 3 i 4; odjeljak „Asistent” u sažetku; prazno stanje bez razgovora | `puno` (asistent radi); `bezrazgovora`; `asistent_zabranjeno`, `asistent_sazimanje`, `asistent_ogranicenje`, `asistent_greska` |
 
-Server (ne izmišlja se, vidi INVENTAR §4): nema u ugovoru PR-20 (PO-34), PR-21 (PO-35, Q-10), čitljivo polje „zadatak zabranjuje kasnu predaju” (PO-36, N-21), slanje dorade za PR-16 (PO-40). Postoje: iznimka roka (PO-37), razlog nemogućeg povlačenja (PO-38, `withdrawalAllowed`), povijest pokušaja (PO-39), napomene (PO-41, PR-14 vidi N-23).
+Server (ne izmišlja se, vidi INVENTAR §4): nema u ugovoru PR-20 (PO-34), PR-21 (PO-35: prilozi i razgovori, **nedostaje** `attachments` u declaration-v1), čitljivo polje „zadatak zabranjuje kasnu predaju” (PO-36, N-21), slanje dorade za PR-16 (PO-40). Postoje: iznimka roka (PO-37), razlog nemogućeg povlačenja (PO-38, `withdrawalAllowed`), povijest pokušaja (PO-39), napomene (PO-41, PR-14 vidi N-23).
+
+## 7. Promjena 23. 11. 2026.: asistent u pilotu radi (ASIST-STUDENT)
+
+**Promijenjeno 23. 11. 2026.: asistent u pilotu radi.** Danielova odluka mijenja raniju odluku „isključen” (NF-2 br. 1, OC-1). Pogođene stavke ovog nalaza (PR-4, PR-21, G-4, G-10, G-11 i izjava o AI-ju) pročitajte s ovom bilješkom. Pružatelj ni model se ne imenuju (Q-10 nije donesena): u sučelju stoji samo „Asistent”. Podudaranje nije dokaz autorstva. Razgovori u prototipu su izmišljeni.
+
+| Stavka | INVENTAR ID | Element prototipa (`Ductura_student.html`) |
+|---|---|---|
+| PR-21 razgovori uz izjavu, „Priloži izjavi” / „Skini s izjave” | E-9, PD-2, R-31, ASIST-S2 | `izjava`: popis „Razgovori s Asistentom (n)”, gumb `data-act=attach` s `aria-pressed`, „Pregledaj razgovor” |
+| PR-21 izjava pokazuje broj razgovora i priloga | E-9, E-9a | blok „Zabilježeno u Ducturi”: retci „Razgovori” i „Prilozi”; „Nastavnik vidi samo priložene razgovore” |
+| PR-4 pošteno prazno stanje | E-9a | varijanta `bezrazgovora`: „U ovom radu nije zabilježen razgovor s Asistentom.” |
+| PR-21 korak 3 „Prije predaje” | E-8 | redak „Razgovori uz izjavu” s brojem razgovora i priloga, poveznica „Uredi priloge” |
+| PR-7 korak 4 „Predaja” | E-10, PD-3 | redak „Razgovori uz izjavu: n priloženo”; dijalog „Predati rad?” navodi broj priloženih razgovora |
+| G-10 sažetak procesa | PD-1 odjeljak 6 | odjeljak „Asistent” s oznakom stanja, brojem razgovora i priloga |
+| Stanja: radi, zabranjeno zadatkom, samo sažimanje, ograničenje uporabe, greška | ASIST-S1 | varijante `puno`, `asistent_zabranjeno`, `asistent_sazimanje`, `asistent_ogranicenje`, `asistent_greska` (traka i oznaka uz „Asistent”) |
+| Bez imena pružatelja i modela | R-31, PD-2 | uklonjeni „Pružatelj A” i „model M-2” iz svih prikaza |
+
+Serverske praznine (**nedostaje**, ništa se ne izmišlja): `aiSummaryOnly` u `student.notice.get`; polje priloga u declaration-v1 (`attachments maxItems 0`); stanje „ograničenje uporabe” i „greška” u ugovoru `student.assistant-request.post`; objašnjenje uz razgovor (OD-12).

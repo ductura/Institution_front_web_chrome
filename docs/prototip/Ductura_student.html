@@ -785,6 +785,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       '<section class="up-sum" aria-labelledby="up-sum-h"><h3 id="up-sum-h">Ukratko</h3><ul class="facts">' +
         '<li>Rok: ' + esc(t.due) + '.</li><li>Opseg: ' + esc(t.words) + ' riječi.</li>' +
         '<li>Dopušteno: lektoriranje i jezična provjera vlastitog rada; pronalaženje literature.</li>' +
+        '<li>Asistent u Ducturi radi u pilotu za dopuštene svrhe; razgovori se bilježe, a Vi ih možete priložiti izjavi.</li>' +
         '<li>Bilježe se promjene teksta u uređivaču i verzije. Ne bilježe se pritisnute tipke, druge aplikacije, kamera, mikrofon ni zaslon.</li>' +
         '<li>Potvrda nije privola.</li></ul><span class="meta">Puni tekst obavijesti je ispod.</span></section>' +
       '<p class="note">' + desc + '</p>' +
@@ -799,7 +800,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       '<div class="up-cols">' +
         '<div><h3>Što se bilježi</h3><ul class="facts">' +
           '<li>Promjene teksta, sažete u odsječke od najviše 30 sekundi. Odsječak nosi jedno vrijeme, zaokruženo na minutu.</li>' +
-          '<li>U ovom zadatku bilježit će se svaka promjena teksta, znak po znak, s redoslijedom i vremenom: unos i brisanje, lijepljenje, uvoz, prijenos iz AI pomoćnika i izmjene nastavnika. Uz svaku promjenu bilježit će se i način unosa, pa će nastavnik (mentor) vidjeti oznaku kad uređivač uz unos nije vidio pritisak tipke ni lijepljenje, na primjer kod diktiranja, nekih tipkovnica na mobitelu ili pomoćnih alata. Oznaka govori samo kako je tekst ušao u uređivač, ne tko ga je napisao. To će služiti samo prikazu uživo i reprodukciji.</li>' +
+          '<li>U ovom zadatku bilježit će se svaka promjena teksta, znak po znak, s redoslijedom i vremenom: unos i brisanje, lijepljenje, uvoz, razgovori s Asistentom, prijenos iz Asistenta i izmjene nastavnika. Uz svaku promjenu bilježit će se i način unosa, pa će nastavnik (mentor) vidjeti oznaku kad uređivač uz unos nije vidio pritisak tipke ni lijepljenje, na primjer kod diktiranja, nekih tipkovnica na mobitelu ili pomoćnih alata. Oznaka govori samo kako je tekst ušao u uređivač, ne tko ga je napisao. To će služiti samo prikazu uživo i reprodukciji.</li>' +
           '<li>Svaki korak spremanja dobiva digitalni otisak povezan s prethodnim, pa se svaka kasnija izmjena zapisa vidi.</li>' +
           '<li>Verzije, predaja i napomene koje dodate.</li></ul></div>' +
         '<div><h3>Što se ne bilježi</h3><ul class="facts">' +
@@ -1106,7 +1107,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   /* ---------- pomoćno ---------- */
   function S() {
     return App.state.sb || (App.state.sb = { declared: {}, check: {}, notes: {}, noteOpen: false, dialog: null, sending: false, showSum: false, form: {},
-      data: {}, declNotes: {}, ver: {}, lateOk: false, withdrawn: {}, hist: {}, opener: '' });
+      data: {}, declNotes: {}, ver: {}, lateOk: false, withdrawn: {}, hist: {}, opener: '', att: { 1: true, 2: false } });
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function parse(s) {
@@ -1138,8 +1139,30 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   function isLate(task, subP) { var d = dueP(task); return !!(d && subP && key(subP) > key(d)); }
   function screenName() { return location.hash.replace('#', ''); }
 
-  /* NF-3 (PR-21, odgovor: pomoćnik je u pilotu isključen): razgovori i zabilježeni prijenosi vide se samo u stanju „razgovori”. */
-  function chatsOn() { return App.state.variant.izjava === 'razgovori'; }
+  /* NF-3 (PR-21, promijenjeno 23. 11. 2026., Danielova odluka: Asistent (OC-1) u pilotu radi): student vidi svoje razgovore s Asistentom
+     osim u stanju „bez razgovora”. Pružatelj ni model se nikad ne imenuju (Q-10 nije donesena), samo „Asistent”. Razgovori su izmišljeni. */
+  function chatsOn() { return App.state.variant.izjava !== 'bezrazgovora'; }
+  var AS_LIMIT = 10;
+  var CONVS = [
+    { n: 1, date: '28. 10. 2026.', purpose: 'sažimanje literature', q: 1, transfer: true },
+    { n: 2, date: '31. 10. 2026.', purpose: 'pregled argumenata', q: 1, transfer: false }
+  ];
+  /* Stanja Asistenta: radi, zabranjeno zadatkom (aiPolicy), samo sažimanje (aiSummaryOnly), ograničenje uporabe, greška. Bira se varijantom ekrana Izjava. */
+  function asMode() {
+    return { asistent_zabranjeno: 'prohibited', asistent_sazimanje: 'summary', asistent_ogranicenje: 'limit', asistent_greska: 'error' }[App.state.variant.izjava] || 'ok';
+  }
+  function asTag() {
+    return { ok: 'radi', prohibited: 'nedostupan za ovaj zadatak', summary: 'samo sažimanje', limit: 'ograničenje uporabe', error: 'greška' }[asMode()];
+  }
+  function asNote() {
+    var m = asMode();
+    if (m === 'prohibited') return '<p class="note" role="status"><b>Asistent nije dostupan.</b> Obavijest ovog zadatka ne dopušta alate. Ranije razgovore i dalje možete pročitati.</p>';
+    if (m === 'summary') return '<p class="note" role="status"><b>Za ovaj zadatak Asistent samo sažima.</b> Drugi upiti nisu dopušteni. Postavka „samo sažimanje” u izvatku obavijesti nedostaje (aiSummaryOnly), pa je ovdje samo prikazana.</p>';
+    if (m === 'limit') return '<p class="note" role="status"><b>Dosegnuto je ograničenje uporabe (' + AS_LIMIT + ' upita).</b> Ponovno ćete moći pitati kad se ograničenje obnovi. Razgovori ostaju vidljivi i mogu se priložiti izjavi.</p>';
+    if (m === 'error') return '<p class="note" role="alert"><b>Asistent trenutačno ne odgovara.</b> Upit nije poslan i nije zabilježen. Tekst rada je netaknut. Razgovori su i dalje vidljivi.</p>';
+    return '<p class="meta">Asistent radi u pilotu. Odgovore daje Asistent, a ne Vi. Ductura bilježi razgovor, a Vi ga možete priložiti izjavi.</p>';
+  }
+  function attN() { var c = 0; for (var i = 0; i < CONVS.length; i++) if (S().att[CONVS[i].n]) c++; return c; }
 
   /* NF-3 (PR-2): jedno stanje izjave za sve korake (none, draft, confirmed, stale, bound), kao `student.declaration.get`. */
   function declState(t, v, scr) {
@@ -1204,14 +1227,15 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     h += '<section class="sb-state"><h3>Lijepljenja</h3><ul class="list"><li class="item"><div class="sb-ev"><span>22. 10. 2026., odsječak oko 10:35 · 640 znakova</span>' + obs + '</div>' +
       '<span class="note">Izvor nije opažen.</span><a href="#rad" data-go="rad">Prikaži mjesto u radu</a></li></ul>' +
       '<p class="meta">Popisano je svako lijepljenje dulje od 200 znakova (prag P-02, postavka fakulteta). Vrijeme je zaokruženo na odsječak zapisa. Bez zbroja i bez udjela u radu.</p></section>';
+    h += '<section class="sb-state"><h3>Asistent <span class="tag">' + asTag() + '</span></h3>' + asNote();
     if (chatsOn()) {
-      h += '<section class="sb-state"><h3>AI pomoćnik</h3><ul class="list"><li class="item"><div class="sb-ev"><span>28. 10. 2026. u 10:05 · Pružatelj A, model M-2 · svrha: sažimanje literature · 96 znakova</span>' + obs + '</div>' +
+      h += '<ul class="list"><li class="item"><div class="sb-ev"><span>28. 10. 2026. u 10:05 · Asistent · svrha: sažimanje literature · prijenos u tekst, 96 znakova</span>' + obs + '</div>' +
         '<blockquote class="sb-quote">Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</blockquote><a href="#rad" data-go="rad">Prikaži mjesto u radu</a></li></ul>' +
-        '<p class="meta">Popisano je svako prenošenje teksta iz AI pomoćnika u rad. Razgovori se nastavniku prikazuju samo kao prilog izjavi.</p></section>';
+        '<p class="meta">Razgovora s Asistentom: ' + CONVS.length + '. Priloženo izjavi: ' + attN() + '. Popisano je svako prenošenje teksta iz Asistenta u rad. Nastavnik vidi samo priložene razgovore.</p>';
     } else {
-      /* NF-3 (PR-21): u pilotu pomoćnik nije uključen, pa je odjeljak pošteno prazan. */
-      h += '<section class="sb-state"><h3>AI pomoćnik</h3><p>U pilotu pomoćnik nije uključen. Nema zabilježenih prijenosa teksta.</p></section>';
+      h += '<p>Nema zabilježenih razgovora ni prijenosa teksta.</p>';
     }
+    h += '</section>';
     h += '<section class="sb-state"><div class="sb-ev"><h3>Praznine u zapisu</h3>' + obs + '</div>' +
       (o.gaps ? '<ul class="facts"><li>Od verzije 26. 10. 2026. u 21:45 do verzije 28. 10. 2026. u 10:50. Poslužitelj je primio obje verzije, ali ne i odsječke između njih, pa promjene u tom rasponu nisu zabilježene pojedinačno.</li></ul>' +
         (o.submitted ? '' : '<p class="meta">Uz prazninu možete dodati napomenu. Nastavnik je vidi uz sažetak.</p>')
@@ -1221,8 +1245,8 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     h += '<section class="sb-state"><h3>Izjava o korištenju generativne umjetne inteligencije</h3>' +
       (dtime ? '<p class="meta">' + dtime + ' · po čl. 9 i 15 pravilnika fakulteta</p>' +
         (chatsOn()
-          ? '<div class="sb-decl"><div class="sb-dh"><span>Zabilježeno u Ducturi</span>' + obs + '</div><div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Pružatelj A, model M-2 · svrha: sažimanje literature</span></div></div>'
-          : '<div class="sb-decl"><div class="sb-dh"><span>Zabilježeno u Ducturi</span>' + obs + '</div><p class="note">U ovom radu nije zabilježen razgovor s AI pomoćnikom.</p></div>') +
+          ? '<div class="sb-decl"><div class="sb-dh"><span>Zabilježeno u Ducturi</span>' + obs + '</div><div class="sb-entry"><span>Prijenos iz Asistenta, 28. 10. 2026. u 10:05</span><span class="sb-who">Asistent · svrha: sažimanje literature</span></div><div class="sb-kv"><span>Razgovori / prilozi</span><b>' + CONVS.length + ' / ' + attN() + '</b></div></div>'
+          : '<div class="sb-decl"><div class="sb-dh"><span>Zabilježeno u Ducturi</span>' + obs + '</div><p class="note">U ovom radu nije zabilježen razgovor s Asistentom.</p></div>') +
         '<div class="sb-decl own"><div class="sb-dh"><span>Izjava studenta</span>' + decl + '</div><div class="sb-kv"><span>Vanjski alati</span><b>' + esc(dv.tools) + '</b></div><div class="sb-kv"><span>Svrha</span><b>' + esc(dv.purpose) + '</b></div><div class="sb-kv"><span>Faza rada</span><b>' + esc(dv.phase) + '</b></div><div class="sb-kv"><span>Ljudska pomoć</span><b>' + esc(dv.helpText || HELP[dv.helpKind]) + '</b></div></div>'
         : '<p>Izjava još nije potvrđena. Potvrđujete je u koracima predaje.</p>') + '</section>';
     h += '<section class="sb-state" id="sb-notes"><h3>Napomene studenta</h3>' +
@@ -1296,7 +1320,12 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       App.toast(conf ? 'Izjava je potvrđena.' : 'Izjava je spremljena, ali još nije potvrđena.');
       var fo = op ? document.querySelector(op) : null; if (fo) fo.focus();
     },
-    todo: function () { App.toast('Dodavanje objašnjenja uz zabilježeni razgovor čeka odluku o pomoćniku (Q-10).'); }
+    todo: function () { App.toast('Dodavanje objašnjenja uz zabilježeni razgovor: nedostaje u ugovoru izjave (OD-12).'); },
+    attach: function (el) {
+      var n = +el.getAttribute('data-n'), on = !S().att[n]; S().att[n] = on; App.rerender();
+      var f = document.querySelector('[data-act="attach"][data-n="' + n + '"]'); if (f) f.focus();
+      App.toast(on ? 'Razgovor ' + n + ' priložen je izjavi.' : 'Razgovor ' + n + ' skinut je s izjave.');
+    }
   };
   function merge(own, scr) { var o = {}, k; for (k in SHARED) o[k] = SHARED[k]; for (k in own) o[k] = own[k]; return o; }
 
@@ -1338,8 +1367,8 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
         '<span class="meta">Mjesta za izvor, lijepljenja i pravila oblika ne zaustavljaju predaju.</span></div>';
       b += '<div class="sb-state"><span class="sb-h">Izjava</span><span>' + esc(declWords(ds, t)) + '</span>' +
         (ds === 'confirmed' ? '' : '<a href="#izjava" data-act="declOpen">' + (ds === 'stale' ? 'Potvrdi izjavu ponovno' : 'Otvori izjavu') + '</a>') + '</div>';
-      /* NF-3 (PR-21): pošteno prazno stanje dok se ne odluči Q-10 (u stanju „razgovori” na koraku 2 vraća se „Priloženo 2”). */
-      b += '<div class="sb-state"><span class="sb-h">Razgovori uz izjavu</span>' + (chatsOn() ? '<span>Priloženo 2</span>' : '<span>Nema razgovora za prilaganje.</span>') + '</div>';
+      /* NF-3 (PR-21, 23. 11. 2026.: Asistent radi): broj razgovora i priloga; nastavnik vidi samo priložene. */
+      b += '<div class="sb-state"><span class="sb-h">Razgovori uz izjavu <span class="tag">Asistent: ' + asTag() + '</span></span>' + (chatsOn() ? '<span>Razgovora: ' + CONVS.length + ', priloženo: ' + attN() + '. Nastavnik vidi samo priložene razgovore.</span><a href="#izjava" data-act="declOpen">Uredi priloge</a>' : '<span>Nema razgovora za prilaganje.</span>') + '</div>';
       b += '<div class="sb-state"><span class="sb-h">Mjesta za izvor koja ste ostavili u tekstu</span>' + (closed ? '<span>Nema otvorenih mjesta za izvor.</span>' :
         '<ul class="sb-places"><li><a href="#rad" data-go="rad">2. Teorijski okvir, odlomak 4</a></li><li><a href="#rad" data-go="rad">3. Analiza, odlomak 2</a></li></ul>') + '</div>';
       b += '<div class="sb-state"><span class="sb-h">Zalijepljeno (izvor nije opažen)</span>' + (closed ? '<span>Oznaka podrijetla dodana uz sva zalijepljena mjesta.</span>' :
@@ -1393,25 +1422,32 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     if (v === 'nesklad') {
       return panel('sb-h', 'Izjava o korištenju generativne umjetne inteligencije', '',
         '<div class="field"><label for="sb-form">Obrazac izjave</label><select class="input" id="sb-form"><option>Generativnu umjetnu inteligenciju nisam koristio ni koristila</option><option>Generativnu umjetnu inteligenciju koristio sam ili koristila uz izjavu</option></select></div>' +
-        '<p class="note" role="status">Zapis bilježi prijenos iz AI pomoćnika na 2. Teorijski okvir, odlomak 1. Provjerite odabrani obrazac.</p>' + checkbox(checked, st));
+        '<p class="note" role="status">Zapis bilježi prijenos iz Asistenta na 2. Teorijski okvir, odlomak 1. Provjerite odabrani obrazac.</p>' + checkbox(checked, st));
     }
     var rec;
     if (chatsOn()) {
       rec = '<div class="sb-decl"><h3>Zabilježeno u Ducturi <span class="tag">zabilježeno</span></h3>' +
-        '<div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Model M-2 · 2. Teorijski okvir, odlomak 1</span></div>' +
-        '<div class="sb-entry"><span>Razgovor s AI pomoćnikom bez prijenosa, 31. 10. 2026.</span><span class="sb-who">Model M-2</span></div>' +
+        '<div class="sb-entry"><span>Prijenos iz Asistenta, 28. 10. 2026. u 10:05</span><span class="sb-who">Asistent · 2. Teorijski okvir, odlomak 1</span></div>' +
+        '<div class="sb-entry"><span>Razgovor s Asistentom bez prijenosa, 31. 10. 2026.</span><span class="sb-who">Asistent</span></div>' +
+        '<div class="sb-kv"><span>Razgovori</span><b>' + CONVS.length + '</b></div><div class="sb-kv"><span>Prilozi</span><b>' + attN() + '</b></div>' +
         '<a href="#izjava" data-act="todo">Dodaj objašnjenje</a></div>';
     } else {
-      /* NF-3 (PR-4, PR-21): pošteno prazno stanje i objašnjenje; bez imena modela i pružatelja. */
-      rec = '<div class="sb-decl"><h3>Zabilježeno u Ducturi <span class="tag">zabilježeno</span></h3><p class="note">U ovom radu nije zabilježen razgovor s AI pomoćnikom.</p>' +
-        '<p class="meta">U pilotu pomoćnik nije uključen; ovdje se bilježi samo ono što napravi sama Ductura. Alate izvan Ducture navedite u „Vašoj izjavi”. Nema razgovora za prilaganje.</p></div>';
+      rec = '<div class="sb-decl"><h3>Zabilježeno u Ducturi <span class="tag">zabilježeno</span></h3><p class="note">U ovom radu nije zabilježen razgovor s Asistentom.</p>' +
+        '<p class="meta">Ovdje se bilježi ono što napravi sama Ductura, uključujući razgovore s Asistentom. Alate izvan Ducture navedite u „Vašoj izjavi”. Nema razgovora za prilaganje.</p></div>';
     }
     var b = '<p class="meta">po čl. 9 i 15 pravilnika fakulteta</p>' +
       '<p class="note" role="status" id="sb-dstate">' + esc(declWords(st, t)) + '</p>' + rec + declBlock(t, st, true);
+    b += '<h3 class="sb-sub">Asistent <span class="tag">' + asTag() + '</span></h3>' + asNote();
     if (chatsOn()) {
-      b += '<h3 class="sb-sub">Prilozi</h3><p class="note">Uz izjavu se prilaže cijeli razgovor, točno kako je zabilježen. Pregledajte ga prije potvrde.</p>' +
-        '<ul class="list"><li class="item"><span class="title">Razgovor 1 · 28. 10. 2026.</span><span class="meta">Obvezno: iz ovog razgovora prenesen je tekst.</span><div class="sb-acts"><button class="btn secondary small" type="button" data-act="chat" data-n="1">Pregledaj razgovor</button></div></li>' +
-        '<li class="item"><span class="title">Razgovor 2 · 31. 10. 2026.</span><div class="sb-acts"><button class="btn secondary small" type="button" data-act="chat" data-n="2">Pregledaj razgovor</button></div></li></ul>';
+      b += '<h3 class="sb-sub">Razgovori s Asistentom (' + CONVS.length + ')</h3><p class="note">Vidite sve svoje razgovore. Uz izjavu se prilaže cijeli razgovor, točno kako je zabilježen. Pregledajte ga prije potvrde. Nastavnik vidi samo priložene razgovore. Priloženo: ' + attN() + ' od ' + CONVS.length + '.</p>' +
+        '<ul class="list">' + CONVS.map(function (c) {
+          var on = !!S().att[c.n];
+          return '<li class="item"><span class="title">Razgovor ' + c.n + ' · ' + c.date + '</span><span class="meta">Svrha: ' + c.purpose + ' · ' + (c.transfer ? 'iz ovog razgovora prenesen je tekst · ' : '') + (on ? 'priloženo izjavi' : 'nije priloženo') + '</span>' +
+            '<div class="sb-acts"><button class="btn secondary small" type="button" data-act="chat" data-n="' + c.n + '">Pregledaj razgovor</button>' +
+            '<button class="btn secondary small" type="button" data-act="attach" data-n="' + c.n + '" aria-pressed="' + on + '">' + (on ? 'Skini s izjave' : 'Priloži izjavi') + '</button></div></li>';
+        }).join('') + '</ul>';
+    } else {
+      b += '<h3 class="sb-sub">Prilozi</h3><p class="note">Nema razgovora za prilaganje.</p>';
     }
     /* NF-3 (PR-20, odgovor 2): pitanje nastavnika uz izjavu je u pilotu; server za to polje nema (INVENTAR PO-34). */
     if (v !== 'bezpitanja') {
@@ -1453,7 +1489,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       b += '<p class="note">Rok je produljen do 15. 11. 2026. u 23:59.</p><p class="note">Nakon predaje tekst ovog rada više nije moguće mijenjati.</p>';
     } else {
       b += '<div class="sb-kv"><span>Rok</span><b>' + fmt(d) + '</b></div><div class="sb-kv"><span>Riječi u predanom tekstu</span><b>5.120</b></div>' +
-        (chatsOn() ? '<div class="sb-kv"><span>Razgovori uz izjavu</span><b>2</b></div>' : '') +   // NF-3 (PR-7, PR-21): samo ako ih ima
+        (chatsOn() ? '<div class="sb-kv"><span>Razgovori uz izjavu</span><b>' + attN() + ' priloženo</b></div>' : '') +   // NF-3 (PR-7, PR-21): samo ako ih ima
         (req ? '' : '<div class="sb-kv"><span>Izjava</span><b>nije potrebna za ovaj zadatak</b></div>') +
         '<p class="note">Vrijeme predaje je trenutak kad zahtjev za predaju stigne na poslužitelj, ne trenutak klika. Nakon predaje tekst ovog rada više nije moguće mijenjati.</p>';
     }
@@ -1512,11 +1548,11 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       inner = dl.n === 1
         ? '<h2 id="sb-dlg-h">Razgovor 1 · 28. 10. 2026.</h2><p class="meta">Točno kako je zabilježen i kako će ga vidjeti nastavnik.</p>' +
           '<div class="sb-entry"><span class="sb-who">Vi · 10:01</span><span>Sažmi tri glavna pristupa iz poglavlja o institucijama.</span></div>' +
-          '<div class="sb-entry"><span class="sb-who">AI pomoćnik, model M-2 · 10:02</span><span>Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</span></div>' +
+          '<div class="sb-entry"><span class="sb-who">Asistent · 10:02</span><span>Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</span></div>' +
           '<div class="sb-entry"><span class="sb-who">Prijenos u tekst · 10:05</span><span>2. Teorijski okvir, odlomak 1</span></div>'
         : '<h2 id="sb-dlg-h">Razgovor 2 · 31. 10. 2026.</h2><p class="meta">Točno kako je zabilježen i kako će ga vidjeti nastavnik.</p>' +
           '<div class="sb-entry"><span class="sb-who">Vi · 19:22</span><span>Koja su dva najčešća prigovora prvom pristupu?</span></div>' +
-          '<div class="sb-entry"><span class="sb-who">AI pomoćnik, model M-2 · 19:23</span><span>Najčešće se navodi da zanemaruje interese sudionika i da teško objašnjava promjenu pravila.</span></div>';
+          '<div class="sb-entry"><span class="sb-who">Asistent · 19:23</span><span>Najčešće se navodi da zanemaruje interese sudionika i da teško objašnjava promjenu pravila.</span></div>';
       inner += '<div class="sb-acts"><button class="btn secondary" type="button" data-act="close">Zatvori</button></div>';
     } else if (dl.kind === 'decl') {
       /* PD-10 (NF-3, PR-5): izjava kao dijalog ch-h; zatvaranje vraća na isti korak. */
@@ -1546,7 +1582,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
       var gate = lateD && !S().lateOk;
       /* PD-3 (NF-3, PR-7): tekst iz stvarnih podataka; „s izjavom” samo ako je zadatak traži i potvrđena je; razgovori samo ako ih ima. */
       inner = '<h2 id="sb-dlg-h">Predati rad?</h2>' +
-        '<p class="note">Predaje se tekst rada „' + esc(t.title) + '” spremljen na poslužitelju' + (withDecl ? ', s izjavom' : '') + (chatsOn() ? ' i dva priložena razgovora' : '') + '. Riječi: 5.120.</p>' +
+        '<p class="note">Predaje se tekst rada „' + esc(t.title) + '” spremljen na poslužitelju' + (withDecl ? ', s izjavom' : '') + (chatsOn() && attN() ? ' i ' + (attN() === 1 ? 'jedan priloženi razgovor' : 'priložena razgovora (' + attN() + ')') : '') + '. Riječi: 5.120.</p>' +
         '<p class="note">Nakon predaje tekst ovog rada više nije moguće mijenjati.</p>' +
         (lateD ? '<p class="note">' + (tm.kind === 'iznimka' ? 'Rok je prošao; nastavnik je za Vas iznimno odobrio kasnu predaju do ' + fmt(tm.ex) + '. Potvrda će navesti da je rad predan nakon roka.' : 'Rok je prošao, pa će potvrda navesti da je rad predan nakon roka.') + '</p>' +
           '<label class="sb-check"><input type="checkbox" id="sb-late-ok"' + (S().lateOk ? ' checked' : '') + '> Razumijem da će predaja biti označena kao predaja nakon roka.</label>' +
@@ -1585,10 +1621,12 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     title: 'S-31 Izjava',
     shell: 'none',
     variants: [
-      { id: 'puno', label: 'puno (izjava ispunjena, pilot bez pomoćnika)' }, { id: 'nesklad', label: 'izjava i zapis se ne slažu (nakon Q-10)' }, { id: 'prazno', label: 'prazno (izjava nije ispunjena)' },
+      { id: 'puno', label: 'puno (izjava ispunjena, Asistent radi)' }, { id: 'nesklad', label: 'izjava i zapis se ne slažu' }, { id: 'prazno', label: 'prazno (izjava nije ispunjena)' },
       { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška učitavanja' },
       { id: 'neaktualna', label: 'NF-3 izjava zastarjela (tekst promijenjen)' }, { id: 'bezpitanja', label: 'NF-3 zadatak bez pitanja nastavnika' },
-      { id: 'razgovori', label: 'NF-3 s razgovorima (nakon Q-10, nije u pilotu)' }
+      { id: 'bezrazgovora', label: 'NF-3 bez razgovora s Asistentom' },
+      { id: 'asistent_zabranjeno', label: 'Asistent: zabranjeno zadatkom' }, { id: 'asistent_sazimanje', label: 'Asistent: samo sažimanje' },
+      { id: 'asistent_ogranicenje', label: 'Asistent: ograničenje uporabe' }, { id: 'asistent_greska', label: 'Asistent: greška' }
     ],
     render: function (ctx) {
       var t = ctx.task, v = ctx.variant, st = ctx.state;

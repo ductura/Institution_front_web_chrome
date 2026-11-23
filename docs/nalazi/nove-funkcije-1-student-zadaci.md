@@ -126,7 +126,7 @@ Zajedničko što studenti očekuju: (1) što je sljedeće i do kada, bez tražen
 - **Pilot:** prijava samo AAI@EduHr (D-09, D-16); lažni OIDC samo lokalno i u CI-ju; rok funkcija 15. 1. 2027.; sve novo najprije u prototip i INVENTAR.
 - **Privatnost:** obavijest kaže što se bilježi i što se ne bilježi (tipke, ritam, druge aplikacije, kamera, mikrofon, zaslon, IP i uređaj ne); Ustav v1.9 dopušta sadržaj tipki samo u polju editora, nikad izvan njega, pa ni na ovim ekranima. „Potvrda nije privola.” Svaki novi zapis na ovim ekranima (npr. „otvorena obavijest”) mora biti naveden u tekstu obavijesti, a čuvanje ide do roka čuvanja fakulteta.
 - **Obavijesti izvan aplikacije:** po odluci 2147 obavijest pri objavi je samo u aplikaciji; e-pošta i push nisu dopušteni bez nove odluke i DPIA.
-- **AI izjava:** nastavnik postavlja pravilo uporabe alata za zadatak (FPZG čl. 8, `aiPurposes`); student ga vidi u obavijesti prije pisanja; izjava (E-9) ovisi o D-194 i Q-10; izjava o AI-ju je dijalog `ch-h` (odluka 2165). U ovom dijelu AI izjava je samo informacija (stupac „Dopušteno / Nije dopušteno”); nikakva procjena niti „postotak AI-ja” ne ulazi ovamo.
+- **AI izjava:** nastavnik postavlja pravilo uporabe alata za zadatak (FPZG čl. 8, `aiPurposes`); student ga vidi u obavijesti prije pisanja; izjava (E-9) ovisi o D-194 i Q-10 (Q-10 ne blokira Asistenta jer se pružatelj ni model ne imenuju; asistent u pilotu radi od 23. 11. 2026.); izjava o AI-ju je dijalog `ch-h` (odluka 2165). U ovom dijelu AI izjava je samo informacija (stupac „Dopušteno / Nije dopušteno”); nikakva procjena niti „postotak AI-ja” ne ulazi ovamo.
 - **Zabranjeni izrazi:** svi novi tekstovi kroz skener (PRODUCT §5). Posebno oprez kod prijedloga o podsjetnicima i oznakama kašnjenja: „kasni” opisuje rok, ne ponašanje studenta.
 
 ---
@@ -278,3 +278,14 @@ Elementi prototipa su ekran (hash), varijanta stanja (izbornik „stanje” u tr
 - Postojeći ekrani bez ljuske (`rad`, `pregled`, `izjava`, `predaja`, `potvrda`) i varijante prijave `preusmjeravanje`, `greska` i `nedostupno` imaju istovjetan HTML prije i poslije izmjene. Na ostalim ekranima razlikuje se samo ono što zadatak traži (zvonce u traci, oznake roka, novi redci i stanja). Veličine i položaji sadržaja na ekranima upis, kolegiji, radovi i početna ostali su isti; razlika je samo u traci prototipa (nije proizvod), koja na mobitelu ima jedan red više zbog izbornika „zvonce”.
 - Nije provjereno čitačem zaslona; nazivi i opisi dolaze iz koda (`aria-label`, `aria-describedby`, `role`), a P-13 (ciljevi na dodir, prijelom stupaca, redoslijed tabulatora) ostaje za centralni prolaz stila.
 - Nije pokrenuta aplikacija ni poslužitelj; za P-1, P-2, P-6, P-7, P-16 i P-17 podaci iz zvonca i povijesti dolaze iz izmišljenih zapisa u prototipu.
+
+## 7. Promjena 23. 11. 2026.: asistent u pilotu radi (ASIST-STUDENT)
+
+**Promijenjeno 23. 11. 2026.: asistent u pilotu radi.** Danielova odluka mijenja raniju odluku „isključen” (NF-2 br. 1, OC-1). U ovom nalazu to pogađa pravilo uporabe alata u obavijesti zadatka (`aiPolicy`, `aiPurposes`) i izjavu (E-9). Pružatelj ni model se ne imenuju (Q-10), samo „Asistent”.
+
+| Stavka | INVENTAR ID | Element prototipa (`Ductura_student.html`) |
+|---|---|---|
+| Obavijest zadatka: pravilo uporabe alata (E-4) | E-4, ASIST-S1 | sažetak „Ukratko”: redak „Asistent u Ducturi radi u pilotu za dopuštene svrhe…”; kartica „Uporaba alata” bez promjene |
+| Zabranjeno zadatkom (`aiPolicy` = prohibited) | ASIST-S1 | varijanta `asistent_zabranjeno` ekrana Izjava: „Asistent nije dostupan. Obavijest ovog zadatka ne dopušta alate.” |
+| Samo sažimanje (`aiSummaryOnly`) | ASIST-S1 | varijanta `asistent_sazimanje`; polje u izvatku obavijesti **nedostaje** |
+| Zapis „što se bilježi” (E-4) | E-4 | u popisu zabilježenog dodani „razgovori s Asistentom” uz „prijenos iz Asistenta” |
