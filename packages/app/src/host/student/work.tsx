@@ -41,6 +41,7 @@ import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
+import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
 import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
@@ -117,7 +118,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               comments: ({ editor, documentId, session, submitted, signedOut }) =>
                 <CommentsHost editor={editor} documentId={documentId} session={session} submitted={submitted} signedOut={signedOut} />,
             }}
-            leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <ChapterPanel workId={assignmentId} /> })}
+            leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session, documentId }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />
