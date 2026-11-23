@@ -18,6 +18,7 @@ import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { assignmentFactsMessages as text } from "./messages.hr";
 import { factsOf, interruptedOf, publishedIn, type AssignmentReads } from "./model";
 import { readCourseFacts, type CourseFactsRead } from "./read";
+import { AssignmentRhythm } from "../input-rhythm/mounts";
 
 /** The facts of one course, read once per visit and per "Pokušaj ponovno". */
 function useCourseFacts(course: TeacherCourse): [CourseFactsRead | null, () => void] {
@@ -83,6 +84,7 @@ export function CourseTasks({ course }: { course: TeacherCourse }) {
               <div className="acts"><button type="button" className="btn secondary small" onClick={retry}>{text.retry}</button></div>
             </div>
           ) : read.reads.get(assignment.id) ? <Facts reads={read.reads.get(assignment.id) as AssignmentReads} /> : null}
+          <AssignmentRhythm courseId={course.id} assignmentId={assignment.id} title={assignment.title} />
           {index === 0 ? (
             <div className="acts"><a className="btn small" href={appHref(base, "/nastavnik/brz-put")}>{text.fastPath}</a></div>
           ) : null}
