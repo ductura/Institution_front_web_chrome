@@ -303,3 +303,46 @@ Pitanja na koja ne mogu odgovoriti sama (najviše 8, samo za Daniela):
 - O8. Montiranje `MentorCard` i `ConsultPanel` u editor (MK-1) dira okvir editora i zajedničke datoteke traka; treba li zasebni VIZ zadatak ili je u traci pisca editora?
 
 Otvoreno za provjeru u pregledniku (nije moguće iz ovog pregleda): sve ekrane kartice Mentor, konzultacija i zapisnika u scenariju koji otvara editor; mobilni prikaz i ladicu; čitač zaslona i fokus u dijalozima `do-h`, „Zatraži konzultacije”, „Vrati na doradu”; ostaje li upisani tekst nakon greške; ponašanje poslužitelja pri istodobnoj potvrdi i prihvatu termina; je li nešto od M-1 do M-13 riješeno u novijoj grani nakon revizija od 22. i 23. 11.
+
+---
+
+## 6. Provedba u prototipu
+
+Zadatak `nf6-prototip-mentorstvo` (slot `claude:wnf6-proto:frontend`, 23. 11. 2026.). Danielove odluke, doslovno: „1 samo mentor, student čita 2. Unutar Ducture 3. Nisam siguran još 4. Mentorstvo otvara nastavnik 5. Da 6. Smije 7. Jesu 8. I na drugom računalu. Inače, sve u pilot”. Svih 17 MK ulazi u pilot. Odluke po pitanjima iz §5:
+
+| Pitanje | Odluka | Posljedica u prototipu |
+|---|---|---|
+| 1 Zapisnik | piše i dopunjuje samo mentor, student čita | uklonjeni studentski zapis, „Potvrđujem”, „Imam primjedbu”; MK-5 svodi se na zadatke koje upisuje mentor |
+| 2 Obrasci i suglasnost | unutar Ducture | MK-12 ostaje u kartici Mentor; „izvornost” samo kao naziv službenog obrasca |
+| 3 Broj mentorstava u pilotu | nije siguran | bez promjene prototipa; MK-11 i MK-14 ipak u pilotu |
+| 4 Ulaz u mentorstvo | mentorstvo otvara nastavnik | uklonjen studentski „Zahtjev za mentorstvo”; N-16 dobiva „Otvori mentorstvo”; student vidi odluku i mentora |
+| 5 Kriteriji | rubrika bez broja, vidljiva studentu | razine i ocjene uklonjene; ocjena ostaje u Merlinu |
+| 6 Priprema | student smije priložiti uz zahtjev za termin | napomena „zapis o unosu, ne o autorstvu” |
+| 7 Poruke | jesu u pilotu uz značku „novo” | odjeljak „Poruke” u kartici Mentor |
+| 8 Poruka sebi i Dokle sam stao | i na drugom računalu | pohrana na poslužitelju, vidi samo student, briše se na zahtjev studenta |
+
+Tablica MK-n → INVENTAR ID → element prototipa. Svaki element ima stanja puno, prazno, učitavanje i grešku (izbornik „Stanja mentorstva” u kartici Mentor, Ctrl+K ili `#nf6=<odjeljak>:<stanje>`; na N-16 izbornik stanja prototipa).
+
+| MK | INVENTAR ID | Element |
+|---|---|---|
+| MK-1 | NF6-MK1, NF6-MK1-RUB (editor §2.9) | kartica Mentor (`mentor2.js` `RP.vRadX`), poruke, „Kako mentor radi”, „Kriteriji rada” (`mentor3.js`) |
+| MK-2 | NF6-MK2 | „Termini konzultacija”, dijalog `m2meet` s izborom datuma i vremena |
+| MK-3 | NF6-MK3 | tema termina, „Povuci zahtjev”, „Odbij”, „Otkaži termin” |
+| MK-4 | NF6-MK4 (editor §2.9), NF6-MK4 (nastavnik §10) | „Zapisnik konzultacija” (samo mentor piše); N-12 `konzultacije` |
+| MK-5 | NF6-MK5 (editor, nastavnik) | „Dogovoreno na konzultacijama”: zadatke upisuje mentor |
+| MK-6 | NF6-MK6 | „Etape · n od m odobreno” s rokom i opisom |
+| MK-7 | NF6-MK7 (editor, nastavnik) | odjeljak „Mentorstvo” u kartici; „Otvori mentorstvo” i dijalog `om-h` na N-16 |
+| MK-8 | NF6-MK8 | „Stanje rada” (dorada, pregled, prihvat), „Vrati na doradu”, „Pregled runde” |
+| MK-9 | NF6-MK9 | „Poruka sebi” i „Dokle sam stao” s pohranom na poslužitelju; trake stanja |
+| MK-10 | NF6-MK10 | „Priprema za konzultacije”, prilog uz zahtjev za termin |
+| MK-11 | NF6-MK11 (editor, nastavnik) | dijalog „Moji studenti”; kartica „Moji studenti” na N-16 |
+| MK-12 | NF6-MK12 | „Obrasci fakulteta” i „Suglasnost mentora za predaju” |
+| MK-13 | NF6-MK13 | dijalog „Vremenska crta rada” |
+| MK-14 | NF6-MK14 | „Nakon predaje i obrana” |
+| MK-15 | NF6-MK15 (editor, nastavnik) | stanja tekstom, izbor datuma i vremena, 44 px, `lang="hr"`, axe |
+| MK-16 | NF6-MK16 | izbornik „Stanja mentorstva”; scenarij lažnog poslužitelja izvan trake |
+| MK-17 | NF6-MK17 (editor, nastavnik) | pregled tekstova i zabranjenih izraza |
+
+Serverske ovisnosti koje **nedostaju** i ne izmišljaju se (svaka je navedena u INVENTAR-u uz svoju stavku): SRV-MENTOR-1 („Kako mentor radi”, kriteriji, obavijest o poruci), SRV-MENTOR-3 (tema, povlačenje, odbijanje, otkazivanje termina), SRV-MENTOR-5 (zadaci s kvačicama), SRV-MENTOR-6 (opis etape), SRV-MENTOR-7 (otvaranje mentorstva od nastavnika, obavijest), SRV-MENTOR-8 („student je vidio”), SRV-MENTOR-9 (serverska pohrana Poruke sebi i Dokle sam stao), SRV-MENTOR-10 (prilog pripreme uz termin), SRV-MENTOR-11 (agregat „Moji studenti”), SRV-MENTOR-12 (suglasnost i obrasci), SRV-MENTOR-14 (nakon predaje i obrana). Postojeće rute (MK-2, MK-4, MK-6, MK-8, MK-13) navedene su uz stavke.
+
+Provjera 23. 11. 2026.: 1280 i 390 px, svijetla i tamna tema, tipkovnica, axe; jedino kršenje (`aria-required-children` na `#tabs`) postoji i na bazi. Aplikacija u `packages/` nije dirana: uklanjanje studentskog „Zahtjeva za mentorstvo” (`student/mentorship-request/`) i montiranje u host su zasebni WEB zadaci.

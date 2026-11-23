@@ -358,7 +358,7 @@ legend { font-weight:600; padding:0 4px; }
     var dlg = stage.querySelector('.dialog[role="dialog"]'); if (!dlg) return;
     var first = dlg.querySelector('textarea, input, .btn:not([aria-disabled="true"])') || dlg; first.focus();
     dlg.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { e.preventDefault(); App.state.dlg = null; render(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); App.state.dlg = null; if (/^otvori/.test(App.state.variant[current()] || '')) App.state.variant[current()] = 'puno'; render(); return; }
       if (e.key === 'Tab') {
         var f = dlg.querySelectorAll('button, a[href], textarea, input, select'); if (!f.length) return;
         var a = f[0], z = f[f.length - 1];
