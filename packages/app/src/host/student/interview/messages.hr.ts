@@ -31,6 +31,8 @@ export const interviewMessages = {
   loading: "Učitavam poziv.",
   unavailable: "Poziv nije bilo moguće učitati. Pokušaj ponovno.",
   notInvited: "Razgovor još nije zakazan.",
+  notStarted: "Rad još nije započet.",
+  notSubmitted: "Razgovor je moguć tek za predan rad. Ako je rad već predan, osvježi stranicu.",
   retry: "Pokušaj ponovno",
   failed: "Objašnjenje nije bilo moguće poslati. Pokušaj ponovno.",
   rejected: "Poslužitelj nije prihvatio objašnjenje.",

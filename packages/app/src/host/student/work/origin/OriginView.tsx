@@ -2,9 +2,9 @@
 
 import { Button } from "@ductura/ui";
 
-import { originText as t } from "../../../teacher/origin-map/messages.hr";
-import { shareRows, unknownLine } from "../../../teacher/origin-map/model";
-import type { OriginRead } from "../../../teacher/origin-map/contract";
+import { originText as t } from "../../../teacher/provenance/origin-messages.hr";
+import { shareRows, unknownLine } from "../../../teacher/provenance/origin-model";
+import type { OriginRead } from "../../../teacher/provenance/origin";
 
 /**
  * The composition by origin kind with the captions of the teacher's screen (WEB-0911): same labels, same order,

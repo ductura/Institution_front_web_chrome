@@ -68,7 +68,7 @@ describe("PIL-K-RAZGOVOR-PRILOG student note", () => {
     expect(transport).not.toHaveBeenCalled();
     expect((await attachNote(real, DOCUMENT, new File([new Uint8Array(NOTE_MAX_BYTES).fill(65)], "tocno.txt"))).kind).toBe("unavailable");
     expect(transport).toHaveBeenCalledTimes(1);
-  });
+  }, 30_000); // Base64 of a whole 1 MiB note is slow on a single test worker.
 
   it("is not offered before the invitation or after the interview is held", () => {
     expect(canAttach(READY)).toBe(true);

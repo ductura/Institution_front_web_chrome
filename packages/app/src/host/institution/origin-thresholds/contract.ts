@@ -6,7 +6,7 @@
 // There are no default thresholds: a kind the server does not list has none. Only the institution
 // administrator may read or change them; the server answers 403 to anyone else.
 import { matchesSchema, type Schema } from "../../../../../../src/client/schema-check";
-import { ORIGIN_KINDS, type OriginKind } from "../../teacher/origin-map/contract";
+import { ORIGIN_KINDS, type OriginKind } from "../../teacher/provenance/origin";
 
 export { ORIGIN_KINDS, type OriginKind };
 
