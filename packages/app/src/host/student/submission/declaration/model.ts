@@ -1,6 +1,5 @@
-// The view's model of E-9 "Izjava" and PD-2 "Razgovor N" (WEB-2107). There is no server route for
-// the declaration yet (declaration-v1), so the data comes through a reader the caller gives; the
-// host passes one that answers "error", and only tests and the catalogue pass a fake.
+// The view's model of E-9 "Izjava" and PD-2 "Razgovor N" (WEB-2107). The host reads it from
+// declaration-v1 through step-ports.ts (PIL-K-IZJAVA); only tests and the catalogue pass a fake.
 import { chatDialogText, declarationStepText as t } from "./messages.hr";
 
 export type RecordedItem =
@@ -48,9 +47,6 @@ export type DeclarationRead =
 
 export type DeclarationReader = (assignmentId: string) => Promise<DeclarationRead>;
 
-/** The host's reader until declaration-v1 has a route: the block cannot load (§5 rule 11). */
-export const unavailableReader: DeclarationReader = async () => ({ kind: "error" });
-
 export const ANSWER_MAX_LENGTH = 1000;
 
 /** What the page shows: the work's state first, then what was read. */
@@ -85,9 +81,37 @@ export function entryLabel(entry: ChatEntry): string {
   return `${who} · ${entry.time}`;
 }
 
-/** "Dalje" is open only once the declaration is confirmed (R-32). */
-export function canProceed(view: StepView, confirmed: boolean): boolean {
-  return confirmed && (view === "full" || view === "empty" || view === "error");
+/**
+ * Where the confirmation stands: `saved` only once the server holds it (step-ports.ts); `reopened`
+ * when the server dropped a held confirmation because the declaration changed.
+ */
+export type ConfirmState = "none" | "sending" | "saved" | "reopened" | "conflict" | "stale" | "refused" | "technical";
+
+/**
+ * "Dalje" is open only once the server holds the confirmation (R-32). A confirmation the server
+ * does not hold, for any reason, never opens it: step 3 and step 4 check the same (PIL-K-IZJAVA).
+ */
+export function canProceed(view: StepView, confirm: ConfirmState): boolean {
+  return confirm === "saved" && (view === "full" || view === "empty");
+}
+
+/** The student may confirm only what they declared themselves: a declaration the server read, filled, not yet confirmed. */
+export function canConfirm(view: StepView, read: DeclarationRead, confirm: ConfirmState): boolean {
+  return (view === "full" || view === "empty") && read.kind === "ready" && read.declared !== null && confirm !== "sending" && confirm !== "saved";
+}
+
+/** The line under the confirmation for each state; null when there is nothing to say. */
+export function confirmLine(confirm: ConfirmState): { readonly role: "status" | "alert"; readonly text: string } | null {
+  switch (confirm) {
+    case "none": return null;
+    case "saved": return { role: "status", text: t.confirmSaved };
+    case "sending": return { role: "status", text: t.confirming };
+    case "reopened": return { role: "status", text: t.reopened };
+    case "conflict": return { role: "alert", text: t.conflict };
+    case "stale": return { role: "alert", text: t.stale };
+    case "refused": return { role: "alert", text: t.confirmRefused };
+    case "technical": return { role: "alert", text: t.confirmTechnical };
+  }
 }
 
 export function recordedLine(item: RecordedItem): { readonly line: string; readonly who: string } {

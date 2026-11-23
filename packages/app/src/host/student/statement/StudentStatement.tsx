@@ -4,36 +4,38 @@ import { useEffect, useState } from "react";
 import { Button, Select, TextArea } from "@ductura/ui";
 
 import type { HumanHelp, HumanHelpKind, StatementPort, StatementRead } from "../../../../../../src/client/statement.ts";
-import { attachFile, helpAfterRead, helpValid, isReadOnly, saveHelp, withKind } from "./model";
+import { attachFile, helpAfterRead, helpValid, isReadOnly, saveHelp, withKind, writeNotice } from "./model";
 import { statementMessages as text } from "./messages.hr";
 
 /**
- * Human-help statement and printout of an external conversation (WEB-1503). The statement text and
- * the allowed formats come from the server; after submission every control is read only.
+ * Human-help statement and printout of an external conversation (WEB-1503), mounted in the
+ * declaration step (PIL-K-IZJAVA). The step reads both halves together and hands this one its
+ * read, so both write on one version; every write ends with `onReload`, which reads both again.
+ * The statement text and the allowed formats come from the server; after submission every
+ * control is read only. A failed write stays as an alert and keeps what the student typed.
  */
-export default function StudentStatement({ port, assignmentId }: { port: StatementPort; assignmentId: string }) {
-  const [read, setRead] = useState<StatementRead | null>(null);
-  const [attempt, setAttempt] = useState(0);
+export default function StudentStatement({ port, assignmentId, read, onReload, onSignIn }: {
+  port: StatementPort;
+  assignmentId: string;
+  /** The step's read of this half; null while it loads. */
+  read: StatementRead | null;
+  onReload: () => void;
+  onSignIn: () => void;
+}) {
   const [draft, setDraft] = useState<HumanHelp | null>(null);
   const [fileError, setFileError] = useState<string | undefined>();
   const [notice, setNotice] = useState<{ tone: "status" | "alert"; message: string } | null>(null);
 
   useEffect(() => {
-    let active = true;
-    void port.read(assignmentId).then((next) => {
-      if (!active) return;
-      setRead(next);
-      setDraft((current) => helpAfterRead(current, next));
-    }).catch(() => { if (active) setRead({ kind: "unavailable" }); });
-    return () => { active = false; };
-  }, [port, assignmentId, attempt]);
+    if (read !== null) setDraft((current) => helpAfterRead(current, read));
+  }, [read]);
 
   if (read === null) return <p role="status">{text.loading}</p>;
   if (read.kind !== "ready") {
     return (
       <div>
         <p role="alert">{text.unavailable}</p>
-        <Button tone="quiet" onClick={() => { setRead(null); setAttempt((n) => n + 1); }}>{text.retry}</Button>
+        <Button tone="quiet" onClick={onReload}>{text.retry}</Button>
       </div>
     );
   }
@@ -44,9 +46,10 @@ export default function StudentStatement({ port, assignmentId }: { port: Stateme
 
   const save = async () => {
     const result = await saveHelp(port, assignmentId, read, help);
-    setNotice(result.kind === "saved"
-      ? { tone: "status", message: text.saved }
-      : { tone: "alert", message: result.kind === "rejected" ? text.rejected : text.failed });
+    if (result.kind === "signedOut") return onSignIn();
+    setNotice(writeNotice(result));
+    // Saved or overtaken: both halves show what the server now holds.
+    if (result.kind === "saved" || result.kind === "conflict") onReload();
   };
 
   const attach = async (file: File | undefined) => {
@@ -54,13 +57,14 @@ export default function StudentStatement({ port, assignmentId }: { port: Stateme
     const result = await attachFile(port, assignmentId, read, file);
     if (result.kind === "invalid") { setFileError(result.message); return; }
     setFileError(undefined);
-    if (result.kind === "saved") setAttempt((n) => n + 1);
-    else setNotice({ tone: "alert", message: text.failed });
+    if (result.kind === "signedOut") return onSignIn();
+    setNotice(result.kind === "saved" ? { tone: "status", message: text.attachSent } : writeNotice(result));
+    if (result.kind === "saved" || result.kind === "conflict") onReload();
   };
 
   return (
     <section aria-labelledby="statement-h" data-statement-readonly={locked || undefined}>
-      <h2 id="statement-h">{text.title}</h2>
+      <h4 id="statement-h">{text.title}</h4>
       <p>{read.statementText}</p>
       <Select label={text.helpLegend} disabled={locked} value={kind}
         options={read.helpKinds.map((k) => ({ value: k, label: text.helpKinds[k] }))}
@@ -68,7 +72,7 @@ export default function StudentStatement({ port, assignmentId }: { port: Stateme
       {kind !== "none" && (
         <TextArea label={text.helpText} readOnly={locked} value={helpText} onChange={(event) => setDraft({ kind, text: event.target.value })} />
       )}
-      <h3>{text.printoutTitle}</h3>
+      <h5>{text.printoutTitle}</h5>
       <p>{text.printoutNote}</p>
       {read.attachment && <p>{text.attached}: {read.attachment.name}</p>}
       {!locked && (

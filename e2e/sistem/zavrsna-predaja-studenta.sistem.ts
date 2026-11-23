@@ -134,7 +134,15 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     await expect(page.getByRole('heading', { name: 'Izjava', exact: true })).toBeVisible();
     const next = page.getByRole('button', { name: 'Dalje', exact: true });
     await expect(next).toBeDisabled();
-    await page.getByRole('checkbox', { name: 'Potvrđujem izjavu' }).check();
+    // PIL-K-IZJAVA: the declaration is filled and saved on the server before it can be confirmed.
+    await page.getByRole('link', { name: /^(Ispuni|Uredi) izjavu$/ }).click();
+    await page.getByRole('button', { name: 'Spremi izjavu' }).click();
+    await expect(page.getByText('Izjava o pomoći je spremljena na poslužitelju.')).toBeVisible();
+    const confirmBox = page.getByRole('checkbox', { name: 'Potvrđujem izjavu' });
+    await expect(confirmBox).toBeEnabled();
+    // Checked only once the server holds the confirmation (no optimistic tick).
+    await confirmBox.click();
+    await expect(confirmBox).toBeChecked();
     await expect(next).toBeEnabled();
     await next.click();
     await expect(page).toHaveURL((url) => url.pathname === `${submissionPath}/pregled`);

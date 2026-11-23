@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { DeclarationAi, type DeclarationAiState } from "@ductura/ui";
+import { useEffect, useMemo, useState } from "react";
 
-import StudentDeclaration from "../../packages/app/src/host/student/declaration/StudentDeclaration.tsx";
 import AiDeclarationSection from "../../packages/app/src/host/teacher/ai-declaration/AiDeclarationSection.tsx";
 import type { DeclarationPort } from "../../src/client/declaration.ts";
 import { createFakeDeclaration } from "../../src/client/declaration-fake.ts";
 import styles from "./Catalog.module.css";
+import { LABELS } from "./declaration-ai";
 
 const ASSISTANT = "Asistent · Primjer d.o.o., Model A";
 const SUBMISSION = "catalog-submission";
@@ -45,7 +46,22 @@ const newPort = () => createFakeDeclaration({
 });
 
 /**
- * Both host containers on one fake (WEB-1209; the teacher's is N-07's AiDeclarationSection): what the student confirms is what the teacher
+ * The student's half on the fake port. The host's own step (PIL-K-IZJAVA) runs on declaration-v1;
+ * this keeps only the catalogue's flow: the UI component on the port, confirmed or not.
+ */
+function StudentHalf({ port }: { port: DeclarationPort }) {
+  const [state, setState] = useState<DeclarationAiState>({ kind: "loading" });
+  const [confirmed, setConfirmed] = useState(false);
+  useEffect(() => {
+    void port.readStudent(SUBMISSION).then((read) => setState(read.kind === "ready" ? { kind: "ready", uses: read.uses, conversations: read.conversations } : { kind: "error" }));
+  }, [port]);
+  if (confirmed) return <p role="status">Izjava je potvrđena.</p>;
+  return <DeclarationAi labels={LABELS} state={state} onRetry={() => undefined}
+    onConfirm={(attachments) => void port.confirm(SUBMISSION, attachments).then((r) => setConfirmed(r.kind === "confirmed"))} />;
+}
+
+/**
+ * Both containers on one fake (WEB-1209; the teacher's is N-07's AiDeclarationSection): what the student confirms is what the teacher
  * reads. Not a component entry, so it stays out of the coverage and screenshot lists.
  */
 export function DeclarationFlow() {
@@ -65,7 +81,7 @@ export function DeclarationFlow() {
     <section id="DeclarationFlow" aria-labelledby="DeclarationFlow-h" className={styles.component}>
       <h2 id="DeclarationFlow-h">DeclarationFlow</h2>
       <div className={`sheet ${styles.sheet}`} data-sheet-theme="light" data-flow="student">
-        <StudentDeclaration port={port} submissionId={SUBMISSION} />
+        <StudentHalf port={port} />
       </div>
       <div className={`sheet ${styles.sheet}`} data-sheet-theme="light" data-flow="teacher">
         <AiDeclarationSection key={confirmations} port={port} submissionId={SUBMISSION} />

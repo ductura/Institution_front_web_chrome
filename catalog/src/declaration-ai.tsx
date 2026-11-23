@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import type { CatalogState } from "./coverage";
 
-const LABELS: DeclarationAiLabels = {
+export const LABELS: DeclarationAiLabels = {
   title: "Izjava o uporabi AI-ja",
   noUse: "U ovom radu nije zabilježena uporaba Asistenta. Ništa se ne prilaže automatski.",
   aiDisabled: "Zadatak ne dopušta ugrađenog Asistenta. Izjavu ipak potvrđujete.",
