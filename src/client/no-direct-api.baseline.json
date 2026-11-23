@@ -56,9 +56,6 @@
  "src/components/how-it-works/access.ts": [
   "API URL"
  ],
- "src/components/replay/replay-view.ts": [
-  "import  and up to change "
- ],
  "src/components/shell/ShellLogout.tsx": [
   "API URL",
   "form submit",
@@ -115,7 +112,6 @@
  "src/lib/i18n/messages.en.ts": [
   "import ,\n      due: ",
   "import ,\n    importValues: { yes: ",
-  "import ,\n    to: ",
   "test file import"
  ],
  "src/lib/i18n/messages.hr.ts": [
