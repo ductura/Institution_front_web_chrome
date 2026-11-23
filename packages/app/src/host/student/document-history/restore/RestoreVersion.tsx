@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@ductura/ui";
 
 import type { Version } from "../../time-machine/model";
@@ -18,6 +18,10 @@ export default function RestoreVersion({
   const [picked, setPicked] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  // `busy` is the last render's: a second click before the next render still sees false. The ref
+  // holds the restore from its first click, so a second one never reaches the port, whose refusal
+  // would clear `busy` while the first restore still runs.
+  const running = useRef(false);
   const [result, setResult] = useState<RestoreOutcome | null>(null);
   const [from, setFrom] = useState(0);
   // This page's restores, so each new revision carries "vraćeno iz verzije N" (PIL-D7-OBNOVA), also
@@ -26,11 +30,13 @@ export default function RestoreVersion({
   const options = restorableVersions(versions);
 
   const run = async () => {
-    if (busy) return;
+    if (running.current) return;
+    running.current = true;
     const revision = Number(picked);
     setBusy(true);
     setConfirming(false);
     const outcome = await restoreVersion(port, documentId, versions, revision);
+    running.current = false;
     setBusy(false);
     setResult(outcome);
     setFrom(revision);
