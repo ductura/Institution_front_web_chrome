@@ -190,6 +190,8 @@ export class EvidenceSession {
    */
   private unsaved: BuiltSegment | null = null;
   private saving = false;
+  /** `adoptServer` runs: no write or drain step starts until the journal answered. */
+  private adopting = false;
   private flight: Promise<void> | null = null;
   private stepping: Promise<void> | null = null;
   private stepAgain = false;
@@ -407,7 +409,7 @@ export class EvidenceSession {
   }
 
   private startWrites(): void {
-    if (this.flight || this.halted || this.closedBy || !this.next) return;
+    if (this.flight || this.halted || this.closedBy || this.adopting || !this.next) return;
     if (!this.stopped && this.profile === null) return; // O3 a: wait for a successful open
     let settle!: (written: Promise<void>) => void;
     this.flight = new Promise<void>((resolve) => { settle = resolve; });
@@ -416,7 +418,7 @@ export class EvidenceSession {
 
   private async writeQueued(): Promise<void> {
     try {
-      while (this.next && !this.halted && !this.closedBy && (this.stopped || this.profile !== null)) {
+      while (this.next && !this.halted && !this.closedBy && !this.adopting && (this.stopped || this.profile !== null)) {
         const candidate = this.next;
         this.next = null;
         await this.save(candidate);
@@ -544,7 +546,7 @@ export class EvidenceSession {
       this.stepAgain = true;
       return;
     }
-    if (!this.runner || this.halted || this.closedBy || this.paused || !this.deps.network.online()) return;
+    if (!this.runner || this.halted || this.closedBy || this.paused || this.adopting || !this.deps.network.online()) return;
     this.clearTimer();
     this.stepAgain = false;
     this.stepping = this.stepLoop().finally(() => {
@@ -554,7 +556,7 @@ export class EvidenceSession {
   }
 
   private async stepLoop(): Promise<void> {
-    while (this.runner && !this.halted && !this.closedBy && !this.paused && this.deps.network.online()) {
+    while (this.runner && !this.halted && !this.closedBy && !this.paused && !this.adopting && this.deps.network.online()) {
       let result;
       this.syncing = this.owed > 0;
       if (this.syncing) this.emit();
@@ -649,28 +651,64 @@ export class EvidenceSession {
    */
   async adoptServer(confirmed: boolean): Promise<AdoptResult> {
     const { journal } = this.deps;
-    if (this.closed || !journal.adoptServerEvidence) return { kind: "unavailable" };
-    await this.settled();
-    const opened = await this.openSafely();
-    if (this.closed || opened.status !== "opened" || opened.work.documentId !== this.id) return { kind: "unavailable" };
-    const fresh = this.deps.schemaVersion === 3 ? await verifiedV3(this.id, opened.work) : null;
-    if (this.deps.schemaVersion === 3 && !fresh) return { kind: "unavailable" };
-    if (this.closed) return { kind: "unavailable" };
-    const decidedAt = this.now().toISOString();
+    if (this.closed || this.adopting || !journal.adoptServerEvidence) return { kind: "unavailable" };
+    // Review c.7099383404: a write the take overtook would fail on the sequence
+    // and its text would be neither in the snapshot nor in the copy, so no
+    // write or drain step starts from here until the journal answered.
+    this.adopting = true;
+    this.clearTimer();
+    let result: AdoptResult = { kind: "unavailable" };
     try {
-      const meta = fresh
-        ? await journal.adoptServerEvidence(this.id, opened.work, confirmed, decidedAt, this.seq, fresh)
-        : await journal.adoptServerEvidence(this.id, opened.work, confirmed, decidedAt, this.seq);
-      // Nothing more is written by this session: a new one loads the server's version.
-      this.close();
+      await this.settled();
+      const opened = await this.openSafely();
+      if (this.closed || opened.status !== "opened" || opened.work.documentId !== this.id) return result;
+      let fresh: VerifiedWorkOpening | null = null;
+      if (this.deps.schemaVersion === 3) {
+        try {
+          fresh = await verifiedV3(this.id, opened.work);
+        } catch {
+          fresh = null;
+        }
+        if (!fresh) return result;
+      }
+      if (this.closed) return result;
+      // A text proposed meanwhile is written first (in `finally`); the author decides again.
+      if (this.flight || this.next || this.unsaved) return (result = { kind: "refused", code: "pending_write" });
+      const decidedAt = this.now().toISOString();
+      let meta: SyncMeta;
+      try {
+        meta = fresh
+          ? await journal.adoptServerEvidence(this.id, opened.work, confirmed, decidedAt, this.seq, fresh)
+          : await journal.adoptServerEvidence(this.id, opened.work, confirmed, decidedAt, this.seq);
+      } catch (error) {
+        const code = (error as { code?: unknown } | null)?.code;
+        return (result = { kind: "refused", code: typeof code === "string" ? code : "unknown" });
+      }
+      result = { kind: "adopted", meta };
       this.seq = meta.localSeq;
       this.stored = meta.state;
       this.syncedHere = false;
+      // A text proposed while the journal took the server's version stays on
+      // this device over it, without evidence, as text written after a stop.
+      const late = this.next as Candidate | null; // set meanwhile by `propose`
+      this.next = null;
+      if (late && !this.closed) {
+        try {
+          await this.saveUncovered(late.doc, this.stopped ?? "gap");
+        } catch (error) {
+          this.failure = failureOf(error);
+        }
+      }
+      // Nothing more is written by this session: a new one loads the server's version.
+      this.close();
+      return result;
+    } finally {
+      this.adopting = false;
+      if (result.kind !== "adopted") {
+        this.startWrites();
+        this.kick();
+      }
       this.emit();
-      return { kind: "adopted", meta };
-    } catch (error) {
-      const code = (error as { code?: unknown } | null)?.code;
-      return { kind: "refused", code: typeof code === "string" ? code : "unknown" };
     }
   }
 

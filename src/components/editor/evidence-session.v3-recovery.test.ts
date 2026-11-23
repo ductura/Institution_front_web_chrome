@@ -17,7 +17,7 @@ import { canonicalToTiptap, canonicalToTiptapV3, createEditorExtensions, createE
 import type { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
 import { createDrainRunner } from "@/lib/sync/drain-runner";
 import { createEvidenceTransport, evidenceVerifierFor } from "@/lib/sync/evidence-transport";
-import { conflict, DOC, DOMAIN, journalKit, PROFILE, raw, server, sha256, trusted } from "@/lib/sync/evidence-test-kit";
+import { conflict, DOC, DOMAIN, journalKit, json, PROFILE, raw, server, sha256, trusted } from "@/lib/sync/evidence-test-kit";
 
 import { EvidenceSession, type EvidenceSessionDeps, type SheetDocument } from "./evidence-session";
 import { sheetCandidate } from "./LocalDocument";
@@ -124,7 +124,7 @@ async function everything(journal: AtomicDexieJournal) {
  * the server, whose version (revision 2) another device wrote. Returns the
  * journal, the local text, and the server's open answer after the conflict.
  */
-async function inConflict(version: Version) {
+async function inConflict(version: Version, refusal: () => Response = () => conflict("chain_conflict", 2), state = "CONFLICT") {
   const zero = revisionZero(version);
   const verified0 = version === 3 ? (await verifyWorkOpening(DOC, zero))! : undefined;
   // The other device: its row is what the server holds at revision 2.
@@ -143,11 +143,11 @@ async function inConflict(version: Version) {
   first.close();
   const runner = createDrainRunner<QueuedTransaction>({
     journal: verified0 ? drainJournalFor(journal, verified0) : journal,
-    transport: createEvidenceTransport(server(0, () => conflict("chain_conflict", 2)).fetchImpl, undefined, verified0),
+    transport: createEvidenceTransport(server(0, refusal).fetchImpl, undefined, verified0),
     verifyFor: evidenceVerifierFor(zero),
   });
   await runner.step(DOC);
-  expect((await read(journal, verified0)).meta).toMatchObject({ state: "CONFLICT", conflictRevision: 2 });
+  expect((await read(journal, verified0)).meta).toMatchObject({ state });
   return { journal, local, serverWork, otherDocument: tx.document };
 }
 
@@ -261,6 +261,120 @@ describe("PIL-K-V3-OPORAVAK: a v3 work leaves CONFLICT as a v1 work does", () =>
     expect(copies).toHaveLength(1);
     expect(canonicalizeJcs(copies![0]!.document)).toBe(canonicalizeJcs(twinA.local));
     expect(copies![0]!.document.schemaVersion).toBe(1);
+  });
+});
+
+const V3_PROOF = { documentId: DOC, sha256: REVISION_ZERO_V3_SHA256 };
+
+describe("PIL-K-V3-OPORAVAK: RECOVERY_REQUIRED and the author's word", () => {
+  it("a v3 work leaves RECOVERY_REQUIRED; only the diverged row owed needs no confirmation", async () => {
+    const { journal, local, serverWork, otherDocument } = await inConflict(3, () => json(409, { status: "txid_reused" }), "RECOVERY_REQUIRED");
+    const { session } = sessionFor(journal, 3, [opened(serverWork)]);
+    expect(await session.load()).toEqual({ kind: "recovery", reason: "sticky", document: local });
+    expect(await session.adoptServer(false)).toMatchObject({ kind: "adopted", meta: { state: "SYNCED" } });
+    const verified = (await verifyWorkOpening(DOC, serverWork, V3_PROOF))!;
+    expect(jcsUtf8Bytes((await journal.readEvidence(DOC, verified)).snapshot!.document)).toEqual(otherDocument);
+    const copies = await journal.readSalvage(DOC, verified);
+    expect(copies).toMatchObject([{ cause: "RECOVERY_REQUIRED" }]);
+    expect(canonicalizeJcs(copies[0]!.document)).toBe(canonicalizeJcs(local));
+  });
+
+  it("without the author's word a stopped v3 text is not replaced, and writing goes on", async () => {
+    const { journal, session, write } = await stoppedRecord();
+    const before = await everything(journal);
+    expect(await session.adoptServer(false)).toEqual({ kind: "refused", code: "confirmation_required" });
+    expect(await everything(journal)).toEqual(before);
+    // The take released the writes again.
+    const next = await write(" i dalje");
+    expect(canonicalizeJcs((await journal.readEvidence(DOC, ZERO_V3)).snapshot!.document)).toBe(canonicalizeJcs(next));
+  });
+});
+
+let ZERO_V3: VerifiedWorkOpening;
+
+/**
+ * A v3 work whose recorder stopped (a change outside the recorder: `gap`) and
+ * that owes nothing: the session stays alive and writes on without evidence.
+ */
+async function stoppedRecord(
+  over: Partial<EvidenceSessionDeps> = {}, journal: AtomicDexieJournal = openJournal(), answers: OpenOutcome[] = [opened(revisionZero(3))],
+) {
+  ZERO_V3 = (await verifyWorkOpening(DOC, revisionZero(3)))!;
+  const { session } = sessionFor(journal, 3, answers, over);
+  const loaded = await session.load();
+  if (loaded.kind !== "ready") throw new Error(`load: ${loaded.kind}`);
+  // Not recorded: the saved text differs from what the recorder saw.
+  const editor = new Editor({ element: null, extensions: createEditorExtensionsV3(), content: canonicalToTiptapV3(loaded.document as CanonicalDocumentV3) });
+  editors.push(editor);
+  const write = async (text: string, settle = true) => {
+    editor.view.dispatch(editor.state.tr.insertText(text));
+    const candidate = sheetCandidate(editor, 3)!;
+    session.edit();
+    const proposed = session.propose(candidate.doc);
+    if (settle) {
+      await proposed;
+      await session.settled();
+    }
+    return candidate.doc;
+  };
+  const first = await write("Tekst bez dokaza");
+  expect(session.snapshot()).toMatchObject({ stopped: true, state: "LOCAL_DURABLE" });
+  expect((await journal.readEvidence(DOC, ZERO_V3)).meta).toMatchObject({ evidenceStopped: "gap" });
+  return { journal, session, write, first };
+}
+
+describe("PIL-K-V3-OPORAVAK: no text is lost to a write the take overtakes (review c.7099383404)", () => {
+  it("a text proposed while the server is asked is written first and the take is refused", async () => {
+    let propose: (() => Promise<unknown>) | null = null;
+    const zero = revisionZero(3);
+    const { journal, session, write } = await stoppedRecord({
+      open: async () => {
+        await propose?.();
+        return opened(zero);
+      },
+    });
+    let late: SheetDocument | null = null;
+    propose = async () => { propose = null; late = await write(" kasni tekst", false); };
+    expect(await session.adoptServer(true)).toEqual({ kind: "refused", code: "pending_write" });
+    await session.settled();
+    const after = await journal.readEvidence(DOC, ZERO_V3);
+    expect(canonicalizeJcs(after.snapshot!.document)).toBe(canonicalizeJcs(late!));
+    expect(await journal.readSalvage(DOC, ZERO_V3)).toEqual([]);
+    // Asked again, the take keeps that text as the copy.
+    expect((await session.adoptServer(true)).kind).toBe("adopted");
+    const copies = await journal.readSalvage(DOC, ZERO_V3);
+    expect(copies).toHaveLength(1);
+    expect(canonicalizeJcs(copies[0]!.document)).toBe(canonicalizeJcs(late!));
+  });
+
+  it("a text proposed while the journal takes the server's version stays in the journal; the earlier one is the copy", async () => {
+    let during: (() => Promise<void>) | null = null;
+    const hooked = (journal: AtomicDexieJournal) => ({
+      readEvidence: journal.readEvidence.bind(journal),
+      startEvidence: journal.startEvidence.bind(journal),
+      saveSegment: journal.saveSegment.bind(journal),
+      saveUncovered: journal.saveUncovered.bind(journal),
+      readSalvage: journal.readSalvage.bind(journal),
+      adoptServerEvidence: async (...args: Parameters<AtomicDexieJournal["adoptServerEvidence"]>) => {
+        const taking = journal.adoptServerEvidence(...args);
+        await during?.();
+        return taking;
+      },
+    }) as unknown as EvidenceSessionDeps["journal"];
+    const base = openJournal();
+    const { journal, session, write, first } = await stoppedRecord({ journal: hooked(base) }, base);
+    expect(journal).toBe(base);
+    let late: SheetDocument | null = null;
+    during = async () => { during = null; late = await write(" za vrijeme preuzimanja", false); };
+    const before = (await journal.readEvidence(DOC, ZERO_V3)).meta!.localSeq;
+    expect(await session.adoptServer(true)).toMatchObject({ kind: "adopted" });
+    const after = await journal.readEvidence(DOC, ZERO_V3);
+    expect(canonicalizeJcs(after.snapshot!.document)).toBe(canonicalizeJcs(late!));
+    expect(after.meta).toMatchObject({ evidenceStopped: "gap" });
+    expect(after.meta!.localSeq).toBe(before + 2);
+    const copies = await journal.readSalvage(DOC, ZERO_V3);
+    expect(copies).toHaveLength(1);
+    expect(canonicalizeJcs(copies[0]!.document)).toBe(canonicalizeJcs(first));
   });
 });
 
