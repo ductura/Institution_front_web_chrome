@@ -21,6 +21,7 @@ import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { originText } from "./host/teacher/origin-map/messages.hr";
+import { interviewMessages as studentInterviewText } from "./host/student/interview/messages.hr";
 import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
 import { hostText } from "./text";
 
@@ -100,6 +101,8 @@ export const PAGES: readonly Page[] = [
   { path: "/rad/[assignmentId]/reprodukcija", label: t.replay.titleStudent, kind: "pending", roles: ["student"] },
   // PIL-P1-SASTAV-STUDENT: the student sees the same composition as the teacher (P-1 rule 2.2).
   { path: "/rad/[assignmentId]/podrijetlo", label: originText.title, kind: "pending", roles: ["student"] },
+  // PIL-K-RAZGOVOR: the student's side of the teacher's interview preparation (N-14, WEB-1531).
+  { path: "/rad/[assignmentId]/razgovor", label: studentInterviewText.pageTitle, kind: "pending", roles: ["student"] },
   { path: "/nastavnik/kolegiji", label: t.teacherCourses.title, kind: "teacherCourses", roles: ["teacher"], current: "/nastavnik" },
   // WEB-2143: N-04 "Popis studenata", reached from the course card (N-01).
   { path: "/nastavnik/kolegiji/[courseId]/studenti", label: courseStudentsMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },

@@ -1,9 +1,11 @@
 "use client";
 
 // WEB-2109 (PARITET Predaja E-10 / PD-3): step 4 in the host. Same server calls as
-// src/components/student/Submission.tsx (evidence.open.post, submission.submit.post), now with the
+// src/components/student/Submission.tsx (evidence.open.post; the submission now on submission.submit-second.post), with the
 // transport of "Provjeri stanje predaje" (readSubmittedWork), the extended deadline (C-15), the states
 // of the prototype, aria-disabled instead of disabled, and a backdrop click that closes PD-3 (R-30).
+// PIL-K-IZJAVA-VRATA: the declaration is read from the server (student.declaration.get), never from this
+// browser; a failed read keeps sending closed, and the server's 409 declaration_required is a warning.
 import { Button, Dialog, StepActions, StepKv, StepLoading, StepNav, StepPanel, StepSpinner } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -11,8 +13,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { browserTransport, createApi, goToSignIn } from "../../../../../../../src/client/api";
 import { useOnline } from "../../../../../../../src/client/online-status";
 import { readSubmissionState, submitWork, type LocalCall, type SubmitInput, type SubmitOutcome } from "../../../../../../../src/client/submission";
-import { readConfirmed, useSessionTag } from "../../../../../../../src/components/predaja/Declaration";
-import { confirmationKey } from "../../../../../../../src/components/predaja/flow";
 import { oneAtATime, readWork, whileShown } from "../../../../../../../src/components/student/Submission";
 import type { WorkRead } from "../../../../../../../src/components/student/SubmissionView";
 import { SERVER_PREFIX } from "../../../../../../../src/client/api";
@@ -25,6 +25,7 @@ import { atOf, fill, nextOf, thousands, wordCount, type Answer, type Next, type 
 import { submitConfirmed, type Confirmed, type NewerChoice } from "./newer-local";
 import { deviceHasNewer, sendLatestFromDevice } from "./local-hold";
 import { routerPath } from "../../../../bases";
+import { opensSending, serverGate, useDeclarationGate, type GateRead } from "../summary/declaration-gate";
 
 const OUTCOME_ID = "submission-outcome";
 const WHY_ID = "submission-why";
@@ -59,20 +60,21 @@ export type SubmitStepProps = {
   readonly title: string;
   readonly stage: SubmitStage;
   readonly dueAt: string | null;
+  /** The declaration's gate; the server's by default, a recorded one in tests. */
+  readonly declarationGate?: GateRead;
 };
 
 export default function SubmitStep(props: SubmitStepProps) {
   return <Step key={props.assignmentId} {...props} />;
 }
 
-function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
+function Step({ assignmentId, title, stage, dueAt, declarationGate = serverGate }: SubmitStepProps) {
   const router = useRouter();
   const { base } = useHost();
   const online = useOnline();
   const href = (path: string) => appHref(base, path);
   const root = useRef<HTMLDivElement>(null);
   const [work, setWork] = useState<WorkRead>({ kind: "loading" });
-  const [confirmed, setConfirmed] = useState(false);
   const [dialog, setDialog] = useState(false);
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -111,8 +113,9 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignmentId, here, base, router]);
 
-  const tag = useSessionTag();
-  useEffect(() => setConfirmed(tag !== null && readConfirmed(confirmationKey(tag, assignmentId))), [tag, assignmentId]);
+  const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
+  const confirmed = opensSending(gate);
+  useEffect(() => { if (gate.kind === "signedOut") goToSignIn(href(here)); }, [gate.kind]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { shown.current = true; return () => { shown.current = false; }; }, []);
   useEffect(() => { void load(); return () => { ticket.current += 1; }; }, [load]);
 
@@ -139,6 +142,8 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
       return;
     }
     const outcome: SubmitOutcome | null = result.answer;
+    // The server holds no confirmed declaration for this revision: read the gate again, so sending stays closed.
+    if (outcome?.kind === "izjava") readGate();
     whileShown(shown, (answer: SubmitOutcome) => { setSending(false); setSendingLatest(false); setNewer(null); setDialog(false); follow(answer); })(outcome);
   };
   const pick = (choice: NewerChoice | null) => {
@@ -156,7 +161,8 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
   };
 
   const canSend = ready !== null && confirmed && online && !sending && (next === null || next.retry);
-  const why = !online ? t.offline : !confirmed ? t.declarationMissing : undefined;
+  const declarationWhy = gate.kind === "loading" ? t.declarationChecking : gate.kind === "unavailable" ? t.declarationUnavailable : t.declarationMissing;
+  const why = !online ? t.offline : !confirmed ? declarationWhy : undefined;
   const words = ready === null ? 0 : wordCount(ready.nodes);
   const closeDialog = () => {
     if (sending) return;
@@ -228,9 +234,13 @@ function Step({ assignmentId, title, stage, dueAt }: SubmitStepProps) {
             <p key={line} className="note" id={i === 0 ? OUTCOME_ID : undefined} tabIndex={i === 0 ? -1 : undefined} role={i === lines.length - 1 ? "alert" : undefined}>{line}</p>
           ))}
           {next?.retry && next.offer === "workspace" && <StepLink href={href(idPath)}>{t.openWorkspace}</StepLink>}
-          {!offline && !confirmed && ready !== null && (
-            <p className="note" id={WHY_ID}>{t.declarationMissing} <StepLink href={href(`${idPath}/predaja/izjava`)}>{t.openDeclaration}</StepLink></p>
+          {!offline && !confirmed && ready !== null && next?.offer !== "declaration" && (
+            <p className="note" id={WHY_ID}>{declarationWhy}{" "}
+              {gate.kind === "missing" && <StepLink href={href(`${idPath}/predaja/izjava`)}>{t.openDeclaration}</StepLink>}
+            </p>
           )}
+          {!offline && gate.kind === "unavailable" && ready !== null && <StepActions><Button tone="secondary" onClick={readGate}>{t.declarationRetry}</Button></StepActions>}
+          {next?.retry && next.offer === "declaration" && <StepLink href={href(`${idPath}/predaja/izjava`)}>{t.openDeclaration}</StepLink>}
           {sending && <p className="note" role="status" id={WHY_ID}><StepSpinner /> {t.inProgress}</p>}
           <StepActions>
             <Button aria-disabled={!canSend || undefined} aria-describedby={why || sending ? WHY_ID : undefined}
