@@ -528,8 +528,8 @@ Dostupno s poveznice „Postavke obavijesti” u ploči PD-9; nije u navigaciji 
   - `ucitavanje`: kostur, `role=status` „Učitavanje postavki…”.
   - `greska` (`role=alert`): „Postavke trenutačno nisu dostupne.” i „Vaše postojeće postavke nisu promijenjene.”, gumb „Pokušaj ponovno”.
   - `spremanje`: `aria-busy`, polja onemogućena, gumb „Spremanje…” (`aria-disabled`), `role=status` „Spremanje postavki…”.
-  - `spremljeno` (`role=status`): „Postavke su spremljene.” (uz e-poštu: „E-pošta je uključena.”).
-  - `greskaspremanja` (`role=alert`): „Postavke nisu spremljene. Pokušajte ponovno. Dok se ne spreme, vrijede prethodne.”
+  - `spremljeno` (`role=status`): „Postavke obavijesti su promijenjene.” (uz e-poštu: „E-pošta je uključena.”). Tekst izbjegava riječ „spremljeno” bez pojašnjenja (skener zabranjenih izraza, PRODUCT §5).
+  - `greskaspremanja` (`role=alert`): „Postavke nisu promijenjene. Pokušajte ponovno. Do tada vrijede prethodne.”
   - `bezadrese`: okvir e-pošte onemogućen, „Račun AAI@EduHr ne daje e-adresu pa se obavijesti e-poštom ne mogu uključiti. Obavijesti u aplikaciji ostaju uključene.”
   - `pushblokiran` (`role=alert`): „Preglednik ne dopušta obavijesti za ovu stranicu. Dopuštenje promijenite u postavkama preglednika, pa ponovno uključite.”
 - **Pravila privatnosti (pregled prije uključenja za stvarne studente):**
@@ -781,7 +781,7 @@ Radnji je ukupno 54 (R-1 do R-42 i NF-1 R-43 do R-54). Uz svaku je zapisano što
 - **R-49 Dodaj rokove u kalendar** (`data-act=ics`, E-2f): preuzima `ductura-rokovi.ics` iz preglednika; obavijest „Datoteka rokova je preuzeta (n).”; bez rokova obavijest „Nema rokova za izvoz.” (P-14).
 - **R-50 Promijeni filtar po stanju** (`data-sel=filter`, E-4a) (P-5).
 - **R-51 Prikaži sve radove** (`data-act=filtarSve`, E-4a): filtar na „Sve” (P-5).
-- **R-52 Spremi postavke obavijesti** (`data-act=spremi`, E-12): `spremanje`, nakon 700 ms `spremljeno` i obavijest „Postavke su spremljene.” U aplikaciji: PO-30; za uključenu e-poštu bilježi se vrijeme pristanka (P-17).
+- **R-52 Spremi postavke obavijesti** (`data-act=spremi`, E-12): `spremanje`, nakon 700 ms `spremljeno` i obavijest „Postavke obavijesti su promijenjene.” U aplikaciji: PO-30; za uključenu e-poštu bilježi se vrijeme pristanka (P-17).
 - **R-53 Odjava iz obavijesti** (`data-act=odjava`, E-13): `odjavljivanje`, nakon 700 ms `uspjeh`; isključuje e-poštu (PO-33) (P-17).
 - **R-54 Ponovno čitanje postavki** (`data-act=ponovno`, E-12 `greska`): vraća na `puno` (P-17).
 

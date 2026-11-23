@@ -1566,8 +1566,8 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
     if (v === 'greska') return '<div class="po-wrap">' + head + '<div class="card po-card" role="alert"><h2>Postavke trenutačno nisu dostupne.</h2><p class="note">Podatke nije bilo moguće učitati. Vaše postojeće postavke nisu promijenjene.</p><button class="btn" type="button" data-act="ponovno" style="justify-self:start">Pokušaj ponovno</button></div></div>';
     var busy = v === 'spremanje', noAddr = v === 'bezadrese', blocked = v === 'pushblokiran';
     var stat = busy ? '<span class="meta" role="status">Spremanje postavki…</span>' :
-      v === 'greskaspremanja' ? '<span class="err" role="alert">Postavke nisu spremljene. Pokušajte ponovno. Dok se ne spreme, vrijede prethodne.</span>' :
-      v === 'spremljeno' ? '<span class="ok" role="status">Postavke su spremljene.' + (p.email ? ' E-pošta je uključena.' : '') + '</span>' : '';
+      v === 'greskaspremanja' ? '<span class="err" role="alert">Postavke nisu promijenjene. Pokušajte ponovno. Do tada vrijede prethodne.</span>' :
+      v === 'spremljeno' ? '<span class="ok" role="status">Postavke obavijesti su promijenjene.' + (p.email ? ' E-pošta je uključena.' : '') + '</span>' : '';
     return '<div class="po-wrap" id="ps-root"' + (busy ? ' aria-busy="true"' : '') + '>' + head +
       '<section class="card ps-sec" aria-labelledby="ps-e"><h2 id="ps-e">E-pošta</h2>' +
         (noAddr ? '<p class="note" role="status">Račun AAI@EduHr ne daje e-adresu pa se obavijesti e-poštom ne mogu uključiti. Obavijesti u aplikaciji ostaju uključene.</p>' :
@@ -1586,7 +1586,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
   var timer = null;
   App.register('postavke', {
     title: 'S-06 Postavke obavijesti', shell: 'side', narrow: true,
-    variants: [{ id: 'puno', label: 'zadano (e-pošta i push isključeni)' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška pri učitavanju' }, { id: 'spremanje', label: 'spremanje' }, { id: 'spremljeno', label: 'spremljeno' }, { id: 'greskaspremanja', label: 'greška pri spremanju' }, { id: 'bezadrese', label: 'račun bez e-adrese' }, { id: 'pushblokiran', label: 'preglednik blokira obavijesti' }],
+    variants: [{ id: 'puno', label: 'zadano (e-pošta i push isključeni)' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška pri učitavanju' }, { id: 'spremanje', label: 'spremanje' }, { id: 'spremljeno', label: 'postavke promijenjene' }, { id: 'greskaspremanja', label: 'greška pri spremanju' }, { id: 'bezadrese', label: 'račun bez e-adrese' }, { id: 'pushblokiran', label: 'preglednik blokira obavijesti' }],
     render: render,
     actions: {
       ponovno: function () { App.state.variant.postavke = 'puno'; App.rerender(); },
@@ -1598,7 +1598,7 @@ input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; ma
         KINDS.forEach(function (k) { var c = document.getElementById('ps-k-' + k[0]); if (c) p.kinds[k[0]] = c.checked; });
         App.state.variant.postavke = 'spremanje'; App.rerender();
         clearTimeout(timer);
-        timer = setTimeout(function () { if (location.hash !== '#postavke') return; App.state.variant.postavke = 'spremljeno'; App.rerender(); App.toast('Postavke su spremljene.'); }, 700);
+        timer = setTimeout(function () { if (location.hash !== '#postavke') return; App.state.variant.postavke = 'spremljeno'; App.rerender(); App.toast('Postavke obavijesti su promijenjene.'); }, 700);
       }
     },
     after: function (stage) {
