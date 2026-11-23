@@ -82,9 +82,9 @@ function teacherData(n: Names) {
     ] },
     "teacher.mentorships.get": { works: [
       { mentorshipId: "7f6e5d4c-3b2a-4190-8f7e-6d5c4b3a2901", assignmentId: T1, documentId: "izmisljeni-rad-0001",
-        student: { givenName: "Student", familyName: "A" }, title: n.title(1), workType: "seminar_paper", workState: "in_progress" },
+        student: { givenName: "Student", familyName: "A" }, title: n.title(1), workType: "master_thesis", workState: "in_progress" },
       { mentorshipId: "7f6e5d4c-3b2a-4190-8f7e-6d5c4b3a2902", assignmentId: T3, documentId: "izmisljeni-rad-0003",
-        student: { givenName: "Student", familyName: "C" }, title: n.title(3), workType: "essay", workState: "submitted" },
+        student: { givenName: "Student", familyName: "C" }, title: n.title(3), workType: "bachelor_thesis", workState: "submitted" },
     ] },
   };
 }
@@ -116,6 +116,14 @@ const DOPUNA: Readonly<Record<string, (body: Record<string, unknown>) => Record<
   "teacher.input-rhythm.get": (body) => ({ source: "course", ...body }),
 };
 
+/** A copy of `value` in which every field named in `ids`, at any depth, holds that id. */
+export function sameIds(value: unknown, ids: Readonly<Record<string, string>>): unknown {
+  if (Array.isArray(value)) return value.map((item) => sameIds(item, ids));
+  if (typeof value !== "object" || value === null) return value;
+  return Object.fromEntries(Object.entries(value).map(([key, item]) =>
+    [key, key in ids && typeof item === "string" ? ids[key] : sameIds(item, ids)]));
+}
+
 export type Contract = Record<string, { path: string; method: string; responses?: Record<string, unknown> }>;
 export type Vector = { route: string; name: string; response?: { status: number; body?: unknown; contentType?: string } };
 
@@ -127,13 +135,24 @@ const size = (v: Vector) => JSON.stringify(v.response?.body ?? null).length;
  * "dugi-tekst", the emptiest for "prazno". A request outside the contract is a
  * 404, as on the real server.
  */
+/**
+ * The vector a route answers with when the fullest one is not a work a screen can show: the
+ * fullest evidence.open.post carries a footnote node, which the submission step refuses as text.
+ */
+const VEKTOR: Readonly<Record<string, string>> = {
+  "evidence.open.post": "opened-after-commit",
+};
+
 export function vizServer(contract: Contract, vectors: readonly Vector[], scenarij: Scenarij) {
   const routes = Object.entries(contract).map(([operation, { path, method, responses }]) => {
-    const params = (path.match(/\{[^}]+\}/g) ?? []).length;
+    const names = (path.match(/\{[^}]+\}/g) ?? []).map((p) => p.slice(1, -1));
+    const params = names.length;
     const pattern = new RegExp(`^${path.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\\?\{[^}]+\\?\}/g, "[^/]+")}$`);
     const ok = vectors.filter((v) => v.route === operation && v.response !== undefined && v.response.status >= 200 && v.response.status < 300);
-    const ranked = [...ok].sort((a, b) => (scenarij === "prazno" ? size(a) - size(b) : size(b) - size(a)));
-    return { operation, method: method.toUpperCase(), pattern, params, vector: ranked[0], has204: responses !== undefined && "204" in responses };
+    const chosen = scenarij === "prazno" ? undefined : ok.find((v) => v.name === VEKTOR[operation]);
+    const ranked = chosen !== undefined ? [chosen] : [...ok].sort((a, b) => (scenarij === "prazno" ? size(a) - size(b) : size(b) - size(a)));
+    const capture = new RegExp(pattern.source.replaceAll("[^/]+", "([^/]+)"));
+    return { operation, method: method.toUpperCase(), pattern, capture, names, params, vector: ranked[0], has204: responses !== undefined && "204" in responses };
   }).sort((a, b) => a.params - b.params);
   const own = podaci(scenarij);
   const json = (body: unknown, status = 200): Answer => ({ status, contentType: "application/json", body: JSON.stringify(body) });
@@ -145,7 +164,15 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
       if (route.operation === "profile.me.get") {
         const n = scenarij === "dugi-tekst" ? LONGER : SHORT;
         return role === null ? json({ code: "unauthenticated" }, 401)
-          : json({ role, displayName: role === "student" ? n.student : "Nastavnik A", institution: { slug: "izm", displayName: n.institution } });
+          : json({
+            // The contract's shape (profile.me.get): the teacher's work views read roles and sessionTag
+            // through the generated client, which refuses a body without them.
+            institution: { slug: "izm", displayName: n.institution },
+            roles: [role],
+            displayName: role === "student" ? n.student : "Nastavnik A",
+            journalScope: "4e84fd38a2f8f663661b8e1b2fc52bad9b9da56f8accead18bfd24ca20b96d12",
+            sessionTag: "c87c2b8c6e066e9f0b3ddbb338a2188630c0364f769518a616173518dc6c603f",
+          });
       }
       if (role === null) return json({ code: "unauthenticated" }, 401);
       if (route.operation === "profile.interface-locale.get") return json({ locale: null });
@@ -156,7 +183,11 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
       if (route.vector?.response !== undefined) {
         const { status, contentType } = route.vector.response;
         const patch = DOPUNA[route.operation];
-        const body = patch !== undefined && typeof route.vector.response.body === "object" ? patch(route.vector.response.body as Record<string, unknown>) : route.vector.response.body;
+        const patched = patch !== undefined && typeof route.vector.response.body === "object" ? patch(route.vector.response.body as Record<string, unknown>) : route.vector.response.body;
+        // A vector names its own invented ids; the screens check the answer is about the id they asked
+        // for, so every field named as a path parameter carries the id of this request.
+        const ids = Object.fromEntries(route.names.map((name, i) => [name, decodeURIComponent(route.capture.exec(pathname)?.[i + 1] ?? "")]));
+        const body = route.names.length === 0 ? patched : sameIds(patched, ids);
         return { status, contentType: contentType ?? (body === undefined ? undefined : "application/json"),
           body: body === undefined ? undefined : typeof body === "string" && contentType !== "application/json" ? body : JSON.stringify(body) };
       }

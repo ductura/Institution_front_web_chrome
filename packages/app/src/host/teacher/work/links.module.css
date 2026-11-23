@@ -1,0 +1,16 @@
+/* The views of a work under its text (VIZ-WCAG-LAZNI): each link is a target of
+   at least 24 px with room around it (WCAG 2.5.8), not a bare line of text. */
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-dense);
+}

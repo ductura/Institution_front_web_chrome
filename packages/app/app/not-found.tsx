@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
+
 import ErrorScreen from "../../../src/components/shell/ErrorScreen.ts";
 import { messagesHr as t } from "../../../locales/hr.ts";
+
+// WCAG 2.4.2: a title of its own, not the root layout's bare "Ductura".
+export const metadata: Metadata = { title: `${t.errorPage.notFoundTitle} · ${t.app.name}` };
 
 /** A path under /app outside /app/web/ and /app/chrome/. */
 export default function NotFound() {

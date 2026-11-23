@@ -19,3 +19,13 @@
 .sheet[data-sheet-theme="light"] {
   --error: #9c3f33;
 }
+
+/*
+ * WCAG 1.4.10 (VIZ-WCAG-LAZNI): with auto side margins in a grid main, a .page
+ * takes the width its content asks for, and a table that scrolls in its own
+ * frame asks for more than 320 px, so the whole screen scrolled sideways.
+ * Never wider than the main keeps the table's own scroll in charge.
+ */
+.page {
+  max-width: min(1200px, 100%);
+}
