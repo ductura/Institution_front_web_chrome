@@ -16,8 +16,11 @@ export type SummaryPorts = {
   readonly readSummary: (documentId: string) => Promise<SummaryOutcome>;
 };
 
+/** A read summary with the work's document, whose event marks (WEB-1305) are read once beside it. */
+export type StepSummaryReady = Extract<SummaryRead, { kind: "ready" }> & { readonly documentId: string };
+
 /** What step 3 shows in the summary column, or that the session has ended. */
-export type StepSummary = SummaryRead | { readonly kind: "signIn" };
+export type StepSummary = Exclude<SummaryRead, { kind: "ready" }> | StepSummaryReady | { readonly kind: "signIn" };
 
 const UNREACHED = { kind: "unavailable" } as const;
 
@@ -32,8 +35,19 @@ export async function readStepSummary(assignmentId: string, ports: SummaryPorts)
   if (work.kind === "empty") return { kind: "unavailable" };
   if (work.kind !== "ready") return { kind: "error" };
   const outcome: SummaryOutcome = await ports.readSummary(work.documentId).catch(() => UNREACHED);
-  if (outcome.kind === "ok") return { kind: "ready", summary: outcome.summary };
+  if (outcome.kind === "ok") return { kind: "ready", summary: outcome.summary, documentId: work.documentId };
   return outcome.kind === "signedOut" ? { kind: "signIn" } : { kind: "error" };
+}
+
+/** The summary sections whose items are events a student can supplement or dispute (WEB-1305). */
+export type SummaryEventSection = "sessions" | "pastes" | "gaps";
+
+/**
+ * The event id the event-disputes route keeps a mark under: the section and the item's place in
+ * the server's list, as the contract's examples write it ("pastes/0", "sessions/1").
+ */
+export function summaryEventId(section: SummaryEventSection, index: number): string {
+  return `${section}/${index}`;
 }
 
 /** What the shared client answers for one notes route. */
