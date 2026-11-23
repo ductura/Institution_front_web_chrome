@@ -44,6 +44,11 @@ export async function fakeServer(page: Page, role: Role) {
   await page.route("**/api/v1/student/assignments", (route) => route.fulfill(json(assignments)));
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill(json({ assignments: [{ assignmentId: ASSIGNMENT_ID, workState: "in_progress" }] })));
   await page.route("**/api/v1/teacher/courses", (route) => route.fulfill(json(teacher["teacher.courses.get"])));
+  // PIL-P1-PRAGOVI-ADMIN: two invented thresholds, so the form shows both a kind with one and kinds without.
+  await page.route("**/api/v1/institution/origin-thresholds", (route) => route.fulfill(json({ thresholds: [
+    { origin: "pasted_unknown", thresholdPercent: 15, strictness: "soft" },
+    { origin: "assistant_inserted", thresholdPercent: 10, strictness: "hard" },
+  ] })));
   await page.route("**/api/v1/teacher/mentorships", (route) => route.fulfill(json(teacher["teacher.mentorships.get"])));
   await page.route("**/api/v1/auth/login**", (route) => route.fulfill({
     status: 200, contentType: "text/html; charset=utf-8",
