@@ -184,7 +184,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     const keepConfirmed = page.getByRole('button', { name: `Predaj potvrđenu verziju V${revision}`, exact: true });
     await keepConfirmed.waitFor({ state: 'visible', timeout: 3_000 }).then(() => keepConfirmed.click(), () => undefined);
     const [submitted] = await Promise.all([
-      page.waitForResponse((response) => isPost(response, `${webOrigin}/api/v1/submission`)),
+      page.waitForResponse((response) => isPost(response, `${webOrigin}/api/v1/submission/v2`)),
       (async () => {
         await dialog.getByRole('button', { name: 'Predaj rad', exact: true }).click();
         await keepConfirmed.waitFor({ state: 'visible', timeout: 3_000 }).then(() => keepConfirmed.click(), () => undefined);
