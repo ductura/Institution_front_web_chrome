@@ -1,0 +1,116 @@
+/*
+ * VIZ-CSS: the layout of the approved prototypes (docs/prototip/Ductura_student.html,
+ * Ductura_nastavnik.html, editor/editor.css), copied rule by rule. Tokens, type
+ * and spacing scales live in ../tokens/prototype.css; this file adds the
+ * breakpoints and the grids the prototypes write per screen, so a page that
+ * uses these classes breaks where the prototype breaks.
+ *
+ * Breakpoints (a media query cannot read a custom property, so the numbers are
+ * written out and mirrored in ./prijelomi.ts, which a test keeps in step):
+ *   <= 640   phone      (student/teacher/editor: .main padding, .card padding, stacks)
+ *   641-1050 tablet     (editor: right panel becomes a drawer at <= 1050)
+ *   1051-1250 laptop    (editor: panel 340 px from 1051; rail narrows at <= 1250)
+ *   > 1250   desktop
+ * The shell itself folds at <= 800 (prototype `.side`), the two-column pages
+ * open at >= 1050 (`.sb-two`), the teacher's reading page at >= 1050 (`.rd-two`)
+ * and the teacher's fast path (N-05) at >= 1000 (`.fp`).
+ */
+
+:root {
+  --bp-phone: 640px;
+  --bp-shell: 800px;
+  --bp-tablet: 1050px;
+  --bp-laptop: 1250px;
+  --two-col-aside: 440px; /* .sb-two */
+  --read-aside: 330px; /* .rd-two (teacher) */
+  --faculty-aside: 260px; /* .fp (teacher) */
+  --sticky-top: 72px; /* .sb-two > .sb-stick, .rd-two > aside */
+  /* The editor frame (rail up to 320 px, panel 340 px from 1051, editor.css l.373/492) is VIZ-S1; its numbers are only named here. */
+  --panel-w: 340px;
+  --rail-w: min(320px, 88vw);
+}
+
+/* .main: Ductura_student.html l.107-108 / Ductura_nastavnik.html l.124-125. */
+.main {
+  width: 100%;
+  max-width: var(--main-w);
+  margin: 0 auto;
+  padding: var(--main-pad-top) var(--space-6) var(--space-9);
+  display: grid;
+  gap: var(--main-gap);
+  align-content: start;
+}
+
+.main.narrow {
+  max-width: var(--main-narrow-w);
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: var(--space-5) var(--gutter-r) var(--space-8) var(--gutter-l);
+  }
+
+  [data-shell-role="teacher"] .main {
+    padding-top: var(--space-4);
+  }
+}
+
+/* .sb-two (both prototypes, l.814 / l.151): a form and its sticky summary. */
+.sb-two {
+  display: grid;
+  gap: var(--main-gap);
+}
+
+@media (min-width: 1050px) {
+  .sb-two {
+    grid-template-columns: minmax(0, var(--two-col-aside)) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .sb-two > .sb-stick {
+    position: sticky;
+    top: var(--sticky-top);
+  }
+
+  .sb-two > .span {
+    grid-column: 1 / -1;
+  }
+}
+
+/* .rd-two (Ductura_nastavnik.html l.223): the teacher's reading page, text and aside. */
+.rd-two {
+  display: grid;
+  gap: var(--main-gap);
+}
+
+@media (min-width: 1050px) {
+  .rd-two {
+    grid-template-columns: minmax(0, 1fr) var(--read-aside);
+    align-items: start;
+  }
+
+  .rd-two > aside {
+    position: sticky;
+    top: var(--sticky-top);
+  }
+}
+
+/* .fp (Ductura_nastavnik.html l.209): the fast path (N-05), a list and its detail. */
+.fp {
+  display: grid;
+  gap: var(--main-gap);
+}
+
+@media (min-width: 1000px) {
+  .fp {
+    grid-template-columns: var(--faculty-aside) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+/* .up-cols (Ductura_student.html l.457): two columns of the enrolment page until 1050. */
+@media (max-width: 1050px) {
+  .up-cols {
+    grid-template-columns: 1fr;
+  }
+}

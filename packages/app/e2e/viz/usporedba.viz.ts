@@ -10,7 +10,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { test } from "@playwright/test";
 
-import { setTheme } from "../a11y/check";
+import { axe, setTheme } from "../a11y/check";
 import { otvori } from "./otvori";
 import { PAIRS, SCENARIJ, VIZ_OUT, WIDTHS } from "./pairs";
 import { razlika } from "./razlika";
@@ -26,11 +26,16 @@ const MASK = "[data-viz-mask]";
 for (const { screen, proto, slug } of PAIRS) {
   for (const width of WIDTHS) {
     const app = `${OUT}/${slug}/app-${width}.png`;
-    test(`${screen.name} · ${width} · aplikacija`, async ({ page }) => {
+    test(`${screen.name} · ${width} · aplikacija`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await otvori(page, screen, SCENARIJ);
       await setTheme(page, THEME);
+      // VIZ-CSS (b): the shot waits for the fonts, so no fallback face is compared.
+      await page.evaluate(() => document.fonts.ready);
       await page.screenshot({ path: app, fullPage: true, mask: [page.locator(MASK)] });
+      // VIZ-CSS (c): axe on every screen of the pass, after the shot so a finding never loses it;
+      // critical and serious findings fail the test (a contrast fix goes into a token, never into this call).
+      await axe(page, info, `${slug}-${width}`);
     });
 
     if (proto === null) continue;
@@ -44,6 +49,7 @@ for (const { screen, proto, slug } of PAIRS) {
       await page.locator("html").evaluate((html, theme) => html.setAttribute("data-theme", theme), THEME);
       // The prototype's own screen/state switcher is not part of the design.
       await page.addStyleTag({ content: "#proto-bar{display:none!important}" });
+      await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(300);
       const shot = `${OUT}/${slug}/proto-${width}.png`;
       await page.screenshot({ path: shot, fullPage: true, mask: [page.locator(MASK)] });

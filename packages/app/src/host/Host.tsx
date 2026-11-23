@@ -13,6 +13,7 @@ import { goToSignIn, readSession, type SessionRead } from "../../../../src/clien
 import { nextPath, type Base } from "../bases";
 import { internalRoute, publicPage, resolve, routeOf, shellRole } from "../routes";
 import { navLabel, useLocale } from "../i18n";
+import { isNarrow, withoutShell } from "./ljuska-po-ekranu";
 import { HostContext } from "./context";
 import { EditorSignOutSlot } from "./editor/save-status/SignOutSlot";
 import { RecoveryOffer } from "./editor/save-status/RecoveryOffer";
@@ -112,7 +113,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
   // VIZ-0: the prototypes' shell (SideShell of @ductura/ui): the 64 px rail with
   // the navigation and its foot, no top bar. The links the old top bar and side
   // bar carried stay, in the rail's foot.
-  const shell = (current: string | undefined, body: ReactNode, ownMain = false) => {
+  const shell = (current: string | undefined, body: ReactNode, ownMain = false, narrow = false) => {
     const shellText = shellMessagesFor(t, role);
     const link = (path: string) => appHref(base, path);
     return (
@@ -137,6 +138,7 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
           tools={<ShellNotifications base={base} />}
           account={<SignOut base={base} />}
           ownMain={ownMain}
+          narrow={narrow}
         >
           {role === "student" && <RecoveryOffer base={base} />}
           {role === "student" ? <StudentToasts>{body}</StudentToasts> : body}
@@ -152,9 +154,10 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
     return shell(undefined, <section className="card"><h1>{t.home.welcome}</h1><p className="note">{hostText.noRole}</p></section>);
   }
   const { page } = resolved;
-  // VIZ-S3 (S: E-7): the student's workspace has no shell in the prototype (`shell: 'none'`):
-  // the page is the whole window, with its own top bar and status bar.
-  if (role === "student" && page.path === "/rad/[assignmentId]") {
+  // VIZ-CSS: the frame of each screen is the prototype's (ljuska-po-ekranu.ts). VIZ-S3 (S: E-7):
+  // the student's workspace has `shell: 'none'`: the page is the whole window, with its own top bar and status bar.
+  const frameRole = role === "student" || role === "teacher" ? role : null;
+  if (withoutShell(route, frameRole)) {
     return (
       <EditorSignOutSlot>
         <RecoveryOffer base={base} />
@@ -162,5 +165,5 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
       </EditorSignOutSlot>
     );
   }
-  return shell(page.current, <HostContext value={{ base, page, role }}>{children}</HostContext>);
+  return shell(page.current, <HostContext value={{ base, page, role }}>{children}</HostContext>, false, isNarrow(route, frameRole));
 }
