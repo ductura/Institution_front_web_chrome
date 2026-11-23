@@ -1599,8 +1599,8 @@ legend { font-weight:600; padding:0 4px; }
     return '<ul class="facts">' + d.map(function (x) { return '<li><b>' + LBL[x.f] + ':</b> ' + showVal(x.f, x.from == null ? '' : x.from) + ' → ' + showVal(x.f, x.to) + (x.sig ? ' <span class="tag open">značajna izmjena</span>' : '') + '</li>'; }).join('') + '</ul>';
   }
   App.register('uredi', {
-    title: 'N-03a Uredi zadatak (nova verzija) · NF-4', shell: 'side', nav: 'kolegiji', narrow: true,
-    note: ['N-03a', 'gradi se sada · NF-4 NZ-4, NZ-7, NZ-9, NZ-15', 'uređivanje objavljenog zadatka kao nova verzija (assignment-versions.post, expectedVersion); „Pravila predaje” isto kao u obrascu zadatka; usporedba s verzijom n računa klijent; značajna izmjena traži ponovnu potvrdu obavijesti; ekran je novi u prototipu (A-10)'],
+    title: 'NF4-U Uredi zadatak (nova verzija)', shell: 'side', nav: 'kolegiji', narrow: true,
+    note: ['NF4-U', 'gradi se sada · NF-4 NZ-4, NZ-7, NZ-9, NZ-15', 'uređivanje objavljenog zadatka kao nova verzija (assignment-versions.post, expectedVersion); „Pravila predaje” isto kao u obrascu zadatka; usporedba s verzijom n računa klijent; značajna izmjena traži ponovnu potvrdu obavijesti; ekran je novi u prototipu (A-10)'],
     variants: [{ id: 'puno', label: 'puno (obrazac)' }, { id: 'sukob', label: 'sukob verzija' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' }],
     render: function (c) {
       var v = c.variant, n = n4(), title = 'Uredi zadatak', lede = TASK_NAME.t1 + ', Kolegij A · objavljena verzija ' + n.ver + '. Spremanje stvara verziju ' + (n.ver + 1) + '.';
@@ -1665,8 +1665,8 @@ legend { font-weight:600; padding:0 4px; }
   /* ---------- NF-4 NZ-14: Nastavni tim i grupe ---------- */
   var ROLES = [['nositelj', 'Nositelj kolegija: zadaci, kod za upis, produljenja, izvoz i nastavni tim.'], ['suradnik', 'Suradnik: samo čita i komentira; ne mijenja zadatke ni rokove.'], ['mentor', 'Mentor: vodi radove uz mentora (vidi „Radovi uz mentora”).']];
   App.register('tim', {
-    title: 'N-19 Nastavni tim i grupe · NF-4', shell: 'side', nav: 'kolegiji',
-    note: ['N-19', 'gradi se sada · NF-4 NZ-14', 'ulaz s kartice kolegija; uloge nositelj, suradnik, mentor s opisom ovlasti; dodavanje nastavnika i raspored po grupama (institution.teaching-team.post, institution.course-group-teachers.post); ulogu nastavnika u ustanovi daje administrator (A-5), nositelj dodaje samo potvrđenog nastavnika u tim kolegija; mentorstvo se samo spominje (dio 6); ekran je novi u prototipu (A-10)'],
+    title: 'NF4-T Nastavni tim i grupe', shell: 'side', nav: 'kolegiji',
+    note: ['NF4-T', 'gradi se sada · NF-4 NZ-14', 'ulaz s kartice kolegija; uloge nositelj, suradnik, mentor s opisom ovlasti; dodavanje nastavnika i raspored po grupama (institution.teaching-team.post, institution.course-group-teachers.post); ulogu nastavnika u ustanovi daje administrator (A-5), nositelj dodaje samo potvrđenog nastavnika u tim kolegija; mentorstvo se samo spominje (dio 6); ekran je novi u prototipu (A-10)'],
     variants: std([{ id: 'dodan', label: 'nastavnik dodan' }]),
     render: function (c) {
       var v = c.variant, n = n4(), title = 'Kolegij A: nastavni tim i grupe', lede = 'Tko predaje na kolegiju, što smije i koja grupa pripada kojem nastavniku.';
