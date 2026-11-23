@@ -30,10 +30,11 @@ describe("time machine real port (PIL-D7-POVIJEST)", () => {
     const port = clientTimeMachinePort(createApi({ baseUrl, fetchImpl }));
     const list = await port.versions("rad-1");
     expect(list).toMatchObject({ kind: "ready", versions: [{ revision: 1 }, { revision: 2 }] });
+    expect(list).not.toHaveProperty("more");
     const one = await port.version("rad-1", 2);
     if (one.kind !== "ready") throw new Error("ready expected");
     expect(versionText(one.document)).toEqual({ kind: "ready", blocks: [
-      { kind: "heading", text: "Uvod" }, { kind: "paragraph", text: "Izmišljena rečenica o kompostu." },
+      { kind: "heading", text: "Uvod", level: 2 }, { kind: "paragraph", text: "Izmišljena rečenica [navod]o kompostu." },
     ] });
     for (const [, init] of fetchImpl.mock.calls) expect(init?.method).toBe("GET");
   });
@@ -58,5 +59,13 @@ describe("time machine real port (PIL-D7-POVIJEST)", () => {
     expect(versionText(JSON.stringify({ nodes: [1] }))).toEqual({ kind: "unreadable" });
     expect(versionText(JSON.stringify({ schemaVersion: 2 }))).toEqual({ kind: "unreadable" });
     expect(versionText(JSON.stringify({ nodes: [] }))).toEqual({ kind: "ready", blocks: [] });
+  });
+
+  it("says that older versions exist when the server names the next page", async () => {
+    const fetchImpl = serving({
+      "/api/v1/works/rad-1/versions": { versions: [{ kind: "checkpoint", revision: 5, savedMinute: "2026-11-18T08:30:00.000Z" }], nextBeforeRevision: 5 },
+    });
+    const list = await clientTimeMachinePort(createApi({ baseUrl, fetchImpl })).versions("rad-1");
+    expect(list).toMatchObject({ kind: "ready", more: true });
   });
 });
