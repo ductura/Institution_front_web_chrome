@@ -12,6 +12,8 @@ export type CardProps = {
   disabled?: boolean;
   /** The prototype's .card.center: an empty or first-visit card with its text centred. */
   center?: boolean;
+  /** The title's heading level: 2 for a card that is a section of the page itself, 3 (default) under a section heading. */
+  level?: 2 | 3;
 };
 
 /**
@@ -20,12 +22,13 @@ export type CardProps = {
  * prototype's grey bars with the status read out; an error is the prototype's
  * error card (the title says what, the text what it means).
  */
-export function Card({ title, children, empty, busy = false, error, disabled = false, center = false }: CardProps) {
+export function Card({ title, children, empty, busy = false, error, disabled = false, center = false, level = 3 }: CardProps) {
   const id = useId();
+  const Title = level === 2 ? "h2" : "h3";
   return (
     <section className={styles.card} aria-labelledby={id} aria-busy={busy || undefined}
       aria-disabled={disabled || undefined} data-center={center || undefined}>
-      <h3 id={id} className={styles.title}>{title}</h3>
+      <Title id={id} className={styles.title}>{title}</Title>
       {error ? <p role="alert" className={styles.error}>{error}</p>
         : busy ? (
           <div role="status" className={styles.loading}>

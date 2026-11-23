@@ -23,7 +23,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {/* WCAG 2.4.1 (VIZ-WCAG N4): the first Tab stop skips the shell's navigation. */}
+        <a className="skip-link" href="#sadrzaj">
+          {t.shell.skipToContent}
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

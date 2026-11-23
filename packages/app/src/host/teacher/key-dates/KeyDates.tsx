@@ -35,7 +35,7 @@ export default function KeyDates({ mentorshipId, port, title = text.title }: { m
   // "empty" passes no content, so the card says text.empty; a failed read is never shown as an empty list.
   return (
     <div data-testid="key-dates" data-state={view?.kind ?? "loading"}>
-      <Card title={title} busy={view === null} empty={text.empty} error={view?.kind === "signedOut" ? text.signedOut : undefined}>
+      <Card level={2} title={title} busy={view === null} empty={text.empty} error={view?.kind === "signedOut" ? text.signedOut : undefined}>
         {body}
       </Card>
     </div>

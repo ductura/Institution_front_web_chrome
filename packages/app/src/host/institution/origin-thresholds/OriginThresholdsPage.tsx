@@ -71,7 +71,7 @@ function KindCard({ origin, row, call, refresh }: CardProps) {
   };
 
   return (
-    <Card title={name}>
+    <Card level={2} title={name}>
       <SummaryList rows={[{ id: "current", label: t.current, value: row === undefined ? t.none : t.shown(row.thresholdPercent, row.strictness) }]} />
       <FieldGrid>
         <TextField label={t.percent} hint={t.percentHint} error={errors.percent} inputMode="numeric" busy={busy}
@@ -112,12 +112,12 @@ function AdminForm({ call }: { call: () => ThresholdCall }) {
     return out.kind === "ready";
   }, [call]);
 
-  if (state.kind === "loading") return <Card title={t.title} busy />;
+  if (state.kind === "loading") return <Card level={2} title={t.title} busy />;
   if (state.kind === "error") {
     // Card shows only its error text, so the retry sits beside it.
     return (
       <>
-        <Card title={t.title} error={state.message} />
+        <Card level={2} title={t.title} error={state.message} />
         <ActionRow><Button tone="secondary" onClick={load}>{t.retry}</Button></ActionRow>
       </>
     );

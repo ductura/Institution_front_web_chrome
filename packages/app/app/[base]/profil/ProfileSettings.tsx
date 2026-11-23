@@ -89,7 +89,7 @@ export function ProfileSettings({ notifications = unavailableNotificationSetting
       <h1>{p.title}</h1>
       <p>{p.intro}</p>
 
-      <Card title={p.language.heading}>
+      <Card level={2} title={p.language.heading}>
         <form onSubmit={(event) => void saveLanguage(event)}>
           <Select
             label={p.language.label}
@@ -109,7 +109,7 @@ export function ProfileSettings({ notifications = unavailableNotificationSetting
         </form>
       </Card>
 
-      <Card title={p.format.heading}>
+      <Card level={2} title={p.format.heading}>
         <p>{p.format.hint}</p>
         <KeyValueList items={[
           { id: "date", label: p.format.date, value: formatDateTime(SAMPLE_INSTANT, locale) },
@@ -117,12 +117,12 @@ export function ProfileSettings({ notifications = unavailableNotificationSetting
         ]} />
       </Card>
 
-      <Card title={p.name.heading}>
+      <Card level={2} title={p.name.heading}>
         <KeyValueList items={[{ id: "name", label: p.name.label, value: name === undefined ? app.host.loading : name ?? p.name.none }]} />
         <p>{p.name.hint}</p>
       </Card>
 
-      <Card title={p.notifications.heading}>
+      <Card level={2} title={p.notifications.heading}>
         <p>{p.notifications.hint}</p>
         {settings === "loading" ? <p role="status">{p.notifications.loading}</p>
           : settings === "unavailable" ? <p role="status">{p.notifications.unavailable}</p>

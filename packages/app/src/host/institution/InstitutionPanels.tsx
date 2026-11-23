@@ -39,12 +39,12 @@ function useRead<T>(read: () => Promise<Read<T>>): [State<T>, () => void] {
 }
 
 function Waiting({ title }: { title: string }) {
-  return <Card title={title} busy />;
+  return <Card level={2} title={title} busy />;
 }
 
 function Failed({ title, message, retry, retryLabel }: { title: string; message: string; retry: () => void; retryLabel: string }) {
   return (
-    <Card title={title} error={message}>
+    <Card level={2} title={title} error={message}>
       <Button tone="secondary" onClick={retry}>{retryLabel}</Button>
     </Card>
   );
@@ -155,7 +155,7 @@ export function UsersPanel() {
       <div role="status">{line !== null && step.kind === "done" && (step.outcome === "confirmed" || step.outcome === "revoked") ? <p>{line}</p> : null}</div>
       <div role="alert">{line !== null && step.kind === "done" && step.outcome !== "confirmed" && step.outcome !== "revoked" ? <p>{line}</p> : null}</div>
 
-      <Card title={t.pending.heading} empty={pending.length === 0 ? t.pending.empty : undefined}>
+      <Card level={2} title={t.pending.heading} empty={pending.length === 0 ? t.pending.empty : undefined}>
         {pending.length === 0 ? undefined : (
           <>
             <p>{t.pending.note}</p>
@@ -175,7 +175,7 @@ export function UsersPanel() {
         )}
       </Card>
 
-      <Card title={t.confirmed.heading} empty={confirmed.length === 0 ? t.confirmed.empty : undefined}>
+      <Card level={2} title={t.confirmed.heading} empty={confirmed.length === 0 ? t.confirmed.empty : undefined}>
         {confirmed.length === 0 ? undefined : (
           <ul>
             {confirmed.map((c) => {
@@ -253,15 +253,15 @@ export function CoursesPanel() {
   if (state.kind !== "ok") return <Failed title={t.title} message={failure(state.kind, t.unavailable)} retry={retry} retryLabel={t.retry} />;
   const { years, year, courses } = state.value;
   if (year === null) {
-    return <Card title={t.noCourses}><p>{t.emptyNote}</p></Card>;
+    return <Card level={2} title={t.noCourses}><p>{t.emptyNote}</p></Card>;
   }
   const names = (people: readonly { name: Parameters<typeof displayName>[0] }[]) => people.map((p) => displayName(p.name, unnamed)).join(", ");
   return (
     <section aria-label={t.yearHeading.replace("{year}", yearLabel(year))}>
       <Select label={t.yearsLabel} value={year} options={years.map((y) => ({ value: y, label: yearLabel(y) }))}
         onChange={(event) => setAsked(event.target.value)} />
-      {courses.length === 0 ? <Card title={t.emptyYear}><p>{t.emptyNote}</p></Card> : courses.map((course) => (
-        <Card key={course.courseId} title={course.name}>
+      {courses.length === 0 ? <Card level={2} title={t.emptyYear}><p>{t.emptyNote}</p></Card> : courses.map((course) => (
+        <Card key={course.courseId} level={2} title={course.name}>
           <Tag>{count(course.students, t.enrolled)}</Tag>
           <KeyValueList items={[
             { id: "holder", label: t.holder, value: course.holder === null ? t.noHolder : displayName(course.holder.name, unnamed) },
@@ -269,7 +269,7 @@ export function CoursesPanel() {
           ]} />
           {course.groups.length === 0 ? <Notice>{t.noGroups}</Notice> : course.groups.map((group) => (
             <section key={group.groupId} aria-label={group.name}>
-              <h4>{group.name}</h4>
+              <h3>{group.name}</h3>
               {group.teachers.length === 0
                 ? <Notice tone="warn">{t.noTeacher}. {t.noTeacherNote}</Notice>
                 : <p>{group.teachers.length === 1 ? t.groupTeacher.one : t.groupTeacher.many}: {names(group.teachers)}</p>}

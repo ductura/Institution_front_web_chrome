@@ -27,7 +27,7 @@ export function EditorShellFrame({ header, tools, rail, panel, status, children,
     {tools != null && <div className={styles.tools} data-editor-chrome>{tools}</div>}
     <div className={styles.body}>
       {rail}
-      <main id="sadrzaj" className={styles.stage}>{children}</main>
+      <main id="sadrzaj" tabIndex={-1} className={styles.stage}>{children}</main>
       {panel}
     </div>
     <div className={styles.status}>{status}</div>

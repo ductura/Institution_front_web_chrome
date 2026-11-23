@@ -104,7 +104,7 @@ export default function BulkDownload(
   const status = busy ? t.requesting : view?.kind === "ready" ? (started ? t.started : t.ready) : view?.kind === "expired" ? t.expired : "";
   return (
     <section aria-labelledby="bulk-download-h">
-      <h3 id="bulk-download-h">{t.title}</h3>
+      <h2 id="bulk-download-h" className={styles.title}>{t.title}</h2>
       <p>{t.idle}</p>
       <fieldset disabled={busy} className={styles.formats}>
         <legend>{t.formatLegend}</legend>

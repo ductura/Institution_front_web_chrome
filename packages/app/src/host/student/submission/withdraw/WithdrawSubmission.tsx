@@ -68,7 +68,7 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
   );
   if (read.kind === "nepoznato") {
     return (
-      <Card title={t.title}>
+      <Card level={2} title={t.title}>
         {note !== null && note.tone === "status" && <p role="status">{note.text}</p>}
         <p role="alert">{t.unavailable}</p>
         <Receipts receipts={shownReceipts} />
@@ -78,7 +78,7 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
   }
   const { state } = read;
   return (
-    <Card title={t.title}>
+    <Card level={2} title={t.title}>
       {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
       {canWithdraw(state)
         ? (

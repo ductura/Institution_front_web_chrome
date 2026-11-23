@@ -81,14 +81,14 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
   if (read === null || read.kind === "session-expired") list = <RouteLoading label={hostText.loading} />;
   else if (read.kind === "nepoznato") {
     list = (
-      <Card title={t.listTitle}>
+      <Card level={2} title={t.listTitle}>
         <p role="alert">{t.unavailable}</p>
         <p><Button tone="quiet" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button></p>
       </Card>
     );
   } else {
     list = (
-      <Card title={t.listTitle}>
+      <Card level={2} title={t.listTitle}>
         {read.requests.length === 0 ? <p>{t.empty}</p> : (
           <ul>
             {read.requests.map((request) => (
@@ -127,7 +127,7 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
         <p>{t.lead}</p>
       </header>
       {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
-      <Card title={t.formTitle}>
+      <Card level={2} title={t.formTitle}>
         <form onSubmit={(event) => void send(event)}>
           {candidates !== null && candidates.kind === "nepoznato" && <p role="alert">{t.candidatesUnavailable}</p>}
           {candidates !== null && candidates.kind === "ready" && candidates.candidates.length === 0 && <p>{t.noCandidates}</p>}
