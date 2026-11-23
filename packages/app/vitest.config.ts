@@ -5,5 +5,5 @@ import { copiedFrontAliases } from "../../src/components/vitest.alias.ts";
 export default defineConfig({
   oxc: { jsx: { runtime: "automatic" } },
   resolve: { alias: copiedFrontAliases },
-  test: { include: ["src/**/*.test.ts"] },
+  test: { include: ["src/**/*.test.ts", "test-fakes/**/*.test.ts"] },
 });

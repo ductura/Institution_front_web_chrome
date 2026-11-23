@@ -1,19 +1,24 @@
 // VIZ alat (graditelj): the app and its prototype, one screenshot per width,
 // side by side in viz-out/index.html, with a diff image and the share of
-// differing pixels (razlika.ts). Nothing fails on a difference. Not in CI
-// (the prototypes are not in the repository). Run: pnpm viz, or
+// differing pixels (razlika.ts). A difference fails only above the threshold
+// VIZ_PRAG in % (prag.ts; the target is 2), checked after the run in
+// izvjestaj.ts; without it nothing fails. Not in ci.yml (workflow viz-usporedba,
+// by hand). Run: pnpm viz, or
 // pnpm viz --grep "student: rad".
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { test } from "@playwright/test";
 
-import { axe, open, setTheme } from "../a11y/check";
-import { PAIRS, WIDTHS } from "./pairs";
+import { axe, setTheme } from "../a11y/check";
+import { otvori } from "./otvori";
+import { PAIRS, SCENARIJ, VIZ_OUT, WIDTHS } from "./pairs";
 import { razlika } from "./razlika";
 
-const OUT = resolve(import.meta.dirname, "../../viz-out");
-const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? "D:/Ductura/_prototipovi");
+const OUT = VIZ_OUT;
+// The prototypes are in the repository (docs/prototip); VIZ_PROTOTIPOVI points elsewhere.
+const PROTOTIPOVI_ZADANO = resolve(import.meta.dirname, "../../../../docs/prototip");
+const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? PROTOTIPOVI_ZADANO);
 const THEME = process.env.VIZ_THEME === "dark" ? "dark" : "light";
 /** Content that changes between runs (dates, generated names) is painted over in both shots. */
 const MASK = "[data-viz-mask]";
@@ -23,7 +28,7 @@ for (const { screen, proto, slug } of PAIRS) {
     const app = `${OUT}/${slug}/app-${width}.png`;
     test(`${screen.name} · ${width} · aplikacija`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
-      await open(page, screen);
+      await otvori(page, screen, SCENARIJ);
       await setTheme(page, THEME);
       // VIZ-CSS (b): the shot waits for the fonts, so no fallback face is compared.
       await page.evaluate(() => document.fonts.ready);

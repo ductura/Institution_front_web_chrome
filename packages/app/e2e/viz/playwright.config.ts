@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // VIZ alat (graditelj): the app beside its prototype at 390, 768, 1100 and
-// 1280 px (e2e/viz). A report for the graditelj, not a test: not in CI.
+// 1280 px (e2e/viz). A report for the graditelj; a gate only with VIZ_PRAG (prag.ts), by hand in
+// the workflow viz-usporedba, never in ci.yml.
 // VIZ_URL reuses a running host (e.g. http://127.0.0.1:5173 of `pnpm dev`),
 // so the screens are shot without a build; without it the host is built once.
 const port = 5192;
