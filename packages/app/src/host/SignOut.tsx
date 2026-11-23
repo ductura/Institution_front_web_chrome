@@ -5,8 +5,7 @@ import { useRef, useState } from "react";
 import { Button, Dialog } from "@ductura/ui";
 
 import { appHref } from "../../../../src/components/index.ts";
-import { leaveFor } from "../../../../src/client/api.ts";
-import { browserSignOutDeps, signOutHere } from "../../../../src/client/logout-request";
+import { browserSignOutDeps, followLogoutNatively, signOutHere } from "../../../../src/client/logout-request";
 
 import { useLocale } from "../i18n";
 import type { Base } from "../bases";
@@ -15,8 +14,10 @@ import styles from "./SignOut.module.css";
 
 /**
  * "Odjava" with its dialog (A-6, E-0 R-3): the button opens it, the person
- * confirms, auth.logout.post ends the Ductura session and the AAI@EduHr one,
- * and the browser goes to "/". Without the server's confirmation nothing has
+ * confirms, auth.logout.post ends the Ductura session, and the browser then
+ * follows the route natively on to the AAI@EduHr logout and back to "/"
+ * (INT-20c: a script request cannot follow that redirect, so the provider session
+ * would outlive the sign-out). Without the server's confirmation nothing has
  * ended: the dialog says so and offers it again (F-285). Esc, the backdrop and
  * "Ostani" close it; while the request runs nothing closes it.
  */
@@ -36,7 +37,7 @@ export function SignOutDialogButton({ className, label }: { className?: string; 
     setBusy(true);
     setFailed(false);
     if (await signOutHere(null, browserSignOutDeps())) {
-      leaveFor("/");
+      followLogoutNatively();
       return;
     }
     setBusy(false);
