@@ -167,6 +167,11 @@ test('jobs are read in any YAML spelling', () => {
   assert.throws(() => jobsOf(workflowOf('on: push\njobs:\n  a: run\n')));
 });
 
+// Jobs that only report and never block (ZEL-CI-WEB): the pixel baselines of
+// the catalogue (Daniel, 22. 11. 2026, until VIZ-0). ci-ok does not need them,
+// so it does not wait for them; the test below holds each to report only.
+const REPORT_ONLY = ['ui-baselines'];
+
 test('ci-ok is a plain job named ci-ok that runs always over every other job', () => {
   const jobs = jobsOf(workflow);
   assert.ok(isMap(ciOk), 'ci.yml has a ci-ok job');
@@ -176,7 +181,7 @@ test('ci-ok is a plain job named ci-ok that runs always over every other job', (
   assert.ok(['always()', '${{ always() }}'].includes(ciOk.if), `ci-ok if: ${ciOk.if}`);
   const step = ciOk.steps.find((s) => s.run === script);
   assert.equal(step.env?.NEEDS, '${{ toJSON(needs) }}');
-  const others = Object.keys(jobs).filter((j) => j !== 'ci-ok');
+  const others = Object.keys(jobs).filter((j) => j !== 'ci-ok' && !REPORT_ONLY.includes(j));
   assert.ok(others.length > 0);
   assert.deepEqual([...needsOf(ciOk)].sort(), others.sort());
 });
@@ -265,7 +270,7 @@ const ALWAYS_ON = ['line-endings'];
 
 test('every job except changes and the always-on jobs is gated by changes and needs it', () => {
   for (const [name, job] of Object.entries(jobsOf(workflow))) {
-    if (name === 'changes' || ALWAYS_ON.includes(name)) continue;
+    if (name === 'changes' || ALWAYS_ON.includes(name) || REPORT_ONLY.includes(name)) continue;
     assert.ok(needsOf(job).includes('changes'), `${name} needs changes`);
     if (name !== 'ci-ok') assert.equal(job.if, `\${{ needs.changes.outputs.${name} == 'true' }}`, name);
   }
@@ -363,5 +368,59 @@ test('line-endings: CRLF in docs/ and a root .md file fails the check too', () =
   for (const path of ['docs/x.md', 'README.md', 'catalog/a.ts']) {
     const r = lineEndingsIn(path, true);
     assert.notEqual(r.code, 0, `${path}: ${r.out}`);
+  }
+});
+
+// ZEL-CI-WEB: the ui checks run as two parts of the matrix `ui`, `checks`
+// (typecheck and the coverage check) and `unit` (every package's unit tests).
+// ci-ok needs `ui`, so it needs both: a failure in either part fails `ui`.
+const ui = jobsOf(workflow).ui;
+const uiStep = (pattern) => ui.steps.filter((s) => typeof s.run === 'string' && pattern.test(s.run));
+
+test('ui runs typecheck and unit tests in two blocking parts of its matrix', () => {
+  const parts = ui.strategy.matrix.include.map((p) => p.part);
+  assert.ok(parts.includes('checks') && parts.includes('unit'), parts.join(','));
+  assert.ok(needsOf(ciOk).includes('ui'), 'ci-ok needs ui');
+  assert.equal(ui.strategy['fail-fast'], false);
+  const [typecheck] = uiStep(/^pnpm -r run typecheck$/);
+  const [unit] = uiStep(/^pnpm -r run test$/);
+  assert.equal(typecheck?.if, "matrix.part == 'checks'");
+  assert.equal(unit?.if, "matrix.part == 'unit'");
+  const [coverage] = uiStep(/the ui parts do not cover every catalogue test exactly once/);
+  assert.equal(coverage?.if, "matrix.part == 'checks'");
+  assert.ok(!ui.steps.some((s) => s['continue-on-error']), 'no step of ui is report-only');
+  assert.equal(ui['continue-on-error'], undefined);
+  // Only the browser parts install a browser; checks and unit need none.
+  for (const p of ui.strategy.matrix.include) {
+    assert.equal(Boolean(p.browser), !['checks', 'unit'].includes(p.part), `${p.part} browser`);
+  }
+});
+
+test('report-only jobs run only the catalogue baselines, on every push, outside ci-ok', () => {
+  const jobs = jobsOf(workflow);
+  for (const name of REPORT_ONLY) {
+    const job = jobs[name];
+    assert.ok(isMap(job), `${name} exists`);
+    assert.ok(!needsOf(ciOk).includes(name), `ci-ok does not need ${name}`);
+    assert.equal(job.if, "${{ github.event_name == 'push' }}", `${name} runs on every push`);
+    assert.deepEqual(needsOf(job), [], `${name} needs nothing, so nothing skips it`);
+    assert.equal(job.env?.BASELINES, ui.env.BASELINES, 'the same baseline filter as ui');
+    const tests = job.steps.filter((s) => typeof s.run === 'string' && /playwright test|test:visual/.test(s.run));
+    assert.equal(tests.length, 1, `${name} runs one test step`);
+    assert.equal(tests[0]['continue-on-error'], true, 'the step only reports');
+    assert.match(tests[0].run, /^pnpm --filter @ductura\/catalog run test:visual --grep "\$BASELINES" --shard="\$\{\{ matrix\.shard \}\}"$/);
+    assert.deepEqual(job.strategy.matrix.shard, ['1/3', '2/3', '3/3']);
+  }
+});
+
+// The baselines run in the report-only job only: no blocking job greps them in,
+// and ui still filters them out of every part (its coverage check counts them out).
+test('no blocking job runs the baselines', () => {
+  for (const [name, job] of Object.entries(jobsOf(workflow))) {
+    if (REPORT_ONLY.includes(name)) continue;
+    for (const s of job.steps ?? []) {
+      if (typeof s.run !== 'string') continue;
+      assert.doesNotMatch(s.run, /--grep "\$BASELINES"/, `${name}: ${s.name ?? s.run}`);
+    }
   }
 });
