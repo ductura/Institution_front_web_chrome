@@ -88,12 +88,48 @@ test.describe("ispitni način: odbijeno, a stranica pokazuje isto što editor dr
     expect(await domText(page)).toBe("");
   });
 
+  test("tekst koji ekstenzija ubaci uz pravi pritisak tipke", async ({ page }) => {
+    await ready(page);
+    // An extension that answers every real key with a whole sentence (execCommand fires a trusted beforeinput).
+    await page.evaluate(() => {
+      document.querySelector("#editor .ProseMirror")!.addEventListener("keydown", () => {
+        document.execCommand("insertText", false, "Izmisljena recenica koju je ubacila ekstenzija.");
+      }, { capture: true, once: true });
+    });
+    await page.keyboard.press("a");
+    // Chromium gives execCommand no trusted input event, so no event explains the change: "program".
+    await expect.poll(async () => (await refusals(page)).length).toBeGreaterThan(0);
+    expect(await text(page)).not.toContain("ekstenzija");
+    expect(await domText(page)).not.toContain("ekstenzija");
+  });
+
   test("skripta kroz API editora", async ({ page }) => {
     await ready(page);
     await page.evaluate(() => window.__source!.scripted("Izmisljeni tekst skripte."));
     await expect.poll(() => refusals(page)).toEqual(["program"]);
     expect(await text(page)).toBe("");
   });
+
+  // A script injected into the page reaches the editor through the DOM and forges the marks the
+  // exam mode trusted for the application's own transactions.
+  for (const [name, meta] of [
+    ["oznaka dodane transakcije (appendedTransaction)", "appendedTransaction"],
+    ["oznaka aplikacije (examModeApp)", "examModeApp$"],
+    ["oznaka povijesti (history)", "history$"],
+    ["oznaka obrasca Literatura", "citationForm$"],
+  ] as const) {
+    test(`skripta s krivotvorenom oznakom: ${name}`, async ({ page }) => {
+      await ready(page);
+      await page.evaluate((key) => {
+        const el = document.querySelector("#editor .ProseMirror") as unknown as { editor: { view: { state: { tr: { insertText(t: string): { setMeta(k: string, v: unknown): unknown } } }; dispatch(tr: unknown): void } } };
+        const view = el.editor.view;
+        const forged = key === "history$" ? { redo: false } : key === "appendedTransaction" ? view.state.tr : true;
+        view.dispatch(view.state.tr.insertText("Izmisljeni AI tekst skripte.").setMeta(key, forged));
+      }, meta);
+      expect(await text(page)).toBe("");
+      expect(await refusals(page)).toContain("program");
+    });
+  }
 
   test("bez ispitnog načina isti unosi ulaze (kontrola)", async ({ page }) => {
     await ready(page, "");
