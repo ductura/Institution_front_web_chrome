@@ -87,6 +87,41 @@ describe("RhythmSwitch", () => {
     expect(host.textContent).not.toContain(text.reset);
   });
 
+  it("an assignment following a course with its own dated setting shows the course's level and no way back", async () => {
+    const followed: RhythmAnswer = {
+      kind: "ready", state: { enabled: false, source: "course", changedBy: { role: "teacher", name: null }, changedAt: "2026-11-22T10:00:00.000Z" },
+    };
+    const host = await mount({ level: "assignment", port: { read: vi.fn(async () => followed), set: vi.fn(), reset: vi.fn() }, name: "Seminar B", onSignedOut: vi.fn() });
+    expect(host.textContent).toContain(text.assignment.course);
+    expect(host.textContent).not.toContain(text.assignment.assignment);
+    expect(host.textContent).not.toContain(text.reset);
+  });
+
+  it("keeps the box focusable while a change is out and drops a read that answers meanwhile", async () => {
+    const answer = deferred<RhythmAnswer>();
+    const read = vi.fn<() => Promise<RhythmAnswer>>(async () => state(true, "course"));
+    const port: RhythmSwitchPort = { read, set: vi.fn(() => answer.promise) };
+    const props = { level: "assignment" as const, port, name: "Seminar A", onSignedOut: vi.fn() };
+    const host = await mount(props);
+    box(host).focus();
+    await act(async () => { box(host).click(); });
+    expect(box(host).disabled).toBe(false);
+    expect(box(host).getAttribute("aria-disabled")).toBe("true");
+    expect(document.activeElement).toBe(box(host));
+    // The course changed meanwhile: a re-read starts while the change is out and answers after it.
+    const stale = deferred<RhythmAnswer>();
+    read.mockReturnValueOnce(stale.promise);
+    await act(async () => { root?.render(h(RhythmSwitch, { ...props, refresh: 1 })); });
+    await act(async () => { answer.resolve(state(false, "assignment")); });
+    await act(async () => { stale.resolve(state(true, "course")); });
+    // The change's answer stays: the older read does not overwrite it.
+    expect(box(host).checked).toBe(false);
+    expect(host.textContent).toContain(text.assignment.assignment);
+    // A read started after the change is shown as usual.
+    await act(async () => { root?.render(h(RhythmSwitch, { ...props, refresh: 2 })); });
+    expect(box(host).checked).toBe(true);
+  });
+
   it("a 401 on read or on change goes to sign-in", async () => {
     const onSignedOut = vi.fn();
     await mount({ level: "course", port: { read: vi.fn(async () => ({ kind: "signedOut" }) as const), set: vi.fn() }, onSignedOut });

@@ -131,7 +131,7 @@ export function TeacherCoursesPage() {
     actions={(courses) => (courses.length > 0 ? <NewCourseLink /> : null)}
     ready={(courses) => <AssignmentCards courses={courses} here={appHref(base, "/nastavnik")}
       tasks={(course) => <CourseTasks course={course} />}
-      extra={(course) => <><CourseRhythm courseId={course.id} /><CourseTeachingTeam courseId={course.id} courseName={course.name} /></>} />} />;
+      extra={(course) => <><CourseRhythm courseId={course.id} name={course.name} /><CourseTeachingTeam courseId={course.id} courseName={course.name} /></>} />} />;
 }
 
 /** N-16 "Radovi uz mentora" over teacher.mentorships.get. */

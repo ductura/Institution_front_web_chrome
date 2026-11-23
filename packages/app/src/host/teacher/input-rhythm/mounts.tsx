@@ -13,16 +13,23 @@ import { RhythmSwitch } from "./RhythmSwitch";
 /** The course's switch changed: the switches of its tasks that follow it read again. */
 const COURSE_CHANGED = "ductura:course-rhythm-changed";
 
+/** One sign-in for the page: every switch on it sees the same 401, the browser leaves once (N3). */
+let leaving = false;
+
 function useSignIn(): () => void {
   const { base } = useHost();
-  return useCallback(() => goToSignIn(appHref(base, "/nastavnik")), [base]);
+  return useCallback(() => {
+    if (leaving) return;
+    leaving = true;
+    goToSignIn(appHref(base, "/nastavnik"));
+  }, [base]);
 }
 
-export function CourseRhythm({ courseId }: { courseId: string }) {
+export function CourseRhythm({ courseId, name }: { courseId: string; name: string }) {
   const signIn = useSignIn();
   const port = useMemo(() => courseRhythmPort(createApi(), courseId), [courseId]);
   const changed = useCallback(() => globalThis.dispatchEvent(new CustomEvent(COURSE_CHANGED, { detail: courseId })), [courseId]);
-  return <RhythmSwitch level="course" port={port} onSignedOut={signIn} onChanged={changed} />;
+  return <RhythmSwitch level="course" port={port} name={name} onSignedOut={signIn} onChanged={changed} />;
 }
 
 export function AssignmentRhythm({ courseId, assignmentId, title }: { courseId: string; assignmentId: string; title: string }) {

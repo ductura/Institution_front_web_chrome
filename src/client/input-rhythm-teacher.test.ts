@@ -77,23 +77,37 @@ describe("course switch", () => {
 });
 
 describe("assignment switch", () => {
-  it("reads an undated setting as the course's and a dated one as the assignment's own", async () => {
-    expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.get", "default").call, TASK).read())
-      .toMatchObject({ kind: "ready", state: { enabled: true, source: "course" } });
-    expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.get", "off").call, TASK).read())
-      .toMatchObject({ kind: "ready", state: { enabled: false, source: "assignment", changedBy: { role: "mentor", name: null } } });
+  const ok = (route: string) => (vectors as Vector[]).filter((v) => v.route === route && v.response.status === 200);
+
+  it("takes the level only from the server's source; an answer without it is unavailable, never guessed", async () => {
+    // Driven by the extract's own vectors: today teacher.input-rhythm.get/put carry no `source`, after the
+    // refresh from SRV #652 they do, and the same test then checks the level they name.
+    for (const v of [...ok("teacher.input-rhythm.get"), ...ok("teacher.input-rhythm.put")]) {
+      const body = v.response.body as { enabled: boolean; source?: string };
+      const port = assignmentRhythmPort(apiAnswering(200, body).call, TASK);
+      const answer = v.route.endsWith(".get") ? await port.read() : await port.set(body.enabled);
+      expect({ name: `${v.route} ${v.name}`, answer })
+        .toEqual({ name: `${v.route} ${v.name}`, answer: body.source === undefined ? { kind: "unavailable" } : expect.objectContaining({ kind: "ready" }) });
+      if (body.source !== undefined) expect(answer).toMatchObject({ state: { source: body.source, enabled: body.enabled } });
+    }
   });
 
-  it("a confirmed PUT is the assignment's own setting; another value is not confirmed", async () => {
-    expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.put", "switched-off").call, TASK).set(false))
-      .toMatchObject({ kind: "ready", state: { enabled: false, source: "assignment" } });
-    expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.put", "switched-off").call, TASK).set(true)).toEqual({ kind: "unavailable" });
+  it("negative control: a dated answer without a source is not read as the assignment's own setting", async () => {
+    const dated = { enabled: false, changedBy: { role: "teacher", name: null }, changedAt: "2026-11-22T10:00:00.000Z" };
+    expect(await assignmentRhythmPort(apiAnswering(200, dated).call, TASK).read()).toEqual({ kind: "unavailable" });
+  });
+
+  it("an assignment following a course with its own dated setting reads as the course's", async () => {
+    const { call } = vectorApi("teacher.input-rhythm.delete", "course-holds");
+    expect(await assignmentRhythmPort(call, TASK).reset!())
+      .toMatchObject({ kind: "ready", state: { enabled: false, source: "course", changedAt: "2026-11-23T10:00:00.000Z" } });
   });
 
   it("going back to the course's setting is one DELETE and shows the level that now holds", async () => {
     const { call, fetchImpl } = vectorApi("teacher.input-rhythm.delete", "course-holds");
-    expect(await assignmentRhythmPort(call, TASK).reset!()).toMatchObject({ kind: "ready", state: { enabled: false, source: "course" } });
+    await assignmentRhythmPort(call, TASK).reset!();
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(String(fetchImpl.mock.calls[0]![0])).toBe(`${BASE_URL}/api/v1/teacher/assignments/${TASK}/input-rhythm`);
     expect(fetchImpl.mock.calls[0]![1]?.method).toBe("DELETE");
     expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.delete", "default-holds").call, TASK).reset!())
       .toMatchObject({ kind: "ready", state: { enabled: true, source: "default" } });
@@ -101,6 +115,7 @@ describe("assignment switch", () => {
 
   it("401 is signedOut and 404 is unavailable on every assignment route", async () => {
     expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.get", "unauthorized").call, TASK).read()).toEqual({ kind: "signedOut" });
+    expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.put", "unauthorized").call, TASK).set(false)).toEqual({ kind: "signedOut" });
     expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.delete", "unauthorized").call, TASK).reset!()).toEqual({ kind: "signedOut" });
     expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.get", "not-found").call, TASK).read()).toEqual({ kind: "unavailable" });
     expect(await assignmentRhythmPort(vectorApi("teacher.input-rhythm.delete", "not-found").call, TASK).reset!()).toEqual({ kind: "unavailable" });

@@ -8,19 +8,17 @@
 //   a broken connection or a thrown call is `unavailable` and the old state stays shown;
 // - 401 is `signedOut` (the screen sends the browser to sign-in); every other refusal, 404 included,
 //   is the same `unavailable`, so the screen never says whether a course or an assignment exists;
-// - the level the state comes from (`source`) is the server's when it names one. The assignment GET
-//   and PUT of the extract carry no `source` yet: a PUT is the assignment's own setting by definition,
-//   and a GET reads as the assignment's own only when the server dates a change (`changedAt`).
-import { createApi } from "./api";
+// - the level the state comes from is the server's `source` and nothing else: the server always sends
+//   it (SRV #652), so an answer without it is `unavailable`, never a level guessed from other fields.
+import { createApi, type ApiResult } from "./api";
+
+type RhythmOperation =
+  | "teacher.course-input-rhythm.get" | "teacher.course-input-rhythm.put"
+  | "teacher.input-rhythm.get" | "teacher.input-rhythm.put" | "teacher.input-rhythm.delete";
+type SwitchBody = Extract<ApiResult<RhythmOperation>, { ok: true }>["body"];
 
 export type RhythmSource = "assignment" | "course" | "default";
-export type RhythmChangedBy = { readonly role: "teacher" | "mentor"; readonly name: string | null };
-export type RhythmState = {
-  readonly enabled: boolean;
-  readonly source: RhythmSource;
-  readonly changedBy: RhythmChangedBy | null;
-  readonly changedAt: string | null;
-};
+export type RhythmState = Pick<SwitchBody, "enabled" | "changedBy" | "changedAt"> & { readonly source: RhythmSource };
 export type RhythmAnswer = { readonly kind: "ready"; readonly state: RhythmState } | { readonly kind: "signedOut" } | { readonly kind: "unavailable" };
 
 /** One switch as the screen uses it: read, set and (for an assignment) go back to the course's setting. */
@@ -31,38 +29,31 @@ export interface RhythmSwitchPort {
 }
 
 type Call = ReturnType<typeof createApi>;
-type Result = { readonly ok: boolean; readonly status: number; readonly body?: unknown };
-type Body = { enabled: boolean; source?: RhythmSource; changedBy: RhythmChangedBy | null; changedAt: string | null };
-
 const UNAVAILABLE = { kind: "unavailable" } as const;
 
-/** The state of an answer, or null; `fallback` names the level when the body names none. */
-function stateOf(result: Result, fallback: (body: Body) => RhythmSource, asked?: boolean): RhythmAnswer {
+/** The state of one answer; `asked` is the value a change asked for, which the answer must name. */
+function stateOf(result: ApiResult<RhythmOperation>, asked?: boolean): RhythmAnswer {
   if (!result.ok) return result.status === 401 ? { kind: "signedOut" } : UNAVAILABLE;
-  const body = result.body as Body;
-  if (typeof body?.enabled !== "boolean" || (asked !== undefined && body.enabled !== asked)) return UNAVAILABLE;
-  return {
-    kind: "ready",
-    state: { enabled: body.enabled, source: body.source ?? fallback(body), changedBy: body.changedBy ?? null, changedAt: body.changedAt ?? null },
-  };
+  const body: SwitchBody = result.body;
+  const source = "source" in body ? body.source : undefined;
+  if (source === undefined || (asked !== undefined && body.enabled !== asked)) return UNAVAILABLE;
+  return { kind: "ready", state: { enabled: body.enabled, source, changedBy: body.changedBy, changedAt: body.changedAt } };
 }
 
-async function settle(send: () => Promise<Result>, fallback: (body: Body) => RhythmSource, asked?: boolean): Promise<RhythmAnswer> {
+async function settle(send: () => Promise<ApiResult<RhythmOperation>>, asked?: boolean): Promise<RhythmAnswer> {
   try {
-    return stateOf(await send(), fallback, asked);
+    return stateOf(await send(), asked);
   } catch {
     return UNAVAILABLE;
   }
 }
 
-const dated = (own: RhythmSource, other: RhythmSource) => (body: Body): RhythmSource => (body.changedAt !== null ? own : other);
-
 /** The course's switch: applies to every assignment of the course that has no setting of its own. */
 export function courseRhythmPort(call: Call, courseId: string): RhythmSwitchPort {
   const params = { courseId };
   return {
-    read: () => settle(() => call("teacher.course-input-rhythm.get", { params, query: undefined, body: undefined }), dated("course", "default")),
-    set: (enabled) => settle(() => call("teacher.course-input-rhythm.put", { params, query: undefined, body: { enabled } }), () => "course", enabled),
+    read: () => settle(() => call("teacher.course-input-rhythm.get", { params, query: undefined, body: undefined })),
+    set: (enabled) => settle(() => call("teacher.course-input-rhythm.put", { params, query: undefined, body: { enabled } }), enabled),
   };
 }
 
@@ -70,8 +61,8 @@ export function courseRhythmPort(call: Call, courseId: string): RhythmSwitchPort
 export function assignmentRhythmPort(call: Call, assignmentId: string): RhythmSwitchPort {
   const params = { assignmentId };
   return {
-    read: () => settle(() => call("teacher.input-rhythm.get", { params, query: undefined, body: undefined }), dated("assignment", "course")),
-    set: (enabled) => settle(() => call("teacher.input-rhythm.put", { params, query: undefined, body: { enabled } }), () => "assignment", enabled),
-    reset: () => settle(() => call("teacher.input-rhythm.delete", { params, query: undefined, body: undefined }), dated("course", "default")),
+    read: () => settle(() => call("teacher.input-rhythm.get", { params, query: undefined, body: undefined })),
+    set: (enabled) => settle(() => call("teacher.input-rhythm.put", { params, query: undefined, body: { enabled } }), enabled),
+    reset: () => settle(() => call("teacher.input-rhythm.delete", { params, query: undefined, body: undefined })),
   };
 }
