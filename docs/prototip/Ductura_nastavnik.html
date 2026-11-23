@@ -1,4 +1,23 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}/* NF-5 pregled rada: oznake su riječima, ne samo bojom; ispis; mobitel. */
+.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+.pg-panel { display:grid; gap:20px; min-width:0; }
+.pg-print { display:none; }
+.pg-panel .pv-l { white-space:normal; display:inline-block; max-width:100%; }
+.sum th[scope="row"] { text-align:left; font-weight:600; }
+.sb-body .sum table { width:100%; border-collapse:collapse; }
+.sb-body .sum th, .sb-body .sum td { text-align:left; vertical-align:top; padding:8px 10px; border-bottom:1px solid var(--rule-2); }
+.sb-body .sum thead th { font-size:12.5px; color:var(--ink-3); }
+.sb-body .sum caption { text-align:left; padding:0 0 6px; }
+@media (max-width:759px) { .sb-body .sum th[scope="row"] { display:block; padding:2px 12px; } .sb-body .sum th[scope="row"]::before { content:attr(data-label) ": "; color:var(--ink-3); font-size:12.5px; } }
+@media print {
+  #proto-bar, .proto-note, .sb-bar, #toast, .sb-page > *:not(.pg-print) { display:none !important; }
+  body { display:block; height:auto; background:#fff; color:#000; }
+  #stage { overflow:visible; }
+  .pg-print { display:block !important; color:#000; background:#fff; font:12pt/1.5 var(--ff-display); }
+  .pg-print h1 { font-size:18pt; } .pg-print h2 { font-size:14pt; margin:14pt 0 4pt; }
+  .pg-print .pv-paste { border-bottom:2px dashed #000; } .pg-print .pv-ai { border-bottom:4px double #000; } .pg-print .pv-l { color:#000; border-color:#000; }
+}
+</style></head><body>
 <title>Ductura nastavnik</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1011,7 +1030,7 @@ legend { font-weight:600; padding:0 4px; }
         (w.st === 'nije-zapoceto' ? '<p class="note">Rad još nije započet, pa nema teksta ni sažetka.</p>' :
           '<div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="' + (tab === 'tekst') + '" data-act="tab" data-t="tekst">Tekst rada</button><button type="button" role="tab" aria-selected="' + (tab === 'sazetak') + '" data-act="tab" data-t="sazetak">Sažetak procesa</button></div>' +
           (tab === 'tekst' ? '<div class="sheet ed-sheet" style="padding:24px">' + (k === 'a' ? body({ noSug: true }).split('<h2>2.')[0] + '<p class="meta">…</p>' : '<p>Lokalni mediji u kampanji: radna verzija. Student piše; prikazan je zadnji tekst koji je poslužitelj primio.</p>') + '</div>'
-            : '<ul class="facts"><li>6 sesija · aktivno vrijeme uređivanja 8 h 05 min</li><li>1 lijepljenje dulje od 200 znakova, izvor nije opažen</li><li>1 prijenos iz AI pomoćnika · Pružatelj A, model M-2</li><li>Zapis ima praznine (vidi puni sažetak)</li></ul><a href="#sazetak" data-go="sazetak">Otvori puni sažetak procesa</a>')) +
+            : '<ul class="facts"><li>6 sesija · aktivno vrijeme uređivanja 8 h 05 min</li><li>1 lijepljenje dulje od 200 znakova, izvor nije opažen</li><li>1 prijenos iz AI pomoćnika · Asistent</li><li>Zapis ima praznine (vidi puni sažetak)</li></ul><a href="#sazetak" data-go="sazetak">Otvori puni sažetak procesa</a>')) +
         '<div class="sb-acts"><button class="btn secondary" type="button" data-act="prev"' + (i === 0 ? ' aria-disabled="true"' : '') + '>Prethodni</button><button class="btn secondary" type="button" data-act="next"' + (i === BK.length - 1 ? ' aria-disabled="true"' : '') + '>Sljedeći</button>' +
         (w.st !== 'nije-zapoceto' ? '<a class="btn" href="#rad" data-go="rad" data-work="' + k + '">Otvori rad</a>' : '') + '</div></section>';
       return head(title, lede) + '<div data-nf4="NZ-1">' + sel('f-bp', 'Zadatak', [['t1', 'Seminarski rad · rok 8. 11. 2026.'], ['t0', 'Esej · rok je prošao']], n4().bp, 'data-bp') + '</div><div class="fp">' + list + det + '</div>';
@@ -1141,7 +1160,7 @@ legend { font-weight:600; padding:0 4px; }
         : 'Nije predano · rok ' + t.due + ' je prošao · prikazan je zadnji tekst koji je poslužitelj primio (' + w.last + ')';
       var links = '<nav class="rd-links" aria-label="Pogledi na rad">' +
         (submitted ? '<a href="#predaja" data-go="predaja">Što je student predao</a>' : '') +
-        '<a href="#sazetak" data-go="sazetak">Sažetak procesa</a><a href="#reprodukcija" data-go="reprodukcija">Reprodukcija</a>' +
+        '<a href="#pregled" data-go="pregled" data-nf5="PG-1">Pregled rada (jedno mjesto)</a><a href="#sazetak" data-go="sazetak">Sažetak procesa</a><a href="#reprodukcija" data-go="reprodukcija">Reprodukcija</a>' +
         (submitted ? '<a href="#usporedba" data-go="usporedba">Usporedba verzija</a>' : '') +
         '<a href="#konzultacije" data-go="konzultacije">Konzultacije</a></nav>';
       var actions = '<div class="acts">' + (submitted ? '<button class="btn" type="button" data-act="askDorada">Zatraži doradu</button>' : '') +
@@ -1198,8 +1217,8 @@ legend { font-weight:600; padding:0 4px; }
     return panel('iz-h', 'Izjava o korištenju generativne umjetne inteligencije', '',
       '<p class="meta">Potvrđena 5. 11. 2026. u 21:10 · po čl. 9 i 15 pravilnika fakulteta</p>' +
       '<div class="sb-decl"><h3>Zabilježeno u Ducturi <span class="tag">zabilježeno</span></h3>' +
-      '<div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Model M-2 · 2. Teorijski okvir, odlomak 1</span></div>' +
-      '<div class="sb-entry"><span>Razgovor s AI pomoćnikom bez prijenosa, 31. 10. 2026.</span><span class="sb-who">Model M-2</span></div></div>' +
+      '<div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Asistent · 2. Teorijski okvir, odlomak 1</span></div>' +
+      '<div class="sb-entry"><span>Razgovor s AI pomoćnikom bez prijenosa, 31. 10. 2026.</span><span class="sb-who">Asistent</span></div></div>' +
       '<div class="sb-decl own"><h3>Izjava studenta <span class="tag open">izjavljeno</span></h3>' +
       '<div class="sb-kv"><span>Vanjski alati</span><b>nijedan</b></div><div class="sb-kv"><span>Svrha</span><b>sažimanje literature</b></div>' +
       '<div class="sb-kv"><span>Faza rada</span><b>priprema</b></div><div class="sb-kv"><span>Ljudska pomoć</span><b>lektura kolege</b></div></div>' +
@@ -1246,10 +1265,10 @@ legend { font-weight:600; padding:0 4px; }
   function chatDialog(n) {
     var inner = n === 1
       ? '<p class="meta">Točno kako je zabilježen; isti razgovor vidi i student.</p><div class="sb-entry"><span class="sb-who">Student A · 10:01</span><span>Sažmi tri glavna pristupa iz poglavlja o institucijama.</span></div>' +
-        '<div class="sb-entry"><span class="sb-who">AI pomoćnik, model M-2 · 10:02</span><span>Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</span></div>' +
+        '<div class="sb-entry"><span class="sb-who">Asistent · 10:02</span><span>Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</span></div>' +
         '<div class="sb-entry"><span class="sb-who">Prijenos u tekst · 10:05</span><span>2. Teorijski okvir, odlomak 1</span></div>'
       : '<p class="meta">Točno kako je zabilježen; isti razgovor vidi i student.</p><div class="sb-entry"><span class="sb-who">Student A · 19:22</span><span>Koja su dva najčešća prigovora prvom pristupu?</span></div>' +
-        '<div class="sb-entry"><span class="sb-who">AI pomoćnik, model M-2 · 19:23</span><span>Najčešće se navodi da zanemaruje interese sudionika i da teško objašnjava promjenu pravila.</span></div>';
+        '<div class="sb-entry"><span class="sb-who">Asistent · 19:23</span><span>Najčešće se navodi da zanemaruje interese sudionika i da teško objašnjava promjenu pravila.</span></div>';
     return dialog('ch-h', 'Razgovor ' + n + ' · ' + (n === 1 ? '28. 10. 2026.' : '31. 10. 2026.'), inner + '<div class="sb-acts"><button class="btn secondary" type="button" data-core="close">Zatvori</button></div>');
   }
   App.register('predaja', {
@@ -1288,12 +1307,12 @@ legend { font-weight:600; padding:0 4px; }
     h += '<section class="sb-state"><div class="sb-ev"><h3>Verzije</h3>' + OBS + '</div><ul class="facts"><li>28. 10. 2026. u 10:50 · poslano na pregled</li><li>5. 11. 2026. u 21:14 · predano</li></ul></section>';
     h += '<section class="sb-state"><h3>Lijepljenja</h3><ul class="list"><li class="item"><div class="sb-ev"><span>22. 10. 2026., odsječak oko 10:35 · 640 znakova</span>' + OBS + '</div><span class="note">Izvor nije opažen.</span><a href="#sazetak" data-act="jump" data-to="pv-paste">Prikaži mjesto u radu</a></li></ul>' +
       '<p class="meta">Popisano je svako lijepljenje dulje od 200 znakova (prag P-02, postavka fakulteta). Vrijeme je zaokruženo na odsječak zapisa. Bez zbroja.</p></section>';
-    h += '<section class="sb-state"><h3>AI pomoćnik</h3><ul class="list"><li class="item"><div class="sb-ev"><span>28. 10. 2026. u 10:05 · Pružatelj A, model M-2 · svrha: sažimanje literature · 96 znakova</span>' + OBS + '</div>' +
+    h += '<section class="sb-state"><h3>AI pomoćnik</h3><ul class="list"><li class="item"><div class="sb-ev"><span>28. 10. 2026. u 10:05 · Asistent · svrha: sažimanje literature · 96 znakova</span>' + OBS + '</div>' +
       '<blockquote class="sb-quote">Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</blockquote><a href="#sazetak" data-act="jump" data-to="pv-ai">Prikaži mjesto u radu</a></li></ul>' +
       '<p class="meta">Popisano je svako prenošenje teksta iz AI pomoćnika u rad.</p></section>';
     h += '<section class="sb-state"><div class="sb-ev"><h3>Praznine u zapisu</h3>' + OBS + '</div>' + (gaps ? '<ul class="facts"><li>Od verzije 26. 10. 2026. u 21:45 do verzije 28. 10. 2026. u 10:50. Poslužitelj je primio obje verzije, ali ne i odsječke između njih, pa promjene u tom rasponu nisu zabilježene pojedinačno.</li></ul>' : '<p>Zapis nema praznina.</p>') + '</section>';
     if (declStep) h += '<section class="sb-state"><h3>Izjava o korištenju generativne umjetne inteligencije</h3><p class="meta">Potvrđena 5. 11. 2026. u 21:10 · po čl. 9 i 15 pravilnika fakulteta</p>' +
-      '<div class="sb-decl"><div class="sb-ev"><span>Zabilježeno u Ducturi</span>' + OBS + '</div><div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Pružatelj A, model M-2 · svrha: sažimanje literature</span></div></div>' +
+      '<div class="sb-decl"><div class="sb-ev"><span>Zabilježeno u Ducturi</span>' + OBS + '</div><div class="sb-entry"><span>Prijenos iz AI pomoćnika, 28. 10. 2026. u 10:05</span><span class="sb-who">Asistent · svrha: sažimanje literature</span></div></div>' +
       '<div class="sb-decl own"><div class="sb-ev"><span>Izjava studenta</span>' + DECL + '</div><div class="sb-kv"><span>Vanjski alati</span><b>nijedan</b></div><div class="sb-kv"><span>Svrha</span><b>sažimanje literature</b></div><div class="sb-kv"><span>Faza rada</span><b>priprema</b></div><div class="sb-kv"><span>Ljudska pomoć</span><b>lektura kolege</b></div></div></section>';
     h += '<section class="sb-state"><h3>Napomene studenta</h3><p class="meta">Nema napomena.</p></section>';
     h += '<section class="sb-state"><div class="sb-ev"><h3>Stanje zapisa</h3>' + OBS + '</div>' + (gaps ? '<p>Zapis ima praznine (vidi popis).</p>' : '<p>Zapis je cjelovit.</p>') + '<p class="meta">Zapis je neizmijenjen od primitka na poslužitelj.</p></section>';
@@ -1317,7 +1336,7 @@ legend { font-weight:600; padding:0 4px; }
       '<div class="sheet ed-sheet ' + (m.origin ? '' : 'pv-off ') + (typedOn ? 'pv-typed-on' : '') + '" style="padding:24px 28px">' +
       '<h2 style="margin-top:0">1. Uvod</h2><p class="pv-t">Lokalni mediji u izbornoj kampanji imaju dvostruku ulogu: prenose poruke kandidata i istodobno oblikuju teme o kojima se u zajednici raspravlja.</p>' +
       '<p id="pv-paste"><span class="pv-paste">Na izborima u Gradu A natjecalo se pet lista, a kampanja je trajala šest tjedana.</span><span class="pv-l">zalijepljeno · izvor nije opažen</span></p>' +
-      '<h2>2. Teorijski okvir</h2><p id="pv-ai"><span class="pv-t-in">Na lokalnoj razini taj se učinak pojačava jer publika ima manje alternativnih izvora informacija.</span> <span class="pv-ai">Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</span><span class="pv-l">prijenos iz AI pomoćnika · model M-2</span></p>' +
+      '<h2>2. Teorijski okvir</h2><p id="pv-ai"><span class="pv-t-in">Na lokalnoj razini taj se učinak pojačava jer publika ima manje alternativnih izvora informacija.</span> <span class="pv-ai">Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</span><span class="pv-l">prijenos iz AI pomoćnika · Asistent</span></p>' +
       '<p class="pv-t">Ovaj odnos dodatno slabi kad je oglašivač ujedno i kandidat. Podaci o oglašavanju preuzeti su iz javnih izvješća <span class="ed-open">otvoreno mjesto za izvor</span>.</p>' +
       '<p class="meta">Uvoza iz datoteke i izmjena nastavnika u ovom radu nema.</p></div>';
     return panel('km-h', 'Karta podrijetla', '', '<p class="note">Pokazuje gdje je tekst ušao lijepljenjem, uvozom ili prijenosom iz AI pomoćnika, te gdje je mijenjao nastavnik. Bez zbroja i bez izračuna.</p><p><b>Ductura ne zna tko je tipkao.</b></p>' + sw + legend + txt, '', 'h2');
@@ -1433,6 +1452,341 @@ legend { font-weight:600; padding:0 4px; }
       return workPage(panel('cp-h', 'Usporedba verzija', 'Seminarski rad', b));
     }
   });
+
+  /* ---------- NF-5 Pregled rada (PG-1 do PG-15, 23. 11. 2026.) ---------- */
+  /* Zadatak nf5-prototip-pregled-rada. Izvor: docs/nalazi/nove-funkcije-5-nastavnik-pregled-rada.md. Daniel: „Sve u pilotu 1. Ostaje u
+     Merlinu 2. Smije ovo prov 3. Da 4. Smije vidjeti ritam pisanja po dijelu teksta 5. Smije s oznamaka podrijetla izvesti i ispisati”.
+     Element nosi atribut data-nf5="PG-n"; napomena „Poslužitelj:” (.srv) označava što poslužitelj danas nema. Pružatelj i model se ne
+     imenuju (Q-10): piše samo „Asistent”. Nijedan tekst ne donosi zaključak o autorstvu; uz svaki postotak stoji „nije dokaz autorstva”. */
+  var NIJE_DOKAZ = 'nije dokaz autorstva';
+  var PG_TABS = [['tekst', 'Tekst'], ['sazetak', 'Sažetak'], ['podrijetlo', 'Podrijetlo'], ['reprodukcija', 'Reprodukcija'], ['usporedba', 'Usporedba'], ['izjava', 'Izjava'], ['dobiveno', 'Što je student dobio'], ['izvoz', 'Izvoz i ispis']];
+  var PG_COMP = [
+    ['Tipkano u Ducturi', '71 %', 'Tekst je nastao tipkanjem u uređivaču Ducture.', 'Ne znači da je tipkao student: Ductura ne zna tko je tipkao.'],
+    ['Umetnuto iz Asistenta', '6 %', 'Student je tekst prenio iz razgovora s Asistentom u rad; prijenos je zabilježen.', 'To nije isto što i „podudara se”: to je zasebna vrsta.'],
+    ['Podudara se s odgovorom Asistenta', '4 %', 'Osam ili više riječi zaredom jednako je odgovoru koji je student dobio u Ducturi. To je usporedba teksta, ne zaključak.', 'Ne znači da je tekst napisao Asistent.'],
+    ['Uvezeno iz datoteke', '3 %', 'Tekst je u rad uvezen iz datoteke.', 'Ne znači da je uvezeni tekst tuđ.'],
+    ['Zalijepljeno, podrijetlo poznato', '9 %', 'Zalijepljeno iz mjesta koje Ductura prepoznaje (npr. iz istog rada ili bilješki u Ducturi).', 'Ne znači da je tekst provjeren.'],
+    ['Zalijepljeno, podrijetlo nepoznato', '7 %', 'Zalijepljeno iz mjesta izvan Ducture, pa izvor nije opažen.', 'Nepoznato podrijetlo nije prekršaj. Traži objašnjenje, ne sankciju.']
+  ];
+  var RIT_GONE = 'ritam više nije dostupan (briše se 30 dana nakon predaje)';
+  var PG_SEG = [
+    ['1. Uvod, odlomak 1', 'tipkano u Ducturi', '20. 10. 2026. oko 18:10', 'medijan razmaka 210 ms · 96 unosa'],
+    ['1. Uvod, odlomak 2', 'zalijepljeno, izvor nije opažen', '22. 10. 2026. oko 10:35', 'nije zabilježen (lijepljenje)'],
+    ['2. Teorijski okvir, odlomak 1', 'umetnuto iz Asistenta · podudara se s odgovorom Asistenta', '28. 10. 2026. oko 10:05', 'nije zabilježen (prijenos)'],
+    ['3. Metoda, odlomak 1', 'zalijepljeno, izvor nije opažen', '31. 10. 2026. oko 19:40', 'nije zabilježen (lijepljenje)'],
+    ['4. Rasprava, odlomak 1', 'tipkano u Ducturi', '5. 11. 2026. oko 20:30', 'medijan razmaka 240 ms · 133 unosa']
+  ];
+  var PG_FIND = [
+    { id: 'n1', title: 'Nalaz 1 · zalijepljeno, podrijetlo nepoznato', what: '1. Uvod, odlomak 2 · 22. 10. 2026. oko 10:35 · 640 znakova', ex: 'Tekst sam preuzeo iz svojih bilježaka s predavanja; izvor je skripta s drugog predavanja.' },
+    { id: 'n2', title: 'Nalaz 2 · podudara se s odgovorom Asistenta', what: '2. Teorijski okvir, odlomak 1 · 12 riječi zaredom · razgovor 1 od 28. 10. 2026. u 10:05 · navedeno u izjavi', ex: 'Rečenicu sam prenio iz razgovora i naveo je u izjavi.', part: true },
+    { id: 'n3', title: 'Nalaz 3 · zalijepljeno, podrijetlo nepoznato', what: '3. Metoda, odlomak 1 · 31. 10. 2026. oko 19:40 · 210 znakova', ex: null },
+    { id: 'n4', title: 'Nalaz 4 · praznina u zapisu', what: 'od verzije 26. 10. 2026. u 21:45 do verzije 28. 10. 2026. u 10:50 · dopuna studenta uz događaj', ex: 'U tim danima radio sam izvan mreže; tekst je kasnije stigao u verziji od 28. 10.' }
+  ];
+  function pg() {
+    var s = App.state;
+    if (!s.pg) s.pg = { tab: 'tekst', origin: true, retried: false, rp: { pos: 1, playing: false, speed: 1 }, exp: null, log: [], reviewed: false, chat: 1, ret: null, live: '', mark: 0 };
+    return s.pg;
+  }
+  function pgKey() {
+    var cur = App.state.work, v = App.variant();
+    if (v === 'prazno') return 'c';
+    return W[cur].task === 't1' ? cur : 'a';
+  }
+  function pgSrv(id, text) { return '<p class="srv" data-srv="' + id + '"><b>Poslužitelj:</b> ' + text + '</p>'; }
+  function pgPanel(id, title, body, tag, nf) { return '<section class="panel sb-panel" aria-labelledby="' + id + '" data-nf5="' + nf + '"><div class="sb-top"><h2 id="' + id + '">' + title + '</h2>' + (tag ? '<span class="tag">' + tag + '</span>' : '') + '</div><div class="sb-body">' + body + '</div></section>'; }
+  function pgPartErr(what) { return '<p class="note" role="alert">' + what + ' trenutačno nije moguće dohvatiti. To ne znači da nalaza nema.</p><div class="sb-acts"><button class="btn secondary small" type="button" data-act="pgRetry">Pokušaj ponovno</button></div>'; }
+  function pgMarkText(on) {
+    var L = function (t) { return on ? '<span class="pv-l">' + t + '</span>' : ''; }, C = function (c) { return on ? c : ''; };
+    return '<h2 style="margin-top:0">1. Uvod</h2><p>Lokalni mediji u izbornoj kampanji imaju dvostruku ulogu: prenose poruke kandidata i istodobno oblikuju teme o kojima se u zajednici raspravlja.</p>' +
+      '<p id="pg-m1" tabindex="-1"><span class="' + C('pv-paste') + '">Na izborima u Gradu A natjecalo se pet lista, a kampanja je trajala šest tjedana.</span>' + L('zalijepljeno · izvor nije opažen · nalaz 1') + '</p>' +
+      '<h2>2. Teorijski okvir</h2><p id="pg-m2" tabindex="-1">Na lokalnoj razini taj se učinak pojačava jer publika ima manje alternativnih izvora informacija. <span class="' + C('pv-ai') + '">Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka.</span>' + L('umetnuto iz Asistenta · podudara se s odgovorom Asistenta · nalaz 2') + '</p>' +
+      '<h2>3. Metoda</h2><p id="pg-m3" tabindex="-1"><span class="' + C('pv-paste') + '">Anketa je provedena među 300 ispitanika tijekom posljednjeg tjedna kampanje, uz kvote prema dobi i spolu.</span>' + L('zalijepljeno · izvor nije opažen · nalaz 3') + '</p>' +
+      '<h2>4. Rasprava</h2><p>Ovaj odnos dodatno slabi kad je oglašivač ujedno i kandidat. Podaci o oglašavanju preuzeti su iz javnih izvješća <span class="ed-open">otvoreno mjesto za izvor</span>.</p>';
+  }
+  function pgHead(k, v) {
+    var w = W[k], t = TASKS[w.task], submitted = w.st === 'predano', live = w.st === 'uzivo', empty = w.st === 'nije-zapoceto';
+    var state = empty ? 'Nije započeto · student još nije potvrdio obavijest o zadatku'
+      : submitted ? 'Predano ' + w.sub + (late(k) ? ', nakon roka' : '') + ' · verzija ' + w.ver + ' · ' + (w.gaps ? 'zapis ima praznine' : 'zapis je cjelovit')
+      : 'U pisanju · prikaz se osvježava dok student piše · zadnja promjena ' + w.last;
+    var grade = v === 'probni' ? '<p class="note" data-nf5="PG-10"><b>Probni zadatak se ne ocjenjuje i ne izvozi.</b> Pregled služi samo razgovoru o radu.</p>'
+      : '<p class="note" data-nf5="PG-10"><b>Ocjenu upisujete u Merlin.</b> Ductura ne bilježi ocjenu, a nijedna oznaka u ovom pregledu ne ulazi u ocjenu ni u izvoz.</p>';
+    var d = doradaOf(k, v), acts = '<div class="acts" data-nf5="PG-8 PG-1">' + (submitted && !d ? '<button class="btn" type="button" data-act="pgAskDorada" data-ret="pg-ask">Zatraži doradu</button>' : '') +
+      '<button class="btn secondary" type="button" data-act="pgReviewed">' + (pg().reviewed ? 'Označeno kao pregledano' : 'Označi kao pregledano') + '</button>' +
+      '<button class="btn secondary" type="button" data-act="pgStep" data-d="-1"' + (T1.indexOf(k) <= 0 ? ' aria-disabled="true"' : '') + '>Prethodni rad</button>' +
+      '<button class="btn secondary" type="button" data-act="pgStep" data-d="1"' + (T1.indexOf(k) >= T1.length - 1 ? ' aria-disabled="true"' : '') + '>Sljedeći rad</button></div>';
+    var hd = '<section class="panel rd-head" data-nf5="PG-1"><p class="meta">' + t.course + ' · ' + w.group + ' · zadatak „' + esc(t.title) + '”' + (v === 'probni' ? ' · probni zadatak' : '') + '</p>' +
+      '<h1 id="pg-h">' + w.who + ' · ' + t.kind + ' „' + esc(t.title) + '”</h1><p>' + state + ' · rok ' + t.due + '</p>' + grade + acts +
+      '<p class="meta" id="pg-rev" role="status">' + (pg().reviewed ? 'Pregled je označen 5. 11. 2026. u 21:50. Sljedeća izmjena studenta ponovno pokazuje promjene.' : 'Promjene od zadnjeg pregleda: verzija 2 predana nakon Vašeg zadnjeg pregleda (28. 10. 2026.).') + '</p></section>';
+    return hd + doradaBanner(k, v === 'dorada' ? 'dorada' : 'puno') + (d && d.state === 'student navodi da je proveden' ? '<p><button class="btn secondary" type="button" data-act="pgTab" data-t="usporedba" data-nf5="PG-8">Usporedi s predanom verzijom</button></p>' : '');
+  }
+  function pgTabs() {
+    var cur = pg().tab;
+    return '<div class="tabs" role="tablist" aria-label="Pogledi na rad" data-nf5="PG-1">' + PG_TABS.map(function (t) {
+      return '<button type="button" role="tab" id="pgt-' + t[0] + '" aria-controls="pgp-' + t[0] + '" aria-selected="' + (cur === t[0]) + '" tabindex="' + (cur === t[0] ? '0' : '-1') + '" data-act="pgTab" data-t="' + t[0] + '">' + t[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  /* ---- kartice ---- */
+  function pgTekst(k, v, empty) {
+    if (empty) return '<p class="note">U radu još nema teksta.</p>';
+    return '<p class="note">Tekst rada je samo za čitanje. Komentari i prijedlozi izmjene su u pogledu „Rad”. Isti komentar vidi i student.</p>' +
+      '<div class="sheet ed-sheet" style="padding:24px 28px">' + pgMarkText(false) + '</div>' +
+      '<p><a href="#rad" data-go="rad" data-work="' + k + '">Komentari i prijedlozi</a></p>';
+  }
+  function pgSazetak(k, v, empty) {
+    if (empty) return '<p class="note">Rad još nije započet, pa sažetka procesa nema.</p>';
+    var gaps = W[k].gaps, rit = v === 'ritam-nedostupan';
+    var h = '<p class="meta">Isti sažetak vide student i nastavnik. Vremena su po zagrebačkom vremenu, zaokružena na minutu.</p>';
+    h += '<section class="sb-state"><h3>Razdoblje rada</h3><div class="sb-kv"><span>Prvi zabilježeni događaj</span><b>20. 10. 2026. u 18:05</b></div><div class="sb-kv"><span>Posljednji zabilježeni događaj</span><b>5. 11. 2026. u 21:14</b></div></section>';
+    h += '<section class="sb-state"><h3>Sesije i aktivno vrijeme uređivanja</h3><div class="sb-kv"><span>Sesije iz primljenih odsječaka</span><b>6 sesija</b></div><div class="sb-kv"><span>Zbroj trajanja</span><b>8 h 05 min</b></div><p class="note">Vrijeme uređivanja nije mjera truda ni vremena razmišljanja.</p></section>';
+    h += '<section class="sb-state"><h3>Lijepljenja dulja od 200 znakova</h3><p>2 lijepljenja, izvor nije opažen (22. 10. 2026. i 31. 10. 2026.).</p><p><button class="btn secondary small" type="button" data-act="pgTab" data-t="podrijetlo">Prikaži u podrijetlu teksta</button></p></section>';
+    h += '<section class="sb-state" data-nf5="PG-4"><h3>Asistent</h3><div class="sb-kv"><span>Zabilježeni razgovori</span><b>2</b></div><div class="sb-kv"><span>Prijenosi teksta u rad</span><b>1</b></div>' +
+      '<p class="meta">Pokazuje se samo broj i datumi. Što Asistent nije dao nastavniku, ne nagađa se.</p><p><button class="btn secondary small" type="button" data-act="pgTab" data-t="izjava">Razgovori uz izjavu</button></p></section>';
+    h += '<section class="sb-state" data-nf5="PG-4"><h3>Podudaranje s odgovorom Asistenta</h3>' + (v === 'dio-greska' && !pg().retried ? pgPartErr('Podudaranje') : '<p>1 nalaz: 12 riječi zaredom u 2. Teorijski okvir. Ovo je obična usporedba teksta i ništa ne govori o autorstvu.</p>') + '</section>';
+    h += '<section class="sb-state" data-nf5="PG-4"><h3>Pravila fakulteta</h3><p class="note">Trenutačno nije dostupno.</p><p class="meta">Poslužitelj ovaj dio ne daje; ponovni pokušaj ne mijenja ništa. Ostali dijelovi sažetka nisu zahvaćeni.</p></section>';
+    h += '<section class="sb-state" data-nf5="PG-4"><h3>Ritam unosa</h3><p class="note">' + (rit ? 'Ritam više nije dostupan (briše se 30 dana nakon predaje).' : 'Ritam je zabilježen po dijelu teksta; vidi „Podrijetlo”. Briše se 30 dana nakon predaje.') + '</p><p class="meta">Zapis o unosu, ne o autorstvu.</p></section>';
+    h += '<section class="sb-state"><h3>Praznine u zapisu</h3>' + (gaps ? '<p>Od verzije 26. 10. 2026. u 21:45 do verzije 28. 10. 2026. u 10:50 promjene nisu zabilježene pojedinačno. Pročitajte to prije nego što zaključite bilo što o tom dijelu.</p>' : '<p>Zapis nema praznina.</p>') + '</section>';
+    return h;
+  }
+  function pgPodrijetlo(k, v, empty) {
+    if (empty) return '<p class="note">Nema teksta, pa nema ni sastava ni karte podrijetla.</p>';
+    var rit = v === 'ritam-nedostupan', pgd = pg();
+    var comp = '<p class="note">Udio je iz zabilježenih događaja u Ducturi. Uz svaki postotak: <b>' + NIJE_DOKAZ + '</b>. Ništa se ne zbraja u ocjenu ni u zaključak.</p>' +
+      '<div class="sum"><table><caption class="meta">Sastav teksta po vrsti, uz objašnjenje što vrsta znači i što ne znači</caption><thead><tr><th scope="col">Vrsta</th><th scope="col">Udio</th><th scope="col">Što znači</th><th scope="col">Što ne znači</th></tr></thead><tbody>' +
+      PG_COMP.map(function (r) { return '<tr><th scope="row" data-label="Vrsta">' + r[0] + '</th><td data-label="Udio">' + r[1] + ' <span class="meta">' + NIJE_DOKAZ + '</span></td><td data-label="Znači">' + r[2] + '</td><td data-label="Ne znači">' + r[3] + '</td></tr>'; }).join('') +
+      '</tbody></table></div><p class="meta">Pragovi fakulteta nisu postavljeni (nema zadanih), pa usporedbe s pragom nema.</p>' +
+      '<details data-nf5="PG-3"><summary>Kako čitati ovaj prikaz</summary><ul class="facts"><li>„Zalijepljeno”, „umetnuto iz Asistenta” i „podudara se” su tri različite stvari.</li><li>Nepoznato podrijetlo nije prekršaj. Traži objašnjenje, ne sankciju.</li><li>Ductura ne otkriva alate izvan sebe. Ovo nije samostalan temelj ni za kakav postupak.</li><li>Nijedna oznaka ne blokira predaju, ne ulazi u ocjenu ni u izvoz, ne rangira. Isti prikaz vidi i student.</li></ul></details>';
+    var map = '<div class="acts"><label class="switch"><input type="checkbox" data-sw="pgorigin"' + (pgd.origin ? ' checked' : '') + '> Prikaži podrijetlo u tekstu</label>' +
+      '<button class="btn secondary small" type="button" data-act="pgNextMark">Sljedeće lijepljenje ili prijenos</button></div>' +
+      '<p class="meta">Oznake su riječima uz boju i crtu, ne samo bojom. <b>Ductura ne zna tko je tipkao.</b> ' + NIJE_DOKAZ.charAt(0).toUpperCase() + NIJE_DOKAZ.slice(1) + '.</p>' +
+      '<ul class="pv-legend" aria-label="Legenda karte"><li><span class="pv-sw paste" aria-hidden="true"></span>zalijepljeno · crtkana crta</li><li><span class="pv-sw ai" aria-hidden="true"></span>umetnuto iz Asistenta · dvostruka crta</li></ul>' +
+      '<div class="sheet ed-sheet ' + (pgd.origin ? '' : 'pv-off') + '" style="padding:24px 28px">' + pgMarkText(pgd.origin) + '</div>' +
+      '<div class="sum"><table><caption class="meta">Odsječci teksta (isti podaci kao oznake, bez boje i crte)</caption><thead><tr><th scope="col">Odsječak</th><th scope="col">Kako je ušao</th><th scope="col">Otprilike u</th><th scope="col">Ritam unosa</th></tr></thead><tbody>' +
+      PG_SEG.map(function (r) { return '<tr><th scope="row" data-label="Odsječak">' + r[0] + '</th><td data-label="Kako je ušao">' + r[1] + '</td><td data-label="Otprilike u">' + r[2] + '</td><td data-label="Ritam unosa">' + (rit ? RIT_GONE : r[3]) + '</td></tr>'; }).join('') +
+      '</tbody></table></div><p class="meta" data-nf5="PG-2"><b>Ritam je zapis o unosu, ne o autorstvu.</b> Bilježe se razmaci u milisekundama, ne tipke, i samo u polju za pisanje u Ducturi. ' + (rit ? 'Ritam više nije dostupan jer se briše 30 dana nakon predaje; to je uobičajeno stanje, ne greška.' : 'Briše se 30 dana nakon predaje.') + '</p>' +
+      pgSrv('PG-2', 'raspon (početak i kraj) po izvoru po odlomku <b>nedostaje</b>: odsječci nose približno vrijeme, ne raspon u tekstu. Oznake u tekstu su u prototipu po odlomku.');
+    var done = PG_FIND.filter(function (f) { return f.ex; }).length;
+    var fin = '<p class="note" role="status" data-nf5="PG-7"><b>Objašnjeno ' + done + ' od ' + PG_FIND.length + ' nalaza.</b> Studentovo objašnjenje stoji uz nalaz i zadano je raširen; ono se čita prije nego što nalaz protumačite. Nalaz se ne može označiti „riješenim”, a ništa od ovoga ne ulazi u ocjenu.</p><ul class="list">' +
+      PG_FIND.map(function (f) {
+        var partBad = f.part && v === 'dio-greska' && !pgd.retried;
+        return '<li class="item" data-nf5="PG-7"><span class="title">' + f.title + '</span><span class="meta">' + f.what + '</span>' +
+          (partBad ? pgPartErr('Podudaranje') :
+            '<details open><summary>Objašnjenje studenta</summary>' + (f.ex ? '<blockquote class="sb-quote">' + esc(f.ex) + '</blockquote>' : '<p class="note">Student još nije dao objašnjenje.</p>') + '</details>') +
+          '<span class="meta">Nalaz je činjenica o zapisu: ' + NIJE_DOKAZ + '.</span></li>';
+      }).join('') + '</ul>' +
+      pgSrv('PG-7', 'čitanje objašnjenja uz nalaz <b>nedostaje</b>: postoje samo <code>work.assistant-match-explanation.post</code> (pisanje) i <code>work.event-disputes.get</code>; objašnjenje uz isti <code>segmentRef</code> u jednom čitanju treba novo polje.');
+    return pgPanel('pgs-h', 'Sastav teksta', comp, '', 'PG-3') + pgPanel('pgm-h', 'Tekst rada s oznakama podrijetla', map, '', 'PG-2') + pgPanel('pgn-h', 'Nalazi i objašnjenja studenta', fin, '', 'PG-7');
+  }
+  function pgFrames() { return frames('praznine'); }
+  function pgMarks() {
+    var F = pgFrames(), out = [];
+    F.forEach(function (f, i) {
+      if (f.src === 'zalijepljeno') out.push({ i: i + 1, t: 'Lijepljenje, 22. 10. 2026. oko 10:35 · izvor nije opažen' });
+      else if (f.gap) out.push({ i: i + 1, t: 'Praznina u zapisu, od 26. 10. 2026. do 28. 10. 2026.' });
+      else if (f.src === 'prijenos iz AI pomoćnika') out.push({ i: i + 1, t: 'Prijenos iz Asistenta, 28. 10. 2026. u 10:05' });
+    });
+    out.push({ i: F.length, t: 'Predaja, 5. 11. 2026. u 21:14 (zadnja promjena)' });
+    return out;
+  }
+  function pgRepro(k, v, empty) {
+    if (empty) return '<p class="note">Nema promjena za prikaz: rad još nije započet.</p>';
+    var F = pgFrames(), rp = pg().rp; if (rp.pos > F.length) rp.pos = F.length; if (rp.pos < 1) rp.pos = 1;
+    var fr = F[rp.pos - 1];
+    var marks = pgMarks();
+    var b = '<p class="note">Ovo je nastanak rada, promjenu po promjenu. Služi razgovoru o radu, ne ocjeni. Bez vremenske osi i bez trajanja. Ne pokreće se sama.</p>' +
+      '<div class="rp-ctl"><button class="btn" type="button" id="pg-play" data-act="pgPlay" aria-pressed="' + (rp.playing ? 'true' : 'false') + '">' + (rp.playing ? 'Zaustavi' : 'Pokreni') + '</button>' +
+      '<button class="btn secondary" type="button" data-act="pgRpStep" data-d="-1"' + (rp.pos <= 1 ? ' aria-disabled="true"' : '') + '>Prethodna promjena</button>' +
+      '<button class="btn secondary" type="button" data-act="pgRpStep" data-d="1"' + (rp.pos >= F.length ? ' aria-disabled="true"' : '') + '>Sljedeća promjena</button>' +
+      '<label class="field" style="grid-auto-flow:column;align-items:center;gap:6px"><span class="lbl">Brzina</span><select class="input" data-pgrp="speed">' + [1, 2, 4].map(function (n) { return '<option value="' + n + '"' + (rp.speed === n ? ' selected' : '') + '>' + n + '×</option>'; }).join('') + '</select></label>' +
+      '<button class="btn secondary" type="button" data-act="pgAnnounce">Najavi trenutačnu promjenu</button></div>' +
+      '<div class="rp-range"><label for="pg-rr" class="meta">Promjena</label><input type="range" id="pg-rr" min="1" max="' + F.length + '" value="' + rp.pos + '" data-pgrp="pos" aria-valuetext="Promjena ' + rp.pos + ' od ' + F.length + '"></div>' +
+      '<p id="pg-rp-line"><b>Promjena ' + rp.pos + ' od ' + F.length + '</b> · izvor ove promjene: <span class="tag' + (fr.src === 'utipkano' ? '' : ' open') + '">' + fr.src + '</span></p>' +
+      '<div id="pg-rp-box" class="sheet ed-sheet rp-text" style="padding:24px 28px" tabindex="0" role="group" aria-label="Reprodukcija teksta. Razmak pokreće ili zaustavlja, strelice lijevo i desno mijenjaju promjenu."><h2 style="margin-top:0">1. Uvod</h2><p id="pg-rp-p">' + esc(fr.before) + (fr.add ? '<span class="rp-new">' + esc(fr.add) + '</span>' : '') + '</p>' +
+      '<p class="rp-gap" id="pg-rp-gap"' + (fr.gap ? '' : ' hidden') + '>Ovdje zapis ima prazninu: poslužitelj je primio verzije 26. 10. 2026. u 21:45 i 28. 10. 2026. u 10:50, ali ne i promjene između njih.</p></div>' +
+      '<p class="meta">Tipkovnica: razmak pokreće ili zaustavlja, strelice mijenjaju promjenu. Promjene se ne najavljuju čitaču zaslona dok traje reprodukcija; „Najavi trenutačnu promjenu” čita jednu.</p>' +
+      '<p class="meta">Isti prikaz vide student, mentor i nastavnik zadatka.</p>';
+    var imp = '<p class="note">Skok na sesiju nije dostupan jer zapis ne nosi sesije (D-239). Umjesto njega: važna mjesta u radu.</p><ul class="list" aria-label="Važna mjesta u reprodukciji">' +
+      marks.map(function (m) { return '<li class="item"><span>' + m.t + '</span><div class="acts"><button class="btn secondary small" type="button" data-act="pgJump" data-i="' + m.i + '">Skoči na promjenu ' + m.i + '</button></div></li>'; }).join('') + '</ul>' +
+      pgSrv('PG-5', 'sesije u zapisu <b>nedostaju</b> (zapis ne nosi sesije, D-239); popis „važna mjesta” gradi se iz sažetka i reprodukcije, ne traži novu operaciju. Reprodukcija: <code>evidence.replay.post</code>.');
+    return pgPanel('pgr-h', 'Reprodukcija rada', b, '', 'PG-5') + pgPanel('pgi-h', 'Važna mjesta', imp, '', 'PG-5');
+  }
+  function pgUsporedba(k, v, empty) {
+    if (empty || W[k].st !== 'predano') return '<p class="note">Postoji najviše jedna poslana verzija ovog rada, pa usporedbe još nema. Međustanja se vide uživo i u reprodukciji.</p>';
+    return '<p><b>Predana verzija · 5. 11. 2026. u 21:14 · verzija 2</b> prema poslanoj verziji od 28. 10. 2026. u 10:50 (verzija 1)</p>' +
+      '<div class="sb-kv"><span>Dodano</span><b>186 riječi</b></div><div class="sb-kv"><span>Uklonjeno</span><b>41 riječ</b></div>' +
+      '<div class="sheet ed-sheet cmp" style="padding:24px 28px"><h2 style="margin-top:0">2. Teorijski okvir</h2><p>Ovaj odnos dodatno slabi kad je oglašivač ujedno i kandidat, <span class="w">uklonjeno:</span><del>osobito u manjim sredinama</del> <span class="w">dodano:</span><ins>što je u Gradu A bio slučaj s dvjema listama</ins>.</p></div>' +
+      '<p class="meta">Dodano je podvučeno i nosi riječ „dodano”, uklonjeno je precrtano i nosi riječ „uklonjeno”. Student i mentor vide istu usporedbu.</p>';
+  }
+  function pgIzjava(k, v, empty) {
+    if (empty || v === 'bez-izjave') return '<p class="note" data-nf5="PG-6"><b>Izjava nije predana.</b> Student još nije dao izjavu o korištenju generativne umjetne inteligencije za ovaj rad. Predaja i potvrda predaje time se ne mijenjaju.</p>' + pgSrv('PG-6', 'stanje „nije obavezna” čita se iz <code>teacher.declaration-required.get</code>; postoji.');
+    var b = '<p class="meta">Obrazac fakulteta declaration-v1, verzija 1 · potvrđena 5. 11. 2026. u 21:10 · izjava je obavezna za ovaj zadatak (nastavnik zadatka je smije isključiti). Isto vidi i student.</p>' +
+      '<div class="sb-decl"><h3>Zabilježeno u Ducturi <span class="tag">zabilježeno</span></h3><p>2 razgovora s Asistentom (28. 10. 2026. i 31. 10. 2026.), 1 prijenos teksta u rad.</p></div>' +
+      '<div class="sb-decl own"><h3>Izjava studenta <span class="tag open">izjavljeno</span></h3><div class="sb-kv"><span>Vanjski alati</span><b>nijedan</b></div><div class="sb-kv"><span>Svrha</span><b>sažimanje literature</b></div><div class="sb-kv"><span>Faza rada</span><b>priprema</b></div>' +
+      '<div class="sb-kv"><span>Ljudska pomoć · vrsta</span><b>lektura</b></div><p class="note">Kolega je pročitao tekst i ispravio pravopis.</p></div>' +
+      '<h3 class="sb-sub">Pitanje nastavnika i odgovor studenta</h3><div class="sb-decl" data-nf5="PG-6"><p class="note">Kako ste provjerili sažetke literature koje ste dobili?</p><div class="sb-entry"><span class="sb-who">Odgovor studenta</span><span>Usporedio sam ih s poglavljima knjige i ispravio dva navoda.</span></div></div>' +
+      pgSrv('PG-6', 'zadatak <b>SRV-IZJAVA-PITANJE</b> je otvoren: polje pitanja i odgovora u declaration-v1 danas ne postoji; prototip ga prikazuje u ovoj kartici.') +
+      '<h3 class="sb-sub">Razgovori uz izjavu</h3><ul class="list"><li class="item"><span class="title">Razgovor 1 · 28. 10. 2026.</span><span class="meta">Iz ovog razgovora prenesen je tekst u rad.</span><div class="acts"><button class="btn secondary small" type="button" data-act="pgChat" data-n="1" data-ret="pg-chat1">Pregledaj razgovor</button></div></li>' +
+      '<li class="item"><span class="title">Razgovor 2 · 31. 10. 2026.</span><span class="meta">Priložio student, bez prijenosa.</span><div class="acts"><button class="btn secondary small" type="button" id="pg-chat2" data-act="pgChat" data-n="2" data-ret="pg-chat2">Pregledaj razgovor</button></div></li></ul>' +
+      '<p class="meta">Razgovori su osobni zapis studenta priložen izjavi. Izjava ne zamjenjuje potvrdu predaje i obratno.</p>';
+    return pgPanel('pgd-h', 'Izjava o korištenju generativne umjetne inteligencije', b, '', 'PG-6');
+  }
+  function pgDobiveno(k, v, empty) {
+    if (empty) return '<p class="note">Student još nije dobio ništa uz ovaj rad.</p>';
+    var rows = [
+      ['4. 11. 2026. u 9:12', 'Komentar objavljen uz 2. Teorijski okvir', 'Student je vidio 4. 11. 2026. u 18:30', ''],
+      ['3. 11. 2026.', 'Konzultacija „Izvori za podatke o oglašavanju”, dogovor zabilježen', 'Student je vidio 3. 11. 2026. u 16:05', ''],
+      ['5. 11. 2026. u 21:40', 'Zatražena dorada, rok 12. 11. 2026. u 23:59', 'Student još nije otvorio', ''],
+      ['5. 11. 2026. u 21:45', 'Nacrt komentara uz 3. Metoda', 'Nije objavljeno: student ga ne vidi', 'draft']
+    ];
+    return '<p class="note">Jedan popis onoga što je student već dobio uz ovaj rad: komentari, dorada, konzultacije. Samo za čitanje.</p><ol class="list" aria-label="Što je student dobio">' +
+      rows.map(function (r) { return '<li class="item"><span class="meta">' + r[0] + '</span><span class="title">' + r[1] + '</span><span><span class="tag' + (r[3] ? ' open' : '') + '">' + r[2] + '</span></span></li>'; }).join('') + '</ol>' +
+      pgSrv('PG-9', '„student je vidio” <b>nedostaje</b>: komentari, nacrti, dorada i konzultacije su zasebne operacije, a ni jedna ne vraća vrijeme prvog otvaranja. Prototip prikazuje izmišljene vrijednosti.');
+  }
+  function pgExpState(v) {
+    var e = pg().exp;
+    if (v === 'probni') return '<p class="note" role="status" data-nf5="PG-11"><b>Probni zadatak se ne izvozi.</b> Poslužitelj vraća 409 za probni zadatak; izvoza i ispisa nema.</p>';
+    if (!e) return '';
+    if (e.st === 'priprema') return '<p class="note" role="status" id="pg-exp-status" tabindex="-1">Pripremam datoteku: ' + e.what + '…</p><div class="skel w60"></div>';
+    if (e.st === 'greska') return '<p class="note" role="alert" id="pg-exp-status" tabindex="-1">Datoteku trenutačno nije moguće pripremiti. Rad i zapis time nisu zahvaćeni.</p><div class="acts"><button class="btn secondary small" type="button" data-act="pgExport" data-what="' + esc(e.what) + '" data-ok="1">Pokušaj ponovno</button></div>';
+    return '<p class="note" role="status" id="pg-exp-status" tabindex="-1"><b>Datoteka je spremna: ' + e.what + '.</b> Izvoz je zabilježen u dnevniku pristupa.</p>';
+  }
+  function pgIzvoz(k, v, empty) {
+    if (empty) return '<p class="note">Nema rada za izvoz: rad još nije započet.</p>';
+    var off = v === 'probni' ? ' aria-disabled="true"' : '';
+    var b = '<p class="banner warn" data-nf5="PG-11"><b>Datoteka sadrži tekst rada i ime studenta; čuvajte je prema pravilima fakulteta.</b></p>' +
+      '<div class="acts"><button class="btn" type="button" data-act="pgExport" data-what="PDF rada"' + off + '>Izvezi PDF rada</button>' +
+      '<button class="btn secondary" type="button" data-act="pgExport" data-what="sažetak procesa (PDF)"' + off + '>Izvezi sažetak procesa</button>' +
+      '<button class="btn secondary" type="button" data-act="pgExport" data-what="pregled s oznakama podrijetla (PDF)"' + off + '>Izvezi pregled s oznakama</button>' +
+      '<button class="btn secondary" type="button" data-act="pgPrint"' + off + '>Ispiši pregled</button></div>' + pgExpState(v) +
+      '<p class="meta">Ispis sadrži zaglavlje s kolegijem, studentom i datumom izvoza, tekst s oznakama podrijetla, sastav, sažetak, izjavu i napomenu „' + NIJE_DOKAZ + '” uz svaki postotak. Oznaka „za pregled” ne ulazi u ocjenu ni u izvoz.</p>' +
+      '<h3 class="sb-sub">Dnevnik pristupa (izvoz)</h3>' + (pg().log.length ? '<ul class="facts" aria-label="Zapisi izvoza u dnevniku pristupa">' + pg().log.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>' : '<p class="meta">Još nema izvoza u ovoj sesiji pregleda. Svaki izvoz i ispis zapisuje se ovdje i u dnevnik pristupa.</p>') +
+      pgSrv('PG-11', 'PDF rada postoji (<code>work.export-pdf.get</code>); PDF sažetka i pregleda s oznakama <b>nedostaje</b> (nema operacije); ispis radi iz preglednika bez poslužitelja. Zapis izvoza u dnevnik pristupa treba potvrditi na poslužitelju.');
+    return pgPanel('pge-h', 'Izvoz i ispis pregleda', b, '', 'PG-11');
+  }
+  function pgPrint(k, v) {
+    var w = W[k], t = TASKS[w.task];
+    return '<section class="pg-print" aria-hidden="true"><h1>Pregled rada · ' + w.who + '</h1><p>' + t.course + ' · zadatak „' + esc(t.title) + '” · ' + t.kind + ' · izvezeno 5. 11. 2026.</p>' +
+      '<p><b>Datoteka sadrži tekst rada i ime studenta; čuvajte je prema pravilima fakulteta.</b> Ocjenu upisujete u Merlin; nijedna oznaka ne ulazi u ocjenu.</p>' +
+      '<h2>Tekst rada s oznakama podrijetla</h2>' + pgMarkText(true) +
+      '<h2>Sastav teksta (' + NIJE_DOKAZ + ')</h2><ul>' + PG_COMP.map(function (r) { return '<li>' + r[0] + ': ' + r[1] + ' · ' + NIJE_DOKAZ + '</li>'; }).join('') + '</ul>' +
+      '<h2>Sažetak</h2><p>6 sesija · aktivno vrijeme uređivanja 8 h 05 min (nije mjera truda) · 2 lijepljenja izvora koji nije opažen · 1 prijenos iz Asistenta · zapis ima prazninu od 26. do 28. 10. 2026.</p>' +
+      '<h2>Izjava</h2><p>Vanjski alati: nijedan. Svrha: sažimanje literature. Ljudska pomoć: lektura. Pitanje nastavnika i odgovor studenta priloženi su u Ducturi.</p>' +
+      '<p>Ductura ne zna tko je tipkao. Ritam je zapis o unosu, ne o autorstvu. Ovo je ' + NIJE_DOKAZ + '.</p></section>';
+  }
+  App.register('pregled', {
+    title: 'NF-5 Pregled rada (PG-1…PG-15)', shell: 'none',
+    note: ['NF-5', 'gradi se sada', 'jedan pregled rada s karticama: Tekst, Sažetak, Podrijetlo, Reprodukcija, Usporedba, Izjava, Što je student dobio, Izvoz i ispis (PG-1); ocjenu upisujete u Merlin (PG-10); studentovo objašnjenje uz nalaz (PG-7); pitanje i odgovor uz izjavu (PG-6); ritam po dijelu teksta uz „nije dokaz autorstva” (odluka 4); izvoz i ispis uz upozorenje i zapis u dnevnik pristupa (odluka 5); Asistent bez pružatelja i modela (Q-10)'],
+    variants: [{ id: 'puno', label: 'puno' }, { id: 'prazno', label: 'prazno (rad nije započet)' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' }, { id: 'ritam-nedostupan', label: 'ritam nedostupan (briše se 30 dana nakon predaje)' }, { id: 'dio-greska', label: 'greška jednog dijela (podudaranje)' }, { id: 'bez-izjave', label: 'izjava nije predana' }, { id: 'dorada', label: 'dorada: student navodi da je provedena' }, { id: 'probni', label: 'probni zadatak (bez izvoza)' }, { id: 'izvoz-greska', label: 'izvoz: greška pri pripremi datoteke' }],
+    render: function (c) {
+      var v = c.variant, k = pgKey(); App.state.work = k;
+      var w = W[k], t = TASKS[w.task], tab = pg().tab, empty = w.st === 'nije-zapoceto';
+      var wrap = function (inner) { return page('studenti', 'Natrag na zadatak', crumbOf(k), inner, 'wide'); };
+      if (v === 'ucitavanje') return wrap(panel('pg-h', 'Pregled rada', '', loadingBody('Učitavam rad s poslužitelja…'), ' busy'));
+      if (v === 'greska') return wrap(panel('pg-h', 'Pregled rada', '', errorBody('Pregled rada trenutačno nije moguće učitati. Tekst rada i zapis time nisu zahvaćeni.')));
+      var fn = { tekst: pgTekst, sazetak: pgSazetak, podrijetlo: pgPodrijetlo, reprodukcija: pgRepro, usporedba: pgUsporedba, izjava: pgIzjava, dobiveno: pgDobiveno, izvoz: pgIzvoz }[tab];
+      var inner = fn(k, v, empty);
+      var title = PG_TABS.filter(function (x) { return x[0] === tab; })[0][1];
+      var panelHtml = (tab === 'podrijetlo' || tab === 'reprodukcija' || tab === 'izjava' || tab === 'izvoz') ? inner : panel('pgc-h', title, '', inner, '', 'h2');
+      var out = wrap(pgHead(k, v) + pgTabs() + '<div role="tabpanel" id="pgp-' + tab + '" aria-labelledby="pgt-' + tab + '" class="pg-panel">' + panelHtml + '</div>' +
+        '<p class="sr-only" id="pg-live" role="status" aria-live="polite">' + esc(pg().live) + '</p>' + pgPrint(k, v));
+      if (App.state.dlg === 'dorada') out += doradaDlg(k, 'sendDorada');
+      if (App.state.dlg === 'pgchat') out += chatDialog(pg().chat);
+      return out;
+    },
+    actions: {
+      pgTab: function (el) { pg().tab = el.getAttribute('data-t'); pg().live = ''; App.rerender(); var x = document.getElementById('pgt-' + pg().tab); if (x) x.focus(); },
+      pgStep: function (el) {
+        var k = App.state.work, nk = T1[T1.indexOf(k) + (+el.getAttribute('data-d'))]; if (!nk) return;
+        App.state.work = nk; App.state.variant.pregled = 'puno'; pg().reviewed = false; App.rerender();
+        var x = document.querySelector('[data-act="pgStep"][data-d="' + el.getAttribute('data-d') + '"]'); if (x) x.focus();
+      },
+      pgReviewed: function () { pg().reviewed = !pg().reviewed; App.rerender(); var x = document.querySelector('[data-act="pgReviewed"]'); if (x) x.focus(); App.toast(pg().reviewed ? 'Pregled je označen kao pregledan.' : 'Oznaka pregleda je uklonjena.'); },
+      pgAskDorada: function (el) { pg().ret = el.getAttribute('data-ret'); App.state.dlg = 'dorada'; App.rerender(); },
+      sendDorada: function (form) {
+        var t = form.dd.value.trim();
+        if (!t) { form.dd.setAttribute('aria-invalid', 'true'); form.dd.focus(); App.toast('Upišite što treba doraditi.'); return; }
+        var r = form.ddr.value.trim();
+        if (!r) { form.ddr.setAttribute('aria-invalid', 'true'); form.ddr.focus(); App.toast('Upišite rok za doradu.'); return; }
+        App.state.dorada[App.state.work] = { state: 'otvoren', at: '5. 11. 2026. u 21:40', rok: r, text: t };
+        App.state.dlg = null; App.rerender(); App.toast('Zahtjev za doradu je poslan. Student ga vidi uz rad.');
+      },
+      withdrawReq: function () { delete App.state.dorada[App.state.work]; App.state.variant.pregled = 'puno'; App.rerender(); App.toast('Zahtjev za doradu je povučen. Student više ne vidi zahtjev.'); },
+      accept: function () { var k = App.state.work; App.state.dorada[k] = Object.assign({}, DORADA_1, App.state.dorada[k] || {}, { state: 'prihvaćen' }); App.state.variant.pregled = 'puno'; App.rerender(); App.toast('Dorada je prihvaćena.'); },
+      reopen: function () { var k = App.state.work; App.state.dorada[k] = Object.assign({}, DORADA_1, App.state.dorada[k] || {}, { state: 'ponovno otvoren' }); App.state.variant.pregled = 'puno'; App.rerender(); App.toast('Zahtjev za doradu je ponovno otvoren.'); },
+      pgRetry: function () { pg().retried = true; App.rerender(); var x = document.getElementById('pgt-' + pg().tab); if (x) x.focus(); App.toast('Podudaranje je dohvaćeno.'); },
+      pgNextMark: function () {
+        var p = pg(); p.mark = (p.mark % 3) + 1; var t = document.getElementById('pg-m' + p.mark);
+        var names = ['', 'zalijepljeno, izvor nije opažen (nalaz 1)', 'umetnuto iz Asistenta i podudara se (nalaz 2)', 'zalijepljeno, izvor nije opažen (nalaz 3)'];
+        p.live = 'Oznaka ' + p.mark + ' od 3: ' + names[p.mark]; var l = document.getElementById('pg-live'); if (l) l.textContent = p.live;
+        if (t) { t.scrollIntoView({ block: 'center' }); t.focus(); }
+      },
+      pgChat: function (el) { pg().chat = +el.getAttribute('data-n'); pg().ret = el.getAttribute('data-ret'); App.state.dlg = 'pgchat'; App.rerender(); },
+      pgExport: function (el) {
+        var p = pg(), what = el.getAttribute('data-what');
+        p.exp = { st: 'priprema', what: what }; App.rerender();
+        var x = document.getElementById('pg-exp-status'); if (x) x.focus();
+        setTimeout(function () {
+          if (current() !== 'pregled') return;
+          var fail = App.variant() === 'izvoz-greska' && !el.getAttribute('data-ok');
+          if (fail) p.exp = { st: 'greska', what: what };
+          else { p.exp = { st: 'spreman', what: what }; p.log.push('Izvoz: ' + what + ' · ' + W[App.state.work].who + ' · 5. 11. 2026. u ' + (21 + Math.floor((50 + p.log.length) / 60)) + ':' + two((50 + p.log.length) % 60)); }
+          App.rerender(); var y = document.getElementById('pg-exp-status'); if (y) y.focus();
+        }, 600);
+      },
+      pgPrint: function () {
+        var p = pg(); p.exp = { st: 'spreman', what: 'ispis pregleda' };
+        p.log.push('Ispis: pregled rada · ' + W[App.state.work].who + ' · 5. 11. 2026. u ' + (21 + Math.floor((50 + p.log.length) / 60)) + ':' + two((50 + p.log.length) % 60));
+        App.rerender(); var y = document.getElementById('pg-exp-status'); if (y) y.focus();
+        try { window.print(); } catch (e) { /* ispis u prototipu nije izveden */ }
+      },
+      pgRpStep: function (el) { var rp = pg().rp; rp.pos += +el.getAttribute('data-d'); App.rerender(); var x = document.querySelector('[data-act="pgRpStep"][data-d="' + el.getAttribute('data-d') + '"]'); if (x) x.focus(); },
+      pgJump: function (el) { pg().rp.pos = +el.getAttribute('data-i'); App.rerender(); var b = document.getElementById('pg-rp-box'); if (b) { b.scrollIntoView({ block: 'center' }); b.focus(); } },
+      pgAnnounce: function () { var F = pgFrames(), rp = pg().rp; pg().live = 'Promjena ' + rp.pos + ' od ' + F.length + ', izvor: ' + F[rp.pos - 1].src; var l = document.getElementById('pg-live'); if (l) l.textContent = pg().live; },
+      pgPlay: function () {
+        var rp = pg().rp, F = pgFrames();
+        if (App._timer) { clearInterval(App._timer); App._timer = null; rp.playing = false; App.rerender(); var s0 = document.getElementById('pg-play'); if (s0) s0.focus(); return; }
+        if (rp.pos >= F.length) rp.pos = 1;
+        rp.playing = true; App.rerender();
+        var b = document.getElementById('pg-play'); if (b) b.focus();
+        var tick = function () {
+          if (rp.pos >= F.length) { clearInterval(App._timer); App._timer = null; rp.playing = false; App.rerender(); var e1 = document.getElementById('pg-play'); if (e1) e1.focus(); return; }
+          rp.pos++; pgPaint(F);
+        };
+        App._timer = setInterval(tick, 900 / rp.speed);
+      }
+    },
+    after: function (stage) {
+      var p = pg(), F = pgFrames();
+      Array.prototype.forEach.call(stage.querySelectorAll('[data-sw="pgorigin"]'), function (b) {
+        b.addEventListener('change', function () { p.origin = b.checked; App.rerender(); var x = document.querySelector('[data-sw="pgorigin"]'); if (x) x.focus(); });
+      });
+      Array.prototype.forEach.call(stage.querySelectorAll('[data-pgrp]'), function (el) {
+        el.addEventListener(el.type === 'range' ? 'input' : 'change', function () {
+          var n = el.getAttribute('data-pgrp');
+          if (n === 'pos') { p.rp.pos = +el.value; pgPaint(F); return; }
+          if (n === 'speed') { p.rp.speed = +el.value; if (App._timer) { clearInterval(App._timer); App._timer = null; p.rp.playing = false; } App.rerender(); var x = document.querySelector('[data-pgrp="speed"]'); if (x) x.focus(); }
+        });
+      });
+      var box = stage.querySelector('#pg-rp-box');
+      if (box) box.addEventListener('keydown', function (e) {
+        if (e.key === ' ') { e.preventDefault(); screens.pregled.actions.pgPlay(); var bx = document.getElementById('pg-rp-box'); if (bx) bx.focus(); }
+        else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); p.rp.pos += e.key === 'ArrowRight' ? 1 : -1; if (p.rp.pos < 1) p.rp.pos = 1; if (p.rp.pos > F.length) p.rp.pos = F.length; App.rerender(); var by = document.getElementById('pg-rp-box'); if (by) by.focus(); }
+      });
+      var tl = stage.querySelector('[role="tablist"]');
+      if (tl) tl.addEventListener('keydown', function (e) {
+        var ids = PG_TABS.map(function (t) { return t[0]; }), i = ids.indexOf(p.tab);
+        if (e.key === 'ArrowRight') i = (i + 1) % ids.length; else if (e.key === 'ArrowLeft') i = (i + ids.length - 1) % ids.length; else if (e.key === 'Home') i = 0; else if (e.key === 'End') i = ids.length - 1; else return;
+        e.preventDefault(); p.tab = ids[i]; App.rerender(); var x = document.getElementById('pgt-' + p.tab); if (x) x.focus();
+      });
+      if (!App.state.dlg && p.ret) { var r = document.getElementById(p.ret); p.ret = null; if (r) r.focus(); }
+    }
+  });
+  function pgPaint(F) { // reprodukcija: osvježi tekst, klizač i redak bez ponovnog crtanja (fokus ostaje, čitač se ne najavljuje)
+    var rp = pg().rp, fr = F[rp.pos - 1], q = function (id) { return document.getElementById(id); };
+    if (!q('pg-rp-p')) return;
+    q('pg-rp-p').innerHTML = esc(fr.before) + (fr.add ? '<span class="rp-new">' + esc(fr.add) + '</span>' : '');
+    q('pg-rp-gap').hidden = !fr.gap; q('pg-rr').value = rp.pos; q('pg-rr').setAttribute('aria-valuetext', 'Promjena ' + rp.pos + ' od ' + F.length);
+    q('pg-rp-line').innerHTML = '<b>Promjena ' + rp.pos + ' od ' + F.length + '</b> · izvor ove promjene: <span class="tag' + (fr.src === 'utipkano' ? '' : ' open') + '">' + fr.src + '</span>';
+  }
 
   /* ---------- N-12 Konzultacije ---------- */
   function cons() { return App.state.cons || (App.state.cons = [
