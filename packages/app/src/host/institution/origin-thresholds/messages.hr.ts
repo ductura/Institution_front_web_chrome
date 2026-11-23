@@ -1,6 +1,6 @@
 // Interface text of "Pragovi po vrsti podrijetla" (PIL-P1-PRAGOVI-ADMIN; P-1 rule 12). No text judges a
 // student: a threshold only decides which neutral label the summary shows (u skladu / za pregled / prekoračeno).
-import { originText } from "../../teacher/origin-map/messages.hr";
+import { originText } from "../../teacher/provenance/origin-messages.hr";
 import type { OriginKind, ReadRefusal, Strictness, WriteRefusal } from "./contract";
 
 const strictness = { hard: "Strogi", soft: "Blagi" } satisfies Record<Strictness, string>;

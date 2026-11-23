@@ -1,4 +1,5 @@
-// An in-memory server for the assistant match (WEB-1230), invented data. Tests and the catalogue only.
+// An in-memory server for the student's assistant match notice (WEB-1230), invented data. Tests only. Moved here
+// with its contract from the removed teacher/origin-map (PIL-P1-PODUDARANJE-KARTA); the notice is its only user.
 import type { AssistantMatch, MatchCall, MatchState } from "./contract";
 
 export const DOCUMENT = "demo-rad";
