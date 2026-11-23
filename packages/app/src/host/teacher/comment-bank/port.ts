@@ -1,7 +1,9 @@
 // The real ports of deferred comments and the comment bank (WEB-1704): the generated client of
-// src/client (createApi over the contract extract), never a network call of their own. The server
-// publishes every draft of the caller on the work and answers only with a count, so a group counts
-// as published (B-6) only when that count equals the number of drafts that were sent.
+// src/client (createApi over the contract extract), never a network call of their own. Publishing
+// sends exactly the drafts the teacher saw (work.comments.publish-selected.post); the server
+// publishes them all or none and answers only with a count, so a group counts as published (B-6)
+// only when that count equals the number of drafts that were sent. A 409 means the server's drafts
+// differ from the ones sent: nothing was published and the list has to be read again.
 import { createApi } from "../../../../../../src/client/api.ts";
 
 import { commentBankMessages as text } from "./messages.hr";
@@ -54,10 +56,11 @@ export function draftCommentsPortFor(call: () => Call = () => createApi()): Draf
     },
     async publishDrafts(documentId, ids): Promise<PublishResult> {
       try {
-        const answer = await call()("work.comments.publish.post", { params: { documentId }, query: undefined, body: undefined });
+        const answer = await call()("work.comments.publish-selected.post", { params: { documentId }, query: undefined, body: { draftIds: [...ids] } });
         if (answer.ok) return answer.body.published === ids.length ? { kind: "published", ids } : { kind: "unknown" };
         if (answer.status === 401) return { kind: "signedOut" };
-        return answer.status >= 400 && answer.status < 500 && answer.status !== 409 ? { kind: "rejected" } : { kind: "unknown" };
+        if (answer.status === 409) return { kind: "changed" };
+        return answer.status >= 400 && answer.status < 500 ? { kind: "rejected" } : { kind: "unknown" };
       } catch {
         return { kind: "unknown" };
       }
