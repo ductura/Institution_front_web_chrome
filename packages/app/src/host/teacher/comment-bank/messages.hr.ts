@@ -1,5 +1,5 @@
 export const commentBankMessages = {
-  title: "Komentari uz rad",
+  title: "Banka i skice komentara",
   draftsTitle: "Skice komentara",
   draftsNote: "Skice vidite samo vi. Student ih ne vidi dok ih ne objavite.",
   noDrafts: "Nema skica komentara.",
@@ -16,8 +16,13 @@ export const commentBankMessages = {
   bankUnavailable: "Banka komentara trenutačno nije dostupna.",
   draftSaved: "Skica je zabilježena na poslužitelju. Student je ne vidi.",
   published: "Skupina komentara je objavljena. Student ih sada vidi.",
+  draftsChanged: "Nacrti su se u međuvremenu promijenili, osvježi popis",
   failed: "Radnja nije zabilježena. Pokušajte ponovno.",
   unknown: "Nije poznato je li radnja zabilježena. Osvježite stranicu pa provjerite skice.",
   signedOut: "Sesija je istekla. Prijavite se ponovno.",
+  needAnchor: "Označite dio teksta rada pa zabilježite skicu.",
+  remove: "Ukloni iz banke",
+  removed: "Komentar je uklonjen iz banke.",
+  kinds: { must: "Obavezno", sugg: "Prijedlog", q: "Pitanje", praise: "Pohvala" },
   retry: "Pokušaj ponovno",
 } as const;

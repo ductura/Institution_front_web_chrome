@@ -8,6 +8,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Button, SegmentedControl } from "@ductura/ui";
 
 import { TopBarSlot } from "../../../../../../src/components/editor/WorkspaceTopBar.tsx";
+import { EditorShortcutListHost } from "../shortcuts/EditorShortcutListHost";
 import { shellHr as t } from "./messages.hr";
 import styles from "./ShellView.module.css";
 import {
@@ -20,9 +21,11 @@ export type ShellViewProps = {
   /** Where "Kako vidi nastavnik" leads; undefined while there is no such view. */
   readonly teacherHref?: string;
   readonly mode?: ShellMode;
+  /** Whether the work can be written in; a locked work's shortcut list omits the writing keys. */
+  readonly editable?: boolean;
 };
 
-export function ShellView({ children, teacherHref, mode = "write" }: ShellViewProps) {
+export function ShellView({ children, teacherHref, mode = "write", editable = true }: ShellViewProps) {
   const [view, setView] = useState<View>(DEFAULT_VIEW);
   useEffect(() => setView((v) => ({ ...v, widths: readWidths() })), []);
   // Typing is off while only the headings are shown: the editor is inert for that time.
@@ -56,6 +59,8 @@ export function ShellView({ children, teacherHref, mode = "write" }: ShellViewPr
           <SegmentedControl label={t.modeLabel} value={mode}
             options={[{ value: "write", label: t.write }, { value: "teacher", label: teacherLabel, ariaLabel: t.teacher, href: teacherHref }]} />
         )}
+        {/* PIL-D8-PRECACI (P-D8): the shortcut list, from its button or "?" outside a text field. */}
+        <EditorShortcutListHost editable={editable} />
       </div>
       <details className={styles.view}>
         <summary>{t.viewMenu} ▾</summary>

@@ -31,4 +31,15 @@ npx playwright install chromium firefox webkit   # chrome i msedge samo uz DUCTU
 npm run test:functional     # funkcionalni test u pregledniku
 ```
 
+## Nestabilni testovi: pravilo „3 zelena zaredom”
+
+Test je stabilan, a popravak nestabilnog testa prihvaćen, tek kad isti CI posao prođe **3 puta zaredom na istom commitu**. Jedan zeleni run nije dokaz: pad koji se javlja jednom u pet pokretanja prođe i dvaput zaredom.
+
+```bash
+node scripts/ci/tri-zelena.mjs --run <id runa>                      # cijeli run
+node scripts/ci/tri-zelena.mjs --run <id runa> --job '^app \(2/3\)$'  # jedan posao
+```
+
+Skripta ponovno pokreće pravi posao na istom runu (isti commit i postavke) dok ne skupi 3 zelena pokušaja, a staje s izlazom 1 na prvom koji nije zelen. Pokušaj se ne broji kao zelen ni kad je test prošao tek u ponovnom pokušaju Playwrighta (`retries: 1` u CI-ju, „N flaky” u logu). Strože je od CI-ja i ne mijenja nijednu kapiju: ne dodaje retry, ne preskače test i ne dira axe. Pravilo grane, 3 zelena `ci-ok` zaredom na bazi, provjerava `scripts/ci-nestabilni.mjs` u `ductura/.github`. Testovi skripte: `test/unit/tri-zelena.test.js`.
+
 `dev-server.mjs` (stari kostur, ne front institucije) oponaša `Ductura/server` API. U produkciji frontend zove pravi API na `/api` iste domene (ductura.org).

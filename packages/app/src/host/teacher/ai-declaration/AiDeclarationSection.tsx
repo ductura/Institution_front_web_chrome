@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionRow, Button, Dialog, EntryList, TeacherAiAttachments, type TeacherAiAttachmentsState } from "@ductura/ui";
 
 import type { DeclarationPort, TeacherDeclarationRead } from "../../../../../../src/client/declaration.ts";
 import { teacherAiLabels } from "../work/ai-attachments/messages.hr";
 import { aiDeclarationMessages as text } from "./messages.hr";
-import { unavailableDeclarationPort } from "./ports";
+import { createTeacherDeclarationPort } from "./ports";
 
 type Ready = Extract<TeacherDeclarationRead, { kind: "ready" }>;
 
 function toState(read: TeacherDeclarationRead): TeacherAiAttachmentsState {
-  if (read.kind === "unavailable") return { kind: "error" };
+  if (read.kind === "unavailable" || read.kind === "signedOut") return { kind: "error" };
   // The conversations are listed below and open in the ch-h dialog, not in the page.
   return read.kind === "ready" ? { ...read, conversations: [] } : read;
 }
@@ -19,11 +19,13 @@ function toState(read: TeacherDeclarationRead): TeacherAiAttachmentsState {
 /**
  * N-07 declPanel and dialog ch-h (WEB-2165): the declaration on the submission page, with each
  * attached conversation opened in a dialog „Razgovor n · datum”. Read only; the port hands over
- * attached conversations only (D-41).
+ * attached conversations only (D-41). Without a given port it reads the server's declaration
+ * (teacher.declaration.get, PIL-K-AI-PRILOZI); a route that fails is said, never an empty list.
  */
-export default function AiDeclarationSection({ port = unavailableDeclarationPort, submissionId }: {
+export default function AiDeclarationSection({ port: given, submissionId }: {
   port?: DeclarationPort; submissionId: string;
 }) {
+  const port = useMemo(() => given ?? createTeacherDeclarationPort(), [given]);
   const [attempt, setAttempt] = useState(0);
   const [read, setRead] = useState<TeacherDeclarationRead | null>(null);
   const [openIndex, setOpenIndex] = useState<number | null>(null);

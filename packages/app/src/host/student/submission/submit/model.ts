@@ -2,7 +2,7 @@
 // submission as a line, and the counts the dialog and page state.
 import type { SubmissionRead, SubmitOutcome } from "../../../../../../../src/client/submission";
 import type { TextNode } from "../../../../../../../src/components/student/SubmissionView";
-import { zagrebParts } from "../../../../../../../src/components/summary/zagreb-time";
+import { atOf as atText, clockOf, dayOf } from "../steps/time";
 import { submitText as t } from "./messages.hr";
 
 export type SubmitStage =
@@ -27,13 +27,21 @@ export function fill(text: string, values: Record<string, string | number>): str
 }
 
 export function dateOf(iso: string): { date: string; time: string } {
-  const parts = zagrebParts(iso);
-  return parts === null ? { date: iso, time: "" } : { date: parts.date, time: parts.time };
+  const date = dayOf(iso);
+  const time = clockOf(iso);
+  return date === null || time === null ? { date: iso, time: "" } : { date, time };
 }
 
+/** "5. 11. 2026. u 21:14", the prototype's fmt(); the raw text when it cannot be read. */
+export const atOf = atText;
+
 export function whenOf(iso: string): string {
-  const { date, time } = dateOf(iso);
-  return time === "" ? date : `${date} u ${time}`;
+  return atText(iso);
+}
+
+/** "5.120": thousands separated by a point, as the prototype writes a count of words. */
+export function thousands(n: number): string {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 export function wordCount(nodes: readonly TextNode[]): number {
@@ -46,7 +54,7 @@ export type Line = {
   readonly go: null;
   readonly title?: string;
   readonly text: readonly string[];
-  readonly offer?: "check" | "reload" | "workspace";
+  readonly offer?: "check" | "reload" | "workspace" | "declaration";
   readonly retry: boolean;
 };
 export type Next = { readonly go: "receipt" | "notice" | "signIn" } | Line;
@@ -76,6 +84,8 @@ export function nextOf(answer: Answer, known: Known = { requestedAt: null, alter
     case "predano": return { go: "receipt" };
     case "session-expired": return { go: "signIn" };
     case "odbijeno": return { go: null, text: [t.blocked[answer.reason]], offer: "workspace", retry: true };
+    // PIL-K-IZJAVA-VRATA: 409 declaration_required is a warning with the way to step 2, not a technical error.
+    case "izjava": return { go: null, title: t.declarationRequiredTitle, text: [t.declarationRequired], offer: "declaration", retry: true };
     case "nedovrseno":
       return { go: null, title: t.incompleteTitle, retry: false,
         text: known.alternative ? [known.requestedAt === null ? t.incompleteText : t.incompleteText.replace("Vrijeme Vašeg zahtjeva", `Vrijeme Vašeg zahtjeva (${whenOf(known.requestedAt)})`)] : [t.incompleteUnavailable] };

@@ -1,7 +1,8 @@
 // The institution front's session (#2028 c.6993786629 §3.3) over a fake
 // institution server (page.route): 401 sends the browser to AAI@EduHr sign-in
 // with returnTo, 200 opens the role's home with the institution's name, and
-// sign-out posts auth.logout.post and leaves for the preloader. Invented
+// sign-out posts auth.logout.post and then follows it natively on to the
+// provider's logout and the preloader (INT-20c). Invented
 // people, institutions and courses only.
 import { readFileSync } from "node:fs";
 
@@ -25,7 +26,7 @@ type Me = { status: number; body?: unknown };
 
 /** Fakes the institution server: /me, the student's assignments, login and logout. Returns what was asked. */
 async function fakeServer(page: Page, me: Me) {
-  const seen = { me: 0, logout: 0, login: [] as string[], meCredentials: [] as (string | null)[] };
+  const seen = { me: 0, logout: 0, logoutKinds: [] as string[], login: [] as string[], meCredentials: [] as (string | null)[] };
   await page.route("**/api/v1/me", async (route) => {
     seen.me += 1;
     seen.meCredentials.push(route.request().headers()["cookie"] ?? null);
@@ -67,6 +68,7 @@ async function fakeServer(page: Page, me: Me) {
   });
   await page.route("**/api/v1/auth/logout", async (route) => {
     seen.logout += 1;
+    seen.logoutKinds.push(route.request().resourceType());
     expect(route.request().method()).toBe("POST");
     await route.fulfill({ status: 303, headers: { location: "/" } });
   });
@@ -121,6 +123,19 @@ test("a student lands on Vaš studentski prostor with the institution's name, wi
   expect(errors).toEqual([]);
 });
 
+/** LOK-WEB-8: the administrator's three reads, answering with invented data. */
+async function institutionReads(page: Page) {
+  const A = "11111111-1111-4111-8111-111111111111";
+  await page.route("**/api/v1/institution/teachers", (route) => route.fulfill({ json: {
+    pending: [{ personId: A, name: { givenName: "Ana", familyName: "Izmišljena" }, revokedAt: null }],
+    confirmed: [{ personId: "22222222-2222-4222-8222-222222222222", name: { givenName: "Ivo", familyName: "Primjer" }, confirmedAt: "2026-10-02T08:00:00.000Z", forReview: false }],
+  } }));
+  await page.route("**/api/v1/institution/admin/academic-years", (route) => route.fulfill({ json: { years: ["2026/2027"] } }));
+  await page.route("**/api/v1/institution/admin/courses?*", (route) => route.fulfill({ json: { academicYear: "2026/2027", courses: [
+    { courseId: A, name: "Izmišljeni seminar", students: 7, holder: null, team: [], groups: [] },
+  ] } }));
+}
+
 test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({ page }) => {
   const errors = errorsOf(page);
   await fakeServer(page, { status: 200, body: { roles: ["teacher"], institutionName: INSTITUTION } });
@@ -139,6 +154,7 @@ test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({
 
   await page.unrouteAll({ behavior: "wait" });
   await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
+  await institutionReads(page);
   await page.goto("/app/chrome/zadaci");
   await expect(page).toHaveURL(/\/app\/chrome\/ustanova$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pregled ustanove");
@@ -161,7 +177,8 @@ test("Odjava posts auth.logout.post and leaves for the preloader", async ({ page
   await page.getByRole("button", { name: "Odjava" }).click();
   await dialog.getByRole("button", { name: "Odjavi se" }).click();
   await expect(page).toHaveURL((url) => url.pathname === "/");
-  expect(seen.logout).toBe(1);
+  // INT-20c: the confirmed request, then the same route natively, so the browser follows its redirect.
+  expect(seen.logoutKinds).toEqual(["fetch", "document"]);
 });
 
 test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E-1 bezuloge)", async ({ page }) => {
@@ -175,7 +192,8 @@ test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E
   await card.getByRole("button", { name: "Odjava" }).click();
   await page.getByRole("dialog", { name: "Odjava" }).getByRole("button", { name: "Odjavi se" }).click();
   await expect(page).toHaveURL((url) => url.pathname === "/");
-  expect(seen.logout).toBe(1);
+  // INT-20c: the confirmed request, then the same route natively, so the browser follows its redirect.
+  expect(seen.logoutKinds).toEqual(["fetch", "document"]);
 });
 
 test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the button", async ({ page }) => {
@@ -305,6 +323,7 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   const seen = await fakeServer(page, { status: 200, body: { role: "institution_admin", institution: { displayName: INSTITUTION } } });
   // WEB-1406 (#303) put the faculty rules page here in place of the placeholder; no rule is published yet.
   await page.route("**/api/v1/institution/faculty-rules", (route) => route.fulfill({ json: { rules: [] } }));
+  await institutionReads(page);
   await page.goto("/app/web/ustanova/pravila");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pravila fakulteta");
   await expect(page.getByText("Za ovu vrstu rada pravilo još nije objavljeno.")).toBeVisible();
@@ -312,13 +331,14 @@ test("the administrator's Ductus pages open at their addresses, and only for the
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Korisnici" }).click();
   await expect(page).toHaveURL(/\/app\/web\/ustanova\/korisnici$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Korisnici");
-  await expect(page.getByRole("status")).toHaveText("Popis korisnika i uloga trenutačno nije dostupan.");
+  await expect(page.getByText("Ana Izmišljena")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Potvrdi ulogu" })).toBeVisible();
   expect(seen.me).toBe(1);
   await page.goto("/app/web/ustanova");
-  await expect(page.getByRole("status")).toHaveText("Pregled ustanove trenutačno nije dostupan.");
+  await expect(page.getByText("Potvrđeni nastavnici")).toBeVisible();
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Kolegiji" }).click();
   await expect(page).toHaveURL(/\/app\/web\/ustanova\/kolegiji$/);
-  await expect(page.getByText("Popis kolegija i akademskih godina trenutačno nije dostupan.")).toBeVisible();
+  await expect(page.getByText("Izmišljeni seminar")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Novi kolegij" })).toBeVisible();
   expect(seen.me).toBe(2);
   expect(errors).toEqual([]);

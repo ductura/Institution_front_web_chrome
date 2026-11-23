@@ -15,6 +15,9 @@ export default defineConfig({
   globalTeardown: "./izvjestaj.ts",
   use: { baseURL: url ?? `http://127.0.0.1:${port}`, ...devices["Desktop Chrome"] },
   webServer: url ? undefined : {
+    // Playwright runs the command in the config directory (e2e/viz) unless
+    // told otherwise; the host builds and starts from packages/app.
+    cwd: "../..",
     command: `pnpm run build && pnpm exec next start -p ${port}`,
     env: { INSTITUTION_SERVER_URL: "http://127.0.0.1:9" },
     url: `http://127.0.0.1:${port}/app/web/`,

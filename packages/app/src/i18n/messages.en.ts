@@ -52,6 +52,8 @@ export const profileEn: ProfileMessages = {
 };
 
 export const pageLabelsEn = {
+  originComposition: "Origin of the text",
+  studentInterview: "Conversation about the work",
   consultations: "Consultations",
   versionComparison: "Version comparison",
   processSummary: "Process summary",
@@ -59,8 +61,11 @@ export const pageLabelsEn = {
   studentDataExport: "Student data export",
   studentDataDownload: "Export of my data",
   merlinExport: "Export for Merlin",
+  assignmentSubmissions: "Assignment submissions",
   courseStudents: "Student list",
+  courseAggregate: "Course summary",
   receiptCheck: "Receipt check",
+  originThresholds: "Thresholds per origin kind",
 };
 
 export const accessDeniedEn = {
@@ -110,42 +115,6 @@ export const teacherWorkEn = {
   loading: "Checking access to the work…",
   unavailable: "Access to the work cannot be checked right now.",
   liveUnavailable: "The text of the work is not available right now. Ductura is trying to reconnect.",
-};
-
-export const declarationStatusEn = {
-  confirming: "Sending the declaration confirmation…",
-  confirmed: "The declaration is confirmed.",
-  stale: "A conversation changed after the review. The new versions are loaded; review them again.",
-  failed: "The declaration could not be confirmed. Please try again.",
-};
-
-export const declarationLabelsEn = {
-  title: "Declaration of AI use",
-  noUse: "No use of the Assistant is recorded in this work. Nothing is attached automatically.",
-  aiDisabled: "The assignment does not allow the built-in Assistant. You still confirm the declaration.",
-  loading: "Putting the declaration together from the record.",
-  error: "The declaration could not be put together. Nothing has been submitted.",
-  errorNote: "A technical error does not prevent submission. The declaration is completed once it can be put together.",
-  retry: "Try again",
-  usesCaption: "Recorded use",
-  colPurpose: "Purpose",
-  colProvider: "Provider and model",
-  colPhase: "Phase",
-  requiredHeading: "Attached as required",
-  requiredNote: "These conversations cannot be left out because text from them was moved into the work. They stay required even if you later delete the moved text.",
-  othersLegend: "Other conversations",
-  othersNote: "Other conversations are yours while you write. The teacher sees them only if you attach them.",
-  review: "Review the exact versions of the conversations being attached",
-  reviewFirst: "Confirmation is available after you open the review of the exact versions of the conversations being attached. If you change your choice, the review is asked for again.",
-  reviewTitle: "Conversations with the declaration",
-  reviewNote: "These are the exact versions of all conversations that go with the declaration, as the teacher will see them.",
-  reviewDone: "Review done, back to the declaration",
-  requiredTag: "required",
-  chosenTag: "your choice",
-  chosenFoot: "Not moved into the work. Attached by your choice.",
-  student: "You",
-  stale: "The conversation changed, review it again.",
-  confirm: "Confirm declaration",
 };
 
 export const teacherAiLabelsEn = {

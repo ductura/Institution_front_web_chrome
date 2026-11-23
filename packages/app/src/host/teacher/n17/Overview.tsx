@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Skeleton } from "@ductura/ui";
 
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { goToSignIn } from "../../../../../../src/client/api";
 import { useHost } from "../../context";
-import { afterDeadlineText, loadN17, recordText, revisionText, sortedRows, stateText, summaryLine, timeText, unavailablePort, workHref, type N17Port, type N17Read } from "./model";
+import { TeacherPage, type TeacherRead } from "../shell/TeacherPage";
+import { afterDeadlineText, loadN17, recordText, revisionText, sortedRows, stateText, summaryLine, timeText, unavailablePort, workHref, type N17Card, type N17Port, type N17Read } from "./model";
 import { n17Messages as text } from "./messages.hr";
 
 /**
@@ -30,63 +30,57 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
   }, [port, attempt, base]);
 
   const retry = () => setAttempt((n) => n + 1);
+  const teacherRead: TeacherRead<readonly N17Card[]> | null = read === null ? null : read.kind === "ready" ? { kind: "ready", value: read.cards } : { kind: read.kind };
   return (
-    <div className="page">
-      <h1>{text.title}</h1>
-      <p>{text.lead}</p>
-      {read === null && <Skeleton label={text.loading} />}
-      {read?.kind === "signedOut" && <p role="status">{text.loading}</p>}
-      {read?.kind === "unavailable" && (
-        <div>
-          <p role="alert">{text.unavailable}</p>
-          <button type="button" className="btn" onClick={retry}>{text.retry}</button>
-        </div>
-      )}
-      {read?.kind === "ready" && read.cards.length === 0 && (
-        <section className="card" aria-labelledby="n17-prazno">
+    <TeacherPage title={text.title} lead={text.lead} loading={text.loading} read={teacherRead} retry={retry}
+      unavailable={text.unavailable} retryLabel={text.retry}
+      ready={(cards) => cards.length === 0 ? (
+        <section className="card center" aria-labelledby="n17-prazno">
           <h2 id="n17-prazno">{text.emptyTitle}</h2>
-          <p>{text.emptyBody}</p>
+          <p className="note">{text.emptyBody}</p>
           <a className="btn" href={appHref(base, "/nastavnik/novi-zadatak")}>{text.emptyAction}</a>
         </section>
-      )}
-      {read?.kind === "ready" && read.cards.map((card) => (
-        <section key={card.assignmentId} className="card" aria-labelledby={`n17-${card.assignmentId}`} data-testid="n17-card">
-          <h2 id={`n17-${card.assignmentId}`}>{text.cardTitle(card.courseName, card.title)}</h2>
-          {card.rows === null ? (
-            <div>
-              <p role="alert">{text.cardUnavailable}</p>
-              <button type="button" className="btn" onClick={retry}>{text.retry}</button>
-            </div>
-          ) : card.rows.length === 0 ? <p>{text.noStudents}</p> : (
-            <>
-              <p className="meta">{summaryLine(card.rows)}</p>
-              <div className="tbl" tabIndex={0} role="region" aria-label={text.tableLabel}>
-                <table>
-                  <thead>
-                    <tr>{Object.values(text.columns).map((c) => <th key={c} scope="col">{c}</th>)}</tr>
-                  </thead>
-                  <tbody>
-                    {sortedRows(card.rows).map((row) => {
-                      const href = workHref(row);
-                      const who = row.name ?? text.noName;
-                      return (
-                        <tr key={row.studentId}>
-                          <th scope="row">{href === null ? who : <a href={appHref(base, href)}>{who}</a>}</th>
-                          <td>{stateText(row)}</td>
-                          <td>{timeText(row)}</td>
-                          <td>{afterDeadlineText(row)}</td>
-                          <td>{recordText(row)}</td>
-                          <td>{revisionText(row)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </section>
-      ))}
-    </div>
+      ) : (
+        <>
+          {cards.map((card) => (
+            <section key={card.assignmentId} className="card" aria-labelledby={`n17-${card.assignmentId}`} data-testid="n17-card">
+              <h2 id={`n17-${card.assignmentId}`}>{text.cardTitle(card.courseName, card.title)}</h2>
+              {card.rows === null ? (
+                <>
+                  <p className="note" role="alert">{text.cardUnavailable}</p>
+                  <div className="acts"><button type="button" className="btn secondary" onClick={retry}>{text.retry}</button></div>
+                </>
+              ) : card.rows.length === 0 ? <p className="note">{text.noStudents}</p> : (
+                <>
+                  <p className="meta">{summaryLine(card.rows)}</p>
+                  <div className="tbl" tabIndex={0} role="region" aria-label={text.tableLabel}>
+                    <table>
+                      <thead>
+                        <tr>{Object.values(text.columns).map((c) => <th key={c} scope="col">{c}</th>)}</tr>
+                      </thead>
+                      <tbody>
+                        {sortedRows(card.rows).map((row) => {
+                          const href = workHref(row);
+                          const who = row.name ?? text.noName;
+                          return (
+                            <tr key={row.studentId}>
+                              <td>{href === null ? who : <a href={appHref(base, href)}>{who}</a>}</td>
+                              <td>{stateText(row)}</td>
+                              <td>{timeText(row)}</td>
+                              <td>{afterDeadlineText(row)}</td>
+                              <td>{recordText(row)}</td>
+                              <td>{revisionText(row)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </section>
+          ))}
+        </>
+      )} />
   );
 }

@@ -38,6 +38,11 @@ export const n10Messages = {
   stateComplete: "Zapis je cjelovit.",
   stateGaps: "Zapis ima praznine (vidi popis).",
   stateUnchanged: "Zapis je neizmijenjen od primitka na poslužitelj.",
+  rulesTitle: "Pravila fakulteta",
+  rulesNotice: "Ovo je izjava o skladu s pravilima fakulteta, ne ocjena studenta.",
+  rulesInLine: "u skladu",
+  rulesForReview: "za pregled",
+  rulesExceeded: "prekoračeno",
   /** A part of the summary the server does not give (or did not give now): said plainly, never guessed. */
   unavailable: "Trenutačno nije dostupno.",
   sessionsMeta: (minutes: string, gaps: boolean): string =>

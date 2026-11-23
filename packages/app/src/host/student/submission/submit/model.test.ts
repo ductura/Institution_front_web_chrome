@@ -59,3 +59,10 @@ describe("forbidden terms", () => {
     expect(findForbiddenTerms(all)).toEqual([]);
   });
 });
+
+// PIL-K-IZJAVA-VRATA: 409 declaration_required is a warning that leads to step 2, the work not submitted.
+describe("nextOf izjava", () => {
+  it("is a warning with the way to the declaration, and the student may submit again after confirming", () => {
+    expect(nextOf({ kind: "izjava" })).toEqual({ go: null, title: t.declarationRequiredTitle, text: [t.declarationRequired], offer: "declaration", retry: true });
+  });
+});

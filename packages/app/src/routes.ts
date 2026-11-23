@@ -17,8 +17,13 @@ import { studentDataDownloadMessages } from "./host/public/student-data-download
 import { publicVerificationHr } from "../../../src/components/public-verification/messages.hr.ts";
 import { VERIFY_PATH } from "./host/public/verify/model";
 import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
+import { courseAggregateMessages } from "./host/teacher/course-aggregate/messages.hr";
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
+import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
+import { originText } from "./host/teacher/provenance/origin-messages.hr";
+import { interviewMessages as studentInterviewText } from "./host/student/interview/messages.hr";
+import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
 import { hostText } from "./text";
 
 export { BASES, type Base } from "./bases";
@@ -95,9 +100,15 @@ export const PAGES: readonly Page[] = [
   { path: "/rad/[assignmentId]/predaja/potvrda", label: workText.receipt.title, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/dnevnik-pristupa", label: t.accessLog.context, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/reprodukcija", label: t.replay.titleStudent, kind: "pending", roles: ["student"] },
+  // PIL-P1-SASTAV-STUDENT: the student sees the same composition as the teacher (P-1 rule 2.2).
+  { path: "/rad/[assignmentId]/podrijetlo", label: originText.title, kind: "pending", roles: ["student"] },
+  // PIL-K-RAZGOVOR: the student's side of the teacher's interview preparation (N-14, WEB-1531).
+  { path: "/rad/[assignmentId]/razgovor", label: studentInterviewText.pageTitle, kind: "pending", roles: ["student"] },
   { path: "/nastavnik/kolegiji", label: t.teacherCourses.title, kind: "teacherCourses", roles: ["teacher"], current: "/nastavnik" },
   // WEB-2143: N-04 "Popis studenata", reached from the course card (N-01).
   { path: "/nastavnik/kolegiji/[courseId]/studenti", label: courseStudentsMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // PIL-K-ZBIRNO: the course aggregate (N-17), reached from the course roster (N-04).
+  { path: "/nastavnik/kolegiji/[courseId]/zbirno", label: courseAggregateMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/rad/[id]", label: t.liveView.context, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/reprodukcija", label: t.replay.titleTeacher, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/predaja", label: workText.receipt.title, kind: "pending", roles: ["teacher"] },
@@ -112,12 +123,16 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/produljenje", label: hostText.deadlineExtensions, kind: "pending", roles: ["teacher"], current: "/nastavnik/zbirni" },
   // WEB-2163: N-18 "Izvoz za Merlin", reached from the course card (N-01).
   { path: "/nastavnik/zadatak/[assignmentId]/merlin", label: merlinMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // PIL-D2-PREDAJE: the submissions of one assignment (WEB-1502), reached from the course card (N-01).
+  { path: "/nastavnik/zadatak/[assignmentId]/predaje", label: submissionsMessages.pageTitle, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
   // WEB-1804 (M11.5): interface language, name and notifications, for everyone signed in.
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },
   // WEB-1302: the registry office requests a student's data export, the administrator starts it;
   // open to everyone signed in, since the registry office has no role of its own and the server decides.
   { path: STUDENT_DATA_EXPORT_PATH, label: studentDataExportMessages.title, kind: "pending", roles: [], current: STUDENT_DATA_EXPORT_PATH },
+  // PIL-P1-PRAGOVI-ADMIN (P-1 rule 12): the faculty's thresholds per origin kind, next to the faculty rules.
+  { path: "/ustanova/pragovi", label: thresholdMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova/pravila" },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.

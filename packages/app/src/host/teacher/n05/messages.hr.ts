@@ -8,6 +8,8 @@ export const fastPathHostText = {
   retry: "Pokušaj ponovno",
   emptyTitle: "Nema radova",
   emptyText: "Nijedan student još nije započeo rad u ovom zadatku.",
+  previous: "Prethodni",
+  next: "Sljedeći",
   notStarted: "Rad još nije započet, pa nema teksta ni sažetka.",
   work: {
     notice_pending: "Obavijest nije potvrđena",

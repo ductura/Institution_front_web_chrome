@@ -28,6 +28,7 @@ import { hostText } from "../../text";
 import { nextPath } from "../../bases";
 import { useHost } from "../context";
 import { EditorSessionControls } from "../editor/save-status/EditorSessionControls";
+import { AssistantMatchNoticeHost } from "../editor/assistant-match-notice/AssistantMatchNoticeHost";
 import { ImportHost } from "../editor/import/ImportHost";
 import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
@@ -38,9 +39,12 @@ import { PregledHost } from "../editor/right/PregledHost";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
+import { CommentsHost } from "../editor/comments/CommentsHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
+import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
+import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
 import { Banner, ErrorCard, FrameStatus, LoadingCard, OfflineBanner, courseLine, momentHr } from "./work/frame";
@@ -110,11 +114,16 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
+              // PIL-K-KOMENTARI-EDITOR: the Comments card over the real port, in place of the old CommentPanel.
+              comments: ({ editor, documentId, session, submitted, signedOut }) =>
+                <CommentsHost editor={editor} documentId={documentId} session={session} submitted={submitted} signedOut={signedOut} />,
             }}
-            leftSections={{ ...leftSectionsFor(assignmentId), chapter: <ChapterPanel workId={assignmentId} /> }}
+            leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
-            sessionControls={({ scope, session }) => <>
-              <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} />
+            sessionControls={({ scope, session, documentId }) => <>
+              <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />
+              <DirectEditSettingHost documentId={documentId} here={here} />
+              <AssistantMatchNoticeHost documentId={documentId} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
               <RulesHost role="student" />
               <MarksHost />
@@ -145,8 +154,11 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               : frame.variant === "prazno"
                 ? <FrameStatus chip={<SaveState state="LOCAL_DURABLE" label={workText.newWork} />} length={length} withNet />
                 : <StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
-            aside={frame.variant === "predano" && <ReadOnlyMentor role="student" submitted
-              documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />}
+            aside={frame.variant === "predano" && <>
+              <ReadOnlyMentor role="student" submitted documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />
+              {receipt?.documentId === undefined ? null : <DirectEditSettingHost documentId={receipt.documentId} here={here} submitted />}
+              {receipt?.documentId === undefined ? null : <CommentsHost editor={null} documentId={receipt.documentId} session={null} submitted />}
+            </>}
           >
             {sheetBody(frame.variant, assignmentId, title)}
           </EditorPage>

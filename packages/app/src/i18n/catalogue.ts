@@ -5,13 +5,12 @@ import type { Messages as WorkMessages } from "../../../../src/lib/i18n/messages
 import { uiMessagesFor, type UiLocale, type UiMessages } from "@ductura/ui";
 
 import { messagesHr as institutionHr } from "../host/institution/messages.hr";
-import { declarationLabels, declarationStatus } from "../host/student/declaration/messages.hr";
 import { noticeReadText } from "../host/student/notice/messages.hr";
 import { teacherAiLabels } from "../host/teacher/work/ai-attachments/messages.hr";
 import { teacherWorkMessages } from "../host/teacher/work/messages.hr";
 import { hostText } from "../text";
 import {
-  accessDeniedEn, declarationLabelsEn, declarationStatusEn, hostTextEn, institutionEn, noticeReadEn, pageLabelsEn, profileEn, teacherAiLabelsEn, teacherWorkEn,
+  accessDeniedEn, hostTextEn, institutionEn, noticeReadEn, pageLabelsEn, profileEn, teacherAiLabelsEn, teacherWorkEn,
 } from "./messages.en";
 import { accessDeniedHr, pageLabelsHr, profileHr } from "./messages.hr";
 
@@ -26,8 +25,6 @@ export const appMessagesHr = {
   profile: profileHr,
   pages: pageLabelsHr,
   institution: institutionHr,
-  declarationLabels,
-  declarationStatus,
   noticeRead: noticeReadText,
   teacherAi: teacherAiLabels,
   teacherWork: teacherWorkMessages,
@@ -39,8 +36,6 @@ export const appMessagesEn = {
   profile: profileEn,
   pages: pageLabelsEn,
   institution: institutionEn,
-  declarationLabels: declarationLabelsEn,
-  declarationStatus: declarationStatusEn,
   noticeRead: noticeReadEn,
   teacherAi: teacherAiLabelsEn,
   teacherWork: teacherWorkEn,

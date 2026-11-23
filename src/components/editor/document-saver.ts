@@ -17,7 +17,7 @@ import {
 import { EvidenceSession, type EvidenceSnapshot } from "./evidence-session";
 
 /** A snapshot of either saver; only the evidence session ever sets `closedBy`. */
-export type DocumentSnapshot = SaverSnapshot & Partial<Pick<EvidenceSnapshot, "closedBy" | "refused" | "submitted" | "stopped" | "unconfirmed">>;
+export type DocumentSnapshot = SaverSnapshot & Partial<Pick<EvidenceSnapshot, "closedBy" | "receiptVerified" | "refused" | "submitted" | "stopped" | "unconfirmed">>;
 
 /**
  * Whether the sheet may hold changes the server has not confirmed (DAN-314).

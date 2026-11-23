@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { createApi } from "./api";
-import { readTimeMachineComparison, readTimeMachineVersions } from "./time-machine";
+import { readTimeMachineComparison, readTimeMachineVersion, readTimeMachineVersions } from "./time-machine";
 
 const baseUrl = "https://ductura.example.invalid";
 const versionsBody = { versions: [
@@ -53,6 +53,26 @@ describe("time machine client", () => {
     for (const [status, code, kind] of [[401, "unauthorized", "signedOut"], [404, "not_found", "notFound"], [503, "unavailable", "unavailable"]] as const) {
       const api = createApi({ baseUrl, fetchImpl: answering({ code }, status) });
       await expect(readTimeMachineComparison("d", 1, 2, api)).resolves.toEqual({ kind });
+    }
+  });
+  it("reads one version's document through the generated client, read only", async () => {
+    const document = JSON.stringify({ schemaVersion: 2, nodes: [] });
+    const fetchImpl = answering({ revision: 2, document });
+    await expect(readTimeMachineVersion("izmišljeni rad/1", 2, createApi({ baseUrl, fetchImpl }))).resolves.toEqual({ kind: "ready", revision: 2, document });
+    const [url, init] = fetchImpl.mock.calls[0]!;
+    expect(String(url)).toBe(`${baseUrl}/api/v1/works/${encodeURIComponent("izmišljeni rad/1")}/versions/2`);
+    expect(init?.method).toBe("GET");
+  });
+  it("refuses a bad revision without a call and never takes another revision or a comparison as the version", async () => {
+    const fetchImpl = answering({ revision: 3, document: "{}" });
+    const api = createApi({ baseUrl, fetchImpl });
+    await expect(readTimeMachineVersion("d", 0, api)).resolves.toEqual({ kind: "unavailable" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    await expect(readTimeMachineVersion("d", 2, api)).resolves.toEqual({ kind: "unavailable" });
+    const compared = createApi({ baseUrl, fetchImpl: answering({ from: 1, to: 2, blocks: [] }) });
+    await expect(readTimeMachineVersion("d", 2, compared)).resolves.toEqual({ kind: "unavailable" });
+    for (const [status, code, kind] of [[401, "unauthorized", "signedOut"], [404, "not_found", "notFound"], [503, "unavailable", "unavailable"]] as const) {
+      await expect(readTimeMachineVersion("d", 1, createApi({ baseUrl, fetchImpl: answering({ code }, status) }))).resolves.toEqual({ kind });
     }
   });
 });

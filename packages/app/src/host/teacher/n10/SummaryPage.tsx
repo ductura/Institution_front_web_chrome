@@ -1,14 +1,18 @@
 "use client";
 
-import { Button, Card, Details, KeyValueList, Skeleton, Tag } from "@ductura/ui";
+import { Button, Details, Tag } from "@ductura/ui";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { goToSignIn } from "../../../../../../src/client/api";
-import styles from "../../../../../../src/components/teacher/LiveWorkView.module.css";
+import { Kv, WorkPage, WorkPanel, workPageStyles as styles } from "../n07/WorkPage";
 import {
   assistantAnchor, assistantTransfers, at, characters, charactersGenitive, duration, loadSummary, minutesGenitive, pasteAnchor,
-  period, segmentLine, sessionLine, sessionsCount, sessionsGenitive, versionLines, type N10Port, type N10Read,
+  period, segmentLine, sessionLine, sessionsCount, sessionsGenitive, versionLines, type N10Port, type N10Read, type ThresholdRow,
+  type ThresholdState,
 } from "./model";
+import { originText } from "../provenance/origin-messages.hr";
+import type { OriginKind } from "../provenance/origin";
+import ProvenanceMap from "../provenance/ProvenanceMap";
 import { n10Messages as text } from "./messages.hr";
 
 /** Scrolls to an anchor of the origin map and moves the focus there (prototype `act:jump`). */
@@ -22,11 +26,50 @@ function jump(id: string) {
 
 function Jump({ id, anchors }: { id: string; anchors: ReadonlySet<string> }) {
   if (!anchors.has(id)) return null;
-  return <Button tone="quiet" onClick={() => jump(id)}>{text.jump}</Button>;
+  return <a href={`#${id}`} onClick={(event) => { event.preventDefault(); jump(id); }}>{text.jump}</a>;
 }
 
 const Observed = () => <Tag>{text.observed}</Tag>;
 const Unavailable = () => <p className="meta">{text.unavailable}</p>;
+
+/** `.sb-state` of the prototype's `summary()`: a ruled section whose heading row carries the "zabilježeno" tag. */
+function Section({ title, observed = true, children }: { title: string; observed?: boolean; children: ReactNode }) {
+  return (
+    <section className={styles.state}>
+      {observed ? <div className={styles.ev}><h3>{title}</h3><Observed /></div> : <h3>{title}</h3>}
+      {children}
+    </section>
+  );
+}
+
+/** A listed item (`.item`): the line with its tag on the `.sb-ev` row, then the notes and the jump link. */
+function Entry({ line, children }: { line: string; children: ReactNode }) {
+  return <li className="item"><div className={styles.ev}><span>{line}</span><Observed /></div>{children}</li>;
+}
+
+const KIND_LABEL: Record<OriginKind, string> = {
+  typed: originText.kindTyped,
+  assistant_inserted: originText.kindAssistantInserted,
+  assistant_match: originText.kindAssistantMatch,
+  imported_file: originText.kindImportedFile,
+  pasted_known: originText.kindPastedKnown,
+  pasted_unknown: originText.kindPastedUnknown,
+};
+const STATE_LABEL: Record<ThresholdState, string> = { in_line: text.rulesInLine, for_review: text.rulesForReview, exceeded: text.rulesExceeded };
+
+/** P-1 rule 12: one of three labels per kind, in the order of the closed list; no threshold, no number, no ranking. */
+function FacultyRules({ rows }: { rows: readonly ThresholdRow[] }) {
+  return (
+    <Section title={text.rulesTitle} observed={false}>
+      <p className="note">{text.rulesNotice}</p>
+      <ul className="list" data-rules>{rows.map((row) => (
+        <li key={row.origin} className="item" data-origin={row.origin}>
+          <div className={styles.ev}><span>{KIND_LABEL[row.origin]}</span><Tag>{STATE_LABEL[row.state]}</Tag></div>
+        </li>
+      ))}</ul>
+    </Section>
+  );
+}
 
 function Sections({ read, anchors }: { read: Extract<N10Read, { kind: "ready" }>; anchors: ReadonlySet<string> }) {
   const { summary, details, versions } = read;
@@ -38,70 +81,63 @@ function Sections({ read, anchors }: { read: Extract<N10Read, { kind: "ready" }>
   return (
     <>
       <p className="meta">{text.intro}</p>
-      <Card title={text.periodTitle}>
-        <Observed />
-        {span === null ? <Unavailable /> : <KeyValueList items={[
-          { id: "first", label: text.periodFirst, value: at(span.from) },
-          { id: "last", label: text.periodLast, value: at(span.to) },
-        ]} />}
-      </Card>
-      <Card title={text.sessionsTitle}>
-        <Observed />
-        <KeyValueList items={[{ id: "count", label: text.sessionsLabel, value: sessionsCount(sessions.count) }]} />
+      <Section title={text.periodTitle}>
+        {span === null ? <Unavailable /> : (
+          <>
+            <Kv label={text.periodFirst}>{at(span.from)}</Kv>
+            <Kv label={text.periodLast}>{at(span.to)}</Kv>
+          </>
+        )}
+      </Section>
+      <Section title={text.sessionsTitle}>
+        <Kv label={text.sessionsLabel}>{sessionsCount(sessions.count)}</Kv>
         <p className="meta">{text.sessionsMeta(minutesGenitive(sessions.breakAboveMinutes), hasGaps)}</p>
         <Details summary={text.sessionsList}>
           <ul className="facts">{sessions.items.map((s, i) => <li key={i}>{sessionLine(s)}</li>)}</ul>
         </Details>
-      </Card>
-      <Card title={text.activeTitle}>
-        <Observed />
-        {details === null ? <Unavailable /> : (
-          <KeyValueList items={[{ id: "sum", label: text.activeLabel(sessionsGenitive(sessions.count)), value: duration(details.activeEditingMinutes) }]} />
-        )}
+      </Section>
+      <Section title={text.activeTitle}>
+        {details === null ? <Unavailable /> : <Kv label={text.activeLabel(sessionsGenitive(sessions.count))}>{duration(details.activeEditingMinutes)}</Kv>}
         <p className="note">{text.activeNote}</p>
-      </Card>
-      <Card title={text.versionsTitle}>
-        <Observed />
+      </Section>
+      <Section title={text.versionsTitle}>
         {versionList === null ? <Unavailable /> : versionList.length === 0 ? <p className="meta">{text.versionsEmpty}</p>
           : <ul className="facts">{versionList.map((v) => <li key={v.revision}>{v.line}</li>)}</ul>}
-      </Card>
-      <Card title={text.pastesTitle}>
+      </Section>
+      <Section title={text.pastesTitle} observed={false}>
         {pastes.listed.length === 0 ? <p className="meta">{text.pastesEmpty}</p> : (
           <ul className="list">{pastes.listed.map((p, i) => (
-            <li key={i} className="item">
-              <span>{`${segmentLine(p.at)} · ${characters(p.characters)}`}</span> <Observed />
-              <p className="note">{text.sourceNotObserved}</p>
+            <Entry key={i} line={`${segmentLine(p.at)} · ${characters(p.characters)}`}>
+              <span className="note">{text.sourceNotObserved}</span>
               <Jump id={pasteAnchor(i)} anchors={anchors} />
-            </li>
+            </Entry>
           ))}</ul>
         )}
         <p className="meta">{text.pastesMeta(charactersGenitive(pastes.listedAboveCharacters))}</p>
-      </Card>
-      <Card title={text.assistantTitle}>
+      </Section>
+      <Section title={text.assistantTitle} observed={false}>
         {transfers === null ? <Unavailable /> : transfers.length === 0 ? <p className="meta">{text.assistantEmpty}</p> : (
           <ul className="list">{transfers.map((t, i) => (
-            <li key={i} className="item">
-              <span>{segmentLine(t)}</span> <Observed />
-              <p className="meta">{text.assistantDetailsMissing}</p>
+            <Entry key={i} line={segmentLine(t)}>
+              <span className="meta">{text.assistantDetailsMissing}</span>
               <Jump id={assistantAnchor(i)} anchors={anchors} />
-            </li>
+            </Entry>
           ))}</ul>
         )}
         <p className="meta">{text.assistantNote}</p>
-      </Card>
-      <Card title={text.gapsTitle}>
-        <Observed />
+      </Section>
+      <Section title={text.gapsTitle}>
         {hasGaps ? <ul className="facts">{gaps.items.map((g, i) => <li key={i}>{text.gap(at(g.previousEndedAt), at(g.nextStartedAt))}</li>)}</ul>
           : <p>{text.gapsNone}</p>}
-      </Card>
-      <Card title={text.notesTitle}>
+      </Section>
+      <Section title={text.notesTitle} observed={false}>
         <Unavailable />
-      </Card>
-      <Card title={text.stateTitle}>
-        <Observed />
+      </Section>
+      {read.thresholds === undefined ? null : <FacultyRules rows={read.thresholds} />}
+      <Section title={text.stateTitle}>
         <p>{hasGaps ? text.stateGaps : text.stateComplete}</p>
         <p className="meta">{text.stateUnchanged}</p>
-      </Card>
+      </Section>
     </>
   );
 }
@@ -127,30 +163,27 @@ export default function SummaryPage({ port, documentId, workHref, signInHref, ma
     return () => { live = false; };
   }, [port, documentId, attempt, signInHref]);
 
-  const heading = <h1 id="sm-h">{text.title}</h1>;
   let body: ReactNode;
-  if (read === null || read.kind === "signedOut") body = <section aria-labelledby="sm-h" aria-busy="true">{heading}<Skeleton label={text.loading} /></section>;
-  else if (read.kind === "unavailable") {
+  let two = false;
+  if (read === null || read.kind === "signedOut") {
+    body = <WorkPanel id="pg-h" title={text.title} busy><p className="note" role="status">{text.loading}</p><div className="skel w80" /><div className="skel w60" /><div className="skel w40" /></WorkPanel>;
+  } else if (read.kind === "unavailable") {
     body = (
-      <section aria-labelledby="sm-h">{heading}
-        <p role="alert">{text.error}</p>
-        <Button tone="quiet" onClick={() => setAttempt((n) => n + 1)}>{text.retry}</Button>
-      </section>
+      <WorkPanel id="pg-h" title={text.title}>
+        <p className="note" role="alert">{text.error}</p>
+        <div className={styles.acts}><Button tone="secondary" onClick={() => setAttempt((n) => n + 1)}>{text.retry}</Button></div>
+      </WorkPanel>
     );
-  } else if (read.kind === "notFound") body = <section aria-labelledby="sm-h">{heading}<p role="alert">{text.notFound}</p></section>;
-  else if (read.kind === "empty") body = <section aria-labelledby="sm-h">{heading}<p className="note">{text.empty}</p></section>;
+  } else if (read.kind === "notFound") body = <WorkPanel id="pg-h" title={text.title}><p className="note" role="alert">{text.notFound}</p></WorkPanel>;
+  else if (read.kind === "empty") body = <WorkPanel id="pg-h" title={text.title}><p className="note">{text.empty}</p></WorkPanel>;
   else {
+    two = true;
     body = (
-      <div className={styles.layout}>
-        <section className={styles.main} aria-labelledby="sm-h">{heading}<Sections read={read} anchors={anchors} /></section>
-        {map !== undefined && <aside className={styles.aside}>{map}</aside>}
-      </div>
+      <>
+        <WorkPanel id="sm-h" title={text.title} stick={two}><Sections read={read} anchors={anchors} /></WorkPanel>
+        {map ?? <ProvenanceMap documentId={documentId} />}
+      </>
     );
   }
-  return (
-    <div className="page">
-      <p><a href={workHref}>{text.backToWork}</a></p>
-      {body}
-    </div>
-  );
+  return <WorkPage back={workHref} backLabel={text.backToWork} two={two}>{body}</WorkPage>;
 }

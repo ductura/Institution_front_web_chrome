@@ -16,7 +16,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   ref?: Ref<HTMLButtonElement>;
 };
 
-export function Button({ tone = "primary", size = "regular", busy = false, type = "button", className, onClick, ...rest }: ButtonProps) {
+export function Button({ tone = "primary", size = "regular", busy = false, type = "button", className, onClick, "aria-disabled": ariaDisabled, ...rest }: ButtonProps) {
   return (
     <button
       {...rest}
@@ -25,7 +25,8 @@ export function Button({ tone = "primary", size = "regular", busy = false, type 
       data-tone={tone}
       data-size={size === "regular" ? undefined : size}
       aria-busy={busy || undefined}
-      aria-disabled={busy || undefined}
+      // The caller's own aria-disabled (a step that is not open yet, the prototype's dimmed "Dalje") shows as well.
+      aria-disabled={busy || ariaDisabled === true || ariaDisabled === "true" || undefined}
       // aria-disabled alone would still submit a form: a busy click does nothing.
       onClick={busy ? (event) => event.preventDefault() : onClick}
     />

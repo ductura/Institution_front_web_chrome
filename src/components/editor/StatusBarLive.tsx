@@ -9,12 +9,11 @@ import StatusBar, { statusSaveOf } from "./StatusBar";
  * The status bar bound to the page's document provider (WEB-14b).
  *
  * `evidence`: the provider was given the assignment, so its saver is the
- * EvidenceSession. That session reports SYNCED only after a receipt passed
- * the Ed25519 check in this page session (G3, `state()` in
- * evidence-session.ts): a SYNCED left in the journal, by a reload or the
- * server's version taken over, it reports as LOCAL_DURABLE. So its SYNCED is
- * the verified result, and only its SYNCED. Without `evidence` the local
- * saver never sends and nothing is verified.
+ * EvidenceSession. "Na poslužitelju" needs that session's `receiptVerified`
+ * (INT-11): a receipt passed the Ed25519 check in this page session. A SYNCED
+ * state without it, such as one read back from the journal, shows as saved
+ * on the device. Without `evidence` the local saver never sends and nothing
+ * is verified.
  */
 export default function StatusBarLive({
   evidence,
@@ -32,9 +31,9 @@ export default function StatusBarLive({
 }) {
   const status = useLocalStatus();
   const shown = length && liveWords ? { ...length, words: status.loading ? null : status.words } : length;
-  const { phase, state } = useLocalSaveRead();
+  const { phase, state, receiptVerified } = useLocalSaveRead();
   const save = online !== undefined && phase === "unavailable"
     ? { state: "ERROR", receiptSigned: false, blocked: false } as const
-    : statusSaveOf({ phase, state, receiptVerifiedHere: evidence && state === "SYNCED" });
+    : statusSaveOf({ phase, state, receiptVerifiedHere: evidence && receiptVerified });
   return <StatusBar save={save} length={shown} online={online}>{children}</StatusBar>;
 }

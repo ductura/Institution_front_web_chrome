@@ -35,6 +35,10 @@ export { Icon, ICON_NAMES, type IconName, type IconProps } from "./icons/icons";
 export { ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, type EntryData, type OptionChoice, type OptionGroupProps, type SummaryRowData } from "./components/form-parts";
 export { Fingerprint, type FingerprintProps } from "./fingerprint";
 export { KeyValueList, type KeyValueItem, type KeyValueListProps } from "./key-value";
+export {
+  StepActions, StepCheck, StepDecl, StepDetails, StepEntry, StepFrame, StepKv, StepLine, StepLoading, StepMono, StepNav, StepPanel, StepPlaces, StepQr,
+  StepSection, StepSpinner, StepSub, type StepFrameProps, type StepPanelProps,
+} from "./submission-step";
 export { Steps, type StepNumber, type StepsProps } from "./steps";
 export { StateTag, SUBMISSION_STATES, type StateTagProps, type SubmissionState } from "./state-tag";
 export { DataTable, type DataTableColumn, type DataTableProps } from "./table";

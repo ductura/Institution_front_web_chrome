@@ -45,6 +45,10 @@ import { n10Port } from "../n10/port";
 import InterviewPage from "../interview/InterviewPage";
 import { interviewMessages } from "../interview/messages.hr";
 import { interviewPort } from "../interview/port";
+import ChangesSinceReview from "../changes-since-review/ChangesSinceReview";
+import { changesPort } from "../changes-since-review/port";
+import CommentBank from "../comment-bank/CommentBank";
+import { commentBankPort, draftCommentsPort } from "../comment-bank/port";
 import { teacherWorkMessages as workText } from "./messages.hr";
 
 const VIEWS = {
@@ -111,7 +115,7 @@ function OpenWork({ documentId, path, view, session }: {
       appPath={`${workHref.slice("/app".length)}/konzultacije`} />;
   }
   if (view === "comparison") {
-    return <N11Compare key={documentId} port={n11Port} documentId={documentId} signInHref={workHref}
+    return <N11Compare key={documentId} port={n11Port} documentId={documentId} signInHref={workHref} workHref={workHref}
       replayHref={`${workHref}${VIEWS.replay.suffix}`} />;
   }
   if (view === "summary") {
@@ -129,12 +133,7 @@ function OpenWork({ documentId, path, view, session }: {
     return <N07ReceiptPage key={documentId} documentId={documentId} workHref={workHref} current={current} />;
   }
   if (view === "replay") {
-    return (
-      <WorkStatus title={title}>
-        <p><a href={workHref}>{consultationMessages.backToWork}</a></p>
-        <ReplayPage documentId={documentId} session={session} />
-      </WorkStatus>
-    );
+    return <ReplayPage documentId={documentId} session={session} workHref={workHref} />;
   }
   return <LiveWork documentId={documentId} workHref={workHref} session={session} />;
 }
@@ -158,8 +157,8 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   };
 
   return (
-    <MobileReview><div className="page">
-      <WorkFrame documentId={documentId} gaps={gaps}
+    <MobileReview>
+      <WorkFrame documentId={documentId} current={current} gaps={gaps}
         text={<>
           {elementsState.elements !== null
             ? <div ref={textRef}><TextElementsView elements={elementsState.elements} /></div>
@@ -184,13 +183,18 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               onReload={() => void comments.load()} onShow={({ nodeId, start, end }) => {
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
+            {/* WEB-1704 (M6.7): deferred comments and the bank; a draft is anchored to the text selected in the work. */}
+            <CommentBank key={documentId} assignmentId={documentId} drafts={draftCommentsPort} bank={commentBankPort}
+              anchor={placeAnchor(view.document, draft) ? draft : null} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
+            {/* WEB-1704 (M6.7): changes since the last review, read from the server; marking only with a route. */}
+            <ChangesSinceReview key={documentId} documentId={documentId} port={changesPort} />
             <TeacherBibliographyHost documentId={documentId} submitted={view.submitted} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
             <ProvenanceMap documentId={documentId} />
           </>}
           <RecordLimits />
         </>} />
-    </div></MobileReview>
+    </MobileReview>
   );
 }

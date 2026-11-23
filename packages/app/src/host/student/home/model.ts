@@ -1,5 +1,6 @@
 import type { MyAssignment, MyCourse } from "../../../../../../src/components/student/my-assignments-read";
 import type { WorkState } from "../../../../../../src/components/student/radovi/works-read";
+import { practiceOf } from "../courses/model";
 import { homeText as t } from "./messages.hr";
 
 /** The row kinds of the prototype's `kind(t, s)`, in the order of its checks. */
@@ -15,6 +16,8 @@ export type TaskRow = {
   readonly extended: boolean;
   /** The workType label, or the generic "Zadatak". */
   readonly typeLabel: string;
+  /** P-D1: the server said `isPractice: true`; the row then carries the "Probni" badge. */
+  readonly practice: boolean;
 };
 
 /** The state of one work: the read's, and `null` where the work-state read did not answer. */
@@ -38,6 +41,7 @@ export function flatRows(courses: readonly MyCourse[], states: States): TaskRow[
         id: assignment.id, title: assignment.title, course: course.name, kind: kindOf(assignment, states),
         dueAt: extended ? (assignment.extendedDueAt as string) : assignment.dueAt, extended,
         typeLabel: assignment.workType === undefined ? t.taskFallback : t.workTypes[assignment.workType],
+        practice: practiceOf(assignment),
       };
     }));
 }

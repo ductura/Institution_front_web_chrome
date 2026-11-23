@@ -167,6 +167,11 @@ test('jobs are read in any YAML spelling', () => {
   assert.throws(() => jobsOf(workflowOf('on: push\njobs:\n  a: run\n')));
 });
 
+// Jobs that only report and never block (ZEL-CI-WEB): the pixel baselines of
+// the catalogue (Daniel, 22. 11. 2026, until VIZ-0). ci-ok does not need them,
+// so it does not wait for them; the test below holds each to report only.
+const REPORT_ONLY = ['ui-baselines'];
+
 test('ci-ok is a plain job named ci-ok that runs always over every other job', () => {
   const jobs = jobsOf(workflow);
   assert.ok(isMap(ciOk), 'ci.yml has a ci-ok job');
@@ -176,7 +181,7 @@ test('ci-ok is a plain job named ci-ok that runs always over every other job', (
   assert.ok(['always()', '${{ always() }}'].includes(ciOk.if), `ci-ok if: ${ciOk.if}`);
   const step = ciOk.steps.find((s) => s.run === script);
   assert.equal(step.env?.NEEDS, '${{ toJSON(needs) }}');
-  const others = Object.keys(jobs).filter((j) => j !== 'ci-ok');
+  const others = Object.keys(jobs).filter((j) => j !== 'ci-ok' && !REPORT_ONLY.includes(j));
   assert.ok(others.length > 0);
   assert.deepEqual([...needsOf(ciOk)].sort(), others.sort());
 });
@@ -258,10 +263,164 @@ test('changes: a push runs every job', () => {
 test('changes: no base sha runs every job', () => {
   assert.equal(on(changesFor(['docs/x.md'], { base: false })), 'app,client,test,ui');
 });
-test('every job except changes is gated by changes and needs it', () => {
+// Jobs that read the whole repository and so run on every pull request, with
+// no `if` and no `needs` (ZEL-W20a): `changes` cannot switch them off and a
+// failed `changes` cannot skip them. A new one is added here on purpose.
+const ALWAYS_ON = ['line-endings'];
+
+test('every job except changes and the always-on jobs is gated by changes and needs it', () => {
   for (const [name, job] of Object.entries(jobsOf(workflow))) {
-    if (name === 'changes') continue;
+    if (name === 'changes' || ALWAYS_ON.includes(name) || REPORT_ONLY.includes(name)) continue;
     assert.ok(needsOf(job).includes('changes'), `${name} needs changes`);
     if (name !== 'ci-ok') assert.equal(job.if, `\${{ needs.changes.outputs.${name} == 'true' }}`, name);
+  }
+});
+
+// The CRLF check of the index (DAN-952) runs on EVERY pull request (ZEL-W20a,
+// review of #435): before, it ran only in the job `test`, which a change to
+// docs/, packages/, catalog/ or a .md file switches off.
+const lineEndings = jobsOf(workflow)['line-endings'];
+const lineEndingsScript = lineEndings?.steps?.find((s) => typeof s?.run === 'string' && s.run.includes('# line-endings:begin'))?.run;
+
+test('line-endings runs always: no if, no needs, required by ci-ok, never a changes output', () => {
+  assert.deepEqual(Object.keys(jobsOf(workflow)).filter((j) => ALWAYS_ON.includes(j)), ALWAYS_ON);
+  for (const name of ALWAYS_ON) {
+    const job = jobsOf(workflow)[name];
+    assert.equal(job.if, undefined, `${name} has no if`);
+    assert.deepEqual(needsOf(job), [], `${name} needs nothing, so a failed changes cannot skip it`);
+    assert.equal(job.strategy, undefined, `${name} is one job, not a matrix`);
+    assert.ok(needsOf(ciOk).includes(name), `ci-ok needs ${name}`);
+    assert.equal(jobsOf(workflow).changes.outputs?.[name], undefined, `changes has no output for ${name}`);
+  }
+  assert.equal(typeof lineEndingsScript, 'string', 'line-endings has the line-endings:begin block');
+  assert.match(lineEndingsScript, /^\s*set -euo pipefail$/m);
+  assert.match(lineEndingsScript, /^\s*node --test test\/unit\/gitattributes\.test\.js$/m);
+  const step = lineEndings.steps.find((s) => s.run === lineEndingsScript);
+  assert.equal(step.if, undefined, 'the check step has no if');
+  assert.notEqual(step['continue-on-error'], true, 'the check step blocks');
+  assert.ok(!lineEndings.steps.some((s) => s['continue-on-error']), 'no step of line-endings is report-only');
+});
+
+// A pull request that changes only docs/x.md or packages/ui/a.css: `changes`
+// switches test off (docs: every job off), yet line-endings still runs and
+// ci-ok requires its success.
+for (const [file, expected] of [['docs/x.md', ''], ['packages/ui/a.css', 'app,ui']]) {
+  test(`changes: ${file} only still runs the CRLF check`, () => {
+    const outputs = changesFor([file]);
+    assert.equal(on(outputs), expected);
+    assert.equal(outputs.test, 'false', 'the job test is off, so only line-endings checks CRLF');
+    const results = Object.fromEntries(['test', 'client', 'ui', 'app'].map((j) => [j, outputs[j] === 'true' ? 'success' : 'skipped']));
+    assert.equal(run(withChanges({ ...results, 'line-endings': 'success' }, outputs)).code, 0, 'green with the check passing');
+    for (const r of ['failure', 'skipped', 'cancelled']) {
+      const out = run(withChanges({ ...results, 'line-endings': r }, outputs));
+      assert.equal(out.code, 1, `line-endings ${r} fails ci-ok`);
+      assert.match(out.out, new RegExp(`::error::job line-endings result: ${r}`));
+    }
+    assert.equal(run(withChanges(results, outputs)).code, 0, 'control: without line-endings the rest is green');
+  });
+}
+
+// The check step itself, in a throwaway repository: a CRLF file stored in
+// packages/ fails it (so ci-ok is red), the same tree with LF passes.
+function lineEndingsIn(path, crlf) {
+  const repo = mkdtempSync(join(tmpdir(), 'line-endings-'));
+  const home = mkdtempSync(join(tmpdir(), 'line-endings-home-'));
+  try {
+    const env = { PATH: process.env.PATH, HOME: home, XDG_CONFIG_HOME: home, GIT_CONFIG_NOSYSTEM: '1' };
+    const git = (args, input) => {
+      const r = spawnSync('git', ['-c', 'core.autocrlf=false', ...args], { cwd: repo, encoding: 'utf8', input, env });
+      assert.equal(r.status, 0, `git ${args.join(' ')}: ${r.stderr}`);
+      return r.stdout.trim();
+    };
+    git(['init', '-q']);
+    git(['config', 'user.email', 'a@example.invalid']);
+    git(['config', 'user.name', 'a']);
+    mkdirSync(join(repo, 'test', 'unit'), { recursive: true });
+    for (const f of ['.gitattributes', 'test/unit/gitattributes.test.js']) {
+      writeFileSync(join(repo, f), readFileSync(new URL(`../../${f}`, import.meta.url)));
+    }
+    git(['add', '.']);
+    // .gitattributes would turn CRLF into LF on add, so the blob goes into
+    // the index unfiltered, as a client without the file would store it.
+    const body = crlf ? 'a { color: red; }\r\nb { color: blue; }\r\n' : 'a { color: red; }\nb { color: blue; }\n';
+    const blob = git(['hash-object', '-w', '--no-filters', '--stdin'], body);
+    git(['update-index', '--add', '--cacheinfo', `100644,${blob},${path}`]);
+    git(['commit', '-q', '-m', 'change']);
+    git(['checkout', '-q', '--', '.']);
+    const r = spawnSync('bash', ['-c', lineEndingsScript], { cwd: repo, encoding: 'utf8', env });
+    return { code: r.status, out: r.stdout + r.stderr };
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }
+}
+
+test('line-endings: CRLF in packages/ fails the check, LF passes', () => {
+  assert.equal(typeof lineEndingsScript, 'string', 'line-endings has the line-endings:begin block');
+  const bad = lineEndingsIn('packages/ui/a.css', true);
+  assert.notEqual(bad.code, 0, bad.out);
+  assert.match(bad.out, /packages\/ui\/a\.css/, 'the failure names the CRLF file');
+  const good = lineEndingsIn('packages/ui/a.css', false);
+  assert.equal(good.code, 0, good.out);
+});
+
+test('line-endings: CRLF in docs/ and a root .md file fails the check too', () => {
+  for (const path of ['docs/x.md', 'README.md', 'catalog/a.ts']) {
+    const r = lineEndingsIn(path, true);
+    assert.notEqual(r.code, 0, `${path}: ${r.out}`);
+  }
+});
+
+// ZEL-CI-WEB: the ui checks run as two parts of the matrix `ui`, `checks`
+// (typecheck and the coverage check) and `unit` (every package's unit tests).
+// ci-ok needs `ui`, so it needs both: a failure in either part fails `ui`.
+const ui = jobsOf(workflow).ui;
+const uiStep = (pattern) => ui.steps.filter((s) => typeof s.run === 'string' && pattern.test(s.run));
+
+test('ui runs typecheck and unit tests in two blocking parts of its matrix', () => {
+  const parts = ui.strategy.matrix.include.map((p) => p.part);
+  assert.ok(parts.includes('checks') && parts.includes('unit'), parts.join(','));
+  assert.ok(needsOf(ciOk).includes('ui'), 'ci-ok needs ui');
+  assert.equal(ui.strategy['fail-fast'], false);
+  const [typecheck] = uiStep(/^pnpm -r run typecheck$/);
+  const [unit] = uiStep(/^pnpm -r run test$/);
+  assert.equal(typecheck?.if, "matrix.part == 'checks'");
+  assert.equal(unit?.if, "matrix.part == 'unit'");
+  const [coverage] = uiStep(/the ui parts do not cover every catalogue test exactly once/);
+  assert.equal(coverage?.if, "matrix.part == 'checks'");
+  assert.ok(!ui.steps.some((s) => s['continue-on-error']), 'no step of ui is report-only');
+  assert.equal(ui['continue-on-error'], undefined);
+  // Only the browser parts install a browser; checks and unit need none.
+  for (const p of ui.strategy.matrix.include) {
+    assert.equal(Boolean(p.browser), !['checks', 'unit'].includes(p.part), `${p.part} browser`);
+  }
+});
+
+test('report-only jobs run only the catalogue baselines, on every push, outside ci-ok', () => {
+  const jobs = jobsOf(workflow);
+  for (const name of REPORT_ONLY) {
+    const job = jobs[name];
+    assert.ok(isMap(job), `${name} exists`);
+    assert.ok(!needsOf(ciOk).includes(name), `ci-ok does not need ${name}`);
+    assert.equal(job.if, "${{ github.event_name == 'push' }}", `${name} runs on every push`);
+    assert.deepEqual(needsOf(job), [], `${name} needs nothing, so nothing skips it`);
+    assert.equal(job.env?.BASELINES, ui.env.BASELINES, 'the same baseline filter as ui');
+    const tests = job.steps.filter((s) => typeof s.run === 'string' && /playwright test|test:visual/.test(s.run));
+    assert.equal(tests.length, 1, `${name} runs one test step`);
+    assert.equal(tests[0]['continue-on-error'], true, 'the step only reports');
+    assert.match(tests[0].run, /^pnpm --filter @ductura\/catalog run test:visual --grep "\$BASELINES" --shard="\$\{\{ matrix\.shard \}\}"$/);
+    assert.deepEqual(job.strategy.matrix.shard, ['1/3', '2/3', '3/3']);
+  }
+});
+
+// The baselines run in the report-only job only: no blocking job greps them in,
+// and ui still filters them out of every part (its coverage check counts them out).
+test('no blocking job runs the baselines', () => {
+  for (const [name, job] of Object.entries(jobsOf(workflow))) {
+    if (REPORT_ONLY.includes(name)) continue;
+    for (const s of job.steps ?? []) {
+      if (typeof s.run !== 'string') continue;
+      assert.doesNotMatch(s.run, /--grep "\$BASELINES"/, `${name}: ${s.name ?? s.run}`);
+    }
   }
 });

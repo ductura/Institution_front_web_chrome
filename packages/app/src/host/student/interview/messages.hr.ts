@@ -1,7 +1,8 @@
-// Interface copy of the student's interview-invitation page (WEB-1531). Fixed notices follow the
+// Interface copy of the student's interview-invitation page (WEB-1531, PIL-K-RAZGOVOR). Fixed notices follow the
 // N-14 draft word for word; nothing here states a verdict, suspicion or authorship.
 export const interviewMessages = {
   notification: "Nastavnik te poziva na razgovor o radu",
+  pageTitle: "Razgovor o radu",
   title: "Nastavnik te poziva na razgovor o radu",
   notice: "Razgovor nije optužba. Ductura ne procjenjuje autorstvo ni korištenje AI-ja.",
   questionsTitle: "Pitanja za razgovor",
@@ -16,20 +17,31 @@ export const interviewMessages = {
   explanationLabel: "Objašnjenje",
   explanationGeneral: "Opće objašnjenje (nije vezano uz pitanje)",
   attachNote: "Priloži bilješke",
-  attachNoteHint: "Bilješke su vidljive nastavniku koji te poziva na razgovor.",
+  attachNoteHint: "Bilješke su vidljive nastavniku koji te poziva na razgovor. Dopušteni su .txt i .pdf do 1 MB.",
   attached: "Priloženo",
+  attaching: "Šaljem bilješku.",
+  noteSaved: "Bilješka je spremljena.",
+  noteHeld: "Razgovor je održan, nove bilješke više se ne primaju.",
+  noteRejected: "Poslužitelj nije prihvatio bilješku.",
+  noteFailed: "Bilješku nije bilo moguće spremiti. Pokušaj ponovno.",
   send: "Pošalji objašnjenje",
+  sending: "Šaljem objašnjenje.",
   sent: "Objašnjenje je poslano.",
   heldNote: "Razgovor je održan {date}.",
   loading: "Učitavam poziv.",
   unavailable: "Poziv nije bilo moguće učitati. Pokušaj ponovno.",
-  notInvited: "Za ovaj rad nema poziva na razgovor.",
+  notInvited: "Razgovor još nije zakazan.",
+  notStarted: "Rad još nije započet.",
+  notSubmitted: "Razgovor je moguć tek za predan rad. Ako je rad već predan, osvježi stranicu.",
   retry: "Pokušaj ponovno",
   failed: "Objašnjenje nije bilo moguće poslati. Pokušaj ponovno.",
   rejected: "Poslužitelj nije prihvatio objašnjenje.",
   errors: {
     empty: "Napiši objašnjenje.",
+    tooLong: "Objašnjenje može imati najviše {max} znakova.",
     fileEmpty: "Datoteka je prazna.",
     fileTooLarge: "Datoteka je prevelika. Najveća dopuštena veličina je {size}.",
+    fileType: "Dopušteni formati: {formats}.",
+    fileName: "Naziv datoteke može imati najviše {max} znakova.",
   },
 } as const;

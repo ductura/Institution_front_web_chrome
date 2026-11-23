@@ -1,8 +1,8 @@
 import type { ProcessSummaryV1 } from "../../../../../../../src/client/process-summary.ts";
 import type { SubmissionNote } from "../../../../../../../src/client/submission.ts";
-import { zagrebParts } from "../../../../../../../src/components/summary/zagreb-time.ts";
 import { countHr } from "../../../../../../../src/lib/i18n/hr.ts";
 
+import { atOf, clockOf, dayOf } from "../steps/time";
 import { summaryText as t } from "./messages.hr";
 
 // WEB-2108 (PD-1): the eleven sections of the process summary as text, from
@@ -18,24 +18,43 @@ const fill = (template: string, values: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
 const count = (n: number, forms: Forms) => countHr(n, forms.one, forms.few, forms.many);
 
-/** "28. listopada 2026. u 10:50", Europe/Zagreb; the raw text when it cannot be read. */
+/** "28. 10. 2026. u 10:50", Europe/Zagreb as the prototype writes it; the raw text when it cannot be read. */
 export function at(iso: string): string {
-  const parts = zagrebParts(iso);
-  return parts === null ? iso : `${parts.date} u ${parts.time}`;
+  return atOf(iso);
 }
 
-/** The date alone, for the "Do sada" range. */
-function day(iso: string): string {
-  return zagrebParts(iso)?.date ?? iso;
+/** "20. 10. do 5. 11. 2026." (the year once when both ends share it), the prototype's "Do sada" range. */
+function range(from: string, to: string): string {
+  const a = dayOf(from);
+  const b = dayOf(to);
+  if (a === null || b === null) return fill(t.period.range, { from, to });
+  const shared = a.slice(-5) === b.slice(-5);
+  return fill(t.period.range, { from: shared ? a.slice(0, -5).trimEnd() : a, to: b });
 }
 
-/** "28. listopada 2026., 9:30 do 10:50"; both dates when the day changes. */
+/** "9:30": the hour without a leading zero, as the prototype's list of sessions has it. */
+function hourOf(iso: string): string {
+  const clock = clockOf(iso);
+  return clock === null ? iso : clock.replace(/^0/, "");
+}
+
+/** "28. 10. 2026., 9:30 do 10:50"; both dates when the day changes. */
 export function spanText(span: Span): string {
-  const from = zagrebParts(span.from);
-  const to = zagrebParts(span.to);
+  const from = dayOf(span.from);
+  const to = dayOf(span.to);
   if (from === null || to === null) return fill(t.sessions.span, { from: span.from, to: span.to });
-  if (from.date === to.date) return fill(t.sessions.span, { from: `${from.date}, ${from.time}`, to: to.time });
-  return fill(t.sessions.span, { from: `${from.date}, ${from.time}`, to: `${to.date}, ${to.time}` });
+  if (from === to) return fill(t.sessions.span, { from: `${from}, ${hourOf(span.from)}`, to: hourOf(span.to) });
+  return fill(t.sessions.span, { from: `${from}, ${hourOf(span.from)}`, to: `${to}, ${hourOf(span.to)}` });
+}
+
+/** "22. 10. 2026., odsječak oko 10:35": the paste is rounded to the middle of its segment. */
+export function pasteWhen(span: Span): string {
+  const a = Date.parse(span.from);
+  const b = Date.parse(span.to);
+  const middle = new Date(Number.isFinite(a) && Number.isFinite(b) ? Math.round((a + b) / 2 / 60_000) * 60_000 : a).toISOString();
+  const day = dayOf(middle);
+  const clock = clockOf(middle);
+  return day === null || clock === null ? span.from : fill(t.pastes.when, { day, clock: clock.replace(/^0/, "") });
 }
 
 /** "8 h 05 min", the plain sum of the listed sessions, as the prototype shows it. */
@@ -81,7 +100,7 @@ export function panelSections(summary: ProcessSummaryV1, { submitted }: PanelCon
     ? { kind: "none", text: t.period.none }
     : submitted
       ? { kind: "rows", rows: [{ label: t.period.first, value: at(first) }, { label: t.period.last, value: at(last) }] }
-      : { kind: "rows", rows: [{ label: t.period.soFar, value: fill(t.period.range, { from: day(first), to: day(last) }) }] };
+      : { kind: "rows", rows: [{ label: t.period.soFar, value: range(first, last) }] };
   return {
     intro: submitted ? undefined : t.beforeSubmit,
     period,
@@ -95,7 +114,7 @@ export function panelSections(summary: ProcessSummaryV1, { submitted }: PanelCon
       value: durationText(minutesOf(items)),
     },
     pastes: {
-      items: pastes.listed.map((p) => fill(t.pastes.item, { at: spanText(p.at), n: count(p.characters, t.pastes.forms) })),
+      items: pastes.listed.map((p) => fill(t.pastes.item, { at: pasteWhen(p.at), n: count(p.characters, t.pastes.forms) })),
       meta: fill(t.pastes.meta, { n: pastes.listedAboveCharacters }),
     },
     gaps: {

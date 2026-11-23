@@ -1,21 +1,16 @@
-import { zagrebParts } from "../../../../../../../src/components/summary/zagreb-time";
-import { zagrebOffset } from "../../../../../../../src/lib/i18n/zagreb";
+import { atOf, zonedOf } from "../steps/time";
 import type { ReceiptRead } from "../../../../../../../src/components/predaja/ReceiptPanel";
 import { receiptText as t } from "./messages.hr";
 
-/** "12. studenoga 2026. u 21:15", Europe/Zagreb; the raw text when the instant cannot be read. */
-export function when(iso: string): string {
-  const parts = zagrebParts(iso);
-  return parts === null ? iso : `${parts.date} u ${parts.time}`;
-}
+/** "5. 11. 2026. u 21:14", Europe/Zagreb as the prototype writes it; the raw text when the instant cannot be read. */
+export const when = atOf;
 
-/** "(UTC+1)" or "(UTC+2)" for the instant, as the prototype's zoned(). */
-export function zone(iso: string): string {
-  return Number.isNaN(Date.parse(iso)) ? "" : zagrebOffset(iso) === "+01:00" ? "(UTC+1)" : "(UTC+2)";
-}
+/** "5. 11. 2026. u 21:14 (UTC+1)": the prototype's zoned(). */
+export const zoned = zonedOf;
 
-function label(template: string, iso: string): string {
-  return template.replace(" {zone}", zone(iso) === "" ? "" : ` ${zone(iso)}`);
+/** The receipt page of a work, without the base: where a sign-in started on it comes back to. */
+export function receiptPath(assignmentId: string): string {
+  return `/rad/${encodeURIComponent(assignmentId)}/predaja/potvrda`;
 }
 
 export type Row = { readonly id: string; readonly label: string; readonly value: string };
@@ -39,8 +34,8 @@ export function receiptView(read: ReceiptRead): ReceiptView {
     return {
       kind: "ceka", title: t.titlePending, lead: t.pending.replace("{when}", when(read.requestedAt)),
       rows: [
-        { id: "requested", label: label(t.submittedAt, read.requestedAt), value: when(read.requestedAt) },
-        { id: "signed", label: label(t.signingStarted, read.requestedAt), value: t.notYetRecorded },
+        { id: "requested", label: t.submittedAt, value: zoned(read.requestedAt) },
+        { id: "signed", label: t.signingStarted, value: t.notYetRecorded },
       ],
       utc: [{ id: "requestedAt", label: "requestedAt", value: read.requestedAt }],
     };
@@ -51,9 +46,9 @@ export function receiptView(read: ReceiptRead): ReceiptView {
     title: (p.afterDeadline ? t.titleAfterDeadline : t.titleSubmitted).replace("{when}", when(p.requestedAt)),
     afterDeadline: p.afterDeadline, gaps: p.evidenceRecord === "with_gaps", fingerprint: p.artifactSha256,
     rows: [
-      { id: "requested", label: label(t.submittedAt, p.requestedAt), value: when(p.requestedAt) },
-      { id: "due", label: label(t.dueAt, p.dueAt), value: when(p.dueAt) },
-      { id: "signed", label: label(t.signingStarted, p.signedAt), value: when(p.signedAt) },
+      { id: "requested", label: t.submittedAt, value: zoned(p.requestedAt) },
+      { id: "due", label: t.dueAt, value: zoned(p.dueAt) },
+      { id: "signed", label: t.signingStarted, value: zoned(p.signedAt) },
     ],
     utc: [
       { id: "requestedAt", label: "requestedAt", value: p.requestedAt },

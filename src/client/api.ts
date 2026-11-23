@@ -253,6 +253,14 @@ export const PROTOCOL_ROUTES: ReadonlySet<string> = new Set([
 ]);
 export type ProtocolVersion = "1" | "2";
 
+/**
+ * Migration routes whose server reads `ductus-protocol` (their vectors send it). With
+ * ApiOptions.protocol such a route sends the header and an error keeps its JSON body as sent
+ * (`errorBody`): the extract declares no error schema, so the caller checks its shape
+ * (PIL-K-IZJAVA-VRATA, submission.ts). Closed; any other migration route is unchanged.
+ */
+export const MIGRATION_PROTOCOL_ROUTES: ReadonlySet<string> = new Set(["submission.submit-second.post"]);
+
 /** The error body when it is exactly one the contract declares for the status; else undefined. */
 function declaredError(id: string, status: number, bytes: ArrayBuffer): unknown {
   const schema = RESPONSES.get(id)?.[String(status)]?.content?.["application/json"]?.schema;
@@ -305,7 +313,7 @@ function migrationError(route: MigrationRoute, status: number, body: unknown): s
 }
 
 async function callMigrationRoute<Id extends ApiOperationId>(
-  id: Id, route: MigrationRoute, wire: WireInput, baseUrl: string, transport: typeof fetch,
+  id: Id, route: MigrationRoute, wire: WireInput, baseUrl: string, transport: typeof fetch, protocol?: ProtocolVersion,
 ): Promise<ApiResult<Id>> {
   if (!acceptsPart(route.query, wire.query) || !acceptsPart(route.params, wire.params) || !acceptsPart(route.body, wire.body)) {
     return { ok: false, status: 0, code: "client_rejected" };
@@ -325,10 +333,14 @@ async function callMigrationRoute<Id extends ApiOperationId>(
     // acceptsPart checked the query against the schema above: an object of string values named by the contract.
     for (const [name, value] of Object.entries(wire.query as Record<string, string>)) url.searchParams.set(name, value);
   }
+  const headers: Record<string, string> = {
+    ...(requestBody === undefined ? {} : { "content-type": "application/json" }),
+    ...(protocol === undefined ? {} : { "ductus-protocol": protocol }),
+  };
   const response = await transport(url, {
     method: route.method,
     redirect: "manual",
-    headers: requestBody === undefined ? undefined : { "content-type": "application/json" },
+    headers: Object.keys(headers).length === 0 ? undefined : headers,
     body: requestBody,
   });
   const status = response.status;
@@ -341,7 +353,11 @@ async function callMigrationRoute<Id extends ApiOperationId>(
       return { ok: false, status: unreadableStatus(status), code: "unexpected" };
     }
   }
-  if (status >= 400) return { ok: false, status, code: migrationError(route, status, body) } as ApiResult<Id>;
+  if (status >= 400) {
+    const error = { ok: false, status, code: migrationError(route, status, body) };
+    const kept = protocol !== undefined && typeof body === "object" && body !== null && !Array.isArray(body);
+    return (kept ? { ...error, body } : error) as ApiResult<Id>;
+  }
   if (!responseMatches(id, status, body, bytes.byteLength)) return { ok: false, status, code: "unexpected" };
   return { ok: true, status, body, headers: {} } as ApiResult<Id>;
 }
@@ -374,7 +390,8 @@ export function createApi(options: ApiOptions = {}) {
     if (names === undefined) {
       const route = MIGRATION_ROUTES.get(id);
       if (route === undefined) return { ok: false, status: 0, code: "client_rejected" };
-      return callMigrationRoute(id, route, wire, baseUrl, transport);
+      const protocol = options.protocol !== undefined && MIGRATION_PROTOCOL_ROUTES.has(id) ? options.protocol : undefined;
+      return callMigrationRoute(id, route, wire, baseUrl, transport, protocol);
     }
     const publishedId = id as OperationId;
     const ahead = AHEAD_OF_PACKAGE.has(id) ? MIGRATION_ROUTES.get(id) : undefined;
@@ -511,7 +528,11 @@ export async function readSession(options: ApiOptions = {}): Promise<SessionRead
   }
 }
 
-/** Leaves the app for an address of the same origin. The only navigation out of the app. */
+/**
+ * Leaves the app for an address of the same origin. Every navigation out of
+ * the app goes here, except the sign-out, which follows the logout route
+ * natively (followLogoutNatively).
+ */
 export function leaveFor(href: string): void {
   globalThis.location.assign(href);
 }
@@ -523,7 +544,8 @@ export function goToSignIn(here: string, leave: (href: string) => void = leaveFo
 
 /**
  * Signs out through auth.logout.post (303 on success). True when the server
- * ended the session; the caller then leaves for the preloader.
+ * ended the session; the caller then calls followLogoutNatively, so the
+ * browser follows the route on to the provider's logout (INT-20c).
  */
 export async function signOut(options: ApiOptions = {}): Promise<boolean> {
   try {

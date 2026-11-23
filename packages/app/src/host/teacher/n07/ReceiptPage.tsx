@@ -1,9 +1,9 @@
 "use client";
 
-import { Button, Details, KeyValueList, Skeleton } from "@ductura/ui";
+import { Button, Details } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
-import { goToSignIn } from "@/client/api";
+import { createApi, goToSignIn } from "@/client/api";
 import { readTeacherWorkReceipt } from "@/client/teacher-work";
 import { appHref } from "@/components/shell/nav";
 import { useProcessSummary } from "@/components/teacher/SummaryCard";
@@ -14,11 +14,14 @@ import { LIVE_PORT, type RevisionPort } from "../../editor/work/review/review-mo
 import AiDeclarationSection from "../ai-declaration/AiDeclarationSection";
 import { FallbackPanel, PreSubmitPanel } from "../pre-submit/PreSubmitPanel";
 import { showFallback } from "../pre-submit/model";
+import { PracticeNotice } from "../submissions/grade/GradeGate";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { fallbackKey, isSubmittedRead, qrCells, receiptView, type ReceiptInput, type ReceiptView, type Row } from "./model";
 import { n07Messages as text } from "./messages.hr";
+import { readWorkPractice, type PracticeCall } from "./practice";
+import { Kv, StateBlock, WorkPage, WorkPanel, workPageStyles as styles } from "./WorkPage";
 
-const rows = (list: readonly Row[]) => list.map(({ id, label, value }) => ({ id, label, value }));
+const rows = (list: readonly Row[]) => list.map(({ id, label, value }) => <Kv key={id} label={label}>{value}</Kv>);
 
 /** The prototype's `qr()` sample: finder squares and the data cells, hidden from assistive technology. */
 function QrSample({ hex }: { hex: string }) {
@@ -29,52 +32,57 @@ function QrSample({ hex }: { hex: string }) {
     </g>
   );
   return (
-    <svg viewBox="0 0 21 21" width={84} height={84} aria-hidden="true" focusable="false" fill="currentColor" shapeRendering="crispEdges">
+    <svg viewBox="0 0 21 21" aria-hidden="true" focusable="false" fill="currentColor" shapeRendering="crispEdges">
       {finder(0, 0)}{finder(14, 0)}{finder(0, 14)}
       <path d={qrCells(hex)} />
     </svg>
   );
 }
 
-/** `po-h`: the receipt as the student got it, in the variants the server's read gives. */
+/** The prototype's `skel` lines of a loading work panel (`loadingBody`). */
+const Lines = () => <><div className="skel w80" /><div className="skel w60" /><div className="skel w40" /></>;
+
+/** `po-h`: the receipt as the student got it, in the variants the server's read gives (prototype `receiptPanel`, `workState`). */
 export function ReceiptPanel({ view, onRetry, onCopy, verifyHref }: {
   view: ReceiptView; onRetry: () => void; onCopy: (hex: string) => void; verifyHref: (path: string) => string;
 }) {
   if (view.kind === "loading") {
-    return <section className="panel"><p aria-hidden="true">{text.loading}</p><Skeleton label={text.loading} /></section>;
+    return <WorkPanel id="pg-h" title={text.title} busy><p className="note" role="status">{text.loading}</p><Lines /></WorkPanel>;
   }
   if (view.kind === "error") {
-    return <section className="panel"><p role="alert">{text.error}</p><Button tone="quiet" onClick={onRetry}>{text.retry}</Button></section>;
+    return (
+      <WorkPanel id="pg-h" title={text.title}>
+        <p className="note" role="alert">{text.error}</p>
+        <div className={styles.acts}><Button tone="secondary" onClick={onRetry}>{text.retry}</Button></div>
+      </WorkPanel>
+    );
   }
-  if (view.kind === "notFound") return <section className="panel"><p role="alert">{text.notFound}</p></section>;
-  if (view.kind === "notSubmitted") return <section className="panel"><p role="status">{view.body}</p></section>;
+  if (view.kind === "notFound") return <WorkPanel id="pg-h" title={text.title}><p className="note" role="alert">{text.notFound}</p></WorkPanel>;
+  if (view.kind === "notSubmitted") return <WorkPanel id="pg-h" title={text.title}><p className="note" role="status">{view.body}</p></WorkPanel>;
   if (view.kind === "pending") {
     return (
-      <section aria-labelledby="po-h" className="panel">
-        <h2 id="po-h">{view.title}</h2>
-        <p role="status">{view.body}</p>
-        <KeyValueList items={rows(view.rows)} />
-        <Button tone="quiet" onClick={onRetry}>{text.check}</Button>
-      </section>
+      <WorkPanel id="po-h" title={view.title} level={2}>
+        <p className="note" role="status">{view.body}</p>
+        {rows(view.rows)}
+        <div className={styles.acts}><Button tone="secondary" onClick={onRetry}>{text.check}</Button></div>
+      </WorkPanel>
     );
   }
   return (
-    <section aria-labelledby="po-h" className="panel">
-      <h2 id="po-h">{view.title}</h2>
-      <KeyValueList items={rows(view.rows)} />
+    <WorkPanel id="po-h" title={view.title} level={2}>
+      {rows(view.rows)}
       <Details summary={text.utc}>
-        <KeyValueList items={view.utc.map(({ id, label, value }) => ({ id, label, value: <code>{value}</code> }))} />
+        <p className={styles.mono}>{view.utc.map(({ id, label, value }, i) => <span key={id}>{i > 0 && <br />}{label} {value}</span>)}</p>
       </Details>
-      <h3>{text.fingerprintTitle}</h3>
-      <p><code>{view.groups}</code></p>
-      <p>{text.fingerprintNote}</p>
-      <Button tone="quiet" onClick={() => onCopy(view.fingerprint)}>{text.copy}</Button>
-      <KeyValueList items={[{ id: "record", label: text.record, value: <>{view.record} {text.recordKept}</> }]} />
-      <p>{text.verifyNote}</p>
-      {view.verifyPath !== null && <p><a href={verifyHref(view.verifyPath)}>{text.verifyLink}</a></p>}
-      <QrSample hex={view.fingerprint} />
-      <p>{text.qrNote}</p>
-    </section>
+      <h3 className="sub">{text.fingerprintTitle}</h3>
+      <p className={styles.mono}>{view.groups}</p>
+      <p className="meta">{text.fingerprintNote}</p>
+      <div className={styles.acts}><Button tone="secondary" onClick={() => onCopy(view.fingerprint)}>{text.copy}</Button></div>
+      <StateBlock title={text.record}><span>{view.record}</span><span className="meta">{text.recordKept}</span></StateBlock>
+      <p className="note">{text.verifyNote}</p>
+      {view.verifyPath !== null && <a href={verifyHref(view.verifyPath)}>{text.verifyLink}</a>}
+      <div className={styles.qr}><QrSample hex={view.fingerprint} /><p className="meta">{text.qrNote}</p></div>
+    </WorkPanel>
   );
 }
 
@@ -82,7 +90,7 @@ export function ReceiptPanel({ view, onRetry, onCopy, verifyHref }: {
 function RevisionAction({ documentId, port, onDone }: { documentId: string; port: RevisionPort; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const post = port.returnForRevision;
-  if (post === null) return <p role="status">{text.revisionUnavailable}</p>;
+  if (post === null) return <span className="note" role="status">{text.revisionUnavailable}</span>;
   const today = new Date().toISOString().slice(0, 10);
   return (
     <>
@@ -115,6 +123,15 @@ export default function N07ReceiptPage({ documentId, workHref, current, port = L
     return () => { active = false; };
   }, [documentId, here, attempt, current]);
 
+  // P-D1: a practice assignment is never graded; the receipt says so calmly (no error, no grade action).
+  const [practice, setPractice] = useState(false);
+  useEffect(() => {
+    let active = true;
+    setPractice(false);
+    void readWorkPractice(createApi() as unknown as PracticeCall, documentId).then((next) => { if (active && current()) setPractice(next); });
+    return () => { active = false; };
+  }, [documentId, current]);
+
   const retry = () => { setInput(null); setAttempt((n) => n + 1); };
   const copy = (hex: string) => {
     void navigator.clipboard.writeText(hex)
@@ -127,25 +144,31 @@ export default function N07ReceiptPage({ documentId, workHref, current, port = L
   const summaryHref = `${workHref}/sazetak`;
   const name = input?.kind === "ready" ? input.studentName : null;
 
+  const full = view.kind === "pending" || view.kind === "submitted";
+  const back = <a className="btn secondary" href={workHref}>{text.backToWork}</a>;
   return (
-    <div className="page">
-      <p><a href={workHref}>{text.backToWork}</a>{name !== null && <> · {name}</>}</p>
-      <section className="panel">
-        <h1>{text.title}</h1>
-        <p>{text.intro}</p>
-      </section>
+    <WorkPage back={workHref} backLabel={text.backToWork} crumb={name ?? undefined}>
+      {full && (
+        <section className="panel">
+          <div className={styles.body}>
+            <h1 className={styles.intro}>{text.title}</h1>
+            <p className="note">{text.intro}</p>
+          </div>
+        </section>
+      )}
+      {practice && <PracticeNotice />}
       {submitted && <PreSubmitPanel outcome={summary.outcome} summaryHref={summaryHref} onReload={() => void summary.load()} />}
       <ReceiptPanel view={view} onRetry={retry} onCopy={copy} verifyHref={(path) => appHref(base, path)} />
       {submitted && showFallback(fallbackKey(view)) && <FallbackPanel fallback={{ kind: "unavailable" }} />}
       {input?.kind === "ready" && <AiDeclarationSection submissionId={documentId} />}
-      {view.kind !== "loading" && view.kind !== "notFound" && (
-        <div>
-          <a href={workHref}>{text.backToWork}</a>
-          {(view.kind === "submitted" || view.kind === "pending") && <RevisionAction documentId={documentId} port={port} onDone={() => toasts.show(text.revisionDone)} />}
-          {view.kind !== "notSubmitted" && <a href={appHref(base, "/nastavnik/brz-put")}>{text.fastPath}</a>}
+      {(full || view.kind === "notSubmitted") && (
+        <div className={styles.acts}>
+          {back}
+          {full && <RevisionAction documentId={documentId} port={port} onDone={() => toasts.show(text.revisionDone)} />}
+          {full && <a className="btn secondary" href={appHref(base, "/nastavnik/brz-put")}>{text.fastPath}</a>}
         </div>
       )}
       <TeacherToastRegion toasts={toasts.toasts} onDismiss={toasts.dismiss} />
-    </div>
+    </WorkPage>
   );
 }

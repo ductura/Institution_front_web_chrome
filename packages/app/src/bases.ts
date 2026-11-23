@@ -16,3 +16,13 @@ export function baseOfSegment(segment: string): Base | null {
 export function nextPath(base: Base, route: string): string {
   return (route === "/" ? `${base}/` : `${base}${route}`).slice("/app".length);
 }
+
+/**
+ * An address from appHref (with the basePath "/app", as a link's href has it)
+ * as router.push and router.replace want it: without "/app", which they add
+ * themselves. INT-10: the submission steps pushed appHref and landed on
+ * "/app/app/web/...", a page that does not exist.
+ */
+export function routerPath(href: string): string {
+  return href.startsWith("/app/") ? href.slice("/app".length) : href;
+}

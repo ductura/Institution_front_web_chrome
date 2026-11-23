@@ -36,7 +36,8 @@ import {
 import { parseCommitOutcome } from "../../packages/editor-core/src/serverSync/contract";
 import type { DrainOutcome, SignedCommitReceiptVerifier } from "../../packages/editor-core/src/sync/drain";
 
-import { createApi, errorBody, type ApiOptions, type ProtocolVersion } from "./api";
+import { createApi, errorBody, RESPONSES, type ApiOptions, type ProtocolVersion } from "./api";
+import { matchesSchema, type Schema } from "./schema-check";
 
 /**
  * A transport as Ductus callers write it (the drain's evidence transport, the
@@ -87,14 +88,13 @@ export type EvidenceCommitInput = {
 
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
-const OPEN_KEYS = [
-  "status", "documentId", "evidenceProfileId", "currentRevision", "documentHash",
-  "headSegmentHash", "lastSequenceTo", "document", "receiptKeys", "submitted",
-];
-// SRV-7F (server #439): the server also sends the work's schemaVersion and its revision 0 hash.
-// Both are optional in the contract; when present they must have their contract shape.
-const OPEN_OPTIONAL_KEYS = ["schemaVersion", "revisionZeroHash"];
-const SCHEMA_VERSIONS: readonly unknown[] = [1, 2, 3];
+/**
+ * INT-12 (N05): the shape of the open answer is the contract's own (the 200 of
+ * `evidence.open.post` in RESPONSES), never a copy written here; openedWorkFrom
+ * only adds the rules the contract cannot state. contract-parsers.test.ts
+ * holds it to every 2xx vector.
+ */
+const OPENED: Schema | undefined = RESPONSES.get("evidence.open.post")?.["200"]?.content?.["application/json"]?.schema;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -226,29 +226,27 @@ function receiptDomainOf(keys: unknown): { domain: string; keys: EvidenceDomainK
     : null;
 }
 
-/** The open answer in its closed shape, or null. */
+/**
+ * The open answer in its closed shape, or null. The shape (every field, its
+ * type, the optional `schemaVersion` and `revisionZeroHash`) is the contract's;
+ * on top of it: base64 that encodes back to the same text, a snapshot within
+ * the editor's limit, a profile the journal and segment v2 take, and receipt
+ * keys of exactly one evidence domain.
+ */
 export function openedWorkFrom(value: unknown): OpenedWork | null {
-  if (!isObject(value) || value.status !== "opened") return null;
-  const own = Object.keys(value);
-  const optional = own.filter((key) => OPEN_OPTIONAL_KEYS.includes(key));
-  if (own.length !== OPEN_KEYS.length + optional.length || !OPEN_KEYS.every((key) => own.includes(key))) return null;
-  if ("schemaVersion" in value && !SCHEMA_VERSIONS.includes(value.schemaVersion)) return null;
-  if ("revisionZeroHash" in value && !(typeof value.revisionZeroHash === "string" && SHA256_HEX.test(value.revisionZeroHash))) return null;
+  if (OPENED === undefined || !isObject(value) || !matchesSchema(OPENED, value)) return null;
   const {
     documentId, evidenceProfileId, currentRevision, documentHash, headSegmentHash, lastSequenceTo, submitted,
-  } = value;
+  } = value as {
+    documentId: string; evidenceProfileId: string; currentRevision: number; documentHash: string;
+    headSegmentHash: string | null; lastSequenceTo: number; submitted: boolean;
+  };
   const document = decodeBase64(value.document);
   const keys = receiptDomainOf(value.receiptKeys);
   if (
-    typeof documentId !== "string" || documentId === "" ||
     // The same rule as the journal and segment v2, so a profile they would refuse is refused here (#733).
     !isEvidenceProfileIdV2(evidenceProfileId) ||
-    !isCount(currentRevision) || !isCount(lastSequenceTo) ||
-    typeof documentHash !== "string" || !SHA256_HEX.test(documentHash) ||
-    !(headSegmentHash === null || (typeof headSegmentHash === "string" && SHA256_HEX.test(headSegmentHash))) ||
-    document === null || document.byteLength > MAX_DOCUMENT_SNAPSHOT_BYTES || keys === null ||
-    // Never false by assumption: only a real boolean says whether the work is submitted.
-    typeof submitted !== "boolean"
+    document === null || document.byteLength > MAX_DOCUMENT_SNAPSHOT_BYTES || keys === null
   ) {
     return null;
   }

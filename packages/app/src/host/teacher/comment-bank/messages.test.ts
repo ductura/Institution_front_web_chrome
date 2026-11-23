@@ -5,6 +5,6 @@ import { commentBankMessages } from "./messages.hr";
 
 describe("comment-bank texts", () => {
   it("hold no forbidden term (Ductus PRODUCT §5)", () => {
-    for (const value of Object.values(commentBankMessages)) expect(findForbiddenTerms(value, "hr")).toEqual([]);
+    for (const value of Object.values(commentBankMessages).flatMap((v) => (typeof v === "string" ? [v] : Object.values(v)))) expect(findForbiddenTerms(value, "hr")).toEqual([]);
   });
 });

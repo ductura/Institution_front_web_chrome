@@ -33,7 +33,7 @@ export const n07Messages = {
   verifyLink: "Provjera potvrde",
   qrNote: "QR kod je u zapisu koji je student preuzeo. Ovdje je samo uzorak bez sadržaja.",
   revision: "Zatraži doradu",
-  // No route returns a whole work for revision yet (LIVE_PORT of WEB-2121): said as unavailable, as on the work page.
+  // Only when the port carries no return (a failed wiring); the live port is work.return-for-revision.post (WEB-2155B).
   revisionUnavailable: "Vraćanje na doradu trenutačno nije dostupno.",
   revisionDone: "Rad je vraćen na doradu.",
   fastPath: "Brz put",

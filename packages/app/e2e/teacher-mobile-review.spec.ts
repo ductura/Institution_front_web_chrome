@@ -21,7 +21,13 @@ const signed = vectors.find((v) => v.route === "teacher.submission-receipt.get"
 if (!("receipt" in signed) || !signed.receipt) throw new Error("Missing signed receipt vector");
 const documentId = signed.receipt.payload.documentId;
 if (typeof documentId !== "string") throw new Error("Missing documentId in signed receipt vector");
-const workBody = vectors.find((v) => v.route === "teacher.work.get" && v.name === "submitted-work")!.response.body;
+// teacher.work.get has no vector for the signed receipt's work: take the server's "middle-work" answer and
+// give it that receipt's work, student and assignment (alone in the assignment, so no previous or next work).
+const workBody = {
+  ...vectors.find((v) => v.route === "teacher.work.get" && v.name === "middle-work")!.response.body,
+  documentId, studentId: signed.receipt.payload.principalId, assignmentId: signed.receipt.payload.assignmentId,
+  studentName: "Iva Izmišljena", prevDocumentId: null, nextDocumentId: null,
+};
 const profile = vectors.find((v) => v.route === "profile.me.get" && v.name === "teacher-without-name")!.response.body;
 const profileBody = { ...profile, roles: ["teacher"] };
 const originNothingRecorded = vectors.find((v) => v.route === "work.origin-composition.get" && v.name === "nothing-recorded")!.response.body;
@@ -54,6 +60,8 @@ async function fakeServer(page: Page, initial: 200 | 401 | 503 = 200) {
       case `/api/v1/live/${documentId}`: return route.fulfill({
         contentType: "application/json", body: snapshot, headers: { etag },
       });
+      // WEB-2151: the work page also reads the revision requests; none exist for this work.
+      case "/api/v1/revision-requests/list": return route.fulfill({ json: { requests: [] } });
       case "/api/v1/process-summary": return route.fulfill({ status: 404, json: { error: "not_found" } });
       // WEB-2157 (#410): the N-10 summary page also reads its details; no summary exists for this work either.
       case "/api/v1/process-summary/details": return route.fulfill({ status: 404, json: { error: "not_found" } });
@@ -117,9 +125,12 @@ async function expectTargets(page: Page) {
   const small = await page.evaluate(() => {
     const controls = document.querySelectorAll<HTMLElement>("a[href], button, input:not([type=hidden]), textarea, select, summary, [role=button]");
     return [...controls].flatMap((el) => {
-      // An input inside its own label (the @ductura/ui Checkbox, WEB-05) is tapped through that label, so the
-      // label is the target that must reach 24 px; the box itself only draws the state.
-      const wrapping = el instanceof HTMLInputElement ? [...(el.labels ?? [])].find((label) => label.contains(el)) : undefined;
+      // A checkbox or radio inside its own label (the @ductura/ui Checkbox, WEB-05) is tapped through that label,
+      // so the label is the target that must reach 24 px; the box itself only draws the state. Any other input
+      // (text, search, ...) is the target itself and is measured as such.
+      const wrapping = el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")
+        ? [...(el.labels ?? [])].find((label) => label.contains(el))
+        : undefined;
       const box = (wrapping ?? el).getBoundingClientRect();
       if (box.width === 0 && box.height === 0) return [];
       return box.width < 24 || box.height < 24

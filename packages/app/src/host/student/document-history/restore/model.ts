@@ -5,13 +5,56 @@
 import type { Version } from "../../time-machine/model";
 
 export type RestoreOutcome =
-  | { readonly kind: "saved"; readonly revision: number }
+  /**
+   * The server confirmed the restored text with a verified receipt. No revision number: the receipt
+   * stays inside the save path, and the version list is no proof of which checkpoint it made.
+   */
+  | { readonly kind: "saved" }
   | { readonly kind: "stale"; readonly currentRevision: number }
-  | { readonly kind: "signedOut" | "unavailable" };
+  /** The text is in the sheet and the device's journal, the server's receipt has not come yet (PIL-D7-OBNOVA). */
+  | { readonly kind: "signedOut" | "unavailable" | "pending" };
 
 export interface RestorePort {
   /** Saves the text of `fromRevision` as a new revision on top of `baseRevision` (the save path). */
   restore(documentId: string, fromRevision: number, baseRevision: number): Promise<RestoreOutcome>;
+  /**
+   * After a "pending" restore: waits once more for the server's verified receipt of the sheet. A port
+   * without it leaves the restore marked as waiting for the receipt (INT-21).
+   */
+  receipt?(): Promise<"confirmed" | "signedOut" | "waiting">;
+}
+
+/** A restore made on this page: "vraćeno iz verzije N", confirmed or still waiting for the receipt. */
+export type RestoredLabel = { readonly at: number; readonly from: number; readonly confirmed: boolean };
+
+/** Adds the label of one restore; `at` keeps it apart from another restore of the same version. */
+export function recordRestored(labels: readonly RestoredLabel[], at: number, from: number, confirmed: boolean): readonly RestoredLabel[] {
+  return [...labels, { at, from, confirmed }];
+}
+
+/** The receipt came: only that restore's label turns confirmed, every other label stays as it was. */
+export function confirmRestored(labels: readonly RestoredLabel[], at: number): readonly RestoredLabel[] {
+  return labels.map((label) => (label.at === at ? { ...label, confirmed: true } : label));
+}
+
+/**
+ * Follows a pending restore until the server's receipt comes (INT-21). True only on "confirmed"; a
+ * sign-out, a port without `receipt`, a receipt that throws, or `active` turning false (the page went
+ * away) is false, and the label stays "čeka potvrdu". "waiting" asks again: each ask waits on its own.
+ */
+export async function awaitRestoreReceipt(port: RestorePort, active: () => boolean): Promise<boolean> {
+  if (port.receipt === undefined) return false;
+  while (active()) {
+    let answer: "confirmed" | "signedOut" | "waiting";
+    try {
+      answer = await port.receipt();
+    } catch {
+      return false;
+    }
+    if (!active() || answer === "signedOut") return false;
+    if (answer === "confirmed") return true;
+  }
+  return false;
 }
 
 export type RestoreRecord = { readonly fromRevision: number; readonly newRevision: number; readonly minute: string };
@@ -28,16 +71,14 @@ export function restorableVersions(versions: readonly Version[]): readonly Versi
   return [...byRevision.values()].sort((a, b) => b.revision - a.revision);
 }
 
-/** Restores through the port. A saved answer must be a revision strictly above the base, else it is unavailable. */
+/** Restores through the port; a port that throws is unavailable, never a guessed result. */
 export async function restoreVersion(
   port: RestorePort, documentId: string, versions: readonly Version[], fromRevision: number,
 ): Promise<RestoreOutcome> {
   if (!restorableVersions(versions).some((v) => v.revision === fromRevision)) return { kind: "unavailable" };
   const base = headRevision(versions);
   try {
-    const outcome = await port.restore(documentId, fromRevision, base);
-    if (outcome.kind === "saved" && !(Number.isSafeInteger(outcome.revision) && outcome.revision > base)) return { kind: "unavailable" };
-    return outcome;
+    return await port.restore(documentId, fromRevision, base);
   } catch {
     return { kind: "unavailable" };
   }

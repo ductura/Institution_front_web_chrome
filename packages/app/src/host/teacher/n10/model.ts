@@ -5,6 +5,7 @@ import { countHr } from "../../../../../../src/lib/i18n/hr";
 import { zagrebEpochMs, zagrebWall } from "../../../../../../src/lib/i18n/zagreb";
 import type { ApiResult } from "../../../../../../src/client/api";
 import type { ProcessSummaryV1, SummaryOutcome } from "../../../../../../src/client/process-summary";
+import { ORIGIN_KINDS, type OriginKind } from "../provenance/origin";
 import { n10Messages as text } from "./messages.hr";
 
 export type Span = { readonly from: string; readonly to: string };
@@ -15,15 +16,21 @@ export type SummaryDetails = { readonly activeEditingMinutes: number; readonly k
 export type DetailsOutcome = { readonly kind: "ok"; readonly details: SummaryDetails } | { readonly kind: "signedOut" | "notFound" | "unavailable" };
 export type N10Version = { readonly kind: "checkpoint" | "submission"; readonly revision: number; readonly savedMinute: string };
 export type VersionsOutcome = { readonly kind: "ready"; readonly versions: readonly N10Version[] } | { readonly kind: "signedOut" | "unavailable" };
+/** P-1 rule 12: the server states only one of three labels per origin kind, never the threshold or a score. */
+export type ThresholdState = "in_line" | "for_review" | "exceeded";
+export type ThresholdRow = { readonly origin: OriginKind; readonly state: ThresholdState };
+export type ThresholdsOutcome = { readonly kind: "ok"; readonly rows: readonly ThresholdRow[] } | { readonly kind: "signedOut" | "notFound" | "unavailable" };
 
 export interface N10Port {
   summary(documentId: string): Promise<SummaryOutcome>;
   details(documentId: string): Promise<DetailsOutcome>;
   versions(documentId: string): Promise<VersionsOutcome>;
+  /** work.origin-thresholds.get; a port without it shows no faculty rules. */
+  thresholds?(documentId: string): Promise<ThresholdsOutcome>;
 }
 
 export type N10Read =
-  | { readonly kind: "ready"; readonly summary: ProcessSummaryV1; readonly details: SummaryDetails | null; readonly versions: readonly N10Version[] | null }
+  | { readonly kind: "ready"; readonly summary: ProcessSummaryV1; readonly details: SummaryDetails | null; readonly versions: readonly N10Version[] | null; readonly thresholds?: readonly ThresholdRow[] }
   | { readonly kind: "empty" }
   | { readonly kind: "signedOut" }
   | { readonly kind: "notFound" }
@@ -46,10 +53,11 @@ export const isEmpty = (s: ProcessSummaryV1): boolean =>
  * summary (its summary differs) is dropped, so two reads never mix into one screen.
  */
 export async function loadSummary(port: N10Port, documentId: string): Promise<N10Read> {
-  const [summary, details, versions] = await Promise.all([
+  const [summary, details, versions, thresholds] = await Promise.all([
     safe(() => port.summary(documentId), { kind: "unavailable" } as SummaryOutcome),
     safe(() => port.details(documentId), { kind: "unavailable" } as DetailsOutcome),
     safe(() => port.versions(documentId), { kind: "unavailable" } as VersionsOutcome),
+    safe(async () => (port.thresholds === undefined ? NO_THRESHOLDS : port.thresholds(documentId)), NO_THRESHOLDS),
   ]);
   if (summary.kind !== "ok") return { kind: summary.kind };
   if (isEmpty(summary.summary)) return { kind: "empty" };
@@ -58,7 +66,22 @@ export async function loadSummary(port: N10Port, documentId: string): Promise<N1
     summary: summary.summary,
     details: details.kind === "ok" ? details.details : null,
     versions: versions.kind === "ready" ? versions.versions : null,
+    ...(thresholds.kind === "ok" && thresholds.rows.length > 0 ? { thresholds: thresholds.rows } : {}),
   };
+}
+
+const NO_THRESHOLDS: ThresholdsOutcome = { kind: "ok", rows: [] };
+
+/**
+ * The comparison in the order of the closed list of origin kinds, so the screen never sorts kinds by their state.
+ * An answer naming a kind twice is not usable (`null`), so two states of one kind never reach the screen.
+ */
+export function thresholdRows(comparison: readonly ThresholdRow[]): readonly ThresholdRow[] | null {
+  const origins = comparison.map((row) => row.origin);
+  if (new Set(origins).size !== origins.length) return null;
+  return [...comparison]
+    .sort((a, b) => ORIGIN_KINDS.indexOf(a.origin) - ORIGIN_KINDS.indexOf(b.origin))
+    .map(({ origin, state }) => ({ origin, state }));
 }
 
 const pad2 = (n: number): string => (n < 10 ? `0${n}` : String(n));

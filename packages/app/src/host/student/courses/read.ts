@@ -7,6 +7,8 @@ export type Assignment = {
   id: string; title: string; dueAt: string; noticeFirst: boolean;
   // The contract's closed set of work kinds, as the shared MyAssignment carries it since WEB-2102.
   workType?: MyAssignment["workType"]; mentor?: Mentor | null; extendedDueAt?: string | null;
+  /** P-D1: the server's practice flag; absent is not practice (the badge is never guessed). */
+  isPractice?: boolean;
 };
 export type Course = { id: string; name: string; academicYear?: string; groups?: Group[]; assignments: Assignment[] };
 export type WorkState = "not_started" | "in_progress" | "submitted";

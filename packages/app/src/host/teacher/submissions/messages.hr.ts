@@ -1,5 +1,7 @@
 // Interface copy of the teacher's submissions table and the submitted version (WEB-1502).
 export const submissionsMessages = {
+  pageTitle: "Predaje zadatka",
+  pageLead: "Predane verzije rada po studentu. Predana verzija otvara se samo za čitanje, a svako otvaranje se bilježi.",
   title: "Predaje",
   caption: "Predane verzije rada",
   student: "Student",
@@ -15,6 +17,7 @@ export const submissionsMessages = {
   unavailable: "Predaje nije bilo moguće učitati. Pokušaj ponovno.",
   signedOut: "Sesija je istekla. Prijavi se ponovno.",
   notFound: "Predana verzija nije pronađena.",
+  noAccess: "Predaje ovog zadatka vide samo nastavnici zadatka. Zadatak nije pronađen među Vašim zadacima.",
   retry: "Pokušaj ponovno",
   versionTitle: "Predana verzija",
   versionNote: "Predana verzija je samo za čitanje.",

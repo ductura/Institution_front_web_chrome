@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@ductura/ui";
 
-import { explainAssistantMatch, MAX_EXPLANATION_LENGTH, readAssistantMatch, type AssistantMatch, type MatchCall, type MatchRead } from "../../teacher/origin-map/assistant-match/contract";
+import { explainAssistantMatch, MAX_EXPLANATION_LENGTH, readAssistantMatch, type AssistantMatch, type MatchCall, type MatchRead } from "./contract";
 import { noticeText as t } from "./messages.hr";
 
 type Status = "idle" | "sending" | "saved" | "failed" | "rejected" | "signedOut";
@@ -11,9 +11,11 @@ type Status = "idle" | "sending" | "saved" | "failed" | "rejected" | "signedOut"
 /**
  * The student's notice at the moment the server attaches the conversation automatically (WEB-1230), with the
  * option to explain the match. Behind the faculty flag: while the flag is off the component renders nothing.
- * The notice never blocks writing or submitting and is not a verdict.
+ * The notice never blocks writing or submitting and is not a verdict. `explainable` is false while the
+ * server has no route that stores the explanation: then no field asks for one. A new `version` reads
+ * the matches again (the host raises it when a checked segment matched).
  */
-export default function AssistantMatchNotice({ call, documentId }: { call: MatchCall; documentId: string }) {
+export default function AssistantMatchNotice({ call, documentId, explainable = true, version = 0 }: { call: MatchCall; documentId: string; explainable?: boolean; version?: number }) {
   const [read, setRead] = useState<MatchRead | null>(null);
   const [matches, setMatches] = useState<readonly AssistantMatch[]>([]);
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
@@ -26,7 +28,7 @@ export default function AssistantMatchNotice({ call, documentId }: { call: Match
       setMatches(answer.kind === "ready" ? answer.state.matches : []);
     });
     return () => { active = false; };
-  }, [call, documentId]);
+  }, [call, documentId, version]);
 
   if (read === null || read.kind !== "ready") return null;
   const open = matches.filter((m) => !dismissed.has(m.segmentId));
@@ -39,6 +41,7 @@ export default function AssistantMatchNotice({ call, documentId }: { call: Match
           match={m}
           call={call}
           documentId={documentId}
+          explainable={explainable}
           onSaved={(next) => setMatches((all) => all.map((x) => (x.segmentId === next.segmentId ? next : x)))}
           onDismiss={() => setDismissed((s) => new Set(s).add(m.segmentId))}
         />
@@ -47,7 +50,7 @@ export default function AssistantMatchNotice({ call, documentId }: { call: Match
   );
 }
 
-function Item({ match, call, documentId, onSaved, onDismiss }: { match: AssistantMatch; call: MatchCall; documentId: string; onSaved: (m: AssistantMatch) => void; onDismiss: () => void }) {
+function Item({ match, call, documentId, explainable, onSaved, onDismiss }: { match: AssistantMatch; call: MatchCall; documentId: string; explainable: boolean; onSaved: (m: AssistantMatch) => void; onDismiss: () => void }) {
   const [text, setText] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const send = async () => {
@@ -65,7 +68,7 @@ function Item({ match, call, documentId, onSaved, onDismiss }: { match: Assistan
       <p>{t.neutral}</p>
       {match.explanation !== undefined ? (
         <p>{t.yourExplanation} {match.explanation.text}</p>
-      ) : (
+      ) : !explainable ? null : (
         <>
           <label>
             {t.explainLabel}

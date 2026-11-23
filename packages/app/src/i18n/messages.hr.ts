@@ -49,6 +49,8 @@ export const profileHr = {
 
 /** Labels of pages whose screens have no English table yet (routes.ts takes them from the screens' own Croatian tables). */
 export const pageLabelsHr = {
+  originComposition: "Podrijetlo teksta",
+  studentInterview: "Razgovor o radu",
   consultations: "Konzultacije",
   versionComparison: "Usporedba verzija",
   processSummary: "Sažetak procesa",
@@ -56,8 +58,11 @@ export const pageLabelsHr = {
   studentDataExport: "Izvoz podataka studenta",
   studentDataDownload: "Izvoz mojih podataka",
   merlinExport: "Izvoz za Merlin",
+  assignmentSubmissions: "Predaje zadatka",
   courseStudents: "Popis studenata",
+  courseAggregate: "Zbirni pregled kolegija",
   receiptCheck: "Provjera potvrde",
+  originThresholds: "Pragovi po vrsti podrijetla",
 };
 
 /** M1.8: the no-access and session-ended screen. English: `accessDeniedEn` in ./messages.en.ts. */

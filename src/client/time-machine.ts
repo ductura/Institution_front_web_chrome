@@ -3,6 +3,7 @@
  *
  * - work.versions.get: the saved versions of a work (checkpoints and submissions), read through createApi.
  * - work.compare.get: the difference between two versions, as the server's blocks of text.
+ * - work.version.get: one saved version's canonical document, for reading only (PIL-D7-POVIJEST).
  *
  * Neither read carries duration, pace or the size of a change into the result (PRODUCT §5): a version is
  * its kind, revision and saved minute, a comparison is its blocks. Restoring a version is not
@@ -14,14 +15,20 @@ import { createApi } from "./api";
 
 export type TimeMachineVersion = { kind: "checkpoint" | "submission"; revision: number; savedMinute: string };
 export type TimeMachineBlock = { kind: "paragraph" | "bulletItem" | "quote" | "heading"; level?: number; change: "unchanged" | "removed" | "added"; text: string };
-export type VersionsResult = { kind: "ready"; versions: TimeMachineVersion[] } | { kind: "signedOut" | "unavailable" };
+export type VersionsResult = { kind: "ready"; versions: TimeMachineVersion[]; more?: true } | { kind: "signedOut" | "unavailable" };
+export type VersionResult = { kind: "ready"; revision: number; document: string } | { kind: "signedOut" | "notFound" | "unavailable" };
 export type CompareResult = { kind: "ready"; blocks: TimeMachineBlock[] } | { kind: "signedOut" | "notFound" | "unavailable" };
 
 export async function readTimeMachineVersions(documentId: string, api = createApi()): Promise<VersionsResult> {
   try {
     const result = await api("work.versions.get", { params: { documentId }, query: {}, body: undefined });
     if (!result.ok) return { kind: result.status === 401 ? "signedOut" : "unavailable" };
-    return { kind: "ready", versions: result.body.versions.map(({ kind, revision, savedMinute }) => ({ kind, revision, savedMinute })) };
+    return {
+      kind: "ready",
+      versions: result.body.versions.map(({ kind, revision, savedMinute }) => ({ kind, revision, savedMinute })),
+      // One page only: older versions exist when the server names where the next page starts.
+      ...(result.body.nextBeforeRevision !== null ? { more: true as const } : {}),
+    };
   } catch {
     return { kind: "unavailable" };
   }
@@ -40,6 +47,21 @@ export async function readTimeMachineComparison(documentId: string, from: number
         kind: block.kind, change: block.change, text: block.text, ...(block.kind === "heading" ? { level: block.level } : {}),
       })),
     };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}
+
+/** One saved version's canonical document as the server sends it; nothing here can change it. */
+export async function readTimeMachineVersion(documentId: string, revision: number, api = createApi()): Promise<VersionResult> {
+  if (!Number.isSafeInteger(revision) || revision < 1) return { kind: "unavailable" };
+  try {
+    const result = await api("work.version.get", { params: { documentId, revision: String(revision) }, query: {}, body: undefined });
+    if (!result.ok) {
+      return { kind: result.status === 401 ? "signedOut" : result.status === 404 ? "notFound" : "unavailable" };
+    }
+    if (!("document" in result.body) || result.body.revision !== revision) return { kind: "unavailable" };
+    return { kind: "ready", revision: result.body.revision, document: result.body.document };
   } catch {
     return { kind: "unavailable" };
   }

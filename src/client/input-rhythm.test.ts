@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { findForbiddenTerms } from "../../scripts/forbidden-terms/terms";
 import { inputRhythmHr } from "../lib/i18n/messages.hr";
 import {
-  BURST_BREAK_MS, createRhythmRecorder, explainPaste, MAX_GAPS_PER_BURST, ORIGIN_KINDS, originOfInput, thinGaps,
+  BURST_BREAK_MS, createRhythmPort, createRhythmRecorder, explainPaste, MAX_GAPS_PER_BURST, ORIGIN_KINDS, originOfInput, thinGaps,
 } from "./input-rhythm";
 import { createFakeRhythmPort } from "./input-rhythm-fake";
 
@@ -83,5 +83,67 @@ describe("fake port and wording", () => {
   it("keeps the wording clear of forbidden terms", () => {
     expect(inputRhythmHr.toggle).toBe("Bilježi ritam tipkanja");
     expect(findForbiddenTerms(JSON.stringify(inputRhythmHr), "hr")).toEqual([]);
+  });
+});
+
+// PIL-P1-RITAM-EDITOR: the real adapter. A fake `call` stands for createApi; no request leaves.
+describe("rhythm port over the server", () => {
+  type Call = Parameters<typeof createRhythmPort>[0];
+  const answering = (answer: (id: string) => unknown) => {
+    const calls: { id: string; input: { params: unknown; body: unknown } }[] = [];
+    const call = vi.fn(async (id: string, input: { params: unknown; body: unknown }) => {
+      calls.push({ id, input });
+      return answer(id);
+    });
+    return { call: call as unknown as Call, calls };
+  };
+  const ok = (body: unknown) => ({ ok: true, status: 200, body, headers: {} });
+
+  it("records only when the switch of the work says exactly enabled: true", async () => {
+    for (const [answer, on] of [
+      [ok({ enabled: true, changedBy: null, changedAt: null }), true],
+      [ok({ enabled: false, changedBy: null, changedAt: null }), false],
+      [{ ok: false, status: 404, code: "not_found" }, false],
+      [{ ok: false, status: 401, code: "session_expired" }, false],
+    ] as const) {
+      const { call, calls } = answering(() => answer);
+      expect(await createRhythmPort(call).recording("doc-1")).toBe(on);
+      expect(calls).toEqual([{ id: "work.input-rhythm-setting.get", input: { params: { documentId: "doc-1" }, query: undefined, body: undefined } }]);
+    }
+    const thrown = createRhythmPort((async () => { throw new TypeError("offline"); }) as unknown as Call);
+    expect(await thrown.recording("doc-1")).toBe(false);
+  });
+
+  it("posts each burst as { gapsMs } alone: no key, text, origin, time or speed", async () => {
+    const { call, calls } = answering(() => ok({ recorded: true }));
+    await createRhythmPort(call).send("doc-1", {
+      origins: [{ kind: "typed", codePoints: 40 }, { kind: "pasted_unknown", codePoints: 0 }],
+      bursts: [
+        { startedAtMinute: 1_700_000_040_000, gapsMs: [120, 95, 2000] },
+        { startedAtMinute: 1_700_000_100_000, gapsMs: [] },
+        { startedAtMinute: 1_700_000_160_000, gapsMs: [310] },
+      ],
+    });
+    expect(calls.map((c) => c.id)).toEqual(["work.input-rhythm.post", "work.input-rhythm.post"]);
+    expect(calls.map((c) => c.input.params)).toEqual([{ documentId: "doc-1" }, { documentId: "doc-1" }]);
+    expect(calls.map((c) => c.input.body)).toEqual([{ gapsMs: [120, 95, 2000] }, { gapsMs: [310] }]);
+    for (const { input } of calls) {
+      expect(Object.keys(input.body as object)).toEqual(["gapsMs"]);
+      expect((input.body as { gapsMs: unknown[] }).gapsMs.every((g) => Number.isInteger(g))).toBe(true);
+    }
+  });
+
+  it("never throws on a refused or failed send, and goes on with the next burst", async () => {
+    let n = 0;
+    const call = (async () => {
+      n += 1;
+      if (n === 1) throw new TypeError("offline");
+      return { ok: false, status: 503, code: "unavailable" };
+    }) as unknown as Call;
+    await expect(createRhythmPort(call).send("doc-1", {
+      origins: [],
+      bursts: [{ startedAtMinute: 0, gapsMs: [100] }, { startedAtMinute: 0, gapsMs: [200] }],
+    })).resolves.toBeUndefined();
+    expect(n).toBe(2);
   });
 });
