@@ -174,12 +174,15 @@ export class SourceObserver {
   /** The text of a trusted compositionend or `insertCompositionText`, kept like `inputData` (F-130, F-132). */
   private composedText: string | null = null;
   private clearing = false;
+  /** A trusted keydown of any key was seen in this task (exam mode: composition made with keys). */
+  private keyInTask = false;
 
   readonly plugin: Plugin = new Plugin({
     key: new PluginKey("evidenceSourceObserver"),
     props: {
       handleKeyDown: (_view, event) => {
         this.touch();
+        if (event.isTrusted) this.keyInTask = true;
         this.pendingKey = event.isTrusted ? typedKey(event) : null;
         if (event.isTrusted && isKeymapKey(event)) this.seen.keymapKey = true;
         return false;
@@ -239,6 +242,18 @@ export class SourceObserver {
    */
   take(transactions: readonly Transaction[]): SourceObservation {
     if (!transactions.some((tr) => tr.docChanged)) return this.observation;
+    const result = this.peek(transactions);
+    this.forget();
+    return result;
+  }
+
+  /**
+   * What `take` would return for this change, without taking it: the observer
+   * keeps what it saw, so the change can still be recorded with `take` once it
+   * is applied. Exam mode reads it before a change enters the document.
+   */
+  peek(transactions: readonly Transaction[]): SourceObservation {
+    if (!transactions.some((tr) => tr.docChanged)) return this.observation;
     const seen = this.seen;
     const text = insertedText(transactions);
     const sameText = this.inputData !== null && text === this.inputData;
@@ -246,7 +261,6 @@ export class SourceObserver {
     const replaced = partOf(this.replacementText);
     const composed = this.compositionText && partOf(this.composedText);
     const composing = partOf(this.composedText);
-    this.forget();
     return {
       ...seen,
       keyedInput: seen.keyedInput && sameText,
@@ -257,8 +271,14 @@ export class SourceObserver {
     };
   }
 
+  /** A trusted key was pressed in the current task (exam mode only; never recorded). */
+  get keyPressedInTask(): boolean {
+    return this.keyInTask;
+  }
+
   private forget(): void {
     this.seen = { ...NO_OBSERVATION };
+    this.keyInTask = false;
     this.pendingKey = null;
     this.inputData = null;
     this.compositionText = false;

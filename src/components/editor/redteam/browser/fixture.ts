@@ -14,6 +14,7 @@ import {
 import {
   changeShape, entersRhythm, InputRhythm, reviewFlags, type Burst, type ReviewFlag,
 } from "../../../../../packages/editor-core/src/editor/review-signals";
+import { createExamMode, type ExamRefusal } from "../../../../../packages/editor-core/src/editor/exam-mode";
 
 type Harness = {
   ready: boolean;
@@ -24,6 +25,9 @@ type Harness = {
   text(): string;
   /** A change made by a script through the editor's own API, with no DOM event. */
   scripted(text: string): void;
+  /** P-4 proposal (?exam=1, ?accommodation=1): what exam mode refused, and the text the page shows. */
+  refusals(): ExamRefusal[];
+  domText(): string;
 };
 
 declare global {
@@ -31,9 +35,14 @@ declare global {
 }
 
 const observer = new SourceObserver();
+const query = new URLSearchParams(location.search);
+const refusals: ExamRefusal[] = [];
+const exam = query.get("exam") === "1"
+  ? [createExamMode({ observer, accommodation: query.get("accommodation") === "1", onRefused: (r) => refusals.push(r) })]
+  : [];
 const editor = new Editor({
   element: document.querySelector<HTMLElement>("#editor"),
-  extensions: [...createEditorExtensions(""), StorableInput, ArrowCollapse, ChapterNumbers, observer.extension],
+  extensions: [...createEditorExtensions(""), StorableInput, ArrowCollapse, ChapterNumbers, observer.extension, ...exam],
 });
 
 const sources: string[] = [];
@@ -68,6 +77,8 @@ const harness: Harness = {
   flags: () => reviewFlags(rhythm.bursts(), { automated: navigator.webdriver === true, rhythmRecorded: true }),
   text: () => editor.getText(),
   scripted: (text) => { editor.commands.insertContent(text); },
+  refusals: () => [...refusals],
+  domText: () => document.querySelector("#editor .ProseMirror")?.textContent ?? "",
 };
 window.__source = harness;
 editor.on("create", () => { ready = true; harness.ready = true; });
