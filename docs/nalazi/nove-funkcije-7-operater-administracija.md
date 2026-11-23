@@ -208,3 +208,23 @@ Ništa nije preporučeno „ne”, ali se **ne treba graditi**: kvota 50/100/200
 6. **Asistent na razini fakulteta:** ostaje li prekidač samo u konfiguraciji (OC-1), a administrator ga samo vidi (OA-9)?
 7. **Obavijest o prekidu:** je li dovoljna javna stranica stanja i ručna obavijest u pilotu, ili treba da operater upisuje poruku (OA-8)? *(za orkestratora: tko smije pisati `maintenanceWindows`?)*
 8. **Prijave problema:** tko ih u pilotu čita i odgovara (OA-7), i je li dovoljan jedan komentar „zaprimljeno/riješeno”? *(za orkestratora: operacija čitanja i stanja prijava u izvatku ne postoji.)*
+
+---
+
+## Provedba u prototipu (23. 11. 2026.)
+
+Daniel je 23. 11. 2026. odlučio za pilot: OA-1, OA-2, OA-3, OA-5, OA-6, OA-7, OA-9, OA-10, OA-12; nakon pilota OA-4, OA-8, OA-11. Napravljen je statični prototip `docs/prototip/Ductura_administracija.html` (kartice: `Ductura_administracija_kartice.html`, inventar: `INVENTAR-administracija.md`). Ekrani za uloge operater (`network_engineer`) i administrator fakulteta (`institution_admin`), izmišljeni podaci, stanja puno, prazno, učitavanje, greška.
+
+| OA | INVENTAR ID | Element u prototipu |
+|---|---|---|
+| OA-1 | NF7-OA1 | ekran `mjerila`, `data-nf7="OA-1"` |
+| OA-2 | NF7-OA2 | ekran `postavke` (uključuje „Čuvanje podataka”: „Rok još nije određen (čeka odluku)”) |
+| OA-3 | NF7-OA3 | ekran `dnevnik` |
+| OA-5 | NF7-OA5 | ekran `prava`, oznaka „čeka pravni pregled” |
+| OA-6 | NF7-OA6 | ekran `izvoz`, stanje „dupli zahtjev” |
+| OA-7 | NF7-OA7 | ekran `prijave` (kategorija, usmjerenje, zaprimljeno/riješeno) |
+| OA-9 | NF7-OA9 | ekran `asistent` (samo čitanje) |
+| OA-10 | NF7-OA10 | ekran `uvoz` (pregled prije potvrde, dijalog potvrde, upis kodom ostaje) |
+| OA-12 | NF7-OA12 | zajednički obrazac: `head`, `sideState`, `empty`, `table` u prototipu |
+
+Provjereno: axe bez nalaza na 390 i 1280 px, svijetla i tamna tema, obje uloge, sva stanja svih ekrana (i kartice); tipkovnica: dijalog potvrde zatvara se tipkom Escape, fokus je zarobljen; skener zabranjenih izraza (`findForbiddenTerms`, hr) bez nalaza nad tekstom prototipa i kartica.
