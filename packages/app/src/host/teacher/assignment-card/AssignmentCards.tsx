@@ -10,6 +10,7 @@ import { codeOutcome, defaultValidUntil, validUntilInstant } from "../../../../.
 import { extensionsHref, newAssignmentHref } from "../../../../../../src/components/teacher/links";
 import type { TeacherCourse } from "../../../../../../src/components/teacher/teacher-courses-read";
 import { useHost } from "../../context";
+import { submissionsHref } from "../submissions/port";
 import { assignmentCardMessages as t } from "./messages.hr";
 import { codeFieldText, dueText, enrolledText, nextDeadline, roleOf, type CardRole } from "./model";
 import styles from "./AssignmentCards.module.css";
@@ -121,6 +122,7 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
         <div key={assignment.id} className={styles.task}>
           <h3>{assignment.title}</h3>
           <p className="meta">{t.due} {dueText(assignment.dueAt)}</p>
+          <a className={small} href={link(submissionsHref(assignment.id))} aria-label={`${t.submissions}: ${assignment.title}`}>{t.submissions}</a>
         </div>
       ))}
       {extra}

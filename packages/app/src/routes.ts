@@ -18,6 +18,7 @@ import { publicVerificationHr } from "../../../src/components/public-verificatio
 import { VERIFY_PATH } from "./host/public/verify/model";
 import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
+import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
 import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { hostText } from "./text";
 
@@ -112,6 +113,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/produljenje", label: hostText.deadlineExtensions, kind: "pending", roles: ["teacher"], current: "/nastavnik/zbirni" },
   // WEB-2163: N-18 "Izvoz za Merlin", reached from the course card (N-01).
   { path: "/nastavnik/zadatak/[assignmentId]/merlin", label: merlinMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // PIL-D2-PREDAJE: the submissions of one assignment (WEB-1502), reached from the course card (N-01).
+  { path: "/nastavnik/zadatak/[assignmentId]/predaje", label: submissionsMessages.pageTitle, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
   // WEB-1804 (M11.5): interface language, name and notifications, for everyone signed in.
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },

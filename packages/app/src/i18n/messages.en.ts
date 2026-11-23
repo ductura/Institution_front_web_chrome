@@ -59,6 +59,7 @@ export const pageLabelsEn = {
   studentDataExport: "Student data export",
   studentDataDownload: "Export of my data",
   merlinExport: "Export for Merlin",
+  assignmentSubmissions: "Assignment submissions",
   courseStudents: "Student list",
   receiptCheck: "Receipt check",
 };
