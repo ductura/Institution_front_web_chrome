@@ -151,3 +151,45 @@ describe("the student's editor", () => {
     expect(read("..", "..", "student", "work.tsx")).toMatch(/footnoteDialog=\{FootnoteDialogHost\}/);
   });
 });
+
+/** INT-24: the visible footnote mark is a button that opens the dialog by keyboard; the number is display only. */
+describe("footnote mark in the editor", () => {
+  async function setUp() {
+    const element = document.createElement("div");
+    document.body.append(element);
+    editor = new Editor({
+      element, extensions: createEditorExtensionsV3(),
+      content: { type: "doc", content: [{ type: "paragraph", attrs: { [NODE_ID_ATTRIBUTE]: ID }, content: [
+        { type: "text", text: "Izmišljeni odlomak." },
+        { type: "footnote", attrs: { text: "Prva izmišljena napomena." } },
+        { type: "footnote", attrs: { text: "Druga izmišljena napomena." } },
+      ] }] },
+    });
+    const Harness = () => createElement("div", null, useV3EditorDialogs(editor, 3, FootnoteDialogHost as never).dialog);
+    mount = document.createElement("div");
+    document.body.append(mount);
+    const root = createRoot(mount);
+    await act(async () => { root.render(createElement(Harness)); });
+    return root;
+  }
+  const marks = () => Array.from(editor!.view.dom.querySelectorAll<HTMLElement>("span[data-footnote]"));
+
+  it.each(["Enter", " "])("%j on the focused second mark opens its dialog and leaves the document unchanged", async (key) => {
+    const root = await setUp();
+    const before = JSON.stringify(editor!.getJSON());
+    const mark = marks()[1]!;
+    expect(mark.getAttribute("aria-label")).toBe("Fusnota 2");
+    await act(async () => { mark.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true })); });
+    expect(document.querySelector("dialog")?.textContent).toContain("Druga izmišljena napomena.");
+    expect(document.querySelector("dialog")?.textContent).toContain("Fusnota 2");
+    expect(JSON.stringify(editor!.getJSON())).toBe(before);
+    await act(async () => { root.unmount(); });
+  });
+
+  it("another key on the mark opens nothing", async () => {
+    const root = await setUp();
+    await act(async () => { marks()[0]!.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true, cancelable: true })); });
+    expect(document.querySelector("dialog")).toBeNull();
+    await act(async () => { root.unmount(); });
+  });
+});

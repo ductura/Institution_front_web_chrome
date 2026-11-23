@@ -12,6 +12,9 @@
  */
 
 import { mergeAttributes, Node } from "@tiptap/core";
+import type { Node as PmNode } from "@tiptap/pm/model";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 import { isAllowedTrimmedText } from "../document/document/forbidden";
 import {
@@ -57,6 +60,34 @@ export const CitationV3 = Citation.extend({
   },
 });
 
+/** The label of a footnote mark for assistive technology; the number is display only. */
+const footnoteLabel = (number: number) => `Fusnota ${number}`;
+
+const footnoteKey = new PluginKey<DecorationSet>("footnoteNumbers");
+
+/**
+ * Footnote marks numbered in document order. Decorations only: the number is
+ * never an attribute, so the canonical document and the revision bytes do not
+ * change (it is a display of the order, nothing stored).
+ */
+function footnoteNumbers(doc: PmNode): DecorationSet {
+  const marks: Decoration[] = [];
+  let number = 0;
+  doc.descendants((node, pos) => {
+    if (node.type.name !== FOOTNOTE) return;
+    number += 1;
+    marks.push(
+      Decoration.node(
+        pos,
+        pos + node.nodeSize,
+        { role: "button", tabindex: "0", "aria-label": footnoteLabel(number), "data-footnote-number": String(number) },
+        { number },
+      ),
+    );
+  });
+  return DecorationSet.create(doc, marks);
+}
+
 export const Footnote = Node.create({
   name: FOOTNOTE,
   group: "inline",
@@ -83,6 +114,50 @@ export const Footnote = Node.create({
   },
   renderHTML({ HTMLAttributes }) {
     return ["span", mergeAttributes({ "data-footnote": "" }, HTMLAttributes)];
+  },
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: footnoteKey,
+        state: {
+          init: (_config, state) => footnoteNumbers(state.doc),
+          apply: (tr, previous, _old, state) => (tr.docChanged ? footnoteNumbers(state.doc) : previous),
+        },
+        props: { decorations: (state) => footnoteKey.getState(state) },
+      }),
+    ];
+  },
+  // The visible mark: the number as a superscript. It is the node view only; the
+  // HTML of renderHTML (copy, paste, getHTML) stays the empty span.
+  addNodeView() {
+    return ({ node, HTMLAttributes, decorations }) => {
+      const dom = document.createElement("span");
+      for (const [name, value] of Object.entries(mergeAttributes({ "data-footnote": "" }, HTMLAttributes))) {
+        if (value != null) dom.setAttribute(name, String(value));
+      }
+      dom.contentEditable = "false";
+      const sup = document.createElement("sup");
+      sup.setAttribute("aria-hidden", "true");
+      dom.append(sup);
+      let current = node;
+      const show = (decorations: readonly Decoration[]) => {
+        const number = decorations.map((d) => d.spec?.number).find((n) => typeof n === "number");
+        sup.textContent = typeof number === "number" ? String(number) : "";
+      };
+      show(decorations);
+      return {
+        dom,
+        update: (next, decorations) => {
+          if (next.type !== current.type) return false;
+          current = next;
+          dom.setAttribute("data-text", String(next.attrs.text));
+          show(decorations);
+          return true;
+        },
+        // Nothing inside is the editor's: a click on the mark selects the node.
+        ignoreMutation: () => true,
+      };
+    };
   },
 });
 
