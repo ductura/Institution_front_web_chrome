@@ -266,3 +266,31 @@ Pitanja na koja ne mogu odgovoriti sama (najviše 8):
 8. **Asistent u pilotu (NF-4 §0 / odluka 23. 11.):** potvrđujete li da NF-4 tvrdnja „asistent isključen (OC-1)” vrijedi samo do 23. 11. i da je nastavnik u pilotu vidi razgovore (ch-h)? Ako da, NF-4 NZ-3 („samo sažimanje” onemogućeno) treba ponovno razmotriti.
 
 Otvoreno za provjeru u pregledniku (nije moguće iz ovog pregleda): sve ekrane rada, sažetka, karte, reprodukcije, usporedbe i izjave u scenariju koji ima `teacher.access.get`; mobilni prikaz i `mobile-review/`; čitač zaslona na reprodukciji i karti; ispis i izvoz; je li karta podrijetla povezana s tekstom rada; jesu li nalazi H-1 i H-10 popravljeni nakon revizije od 23. 11.; ponašanje poslužitelja za `work.assistant-match` i objašnjenja.
+
+---
+
+## 6. Provedba u prototipu (NF-5, 23. 11. 2026.)
+
+Zadatak `nf5-prototip-pregled-rada`. Danielove odluke (doslovno: „Sve u pilotu 1. Ostaje u Merlinu 2. Smije ovo prov 3. Da 4. Smije vidjeti ritam pisanja po dijelu teksta 5. Smije s oznamaka podrijetla izvesti i ispisati”) zatvaraju pitanja 1, 3, 4, 5 i 6 iz odjeljka 5 i stavljaju svih 15 prijedloga u pilot. Provedeno je u `docs/prototip/Ductura_nastavnik.html` (novi ekran `pregled`; atribut `data-nf5="PG-n"` na elementu; `.srv` „Poslužitelj:” označava što poslužitelj nema) i u `docs/prototip/INVENTAR-nastavnik.md` §9 (ID-evi NF5-PGn, stanja, serverska ovisnost). Pružatelj i model se ne imenuju: pišu samo „Asistent” (Q-10 nije donesena); zamijenjeni su i preostali tekstovi u sažetku, Brzom putu i radu koji su imenovali „Pružatelj A, model M-2”.
+
+| PG | INVENTAR ID | Element u prototipu | Poslužitelj |
+|---|---|---|---|
+| PG-1 | NF5-PG1 | zaglavlje s kontekstom i kartice pogleda na ekranu `pregled`; ulaz iz `rad` | naziv zadatka i kolegij nedostaju u `teacher.work.get` |
+| PG-2 | NF5-PG2 | tekst s oznakama podrijetla riječima, prekidač, skok na sljedeću oznaku, tablica odsječaka | raspon po odlomku nedostaje |
+| PG-3 | NF5-PG3 | „Sastav teksta” s „Što znači / Što ne znači” i „nije dokaz autorstva” uz svaki postotak | postoji |
+| PG-4 | NF5-PG4 | sažetak: Asistent (broj), podudaranje s greškom dijela, „nije dostupno” s razlogom, ritam | postoji |
+| PG-5 | NF5-PG5 | „Važna mjesta” sa „Skoči”, razmak i strelice, bez automatskog pokretanja | sesije u zapisu nedostaju |
+| PG-6 | NF5-PG6 | kartica Izjava s pitanjem i odgovorom, razgovori, `ch-h` | pitanje i odgovor: SRV-IZJAVA-PITANJE otvoren |
+| PG-7 | NF5-PG7 | objašnjenje uz svaki nalaz, „Objašnjeno n od m” | čitanje objašnjenja nedostaje |
+| PG-8 | NF5-PG8 | jedan dijalog dorade, „Povuci zahtjev”, usporedba | postoji |
+| PG-9 | NF5-PG9 | „Što je student dobio” | „student je vidio” nedostaje |
+| PG-10 | NF5-PG10 | „Ocjenu upisujete u Merlin”, probni zadatak | ne |
+| PG-11 | NF5-PG11 | izvoz i ispis, upozorenje, dnevnik pristupa | PDF sažetka i pregleda nedostaje |
+| PG-12 | NF5-PG12 | kartice umjesto tablica ispod 760 px | ne |
+| PG-13 | NF5-PG13 | tablist, `caption`/`scope`, `aria-live` na zahtjev, povrat fokusa | ne |
+| PG-14 | NF5-PG14 | skener zabranjenih izraza nad novim tekstovima | ne |
+| PG-15 | NF5-PG15 | varijanta „puno” svakog elementa | test-fakes: otvoreno |
+
+Provjera: sve varijante (puno, prazno, učitavanje, greška, ritam nedostupan, greška jednog dijela, izjava nije predana, dorada, probni zadatak, greška izvoza) svih osam kartica crtaju se bez grešaka u konzoli; skripta s tokovima (promjena kartice strelicama, reprodukcija, skok na važno mjesto, `ch-h` s povratom fokusa, izvoz sa zapisom u dnevnik, dijalog dorade, skok na oznaku) prolazi; axe (WCAG 2 A/AA, 2.1 AA i najbolje prakse) na 390 i 1280 px u svijetloj i tamnoj temi nije našao pogreške; na 390 px nema vodoravnog pomicanja. Skener zabranjenih izraza javlja samo „dokaz autorstva” u negaciji (dopušteno) i tehničke atribute koji su bili i prije.
+
+Otvoreno: lažni poslužitelj za scenarij VIZ „puno” (PG-15) u `packages/test-fakes`; e2e s axe u hostu (PG-13); čitač zaslona i stvarni ispis (nije izmjereno; `@media print` provjeren samo emulacijom); SRV zadatak SRV-IZJAVA-PITANJE; operacije koje nedostaju (raspon po odlomku, čitanje objašnjenja, „student je vidio”, PDF sažetka).
