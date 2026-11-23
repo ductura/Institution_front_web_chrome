@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}/* NF-5 pregled rada: oznake su riječima, ne samo bojom; ispis; mobitel. */
+<!doctype html><html lang="hr"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}/* NF-5 pregled rada: oznake su riječima, ne samo bojom; ispis; mobitel. */
 .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 .pg-panel { display:grid; gap:20px; min-width:0; }
 .pg-print { display:none; }
@@ -314,7 +314,7 @@ legend { font-weight:600; padding:0 4px; }
     data: { teacher: 'Nastavnik A', today: '5. 11. 2026.' },
     state: {
       variant: {}, work: 'a', dlg: null, fp: 0, code: null, dorada: {}, resolved: false, replies: [], newComments: [],
-      sug: 'ceka', wiz: { f: {}, kol: 'Kolegij A' }, map: { origin: true, typed: false }, filter: 'svi', mentReq: true, mentAdded: false,
+      sug: 'ceka', wiz: { f: {}, kol: 'Kolegij A' }, map: { origin: true, typed: false }, filter: 'svi', mentAdded: false,
       fpTab: 'tekst', rp: { pos: 12, playing: false, speed: 1 }, cons: null, consOpen: 0, ext: null, extFor: 'jedan', cmpWith: 'v1', exp: 't0'
     },
     register: function (name, def) { screens[name] = def; order.push(name); },
@@ -358,7 +358,7 @@ legend { font-weight:600; padding:0 4px; }
     var dlg = stage.querySelector('.dialog[role="dialog"]'); if (!dlg) return;
     var first = dlg.querySelector('textarea, input, .btn:not([aria-disabled="true"])') || dlg; first.focus();
     dlg.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { e.preventDefault(); App.state.dlg = null; render(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); App.state.dlg = null; if (/^otvori/.test(App.state.variant[current()] || '')) App.state.variant[current()] = 'puno'; render(); return; }
       if (e.key === 'Tab') {
         var f = dlg.querySelectorAll('button, a[href], textarea, input, select'); if (!f.length) return;
         var a = f[0], z = f[f.length - 1];
@@ -390,7 +390,7 @@ legend { font-weight:600; padding:0 4px; }
     if (core === 'logout') { App.toast('Odjava u prototipu nije izvedena.'); return; }
     if (core === 'menu') { var s = el.closest('.side'), o = s.getAttribute('data-open') !== 'true'; s.setAttribute('data-open', o); el.setAttribute('aria-expanded', o); return; }
     if (core === 'retry') { e.preventDefault(); App.state.variant[current()] = 'puno'; render(); return; }
-    if (core === 'close') { e.preventDefault(); App.state.dlg = null; render(); return; }
+    if (core === 'close') { e.preventDefault(); App.state.dlg = null; if (/^otvori/.test(App.state.variant[current()] || '')) App.state.variant[current()] = 'puno'; render(); return; }
     var act = el.getAttribute('data-act');
     if (act) { var def = screens[current()]; if (def.actions && def.actions[act]) { e.preventDefault(); def.actions[act](el, ctx(), e); } return; }
     var go = el.getAttribute('data-go');
@@ -980,35 +980,62 @@ legend { font-weight:600; padding:0 4px; }
     after: function (stage) { bindFilters(stage); }
   });
 
-/* ---------- N-16 Radovi uz mentora ---------- */
+/* ---------- N-16 Radovi uz mentora (NF-6: MK-7 nastavnik otvara mentorstvo, MK-11 „Moji studenti”) ---------- */
+  /* Zadatak nf6-prototip-mentorstvo. Daniel, 23. 11. 2026.: „Mentorstvo otvara nastavnik” (odluka 4); sve u pilot. Student ne traži mentora i ne šalje zahtjev;
+     vidi nastavnikovu odluku i mentora u kartici Mentor. Ovdje nema „Odobri/Odbij”. Element nosi atribut data-nf6="MK-n"; napomena „Poslužitelj:” (.srv) označava što poslužitelj danas nema. */
+  var MS_STUDENTS = [['Student B · Kolegij A', 'završni rad'], ['Student E · Kolegij B', 'diplomski rad'], ['Student F · Kolegij B', 'završni rad']];
+  var MS_KINDS = ['završni rad', 'diplomski rad', 'specijalistički rad', 'doktorski rad'];
+  /* MK-11: redoslijed „čeka Vas” prvo; stanje opisuje rad i rok, ne studenta (bez rangiranja i ocjene aktivnosti) */
+  var MS_ROWS = [
+    { who: 'Student A · Kolegij A', t: 'Lokalni mediji i izborna kampanja', et: 'Prvo poglavlje', w: 2, x: 'čeka Vas: rad je na pregledu' },
+    { who: 'Student D · Kolegij B', t: 'Javna rasprava o školskom kurikulu', et: 'Nacrt', w: 2, x: 'čeka Vas: termin konzultacija' },
+    { who: 'Student C · Kolegij A', t: 'Javne politike stanovanja', et: 'Prvo poglavlje', w: 1, x: 'kod studenta, rok je bio prije 3 dana' },
+    { who: 'Student G · Kolegij B', t: 'Europski fondovi i mali gradovi', et: 'Predajna verzija', w: 0, x: 'predano, obrana 12. 12.' }
+  ];
+  function msTag(id) { return '<span class="tag" data-nf6="' + id + '">NF-6</span>'; }
+  function msOverview(v) {
+    if (v === 'pregled-ucitavanje') return '<section class="card" aria-busy="true" aria-labelledby="ms-h" data-nf6="MK-11"><h2 id="ms-h">Moji studenti</h2>' + loadingBody('Učitavam stanje radova…') + '</section>';
+    if (v === 'pregled-greska') return '<section class="card" aria-labelledby="ms-h" data-nf6="MK-11"><h2 id="ms-h">Moji studenti</h2>' + errorBody('Stanje radova trenutačno nije moguće učitati. Popis radova iznad je ostao. Pokušajte ponovno.') + '</section>';
+    return '<section class="card" aria-labelledby="ms-h" data-nf6="MK-11"><div class="sb-top"><h2 id="ms-h">Moji studenti</h2>' + msTag('MK-11') + '</div>' +
+      '<p class="meta">Prvo je ono što čeka Vas. Stanje opisuje rad i rok, ne studenta; nema poretka po uspjehu ni ocjene aktivnosti.</p>' +
+      '<div class="tbl" tabindex="0" role="region" aria-label="Moji studenti"><table><caption class="sr-only">Radovi uz mentora: etapa i tko je na redu</caption><thead><tr><th scope="col">Student i rad</th><th scope="col">Etapa</th><th scope="col">Stanje</th></tr></thead><tbody>' +
+      MS_ROWS.map(function (r) { return '<tr><th scope="row" data-label="Student i rad">' + r.who + '<br><span class="meta">' + esc(r.t) + '</span></th><td data-label="Etapa">' + r.et + '</td><td data-label="Stanje">' + (r.w === 2 ? '<span class="tag">' + r.x + '</span>' : r.x) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      srv('SRV-MENTOR-11', 'nedostaje, SRV-MENTOR-11 (etapa, tko čeka koga i dani do roka nisu u teacher.mentorships.get). Do tada se spaja work.milestone-states.get po radu.') + '</section>';
+  }
   App.register('mentorstva', {
     title: 'N-16 Radovi uz mentora', shell: 'side',
-    note: ['N-16', 'gradi se sada', 'zahtjevi na čekanju s Odobri i Odbij (zaseban korak); razlog odbijanja je neobavezan, a student ga vidi ako ga mentor upiše; uz „Predano” vrijeme predaje i verzija; bez zadnje izmjene, etape i ocjene (D-202); mentorstvo nastaje kad nastavnik odobri zahtjev (D-204)'],
-    variants: std(),
+    note: ['N-16', 'gradi se sada · NF-6 MK-7, MK-11', 'mentorstvo OTVARA nastavnik („Otvori mentorstvo”), student ne šalje zahtjev i vidi odluku i mentora (D-204 izmijenjen, Daniel 23. 11.); „Moji studenti” s redoslijedom „čeka Vas”, bez rangiranja; uz „Predano” vrijeme predaje i verzija; bez zadnje izmjene, etape i ocjene (D-202)'],
+    variants: std([{ id: 'otvori', label: 'otvaranje mentorstva (dijalog)' }, { id: 'otvori-greska', label: 'otvaranje: greška' }, { id: 'pregled-ucitavanje', label: 'Moji studenti: učitavanje' }, { id: 'pregled-greska', label: 'Moji studenti: greška' }]),
     render: function (c) {
-      var v = c.variant, title = 'Radovi uz mentora', lede = 'Radovi studenata kojima ste mentor, po prezimenu.';
+      var v = c.variant, title = 'Radovi uz mentora', lede = 'Radovi studenata kojima ste mentor, po prezimenu. Mentorstvo otvarate Vi.';
       var s = sideState(v, title, lede, 'Učitavanje mentorstava…', 'Popis mentorstava trenutačno nije dostupan. Pokušajte ponovno.'); if (s) return s;
-      if (v === 'prazno') return head(title, lede) + '<section class="card center"><h2>Nemate mentorstava</h2><p class="note">Mentorstvo nastaje kad odobrite studentov zahtjev.</p></section>';
-      var st = App.state, rows = '<li class="item"><span class="title">Student A · Kolegij A</span><span class="note">Seminarski rad „Lokalni mediji i izborna kampanja”. ' + subLine('a') + '.</span><a class="rowlink" href="#rad" data-go="rad" data-work="a">Otvori rad</a></li>' +
-        (st.mentAdded ? '<li class="item"><span class="title">Student B · Kolegij A</span><span class="note">Završni rad „Lokalni radio u kampanji”. Rad nije započet.</span></li>' : '') +
+      var st = App.state, open = v === 'otvori' || v === 'otvori-greska' || st.dlg === 'otvori';
+      var openBtn = '<div class="sb-acts" data-nf6="MK-7"><button class="btn" type="button" data-act="otvori">Otvori mentorstvo</button>' + msTag('MK-7') + '</div>' +
+        srv('SRV-MENTOR-7', 'nedostaje, SRV-MENTOR-7 (otvaranje mentorstva od strane nastavnika). Postoje samo mentorship.requests.post i mentorship.request-approve.post, a oni su studentski put; ne izmišljam novu rutu.');
+      var dlg = open ? dialog('om-h', 'Otvori mentorstvo',
+        '<form class="sb-body" style="padding:0" data-submit="otvoriSave" data-nf6="MK-7"><p class="note">Student će vidjeti da ste mu mentor i kada ste otvorili mentorstvo. Obavijest stiže samo u aplikaciji.</p>' +
+        (v === 'otvori-greska' ? '<p class="note" role="alert">Nije poznato je li mentorstvo otvoreno. Osvježite popis prije novog pokušaja. Ono što ste upisali je sačuvano.</p>' : '') +
+        '<div class="field"><label for="f-os">Student</label><select class="input" id="f-os" name="stu" required aria-describedby="os-h"><option value="">Odaberite studenta</option>' + MS_STUDENTS.map(function (x, i) { return '<option value="' + i + '">' + x[0] + '</option>'; }).join('') + '</select><span class="meta" id="os-h">Samo studenti Vaših kolegija koji još nemaju mentora za tu vrstu rada.</span></div>' +
+        '<div class="field"><label for="f-ov">Vrsta rada</label><select class="input" id="f-ov" name="kind">' + MS_KINDS.map(function (k) { return '<option>' + k + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field"><label for="f-ot">Tema ili područje (neobavezno)</label><input class="input" id="f-ot" name="top" maxlength="200"></div>' +
+        '<div class="sb-acts"><button class="btn" type="submit">Otvori mentorstvo</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div></form>') : '';
+      if (v === 'prazno') return head(title, lede) + '<section class="card center"><h2>Nemate mentorstava</h2><p class="note">Mentorstvo otvarate Vi: odaberite studenta i vrstu rada.</p></section><section class="card">' + openBtn + '</section>' + dlg;
+      var rows = '<li class="item"><span class="title">Student A · Kolegij A</span><span class="note">Seminarski rad „Lokalni mediji i izborna kampanja”. ' + subLine('a') + '.</span><a class="rowlink" href="#rad" data-go="rad" data-work="a">Otvori rad</a></li>' +
+        (st.mentAdded ? '<li class="item"><span class="title">' + esc(st.mentAdded) + '</span><span class="note">Mentorstvo je otvoreno. Student to vidi u kartici Mentor. Rad nije započet.</span></li>' : '') +
         '<li class="item"><span class="title">Student D · Kolegij B</span><span class="note">Esej „Javna rasprava o školskom kurikulu”. U pisanju.</span><a class="rowlink" href="#rad" data-go="rad" data-work="d">Otvori rad</a></li>';
-      return head(title, lede) + '<ul class="list">' + rows + '</ul>' +
-        '<section class="card" aria-labelledby="zm-h"><h2 id="zm-h">Zahtjevi za mentorstvo</h2>' +
-        (st.mentReq ? '<div class="item"><span class="title">Student B · Kolegij A</span><span class="note">Tema: „Lokalni radio u kampanji”. Zahtjev poslan 3. 11. 2026. u 12:40.</span><div class="acts"><button class="btn small" type="button" data-act="ok">Odobri</button><button class="btn secondary small" type="button" data-act="no">Odbij</button></div></div>'
-          : '<p class="note">Nema zahtjeva na čekanju.</p>') + '</section>' +
-        (st.dlg === 'odbij' ? dialog('do-h', 'Odbiti zahtjev za mentorstvo?',
-          '<form class="sb-body" style="padding:0" data-submit="reject"><p class="note">Student B · Kolegij A · tema „Lokalni radio u kampanji”.</p>' +
-          '<div class="field"><label for="f-ro">Razlog odbijanja (neobavezno)</label><textarea class="input" id="f-ro" name="ro" aria-describedby="ro-h"></textarea><span class="meta" id="ro-h">Razlog nije obavezan. Preporučujemo da ga upišete zbog studenta. Student će vidjeti razlog.</span></div>' +
-          '<div class="sb-acts"><button class="btn" type="submit">Odbij zahtjev</button><button class="btn secondary" type="button" data-core="close">Odustani</button></div></form>') : '');
+      return head(title, lede) + '<ul class="list">' + rows + '</ul><section class="card" aria-labelledby="om-s"><h2 id="om-s">Novo mentorstvo</h2>' + openBtn + '</section>' + msOverview(v) + dlg;
     },
     actions: {
-      ok: function () { App.state.mentReq = false; App.state.mentAdded = true; App.rerender(); App.toast('Zahtjev je odobren; mentorstvo je nastalo.'); },
-      no: function () { App.state.dlg = 'odbij'; App.rerender(); },
-      reject: function (form) { var ro = form && form.ro ? form.ro.value.trim() : ''; App.state.dlg = null; App.state.mentReq = false; App.rerender(); App.toast(ro ? 'Zahtjev je odbijen. Student vidi odgovor i razlog.' : 'Zahtjev je odbijen. Student vidi odgovor.'); }
+      otvori: function () { App.state.dlg = 'otvori'; App.rerender(); },
+      otvoriSave: function (form) {
+        if (!form.stu.value) { form.stu.setAttribute('aria-invalid', 'true'); form.stu.focus(); App.toast('Odaberite studenta.'); return; }
+        var x = MS_STUDENTS[+form.stu.value]; App.state.dlg = null; App.state.mentAdded = x[0]; App.state.variant.mentorstva = 'puno'; App.rerender();
+        App.toast('Mentorstvo je otvoreno. Student vidi odluku i Vas kao mentora.');
+      }
     }
   });
 
-  /* ---------- N-05 Brz put ---------- */
+/* ---------- N-05 Brz put ---------- */
   App.register('brz-put', {
     title: 'N-05 Brz put', shell: 'side',
     note: ['N-05', 'gradi se sada · NF-4 NZ-1 (izbornik zadatka; ulaz s kartice zadatka)', '„Otvori rad” je prava poveznica; prethodni i sljedeći; bez točke u boji; broj lijepljenja bez izvora samo u pojedinostima, nikad u popisu i bez poretka; naziv „Predaja u obradi” potvrđen (#1782)'],
@@ -1794,13 +1821,13 @@ legend { font-weight:600; padding:0 4px; }
     { d: '22. 10. 2026.', t: 'Izbor medija za analizu', ver: 'Prije prve verzije', dog: 'Analiziraju se tri portala i jedna radijska postaja.', dop: [] }]); }
   App.register('konzultacije', {
     title: 'N-12 Konzultacije', shell: 'none',
-    note: ['N-12', 'gradi se sada', 'popis, zapis i obrazac (datum, tema, verzija, dogovoreno); isti zapis vidi i student (D-47); zapis se ne briše ni ne prepravlja, samo se dopunjuje; dopunjuje ga samo mentor, a student zapis i dopune vidi, ali ne dopunjuje; privatna bilješka mentora ne sada (D-135, D-55)'],
+    note: ['N-12', 'gradi se sada · NF-6 MK-4, MK-5 (Daniel 23. 11.: zapisnik piše i dopunjuje samo mentor, student čita; nema studentskog zapisa ni „Potvrđujem/Imam primjedbu”)', 'popis, zapis i obrazac (datum, tema, verzija, dogovoreno); isti zapis vidi i student (D-47); zapis se ne briše ni ne prepravlja, samo se dopunjuje; dopunjuje ga samo mentor, a student zapis i dopune vidi, ali ne dopunjuje; privatna bilješka mentora ne sada (D-135, D-55)'],
     variants: [{ id: 'puno', label: 'puno (popis)' }, { id: 'zapis', label: 'jedan zapis' }, { id: 'novi', label: 'novi zapis' }, { id: 'prazno', label: 'prazno' }, { id: 'ucitavanje', label: 'učitavanje' }, { id: 'greska', label: 'greška' }],
     render: function (c) {
       var v = c.variant, L = cons();
       var s = workState(v, 'Konzultacije', 'Učitavam zapise konzultacija…', 'Zapise konzultacija trenutačno nije moguće učitati. Pokušajte ponovno.'); if (s) return s;
-      if (v === 'prazno') return workPage(panel('pg-h', 'Konzultacije', '', '<p class="note">Još nema zapisa konzultacija uz ovaj rad.</p><div class="sb-acts"><button class="btn" type="button" data-act="new">Novi zapis konzultacije</button></div>'));
-      if (v === 'novi') return workPage(panel('pg-h', 'Novi zapis konzultacije', '',
+      if (v === 'prazno') return workPage(panel('pg-h', 'Konzultacije', 'NF-6 · MK-4', '<p class="note">Još nema zapisa konzultacija uz ovaj rad.</p><div class="sb-acts"><button class="btn" type="button" data-act="new">Novi zapis konzultacije</button></div>'));
+      if (v === 'novi') return workPage(panel('pg-h', 'Novi zapis konzultacije', 'NF-6 · MK-4',
         '<form class="sb-body" style="padding:0" data-submit="save"><div class="grid2"><div class="field"><label for="f-cd">Datum</label><input class="input" id="f-cd" name="d" value="5. 11. 2026."></div>' +
         '<div class="field"><label for="f-cv">Verzija rada</label><select class="input" id="f-cv" name="ver"><option>Verzija 2, predana 5. 11. 2026.</option><option>Verzija 1, poslana 28. 10. 2026.</option></select></div></div>' +
         '<div class="field"><label for="f-ct">Tema</label><input class="input" id="f-ct" name="t"></div>' +
@@ -1809,13 +1836,13 @@ legend { font-weight:600; padding:0 4px; }
         '<div class="sb-acts"><button class="btn" type="submit">Zabilježi konzultaciju</button><button class="btn secondary" type="button" data-act="list">Odustani</button></div></form>'));
       if (v === 'zapis') {
         var r = L[App.state.consOpen] || L[0];
-        return workPage(panel('pg-h', 'Konzultacija ' + r.d, '', '<div class="sb-kv"><span>Datum</span><b>' + r.d + '</b></div><div class="sb-kv"><span>Tema</span><b>' + esc(r.t) + '</b></div><div class="sb-kv"><span>Verzija rada</span><b>' + esc(r.ver) + '</b></div>' +
+        return workPage(panel('pg-h', 'Konzultacija ' + r.d, 'NF-6 · MK-4 MK-5', '<div class="sb-kv"><span>Datum</span><b>' + r.d + '</b></div><div class="sb-kv"><span>Tema</span><b>' + esc(r.t) + '</b></div><div class="sb-kv"><span>Verzija rada</span><b>' + esc(r.ver) + '</b></div>' +
           '<div class="sb-state"><span class="sb-h">Dogovoreno</span><span>' + esc(r.dog) + '</span></div>' +
           '<div class="sb-state"><span class="sb-h">Dopune</span>' + ((r.dop || []).length ? r.dop.map(function (x) { return '<div class="sb-entry"><span class="sb-who">' + x.who + ' · ' + x.at + '</span><span>' + esc(x.t) + '</span></div>'; }).join('') : '<span class="meta">Nema dopuna.</span>') + '</div>' +
           '<form class="field" data-submit="addDop"><label for="f-dop">Dopuna zapisa</label><textarea class="input" id="f-dop" name="dop" aria-describedby="dop-h"></textarea><span class="meta" id="dop-h">Zapis se ne briše ni ne prepravlja; može se samo dopuniti. Zapis dopunjuje samo mentor. Student zapis i dopune vidi, ali ih ne dopunjuje. Dopuna nosi vrijeme.</span><div class="acts"><button class="btn secondary" type="submit">Dodaj dopunu</button></div></form>' +
-          '<p class="meta">Isti zapis i dopune vidi i student.</p><div class="sb-acts"><button class="btn secondary" type="button" data-act="list">Svi zapisi</button></div>'));
+          '<p class="meta">Isti zapis i dopune vidi i student; student ne piše ni ne potvrđuje zapis.</p>' + srv('SRV-MENTOR-5', 'zapis i dopune: work.consultation-records.get|post i work.consultation-additions.post postoje (ograničenje pisanja na mentora provjeriti na poslužitelju); dogovoreni zadaci s kvačicama: nedostaje, SRV-MENTOR-5.') + '<div class="sb-acts"><button class="btn secondary" type="button" data-act="list">Svi zapisi</button></div>'));
       }
-      return workPage(panel('pg-h', 'Konzultacije', '', '<div class="tbl" tabindex="0" role="region" aria-label="Zapisi konzultacija"><table><thead><tr><th scope="col">Datum</th><th scope="col">Tema</th><th scope="col">Verzija rada</th></tr></thead><tbody>' +
+      return workPage(panel('pg-h', 'Konzultacije', 'NF-6 · MK-4', '<div class="tbl" tabindex="0" role="region" aria-label="Zapisi konzultacija"><table><thead><tr><th scope="col">Datum</th><th scope="col">Tema</th><th scope="col">Verzija rada</th></tr></thead><tbody>' +
         L.map(function (r, i) { return '<tr><td><a href="#konzultacije" data-act="open" data-i="' + i + '">' + r.d + '</a></td><td>' + esc(r.t) + '</td><td>' + esc(r.ver) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
         '<p class="meta">Zapise vide mentor i student. Dopunjuje ih samo mentor.</p><div class="sb-acts"><button class="btn" type="button" data-act="new">Novi zapis konzultacije</button></div>'));
     },
