@@ -43,6 +43,8 @@ export type DraftSave =
 
 export type PublishResult =
   | { readonly kind: "published"; readonly ids: readonly string[] }
+  /** The server's drafts differ from the ones sent: nothing was published, the list is read again. */
+  | { readonly kind: "changed" }
   | { readonly kind: "signedOut" }
   | { readonly kind: "rejected" }
   | { readonly kind: "unknown" };
@@ -146,6 +148,7 @@ export function draftMessage(result: DraftSave): string {
 export function publishMessage(result: PublishResult): string {
   switch (result.kind) {
     case "published": return text.published;
+    case "changed": return text.draftsChanged;
     case "signedOut": return text.signedOut;
     case "rejected": return text.failed;
     case "unknown": return text.unknown;

@@ -14,6 +14,14 @@ describe("no direct API in WEB-1902 modules", () => {
     for (const file of files) expect({ file, hit: FORBIDDEN.test(readFileSync(file, "utf8")) }).toEqual({ file, hit: false });
   });
 
+  it("PIL-D2-ZIP: the file path is the contract's, and the screen asks only through its port", () => {
+    expect(readFileSync(join(DIR, "contract.ts"), "utf8")).not.toMatch(/submissions-bulk\//);
+    expect(readFileSync(join(DIR, "contract.ts"), "utf8")).toContain('migrationContracts["teacher.submissions-bulk.get"]');
+    const screen = readFileSync(join(DIR, "BulkDownload.tsx"), "utf8");
+    expect(screen).toMatch(/bulkPort\(call/);
+    expect(screen).not.toMatch(/requestBulkLink|createApi/);
+  });
+
   it("the screen uses the Button of @ductura/ui", () => {
     expect(readFileSync(join(DIR, "BulkDownload.tsx"), "utf8")).toMatch(/import \{[^}]*\bButton\b[^}]*\} from "@ductura\/ui"/);
   });

@@ -3,7 +3,9 @@
 //   teacher.submissions-bulk.get        the downloadPath of that answer (the token is in the link) -> the file
 // There is no asynchronous job and no status route: the server answers with a link that expires, and the
 // screen renders it as a link. A 410 on the file means the link expired; the screen asks for a new one.
-import { SERVER_PREFIX } from "../../../../../../../src/client/api";
+// PIL-D2-ZIP: the file path and its token come from the contract extract of teacher.submissions-bulk.get,
+// never from a path written here, so the link the screen renders is exactly that route.
+import migrationContracts from "../../../../../../../src/client/migration-contracts.generated.json" with { type: "json" };
 import { matchesSchema, type Schema } from "../../../../../../../src/client/schema-check";
 
 export type BulkFormat = "pdf" | "docx";
@@ -33,14 +35,17 @@ const LINK: Schema = {
   properties: { format: FORMAT, downloadPath: { type: "string" }, expiresAt: { type: "string", format: "date-time" } },
 };
 
-/** The path of the file of one assignment and format, without the token. */
+const FILE_ROUTE = migrationContracts["teacher.submissions-bulk.get"];
+const TOKEN = new RegExp(FILE_ROUTE.query.properties.token.pattern);
+
+/** The path of the file of one assignment and format (teacher.submissions-bulk.get), without the token. */
 export const bulkFilePath = (assignmentId: string, format: BulkFormat): string =>
-  `${SERVER_PREFIX}teacher/assignments/${assignmentId}/submissions-bulk/${format}`;
+  FILE_ROUTE.path.replace("{assignmentId}", encodeURIComponent(assignmentId)).replace("{format}", format);
 
 /** A link the screen may render: exactly the file path of this assignment and format, with the token the server gives. */
 export function isBulkHref(href: string, assignmentId: string, format: BulkFormat): boolean {
   const path = bulkFilePath(assignmentId, format);
-  return href.startsWith(`${path}?token=`) && /^\d{1,15}\.[A-Za-z0-9_-]{43}$/.test(href.slice(path.length + "?token=".length));
+  return href.startsWith(`${path}?token=`) && TOKEN.test(href.slice(path.length + "?token=".length));
 }
 
 function parse(body: unknown, assignmentId: string, format: BulkFormat): BulkLink | null {
@@ -67,3 +72,6 @@ export async function requestBulkLink(call: BulkCall, assignmentId: string, form
     return UNKNOWN;
   }
 }
+
+/** The port of the screen (PIL-D2-ZIP): asks for the link; the file itself is the browser's GET of that link. */
+export type BulkPort = { readonly requestLink: (assignmentId: string, format: BulkFormat) => Promise<BulkRequest> };
