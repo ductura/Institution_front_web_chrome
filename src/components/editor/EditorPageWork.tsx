@@ -27,6 +27,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import EditorPage, { SheetNote } from "./EditorPage";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
+import type { FootnoteDialogComponent } from "./footnotes/useV3EditorDialogs";
 import EditorCommands from "./commands/EditorCommands";
 import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalSaveRead, useLocalSavingOnDevice, useLocalSignedOut, useLocalSubmitted } from "./LocalDocument";
 import { EditorHelpDialogs, useEditorHelp, type EditorHelpView } from "./help/EditorHelp";
@@ -44,6 +45,9 @@ import { SubmissionRehearsal, type SubmissionRehearsalProps } from "./submission
 import type { LeftSections } from "./layout-prefs/LeftPanel";
 import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/WorkPrintExport";
 import { TriggerPopover } from "./triggers/TriggerPopover";
+
+/** A host's toolbar for the tools slot; it is mounted inside the document provider. */
+export type ToolbarSlot = (ctx: { workPartsKey: string; footnoteDialog?: FootnoteDialogComponent }) => ReactNode;
 
 /** What a host section is given: the live editor, the ids of the work and the state of its session. */
 export type HostSectionContext = {
@@ -133,6 +137,7 @@ export default function EditorPageWork({
   hostSections,
   leftSections,
   footnoteDialog,
+  toolbar,
 }: {
   assignmentId: string;
   course: string;
@@ -157,6 +162,8 @@ export default function EditorPageWork({
   leftSections?: LeftSections | ((work: { documentId: string }) => LeftSections);
   /** The host's footnote dialog in place of the copied one (PIL-K-FUSNOTA). */
   footnoteDialog?: NonNullable<ComponentProps<typeof EditorToolbar>>["footnoteDialog"];
+  /** The host's toolbar for the tools slot in place of the copied EditorToolbar (PIL-K-TRAKA). */
+  toolbar?: ToolbarSlot;
 }) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
   useEffect(() => {
@@ -179,7 +186,7 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} footnoteDialog={footnoteDialog} triggers={triggers} literature={literature}
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} footnoteDialog={footnoteDialog} toolbar={toolbar} triggers={triggers} literature={literature}
           statusExtra={statusExtra} useSupplements={useSupplements} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
@@ -189,7 +196,7 @@ export default function EditorPageWork({
 
 const noSupplements = (): SubmissionRehearsalProps["supplements"] => undefined;
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, hostSections, leftSections, footnoteDialog, triggers, literature, statusExtra, useSupplements }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, hostSections, leftSections, footnoteDialog, toolbar, triggers, literature, statusExtra, useSupplements }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -210,6 +217,8 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   leftSections?: LeftSections | ((work: { documentId: string }) => LeftSections);
   /** The host's footnote dialog in place of the copied one (PIL-K-FUSNOTA). */
   footnoteDialog?: NonNullable<ComponentProps<typeof EditorToolbar>>["footnoteDialog"];
+  /** The host's toolbar for the tools slot in place of the copied EditorToolbar (PIL-K-TRAKA). */
+  toolbar?: ToolbarSlot;
 }) {
   const editor = useLocalEditor();
   const useRows = useSupplements ?? noSupplements;
@@ -226,7 +235,10 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   return (
     <EditorPanelLayout title={title} leftSections={typeof leftSections === "function" ? leftSections({ documentId }) : leftSections} header={topBar ?? <p>{course} / {title}</p>}
       tools={<EditorCommands><div className={helpStyles.toolbar}>
-        <EditorToolbar footnoteDialog={footnoteDialog} workPartsKey={`ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`} />
+        {(() => {
+          const workPartsKey = `ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`;
+          return toolbar ? toolbar({ workPartsKey, footnoteDialog }) : <EditorToolbar footnoteDialog={footnoteDialog} workPartsKey={workPartsKey} />;
+        })()}
         <EditorHelpMenu onSelect={setView} />
         {!signedOut && <WorkPrintExport documentId={documentId} title={title} renderPdf={renderPdf} open={printOpen} onOpenChange={setPrintOpen} />}
       </div></EditorCommands>}
