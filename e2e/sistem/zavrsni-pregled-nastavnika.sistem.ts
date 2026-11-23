@@ -16,11 +16,15 @@ const title = 'Seminarski rad: kućno kompostiranje';
 const course = 'Izmišljeni seminar iz ekologije grada';
 const otherCourse = 'Izmišljeni seminar o gradskim krovovima';
 const studentName = /Lucija Đaković/;
-/** How the thread should name the revision it belongs to (INT-15); no screen shows it yet. */
-const revisionV1 = 'uz verziju V1';
+/**
+ * How the thread names the revision it belongs to (INT-15). "V1" of the scenario is the version
+ * INT-03 submitted; its number is that submission's revision as the version list gives it, the
+ * same V{n} the student's submit step shows.
+ */
+const revisionLabel = (revision: number) => commentText.revision.replace('{n}', String(revision));
 
 /** Set by INT-04 once the teacher's comment from the form is on screen; INT-15 reopens it. */
-let commentedInUi: { workPath: string; comment: string } | null = null;
+let commentedInUi: { workPath: string; comment: string; revision: number } | null = null;
 
 function commentsPanel(page: Page) {
   return page.getByRole('region', { name: commentText.title, exact: true });
@@ -122,16 +126,31 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
       await expect(summary.locator('[data-record-state]')).toHaveAttribute('data-record-state', /^(complete|has_gaps)$/);
     });
 
+    const submittedRevision = await test.step('Pročitaj reviziju predane verzije iz popisa verzija', async () => {
+      // INT-15: a teacher's comment names the revision it is written on; the shown text is the newest submission.
+      const versions = await teacherPage.request.get(`/api/v1/works/${encodeURIComponent(documentId)}/versions`);
+      await expect(versions).toBeOK();
+      const { versions: listed } = await versions.json() as { versions: { kind: string; revision: number }[] };
+      const submission = listed.find((version) => version.kind === 'submission');
+      if (submission === undefined) throw new Error('Popis verzija nema predaju iz INT-03.');
+      return submission.revision;
+    });
+
     const comment = `Pojasnite odabir lišća za kompostiranje (${randomUUID()}).`;
     await test.step('Spremi komentar uz predani odlomak i ponovno ga pročitaj s poslužitelja', async () => {
       const anchor = createTextAnchor({ nodeId, nodeText: quote, start: 0, end: quote.length });
-      const created = await postFromBrowser(teacherPage, '/api/v1/comments/create', { documentId, body: comment, anchor });
+      const created = await postFromBrowser(teacherPage, '/api/v1/comments/create', {
+        documentId, body: comment, anchor, revision: submittedRevision,
+      });
       expect(created.status).toBe(200);
       expect(created.body).toMatchObject({ id: expect.any(String) });
       const listed = await postFromBrowser(teacherPage, '/api/v1/comments/list', { documentId });
       expect(listed.status).toBe(200);
       expect(listed.body.comments).toEqual(expect.arrayContaining([
-        expect.objectContaining({ threadId: created.body.id, position: 1, authorRole: 'teacher', isOwn: true, body: comment, anchor }),
+        expect.objectContaining({
+          threadId: created.body.id, position: 1, authorRole: 'teacher', isOwn: true, body: comment, anchor,
+          revision: submittedRevision,
+        }),
       ]));
     });
 
@@ -162,13 +181,15 @@ test('INT-04: nastavnik otvara predaju, pregledava sažetak i komentira, drugi k
         })(),
       ]);
       expect(created.status()).toBe(200);
-      expect(created.request().postDataJSON()).toMatchObject({ documentId, body: uiComment, anchor: { nodeId } });
+      expect(created.request().postDataJSON()).toMatchObject({
+        documentId, body: uiComment, anchor: { nodeId }, revision: submittedRevision,
+      });
       await expect(panel.getByRole('status').filter({ hasText: commentText.added })).toBeVisible();
       const thread = panel.getByRole('article').filter({ hasText: uiComment });
       await expect(thread).toHaveCount(1);
       await expect(commentBody(thread, uiComment)).toHaveText(new RegExp(`^${commentText.own} · `));
       await expect(commentBody(thread, uiComment)).toBeVisible();
-      commentedInUi = { workPath, comment: uiComment };
+      commentedInUi = { workPath, comment: uiComment, revision: submittedRevision };
     });
 
     await test.step('Drugi nastavnik iz iste ustanove ne vidi predaju ni kroz popis ni izravnim otvaranjem', async () => {
@@ -207,20 +228,16 @@ test('INT-15: komentar nastavnika iz obrasca prikazan je uz reviziju V1', async 
   const opened = await test.step('Ponovno otvori rad i nađi komentar iz INT-04', async () => {
     const earlier = commentedInUi;
     if (earlier === null) throw new Error('Prvo mora proći korak obrasca u INT-04 u istom pokretanju.');
-    const { workPath, comment } = earlier;
+    const { workPath, comment, revision } = earlier;
     await signInTeacher(page, true);
     await page.goto(workPath);
     await expect(page).toHaveURL(workPath);
     const thread = commentsPanel(page).getByRole('article').filter({ hasText: comment });
     await expect(commentBody(thread, comment)).toBeVisible();
-    return thread;
+    return { thread, revision };
   });
 
   await test.step('Nit komentara navodi reviziju V1', async () => {
-    // Expected failure from here on only: collaboration.comments.post (create and list) carries no
-    // revision, so neither the server nor the panel can tie the comment to V1. The steps above must
-    // still pass. Remove this line once the contract and the panel name the revision.
-    test.fail(true, 'PITANJE INT-15: collaboration.comments.post ne nosi reviziju komentara (create ni list).');
-    await expect(opened.getByText(revisionV1, { exact: false })).toBeVisible({ timeout: 5_000 });
+    await expect(opened.thread.getByText(revisionLabel(opened.revision), { exact: true })).toBeVisible({ timeout: 5_000 });
   });
 });

@@ -13,6 +13,11 @@ export function threadTitle(quote: string | null): string {
   return t.threadTitle.replace("{quote}", short);
 }
 
+/** „uz verziju V3” for a thread written on revision 3; null for a thread without a revision (INT-15). */
+export function revisionLabel(revision: number | null): string | null {
+  return revision === null ? null : t.revision.replace("{n}", String(revision));
+}
+
 /** Entry author line: „Vi · 3. 11. 2026. u 9:15” (own entries are „Vi”, never a name). */
 export function entryWho(comment: Pick<ThreadComment, "isOwn" | "role" | "createdWindow">): string {
   const who = comment.isOwn ? t.own : comment.role === "teacher" ? t.teacher : t.student;

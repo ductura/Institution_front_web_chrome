@@ -155,7 +155,7 @@ describe("LiveText", () => {
 
 describe("openMarks", () => {
   const placed = (id: string, state: "open" | "answered" | "resolved", range: TextRange | null): PlacedThread => ({
-    thread: { id, number: 1, state, anchor: null, comments: [] }, range, pending: false,
+    thread: { id, number: 1, state, anchor: null, revision: null, comments: [] }, range, pending: false,
   });
 
   it("marks every placed thread that is not resolved", () => {

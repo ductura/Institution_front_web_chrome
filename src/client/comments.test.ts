@@ -10,7 +10,9 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import type { TextAnchor } from "../../packages/editor-core/src/document/collaboration";
 
 import type { ApiOptions } from "./api";
-import { changeThreadState, createComment, listComments, replyComment, threadsFromList } from "./comments";
+import {
+  changeThreadState, createComment, createRevisionComment, listComments, replyComment, threadsFromList,
+} from "./comments";
 
 const ORIGIN = "https://ductura.example.invalid";
 
@@ -37,6 +39,14 @@ describe("threadsFromList", () => {
     ]);
     expect(threads[0]!.anchor).toEqual(anchor);
     expect(threads[0]!.comments[1]).toMatchObject({ role: "student", isOwn: true, body: "Tekst 2" });
+  });
+
+  it("keeps the revision of each thread, and null where the server names none (INT-15)", () => {
+    const threads = threadsFromList({ comments: [
+      row(T1, 1, { revision: 3 }), row(T1, 2, { revision: 3 }), row(T2, 1, { revision: null }),
+    ] })!;
+    expect(threads.map((t) => t.revision)).toEqual([3, null]);
+    expect(threadsFromList({ comments: [row(T1, 1)] })![0]!.revision).toBeNull();
   });
 
   it("keeps a thread whose stored anchor is out of shape, without a place", () => {
@@ -71,6 +81,10 @@ describe("threadsFromList", () => {
     ["thread opened twice", { comments: [row(T1, 1), row(T2, 1), row(T1, 1)] }],
     ["bad id", { comments: [row("x", 1)] }],
     ["bad time", { comments: [row(T1, 1, { createdWindow: "jučer" })] }],
+    ["revision zero", { comments: [row(T1, 1, { revision: 0 })] }],
+    ["revision as text", { comments: [row(T1, 1, { revision: "1" })] }],
+    ["fractional revision", { comments: [row(T1, 1, { revision: 1.5 })] }],
+    ["reply on another revision than its thread", { comments: [row(T1, 1, { revision: 1 }), row(T1, 2, { revision: 2 })] }],
   ])("refuses the whole list: %s", (_name, value) => {
     expect(threadsFromList(value)).toBeNull();
   });
@@ -123,6 +137,32 @@ describe("listComments and replyComment", () => {
       answer(status);
       expect(await createComment("doc-1", "Da.", anchor as TextAnchor)).toBe(outcome);
     }
+  });
+
+  it("opens a thread on the revision shown, anchored or general (INT-15)", async () => {
+    answer(200, { id: T2 });
+    expect(await createRevisionComment("doc-1", "Dodaj izvor.", anchor as TextAnchor, 1)).toBe("ok");
+    const [url, init] = vi.mocked(fetch).mock.calls[0]!;
+    expect(String(url)).toBe(`${ORIGIN}/api/v1/comments/create`);
+    expect(JSON.parse(String(init!.body))).toEqual({ documentId: "doc-1", body: "Dodaj izvor.", anchor, revision: 1 });
+    answer(200, { id: T2 });
+    expect(await createRevisionComment("doc-1", "Općenito.", null, 2)).toBe("ok");
+    expect(JSON.parse(String(vi.mocked(fetch).mock.calls[0]![1]!.body))).toEqual({
+      documentId: "doc-1", body: "Općenito.", anchor: null, revision: 2,
+    });
+    for (const [status, outcome] of [[401, "signedOut"], [403, "forbidden"], [409, "unavailable"], [422, "invalid"], [503, "unavailable"]] as const) {
+      answer(status);
+      expect(await createRevisionComment("doc-1", "Da.", anchor as TextAnchor, 1)).toBe(outcome);
+    }
+  });
+
+  it("sends no thread without a revision the contract takes", async () => {
+    answer(200, { id: T2 });
+    for (const revision of [0, -1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(await createRevisionComment("doc-1", "Da.", anchor as TextAnchor, revision)).toBe("invalid");
+    }
+    expect(await createRevisionComment("doc-1", "Da.", anchor as TextAnchor, 1, () => false)).toBe("signedOut");
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("resolves and reopens a thread by its id, 204 being success", async () => {

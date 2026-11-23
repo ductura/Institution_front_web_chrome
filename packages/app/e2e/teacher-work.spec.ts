@@ -162,10 +162,12 @@ test("the anchored comment is shown after the server confirms and returns it", a
   await page.route("**/api/v1/comments/create", async (route) => {
     expect(route.request().method()).toBe("POST");
     const input = route.request().postDataJSON();
-    expect(input).toMatchObject({ documentId, body: comment, anchor: { quote: text } });
+    // INT-15: the live text is named by the newest saved version, here the submission of revision 1.
+    expect(input).toMatchObject({ documentId, body: comment, anchor: { quote: text }, revision: 1 });
     await accepted;
     recorded = { threadId: id, commentId: id, position: 1, authorRole: "teacher", isOwn: true,
-      body: comment, anchor: input.anchor, state: "open", createdWindow: "2026-11-20T12:00:00.000Z", deletedWindow: null };
+      body: comment, anchor: input.anchor, state: "open", createdWindow: "2026-11-20T12:00:00.000Z", deletedWindow: null,
+      revision: input.revision };
     await route.fulfill({ json: { id } });
   });
   await page.route("**/api/v1/comments/list", (route) => route.fulfill({ json: { comments: recorded ? [recorded] : [] } }));
@@ -193,4 +195,5 @@ test("the anchored comment is shown after the server confirms and returns it", a
   // passed only while it was still there (ZEL-CI-WEB, flaky under load).
   await expect(page.getByRole("form", { name: comments.newTitle })).toHaveCount(0);
   await expect(page.getByRole("article").getByText(comment)).toBeVisible();
+  await expect(page.getByRole("article").getByText(comments.revision.replace("{n}", "1"), { exact: true })).toBeVisible();
 });
