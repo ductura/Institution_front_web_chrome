@@ -314,6 +314,18 @@ export function createEditorExtensionsV3(placeholder: string = DEFAULT_PLACEHOLD
   );
 }
 
+/** The schema the student's sheet is built with (PIL-K-SPREMANJE-V3). */
+export type SheetSchemaVersion = 1 | 3;
+
+/**
+ * v3 only when the server confirmed exactly 3 for the work; an absent,
+ * unknown or any other version keeps the v1 sheet, whose document, journal
+ * and evidence stay as they were.
+ */
+export function sheetSchemaVersion(confirmed: unknown): SheetSchemaVersion {
+  return confirmed === 3 ? 3 : 1;
+}
+
 /**
  * The document node of v4: the sources as in v2 and the cover (contract v4
  * §7), neither rendered. An absent cover is `null`.

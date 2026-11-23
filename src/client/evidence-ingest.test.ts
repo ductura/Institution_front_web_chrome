@@ -386,7 +386,9 @@ describe("F-8 3c: the open route", () => {
   it("reads the answer of a server that sends schemaVersion and revisionZeroHash (SRV-7F)", () => {
     const work = openedWorkFrom(openBody({ schemaVersion: 1, revisionZeroHash: "b".repeat(64) }));
     expect(work?.documentId).toBe(DOC);
+    expect(work?.revisionZeroHash).toBe("b".repeat(64));
     expect(openedWorkFrom(openBody({ schemaVersion: 3 }))).not.toBeNull();
+    expect(openedWorkFrom(openBody({ schemaVersion: 3 }))).not.toHaveProperty("revisionZeroHash");
   });
 
   it.each([true, false])("reads submitted as the server says it (%s)", (submitted) => {

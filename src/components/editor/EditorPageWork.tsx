@@ -189,7 +189,7 @@ export default function EditorPageWork({
   return (
     <>
       <SessionObserver tag={read.session.tag} at={read.session.at} />
-      <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
+      <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session} schemaVersion={read.schemaVersion}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
           assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} schemaVersion={read.schemaVersion} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} footnoteDialog={footnoteDialog} toolbar={toolbar} triggers={triggers} literature={literature}
           statusExtra={statusExtra} useSupplements={useSupplements} />
