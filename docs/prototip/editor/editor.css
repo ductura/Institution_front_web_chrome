@@ -878,3 +878,13 @@ li .pgb, blockquote .pgb { width:calc(100% + var(--pg-ml) + var(--pg-mr) + 1.6em
 @media (max-width:640px) { .nf2-sub .w { display:none; } .nf2-sub .s { display:inline; } .nf2h { gap:4px; } }
 @media (max-width:480px) { .top { gap:4px; padding:0 6px; } .top .mark { font-size:15px; } .top .seg button { padding:0 7px; } .nf2-sub .btn { padding:0 9px; } .nf2n { margin-left:4px; } }
 @media (max-width:640px) { .tools .tb, .tools .tb.ic { min-width:44px; height:44px; } .tools .sel { height:44px; } }
+/* NF-2: Asistent u pilotu (P-9, P-10) */
+.nf2-asn { margin:0 0 8px; }
+.nf2-asb { margin:0 0 10px; }
+.nf2-asl { margin:6px 0; }
+.nf2-cv { border:1px solid var(--rule); border-radius:var(--radius); margin:6px 0; }
+.nf2-cv > summary { padding:6px 8px; cursor:pointer; min-height:32px; }
+.nf2-m { padding:6px 8px; border-top:1px solid var(--rule); white-space:pre-wrap; }
+.nf2-m b { display:block; font-size:12px; font-weight:600; color:var(--ink-2); }
+.nf2-m.a { background:var(--well); }
+@media (max-width:640px) { .nf2-cv > summary { min-height:44px; padding-top:10px; } }

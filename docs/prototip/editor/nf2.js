@@ -4,7 +4,7 @@
  *   1 stanja otvaranja, spremanja, mreže, sukoba, drugog uređaja i oporavka (P-1, P-2, P-3, P-18, P-21, P-26): traka obavijesti + dijalog „Stanja”
  *   2 zaglavlje: Povijest, Prečaci, prebacivač lista, Predaja rada s brojem blokada (P-5, P-14, P-17)
  *   3 statusna traka: opseg riječi i najave (P-2, P-6)
- *   4 Asistent isključen + pravila uporabe alata (P-9, P-10)
+ *   4 Asistent u pilotu (simulirani odgovori, zapis razgovora, prilog izjavi) + pravila uporabe alata (P-9, P-10)
  *   5 izjava: stanje s poslužitelja, „što je zabilježeno”, dijalog iz editora (P-11, P-12), objašnjenje podudaranja (P-13)
  *   6 povijest i usporedba, vraćanje s pregledom razlike (P-14, P-15)
  *   7 Proba predaje sa stvarnim podacima (P-16), dohvat DOI/ISBN (P-7), zahtjevi nastavnika (P-8), uvoz iz datoteke (P-19)
@@ -16,7 +16,7 @@
   'use strict';
   const X = window.DU, { S, U, ACT, esc, $, toast, persist, plural } = X, ed = () => X.editor, D = () => X.D, T = () => S.mode === 'teacher';
   const mi = X.fx.mi, fmtN = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  const N = U.nf2 = { open: '', net: 'on', pend: 0, srv: false, conflict: false, stopped: false, other: '', recover: false, match: false, pilot: false, req: '', noRules: false, hist: 'ok', lk: '' };
+  const N = U.nf2 = { open: '', net: 'on', pend: 0, srv: false, conflict: false, stopped: false, other: '', recover: false, match: false, pilot: false, req: '', noRules: false, hist: 'ok', lk: '', asPol: '', asSum: false, asState: '', asLim: false, asErr: false, asBusy: false, asDraft: '', asPurp: '', asNew: false };
   X.hooks.defaults.push(s => { if (!s.nf2) s.nf2 = {}; const n = s.nf2; if (n.onbSeen === undefined) n.onbSeen = false; if (!n.decl) n.decl = { use: null, tools: [], help: [], confirm: false, hash: '', touched: false, tool: '', purpose: '', phase: '', helpKind: 'language', helpText: '' }; if (!n.vers) n.vers = null; if (n.imported === undefined) n.imported = 0; });
   const offline = () => !navigator.onLine || N.net === 'off';
   const hash = s => { let a = 0; for (let i = 0; i < s.length; i++) a = (Math.imul(a, 31) + s.charCodeAt(i)) | 0; return String(a); };
@@ -47,10 +47,10 @@
     if (N.match) h += b('status', '<b>Dio teksta podudara se s odgovorom pomoćnika.</b> Ovo je obična usporedba teksta i ništa ne govori o autorstvu.', '<button class="lnk" data-act="nf2Expl">Objasni, ako želiš…</button>');
     return h;
   });
-  const PRESET = { puno: { open: '' }, ucitavanje: { open: 'load' }, sporo: { open: 'slow' }, prazno: { open: 'empty' }, prijava: { open: 'scope' }, mreza: { open: 'net' }, verzija: { open: 'upgrade' }, zatvoreno: { open: 'closed' }, offline: { net: 'off', pend: 3 }, povratak: { net: 'back', pend: 3 }, posluzitelj: { srv: true }, sukob: { conflict: true }, zaustavljeno: { stopped: true }, uredaj: { other: 'mobitel' }, oporavak: { recover: true }, podudaranje: { match: true }, pilot: { pilot: true }, zahtjevi: { req: 'ok' }, zahtjevi_ucitavanje: { req: 'load' }, zahtjevi_greska: { req: 'err' }, zahtjevi_prazno: { req: 'none' }, bez_pravila: { noRules: true }, povijest_prazno: { hist: 'empty' }, povijest_jedna: { hist: 'single' }, povijest_ucitavanje: { hist: 'load' }, povijest_greska: { hist: 'err' } };
+  const PRESET = { asistent_radi: { asPol: '', asSum: false, asState: '', asLim: false }, asistent_ucitavanje: { asState: 'load' }, asistent_greska: { asState: 'err' }, asistent_zabranjeno: { asPol: 'prohibited' }, asistent_sazimanje: { asSum: true }, asistent_ogranicenje: { asLim: true }, puno: { open: '' }, ucitavanje: { open: 'load' }, sporo: { open: 'slow' }, prazno: { open: 'empty' }, prijava: { open: 'scope' }, mreza: { open: 'net' }, verzija: { open: 'upgrade' }, zatvoreno: { open: 'closed' }, offline: { net: 'off', pend: 3 }, povratak: { net: 'back', pend: 3 }, posluzitelj: { srv: true }, sukob: { conflict: true }, zaustavljeno: { stopped: true }, uredaj: { other: 'mobitel' }, oporavak: { recover: true }, podudaranje: { match: true }, pilot: { pilot: true }, zahtjevi: { req: 'ok' }, zahtjevi_ucitavanje: { req: 'load' }, zahtjevi_greska: { req: 'err' }, zahtjevi_prazno: { req: 'none' }, bez_pravila: { noRules: true }, povijest_prazno: { hist: 'empty' }, povijest_jedna: { hist: 'single' }, povijest_ucitavanje: { hist: 'load' }, povijest_greska: { hist: 'err' } };
   function apply(k) {
-    if (k === 'reset') { Object.assign(N, { open: '', net: 'on', pend: 0, srv: false, conflict: false, stopped: false, other: '', recover: false, match: false, pilot: false, req: '', noRules: false, hist: 'ok' }); return; }
-    const p = PRESET[k]; if (!p) return; Object.assign(N, p);
+    if (k === 'reset') { Object.assign(N, { open: '', net: 'on', pend: 0, srv: false, conflict: false, stopped: false, other: '', recover: false, match: false, pilot: false, req: '', noRules: false, hist: 'ok', asPol: '', asSum: false, asState: '', asLim: false, asErr: false, asBusy: false, asDraft: '', asNew: false }); return; }
+    const p = PRESET[k]; if (!p) return; Object.assign(N, p); if (/^asistent_/.test(k)) { S.tab = 'ai'; N.asErr = false; }
     if (p.net === 'back') setTimeout(() => { if (N.net === 'back') { N.net = 'on'; N.pend = 0; say('Veza je vraćena.'); rr(); } }, 5000);
   }
   X.nf2 = { apply, N, PRESET };
@@ -86,6 +86,7 @@
     ['Uređaj i oporavak (P-21, P-26)', [['uredaj', 'Drugi uređaj'], ['oporavak', 'Ponuda oporavka']]],
     ['Izvori i pravila (P-8, P-16)', [['zahtjevi', 'Zahtjevi nastavnika'], ['zahtjevi_ucitavanje', 'Učitavanje'], ['zahtjevi_greska', 'Greška'], ['zahtjevi_prazno', 'Prazno'], ['bez_pravila', 'Fakultet nije objavio pravila']]],
     ['Povijest (P-14, P-15)', [['povijest_prazno', 'Nema verzija'], ['povijest_jedna', 'Jedna verzija'], ['povijest_ucitavanje', 'Učitavanje'], ['povijest_greska', 'Greška']]],
+    ['Asistent (P-9, P-10)', [['asistent_radi', 'Radi'], ['asistent_ucitavanje', 'Učitavanje odgovora'], ['asistent_greska', 'Greška'], ['asistent_zabranjeno', 'Zabranjeno zadatkom'], ['asistent_sazimanje', 'Samo sažimanje'], ['asistent_ogranicenje', 'Ograničenje uporabe']]],
     ['Ostalo', [['podudaranje', 'Podudaranje s pomoćnikom (P-13)'], ['pilot', 'Ograničenja pilota (P-4, P-25)']]],
   ];
   X.hooks.dlg.nf2sim = () => `<h3>Stanja radnog prostora (prototip)</h3><p class="muted">Poslužitelj u prototipu ne postoji, pa se stanja biraju ovdje. Dijalog ostaje otvoren da vidite traku iznad lista. Adresa #nf2=offline otvara stanje odmah.</p>${SIM.map(([t, l]) => `<div class="ptitle">${t}</div><div class="row">${l.map(([k, n]) => `<button class="chip${isOn(k) ? ' done' : ''}" aria-pressed="${isOn(k)}" data-act="nf2Set" data-v="${k}">${n}</button>`).join('')}</div>`).join('')}<div class="foot"><button class="btn" data-act="nf2Set" data-v="reset">Sve na zadano</button><button class="btn pri" data-act="dlgClose">Gotovo</button></div>`;
@@ -135,15 +136,77 @@
   addEventListener('offline', () => { N.pend = N.pend || 0; rr(); });
   addEventListener('online', () => { if (N.pend) { N.net = 'back'; setTimeout(() => { if (N.net === 'back') { N.net = 'on'; N.pend = 0; say('Veza je vraćena.'); rr(); } }, 5000); } rr(); });
 
-  /* ---------- 4. Asistent isključen + pravila uporabe alata (P-9, P-10) ---------- */
+  /* ---------- 4. Asistent u pilotu + pravila uporabe alata (P-9, P-10; odluka NF-2 br. 1: Asistent (OC-1) u pilotu radi) ---------- */
   const NOTICE = { policy: 'partially_allowed', purposes: [['formatting', 'formatiranje', 1], ['proofreading', 'lektura i jezična provjera', 1], ['literature_search', 'traženje literature', 1], ['transcription', 'transkripcija', 0], ['translation', 'prijevod', 1]] };
   const POL = { prohibited: 'Alati nisu dopušteni.', partially_allowed: 'Alati su djelomično dopušteni.', encouraged: 'Alati su dopušteni.' };
+  /* Simulirano: odgovori su izmišljeni, poslužitelja nema. Pružatelj ni model se nikad ne imenuju (Q-10), samo „Asistent”. */
+  const AS_LIMIT = 10;
+  const pol = () => N.asPol || NOTICE.policy, sumOnly = () => N.asSum, asd = () => S.nf2.as;
+  X.hooks.defaults.push(s => { if (!s.nf2) s.nf2 = {}; if (!s.nf2.as) s.nf2.as = { convs: [], used: 0 }; });
+  const limit = () => N.asLim || asd().used >= AS_LIMIT;
+  const okPurposes = () => NOTICE.purposes.filter(p => p[2]);
+  const hm = () => new Date().toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' });
+  const REPLY = {
+    formatting: 'Prijedlog (simulirano): naslove označite stilom bloka H1 do H3, a popis literature složite abecedno. Ništa u tekstu nisam mijenjao; promjene radite sami.',
+    proofreading: 'Prijedlog (simulirano): u drugoj rečenici ponavlja se riječ „praksa”, pa je možete zamijeniti zamjenicom. Pazite na zarez ispred „koji”. Tekst ostaje Vaš; prihvaćate samo ono što želite.',
+    literature_search: 'Prijedlog (simulirano): pokušajte pretražiti pojmove „čitanje naglas” i „razvoj rječnika”. Ovo nije popis izvora i ne tvrdi da izvori postoje; provjerite ih u pretrazi Ducture.',
+    translation: 'Prijevod (simulirano): „Reading aloud is often described as a simple practice.” Provjerite stručne pojmove prije nego što ga upotrijebite.',
+  };
+  const sum = t => { const s = t.replace(/\s+/g, ' ').split(/(?<=[.!?])\s/).filter(Boolean).slice(0, 2).join(' '); return 'Sažetak (simulirano): ' + (s.length > 240 ? s.slice(0, 237) + '…' : s); };
+  const asBan = (role, txt, btn) => `<div class="banner nf2-asb" role="${role}"><span>${txt}</span>${btn || ''}</div>`;
+  function asConvs(ro, mine) {
+    const L = asd().convs.map((c, i) => [c, i]).filter(([c]) => mine || c.att); if (!L.length) return `<p class="muted">${mine ? 'Još nema razgovora. Svaki razgovor s Asistentom Ductura zabilježi, a Vi ga vidite ovdje.' : 'Student nije priložio nijedan razgovor.'}</p>`;
+    return L.slice().reverse().map(([c, i], k) => `<details class="nf2-cv"${k === 0 && mine ? ' open' : ''}><summary><b>${esc(c.title)}</b> <span class="muted">· ${esc(c.purpose)} · ${c.msgs.length / 2} ${plural(c.msgs.length / 2, 'upit', 'upita', 'upita')} · ${c.att ? 'priloženo izjavi' : 'nije priloženo'}</span></summary>${c.msgs.map(m => `<div class="nf2-m ${m.r}"><b>${m.r === 'u' ? 'Vi' : 'Asistent'} · ${esc(m.at)}</b>${esc(m.t)}</div>`).join('')}${mine && !ro ? `<div class="row nf2-m"><button class="btn sm" data-act="nf2AsAtt" data-i="${i}" aria-pressed="${!!c.att}">${c.att ? 'Skini s izjave' : 'Priloži izjavi'}</button></div>` : ''}</details>`).join('');
+  }
   function aiCard() {
-    return `<div class="ptitle">Asistent <span class="tag">isključen u pilotu</span></div><p>Asistent u ovom pilotu nije uključen. Nema razgovora koji bi se bilježio i ništa se ne šalje nikamo. Kad ga ustanova uključi, ova će kartica to jasno reći.</p>
-    <div class="ptitle">Pravila za ovaj zadatak</div><div class="card"><p style="margin:0 0 6px"><b>${POL[NOTICE.policy]}</b></p>${NOTICE.purposes.map(([, l, ok]) => `<div class="nf2-pur"><span class="${ok ? 'nf2-y' : 'nf2-n'}" aria-hidden="true">${ok ? '✓' : '×'}</span><span>${l}<span class="sr"> · ${ok ? 'dopušteno' : 'nije dopušteno'}</span></span></div>`).join('')}</div>
+    const p = pol(), a = asd(), off = offline(), tch = T(), ro = tch || !!S.submitted, busy = N.asBusy || N.asState === 'load', lim = limit(), left = Math.max(0, AS_LIMIT - a.used);
+    const off1 = p === 'prohibited', dis = ro || off1 || off || busy || lim;
+    const tag = off1 ? '<span class="tag warn">nedostupan za ovaj zadatak</span>' : sumOnly() ? '<span class="tag">samo sažimanje</span>' : lim ? '<span class="tag warn">ograničenje uporabe</span>' : '<span class="tag ok">uključen u pilotu</span>';
+    let h = `<div class="ptitle">Asistent ${tag}</div>`;
+    if (tch) h += `<p class="muted">Nastavnik vidi samo razgovore koje je student priložio izjavi. Ostale ne vidi.</p>`;
+    else {
+      h += `<p class="nf2-asn"><b>Odgovore daje Asistent, a ne Vi.</b> Ductura bilježi razgovor s Asistentom: vidite ga niže i možete ga priložiti izjavi. Šalje se samo ono što upišete, ne cijeli rad. U prototipu su odgovori simulirani i izmišljeni.</p>`;
+      if (off1) h += asBan('status', '<b>Asistent nije dostupan.</b> Obavijest ovog zadatka ne dopušta alate. Ranije razgovore i dalje možete pročitati.');
+      else {
+        if (sumOnly()) h += asBan('status', '<b>Za ovaj zadatak Asistent samo sažima.</b> Zalijepite ili upišite tekst koji želite sažeti; drugi upiti nisu dopušteni.');
+        if (off) h += asBan('status', '<b>Bez mreže.</b> Asistent traži vezu s mrežom. Tekst rada i dalje se sprema na uređaju.');
+        if (lim) h += asBan('status', `<b>Dosegnuto je ograničenje uporabe (${AS_LIMIT} upita).</b> Ponovno ćete moći pitati kad se ograničenje obnovi. Razgovori ostaju vidljivi i mogu se priložiti izjavi.`);
+        if (N.asState === 'err' || N.asErr) h += asBan('alert', '<b>Asistent trenutačno ne odgovara.</b> Upit nije poslan i nije zabilježen. Tekst rada je netaknut.', '<button class="btn sm" data-act="nf2AsRetry">Pokušaj ponovno</button>');
+        if (busy) h += `<p role="status" class="nf2-asl"><span class="dot saving"></span>Asistent odgovara…</p>`;
+        if (!ro) {
+          const sel = N.asPurp || okPurposes()[0][0];
+          h += `${sumOnly() ? '' : `<label class="f" for="nf2asP">Svrha upita</label><select class="in" id="nf2asP"${dis ? ' disabled' : ''}>${okPurposes().map(([k, l]) => `<option value="${k}"${sel === k ? ' selected' : ''}>${l}</option>`).join('')}</select>`}<label class="f" for="nf2asIn">${sumOnly() ? 'Tekst za sažimanje' : 'Upit Asistentu'}</label><textarea class="ta" id="nf2asIn" rows="4" maxlength="2000"${dis ? ' disabled' : ''}>${esc(N.asDraft)}</textarea><div class="row"><button class="btn pri sm" data-act="nf2AsSend"${dis ? ' disabled' : ''}>${sumOnly() ? 'Sažmi' : 'Pošalji Asistentu'}</button><button class="btn sm" data-act="nf2AsNew"${dis || !a.convs.length || N.asNew ? ' disabled' : ''}>Novi razgovor</button><span class="muted">Preostalo upita: ${left} od ${AS_LIMIT}</span></div>`;
+        }
+      }
+    }
+    h += `<div class="ptitle">Razgovori (${tch ? a.convs.filter(c => c.att).length : a.convs.length})</div>${asConvs(ro, !tch)}`;
+    return h + `<div class="ptitle">Pravila za ovaj zadatak</div><div class="card"><p style="margin:0 0 6px"><b>${POL[p]}</b></p>${p === 'prohibited' ? '<p class="muted" style="margin:0">Nijedna svrha nije dopuštena.</p>' : (NOTICE.purposes.map(([, l, ok]) => `<div class="nf2-pur"><span class="${ok ? 'nf2-y' : 'nf2-n'}" aria-hidden="true">${ok ? '✓' : '×'}</span><span>${l}<span class="sr"> · ${ok ? 'dopušteno' : 'nije dopušteno'}</span></span></div>`).join('') + (sumOnly() ? '<div class="nf2-pur"><span class="nf2-n" aria-hidden="true">×</span><span>sve osim sažimanja<span class="sr"> · nije dopušteno</span></span></div>' : ''))}</div>
     <p class="muted">Alate koje koristite izvan Ducture navedite u izjavi pri predaji.</p><div class="row"><button class="btn sm" data-act="nf2Notice">Pročitaj obavijest zadatka</button><button class="btn sm" data-act="nf2Decl">Izjava o korištenju alata</button></div>`;
   }
   X.panels.ai = aiCard; if (X.rp) X.rp.vAi = aiCard;
+  document.addEventListener('input', e => { if (e.target && e.target.id === 'nf2asIn') N.asDraft = e.target.value; });
+  document.addEventListener('change', e => { if (e.target && e.target.id === 'nf2asP') N.asPurp = e.target.value; });
+  const asFocus = () => setTimeout(() => { const f = $('#nf2asIn'); if (f && !f.disabled) f.focus(); }, 30);
+  Object.assign(ACT, {
+    nf2AsNew: () => { N.asNew = true; N.asDraft = ''; X.renderPanel(true); say('Novi razgovor. Sljedeći upit otvara novi zapis.'); asFocus(); },
+    nf2AsRetry: () => { N.asErr = false; X.renderPanel(true); if (N.asState === 'err') { N.asErr = true; say('Asistent i dalje ne odgovara.'); X.renderPanel(true); } else { say('Pokušajte ponovno poslati upit.'); asFocus(); } },
+    nf2AsSend: () => {
+      const t = (($('#nf2asIn') || {}).value || '').trim(); N.asDraft = t;
+      if (!t) return toast(sumOnly() ? 'Upišite tekst za sažimanje.' : 'Upišite upit.');
+      if (sumOnly() && X.wc && X.wc(t) < 8) return toast('Za sažimanje upišite barem osam riječi.');
+      if (pol() === 'prohibited' || limit() || offline() || N.asBusy) return;
+      if (N.asState === 'err') { N.asErr = true; say('Asistent trenutačno ne odgovara. Upit nije poslan.'); return X.renderPanel(true); }
+      N.asErr = false; N.asBusy = true; X.renderPanel(true); say('Asistent odgovara.');
+      setTimeout(() => {
+        N.asBusy = false; const a = asd(), k = sumOnly() ? 'summary' : (N.asPurp || okPurposes()[0][0]), lab = k === 'summary' ? 'sažimanje' : (NOTICE.purposes.find(p => p[0] === k) || ['', k])[1], at = hm();
+        let c = !N.asNew && a.convs.length ? a.convs[a.convs.length - 1] : null;
+        if (!c) { c = { title: t.slice(0, 48) + (t.length > 48 ? '…' : ''), purpose: lab, att: false, msgs: [] }; a.convs.push(c); N.asNew = false; }
+        c.msgs.push({ r: 'u', t, at }, { r: 'a', t: k === 'summary' ? sum(t) : REPLY[k] || REPLY.formatting, at }); a.used++; N.asDraft = ''; persist(); X.renderPanel(true); say('Asistent je odgovorio. Odgovor je u razgovoru niže. Razgovor je zabilježen u Ducturi.'); asFocus();
+      }, 900);
+    },
+    nf2AsAtt: el => { const c = asd().convs[+el.dataset.i]; if (!c || S.submitted) return; c.att = !c.att; persist(); X.renderPanel(true); say(c.att ? 'Razgovor je priložen izjavi.' : 'Razgovor je skinut s izjave.'); toast(c.att ? 'Razgovor je priložen izjavi. Vidi ga i nastavnik.' : 'Razgovor više nije priložen izjavi.'); },
+    nf2AsOpen: () => { X.closeDlg(); ACT.tab({ dataset: { v: 'ai' } }); },
+  });
 
   /* ---------- 5. izjava (P-11, P-12) ---------- */
   const decl = () => S.nf2.decl;
@@ -154,7 +217,7 @@
   X.hooks.dlg.nf2decl = d => {
     const c = decl(), s = S.submitted ? 'bound' : declState(), ro = !!S.submitted || T();
     return `<h3>Izjava o korištenju alata</h3><p class="muted">Obrazac je test-izjava fakulteta (verzija 1). Potvrđujete je pri predaji; ovdje je možete pripremiti ranije i ažurirati čim upotrijebite alat.</p><p><span class="tag ${DS[s][1]}">${DS[s][0]}</span></p>
-    <div class="ptitle">Što je zabilježeno u Ducturi</div><div class="fx"><span style="flex:1"><b>Prijenosi iz pomoćnika</b></span><span>0</span></div><div class="fx"><span style="flex:1"><b>Razgovori bez prijenosa</b></span><span>0</span></div><div class="fx"><span style="flex:1"><b>Prilozi</b></span><span>0</span></div><p class="muted">Asistent u pilotu nije uključen, pa ovdje nema zapisa. Prikazuje se samo ono što je Ductura zabilježila; vi dodajete ono što je bilo izvan nje.</p>
+    <div class="ptitle">Što je zabilježeno u Ducturi</div><div class="fx"><span style="flex:1"><b>Prijenosi iz pomoćnika</b></span><span>0</span></div><div class="fx"><span style="flex:1"><b>Razgovori bez prijenosa</b></span><span>${asd().convs.length}</span></div><div class="fx"><span style="flex:1"><b>Prilozi</b><span class="d">Razgovori koje ste priložili izjavi; vidi ih i nastavnik.</span></span><span>${asd().convs.filter(x => x.att).length}</span></div>${asd().convs.filter(x => x.att).map(x => `<div class="fx"><span style="flex:1">${esc(x.title)}<span class="d">${esc(x.purpose)} · ${x.msgs.length / 2} ${plural(x.msgs.length / 2, 'upit', 'upita', 'upita')}</span></span></div>`).join('')}<p class="muted">Prikazuje se samo ono što je Ductura zabilježila (razgovori s Asistentom); vi dodajete ono što je bilo izvan nje. Nastavnik vidi samo priložene razgovore.</p><div class="row"><button class="btn sm" data-act="nf2AsOpen">Otvori razgovore s Asistentom</button></div>
     <div class="ptitle">Alati izvan Ducture</div><label class="check"><input type="radio" name="nf2use" data-act="nf2Use" data-v="not_used"${c.use === 'not_used' ? ' checked' : ''}${ro ? ' disabled' : ''}><span>Nisam koristio/la alate umjetne inteligencije</span></label><label class="check"><input type="radio" name="nf2use" data-act="nf2Use" data-v="used"${c.use === 'used' ? ' checked' : ''}${ro ? ' disabled' : ''}><span>Koristio/la sam alate</span></label>
     ${c.use === 'used' ? `${c.tools.map((t, i) => `<div class="fx"><span style="flex:1"><b>${esc(t.label)}</b><span class="d">${esc(t.purpose)} · ${esc(t.phase)}</span></span>${ro ? '' : `<button class="lnk" data-act="nf2ToolDel" data-i="${i}">Ukloni</button>`}</div>`).join('')}${ro || c.tools.length >= 8 ? '' : `<div class="row"><input class="in" style="flex:1;min-width:110px" data-bind="S.nf2.decl.tool" value="${esc(c.tool)}" placeholder="Alat, npr. DeepL" maxlength="120" aria-label="Alat"><input class="in" style="flex:1;min-width:110px" data-bind="S.nf2.decl.purpose" value="${esc(c.purpose)}" placeholder="Svrha" maxlength="200" aria-label="Svrha"><input class="in" style="flex:1;min-width:110px" data-bind="S.nf2.decl.phase" value="${esc(c.phase)}" placeholder="Faza rada" maxlength="200" aria-label="Faza rada"><button class="btn sm" data-act="nf2ToolAdd">Dodaj</button></div>`}` : ''}
     <div class="ptitle">Pomoć drugih osoba</div>${c.help.map((h, i) => `<div class="fx"><span style="flex:1"><b>${HK[h.kind]}</b><span class="d">${esc(h.text)}</span></span>${ro ? '' : `<button class="lnk" data-act="nf2HelpDel" data-i="${i}">Ukloni</button>`}</div>`).join('') || '<p class="muted">Nije navedena.</p>'}${ro ? '' : `<div class="row"><select class="in" data-bind="S.nf2.decl.helpKind" aria-label="Vrsta pomoći">${Object.entries(HK).map(([k, v]) => `<option value="${k}"${c.helpKind === k ? ' selected' : ''}>${v}</option>`).join('')}</select><input class="in" style="flex:1;min-width:120px" data-bind="S.nf2.decl.helpText" value="${esc(c.helpText)}" placeholder="Što je tko napravio" maxlength="300" aria-label="Opis pomoći"><button class="btn sm" data-act="nf2HelpAdd">Dodaj</button></div>`}
