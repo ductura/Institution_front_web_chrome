@@ -4,20 +4,20 @@ import { useEffect, useState } from "react";
 import { Button, TextArea } from "@ductura/ui";
 
 import { interviewMessages as text } from "./messages.hr";
-import { afterSend, attachNote, explanationError, orderedQuestions, sendExplanation, shownDate } from "./model";
-import type { InterviewPort, InterviewRead } from "./port";
+import { afterNote, afterSend, attachNote, explanationError, keepNotes, notesOpen, orderedQuestions, sendExplanation, shownDate } from "./model";
+import { NOTE_FORMATS, type InterviewPort, type InterviewRead } from "./port";
 
 type Ready = Extract<InterviewRead, { kind: "ready" }>;
 
 /**
  * Student's page for a teacher's invitation to a talk about the work (WEB-1531, PIL-K-RAZGOVOR). The
- * student sees the questions the server reveals to them and may write explanations; notes only while the
- * port has a route for them. The fixed notice says the talk is not an accusation; the page never shows an
+ * student sees the questions the server reveals to them and may write explanations and attach notes
+ * (work.interview-notes.post) until the talk is held; a note is listed only once the server confirms it. The fixed notice says the talk is not an accusation; the page never shows an
  * outcome, grade or suspicion. Before the invitation the server answers 403, shown as "not yet scheduled".
  */
 export default function StudentInterview({ port, documentId, onChooseSlot, onSignedOut, onNotFound, initial = null }: {
   port: InterviewPort; documentId: string; onChooseSlot?: () => void; onSignedOut?: () => void; onNotFound?: () => void;
-  /** A read already in hand (the tests); the page then reads again only on retry or after a note. */
+  /** A read already in hand (the tests); the page then reads again only on retry or after a 403 or 409. */
   initial?: InterviewRead | null;
 }) {
   const [read, setRead] = useState<InterviewRead | null>(initial);
@@ -25,12 +25,14 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | undefined>();
+  const [notePending, setNotePending] = useState(false);
+  const [closed, setClosed] = useState(false);
   const [notice, setNotice] = useState<{ tone: "status" | "alert"; message: string } | null>(null);
 
   useEffect(() => {
     if (attempt === 0 && initial !== null) return;
     let active = true;
-    void port.read(documentId).then((next) => { if (active) setRead(next); }).catch(() => { if (active) setRead({ kind: "unavailable" }); });
+    void port.read(documentId).then((next) => { if (active) setRead((prev) => keepNotes(prev, next)); }).catch(() => { if (active) setRead({ kind: "unavailable" }); });
     return () => { active = false; };
   }, [port, documentId, attempt, initial]);
 
@@ -67,11 +69,21 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
   };
 
   const attach = async (file: File | undefined) => {
-    if (!file) return;
+    if (!file || notePending) return;
+    setNotePending(true);
+    setNotice(null);
     const result = await attachNote(port, documentId, file);
+    setNotePending(false);
     if (result.kind === "invalid") { setFileError(result.message); return; }
     setFileError(undefined);
-    if (result.kind === "saved") setAttempt((n) => n + 1); else setNotice({ tone: "alert", message: text.failed });
+    if (result.kind === "signedOut") { onSignedOut?.(); return; }
+    if (result.kind === "notFound") { onNotFound?.(); return; }
+    // 403: the invitation no longer holds; 409: the talk is held. Both read the talk again.
+    if (result.kind === "notInvited" || result.kind === "closed") setAttempt((n) => n + 1);
+    const next = afterNote(shown, result);
+    if (next.closed) setClosed(true);
+    setRead(next.read);
+    setNotice({ tone: next.saved ? "status" : "alert", message: next.message });
   };
 
   const box = (key: string, questionId: string | null, label: string) => {
@@ -118,15 +130,15 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
       {read.explanations.filter((e) => e.questionId === null).map((e) => <p key={e.id}>{e.text}</p>)}
       {box("general", null, text.explanationGeneral)}
 
-      {port.attachNote !== undefined && (
+      {read.attachments.map((note) => <p key={note.id}>{text.attached}: {note.fileName}</p>)}
+      {!closed && notesOpen(read, port) && (
         <>
           <label>
-            {text.attachNote}
-            <input type="file" accept=".pdf,.txt,.md" aria-invalid={fileError ? true : undefined}
+            {notePending ? text.noteSending : text.attachNote}
+            <input type="file" accept={NOTE_FORMATS.join(",")} disabled={notePending} aria-invalid={fileError ? true : undefined}
               onChange={(event) => { void attach(event.target.files?.[0]); event.target.value = ""; }} />
           </label>
           <p>{text.attachNoteHint}</p>
-          {read.attachments.map((name) => <p key={name}>{text.attached}: {name}</p>)}
           {fileError && <p role="alert">{fileError}</p>}
         </>
       )}

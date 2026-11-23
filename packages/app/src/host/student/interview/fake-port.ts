@@ -1,10 +1,11 @@
 // Probe port for the tests and the catalogue; the real one is studentInterviewPort (port.ts). Invented data.
-import type { InterviewExplanation, InterviewPort, InterviewRead } from "./port";
+import type { InterviewExplanation, InterviewNote, InterviewPort, InterviewRead } from "./port";
 
 export function fakeInterviewPort(invited = true): InterviewPort & { readonly explained: string[]; readonly notes: string[] } {
   const explained: string[] = [];
   const notes: string[] = [];
   const explanations: InterviewExplanation[] = [];
+  const attachments: InterviewNote[] = [];
   return {
     explained, notes,
     async read(): Promise<InterviewRead> {
@@ -15,7 +16,7 @@ export function fakeInterviewPort(invited = true): InterviewPort & { readonly ex
           { id: "q1", paragraphRef: "p3", paragraphExcerpt: "Izmišljeni odlomak o Savi.", text: "Kako si došao do ovog zaključka?" },
           { id: "q0", paragraphRef: null, text: "Koje si izvore koristio?" },
         ],
-        slot: null, heldAt: null, explanations, attachments: [...notes],
+        slot: null, heldAt: null, explanations, attachments: [...attachments],
       };
     },
     async explain(_id, input) {
@@ -24,6 +25,11 @@ export function fakeInterviewPort(invited = true): InterviewPort & { readonly ex
       explanations.push(explanation);
       return { kind: "saved", explanation };
     },
-    async attachNote(_id, file) { notes.push(file.name); return { kind: "saved" }; },
+    async attachNote(_id, upload) {
+      notes.push(upload.fileName);
+      const note = { id: `n${attachments.length}`, fileName: upload.fileName };
+      attachments.push(note);
+      return { kind: "saved", note };
+    },
   };
 }

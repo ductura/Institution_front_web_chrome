@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // PIL-K-RAZGOVOR: the student's interview page and the outcomes of a send, mounted in jsdom. The work's
 // document and the host are stubbed; the port is a test double. Invented texts only.
+import { File } from "node:buffer";
 import { act, createElement as h } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -106,5 +107,39 @@ describe("StudentInterview in the browser", () => {
     expect(host.textContent).toContain(READY.questions[0]!.text);
     work.current = { kind: "notFound" };
     await expect(render(page("d"))).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("lists a note only after the server confirms it, and hides the action once the talk is held (409)", async () => {
+    let answer!: (w: InterviewWrite) => void;
+    const held: InterviewRead = { ...READY, heldAt: "2026-11-21" };
+    const read = vi.fn(async () => (read.mock.calls.length > 1 ? held : READY));
+    const attachNote = vi.fn(() => new Promise<InterviewWrite>((resolve) => { answer = resolve; }));
+    const port: InterviewPort = { read, explain: vi.fn(), attachNote };
+    await render(h(StudentInterview, { port, documentId: "doc-1" }));
+    const choose = async (file: File) => {
+      const input = host.querySelector('input[type="file"]') as HTMLInputElement;
+      Object.defineProperty(input, "files", { configurable: true, value: [file] });
+      await act(async () => { input.dispatchEvent(new Event("change", { bubbles: true })); });
+    };
+    await choose(new File(["x"], "skripta.exe"));
+    expect(attachNote).not.toHaveBeenCalled();
+    expect(host.textContent).toContain(text.errors.fileType);
+
+    await choose(new File(["Izmišljene bilješke."], "biljeske.txt"));
+    await vi.waitFor(() => expect(attachNote).toHaveBeenCalledTimes(1));
+    expect((host.querySelector('input[type="file"]') as HTMLInputElement).disabled).toBe(true);
+    expect(host.textContent).not.toContain(`${text.attached}: biljeske.txt`);
+    await act(async () => { answer({ kind: "saved", note: { id: "n1", fileName: "biljeske.txt" } }); });
+    expect(host.textContent).toContain(`${text.attached}: biljeske.txt`);
+    expect(host.textContent).toContain(text.noteSaved);
+
+    await choose(new File(["Kasne bilješke."], "kasno.txt"));
+    await vi.waitFor(() => expect(attachNote).toHaveBeenCalledTimes(2));
+    await act(async () => { answer({ kind: "closed" }); });
+    expect(host.querySelector('input[type="file"]')).toBeNull();
+    expect(host.textContent).toContain(text.noteClosed);
+    expect(host.textContent).toContain(`${text.attached}: biljeske.txt`);
+    expect(host.textContent).not.toContain("kasno.txt");
+    expect(read).toHaveBeenCalledTimes(2);
   });
 });

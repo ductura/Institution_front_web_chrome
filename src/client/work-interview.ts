@@ -70,3 +70,25 @@ export const readInterviewAsStudent = (documentId: string, options?: ApiOptions)
 /** One explanation, up to 2000 characters; the answer is the explanation as the server stored it. */
 export const sendInterviewExplanation = (documentId: string, input: { questionId: string | null; text: string }, options?: ApiOptions) =>
   run(() => createApi(options)("work.interview-explanations.post", { params: { documentId }, ...none, body: input }), "notInvited");
+
+// The student's notes (PIL-K-RAZGOVOR-PRILOG, SRV #644): UTF-8 text or PDF, at most 1 MiB, sent as base64.
+// Before the invitation the server answers 403; once the talk is held, 409.
+export type InterviewNote = Body<ApiResult<"work.interview-notes.post">>;
+export type InterviewNoteInput = Input<"work.interview-notes.post">["body"];
+export type InterviewNoteMediaType = InterviewNoteInput["mediaType"];
+/** The route's limit of one note in bytes (byteSize maximum of work.interview-notes.post). */
+export const INTERVIEW_NOTE_MAX_BYTES = 1024 * 1024;
+
+function base64Of(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
+/** The body of work.interview-notes.post for the file's bytes. */
+export const interviewNoteBody = (fileName: string, mediaType: InterviewNoteMediaType, bytes: Uint8Array): InterviewNoteInput =>
+  ({ fileName, mediaType, contentBase64: base64Of(bytes) });
+
+/** One note; the answer is the note as the server stored it (id, size and SHA-256 of the bytes). */
+export const sendInterviewNote = (documentId: string, body: InterviewNoteInput, options?: ApiOptions) =>
+  run(() => createApi(options)("work.interview-notes.post", { params: { documentId }, ...none, body }), "notInvited");
