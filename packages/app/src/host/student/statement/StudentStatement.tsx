@@ -58,13 +58,13 @@ export default function StudentStatement({ port, assignmentId, read, onReload, o
     if (result.kind === "invalid") { setFileError(result.message); return; }
     setFileError(undefined);
     if (result.kind === "signedOut") return onSignIn();
-    if (result.kind !== "saved") setNotice(writeNotice(result));
+    setNotice(result.kind === "saved" ? { tone: "status", message: text.attachSent } : writeNotice(result));
     if (result.kind === "saved" || result.kind === "conflict") onReload();
   };
 
   return (
     <section aria-labelledby="statement-h" data-statement-readonly={locked || undefined}>
-      <h2 id="statement-h">{text.title}</h2>
+      <h4 id="statement-h">{text.title}</h4>
       <p>{read.statementText}</p>
       <Select label={text.helpLegend} disabled={locked} value={kind}
         options={read.helpKinds.map((k) => ({ value: k, label: text.helpKinds[k] }))}
@@ -72,7 +72,7 @@ export default function StudentStatement({ port, assignmentId, read, onReload, o
       {kind !== "none" && (
         <TextArea label={text.helpText} readOnly={locked} value={helpText} onChange={(event) => setDraft({ kind, text: event.target.value })} />
       )}
-      <h3>{text.printoutTitle}</h3>
+      <h5>{text.printoutTitle}</h5>
       <p>{text.printoutNote}</p>
       {read.attachment && <p>{text.attached}: {read.attachment.name}</p>}
       {!locked && (

@@ -121,7 +121,15 @@ if (process.env.DUCTURA_STOG === '1') {
 
     test('izjava: Dalje je zaključano do potvrde, potvrda otvara korak prije predaje', async () => {
       await expect(page.getByRole('button', { name: 'Dalje', exact: true })).toBeDisabled();
-      await page.getByRole('checkbox', { name: 'Potvrđujem izjavu' }).check();
+      // PIL-K-IZJAVA: the declaration is filled and saved on the server before it can be confirmed.
+      await page.getByRole('link', { name: /^(Ispuni|Uredi) izjavu$/ }).click();
+      await page.getByRole('button', { name: 'Spremi izjavu' }).click();
+      await expect(page.getByText('Izjava o pomoći je spremljena na poslužitelju.')).toBeVisible();
+      const confirm = page.getByRole('checkbox', { name: 'Potvrđujem izjavu' });
+      await expect(confirm).toBeEnabled();
+      // Checked only once the server holds the confirmation (no optimistic tick).
+      await confirm.click();
+      await expect(confirm).toBeChecked();
       await expect(page.getByRole('button', { name: 'Dalje', exact: true })).toBeEnabled();
       await page.getByRole('button', { name: 'Dalje', exact: true }).click();
       await step(page, assignmentId, 'pregled');

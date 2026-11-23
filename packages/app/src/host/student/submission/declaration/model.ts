@@ -81,23 +81,32 @@ export function entryLabel(entry: ChatEntry): string {
   return `${who} · ${entry.time}`;
 }
 
-/** Where the confirmation stands: `saved` only once the server holds it (step-ports.ts). */
-export type ConfirmState = "none" | "sending" | "saved" | "conflict" | "stale" | "refused" | "technical";
+/**
+ * Where the confirmation stands: `saved` only once the server holds it (step-ports.ts); `reopened`
+ * when the server dropped a held confirmation because the declaration changed.
+ */
+export type ConfirmState = "none" | "sending" | "saved" | "reopened" | "conflict" | "stale" | "refused" | "technical";
 
 /**
- * "Dalje" is open only once the server holds the confirmation (R-32). A technical error never stops
- * a submission (PRODUCT §5 rule 11): a confirmation that could not reach the server opens it too,
- * shown as not saved.
+ * "Dalje" is open only once the server holds the confirmation (R-32). A confirmation the server
+ * does not hold, for any reason, never opens it: step 3 and step 4 check the same (PIL-K-IZJAVA).
  */
 export function canProceed(view: StepView, confirm: ConfirmState): boolean {
-  return (confirm === "saved" || confirm === "technical") && (view === "full" || view === "empty" || view === "error");
+  return confirm === "saved" && (view === "full" || view === "empty");
+}
+
+/** The student may confirm only what they declared themselves: a declaration the server read, filled, not yet confirmed. */
+export function canConfirm(view: StepView, read: DeclarationRead, confirm: ConfirmState): boolean {
+  return (view === "full" || view === "empty") && read.kind === "ready" && read.declared !== null && confirm !== "sending" && confirm !== "saved";
 }
 
 /** The line under the confirmation for each state; null when there is nothing to say. */
 export function confirmLine(confirm: ConfirmState): { readonly role: "status" | "alert"; readonly text: string } | null {
   switch (confirm) {
-    case "none": case "saved": return null;
+    case "none": return null;
+    case "saved": return { role: "status", text: t.confirmSaved };
     case "sending": return { role: "status", text: t.confirming };
+    case "reopened": return { role: "status", text: t.reopened };
     case "conflict": return { role: "alert", text: t.conflict };
     case "stale": return { role: "alert", text: t.stale };
     case "refused": return { role: "alert", text: t.confirmRefused };

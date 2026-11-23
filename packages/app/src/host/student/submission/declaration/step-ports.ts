@@ -24,8 +24,8 @@ export type StepRead =
 
 /**
  * How a confirmation ended. `technical`: the server could not be reached or failed (0, 5xx, or
- * nothing read to write on), which never stops a submission (PRODUCT §5 rule 11); `refused`: the
- * server answered and did not accept it.
+ * nothing read to write on); `refused`: the server answered and did not accept it. Neither opens
+ * "Dalje": only a confirmation the server holds does.
  */
 export type ConfirmOutcome = "saved" | "conflict" | "stale" | "signedOut" | "refused" | "technical";
 
@@ -38,26 +38,21 @@ export type StepPorts = {
 
 const TECHNICAL = (status: number | null) => status === null || status === 0 || status >= 500;
 
+type Answer = { readonly ok: boolean; readonly status?: number; readonly body?: { readonly state?: string } };
+
 /** The step's ports over `call` (createApi by default). */
 export function createStepPorts(call: Call = createApi()): StepPorts {
-  // One GET per refresh for both halves; the state and the last write's status the server gave.
-  let held: Promise<unknown> | null = null;
-  let state: string | null = null;
-  let putStatus: number | null = null;
+  const send = call as unknown as (op: string, input: unknown) => Promise<Answer>;
+  // The GET of the refresh that is running: both halves get this one answer.
+  let held: Promise<Answer> | null = null;
+  // The status of the confirming PUT (confirm: true). The port sends at most one at a time.
+  let confirmStatus: number | null = null;
   const shared = (async (op: string, input: unknown) => {
-    const send = () => (call as (op: string, input: unknown) => Promise<{ ok: boolean; status?: number; body?: { state?: string } }>)(op, input);
-    if (op === "student.declaration.get") {
-      held ??= send().then((result) => {
-        state = result.ok ? result.body?.state ?? null : null;
-        return result;
-      });
-      return held;
-    }
-    if (op !== "student.declaration.put") return send();
-    putStatus = 0;
-    const result = await send();
-    putStatus = result.ok ? 200 : result.status ?? 0;
-    if (result.ok) state = result.body?.state ?? null;
+    if (op === "student.declaration.get" && held !== null) return held;
+    if (op !== "student.declaration.put" || (input as { body?: { confirm?: boolean } }).body?.confirm !== true) return send(op, input);
+    confirmStatus = 0;
+    const result = await send(op, input);
+    confirmStatus = result.ok ? 200 : result.status ?? 0;
     return result;
   }) as Call;
   const ports = createDeclarationStepPorts(shared);
@@ -66,19 +61,24 @@ export function createStepPorts(call: Call = createApi()): StepPorts {
     statement: ports.statement,
 
     async read(assignmentId) {
-      held = null;
+      const own = send("student.declaration.get", { params: { assignmentId }, query: undefined, body: undefined });
+      held = own;
       try {
-        const [student, statement] = await Promise.all([ports.declaration.readStudent(assignmentId), ports.statement.read(assignmentId)]);
+        const [student, statement, answer] = await Promise.all([
+          ports.declaration.readStudent(assignmentId), ports.statement.read(assignmentId), own.catch((): Answer => ({ ok: false })),
+        ]);
         if (student.kind === "signedOut" || statement.kind === "signedOut") return { kind: "signedOut" };
+        const state = answer.ok ? answer.body?.state : undefined;
         return { kind: "read", view: viewOf(student, statement), statement, confirmed: state === "confirmed" || state === "bound" };
       } finally {
-        held = null;
+        if (held === own) held = null;
       }
     },
 
     async confirm(assignmentId) {
-      putStatus = null;
-      return outcomeOf(await ports.declaration.confirm(assignmentId, []), putStatus);
+      confirmStatus = null;
+      const result = await ports.declaration.confirm(assignmentId, []);
+      return outcomeOf(result, confirmStatus);
     },
   };
 }

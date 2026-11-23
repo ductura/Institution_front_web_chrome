@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 
 import { createApi } from "../../../../../../../src/client/api.ts";
 import { writeNotice } from "../../statement/model";
-import { canProceed, stepView } from "./model";
 import { createStepPorts, type StepRead } from "./step-ports";
 
 // PIL-K-IZJAVA: the step on declaration-v1 against a recorded transport. Invented data only.
@@ -70,14 +69,13 @@ describe("declaration step on declaration-v1 (PIL-K-IZJAVA)", () => {
   it("the confirmation is written on the server; until the server holds it 'Dalje' stays closed", async () => {
     const s = server();
     const first = shown(await s.ports.read(ASSIGNMENT));
-    expect(canProceed(stepView("in_progress", first.view), "none")).toBe(false);
+    expect(first.confirmed).toBe(false);
     expect(await s.ports.confirm(ASSIGNMENT)).toBe("saved");
     const put = s.sent.find((r) => r.method === "PUT");
     expect(put?.body).toMatchObject({ baseVersion: 4, confirm: true, ownWork: { confirmed: true }, ai: { use: "used" } });
     // A reload reads the confirmation back from the server, not from the browser.
     const again = shown(await s.ports.read(ASSIGNMENT));
     expect(again.confirmed).toBe(true);
-    expect(canProceed(stepView("in_progress", again.view), "saved")).toBe(true);
   });
 
   it("the step and StudentStatement share one read and one version: no 409 between them", async () => {
@@ -101,7 +99,7 @@ describe("declaration step on declaration-v1 (PIL-K-IZJAVA)", () => {
     expect(writeNotice(write).tone).toBe("alert");
     const read = shown(await s.ports.read(ASSIGNMENT));
     expect(read.statement).toMatchObject({ humanHelp: { kind: "proofreading", text: "Izmišljena lektura." } });
-    // The confirmation fails the same way: a technical error, not saved (§5 rule 11 keeps "Dalje" open).
+    // The confirmation fails the same way: a technical error, not saved, and "Dalje" stays closed.
     expect(await s.ports.confirm(ASSIGNMENT)).toBe("technical");
     expect(shown(await s.ports.read(ASSIGNMENT)).confirmed).toBe(false);
   });

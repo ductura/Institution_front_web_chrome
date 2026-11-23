@@ -17,7 +17,7 @@ import StudentStatement from "../../statement/StudentStatement";
 import StepLink from "../steps/StepLink";
 import { chatDialogText as d, declarationStepText as t } from "./messages.hr";
 import {
-  ANSWER_MAX_LENGTH, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
+  ANSWER_MAX_LENGTH, canConfirm, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
   type Chat, type ConfirmState, type DeclarationRead, type FormChoice,
 } from "./model";
 import type { StepPorts, StepRead } from "./step-ports";
@@ -68,16 +68,22 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
   const [chat, setChat] = useState<Chat | null>(null);
   const [todo, setTodo] = useState(false);
   const why = useId();
+  const statementId = useId();
+  const statementRef = useRef<HTMLDivElement>(null);
+  // index.tsx gives a new onSignIn on every render; the read must not run again for it.
+  const signIn = useRef(onSignIn);
+  signIn.current = onSignIn;
   // Both halves are read together: one answer of the server, one version to write on.
   const reload = () => setAttempt((n) => n + 1);
   useEffect(() => {
     let live = true;
     void ports.read(assignmentId).then((next) => {
       if (!live) return;
-      if (next.kind === "signedOut") return onSignIn();
+      if (next.kind === "signedOut") return signIn.current();
       setStep(next);
-      // What the server holds decides; an alert about a failed write stays until the next try.
-      setConfirm((current) => (next.confirmed ? "saved" : current === "saved" ? "none" : current));
+      // What the server holds decides. A held confirmation the server dropped (the declaration
+      // changed) is said so; an alert about a failed write stays until the next try.
+      setConfirm((current) => (next.confirmed ? "saved" : current === "saved" ? "reopened" : current));
     }, () => { if (live) setStep(FAILED_READ); });
     return () => { live = false; };
   }, [ports, assignmentId, attempt]);
@@ -91,17 +97,18 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
   const chosen = form ?? ready?.declared?.form ?? "used";
   const target = ready ? mismatchTarget(ready.recorded, chosen) : null;
   const proceed = canProceed(view, confirm);
+  const confirmable = canConfirm(view, read, confirm);
   const line = confirmLine(confirm);
+  useEffect(() => { if (editing) statementRef.current?.focus(); }, [editing]);
   const back = () => router.push(routerPath(hrefOf(stepHref(assignmentId, "tekst"))));
   const later = () => setTodo(true);
 
   const send = async (next: boolean) => {
-    // A confirmation the server holds is withdrawn only by changing the declaration.
-    if (!next) { if (confirm !== "saved" && confirm !== "sending") setConfirm("none"); return; }
-    if (confirm === "sending" || confirm === "saved") return;
+    // Only what the student filled in is confirmed; a held confirmation is withdrawn by changing the declaration.
+    if (!next || !confirmable) return;
     setConfirm("sending");
     const outcome = await ports.confirm(assignmentId);
-    if (outcome === "signedOut") return onSignIn();
+    if (outcome === "signedOut") return signIn.current();
     setConfirm(outcome);
     // Saved, conflict and stale read both halves again: the step shows what the server now holds.
     if (outcome === "saved" || outcome === "conflict" || outcome === "stale") reload();
@@ -141,13 +148,15 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
                 </>
               )}
               {!closed && (
-                <StepLink href="#izjava" onClick={() => setEditing((open) => !open)}>
+                <StepLink href={`#${statementId}`} aria-expanded={editing} aria-controls={statementId} onClick={() => setEditing((open) => !open)}>
                   {editing ? t.closeEdit : ready.declared === null ? t.fillDeclaration : t.editDeclaration}
                 </StepLink>
               )}
-              {(editing || closed) && step?.kind === "read" && (
-                <StudentStatement port={ports.statement} assignmentId={assignmentId} read={step.statement} onReload={reload} onSignIn={onSignIn} />
-              )}
+              <div id={statementId} ref={statementRef} tabIndex={-1}>
+                {(editing || closed) && step?.kind === "read" && (
+                  <StudentStatement port={ports.statement} assignmentId={assignmentId} read={step.statement} onReload={reload} onSignIn={() => signIn.current()} />
+                )}
+              </div>
             </StepDecl>
             {ready.chats.length === 0 ? <p className="note">{t.emptyChats}</p> : (
               <>
@@ -183,11 +192,11 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
         )}
         {!closed && (
           <>
-            <StepCheck id="sb-confirm" checked={confirm === "saved" || confirm === "sending" || confirm === "technical"}
+            {/* Checked only once the server holds it, never ahead of its answer. */}
+            <StepCheck id="sb-confirm" checked={confirm === "saved"} disabled={!confirmable}
               describedBy={proceed ? undefined : why} onChange={(next) => void send(next)}>{t.confirm}</StepCheck>
-            {confirm === "saved" && <p className="meta" role="status">{t.confirmSaved}</p>}
             {line !== null && <p className="note" role={line.role}>{line.text}</p>}
-            {!proceed && <p className="meta" id={why}>{t.why}</p>}
+            {!proceed && <p className="meta" id={why}>{ready?.declared === null ? t.fillFirst : t.why}</p>}
           </>
         )}
         {closed && <p className="note" role="status">{t.submitted}</p>}

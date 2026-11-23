@@ -31,11 +31,13 @@ export const declarationStepText = {
   mismatch: "Zapis bilježi prijenos iz AI pomoćnika na {target}. Provjerite odabrani obrazac.",
   confirm: "Potvrđujem izjavu",
   confirming: "Spremam potvrdu izjave na poslužitelj…",
-  confirmSaved: "Potvrda izjave je spremljena na poslužitelju.",
+  confirmSaved: "Potvrda izjave je spremljena na poslužitelju. Ako promijenite izjavu, potvrdite je ponovno.",
+  reopened: "Izjava je promijenjena, pa je treba ponovno potvrditi.",
+  fillFirst: "Prije potvrde ispunite izjavu i spremite je.",
   conflict: "Izjava se u međuvremenu promijenila. Učitana je verzija s poslužitelja; provjerite je i potvrdite ponovno.",
-  stale: "Razgovor se promijenio nakon pregleda. Ponovno pregledajte sve razgovore i potvrdite izjavu.",
+  stale: "Izjava se promijenila nakon pregleda i ponovno je učitana. Ponovno pregledajte sve i potvrdite izjavu.",
   confirmRefused: "Poslužitelj nije prihvatio potvrdu. Provjerite izjavu i pokušajte ponovno.",
-  confirmTechnical: "Potvrda nije spremljena na poslužitelju zbog tehničke greške. Tehnička greška ne sprječava predaju: možete nastaviti, a izjavu potvrdite ponovno kad poslužitelj bude dostupan.",
+  confirmTechnical: "Potvrda nije spremljena na poslužitelju zbog tehničke greške. Pokušajte ponovno.",
   noTools: "nijedan",
   noValue: "nije navedeno",
   closeEdit: "Zatvori uređivanje",
@@ -50,8 +52,8 @@ export const declarationStepText = {
   notStarted: "Rad još nije započet. Započnite ga u radnom prostoru.",
   openWorkspace: "Otvori radni prostor",
   loading: "Učitavam zabilježene stavke i priloge.",
-  // Rule 11 (PRODUCT §5): a technical error never stops a submission, so the confirmation stays open.
-  error: "Zabilježene stavke trenutačno nije moguće učitati. Izjavu možete potvrditi i bez zapisa.",
+  // The confirmation is written on the server: without a read there is nothing to confirm (PIL-K-IZJAVA).
+  error: "Izjavu trenutačno nije moguće učitati s poslužitelja. Pokušajte ponovno; potvrda je moguća kad se izjava učita.",
   retry: "Pokušaj ponovno",
 } as const;
 

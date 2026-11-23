@@ -17,6 +17,7 @@ export const statementMessages = {
   printoutLabel: "Datoteka s ispisom",
   attach: "Priloži ispis",
   attached: "Priloženo",
+  attachSent: "Ispis je poslan na poslužitelj. Priložit će se izjavi kad je spremite ili potvrdite.",
   readOnly: "Rad je predan. Izjava i prilog su samo za čitanje.",
   loading: "Učitavam izjavu.",
   unavailable: "Izjavu nije bilo moguće učitati. Pokušaj ponovno.",
