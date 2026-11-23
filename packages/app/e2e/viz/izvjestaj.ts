@@ -5,7 +5,6 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { frameOf } from "../../src/host/ljuska-po-ekranu";
 import { PAIRS, SCENARIJ, SCENARIJ_OUT, TEME, THEME, VIZ_OUT, WIDTHS, temaOut, type Tema } from "./pairs";
 import type { Stavka } from "./popis.viz";
 import { CILJ_PRAG, prekoracenja, procitajPrag, type Mjerenje } from "./prag";
@@ -15,6 +14,18 @@ import { tablicaHtml, tablicaMd, type Redak } from "./tablica";
 const OUT = VIZ_OUT;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 const json = <T>(file: string): T | null => (existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as T) : null);
+
+/**
+ * The frame the prototype gives a route (VIZ-CSS, src/host/ljuska-po-ekranu.ts). The file is read as text, not
+ * imported: it pulls in the whole app (CSS modules), which this node process cannot load.
+ */
+const OKVIRI = [...readFileSync(resolve(import.meta.dirname, "../../src/host/ljuska-po-ekranu.ts"), "utf8")
+  .matchAll(/^\s+([sn])\("([^"]+)", "[^"]*", "(side|none)"/gm)].map((m) => ({ role: m[1] === "s" ? "student" : "teacher", path: m[2]!, shell: m[3]! }));
+const matches = (pattern: string, route: string) => {
+  const want = pattern.split("/"), have = route.split("/");
+  return want.length === have.length && want.every((w, i) => (/^\[\w+\]$/.test(w) ? (have[i] ?? "") !== "" : w === have[i]));
+};
+const ljuskaOd = (role: string | null, path: string) => OKVIRI.find((o) => o.role === role && matches(o.path, path.split("?")[0]!))?.shell ?? "-";
 
 /** The coverage table (VIZ-TAMNA): a row per prototype screen, both themes of the scenario read from their folders. */
 function tablica(prag: number): { md: string; html: string } | null {
@@ -28,7 +39,7 @@ function tablica(prag: number): { md: string; html: string } | null {
     if (parovi.length === 0) return [{ prototip, naslov: s.naslov, ekran: null, ruta: "", ljuska: "-", svijetla: [], tamna: [] }];
     return parovi.map(({ screen, slug }) => ({
       prototip, naslov: s.naslov, ekran: screen.name, ruta: screen.path,
-      ljuska: (screen.role === "student" || screen.role === "teacher" ? frameOf(screen.path.split("?")[0]!, screen.role)?.shell : undefined) ?? "-",
+      ljuska: ljuskaOd(screen.role, screen.path),
       svijetla: posto("light", slug), tamna: posto("dark", slug),
     }));
   });
