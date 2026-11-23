@@ -84,15 +84,16 @@ describe("M0.1 journal: local writes", () => {
     },
   );
 
-  it("56: a fresh journal opens straight at version 4 with all six stores", async () => {
+  it("56: a fresh journal opens straight at version 5 with all seven stores", async () => {
     const journal = kit.open();
     await journal.read(ID);
     const db = raw(journal);
-    expect(db.verno).toBe(4);
+    // PIL-K-V3-BEZ-MREZE: version 5 added the store of verified openings.
+    expect(db.verno).toBe(5);
     expect(db.tables.map((table) => table.name).sort())
-      .toEqual(["control", "meta", "pending", "salvage", "snapshots", "timings"]);
+      .toEqual(["control", "meta", "pending", "salvage", "snapshots", "timings", "works"]);
     expect(Array.from(db.backendDB().objectStoreNames).sort())
-      .toEqual(["control", "meta", "pending", "salvage", "snapshots", "timings"]);
+      .toEqual(["control", "meta", "pending", "salvage", "snapshots", "timings", "works"]);
     expect(db.table("pending").schema.primKey.keyPath).toEqual(["documentId", "localSeq"]);
   });
 });

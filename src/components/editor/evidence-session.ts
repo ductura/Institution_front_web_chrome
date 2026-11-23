@@ -45,7 +45,9 @@ import type { DrainRunner } from "@/lib/sync/drain-runner";
 
 export type EvidenceJournal = Pick<AtomicDexieJournal, "readEvidence" | "startEvidence" | "saveSegment" | "saveUncovered">
   /** PIL-K-V3-OPORAVAK: the way out of a sticky state and its kept copies; without them `adoptServer` and `salvage` do nothing. */
-  & Partial<Pick<AtomicDexieJournal, "adoptServerEvidence" | "readSalvage">>;
+  & Partial<Pick<AtomicDexieJournal, "adoptServerEvidence" | "readSalvage">>
+  /** PIL-K-V3-BEZ-MREZE: the stored verified opening; without it a v3 work opens only with the server's answer. */
+  & Partial<Pick<AtomicDexieJournal, "readVerifiedWork">>;
 
 /**
  * What `adoptServer` did: the journal took the server's version (the session
@@ -252,7 +254,12 @@ export class EvidenceSession {
         // answer comes first; without it nothing is read or written.
         opened = await this.openSafely();
         if (this.closed) return { kind: "unavailable" };
-        this.verified = opened.status === "opened" ? await verifiedV3(this.id, opened.work) : null;
+        // PIL-K-V3-BEZ-MREZE: the server's answer, when there is one, decides;
+        // only no answer at all opens the work from its stored verified opening.
+        this.verified = opened.status === "opened"
+          ? await verifiedV3(this.id, opened.work)
+          : opened.status === "unavailable" ? await this.storedV3() : null;
+        if (this.closed) return { kind: "unavailable" };
         if (!this.verified) return this.haltLoad("unavailable");
         contents = await this.readJournal();
       } else {
@@ -603,13 +610,18 @@ export class EvidenceSession {
    */
   private retryOpen(): void {
     if (this.work || this.opening || this.paused || this.ended || !this.deps.network.online()) return;
-    this.opening = this.openSafely().then((opened) => {
+    this.opening = this.openSafely().then(async (opened) => {
       if (opened.status !== "opened" || this.closed) return;
-      if (opened.work.documentId !== this.id) {
+      // PIL-K-V3-BEZ-MREZE: a v3 work opened from its stored opening is
+      // verified again against the server's answer, which takes its place.
+      const fresh = this.deps.schemaVersion === 3 ? await verifiedV3(this.id, opened.work).catch(() => null) : null;
+      if (this.closed || this.work) return;
+      if (opened.work.documentId !== this.id || (this.deps.schemaVersion === 3 && !fresh)) {
         this.failure = "unavailable";
         this.halted = true;
         return;
       }
+      if (fresh) this.verified = fresh;
       this.work = opened.work;
       if (opened.work.submitted) {
         // O2 also when the first open could not be reached (Codex #818
@@ -618,7 +630,7 @@ export class EvidenceSession {
         return;
       }
       this.profile = opened.work.evidenceProfileId;
-      this.runner = this.deps.createRunner(opened.work);
+      this.runner = fresh ? this.deps.createRunner(opened.work, fresh) : this.deps.createRunner(opened.work);
       this.startWrites();
       this.kick();
     }).finally(() => {
@@ -632,6 +644,16 @@ export class EvidenceSession {
       return await this.deps.open();
     } catch {
       return { status: "unavailable" };
+    }
+  }
+
+  /** The stored verified opening of this v3 work (`readVerifiedWork`), or null; never a throw. */
+  private async storedV3(): Promise<VerifiedWorkOpening | null> {
+    try {
+      const stored = await this.deps.journal.readVerifiedWork?.(this.id);
+      return stored?.schemaVersion === 3 ? stored : null;
+    } catch {
+      return null;
     }
   }
 
