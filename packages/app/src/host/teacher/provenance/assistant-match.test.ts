@@ -51,6 +51,8 @@ describe("PIL-P1-PODUDARANJE-KARTA: read", () => {
     expect(await reader({ match: Response.json({ findings: [{ ...FAKE_FINDING, copied: true }] }), parts: parts() }).read(DOCUMENT)).toEqual({ kind: "unavailable" });
     expect(await reader({ match: new Error("offline"), parts: parts() }).read(DOCUMENT)).toEqual({ kind: "unavailable" });
     expect(await reader({}).read("")).toEqual({ kind: "notFound" });
+    // 403 is outside the extract: a retry cannot help, so it shows nothing, like 404.
+    expect(await reader({ match: json(403, "forbidden"), parts: parts() }).read(DOCUMENT)).toEqual({ kind: "notFound" });
   });
 });
 
@@ -62,6 +64,8 @@ describe("PIL-P1-PODUDARANJE-KARTA: model", () => {
     expect(shareLabel(0.4)).toBe(`${LABEL} · manje od 1 %`);
     const second = { ...FAKE_FINDING, messageId: "00000000-0000-4000-8000-00000000a002", runWords: 21 };
     expect(matchRows([FAKE_FINDING, second]).map((row) => row.words)).toEqual(["11 riječi", "21 riječ"]);
+    const keys = matchRows([FAKE_FINDING, FAKE_FINDING]).map((row) => row.key);
+    expect(new Set(keys).size).toBe(2);
   });
 });
 
@@ -72,6 +76,9 @@ describe("PIL-P1-PODUDARANJE-KARTA: view", () => {
       expect(out).toContain(text);
     }
     expect(out).toContain('data-assistant-match="ready"');
+    expect(out).toContain('<h3 id="assistant-match-h"');
+    const top = renderToStaticMarkup(createElement(AssistantMatchView, { read: { kind: "ready", percent: 4, findings: [FAKE_FINDING] }, onRetry: () => {}, level: 2 }));
+    expect(top).toContain('<h2 id="assistant-match-h"');
   });
 
   it("does not exist while there is nothing: flag off, loading, not found, signed out", () => {

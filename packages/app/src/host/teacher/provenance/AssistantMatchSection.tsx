@@ -19,7 +19,8 @@ const COLUMNS: readonly DataTableColumn<MatchRow>[] = [
  * student and the teacher see the same section. While the faculty flag is off the server has nothing, and the
  * section does not exist: no heading, no share, no row.
  */
-export default function AssistantMatchSection({ documentId, call = readAssistantMatch }: { documentId: string; call?: MatchCall }) {
+/** `level` is the heading level the parent gives: 3 inside the map panel (default), 2 directly under a page title. */
+export default function AssistantMatchSection({ documentId, call = readAssistantMatch, level = 3 }: { documentId: string; call?: MatchCall; level?: 2 | 3 }) {
   const [read, setRead] = useState<MatchRead | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -28,11 +29,12 @@ export default function AssistantMatchSection({ documentId, call = readAssistant
     void call(documentId).then((answer) => { if (active) setRead(answer); });
     return () => { active = false; };
   }, [call, documentId, attempt]);
-  return <AssistantMatchView read={read} onRetry={() => setAttempt((n) => n + 1)} />;
+  return <AssistantMatchView read={read} level={level} onRetry={() => setAttempt((n) => n + 1)} />;
 }
 
 /** Loading, none, not found and signed out draw nothing: the surrounding screen already says those. */
-export function AssistantMatchView({ read, onRetry }: { read: MatchRead | null; onRetry: () => void }) {
+export function AssistantMatchView({ read, onRetry, level = 3 }: { read: MatchRead | null; onRetry: () => void; level?: 2 | 3 }) {
+  const Heading = level === 2 ? "h2" : "h3";
   if (read === null || read.kind === "none" || read.kind === "notFound" || read.kind === "signedOut") return null;
   if (read.kind === "unavailable") {
     return (
@@ -44,7 +46,7 @@ export function AssistantMatchView({ read, onRetry }: { read: MatchRead | null; 
   }
   return (
     <section aria-labelledby="assistant-match-h" data-assistant-match="ready">
-      <h3 id="assistant-match-h">{t.heading}</h3>
+      <Heading id="assistant-match-h">{t.heading}</Heading>
       <p data-assistant-match-share><b>{shareLabel(read.percent)}</b></p>
       <p className="note">{t.intro}</p>
       <p className="note">{t.neutral}</p>

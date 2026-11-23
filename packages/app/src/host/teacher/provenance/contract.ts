@@ -24,7 +24,8 @@ export function assistantMatchReader(options?: ApiOptions): MatchCall {
       if (findings.ok && composition.ok) return matchOf(findings.body.findings, composition.body.parts);
       const status = (findings.ok ? null : findings.status) ?? (composition.ok ? null : composition.status);
       if (status === 401) return { kind: "signedOut" };
-      if (status === 404) return { kind: "notFound" };
+      // 403 is not in the contract extract; a retry cannot help, so it reads like 404: nothing to show.
+      if (status === 404 || status === 403) return { kind: "notFound" };
     } catch {
       return { kind: "unavailable" };
     }

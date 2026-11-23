@@ -39,8 +39,9 @@ export type MatchRow = { readonly key: string; readonly words: string; readonly 
 
 /** One row per finding, in the server's order, never sorted or counted by size. */
 export function matchRows(findings: readonly MatchFinding[]): readonly MatchRow[] {
-  return findings.map((f) => ({
-    key: `${f.segmentRef}:${f.messageId}`,
+  return findings.map((f, index) => ({
+    // The schema does not make (segmentRef, messageId) unique; the position keeps the key unique.
+    key: `${index}:${f.segmentRef}:${f.messageId}`,
     words: t.words(f.runWords),
     recorded: formatDateTimeHr(f.recordedAt),
     attached: formatDateTimeHr(f.attachedAt),
