@@ -33,8 +33,9 @@ export default function StudentInterviewPage({ assignmentId: raw, port = student
   let body: ReactNode;
   if (work === null) body = <p role="status">{hostText.loading}</p>;
   else if (work.kind === "invalid") body = <p role="status">{t.replay.invalid}</p>;
-  else if (work.kind === "notStarted") body = <p role="status">{t.replay.notStarted}</p>;
-  else if (work.kind !== "document") body = <p role="alert">{text.unavailable}</p>;
+  else if (work.kind === "notStarted") body = <p role="status">{text.notStarted}</p>;
+  // A work in progress (or one whose receipt could not be read): not an error of the student's.
+  else if (work.kind !== "document") body = <p role="status">{text.notSubmitted}</p>;
   else body = <StudentInterview port={port} documentId={work.documentId} onSignedOut={signedOut} onNotFound={gone} />;
   return <div className="page"><h1>{text.pageTitle}</h1>{back}{body}</div>;
 }

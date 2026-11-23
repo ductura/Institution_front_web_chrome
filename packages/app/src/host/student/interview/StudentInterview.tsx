@@ -39,7 +39,7 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
     if (read?.kind === "notFound") onNotFound?.();
   }, [read, onSignedOut, onNotFound]);
 
-  if (read === null || read.kind === "signedOut") return <p role="status">{text.loading}</p>;
+  if (read === null || read.kind === "signedOut" || read.kind === "notFound") return <p role="status">{text.loading}</p>;
   if (read.kind === "notInvited") return <p role="status">{text.notInvited}</p>;
   if (read.kind !== "ready") {
     return (
@@ -57,6 +57,9 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
     const result = await sendExplanation(port, documentId, questionId, drafts[key] ?? "");
     setPending(null);
     if (result.kind === "signedOut") { onSignedOut?.(); return; }
+    if (result.kind === "notFound") { onNotFound?.(); return; }
+    // 403 on a send: read the talk again; a withdrawn invitation then shows as not scheduled, the draft stays.
+    if (result.kind === "notInvited") setAttempt((n) => n + 1);
     const next = afterSend(shown, result);
     setRead(next.read);
     setNotice({ tone: next.sent ? "status" : "alert", message: next.message });
@@ -78,7 +81,7 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
       <div>
         <TextArea label={label} value={value} error={error ?? undefined} invalid={error !== null} busy={pending === key}
           onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))} />
-        <Button disabled={pending !== null || explanationError(value) !== null} onClick={() => void send(key, questionId)}>
+        <Button busy={pending !== null} disabled={explanationError(value) !== null} onClick={() => void send(key, questionId)}>
           {pending === key ? text.sending : text.send}
         </Button>
       </div>
@@ -127,7 +130,9 @@ export default function StudentInterview({ port, documentId, onChooseSlot, onSig
           {fileError && <p role="alert">{fileError}</p>}
         </>
       )}
-      {notice && <p role={notice.tone === "alert" ? "alert" : "status"}>{notice.message}</p>}
+      {/* Live regions present from the first render, so the outcome of a send is announced when written into them. */}
+      <p role="status">{notice?.tone === "status" ? notice.message : ""}</p>
+      <p role="alert">{notice?.tone === "alert" ? notice.message : ""}</p>
     </section>
   );
 }
