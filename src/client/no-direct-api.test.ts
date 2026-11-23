@@ -127,9 +127,9 @@ export function normalise(text: string): string {
     .replace(/(["'`])\s*,\s*(["'`])/g, "$1/$2");
 }
 
-// An "import" inside a string literal (a generated enum value: "kind": "import" | "ai-transfer") is not a statement.
+// An "import" or "from" inside a string literal (a generated enum value "kind": "import", a generated key "from": string) is not a statement.
 function bareImports(text: string): string[] {
-  const found = [...text.matchAll(/(?:\bfrom\s*|(?<!["'`])\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
+  const found = [...text.matchAll(/(?:(?<!["'`])\bfrom\s*|(?<!["'`])\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
   return found.map((m) => m[1] ?? "").filter((spec) => !spec.startsWith(".") && !spec.startsWith("/"));
 }
 
@@ -300,6 +300,8 @@ describe("paths read the same with Windows separators", () => {
     expect(directCalls(vite, toPosix("catalog\\vite.config.ts", win32.sep))).toEqual([]);
     expect(directCalls(vite, toPosix("packages/ui\\vite.config.ts", win32.sep))).toEqual([]);
     expect(directCalls(vite, toPosix("catalog\\src\\main.tsx", win32.sep))).toEqual(["import vite"]);
+    expect(directCalls('type T = { "kind": "import" | "ai-transfer"; "at": { "from": string; "to": string } };', "src/x.ts")).toEqual([]);
+    expect(directCalls('import{a}from"evil-net";', "src/x.ts")).toEqual(["import evil-net"]);
     expect(["C:\\repo\\packages", "C:\\repo\\packages\\", "/repo/packages", "/repo/packages/", "C:\\repo\\src", "C:\\repo\\mypackages"]
       .map((dir) => isPackagesDir(dir, dir.startsWith("C:") ? win32.sep : posix.sep))).toEqual([true, true, true, true, false, false]);
   });

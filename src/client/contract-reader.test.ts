@@ -36,7 +36,7 @@ function schemaOf(vector: Vector): Json | undefined {
 }
 
 /** Vectors (`route name`) whose answer has no field this test can mutate (fields behind $ref/anyOf/oneOf, or an empty object). */
-// 47 answers are a top-level anyOf (no `properties` to mutate) and 2 have properties without a plain type/const.
+// 50 answers are a top-level anyOf (no `properties` to mutate) and 2 have properties without a plain type/const.
 const NO_MUTABLE_FIELDS = new Set<string>([
   "auth.webauthn-challenge.post assertion",
   "auth.webauthn-challenge.post registration",
@@ -85,6 +85,10 @@ const NO_MUTABLE_FIELDS = new Set<string>([
   "work.comment-drafts.post reply-created",
   "work.comment-drafts.post thread-created",
   "work.export-pdf.get ordinary",
+  // work.restore.post (INT-21 C): recorded/already_recorded with a revision, or no_matching_revision alone.
+  "work.restore.post already-recorded",
+  "work.restore.post no-matching-revision",
+  "work.restore.post recorded",
   "work.version.get diff",
   "work.version.get snapshot",
 ]);
