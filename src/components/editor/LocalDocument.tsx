@@ -38,7 +38,7 @@
  */
 
 import type { Transaction } from "@tiptap/pm/state";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import { EditorContent, useEditor, type Editor, type Extensions } from "@tiptap/react";
 import {
   createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type FormEvent, type MouseEvent, type ReactNode,
 } from "react";
@@ -52,7 +52,7 @@ import { localChip, type LocalChip } from "@/domain/sync/labels";
 import type { SyncState } from "@/domain/sync/states";
 import {
   countWords, NODE_ID_ATTRIBUTE, tiptapToCanonical, startFreshHistory, replaceWithStoredDocument,
-  createEditorExtensions, ArrowCollapse, ChapterNumbers, StorableInput, storableDocument, SourceObserver,
+  createEditorExtensions, createEditorExtensionsV3, ArrowCollapse, ChapterNumbers, StorableInput, storableDocument, SourceObserver,
 } from "@/editor";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { createLivePublisher, type LivePublisher } from "@/client/live-publisher";
@@ -91,6 +91,31 @@ function noBrowserStorage(): boolean {
 }
 
 type Phase = "loading" | "blocked" | "ready" | "recovery" | "unavailable" | "signed-out";
+
+/**
+ * The document schema the sheet mounts (PIL-K-SHEMA-V3). Only a work whose
+ * open answer (evidence.open.post `schemaVersion`) confirmed version 3 gets
+ * the v3 editor with the footnote and the cross reference; any other version,
+ * an unknown one, or none at all stays on v1, as every work did before.
+ */
+export type SheetSchema = 1 | 3;
+
+export function sheetSchemaOf(confirmedWorkSchemaVersion: unknown): SheetSchema {
+  return confirmedWorkSchemaVersion === 3 ? 3 : 1;
+}
+
+/**
+ * Every extension of the sheet, in the order the editor registers them.
+ * ArrowCollapse: a plain arrow on a selection across blocks moves the caret
+ * in the editor state at once, never after the next letter (DAN-247). The
+ * source observer's priority puts it before ArrowCollapse's keydown.
+ * ChapterNumbers: heading numbers as decorations, never text (DAN-395).
+ * CroatianQuotes: a typed straight quote becomes „ ” or ‚ ’ (WEB-1605).
+ */
+export function sheetExtensions(schema: SheetSchema, observer: Extensions[number]): Extensions {
+  const base = schema === 3 ? createEditorExtensionsV3(t.editor.placeholder) : createEditorExtensions(t.editor.placeholder);
+  return [...base, StorableInput, ArrowCollapse, ChapterNumbers, CroatianQuotes, observer];
+}
 
 type Failure = SaverFailure | "invalid";
 
@@ -209,7 +234,7 @@ function sameIds(editor: Editor, doc: CanonicalDocument): boolean {
 }
 
 export function LocalDocumentProvider({
-  scope, documentId, assignmentId = null, session = null, livePublish = false, publishHeld = false, children,
+  scope, documentId, assignmentId = null, session = null, livePublish = false, publishHeld = false, schemaVersion, children,
 }: {
   scope: string;
   documentId: string;
@@ -233,8 +258,15 @@ export function LocalDocumentProvider({
    * restarts the lock run.
    */
   publishHeld?: boolean;
+  /**
+   * The schema version the server confirmed for this work (PIL-K-SHEMA-V3):
+   * 3 mounts the v3 editor, anything else v1. Read once; the page keys the
+   * provider by the work it opened.
+   */
+  schemaVersion?: number;
   children: ReactNode;
 }) {
+  const [sheet] = useState(() => sheetSchemaOf(schemaVersion));
   const [loadPhase, setPhase] = useState<Phase>("loading");
   // A browser without Web Locks or IndexedDB never leaves "loading" by itself:
   // it shows "unavailable" from the first render after hydration (the server
@@ -292,6 +324,13 @@ export function LocalDocumentProvider({
     const saver = saverRef.current;
     if (!dirtyRef.current || !editor || editor.isDestroyed || !saver || !readyRef.current) return;
     dirtyRef.current = false;
+    // The candidate, the journal and the evidence of this sheet are v1 only:
+    // a v3 work's text (a footnote) is never proposed as a v1 document. Until
+    // they take v3 the change is refused, as any text they cannot keep.
+    if (sheet === 3) {
+      setInvalid(true);
+      return;
+    }
     const candidate = tiptapToCanonical(editor.getJSON());
     // `StorableInput` keeps unstorable text out of the editor; should any
     // remain, the journal would hold other text than shown, so it is refused.
@@ -307,12 +346,7 @@ export function LocalDocumentProvider({
   });
 
   const editor = useEditor({
-    // ArrowCollapse: a plain arrow on a selection across blocks moves the
-    // caret in the editor state at once, never after the next letter (DAN-247).
-    // The source observer's priority puts it before ArrowCollapse's keydown.
-    // ChapterNumbers: heading numbers as decorations, never text (DAN-395).
-    // CroatianQuotes: a typed straight quote becomes „ ” or ‚ ’ (WEB-1605).
-    extensions: [...createEditorExtensions(t.editor.placeholder), StorableInput, ArrowCollapse, ChapterNumbers, CroatianQuotes, observer.extension],
+    extensions: sheetExtensions(sheet, observer.extension),
     editable: false,
     immediatelyRender: false,
     injectCSS: false, // app/prosemirror.css (DAN-489)
