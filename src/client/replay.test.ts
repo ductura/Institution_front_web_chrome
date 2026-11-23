@@ -13,12 +13,24 @@ import {
 } from "./replay-record/replay-record.fixture";
 
 import {
+  buildRecordV3,
+  citeAndFootnote,
+  typeAt as typeAtV3,
+  V3_START_JCS,
+  v3Start,
+} from "./replay-record/replay-record-v3.fixture";
+import { createBrowserReplayStepsV1, createBrowserReplayStepsV3 } from "./replay-record/replay-steps";
+import { buildReplayTimeline } from "./replay-record/replay-timeline";
+import { REVISION_ZERO_JCS, REVISION_ZERO_NODE_ID } from "@/domain/document/revision-zero";
+
+import {
   fetchReplayRecord,
   loadReplay,
   parseReplayPage,
   REPLAY_PAGE_FORMAT,
   REPLAY_PAGE_MAX_SEGMENTS,
   REPLAY_RESTARTS,
+  replayStepsFor,
 } from "./replay";
 
 // createApi names the page's own origin; the node test has none.
@@ -211,5 +223,112 @@ describe("loadReplay (DAN-537)", () => {
   it("passes signed out and not found through", async () => {
     expect(await loadReplay(DOC, () => true, scripted([{ status: 401 }]).fetcher)).toStrictEqual({ kind: "signedOut" });
     expect(await loadReplay(DOC, () => true, scripted([{ status: 404 }]).fetcher)).toStrictEqual({ kind: "notFound" });
+  });
+});
+
+describe("replay of a work of document v3 (INT-23)", () => {
+  type V3Record = Awaited<ReturnType<typeof buildRecordV3>>;
+  // Sources, a citation and a footnote, then text typed after them, in two segments.
+  let v3: V3Record;
+  beforeAll(async () => {
+    v3 = await buildRecordV3([[citeAndFootnote, typeAtV3(3, " Izmišljena")], [typeAtV3(14, " rečenica.")]]);
+  });
+
+  /** The page of the v3 record from `from` with `size` segments, as the route writes it. */
+  function pageV3(r: V3Record, from: number, size: number, startDocument = V3_START_JCS) {
+    const segments = r.segments.slice(from, from + size);
+    const end = from + segments.length;
+    return {
+      replayFormat: REPLAY_PAGE_FORMAT,
+      segmentCount: r.segments.length,
+      head: r.head,
+      from,
+      next: end < r.segments.length ? end : null,
+      startDocument: from === 0 ? startDocument : null,
+      segments,
+      resumeDocuments: {},
+    };
+  }
+  const recordV3 = (r: V3Record, startDocument = V3_START_JCS) =>
+    ({ startDocument, segments: r.segments, head: r.head, resumeDocuments: {}, sessionBreakAboveMinutes: 30 });
+
+  it("the record is written in ductus-edit-steps-v3 from the v3 revision 0", () => {
+    const first = JSON.parse(v3.segments[0]!) as { captureContext: { transactionFormat: string } };
+    expect(first.captureContext.transactionFormat).toBe("ductus-edit-steps-v3");
+    expect(v3.segments).toHaveLength(2);
+  });
+
+  it("goes through the whole timeline: every step, no gap, the document of every event's hash", async () => {
+    const timeline = await buildReplayTimeline(recordV3(v3), createBrowserReplayStepsV3());
+    if (!timeline.ok) throw new Error(timeline.reason);
+    expect(timeline.end).toBe("complete");
+    // The record starts at the v3 revision 0 with event 1: nothing before it is missing.
+    expect(timeline.markers.filter((marker) => marker.kind === "gap")).toStrictEqual([]);
+    expect(timeline.changes.map((change) => change.kind)).toStrictEqual(["structure", "insert", "insert", "insert", "insert"]);
+    expect(timeline.changes.map((change) => change.index)).toStrictEqual([1, 2, 3, 4, 5]);
+    expect(timeline.documentAt(0)).toStrictEqual(v3Start.toJSON());
+    expect(timeline.documentAt(timeline.changes.length)).toStrictEqual(v3.ends[1]!.toJSON());
+    const history = timeline.blockHistory(REVISION_ZERO_NODE_ID);
+    expect(history.at(-1)).toMatchObject({ after: " Izmišljena rečenica.", inserted: " rečenica." });
+  });
+
+  it("loadReplay reads the v3 record over pages and replays it with the v3 replayer", async () => {
+    const { fetcher } = scripted([ok(pageV3(v3, 0, 1)), ok(pageV3(v3, 1, 1))]);
+    const loaded = await loadReplay(DOC, () => true, fetcher);
+    if (loaded.kind !== "ok") throw new Error(loaded.kind);
+    expect(loaded.player.end).toBe("complete");
+    expect(loaded.player.total).toBe(5);
+    expect(loaded.player.entries.some((entry) => entry.entry === "gap")).toBe(false);
+    expect(loaded.player.documentAt(5)).toStrictEqual(v3.ends[1]!.toJSON());
+    expect(loaded.player.paragraphHistory(REVISION_ZERO_NODE_ID).at(-1)).toMatchObject({ entry: "change", index: 5 });
+  });
+
+  it("picks the replayer by the step format of the first segment", () => {
+    expect(replayStepsFor({ segments: v3.segments })?.transactionFormat).toBe("ductus-edit-steps-v3");
+    expect(replayStepsFor({ segments: one.segments })?.transactionFormat).toBe("ductus-edit-steps-v1");
+    // The empty record is read as before.
+    expect(replayStepsFor({ segments: [] })?.transactionFormat).toBe("ductus-edit-steps-v1");
+  });
+
+  it("knows no other step format: unknown, missing or unreadable is no replayer", () => {
+    const other = (format: unknown) => {
+      const segment = JSON.parse(v3.segments[0]!) as { captureContext: Record<string, unknown> };
+      segment.captureContext.transactionFormat = format;
+      return JSON.stringify(segment);
+    };
+    for (const format of ["ductus-edit-steps-v2", "ductus-edit-steps-v4", "ductus-edit-steps-v9", "", 3, null]) {
+      expect(replayStepsFor({ segments: [other(format)] })).toBeNull();
+    }
+    expect(replayStepsFor({ segments: ["{"] })).toBeNull();
+    expect(replayStepsFor({ segments: ["[]"] })).toBeNull();
+    expect(replayStepsFor({ segments: [JSON.stringify({ captureContext: null })] })).toBeNull();
+  });
+
+  it("is unavailable for a record of an unknown step format, even with a whole chain", async () => {
+    const segment = JSON.parse(v3.segments[0]!) as { captureContext: Record<string, unknown> };
+    segment.captureContext.transactionFormat = "ductus-edit-steps-v9";
+    const text = JSON.stringify(segment);
+    const page = { ...pageV3(v3, 0, 1), segmentCount: 1, next: null, segments: [text], head: { segmentHash: sha(text), segmentCount: 1 } };
+    expect(await loadReplay(DOC, () => true, scripted([ok(page)]).fetcher)).toStrictEqual({ kind: "unavailable" });
+  });
+
+  it("stays fail-closed: a changed v3 segment, or a start document of another schema", async () => {
+    const tampered = { ...pageV3(v3, 0, 2), segments: [v3.segments[0], v3.segments[1]!.replace("rečenica", "recenica")] };
+    expect(await loadReplay(DOC, () => true, scripted([ok(tampered)]).fetcher)).toStrictEqual({ kind: "unavailable" });
+    const v1Start = pageV3(v3, 0, 2, REVISION_ZERO_JCS);
+    expect(await loadReplay(DOC, () => true, scripted([ok(v1Start)]).fetcher)).toStrictEqual({ kind: "unavailable" });
+    expect(await buildReplayTimeline(recordV3(v3, REVISION_ZERO_JCS), createBrowserReplayStepsV3()))
+      .toStrictEqual({ ok: false, reason: "document_mismatch" });
+    // The v3 revision 0 under the wrong hash is no start either.
+    expect(await buildReplayTimeline(recordV3(v3, V3_START_JCS.replace("[]}", "[] }")), createBrowserReplayStepsV3()))
+      .toStrictEqual({ ok: false, reason: "document_mismatch" });
+  });
+
+  it("each replayer refuses the other's format: v3 is never read as v1, nor v1 as v3", async () => {
+    // Each segment is checked against the replayer's own format, so it is no segment of the other.
+    expect(await buildReplayTimeline(recordV3(v3), createBrowserReplayStepsV1()))
+      .toStrictEqual({ ok: false, reason: "invalid_segment" });
+    const v1 = { startDocument: jcsOf(start), segments: one.segments, head: one.head, resumeDocuments: {}, sessionBreakAboveMinutes: 30 };
+    expect(await buildReplayTimeline(v1, createBrowserReplayStepsV3())).toStrictEqual({ ok: false, reason: "invalid_segment" });
   });
 });

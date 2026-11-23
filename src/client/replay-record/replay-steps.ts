@@ -4,7 +4,9 @@ import type { EvidenceEventV2 } from "@/domain/forensics/evidence-segment-v2";
 import type { JcsJsonValue } from "@/domain/forensics/jcs";
 import type { ReplayStepReplayer } from "./replay-timeline";
 
+import type { AsyncEvidenceStepReplayerV2 } from "@/domain/forensics/evidence-replay-v2";
 import { createBrowserEditStepsV1Replayer } from "../../../packages/editor-core/src/document/forensics/replay/edit-steps-v1-browser-replayer";
+import { createBrowserAcademicReplayer } from "../../../packages/editor-core/src/document/forensics/replay/edit-steps-versioned-browser-replayer";
 
 /**
  * The replay timeline's view of `ductus-edit-steps-v1` (DAN-344, contract on
@@ -37,8 +39,12 @@ function stepRange(step: unknown): { from: number; to: number } | null {
   return null;
 }
 
-export function createBrowserReplayStepsV1(): ReplayStepReplayer<PmNode> {
-  const replayer = createBrowserEditStepsV1Replayer();
+/**
+ * The timeline's view of any event replayer: every step of an event runs as
+ * an event of one step through `replayer.apply`, so the rules are exactly the
+ * replayer's own and nothing here applies a step itself.
+ */
+function replayStepsOf(replayer: AsyncEvidenceStepReplayerV2<PmNode>): ReplayStepReplayer<PmNode> {
   return {
     transactionFormat: replayer.transactionFormat,
     load: replayer.load,
@@ -68,4 +74,18 @@ export function createBrowserReplayStepsV1(): ReplayStepReplayer<PmNode> {
       return text;
     },
   };
+}
+
+export function createBrowserReplayStepsV1(): ReplayStepReplayer<PmNode> {
+  return replayStepsOf(createBrowserEditStepsV1Replayer());
+}
+
+/**
+ * The same view of `ductus-edit-steps-v3` (INT-23): a work of document v3 is
+ * replayed by the browser replayer of v3, the one the editor checks its own
+ * segments with, so its sources, citations and footnotes are applied by the
+ * same rules as in the work.
+ */
+export function createBrowserReplayStepsV3(): ReplayStepReplayer<PmNode> {
+  return replayStepsOf(createBrowserAcademicReplayer(3));
 }
