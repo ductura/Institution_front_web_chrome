@@ -46,6 +46,14 @@ export function nearTag(dueIso: string, now: Date): string | null {
   return t.dueSoon.replace("{n}", String(days)).replace("{unit}", days % 10 === 1 && days !== 11 ? t.dayOne : t.dayMany);
 }
 
+/**
+ * P-D1: whether the server marked the assignment as practice ("Probni"). Only an explicit `isPractice: true`
+ * in the server's answer counts; a missing or other value is a regular assignment, never a local guess.
+ */
+export function practiceOf(assignment: object): boolean {
+  return "isPractice" in assignment && assignment.isPractice === true;
+}
+
 /** The deadline in force: an extension replaces the original. */
 export function effectiveDue(dueAt: string, extendedDueAt: string | null | undefined): string {
   return typeof extendedDueAt === "string" && extendedDueAt !== "" ? extendedDueAt : dueAt;
