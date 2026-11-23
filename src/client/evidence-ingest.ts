@@ -65,6 +65,8 @@ export type OpenedWork = {
   receiptKeys: readonly EvidenceDomainKey[];
   /** True exactly when the student's submission of this work is recorded (DAN-289 O2). */
   submitted: boolean;
+  /** The server-confirmed schema version of the work's revision zero; absent when the server did not state it. */
+  schemaVersion?: 1 | 2 | 3;
 };
 
 export type OpenOutcome =
@@ -250,9 +252,11 @@ export function openedWorkFrom(value: unknown): OpenedWork | null {
   ) {
     return null;
   }
+  const schemaVersion = value.schemaVersion;
   return {
     documentId, evidenceProfileId, currentRevision, documentHash, headSegmentHash, lastSequenceTo,
     document, evidenceDomainId: keys.domain, receiptKeys: keys.keys, submitted,
+    ...(schemaVersion === 1 || schemaVersion === 2 || schemaVersion === 3 ? { schemaVersion } : {}),
   };
 }
 

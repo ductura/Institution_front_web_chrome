@@ -47,7 +47,11 @@ import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/Wo
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
 /** A host's toolbar for the tools slot; it is mounted inside the document provider. */
-export type ToolbarSlot = (ctx: { workPartsKey: string; footnoteDialog?: FootnoteDialogComponent }) => ReactNode;
+export type ToolbarSlot = (ctx: {
+  workPartsKey: string; footnoteDialog?: FootnoteDialogComponent;
+  /** The server-confirmed schema version of the work; footnotes open only for 3. */
+  confirmedWorkSchemaVersion?: number;
+}) => ReactNode;
 
 /** What a host section is given: the live editor, the ids of the work and the state of its session. */
 export type HostSectionContext = {
@@ -66,7 +70,7 @@ export type HostSections = {
 
 export type OpenRead =
   | { readonly kind: "opening" }
-  | { readonly kind: "ready"; readonly documentId: string; readonly scope: string; readonly session: SessionMark }
+  | { readonly kind: "ready"; readonly documentId: string; readonly scope: string; readonly session: SessionMark; readonly schemaVersion?: number }
   | { readonly kind: "signedOut" }
   | { readonly kind: "closed" }
   | { readonly kind: "reload" }
@@ -76,7 +80,8 @@ export type OpenRead =
 export function openReadOf(outcome: OpenOutcome, scope: string, session: SessionMark): OpenRead {
   switch (outcome.status) {
     case "opened":
-      return { kind: "ready", documentId: outcome.work.documentId, scope, session };
+      return { kind: "ready", documentId: outcome.work.documentId, scope, session,
+        ...(outcome.work.schemaVersion === undefined ? {} : { schemaVersion: outcome.work.schemaVersion }) };
     case "unauthenticated":
       return { kind: "signedOut" };
     case "not_found":
@@ -186,7 +191,7 @@ export default function EditorPageWork({
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} footnoteDialog={footnoteDialog} toolbar={toolbar} triggers={triggers} literature={literature}
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} schemaVersion={read.schemaVersion} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} footnoteDialog={footnoteDialog} toolbar={toolbar} triggers={triggers} literature={literature}
           statusExtra={statusExtra} useSupplements={useSupplements} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
@@ -196,7 +201,7 @@ export default function EditorPageWork({
 
 const noSupplements = (): SubmissionRehearsalProps["supplements"] => undefined;
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, saveSummary, renderPdf, hostSections, leftSections, footnoteDialog, toolbar, triggers, literature, statusExtra, useSupplements }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, schemaVersion, saveSummary, renderPdf, hostSections, leftSections, footnoteDialog, toolbar, triggers, literature, statusExtra, useSupplements }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -205,6 +210,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   documentId: string;
   scope: string;
   session: SessionMark;
+  schemaVersion?: number;
   saveSummary: boolean;
   renderPdf?: RenderPdf;
   statusExtra?: ReactNode;
@@ -237,7 +243,8 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       tools={<EditorCommands><div className={helpStyles.toolbar}>
         {(() => {
           const workPartsKey = `ductura.editor.work-parts:${JSON.stringify([scope, documentId])}`;
-          return toolbar ? toolbar({ workPartsKey, footnoteDialog }) : <EditorToolbar footnoteDialog={footnoteDialog} workPartsKey={workPartsKey} />;
+          return toolbar ? toolbar({ workPartsKey, footnoteDialog, confirmedWorkSchemaVersion: schemaVersion })
+            : <EditorToolbar footnoteDialog={footnoteDialog} workPartsKey={workPartsKey} confirmedWorkSchemaVersion={schemaVersion} />;
         })()}
         <EditorHelpMenu onSelect={setView} />
         {!signedOut && <WorkPrintExport documentId={documentId} title={title} renderPdf={renderPdf} open={printOpen} onOpenChange={setPrintOpen} />}
