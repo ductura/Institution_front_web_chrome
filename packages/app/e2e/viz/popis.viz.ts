@@ -7,9 +7,9 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { test } from "@playwright/test";
 
-import { PAIRS } from "./pairs";
+import { PAIRS, VIZ_OUT } from "./pairs";
 
-const OUT = resolve(import.meta.dirname, "../../viz-out");
+const OUT = VIZ_OUT;
 const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? "D:/Ductura/_prototipovi");
 const FILES = ["Ductura_student.html", "Ductura_nastavnik.html", "editor/index.html"];
 

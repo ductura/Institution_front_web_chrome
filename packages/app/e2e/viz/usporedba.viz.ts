@@ -8,11 +8,12 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { test } from "@playwright/test";
 
-import { open, setTheme } from "../a11y/check";
-import { PAIRS, WIDTHS } from "./pairs";
+import { setTheme } from "../a11y/check";
+import { otvori } from "./otvori";
+import { PAIRS, SCENARIJ, VIZ_OUT, WIDTHS } from "./pairs";
 import { razlika } from "./razlika";
 
-const OUT = resolve(import.meta.dirname, "../../viz-out");
+const OUT = VIZ_OUT;
 const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? "D:/Ductura/_prototipovi");
 const THEME = process.env.VIZ_THEME === "dark" ? "dark" : "light";
 /** Content that changes between runs (dates, generated names) is painted over in both shots. */
@@ -23,7 +24,7 @@ for (const { screen, proto, slug } of PAIRS) {
     const app = `${OUT}/${slug}/app-${width}.png`;
     test(`${screen.name} · ${width} · aplikacija`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await open(page, screen);
+      await otvori(page, screen, SCENARIJ);
       await setTheme(page, THEME);
       await page.screenshot({ path: app, fullPage: true, mask: [page.locator(MASK)] });
     });
