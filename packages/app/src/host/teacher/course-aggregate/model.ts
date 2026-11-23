@@ -2,6 +2,9 @@
 // closed list of measures for the whole course: no names, no scale, no ranking. Below the threshold
 // the whole view is replaced by the "suppressed" state; a measure whose count or whose complement
 // is below the threshold is hidden too, because the complement would give a small group away.
+// The measures add up to all the course's students, and that total is known (shown here, and on the N-04
+// list): a hidden measure could be worked out from it and the shown ones. So once any measure is hidden, all
+// are hidden (secondary suppression, withSecondarySuppression); no hidden count can be worked out from the view.
 // The real port (./port.ts, PIL-K-ZBIRNO) reads course.aggregate.get; its measures are the stages the
 // route gives (not started, in progress, submitted). This module makes no network call.
 // P-D1 (PIL-D1-BEZ-OCJENE): a practice assignment never enters the aggregate. The port is asked only for
@@ -74,6 +77,17 @@ export function measureView(key: MeasureKey, count: number, students: number): M
   return { key, label, shown: true, count, percent, summary: text.shareOf(count, students, percent) };
 }
 
+/**
+ * Secondary suppression: the measures add up to all students, so a hidden measure could be worked out as the
+ * total minus the shown ones. Hiding only one more (e.g. the smallest shown) is not enough once the rule is
+ * known: with 4, 4 and 5 of 13 the one shown 5 leaves only 4 and 4 for the other two. So once any measure is
+ * hidden, all are hidden.
+ */
+export function withSecondarySuppression(measures: readonly MeasureView[]): readonly MeasureView[] {
+  if (measures.every((m) => m.shown)) return measures;
+  return measures.map((m) => ({ key: m.key, label: m.label, shown: false }));
+}
+
 /** The text alternative of the chart: every measure, read out in the order of the closed list. */
 export function chartAlt(measures: readonly MeasureView[]): string {
   return text.chartAlt(measures.map((m) => (m.shown ? text.chartPart(m.label, m.percent) : text.chartPartHidden(m.label))));
@@ -86,7 +100,7 @@ export function aggregateView(read: AggregateRead, practiceLeftOut = 0): Aggrega
   if (!Number.isInteger(students) || students < 0) return { kind: "unavailable" };
   if (students === 0) return { kind: "empty" };
   if (students < MIN_STUDENTS) return { kind: "suppressed" };
-  const measures = MEASURES.map((key) => measureView(key, counts[key], students));
+  const measures = withSecondarySuppression(MEASURES.map((key) => measureView(key, counts[key], students)));
   return { kind: "ready", students, measures, chartAlt: chartAlt(measures), practiceLeftOut };
 }
 

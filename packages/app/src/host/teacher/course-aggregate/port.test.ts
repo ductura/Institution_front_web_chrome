@@ -67,7 +67,9 @@ describe("course aggregate real port (PIL-K-ZBIRNO)", () => {
   it("(2) hides a measure whose count or whose complement is below the threshold", async () => {
     const small = await view(available({ notStarted: 3, inProgress: 7, submitted: 10 }));
     if (small.kind !== "ready") throw new Error("expected ready");
-    expect(small.measures.map((m) => [m.key, m.shown])).toEqual([["submitted", true], ["inProgress", true], ["notStarted", false]]);
+    // 3 is below the threshold; 7 and 10 are hidden too, or 3 would be 20 − 7 − 10 (secondary suppression).
+    expect(small.measures.map((m) => [m.key, m.shown])).toEqual([["submitted", false], ["inProgress", false], ["notStarted", false]]);
+    expect(small.chartAlt).not.toMatch(/\d/);
     const complement = await view(available({ notStarted: 1, inProgress: 2, submitted: 17 }));
     if (complement.kind !== "ready") throw new Error("expected ready");
     expect(complement.measures.every((m) => !m.shown)).toBe(true);

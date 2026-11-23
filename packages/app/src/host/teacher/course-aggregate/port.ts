@@ -7,16 +7,15 @@
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { readAssignmentVersion } from "../../../../../../src/client/teacher-assignment";
 import { appHref } from "../../../../../../src/components/shell/nav";
-import { readTeacherCourses, type TeacherCoursesCall } from "../../../../../../src/components/teacher/teacher-courses-read";
+import type { MigrationOperations } from "../../../../../../src/client/migration-contract-types.generated";
+import { readTeacherCourses } from "../../../../../../src/components/teacher/teacher-courses-read";
 import { readPractice, type ReadAssignment } from "../assignment-card/model";
 import { aggregatePath, type AggregateRead, type CourseAggregatePort, type CourseAssignment } from "./model";
 
 export type AggregateCall = ReturnType<typeof createApi>;
 
-type Wire = { status: "suppressed" } | {
-  status: "available"; started: number; submitted: number;
-  stages: { notStarted: number; inProgress: number; submitted: number };
-};
+/** The route's 200 body, as the generated contract extract declares it. */
+type Wire = MigrationOperations["course.aggregate.get"]["success"]["body"];
 
 /** The route's answer as the model's read; totals that contradict the stages are "unavailable". */
 export function aggregateOfWire(body: Wire): AggregateRead {
@@ -51,7 +50,7 @@ export async function readCourseAssignments(
   courseId: string, client: () => AggregateCall = () => createApi(), readAssignment?: ReadAssignment,
 ): Promise<CourseAssignmentsRead> {
   const call = client();
-  const courses = await readTeacherCourses(call as unknown as TeacherCoursesCall);
+  const courses = await readTeacherCourses(call);
   if (courses.kind !== "ready") return { kind: courses.kind };
   const course = courses.courses.find((c) => c.id === courseId);
   if (course === undefined) return { kind: "unavailable" };
