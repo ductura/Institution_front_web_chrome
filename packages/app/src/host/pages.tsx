@@ -21,6 +21,7 @@ import { assignmentCardMessages as card } from "./teacher/assignment-card/messag
 import { teacherShellHr } from "./teacher/shell/messages.hr";
 import { TeacherPage, type TeacherRead } from "./teacher/shell/TeacherPage";
 import { CourseTeachingTeam } from "./teacher/teaching-team/TeachingTeam";
+import { CourseRhythm } from "./teacher/input-rhythm/mounts";
 import { startWorkAction } from "./student/start-work/action";
 import { HomePage } from "./student/home/HomePage";
 import SignInScreen from "./signin/SignInScreen";
@@ -130,7 +131,7 @@ export function TeacherCoursesPage() {
     actions={(courses) => (courses.length > 0 ? <NewCourseLink /> : null)}
     ready={(courses) => <AssignmentCards courses={courses} here={appHref(base, "/nastavnik")}
       tasks={(course) => <CourseTasks course={course} />}
-      extra={(course) => <CourseTeachingTeam courseId={course.id} courseName={course.name} />} />} />;
+      extra={(course) => <><CourseRhythm courseId={course.id} name={course.name} /><CourseTeachingTeam courseId={course.id} courseName={course.name} /></>} />} />;
 }
 
 /** N-16 "Radovi uz mentora" over teacher.mentorships.get. */
