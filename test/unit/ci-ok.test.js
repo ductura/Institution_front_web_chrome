@@ -258,10 +258,110 @@ test('changes: a push runs every job', () => {
 test('changes: no base sha runs every job', () => {
   assert.equal(on(changesFor(['docs/x.md'], { base: false })), 'app,client,test,ui');
 });
-test('every job except changes is gated by changes and needs it', () => {
+// Jobs that read the whole repository and so run on every pull request, with
+// no `if` and no `needs` (ZEL-W20a): `changes` cannot switch them off and a
+// failed `changes` cannot skip them. A new one is added here on purpose.
+const ALWAYS_ON = ['line-endings'];
+
+test('every job except changes and the always-on jobs is gated by changes and needs it', () => {
   for (const [name, job] of Object.entries(jobsOf(workflow))) {
-    if (name === 'changes') continue;
+    if (name === 'changes' || ALWAYS_ON.includes(name)) continue;
     assert.ok(needsOf(job).includes('changes'), `${name} needs changes`);
     if (name !== 'ci-ok') assert.equal(job.if, `\${{ needs.changes.outputs.${name} == 'true' }}`, name);
+  }
+});
+
+// The CRLF check of the index (DAN-952) runs on EVERY pull request (ZEL-W20a,
+// review of #435): before, it ran only in the job `test`, which a change to
+// docs/, packages/, catalog/ or a .md file switches off.
+const lineEndings = jobsOf(workflow)['line-endings'];
+const lineEndingsScript = lineEndings?.steps?.find((s) => typeof s?.run === 'string' && s.run.includes('# line-endings:begin'))?.run;
+
+test('line-endings runs always: no if, no needs, required by ci-ok, never a changes output', () => {
+  assert.deepEqual(Object.keys(jobsOf(workflow)).filter((j) => ALWAYS_ON.includes(j)), ALWAYS_ON);
+  for (const name of ALWAYS_ON) {
+    const job = jobsOf(workflow)[name];
+    assert.equal(job.if, undefined, `${name} has no if`);
+    assert.deepEqual(needsOf(job), [], `${name} needs nothing, so a failed changes cannot skip it`);
+    assert.equal(job.strategy, undefined, `${name} is one job, not a matrix`);
+    assert.ok(needsOf(ciOk).includes(name), `ci-ok needs ${name}`);
+    assert.equal(jobsOf(workflow).changes.outputs?.[name], undefined, `changes has no output for ${name}`);
+  }
+  assert.equal(typeof lineEndingsScript, 'string', 'line-endings has the line-endings:begin block');
+  assert.match(lineEndingsScript, /^\s*set -euo pipefail$/m);
+  assert.match(lineEndingsScript, /^\s*node --test test\/unit\/gitattributes\.test\.js$/m);
+  const step = lineEndings.steps.find((s) => s.run === lineEndingsScript);
+  assert.equal(step.if, undefined, 'the check step has no if');
+  assert.notEqual(step['continue-on-error'], true, 'the check step blocks');
+  assert.ok(!lineEndings.steps.some((s) => s['continue-on-error']), 'no step of line-endings is report-only');
+});
+
+// A pull request that changes only docs/x.md or packages/ui/a.css: `changes`
+// switches test off (docs: every job off), yet line-endings still runs and
+// ci-ok requires its success.
+for (const [file, expected] of [['docs/x.md', ''], ['packages/ui/a.css', 'app,ui']]) {
+  test(`changes: ${file} only still runs the CRLF check`, () => {
+    const outputs = changesFor([file]);
+    assert.equal(on(outputs), expected);
+    assert.equal(outputs.test, 'false', 'the job test is off, so only line-endings checks CRLF');
+    const results = Object.fromEntries(['test', 'client', 'ui', 'app'].map((j) => [j, outputs[j] === 'true' ? 'success' : 'skipped']));
+    assert.equal(run(withChanges({ ...results, 'line-endings': 'success' }, outputs)).code, 0, 'green with the check passing');
+    for (const r of ['failure', 'skipped', 'cancelled']) {
+      const out = run(withChanges({ ...results, 'line-endings': r }, outputs));
+      assert.equal(out.code, 1, `line-endings ${r} fails ci-ok`);
+      assert.match(out.out, new RegExp(`::error::job line-endings result: ${r}`));
+    }
+    assert.equal(run(withChanges(results, outputs)).code, 0, 'control: without line-endings the rest is green');
+  });
+}
+
+// The check step itself, in a throwaway repository: a CRLF file stored in
+// packages/ fails it (so ci-ok is red), the same tree with LF passes.
+function lineEndingsIn(path, crlf) {
+  const repo = mkdtempSync(join(tmpdir(), 'line-endings-'));
+  const home = mkdtempSync(join(tmpdir(), 'line-endings-home-'));
+  try {
+    const env = { PATH: process.env.PATH, HOME: home, XDG_CONFIG_HOME: home, GIT_CONFIG_NOSYSTEM: '1' };
+    const git = (args, input) => {
+      const r = spawnSync('git', ['-c', 'core.autocrlf=false', ...args], { cwd: repo, encoding: 'utf8', input, env });
+      assert.equal(r.status, 0, `git ${args.join(' ')}: ${r.stderr}`);
+      return r.stdout.trim();
+    };
+    git(['init', '-q']);
+    git(['config', 'user.email', 'a@example.invalid']);
+    git(['config', 'user.name', 'a']);
+    mkdirSync(join(repo, 'test', 'unit'), { recursive: true });
+    for (const f of ['.gitattributes', 'test/unit/gitattributes.test.js']) {
+      writeFileSync(join(repo, f), readFileSync(new URL(`../../${f}`, import.meta.url)));
+    }
+    git(['add', '.']);
+    // .gitattributes would turn CRLF into LF on add, so the blob goes into
+    // the index unfiltered, as a client without the file would store it.
+    const body = crlf ? 'a { color: red; }\r\nb { color: blue; }\r\n' : 'a { color: red; }\nb { color: blue; }\n';
+    const blob = git(['hash-object', '-w', '--no-filters', '--stdin'], body);
+    git(['update-index', '--add', '--cacheinfo', `100644,${blob},${path}`]);
+    git(['commit', '-q', '-m', 'change']);
+    git(['checkout', '-q', '--', '.']);
+    const r = spawnSync('bash', ['-c', lineEndingsScript], { cwd: repo, encoding: 'utf8', env });
+    return { code: r.status, out: r.stdout + r.stderr };
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }
+}
+
+test('line-endings: CRLF in packages/ fails the check, LF passes', () => {
+  assert.equal(typeof lineEndingsScript, 'string', 'line-endings has the line-endings:begin block');
+  const bad = lineEndingsIn('packages/ui/a.css', true);
+  assert.notEqual(bad.code, 0, bad.out);
+  assert.match(bad.out, /packages\/ui\/a\.css/, 'the failure names the CRLF file');
+  const good = lineEndingsIn('packages/ui/a.css', false);
+  assert.equal(good.code, 0, good.out);
+});
+
+test('line-endings: CRLF in docs/ and a root .md file fails the check too', () => {
+  for (const path of ['docs/x.md', 'README.md', 'catalog/a.ts']) {
+    const r = lineEndingsIn(path, true);
+    assert.notEqual(r.code, 0, `${path}: ${r.out}`);
   }
 });

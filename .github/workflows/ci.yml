@@ -21,6 +21,13 @@ jobs:
   # job runs when a path it reads changed. src/ feeds ui (pnpm -r runs the
   # tests of every workspace package) and app (it imports src/), so a change
   # there runs both.
+  #
+  # These rules only fit checks that read the paths they list. A check that
+  # reads the whole repository (the index, every tracked file, the lockfiles)
+  # can be broken by a change in any path, so it must not hide behind these
+  # rules: give it its own job with no `if`, listed in ALWAYS_ON in
+  # test/unit/ci-ok.test.js, like `line-endings`, or make every path it reads
+  # turn its job on here (ZEL-W20a, review of #435).
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -63,6 +70,28 @@ jobs:
           a="$(hit '^(packages/|src/|locales/)')"
           printf 'test=%s\nclient=%s\nui=%s\napp=%s\n' "$t" "$c" "$u" "$a" | tee -a "$GITHUB_OUTPUT"
           # changes:end
+  # No CRLF in the index (DAN-952), on EVERY pull request (ZEL-W20a): a CRLF
+  # file can come in any path, also docs/, packages/, catalog/ or a .md file
+  # that `changes` sends to no job. So this job has no `if` and does not need
+  # `changes`; ci-ok needs it, and a skipped or failed run fails ci-ok. Node's
+  # own test runner and git only, no install.
+  line-endings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: No tracked text file has CRLF in the index
+        shell: bash
+        run: |
+          # line-endings:begin
+          set -euo pipefail
+          node --test test/unit/gitattributes.test.js
+          # line-endings:end
   test:
     needs: changes
     if: ${{ needs.changes.outputs.test == 'true' }}
@@ -281,7 +310,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: ${{ always() }}
-    needs: [changes, test, client, ui, app]
+    needs: [changes, line-endings, test, client, ui, app]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
