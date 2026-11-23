@@ -5,12 +5,12 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { PAIRS, WIDTHS } from "./pairs";
+import { PAIRS, VIZ_OUT, WIDTHS } from "./pairs";
 import type { Stavka } from "./popis.viz";
 import { prekoracenja, procitajPrag, type Mjerenje } from "./prag";
 import type { Razlika } from "./razlika";
 
-const OUT = resolve(import.meta.dirname, "../../viz-out");
+const OUT = VIZ_OUT;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 const json = <T>(file: string): T | null => (existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as T) : null);
 
