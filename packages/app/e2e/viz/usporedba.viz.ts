@@ -1,7 +1,9 @@
 // VIZ alat (graditelj): the app and its prototype, one screenshot per width,
 // side by side in viz-out/index.html, with a diff image and the share of
-// differing pixels (razlika.ts). Nothing fails on a difference. Not in CI
-// (the prototypes are not in the repository). Run: pnpm viz, or
+// differing pixels (razlika.ts). A difference fails only above the threshold
+// VIZ_PRAG in % (prag.ts; the target is 2), checked after the run in
+// izvjestaj.ts; without it nothing fails. Not in ci.yml (workflow viz-usporedba,
+// by hand). Run: pnpm viz, or
 // pnpm viz --grep "student: rad".
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -14,7 +16,9 @@ import { PAIRS, SCENARIJ, VIZ_OUT, WIDTHS } from "./pairs";
 import { razlika } from "./razlika";
 
 const OUT = VIZ_OUT;
-const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? "D:/Ductura/_prototipovi");
+// The prototypes are in the repository (docs/prototip); VIZ_PROTOTIPOVI points elsewhere.
+const PROTOTIPOVI_ZADANO = resolve(import.meta.dirname, "../../../../docs/prototip");
+const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? PROTOTIPOVI_ZADANO);
 const THEME = process.env.VIZ_THEME === "dark" ? "dark" : "light";
 /** Content that changes between runs (dates, generated names) is painted over in both shots. */
 const MASK = "[data-viz-mask]";

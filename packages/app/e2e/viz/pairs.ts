@@ -1,7 +1,7 @@
 // VIZ alat (graditelj): which prototype screen each app screen is compared
 // with. The app screens are the a11y list (e2e/a11y/screens.ts), so a new
-// screen there is one line here. The prototypes are outside the repository
-// (D:/Ductura/_prototipovi, or VIZ_PROTOTIPOVI); a screen without a pair is
+// screen there is one line here. The prototypes are in docs/prototip
+// (or VIZ_PROTOTIPOVI); a screen without a pair is
 // shot from the app only.
 import { resolve } from "node:path";
 

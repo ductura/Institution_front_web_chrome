@@ -7,6 +7,7 @@ import { resolve } from "node:path";
 
 import { PAIRS, VIZ_OUT, WIDTHS } from "./pairs";
 import type { Stavka } from "./popis.viz";
+import { prekoracenja, procitajPrag, type Mjerenje } from "./prag";
 import type { Razlika } from "./razlika";
 
 const OUT = VIZ_OUT;
@@ -20,6 +21,19 @@ export default function report() {
   const done = new Set(readdirSync(OUT));
   const pairs = PAIRS.filter((p) => done.has(p.slug));
   const posto = (slug: string, w: number) => json<Razlika>(resolve(OUT, slug, `razlika-${w}.json`))?.posto ?? null;
+
+  // The gate (VIZ_PRAG, prag.ts): above the threshold is a failure, below the report.
+  const prag = procitajPrag(process.env.VIZ_PRAG);
+  const mjerenja: Mjerenje[] = pairs.flatMap(({ screen, slug }) => WIDTHS.flatMap((w) => {
+    const p = posto(slug, w);
+    return p === null ? [] : [{ ekran: screen.name, sirina: w, posto: p }];
+  }));
+  const pali = prag === null ? [] : prekoracenja(mjerenja, prag);
+  const vrata = prag === null
+    ? `<p>Vrata nisu uključena (VIZ_PRAG nije postavljen): samo izvještaj.</p>`
+    : pali.length === 0
+      ? `<p><b>Vrata prolaze:</b> nijedan ekran ni širina ne prelazi ${prag} %.</p>`
+      : `<h2 class="bez">Vrata padaju: ${pali.length} od ${mjerenja.length} mjerenja prelazi ${prag} %</h2><table><tr><th>ekran</th><th>px</th><th>razlika</th></tr>${pali.map((r) => `<tr><td>${esc(r.ekran)}</td><td>${r.sirina}</td><td class="num">${r.posto.toFixed(1)} %</td></tr>`).join("")}</table>`;
 
   const sazetak = pairs.flatMap(({ screen, slug }) => WIDTHS.map((w) => ({ name: screen.name, slug, w, p: posto(slug, w) })))
     .filter((r) => r.p !== null).sort((a, b) => b.p! - a.p!)
@@ -43,8 +57,14 @@ ${WIDTHS.map((w) => {
 .row{display:grid;grid-template-columns:5rem 1fr 1fr 1fr;gap:12px;align-items:start;margin:8px 0}figure{margin:0}figcaption{color:#777;font-size:12px}
 img{width:100%;border:1px solid #ccc;background:#fff}.none{color:#999}table{border-collapse:collapse;background:#fff}
 td,th{border:1px solid #ddd;padding:4px 8px;text-align:left}.num{font-variant-numeric:tabular-nums;text-align:right}.bez{color:#a33}</style>
-<h1>Usporedba s prototipom</h1><p>${new Date().toISOString()} · ${WIDTHS.join(", ")} px · razlika = udio piksela koji se razlikuju (prag po kanalu u razlika.ts)</p>
+<h1>Usporedba s prototipom</h1>${vrata}<p>${new Date().toISOString()} · ${WIDTHS.join(", ")} px · razlika = udio piksela koji se razlikuju (prag po kanalu u razlika.ts)</p>
 ${sazetak ? `<h2>Najveća odstupanja</h2><table><tr><th>ekran</th><th>px</th><th>razlika</th></tr>${sazetak}</table>` : ""}
 ${pokrivenost}${rows}</html>`);
   console.log(`VIZ: ${resolve(OUT, "index.html")}`);
+  if (pali.length > 0) {
+    // Written to a file too: the workflow puts it in the job summary.
+    const tekst = pali.map((r) => `${r.ekran} @ ${r.sirina} px: ${r.posto.toFixed(1)} % > ${prag} %`).join("\n");
+    writeFileSync(resolve(OUT, "pali.txt"), tekst + "\n");
+    throw new Error(`VIZ: ${pali.length} mjerenja iznad praga ${prag} %\n${tekst}`);
+  }
 }
