@@ -7,6 +7,7 @@ import { BULK_FORMATS, type BulkCall, type BulkFormat, type BulkLink } from "./c
 import { bulkText as t } from "./messages.hr";
 import { mayFollow, msUntilExpiry, requestFailure, viewOf } from "./model";
 import { bulkPort } from "./port";
+import styles from "./BulkDownload.module.css";
 
 const FORMAT_LABEL: Record<BulkFormat, string> = { pdf: t.formatPdf, docx: t.formatDocx };
 
@@ -105,10 +106,10 @@ export default function BulkDownload(
     <section aria-labelledby="bulk-download-h">
       <h3 id="bulk-download-h">{t.title}</h3>
       <p>{t.idle}</p>
-      <fieldset disabled={busy}>
+      <fieldset disabled={busy} className={styles.formats}>
         <legend>{t.formatLegend}</legend>
         {BULK_FORMATS.map((value) => (
-          <label key={value}>
+          <label key={value} className={styles.format}>
             <input type="radio" name="bulk-format" value={value} checked={format === value} onChange={() => choose(value)} /> {FORMAT_LABEL[value]}
           </label>
         ))}

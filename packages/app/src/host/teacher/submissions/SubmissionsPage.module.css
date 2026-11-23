@@ -1,0 +1,7 @@
+/* VIZ-WCAG-MOB (WCAG 1.4.10). The host .page is a grid item with auto margins, so it takes its content's
+   min-content width: here the table in its scroll box widened it past a 320 px viewport. Capping it at its
+   grid area lets the table scroll inside its own box. The doubled class outranks .page from globals.css,
+   which is ported byte for byte from Ductus (packages/ui/PROVENANCE.md) and is not changed here. */
+.page.page {
+  max-width: min(1200px, 100%);
+}

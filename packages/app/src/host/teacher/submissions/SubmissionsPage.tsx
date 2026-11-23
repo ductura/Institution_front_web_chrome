@@ -16,6 +16,7 @@ import { GradeGate, useGradeRead } from "./grade/GradeGate";
 import type { GradeCall } from "./grade/contract";
 import TeacherSubmissions from "./TeacherSubmissions";
 import { submissionsMessages as text } from "./messages.hr";
+import styles from "./SubmissionsPage.module.css";
 import { clientSubmissionsPort, signInReturn } from "./port";
 import { clientHistoryCall, type HistoryTransport } from "./history/port";
 
@@ -29,7 +30,7 @@ export function TeacherSubmissionsPage({ assignmentId }: { assignmentId: string 
   const history = useMemo(() => clientHistoryCall(call as unknown as HistoryTransport), [call]);
   const grade = useGradeRead(call as unknown as GradeCall, assignmentId, signIn);
   return (
-    <div className="page">
+    <div className={`page ${styles.page}`}>
       <div className="pagehead">
         <h1>{text.pageTitle}</h1>
         <p className="lede">{text.pageLead}</p>
