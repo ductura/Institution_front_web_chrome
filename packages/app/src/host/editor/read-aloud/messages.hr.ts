@@ -18,5 +18,4 @@ export const readAloudHr = {
     unsupported: "Ovaj preglednik ne podržava čitanje naglas.",
     voiceFallback: "Hrvatski glas nije dostupan, koristi se zadani glas preglednika.",
   },
-  local: "Tekst se čita u pregledniku i ne šalje se nikamo.",
 } as const;

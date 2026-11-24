@@ -108,7 +108,7 @@ describe("reading in the editor", () => {
     reading.read("paragraph");
     reading.pause();
     reading.read("work"); // another scope while paused
-    expect(calls.slice(calls.indexOf("pause"))).toEqual(["pause", "resume", "cancel", "speak"]);
+    expect(calls.slice(calls.indexOf("pause"))).toEqual(["pause", "cancel", "resume", "speak"]);
     reading.pause();
     calls.length = 0;
     reading.stop();

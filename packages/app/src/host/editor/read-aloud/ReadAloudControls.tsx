@@ -38,7 +38,7 @@ export function ReadAloudControls({ editor }: { editor: EditorArg | null }) {
   };
   return (
     <>
-      <Button tone="quiet" aria-haspopup="menu" disabled={!usable}
+      <Button tone="quiet" aria-haspopup="menu" aria-expanded={anchor !== null} disabled={!usable}
         onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); setAnchor({ x: b.left, y: b.bottom }); }}>{t.menu} ▾</Button>
       <ContextMenu anchor={anchor} entries={readAloudEntries(snap.state)} label={t.menu} onClose={() => setAnchor(null)}
         onSelect={(id) => { setAnchor(null); run(id); }} />
