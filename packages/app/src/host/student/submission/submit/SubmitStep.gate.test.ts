@@ -93,11 +93,11 @@ describe("step 4 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     await trySubmit(host);
     expect(host.textContent).toContain(t.declarationRequired);
     expect(host.textContent).not.toContain(t.unknown);
+    expect(server.paths).toHaveLength(2);
     const open = [...host.querySelectorAll("button")].find((b) => b.textContent === d.open);
     expect(open).toBeDefined();
     await act(async () => { open?.click(); });
     expect(document.querySelector("dialog h2")?.textContent).toBe(d.title);
-    expect(server.paths).toHaveLength(2);
     expect(submitButton(host)?.getAttribute("aria-disabled")).toBe("true");
     expect(push).not.toHaveBeenCalled();
   });

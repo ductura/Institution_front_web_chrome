@@ -30,7 +30,7 @@ import { pasteWhen } from "./panel-model";
 import { lateLine, timingTag, type Timing } from "../submit/timing";
 import { routerPath } from "../../../../bases";
 import DeclarationDialog from "../declaration/DeclarationDialog";
-import { dialogOpener, isStale } from "../declaration/dialog-model";
+import { useFocusAfterDialog, useOpener } from "../declaration/dialog-model";
 import { deviceHasNewer } from "../submit/local-hold";
 import { rememberChoice } from "../submit/newer-choice";
 import type { Confirmed, NewerChoice } from "../submit/newer-local";
@@ -81,6 +81,7 @@ export default function BeforeSubmitStep({
   const [noteOpen, setNoteOpen] = useState(false);
   // NF-3 PR-5 (PD-10): the declaration as a dialog, without leaving this step.
   const [declaring, setDeclaring] = useState(false);
+  const nextButton = useRef<HTMLButtonElement>(null);
   // NF-3 PR-10 (E-8c): the revision the server confirmed, a newer one on this device, and the student's choice.
   const [confirmedWork, setConfirmedWork] = useState<Confirmed | null>(null);
   const [newer, setNewer] = useState(false);
@@ -145,7 +146,8 @@ export default function BeforeSubmitStep({
     if (choosing && version !== null) rememberChoice(assignmentId, confirmedWork, version);
     go("slanje");
   };
-  const opener = dialogOpener(gate);
+  const opener = useOpener(gate);
+  useFocusAfterDialog(declaring, opener, nextButton);
   const openNote = () => {
     if (!online || notes.kind !== "ready") return;
     setNoteOpen(true);
@@ -204,12 +206,12 @@ export default function BeforeSubmitStep({
         <StepLink href="#sb-notes" onClick={openNote}>{c.addNote}</StepLink>
         {online && nextHint !== undefined && <p className="meta" id={hint}>{nextHint}</p>}
         <StepActions>
-          <Button aria-disabled={nextClosed || undefined} aria-describedby={describedBy}
+          <Button ref={nextButton} aria-disabled={nextClosed || undefined} aria-describedby={describedBy}
             onClick={onward}>{c.next}</Button>
           <Button tone="secondary" onClick={() => go("izjava")}>{c.back}</Button>
         </StepActions>
       </StepPanel>
-      <DeclarationDialog assignmentId={assignmentId} open={declaring} stale={isStale(gate)} onSignIn={() => signIn.current()}
+      <DeclarationDialog assignmentId={assignmentId} open={declaring} declarationGate={declarationGate} onSignIn={() => signIn.current()}
         onClose={() => { setDeclaring(false); readGate(); }} />
       <SummaryPanel summary={summary} notes={notes} submitted={submitted} confirmed={confirmed} kind={kind}
         online={online} workHref={workHref} onRetry={retry}

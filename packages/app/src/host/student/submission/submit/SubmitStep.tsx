@@ -29,7 +29,7 @@ import { submitConfirmed, type Confirmed, type NewerChoice } from "./newer-local
 import { deviceHasNewer, sendLatestFromDevice } from "./local-hold";
 import { takeChoice } from "./newer-choice";
 import DeclarationDialog from "../declaration/DeclarationDialog";
-import { dialogOpener, isStale } from "../declaration/dialog-model";
+import { useFocusAfterDialog, useOpener } from "../declaration/dialog-model";
 import { routerPath } from "../../../../bases";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "../summary/declaration-gate";
 // Review #590, 3: the declaration in the words of the one source (PR-2), not step 4's own.
@@ -137,6 +137,9 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
 
   const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
   const confirmed = opensSending(gate);
+  const opener = useOpener(gate);
+  const mainSubmit = useRef<HTMLButtonElement>(null);
+  useFocusAfterDialog(declaring, opener, mainSubmit);
   useEffect(() => { if (gate.kind === "signedOut") goToSignIn(href(here)); }, [gate.kind]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { shown.current = true; return () => { shown.current = false; }; }, []);
   useEffect(() => { void load(); return () => { ticket.current += 1; }; }, [load]);
@@ -276,20 +279,20 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
           ))}
           {!offline && !confirmed && ready !== null && next?.offer !== "declaration" && (
             <p className="note" id={WHY_ID}>{declarationWhy}{" "}
-              {dialogOpener(gate) !== null && <Button tone="secondary" size="small" onClick={() => setDeclaring(true)}>{dialogOpener(gate)}</Button>}
+              {opener !== null && <Button tone="secondary" size="small" onClick={() => setDeclaring(true)}>{opener}</Button>}
             </p>
           )}
           {!offline && gate.kind === "unavailable" && ready !== null && <StepActions><Button tone="secondary" onClick={readGate}>{t.declarationRetry}</Button></StepActions>}
-          {next?.retry && next.offer === "declaration" && <Button tone="secondary" onClick={() => setDeclaring(true)}>{dialogOpener(gate) ?? t.openDeclaration}</Button>}
+          {next?.retry && next.offer === "declaration" && <Button tone="secondary" onClick={() => setDeclaring(true)}>{opener ?? t.openDeclaration}</Button>}
           {sending && <p className="note" role="status" id={WHY_ID}><StepSpinner /> {t.inProgress}</p>}
           <StepActions>
-            <Button aria-disabled={!canSend || undefined} aria-describedby={why || sending ? WHY_ID : undefined}
+            <Button ref={mainSubmit} aria-disabled={!canSend || undefined} aria-describedby={why || sending ? WHY_ID : undefined}
               onClick={openDialog}>{sending ? t.inProgress : t.submit}</Button>
             <Button tone="secondary" onClick={goBack}>{t.back}</Button>
           </StepActions>
         </StepPanel>
       )}
-      <DeclarationDialog assignmentId={assignmentId} open={declaring} stale={isStale(gate)} onSignIn={() => goToSignIn(href(here))}
+      <DeclarationDialog assignmentId={assignmentId} open={declaring} declarationGate={declarationGate} onSignIn={() => goToSignIn(href(here))}
         onClose={() => { setDeclaring(false); readGate(); }} />
       {newer === null ? (
         // PD-3 (PR-7): the focus on "Predaj rad"; for a late submission on its confirmation, the dialog's first control.

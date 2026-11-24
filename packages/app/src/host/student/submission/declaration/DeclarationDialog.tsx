@@ -4,11 +4,15 @@
 // the student does not lose their place in the submission. Step 2 stays the declaration's page; this
 // dialog reads and confirms the same declaration-v1 through the same step ports (one session for both
 // halves), and closing it (Zatvori, Escape) leaves the student on the step that opened it, with the
-// focus back on what opened it (the shared Dialog). Only the server's answer checks the box.
+// focus back on what opened it (the shared Dialog). Only the server's answer checks the box, and only a
+// confirmation the server holds for the current revision of the text counts as held: that is the gate's
+// word (student.declaration.get read per revision), not the step's, which also counts a stale one.
 import { Button, Dialog, StepCheck, StepKv, StepLoading } from "@ductura/ui";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import StudentStatement from "../../statement/StudentStatement";
+import { serverGate, useDeclarationGate, type GateRead } from "../summary/declaration-gate";
+import { isStale } from "./dialog-model";
 import { declarationStepText as t } from "./messages.hr";
 import { canConfirm, confirmLine, stepView, type ConfirmState, type DeclarationRead } from "./model";
 import { createStepPorts, type StepPorts, type StepRead } from "./step-ports";
@@ -18,8 +22,8 @@ const FAILED_READ: StepRead = { kind: "read", view: { kind: "error" }, statement
 export type DeclarationDialogProps = {
   readonly assignmentId: string;
   readonly open: boolean;
-  /** The gate's word for it: the text changed after the confirmation, so it is confirmed again. */
-  readonly stale: boolean;
+  /** The declaration's gate, read again after every confirmation; the server's by default. */
+  readonly declarationGate?: GateRead;
   /** Called on every close; the step reads its gate again, since the dialog may have confirmed. */
   readonly onClose: () => void;
   readonly onSignIn: () => void;
@@ -32,7 +36,7 @@ export default function DeclarationDialog({ open, ...props }: DeclarationDialogP
   return open ? <Opened {...props} /> : null;
 }
 
-function Opened({ assignmentId, stale, onClose, onSignIn, ports: given }: Omit<DeclarationDialogProps, "open">) {
+function Opened({ assignmentId, declarationGate = serverGate, onClose, onSignIn, ports: given }: Omit<DeclarationDialogProps, "open">) {
   const ports = useMemo(() => given ?? createStepPorts(), [given]);
   const [step, setStep] = useState<StepRead | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -41,17 +45,22 @@ function Opened({ assignmentId, stale, onClose, onSignIn, ports: given }: Omit<D
   const why = useId();
   const signIn = useRef(onSignIn);
   signIn.current = onSignIn;
-  const reload = () => setAttempt((n) => n + 1);
+  const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
+  const reload = () => { setAttempt((n) => n + 1); readGate(); };
   useEffect(() => {
     let live = true;
     void ports.read(assignmentId).then((next) => {
       if (!live) return;
       if (next.kind === "signedOut") return signIn.current();
       setStep(next);
-      setConfirm((current) => (next.confirmed ? "saved" : current === "saved" ? "reopened" : current));
     }, () => { if (live) setStep(FAILED_READ); });
     return () => { live = false; };
   }, [ports, assignmentId, attempt]);
+  // Held only as the gate says, for this revision; a held confirmation the server dropped is said so.
+  useEffect(() => {
+    if (gate.kind === "loading") return;
+    setConfirm((current) => (gate.kind === "confirmed" ? "saved" : current === "saved" ? "reopened" : current));
+  }, [gate]);
 
   const read: DeclarationRead = step?.kind === "read" ? step.view : { kind: "loading" };
   const view = stepView("in_progress", read);
@@ -59,7 +68,7 @@ function Opened({ assignmentId, stale, onClose, onSignIn, ports: given }: Omit<D
   const confirmable = canConfirm(view, read, confirm);
   const line = confirmLine(confirm);
   // Stale only until this dialog's confirmation is held by the server.
-  const again = stale && confirm !== "saved";
+  const again = isStale(gate) && confirm !== "saved";
 
   const send = async (next: boolean) => {
     if (!next || !confirmable) return;
