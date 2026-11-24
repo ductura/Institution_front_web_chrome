@@ -2659,6 +2659,11 @@
                       "type": "null"
                     }
                   ]
+                },
+                "purposeCatalogVersion": {
+                  "minimum": 1,
+                  "maximum": 2147483647,
+                  "type": "integer"
                 }
               }
             }
@@ -46262,6 +46267,349 @@
       ],
       "408": [
         "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.assignment-submissions.get": {
+    "path": "/api/v1/student/assignment-submissions",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "ready (an empty list when the student has no course)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "assignments"
+              ],
+              "properties": {
+                "assignments": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "assignmentId",
+                          "submittedAt",
+                          "afterDeadline"
+                        ],
+                        "properties": {
+                          "assignmentId": {
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "submittedAt": {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+                            "type": "string"
+                          },
+                          "afterDeadline": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "assignmentId",
+                          "submittedAt",
+                          "afterDeadline"
+                        ],
+                        "properties": {
+                          "assignmentId": {
+                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "submittedAt": {
+                            "type": "null"
+                          },
+                          "afterDeadline": {
+                            "type": "null"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.assistant-conversations.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/assistant-conversations",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the conversations (an empty list when there is none)",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "assignmentId",
+                "conversations"
+              ],
+              "properties": {
+                "assignmentId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "conversations": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "conversationId",
+                      "purposeKey",
+                      "createdAt",
+                      "requestCount",
+                      "lastActivityAt"
+                    ],
+                    "properties": {
+                      "conversationId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "purposeKey": {
+                        "pattern": "^[a-z][a-z0-9_]{0,63}$",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "requestCount": {
+                        "minimum": 1,
+                        "maximum": 2147483647,
+                        "type": "integer"
+                      },
+                      "lastActivityAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.origin-segments.post": {
+    "path": "/api/v1/works/{documentId}/origin-segments",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "revision",
+        "segments"
+      ],
+      "properties": {
+        "revision": {
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "type": "integer"
+        },
+        "segments": {
+          "minItems": 1,
+          "maxItems": 10000,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "blockId",
+              "start",
+              "end",
+              "kind"
+            ],
+            "properties": {
+              "blockId": {
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                "type": "string"
+              },
+              "start": {
+                "minimum": 0,
+                "maximum": 9999999,
+                "type": "integer"
+              },
+              "end": {
+                "minimum": 1,
+                "maximum": 10000000,
+                "type": "integer"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "typed",
+                    "type": "string"
+                  },
+                  {
+                    "const": "assistant_inserted",
+                    "type": "string"
+                  },
+                  {
+                    "const": "assistant_match",
+                    "type": "string"
+                  },
+                  {
+                    "const": "imported_file",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pasted_known",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pasted_unknown",
+                    "type": "string"
+                  }
+                ]
+              },
+              "segmentRef": {
+                "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]{1,128}$",
+                "type": "string"
+              },
+              "changeId": {
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the ranges are recorded",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "revision",
+                "recorded"
+              ],
+              "properties": {
+                "revision": {
+                  "minimum": 0,
+                  "maximum": 9007199254740991,
+                  "type": "integer"
+                },
+                "recorded": {
+                  "minimum": 1,
+                  "maximum": 10000,
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
       ],
       "413": [
         "body_too_large"
