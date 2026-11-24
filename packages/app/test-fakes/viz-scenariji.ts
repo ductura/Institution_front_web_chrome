@@ -7,7 +7,7 @@
 // Student A, Kolegij A, B and C, the tasks t1 to t3, today 5. 11. 2026.).
 export const SCENARIJI = ["puno", "prazno", "ucitavanje", "greska", "dugi-tekst"] as const;
 export type Scenarij = (typeof SCENARIJI)[number];
-export type VizRole = "student" | "teacher" | "institution_admin" | null;
+export type VizRole = "student" | "teacher" | "institution_admin" | "network_engineer" | null;
 
 /** The prototype's "today" (5. 11. 2026.), fixed in the page clock so shots are stable. */
 // 23:59 is the hour of the deadline of t1, so "Rok za 3 dana" reads as in the prototype.
@@ -169,7 +169,7 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
             // through the generated client, which refuses a body without them.
             institution: { slug: "izm", displayName: n.institution },
             roles: [role],
-            displayName: role === "student" ? n.student : "Nastavnik A",
+            displayName: role === "student" ? n.student : role === "network_engineer" ? "Operater A" : "Nastavnik A",
             journalScope: "4e84fd38a2f8f663661b8e1b2fc52bad9b9da56f8accead18bfd24ca20b96d12",
             sessionTag: "c87c2b8c6e066e9f0b3ddbb338a2188630c0364f769518a616173518dc6c603f",
           });

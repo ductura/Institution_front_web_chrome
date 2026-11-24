@@ -47,6 +47,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/izvoz-podataka/[token]": (c) => c.app.pages.studentDataDownload,
   "/provjera": (c) => c.app.pages.receiptCheck,
   "/ustanova/pragovi": (c) => c.app.pages.originThresholds,
+  "/operater/mjerila-pilota": (c) => c.app.pages.pilotMetrics,
 };
 
 /**

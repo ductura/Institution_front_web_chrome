@@ -67,6 +67,7 @@ export const pageLabelsEn = {
   courseAggregate: "Course summary",
   receiptCheck: "Receipt check",
   originThresholds: "Thresholds per origin kind",
+  pilotMetrics: "Pilot measures",
 };
 
 export const accessDeniedEn = {
