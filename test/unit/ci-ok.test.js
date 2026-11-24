@@ -232,7 +232,8 @@ function changesFor(files, { event = 'pull_request', base = true } = {}) {
     rmSync(repo, { recursive: true, force: true });
   }
 }
-const on = (o) => Object.keys(o).filter((k) => o[k] === 'true').sort().join(',');
+const JOBS = ['test', 'client', 'ui', 'app'];
+const on = (o) => JOBS.filter((k) => o[k] === 'true').sort().join(',');
 
 const pathCases = [
   [['docs/x.md'], ''],
@@ -263,14 +264,44 @@ test('changes: a push runs every job', () => {
 test('changes: no base sha runs every job', () => {
   assert.equal(on(changesFor(['docs/x.md'], { base: false })), 'app,client,test,ui');
 });
-// Jobs that read the whole repository and so run on every pull request, with
-// no `if` and no `needs` (ZEL-W20a): `changes` cannot switch them off and a
-// failed `changes` cannot skip them. A new one is added here on purpose.
-const ALWAYS_ON = ['line-endings'];
 
-test('every job except changes and the always-on jobs is gated by changes and needs it', () => {
+// ZEL-CI-RED: app-build always follows app, and the checks of src/client run
+// inside the ui part `checks`, so every change that turns client on turns ui
+// on too (otherwise they would run nowhere).
+test('changes: app-build equals app and client implies ui, for every case', () => {
+  const runs = [...pathCases.map(([files]) => changesFor(files)), changesFor(['docs/x.md'], { event: 'push' }), changesFor(['docs/x.md'], { base: false })];
+  for (const o of runs) {
+    assert.ok(['true', 'false'].includes(o.app), JSON.stringify(o));
+    assert.equal(o['app-build'], o.app, JSON.stringify(o));
+    if (o.client === 'true') assert.equal(o.ui, 'true', JSON.stringify(o));
+  }
+});
+
+// ZEL-CI-RED: the report-only pixel baselines run on the schedule, by hand and
+// on a pull request that changes catalog/ or a root or .github/ file; never
+// on a push.
+const baselineCases = [
+  [['catalog/a.ts'], 'pull_request', 'true'],
+  [['packages/ui/src/a.tsx'], 'pull_request', 'false'],
+  [['packages/app/src/host/a.tsx'], 'pull_request', 'false'],
+  [['docs/x.md'], 'pull_request', 'false'],
+  [['.github/workflows/ci.yml'], 'pull_request', 'true'],
+  [['pnpm-lock.yaml'], 'pull_request', 'true'],
+  [['catalog/a.ts'], 'push', 'false'],
+  [['docs/x.md'], 'schedule', 'true'],
+  [['docs/x.md'], 'workflow_dispatch', 'true'],
+];
+for (const [files, event, expected] of baselineCases) {
+  test(`changes: baselines ${expected === 'true' ? 'on' : 'off'} for ${event} ${files.join(', ')}`, () => {
+    assert.equal(changesFor(files, { event }).baselines, expected);
+  });
+}
+// Checks that read the whole repository run as steps of `changes`, which has
+// no `if` and no `needs` (ZEL-W20a; a step of changes since ZEL-CI-RED, one
+// runner less per run): nothing can switch them off or skip them.
+test('every job except changes is gated by changes and needs it', () => {
   for (const [name, job] of Object.entries(jobsOf(workflow))) {
-    if (name === 'changes' || ALWAYS_ON.includes(name) || REPORT_ONLY.includes(name)) continue;
+    if (name === 'changes' || REPORT_ONLY.includes(name)) continue;
     assert.ok(needsOf(job).includes('changes'), `${name} needs changes`);
     if (name !== 'ci-ok') assert.equal(job.if, `\${{ needs.changes.outputs.${name} == 'true' }}`, name);
   }
@@ -278,45 +309,43 @@ test('every job except changes and the always-on jobs is gated by changes and ne
 
 // The CRLF check of the index (DAN-952) runs on EVERY pull request (ZEL-W20a,
 // review of #435): before, it ran only in the job `test`, which a change to
-// docs/, packages/, catalog/ or a .md file switches off.
-const lineEndings = jobsOf(workflow)['line-endings'];
+// docs/, packages/, catalog/ or a .md file switches off. Since ZEL-CI-RED it
+// is a step of `changes`, so a CRLF file fails `changes` and with it ci-ok.
+const lineEndings = jobsOf(workflow).changes;
 const lineEndingsScript = lineEndings?.steps?.find((s) => typeof s?.run === 'string' && s.run.includes('# line-endings:begin'))?.run;
 
-test('line-endings runs always: no if, no needs, required by ci-ok, never a changes output', () => {
-  assert.deepEqual(Object.keys(jobsOf(workflow)).filter((j) => ALWAYS_ON.includes(j)), ALWAYS_ON);
-  for (const name of ALWAYS_ON) {
-    const job = jobsOf(workflow)[name];
-    assert.equal(job.if, undefined, `${name} has no if`);
-    assert.deepEqual(needsOf(job), [], `${name} needs nothing, so a failed changes cannot skip it`);
-    assert.equal(job.strategy, undefined, `${name} is one job, not a matrix`);
-    assert.ok(needsOf(ciOk).includes(name), `ci-ok needs ${name}`);
-    assert.equal(jobsOf(workflow).changes.outputs?.[name], undefined, `changes has no output for ${name}`);
-  }
-  assert.equal(typeof lineEndingsScript, 'string', 'line-endings has the line-endings:begin block');
+test('the CRLF check runs always: a step of changes, which has no if, no needs and is required by ci-ok', () => {
+  assert.equal(jobsOf(workflow)['line-endings'], undefined, 'no separate line-endings job');
+  assert.equal(lineEndings.if, undefined, 'changes has no if');
+  assert.deepEqual(needsOf(lineEndings), [], 'changes needs nothing');
+  assert.equal(lineEndings.strategy, undefined, 'changes is one job, not a matrix');
+  assert.ok(needsOf(ciOk).includes('changes'), 'ci-ok needs changes');
+  assert.equal(typeof lineEndingsScript, 'string', 'changes has the line-endings:begin block');
   assert.match(lineEndingsScript, /^\s*set -euo pipefail$/m);
   assert.match(lineEndingsScript, /^\s*node --test test\/unit\/gitattributes\.test\.js$/m);
   const step = lineEndings.steps.find((s) => s.run === lineEndingsScript);
   assert.equal(step.if, undefined, 'the check step has no if');
   assert.notEqual(step['continue-on-error'], true, 'the check step blocks');
-  assert.ok(!lineEndings.steps.some((s) => s['continue-on-error']), 'no step of line-endings is report-only');
+  assert.ok(!lineEndings.steps.some((s) => s['continue-on-error']), 'no step of changes is report-only');
+  assert.equal(lineEndings['continue-on-error'], undefined);
 });
 
 // A pull request that changes only docs/x.md or packages/ui/a.css: `changes`
-// switches test off (docs: every job off), yet line-endings still runs and
-// ci-ok requires its success.
+// switches test off (docs: every job off), yet the CRLF check still runs in
+// `changes`, and a failed check fails `changes` and so ci-ok.
 for (const [file, expected] of [['docs/x.md', ''], ['packages/ui/a.css', 'app,ui']]) {
   test(`changes: ${file} only still runs the CRLF check`, () => {
     const outputs = changesFor([file]);
     assert.equal(on(outputs), expected);
     assert.equal(outputs.test, 'false', 'the job test is off, so only line-endings checks CRLF');
-    const results = Object.fromEntries(['test', 'client', 'ui', 'app'].map((j) => [j, outputs[j] === 'true' ? 'success' : 'skipped']));
-    assert.equal(run(withChanges({ ...results, 'line-endings': 'success' }, outputs)).code, 0, 'green with the check passing');
-    for (const r of ['failure', 'skipped', 'cancelled']) {
-      const out = run(withChanges({ ...results, 'line-endings': r }, outputs));
-      assert.equal(out.code, 1, `line-endings ${r} fails ci-ok`);
-      assert.match(out.out, new RegExp(`::error::job line-endings result: ${r}`));
+    const results = Object.fromEntries(['test', 'ui', 'app-build', 'app'].map((j) => [j, outputs[j] === 'true' ? 'success' : 'skipped']));
+    assert.equal(run(withChanges(results, outputs)).code, 0, 'green with the check passing');
+    const skippedAll = Object.fromEntries(Object.keys(results).map((j) => [j, 'skipped']));
+    for (const r of ['failure', 'cancelled']) {
+      const out = run(withChanges(skippedAll, outputs, r));
+      assert.equal(out.code, 1, `changes ${r} (the check failed) fails ci-ok`);
+      assert.match(out.out, new RegExp(`::error::job changes result: ${r}`));
     }
-    assert.equal(run(withChanges(results, outputs)).code, 0, 'control: without line-endings the rest is green');
   });
 }
 
@@ -356,7 +385,7 @@ function lineEndingsIn(path, crlf) {
 }
 
 test('line-endings: CRLF in packages/ fails the check, LF passes', () => {
-  assert.equal(typeof lineEndingsScript, 'string', 'line-endings has the line-endings:begin block');
+  assert.equal(typeof lineEndingsScript, 'string', 'changes has the line-endings:begin block');
   const bad = lineEndingsIn('packages/ui/a.css', true);
   assert.notEqual(bad.code, 0, bad.out);
   assert.match(bad.out, /packages\/ui\/a\.css/, 'the failure names the CRLF file');
@@ -396,14 +425,14 @@ test('ui runs typecheck and unit tests in two blocking parts of its matrix', () 
   }
 });
 
-test('report-only jobs run only the catalogue baselines, on every push, outside ci-ok', () => {
+test('report-only jobs run only the catalogue baselines, when changes says baselines, outside ci-ok', () => {
   const jobs = jobsOf(workflow);
   for (const name of REPORT_ONLY) {
     const job = jobs[name];
     assert.ok(isMap(job), `${name} exists`);
     assert.ok(!needsOf(ciOk).includes(name), `ci-ok does not need ${name}`);
-    assert.equal(job.if, "${{ github.event_name == 'push' }}", `${name} runs on every push`);
-    assert.deepEqual(needsOf(job), [], `${name} needs nothing, so nothing skips it`);
+    assert.equal(job.if, "${{ needs.changes.outputs.baselines == 'true' }}", `${name} runs when changes says baselines`);
+    assert.deepEqual(needsOf(job), ['changes'], `${name} needs changes only`);
     assert.equal(job.env?.BASELINES, ui.env.BASELINES, 'the same baseline filter as ui');
     const tests = job.steps.filter((s) => typeof s.run === 'string' && /playwright test|test:visual/.test(s.run));
     assert.equal(tests.length, 1, `${name} runs one test step`);
@@ -423,4 +452,53 @@ test('no blocking job runs the baselines', () => {
       assert.doesNotMatch(s.run, /--grep "\$BASELINES"/, `${name}: ${s.name ?? s.run}`);
     }
   }
+});
+
+// ZEL-CI-RED: the checks of src/client run in the ui part `checks`, only when
+// `changes` says client, and the read-only package token reaches its install
+// step only.
+test('the client checks run in the ui part checks when changes says client', () => {
+  const when = "matrix.part == 'checks' && needs.changes.outputs.client == 'true'";
+  const [typecheck] = uiStep(/^pnpm run typecheck$/);
+  const [tests] = uiStep(/^pnpm run test$/);
+  for (const s of [typecheck, tests]) {
+    assert.equal(s?.if, when, s?.name);
+    assert.equal(s['working-directory'], 'src/client', s.name);
+  }
+  const withToken = ui.steps.filter((s) => s.env?.NODE_AUTH_TOKEN);
+  assert.equal(withToken.length, 1);
+  assert.equal(withToken[0].if, "matrix.part == 'checks'");
+  assert.equal(ui.permissions?.packages, 'read');
+  assert.equal(jobsOf(workflow).client, undefined, 'no separate client job');
+});
+
+// ZEL-CI-RED: the host is built once in app-build and every app shard starts
+// that build; no shard builds again.
+test('app shards download the one build of app-build', () => {
+  const jobs = jobsOf(workflow);
+  const build = jobs['app-build'];
+  const app = jobs.app;
+  assert.deepEqual([...needsOf(app)].sort(), ['app-build', 'changes']);
+  const step = build.steps.find((s) => s.run === 'pnpm run build');
+  assert.equal(step?.env?.INSTITUTION_SERVER_URL, 'http://127.0.0.1:9');
+  const upload = build.steps.find((s) => String(s.uses).startsWith('actions/upload-artifact@'));
+  assert.equal(upload.with.name, 'app-build');
+  assert.equal(upload.with['include-hidden-files'], true);
+  assert.equal(upload.with['if-no-files-found'], 'error');
+  const download = app.steps.findIndex((s) => String(s.uses).startsWith('actions/download-artifact@'));
+  const e2e = app.steps.findIndex((s) => typeof s.run === 'string' && s.run.includes('test:e2e'));
+  assert.ok(download >= 0 && download < e2e, 'the shard downloads the build before the e2e');
+  assert.equal(app.steps[download].with.path, 'packages/app/.next');
+  assert.ok(!app.steps.some((s) => typeof s.run === 'string' && /\bbuild\b/.test(s.run)), 'no shard builds');
+});
+
+// ZEL-CI-RED: a newer push to the migration base cancels the older run, as a
+// newer push to a pull request does; a push to main never.
+test('concurrency cancels older pull request and base runs, never main', () => {
+  const { group, 'cancel-in-progress': cancel } = workflow.concurrency;
+  assert.match(group, /github\.event\.pull_request\.number/);
+  assert.match(group, /github\.event_name/);
+  assert.match(cancel, /github\.event_name == 'pull_request'/);
+  assert.match(cancel, /github\.ref == 'refs\/heads\/migracija\/kopija-ductus-front'/);
+  assert.doesNotMatch(cancel, /refs\/heads\/main/);
 });
