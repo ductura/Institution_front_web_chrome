@@ -4,7 +4,7 @@ import type { createApi } from "@/client/api";
 import { accessLogDaysOf, type AccessLogDay } from "./days";
 
 /**
- * WEB-13 (S-42 over /api/v1): the student's own access log, through the
+ * WEB-13 (S-42 over the v1 contract): the student's own access log, through the
  * contract only. The page knows the assignment; student.access-log.get wants
  * the work (documentId). The contract has no read-only route from one to the
  * other, and evidence.open.post opens the document and has side effects, so
