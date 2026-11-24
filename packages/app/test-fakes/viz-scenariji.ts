@@ -7,8 +7,9 @@
 // Student A, Kolegij A, B and C, the tasks t1 to t3, today 5. 11. 2026.).
 export const SCENARIJI = ["puno", "prazno", "ucitavanje", "greska", "dugi-tekst"] as const;
 export type Scenarij = (typeof SCENARIJI)[number];
+import { mentorstvo } from "./viz-mentorstvo";
 import { nastavnik } from "./viz-nastavnik";
-import { predaja, type IshodPredaje } from "./viz-predaja";
+import { DOKUMENT_T1, predaja, type IshodPredaje } from "./viz-predaja";
 
 export type VizRole = "student" | "teacher" | "institution_admin" | "network_engineer" | null;
 
@@ -84,7 +85,8 @@ function teacherData(n: Names) {
       ] },
     ] },
     "teacher.mentorships.get": { works: [
-      { mentorshipId: "7f6e5d4c-3b2a-4190-8f7e-6d5c4b3a2901", assignmentId: T1, documentId: "izmisljeni-rad-0001",
+      // MK-16: T1's mentored work is the document the student's workspace opens.
+      { mentorshipId: "7f6e5d4c-3b2a-4190-8f7e-6d5c4b3a2901", assignmentId: T1, documentId: DOKUMENT_T1,
         student: { givenName: "Student", familyName: "A" }, title: n.title(1), workType: "master_thesis", workState: "in_progress" },
       { mentorshipId: "7f6e5d4c-3b2a-4190-8f7e-6d5c4b3a2902", assignmentId: T3, documentId: "izmisljeni-rad-0003",
         student: { givenName: "Student", familyName: "C" }, title: n.title(3), workType: "bachelor_thesis", workState: "submitted" },
@@ -172,6 +174,8 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
   const t1 = scenarij === "prazno" ? undefined : predaja(vectors, { id: T1, dueAt: T1_ROK }, opcije.predaja ?? "predano", FIKSNI_DATUM);
   // NZ-18, PG-15: the teacher's reads joined to T1 and T2.
   const teacher = scenarij === "prazno" ? undefined : nastavnik(vectors, { t1: T1, t2: T2 });
+  // MK-16: the mentorship of T1 and T3, and the answers that say back what was sent.
+  const mentor = scenarij === "prazno" ? undefined : mentorstvo(vectors, { t1: T1, t1Rok: T1_ROK, t3: T3 }, FIKSNI_DATUM);
   const json = (body: unknown, status = 200, headers?: Readonly<Record<string, string>>): Answer =>
     ({ status, contentType: "application/json", body: JSON.stringify(body), ...(headers === undefined ? {} : { headers }) });
 
@@ -202,6 +206,8 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
       const sent = parse(requestBody);
       const dynamic = t1?.(route.operation, ids.assignmentId, sent);
       if (dynamic !== undefined) return json(dynamic.body, dynamic.status);
+      const mentored = mentor?.(route.operation, ids, sent);
+      if (mentored !== undefined) return json(mentored.body, mentored.status);
       const joined = teacher?.(route.operation, ids);
       if (joined !== undefined) return json(joined.body, joined.status, joined.headers);
       if (route.operation in own) return json(own[route.operation]);
