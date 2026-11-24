@@ -25,21 +25,19 @@ function pauseResponse() {
   return { wait, release };
 }
 
-test("renders the notice, waits for both writes and restores the confirmation on reload", async ({ page }) => {
+test("renders the notice, writes nothing on opening, waits for the acknowledgment and restores the confirmation on reload", async ({ page }) => {
   await studentSession(page);
-  let readAt: string | null = null;
+  const readAt: string | null = null;
   let acknowledgedAt: string | null = null;
   let writes = 0;
-  const markResponse = pauseResponse();
+  let opens = 0;
   const ackResponse = pauseResponse();
 
   await page.route(API, (route) => route.fulfill({ json: { ...notice, readAt, acknowledgedAt } }));
+  // P-9 (a): opening the notice sends nothing; a request to the "read" route would be a regression.
   await page.route(`${API}-read`, async (route) => {
-    expect(route.request().method()).toBe("POST");
-    expect(route.request().postDataJSON()).toEqual({ versionNo: notice.versionNo });
-    await markResponse.wait;
-    readAt = TIME;
-    await route.fulfill({ json: { readAt } });
+    opens++;
+    await route.fulfill({ json: { readAt: TIME } });
   });
   await page.route(`**/api/v1/institution/assignments/${ID}/acknowledgment`, async (route) => {
     expect(route.request().method()).toBe("POST");
@@ -55,10 +53,13 @@ test("renders the notice, waits for both writes and restores the confirmation on
   await page.goto(`/app/web${PATH}`);
   await expect(page.getByRole("heading", { name: TITLE })).toBeVisible();
   await expect(page.getByRole("link", { name: "Moji kolegiji i zadaci" })).toHaveAttribute("href", "/app/web/zadaci");
-  await expect(page.getByText("Bilježi se da je obavijest otvorena…")).toBeVisible();
-  await expect(page.getByText(/^Na poslužitelju je zabilježeno/)).toHaveCount(0);
-  markResponse.release();
-  await expect(page.getByText(/^Na poslužitelju je zabilježeno/)).toBeVisible();
+  // P-8: five lines on top, with the line that a confirmation is not a consent.
+  const summary = page.getByRole("region", { name: "Ukratko" });
+  await expect(summary.getByRole("listitem")).toHaveCount(5);
+  await expect(summary).toContainText("lektoriranje i jezična provjera");
+  await expect(summary).toContainText("Potvrda nije privola.");
+  await expect(page.getByText(/otvorena|zabilježeno da je obavijest/)).toHaveCount(0);
+  expect(opens).toBe(0);
 
   const submit = page.getByRole("button", { name: "Potvrdi i otvori editor" });
   await expect(submit).toBeDisabled();
@@ -76,6 +77,7 @@ test("renders the notice, waits for both writes and restores the confirmation on
   // The editor link routes on the client; wait for the address rather than read it once.
   await expect.poll(() => new URL(page.url()).pathname).toBe(`/app/web/rad/${ID}`);
   expect(writes).toBe(1);
+  expect(opens).toBe(0);
 });
 
 test("a 401 from the notice sends the student to AAI@EduHr with the current base", async ({ page }) => {

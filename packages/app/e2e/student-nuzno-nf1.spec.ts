@@ -81,7 +81,7 @@ test("P-1: the bell counts only known unread kinds, opens the list, and marks an
   const list = page.getByRole("dialog", { name: "Popis obavijesti" });
   await expect(list.getByRole("link")).toHaveCount(2);
   await expect(list.getByRole("link", { name: /Nova verzija zadatka/ })).toBeVisible();
-  await expect(list.getByRole("link", { name: /Podsjetnik na rok zadatka/ })).toBeVisible();
+  await expect(list.getByRole("link", { name: /Rok za zadatak Esej o izmišljenom gradu: / })).toBeVisible();
   await axe(page);
   await list.getByRole("link", { name: /Nova verzija zadatka/ }).click();
   await expect(page).toHaveURL(new RegExp(`/app/web/zadatak/${LATE}$`));
@@ -153,7 +153,7 @@ test("P-1: the bell works from the keyboard: Enter opens the list, Tab reaches a
   let reached = false;
   for (let i = 0; i < 4 && !reached; i += 1) {
     await page.keyboard.press("Tab");
-    reached = await list.getByRole("link", { name: /Podsjetnik na rok zadatka/ }).evaluate((el) => el === document.activeElement);
+    reached = await list.getByRole("link", { name: /Rok za zadatak Esej o izmišljenom gradu: / }).evaluate((el) => el === document.activeElement);
   }
   expect(reached).toBe(true);
   await page.keyboard.press("Enter");
