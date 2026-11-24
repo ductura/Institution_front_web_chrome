@@ -15,11 +15,17 @@ describe("reading font for dyslexia", () => {
     }
   });
 
-  it("leaves the interface shell alone: only the editor sheet text is targeted", () => {
+  it("leaves the interface shell alone: only the sheet (.manuscript, title) and the editor text are targeted", () => {
     for (const selector of selectors.flatMap((s) => s.split(",")).filter((s) => !s.includes("--"))) {
       const s = selector.trim();
       if (s === ':root[data-reading-font="dyslexia"]') continue;
-      expect(s, s).toContain(".editor-surface .ProseMirror");
+      expect(/\.manuscript|\.editor-surface \.ProseMirror/.test(s), s).toBe(true);
+    }
+  });
+
+  it("covers the sheet and its title in every view that shows the work", () => {
+    for (const target of [".manuscript,", ".manuscript__title", ".editor-surface .ProseMirror"]) {
+      expect(code, target).toContain(target);
     }
   });
 
