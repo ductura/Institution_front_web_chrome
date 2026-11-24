@@ -33,10 +33,13 @@ export function stepFor(outcome: StartOutcome, assignmentId: string): Step {
   }
 }
 
-/** "Jezik rada: hrvatski" and "Pravila fakulteta: verzija 3", from the server's answer only. */
-export function workFacts(work: StartedWork): readonly [string, string] {
-  return [
-    t.language.replace("{language}", t.languages[work.workLanguage]),
-    t.rules.replace("{version}", String(work.facultyRulesVersion)),
-  ];
+/**
+ * "Jezik rada: hrvatski" and "Pravila fakulteta: verzija 3", from the server's
+ * answer only. While the faculty has no rules for the work (null) nothing is
+ * said about them: no version is made up.
+ */
+export function workFacts(work: StartedWork): readonly string[] {
+  const language = t.language.replace("{language}", t.languages[work.language]);
+  if (work.rulesVersion === null) return [language];
+  return [language, t.rules.replace("{version}", String(work.rulesVersion))];
 }

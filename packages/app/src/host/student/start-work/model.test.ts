@@ -6,9 +6,7 @@ import { stepFor, workFacts } from "./model";
 import { startWorkText as t } from "./messages.hr";
 
 const ID = "20000000-0000-4000-8000-000000000001";
-const WORK: StartedWork = {
-  assignmentId: ID, documentId: "30000000-0000-4000-8000-000000000001", created: true, workLanguage: "hr", facultyRulesVersion: 3,
-};
+const WORK: StartedWork = { assignmentId: ID, workId: "30000000-0000-4000-8000-000000000001", language: "hr", rulesVersion: 3 };
 
 describe("stepFor", () => {
   it("a started work opens the editor of that assignment", () => {
@@ -36,6 +34,10 @@ describe("stepFor", () => {
 describe("workFacts", () => {
   it("names the language of the work and the version of the faculty rules", () => {
     expect(workFacts(WORK)).toEqual(["Jezik rada: hrvatski", "Pravila fakulteta: verzija 3"]);
-    expect(workFacts({ ...WORK, workLanguage: "en", facultyRulesVersion: 12 })).toEqual(["Jezik rada: engleski", "Pravila fakulteta: verzija 12"]);
+    expect(workFacts({ ...WORK, language: "en", rulesVersion: 12 })).toEqual(["Jezik rada: engleski", "Pravila fakulteta: verzija 12"]);
+  });
+
+  it("says nothing about the rules while the faculty has none for the work", () => {
+    expect(workFacts({ ...WORK, rulesVersion: null })).toEqual(["Jezik rada: hrvatski"]);
   });
 });
