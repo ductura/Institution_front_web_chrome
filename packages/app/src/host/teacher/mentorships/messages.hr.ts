@@ -1,6 +1,6 @@
 export const myStudentsText = {
   title: "Moji studenti",
-  lead: "Studenti čiji ste zahtjev za mentorstvo odobrili.",
+  lead: "Studenti kojima ste mentor.",
   empty: "Još nemate odobrenih studenata.",
   unnamed: "Ime nije dostupno",
   unavailable: "Popis studenata trenutačno nije dostupan. Pokušajte ponovno.",

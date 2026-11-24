@@ -39,8 +39,8 @@ export function MyStudents({ works, call, base, now = Date.now }:
   const outcome = progress === null ? "ok" : readOutcome(progress);
   const retry = <Button tone="quiet" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>;
   const columns: DataTableColumn<OverviewRow>[] = [
-    { id: "work", header: t.colWork, rowHeader: true, cell: (r) => (
-      <>{r.href === null ? r.name : <a href={appHref(base, r.href)}>{r.name}</a>}<br /><span className="meta">{`${typeText[r.workType] ?? ""} „${r.title}”`}</span></>
+    { id: "work", header: t.colWork, rowHeader: true, cell: ({ href, name, workType, title }) => (
+      <>{href === null ? name : <a href={appHref(base, href)}>{name}</a>}<br /><span className="meta">{`${typeText[workType] ?? ""} „${title}”`}</span></>
     ) },
     { id: "stage", header: t.colStage, cell: (r) => r.stage },
     { id: "state", header: t.colState, cell: (r) => (r.standing === "yours" ? <Tag tone="accent">{r.state}</Tag> : r.state) },

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button, Card, RouteLoading, Select, Tag } from "@ductura/ui";
 
-import { goToSignIn } from "../../../../../../src/client/api";
+import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import {
   canWithdraw, nameText, studentMentorshipCall, WORK_TYPES, type CandidatesRead, type MentorshipRead, type MentorshipWorkType, type StudentMentorshipCall,
 } from "../../../../../../src/client/mentorship";
@@ -11,11 +11,16 @@ import { appHref } from "../../../../../../src/components/shell/nav";
 import { formatDateHr } from "../../../../../../src/lib/i18n/hr";
 import { useHost } from "../../context";
 import { hostText } from "../../../text";
+import KeyDates from "../../teacher/key-dates/KeyDates";
+import { keyDatesPort, type KeyDatesCall } from "../../teacher/key-dates/contract";
+import { keyDatesMessages } from "../../teacher/key-dates/messages.hr";
 import { mentorshipRequestText as t } from "./messages.hr";
 import { readMentorCandidates, readMyMentorshipRequests, sendRequest, statusText, withdrawRequest, type Note } from "./model";
 
 /** The student's transport: the contract routes of mentorship.* through createApi. */
 const defaultCall = () => studentMentorshipCall();
+/** MK-13: the same timeline the mentor sees (mentorship.key-dates.get), for each approved mentorship. */
+const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
 
 /**
  * Student: "Zahtjev za mentorstvo" (WEB-1404). The form sends a request, the list
@@ -23,8 +28,10 @@ const defaultCall = () => studentMentorshipCall();
  * and a pending one can be withdrawn. A note follows only the server's answer (B-6).
  * `call` is for tests; the page uses the client.
  */
-export default function MentorshipRequestPage({ call = defaultCall }: { call?: () => StudentMentorshipCall }) {
+export default function MentorshipRequestPage({ call = defaultCall, keyDates = keyDatesCall }:
+  { call?: () => StudentMentorshipCall; keyDates?: () => KeyDatesCall }) {
   const { base } = useHost();
+  const datesPort = useMemo(() => keyDatesPort(keyDates), [keyDates]);
   const here = appHref(base, "/zadaci/mentorstvo");
   const [read, setRead] = useState<MentorshipRead | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -142,6 +149,10 @@ export default function MentorshipRequestPage({ call = defaultCall }: { call?: (
         </form>
       </Card>
       {list}
+      {read?.kind === "ready" && read.requests.flatMap((r) => (r.mentorshipId === null ? [] : [
+        <KeyDates key={r.mentorshipId} mentorshipId={r.mentorshipId} port={datesPort}
+          title={keyDatesMessages.forMentor(nameText(r.teacherName) ?? t.teacherUnnamed)} />,
+      ]))}
     </div>
   );
 }
