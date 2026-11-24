@@ -20,7 +20,7 @@ import { printAttempts, SESSION_RETRY } from "@/components/session-retry";
  * for React to render the panel into is set up below.
  */
 
-printAttempts();
+printAttempts(beforeEach);
 
 const t = messagesHr.revisions;
 

@@ -184,7 +184,7 @@ async function answer(outcome: ReplayOutcome) {
   await act(async () => { load.resolve!(outcome); });
 }
 
-printAttempts();
+printAttempts(beforeEach);
 
 beforeEach(() => { heard.clear(); });
 

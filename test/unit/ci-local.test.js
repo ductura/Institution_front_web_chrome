@@ -82,7 +82,7 @@ test('only *.session.test.ts retry, once, through session-retry.ts', () => {
     const text = readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
     if (session.includes(f)) {
       assert.match(text, /from "@\/components\/session-retry"/, f);
-      assert.match(text, /^printAttempts\(\);$/m, f);
+      assert.match(text, /^printAttempts\(beforeEach\);$/m, f);
       const tops = text.match(/^describe\(.*$/gm) ?? [];
       assert.ok(tops.length > 0 && tops.every((l) => l.includes('SESSION_RETRY, ')), f);
     } else {
