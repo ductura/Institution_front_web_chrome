@@ -12,19 +12,20 @@ import styles from "./pilot-metrics.module.css";
 const number = new Intl.NumberFormat("hr-HR");
 const date = new Intl.DateTimeFormat("hr-HR", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Zagreb" });
 
-function display({ value, duration }: MeasureRow): string {
-  if (value === null) return t.hidden;
+function display({ value, duration }: MeasureRow, minimum: number): string {
+  if (value === null) return t.hidden.replace("{minimum}", String(minimum));
   const formatted = number.format(value);
   return duration ? t.milliseconds.replace("{value}", formatted) : formatted;
 }
 
-const columns: DataTableColumn<MeasureRow>[] = [
+const columnsFor = (minimum: number): DataTableColumn<MeasureRow>[] => [
   { id: "measure", header: t.measure, cell: (row) => row.label, rowHeader: true },
-  { id: "value", header: t.value, cell: display, numeric: true },
+  { id: "value", header: t.value, cell: (row) => display(row, minimum), numeric: true },
 ];
 
 function MetricsView({ data }: { data: PilotMetricsData }) {
   const rows = measuresOf(data);
+  const columns = columnsFor(data.minimumGroup);
   const visible = rows.filter((row): row is MeasureRow & { value: number } => !row.duration && row.value !== null);
   const max = Math.max(1, ...visible.map((row) => row.value));
   return (
@@ -40,7 +41,7 @@ function MetricsView({ data }: { data: PilotMetricsData }) {
               <li key={row.id}>
                 <span>{row.label}</span>
                 <span className={styles.track}><span style={{ width: `${row.value / max * 100}%` }} /></span>
-                <span>{display(row)}</span>
+                <span>{display(row, data.minimumGroup)}</span>
               </li>
             ))}
           </ul>

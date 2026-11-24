@@ -10,7 +10,7 @@ export const pilotMetricsMessages = {
   emptyBody: "Brojevi se pojavljuju nakon prve zabilježene predaje ili prijave problema.",
   asOf: "Presjek podataka",
   hiddenNote: "Poslužitelj skriva male skupine i vrijednosti koje bi ih mogle otkriti. Prag je {minimum} zapisa.",
-  hidden: "Skriveno",
+  hidden: "Nije prikazano (manje od {minimum})",
   table: "Zbirna mjerila pilota",
   measure: "Mjerilo",
   value: "Vrijednost",
