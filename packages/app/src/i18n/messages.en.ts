@@ -68,6 +68,8 @@ export const pageLabelsEn = {
   receiptCheck: "Receipt check",
   originThresholds: "Thresholds per origin kind",
   pilotMetrics: "Pilot measures",
+  actionLog: "Log of actions",
+  problemReports: "Problem reports",
   facultySettings: "Faculty settings",
   facultyAssistant: "Assistant at the faculty",
   myRights: "My rights",

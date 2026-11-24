@@ -1,7 +1,7 @@
 "use client";
 
 import { StudentDataExportList, StudentDataExportRequest, formatDateTime, type StudentDataExportListState } from "@ductura/ui";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   approveStudentDataExport, listStudentDataExports, requestStudentDataExport, studentDataExportCall,
@@ -9,6 +9,7 @@ import {
 } from "@/client/student-data-export";
 
 import { useHost } from "../../context";
+import { openRequests, type OpenRequests } from "./duplicate";
 import { studentDataExportMessages as t } from "./messages.hr";
 
 type Refused = Exclude<RequestOutcome["kind"] | ApproveOutcome["kind"], "ok">;
@@ -62,12 +63,13 @@ function AdminList({ call }: { call: StudentDataExportCall }) {
         labels={t.labels} state={state} busy={busy} actionError={actionError}
         onApprove={(id, reference) => { void approve(id, reference); }} onRetry={load}
       />
+      <p>{t.statesNote}</p>
       <p role="status">{note}</p>
     </>
   );
 }
 
-function RequestForm({ call }: { call: StudentDataExportCall }) {
+function RequestForm({ call, open }: { call: StudentDataExportCall; open: OpenRequests }) {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | undefined>();
   const [note, setNote] = useState("");
@@ -76,7 +78,14 @@ function RequestForm({ call }: { call: StudentDataExportCall }) {
     setBusy(true);
     setActionError(undefined);
     setNote("");
+    // NF-7 OA-6: a student this page already sent a request for is refused before anything is sent.
+    if (open.has(input.studentId)) {
+      setActionError(say("exists"));
+      setBusy(false);
+      return;
+    }
     const out = await requestStudentDataExport(input, call);
+    if (out.kind === "ok" || out.kind === "exists") open.add(input.studentId);
     if (out.kind === "ok") setNote(t.requested);
     else setActionError(say(out.kind));
     setBusy(false);
@@ -94,17 +103,27 @@ function RequestForm({ call }: { call: StudentDataExportCall }) {
 }
 
 /**
- * /ustanova/izvoz-podataka (WEB-1302; SRV-1308): the institution administrator sees the requests
- * and starts an export with a reference; everyone else signed in sees the registry office's
- * request form. The server decides who may do what (403 is shown as the catalogue text). Reads
- * and writes go only through src/client.
+ * The registry office records requests (SRV-1308: only a clerk may, an administrator gets 403), so
+ * the administrator who approves never records: one person records, another approves.
+ */
+function RegistryView({ call }: { call: StudentDataExportCall }) {
+  const open = useRef(openRequests()).current;
+  return <RequestForm call={call} open={open} />;
+}
+
+/**
+ * /ustanova/izvoz-podataka (WEB-1302; SRV-1308; NF-7 OA-6): the institution administrator sees the
+ * requests with their state and starts an export with a reference; everyone else signed in sees the
+ * registry office's request form. A second request for the same student is
+ * refused on the page before sending, and the server's 409 says the same. The server decides who
+ * may do what (403 is shown as the catalogue text). Reads and writes go only through src/client.
  */
 export default function StudentDataExportPage({ call = studentDataExportCall() }: { call?: StudentDataExportCall }) {
   const { page, role } = useHost();
   return (
-    <section className="page" data-role={role ?? undefined}>
+    <section className="page" data-role={role ?? undefined} data-nf7="OA-6">
       <h1>{page.label}</h1>
-      {role === "admin" ? <AdminList call={call} /> : <RequestForm call={call} />}
+      {role === "admin" ? <AdminList call={call} /> : <RegistryView call={call} />}
     </section>
   );
 }
