@@ -8,7 +8,7 @@ import { readStudentNotice, type StudentNoticeRead } from "@/client/student-noti
 import { appHref } from "@/components/shell/nav";
 import styles from "@/components/student/AssignmentNotice.module.css";
 import { noticeWindow } from "@/components/student/notice-window";
-import { messagesHr as t } from "@/lib/i18n/messages.hr";
+import { studentHostHr as t } from "../i18n/messages.hr";
 import { useHost } from "../../context";
 import HostNotice from "../enrol/HostNotice";
 import { editorPath } from "../enrol/model";

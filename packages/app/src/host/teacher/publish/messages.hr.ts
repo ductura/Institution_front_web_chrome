@@ -29,10 +29,3 @@ export const noticePreviewHr = {
   importNo: "nije dopušten",
 } as const;
 
-/** NZ-8: who confirmed the notice. The server does not say per student yet, so the page says so. */
-export const noticeAckHr = {
-  title: "Tko je potvrdio obavijest",
-  unavailable: "Potvrda obavijesti po studentu još nije dostupna. Broj „Potvrdilo n od m” prikazat će se čim ga poslužitelj bude davao.",
-  count: (n: number, m: number): string => `Potvrdilo ${n} od ${m}`,
-  newVersion: "nova verzija",
-} as const;

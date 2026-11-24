@@ -9,7 +9,7 @@ import { useCallback, useState, type ReactNode } from "react";
 import { appHref } from "../../../../../../src/components/index.ts";
 import { assignmentIdOf } from "../../../../../../src/components/editor/EditorPage.read.ts";
 import { goToSignIn } from "../../../../../../src/client/api.ts";
-import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
+import { studentHostHr as t } from "../i18n/messages.hr.ts";
 
 import { hostText } from "../../../text";
 import { useHost } from "../../context";

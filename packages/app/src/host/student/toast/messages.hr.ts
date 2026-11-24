@@ -3,5 +3,4 @@ export const studentToastText = {
   region: "Obavijesti",
   close: "Zatvori",
   enrolled: "Upisani ste u kolegij.",
-  noteAdded: "Napomena je dodana.",
 } as const;
