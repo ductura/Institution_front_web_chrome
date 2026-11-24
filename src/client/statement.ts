@@ -6,8 +6,11 @@
 // The client comes through the declaration adapter, so this file names no API module itself.
 import {
   browserTransport, createApi, createDeclarationPort, createDeclarationSession, printoutName, readStudentState, responseMatches,
-  writeDraft, type Call, type DeclarationPort, type DeclarationPortOptions, type DeclarationSession,
+  writeDraft, type AnswerWrite, type Call, type DeclarationPort, type DeclarationPortOptions, type DeclarationSession,
+  type QuestionAnswer, type TeacherQuestion,
 } from "./declaration";
+
+export type { AnswerWrite, QuestionAnswer, TeacherQuestion };
 import migrationContracts from "./migration-contracts.generated.json" with { type: "json" };
 
 /** Closed set of kinds of human help (OD-12). The server may name fewer, never others. */
@@ -32,6 +35,10 @@ export type StatementRead =
       readonly attachment: { readonly name: string; readonly bytes: number } | null;
       /** Set after the work is submitted: everything is then read only. */
       readonly submitted: boolean;
+      /** NF-3 PR-20: the teacher's question beside the declaration; null when none was asked. */
+      readonly question: TeacherQuestion | null;
+      /** The student's answer the server holds; null when there is none. */
+      readonly answer: QuestionAnswer | null;
     }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
@@ -51,6 +58,8 @@ export interface StatementPort {
   read(assignmentId: string): Promise<StatementRead>;
   saveHumanHelp(assignmentId: string, help: HumanHelp): Promise<StatementWrite>;
   attachPrintout(assignmentId: string, file: File): Promise<StatementWrite>;
+  /** The answer to the teacher's question on the same draft (null takes it back); the answer is not obligatory. */
+  saveAnswer(assignmentId: string, answer: AnswerWrite): Promise<StatementWrite>;
 }
 
 export type FileCheck =
@@ -117,7 +126,15 @@ export function createStatementPort(call: Call = createApi(), options: Statement
         humanHelp: help === null ? null : first === undefined ? { kind: "none", text: "" } : { kind: FROM_WIRE[first.kind], text: first.text },
         attachment: upload === undefined ? null : { name: printoutName(upload.externalAttachmentId, upload.format), bytes: upload.byteLength },
         submitted: state.submitted || state.state === "bound",
+        question: state.teacherQuestion ?? null,
+        answer: state.questionAnswer ?? null,
       };
+    },
+
+    async saveAnswer(assignmentId, answer) {
+      const write = await writeDraft(call, session, assignmentId, { questionAnswer: answer });
+      if (write.kind === "refused") return { kind: "rejected" };
+      return { kind: write.kind };
     },
 
     async saveHumanHelp(assignmentId, help) {

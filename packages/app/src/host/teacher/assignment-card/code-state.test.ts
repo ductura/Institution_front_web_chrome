@@ -33,6 +33,8 @@ describe("codeStateText and canRevoke", () => {
     expect(codeStateText({ kind: "none" })).toBe("Nema izdanog koda.");
     expect(canRevoke({ kind: "none" })).toBe(false);
     expect(canRevoke({ kind: "unknown" })).toBe(false);
+    // A failed or broken read never claims a state the server did not give.
+    expect(codeStateText({ kind: "unknown" })).toContain("nije dostupno");
   });
 });
 

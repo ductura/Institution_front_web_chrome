@@ -26,6 +26,10 @@ export type StepsShellProps = {
   readonly label: string;
   /** Two columns from 1050 px (E-8). */
   readonly wide?: boolean;
+  /** NF-3 PR-16: the teacher's request for revision, after the ordinary step. */
+  readonly revision?: ReactNode;
+  /** NF-3 PR-14: what follows the panel of a submitted work (the note beside the declaration). */
+  readonly submittedExtra?: ReactNode;
 };
 
 /** The frame while the work is read: the bar without a path and the loading panel (prototype `ucitavanje`). */
@@ -38,7 +42,7 @@ export function StepsLoading({ title, message, workHref, label }: { title: strin
   );
 }
 
-export default function StepsShell({ step, work, workHref, receiptHref, requestedAt, onRetry, children, label, wide }: StepsShellProps) {
+export default function StepsShell({ step, work, workHref, receiptHref, requestedAt, onRetry, children, label, wide, revision, submittedExtra }: StepsShellProps) {
   const router = useRouter();
   const panel = stepPanelOf(work);
   const path = work.kind === "ready" ? { course: work.course, title: work.title } : { course: "", title: "" };
@@ -48,7 +52,7 @@ export default function StepsShell({ step, work, workHref, receiptHref, requeste
     </StepFrame>
   );
   // Only the label of the ordinary step is the step's own; the other panels are "Predaja" in the prototype.
-  if (panel.kind === "normal") return frame(label, children, wide);
+  if (panel.kind === "normal") return frame(label, <>{children}{revision}</>, wide);
   return frame(text.panelLabel, (
     <>
       {panel.kind === "error" && (
@@ -72,6 +76,7 @@ export default function StepsShell({ step, work, workHref, receiptHref, requeste
           <StepLink href={receiptHref}>{text.openReceipt}</StepLink>
         </StepPanel>
       )}
+      {panel.kind === "submitted" && submittedExtra}
     </>
   ));
 }

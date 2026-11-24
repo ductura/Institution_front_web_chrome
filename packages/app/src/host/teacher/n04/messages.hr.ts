@@ -2,7 +2,7 @@
 export const courseStudentsMessages = {
   title: "Popis studenata",
   courseTitle: (course: string): string => `${course}: studenti`,
-  lead: "Svaki student kroz sve zadatke kolegija. Popis je abecedan i ne može se poredati po brojevima. Stanje rada piše se riječima.",
+  lead: "Svaki student kroz sve zadatke kolegija. Popis je poredan po prezimenu ili po stanju rada, nikad po brojevima. Stanje rada piše se riječima.",
   filter: "Prikaz",
   allGroups: "Svi",
   // NZ-11

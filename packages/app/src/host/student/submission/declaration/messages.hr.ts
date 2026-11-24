@@ -56,6 +56,14 @@ export const declarationStepText = {
   // The confirmation is written on the server: without a read there is nothing to confirm (PIL-K-IZJAVA).
   error: "Izjavu trenutačno nije moguće učitati s poslužitelja. Pokušajte ponovno; potvrda je moguća kad se izjava učita.",
   retry: "Pokušaj ponovno",
+  // NF-3 PR-5 (PD-10, E-9c): the declaration as a dialog from steps 3 and 4, and a confirmation that went stale.
+  dialogMeta: "po čl. 9 i 15 pravilnika fakulteta. Po zatvaranju ostajete na istom koraku predaje.",
+  dialogLoading: "Učitavam izjavu s poslužitelja.",
+  dialogClose: "Zatvori",
+  staleNotice: "Tekst rada se promijenio nakon potvrde. Izjavu treba potvrditi ponovno.",
+  confirmAgain: "Potvrđujem izjavu ponovno",
+  openDialog: "Otvori izjavu",
+  reconfirm: "Potvrdi izjavu ponovno",
 } as const;
 
 export const chatDialogText = {
@@ -65,4 +73,19 @@ export const chatDialogText = {
   ai: "Asistent",
   transfer: "Prijenos u tekst",
   close: "Zatvori",
+} as const;
+
+// NF-3 PR-14 (E-9b, R-57): the note beside a submitted declaration, tagged for legal review.
+export const correctionText = {
+  title: "Ispravak izjave",
+  tag: "za pravni pregled",
+  legal: "Tekst ovog odjeljka čeka pravni pregled.",
+  lead: "Potvrđena izjava se ne mijenja. Ako ste nešto izostavili, uz izjavu možete dodati napomenu; nastavnik je vidi uz sažetak.",
+  open: "Dodaj napomenu uz izjavu",
+  label: "Napomena uz izjavu",
+  hint: "Napomene se samo dodaju; potvrđena izjava ostaje kakva jest.",
+  seenBy: "Vidi je nastavnik uz sažetak.",
+  added: "Napomena uz izjavu je dodana.",
+  withdraw: "Dok rok traje, predaju možete i povući, ispraviti izjavu i rad predati ponovno.",
+  toWithdraw: "Povlačenje predaje",
 } as const;

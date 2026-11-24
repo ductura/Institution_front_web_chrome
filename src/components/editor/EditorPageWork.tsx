@@ -67,6 +67,10 @@ export type HostSections = {
   review?: (ctx: HostSectionContext) => ReactNode;
   work?: (ctx: HostSectionContext) => ReactNode;
   comments?: (ctx: HostSectionContext) => ReactNode;
+  /** ED-09 (NF2-P9): cards under the Asistent card ("Pravila za ovaj zadatak"). */
+  assistant?: (ctx: HostSectionContext) => ReactNode;
+  /** ED-09 (NF2-P9): the assignment's instructions in "Prvi redak"; none without it. */
+  instructions?: (ctx: HostSectionContext) => ReactNode;
 };
 
 export type OpenRead =
@@ -269,7 +273,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       rightSections={{ sources: <>{literature?.({ documentId })}<EditorSourceProofs assignmentId={assignmentId} documentId={documentId} /></>,
         comments: hostSections?.comments ? hostSections.comments(ctx) : <CommentPanel documentId={documentId} session={session} />,
         review: hostSections?.review?.(ctx),
-        assistant: <AssistantComingSoonCard /> }}
+        assistant: <><AssistantComingSoonCard />{hostSections?.assistant?.(ctx)}</> }}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
           sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer}
@@ -284,7 +288,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId}
         fresh={phase === "ready" && editor?.isEmpty}
-        notice={{ course, title, length: length?.range ?? undefined, instructions: null }} />
+        notice={{ course, title, length: length?.range ?? undefined, instructions: hostSections?.instructions?.(ctx) ?? null }} />
     </EditorPanelLayout>
   );
 }

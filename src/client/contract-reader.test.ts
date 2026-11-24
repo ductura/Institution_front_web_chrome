@@ -36,7 +36,7 @@ function schemaOf(vector: Vector): Json | undefined {
 }
 
 /** Vectors (`route name`) whose answer has no field this test can mutate (fields behind $ref/anyOf/oneOf, or an empty object). */
-// 50 answers are a top-level anyOf (no `properties` to mutate) and 2 have properties without a plain type/const.
+// 52 answers are a top-level anyOf (no `properties` to mutate) and 2 have properties without a plain type/const.
 const NO_MUTABLE_FIELDS = new Set<string>([
   "auth.webauthn-challenge.post assertion",
   "auth.webauthn-challenge.post registration",
@@ -55,6 +55,8 @@ const NO_MUTABLE_FIELDS = new Set<string>([
   "institution.teaching-team-view.get success-holder",
   "live.document.get state",
   "live.document.get submitted",
+  "ops.events.get empty",
+  "ops.events.get page",
   "profile.staff-affiliation.get confirmed",
   "profile.staff-affiliation.get missing",
   "public.verification.post match",

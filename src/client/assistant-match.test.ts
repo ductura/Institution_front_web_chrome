@@ -17,9 +17,18 @@ describe("segmentsOf", () => {
       finding("p-1", 14, "2026-11-20T09:00:00.000Z", "c-2"),
       finding("p-1", 8, "2026-11-20T11:00:00.000Z", "c-4"),
     ])).toEqual([
-      { segmentId: "p-1", conversationId: "c-2", words: 14, attachedAt: "2026-11-20T11:00:00.000Z" },
-      { segmentId: "p-2", conversationId: "c-3", words: 8, attachedAt: "2026-11-20T10:01:00.000Z" },
+      { segmentId: "p-1", conversationId: "c-2", messageId: "m-14", words: 14, attachedAt: "2026-11-20T11:00:00.000Z" },
+      { segmentId: "p-2", conversationId: "c-3", messageId: "m-8", words: 8, attachedAt: "2026-11-20T10:01:00.000Z" },
     ]);
+  });
+
+  it("carries the latest explanation the student wrote for the segment (ED-13)", () => {
+    const at = "2026-11-20T10:00:00.000Z";
+    expect(segmentsOf([
+      { ...finding("p-1", 9, at), explanation: { text: "Prvo.", writtenAt: "2026-11-20T12:00:00.000Z" } },
+      { ...finding("p-1", 12, at), explanation: null },
+      { ...finding("p-1", 8, at), explanation: { text: "Drugo.", writtenAt: "2026-11-20T13:00:00.000Z" } },
+    ])).toEqual([{ segmentId: "p-1", conversationId: "c-1", messageId: "m-12", words: 12, attachedAt: at, explanation: { text: "Drugo.", at: "2026-11-20T13:00:00.000Z" } }]);
   });
 });
 
@@ -29,7 +38,7 @@ describe("the match port over the server", () => {
     const port = createAssistantMatchCall(call as never);
     const answer = await port("work.assistant-match.get", { params: { documentId: DOC } });
     expect(call).toHaveBeenCalledWith("work.assistant-match.get", { params: { documentId: DOC }, query: undefined, body: undefined });
-    expect(answer).toEqual({ ok: true, status: 200, body: { enabled: true, matches: [{ segmentId: "p-1", conversationId: "c-1", words: 9, attachedAt: "2026-11-20T10:00:00.000Z" }] } });
+    expect(answer).toEqual({ ok: true, status: 200, body: { enabled: true, matches: [{ segmentId: "p-1", conversationId: "c-1", messageId: "m-9", words: 9, attachedAt: "2026-11-20T10:00:00.000Z" }] } });
   });
 
   it("with the switch off the server stores no finding, so there is nothing to show", async () => {
@@ -44,11 +53,17 @@ describe("the match port over the server", () => {
       .toEqual({ ok: false, status: 401, code: "unauthorized" });
   });
 
-  it("never sends an explanation: the server has no route for it", async () => {
-    const call = vi.fn();
-    const answer = await createAssistantMatchCall(call as never)("work.assistant-match.explain", { params: { documentId: DOC, segmentId: "p-1" }, body: { text: "x" } });
-    expect(answer).toEqual({ ok: false, status: 404, code: "not_found" });
-    expect(call).not.toHaveBeenCalled();
+  it("sends an explanation to its own route with the answer it explains (ED-13)", async () => {
+    const call = vi.fn(async () => ({ ok: true as const, status: 201 as const, headers: {}, body: { text: "Objašnjenje.", writtenAt: "2026-11-20T12:00:00.000Z" } }));
+    const answer = await createAssistantMatchCall(call as never)("work.assistant-match.explain", { params: { documentId: DOC, segmentId: "p-1" }, body: { text: "Objašnjenje.", messageId: "m-9" } });
+    expect(call).toHaveBeenCalledWith("work.assistant-match-explanation.post", { params: { documentId: DOC }, query: undefined, body: { segmentRef: "p-1", messageId: "m-9", text: "Objašnjenje." } });
+    expect(answer).toEqual({ ok: true, status: 201, body: { text: "Objašnjenje.", at: "2026-11-20T12:00:00.000Z" } });
+  });
+
+  it("passes a refused explanation on as it came", async () => {
+    const call = vi.fn(async () => ({ ok: false as const, status: 409, code: "conflict" }));
+    expect(await createAssistantMatchCall(call as never)("work.assistant-match.explain", { params: { documentId: DOC, segmentId: "p-1" }, body: { text: "x", messageId: "m-9" } }))
+      .toEqual({ ok: false, status: 409, code: "conflict" });
   });
 });
 
