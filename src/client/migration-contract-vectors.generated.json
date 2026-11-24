@@ -60028,7 +60028,8 @@
             "id": "00000000-0000-4000-8000-000000000001",
             "startsAt": "2026-12-04T12:00:00.000Z",
             "proposedAt": "2026-11-20T11:11:00.000Z",
-            "state": "requested"
+            "state": "requested",
+            "topic": "Izmišljena tema: struktura uvoda"
           }
         ]
       }
@@ -60174,7 +60175,8 @@
         "id": "00000000-0000-4000-8000-000000000001",
         "startsAt": "2026-12-04T12:00:00.000Z",
         "proposedAt": "2026-11-20T11:11:00.000Z",
-        "state": "confirmed"
+        "state": "confirmed",
+        "topic": null
       }
     }
   },
@@ -60207,7 +60209,8 @@
         "id": "00000000-0000-4000-8000-000000000001",
         "startsAt": "2026-12-05T13:00:00.000Z",
         "proposedAt": "2026-11-20T11:11:00.000Z",
-        "state": "countered"
+        "state": "countered",
+        "topic": null
       }
     }
   },
@@ -60239,7 +60242,8 @@
         "id": "00000000-0000-4000-8000-000000000001",
         "startsAt": "2026-12-05T13:00:00.000Z",
         "proposedAt": "2026-11-20T11:11:00.000Z",
-        "state": "confirmed"
+        "state": "confirmed",
+        "topic": null
       }
     }
   },
@@ -60746,7 +60750,41 @@
         "id": "00000000-0000-4000-8000-000000000001",
         "startsAt": "2026-12-04T12:00:00.000Z",
         "proposedAt": "2026-11-20T11:11:00.000Z",
-        "state": "requested"
+        "state": "requested",
+        "topic": null
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slots.post",
+    "name": "requested-with-topic",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-termini-000000000000000000",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "startsAt": "2026-12-04T12:00:00.000Z",
+        "topic": "Izmišljena tema: struktura uvoda"
+      }
+    },
+    "response": {
+      "status": 201,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "startsAt": "2026-12-04T12:00:00.000Z",
+        "proposedAt": "2026-11-20T11:11:00.000Z",
+        "state": "requested",
+        "topic": "Izmišljena tema: struktura uvoda"
       }
     }
   },
@@ -61167,6 +61205,36 @@
       },
       "body": {
         "startsAt": "2026-12-04"
+      }
+    },
+    "response": {
+      "status": 422,
+      "contentType": "application/json",
+      "body": {
+        "error": "invalid_input",
+        "code": "invalid_input",
+        "messageKey": "errors.invalidInput",
+        "status": 422,
+        "requestId": "00000000-0000-4000-8000-000000000001"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slots.post",
+    "name": "invalid-input-blank-topic",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-termini-000000000000000000",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "startsAt": "2026-12-04T12:00:00.000Z",
+        "topic": "   "
       }
     },
     "response": {
@@ -80751,6 +80819,813 @@
         "messageKey": "errors.unavailable",
         "status": 503,
         "requestId": "00000000-0000-4000-8000-0000000000bd"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "declined",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "id": "00000000-0000-4000-8000-00000000a7a1",
+        "startsAt": "2026-12-04T12:00:00.000Z",
+        "proposedAt": "2026-11-23T10:00:00.000Z",
+        "state": "declined",
+        "topic": "Metoda istraživanja",
+        "closing": {
+          "by": "teacher",
+          "reason": "Izmišljeni razlog: termin je zauzet.",
+          "at": "2026-11-23T12:00:00.000Z"
+        },
+        "preparation": {
+          "text": "Izmišljena priprema: dovršen pregled literature, pitanje o metodi.",
+          "changedParagraphs": 4,
+          "resolvedComments": 2
+        }
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "withdrawn",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "withdraw"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "id": "00000000-0000-4000-8000-00000000a7a1",
+        "startsAt": "2026-12-04T12:00:00.000Z",
+        "proposedAt": "2026-11-23T10:00:00.000Z",
+        "state": "withdrawn",
+        "topic": "Metoda istraživanja",
+        "closing": {
+          "by": "student",
+          "reason": null,
+          "at": "2026-11-23T12:00:00.000Z"
+        },
+        "preparation": {
+          "text": "Izmišljena priprema: dovršen pregled literature, pitanje o metodi.",
+          "changedParagraphs": 4,
+          "resolvedComments": 2
+        }
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "cancelled",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "cancel",
+        "reason": "Izmišljeni razlog: putovanje."
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "id": "00000000-0000-4000-8000-00000000a7a1",
+        "startsAt": "2026-12-04T12:00:00.000Z",
+        "proposedAt": "2026-11-23T10:00:00.000Z",
+        "state": "cancelled",
+        "topic": "Metoda istraživanja",
+        "closing": {
+          "by": "teacher",
+          "reason": "Izmišljeni razlog: putovanje.",
+          "at": "2026-11-23T12:00:00.000Z"
+        },
+        "preparation": {
+          "text": "Izmišljena priprema: dovršen pregled literature, pitanje o metodi.",
+          "changedParagraphs": 4,
+          "resolvedComments": 2
+        }
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "origin-missing",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "origin_missing",
+        "code": "origin_missing",
+        "messageKey": "errors.originMissing",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000002a2b"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "origin-mismatch",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://drugo.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "origin_mismatch",
+        "code": "origin_mismatch",
+        "messageKey": "errors.originMismatch",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000002a2c"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "cross-site",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "cross-site",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "cross_site",
+        "code": "cross_site",
+        "messageKey": "errors.crossSite",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000002a2d"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "body-too-large",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json",
+        "content-length": "8193"
+      },
+      "rawBody": "{\"action\":\"decline\",\"reason\":\"Izmi\\u0161ljeni razlog: termin je zauzet.\"}"
+    },
+    "response": {
+      "status": 413,
+      "contentType": "application/json",
+      "body": {
+        "error": "body_too_large",
+        "code": "body_too_large",
+        "messageKey": "errors.bodyTooLarge",
+        "status": 413,
+        "requestId": "00000000-0000-4000-8000-000000002a2e"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "body-timeout",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json",
+        "content-length": "93"
+      },
+      "rawBody": "{\"action\":\"decline\",\"reason\":\"Izmi\\u0161ljeni razlog: termin je zauzet.\"}"
+    },
+    "response": {
+      "status": 408,
+      "contentType": "application/json",
+      "body": {
+        "error": "body_timeout",
+        "code": "body_timeout",
+        "messageKey": "errors.bodyTimeout",
+        "status": 408,
+        "requestId": "00000000-0000-4000-8000-000000002a2f"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "content-length-invalid",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json",
+        "content-length": "-1"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 400,
+      "contentType": "application/json",
+      "body": {
+        "error": "content_length_invalid",
+        "code": "content_length_invalid",
+        "messageKey": "errors.contentLengthInvalid",
+        "status": 400,
+        "requestId": "00000000-0000-4000-8000-000000002a30"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "content-length-mismatch",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json",
+        "content-length": "9999"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 400,
+      "contentType": "application/json",
+      "body": {
+        "error": "content_length_mismatch",
+        "code": "content_length_mismatch",
+        "messageKey": "errors.contentLengthMismatch",
+        "status": 400,
+        "requestId": "00000000-0000-4000-8000-000000002a31"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "body-stream-error",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json",
+        "content-length": "93"
+      },
+      "rawBody": "{\"a"
+    },
+    "response": {
+      "status": 400,
+      "contentType": "application/json",
+      "body": {
+        "error": "body_stream_error",
+        "code": "body_stream_error",
+        "messageKey": "errors.bodyStreamError",
+        "status": 400,
+        "requestId": "00000000-0000-4000-8000-000000002a32"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 401,
+      "contentType": "application/json",
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000002a33"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "unsupported-media-type",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "text/plain"
+      },
+      "rawBody": "{\"action\":\"decline\",\"reason\":\"Izmi\\u0161ljeni razlog: termin je zauzet.\"}"
+    },
+    "response": {
+      "status": 415,
+      "contentType": "application/json",
+      "body": {
+        "error": "unsupported_media_type",
+        "code": "unsupported_media_type",
+        "messageKey": "errors.unsupportedMediaType",
+        "status": 415,
+        "requestId": "00000000-0000-4000-8000-000000002a34"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "invalid-json",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "rawBody": "{\"action\":\"decline\",\"reason\":\"Izmi\\u0161ljeni razlog: termin je zauzet.\""
+    },
+    "response": {
+      "status": 400,
+      "contentType": "application/json",
+      "body": {
+        "error": "invalid_json",
+        "code": "invalid_json",
+        "messageKey": "errors.invalidJson",
+        "status": 400,
+        "requestId": "00000000-0000-4000-8000-000000002a35"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "unknown-field",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet.",
+        "unknown": "x"
+      }
+    },
+    "response": {
+      "status": 422,
+      "contentType": "application/json",
+      "body": {
+        "error": "invalid_input",
+        "code": "invalid_input",
+        "messageKey": "errors.invalidInput",
+        "status": 422,
+        "requestId": "00000000-0000-4000-8000-000000002a36"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "wrong-side",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000002a37"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "neispravan"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 404,
+      "contentType": "application/json",
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-000000002a38"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 503,
+      "contentType": "application/json",
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000002a39"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "already-closed",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "decline",
+        "reason": "Izmišljeni razlog: termin je zauzet."
+      }
+    },
+    "response": {
+      "status": 409,
+      "contentType": "application/json",
+      "body": {
+        "error": "conflict",
+        "code": "conflict",
+        "messageKey": "errors.conflict",
+        "status": 409,
+        "requestId": "00000000-0000-4000-8000-000000002a3a"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-close.post",
+    "name": "unknown-action",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo",
+        "slotId": "00000000-0000-4000-8000-00000000a7a1"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001",
+        "origin": "https://ductura.example.invalid",
+        "sec-fetch-site": "same-origin",
+        "content-type": "application/json"
+      },
+      "body": {
+        "action": "delete"
+      }
+    },
+    "response": {
+      "status": 422,
+      "contentType": "application/json",
+      "body": {
+        "error": "invalid_input",
+        "code": "invalid_input",
+        "messageKey": "errors.invalidInput",
+        "status": 422,
+        "requestId": "00000000-0000-4000-8000-000000002a3b"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-details.get",
+    "name": "listed",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "slots": [
+          {
+            "id": "00000000-0000-4000-8000-00000000a7a1",
+            "startsAt": "2026-12-04T12:00:00.000Z",
+            "proposedAt": "2026-11-23T10:00:00.000Z",
+            "state": "requested",
+            "topic": "Metoda istraživanja",
+            "closing": null,
+            "preparation": {
+              "text": "Izmišljena priprema: dovršen pregled literature, pitanje o metodi.",
+              "changedParagraphs": 4,
+              "resolvedComments": 2
+            }
+          },
+          {
+            "id": "00000000-0000-4000-8000-00000000a7a2",
+            "startsAt": "2026-12-01T09:00:00.000Z",
+            "proposedAt": "2026-11-23T10:00:00.000Z",
+            "state": "cancelled",
+            "topic": null,
+            "closing": {
+              "by": "student",
+              "reason": "Izmišljeni razlog: bolest.",
+              "at": "2026-11-23T11:00:00.000Z"
+            },
+            "preparation": null
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-details.get",
+    "name": "empty",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "headers": {
+        "cache-control": "no-store"
+      },
+      "body": {
+        "slots": []
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-details.get",
+    "name": "unauthorized",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo"
+      },
+      "headers": {}
+    },
+    "response": {
+      "status": 401,
+      "contentType": "application/json",
+      "body": {
+        "error": "unauthorized",
+        "code": "unauthorized",
+        "messageKey": "errors.unauthorized",
+        "status": 401,
+        "requestId": "00000000-0000-4000-8000-000000002a17"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-details.get",
+    "name": "forbidden",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001"
+      }
+    },
+    "response": {
+      "status": 403,
+      "contentType": "application/json",
+      "body": {
+        "error": "forbidden",
+        "code": "forbidden",
+        "messageKey": "errors.forbidden",
+        "status": 403,
+        "requestId": "00000000-0000-4000-8000-000000002a18"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-details.get",
+    "name": "not-found",
+    "request": {
+      "params": {
+        "documentId": " neispravan-id"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001"
+      }
+    },
+    "response": {
+      "status": 404,
+      "contentType": "application/json",
+      "body": {
+        "error": "not_found",
+        "code": "not_found",
+        "messageKey": "errors.notFound",
+        "status": 404,
+        "requestId": "00000000-0000-4000-8000-000000002a19"
+      }
+    }
+  },
+  {
+    "route": "work.consultation-slot-details.get",
+    "name": "unavailable",
+    "request": {
+      "params": {
+        "documentId": "doc-izmisljeni-mentorstvo"
+      },
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-mentor-1-nastavnik-0000001"
+      }
+    },
+    "response": {
+      "status": 503,
+      "contentType": "application/json",
+      "body": {
+        "error": "unavailable",
+        "code": "unavailable",
+        "messageKey": "errors.unavailable",
+        "status": 503,
+        "requestId": "00000000-0000-4000-8000-000000002a1a"
       }
     }
   }
