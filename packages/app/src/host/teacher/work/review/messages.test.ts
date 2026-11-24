@@ -49,9 +49,11 @@ describe("PG-14: messages and forbidden terms of the work review", () => {
     expect(NEVER.test("Provjera AI-ja")).toBe(true);
   });
 
-  it("put „nije dokaz autorstva” next to the share line and the grade in Merlin in the header", () => {
+  it("put „nije dokaz autorstva” next to the share line and the grade in Merlin and Studomat in the header", () => {
     expect(reviewMessages.notProof).toBe("nije dokaz autorstva");
     expect(matchText.notProof).toBe("nije dokaz autorstva");
-    expect(reviewMessages.gradeMerlin).toBe("Ocjenu upisujete u Merlin.");
+    expect(reviewMessages.gradeExternal).toBe("Ocjenu upisujete u Merlin i Studomat.");
+    // NF5-Q4: the review adds no text about the input rhythm.
+    expect(Object.keys(reviewMessages).filter((key) => /rhythm/i.test(key))).toEqual([]);
   });
 });

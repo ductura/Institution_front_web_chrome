@@ -1,7 +1,7 @@
 // WEB-NUZ-PG: the reads of "Pregled rada" through createApi on a recorded transport. Invented data only.
 import { describe, expect, it } from "vitest";
 
-import { readGrade, readHeader, readRhythm } from "./read";
+import { readGrade, readHeader } from "./read";
 
 const ORIGIN = "https://ductura.example.invalid";
 const DOCUMENT = "rad-izmisljeni-b";
@@ -61,14 +61,4 @@ describe("WEB-NUZ-PG reads", () => {
     expect(await readHeader(DOCUMENT, server({ [`/api/v1/teacher/works/${DOCUMENT}`]: () => error(404, "not_found") }).options)).toEqual({ kind: "notFound" });
   });
 
-  it("counts rhythm bursts; 404 is not given, 503 an error, nothing is sent after the session ended", async () => {
-    const path = `/api/v1/works/${DOCUMENT}/input-rhythm`;
-    const burst = { id: "00000000-0000-4000-8000-0000000000d1", gapsMs: [120, 90], recordedAt: "2026-11-01T10:00:00.000Z" };
-    expect(await readRhythm(DOCUMENT, () => true, server({ [path]: () => json(200, { bursts: [burst, burst] }) }).options)).toEqual({ kind: "ok", value: 2 });
-    expect(await readRhythm(DOCUMENT, () => true, server({ [path]: () => error(404, "not_found") }).options)).toEqual({ kind: "notFound" });
-    expect(await readRhythm(DOCUMENT, () => true, server({}).options)).toEqual({ kind: "unavailable" });
-    const idle = server({});
-    expect(await readRhythm(DOCUMENT, () => false, idle.options)).toEqual({ kind: "signedOut" });
-    expect(idle.sent).toEqual([]);
-  });
 });

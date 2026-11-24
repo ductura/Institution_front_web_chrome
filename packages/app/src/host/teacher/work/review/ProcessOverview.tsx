@@ -7,7 +7,7 @@ import { readAssistantMatch, type MatchCall } from "../../provenance/contract";
 import type { MatchRead } from "../../provenance/match-model";
 import { Kv } from "../../n07/WorkPage";
 import { assistantTransfers, sessionsCount } from "../../n10/model";
-import { matchPart, matchShareLine, partOf, rhythmLine, ruleLines, type Outcome, type Part } from "./model";
+import { matchPart, matchShareLine, partOf, ruleLines, type Outcome, type Part } from "./model";
 import type { ReviewReads } from "./read";
 import { reviewMessages as t } from "./messages.hr";
 
@@ -49,7 +49,7 @@ export function PartBlock<T>({ id, title, part, onRetry, children }: {
 
 /**
  * PG-4 "Sažetak" of the work review: record state, the Asistent (counts only, no provider or model, Q-10), the
- * match with an answer of the Asistent, faculty rules and the input rhythm. Every part is read on its own, so
+ * match with an answer of the Asistent and faculty rules; the input rhythm stays out (NF5-Q4). Every part is read on its own, so
  * "Trenutačno nije dostupno" (the server does not give the part) reads apart from an error with a retry.
  */
 export default function ProcessOverview({ documentId, reads, matchCall = readAssistantMatch, summaryHref, declarationHref }: {
@@ -59,7 +59,6 @@ export default function ProcessOverview({ documentId, reads, matchCall = readAss
   const [details, retryDetails] = usePart(() => asPart(reads.details(documentId)), `details:${documentId}`);
   const [match, retryMatch] = usePart(() => matchCall(documentId).then((r: MatchRead) => matchPart(r)), `match:${documentId}`);
   const [rules, retryRules] = usePart(() => asPart(reads.thresholds(documentId)), `rules:${documentId}`);
-  const [rhythm, retryRhythm] = usePart(() => asPart(reads.rhythm(documentId)), `rhythm:${documentId}`);
   const conversations = match.kind === "ready" ? match.value.conversations : null;
 
   return (
@@ -94,9 +93,6 @@ export default function ProcessOverview({ documentId, reads, matchCall = readAss
           <ul>{ruleLines(rows).map((line) => <li key={line}>{line}</li>)}</ul>
           <p className="meta">{t.rulesNote}</p>
         </>}
-      </PartBlock>
-      <PartBlock id="pg-rhythm" title={t.rhythmHeading} part={rhythm} onRetry={retryRhythm}>
-        {(bursts) => <><p className="note">{rhythmLine(bursts)}</p><p className="meta">{t.rhythmNote}</p></>}
       </PartBlock>
       <p><a href={summaryHref}>{t.summaryFull}</a></p>
     </div>

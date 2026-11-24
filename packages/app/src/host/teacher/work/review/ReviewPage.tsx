@@ -25,7 +25,7 @@ const firstTab = (): TabId => (typeof window === "undefined" ? DEFAULT_TAB : tab
  * "Pregled rada" (WEB-NUZ-PG; NF-5 PG-1, PG-4, PG-10; prototype screen `pregled`): one place for one work. The
  * header names the course, the assignment, the kind of work, the deadline and the state of the submission; below
  * it the views of the work are tabs. The open tab is kept in the address, so "Prethodni/Sljedeći rad" open the
- * other work on the same tab. Read only: nothing here writes, and no mark goes into a grade (the grade is in Merlin).
+ * other work on the same tab. Read only: nothing here writes, and no mark goes into a grade (the grade is in Merlin and Studomat).
  */
 export default function ReviewPage({ documentId, current = ALWAYS, reads: given, matchCall, provenanceCall, declarationPort }: {
   documentId: string; current?: () => boolean; reads?: ReviewReads; matchCall?: MatchCall;

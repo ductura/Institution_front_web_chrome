@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Facts } from "../../n06/model";
 import {
-  contextLine, gradeNote, headingOf, matchPart, matchShareLine, partOf, reviewPath, rhythmLine, ruleLines, stateOf, tabOf, taskPath,
+  contextLine, gradeNote, headingOf, matchPart, matchShareLine, partOf, reviewPath, ruleLines, stateOf, tabOf, taskPath,
   type Header,
 } from "./model";
 import { reviewMessages as t } from "./messages.hr";
@@ -45,10 +45,10 @@ describe("WEB-NUZ-PG PG-1: header with the context of the work", () => {
   });
 });
 
-describe("WEB-NUZ-PG PG-10: the grade stays in Merlin", () => {
+describe("WEB-NUZ-PG PG-10: the grade stays in Merlin and Studomat", () => {
   it("says so, and that no mark goes into a grade or export", () => {
-    expect(gradeNote("eligible")).toEqual({ strong: "Ocjenu upisujete u Merlin.", note: t.gradeMerlinNote });
-    expect(gradeNote("unknown").strong).toBe("Ocjenu upisujete u Merlin.");
+    expect(gradeNote("eligible")).toEqual({ strong: "Ocjenu upisujete u Merlin i Studomat.", note: t.gradeExternalNote });
+    expect(gradeNote("unknown").strong).toBe("Ocjenu upisujete u Merlin i Studomat.");
     expect(gradeNote("practice").strong).toBe("Probni zadatak se ne ocjenjuje i ne izvozi.");
   });
 });
@@ -80,11 +80,8 @@ describe("WEB-NUZ-PG PG-4: not available apart from an error", () => {
     expect(matchShareLine(0)).toBeNull();
   });
 
-  it("names faculty rules in words and the rhythm as a usual state once gone", () => {
+  it("names faculty rules in words", () => {
     expect(ruleLines([{ origin: "imported_file", state: "for_review" }, { origin: "typed", state: "in_line" }]))
       .toEqual(["Uvezeno iz datoteke: za pregled", "Tipkano u Ducturi: u skladu"]);
-    expect(rhythmLine(0)).toBe(t.rhythmGone);
-    expect(rhythmLine(1)).toContain("za 1 dio teksta");
-    expect(rhythmLine(5)).toContain("za 5 dijelova teksta");
   });
 });

@@ -70,9 +70,9 @@ export function stateOf(h: Header): string {
   return `${line} · ${h.context === null ? t.dueUnavailable : t.due(formatDateTimeHr(h.context.dueAt))}`;
 }
 
-/** PG-10: the grade stays in Merlin; a practice assignment is not graded or exported. */
+/** PG-10: the grade stays in Merlin and Studomat; a practice assignment is not graded or exported. */
 export function gradeNote(grade: Grade): { readonly strong: string; readonly note: string } {
-  return grade === "practice" ? { strong: t.gradePractice, note: t.gradePracticeNote } : { strong: t.gradeMerlin, note: t.gradeMerlinNote };
+  return grade === "practice" ? { strong: t.gradePractice, note: t.gradePracticeNote } : { strong: t.gradeExternal, note: t.gradeExternalNote };
 }
 
 /** „Natrag na zadatak” goes to the submissions of the assignment (N-04/PIL-D2), not only to the course list. */
@@ -125,6 +125,3 @@ export function matchShareLine(percent: number): string | null {
 /** „Uvezeno iz datoteke: za pregled”, in the closed order of the server rows. */
 export const ruleLines = (rows: readonly ThresholdRow[]): readonly string[] =>
   rows.map((row) => `${kindLabel(row.origin)}: ${t.ruleState[row.state]}`);
-
-/** The rhythm line: recorded bursts, or the usual state once it is gone or was never recorded. */
-export const rhythmLine = (bursts: number): string => (bursts > 0 ? t.rhythmRecorded(bursts) : t.rhythmGone);

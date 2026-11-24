@@ -41,7 +41,6 @@ function reads(over: Partial<ReviewReads> = {}): ReviewReads {
     summary: () => ok(SUMMARY as never),
     details: () => ok({ activeEditingMinutes: 40, keyEvents: [] }),
     thresholds: async () => ({ kind: "notFound" }),
-    rhythm: () => ok(0),
     ...over,
   };
 }
@@ -78,12 +77,12 @@ describe("WEB-NUZ-PG Pregled rada", () => {
     return el;
   };
 
-  it("PG-1/PG-10: shows the context header, the grade in Merlin and the tab from the address", async () => {
+  it("PG-1/PG-10: shows the context header, the grade in Merlin and Studomat and the tab from the address", async () => {
     const el = await mount(reads());
     expect(el.querySelector("[data-review-context]")?.textContent).toBe("Kolegij A · zadatak „Lokalni mediji”");
     expect(el.querySelector("h1")?.textContent).toBe("Student A · Esej „Lokalni mediji”");
     expect(el.querySelector("[data-review-state]")?.textContent).toContain("rok 30. studenoga 2026.");
-    expect(el.querySelector("[data-review-grade]")?.textContent).toContain(t.gradeMerlin);
+    expect(el.querySelector("[data-review-grade]")?.textContent).toContain(t.gradeExternal);
     const tabs = [...el.querySelectorAll('[role="tab"]')];
     expect(tabs.map((tab) => tab.textContent)).toEqual([t.tabText, t.tabSummary, t.tabOrigin, t.tabReplay, t.tabCompare, t.tabDeclaration]);
     expect(el.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe(t.tabSummary);
@@ -114,7 +113,7 @@ describe("WEB-NUZ-PG Pregled rada", () => {
     const match = el.querySelector('[data-part="pg-match"]')!;
     expect(match.querySelector('[role="alert"]')?.textContent).toBe(t.partError(t.matchHeading));
     expect(el.querySelector('[data-part="pg-record"]')?.textContent).toContain(t.recordComplete);
-    expect(el.querySelector('[data-part="pg-rhythm"]')?.textContent).toContain(t.rhythmGone);
+    expect(el.querySelector('[data-part="pg-rhythm"]')).toBeNull();
     fail = false;
     await act(async () => { match.querySelector("button")!.click(); });
     await settle();

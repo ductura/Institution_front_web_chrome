@@ -1,4 +1,4 @@
-// "Pregled rada" (WEB-NUZ-PG; NF-5 PG-1, PG-4, PG-14): interface text as in Ductura_nastavnik.html, screen
+// "Pregled rada" (WEB-NUZ-PG; NF-5 PG-1, PG-4, PG-14; the input rhythm stays out, NF5-Q4): interface text as in Ductura_nastavnik.html, screen
 // `pregled` (data-nf5="PG-1", "PG-4", "PG-10"). The assistant is named only "Asistent" (Q-10): no provider, no model.
 // No text draws a conclusion about authorship; every share carries "nije dokaz autorstva" (Ustav v1.6 C-6).
 export const reviewMessages = {
@@ -28,9 +28,9 @@ export const reviewMessages = {
   steps: "Drugi radovi istog zadatka",
   stepsNote: "Prethodni i sljedeći rad otvaraju se na istoj kartici.",
 
-  // PG-10 (direction a, Daniel 23. 11.): the grade stays in Merlin.
-  gradeMerlin: "Ocjenu upisujete u Merlin.",
-  gradeMerlinNote: "Ductura ne bilježi ocjenu, a nijedna oznaka u ovom pregledu ne ulazi u ocjenu ni u izvoz.",
+  // PG-10 (direction a, Daniel 23. 11.; Merlin and Studomat, Daniel 24. 11.): the grade stays outside Ductura.
+  gradeExternal: "Ocjenu upisujete u Merlin i Studomat.",
+  gradeExternalNote: "Ductura ne bilježi ocjenu, a nijedna oznaka u ovom pregledu ne ulazi u ocjenu ni u izvoz.",
   gradePractice: "Probni zadatak se ne ocjenjuje i ne izvozi.",
   gradePracticeNote: "Pregled služi samo razgovoru o radu.",
 
@@ -82,9 +82,4 @@ export const reviewMessages = {
   rulesNone: "Pragovi fakulteta nisu postavljeni (nema zadanih), pa usporedbe s pragom nema.",
   rulesNote: "Izjava o skladu s pravilima fakulteta, ne ocjena studenta.",
   ruleState: { in_line: "u skladu", for_review: "za pregled", exceeded: "prekoračeno" },
-
-  rhythmHeading: "Ritam unosa",
-  rhythmRecorded: (n: number): string => `Ritam je zabilježen za ${n} ${n % 10 === 1 && n % 100 !== 11 ? "dio" : "dijelova"} teksta; vidi „Podrijetlo”. Briše se 30 dana nakon predaje.`,
-  rhythmGone: "Ritam nije zabilježen ili više nije dostupan (briše se 30 dana nakon predaje). To je uobičajeno stanje, ne greška.",
-  rhythmNote: "Zapis o unosu, ne o autorstvu.",
 } as const;

@@ -51,7 +51,6 @@ async function fakeServer(page: Page) {
       case "/api/v1/process-summary": return route.fulfill({ json: SUMMARY });
       case "/api/v1/process-summary/details": return route.fulfill({ status: 404, json: { error: "not_found" } });
       case `/api/v1/works/${documentId}/origin-thresholds`: return route.fulfill({ json: { comparison: [{ origin: "pasted_unknown", state: "for_review" }] } });
-      case `/api/v1/works/${documentId}/input-rhythm`: return route.fulfill({ json: { bursts: [] } });
       case `/api/v1/works/${documentId}/assistant-match`: return matchFails
         ? route.fulfill({ status: 503, json: { error: "unavailable" } })
         : route.fulfill({ json: { findings: [FINDING] } });
@@ -67,12 +66,12 @@ async function fakeServer(page: Page) {
   return { recover: () => { matchFails = false; } };
 }
 
-test("PG-1/PG-10: the review names the work, keeps the tab across works and says the grade is in Merlin", async ({ page }) => {
+test("PG-1/PG-10: the review names the work, keeps the tab across works and says the grade is in Merlin and Studomat", async ({ page }) => {
   await fakeServer(page);
   await page.goto(`${review}?kartica=sazetak`);
   await expect(page.getByRole("heading", { level: 1, name: "Student A · Seminarski rad „Lokalni mediji”" })).toBeVisible();
   await expect(page.getByText("Kolegij A · zadatak „Lokalni mediji”")).toBeVisible();
-  await expect(page.getByText(t.gradeMerlin)).toBeVisible();
+  await expect(page.getByText(t.gradeExternal)).toBeVisible();
   await expect(page.getByRole("tab", { name: t.tabSummary })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("link", { name: t.prev })).toHaveAttribute("href", `/app/web/nastavnik/rad/${previousId}/pregled?kartica=sazetak`);
   await expect(page.getByRole("link", { name: t.backToTask })).toHaveAttribute("href", `/app/web/nastavnik/zadatak/${assignmentId}/predaje`);
@@ -95,7 +94,8 @@ test("PG-4: not given reads apart from an error, and the failed part recovers on
   const match = page.locator('[data-part="pg-match"]');
   await expect(match.getByRole("alert")).toHaveText(t.partError(t.matchHeading));
   await expect(page.locator('[data-part="pg-rules"]')).toContainText("Zalijepljeno, podrijetlo nepoznato: za pregled");
-  await expect(page.locator('[data-part="pg-rhythm"]')).toContainText(t.rhythmGone);
+  // NF5-Q4: the input rhythm is not read and has no part here.
+  await expect(page.locator('[data-part="pg-rhythm"]')).toHaveCount(0);
   recover();
   await match.getByRole("button", { name: t.retry }).click();
   await expect(match).toHaveAttribute("data-state", "ready");
