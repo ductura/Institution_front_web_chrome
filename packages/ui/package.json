@@ -9,7 +9,8 @@
     "./assistant-thread": "./src/components/assistant-thread/AssistantThread.tsx",
     "./save-status": "./src/components/save-status/SaveStatus.tsx",
     "./tokens.css": "./src/tokens/tokens.css",
-    "./fonts.css": "./src/fonts/faces.css"
+    "./fonts.css": "./src/fonts/faces.css",
+    "./reading-font.css": "./src/styles/reading-font.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
