@@ -42,6 +42,8 @@ export default function RevisionSection({ documentId, current, port = revisionPo
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Exclude<ActionOutcome, "ok"> | null>(null);
+  // "Povuci zahtjev" asks first: a withdrawn request is final (#594 review, point 4).
+  const [confirming, setConfirming] = useState(false);
   const toasts = useTeacherToasts();
 
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function RevisionSection({ documentId, current, port = revisionPo
           {compareHref !== undefined && <p><a href={compareHref}>{t.compare}</a></p>}
           {banner.canWithdraw && request && (
             <div className="acts">
-              <Button tone="quiet" size="small" disabled={busy} onClick={() => void act(() => port.withdraw(request), t.withdrawn)}>{t.withdraw}</Button>
+              <Button tone="quiet" size="small" disabled={busy} onClick={() => setConfirming(true)}>{t.withdraw}</Button>
             </div>
           )}
           {banner.canClose && request && (
@@ -98,11 +100,23 @@ export default function RevisionSection({ documentId, current, port = revisionPo
       <TeacherToastRegion toasts={toasts.toasts} onDismiss={toasts.dismiss} />
     </>
   );
+  const withdrawDialog = confirming && banner?.canWithdraw && request ? (
+    <Dialog open title={t.withdrawTitle} onClose={() => setConfirming(false)}
+      actions={<>
+        <Button tone="quiet" onClick={() => setConfirming(false)}>{t.cancel}</Button>
+        <Button onClick={() => { setConfirming(false); void act(() => port.withdraw(request), t.withdrawn); }}>{t.withdrawConfirm}</Button>
+      </>}>
+      <p>{t.withdrawExplain}</p>
+    </Dialog>
+  ) : null;
   return <>{children({
     action: read.submitted ? <Button onClick={() => setOpen(true)}>{t.ask}</Button> : null,
     banner: banners,
-    dialog: open ? <AskDialog documentId={documentId} port={port} onClose={() => setOpen(false)}
-      onSent={() => { setOpen(false); toasts.show(t.sent); reload(); }} /> : null,
+    dialog: <>
+      {open && <AskDialog documentId={documentId} port={port} onClose={() => setOpen(false)}
+        onSent={() => { setOpen(false); toasts.show(t.sent); reload(); }} />}
+      {withdrawDialog}
+    </>,
   })}</>;
 }
 
