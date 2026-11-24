@@ -34,6 +34,7 @@ import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import { AssistantRules, NoticeInstructions } from "../editor/assistant-rules/AssistantRules";
+import { AssistantChat } from "../editor/assistant-chat/AssistantChat";
 import PdfExport from "../editor/export/PdfExport";
 import { StatusExtras, beforeSubmissionFor, rehearsalSupplementsFor } from "../editor/status/StatusExtras";
 import { PregledHost } from "../editor/right/PregledHost";
@@ -129,7 +130,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               comments: ({ editor, documentId, session, submitted, signedOut }) =>
                 <CommentsHost editor={editor} documentId={documentId} session={session} submitted={submitted} signedOut={signedOut} />,
               // ED-09 (NF2-P9): the assignment's rules under the Asistent card, its instructions in "Prvi redak".
-              assistant: () => <AssistantRules assignmentId={assignmentId} base={base} />,
+              assistant: ({ submitted, signedOut }) => <>
+                <AssistantChat assignmentId={assignmentId} readOnly={submitted || signedOut} />
+                <AssistantRules assignmentId={assignmentId} base={base} />
+              </>,
               instructions: () => <NoticeInstructions assignmentId={assignmentId} />,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></> })}

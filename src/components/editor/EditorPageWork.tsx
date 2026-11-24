@@ -67,7 +67,10 @@ export type HostSections = {
   review?: (ctx: HostSectionContext) => ReactNode;
   work?: (ctx: HostSectionContext) => ReactNode;
   comments?: (ctx: HostSectionContext) => ReactNode;
-  /** ED-09 (NF2-P9): cards under the Asistent card ("Pravila za ovaj zadatak"). */
+  /**
+   * The host's Asistent tab (ED-10, NF2-P10: the conversation, then ED-09's "Pravila za ovaj
+   * zadatak"); when the host gives one, the "uskoro" card is not rendered.
+   */
   assistant?: (ctx: HostSectionContext) => ReactNode;
   /** ED-09 (NF2-P9): the assignment's instructions in "Prvi redak"; none without it. */
   instructions?: (ctx: HostSectionContext) => ReactNode;
@@ -273,7 +276,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       rightSections={{ sources: <>{literature?.({ documentId })}<EditorSourceProofs assignmentId={assignmentId} documentId={documentId} /></>,
         comments: hostSections?.comments ? hostSections.comments(ctx) : <CommentPanel documentId={documentId} session={session} />,
         review: hostSections?.review?.(ctx),
-        assistant: <><AssistantComingSoonCard />{hostSections?.assistant?.(ctx)}</> }}
+        assistant: hostSections?.assistant ? hostSections.assistant(ctx) : <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
           sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer}
