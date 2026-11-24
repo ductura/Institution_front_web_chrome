@@ -51,11 +51,13 @@ export function MerlinExportPage({ assignmentId }: { assignmentId: string }) {
   // NZ-16: read `?izbor=1` once and drop it from the address, so a reload does not take the focus again.
   const [focusChooser, setFocusChooser] = useState(false);
   useEffect(() => {
-    if (!wantsChooserFocus(globalThis.location.search)) return;
+    const { pathname, search, hash } = globalThis.location;
+    if (!wantsChooserFocus(search)) return;
     setFocusChooser(true);
-    const url = new URL(globalThis.location.href);
-    url.searchParams.delete(CHOOSER_PARAM);
-    globalThis.history.replaceState(globalThis.history.state, "", url);
+    const params = new URLSearchParams(search);
+    params.delete(CHOOSER_PARAM);
+    const rest = params.toString();
+    globalThis.history.replaceState(globalThis.history.state, "", `${pathname}${rest ? `?${rest}` : ""}${hash}`);
   }, []);
   // The prototype's side page (sideState): .pagehead, then a card for loading or an error, never a bare line.
   return (
