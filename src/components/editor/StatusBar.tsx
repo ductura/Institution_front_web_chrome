@@ -86,6 +86,11 @@ export function scopeLine(words: number | null, range: ScopeRange): string | nul
  * open on this page: the bar then says that nothing is saved here, never a
  * save state. A submitted work (`readOnly`) says it is read only instead.
  * `length` is the scope line (WEB-23); `children` takes the rest of the bar.
+ *
+ * With `online` (the product editor, ED-01c): the chip is not a live region,
+ * so a pause in typing is not announced; `said` is, in its own region, and
+ * the page sets it only when the level changes. Offline the chip adds what
+ * `waiting` counts (NF2-P2 c).
  */
 export default function StatusBar({
   save,
@@ -93,15 +98,21 @@ export default function StatusBar({
   length,
   children,
   online,
+  waiting = null,
+  said = null,
 }: {
   save: StatusSave | null;
   readOnly?: boolean;
   length?: { readonly words: number | null; readonly range: ScopeRange };
   children?: ReactNode;
   online?: boolean;
+  /** Offline only: what waits to be sent, as `waitingText` writes it. */
+  waiting?: string | null;
+  said?: string | null;
 }) {
   const scope = length === undefined ? null : scopeLine(length.words, length.range);
-  const Chip = online === undefined ? SaveState : SaveStatus;
+  const calm = online !== undefined;
+  const waitingLine = online === false && waiting ? waiting : undefined;
   return (
     <footer className={styles.bar} aria-label={t.workspace.status}>
       {readOnly ? (
@@ -109,8 +120,10 @@ export default function StatusBar({
       ) : save === null ? (
         <SaveState state="LOCAL_DURABLE" label={t.workspace.statusNoJournal} />
       ) : (
-        <Chip state={shownSaveState(save)} blocked={save.blocked} online={online} />
+        calm ? <SaveStatus state={shownSaveState(save)} blocked={save.blocked} online={online} waiting={waitingLine} live={false} />
+          : <SaveState state={shownSaveState(save)} blocked={save.blocked} />
       )}
+      {calm ? <span className={styles.said} role="status">{said ?? ""}</span> : null}
       {scope === null ? null : <span className={styles.scope}>{scope}</span>}
       {children}
     </footer>

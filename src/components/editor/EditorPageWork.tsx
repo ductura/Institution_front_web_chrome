@@ -14,7 +14,7 @@
  * Nothing here sends text by itself.
  */
 
-import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 
 import { openWork, type OpenOutcome } from "@/client/evidence-ingest";
@@ -29,7 +29,8 @@ import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
 import type { FootnoteDialogComponent } from "./footnotes/useV3EditorDialogs";
 import EditorCommands from "./commands/EditorCommands";
-import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalSaveRead, useLocalSavingOnDevice, useLocalSignedOut, useLocalSubmitted } from "./LocalDocument";
+import { LocalDocumentProvider, LocalEditor, useLocalEditor, useLocalPending, useLocalSaveRead, useLocalSavingOnDevice, useLocalSignedOut, useLocalSubmitted } from "./LocalDocument";
+import { offlineWaitingText, reconnectShown, reconnectText } from "./save-level";
 import { EditorHelpDialogs, useEditorHelp, type EditorHelpView } from "./help/EditorHelp";
 import { EditorHelpMenu } from "./help/EditorHelpMenu";
 import { EditorNotices } from "./help/EditorNotices";
@@ -246,9 +247,11 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   const signedOut = useLocalSignedOut();
   const submitted = useLocalSubmitted();
   const ctx: HostSectionContext = { editor, assignmentId, documentId, session, submitted, signedOut };
-  const { phase } = useLocalSaveRead();
+  const { phase, state, receiptVerified } = useLocalSaveRead();
   const savingLocally = useLocalSavingOnDevice();
   const online = useOnline();
+  const pending = useLocalPending(online);
+  const reconnected = useReconnected(online, pending, pending === 0 || (state === "SYNCED" && receiptVerified));
   const help = useEditorHelp();
   const [view, setView] = useState<EditorHelpView | null>(null);
   return (
@@ -262,7 +265,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         <EditorHelpMenu onSelect={setView} />
         {!signedOut && <WorkPrintExport documentId={documentId} title={title} renderPdf={renderPdf} open={printOpen} onOpenChange={setPrintOpen} />}
       </div></EditorCommands>}
-      status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} liveWords={Boolean(statusExtra)}>{statusExtra}</StatusBarLive>}
+      status={<StatusBarLive evidence length={length} online={saveSummary ? online : undefined} pending={pending} liveWords={Boolean(statusExtra)}>{statusExtra}</StatusBarLive>}
       rightSections={{ sources: <>{literature?.({ documentId })}<EditorSourceProofs assignmentId={assignmentId} documentId={documentId} /></>,
         comments: hostSections?.comments ? hostSections.comments(ctx) : <CommentPanel documentId={documentId} session={session} />,
         review: hostSections?.review?.(ctx),
@@ -274,7 +277,9 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         <RevisionPanel documentId={documentId} assignmentId={assignmentId} session={session} />
         {hostSections?.work?.(ctx)}
       </>}>
-      <EditorNotices notices={online ? [] : [{ kind: "offline", savingLocally, resumesSync: true }]} />
+      <EditorNotices notices={!online
+        ? [{ kind: "offline", savingLocally, resumesSync: true, waiting: pending ? offlineWaitingText(pending) : null }]
+        : reconnected ? [{ kind: "reconnected", sending: reconnectText(pending) }] : []} />
       <LocalEditor />
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId}
@@ -282,4 +287,19 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         notice={{ course, title, length: length?.range ?? undefined, instructions: null }} />
     </EditorPanelLayout>
   );
+}
+
+/**
+ * ED-01c (NF2-P2 b): true from the return of the network, with changes
+ * waiting, until nothing waits (`settled`). It never says the server.
+ */
+function useReconnected(online: boolean, pending: number | null, settled: boolean): boolean {
+  const wasOnlineRef = useRef(online);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const next = reconnectShown(shown, wasOnlineRef.current, { online, pending, settled });
+    wasOnlineRef.current = online;
+    if (next !== shown) setShown(next);
+  }, [online, pending, settled, shown]);
+  return shown;
 }

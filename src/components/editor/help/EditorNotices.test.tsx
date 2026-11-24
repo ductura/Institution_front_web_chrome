@@ -17,6 +17,16 @@ describe("editor notices", () => {
     expect(saving).toContain(editorNoticesHr.resumeSync);
   });
 
+  it("ED-01c: says what waits offline and, after the network returns, that it is being sent", () => {
+    const offline = renderToStaticMarkup(<EditorNotices notices={[{ kind: "offline", savingLocally: true, resumesSync: true, waiting: "Čeka slanje: 2 izmjene." }]} />);
+    expect(offline).toContain("Čeka slanje: 2 izmjene.");
+    const notSaving = renderToStaticMarkup(<EditorNotices notices={[{ kind: "offline", savingLocally: false, waiting: "Čeka slanje: 2 izmjene." }]} />);
+    expect(notSaving).not.toContain("Čeka slanje");
+    const back = renderToStaticMarkup(<EditorNotices notices={[{ kind: "reconnected", sending: "Šalje se 2 izmjene." }]} />);
+    expect(back).toContain("<strong>Veza je vraćena.</strong> Šalje se 2 izmjene.");
+    expect(back).not.toContain("poslužitelj");
+  });
+
   it("shows the real chapter title as text and offers the corresponding action", () => {
     const html = renderToStaticMarkup(<EditorNotices notices={[{ kind: "chapter", title: "Izmišljeno <poglavlje> $&", showAll() {} }]} />);
     expect(html).toContain("„Izmišljeno &lt;poglavlje&gt; $&amp;”.");

@@ -10,7 +10,8 @@ import styles from "./EditorNotices.module.css";
 
 export type EditorNotice =
   | { kind: "blocked" }
-  | { kind: "offline"; savingLocally: boolean; resumesSync?: boolean }
+  | { kind: "offline"; savingLocally: boolean; resumesSync?: boolean; waiting?: string | null }
+  | { kind: "reconnected"; sending: string }
   | { kind: "outline"; resume: () => void }
   | { kind: "chapter"; title: string; showAll: () => void }
   | { kind: "note"; text: string; go: () => void; remove: () => void }
@@ -29,7 +30,10 @@ function contents(notice: EditorNotice) {
       return <span><strong>{MULTI_TAB_BLOCKED_MESSAGE}</strong> {messagesHr.editor.blockedHint}</span>;
     case "offline":
       return <span>{notice.savingLocally ? messagesHr.network.offlineSaving : messagesHr.network.offlineNotSaving}
-        {notice.savingLocally && notice.resumesSync ? ` ${t.resumeSync}` : null}</span>;
+        {notice.savingLocally && notice.resumesSync ? ` ${t.resumeSync}` : null}
+        {notice.savingLocally && notice.waiting ? ` ${notice.waiting}` : null}</span>;
+    case "reconnected":
+      return <span><strong>{t.reconnected}</strong> {notice.sending}</span>;
     case "outline":
       return <><span>{t.outline}</span><Action run={notice.resume}>{t.resume}</Action></>;
     case "chapter":

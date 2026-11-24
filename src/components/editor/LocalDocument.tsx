@@ -145,6 +145,12 @@ type LocalDocumentValue = {
    * meanwhile even when the server has already confirmed it (DAN-314).
    */
   editsNow: () => number;
+  /**
+   * ED-01c (NF2-P2 c): how many changes the journal holds unsent, read at
+   * the moment of the call; null while no journal is open here or it does
+   * not answer within the hold limit (the read sign-out uses).
+   */
+  pendingNow: () => Promise<number | null>;
 };
 
 const LocalDocumentContext = createContext<LocalDocumentValue | null>(null);
@@ -327,6 +333,8 @@ export function LocalDocumentProvider({
   const [unconfirmedNow] = useState(() => () =>
     unconfirmedOf(phaseRef.current, saverRef.current?.snapshot() ?? null, dirtyRef.current));
   const [editsNow] = useState(() => () => editsRef.current);
+  const [pendingNow] = useState(() => (): Promise<number | null> =>
+    logoutRef.current ? logoutRef.current.held().catch(() => null) : Promise.resolve(null));
 
   // Builds and proposes the candidate for what the editor holds now.
   const flushRef = useRef(() => {
@@ -739,7 +747,7 @@ export function LocalDocumentProvider({
 
   const value: LocalDocumentValue = {
     editor, phase, snapshot, words, invalid, stickyLoad, prepareSignOut, staySignedIn, signOut, discardAfterSubmission,
-    unconfirmedNow, editsNow,
+    unconfirmedNow, editsNow, pendingNow,
   };
   return <LocalDocumentContext.Provider value={value}>{children}</LocalDocumentContext.Provider>;
 }
@@ -920,6 +928,25 @@ export function useLocalSaveRead(): { phase: Phase; state: SyncState | null; rec
   const state = chip === null || chip.state === "blocked" ? null : chip.state;
   // INT-11: the saver's own result of the receipt check, not a guess from the state.
   return { phase: value.phase, state, receiptVerified: state === "SYNCED" && value.snapshot?.receiptVerified === true };
+}
+
+/**
+ * ED-01c (NF2-P2 c): how many changes wait to be sent, read again whenever
+ * the saver reports or the network changes; null while it is not known.
+ */
+export function useLocalPending(online: boolean): number | null {
+  const { snapshot, pendingNow } = useLocalDocument();
+  const [pending, setPending] = useState<number | null>(null);
+  useEffect(() => {
+    let current = true;
+    void pendingNow().then((n) => {
+      if (current) setPending(n);
+    });
+    return () => {
+      current = false;
+    };
+  }, [snapshot, online, pendingNow]);
+  return pending;
 }
 
 /** States in which this tab is putting the text on the device. */

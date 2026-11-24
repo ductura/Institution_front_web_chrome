@@ -3,7 +3,9 @@
   flex: 1; min-width: 0; min-height: 30px; display: flex; align-items: center; gap: 14px;
   font-family: var(--ff-ui); font-size: 12px; color: var(--ink-2); white-space: nowrap;
 }
-.bar [role="status"] { gap: 8px; color: var(--ink); }
+.bar [data-tone] { gap: 8px; color: var(--ink); }
+/* ED-01c: the level announcement, heard and not seen. */
+.said { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .bar button { color: inherit; font-size: 12px; text-decoration: underline; text-decoration-color: var(--link-rule); text-underline-offset: 3px; }
 /* The length goes to the right edge. */
 .scope { margin-left: auto; }
