@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { NotificationBell, type NotificationEntry } from "@ductura/ui";
 
 import { appHref } from "../../../../../../src/components/index.ts";
 import type { Base } from "../../../bases";
 import { contractInbox, inboxRoute, markInboxRead, readInbox, type InboxRead, type InboxTransport } from "./inbox";
-import { applyMarked, applyRead, entriesOf, INITIAL, unreadOf, type NotificationsState } from "./notifications-state";
+import { applyMarked, applyRead, entriesOf, INITIAL, unreadOf, type Deadlines, type NotificationsState } from "./notifications-state";
+import { readMyAssignments } from "../../../../../../src/components/student/my-assignments-read.ts";
+import { createApi } from "../../../../../../src/client/api";
 import { bellLabels } from "./text";
 
 export const POLL_MS = 60_000;
@@ -26,6 +28,8 @@ export default function ShellNotifications({ base, transport }: { base: Base; tr
   const inbox = useMemo(() => transport ?? contractInbox(), [transport]);
   const [state, dispatch] = useReducer(reduce, INITIAL);
   const alive = useRef(true);
+  const [deadlines, setDeadlines] = useState<Deadlines | undefined>(undefined);
+  const asked = useRef(false);
 
   const refresh = useCallback(async () => {
     const read = await readInbox(inbox);
@@ -45,6 +49,19 @@ export default function ShellNotifications({ base, transport }: { base: Base; tr
     };
   }, [refresh]);
 
+  // P-2: a reminder names its assignment when student.assignments.get knows it; asked once, only when a reminder is in the list.
+  const wantsDeadlines = state.items.some((item) => item.kind === "deadline_reminder");
+  useEffect(() => {
+    if (!wantsDeadlines || asked.current || transport !== undefined) return;
+    asked.current = true;
+    void readMyAssignments(createApi() as unknown as Parameters<typeof readMyAssignments>[0]).then((read) => {
+      if (read.kind !== "ready" || !alive.current) return;
+      setDeadlines(new Map(read.courses.flatMap((course) => course.assignments.map((a) => [
+        a.id.toLowerCase(), { title: a.title, dueAt: typeof a.extendedDueAt === "string" && a.extendedDueAt !== "" ? a.extendedDueAt : a.dueAt },
+      ] as const))));
+    });
+  }, [wantsDeadlines, transport]);
+
   const onOpenEntry = useCallback((entry: NotificationEntry) => {
     void markInboxRead(inbox, entry.id).then((mark) => {
       // The contract answers 204: the moment of reading is the browser's until the next read.
@@ -55,7 +72,7 @@ export default function ShellNotifications({ base, transport }: { base: Base; tr
 
   return (
     <NotificationBell
-      entries={entriesOf(state, (item) => appHref(base, inboxRoute(item)))}
+      entries={entriesOf(state, (item) => appHref(base, inboxRoute(item)), deadlines)}
       unread={unreadOf(state)}
       status={state.status}
       labels={bellLabels}
