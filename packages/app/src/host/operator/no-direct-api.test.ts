@@ -8,14 +8,16 @@ import { problemReportsMessages } from "./problem-reports/messages.hr";
 
 const DIRS = ["action-log", "problem-reports"].map((dir) => join(import.meta.dirname, dir));
 
-it("NF-7 OA-3, OA-7: the pages read nothing from the server and send no form of their own", () => {
+it("NF-7 OA-3, OA-7: the pages reach the server only through the shared client, in read.ts, and send no form of their own", () => {
   for (const dir of DIRS) {
     const files = readdirSync(dir).filter((file) => /\.tsx?$/.test(file) && !file.endsWith(".test.ts"));
     expect(files.length).toBeGreaterThanOrEqual(2);
+    expect(files).toContain("read.ts");
     for (const file of files) {
-      expect(readFileSync(join(dir, file), "utf8"), file).not.toMatch(
-        /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon|axios|createApi)\b|\/api\/v\d|<form\b/,
-      );
+      const source = readFileSync(join(dir, file), "utf8");
+      expect(source, file).not.toMatch(/\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon|axios)\b|\/api\/v\d|<form\b/);
+      // Only read.ts builds the client; the page components go through it.
+      if (file !== "read.ts") expect(source, file).not.toMatch(/\bcreateApi\b/);
     }
   }
 });
