@@ -7,7 +7,7 @@ import { consultHr } from "../../editor/work/consult/messages.hr";
 import { mentorshipRequestText } from "../../student/mentorship-request/messages.hr";
 import { keyDatesMessages } from "../key-dates/messages.hr";
 import { n12Messages } from "../n12/messages.hr";
-import { mentorPlanText, myStudentsText, overviewText } from "./messages.hr";
+import { mentorPlanText, myStudentsText, overviewText, roundText } from "./messages.hr";
 
 // NF-6 MK-17: one pass over every text of mentoring (the Mentor card, consultations, the record, the mentor's
 // pages, the timeline, the student's mentorship page). Functions are called with invented values so their
@@ -25,12 +25,13 @@ function strings(value: unknown, path: string, out: Array<[string, string]>): Ar
 }
 
 const CATALOGS = {
-  overviewText, myStudentsText, mentorPlanText, keyDatesMessages, mentorshipRequestText, mentorCardHr, consultHr, n12Messages,
+  overviewText, myStudentsText, mentorPlanText, roundText, keyDatesMessages, mentorshipRequestText, mentorCardHr, consultHr, n12Messages,
   mentoredWorks: messagesHr.mentoredWorks, mentorshipRequests: messagesHr.mentorshipRequests,
 };
 const ALL = Object.entries(CATALOGS).flatMap(([name, catalog]) => strings(catalog, name, []));
 /** The catalogs of this task's lane (teacher/mentorships, teacher/key-dates, student/mentorship-request). */
-const OWN = ["overviewText", "myStudentsText", "mentorPlanText", "keyDatesMessages", "mentorshipRequestText"];
+/** WEB-NF6-RUNDA adds roundText ("Pregled runde", MK-8) to this lane. */
+const OWN = ["overviewText", "myStudentsText", "mentorPlanText", "roundText", "keyDatesMessages", "mentorshipRequestText"];
 
 /**
  * Findings of the MK-17 pass in catalogs of the editor's lane (host/editor/**), which this task does not touch
@@ -47,6 +48,7 @@ const OPEN_ELSEWHERE = [
 describe("texts of mentoring (MK-17)", () => {
   it("read every catalog", () => {
     expect(ALL.length).toBeGreaterThan(150);
+    expect(ALL.some(([path]) => path.startsWith("roundText."))).toBe(true);
   });
 
   it("hold no forbidden term (Ductus PRODUCT §5); outside this lane only the listed open findings remain", () => {
@@ -62,7 +64,7 @@ describe("texts of mentoring (MK-17)", () => {
   });
 
   it("call the role beside a work 'mentor' in the overview and the timeline, never 'nastavnik'", () => {
-    const own = ALL.filter(([path]) => path.startsWith("overviewText") || path.startsWith("keyDatesMessages"));
+    const own = ALL.filter(([path]) => path.startsWith("overviewText") || path.startsWith("roundText") || path.startsWith("keyDatesMessages"));
     expect(own.filter(([, text]) => /nastavni/i.test(text))).toEqual([]);
   });
 
