@@ -1,7 +1,7 @@
 "use client";
 
 import { Select } from "@ductura/ui";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { createApi } from "../../../../../../src/client/api";
@@ -13,6 +13,7 @@ import { readFastPath } from "../../../../../../src/components/teacher/fast-path
 import { fastPathControlsHr as c } from "../../../../../../src/components/teacher/fast-path/messages.hr";
 import { liveWorkHref, SUMMARY_ANCHOR } from "../../../../../../src/components/teacher/LiveWorkFrame";
 import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr";
+import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 import { TeacherPage, useTeacherRead } from "../../pages";
 import { PageHead } from "../shell/TeacherPage";
@@ -42,12 +43,13 @@ function useTasks(): Tasks | null {
 /** The chooser "Zadatak": a change opens that assignment's works. */
 function TaskChooser({ tasks, current }: { tasks: Tasks; current: string }) {
   const { base } = useHost();
+  const router = useRouter();
   if (tasks.length === 0) return null;
   return (
     <div className="card">
       <Select label={t.task} value={tasks.some((o) => o.value === current) ? current : ""} options={[...tasks]}
         placeholder={tasks.some((o) => o.value === current) ? undefined : fp.pickAssignment}
-        onChange={(event) => { if (event.target.value !== "") window.location.assign(appHref(base, fastPathPath(event.target.value))); }} />
+        onChange={(event) => { if (event.target.value !== "") router.push(nextPath(base, fastPathPath(event.target.value))); }} />
     </div>
   );
 }
