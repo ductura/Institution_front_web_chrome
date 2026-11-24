@@ -21,8 +21,14 @@ export function readingModeGroups(): readonly ReadingModeGroup[] {
 }
 
 /** A step chosen on screen: only a value of the closed set of that field passes, anything else is refused (null). */
-export function chosenStep(field: ReadingModeField, value: string): ReadingPrefs[ReadingModeField] | null {
+export function chosenStep<K extends ReadingModeField>(field: K, value: string): ReadingPrefs[K] | null {
   return isStep(field, value) ? value : null;
+}
+
+/** Hands a chosen step to `onChange`, typed per field; a value outside the field's set is dropped. */
+export function emitStep<K extends ReadingModeField>(field: K, value: string, onChange: (field: K, value: ReadingPrefs[K]) => void): void {
+  const step = chosenStep(field, value);
+  if (step !== null) onChange(field, step);
 }
 
 /** True when the four sheet fields are at their default (the font is not this task's and does not count). */

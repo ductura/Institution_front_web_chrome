@@ -6,7 +6,7 @@
 import { Button, SegmentedControl } from "@ductura/ui";
 
 import type { ReadingPrefs } from "../../shared/reading-prefs";
-import { chosenStep, readingModeGroups, readingModeIsDefault, type ReadingModeField } from "./reading-mode-model";
+import { emitStep, readingModeGroups, readingModeIsDefault, type ReadingModeField } from "./reading-mode-model";
 import { readingModeHr as t } from "./messages.hr";
 import styles from "./reading-mode.module.css";
 
@@ -28,10 +28,7 @@ export function ReadingModeControls({ prefs, onChange, onReset }: ReadingModeCon
             label={group.label}
             options={group.options}
             value={prefs[group.field]}
-            onChange={(value) => {
-              const step = chosenStep(group.field, value);
-              if (step !== null) onChange(group.field, step as never);
-            }}
+            onChange={(value) => emitStep(group.field, value, onChange)}
           />
         </div>
       ))}

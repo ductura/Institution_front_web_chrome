@@ -54,8 +54,10 @@ describe("reading mode (WEB-V20-NACIN-CITANJA)", () => {
   });
 
   it("scopes the rules to the sheet's text, never the shell, and uses no external URL", () => {
-    for (const line of css.split("\n").filter((l) => l.startsWith(":global("))) expect(line).toMatch(/\.editor-surface \.ProseMirror|\.sheet\)/);
-    expect(css).toContain('html[data-reading-width="wide"] .sheet');
+    for (const line of css.split("\n").filter((l) => l.startsWith(":global("))) expect(line).toContain(".editor-surface");
+    // .sheet is also the frame of the sign-in and teacher screens: the wide rule must be tied to the editor's sheet.
+    expect(css).toContain('html[data-reading-width="wide"] .sheet:has(.editor-surface)');
+    expect(css).not.toMatch(/\.sheet\) \{/);
     expect(css).not.toMatch(/url\(|@import|https?:/);
   });
 
@@ -76,9 +78,11 @@ describe("reading mode (WEB-V20-NACIN-CITANJA)", () => {
   });
 
   it("lifts the sheet's cap for the wide step and covers the closing list and quote paragraphs", () => {
-    expect(css).toMatch(/html\[data-reading-width="wide"\] \.sheet\) \{ max-width: (\d+)px/);
-    expect(Number(/data-reading-width="wide"\] \.sheet\) \{ max-width: (\d+)px/.exec(css)?.[1])).toBeGreaterThan(720);
+    expect(css).toMatch(/html\[data-reading-width="wide"\] \.sheet:has\(\.editor-surface\)\) \{ max-width: (\d+)px/);
+    expect(Number(/data-reading-width="wide"\] \.sheet:has\(\.editor-surface\)\) \{ max-width: (\d+)px/.exec(css)?.[1])).toBeGreaterThan(720);
     for (const gap of ["wide", "wider"]) {
+      // The general rule leaves the inner items of a list and of a quote alone (they stay one run).
+      expect(css).toContain(`html[data-reading-paragraph-gap="${gap}"] .editor-surface .ProseMirror p:not([data-block="bullet-item"], [data-block="quote"]))`);
       expect(css).toContain(`html[data-reading-paragraph-gap="${gap}"] .editor-surface .ProseMirror p[data-block="bullet-item"]:not(:has(+ p[data-block="bullet-item"]))`);
       expect(css).toContain(`html[data-reading-paragraph-gap="${gap}"] .editor-surface .ProseMirror p[data-block="quote"]:not(:has(+ p[data-block="quote"]))`);
     }
