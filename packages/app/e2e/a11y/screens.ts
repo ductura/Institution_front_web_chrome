@@ -19,7 +19,6 @@ const TEACHER_COURSE = "2c1d0e9f-8a7b-4c6d-9e5f-4a3b2c1d0e01";
 export const SCREENS: readonly Screen[] = [
   // Public: no session is read.
   { name: "prijava", path: "/prijava", role: null },
-  { name: "operater: mjerila pilota", path: "/operater/mjerila-pilota", role: null },
   { name: "nepostojeća stranica", path: "/nepostojeca-stranica", role: "student" },
   { name: "stanje sustava", path: "/stanje", role: null },
   { name: "provjera potvrde", path: "/provjera", role: null },
@@ -48,6 +47,8 @@ export const SCREENS: readonly Screen[] = [
   { name: "student: razgovor o radu", path: `/rad/${A}/razgovor`, role: "student" },
   { name: "student: kako Ductura radi", path: "/kako-radi", role: "student" },
   { name: "student: postavke profila", path: "/profil", role: "student" },
+  // Operator (WEB-NUZ-OPERATER): its own page in the host, no longer public.
+  { name: "operater: mjerila pilota", path: "/operater/mjerila-pilota", role: "network_engineer" },
   // Teacher.
   { name: "nastavnik: kolegiji", path: "/nastavnik", role: "teacher" },
   { name: "nastavnik: moji kolegiji", path: "/nastavnik/kolegiji", role: "teacher" },

@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 
 import type { Page } from "@playwright/test";
 
-export type Role = "student" | "teacher" | "institution_admin" | null;
+export type Role = "student" | "teacher" | "institution_admin" | "network_engineer" | null;
 
 export const INSTITUTION = "Izmišljeni fakultet za provjeru pristupačnosti";
 /** "Izmišljeni zadatak 1" of the "ready" vector of student.assignments.get, and its course. */

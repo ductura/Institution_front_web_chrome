@@ -1,54 +1,43 @@
 "use client";
 
-import { Button, DataTable, type DataTableColumn } from "@ductura/ui";
+import { Button, Card, DataTable, type DataTableColumn } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
+import { useHost } from "../../context";
 import { pilotMetricsMessages as t } from "./messages.hr";
 import { readPilotMetrics, type PilotMetricsData, type PilotMetricsState } from "./read";
+import { isEmpty, measuresOf, type MeasureRow } from "./view";
 import styles from "./pilot-metrics.module.css";
 
-type Row = { label: string; value: number | null; duration?: true };
 const number = new Intl.NumberFormat("hr-HR");
 const date = new Intl.DateTimeFormat("hr-HR", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Zagreb" });
 
-function display({ value, duration }: Row): string {
+function display({ value, duration }: MeasureRow): string {
   if (value === null) return t.hidden;
   const formatted = number.format(value);
   return duration ? t.milliseconds.replace("{value}", formatted) : formatted;
 }
 
-const columns: DataTableColumn<Row>[] = [
+const columns: DataTableColumn<MeasureRow>[] = [
   { id: "measure", header: t.measure, cell: (row) => row.label, rowHeader: true },
   { id: "value", header: t.value, cell: display, numeric: true },
 ];
 
 function MetricsView({ data }: { data: PilotMetricsData }) {
-  const counts: Row[] = [
-    { label: t.recorded, value: data.submissions.recorded },
-    { label: t.notRecorded, value: data.submissions.notRecorded },
-    { label: t.issued, value: data.receipts.issued },
-    { label: t.pending, value: data.receipts.pending },
-    { label: t.help, value: data.helpRequests.total },
-    { label: t.saveProblems, value: data.helpRequests.saveProblems },
-  ];
-  const rows: Row[] = [
-    ...counts,
-    { label: t.median, value: data.receiptTime.p50Ms, duration: true },
-    { label: t.p95, value: data.receiptTime.p95Ms, duration: true },
-  ];
-  const visible = counts.filter((row): row is Row & { value: number } => row.value !== null);
+  const rows = measuresOf(data);
+  const visible = rows.filter((row): row is MeasureRow & { value: number } => !row.duration && row.value !== null);
   const max = Math.max(1, ...visible.map((row) => row.value));
   return (
-    <>
+    <Card title={t.overview} level={2}>
       <p>{t.asOf} · <time dateTime={data.asOf}>{date.format(new Date(data.asOf))}</time></p>
       {rows.some((row) => row.value === null) && <p>{t.hiddenNote.replace("{minimum}", String(data.minimumGroup))}</p>}
-      <DataTable caption={t.table} columns={columns} rows={rows} rowKey={(row) => row.label} empty={t.noMeasures} />
+      <DataTable caption={t.table} columns={columns} rows={rows} rowKey={(row) => row.id} empty={t.noMeasures} />
       {visible.length > 0 ? (
         <section className={styles.chart} aria-hidden="true">
-          <h2>{t.chart}</h2>
+          <h3>{t.chart}</h3>
           <ul>
             {visible.map((row) => (
-              <li key={row.label}>
+              <li key={row.id}>
                 <span>{row.label}</span>
                 <span className={styles.track}><span style={{ width: `${row.value / max * 100}%` }} /></span>
                 <span>{display(row)}</span>
@@ -57,11 +46,18 @@ function MetricsView({ data }: { data: PilotMetricsData }) {
           </ul>
         </section>
       ) : <p>{t.noCounts}</p>}
-    </>
+    </Card>
   );
 }
 
-export function PilotMetrics({ home }: { home: string }) {
+/**
+ * WEB-NUZ-OPERATER (NF-7 OA-1, OA-12): the operator's view of the institution, inside the host's
+ * shell. Only the aggregates of ops.pilot-metrics.get, through the shared client; the host lets only
+ * the operator's account open the page (routes.ts), and the server's 401/403 is shown as a refusal.
+ * The states of the prototype: loading, empty, error with "Pokušaj ponovno", and the measures.
+ */
+export function PilotMetrics() {
+  const { role } = useHost();
   const [view, setView] = useState<PilotMetricsState>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -71,18 +67,20 @@ export function PilotMetrics({ home }: { home: string }) {
   }, [attempt]);
 
   return (
-    <main id="sadrzaj" tabIndex={-1} className={styles.page}>
-      <a href={home}>{t.home}</a>
+    <section className="page" data-role={role ?? undefined} data-nf7="OA-1">
       <h1>{t.title}</h1>
-      {view.kind === "loading" && <p role="status">{t.loading}</p>}
-      {view.kind === "denied" && <p role="alert">{t.denied}</p>}
+      <p>{t.lead}</p>
+      {view.kind === "loading" && <Card title={t.overview} level={2} busy />}
+      {view.kind === "denied" && <Card title={t.overview} level={2} error={t.denied} />}
       {view.kind === "unavailable" && (
         <>
-          <p role="alert">{t.unavailable}</p>
+          <Card title={t.overview} level={2} error={t.unavailable} />
           <Button onClick={() => { setView({ kind: "loading" }); setAttempt((n) => n + 1); }}>{t.retry}</Button>
         </>
       )}
-      {view.kind === "ready" && <MetricsView data={view.data} />}
-    </main>
+      {view.kind === "ready" && (isEmpty(view.data)
+        ? <Card title={t.emptyTitle} level={2} center empty={t.emptyBody} />
+        : <MetricsView data={view.data} />)}
+    </section>
   );
 }
