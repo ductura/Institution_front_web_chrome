@@ -18,13 +18,16 @@ export const noticeText = {
   heroAccent: "rečenice",
 };
 
-// E-5 `MSG` of the prototype: the text under the field for the three states the
-// prototype names (neispravan, istekao, mreza); other refusals keep the shared text.
+// E-5 `MSG` of the prototype: the text for the states the prototype names
+// (neispravan, istekao, mreza, and previse of P-10); other refusals keep the shared
+// text. A code that does not exist and an expired one keep one text on purpose:
+// telling them apart would say that a code exists (P-10, E-5a).
 export const enrolErrors = {
   malformed: "Kod ima od 8 do 32 slova i brojke. Provjerite ga i upišite ponovno.",
   invalidCode: "Kod ne postoji ili je istekao. Provjerite ga s nastavnikom.",
   expiredCode: "Kod ne postoji ili je istekao. Provjerite ga s nastavnikom.",
   offline: "Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.",
+  tooManyAttempts: "Previše pokušaja. Pričekajte malo i pokušajte ponovno ili se javite nastavniku.",
 } as const;
 
 // E-6 hero of the prototype (`hero()`): the eyebrow is the shared s.step ("Prije pisanja").

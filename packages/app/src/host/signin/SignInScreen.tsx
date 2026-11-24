@@ -7,6 +7,7 @@ import { SignOutDialogButton } from "../SignOut";
 import screen from "../../../../../src/components/auth/SignInScreen.module.css";
 import own from "./SignIn.module.css";
 import type { SignInView } from "./sign-in-view";
+import { signInTextFor } from "./text";
 
 /** Official AAI@EduHr help: identity problems belong to the home institution (R-8). */
 const AAI_HELP_URL = "https://www.aaiedu.hr/kontakt";
@@ -28,8 +29,9 @@ export type SignInScreenProps = {
  * field; the button is a link to the login route, so it works without script.
  */
 export default function SignInScreen({ view, href, onStart }: SignInScreenProps) {
-  const { work, app } = useLocale();
+  const { work, app, locale } = useLocale();
   const p = work.prijava;
+  const extra = signInTextFor(locale);
   const start = (event: { preventDefault(): void }) => {
     event.preventDefault();
     onStart();
@@ -53,10 +55,20 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
         <p className={screen.note}>{p.passwordNote}</p>
       </section>
     );
+  } else if (view === "refused") {
+    // P-15: a refusal is not a fault of the sign-in, so there is no "Pokušaj ponovno".
+    card = (
+      <section className={screen.panel} role="alert" aria-labelledby="prijava-kartica">
+        <h2 id="prijava-kartica" className={screen.panelTitle}>{extra.refusedTitle}</h2>
+        <p className={screen.body}>{extra.refusedBody}</p>
+        <p className={screen.body}>{extra.refusedContact}</p>
+        <div className={own.actions}>{home}</div>
+      </section>
+    );
   } else if (view === "failed" || view === "unavailable") {
     card = (
       <section className={screen.panel} role="alert" aria-labelledby="prijava-kartica">
-        <h2 id="prijava-kartica" className={screen.panelTitle}>{work.auth.failedTitle}</h2>
+        <h2 id="prijava-kartica" className={screen.panelTitle}>{view === "failed" ? work.auth.failedTitle : extra.unavailableTitle}</h2>
         <p className={screen.body}>{view === "failed" ? work.auth.failedBody : work.auth.unavailableBody}</p>
         <div className={own.actions}>
           {retry}
@@ -68,8 +80,8 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
     card = (
       <section className={screen.panel} role="status" aria-labelledby="prijava-kartica">
         <h2 id="prijava-kartica" className={screen.panelTitle}>{app.host.signInNoRoleTitle}</h2>
-        <p className={screen.body}>{app.host.signInNoRoleBody}</p>
-        <p className={screen.body}>{p.helpAccessBody}</p>
+        <p className={screen.body}>{app.host.signInNoRoleBody} {extra.noRoleWho}</p>
+        <p className={screen.body}>{extra.noRoleContact}</p>
         <div className={own.actions}>
           <SignOutDialogButton className={own.plain} />
         </div>
@@ -157,7 +169,7 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
             <p className={screen.small}>{p.helpAaiBody}</p>
             <a className={screen.link} href={AAI_HELP_URL} rel="noopener noreferrer">{p.helpAaiLink}</a>
             <h3 className={screen.roleTitle}>{p.helpAccessTitle}</h3>
-            <p className={screen.small}>{p.helpAccessBody}</p>
+            <p className={screen.small}>{extra.helpAccessBody}</p>
           </div>
         </details>
       </footer>

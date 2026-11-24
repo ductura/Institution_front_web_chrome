@@ -16,28 +16,32 @@ import { CodeCard, CodeForm } from "./CodeForm";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
-import { continueRow, flatRows, nearTag, rowAction, rowRoute, type RowKind, type TaskRow } from "./model";
+import { continueRow, deadlineTag, flatRows, nearTag, rowAction, rowRoute, type RowKind, type TaskRow } from "./model";
 
 const dueText = protoDateTime;
 
 function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base; action: ReturnType<typeof startWorkAction> }) {
   const { label, primary } = rowAction(row.kind);
   const near = row.kind === "predano" ? null : nearTag(row.dueAt, now);
+  const deadline = deadlineTag(row, now);
+  // E-2h: the row's link names the task and is described by the line with the deadline and its tags.
+  const whenId = `po-rok-${row.id}`;
   return (
     <li className={styles.item}>
       <span>
         <span className={styles.eyebrow}>{row.course}</span>
         <span className={styles.title}>{row.title}</span>
-        <span className={styles.when}>
+        <span className={styles.when} id={whenId}>
           {row.kind === "predano" ? <span>{t.submitted}</span> : <span>{(row.extended ? t.extendedDue : t.due).replace("{due}", dueText(row.dueAt))}</span>}
           {near === null ? null : <Tag tone="warn">{near}</Tag>}
+          {deadline === null ? null : <Tag tone={deadline.kind === "late" ? "warn" : "neutral"}>{deadline.text}</Tag>}
           {row.kind === "obavijest" ? <Tag tone="open">{t.noticeFirst}</Tag> : null}
           <PracticeBadge practice={row.practice} />
         </span>
       </span>
       <span className={styles.itemActions}>
         <a className={styles.open} data-tone={primary ? "primary" : "secondary"} aria-label={t.openFor.replace("{action}", label).replace("{title}", row.title)}
-          href={appHref(base, rowRoute(row))}>{label}</a>
+          aria-describedby={whenId} href={appHref(base, rowRoute(row))}>{label}</a>
         {action}
       </span>
     </li>

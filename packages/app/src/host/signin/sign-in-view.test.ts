@@ -23,4 +23,10 @@ describe("signInViewOf", () => {
     expect(of("greska=provider_unavailable")).toBe("unavailable");
     expect(of("stanje=pomoc&greska=login_failed")).toBe("failed");
   });
+  it("tells a refused sign-in (login_refused, P-15) apart from a fault and from no role", () => {
+    expect(of("greska=login_refused")).toBe("refused");
+    expect(of("stanje=odbijeno")).toBe("refused");
+    expect(of("stanje=bezuloge&greska=login_refused")).toBe("refused");
+    expect(of("greska=provider_unavailable")).not.toBe(of("greska=login_refused"));
+  });
 });

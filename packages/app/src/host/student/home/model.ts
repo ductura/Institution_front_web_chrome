@@ -1,6 +1,8 @@
 import type { MyAssignment, MyCourse } from "../../../../../../src/components/student/my-assignments-read";
 import type { WorkState } from "../../../../../../src/components/student/radovi/works-read";
 import { practiceOf } from "../courses/model";
+import { cleanCode } from "../enrol/code";
+import { protoToday } from "./format";
 import { homeText as t } from "./messages.hr";
 
 /** The row kinds of the prototype's `kind(t, s)`, in the order of its checks. */
@@ -14,6 +16,8 @@ export type TaskRow = {
   /** Deadline as the assignment gives it: the extended one replaces the original. */
   readonly dueAt: string;
   readonly extended: boolean;
+  /** The assignment's own deadline, before any extension the teacher gave this student. */
+  readonly originalDueAt: string;
   /** The workType label, or the generic "Zadatak". */
   readonly typeLabel: string;
   /** P-D1: the server said `isPractice: true`; the row then carries the "Probni" badge. */
@@ -39,7 +43,7 @@ export function flatRows(courses: readonly MyCourse[], states: States): TaskRow[
       const extended = typeof assignment.extendedDueAt === "string" && assignment.extendedDueAt !== "";
       return {
         id: assignment.id, title: assignment.title, course: course.name, kind: kindOf(assignment, states),
-        dueAt: extended ? (assignment.extendedDueAt as string) : assignment.dueAt, extended,
+        dueAt: extended ? (assignment.extendedDueAt as string) : assignment.dueAt, extended, originalDueAt: assignment.dueAt,
         typeLabel: assignment.workType === undefined ? t.taskFallback : t.workTypes[assignment.workType],
         practice: practiceOf(assignment),
       };
@@ -67,10 +71,29 @@ export function nearTag(dueAt: string, now: number): string | null {
   return days === 1 ? t.nearOne : t.nearMany.replace("{n}", String(days));
 }
 
-/** The prototype's R-10: no spaces at the edges, capitals; empty stays empty. */
-export function normalizeCode(raw: string): string {
-  return raw.trim().toUpperCase();
+/**
+ * P-3 (E-2a): the deadline tag of a row that is not submitted. "Rok je prošao {datum}"
+ * once the deadline that applies (the extended one when given) has passed. While an
+ * extension the teacher gave this student still runs, the row says the original
+ * deadline has passed, so both states are told apart. Null for a submitted row
+ * and before the original deadline. The tag describes the deadline, not the student.
+ */
+export type DeadlineTag = { readonly kind: "late" | "extension"; readonly text: string };
+
+export function deadlineTag(row: Pick<TaskRow, "kind" | "dueAt" | "extended" | "originalDueAt">, now: number): DeadlineTag | null {
+  if (row.kind === "predano") return null;
+  const due = Date.parse(row.dueAt);
+  if (Number.isNaN(due)) return null;
+  if (due < now) return { kind: "late", text: t.late.replace("{date}", protoToday(new Date(due))) };
+  const original = Date.parse(row.originalDueAt);
+  if (row.extended && !Number.isNaN(original) && original < now) {
+    return { kind: "extension", text: t.originalPassed.replace("{date}", protoToday(new Date(original))) };
+  }
+  return null;
 }
+
+/** P-11: the one code rule (enrol/code.ts), the same as on E-5 and before sending. */
+export const normalizeCode = cleanCode;
 
 /** Where a row opens (R-9): a submitted work its receipt, an open notice the notice, else the work. */
 export function rowRoute(row: Pick<TaskRow, "id" | "kind">): string {
