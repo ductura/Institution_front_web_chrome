@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { requestShortcutList, SHORTCUT_LIST_EVENT, shortcutListGroups } from "./shortcut-definitions";
 import { editorShortcut, shortcutGroups } from "./shortcuts";
 
 const key = (event: Partial<KeyboardEvent>) => editorShortcut(event as KeyboardEvent);
@@ -33,5 +34,20 @@ describe("editor shortcuts", () => {
     expect(keys(true)).toContain("Ctrl+B");
     expect(keys(false)).not.toContain("Ctrl+B");
     expect(keys(false)).toContain("Ctrl+K");
+  });
+
+  it("draws the same list as the host: one definition, the same groups and rows (ED-03)", () => {
+    for (const editable of [true, false]) {
+      expect(shortcutGroups(editable)).toEqual(shortcutListGroups(editable).map(({ title, items }) =>
+        ({ title, items: items.map(({ label, keys }) => ({ label, keys })) })));
+    }
+    expect(shortcutGroups(true).map(({ title }) => title)).toEqual(["Pisanje", "Kretanje i uređivanje", "Prikaz"]);
+  });
+
+  it("asks the page's one list to open, and says whether a host took it (ED-03)", () => {
+    const page = new EventTarget();
+    expect(requestShortcutList(page)).toBe(false);
+    page.addEventListener(SHORTCUT_LIST_EVENT, (event) => event.preventDefault());
+    expect(requestShortcutList(page)).toBe(true);
   });
 });

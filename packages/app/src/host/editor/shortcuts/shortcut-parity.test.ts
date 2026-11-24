@@ -55,7 +55,7 @@ describe("shortcut-definitions.ts matches the editor commands (PIL-D8-PRECACI)",
   });
   it("describes every key the editor's own list shows", () => {
     const written = new Set(SHORTCUTS.flatMap((def) => displayKeys(def).split(" ili ")));
-    const shown = shortcutGroups(true).flatMap(({ items }) => items.map((item) => item.keys));
+    const shown = shortcutGroups(true).flatMap(({ items }) => items.flatMap((item) => item.keys.split(" ili ")));
     expect(shown.length).toBeGreaterThan(0);
     expect(shown.filter((keys) => !written.has(keys))).toEqual([]);
   });

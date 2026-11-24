@@ -29,16 +29,12 @@ describe("editor shortcut definitions (WEB-1908)", () => {
     expect(ariaKeyShortcuts("shortcuts")).toBe("Control+/");
     expect(ariaKeyShortcuts("nope")).toBeUndefined();
   });
-  it("carries the consistent moving shortcuts of the prototype (Alt+arrows, Ctrl+Alt+M)", () => {
-    const moving = shortcutListGroups(true).find((g) => g.id === "moving")!.items;
-    expect(moving.find((i) => i.id === "comment")?.keys).toBe("Ctrl+Alt+M");
-    expect(displayKeys(SHORTCUTS.find((s) => s.id === "comment")!, true)).toBe("Cmd+Alt+M");
-    expect(moving.find((i) => i.id === "moveSentence")?.keys).toBe("Alt+↑ ili Alt+↓");
-    expect(moving.find((i) => i.id === "moveChapter")?.keys).toBe("Alt+Shift+↑ ili Alt+Shift+↓");
-    // Moving text needs a work that can be written in; commenting is for a locked work too.
-    const locked = shortcutListGroups(false).flatMap((g) => g.items.map((i) => i.id));
-    expect(locked).toContain("comment");
-    expect(locked).not.toContain("moveSentence");
-    expect(locked).not.toContain("moveChapter");
+  it("lists no key the editor does not answer yet: comment, sentence, chapter and outline wait for P2-2, the numbered list for the v4 document (ED-03)", () => {
+    // The keys of the prototype stay in toolbar-keys.ts; the list names them again once a handler is mounted.
+    const all = [...shortcutListGroups(true), ...shortcutListGroups(false)].flatMap((g) => g.items);
+    for (const id of ["comment", "moveSentence", "moveChapter", "outline", "numberedList"]) expect(all.find((i) => i.id === id)).toBeUndefined();
+    expect(all.map((i) => i.keys)).not.toEqual(expect.arrayContaining(["Ctrl+Alt+M"]));
+    expect(all.map((i) => i.keys)).not.toContain("Alt+↑ ili Alt+↓");
+    expect(all.map((i) => i.keys)).not.toContain("Ctrl+\\");
   });
 });

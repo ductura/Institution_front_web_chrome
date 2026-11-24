@@ -31,6 +31,6 @@ describe("ShellView (first draw)", () => {
     expect(live).toMatch(/<a[^>]*href="\/x"[^>]*>/);
   });
   it("mounts the shortcut list's button, opened by ? and closed with the dialog (PIL-D8-PRECACI)", () => {
-    expect(html).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*aria-keyshortcuts="\?"[^>]*>Prečaci<\/button>/);
+    expect(html).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*aria-keyshortcuts="Control\+\/ Meta\+\/ \?"[^>]*>Prečaci<\/button>/);
   });
 });

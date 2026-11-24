@@ -1,5 +1,4 @@
-import { DEFAULT_SHORTCUT_GROUPS } from "@ductura/ui";
-import { editorCommandsHr as t } from "./messages.hr";
+import { shortcutDialogGroups } from "./shortcut-definitions";
 
 export function editorShortcut(event: KeyboardEvent) {
   if (event.defaultPrevented || event.isComposing || event.repeat || event.shiftKey) return null;
@@ -12,14 +11,7 @@ export function editorShortcut(event: KeyboardEvent) {
   return null;
 }
 
-const available = new Set(["Ctrl+Z", "Ctrl+Y", "Ctrl+B", "Ctrl+I", "Ctrl+K", "Ctrl+F", "Ctrl+.", "Ctrl+/", "Esc"]);
-
+/** The editor's list: the one definition (shortcut-definitions.ts), Ctrl written for both platforms. */
 export function shortcutGroups(editable: boolean) {
-  return DEFAULT_SHORTCUT_GROUPS.map(({ title, items }, index) => ({
-    title,
-    items: [
-      ...items.filter(({ keys }) => available.has(keys) && (index !== 0 || editable)),
-      ...(index === 1 ? [{ keys: "Alt+F10", label: t.toolbarKeys }] : []),
-    ],
-  })).filter(({ items }) => items.length > 0);
+  return shortcutDialogGroups(editable);
 }
