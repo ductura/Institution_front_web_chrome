@@ -4,7 +4,7 @@ import type { SubmissionRead, SubmitOutcome } from "../../../../../../../src/cli
 import type { TextNode } from "../../../../../../../src/components/student/SubmissionView";
 import { atOf as atText, clockOf, dayOf } from "../steps/time";
 import { submitText as t } from "./messages.hr";
-import { forbiddenLines } from "./timing";
+import { forbiddenLines, type Timing } from "./timing";
 
 export type SubmitStage =
   | { readonly kind: "open" }
@@ -72,9 +72,9 @@ export type Answer = SubmitOutcome | { readonly kind: "check"; readonly state: S
 
 /**
  * `requestedAt`: when the server says the request arrived, if it does; `alternative`: the procedure the server
- * names, if any (P-2156); `dueAt`: the assignment's deadline, for the panel of a submission not open (409 not_open).
+ * names, if any (P-2156); `timing`: where the deadline stands, for the panel of a submission not open (409 not_open).
  */
-export type Known = { readonly requestedAt: string | null; readonly alternative: boolean; readonly dueAt?: string | null };
+export type Known = { readonly requestedAt: string | null; readonly alternative: boolean; readonly timing?: Timing };
 
 const NOTHING_KNOWN: Known = { requestedAt: null, alternative: false };
 
@@ -118,7 +118,7 @@ export function nextOf(answer: Answer, known: Known = NOTHING_KNOWN): Next {
       if (answer.code === "not_acknowledged") return { go: "notice" };
       if (answer.code === "stale_revision") return { go: null, title: t.refusedTitle, text: [t.errors.stale_revision, t.notSubmitted], alertAt: 0, offer: "reload", retry: false };
       // PR-17, Daniel's answer 3: the assignment does not take a submission after the deadline.
-      if (answer.code === "not_open") return { go: null, title: t.late.forbiddenTitle, text: forbiddenLines(known.dueAt ?? null), alertAt: 0, offer: "back", retry: false };
+      if (answer.code === "not_open") return { go: null, title: t.late.forbiddenTitle, text: forbiddenLines(known.timing ?? { kind: "unavailable" }), alertAt: 0, offer: "back", retry: false };
       return { go: null, text: [Object.hasOwn(t.errors, answer.code) ? t.errors[answer.code as keyof typeof t.errors] : t.errors.other], retry: true };
     default: return unknown(known.requestedAt);
   }

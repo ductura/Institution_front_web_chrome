@@ -51,11 +51,17 @@ describe("nextOf", () => {
     const known = nextOf({ kind: "nepoznato" }, { requestedAt: "2026-11-20T09:00:00.000000Z", alternative: false }) as unknown as { text: string[] };
     expect(known.text[0]).toBe(t.unknownRequested.replace("{when}", whenOf("2026-11-20T09:00:00.000000Z")));
   });
-  it("409 not_open is the panel 'Predaja nije otvorena' with the deadline, without 'Predaj rad' (PR-17)", () => {
-    const next = nextOf({ kind: "greska", code: "not_open" }, { requestedAt: null, alternative: false, dueAt: "2026-11-10T22:59:00.000Z" }) as unknown as { title: string; text: string[]; offer: string; retry: boolean };
+  it("409 not_open after the deadline is the panel 'Predaja nije otvorena' with the deadline, without 'Predaj rad' (PR-17)", () => {
+    const next = nextOf({ kind: "greska", code: "not_open" }, { requestedAt: null, alternative: false, timing: { kind: "late", dueAt: "2026-11-10T22:59:00.000Z" } }) as unknown as { title: string; text: string[]; offer: string; retry: boolean };
     expect(next).toMatchObject({ title: t.late.forbiddenTitle, offer: "back", retry: false });
     expect(next.text[0]).toContain("Rok je bio 10. 11. 2026. u 23:59.");
-    expect(nextOf({ kind: "greska", code: "not_open" })).toMatchObject({ text: [t.late.forbiddenNoDue, t.late.forbiddenMeta] });
+  });
+  // Review #590, 1: before the deadline or during an extension the server's not_open says nothing of a deadline.
+  it("409 not_open before the deadline, during an extension or with no known deadline is one neutral line", () => {
+    for (const timing of [{ kind: "open" }, { kind: "extended", until: "2026-11-25T22:59:00.000Z" }] as const) {
+      expect(nextOf({ kind: "greska", code: "not_open" }, { requestedAt: null, alternative: false, timing })).toMatchObject({ title: t.late.forbiddenTitle, text: [t.late.notOpen], retry: false });
+    }
+    expect(nextOf({ kind: "greska", code: "not_open" })).toMatchObject({ text: [t.late.notOpen] });
   });
   it("a state from the server leads to the receipt, the waiting line or the notice", () => {
     expect(nextOf({ kind: "check", state: { kind: "none" } })).toMatchObject({ retry: true });

@@ -10,6 +10,7 @@ import { ASSIGNMENT, CONFIRMED, DRAFT, gateServer } from "../summary/declaration
 import { submitText as t } from "./messages.hr";
 import SubmitStep from "./SubmitStep";
 import type { Timing } from "./timing";
+import { rehearsalMessagesHr as r } from "../../../../../../../src/components/editor/submission-rehearsal/messages.hr.ts";
 
 const push = vi.fn();
 const submitWork = vi.fn();
@@ -74,7 +75,7 @@ describe("PR-7 the dialog 'Predati rad?'", () => {
 
   it("without a declaration asked for, says nothing of one and names it in the panel", async () => {
     const host = await mount({ gate: NOT_REQUIRED });
-    expect(host.textContent).toContain(t.declarationNotRequired);
+    expect(host.textContent).toContain(r.declarationNotRequired);
     await openDialog(host);
     const text = document.querySelector("dialog")?.textContent ?? "";
     expect(text).toContain("spremljen na poslužitelju. Riječi: 3.");
@@ -152,15 +153,30 @@ describe("PR-8 a refused submission is a panel of its own", () => {
     expect(pageSubmit(host)).toBeUndefined();
   });
 
-  it("409 not_open is 'Predaja nije otvorena' with the deadline, 'Natrag' and the workspace", async () => {
+  it("409 not_open after the deadline is 'Predaja nije otvorena' with the deadline, 'Natrag' and the workspace", async () => {
     submitWork.mockResolvedValue({ kind: "greska", code: "not_open" });
-    const host = await mount();
-    await submit(host);
+    const host = await mount({ timing: { kind: "late", dueAt: DUE } });
+    await openDialog(host);
+    await act(async () => { (document.getElementById("sb-late-ok") as HTMLInputElement).click(); });
+    await act(async () => { dialogSubmit()?.click(); });
+    await settle();
     expect(host.textContent).toContain(t.late.forbiddenTitle);
     expect(host.textContent).toContain("Rok je bio 12. 11. 2026. u 23:59.");
     expect(pageSubmit(host)).toBeUndefined();
     await act(async () => { byText(host, t.back)?.click(); });
     expect(push).toHaveBeenCalledWith(expect.stringContaining(`/rad/${ASSIGNMENT}/predaja/pregled`));
+  });
+
+  // Review #590, 1: before the deadline the server's not_open names no deadline and no rule on late submission.
+  it("409 not_open before the deadline is one neutral line, without a deadline", async () => {
+    submitWork.mockResolvedValue({ kind: "greska", code: "not_open" });
+    const host = await mount({ timing: { kind: "open" } });
+    await submit(host);
+    expect(host.textContent).toContain(t.late.forbiddenTitle);
+    expect(host.textContent).toContain(t.late.notOpen);
+    expect(host.textContent).not.toContain("Rok je bio");
+    expect(host.textContent).not.toContain(t.late.forbiddenMeta);
+    expect(pageSubmit(host)).toBeUndefined();
   });
 });
 
@@ -186,6 +202,9 @@ describe("PR-9 an unknown outcome", () => {
     expect(host.textContent).toContain(t.gaveUp);
     expect(host.textContent).toContain(t.reportMeta);
     expect(byText(host, "Prijavi problem")).toBeDefined();
+    // Review #590, 5: after the third read no check is offered that would do nothing.
+    expect(byText(host, t.check)).toBeUndefined();
+    expect(byText(host, t.checking)).toBeUndefined();
     expect(pageSubmit(host)).toBeUndefined();
   });
 

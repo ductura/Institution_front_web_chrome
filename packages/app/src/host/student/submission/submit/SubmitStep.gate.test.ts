@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { confirmationKey } from "../../../../../../../src/components/predaja/flow";
 import { ASSIGNMENT, CONFIRMED, DRAFT, gateServer } from "../summary/declaration-gate.fixture";
 import { submitText as t } from "./messages.hr";
+import { rehearsalMessagesHr as r } from "../../../../../../../src/components/editor/submission-rehearsal/messages.hr.ts";
 import SubmitStep from "./SubmitStep";
 
 const push = vi.fn();
@@ -55,7 +56,7 @@ describe("step 4 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     window.sessionStorage.setItem(confirmationKey("tag-1", ASSIGNMENT), "1");
     const host = await mount(gateServer(() => DRAFT).read);
     expect(submitButton(host)?.getAttribute("aria-disabled")).toBe("true");
-    expect(host.textContent).toContain(t.declarationMissing);
+    expect(host.textContent).toContain(r.declarationDraft);
     await trySubmit(host);
     expect(submitWork).not.toHaveBeenCalled();
   });
@@ -64,7 +65,7 @@ describe("step 4 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     for (const answer of [503, "offline"]) {
       const host = await mount(gateServer(() => answer).read);
       expect(submitButton(host)?.getAttribute("aria-disabled"), String(answer)).toBe("true");
-      expect(host.textContent).toContain(t.declarationUnavailable);
+      expect(host.textContent).toContain(r.declarationUnavailable);
       await trySubmit(host);
       act(() => root?.unmount());
       root = null;

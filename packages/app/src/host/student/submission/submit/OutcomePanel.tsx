@@ -54,7 +54,7 @@ export default function OutcomePanel({ line, workHref, declarationHref, onBack, 
             aria-describedby={saved === "saved" ? undefined : RETRY_WHY_ID} onClick={() => { if (saved === "saved") onRetry(); }}>{t.retryAgain}</Button>
         )}
         {line.offer === "reload" && <Button onClick={onReload}>{t.reload}</Button>}
-        {line.offer === "check" && (
+        {line.offer === "check" && !gaveUp && (
           <Button tone="secondary" busy={checking || reading} onClick={onCheck}>{checking || reading ? t.checking : t.check}</Button>
         )}
         {line.offer === "back" && <Button tone="secondary" onClick={onBack}>{t.back}</Button>}

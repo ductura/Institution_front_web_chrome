@@ -18,7 +18,7 @@ export async function readException(
   if (!Number.isFinite(due) || !Number.isFinite(until) || due >= now || until < now) return false;
   try {
     const answer = await call(assignmentId);
-    return answer.ok ? exceptionFrom(answer.body, extendedDueAt) : null;
+    return answer.ok ? exceptionFrom(answer.body, extendedDueAt, dueAt) : null;
   } catch {
     return null;
   }

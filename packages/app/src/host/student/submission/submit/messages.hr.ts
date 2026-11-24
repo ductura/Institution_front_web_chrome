@@ -20,9 +20,6 @@ export const submitText = {
   retry: "Pokušaj ponovno",
   empty: "Na poslužitelju još nema teksta ovog rada. Predaja je moguća kad tekst stigne na poslužitelj.",
   inProgress: "Predaja u tijeku…",
-  declarationMissing: "Predaja je moguća kad potvrdite izjavu.",
-  declarationChecking: "Provjeravam izjavu na poslužitelju…",
-  declarationUnavailable: "Stanje izjave trenutačno nije moguće provjeriti, pa predaja još nije moguća.",
   declarationRetry: "Provjeri izjavu ponovno",
   declarationRequiredTitle: "Izjava nije potvrđena",
   declarationRequired: "Ovaj zadatak traži izjavu, a poslužitelj nema potvrđenu izjavu za ovu verziju teksta. Rad nije predan. Potvrdite izjavu pa predajte rad.",
@@ -42,7 +39,6 @@ export const submitText = {
   lateConfirm: "Razumijem da će predaja biti označena kao predaja nakon roka.",
   lateConfirmWhy: "Predaja je moguća kad potvrdite ovu rečenicu.",
   declarationRow: "Izjava",
-  declarationNotRequired: "nije potrebna za ovaj zadatak",
   // NF-3 PR-17, Daniel's answer 3: late after the deadline, late by the teacher's exception, and not open.
   late: {
     past: "Rok je prošao {due}. Predaja će biti označena kao predaja nakon roka; dopušta li zadatak predaju nakon roka, poslužitelj provjerava pri predaji.",
@@ -51,8 +47,9 @@ export const submitText = {
     exceptionDue: "Rok iznimke",
     dialogException: "Rok je prošao; nastavnik je za Vas iznimno odobrio kasnu predaju do {until}. Potvrda će navesti da je rad predan nakon roka.",
     forbiddenTitle: "Predaja nije otvorena",
+    // Review #590, 1: 409 not_open is not tied to the deadline; only after a deadline that has passed is it named.
+    notOpen: "Predaja za ovaj zadatak trenutačno nije otvorena. Obratite se nastavniku kolegija.",
     forbidden: "Predaja za ovaj zadatak više nije otvorena. Rok je bio {due}. Obratite se nastavniku kolegija.",
-    forbiddenNoDue: "Predaja za ovaj zadatak više nije otvorena. Obratite se nastavniku kolegija.",
     forbiddenMeta: "Zadatak ne dopušta predaju nakon roka. Nastavnik može iznimno odobriti kasnu predaju pojedinom studentu; tada ovdje stoji rok iznimke.",
   },
   cancel: "Natrag",

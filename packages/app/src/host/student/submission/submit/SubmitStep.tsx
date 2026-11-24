@@ -30,6 +30,8 @@ import { submitConfirmed, type Confirmed, type NewerChoice } from "./newer-local
 import { deviceHasNewer, sendLatestFromDevice } from "./local-hold";
 import { routerPath } from "../../../../bases";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "../summary/declaration-gate";
+// Review #590, 3: the declaration in the words of the one source (PR-2), not step 4's own.
+import { declarationText } from "../summary/declaration-gate";
 
 const WHY_ID = "submission-why";
 const LATE_WHY_ID = "submission-late-why";
@@ -107,7 +109,7 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
   const shown = useRef(false);
 
   const follow = useCallback((answer: Answer, known: Known = { requestedAt: null, alternative: false }) => {
-    const step = nextOf(answer, { ...known, dueAt });
+    const step = nextOf(answer, { ...known, timing });
     if (step.go === null) {
       setNext(step);
       requestAnimationFrame(() => document.getElementById(OUTCOME_ID)?.focus());
@@ -115,7 +117,7 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
     else if (step.go === "notice") router.push(routerPath(href(`/zadatak/${encodeURIComponent(assignmentId)}`)));
     else goToSignIn(href(here));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignmentId, idPath, here, base, router, dueAt]);
+  }, [assignmentId, idPath, here, base, router, timing]);
 
   const load = useCallback(async () => {
     const mine = ++ticket.current;
@@ -191,7 +193,7 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
   const canSend = ready !== null && confirmed && online && !sending && (next === null || next.retry);
   const canConfirm = canSend || sending;
   const lateHold = late && !lateOk;
-  const declarationWhy = gate.kind === "loading" ? t.declarationChecking : gate.kind === "unavailable" ? t.declarationUnavailable : t.declarationMissing;
+  const declarationWhy = declarationText(gate);
   const why = !online ? t.offline : !confirmed ? declarationWhy : undefined;
   const words = ready === null ? 0 : wordCount(ready.nodes);
   const closeDialog = () => {
@@ -256,7 +258,7 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
             <>
               <StepKv label={t.due}>{dueText}</StepKv>
               <StepKv label={t.words}>{thousands(words)}</StepKv>
-              {gate.kind === "not_required" && <StepKv label={t.declarationRow}>{t.declarationNotRequired}</StepKv>}
+              {gate.kind === "not_required" && <StepKv label={t.declarationRow}>{declarationWhy}</StepKv>}
               {stage.kind === "unavailable" && <p className="note" role="note">{t.stageUnavailable}</p>}
               <p className="note">{t.timeNote}</p>
             </>

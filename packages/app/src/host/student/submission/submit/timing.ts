@@ -1,8 +1,8 @@
 // WEB-NUZ-PREDAJA-2 (NF-3 PR-7, PR-17, Daniel's answer 3): where the deadline stands for steps 3 and 4,
 // in words both steps say alike. Two kinds of late submission are shown: after the deadline (the
 // server decides whether the assignment allows it), and late by an exception the teacher granted this
-// student (an individual extension read from student.deadline-history.get, opened after the
-// assignment's deadline had passed). A submission the assignment does not allow after the deadline is
+// student (an individual extension read from student.deadline-history.get, granted after the
+// assignment's deadline had passed and still open). A submission the assignment does not allow after the deadline is
 // known only from the server's 409 not_open (PO-36: no field says so before), so it is an outcome of
 // step 4, never guessed here. Pure: the time and the reads come in.
 import { atOf, dayOf } from "../steps/time";
@@ -42,10 +42,11 @@ type Extension = { readonly scope?: unknown; readonly dueAt?: unknown; readonly 
 
 /**
  * Whether the extended deadline is this student's own exception: the newest extension in a
- * student.deadline-history.get body has scope "one" and the same instant as `extendedDueAt`.
- * Null when the body is not the contract's list.
+ * student.deadline-history.get body has scope "one", the same instant as `extendedDueAt`, and was
+ * granted after the assignment's deadline `dueAt` had passed (an extension granted before the deadline
+ * is an ordinary extension, not a late submission). Null when the body is not the contract's list.
  */
-export function exceptionFrom(body: unknown, extendedDueAt: string | null): boolean | null {
+export function exceptionFrom(body: unknown, extendedDueAt: string | null, dueAt: string): boolean | null {
   const list = (body as { extensions?: unknown } | null)?.extensions;
   if (!Array.isArray(list)) return null;
   if (extendedDueAt === null) return false;
@@ -53,7 +54,7 @@ export function exceptionFrom(body: unknown, extendedDueAt: string | null): bool
     .filter((e) => typeof e.createdAt === "string" && Number.isFinite(ms(e.createdAt as string)))
     .sort((a, b) => ms(b.createdAt as string) - ms(a.createdAt as string))[0];
   if (newest === undefined || typeof newest.dueAt !== "string") return false;
-  return newest.scope === "one" && ms(newest.dueAt) === ms(extendedDueAt);
+  return newest.scope === "one" && ms(newest.dueAt) === ms(extendedDueAt) && ms(newest.createdAt as string) > ms(dueAt);
 }
 
 const fill = (text: string, values: Record<string, string>) => text.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? "");
@@ -79,7 +80,12 @@ export function dialogLateLine(timing: Timing): string | null {
   return null;
 }
 
-/** 409 not_open (PO-36): the assignment does not take a submission now; with the deadline when it is known. */
-export function forbiddenLines(dueAt: string | null): readonly string[] {
-  return dueAt === null || !Number.isFinite(ms(dueAt)) ? [t.late.forbiddenNoDue, t.late.forbiddenMeta] : [fill(t.late.forbidden, { due: atOf(dueAt) }), t.late.forbiddenMeta];
+/**
+ * 409 not_open (PO-36). The server does not tie it to the deadline, so the deadline that counts (and
+ * that the assignment does not take a late submission) is named only when it has passed (`late`).
+ * Before it, during an extension and during the teacher's exception (whose deadline has not passed)
+ * the line is neutral: nothing here says why the server refused.
+ */
+export function forbiddenLines(timing: Timing): readonly string[] {
+  return timing.kind === "late" ? [fill(t.late.forbidden, { due: atOf(timing.dueAt) }), t.late.forbiddenMeta] : [t.late.notOpen];
 }
