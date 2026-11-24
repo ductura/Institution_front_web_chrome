@@ -21,7 +21,8 @@ const COMMIT = `${webOrigin}/api/v1/evidence/commit`;
 
 /** "Odjava" from the student's home page; the work's own sheet has no account place. */
 async function signOut(page: Page) {
-  await page.getByRole('link', { name: '← Moji zadaci' }).click();
+  // VIZ-E1: the top bar's way home is the Ductura mark, named "Ductura: Moji zadaci".
+  await page.getByRole('link', { name: 'Ductura: Moji zadaci', exact: true }).click();
   await expect(page).toHaveURL((url) => url.origin === webOrigin && url.pathname === app('/zadaci'));
   await page.getByRole('button', { name: 'Odjava', exact: true }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Odjava' });
