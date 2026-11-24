@@ -30,8 +30,10 @@ type Read = { kind: "loading" } | { kind: "unavailable" } | { kind: "ready"; req
  */
 export type RevisionSlots = { action: ReactNode; banner: ReactNode; dialog: ReactNode };
 
-export default function RevisionSection({ documentId, current, port = revisionPort, children }: {
+export default function RevisionSection({ documentId, current, port = revisionPort, compareHref, children }: {
   documentId: string; current: () => boolean; port?: RevisionPort;
+  /** Link of the banner to the comparison with the submitted version; none when the frame has no such page. */
+  compareHref?: string;
   /** The frame places the button in the heading actions and the banner under the heading, as the prototype does. */
   children: (slots: RevisionSlots) => ReactNode;
 }) {
@@ -76,8 +78,14 @@ export default function RevisionSection({ documentId, current, port = revisionPo
       {banner !== null && (
         <div className="banner" role="status">
           <p><b>{banner.head}</b></p>
-          <p className="note">„{banner.instruction}”</p>
+          <p className="note">{t.studentSees} „{banner.instruction}”</p>
           <p className="meta">{t.statesNote}</p>
+          {compareHref !== undefined && <p><a href={compareHref}>{t.compare}</a></p>}
+          {banner.canWithdraw && request && (
+            <div className="acts">
+              <Button tone="quiet" size="small" disabled={busy} onClick={() => void act(() => port.withdraw(request), t.withdrawn)}>{t.withdraw}</Button>
+            </div>
+          )}
           {banner.canClose && request && (
             <div className="acts">
               <Button size="small" disabled={busy} onClick={() => void act(() => port.accept(request), t.accepted)}>{t.accept}</Button>

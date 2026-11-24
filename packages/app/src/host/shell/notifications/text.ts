@@ -24,3 +24,6 @@ export const bellLabels: NotificationBellLabels = {
   unreadMark: "Novo",
   changed: (n) => (n === 0 ? "Nema nepročitanih obavijesti." : `Nepročitanih obavijesti: ${n}`),
 };
+
+/** P-2: with the assignment known, the line names it and its deadline; no pressure, no claim about behaviour. */
+export const deadlineReminderLine = "Rok za zadatak {title}: {due}";

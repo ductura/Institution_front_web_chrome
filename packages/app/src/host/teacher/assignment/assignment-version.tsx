@@ -7,6 +7,7 @@ import AssignmentVersionForm from "@/components/teacher/AssignmentVersionForm";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { AssignmentCopy } from "../assignment-copy/AssignmentCopy";
+import { NoticePreview } from "../publish/NoticePreview";
 import { PracticeReadBack } from "../assignment-form/PracticeField";
 import { AssignmentPage, useAssignmentRead } from "./page-state";
 
@@ -22,6 +23,7 @@ export default function AssignmentVersionPage({ assignmentId }: { assignmentId: 
     <AssignmentPage title={t.title} read={read} retry={retry} unavailable={t.unavailable} missing={t.missing}>
       {(current, href) => <>
         <AssignmentCopy current={current} href={href} startOpen={copy} />
+        <NoticePreview fields={{ versionNo: current.versionNo, dueAt: current.dueAt, aiPolicy: current.aiPolicy, aiPurposes: current.aiPurposes, importAllowed: current.importAllowed, wordMin: current.wordMin ?? null, wordMax: current.wordMax ?? null }} />
         <PracticeReadBack current={current} />
         <AssignmentVersionForm current={current} backHref={href("/nastavnik")} onReload={retry} />
       </>}

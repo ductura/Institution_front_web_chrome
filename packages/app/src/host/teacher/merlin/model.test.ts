@@ -55,3 +55,23 @@ describe("N-18 extension reasons and link", () => {
     expect(merlinHref("a/b")).toBe("/nastavnik/zadatak/a%2Fb/merlin");
   });
 });
+
+describe("NZ-16 option title and focus", () => {
+  const NOW = Date.parse("2026-11-24T10:00:00Z");
+  it("says the kind of work and a passed deadline in the option", async () => {
+    const { choiceLabel } = await import("./model");
+    expect(choiceLabel({ id: "a", title: "Kućno kompostiranje", workType: "essay", dueAt: "2026-11-01T22:59:00Z" }, NOW))
+      .toBe("Kućno kompostiranje · Esej · rok je prošao");
+    expect(choiceLabel({ id: "a", title: "Prikaz članka", workType: "seminar_paper", dueAt: "2099-01-01T00:00:00Z" }, NOW))
+      .toBe("Prikaz članka · Seminarski rad");
+    expect(choiceLabel({ id: "a", title: null }, NOW)).toBe("Naziv zadatka nije dostupan");
+    expect(choiceLabel({ id: "a", title: "X", workType: "nepoznato", dueAt: "sutra" }, NOW)).toBe("X");
+  });
+  it("asks for focus once and gives it only to the next page", async () => {
+    const { askFocusAfterChoose, takeFocusAfterChoose } = await import("./model");
+    expect(takeFocusAfterChoose()).toBe(false);
+    askFocusAfterChoose();
+    expect(takeFocusAfterChoose()).toBe(true);
+    expect(takeFocusAfterChoose()).toBe(false);
+  });
+});

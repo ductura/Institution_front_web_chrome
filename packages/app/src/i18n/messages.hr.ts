@@ -65,6 +65,9 @@ export const pageLabelsHr = {
   receiptCheck: "Provjera potvrde",
   originThresholds: "Pragovi po vrsti podrijetla",
   pilotMetrics: "Mjerila pilota",
+  facultySettings: "Postavke fakulteta",
+  facultyAssistant: "Asistent na fakultetu",
+  myRights: "Moja prava",
 };
 
 /** M1.8: the no-access and session-ended screen. English: `accessDeniedEn` in ./messages.en.ts. */

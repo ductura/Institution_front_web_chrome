@@ -26,7 +26,8 @@ export type DialogProps = {
 /**
  * The shared dialog (WEB-04, Z-08): a native `<dialog>`. Modal by default, so
  * the page behind is inert; Tab and Shift+Tab wrap inside it, Escape calls
- * `onClose`, and on closing the focus goes back to what opened it.
+ * `onClose`, and on closing the focus goes back to what opened it. A modal one says so to
+ * assistive technology too (`aria-modal`, NF-3 PR-18).
  */
 export function Dialog({
   open, title, children, actions, onClose, dismissible = true, initialFocus, error, modal = true,
@@ -72,7 +73,7 @@ export function Dialog({
   if (!open) return null;
   return (
     <dialog ref={ref} open={modal ? undefined : true} className={modal ? styles.dialog : `${styles.dialog} ${styles.inline}`}
-      aria-labelledby={titleId}
+      aria-labelledby={titleId} aria-modal={modal || undefined}
       onCancel={onCancel} onKeyDown={onKeyDown}>
       <div className={styles.body}>
         <h2 id={titleId} className={styles.title}>{title}</h2>

@@ -22,14 +22,13 @@ import { browserTransport, createApi, goToSignIn } from "../../../../../../src/c
 
 import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
-import PortableRecord from "../portable-record/PortableRecord";
-import SubmissionPackage from "../submission-package/SubmissionPackage";
 import DeclarationStep from "./declaration/DeclarationStep";
 import { createStepPorts, type StepPorts } from "./declaration/step-ports";
 import { stepsText } from "./steps/messages.hr";
 import StepsShell, { StepsLoading } from "./steps/StepsShell";
 import { atOf } from "./steps/time";
 import ReceiptScreen from "./receipt/ReceiptScreen";
+import SubmittedReceipt from "./receipt/SubmittedReceipt";
 import { receiptText } from "./receipt/messages.hr";
 import BeforeSubmitStep from "./summary/BeforeSubmitStep";
 import { VERIFY_PATH } from "../../public/verify/model";
@@ -256,10 +255,14 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
     <Shown shown={shown} loading={{ title: receiptText.panelTitle, message: receiptText.loading, label: receiptText.label, workHref }}>
       {({ id, receipt, course, title }) => (
         <StepFrame backHref={workHref} onBack={() => router.push(workHref)} course={course} title={title} label={receiptText.label}>
-          <ReceiptScreen read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload} workHref={workHref}
-            homeHref={hrefOf("/")} checkHref={hrefOf(VERIFY_PATH)} />
-          {receipt.kind === "potvrdeno" ? <PortableRecord submissionId={receipt.receipt.payload.submissionId} /> : null}
-          {receipt.kind === "potvrdeno" ? <SubmissionPackage assignmentId={id} submissionId={receipt.receipt.payload.submissionId} /> : null}
+          {/* NF-3 PR-11: a signed receipt also reads what was submitted and the summary of the work. PR-12 (answer 1):
+              in the pilot the student saves only the PDF with the QR code, so neither the package for the
+              registrar nor the portable record is shown here. */}
+          {receipt.kind === "potvrdeno"
+            ? <SubmittedReceipt read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload} workHref={workHref}
+                homeHref={hrefOf("/")} checkHref={hrefOf(VERIFY_PATH)} onSignIn={() => goToSignIn(appHref(base, stepPath(id, "potvrda")))} />
+            : <ReceiptScreen read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload} workHref={workHref}
+                homeHref={hrefOf("/")} checkHref={hrefOf(VERIFY_PATH)} />}
           <WithdrawSubmission assignmentId={id} />
         </StepFrame>
       )}

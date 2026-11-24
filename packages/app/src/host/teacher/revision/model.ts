@@ -25,6 +25,8 @@ export type Banner = {
   readonly requestId: string; readonly state: BannerState; readonly head: string; readonly instruction: string;
   /** Accept and reopen only exist once the student answered. */
   readonly canClose: boolean;
+  /** "Povuci zahtjev" exists only while the student has not answered (PG-8). */
+  readonly canWithdraw: boolean;
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -44,6 +46,7 @@ export function bannerOf(requests: readonly RevisionRequest[]): Banner | null {
   return {
     requestId: last.id, state: last.state, instruction: version.instruction,
     head: text.stateHead(label, zagrebStamp(version.openedWindow)), canClose: last.state === "responded",
+    canWithdraw: last.state === "open" || last.state === "reopened",
   };
 }
 
@@ -59,4 +62,9 @@ export function reopenBody(request: RevisionRequest) {
   const version = request.versions.at(-1);
   if (!version?.response) return null;
   return { requestId: request.id, expectedSeq: request.rowSeq, instruction: version.instruction, requestedRevision: version.response.revision };
+}
+
+/** Body of withdraw: only the request and its counter (contract 4.14). */
+export function withdrawBody(request: RevisionRequest) {
+  return { requestId: request.id, expectedSeq: request.rowSeq };
 }
