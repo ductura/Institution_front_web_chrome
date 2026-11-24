@@ -1,4 +1,5 @@
 import { formatDateTimeHr } from "../../../../../../../src/lib/i18n/hr";
+import { atOf } from "../steps/time";
 import { readWithdrawalState, withdrawSubmission, type WithdrawalReceipt, type WithdrawalState, type WithdrawCall, type WithdrawOutcome } from "./contract";
 import { withdrawText as t } from "./messages.hr";
 
@@ -35,6 +36,45 @@ export async function withdraw(call: WithdrawCall, assignmentId: string): Promis
 }
 
 export { readWithdrawalState };
+
+/** What the page knows beside the withdrawal state: the history's switch, the deadline, whether the newest event is a withdrawal. */
+export type WithdrawContext = {
+  /** student.submission-history.get `withdrawalAllowed`; null while it is not known. */
+  readonly allowed: boolean | null;
+  /** The later of the deadline and its extension; null when it is not known. */
+  readonly deadline: string | null;
+  readonly withdrawn: boolean;
+  readonly now: number;
+};
+
+export type WithdrawView =
+  | { readonly kind: "open"; readonly lead: string; readonly explainDue: string | null }
+  | { readonly kind: "withdrawn"; readonly next: string }
+  | { readonly kind: "closed"; readonly reason: string };
+
+const passed = (deadline: string | null, now: number) => deadline !== null && Date.parse(deadline) <= now;
+
+/**
+ * NF-3 PR-13 (E-11b, E-11e). The button still follows the server's `withdrawable` alone; the
+ * deadline only words the reason and what comes next. Only reasons the client knows are named
+ * (PO-38): switched off by the history's `withdrawalAllowed`, or the deadline passed; any other
+ * stays the general sentence, never a guess.
+ */
+export function withdrawView(state: WithdrawalState, ctx: WithdrawContext): WithdrawView {
+  const due = ctx.deadline === null ? null : atOf(ctx.deadline);
+  if (canWithdraw(state)) {
+    return due === null
+      ? { kind: "open", lead: t.lead, explainDue: null }
+      : { kind: "open", lead: t.leadDue.replace("{due}", due), explainDue: t.explainDue.replace("{due}", due) };
+  }
+  if (ctx.withdrawn) {
+    if (due === null) return { kind: "withdrawn", next: t.withdrawnNextNoDue };
+    return { kind: "withdrawn", next: (passed(ctx.deadline, ctx.now) ? t.withdrawnLate : t.withdrawnNext).replace("{due}", due) };
+  }
+  if (ctx.allowed === false) return { kind: "closed", reason: t.closedNotAllowed };
+  if (due !== null && passed(ctx.deadline, ctx.now)) return { kind: "closed", reason: t.closedDeadline.replace("{due}", due) };
+  return { kind: "closed", reason: t.closed };
+}
 
 export function receiptLine(receipt: WithdrawalReceipt): string {
   const date = formatDateTimeHr(receipt.withdrawnAt);

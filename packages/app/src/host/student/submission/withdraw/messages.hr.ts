@@ -21,4 +21,16 @@ export const withdrawText = {
   notFound: "Predaja više nije dostupna.",
   invalid: "Povlačenje nije moguće za ovaj zahtjev.",
   unknown: "Nije poznato je li povlačenje zabilježeno. Osvježite stanje prije novog pokušaja.",
+  // NF-3 PR-13 (E-11b, E-11e, PD-11): the deadline beside the button, the reason, and what comes next.
+  leadDue: "Dok rok traje, predaju možete povući i predati ponovno. Rok: {due}.",
+  explainDue: "Dok rok traje, rad možete ponovno mijenjati i predati iznova. Rok: {due}.",
+  withdrawingStatus: "Povlačenje u tijeku…",
+  closedNotAllowed: "Nastavnik ili fakultet ne dopušta povlačenje za ovaj zadatak.",
+  closedDeadline: "Povlačenje predaje više nije moguće: rok je istekao {due}.",
+  withdrawnTitle: "Predaja je povučena",
+  withdrawnNext: "Rad možete ponovno mijenjati do {due}. Zatim ga predajte iznova.",
+  withdrawnNextNoDue: "Rad možete ponovno mijenjati i predati iznova dok rok traje.",
+  withdrawnLate: "Rok je istekao {due}.",
+  openWorkspace: "Otvori radni prostor",
+  teacherSees: "Nastavnik u povijesti vidi i predaju i povlačenje.",
 } as const;
