@@ -64,6 +64,7 @@ export const pageLabelsHr = {
   courseAggregate: "Zbirni pregled kolegija",
   receiptCheck: "Provjera potvrde",
   originThresholds: "Pragovi po vrsti podrijetla",
+  pilotMetrics: "Mjerila pilota",
 };
 
 /** M1.8: the no-access and session-ended screen. English: `accessDeniedEn` in ./messages.en.ts. */

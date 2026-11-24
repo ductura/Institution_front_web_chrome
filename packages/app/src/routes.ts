@@ -24,6 +24,7 @@ import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { originText } from "./host/teacher/provenance/origin-messages.hr";
 import { interviewMessages as studentInterviewText } from "./host/student/interview/messages.hr";
 import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
+import { pilotMetricsMessages } from "./host/operator/pilot-metrics/messages.hr";
 import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 
@@ -60,7 +61,17 @@ export type Page = {
   readonly current?: string;
   /** Opened without reading the session and outside the shell, as Ductus /stanje and /prijava. */
   readonly public?: boolean;
+  /**
+   * Account kinds that alone may open it, whatever their shell role (NF-7 OA-1: the operator has
+   * none); `roles` is then not read. Every other account is refused (NO_ACCESS), not led home.
+   */
+  readonly accounts?: readonly SessionRole[];
 };
+
+/** NF-7 OA-1: the operator's own page, the pilot's aggregate measures; the operator's home. */
+export const OPERATOR_HOME = "/operater/mjerila-pilota";
+/** M1.8: where a refused page leads, with the refusal ("Nemate ovlasti za ovaj prikaz"). */
+export const NO_ACCESS = "/nema-ovlasti?kind=denied";
 
 /** Whether a route is a page's path: the same segments, a bracketed one standing for any. */
 export function pathMatches(path: string, route: string): boolean {
@@ -136,6 +147,8 @@ export const PAGES: readonly Page[] = [
   { path: STUDENT_DATA_EXPORT_PATH, label: studentDataExportMessages.title, kind: "pending", roles: [], current: STUDENT_DATA_EXPORT_PATH },
   // PIL-P1-PRAGOVI-ADMIN (P-1 rule 12): the faculty's thresholds per origin kind, next to the faculty rules.
   { path: "/ustanova/pragovi", label: thresholdMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova/pravila" },
+  // WEB-NUZ-OPERATER (NF-7 OA-1, OA-12): the operator's view of the institution, the pilot's aggregates only.
+  { path: OPERATOR_HOME, label: pilotMetricsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer"], current: OPERATOR_HOME },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.
@@ -162,13 +175,22 @@ export type Resolved =
 /**
  * What a path shows to a role. "/" leads to the role's own home; a page of
  * another role leads there too, since the server would refuse its reads
- * anyway. Without a role only "Kako Ductura radi" and the plain home remain.
+ * anyway. Without a role only "Kako Ductura radi" and the plain home remain,
+ * and for the operator (`accounts`, the session's account kinds) its own page.
+ * A page kept for some account kinds refuses every other account.
  */
-export function resolve(route: string, role: ShellRole | null): Resolved {
+export function resolve(route: string, role: ShellRole | null, accounts: readonly SessionRole[] = []): Resolved {
   const home = homeHref(role);
-  if (route === "/") return role === null ? { kind: "noRole" } : { kind: "redirect", to: home };
+  const operator = role === null && accounts.includes("network_engineer");
+  if (route === "/") {
+    if (operator) return { kind: "redirect", to: OPERATOR_HOME };
+    return role === null ? { kind: "noRole" } : { kind: "redirect", to: home };
+  }
   const page = PAGES.find((p) => pathMatches(p.path, route));
   if (page === undefined) return { kind: "notFound" };
+  if (page.accounts !== undefined) {
+    return page.accounts.some((kind) => accounts.includes(kind)) ? { kind: "page", page } : { kind: "redirect", to: NO_ACCESS };
+  }
   if (page.roles.length === 0 || (role !== null && page.roles.includes(role))) return { kind: "page", page };
   return role === null ? { kind: "redirect", to: "/" } : { kind: "redirect", to: home };
 }

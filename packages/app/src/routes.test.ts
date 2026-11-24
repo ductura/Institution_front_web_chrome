@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { baseOf, crumbsOf, internalRoute, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -130,6 +130,41 @@ describe("the student data export (WEB-1302)", () => {
   it("opens for the administrator and for a signed-in account without a role of its own", () => {
     expect(resolve("/ustanova/izvoz-podataka", "admin")).toMatchObject({ kind: "page", page: { label: "Izvoz podataka studenta" } });
     expect(resolve("/ustanova/izvoz-podataka", null)).toMatchObject({ kind: "page", page: { label: "Izvoz podataka studenta" } });
+  });
+});
+
+describe("the operator's page (WEB-NUZ-OPERATER, NF-7 OA-1)", () => {
+  it("is the operator's home instead of the screen without a role", () => {
+    expect(resolve("/", null, ["network_engineer"])).toEqual({ kind: "redirect", to: OPERATOR_HOME });
+    expect(resolve("/", null, [])).toEqual({ kind: "noRole" });
+    expect(resolve("/", "admin", ["institution_admin", "network_engineer"])).toEqual({ kind: "redirect", to: "/ustanova" });
+  });
+
+  it("opens for the operator's account only, whatever its shell role", () => {
+    expect(resolve(OPERATOR_HOME, null, ["network_engineer"])).toMatchObject({ kind: "page", page: { label: "Mjerila pilota" } });
+    expect(resolve(OPERATOR_HOME, "teacher", ["teacher", "network_engineer"])).toMatchObject({ kind: "page", page: { path: OPERATOR_HOME } });
+  });
+
+  it("refuses every other account, never leading it home", () => {
+    expect(NO_ACCESS).toBe("/nema-ovlasti?kind=denied");
+    expect(resolve(OPERATOR_HOME, "admin", ["institution_admin"])).toEqual({ kind: "redirect", to: NO_ACCESS });
+    expect(resolve(OPERATOR_HOME, "teacher", ["teacher"])).toEqual({ kind: "redirect", to: NO_ACCESS });
+    expect(resolve(OPERATOR_HOME, "student", ["student"])).toEqual({ kind: "redirect", to: NO_ACCESS });
+    expect(resolve(OPERATOR_HOME, null, [])).toEqual({ kind: "redirect", to: NO_ACCESS });
+    // Without the account kinds (an older caller), the page stays refused.
+    expect(resolve(OPERATOR_HOME, "admin")).toEqual({ kind: "redirect", to: NO_ACCESS });
+  });
+
+  it("leads the operator from another role's page to its own home, and keeps the pages open to everyone", () => {
+    expect(resolve("/ustanova", null, ["network_engineer"])).toEqual({ kind: "redirect", to: "/" });
+    expect(resolve("/kako-radi", null, ["network_engineer"])).toMatchObject({ kind: "page" });
+    expect(resolve("/profil", null, ["network_engineer"])).toMatchObject({ kind: "page" });
+  });
+
+  it("is a page of the host, opened in the app, not a public page", () => {
+    expect(publicPage(OPERATOR_HOME)).toBeNull();
+    expect(internalRoute(`/app/web${OPERATOR_HOME}`, "/app/web")).toBe(OPERATOR_HOME);
+    expect(PAGES.filter((p) => p.accounts !== undefined).map((p) => p.path)).toEqual([OPERATOR_HOME]);
   });
 });
 
