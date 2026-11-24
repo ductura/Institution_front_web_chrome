@@ -16,6 +16,7 @@ import { dueText } from "../assignment-card/model";
 import { TaskActions } from "../assignment-card/AssignmentCards";
 import { usePractice } from "../assignment-card/practice";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
+import { LateException } from "./LateException";
 import { assignmentFactsMessages as text } from "./messages.hr";
 import { factsOf, interruptedOf, publishedIn, type AssignmentReads } from "./model";
 import { readCourseFacts, type CourseFactsRead } from "./read";
@@ -42,7 +43,7 @@ function useCourseFacts(course: TeacherCourse): [CourseFactsRead | null, () => v
   return [read, () => setAttempt((n) => n + 1)];
 }
 
-function Facts({ reads }: { reads: AssignmentReads }) {
+function Facts({ reads, assignmentId, onRecorded }: { reads: AssignmentReads; assignmentId: string; onRecorded: () => void }) {
   const { base } = useHost();
   const facts = factsOf(reads, Date.now());
   if (facts.opened === null) return <p className="note">{text.noStudents}</p>;
@@ -59,6 +60,7 @@ function Facts({ reads }: { reads: AssignmentReads }) {
               <a className="btn secondary small" href={appHref(base, `/nastavnik/rad/${encodeURIComponent(row.documentId)}`)}
                 aria-label={`${text.openWork}: ${row.name}`}>{text.openWork}</a>
             ) : null}
+          {row.kind === "notSubmitted" ? <LateException assignmentId={assignmentId} studentId={row.studentId} name={row.name} onRecorded={onRecorded} /> : null}
         </div>
       ))}
     </>
@@ -83,7 +85,7 @@ export function CourseTasks({ course }: { course: TeacherCourse }) {
               <p role="alert" className="note">{text.unavailable}</p>
               <div className="acts"><button type="button" className="btn secondary small" onClick={retry}>{text.retry}</button></div>
             </div>
-          ) : read.reads.get(assignment.id) ? <Facts reads={read.reads.get(assignment.id) as AssignmentReads} /> : null}
+          ) : read.reads.get(assignment.id) ? <Facts reads={read.reads.get(assignment.id) as AssignmentReads} assignmentId={assignment.id} onRecorded={retry} /> : null}
           <AssignmentRhythm courseId={course.id} assignmentId={assignment.id} title={assignment.title} />
           <TaskActions assignment={assignment} />
         </div>

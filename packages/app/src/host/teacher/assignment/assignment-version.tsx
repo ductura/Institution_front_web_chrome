@@ -9,6 +9,7 @@ import { messagesHr } from "@/lib/i18n/messages.hr";
 import { AssignmentCopy } from "../assignment-copy/AssignmentCopy";
 import { PracticeReadBack } from "../assignment-form/PracticeField";
 import { AssignmentPage, useAssignmentRead } from "./page-state";
+import SubmissionRulesLive from "./SubmissionRulesLive";
 
 const t = messagesHr.teacher.newVersion;
 
@@ -24,6 +25,7 @@ export default function AssignmentVersionPage({ assignmentId }: { assignmentId: 
         <AssignmentCopy current={current} href={href} startOpen={copy} />
         <PracticeReadBack current={current} />
         <AssignmentVersionForm current={current} backHref={href("/nastavnik")} onReload={retry} />
+        <SubmissionRulesLive assignmentId={assignmentId} />
       </>}
     </AssignmentPage>
   );
