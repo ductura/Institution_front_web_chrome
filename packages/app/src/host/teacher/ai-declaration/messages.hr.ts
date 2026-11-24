@@ -10,4 +10,6 @@ export const aiDeclarationMessages = {
   unavailable: "Izjava o korištenju AI-ja trenutačno nije dostupna.",
   unavailableNote: "Predaja i potvrda predaje time se ne mijenjaju.",
   student: "Student",
+  /** Q-10: the assistant is never named by provider or model, only „Asistent”. */
+  assistant: "Asistent",
 } as const;
