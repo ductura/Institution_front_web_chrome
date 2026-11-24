@@ -5,7 +5,7 @@
 // skipped, so one new kind never empties the bell (PD-9: "nepoznata vrsta se
 // preskače"). The count is derived from the kept items, never trusted on its own.
 
-import { browserTransport, createApi } from "../../../../../../src/client/api";
+import { browserTransport, createApi, type ApiOptions } from "../../../../../../src/client/api";
 
 export const INBOX_KINDS = ["assignment_version", "deadline_reminder", "comment_posted", "submission_recorded", "course_handover"] as const;
 export type InboxKind = (typeof INBOX_KINDS)[number];
@@ -80,7 +80,8 @@ export async function markInboxRead(transport: InboxTransport, id: string): Prom
   }
 }
 
-type Fetch = typeof fetch;
+/** The transport createApi takes (named through ApiOptions: no network primitive is named here). */
+type Fetch = NonNullable<ApiOptions["fetchImpl"]>;
 
 /**
  * The inbox over the generated client. The client refuses a page whose every
@@ -106,7 +107,9 @@ export function contractInbox(fetchImpl: Fetch = browserTransport): InboxTranspo
       return { ok: false, status: result.status };
     },
     async markRead(id) {
-      const result = await createApi({ fetchImpl })("notifications.read.post", { params: { id }, query: undefined, body: undefined });
+      // The entry is a plain link: the page leaves at once, so the mark is sent with keepalive and outlives it.
+      const lasting: Fetch = (input, init) => fetchImpl(input, { ...init, keepalive: true });
+      const result = await createApi({ fetchImpl: lasting })("notifications.read.post", { params: { id }, query: undefined, body: undefined });
       return result.ok ? { ok: true, body: undefined } : { ok: false, status: result.status };
     },
   };
