@@ -1,0 +1,118 @@
+{
+  "faculty": "apa",
+  "style": "author-date",
+  "version": "2026-11-24.1",
+  "provenance": {
+    "decision": "Val 20, WEB-V20-STIL-APA-CHICAGO: stil APA prilagođen hrvatskom; pravila su sažeta vlastitim riječima, bez prepisivanja tuđeg teksta",
+    "sourceWork": "Publication Manual of the American Psychological Association, 7. izdanje (2020.): autor-godina u tekstu i popis literature; hrvatska prilagodba veznika i kratica je naša (izvedena)",
+    "sourceUrl": "https://apastyle.apa.org/",
+    "createdAt": "2026-11-24",
+    "verifiedWith": "nije potvrđeno s nositeljem stila ni s fakultetom; stavke status=derived čekaju potvrdu",
+    "limits": "Format popisa je zajednička jezgra: godina je uvijek u zagradi, inicijali autora dolaze onako kako su upisani u izvor"
+  },
+  "inText": {
+    "open": "(",
+    "close": ")",
+    "authorYearSeparator": ", ",
+    "pageSeparator": ", str. ",
+    "twoAuthorsJoiner": " i ",
+    "maxNamedAuthors": 2,
+    "manyAuthorsSuffix": " i sur."
+  },
+  "bibliography": {
+    "authorJoiner": " i ",
+    "periodAfterYear": true,
+    "editorLabel": "ur.",
+    "inLabel": "U:",
+    "accessedLabel": "pristupljeno",
+    "hangingIndentCm": 1.27
+  },
+  "rangeDash": "–",
+  "rules": [
+    {
+      "id": "in-text",
+      "status": "derived",
+      "rule": "Autor i godina odvojeni zarezom, stranica iza zareza s oznakom „str.“",
+      "examples": [
+        "(Becker, 2007, str. 9)",
+        "(Becker, 2007)"
+      ],
+      "source": "APA 7 (sažeto); oznaka „str.“ prilagođena hrvatskom"
+    },
+    {
+      "id": "in-text-two-authors",
+      "status": "derived",
+      "rule": "Dva autora povezana veznikom „i“ (umjesto „&“)",
+      "examples": [
+        "(Swanson i Mancini, 1996)"
+      ],
+      "source": "APA 7; veznik prilagođen hrvatskom"
+    },
+    {
+      "id": "in-text-three-or-more-authors",
+      "status": "derived",
+      "rule": "Tri ili više autora: prvo prezime i „i sur.“ već pri prvom navodu",
+      "examples": [
+        "(Horvat i sur., 2019)"
+      ],
+      "source": "APA 7 (skraćivanje od prvog navoda); „i sur.“ prilagođeno hrvatskom"
+    },
+    {
+      "id": "book",
+      "status": "derived",
+      "rule": "Prezime, I. (godina). Naslov. Mjesto: Nakladnik.",
+      "examples": [
+        "Marić, A. (2003). Politički marketing. Zagreb: Izmišljena naklada."
+      ],
+      "source": "APA 7; mjesto izdanja prema hrvatskoj praksi"
+    },
+    {
+      "id": "article",
+      "status": "derived",
+      "rule": "Prezime, I. (godina). Naslov članka. Naziv časopisa volumen/broj: stranice.",
+      "source": "APA 7; zapis broja i stranica ograničen zajedničkom jezgrom"
+    },
+    {
+      "id": "chapter",
+      "status": "derived",
+      "rule": "Prezime, I. (godina). Naslov poglavlja. U: Ime Prezime (ur.) Naslov knjige. Mjesto: Nakladnik: stranice.",
+      "source": "APA 7; „U:“ i „(ur.)“ prilagođeno hrvatskom"
+    },
+    {
+      "id": "web",
+      "status": "derived",
+      "rule": "Prezime, I. (godina). Naslov. URL (pristupljeno D. M. GGGG.)",
+      "source": "APA 7; datum pristupa je obavezan u ovoj jezgri"
+    },
+    {
+      "id": "multiple-authors-in-list",
+      "status": "derived",
+      "rule": "Svi autori u obliku „Prezime, I.“; dva povezana s „i“, više njih zarezom i „i“ pred posljednjim",
+      "source": "APA 7 (ne „&“)"
+    },
+    {
+      "id": "same-year",
+      "status": "derived",
+      "rule": "Isti autori iste godine: 2013a, 2013b",
+      "source": "APA 7"
+    },
+    {
+      "id": "order",
+      "status": "derived",
+      "rule": "Abecedno po prezimenu, potom kronološki",
+      "source": "APA 7"
+    },
+    {
+      "id": "range-dash",
+      "status": "derived",
+      "rule": "En crtica (–) za raspone stranica",
+      "source": "APA 7"
+    },
+    {
+      "id": "hanging-indent",
+      "status": "derived",
+      "rule": "Viseća uvlaka u popisu literature, 1,27 cm (0,5 inča)",
+      "source": "APA 7"
+    }
+  ]
+}
