@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { MyCourse } from "../../../../../../src/components/student/my-assignments-read";
+import type { MyCourse } from "../read/assignments";
 import { normalizeCode as enrollRule } from "../../../../../../src/components/student/upis/enroll";
 import { CODE_MAX, cleanCode } from "../enrol/code";
 import { codeFromQuery } from "../enrol/model";
