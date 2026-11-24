@@ -8,3 +8,9 @@
 /* The length goes to the right edge. */
 .scope { margin-left: auto; }
 .net { color: var(--ink); font-weight: 600; }
+/* On a narrow screen the row wraps instead of scrolling sideways: a scrolling row with nothing
+   focusable in it cannot be reached by keyboard (axe scrollable-region-focusable at 400 px). */
+@media (max-width: 640px) {
+  .bar { flex-wrap: wrap; gap: 2px 14px; padding: 4px 0; white-space: normal; }
+  .scope { margin-left: 0; }
+}
