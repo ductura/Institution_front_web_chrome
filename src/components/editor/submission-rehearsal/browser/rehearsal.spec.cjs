@@ -56,7 +56,6 @@ test("uses the assignment's GET range, displays the prototype form row and selec
   await expect(dialog.getByText("Provjera oblika još nije pokrenuta.", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Potvrđena 20. 11. 2026. u 11:00.", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Mjesta ostavljena za kasnije: 1 (ne zaustavljaju predaju).", { exact: true })).toBeVisible();
-  // P-16: the faculty's form is the one the server names, not "unavailable".
   await expect(dialog.getByText("Predaj rad", { exact: true })).toHaveCount(0);
   await expect(dialog.getByRole("button", { name: /pravila oblika|pokreni provjeru/i })).toHaveCount(0);
   await dialog.getByRole("button", { name: "Predajni paket" }).click();
@@ -94,6 +93,9 @@ test("never says confirmed when the declaration cannot be read", async ({ page }
   const dialog = page.getByRole("dialog", { name: "Proba predaje" });
   await expect(dialog.getByText("Stanje izjave trenutačno nije moguće provjeriti, pa predaja još nije moguća.", { exact: true })).toBeVisible();
   await expect(dialog.getByText(/^Potvrđena/)).toHaveCount(0);
+  // "Što još fali" never says nothing blocks while the declaration cannot be read (review c.7133358436, 1).
+  await expect(dialog.getByText(/^Stanje izjave nije poznato, pa predaja još nije moguća\./)).toBeVisible();
+  await expect(dialog.getByText("Ništa ne blokira predaju.", { exact: true })).toHaveCount(0);
 });
 
 test("reopens with a fresh read and jumps to the summary, while Escape restores focus", async ({ page }) => {

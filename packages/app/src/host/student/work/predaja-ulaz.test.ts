@@ -64,9 +64,13 @@ describe("what is still missing (E-8a, P-17)", () => {
     expect(both.count).toBe(2);
     expect(both.items.map((i) => [i.id, i.blocks])).toEqual([["declaration", true], ["places", false]]);
     expect(both.items[1]!.text).toBe("Mjesta ostavljena za kasnije: 2 (ne zaustavljaju predaju).");
-    // A read that has not answered or failed is not counted as a missing confirmation.
+    // A read that has not answered yet adds nothing; a read that failed blocks and says why, never "nothing".
     expect(beforeSubmission(GATES.loading!, 1).count).toBe(1);
-    expect(beforeSubmission(GATES.unavailable!, 0).count).toBe(0);
+    for (const gate of [GATES.unavailable!, { kind: "signedOut" } as const]) {
+      const failed = beforeSubmission(gate, 0);
+      expect(failed.count).toBe(1);
+      expect(failed.items).toEqual([{ id: "declaration", text: r.missingUnknown, blocks: true }]);
+    }
   });
 
   it("says the count as the prototype does", () => {
