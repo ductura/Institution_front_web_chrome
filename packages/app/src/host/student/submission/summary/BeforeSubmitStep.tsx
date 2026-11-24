@@ -146,8 +146,8 @@ export default function BeforeSubmitStep({
     if (choosing && version !== null) rememberChoice(assignmentId, confirmedWork, version);
     go("slanje");
   };
-  const opener = useOpener(gate);
-  useFocusAfterDialog(declaring, opener, nextButton);
+  const declareLabel = useOpener(gate);
+  useFocusAfterDialog(declaring, declareLabel, nextButton);
   const openNote = () => {
     if (!online || notes.kind !== "ready") return;
     setNoteOpen(true);
@@ -168,7 +168,7 @@ export default function BeforeSubmitStep({
         </StepSection>
         <StepSection label={c.declaration}>
           <span id={declarationId}>{declarationText}</span>
-          {opener !== null && <Button tone="secondary" size="small" onClick={() => setDeclaring(true)}>{opener}</Button>}
+          {declareLabel !== null && <Button tone="secondary" size="small" onClick={() => setDeclaring(true)}>{declareLabel}</Button>}
           {gate.kind === "unavailable" && <Button tone="secondary" onClick={readGate}>{c.declarationRetry}</Button>}
         </StepSection>
         {choosing && (

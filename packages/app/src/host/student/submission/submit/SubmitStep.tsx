@@ -137,9 +137,9 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
 
   const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
   const confirmed = opensSending(gate);
-  const opener = useOpener(gate);
+  const declareLabel = useOpener(gate);
   const mainSubmit = useRef<HTMLButtonElement>(null);
-  useFocusAfterDialog(declaring, opener, mainSubmit);
+  useFocusAfterDialog(declaring, declareLabel, mainSubmit);
   useEffect(() => { if (gate.kind === "signedOut") goToSignIn(href(here)); }, [gate.kind]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { shown.current = true; return () => { shown.current = false; }; }, []);
   useEffect(() => { void load(); return () => { ticket.current += 1; }; }, [load]);
@@ -279,11 +279,11 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
           ))}
           {!offline && !confirmed && ready !== null && next?.offer !== "declaration" && (
             <p className="note" id={WHY_ID}>{declarationWhy}{" "}
-              {opener !== null && <Button tone="secondary" size="small" onClick={() => setDeclaring(true)}>{opener}</Button>}
+              {declareLabel !== null && <Button tone="secondary" size="small" onClick={() => setDeclaring(true)}>{declareLabel}</Button>}
             </p>
           )}
           {!offline && gate.kind === "unavailable" && ready !== null && <StepActions><Button tone="secondary" onClick={readGate}>{t.declarationRetry}</Button></StepActions>}
-          {next?.retry && next.offer === "declaration" && <Button tone="secondary" onClick={() => setDeclaring(true)}>{opener ?? t.openDeclaration}</Button>}
+          {next?.retry && next.offer === "declaration" && <Button tone="secondary" onClick={() => setDeclaring(true)}>{declareLabel ?? t.openDeclaration}</Button>}
           {sending && <p className="note" role="status" id={WHY_ID}><StepSpinner /> {t.inProgress}</p>}
           <StepActions>
             <Button ref={mainSubmit} aria-disabled={!canSend || undefined} aria-describedby={why || sending ? WHY_ID : undefined}

@@ -22,7 +22,7 @@ export function dialogOpener(gate: GateState): string | null {
 export const dialogTexts = { title: t.title, open: t.openDialog, reconfirm: t.reconfirm, again: t.confirmAgain, stale: t.staleNotice } as const;
 
 /**
- * The opener as the step shows it: while the gate is read again (after the dialog closes) the last one
+ * The label of the button that opens the dialog, as the step shows it: while the gate is read again (after the dialog closes) the last one
  * stays, so the shared Dialog can hand the focus back to the very button that opened it.
  */
 export function useOpener(gate: GateState): string | null {
@@ -31,13 +31,13 @@ export function useOpener(gate: GateState): string | null {
   return last.current;
 }
 
-/** Once the dialog has confirmed and its opener is gone, the focus goes to the step's next action, not the page. */
-export function useFocusAfterDialog(open: boolean, opener: string | null, next: RefObject<HTMLElement | null>): void {
+/** Once the dialog has confirmed and its button is gone, the focus goes to the step's next action, not the page. */
+export function useFocusAfterDialog(open: boolean, declareLabel: string | null, next: RefObject<HTMLElement | null>): void {
   const wasOpen = useRef(false);
   useEffect(() => {
     if (open) { wasOpen.current = true; return; }
-    if (!wasOpen.current || opener !== null) return;
+    if (!wasOpen.current || declareLabel !== null) return;
     wasOpen.current = false;
     if (document.activeElement === null || document.activeElement === document.body) next.current?.focus();
-  }, [open, opener, next]);
+  }, [open, declareLabel, next]);
 }
