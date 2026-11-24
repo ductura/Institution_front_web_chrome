@@ -12,7 +12,7 @@ import { Button, PracticeBadge, Tag } from "@ductura/ui";
 
 import { appHref } from "../../../../../../src/components/index.ts";
 import { createApi, goToSignIn } from "../../../../../../src/client/api.ts";
-import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr.ts";
+import { studentHostHr as messagesHr } from "../i18n/messages.hr.ts";
 
 import { nextPath, type Base } from "../../../bases";
 import { useHost } from "../../context";

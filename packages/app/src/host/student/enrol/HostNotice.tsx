@@ -13,7 +13,7 @@ import type { NoticeWindow } from "../../../../../../src/components/student/noti
 import styles from "../../../../../../src/components/student/AssignmentNotice.module.css";
 import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr.ts";
 import { wordRangeHr } from "../../../../../../src/lib/i18n/length-line.ts";
-import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
+import { studentHostHr as t } from "../i18n/messages.hr.ts";
 
 import { noticeText } from "./messages.hr";
 import { editorPath } from "./model";
