@@ -55,18 +55,32 @@ export function prepFrom(f: PrepFacts): PrepInput {
 /** Words of a piece of text. */
 export const textWords = (text: string): number => text.split(/\s+/).filter((w) => w !== "").length;
 
-type TextBlock = { readonly isTextblock: boolean; readonly textContent: string };
+/** The parts of a ProseMirror node the word count reads. */
+export type WordsNode = {
+  readonly isTextblock: boolean;
+  readonly content: { readonly size: number };
+  textBetween(from: number, to: number, blockSeparator?: string, leafText?: string): string;
+  descendants(fn: (node: WordsNode) => boolean | void): void;
+};
+
+/** Words of one text block; a leaf inside it (a hard line break) separates words like a space. */
+const textblockWords = (node: WordsNode): number => textWords(node.textBetween(0, node.content.size, " ", " "));
 
 /**
- * Words of the whole document, counted block by block: the document's own textContent joins blocks
- * without a space, so "a b" and "c d" would read as three words (#631 review, point 1).
+ * Words of a node, counted block by block: the node's own textContent joins blocks without a space,
+ * so "a b" and "c d" would read as three words (#631 review, point 1), and it drops a hard line break,
+ * so "a<br>b" would read as one word (#631 review, c.7144836874).
  */
-export function docWords(doc: { descendants(fn: (node: TextBlock) => boolean | void): void }): number {
+export function nodeWords(node: WordsNode): number {
+  if (node.isTextblock) return textblockWords(node);
   let words = 0;
-  doc.descendants((node) => {
-    if (!node.isTextblock) return true;
-    words += textWords(node.textContent);
+  node.descendants((child) => {
+    if (!child.isTextblock) return true;
+    words += textblockWords(child);
     return false;
   });
   return words;
 }
+
+/** Words of the whole document. */
+export const docWords = (doc: WordsNode): number => nodeWords(doc);

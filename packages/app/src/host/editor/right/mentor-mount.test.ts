@@ -1,4 +1,5 @@
 // WEB-NUZ-MENTOR-1 (NF-6 MK-1): the Mentor card's mount point. Every request, text and id is invented.
+import { Schema } from "@tiptap/pm/model";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
@@ -54,12 +55,23 @@ describe("seenAtOf", () => {
 });
 
 describe("abstractWords", () => {
-  const doc = (blocks: [string, string][]) => ({ forEach: (fn: (n: { type: { name: string }; textContent: string }) => void) => blocks.forEach(([name, text]) => fn({ type: { name }, textContent: text })) });
+  const schema = new Schema({ nodes: { doc: { content: "block+" }, heading: { group: "block", content: "inline*" },
+    paragraph: { group: "block", content: "inline*" }, bulletList: { group: "block", content: "paragraph+" },
+    hardBreak: { group: "inline", inline: true }, text: { group: "inline" } } });
+  const node = ([name, text]: [string, string]) => schema.node(name, null, text === "" ? [] : [schema.text(text)]);
+  const doc = (blocks: [string, string][]) => schema.node("doc", null, blocks.map(node));
   it("counts the words under the Sažetak heading up to the next heading", () => {
     expect(abstractWords(doc([["heading", "Uvod"], ["paragraph", "jedan dva"], ["heading", " sažetak "], ["paragraph", "tri četiri  pet"], ["paragraph", "šest"], ["heading", "Summary"], ["paragraph", "seven"]]))).toBe(4);
   });
   it("is 0 without the heading", () => {
     expect(abstractWords(doc([["paragraph", "Izmišljeni tekst rada."]]))).toBe(0);
+  });
+  it("does not glue words across a list or a hard line break (#631 review, c.7144836874)", () => {
+    const list = schema.node("bulletList", null, [node(["paragraph", "jedan dva"]), node(["paragraph", "tri"])]);
+    const broken = schema.node("paragraph", null, [schema.text("četiri"), schema.node("hardBreak"), schema.text("pet")]);
+    const d = schema.node("doc", null, [node(["heading", "Sažetak"]), list, broken]);
+    // The joined text of the list ("jedan dvatri") and of the paragraph ("četiripet") is 3 words; block by block it is 5.
+    expect(abstractWords(d)).toBe(5);
   });
 });
 

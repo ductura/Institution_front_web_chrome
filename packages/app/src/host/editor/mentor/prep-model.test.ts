@@ -55,4 +55,12 @@ describe("prep model", () => {
     expect(textWords(doc.textContent)).toBe(4);
     expect(docWords(doc)).toBe(7);
   });
+  it("a hard line break inside a paragraph separates words (#631 review, c.7144836874)", () => {
+    const schema = new Schema({ nodes: { doc: { content: "block+" }, paragraph: { group: "block", content: "inline*" },
+      hardBreak: { group: "inline", inline: true }, text: { group: "inline" } } });
+    const doc = schema.node("doc", null, [schema.node("paragraph", null, [schema.text("a"), schema.node("hardBreak"), schema.text("b c")])]);
+    // textContent drops the break and reads "ab c" as 2 words.
+    expect(textWords(doc.textContent)).toBe(2);
+    expect(docWords(doc)).toBe(3);
+  });
 });
