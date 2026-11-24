@@ -2,8 +2,10 @@
  * Reading font for dyslexia (WEB-V20-FONT-DISLEKSIJA, val20-razlika §2.1).
  * Active only while <html data-reading-font="dyslexia"> is set (reading-prefs).
  * Without the attribute nothing here applies. The shell (navigation, buttons,
- * panels) keeps the interface font; only the text of the work (editor sheet)
- * and the teacher's reading of it change.
+ * panels) keeps the interface font; only the sheet (.manuscript, with its title)
+ * and the text of the work change. .manuscript is the sheet of every view that
+ * shows the work: the student's editor, the teacher's live text, replay and the
+ * submission view.
  *
  * No font file is shipped yet: the owner picks the font and confirms its licence
  * (fonts/dyslexia/README.md). Until then only local() sources are named, so no
@@ -21,7 +23,10 @@
   --ff-reading: "Ductura Dyslexia", var(--ff-ui);
 }
 
+:root[data-reading-font="dyslexia"] .manuscript,
+:root[data-reading-font="dyslexia"] .manuscript__title,
+:root[data-reading-font="dyslexia"] .manuscript__placeholder,
 :root[data-reading-font="dyslexia"] .editor-surface .ProseMirror,
-:root[data-reading-font="dyslexia"] .editor-surface .ProseMirror :is(p, h1, h2, h3, li, blockquote) {
+:root[data-reading-font="dyslexia"] .manuscript :is(p, h1, h2, h3, li, blockquote) {
   font-family: var(--ff-reading);
 }
