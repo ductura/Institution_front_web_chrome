@@ -168,7 +168,7 @@ describe("NF-5 PG-11, PG-12, PG-13", () => {
     });
     const QUIET: ReviewExtras = {
       composition: async () => ({ kind: "empty" }), disputes: async () => ({ kind: "ok", disputes: [] }),
-      comments: async () => ({ kind: "ok", threads: [] }), drafts: async () => ({ kind: "ready", drafts: [] }),
+      comments: async () => ({ kind: "ok", threads: [] }), drafts: async () => ({ kind: "ready", drafts: [] }), seen: async () => ({ kind: "ready", items: [] }),
     };
     const provenance: ProvenanceCall = async () => ({ kind: "noMarks" });
     beforeEach(() => { window.history.replaceState(null, "", `/app/web/nastavnik/rad/${DOCUMENT}/pregled`); });
