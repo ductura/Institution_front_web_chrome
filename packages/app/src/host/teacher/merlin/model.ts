@@ -9,7 +9,32 @@ export type { MerlinExtensionReason, MerlinPackage, MerlinRow, PackageRequest, P
 /** How often a queued package is read again. */
 export const POLL_MS = 3000;
 
-export type AssignmentChoice = { readonly id: string; readonly title: string | null };
+export type AssignmentChoice = {
+  readonly id: string;
+  readonly title: string | null;
+  /** NZ-16: the kind of work and the deadline, for the option's title; absent when the read does not give them. */
+  readonly workType?: string | null;
+  readonly dueAt?: string | null;
+};
+
+/** NZ-16: "Naslov · Esej · rok je prošao": the kind of work and a passed deadline are said in the option. */
+export function choiceLabel(choice: AssignmentChoice, now: number): string {
+  const parts = [choice.title ?? text.taskUnnamed];
+  const kind = typeof choice.workType === "string" ? text.workType[choice.workType] : undefined;
+  if (kind !== undefined) parts.push(kind);
+  const due = typeof choice.dueAt === "string" ? Date.parse(choice.dueAt) : Number.NaN;
+  if (!Number.isNaN(due) && due < now) parts.push(text.deadlinePassed);
+  return parts.join(" · ");
+}
+
+/** NZ-16: a choice made in the "Zadatak" select returns focus to it on the page of the new assignment. */
+let focusSelectAfterChoose = false;
+export const askFocusAfterChoose = (): void => { focusSelectAfterChoose = true; };
+export function takeFocusAfterChoose(): boolean {
+  const asked = focusSelectAfterChoose;
+  focusSelectAfterChoose = false;
+  return asked;
+}
 
 export type MerlinData = {
   readonly rows: readonly MerlinRow[];

@@ -155,3 +155,19 @@ describe("DeclarationStep on declaration-v1 (PIL-K-IZJAVA)", () => {
     expect(view.next().getAttribute("aria-disabled")).toBe("true");
   });
 });
+
+describe("NF-3 PR-4: an honest empty state on E-9", () => {
+  it("nothing recorded: the block says so, explains what it holds and offers no dead element", async () => {
+    await show(server(STATE).ports);
+    const text = host!.textContent ?? "";
+    expect(text).toContain("U ovom radu nije zabilježen razgovor s Asistentom.");
+    expect(text).toContain("Ovdje se bilježi ono što napravi sama Ductura, uključujući razgovore s Asistentom. Alate izvan Ducture navedite u „Vašoj izjavi”.");
+    expect(text).toContain("Nema razgovora za prilaganje.");
+    // No "Dodaj objašnjenje", no teacher's question and no "Prilozi" list the contract cannot fill.
+    expect(text).not.toContain("Dodaj objašnjenje");
+    expect(text).not.toContain(t.question);
+    expect(text).not.toContain(t.attachments);
+    // Q-10: no provider and no model anywhere on the step.
+    expect(text).not.toMatch(/AI pomoćnik|model/iu);
+  });
+});

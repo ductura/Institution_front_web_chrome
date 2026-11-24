@@ -7,7 +7,7 @@ import { appHref } from "../../../../../../src/components/shell/nav";
 import { goToSignIn } from "../../../../../../src/client/api";
 import { zagrebInstant } from "../../../../../../src/lib/i18n/zagreb";
 import { useHost } from "../../context";
-import { deadlinePassed, detailText, leadText, loadN13, noteOf, reasonOptions, recordN13, titleText, unavailablePort, type N13Port, type N13Read, type Note } from "./model";
+import { deadlinePassed, detailText, filterByStudent, studentSeesText, leadText, loadN13, noteOf, reasonOptions, recordN13, titleText, unavailablePort, type N13Port, type N13Read, type Note } from "./model";
 import { n13Messages as text } from "./messages.hr";
 
 /**
@@ -25,6 +25,7 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
   const [reasonId, setReasonId] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
+  const [filter, setFilter] = useState("");
 
   useEffect(() => {
     let live = true;
@@ -133,11 +134,23 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
               </>
             ) : data.extensions.length === 0 ? <p className="note">{text.empty}</p> : (
               <>
+                {canPickOne && (
+                  <Select
+                    label={text.filter}
+                    placeholder={text.filterAll}
+                    value={filter}
+                    options={(students ?? []).map((s) => ({ value: s.studentId, label: s.name ?? text.unnamed }))}
+                    onChange={(e) => setFilter(e.target.value)}
+                  />
+                )}
+                {filterByStudent(data.extensions, filter).length === 0 && <p className="note">{text.filterEmpty}</p>}
                 <ul className="list">
-                  {data.extensions.map((e) => (
+                  {filterByStudent(data.extensions, filter).map((e) => (
                     <li key={e.id} className="item">
                       <span className="title">{titleText(e, students)}</span>
                       <span className="meta">{detailText(e)}</span>
+                      <span className="meta">{studentSeesText(e)}</span>
+                      {e.reasonId === null && <span className="meta">{text.studentSeesHidden}</span>}
                     </li>
                   ))}
                 </ul>

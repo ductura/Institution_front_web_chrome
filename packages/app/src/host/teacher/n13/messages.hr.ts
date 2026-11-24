@@ -36,6 +36,12 @@ export const n13Messages = {
   cancel: "Odustani",
   listTitle: "Produljeni rokovi",
   empty: "Nijedan rok nije produljen.",
+  // NZ-6: filter by student and the line of what the student reads (same source as the student view: previousDueAt, dueAt, reasonId, scope).
+  filter: "Prikaži produljenja za",
+  filterAll: "Svi studenti",
+  filterEmpty: "Za odabranog studenta nema produljenja.",
+  studentSees: (oldDue: string, reason: string | null): string => `Student vidi: Bio ${oldDue}${reason === null ? "" : `, razlog: ${reason}`}`,
+  studentSeesHidden: "Razlog koji je zabilježio drugi nastavnik ne vidite; student ga vidi.",
   keptNote: "Zapis o produljenju (stari i novi rok, tko i kada) se ne briše.",
   allStudents: "Svi studenti zadatka",
   newDue: "novi rok",

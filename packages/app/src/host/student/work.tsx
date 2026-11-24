@@ -36,6 +36,7 @@ import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
 import { StatusExtras, beforeSubmissionFor, rehearsalSupplementsFor } from "../editor/status/StatusExtras";
 import { PregledHost } from "../editor/right/PregledHost";
+import { MentorMount } from "../editor/right/MentorMount";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
@@ -118,7 +119,11 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             literature={() => <LiteratureList />}
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
-              work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
+              // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
+              work: ({ editor, documentId, submitted }) => <>
+                <MentorMount editor={editor} documentId={documentId} submitted={submitted} />
+                <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />
+              </>,
               // PIL-K-KOMENTARI-EDITOR: the Comments card over the real port, in place of the old CommentPanel.
               comments: ({ editor, documentId, session, submitted, signedOut }) =>
                 <CommentsHost editor={editor} documentId={documentId} session={session} submitted={submitted} signedOut={signedOut} />,
