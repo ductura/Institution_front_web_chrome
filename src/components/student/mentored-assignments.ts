@@ -63,3 +63,14 @@ export async function readAssignmentsWithMentored(call: AssignmentsApi): Promise
 export function withMentoredCall(call: AssignmentsApi): (id: "student.assignments.get", input: None) => Promise<Assignments> {
   return () => readAssignmentsWithMentored(call);
 }
+
+/**
+ * createApi() as it was, except that student.assignments.get also names the
+ * mentored works: the host pages (packages/app) that find an assignment by id
+ * or list the student's works change one line, never their reading.
+ */
+export function withMentoredAssignments<Call extends (id: never, input: never) => Promise<unknown>>(call: Call): Call {
+  const forward = call as unknown as (id: string, input: unknown) => Promise<unknown>;
+  return ((id: string, input: unknown) =>
+    id === "student.assignments.get" ? readAssignmentsWithMentored(call as unknown as AssignmentsApi) : forward(id, input)) as unknown as Call;
+}

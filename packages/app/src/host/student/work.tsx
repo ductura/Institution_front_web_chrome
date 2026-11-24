@@ -21,6 +21,7 @@ import StatusBar from "../../../../../src/components/editor/StatusBar.tsx";
 import WorkspaceTopBar from "../../../../../src/components/editor/WorkspaceTopBar.tsx";
 import { workspaceFrame, type WorkspaceVariant } from "../../../../../src/components/editor/workspace-variant.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../src/client/api.ts";
+import { withMentoredAssignments } from "../../../../../src/components/student/mentored-assignments.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 
 import { SaveState } from "@ductura/ui";
@@ -88,7 +89,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
     if (attempt > 0) setShown({ kind: "loading" });
     const here = appHref(base, `/rad/${assignmentId}`);
     void (async () => {
-      const client = createApi();
+      const client = withMentoredAssignments(createApi());
       const [assignments, work, wordRange] = await Promise.all([
         client("student.assignments.get", NONE).catch(() => UNREACHED),
         client("student.assignment-work.get", NONE).catch(() => UNREACHED),

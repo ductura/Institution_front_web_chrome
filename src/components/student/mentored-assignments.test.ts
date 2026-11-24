@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { editorWorkRead } from "../editor/EditorPage.read";
-import { MENTORED_GROUP_ID, readAssignmentsWithMentored, withMentored, withMentoredCall, type AssignmentsApi } from "./mentored-assignments";
+import { MENTORED_GROUP_ID, readAssignmentsWithMentored, withMentored, withMentoredAssignments, withMentoredCall, type AssignmentsApi } from "./mentored-assignments";
 
 const COURSE = "00000000-0000-4000-8000-0000000000c1";
 const ESSAY = "00000000-0000-4000-8000-0000000000a1";
@@ -87,5 +87,21 @@ describe("readAssignmentsWithMentored", () => {
     const api = (async (id: string) => (id === "student.assignments.get" ? courses : mentored([thesis]))) as unknown as AssignmentsApi;
     const result = await withMentoredCall(api)("student.assignments.get", { params: undefined, query: undefined, body: undefined });
     expect(result.ok && result.body.courses.at(-1)?.assignments.map((a) => a.id)).toEqual([THESIS]);
+  });
+});
+
+describe("withMentoredAssignments", () => {
+  it("adds the mentored works to student.assignments.get and forwards every other route as it was", async () => {
+    const seen: string[] = [];
+    const work = { ok: true as const, status: 200 as const, body: { assignments: [] } };
+    const client = async (id: string, _input: unknown) => {
+      seen.push(id);
+      return id === "student.assignments.get" ? courses : id === "student.mentored-assignments.get" ? mentored([thesis]) : work;
+    };
+    const wrapped = withMentoredAssignments(client as (id: never, input: never) => Promise<unknown>) as unknown as typeof client;
+    const result = (await wrapped("student.assignments.get", {})) as typeof courses;
+    expect(result.body.courses.map((c) => c.id)).toEqual([COURSE, MENTORED_GROUP_ID]);
+    expect(await wrapped("student.assignment-work.get", {})).toBe(work);
+    expect(seen.sort()).toEqual(["student.assignment-work.get", "student.assignments.get", "student.mentored-assignments.get"]);
   });
 });
