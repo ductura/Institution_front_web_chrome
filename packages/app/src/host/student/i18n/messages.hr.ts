@@ -49,6 +49,19 @@ export const studentHostHr = {
       submit: "Upiši",
       sending: "Upisivanje…",
       opening: "Upisani ste u kolegij. Otvaram obavijest zadatka…",
+      errors: {
+        malformed: "Kod ima od 8 do 32 slova i brojke. Provjerite ga i upišite ponovno.",
+        tooManyAttempts: "Previše pokušaja. Pokušajte ponovno kasnije.",
+        forbidden: "Ovaj račun ne može upisati kolegij.",
+        invalid: "Upis nije prihvaćen. Ponovno učitajte stranicu.",
+        unavailable: "Upis trenutačno nije moguć. Pokušajte ponovno.",
+        offline: "Nema veze s poslužiteljem. Provjerite mrežu i pokušajte ponovno.",
+      },
+      codeErrors: {
+        invalidCode: "Ovaj kod ne postoji. Provjerite ga s nastavnikom i upišite ponovno.",
+        expiredCode: "Ovaj kod je istekao. Zatražite novi kod od nastavnika.",
+        signedOut: "Prijava je istekla. Prijavite se ponovno pa upišite kod.",
+      },
       course: {
         none: "Upisani ste u kolegij, ali u njemu zasad nema otvorenog zadatka. Kad ga nastavnik objavi, vratite se na ovu stranicu.",
         notFound: "Ovaj kolegij nije dostupan ovom računu. Upišite ga kodom koji Vam daje nastavnik.",

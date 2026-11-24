@@ -32,13 +32,35 @@ describe("AssistantMatchNoticeHost", () => {
     await act(async () => { root?.render(h(AssistantMatchNoticeHost, { documentId: DOC, call })); });
   };
 
-  it("shows the notice when the server has recorded a match, and asks for no explanation", async () => {
+  it("shows the notice when the server has recorded a match; without a writable editor it asks for no explanation", async () => {
     const route = server({ ok: true, status: 200, headers: {}, body: { findings: [FINDING] } });
     await mount(route);
     expect(route).toHaveBeenCalledWith("work.assistant-match.get", { params: { documentId: DOC }, query: undefined, body: undefined });
-    expect(host.querySelector("[data-match='p-1']")?.textContent).toContain(noticeText.title);
-    expect(host.querySelector("textarea")).toBeNull();
-    expect(host.textContent).not.toContain(noticeText.send);
+    const banner = host.querySelector("[data-match='p-1']");
+    expect(banner?.getAttribute("role")).toBe("status");
+    expect(banner?.textContent).toContain(`${noticeText.title}. ${noticeText.neutral}`);
+    expect(host.textContent).not.toContain(noticeText.explainOpen);
+  });
+
+  it("in the writable editor offers \"Objasni, ako želiš…\" (ED-13, NF2-P13)", async () => {
+    const editor = document.createElement("div");
+    editor.className = "ProseMirror";
+    editor.setAttribute("contenteditable", "true");
+    document.body.append(editor);
+    await mount(server({ ok: true, status: 200, headers: {}, body: { findings: [FINDING] } }));
+    const open = [...host.querySelectorAll("button")].find((b) => b.textContent === noticeText.explainOpen);
+    expect(open).toBeDefined();
+  });
+
+  it("an explained match says so and asks again for nothing", async () => {
+    const editor = document.createElement("div");
+    editor.className = "ProseMirror";
+    editor.setAttribute("contenteditable", "true");
+    document.body.append(editor);
+    const explanation = { text: "Izmišljeno objašnjenje.", writtenAt: "2026-11-20T11:00:00.000Z" };
+    await mount(server({ ok: true, status: 200, headers: {}, body: { findings: [{ ...FINDING, explanation }] } }));
+    expect(host.textContent).toContain(noticeText.explained);
+    expect(host.textContent).not.toContain(noticeText.explainOpen);
   });
 
   it("with the faculty switch off (no finding stored) shows nothing", async () => {
