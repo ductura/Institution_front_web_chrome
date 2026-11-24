@@ -20,7 +20,9 @@ export async function signInThroughPreloader(page: Page, pick: SeedAccount | ((p
   await expect(page).toHaveURL((url) => url.origin === oidcOrigin);
   if (typeof pick === 'function') await pick(page);
   else await page.locator(`button[name="account"][value="${pick}"]`).click();
-  await expect(page).toHaveURL((url) => url.origin === webOrigin && url.pathname.startsWith(`${appBase}/`));
+  // The first sign-in of a run is the first request the shipped app answers, and on a
+  // cold local stack that can take longer than the default 5 s (INT-20, F3b 24. 11.).
+  await expect(page).toHaveURL((url) => url.origin === webOrigin && url.pathname.startsWith(`${appBase}/`), { timeout: 30_000 });
 }
 
 export async function signInDemoStudent(page: Page, account: 'demo-student' | 'demo-student-2' = 'demo-student') {

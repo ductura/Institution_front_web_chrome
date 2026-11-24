@@ -74,7 +74,8 @@ export default function Host({ base, children }: { base: Base; children: ReactNo
 
   const signedIn = session?.kind === "signedIn" ? session.session : null;
   const role = signedIn === null ? null : shellRole(signedIn.role);
-  const resolved = signedIn === null ? null : resolve(route, role);
+  // WEB-NUZ-OPERATER: the account kinds too, so the operator (no shell role) reaches its own page.
+  const resolved = signedIn === null ? null : resolve(route, role, signedIn.roles);
 
   // The saved interface language (D-70) is read once the person is signed in.
   useEffect(() => {
