@@ -7,6 +7,9 @@ import { ComparisonResult } from "./ComparisonResult";
 import { readComparison, readSubmittedVersions, type Comparison, type ComparisonApi, type Read } from "./comparison-read";
 import { comparisonHr as t } from "./messages.hr";
 
+/** Why there is no comparison: with one sent version the student is told so (NF2-P14). */
+export const emptyText = (versions: number): string => versions === 1 ? `${t.empty} ${t.oneVersion}` : t.empty;
+
 export type VersionComparisonProps = { client: ComparisonApi; documentId: string; replayHref: string };
 type Mode = "page" | "submissions" | "round";
 
@@ -73,7 +76,7 @@ function VersionsRead({ client, documentId, replayHref, mode }: VersionCompariso
   if (!read) return <p role="status">{t.loadingVersions}</p>;
   if (read.kind !== "ready") return <ReadFailure message={read.kind === "not-found" ? t.notFound : t.versionsError}
     retry={() => { setRead(undefined); setAttempt((n) => n + 1); }} />;
-  if (read.value.length < 2) return <><p role="status">{t.empty}</p><a href={replayHref}>{t.replay}</a></>;
+  if (read.value.length < 2) return <><p role="status">{emptyText(read.value.length)}</p><a href={replayHref}>{t.replay}</a></>;
   return <VersionPicker key={mode} client={client} documentId={documentId} versions={read.value} mode={mode} />;
 }
 

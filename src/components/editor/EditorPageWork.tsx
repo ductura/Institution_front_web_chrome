@@ -45,6 +45,7 @@ import { EditorPanelLayout } from "./SidePanels";
 import { SubmissionRehearsal, type SubmissionRehearsalProps } from "./submission-rehearsal/SubmissionRehearsal";
 import type { LeftSections } from "./layout-prefs/LeftPanel";
 import { WorkPrintExport, type RenderPdf } from "./print-export/docx-download/WorkPrintExport";
+import { PRINT_PREVIEW_EVENT } from "./print-export/print-event";
 import { TriggerPopover } from "./triggers/TriggerPopover";
 
 /** A host's toolbar for the tools slot; it is mounted inside the document provider. */
@@ -246,6 +247,13 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   const [printOpen, setPrintOpen] = useState(false);
   const signedOut = useLocalSignedOut();
   const submitted = useLocalSubmitted();
+  // ED-06: "Izvezi ▾ → Pregled ispisa" opens this page's print preview.
+  useEffect(() => {
+    if (signedOut) return;
+    const asked = (event: Event) => { event.preventDefault(); setPrintOpen(true); };
+    document.addEventListener(PRINT_PREVIEW_EVENT, asked);
+    return () => document.removeEventListener(PRINT_PREVIEW_EVENT, asked);
+  }, [signedOut]);
   const ctx: HostSectionContext = { editor, assignmentId, documentId, session, submitted, signedOut };
   const { phase, state, receiptVerified } = useLocalSaveRead();
   const savingLocally = useLocalSavingOnDevice();
