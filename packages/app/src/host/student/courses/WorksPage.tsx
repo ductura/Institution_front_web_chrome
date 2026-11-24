@@ -8,7 +8,7 @@ import { Button, Select, TextField } from "@ductura/ui";
 
 import { appHref } from "../../../../../../src/components/index.ts";
 import { studentHostHr as messagesHr } from "../i18n/messages.hr.ts";
-import { filterWorks, worksOf, yearsOf, type WorksFilter } from "../../../../../../src/components/student/radovi/works-view.ts";
+import { filterWorks, worksOf, yearsOf, type WorksFilter } from "../read/works-view.ts";
 
 import { useHost } from "../../context";
 import { coursesText as t } from "./messages.hr";

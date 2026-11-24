@@ -1,5 +1,5 @@
-import type { MyAssignment, MyCourse } from "../../../../../../src/components/student/my-assignments-read";
-import type { WorkState } from "../../../../../../src/components/student/radovi/works-read";
+import type { MyAssignment, MyCourse } from "../read/assignments";
+import type { WorkState } from "../read/works";
 import { practiceOf } from "../courses/model";
 import { cleanCode } from "../enrol/code";
 import { protoToday } from "./format";
