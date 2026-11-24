@@ -35,6 +35,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/StatusBar.tsx",
   "editor/StatusBarLive.tsx",
   "editor/StatusLength.tsx",
+  "editor/ScopeAnnounce.tsx", // ED-04: the status bar's polite word-range announcement; waits with StatusBar.tsx.
   "editor/ToolbarMenu.tsx",
   "editor/WorkspaceTopBar.tsx",
   "editor/citations/CitationPopover.tsx",
