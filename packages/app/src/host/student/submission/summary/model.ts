@@ -1,7 +1,7 @@
 import type { SummaryRead } from "../../../../../../../src/components/predaja/BeforeSubmit.tsx";
 import type { SummaryOutcome } from "../../../../../../../src/client/process-summary.ts";
 import type { LocalCall } from "../../../../../../../src/client/submission.ts";
-import type { TextNode } from "../../../../../../../src/components/student/SubmissionView.tsx";
+import type { TextNode } from "../work-read.ts";
 import { placesOf, type Place } from "./places";
 
 // WEB-2108 (PD-1, PD-4): step 3 reads the process summary and the notes from
