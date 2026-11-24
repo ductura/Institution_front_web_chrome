@@ -79,14 +79,19 @@ test("OA-3, OA-7: the administrator opens both pages and sees its own category; 
   await expect(page).toHaveURL(/nema-ovlasti/);
 });
 
-/** The export routes: the list as given, and the request's answers in turn (the last one repeats). */
-async function fakeExports(page: Page, replies: number[]) {
+/**
+ * The export routes for a session of `roles`: the list as given, and the request's answers in turn
+ * (the last one repeats). Only the registry office records a request (SRV-1308), so the POST is
+ * answered only for a session that is not the administrator's; the administrator's would be a 403.
+ */
+async function fakeExports(page: Page, roles: string[], replies: number[]) {
   const seen = { list: 0, posts: 0 };
-  await page.route("**/api/v1/me", (route) => route.fulfill({ json: ME(["institution_admin"]) }));
+  await page.route("**/api/v1/me", (route) => route.fulfill({ json: ME(roles) }));
   await page.route("**/api/v1/institution/student-data-exports", (route) => {
     if (route.request().method() === "GET") { seen.list += 1; return route.fulfill({ json: EXPORTS }); }
-    const status = replies[Math.min(seen.posts, replies.length - 1)] ?? 201;
     seen.posts += 1;
+    if (roles.includes("institution_admin")) return route.fulfill({ status: 403, json: { error: "forbidden" } });
+    const status = replies[Math.min(seen.posts - 1, replies.length - 1)] ?? 201;
     return status === 201
       ? route.fulfill({ status, json: { exportId: "55555555-5555-4555-8555-555555555555" } })
       : route.fulfill({ status, json: { error: "conflict" } });
@@ -94,8 +99,10 @@ async function fakeExports(page: Page, replies: number[]) {
   return seen;
 }
 
+const REQUEST_FORM = "Zahtjev za izvoz podataka studenta";
+
 async function requestFor(page: Page, studentId: string) {
-  const form = page.getByRole("region", { name: "Zahtjev za izvoz podataka studenta" });
+  const form = page.getByRole("region", { name: REQUEST_FORM });
   await form.getByLabel("Oznaka studenta").fill(studentId);
   await form.getByLabel("Isprava kojom je provjeren identitet").selectOption("student_card");
   await form.getByLabel("Provjerio/la sam identitet studenta uživo").check();
@@ -105,39 +112,50 @@ async function requestFor(page: Page, studentId: string) {
 }
 
 for (const width of [390, 1280]) {
-  test(`OA-6: states in words, a recorded request re-reads the list, a second one is refused unsent (${width} px)`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 });
-    const seen = await fakeExports(page, [201]);
-    await page.goto("/app/web/ustanova/izvoz-podataka");
-    for (const state of ["Čeka odobrenje", "Odobren", "Preuzet", "Istekao"]) await expect(page.getByText(state, { exact: true })).toBeVisible();
-    await expect(page.getByText("Preuzet ili istekao: zahtjev je zatvoren", { exact: false })).toBeVisible();
-    expect(await serious(page)).toEqual([]);
+  for (const colorScheme of ["light", "dark"] as const) {
+    test(`OA-6: the administrator sees the states in words and records nothing (${width} px, ${colorScheme})`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ colorScheme });
+      const seen = await fakeExports(page, ["institution_admin"], [201]);
+      await page.goto("/app/web/ustanova/izvoz-podataka");
+      for (const state of ["Čeka odobrenje", "Odobren", "Preuzet", "Istekao"]) await expect(page.getByText(state, { exact: true })).toBeVisible();
+      await expect(page.getByText("Preuzet ili istekao: zahtjev je zatvoren", { exact: false })).toBeVisible();
+      // One person records a request (the registry office), another approves it (the administrator).
+      await expect(page.getByRole("region", { name: REQUEST_FORM })).toHaveCount(0);
+      expect(seen.posts).toBe(0);
+      expect(await serious(page)).toEqual([]);
+    });
 
-    await expect(page.getByText("Čeka odobrenje", { exact: true })).toBeVisible();
-    const before = seen.list;
-    await requestFor(page, STUDENT);
-    await expect(page.getByText("Zahtjev je zabilježen i dodan na popis.")).toBeVisible();
-    await expect.poll(() => seen.list).toBe(before + 1);
+    test(`OA-6: the registry office records a request, and a second one for the same student is refused unsent (${width} px, ${colorScheme})`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ colorScheme });
+      const seen = await fakeExports(page, ["teacher"], [201]);
+      await page.goto("/app/web/ustanova/izvoz-podataka");
+      await expect(page.getByRole("region", { name: REQUEST_FORM })).toBeVisible();
+      expect(await serious(page)).toEqual([]);
 
-    await requestFor(page, STUDENT.toUpperCase());
-    await expect(page.locator("main").getByRole("alert")).toHaveText(WARNING);
-    expect(seen.posts).toBe(1);
-    expect(await serious(page)).toEqual([]);
-  });
+      await requestFor(page, STUDENT);
+      await expect(page.getByText("Zahtjev je poslan. Izvoz će pokrenuti administrator ustanove.")).toBeVisible();
+      expect(seen.posts).toBe(1);
+
+      await requestFor(page, STUDENT.toUpperCase());
+      await expect(page.locator("main").getByRole("alert")).toHaveText(WARNING);
+      expect(seen.posts).toBe(1);
+      // The registry office does not read the administrator's list.
+      expect(seen.list).toBe(0);
+      expect(await serious(page)).toEqual([]);
+    });
+  }
 }
 
 test("OA-6: the server's 409 is the same warning, and the student is then refused on the page", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
-  const seen = await fakeExports(page, [409]);
+  const seen = await fakeExports(page, ["teacher"], [409]);
   await page.goto("/app/web/ustanova/izvoz-podataka");
-  await expect(page.getByText("Čeka odobrenje", { exact: true })).toBeVisible();
-  const before = seen.list;
   await requestFor(page, STUDENT);
   await expect(page.locator("main").getByRole("alert")).toHaveText(WARNING);
   await requestFor(page, STUDENT);
   await expect(page.locator("main").getByRole("alert")).toHaveText(WARNING);
   expect(seen.posts).toBe(1);
-  // A refused request changes nothing, so the list is not read again.
-  expect(seen.list).toBe(before);
   expect(await serious(page)).toEqual([]);
 });

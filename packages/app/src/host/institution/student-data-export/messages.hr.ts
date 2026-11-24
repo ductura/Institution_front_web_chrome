@@ -44,7 +44,6 @@ export const studentDataExportMessages = {
   approved: "Izvoz je pokrenut. Student će dobiti poveznicu za preuzimanje.",
   /** NF-7 OA-6: what each state means, under the list, in the prototype's words. */
   statesNote: "Čeka odobrenje: zahtjev je zabilježen. Odobren i spreman za preuzimanje: student može preuzeti izvoz jednom. Preuzet ili istekao: zahtjev je zatvoren i za studenta se može zabilježiti novi.",
-  recordedHere: "Zahtjev je zabilježen i dodan na popis.",
   errors: {
     unauthorized: "Prijava nije valjana. Prijavite se ponovno.",
     forbidden: "Zahtjeve za izvoz podataka predaje referada, a pokreće ih administrator ustanove.",

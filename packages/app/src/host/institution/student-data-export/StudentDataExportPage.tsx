@@ -20,7 +20,7 @@ export const say = (kind: Refused): string => ({
   notFound: t.errors.notFound, exists: t.errors.exists, stale: t.errors.stale,
 })[kind];
 
-function AdminList({ call, refresh }: { call: StudentDataExportCall; refresh: number }) {
+function AdminList({ call }: { call: StudentDataExportCall }) {
   const [state, setState] = useState<StudentDataExportListState>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | undefined>();
@@ -43,8 +43,7 @@ function AdminList({ call, refresh }: { call: StudentDataExportCall; refresh: nu
     setState({ kind: "loading" });
     void read();
   }, [read]);
-  // `refresh` grows when a request was recorded on this page: the list is read again.
-  useEffect(load, [load, refresh]);
+  useEffect(load, [load]);
 
   const approve = async (exportId: string, reference: string) => {
     setBusy(true);
@@ -70,9 +69,7 @@ function AdminList({ call, refresh }: { call: StudentDataExportCall; refresh: nu
   );
 }
 
-type RequestFormProps = { call: StudentDataExportCall; open: OpenRequests; onRecorded?: () => void };
-
-function RequestForm({ call, open, onRecorded }: RequestFormProps) {
+function RequestForm({ call, open }: { call: StudentDataExportCall; open: OpenRequests }) {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | undefined>();
   const [note, setNote] = useState("");
@@ -89,10 +86,9 @@ function RequestForm({ call, open, onRecorded }: RequestFormProps) {
     }
     const out = await requestStudentDataExport(input, call);
     if (out.kind === "ok" || out.kind === "exists") open.add(input.studentId);
-    if (out.kind === "ok") setNote(onRecorded === undefined ? t.requested : t.recordedHere);
+    if (out.kind === "ok") setNote(t.requested);
     else setActionError(say(out.kind));
     setBusy(false);
-    if (out.kind === "ok") onRecorded?.();
   };
 
   return (
@@ -106,18 +102,10 @@ function RequestForm({ call, open, onRecorded }: RequestFormProps) {
   );
 }
 
-/** NF-7 OA-6: the administrator sees the requests with their state and may record one too (prototype `izvoz`). */
-function AdminView({ call }: { call: StudentDataExportCall }) {
-  const open = useRef(openRequests()).current;
-  const [refresh, setRefresh] = useState(0);
-  return (
-    <>
-      <AdminList call={call} refresh={refresh} />
-      <RequestForm call={call} open={open} onRecorded={() => { setRefresh((n) => n + 1); }} />
-    </>
-  );
-}
-
+/**
+ * The registry office records requests (SRV-1308: only a clerk may, an administrator gets 403), so
+ * the administrator who approves never records: one person records, another approves.
+ */
 function RegistryView({ call }: { call: StudentDataExportCall }) {
   const open = useRef(openRequests()).current;
   return <RequestForm call={call} open={open} />;
@@ -125,8 +113,8 @@ function RegistryView({ call }: { call: StudentDataExportCall }) {
 
 /**
  * /ustanova/izvoz-podataka (WEB-1302; SRV-1308; NF-7 OA-6): the institution administrator sees the
- * requests with their state, starts an export with a reference and may record a request; everyone
- * else signed in sees the registry office's request form. A second request for the same student is
+ * requests with their state and starts an export with a reference; everyone else signed in sees the
+ * registry office's request form. A second request for the same student is
  * refused on the page before sending, and the server's 409 says the same. The server decides who
  * may do what (403 is shown as the catalogue text). Reads and writes go only through src/client.
  */
@@ -135,7 +123,7 @@ export default function StudentDataExportPage({ call = studentDataExportCall() }
   return (
     <section className="page" data-role={role ?? undefined} data-nf7="OA-6">
       <h1>{page.label}</h1>
-      {role === "admin" ? <AdminView call={call} /> : <RegistryView call={call} />}
+      {role === "admin" ? <AdminList call={call} /> : <RegistryView call={call} />}
     </section>
   );
 }
