@@ -3,7 +3,7 @@
 // WEB-V20-POSTAVKE-DIJALOG: "Prikaz i čitanje", one dialog for the personal reading settings: font of the work's text,
 // reading mode (the controls of WEB-V20-NACIN-CITANJA) and the read-aloud speed. "Zadano" puts all of them back.
 // Everything stays in this browser (localStorage); nothing here reads or writes the document or calls the server.
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Button, Dialog, SegmentedControl } from "@ductura/ui";
 
 import { createReadingStore, DEFAULT_READING_PREFS, isStep, type ReadingPrefKey, type ReadingPrefs, type ReadingStore } from "../../shared/reading-prefs";
@@ -45,13 +45,17 @@ export function resetReadingSettings(store: ReadingStore): void {
 export function ReadingSettingsDialog({ open, onClose, store = readingStore() }: { open: boolean; onClose: () => void; store?: ReadingStore }) {
   const prefs = useSyncExternalStore(store.subscribe, store.get, store.get);
   const rate = useSyncExternalStore(subscribeReadAloudRate, readAloudRate, readAloudRate);
+  const [resetDone, setResetDone] = useState(false);
+  useEffect(() => { if (!open) setResetDone(false); }, [open]);
+  useEffect(() => { if (!readingSettingsAreDefault(prefs, rate)) setResetDone(false); }, [prefs, rate]);
   return (
     <Dialog open={open} title={t.title} onClose={onClose}
       actions={<>
-        <Button tone="quiet" disabled={readingSettingsAreDefault(prefs, rate)} onClick={() => resetReadingSettings(store)}>{t.reset}</Button>
+        <Button tone="quiet" disabled={readingSettingsAreDefault(prefs, rate)} onClick={() => { resetReadingSettings(store); setResetDone(true); }}>{t.reset}</Button>
         <Button onClick={onClose}>{t.done}</Button>
       </>}>
       <p>{t.intro}</p>
+      <p role="status">{resetDone ? t.resetDone : ""}</p>
       <h3>{t.font.label}</h3>
       <SegmentedControl label={t.font.label} options={FONT_OPTIONS} value={prefs.font}
         onChange={(value) => { if (isStep("font", value)) store.set("font", value); }} />

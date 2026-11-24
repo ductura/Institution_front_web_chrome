@@ -71,6 +71,7 @@ describe("reading settings dialog (WEB-V20-POSTAVKE-DIJALOG)", () => {
     press("Veći", "Razmak redaka");
     press(t.rate.faster, t.rate.label);
     pressAction(t.reset);
+    expect(host.querySelector('[role="status"]')?.textContent).toBe(t.resetDone);
     expect(store.get()).toEqual(DEFAULT_READING_PREFS);
     expect(readAloudRate()).toBe(1);
     expect(localStorage.getItem(READ_ALOUD_RATE_KEY)).toBeNull();
