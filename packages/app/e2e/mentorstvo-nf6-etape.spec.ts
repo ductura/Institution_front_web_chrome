@@ -6,6 +6,7 @@
 import { axe, setTheme } from "./a11y/check";
 import { expect, test, type Page } from "./fixtures/test";
 import { FIKSNI_DATUM } from "../test-fakes/viz-scenariji";
+import { DOKUMENT_T1 } from "../test-fakes/viz-predaja";
 import { generatedServer } from "./viz/server";
 import { mentorPlanText as t } from "../src/host/teacher/mentorships/messages.hr";
 import { mentorshipRequestText as s } from "../src/host/student/mentorship-request/messages.hr";
@@ -85,7 +86,7 @@ test("the mentor sees each work's stages and agreement, adds a stage, and is tol
   await dialog.getByLabel(t.plan.submits).selectOption("topic_text");
   await dialog.getByRole("button", { name: t.plan.save }).click();
   await expect(first.getByText(t.plan.added)).toBeVisible();
-  expect(sent).toEqual([{ method: "POST", path: "/api/v1/works/izmisljeni-rad-0001/milestone-plan/milestones", body: { title: "Izmišljena etapa", submits: "topic_text" } }]);
+  expect(sent).toEqual([{ method: "POST", path: `/api/v1/works/${DOKUMENT_T1}/milestone-plan/milestones`, body: { title: "Izmišljena etapa", submits: "topic_text" } }]);
 
   await first.getByRole("button", { name: t.plan.template }).click();
   await page.getByRole("dialog", { name: t.plan.templateTitle }).getByRole("button", { name: t.plan.templateConfirm }).click();
