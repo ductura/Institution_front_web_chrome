@@ -25,7 +25,7 @@ import { readMyWorks, type WorksRead } from "../../../../../../src/components/st
 import type { WorksFilter } from "../../../../../../src/components/student/radovi/works-view.ts";
 import { browserTransport, createApi, goToSignIn, signInHref } from "../../../../../../src/client/api.ts";
 import type { SessionMark } from "../../../../../../src/client/session-marks.ts";
-import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
+import { studentHostHr as t } from "../i18n/messages.hr.ts";
 
 import { nextPath } from "../../../bases";
 import { hostText } from "../../../text";
