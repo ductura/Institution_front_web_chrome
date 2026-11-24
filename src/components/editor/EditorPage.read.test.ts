@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { assignmentIdOf, editorWorkRead } from "./EditorPage.read";
+import { frameFailureOf, assignmentIdOf, editorWorkRead } from "./EditorPage.read";
 
 // WEB-14: the editor page's read of one assignment from student.assignments.get
 // and student.assignment-work.get. Invented data only.
@@ -44,5 +44,15 @@ describe("editorWorkRead", () => {
     expect(editorWorkRead(ID, courses(), { ok: false, status: 0 })).toEqual({ kind: "unavailable" });
     expect(editorWorkRead(ID, courses(), works("in_progress", OTHER))).toEqual({ kind: "unavailable" });
     expect(editorWorkRead(ID, courses(), works("draft"))).toEqual({ kind: "unavailable" });
+  });
+});
+
+describe("frameFailureOf (ED-01b)", () => {
+  it("no answer from either read is the network; any other failure is the server", () => {
+    expect(frameFailureOf({ status: 0 }, { status: 200 })).toBe("offline");
+    expect(frameFailureOf({ status: 200 }, { status: 0 })).toBe("offline");
+    expect(frameFailureOf({ status: 503 }, { status: 200 })).toBe("server");
+    expect(frameFailureOf({ status: 200 }, { status: 403 })).toBe("server");
+    expect(frameFailureOf({ status: 200 }, { status: 200 })).toBe("server");
   });
 });
