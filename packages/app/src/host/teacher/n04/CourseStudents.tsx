@@ -7,8 +7,9 @@ import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
 import { TeacherPage, type TeacherRead } from "../shell/TeacherPage";
 import {
-  extensionLine, groupOptions, loadRoster, revisionLine, seminarDocumentId, stateLine, unavailablePort, visibleStudents, workLabel,
-  type CourseStudentsPort, type RosterData, type RosterRead,
+  extensionLine, groupOptions, listedStudents, loadRoster, notStartedCount, revisionLine, seminarDocumentId, stateLine, stateOptions,
+  unavailablePort, workLabel,
+  type CourseStudentsPort, type RosterData, type RosterRead, type StateFilter, type StudentOrder,
 } from "./model";
 import { courseStudentsMessages as text } from "./messages.hr";
 import { aggregatePath } from "../course-aggregate/model";
@@ -25,6 +26,8 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
   const [read, setRead] = useState<RosterRead | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [group, setGroup] = useState("");
+  const [state, setState] = useState<StateFilter>("");
+  const [order, setOrder] = useState<StudentOrder>("surname");
 
   useEffect(() => {
     let live = true;
@@ -40,7 +43,7 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
   const data = read?.kind === "ready" ? read.data : null;
   const title = data?.courseName ? text.courseTitle(data.courseName) : text.title;
   const options = data === null ? [] : groupOptions(data.students);
-  const shown = data === null ? [] : visibleStudents(data.students, options.some((o) => o.value === group) ? group : "");
+  const shown = data === null ? [] : listedStudents(data.students, options.some((o) => o.value === group) ? group : "", state, order);
   const teacherRead: TeacherRead<RosterData> | null = read === null ? null : read.kind === "ready" ? { kind: "ready", value: read.data } : { kind: read.kind };
 
   return (
@@ -55,12 +58,18 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
         </section>
       ) : (
         <>
-          {options.length > 0 && (
-            <div style={{ maxWidth: 280 }}>
+          <p className="note" role="status" data-testid="n04-not-started">{text.notStartedCount(notStartedCount(roster.students))}</p>
+          <div className="acts" role="group" aria-label={text.filter}>
+            {options.length > 0 && (
               <Select label={text.filter} options={[...options]} value={options.some((o) => o.value === group) ? group : ""}
                 onChange={(event) => setGroup(event.target.value)} />
-            </div>
-          )}
+            )}
+            <Select label={text.stateLabel} options={[...stateOptions(roster.students)]} value={state}
+              onChange={(event) => setState(event.target.value as StateFilter)} />
+            <Select label={text.orderLabel} value={order} onChange={(event) => setOrder(event.target.value as StudentOrder)}
+              options={[{ value: "surname", label: text.orderSurname }, { value: "state", label: text.orderState }]} />
+          </div>
+          {shown.length === 0 && <p className="note" role="status">{text.noMatch}</p>}
           <ul className="list" role="list">
             {shown.map((student) => (
               <li key={student.studentId} className="item" data-testid="n04-student">
