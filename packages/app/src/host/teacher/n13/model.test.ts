@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FAKE_DATA, FAKE_EXTENSIONS, fakeN13Port } from "./fake-port";
-import { detailText, leadText, loadN13, noteOf, reasonOptions, recordN13, titleText, whoText } from "./model";
+import { filterByStudent, studentSeesText, detailText, leadText, loadN13, noteOf, reasonOptions, recordN13, titleText, whoText } from "./model";
 
 const students = FAKE_DATA.students;
 const draft = { scope: "all", studentId: "", dueAt: "2026-11-15T22:59:00.000Z", reasonId: "all" } as const;
@@ -35,5 +35,13 @@ describe("N-13 model", () => {
     expect(await loadN13(broken, "a-1")).toEqual({ kind: "unavailable" });
     expect(await recordN13(broken, "a-1", draft)).toEqual({ kind: "nepoznato" });
     expect((await loadN13(fakeN13Port(), "a-1")).kind).toBe("ready");
+  });
+
+  it("NZ-6: filters by student (own and for all) and shows what the student reads", () => {
+    expect(filterByStudent(FAKE_EXTENSIONS, "").length).toBe(2);
+    expect(filterByStudent(FAKE_EXTENSIONS, "s-4").map((e) => e.id)).toEqual(["e-1", "e-2"]);
+    expect(filterByStudent(FAKE_EXTENSIONS, "s-1").map((e) => e.id)).toEqual(["e-2"]);
+    expect(studentSeesText(FAKE_EXTENSIONS[0]!)).toBe("Student vidi: Bio 8. 11. 2026. u 23:59, razlog: Opravdan razlog");
+    expect(studentSeesText(FAKE_EXTENSIONS[1]!)).toBe("Student vidi: Bio 12. 11. 2026. u 23:59");
   });
 });

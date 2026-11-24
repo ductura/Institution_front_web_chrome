@@ -95,3 +95,15 @@ export function deadlinePassed(context: N13Context, now: number): boolean {
   const ms = Date.parse(context.dueAt);
   return Number.isFinite(ms) && ms < now;
 }
+
+/** NZ-6: the extensions that apply to one student (their own and those for all); "" is every extension. */
+export function filterByStudent(extensions: readonly DeadlineExtension[], studentId: string): readonly DeadlineExtension[] {
+  if (studentId === "") return extensions;
+  return extensions.filter((e) => e.scope === "all" || e.studentId === studentId);
+}
+
+/** NZ-6: what the student reads about this extension; the reason of another teacher is not ours to repeat. */
+export function studentSeesText(extension: DeadlineExtension): string {
+  const reason = extension.reasonId === null ? null : text.reasons[extension.reasonId];
+  return text.studentSees(formatDateTimeHr(extension.previousDueAt), reason);
+}
