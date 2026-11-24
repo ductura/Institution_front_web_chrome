@@ -5,7 +5,7 @@
 // declaration is read and confirmed on the server (declaration-v1, PIL-K-IZJAVA) through the
 // step's ports; the human help and the printout are edited in StudentStatement on the same read.
 import {
-  Button, Dialog, Select, StepActions, StepCheck, StepDecl, StepEntry, StepKv, StepLoading, StepNav, StepPanel, StepSub, Tag, TextArea,
+  Button, Dialog, Select, StepActions, StepCheck, StepDecl, StepEntry, StepKv, StepLoading, StepNav, StepPanel, StepSub, Tag,
 } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
@@ -14,10 +14,11 @@ import { useSessionTag, writeConfirmed } from "../../../../../../../src/componen
 import { confirmationKey, stepHref } from "../../../../../../../src/components/predaja/flow.ts";
 import { routerPath } from "../../../../bases";
 import StudentStatement from "../../statement/StudentStatement";
+import TeacherQuestion from "../../statement/TeacherQuestion";
 import StepLink from "../steps/StepLink";
 import { chatDialogText as d, declarationStepText as t } from "./messages.hr";
 import {
-  ANSWER_MAX_LENGTH, canConfirm, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
+  canConfirm, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
   type Chat, type ConfirmState, type DeclarationRead, type FormChoice,
 } from "./model";
 import type { StepPorts, StepRead } from "./step-ports";
@@ -64,7 +65,6 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
   const [confirm, setConfirm] = useState<ConfirmState>("none");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<FormChoice | null>(null);
-  const [answer, setAnswer] = useState("");
   const [chat, setChat] = useState<Chat | null>(null);
   const why = useId();
   const statementId = useId();
@@ -172,13 +172,9 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
                 </ul>
               </>
             )}
-            {ready.question !== null && (
-              <>
-                <StepSub>{t.question}</StepSub>
-                <p className="note">{ready.question}</p>
-                <TextArea label={t.answer} value={answer} maxLength={ANSWER_MAX_LENGTH} readOnly={closed} rows={undefined}
-                  onChange={(event) => setAnswer(event.currentTarget.value)} />
-              </>
+            {/* NF-3 PR-20: the teacher's question and the answer, written on the step's read. */}
+            {step?.kind === "read" && (
+              <TeacherQuestion port={ports.statement} assignmentId={assignmentId} read={step.statement} onReload={reload} onSignIn={() => signIn.current()} />
             )}
             {!closed && ready.recorded.length + ready.chats.length > 0 && (
               <>

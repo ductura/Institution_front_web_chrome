@@ -16,6 +16,10 @@ export type NoteFormProps = {
   readonly onAdd: (text: string) => Promise<NoteAdded>;
   readonly onAdded: (note: SubmissionNote) => void;
   readonly onCancel: () => void;
+  /** NF-3 PR-14 (E-9b): the field's label and the line under it, when the note is not the one of step 3. */
+  readonly label?: string;
+  readonly hint?: string;
+  readonly seenBy?: string;
 };
 
 /**
@@ -23,7 +27,7 @@ export type NoteFormProps = {
  * the focus in the field; a blank text marks the field invalid and keeps the
  * focus there (R-36).
  */
-export default function NoteForm({ online, onAdd, onAdded, onCancel }: NoteFormProps) {
+export default function NoteForm({ online, onAdd, onAdded, onCancel, label = t.label, hint = t.hint, seenBy = t.seenBy }: NoteFormProps) {
   const field = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState("");
   const [error, setError] = useState<string>();
@@ -56,10 +60,10 @@ export default function NoteForm({ online, onAdd, onAdded, onCancel }: NoteFormP
 
   return (
     <StepDecl own onSubmit={(event) => void submit(event)}>
-      <TextArea ref={field} label={t.label} name="note" maxLength={NOTE_MAX} value={text} busy={sending}
-        error={error} hint={online ? t.hint : t.offline}
+      <TextArea ref={field} label={label} name="note" maxLength={NOTE_MAX} value={text} busy={sending}
+        error={error} hint={online ? hint : t.offline}
         onChange={(event) => { setText(event.currentTarget.value); if (error !== undefined) setError(undefined); }} />
-      <p className="meta">{t.seenBy}</p>
+      <p className="meta">{seenBy}</p>
       {failure !== undefined && <p className="note" role="alert">{failure}</p>}
       <StepActions>
         <Button type="submit" aria-disabled={!online || undefined} busy={sending}>{sending ? t.sending : t.add}</Button>
