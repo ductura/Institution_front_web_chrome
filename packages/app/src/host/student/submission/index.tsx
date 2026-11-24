@@ -32,7 +32,9 @@ import SubmittedReceipt from "./receipt/SubmittedReceipt";
 import { receiptText } from "./receipt/messages.hr";
 import BeforeSubmitStep from "./summary/BeforeSubmitStep";
 import { VERIFY_PATH } from "../../public/verify/model";
-import WithdrawSubmission from "./withdraw/WithdrawSubmission";
+import AfterSubmission from "./history/AfterSubmission";
+import DeclarationCorrection from "./declaration/DeclarationCorrection";
+import RevisionNotice from "./revision/RevisionNotice";
 import SubmitStep from "./submit/SubmitStep";
 import { extendedDueOf, submitStageOf } from "./submit/model";
 import { readException } from "./submit/exception";
@@ -124,6 +126,11 @@ async function timingFor(checked: Checked, id: string): Promise<Timing> {
   return timingOf(stage, checked.dueAt, exception, now);
 }
 
+/** The deadline in force: the extension when it is later than the deadline. */
+function laterOf(dueAt: string, extendedDueAt: string | null): string {
+  return extendedDueAt !== null && Date.parse(extendedDueAt) > Date.parse(dueAt) ? extendedDueAt : dueAt;
+}
+
 /** The host's base on every path a step opens. */
 function useHrefOf(): (path: string) => string {
   const { base } = useHost();
@@ -172,7 +179,9 @@ export function DeclarationStepPage({ assignmentId, ports: given }: { assignment
     <Shown shown={shown} loading={{ title: stepsText.declarationTitle, message: stepsText.loadingRecorded, label: stepsText.declarationTitle, workHref }}>
       {({ checked, id: assignment, requestedAt }) => (
         <StepsShell step="declaration" work={checked} workHref={workHref} label={stepsText.declarationTitle}
-          receiptHref={hrefOf(stepPath(assignment, "potvrda"))} requestedAt={requestedAt} onRetry={shown.reload}>
+          receiptHref={hrefOf(stepPath(assignment, "potvrda"))} requestedAt={requestedAt} onRetry={shown.reload}
+          revision={<RevisionNotice assignmentId={assignment} onDeclaration />}
+          submittedExtra={<DeclarationCorrection assignmentId={assignment} receiptHref={hrefOf(stepPath(assignment, "potvrda"))} />}>
           {checked.kind === "ready"
             ? <DeclarationStep assignmentId={assignment} workState={checked.workState} ports={ports} hrefOf={hrefOf}
                 onSignIn={() => goToSignIn(appHref(base, stepPath(assignment, "izjava")))} />
@@ -196,7 +205,8 @@ export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignment
     <Shown shown={shown} loading={{ title: stepsText.panelTitle, message: stepsText.loadingWork, label: stepsText.panelLabel, workHref }}>
       {({ checked, id, requestedAt, timing }) => (
         <StepsShell step="beforeSubmit" work={checked} workHref={workHref} label={stepsText.beforeSubmitTitle} wide
-          receiptHref={hrefOf(stepPath(id, "potvrda"))} requestedAt={requestedAt} onRetry={shown.reload}>
+          receiptHref={hrefOf(stepPath(id, "potvrda"))} requestedAt={requestedAt} onRetry={shown.reload}
+          revision={<RevisionNotice assignmentId={id} />}>
           <BeforeSubmitStep assignmentId={id} declaredFor={declaredFor} hrefOf={hrefOf} workHref={workHref} timing={timing}
             stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }}
             onSignIn={() => goToSignIn(appHref(base, stepPath(id, "pregled")))} />
@@ -223,7 +233,8 @@ export function SubmitStepPage({ assignmentId }: { assignmentId: string }) {
     <Shown shown={shown} loading={{ title: stepsText.panelTitle, message: stepsText.loadingWork, label: stepsText.panelLabel, workHref }}>
       {({ checked, id, timing }) => (
         <StepsShell step="submit" work={checked} workHref={workHref} label={stepsText.panelLabel}
-          receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
+          receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}
+          revision={<RevisionNotice assignmentId={id} />}>
           <SubmitStep assignmentId={id} title={checked.kind === "ready" ? checked.title : ""} dueAt={checked.kind === "ready" ? checked.dueAt : null}
             stage={checked.kind === "ready" ? submitStageOf(checked.workState, checked.dueAt, checked.extendedDueAt, Date.now()) : { kind: "unavailable" }}
             timing={timing} />
@@ -239,7 +250,7 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
   const router = useRouter();
   const hrefOf = useHrefOf();
   const workHref = useWorkHref(assignmentId);
-  const shown = useChecked<{ id: string; receipt: ReceiptRead; course: string; title: string }>(assignmentId, "potvrda", async (checked, id) => {
+  const shown = useChecked<{ id: string; receipt: ReceiptRead; course: string; title: string; deadline: string | null }>(assignmentId, "potvrda", async (checked, id) => {
     const submission = await readSubmittedWork(id, { baseUrl: window.location.origin, fetchImpl: browserTransport })
       .catch(() => ({ kind: "nepoznato" as const }));
     if (submission.kind === "session-expired") {
@@ -249,11 +260,12 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
     return {
       id, receipt: studentReceiptRead(submission, checked.kind === "ready" ? checked.workState : null),
       course: checked.kind === "ready" ? checked.course : "", title: checked.kind === "ready" ? checked.title : "",
+      deadline: checked.kind === "ready" ? laterOf(checked.dueAt, checked.extendedDueAt) : null,
     };
   });
   return (
     <Shown shown={shown} loading={{ title: receiptText.panelTitle, message: receiptText.loading, label: receiptText.label, workHref }}>
-      {({ id, receipt, course, title }) => (
+      {({ id, receipt, course, title, deadline }) => (
         <StepFrame backHref={workHref} onBack={() => router.push(workHref)} course={course} title={title} label={receiptText.label}>
           {/* NF-3 PR-11: a signed receipt also reads what was submitted and the summary of the work. PR-12 (answer 1):
               in the pilot the student saves only the PDF with the QR code, so neither the package for the
@@ -263,7 +275,9 @@ export function ReceiptStepPage({ assignmentId }: { assignmentId: string }) {
                 homeHref={hrefOf("/")} checkHref={hrefOf(VERIFY_PATH)} onSignIn={() => goToSignIn(appHref(base, stepPath(id, "potvrda")))} />
             : <ReceiptScreen read={receipt} retryHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload} workHref={workHref}
                 homeHref={hrefOf("/")} checkHref={hrefOf(VERIFY_PATH)} />}
-          <WithdrawSubmission assignmentId={id} />
+          {/* NF-3 PR-13, PR-15: the withdrawal with its reason and next step, and "Moje predaje". */}
+          <AfterSubmission assignmentId={id} deadline={deadline} workHref={workHref} receiptHref={hrefOf(stepPath(id, "potvrda"))}
+            here={appHref(base, stepPath(id, "potvrda"))} />
         </StepFrame>
       )}
     </Shown>

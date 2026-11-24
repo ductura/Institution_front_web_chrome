@@ -17,8 +17,14 @@ import { TeacherPage } from "../shell/TeacherPage";
 import KeyDates from "../key-dates/KeyDates";
 import { keyDatesPort, type KeyDatesCall } from "../key-dates/contract";
 import { keyDatesMessages } from "../key-dates/messages.hr";
-import { mentorshipsOf, roundWorks } from "./model";
+import { goToSignIn } from "../../../../../../src/client/api";
+import { studentName } from "../../../../../../src/components/teacher/mentored-works-view";
+import { mentorshipsOf, roundWorks, startedWorks } from "./model";
 import { RoundReview } from "./RoundReview";
+import { OpenMentorshipCard } from "./OpenMentorshipCard";
+import { WorkPlan } from "./WorkPlan";
+import type { PlanCall } from "./plan-actions";
+import type { RecordsRead } from "./AgreedCard";
 
 const HREF = "/nastavnik/mentorstva";
 const requestsCall = () => createApi() as unknown as MentorshipCall;
@@ -31,12 +37,15 @@ const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
  * through the contract client (LOK-WEB-5); a failed read says "unavailable",
  * never "none". After a decision the page reads again. PIL-K-ROKOVI: each mentorship has its
  * key-dates card (mentorship.key-dates.get), read on its own; its failure never hides the page.
+ * WEB-NF6-ETAPE (MK-5, MK-6, MK-7): "Novo mentorstvo" (not available yet), and per started work its stages,
+ * plan writes and what was agreed at the latest consultation, each read on its own.
  */
-export default function MentorshipsPage({ requests = requestsCall, works = worksCall, keyDates = keyDatesCall }:
-  { requests?: () => MentorshipCall; works?: () => MentoredWorksCall; keyDates?: () => KeyDatesCall }) {
+export default function MentorshipsPage({ requests = requestsCall, works = worksCall, keyDates = keyDatesCall, plan, records }:
+  { requests?: () => MentorshipCall; works?: () => MentoredWorksCall; keyDates?: () => KeyDatesCall; plan?: () => PlanCall; records?: RecordsRead }) {
   const { base } = useHost();
   const datesPort = useMemo(() => keyDatesPort(keyDates), [keyDates]);
   const here = appHref(base, HREF);
+  const signedOut = () => goToSignIn(here);
   const [read, retry] = useTeacherRead<{ asked: RequestsRead; works: MentoredWork[] }>(base, async () => {
     const [list, mentored] = await Promise.all([readMentorshipRequests(requests()), readMentoredWorks(works())]);
     if (mentored.kind === "signedOut") return { kind: "signedOut" };
@@ -60,6 +69,11 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
             <KeyDates key={m.mentorshipId} mentorshipId={m.mentorshipId} port={datesPort} title={keyDatesMessages.forStudent(m.name)} />
           ))}
           <RequestsCard read={value.asked} here={here} call={requests()} onDecided={retry} />
+          <OpenMentorshipCard />
+          {startedWorks(value.works).map((work) => (
+            <WorkPlan key={work.documentId} documentId={work.documentId} name={studentName(work)} title={work.title} base={base}
+              onSignedOut={signedOut} plan={plan} records={records} />
+          ))}
         </>
       )} />
   );

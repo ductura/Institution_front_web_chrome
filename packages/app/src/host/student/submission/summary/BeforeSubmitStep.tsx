@@ -24,7 +24,8 @@ import { checksText as c } from "./messages.hr";
 import SummaryPanel from "./SummaryPanel";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "./declaration-gate";
 import { beforeSubmission, declarationText as declarationWords } from "./declaration-gate";
-import { notesCall, readStepChecks, type ClientAnswer, type NotesClient, type SummaryPorts } from "./model";
+import { readStepChecks, type SummaryPorts } from "./model";
+import { NOTES } from "./notes-port";
 import { pastesOf, type Place } from "./places";
 import { pasteWhen } from "./panel-model";
 import { lateLine, timingTag, type Timing } from "../submit/timing";
@@ -38,12 +39,6 @@ import { submitText } from "../submit/messages.hr";
 
 const PORTS: SummaryPorts = { readWork: (id) => readWork(id), readSummary: (documentId) => fetchProcessSummary(documentId) };
 
-const client: NotesClient = {
-  list: (assignmentId) => createApi()("student.submission-notes.get", { params: { assignmentId }, query: undefined, body: undefined }) as Promise<ClientAnswer>,
-  add: (assignmentId, text) => createApi()("student.submission-notes.post", { params: undefined, query: undefined, body: { assignmentId, text } }) as Promise<ClientAnswer>,
-};
-// One transport for the page's life: the step reads the notes again whenever it changes.
-const NOTES = notesCall(client);
 // The supplements and disputes of the summary's events (WEB-1305): one read per work.
 const DISPUTES = createEventDisputes(createApi());
 

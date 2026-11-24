@@ -17,7 +17,7 @@ export async function otvori(page: Page, screen: Screen, scenarij: Scenarij) {
   await page.route("**/api/v1/**", (route) => {
     const request = route.request();
     if (request.url().includes("/api/v1/auth/login")) return route.fallback();
-    const result = server.answer(screen.role, request.method(), new URL(request.url()).pathname);
+    const result = server.answer(screen.role, request.method(), new URL(request.url()).pathname, request.postData());
     // "hang": the request is never answered, so the loading state stays on screen.
     if (result === "hang") return undefined;
     return route.fulfill(result);

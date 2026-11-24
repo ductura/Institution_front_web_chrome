@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { MyCourse } from "../read/assignments";
-import { normalizeCode as enrollRule } from "../../../../../../src/components/student/upis/enroll";
+import { normalizeCode as enrollRule } from "../enrol/enroll";
 import { CODE_MAX, cleanCode } from "../enrol/code";
 import { codeFromQuery } from "../enrol/model";
 import { continueRow, coursesWithoutTask, deadlineTag, sections, enrollRoute, flatRows, kindOf, nearTag, normalizeCode, rowAction, rowRoute, type TaskRow } from "./model";

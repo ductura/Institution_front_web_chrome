@@ -1,14 +1,33 @@
 /**
- * Interface text of "Prijave problema" (NF-7 OA-7, prototype screen `prijave`). Only sending a
- * report exists on the server (support.problem-reports.post); reading the reports and their state
- * does not yet (SRV-ADMIN-7), so the page says so honestly and shows who handles which kind of
- * report (Daniel 23. 11. 2026., t. 8). It never shows invented reports.
+ * Interface text of "Prijave problema" (NF-7 OA-7, prototype screen `prijave`): the read of the reports
+ * routed to the reader (support.problem-reports.get) and the change of their state
+ * (support.problem-report-status.post). Who handles which category: Daniel 23. 11. 2026., t. 8.
  */
 export const problemReportsMessages = {
   title: "Prijave problema",
   lead: "Prijave koje su podnijeli studenti, usmjerene onome tko ih rješava.",
-  unavailableTitle: "Popis prijava još nije dostupan",
-  unavailableBody: "Studenti već mogu poslati prijavu iz pomoći, ali poslužitelj još ne daje popis primljenih prijava ni njihovo stanje. Kad bude dostupan, ovdje će se vidjeti kategorija, datum i stanje svake prijave.",
+  reportsTitle: "Primljene prijave",
+  table: "Prijave problema",
+  reference: "Oznaka",
+  received: "Zaprimljeno",
+  description: "Opis",
+  state: "Stanje",
+  actionColumn: "Radnja",
+  routedTo: "Usmjereno na",
+  truncated: "Prikazano je samo najnovijih {count} prijava.",
+  emptyTitle: "Nema prijava",
+  emptyBody: "Nijedna prijava nije stigla vama. Kad je student pošalje iz pomoći, pojavit će se ovdje.",
+  denied: "Nemate ovlasti za prijave problema.",
+  unavailable: "Prijave trenutačno nije moguće učitati. Pokušajte ponovno.",
+  retry: "Pokušaj ponovno",
+  stateNames: { received: "zaprimljeno", resolved: "riješeno" },
+  markResolved: "Označi riješenom",
+  markReceived: "Vrati u zaprimljeno",
+  changedOk: "Stanje prijave {reference} je promijenjeno.",
+  changeDenied: "Nemate ovlasti za promjenu stanja prijave {reference}.",
+  changeGone: "Prijava {reference} više ne postoji. Popis je ponovno učitan.",
+  changeFailed: "Stanje prijave {reference} nije promijenjeno. Pokušajte ponovno.",
+  handlers: { network_engineer: "operater", course_teacher: "nastavnik", institution_admin: "administrator fakulteta" },
   routingTitle: "Tko rješava koju prijavu",
   routingCaption: "Usmjeravanje prijava po kategoriji",
   category: "Kategorija",

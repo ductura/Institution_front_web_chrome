@@ -31,13 +31,28 @@ describe("WEB-1230 assistant match notice", () => {
     expect((await readAssistantMatch(fakeMatchServer({ throws: true }).call, DOCUMENT)).kind).toBe("unavailable");
   });
 
-  it("sends the student's explanation and gets the match back with it", async () => {
+  it("sends the student's explanation with the answer it explains and keeps it on the match (ED-13)", async () => {
     const { call, calls } = fakeMatchServer();
-    const result = await explainAssistantMatch(call, DOCUMENT, "s3", "  Pitao/la sam pomoćnika za definiciju.  ");
-    expect(result.kind).toBe("saved");
-    expect(calls[0]).toMatchObject({ id: "work.assistant-match.explain", params: { documentId: DOCUMENT, segmentId: "s3" }, body: { text: "Pitao/la sam pomoćnika za definiciju." } });
-    expect((await explainAssistantMatch(call, DOCUMENT, "s3", "   ")).kind).toBe("rejected");
-    expect((await explainAssistantMatch(fakeMatchServer({ status: 500 }).call, DOCUMENT, "s3", "x")).kind).toBe("failed");
+    const result = await explainAssistantMatch(call, DOCUMENT, FAKE_MATCH, "  Pitao/la sam pomoćnika za definiciju.  ");
+    expect(result).toEqual({ kind: "saved", match: { ...FAKE_MATCH, explanation: { text: "Pitao/la sam pomoćnika za definiciju.", at: "2026-11-18T10:00:00.000Z" } } });
+    expect(calls[0]).toEqual({ id: "work.assistant-match.explain", params: { documentId: DOCUMENT, segmentId: "s3" }, body: { text: "Pitao/la sam pomoćnika za definiciju.", messageId: FAKE_MATCH.messageId } });
+    expect((await explainAssistantMatch(call, DOCUMENT, FAKE_MATCH, "   ")).kind).toBe("rejected");
+    expect((await explainAssistantMatch(call, DOCUMENT, FAKE_MATCH, "x".repeat(2001))).kind).toBe("rejected");
+  });
+
+  it("maps every refusal of the explanation and never sends without the answer it explains", async () => {
+    const kind = async (opts: Parameters<typeof fakeMatchServer>[0]) => (await explainAssistantMatch(fakeMatchServer(opts).call, DOCUMENT, FAKE_MATCH, "x")).kind;
+    expect(await kind({ status: 401 })).toBe("signedOut");
+    expect(await kind({ status: 409 })).toBe("conflict");
+    expect(await kind({ status: 422 })).toBe("rejected");
+    expect(await kind({ status: 400 })).toBe("rejected");
+    expect(await kind({ status: 503 })).toBe("failed");
+    expect(await kind({ throws: true })).toBe("failed");
+    expect(await kind({ body: { text: "x", at: "2026-11-18T10:00:00.000Z", verdict: "copied" } })).toBe("failed");
+    const { call, calls } = fakeMatchServer();
+    const { messageId: _drop, ...withoutMessage } = FAKE_MATCH;
+    expect((await explainAssistantMatch(call, DOCUMENT, withoutMessage, "x")).kind).toBe("failed");
+    expect(calls).toEqual([]);
   });
 
   it("renders nothing before the read arrives and holds neutral copy", () => {
