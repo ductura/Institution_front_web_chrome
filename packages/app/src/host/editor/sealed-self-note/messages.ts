@@ -51,6 +51,8 @@ export const sealedSelfNoteHr = {
   saved: "Poruka je spremljena na poslužitelju.",
   saveFailed: "Poruka nije spremljena na poslužitelju. Pokušajte ponovno.",
   tooLong: "Poruka je preduga.",
+  empty: "Upišite poruku.",
+  notAllowed: "Poruka sadrži znak koji se ne može spremiti. Uklonite ga i pokušajte ponovno.",
   placeKept: "Uz poruku je zapamćeno mjesto u radu.",
   goToPlace: "Idi na to mjesto",
   remove: "Obriši poruku",

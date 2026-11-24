@@ -13,7 +13,7 @@ import { browserMarkStore, currentSession } from "@/client/session-marks";
 import { sealedSelfNoteHr as t } from "./messages";
 import {
   browserSelfNotePort, charsLeft, confirmRenew, confirmSetup, load, removeNote, reset, save, startRenew, startSetup, unlock,
-  type Notice, type OpenView, type SelfNotePort, type View,
+  type Notice, type OpenView, type SaveError, type SelfNotePort, type View,
 } from "./self-note-model";
 
 export type SealedSelfNoteProps = {
@@ -159,14 +159,14 @@ function Open({ view, port, documentId, currentPlace, onGoToPlace, onView }: {
 }) {
   const [text, setText] = useState(view.note?.text ?? "");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<"tooLong" | "saveFailed" | null>(null);
+  const [error, setError] = useState<SaveError | null>(null);
   const [renewing, setRenewing] = useState(false);
   const [typed, setTyped] = useState("");
   const [renewError, setRenewError] = useState<"unlockWrong" | "unlockMalformed" | null>(null);
   const left = charsLeft(text);
   const place = view.note?.place ?? null;
 
-  const act = async (step: () => Promise<{ view: View } | { error: "tooLong" | "saveFailed" }>) => {
+  const act = async (step: () => Promise<{ view: View } | { error: SaveError }>) => {
     setBusy(true);
     setError(null);
     try {
@@ -197,12 +197,12 @@ function Open({ view, port, documentId, currentPlace, onGoToPlace, onView }: {
     {view.notice && view.notice !== "saved" && view.notice !== "removed" && <Banner tone={view.notice === "renewDone" ? "info" : "warn"}>{t[view.notice]}</Banner>}
     {view.old && <p>{t.oldNote}</p>}
     <TextArea label={t.noteLabel} value={text} rows={5} onChange={(event) => setText(event.currentTarget.value)}
-      hint={t.noteHint(Math.max(left, 0))} error={left < 0 || error === "tooLong" ? t.tooLong : error === "saveFailed" ? t.saveFailed : undefined} busy={busy} />
+      hint={t.noteHint(Math.max(left, 0))} error={left < 0 ? t.tooLong : error ? t[error] : undefined} busy={busy} />
     {place && <p>{t.placeKept}{" "}
       {onGoToPlace && <Button tone="quiet" onClick={() => onGoToPlace(place)}>{t.goToPlace}</Button>}
     </p>}
     <ActionRow>
-      <Button busy={busy} disabled={left < 0} onClick={() => void act(() => save(port, documentId, view, text, currentPlace?.() ?? place))}>
+      <Button busy={busy} disabled={left < 0 || text.length === 0} onClick={() => void act(() => save(port, documentId, view, text, currentPlace?.() ?? place))}>
         {busy ? t.saveBusy : t.save}
       </Button>
       {(view.note !== null || view.old) && <Button tone="quiet" disabled={busy} onClick={() => void act(() => removeNote(port, documentId, view))}>{t.remove}</Button>}

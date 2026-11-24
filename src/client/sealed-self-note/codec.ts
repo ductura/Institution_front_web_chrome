@@ -15,8 +15,9 @@ export const SALT_BYTES = 16;
 export const DEK_BYTES = 32;
 /** ct of a wrap: the 32 key bytes and the tag. */
 export const WRAP_CT_BYTES = DEK_BYTES + TAG_BYTES;
-/** The note's text, in characters, as the editor's own note limit (work-notes.ts LIMITS.note). */
-export const MAX_TEXT_CHARS = 400;
+/** The note's text, in characters (code points), as the contract allows (§4.1): 1 to 280. */
+export const MIN_TEXT_CHARS = 1;
+export const MAX_TEXT_CHARS = 280;
 /** The place inside the work, as `readingPlace.place` of the contract. */
 export const MAX_PLACE_OFFSET = 1_000_000;
 /** PBKDF2 iterations the contract accepts (§4.1). */
@@ -104,6 +105,22 @@ export const KEY_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 // Controls other than tab and line feed; a lone surrogate has no UTF-8 form.
 // eslint-disable-next-line no-control-regex
 const NOT_TEXT = /[\u0000-\u0008\u000b-\u001f\u007f]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u;
+/** Direction controls the contract forbids (§4.1): U+200E, U+200F, U+202A–U+202E, U+2066–U+2069. */
+const DIRECTION = /[\u200e\u200f\u202a-\u202e\u2066-\u2069]/u;
+
+export type TextProblem = "empty" | "tooLong" | "notAllowed";
+
+/**
+ * Why a note's text breaks the contract's rules (§4.1), or null when it keeps them: 1 to 280
+ * code points, Unicode NFC, no controls but tab and line feed, no direction controls and no
+ * lone surrogates. Applied before sealing and again after opening.
+ */
+export function textProblem(text: string): TextProblem | null {
+  if (NOT_TEXT.test(text) || DIRECTION.test(text) || text !== text.normalize("NFC")) return "notAllowed";
+  const chars = [...text].length;
+  if (chars < MIN_TEXT_CHARS) return "empty";
+  return chars > MAX_TEXT_CHARS ? "tooLong" : null;
+}
 
 function validPlace(place: unknown): place is NotePlace {
   if (typeof place !== "object" || place === null || Array.isArray(place)) return false;
@@ -118,7 +135,7 @@ export function validContent(content: unknown): content is NoteContent {
   const keys = Object.keys(content).sort();
   const { text, place } = content as Record<string, unknown>;
   return keys.length === 2 && keys[0] === "place" && keys[1] === "text"
-    && typeof text === "string" && !NOT_TEXT.test(text) && [...text].length <= MAX_TEXT_CHARS
+    && typeof text === "string" && textProblem(text) === null
     && (place === null || validPlace(place));
 }
 

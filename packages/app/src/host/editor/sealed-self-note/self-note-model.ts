@@ -3,7 +3,7 @@
 // the next view; nothing here holds the phrase or the recovery code longer than one step.
 
 import { commitKey, deleteSealed, readKey, readSealed, removeKey, writeSealed, type ServerKey } from "@/client/sealed-self-note/calls";
-import { MAX_TEXT_CHARS, normaliseSecret, type NoteContent, type NotePlace } from "@/client/sealed-self-note/codec";
+import { MAX_TEXT_CHARS, normaliseSecret, textProblem, type NoteContent, type NotePlace, type TextProblem } from "@/client/sealed-self-note/codec";
 import { forgetDeviceKey, keepDeviceKey, readDeviceKey, type DeviceKey } from "@/client/sealed-self-note/device-key";
 import { createKeySetup, openNote, rewrapKey, sealNote, unlockKey, type KeySetup } from "@/client/sealed-self-note/seal";
 import type { SealedSelfNoteText } from "./messages";
@@ -112,13 +112,20 @@ export async function unlock(port: SelfNotePort, documentId: string, key: Server
 
 /** Characters as the contract counts them (code points). */
 export const textLength = (text: string): number => [...text].length;
-export const charsLeft = (text: string): number => MAX_TEXT_CHARS - textLength(text);
+export const charsLeft = (text: string): number => MAX_TEXT_CHARS - textLength(text.normalize("NFC"));
 
-export type SaveResult = { view: View } | { error: "tooLong" | "saveFailed" };
+export type SaveError = TextProblem | "saveFailed";
+export type SaveResult = { view: View } | { error: SaveError };
 
-/** Seals the text and the place on the device and sends only the sealed note. */
-export async function save(port: SelfNotePort, documentId: string, view: OpenView, text: string, place: NotePlace | null): Promise<SaveResult> {
-  if (charsLeft(text) < 0) return { error: "tooLong" };
+/**
+ * Seals the text and the place on the device and sends only the sealed note. The text is put
+ * in NFC first (some keyboards type letters such as č as two signs); what still breaks the
+ * contract's rules (§4.1) is refused before anything is sealed or sent.
+ */
+export async function save(port: SelfNotePort, documentId: string, view: OpenView, typed: string, place: NotePlace | null): Promise<SaveResult> {
+  const text = typed.normalize("NFC");
+  const problem = textProblem(text);
+  if (problem !== null) return { error: problem };
   const content: NoteContent = { text, place };
   const sealed = await port.sealNote(view.device, documentId, content);
   if (sealed === null) return { error: "tooLong" };

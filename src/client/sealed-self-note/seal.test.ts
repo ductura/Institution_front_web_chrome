@@ -61,8 +61,8 @@ describe("a sealed note", () => {
     const setup = await createKeySetup();
     const a = (await sealNote(setup.deviceKey, setup.body.keyId, DOC, NOTE))!;
     const b = (await sealNote(setup.deviceKey, setup.body.keyId, DOC, NOTE))!;
-    const empty = (await sealNote(setup.deviceKey, setup.body.keyId, DOC, { text: "", place: null }))!;
-    for (const s of [a, b, empty]) {
+    const short = (await sealNote(setup.deviceKey, setup.body.keyId, DOC, { text: "a", place: null }))!;
+    for (const s of [a, b, short]) {
       expect(Object.keys(s).sort()).toEqual(["ct", "iv", "keyId", "v"]);
       expect(s.v).toBe(1);
       expect(s.keyId).toBe(setup.body.keyId);
@@ -109,8 +109,29 @@ describe("a sealed note", () => {
 
   it("refuses a note that does not fit, without sealing anything", async () => {
     const setup = await createKeySetup();
-    expect(await sealNote(setup.deviceKey, setup.body.keyId, DOC, { text: "x".repeat(401), place: null })).toBeNull();
+    for (const text of ["", "x".repeat(281), "c\u030c", "a\u202eb", "a\u2066b", "a\u200fb"]) {
+      expect(await sealNote(setup.deviceKey, setup.body.keyId, DOC, { text, place: null })).toBeNull();
+    }
     expect(await sealNote(setup.deviceKey, "NIJE-UUID", DOC, NOTE)).toBeNull();
+  });
+
+  it("does not open a well-sealed note whose text breaks the contract's text rules (§4.1)", async () => {
+    // Sealed by hand with the right key, AAD and padding: only the text rules can refuse it.
+    const raw = webcrypto.getRandomValues(new Uint8Array(32));
+    const deviceKey = await browserCrypto().subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+    const keyId = "6f1e2d3c-4b5a-4968-8776-6554433221a1";
+    const sealRaw = async (text: string) => {
+      const message = new Uint8Array(1280);
+      message.set(new TextEncoder().encode(JSON.stringify({ place: null, text })));
+      const iv = webcrypto.getRandomValues(new Uint8Array(IV_BYTES));
+      const ct = new Uint8Array(await webcrypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: ab(noteAad(DOC)) }, deviceKey, message));
+      return { v: 1, keyId, iv: Buffer.from(iv).toString("base64url"), ct: Buffer.from(ct).toString("base64url") };
+    };
+    expect(await openNote(deviceKey, keyId, DOC, await sealRaw("Izmišljeno."))).toEqual({ text: "Izmišljeno.", place: null });
+    expect(await openNote(deviceKey, keyId, DOC, await sealRaw("a".repeat(280)))).toEqual({ text: "a".repeat(280), place: null });
+    const broken = ["", "a".repeat(281), "Izmišljeno.".normalize("NFD"),
+      ...[0x200e, 0x200f, 0x202a, 0x202b, 0x202c, 0x202d, 0x202e, 0x2066, 0x2067, 0x2068, 0x2069].map((code) => `a${String.fromCodePoint(code)}b`)];
+    for (const text of broken) expect(await openNote(deviceKey, keyId, DOC, await sealRaw(text))).toBeNull();
   });
 });
 

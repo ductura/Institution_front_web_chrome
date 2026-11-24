@@ -4,8 +4,8 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import vectors from "../migration-contract-vectors.generated.json" with { type: "json" };
 import {
-  bytesOfLength, canonicalMessage, formatSecret, fromBase64Url, MESSAGE_BYTES, normaliseSecret, noteAad, padMessage,
-  SECRET_ALPHABET, SECRET_CHARS, secretFromBytes, toBase64Url, unpadMessage, wrapAad,
+  bytesOfLength, canonicalMessage, formatSecret, fromBase64Url, MAX_TEXT_CHARS, MESSAGE_BYTES, normaliseSecret, noteAad, padMessage,
+  SECRET_ALPHABET, SECRET_CHARS, secretFromBytes, textProblem, toBase64Url, unpadMessage, wrapAad,
 } from "./codec";
 
 const PLACE = { nodeId: "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", offset: 42 };
@@ -73,16 +73,71 @@ describe("the message", () => {
     expect(unpadMessage(padded.subarray(1))).toBeNull();
   });
 
-  it("refuses what does not fit: too many characters, too many bytes, controls, another shape", () => {
-    expect(padMessage({ text: "a".repeat(400), place: PLACE })).not.toBeNull();
-    expect(padMessage({ text: "a".repeat(401), place: null })).toBeNull();
-    expect(padMessage({ text: "😀".repeat(400), place: null })).toBeNull(); // 1600 bytes
+  it("refuses what does not fit: too many characters, controls, another shape", () => {
+    expect(MAX_TEXT_CHARS).toBe(280);
+    expect(padMessage({ text: "a".repeat(280), place: PLACE })).not.toBeNull();
+    expect(padMessage({ text: "😀".repeat(280), place: PLACE })).not.toBeNull(); // 280 code points, 1120 bytes
+    expect(padMessage({ text: "a".repeat(281), place: null })).toBeNull();
+    expect(padMessage({ text: "😀".repeat(281), place: null })).toBeNull();
     expect(padMessage({ text: "a\u0000b", place: null })).toBeNull();
     expect(padMessage({ text: "a\ud800", place: null })).toBeNull();
     expect(padMessage({ text: "a", place: { nodeId: "x", offset: 1 } })).toBeNull();
     expect(padMessage({ text: "a", place: { ...PLACE, offset: 1_000_001 } })).toBeNull();
     expect(padMessage({ text: "a", place: null, extra: 1 } as never)).toBeNull();
     expect(padMessage({ text: "red\npa\tred", place: null })).not.toBeNull();
+  });
+});
+
+// SRV self-note-sealed-v1 §4.1: 1 to 280 code points, NFC, no direction controls.
+const DIRECTION_CONTROLS = [0x200e, 0x200f, 0x202a, 0x202b, 0x202c, 0x202d, 0x202e, 0x2066, 0x2067, 0x2068, 0x2069];
+/** Padded bytes of exactly the JCS form, bypassing padMessage's own check. */
+const rawPadded = (text: string): Uint8Array => {
+  const out = new Uint8Array(MESSAGE_BYTES);
+  out.set(new TextEncoder().encode(JSON.stringify({ place: null, text })));
+  return out;
+};
+
+describe("the text rules of the contract (§4.1), before sealing and after opening", () => {
+  it("allows 1 to 280 code points and refuses an empty text", () => {
+    expect(textProblem("")).toBe("empty");
+    expect(textProblem("a")).toBeNull();
+    expect(textProblem("a".repeat(280))).toBeNull();
+    expect(textProblem("a".repeat(281))).toBe("tooLong");
+    expect(padMessage({ text: "", place: null })).toBeNull();
+    expect(padMessage({ text: "", place: PLACE })).toBeNull();
+    expect(unpadMessage(rawPadded(""))).toBeNull();
+    expect(unpadMessage(rawPadded("a"))).toEqual({ text: "a", place: null });
+    expect(unpadMessage(rawPadded("a".repeat(280)))).toEqual({ text: "a".repeat(280), place: null });
+    expect(unpadMessage(rawPadded("a".repeat(281)))).toBeNull();
+  });
+
+  it("allows only text in NFC", () => {
+    const composed = "Bilješka: č i ž";
+    const decomposed = composed.normalize("NFD");
+    expect(decomposed).not.toBe(composed);
+    expect(textProblem(composed)).toBeNull();
+    expect(textProblem(decomposed)).toBe("notAllowed");
+    expect(textProblem("c\u030c")).toBe("notAllowed");
+    expect(padMessage({ text: decomposed, place: null })).toBeNull();
+    expect(unpadMessage(rawPadded(composed))).toEqual({ text: composed, place: null });
+    expect(unpadMessage(rawPadded(decomposed))).toBeNull();
+  });
+
+  it.each(DIRECTION_CONTROLS)("refuses the direction control U+%s anywhere in the text", (code) => {
+    const sign = String.fromCodePoint(code);
+    for (const text of [sign, `a${sign}`, `${sign}a`, `ab${sign}cd`]) {
+      expect(textProblem(text)).toBe("notAllowed");
+      expect(padMessage({ text, place: PLACE })).toBeNull();
+      expect(unpadMessage(rawPadded(text))).toBeNull();
+    }
+  });
+
+  it("still allows the signs right next to the forbidden ranges", () => {
+    for (const code of [0x200d, 0x2010, 0x2029, 0x202f, 0x2065, 0x206a]) {
+      const text = `a${String.fromCodePoint(code)}b`;
+      expect(textProblem(text)).toBeNull();
+      expect(unpadMessage(padMessage({ text, place: null })!)).toEqual({ text, place: null });
+    }
   });
 });
 

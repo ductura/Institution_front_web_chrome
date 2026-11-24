@@ -6,7 +6,7 @@ import { normaliseSecret } from "@/client/sealed-self-note/codec";
 import { forgetDeviceKey, keepDeviceKey, readDeviceKey, type DeviceKeyDeps, type KeyVault } from "@/client/sealed-self-note/device-key";
 import { createKeySetup, openNote, rewrapKey, sealNote, unlockKey, type KeyBody, type SealedNote } from "@/client/sealed-self-note/seal";
 import { CURRENT_KEY } from "@/client/session-marks";
-import { confirmRenew, confirmSetup, load, removeNote, reset, save, startRenew, startSetup, unlock, type OpenView, type SelfNotePort, type View } from "./self-note-model";
+import { charsLeft, confirmRenew, confirmSetup, load, removeNote, reset, save, startRenew, startSetup, unlock, type OpenView, type SelfNotePort, type View } from "./self-note-model";
 
 const BASE = "https://ductura.example.invalid";
 const DOC = "rad-izmisljeni-nf6-3";
@@ -222,14 +222,40 @@ describe("starting over (S2)", () => {
 });
 
 describe("saving", () => {
-  it("refuses a note over 400 characters without sending anything", async () => {
+  it("refuses a note over 280 characters without sending anything", async () => {
     const server = memoryServer();
     const p = port(server, device());
     const opened = asOpen(await confirmSetup(p, DOC, (await startSetup(p) as Extract<View, { kind: "setup" }>).setup));
     const before = server.seen.length;
-    expect(await save(p, DOC, opened, "a".repeat(401), null)).toEqual({ error: "tooLong" });
-    expect(await save(p, DOC, opened, "😀".repeat(400), null)).toEqual({ error: "tooLong" });
+    expect(await save(p, DOC, opened, "a".repeat(281), null)).toEqual({ error: "tooLong" });
+    expect(await save(p, DOC, opened, "😀".repeat(281), null)).toEqual({ error: "tooLong" });
     expect(server.seen.length).toBe(before);
+    expect(charsLeft("a".repeat(280))).toBe(0);
+    expect(asOpen(viewOf(await save(p, DOC, opened, "😀".repeat(280), null))).notice).toBe("saved");
+  });
+
+  it("refuses an empty note and one with a direction control without sending anything", async () => {
+    const server = memoryServer();
+    const p = port(server, device());
+    const opened = asOpen(await confirmSetup(p, DOC, (await startSetup(p) as Extract<View, { kind: "setup" }>).setup));
+    const before = server.seen.length;
+    expect(await save(p, DOC, opened, "", null)).toEqual({ error: "empty" });
+    for (const code of [0x200e, 0x200f, 0x202a, 0x202b, 0x202c, 0x202d, 0x202e, 0x2066, 0x2067, 0x2068, 0x2069]) {
+      expect(await save(p, DOC, opened, `Izmišljeno ${String.fromCodePoint(code)}x`, null)).toEqual({ error: "notAllowed" });
+    }
+    expect(server.seen.length).toBe(before);
+  });
+
+  it("seals a text typed in decomposed form as NFC, and reads it back the same", async () => {
+    const server = memoryServer();
+    const dev = device();
+    const p = port(server, dev);
+    const opened = asOpen(await confirmSetup(p, DOC, (await startSetup(p) as Extract<View, { kind: "setup" }>).setup));
+    const typed = "Pročitati čž poglavlje.".normalize("NFD");
+    const saved = asOpen(viewOf(await save(p, DOC, opened, typed, null)));
+    expect(saved.note?.text).toBe(typed.normalize("NFC"));
+    const again = asOpen(await load(p, DOC));
+    expect(again.note?.text).toBe(typed.normalize("NFC"));
   });
 
   it("goes back to unlocking when the server's key changed under the device (409)", async () => {
