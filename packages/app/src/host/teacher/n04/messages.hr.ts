@@ -5,6 +5,17 @@ export const courseStudentsMessages = {
   lead: "Svaki student kroz sve zadatke kolegija. Popis je abecedan i ne može se poredati po brojevima. Stanje rada piše se riječima.",
   filter: "Prikaz",
   allGroups: "Svi",
+  // NZ-11
+  stateLabel: "Stanje",
+  allStates: "Sva stanja",
+  stateFilter: {
+    notStarted: "Nije započelo", writing: "Piše", submitted: "Predano", late: "Nakon roka", revision: "Dorada",
+  } as Readonly<Record<"notStarted" | "writing" | "submitted" | "late" | "revision", string>>,
+  orderLabel: "Poredak",
+  orderSurname: "Po prezimenu",
+  orderState: "Po stanju (što traži Vašu pažnju prvo)",
+  notStartedCount: (n: number): string => `Nije započelo: ${n}`,
+  noMatch: "Nijedan student ne odgovara odabranom prikazu.",
   noName: "Ime nije dostupno",
   noWorks: "Nema zadataka.",
   noAssignmentTitle: "Naziv zadatka nije dostupan",

@@ -1,26 +1,26 @@
 "use client";
 
-import { Button, Dialog, PracticeBadge, Select, ToastRegion, useToasts } from "@ductura/ui";
+import { Button, Dialog, PracticeBadge, Select, TextField, ToastRegion, useToasts } from "@ductura/ui";
 import { useSearchParams } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { createTeachingTeam, type TeachingTeamView } from "../../../../../../src/client/teaching-team";
 import { appHref } from "../../../../../../src/components/shell/nav";
-import { codeOutcome, defaultValidUntil, validUntilInstant } from "../../../../../../src/components/teacher/kolegiji/course-codes";
+import { codeOutcome } from "../../../../../../src/components/teacher/kolegiji/course-codes";
 import { newAssignmentHref } from "../../../../../../src/components/teacher/links";
 import type { TeacherCourse } from "../../../../../../src/components/teacher/teacher-courses-read";
 import { useHost } from "../../context";
+import { canRevoke, chosenInstant, codeStateOf, codeStateText, firstValidUntil, revocationOf, type CodeState } from "./code-state";
 import { assignmentCardMessages as t } from "./messages.hr";
 import {
-  codeFieldText, courseOverviewPath, dueText, enrolledText, nextDeadline, pickedPath, roleOf, taskOptions, taskPaths,
+  courseOverviewPath, dueText, enrolledText, nextDeadline, pickedPath, roleOf, taskOptions, taskPaths,
   type CardRole, type TaskPick,
 } from "./model";
 import { usePractice } from "./practice";
 import styles from "./AssignmentCards.module.css";
 
 type Failure = keyof typeof t.errors;
-type Issued = "now" | "before";
 
 /** The role and the people of one course from the teaching-team view; null while unread or when it failed. */
 function useTeam(courseId: string): { view: TeachingTeamView | null; done: boolean } {
@@ -117,8 +117,8 @@ export function NewCourseLink() {
 }
 
 /** One course card (N-01): role, enrolled, code state, next deadline, the buttons and the tasks. */
-export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode = false }: {
-  course: TeacherCourse; here: string; onIssued: () => void; extra?: React.ReactNode;
+export function AssignmentCard({ course, here, onIssued, onRevoked, extra, tasks, askCode = false }: {
+  course: TeacherCourse; here: string; onIssued: () => void; onRevoked: (text: string) => void; extra?: React.ReactNode;
   /** The tasks with their facts (WEB-2145); without it, title and deadline only. */
   tasks?: React.ReactNode;
   /** NZ-1: `?kod=<courseId>` (from the empty N-04 "Izdaj novi kod") opens dk-h once the holder is known. */
@@ -127,7 +127,11 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode =
   const { base } = useHost();
   const team = useTeam(course.id);
   const role: CardRole = roleOf(team.view);
-  const [issued, setIssued] = useState<Issued | null>(null);
+  const [codeState, setCodeState] = useState<CodeState | null>(null);
+  const [until, setUntil] = useState(() => firstValidUntil(Date.now()));
+  const [untilInvalid, setUntilInvalid] = useState(false);
+  const [revokeOpen, setRevokeOpen] = useState(false);
+  const [copied, setCopied] = useState<"done" | "failed" | null>(null);
   const [code, setCode] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -136,6 +140,15 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode =
   const next = nextDeadline(course, Date.now());
   const hasTasks = course.assignments.length > 0;
   const asked = useRef(false);
+  // NZ-13: only the holder issues and revokes, so only the holder reads the state of the code.
+  useEffect(() => {
+    if (role !== "holder") return;
+    let live = true;
+    void createApi()("institution.enrollment-code-state.get", { params: { courseId: course.id }, query: undefined, body: undefined })
+      .catch(() => ({ ok: false, status: 0, code: "unexpected" }) as const)
+      .then((answer) => { if (live) setCodeState((now) => now ?? codeStateOf(answer, Date.now())); });
+    return () => { live = false; };
+  }, [role, course.id]);
   useEffect(() => {
     if (!askCode || asked.current || role !== "holder") return;
     asked.current = true;
@@ -148,11 +161,14 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode =
     if (busy) return;
     setOpen(false);
     setFailure(null);
+    setUntilInvalid(false);
   }
 
   async function issue() {
-    const validUntil = validUntilInstant(defaultValidUntil(Date.now()));
-    if (busy || validUntil === null) return;
+    const chosen = chosenInstant(until, Date.now());
+    if (busy) return;
+    if (!chosen.ok) return setUntilInvalid(true);
+    const validUntil = chosen.instant;
     setBusy(true);
     setFailure(null);
     const answer = await createApi()("institution.enrollment-code.post", {
@@ -163,19 +179,52 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode =
     if (outcome.kind === "signedOut") return goToSignIn(here);
     if (outcome.kind === "issued") {
       setCode(outcome.code);
-      setIssued("now");
+      setCopied(null);
+      setCodeState({ kind: "valid", validUntil });
       setOpen(false);
       onIssued(); // the toast only after the server's answer (decision 2164)
     } else {
       // An unknown outcome may have replaced the code: never keep claiming the old one.
-      if (outcome.kind === "unavailable") { setCode(null); setIssued(null); }
+      if (outcome.kind === "unavailable") { setCode(null); setCodeState({ kind: "unknown" }); }
       setFailure(outcome.kind === "revoked" ? "unavailable" : outcome.kind);
     }
   }
 
+  async function revoke() {
+    if (busy) return;
+    setBusy(true);
+    setFailure(null);
+    const answer = await createApi()("institution.enrollment-code-revocation.post", {
+      params: { courseId: course.id }, query: undefined, body: {},
+    }).catch(() => ({ ok: false, status: 0, code: "unexpected" }) as const);
+    setBusy(false);
+    const result = revocationOf(answer);
+    if (result === "signedOut") return goToSignIn(here);
+    if (result === "revoked" || result === "nothing") {
+      setCode(null);
+      setCodeState({ kind: "none" });
+      setRevokeOpen(false);
+      onRevoked(result === "revoked" ? t.revokeDone : t.revokeNothing);
+    } else {
+      // An unknown outcome may have revoked the code: never keep claiming it is valid.
+      if (result === "unavailable") { setCode(null); setCodeState({ kind: "unknown" }); }
+      setFailure(result === "forbidden" ? "forbidden" : "unavailable");
+    }
+  }
+
+  async function copy() {
+    if (code === null) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied("done");
+    } catch {
+      setCopied("failed");
+    }
+  }
+
+  const small = "btn secondary small";
   const unknown = (value: string | null) => value ?? t.unavailableValue;
   const roleText = role === "holder" ? t.roleHolder : role === "collaborator" ? t.roleCollaborator : null;
-  const small = "btn secondary small";
   return (
     <CardRoleContext.Provider value={role}>
     <section className={`card ${styles.course}`} aria-labelledby={id}>
@@ -183,7 +232,7 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode =
       <div className={styles.kv}>
         <Field name={t.role}>{unknown(roleText)}</Field>
         <Field name={t.enrolled}>{unknown(team.done ? enrolledText(team.view) : null)}</Field>
-        <Field name={t.codeField}>{codeFieldText(role, issued)}</Field>
+        <Field name={t.codeField}>{role === "collaborator" ? t.codeHolderIssues : codeStateText(codeState ?? { kind: "unknown" })}</Field>
         {course.assignments.length === 0 ? <Field name={t.tasks}>{t.noTasks}</Field>
           : <Field name={t.nextDeadline}>{next ? dueText(next.dueAt) : t.noDeadline}</Field>}
       </div>
@@ -191,6 +240,11 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode =
         <>
           <p className={styles.code} aria-label={t.codeLabel}>{code}</p>
           <p className="meta">{t.codeOnce}</p>
+          <p className="meta">{t.codeHowTo}</p>
+          <div className="acts">
+            <button type="button" className={small} onClick={() => void copy()}>{t.copyCode}</button>
+          </div>
+          {copied === null ? null : <p className="meta" role={copied === "failed" ? "alert" : "status"}>{copied === "done" ? t.copied : t.copyFailed}</p>}
         </>
       ) : null}
       <div className="acts">
@@ -202,6 +256,8 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode =
         {role === "holder" && hasTasks
           ? <button type="button" className={small} aria-haspopup="dialog" onClick={() => setPick("merlin")}>{t.merlin}</button> : null}
         {role === "holder" ? <button type="button" className={small} onClick={() => setOpen(true)} aria-label={`${t.newCode}: ${course.name}`}>{t.newCode}</button> : null}
+        {role === "holder" && canRevoke(codeState ?? { kind: "unknown" })
+          ? <button type="button" className={small} aria-haspopup="dialog" onClick={() => { setFailure(null); setRevokeOpen(true); }} aria-label={`${t.revokeCode}: ${course.name}`}>{t.revokeCode}</button> : null}
       </div>
       {tasks ?? <CardTasks course={course} />}
       {extra}
@@ -212,6 +268,17 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode =
           <Button tone="secondary" onClick={close}>{t.cancel}</Button>
         </>}>
         <p className="note">{t.dialogLead}</p>
+        <TextField label={t.validUntilLabel} hint={t.validUntilHint} type="datetime-local" value={until} busy={busy}
+          error={untilInvalid ? t.validUntilInvalid : undefined}
+          onChange={(event) => { setUntil(event.target.value); setUntilInvalid(false); }} />
+      </Dialog>
+      <Dialog open={revokeOpen} title={t.revokeTitle} onClose={() => { if (!busy) { setRevokeOpen(false); setFailure(null); } }} dismissible={!busy}
+        error={failure && revokeOpen ? (failure === "forbidden" ? t.revokeErrors.forbidden : t.revokeErrors.unavailable) : undefined}
+        actions={<>
+          <Button busy={busy} onClick={() => void revoke()}>{busy ? t.revoking : t.revokeCode}</Button>
+          <Button tone="secondary" onClick={() => { if (!busy) { setRevokeOpen(false); setFailure(null); } }}>{t.cancel}</Button>
+        </>}>
+        <p className="note">{t.revokeLead}</p>
       </Dialog>
       <TaskPicker course={course} pick={pick} onClose={() => setPick(null)} />
     </section>
@@ -239,7 +306,7 @@ export function AssignmentCards({ courses, here, extra, tasks }: {
   return (
     <>
       {courses.map((course) => (
-        <AssignmentCard key={course.id} course={course} here={here} onIssued={() => show(t.issued)} extra={extra?.(course)}
+        <AssignmentCard key={course.id} course={course} here={here} onIssued={() => show(t.issued)} onRevoked={(text) => show(text)} extra={extra?.(course)}
           tasks={tasks?.(course)} askCode={askCode === course.id} />
       ))}
       <ToastRegion toasts={toasts} onDismiss={dismiss} label={t.toastLabel} closeLabel={t.toastClose} />

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createApi } from "../../../../../../src/client/api";
 import { createTeachingTeam } from "../../../../../../src/client/teaching-team";
-import { TeachingTeamContent } from "./TeachingTeam";
+import { TeachingTeamContent, TeamRoles } from "./TeachingTeam";
 
 const ORIGIN = "https://ductura.example.invalid";
 const courseId = "c0000000-0000-4000-8000-000000000001";
@@ -81,5 +81,21 @@ describe("WEB-1405 teaching team", () => {
       .mockResolvedValueOnce(Response.json({ code: "forbidden" }, { status: 403 }));
     expect(await port.saveGroup(groupId, [], [studentId])).toEqual({ kind: "conflict" });
     expect(await port.saveAssistants([assistantId])).toEqual({ kind: "forbidden" });
+  });
+});
+
+describe("NZ-14 roles on the course", () => {
+  it("names the three roles, the caller's own, and links the mentored works under the app's base", () => {
+    const html = renderToStaticMarkup(createElement(TeamRoles, { role: "holder", mentorHref: "/app/web/nastavnik/mentorstva" }));
+    expect(html).toContain("Vaša uloga: nositelj.");
+    for (const name of ["Nositelj", "Suradnik", "Mentor"]) expect(html).toContain(`<strong>${name}</strong>`);
+    expect(html).toContain("samo čita i komentira");
+    expect(html).toContain('href="/app/web/nastavnik/mentorstva"');
+    expect(html).toContain("administrator ustanove");
+  });
+  it("tells a collaborator they read and comment only, without the note on adding teachers", () => {
+    const html = renderToStaticMarkup(createElement(TeamRoles, { role: "assistant", mentorHref: "/x" }));
+    expect(html).toContain("Vaša uloga: suradnik.");
+    expect(html).not.toContain("administrator ustanove");
   });
 });

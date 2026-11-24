@@ -42,7 +42,7 @@ export function MerlinExportPage({ assignmentId }: { assignmentId: string }) {
     if (roster.kind === "session-expired") return { kind: "signedOut" };
     if (roster.kind !== "ready") return { kind: "unavailable" };
     const assignments: AssignmentChoice[] | null = courses.kind === "ready"
-      ? courses.courses.flatMap((c) => c.assignments.map((a) => ({ id: a.id, title: a.title })))
+      ? courses.courses.flatMap((c) => c.assignments.map((a) => ({ id: a.id, title: a.title, workType: a.workType, dueAt: a.dueAt })))
       : null;
     return { kind: "ready", value: { rows: roster.rows, extensionReasons: roster.extensionReasons, assignments } };
   });
