@@ -1,5 +1,17 @@
 export const teachingTeamHr = {
   title: "Nastavni tim i grupe",
+  // NZ-14: what each role may do (INVENTAR §7 t. 5; the teacher role itself is given by the institution's administrator, A-5).
+  rolesTitle: "Uloge na kolegiju",
+  yourRole: (role: string): string => `Vaša uloga: ${role}.`,
+  roleHolder: "nositelj",
+  roleCollaborator: "suradnik",
+  roles: [
+    { id: "holder", name: "Nositelj", can: "vodi kolegij: izdaje i opoziva kod za upis, objavljuje i mijenja zadatke te određuje nastavni tim i grupe." },
+    { id: "collaborator", name: "Suradnik", can: "samo čita i komentira radove studenata u grupama koje su mu dodijeljene." },
+    { id: "mentor", name: "Mentor", can: "prati radove studenata koji su ga zatražili za mentora." },
+  ] as const,
+  mentorLink: "Radovi uz mentora",
+  adminNote: "Nastavnika kojeg nema na popisu dodaje administrator ustanove; kad se pojavi, odaberite ga u nastavnom timu.",
   assistants: "Asistenti",
   assistant: "Asistent",
   inTeam: "U nastavnom timu",

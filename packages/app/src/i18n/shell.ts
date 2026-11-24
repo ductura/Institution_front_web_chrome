@@ -47,7 +47,12 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/izvoz-podataka/[token]": (c) => c.app.pages.studentDataDownload,
   "/provjera": (c) => c.app.pages.receiptCheck,
   "/ustanova/pragovi": (c) => c.app.pages.originThresholds,
+  "/ustanova/postavke": (c) => c.app.pages.facultySettings,
+  "/ustanova/postavke/asistent": (c) => c.app.pages.facultyAssistant,
+  "/moja-prava": (c) => c.app.pages.myRights,
   "/operater/mjerila-pilota": (c) => c.app.pages.pilotMetrics,
+  "/operater/dnevnik-radnji": (c) => c.app.pages.actionLog,
+  "/operater/prijave-problema": (c) => c.app.pages.problemReports,
 };
 
 /**

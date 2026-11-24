@@ -40,7 +40,7 @@ describe("readStepSummary", () => {
   });
 });
 
-const NOTE = { id: "n-1", text: "Izmišljena bilješka", createdAt: "2026-11-01T10:00:00.000000Z" };
+const NOTE = { id: "n-1", text: "Izmišljena bilješka", createdAt: "2026-11-01T10:00:00.000Z" };
 const notes = (list: ClientAnswer, add: ClientAnswer) => {
   const sent: unknown[] = [];
   const client: NotesClient = {

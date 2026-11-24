@@ -46,6 +46,11 @@ describe("Dialog focus (WEB-04)", () => {
     expect(html).toMatch(/<p role="alert"[^>]*>Odjava nije uspjela\.<\/p>/);
     expect(html).toContain("Ostani");
   });
+
+  it("NF-3 PR-18: a modal dialog says so with aria-modal; an inline one does not", () => {
+    expect(renderToStaticMarkup(<Dialog open title="Predati rad?" onClose={() => undefined} />)).toContain('aria-modal="true"');
+    expect(renderToStaticMarkup(<Dialog open modal={false} title="Predati rad?" onClose={() => undefined} />)).not.toContain("aria-modal");
+  });
 });
 
 describe("Toast (WEB-04)", () => {

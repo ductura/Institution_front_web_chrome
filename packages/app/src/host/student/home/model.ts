@@ -1,5 +1,5 @@
-import type { MyAssignment, MyCourse } from "../../../../../../src/components/student/my-assignments-read";
-import type { WorkState } from "../../../../../../src/components/student/radovi/works-read";
+import type { MyAssignment, MyCourse } from "../read/assignments";
+import type { WorkState } from "../read/works";
 import { practiceOf } from "../courses/model";
 import { cleanCode } from "../enrol/code";
 import { protoToday } from "./format";
@@ -50,13 +50,62 @@ export function flatRows(courses: readonly MyCourse[], states: States): TaskRow[
     }));
 }
 
+/** The deadline as a time, or `Infinity` for one that does not parse, so such a row sorts last. */
+const dueTime = (row: Pick<TaskRow, "dueAt">): number => {
+  const due = Date.parse(row.dueAt);
+  return Number.isNaN(due) ? Number.POSITIVE_INFINITY : due;
+};
+
 /**
- * The "nastavak rada" card: the first started, unsubmitted work whose notice is
- * acknowledged (INVENTAR wins over the HTML's fallback without the notice). Rows
- * of kind `rad` are exactly those, since `obavijest` is checked first.
+ * P-4: the "nastavak rada" card is the started, unsubmitted work whose notice is
+ * acknowledged and whose deadline is nearest (INVENTAR wins over the HTML's
+ * fallback without the notice). Rows of kind `rad` are exactly those, since
+ * `obavijest` is checked first. A tie keeps the read's order.
  */
 export function continueRow(rows: readonly TaskRow[]): TaskRow | null {
-  return rows.find((row) => row.kind === "rad") ?? null;
+  let best: TaskRow | null = null;
+  for (const row of rows) {
+    if (row.kind === "rad" && (best === null || dueTime(row) < dueTime(best))) best = row;
+  }
+  return best;
+}
+
+/** P-4: the order of the list; "rok" is the default, "kolegij" the read's own order. */
+export type Order = "rok" | "kolegij";
+export const ORDERS: readonly Order[] = ["rok", "kolegij"];
+
+/** P-4: a deadline within this many days (or already passed) is "Uskoro". */
+export const SOON_DAYS = 14;
+
+export type SectionKey = "uskoro" | "kasnije" | "predano";
+export type Section = { readonly key: SectionKey; readonly rows: readonly TaskRow[] };
+
+/**
+ * P-4 (E-2d, E-2e): the list by deadline, nearest first, in "Uskoro" (up to
+ * SOON_DAYS ahead, or already passed), "Kasnije" and "Predano" (submitted rows at
+ * the bottom). Empty sections are left out; a stable sort keeps the read's order
+ * for equal deadlines. Order "kolegij" is one section of the rows as read, so
+ * the list is only reordered when the student does not ask for the old order.
+ */
+export function sections(rows: readonly TaskRow[], now: number, order: Order = "rok"): Section[] {
+  if (order === "kolegij") return rows.length === 0 ? [] : [{ key: "uskoro", rows }];
+  const byDue = (a: TaskRow, b: TaskRow) => (dueTime(a) === dueTime(b) ? 0 : dueTime(a) < dueTime(b) ? -1 : 1);
+  const open = rows.filter((row) => row.kind !== "predano").sort(byDue);
+  const horizon = now + SOON_DAYS * 86_400_000;
+  const groups: Section[] = [
+    { key: "uskoro", rows: open.filter((row) => dueTime(row) <= horizon) },
+    { key: "kasnije", rows: open.filter((row) => dueTime(row) > horizon) },
+    { key: "predano", rows: rows.filter((row) => row.kind === "predano").sort(byDue) },
+  ];
+  return groups.filter((group) => group.rows.length > 0);
+}
+
+/**
+ * P-12 (E-2g): the courses without any visible assignment, all of them (not only
+ * the first), in the read's order. Used when no row is visible at all.
+ */
+export function coursesWithoutTask(courses: readonly MyCourse[]): MyCourse[] {
+  return courses.filter((course) => course.assignments.length === 0);
 }
 
 const DAY_MS = 86_400_000;

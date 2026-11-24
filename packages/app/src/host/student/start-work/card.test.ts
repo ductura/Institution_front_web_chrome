@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import StudentHome from "../../../../../../src/components/student/StudentHome";
-import type { MyAssignmentsRead } from "../../../../../../src/components/student/my-assignments-read";
+import type { MyAssignmentsRead } from "../read/assignments";
 
 const read: MyAssignmentsRead = {
   kind: "ready",

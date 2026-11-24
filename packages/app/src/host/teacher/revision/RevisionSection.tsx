@@ -30,8 +30,10 @@ type Read = { kind: "loading" } | { kind: "unavailable" } | { kind: "ready"; req
  */
 export type RevisionSlots = { action: ReactNode; banner: ReactNode; dialog: ReactNode };
 
-export default function RevisionSection({ documentId, current, port = revisionPort, children }: {
+export default function RevisionSection({ documentId, current, port = revisionPort, compareHref, children }: {
   documentId: string; current: () => boolean; port?: RevisionPort;
+  /** Link of the banner to the comparison with the submitted version; none when the frame has no such page. */
+  compareHref?: string;
   /** The frame places the button in the heading actions and the banner under the heading, as the prototype does. */
   children: (slots: RevisionSlots) => ReactNode;
 }) {
@@ -40,6 +42,8 @@ export default function RevisionSection({ documentId, current, port = revisionPo
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Exclude<ActionOutcome, "ok"> | null>(null);
+  // "Povuci zahtjev" asks first: a withdrawn request is final (#594 review, point 4).
+  const [confirming, setConfirming] = useState(false);
   const toasts = useTeacherToasts();
 
   useEffect(() => {
@@ -76,8 +80,14 @@ export default function RevisionSection({ documentId, current, port = revisionPo
       {banner !== null && (
         <div className="banner" role="status">
           <p><b>{banner.head}</b></p>
-          <p className="note">„{banner.instruction}”</p>
+          <p className="note">{t.studentSees} „{banner.instruction}”</p>
           <p className="meta">{t.statesNote}</p>
+          {compareHref !== undefined && <p><a href={compareHref}>{t.compare}</a></p>}
+          {banner.canWithdraw && request && (
+            <div className="acts">
+              <Button tone="quiet" size="small" disabled={busy} onClick={() => setConfirming(true)}>{t.withdraw}</Button>
+            </div>
+          )}
           {banner.canClose && request && (
             <div className="acts">
               <Button size="small" disabled={busy} onClick={() => void act(() => port.accept(request), t.accepted)}>{t.accept}</Button>
@@ -90,11 +100,23 @@ export default function RevisionSection({ documentId, current, port = revisionPo
       <TeacherToastRegion toasts={toasts.toasts} onDismiss={toasts.dismiss} />
     </>
   );
+  const withdrawDialog = confirming && banner?.canWithdraw && request ? (
+    <Dialog open title={t.withdrawTitle} onClose={() => setConfirming(false)}
+      actions={<>
+        <Button tone="quiet" onClick={() => setConfirming(false)}>{t.cancel}</Button>
+        <Button onClick={() => { setConfirming(false); void act(() => port.withdraw(request), t.withdrawn); }}>{t.withdrawConfirm}</Button>
+      </>}>
+      <p>{t.withdrawExplain}</p>
+    </Dialog>
+  ) : null;
   return <>{children({
     action: read.submitted ? <Button onClick={() => setOpen(true)}>{t.ask}</Button> : null,
     banner: banners,
-    dialog: open ? <AskDialog documentId={documentId} port={port} onClose={() => setOpen(false)}
-      onSent={() => { setOpen(false); toasts.show(t.sent); reload(); }} /> : null,
+    dialog: <>
+      {open && <AskDialog documentId={documentId} port={port} onClose={() => setOpen(false)}
+        onSent={() => { setOpen(false); toasts.show(t.sent); reload(); }} />}
+      {withdrawDialog}
+    </>,
   })}</>;
 }
 

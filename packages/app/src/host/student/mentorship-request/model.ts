@@ -47,3 +47,13 @@ export { readMentorCandidates, readMyMentorshipRequests };
 export function statusText(request: StudentMentorshipRequest): string {
   return t.status[request.state];
 }
+
+/** WEB-NF6-ETAPE (MK-7): the approved requests, newest decision first; each is a mentorship the student has. */
+export function approvedOf(requests: readonly StudentMentorshipRequest[]): readonly StudentMentorshipRequest[] {
+  return requests.filter((r) => r.state === "approved").sort((a, b) => (b.endedAt ?? "").localeCompare(a.endedAt ?? ""));
+}
+
+/** WEB-NF6-ETAPE (MK-7): a declined request can go to another teacher; the same work type, no teacher chosen. */
+export function canRetarget(request: StudentMentorshipRequest): boolean {
+  return request.state === "declined";
+}

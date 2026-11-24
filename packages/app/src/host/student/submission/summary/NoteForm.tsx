@@ -16,6 +16,10 @@ export type NoteFormProps = {
   readonly onAdd: (text: string) => Promise<NoteAdded>;
   readonly onAdded: (note: SubmissionNote) => void;
   readonly onCancel: () => void;
+  /** NF-3 PR-14 (E-9b): the field's label and the line under it, when the note is not the one of step 3. */
+  readonly label?: string;
+  readonly hint?: string;
+  readonly seenBy?: string;
 };
 
 /**
@@ -23,10 +27,12 @@ export type NoteFormProps = {
  * the focus in the field; a blank text marks the field invalid and keeps the
  * focus there (R-36).
  */
-export default function NoteForm({ online, onAdd, onAdded, onCancel }: NoteFormProps) {
+export default function NoteForm({ online, onAdd, onAdded, onCancel, label = t.label, hint = t.hint, seenBy = t.seenBy }: NoteFormProps) {
   const field = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState("");
   const [error, setError] = useState<string>();
+  // NF-3 PR-6 (E-8d, R-66): an answer that did not add the note is an alert of its own, not a field error.
+  const [failure, setFailure] = useState<string>();
   const [sending, setSending] = useState(false);
   useEffect(() => { field.current?.focus(); }, []);
 
@@ -40,20 +46,25 @@ export default function NoteForm({ online, onAdd, onAdded, onCancel }: NoteFormP
       return;
     }
     setSending(true);
+    setFailure(undefined);
     const result = await onAdd(text.trim());
     setSending(false);
     if (result.kind === "added") onAdded(result.note);
     else {
-      setError(noteFailure(result));
+      // The server's 422 is about the text; anything else leaves it unknown whether the note was added.
+      if (result.kind === "greska" && result.code === "invalid") setError(noteFailure(result));
+      else setFailure(noteFailure(result));
       field.current?.focus();
     }
   }
 
   return (
     <StepDecl own onSubmit={(event) => void submit(event)}>
-      <TextArea ref={field} label={t.label} name="note" maxLength={NOTE_MAX} value={text} busy={sending}
-        error={error} hint={online ? t.hint : t.offline}
+      <TextArea ref={field} label={label} name="note" maxLength={NOTE_MAX} value={text} busy={sending}
+        error={error} hint={online ? hint : t.offline}
         onChange={(event) => { setText(event.currentTarget.value); if (error !== undefined) setError(undefined); }} />
+      <p className="meta">{seenBy}</p>
+      {failure !== undefined && <p className="note" role="alert">{failure}</p>}
       <StepActions>
         <Button type="submit" aria-disabled={!online || undefined} busy={sending}>{sending ? t.sending : t.add}</Button>
         <Button type="button" tone="secondary" onClick={onCancel}>{t.cancel}</Button>

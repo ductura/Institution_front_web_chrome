@@ -5,7 +5,7 @@
 // declaration is read and confirmed on the server (declaration-v1, PIL-K-IZJAVA) through the
 // step's ports; the human help and the printout are edited in StudentStatement on the same read.
 import {
-  Button, Dialog, Select, StepActions, StepCheck, StepDecl, StepEntry, StepKv, StepLoading, StepNav, StepPanel, StepSub, Tag, TextArea,
+  Button, Dialog, Select, StepActions, StepCheck, StepDecl, StepEntry, StepKv, StepLoading, StepNav, StepPanel, StepSub, Tag,
 } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
@@ -14,10 +14,11 @@ import { useSessionTag, writeConfirmed } from "../../../../../../../src/componen
 import { confirmationKey, stepHref } from "../../../../../../../src/components/predaja/flow.ts";
 import { routerPath } from "../../../../bases";
 import StudentStatement from "../../statement/StudentStatement";
+import TeacherQuestion from "../../statement/TeacherQuestion";
 import StepLink from "../steps/StepLink";
 import { chatDialogText as d, declarationStepText as t } from "./messages.hr";
 import {
-  ANSWER_MAX_LENGTH, canConfirm, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
+  canConfirm, canProceed, chatTitle, confirmLine, entryLabel, mismatchTarget, mismatchText, recordedLine, stepView,
   type Chat, type ConfirmState, type DeclarationRead, type FormChoice,
 } from "./model";
 import type { StepPorts, StepRead } from "./step-ports";
@@ -64,9 +65,7 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
   const [confirm, setConfirm] = useState<ConfirmState>("none");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<FormChoice | null>(null);
-  const [answer, setAnswer] = useState("");
   const [chat, setChat] = useState<Chat | null>(null);
-  const [todo, setTodo] = useState(false);
   const why = useId();
   const statementId = useId();
   const statementRef = useRef<HTMLDivElement>(null);
@@ -101,7 +100,6 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
   const line = confirmLine(confirm);
   useEffect(() => { if (editing) statementRef.current?.focus(); }, [editing]);
   const back = () => router.push(routerPath(hrefOf(stepHref(assignmentId, "tekst"))));
-  const later = () => setTodo(true);
 
   const send = async (next: boolean) => {
     // Only what the student filled in is confirmed; a held confirmation is withdrawn by changing the declaration.
@@ -135,8 +133,9 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
                 const { line: entry, who } = recordedLine(item);
                 return <StepEntry key={index} who={who}>{entry}</StepEntry>;
               })}
-              {ready.recorded.length > 0 && !closed && <StepLink href="#izjava" onClick={later}>{t.addNote}</StepLink>}
-              {todo && <p className="note" role="status">{t.notDone}</p>}
+              {/* NF-3 PR-4 (E-9a): the block says what it holds; without conversations, that none can be attached. */}
+              <p className="meta">{t.recordedExplained}</p>
+              {ready.chats.length === 0 && <p className="meta">{t.emptyChats}</p>}
             </StepDecl>
             <StepDecl title={t.declared} tag={<Tag tone="open">{t.declaredTag}</Tag>} own>
               {ready.declared === null ? <p className="note">{t.emptyDeclared}</p> : (
@@ -158,7 +157,7 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
                 )}
               </div>
             </StepDecl>
-            {ready.chats.length === 0 ? <p className="note">{t.emptyChats}</p> : (
+            {ready.chats.length > 0 && (
               <>
                 <StepSub>{t.attachments}</StepSub>
                 <p className="note">{t.attachmentsNote}</p>
@@ -173,13 +172,9 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
                 </ul>
               </>
             )}
-            {ready.question !== null && (
-              <>
-                <StepSub>{t.question}</StepSub>
-                <p className="note">{ready.question}</p>
-                <TextArea label={t.answer} value={answer} maxLength={ANSWER_MAX_LENGTH} readOnly={closed} rows={undefined}
-                  onChange={(event) => setAnswer(event.currentTarget.value)} />
-              </>
+            {/* NF-3 PR-20: the teacher's question and the answer, written on the step's read. */}
+            {step?.kind === "read" && (
+              <TeacherQuestion port={ports.statement} assignmentId={assignmentId} read={step.statement} onReload={reload} onSignIn={() => signIn.current()} />
             )}
             {!closed && ready.recorded.length + ready.chats.length > 0 && (
               <>

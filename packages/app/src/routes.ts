@@ -24,7 +24,12 @@ import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
 import { originText } from "./host/teacher/provenance/origin-messages.hr";
 import { interviewMessages as studentInterviewText } from "./host/student/interview/messages.hr";
 import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
+import { facultySettingsMessages } from "./host/admin/faculty-settings/messages.hr";
+import { myRightsMessages } from "./host/public/my-rights/messages.hr";
 import { pilotMetricsMessages } from "./host/operator/pilot-metrics/messages.hr";
+import { actionLogMessages } from "./host/operator/action-log/messages.hr";
+import { problemReportsMessages } from "./host/operator/problem-reports/messages.hr";
+import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 
@@ -70,6 +75,7 @@ export type Page = {
 
 /** NF-7 OA-1: the operator's own page, the pilot's aggregate measures; the operator's home. */
 export const OPERATOR_HOME = "/operater/mjerila-pilota";
+export { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 /** M1.8: where a refused page leads, with the refusal ("Nemate ovlasti za ovaj prikaz"). */
 export const NO_ACCESS = "/nema-ovlasti?kind=denied";
 
@@ -147,8 +153,16 @@ export const PAGES: readonly Page[] = [
   { path: STUDENT_DATA_EXPORT_PATH, label: studentDataExportMessages.title, kind: "pending", roles: [], current: STUDENT_DATA_EXPORT_PATH },
   // PIL-P1-PRAGOVI-ADMIN (P-1 rule 12): the faculty's thresholds per origin kind, next to the faculty rules.
   { path: "/ustanova/pragovi", label: thresholdMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova/pravila" },
+  // NF-7 OA-2 / OA-9: the faculty's settings in one place, and the assistant's settings (read only).
+  { path: "/ustanova/postavke", label: facultySettingsMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  { path: "/ustanova/postavke/asistent", label: facultySettingsMessages.assistant.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  // NF-7 OA-5: "Moja prava", static help for everyone signed in.
+  { path: "/moja-prava", label: myRightsMessages.title, kind: "pending", roles: [], current: "/moja-prava" },
   // WEB-NUZ-OPERATER (NF-7 OA-1, OA-12): the operator's view of the institution, the pilot's aggregates only.
   { path: OPERATOR_HOME, label: pilotMetricsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer"], current: OPERATOR_HOME },
+  // NF-7 OA-3, OA-7: the log of actions and the problem reports, for the operator and the faculty's administrator.
+  { path: ACTION_LOG, label: actionLogMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
+  { path: PROBLEM_REPORTS, label: problemReportsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { effectiveDue, groupLabels, mentorLabel, nearTag, practiceOf, rowKind, workTypeLabel } from "./model";
-import { readCourses, type CoursesCall } from "./read";
+import { effectiveDue, extensionOf, extensionText, groupLabels, matchesState, mentorLabel, nearTag, practiceOf, rowKind, stateFilterOf, submittedLine, submittedOf, workTypeLabel } from "./model";
+import { readCourses, readExtensions, type Course, type CoursesCall } from "./read";
 
 const NOW = new Date("2026-11-22T10:00:00Z");
 
@@ -53,5 +53,87 @@ describe("readCourses", () => {
   it("keeps courses without states when the state read fails", async () => {
     const call = (async (id: string) => (id === "student.assignments.get" ? ok : { ok: false, status: 404 })) as unknown as CoursesCall;
     expect(await readCourses(call, true)).toEqual({ kind: "ready", courses: [], states: null });
+  });
+});
+
+describe("NF-1 P-5: the state filter", () => {
+  it("accepts only the closed set, else everything", () => {
+    expect(stateFilterOf("predano")).toBe("predano");
+    expect(stateFilterOf("zapredati")).toBe("zapredati");
+    expect(stateFilterOf("nesto")).toBe("sve");
+    expect(stateFilterOf(null)).toBe("sve");
+    expect(stateFilterOf("")).toBe("sve");
+  });
+  it("narrows the row kinds and never adds one", () => {
+    const kinds = ["submitted", "notice", "work", "task"] as const;
+    expect(kinds.filter((k) => matchesState(k, "sve"))).toEqual(["submitted", "notice", "work", "task"]);
+    expect(kinds.filter((k) => matchesState(k, "zapredati"))).toEqual(["work", "task"]);
+    expect(kinds.filter((k) => matchesState(k, "predano"))).toEqual(["submitted"]);
+    expect(kinds.filter((k) => matchesState(k, "obavijest"))).toEqual(["notice"]);
+  });
+});
+
+describe("NF-1 P-6: the submission time", () => {
+  const fmt = (iso: string) => `[${iso}]`;
+  it("shows a time only when the answer has a valid one", () => {
+    expect(submittedOf({ assignmentId: "a", workState: "submitted" })).toBeNull();
+    expect(submittedOf({ submittedAt: "sutra" })).toBeNull();
+    expect(submittedOf({ submittedAt: 5 })).toBeNull();
+    expect(submittedOf({ submittedAt: "2026-11-20T10:00:00.000Z" })).toEqual({ submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: false });
+    expect(submittedOf({ submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: "true" })?.afterDeadline).toBe(false);
+    expect(submittedOf({ submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: true })?.afterDeadline).toBe(true);
+  });
+  it("says Predano alone without a time, never a guessed one", () => {
+    expect(submittedLine(null, fmt)).toBe("Predano");
+    expect(submittedLine({ submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: false }, fmt)).toBe("Predano [2026-11-20T10:00:00.000Z]");
+    expect(submittedLine({ submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: true }, fmt)).toBe("Predano [2026-11-20T10:00:00.000Z], nakon roka");
+  });
+  it("reads the time from the work states when they carry it", async () => {
+    const call = (async (id: string) => (id === "student.assignments.get"
+      ? { ok: true, status: 200, body: { courses: [] } }
+      : { ok: true, status: 200, body: { assignments: [
+        { assignmentId: "a", workState: "submitted", submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: true },
+        { assignmentId: "b", workState: "in_progress", submittedAt: "2026-11-20T10:00:00.000Z" },
+        { assignmentId: "c", workState: "submitted" },
+      ] } })) as unknown as CoursesCall;
+    const r = await readCourses(call, true);
+    expect(r.kind === "ready" && [...(r.submitted ?? new Map()).keys()]).toEqual(["a"]);
+  });
+});
+
+describe("NF-1 P-7: the history of an extended deadline", () => {
+  const fmt = (iso: string) => iso.slice(0, 10);
+  const rec = (over: object) => ({ id: "x", scope: "one", previousDueAt: "2026-11-01T10:00:00.000Z", dueAt: "2026-11-08T10:00:00.000Z", reasonId: "technical", createdAt: "2026-11-02T10:00:00.000Z", ...over });
+  it("picks the record behind the deadline in force, the latest one", () => {
+    const body = { extensions: [rec({ id: "1", dueAt: "2026-11-05T10:00:00.000Z" }), rec({ id: "2", reasonId: "agreement", createdAt: "2026-11-03T10:00:00.000Z" }), rec({ id: "3", reasonId: "justified", createdAt: "2026-11-02T12:00:00.000Z" })] };
+    expect(extensionOf(body, "2026-11-08T10:00:00.000Z")).toEqual({ previousDueAt: "2026-11-01T10:00:00.000Z", scope: "one", reasonId: "agreement" });
+  });
+  it("is null for another shape, no matching record or a broken record", () => {
+    expect(extensionOf(null, "2026-11-08T10:00:00.000Z")).toBeNull();
+    expect(extensionOf({ extensions: "x" }, "2026-11-08T10:00:00.000Z")).toBeNull();
+    expect(extensionOf({ extensions: [rec({ dueAt: "2030-01-01T00:00:00.000Z" })] }, "2026-11-08T10:00:00.000Z")).toBeNull();
+    expect(extensionOf({ extensions: [rec({ scope: "nitko" })] }, "2026-11-08T10:00:00.000Z")).toBeNull();
+    expect(extensionOf({ extensions: [rec({ previousDueAt: "nije datum" })] }, "2026-11-08T10:00:00.000Z")).toBeNull();
+  });
+  it("tells the reason of a closed set, or leaves it out when unknown", () => {
+    const note = extensionOf({ extensions: [rec({ scope: "all", reasonId: "justified" })] }, "2026-11-08T10:00:00.000Z")!;
+    expect(extensionText(note, fmt)).toBe("Prethodni rok: 2026-11-01. Razlog: opravdani razlog. Vrijedi za sve studente kolegija.");
+    const unknown = extensionOf({ extensions: [rec({ reasonId: "nesto" })] }, "2026-11-08T10:00:00.000Z")!;
+    expect(extensionText(unknown, fmt)).toBe("Prethodni rok: 2026-11-01. Vrijedi za samo Vas.");
+  });
+  it("asks only for assignments with an extended deadline, and a failure leaves that one out", async () => {
+    const asked: string[] = [];
+    const course = { id: "c", name: "K", assignments: [
+      { id: "a", title: "A", dueAt: "2026-11-01T10:00:00.000Z", noticeFirst: false, extendedDueAt: "2026-11-08T10:00:00.000Z" },
+      { id: "b", title: "B", dueAt: "2026-11-01T10:00:00.000Z", noticeFirst: false },
+      { id: "d", title: "D", dueAt: "2026-11-01T10:00:00.000Z", noticeFirst: false, extendedDueAt: "2026-11-08T10:00:00.000Z" },
+    ] } as Course;
+    const notes = await readExtensions(async (id) => {
+      asked.push(id);
+      if (id === "d") throw new Error("mreža");
+      return { ok: true, body: { extensions: [rec({})] } };
+    }, [course]);
+    expect(asked.sort()).toEqual(["a", "d"]);
+    expect([...notes.keys()]).toEqual(["a"]);
   });
 });
