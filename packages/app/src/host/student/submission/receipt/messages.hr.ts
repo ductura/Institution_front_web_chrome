@@ -41,4 +41,25 @@ export const receiptText = {
   check: "Provjeri stanje predaje",
   portfolioOpen: "Izvoz za portfelj",
   portfolioClose: "Zatvori izvoz za portfelj",
+  // NF-3 PR-11 (E-11d): what the receipt stands for, without percentages (Ustav v1.6).
+  givenTitle: "Što je predano",
+  givenVersion: "Verzija teksta: V{n}",
+  givenWords: "Riječi: {n}",
+  givenWordsLoading: "Riječi: učitavam…",
+  givenWordsUnknown: "Riječi: broj trenutačno nije moguće učitati.",
+  givenDeclarationAt: "Izjava: potvrđena {at}",
+  givenDeclaration: "Izjava: potvrđena",
+  givenDeclarationNotRequired: "Izjava: nije bila potrebna",
+  givenDeclarationChecking: "Izjava: provjeravam…",
+  givenDeclarationUnknown: "Izjava: stanje trenutačno nije moguće učitati.",
+  givenDeclarationMissing: "Izjava: nije potvrđena za predanu verziju.",
+  givenNotes: "Napomene uz rad: {n}",
+  givenNotesLoading: "Napomene uz rad: učitavam…",
+  givenNotesUnknown: "Napomene uz rad: broj trenutačno nije moguće učitati.",
+  // NF-3 PR-11, PR-18 (R-67): the summary opens below, with the focus on its title.
+  summaryOpened: "Sažetak procesa je otvoren ispod.",
+  // NF-3 PR-12 (E-11a, answer 1): in the pilot the student saves only the PDF with the QR code.
+  saveTitle: "Sačuvaj potvrdu",
+  saveLead: "Za Vas, mentora i osobnu pohranu: PDF s QR kodom i otiskom teksta.",
+  downloadFailed: "Zapis trenutačno nije moguće preuzeti. Pokušajte ponovno.",
 } as const;
