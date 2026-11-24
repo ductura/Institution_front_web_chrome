@@ -23,7 +23,9 @@
  * Known limit: keys sent through the Chrome DevTools Protocol (an extension
  * with chrome.debugger) or by a program outside the browser are trusted keys
  * and pass (red-team kanali.spec.ts, redteam.spec.ts). Only the desktop app
- * can tell those apart (P-3).
+ * can tell those apart (P-3): inside it, exam mode turns the app's exam mode
+ * on (exam-desktop.ts), and the app drops keys a program sends before they
+ * reach the page; each report of dropped keys is a "program" refusal.
  */
 
 import { Extension } from "@tiptap/core";
@@ -33,6 +35,7 @@ import type { EditorView } from "@tiptap/pm/view";
 import { ReplaceAroundStep, ReplaceStep } from "@tiptap/pm/transform";
 
 import type { EvidenceSource } from "../document/forensics/evidence-segment-v2";
+import { connectExamToDesktop, desktopWebView, type DesktopWebView } from "./exam-desktop";
 import { sourceOfChange, type SourceObserver } from "./source";
 
 /**
@@ -120,11 +123,15 @@ export type ExamModeOptions = {
   accommodation?: boolean;
   /** Told after a refusal, outside the transaction, so the interface can say why. */
   onRefused?: (reason: ExamRefusal) => void;
+  /** window.chrome.webview inside the desktop app (the default finds it); null turns the bridge off. */
+  desktop?: DesktopWebView | null;
 };
 
 /** The exam mode extension; add it after the observer's extension. */
 export function createExamMode(options: ExamModeOptions): Extension {
   const { observer, accommodation = false, onRefused } = options;
+  const desktop = options.desktop === undefined ? desktopWebView() : options.desktop;
+  let disconnect: (() => void) | null = null;
   // Text copied or cut in this work, kept only as the last copied string and only in memory.
   let copied: string | null = null;
   const remember = (state: EditorState) => {
@@ -174,6 +181,17 @@ export function createExamMode(options: ExamModeOptions): Extension {
   });
   // Below the source observer (100 000), which must still see every key, and above the history
   // keymap, so undo and redo from the keyboard go through exam mode.
-  return Extension.create({ name: "examMode", priority: 50_000, addProseMirrorPlugins: () => [plugin] });
+  return Extension.create({
+    name: "examMode",
+    priority: 50_000,
+    addProseMirrorPlugins: () => [plugin],
+    // beforeCreate runs in the editor's constructor, with or without a DOM; create waits for a mounted view.
+    onBeforeCreate: () => {
+      if (desktop && !disconnect) {
+        disconnect = connectExamToDesktop({ webview: desktop, accommodation, onBlocked: () => onRefused?.("program") });
+      }
+    },
+    onDestroy: () => { disconnect?.(); disconnect = null; },
+  });
 }
 
