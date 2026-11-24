@@ -1,5 +1,7 @@
 // N-18 "Izvoz za Merlin" (WEB-2163): interface text exactly as in the prototype (Ductura_nastavnik.html,
 // screen "izvoz") and INVENTAR-nastavnik 3.14. The CSV has eight columns.
+import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr.ts";
+
 export const merlinMessages = {
   title: "Izvoz za Merlin",
   lead: "Jedan paket (.zip) po zadatku: PDF i .docx svakog predanog rada i CSV popis. Ocjena se upisuje u Merlinu.",
@@ -9,7 +11,8 @@ export const merlinMessages = {
   retry: "Pokušaj ponovno",
   taskLabel: "Zadatak",
   taskUnnamed: "Naziv zadatka nije dostupan",
-  workType: { seminar_paper: "Seminarski rad", essay: "Esej" } as Readonly<Record<string, string>>,
+  // NZ-16: every kind of work of the contract, with the names of the assignment form (one source).
+  workType: messagesHr.teacher.assignment.workTypes as Readonly<Record<string, string>>,
   deadlinePassed: "rok je prošao",
   personalData: "Datoteka sadrži imena studenata; čuvajte je prema pravilima fakulteta.",
   emptyTitle: "Nema predanih radova",
