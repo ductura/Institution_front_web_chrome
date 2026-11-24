@@ -4,7 +4,6 @@ export const readingModeHr = {
   title: "Način čitanja",
   help: "Mijenja samo prikaz lista na ovom uređaju. Tekst rada ostaje isti.",
   reset: "Vrati na zadano",
-  resetDone: "Prikaz je vraćen na zadano.",
   width: {
     label: "Širina retka",
     narrow: "Uža",
