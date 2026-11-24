@@ -66,7 +66,6 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
   const [form, setForm] = useState<FormChoice | null>(null);
   const [answer, setAnswer] = useState("");
   const [chat, setChat] = useState<Chat | null>(null);
-  const [todo, setTodo] = useState(false);
   const why = useId();
   const statementId = useId();
   const statementRef = useRef<HTMLDivElement>(null);
@@ -101,7 +100,6 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
   const line = confirmLine(confirm);
   useEffect(() => { if (editing) statementRef.current?.focus(); }, [editing]);
   const back = () => router.push(routerPath(hrefOf(stepHref(assignmentId, "tekst"))));
-  const later = () => setTodo(true);
 
   const send = async (next: boolean) => {
     // Only what the student filled in is confirmed; a held confirmation is withdrawn by changing the declaration.
@@ -135,8 +133,9 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
                 const { line: entry, who } = recordedLine(item);
                 return <StepEntry key={index} who={who}>{entry}</StepEntry>;
               })}
-              {ready.recorded.length > 0 && !closed && <StepLink href="#izjava" onClick={later}>{t.addNote}</StepLink>}
-              {todo && <p className="note" role="status">{t.notDone}</p>}
+              {/* NF-3 PR-4 (E-9a): the block says what it holds; without conversations, that none can be attached. */}
+              <p className="meta">{t.recordedExplained}</p>
+              {ready.chats.length === 0 && <p className="meta">{t.emptyChats}</p>}
             </StepDecl>
             <StepDecl title={t.declared} tag={<Tag tone="open">{t.declaredTag}</Tag>} own>
               {ready.declared === null ? <p className="note">{t.emptyDeclared}</p> : (
@@ -158,7 +157,7 @@ export default function DeclarationStep({ assignmentId, workState, ports, hrefOf
                 )}
               </div>
             </StepDecl>
-            {ready.chats.length === 0 ? <p className="note">{t.emptyChats}</p> : (
+            {ready.chats.length > 0 && (
               <>
                 <StepSub>{t.attachments}</StepSub>
                 <p className="note">{t.attachmentsNote}</p>

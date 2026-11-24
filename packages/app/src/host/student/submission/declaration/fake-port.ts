@@ -6,7 +6,7 @@ export const FAKE_CHATS: readonly Chat[] = [
     n: 1, date: "28. 10. 2026.", required: true,
     entries: [
       { who: "you", time: "10:01", text: "Sažmi tri glavna pristupa iz poglavlja o institucijama." },
-      { who: "ai", time: "10:02", model: "model M-2", text: "Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka." },
+      { who: "ai", time: "10:02", text: "Prvi pristup naglašava pravila, drugi interese, a treći povijesni slijed odluka." },
       { who: "transfer", time: "10:05", text: "2. Teorijski okvir, odlomak 1" },
     ],
   },
@@ -14,7 +14,7 @@ export const FAKE_CHATS: readonly Chat[] = [
     n: 2, date: "31. 10. 2026.", required: false,
     entries: [
       { who: "you", time: "19:22", text: "Koja su dva najčešća prigovora prvom pristupu?" },
-      { who: "ai", time: "19:23", model: "model M-2", text: "Najčešće se navodi da zanemaruje interese sudionika i da teško objašnjava promjenu pravila." },
+      { who: "ai", time: "19:23", text: "Najčešće se navodi da zanemaruje interese sudionika i da teško objašnjava promjenu pravila." },
     ],
   },
 ];
@@ -27,8 +27,8 @@ export const FAKE_DECLARED: Declared = {
 const FULL: Extract<DeclarationRead, { kind: "ready" }> = {
   kind: "ready",
   recorded: [
-    { kind: "transfer", at: "28. 10. 2026. u 10:05", model: "Model M-2", target: "2. Teorijski okvir, odlomak 1" },
-    { kind: "chat", date: "31. 10. 2026.", model: "Model M-2" },
+    { kind: "transfer", at: "28. 10. 2026. u 10:05", target: "2. Teorijski okvir, odlomak 1" },
+    { kind: "chat", date: "31. 10. 2026." },
   ],
   declared: FAKE_DECLARED,
   chats: FAKE_CHATS,
