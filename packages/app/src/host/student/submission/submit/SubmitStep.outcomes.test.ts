@@ -14,7 +14,7 @@ import type { Timing } from "./timing";
 const push = vi.fn();
 const submitWork = vi.fn();
 const readSubmissionState = vi.fn();
-const hasNewer = vi.fn(async () => false);
+const hasNewer = vi.fn(async (_documentId: string) => false);
 const router = { push };
 const hostContext = { base: "" };
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
