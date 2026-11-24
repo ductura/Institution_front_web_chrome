@@ -79,7 +79,7 @@ test("when the reads fail the works list stays and the card says so with a retry
   await expect(page.getByTestId("my-students").locator("table")).toHaveCount(0);
 });
 
-test("the student sees the same timeline for an approved mentorship (MK-13)", async ({ page }) => {
+test("the student sees the same timeline for an approved mentorship (MK-13); axe in both themes (MK-15)", async ({ page }, info) => {
   await session(page, "student");
   await page.route("**/api/v1/student/mentor-candidates", (route) => route.fulfill({ json: { candidates: [] } }));
   await page.route("**/api/v1/student/mentorship-requests", (route) => route.fulfill({ json: { requests: [{
@@ -92,11 +92,15 @@ test("the student sees the same timeline for an approved mentorship (MK-13)", as
   await expect(line.getByRole("heading", { name: k.forMentor("Marko Izmišljeni") })).toBeVisible();
   await expect(line.locator('ol[data-list="past"] li')).toHaveText(["Etapa „Nacrt uvoda”: 20. 11. 2026. u 10:00 (prije 11 dana)"]);
   await expect(line.locator('ol[data-list="ahead"] li')).toHaveText(["Rok predaje: 15. 1. 2027. u 23:59 (za 45 dana)"]);
+  for (const theme of ["dark", "light"] as const) {
+    await setTheme(page, theme);
+    await axe(page, info, `student-timeline-${theme}`);
+  }
 });
 
 for (const width of [1280, 390]) {
   for (const theme of ["dark", "light"] as const) {
-    test(`MK-15: N-16 with Moji studenti and the student's timeline at ${width} px, ${theme}: axe, focus, no sideways scroll`, async ({ page }, info) => {
+    test(`MK-15: N-16 with Moji studenti and the mentor's timeline at ${width} px, ${theme}: axe, focus, no sideways scroll`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await teacher(page);
       await expect(page.getByTestId("my-students")).toHaveAttribute("data-state", "ok");
