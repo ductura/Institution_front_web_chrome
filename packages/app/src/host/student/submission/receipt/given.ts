@@ -21,10 +21,11 @@ function declarationLine(gate: GateState, at: (iso: string) => string): string {
   switch (gate.kind) {
     case "loading": return t.givenDeclarationChecking;
     case "not_required": return t.givenDeclarationNotRequired;
-    case "missing": return t.givenDeclarationMissing;
     case "confirmed": {
       return gate.confirmedAt ? t.givenDeclarationAt.replace("{at}", at(gate.confirmedAt)) : t.givenDeclaration;
     }
+    // A submitted work went with a confirmed declaration (submit-second checks it); a read that does not
+    // match the submitted revision says it could not be read, never that the declaration was missing.
     default: return t.givenDeclarationUnknown;
   }
 }

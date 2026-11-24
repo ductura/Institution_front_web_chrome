@@ -34,12 +34,12 @@ describe("givenLines", () => {
     expect(givenLines({ ...FULL, words: null, declaration: { kind: "unavailable" }, notes: { kind: "unavailable" } }).slice(1)).toEqual([
       receiptText.givenWordsUnknown, receiptText.givenDeclarationUnknown, receiptText.givenNotesUnknown,
     ]);
-    expect(givenLines({ ...FULL, declaration: { kind: "missing", detail: "stale" } })[2]).toBe(receiptText.givenDeclarationMissing);
+    expect(givenLines({ ...FULL, declaration: { kind: "missing", detail: "stale" } })[2]).toBe(receiptText.givenDeclarationUnknown);
   });
 
   it("no percentage and no forbidden term in any line or new message", () => {
     const added = Object.entries(receiptText).filter(([key]) => /^(given|save|summaryOpened|downloadFailed)/.test(key)).map(([, text]) => text);
-    expect(added.length).toBeGreaterThanOrEqual(18);
+    expect(added.length).toBeGreaterThanOrEqual(17);
     for (const text of [...givenLines(FULL), ...added]) {
       expect(text, text).not.toContain("%");
       expect({ text, hits: findForbiddenTerms(text) }).toEqual({ text, hits: [] });

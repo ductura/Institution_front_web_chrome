@@ -52,7 +52,6 @@ export const receiptText = {
   givenDeclarationNotRequired: "Izjava: nije bila potrebna",
   givenDeclarationChecking: "Izjava: provjeravam…",
   givenDeclarationUnknown: "Izjava: stanje trenutačno nije moguće učitati.",
-  givenDeclarationMissing: "Izjava: nije potvrđena za predanu verziju.",
   givenNotes: "Napomene uz rad: {n}",
   givenNotesLoading: "Napomene uz rad: učitavam…",
   givenNotesUnknown: "Napomene uz rad: broj trenutačno nije moguće učitati.",
