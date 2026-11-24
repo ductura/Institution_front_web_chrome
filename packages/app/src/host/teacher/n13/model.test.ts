@@ -42,6 +42,6 @@ describe("N-13 model", () => {
     expect(filterByStudent(FAKE_EXTENSIONS, "s-4").map((e) => e.id)).toEqual(["e-1", "e-2"]);
     expect(filterByStudent(FAKE_EXTENSIONS, "s-1").map((e) => e.id)).toEqual(["e-2"]);
     expect(studentSeesText(FAKE_EXTENSIONS[0]!)).toBe("Student vidi: Bio 8. 11. 2026. u 23:59, razlog: Opravdan razlog");
-    expect(studentSeesText(FAKE_EXTENSIONS[1]!)).toBe("Student vidi: Bio 12. 11. 2026. u 23:59");
+    expect(studentSeesText(FAKE_EXTENSIONS[1]!)).toBe("Student vidi: Bio 12. 11. 2026. u 23:59, razlog: (skriven Vama)");
   });
 });
