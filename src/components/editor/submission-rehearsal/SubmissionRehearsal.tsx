@@ -162,7 +162,7 @@ function RehearsalDialog({
     </> : <>
     <p ref={intro} tabIndex={-1}>{t.intro}</p>
     <h3>{t.missingTitle}</h3>
-    <p role="status">{missingLine}</p>
+    <p>{missingLine}</p>
     <h3>{t.blockers} ({places.length})</h3>
     <CheckActionList findings={places} labels={{ ...advisoryLabels, list: t.blockers, empty: t.noBlockers }}
       onAction={({ findingId }) => {

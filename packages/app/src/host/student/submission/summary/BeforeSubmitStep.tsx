@@ -95,7 +95,10 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
   // WEB-NUZ-PREDAJA-1 (PR-2): the same words and the same "Što još fali" as the rehearsal in the editor.
   const declarationText = declarationWords(gate);
   const missing = beforeSubmission(gate, null);
+  // G-8: the reason of a closed "Dalje" is the declaration row itself, said once; offline it is its own line.
   const nextHint = !online ? c.offline : confirmed ? undefined : declarationText;
+  const declarationId = `${hint}-izjava`;
+  const describedBy = !online ? hint : confirmed ? undefined : declarationId;
   const go = (step: "izjava" | "slanje" | "potvrda") => router.push(routerPath(hrefOf(stepHref(assignmentId, step))));
   const openNote = () => {
     if (!online || notes.kind !== "ready") return;
@@ -116,7 +119,7 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
           <span className="meta">{c.missingMeta}</span>
         </StepSection>
         <StepSection label={c.declaration}>
-          <span>{declarationText}</span>
+          <span id={declarationId}>{declarationText}</span>
           {gate.kind === "missing" && <StepLink href={hrefOf(stepHref(assignmentId, "izjava"))}>{c.openDeclaration}</StepLink>}
           {gate.kind === "unavailable" && <Button tone="secondary" onClick={readGate}>{c.declarationRetry}</Button>}
         </StepSection>
@@ -127,11 +130,11 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
         <StepLink href="#sb-notes" onClick={openNote}>{c.addNote}</StepLink>
         <StepActions>
           {confirmed
-            ? <Button aria-disabled={!online || undefined} aria-describedby={nextHint ? hint : undefined} onClick={() => { if (online) go("slanje"); }}>{c.next}</Button>
-            : <Button aria-describedby={hint} onClick={() => go("izjava")}>{c.toDeclaration}</Button>}
+            ? <Button aria-disabled={!online || undefined} aria-describedby={describedBy} onClick={() => { if (online) go("slanje"); }}>{c.next}</Button>
+            : <Button aria-describedby={describedBy} onClick={() => go("izjava")}>{c.toDeclaration}</Button>}
           <Button tone="secondary" onClick={() => go("izjava")}>{c.back}</Button>
         </StepActions>
-        {nextHint && <p className="meta" id={hint}>{nextHint}</p>}
+        {!online && nextHint && <p className="meta" id={hint}>{nextHint}</p>}
       </StepPanel>
       <SummaryPanel summary={summary} notes={notes} submitted={submitted} confirmed={confirmed} kind={kind}
         online={online} workHref={workHref} onRetry={retry}

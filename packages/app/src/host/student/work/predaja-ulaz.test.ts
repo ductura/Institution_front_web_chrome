@@ -101,6 +101,8 @@ describe("Predaja rada in the top bar (PR-1, P-17)", () => {
       expect(html).toContain(`>${r.submitShort}<`);
       expect(html).not.toContain("prije predaje");
       expect(html).not.toContain("aria-label=\"Predaja rada:");
+      // Up to 640 px the visible name is the short one, hidden from assistive technology: the link keeps the whole name.
+      expect(html).toMatch(/<a[^>]*aria-label="Predaja rada"[^>]*href=|<a[^>]*href=[^>]*aria-label="Predaja rada"/);
     }
   });
 

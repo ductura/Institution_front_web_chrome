@@ -75,7 +75,8 @@ export function WorkspaceTopBarView({
         {subtitle ? <i>{subtitle}</i> : null}
       </span>
       <span className={styles.grow} />
-      {slot}
+      {/* PR-1 (G-1): the shell's switches give way (they scroll) before "Predaja rada" is cut. */}
+      {slot === null ? null : <span className={styles.slot}>{slot}</span>}
       <div className={styles.actions} role="group" aria-label={t.workspace.sheetTheme}>
         <button type="button" className={styles.theme} aria-pressed={light} onClick={() => onTheme(light ? "dark" : "light")}>
           {light ? t.workspace.sheetThemeDark : t.workspace.sheetThemeLight}
@@ -85,7 +86,7 @@ export function WorkspaceTopBarView({
         ) : online ? (
           <span className={styles.submit}>
             <a className={styles.link} href={`/rad/${encodeURIComponent(assignmentId)}/predaja`}
-              aria-label={things === null ? undefined : `${t.workspace.submitWork}: ${things}`}>
+              aria-label={things === null ? t.workspace.submitWork : `${t.workspace.submitWork}: ${things}`}>
               {label}
               {count === null ? null : <b className={styles.count} aria-hidden="true">{count}</b>}
             </a>
