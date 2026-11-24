@@ -33,4 +33,11 @@ describe("splitIntoChunks", () => {
     expect(splitIntoChunks("Prvi odlomak\n\nDrugi odlomak").map((c) => c.text)).toEqual(["Prvi odlomak", "Drugi odlomak"]);
     expect(splitIntoChunks("Vrijednost 3.5 je mala.").map((c) => c.text)).toEqual(["Vrijednost 3.5 je mala."]);
   });
+
+  it("scans long punctuation runs in linear time", () => {
+    const started = performance.now();
+    const chunks = splitIntoChunks(`${".".repeat(50000)}a`);
+    expect(performance.now() - started).toBeLessThan(500);
+    expect(chunks.every((c) => c.text.length <= MAX_CHUNK)).toBe(true);
+  });
 });

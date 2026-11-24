@@ -3,7 +3,29 @@ export const MAX_CHUNK = 200;
 
 export type Chunk = { text: string; start: number; end: number };
 
-const SENTENCE_END = /[.!?…]+["'”»)\]]*(?=\s|$)|\n+/g;
+const TERMINATORS = ".!?…";
+const CLOSERS = "\"'”»)]";
+const isSpace = (ch: string | undefined) => ch === undefined || /\s/.test(ch);
+
+/** End offsets of sentences. One linear pass (a regex retried every suffix of a long punctuation run: quadratic). */
+function sentenceEnds(source: string): number[] {
+  const ends: number[] = [];
+  let i = 0;
+  while (i < source.length) {
+    const ch = source[i] as string;
+    if (ch === "\n") {
+      while (source[i] === "\n") i += 1;
+      ends.push(i);
+    } else if (TERMINATORS.includes(ch)) {
+      let j = i;
+      while (j < source.length && TERMINATORS.includes(source[j] as string)) j += 1;
+      while (j < source.length && CLOSERS.includes(source[j] as string)) j += 1;
+      if (isSpace(source[j])) ends.push(j);
+      i = j;
+    } else i += 1;
+  }
+  return ends;
+}
 
 /** Splits [start,end) of `source` at the last separator before the limit; falls back to a hard cut. */
 function splitLong(source: string, start: number, end: number, max: number, out: Chunk[]): void {
@@ -32,8 +54,7 @@ export function splitIntoChunks(source: string, max: number = MAX_CHUNK): Chunk[
   const out: Chunk[] = [];
   if (!source.trim()) return out;
   let from = 0;
-  for (const match of source.matchAll(SENTENCE_END)) {
-    const end = match.index + match[0].length;
+  for (const end of sentenceEnds(source)) {
     splitLong(source, from, end, limit, out);
     from = end;
   }
