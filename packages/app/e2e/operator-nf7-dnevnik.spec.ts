@@ -1,6 +1,7 @@
 // NF-7 OA-3, OA-6, OA-7 over a fake institution server (page.route); invented data only.
-// OA-3 "Dnevnik radnji" and OA-7 "Prijave problema" have no read in the contract extract yet, so the
-// pages show the honest "not yet available" state and read nothing. OA-6: the export requests show
+// OA-3 "Dnevnik radnji" and OA-7 "Prijave problema" read institution.admin-actions.get and
+// support.problem-reports.get (and set a report's state) through the shared client: loading, empty,
+// error and "no authority" are all shown. OA-6: the export requests show
 // their state in words, and a second request for the same student is refused (on the page and on 409).
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "./fixtures/test";
@@ -36,24 +37,49 @@ const serious = async (page: Page) =>
   (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze()).violations
     .filter((v) => v.impact === "serious" || v.impact === "critical");
 
+const LOG = "/api/v1/institution/admin-actions";
+const REPORTS = "/api/v1/problem-reports";
+const ACTIONS = {
+  truncated: false,
+  entries: [
+    { at: "2026-11-20T09:00:00.000Z", actorRole: "institution_admin", action: "rule_published", subjectRole: null, outcome: "completed" },
+    { at: "2026-11-22T10:30:00.000Z", actorRole: "operator", action: "role_confirmed", subjectRole: "teacher", outcome: "completed" },
+  ],
+};
+const report = (n: number, over: Record<string, unknown> = {}) => ({
+  reference: `PR-00000000A${n}`, category: "technical", routedTo: "network_engineer", courseId: null, description: `Izmišljeni opis prijave ${n}`,
+  route: "/student", appVersion: "1.2.3", browser: { family: "chromium", major: 130 }, syncState: null,
+  createdAt: `2026-11-2${n}T09:00:00.000Z`, status: "received", statusChangedAt: null, statusChangedByRole: null, statusChangedByMe: false, ...over,
+});
+
+/** Answers one path with `status` and `json`; the fake server counts every other call. */
+async function answer(page: Page, path: string, status: number, json: unknown) {
+  await page.route(`**${path}`, (route) => route.fulfill({ status, json }));
+}
+
 for (const width of [390, 1280]) {
   for (const colorScheme of ["light", "dark"] as const) {
-    test(`OA-3, OA-7: the operator reaches both pages from its home; honest state, nothing read (${width} px, ${colorScheme})`, async ({ page }) => {
+    test(`OA-3, OA-7: the operator reads both pages from its home (${width} px, ${colorScheme})`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme });
       const seen = await fakeServer(page, ["network_engineer"]);
+      await answer(page, LOG, 200, ACTIONS);
+      await answer(page, REPORTS, 200, { truncated: false, reports: [report(1), report(2, { status: "resolved" })] });
       await page.goto("/app/web/operater/mjerila-pilota");
       await page.getByRole("link", { name: "Dnevnik radnji" }).click();
       await expect(page).toHaveURL(/\/operater\/dnevnik-radnji$/);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dnevnik radnji");
-      await expect(page.getByText("Dnevnik radnji još nije dostupan")).toBeVisible();
-      await expect(page.getByRole("table", { name: "Vrste radnji u dnevniku" }).getByRole("row")).toHaveCount(6);
+      const log = page.getByRole("table", { name: "Radnje administratora i operatera" });
+      await expect(log.getByRole("row")).toHaveCount(3);
+      await expect(log.getByRole("row").nth(1)).toContainText("Uloga potvrđena");
       expect(await serious(page)).toEqual([]);
 
       await page.goto("/app/web/operater/mjerila-pilota");
       await page.getByRole("link", { name: "Prijave problema" }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prijave problema");
-      await expect(page.getByText("Popis prijava još nije dostupan")).toBeVisible();
+      const reports = page.getByRole("table", { name: "Prijave problema" });
+      await expect(reports.getByRole("row")).toHaveCount(3);
+      await expect(reports.getByRole("row").nth(1)).toContainText("Izmišljeni opis prijave 2");
       const routing = page.getByRole("table", { name: "Usmjeravanje prijava po kategoriji" });
       await expect(routing.getByRole("row", { name: /Tehnički problem/ })).toContainText("operater vaša");
       await expect(routing.getByRole("row", { name: /Račun i uloge/ })).not.toContainText("vaša");
@@ -63,20 +89,73 @@ for (const width of [390, 1280]) {
   }
 }
 
+test("OA-3, OA-7: empty, error with a retry, and no authority are each said in words", async ({ page }) => {
+  await fakeServer(page, ["network_engineer"]);
+  await answer(page, LOG, 200, { entries: [], truncated: false });
+  await page.goto("/app/web/operater/dnevnik-radnji");
+  await expect(page.getByText("Još nema zabilježenih radnji")).toBeVisible();
+
+  await page.unroute(`**${LOG}`);
+  let attempts = 0;
+  await page.route(`**${LOG}`, (route) => (attempts++ === 0 ? route.fulfill({ status: 503, json: { error: "unavailable" } }) : route.fulfill({ json: ACTIONS })));
+  await page.goto("/app/web/operater/dnevnik-radnji");
+  await expect(page.getByText("Dnevnik radnji trenutačno nije moguće učitati. Pokušajte ponovno.")).toBeVisible();
+  await page.getByRole("button", { name: "Pokušaj ponovno" }).click();
+  await expect(page.getByRole("table", { name: "Radnje administratora i operatera" })).toBeVisible();
+
+  await answer(page, REPORTS, 403, { error: "forbidden" });
+  await page.goto("/app/web/operater/prijave-problema");
+  await expect(page.getByText("Nemate ovlasti za prijave problema.")).toBeVisible();
+  await page.unroute(`**${REPORTS}`);
+  await answer(page, REPORTS, 200, { reports: [], truncated: false });
+  await page.goto("/app/web/operater/prijave-problema");
+  await expect(page.getByText("Nema prijava")).toBeVisible();
+});
+
+test("OA-7: a report's state changes only after the server confirms it; a refusal leaves it as it was", async ({ page }) => {
+  await fakeServer(page, ["network_engineer"]);
+  await answer(page, REPORTS, 200, { truncated: false, reports: [report(1)] });
+  const posts: { path: string; body: unknown }[] = [];
+  let status = 200;
+  await page.route("**/api/v1/problem-reports/*/status", (route) => {
+    posts.push({ path: new URL(route.request().url()).pathname, body: route.request().postDataJSON() });
+    return status === 200
+      ? route.fulfill({ json: { reference: "PR-00000000A1", status: "resolved", statusChangedAt: "2026-11-24T08:00:00.000Z" } })
+      : route.fulfill({ status, json: { error: "forbidden" } });
+  });
+  await page.goto("/app/web/operater/prijave-problema");
+  const row = page.getByRole("table", { name: "Prijave problema" }).getByRole("row").nth(1);
+  await expect(row).toContainText("zaprimljeno");
+  status = 403;
+  await row.getByRole("button", { name: /Označi riješenom/ }).click();
+  await expect(page.getByText("Nemate ovlasti za promjenu stanja prijave PR-00000000A1.")).toBeVisible();
+  await expect(row).toContainText("zaprimljeno");
+  status = 200;
+  await row.getByRole("button", { name: /Označi riješenom/ }).click();
+  await expect(page.getByText("Stanje prijave PR-00000000A1 je promijenjeno.")).toBeVisible();
+  await expect(row).toContainText("riješeno");
+  expect(posts).toEqual([
+    { path: "/api/v1/problem-reports/PR-00000000A1/status", body: { status: "resolved" } },
+    { path: "/api/v1/problem-reports/PR-00000000A1/status", body: { status: "resolved" } },
+  ]);
+});
+
 test("OA-3, OA-7: the administrator opens both pages and sees its own category; a teacher is refused", async ({ page }) => {
-  const seen = await fakeServer(page, ["institution_admin"]);
+  await fakeServer(page, ["institution_admin"]);
+  await answer(page, LOG, 200, ACTIONS);
+  await answer(page, REPORTS, 200, { reports: [report(1, { category: "account", routedTo: "institution_admin" })], truncated: false });
   await page.goto("/app/web/operater/prijave-problema");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prijave problema");
   await expect(page.getByRole("table", { name: "Usmjeravanje prijava po kategoriji" }).getByRole("row", { name: /Račun i uloge/ }))
     .toContainText("administrator fakulteta vaša");
   await page.goto("/app/web/operater/dnevnik-radnji");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dnevnik radnji");
-  expect(seen).toEqual([]);
 
   await page.unrouteAll();
-  await fakeServer(page, ["teacher"]);
+  const seen = await fakeServer(page, ["teacher"]);
   await page.goto("/app/web/operater/dnevnik-radnji");
   await expect(page).toHaveURL(/nema-ovlasti/);
+  expect(seen.filter((call) => /admin-actions|problem-reports/.test(call))).toEqual([]);
 });
 
 /**

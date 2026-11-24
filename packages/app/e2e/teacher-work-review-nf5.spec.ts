@@ -34,6 +34,7 @@ const FINDING = {
 
 async function fakeServer(page: Page) {
   let detailsFail = false;
+  let seenItems: { kind: string; id: string; firstSeenAt: string }[] = [{ kind: "comment", id: "00000000-0000-4000-8000-0000000000a6", firstSeenAt: "2026-11-12T11:00:00.000Z" }];
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     switch (path) {
@@ -59,6 +60,7 @@ async function fakeServer(page: Page) {
       case "/api/v1/comments/list": return route.fulfill({ json: { comments: [{
         threadId: "00000000-0000-4000-8000-0000000000a7", commentId: "00000000-0000-4000-8000-0000000000a6", position: 1, authorRole: "teacher", isOwn: true,
         body: "Izmišljen komentar.", anchor: null, state: "open", createdWindow: "2026-11-12T10:00:00.000Z", deletedWindow: null, revision: 1 }] } });
+      case `/api/v1/works/${documentId}/seen-by-student`: return route.fulfill({ json: { items: seenItems } });
       case `/api/v1/works/${documentId}/origin-composition`: return route.fulfill({ json: { parts: [
         { kind: "typed", percent: 86 }, { kind: "assistant_inserted", percent: 0 }, { kind: "assistant_match", percent: 4 },
         { kind: "imported_file", percent: 0 }, { kind: "pasted_known", percent: 0 }, { kind: "pasted_unknown", percent: 10 },
@@ -68,7 +70,7 @@ async function fakeServer(page: Page) {
       default: return route.fallback();
     }
   });
-  return { failDetails: () => { detailsFail = true; }, recoverDetails: () => { detailsFail = false; } };
+  return { clearSeen: () => { seenItems = []; }, failDetails: () => { detailsFail = true; }, recoverDetails: () => { detailsFail = false; } };
 }
 
 test("PG-3: every share carries what it means, what it does not and „nije dokaz autorstva”; the help is closed", async ({ page }) => {
@@ -120,8 +122,15 @@ test("PG-9: published comments and drafts marked „nije objavljeno”, read onl
   await expect(section.locator("tbody tr")).toHaveCount(2);
   await expect(section.getByText(p.givenDraft)).toBeVisible();
   await expect(section.getByText(p.givenPublished)).toBeVisible();
-  await expect(section.locator('[data-missing="seen"]')).toBeVisible();
+  await expect(section.locator('[data-seen="yes"]')).toHaveText(/Student je vidio ·/);
   await expect(section.locator("textarea, input")).toHaveCount(0);
+});
+
+test("PG-9: without a seen record it says „Student još nije otvorio”", async ({ page }) => {
+  const { clearSeen } = await fakeServer(page);
+  clearSeen();
+  await page.goto(`${review}`);
+  await expect(page.locator('[data-nf5="PG-9"] [data-seen="no"]')).toHaveText(p.seenNot);
 });
 
 for (const width of [390, 1280]) {

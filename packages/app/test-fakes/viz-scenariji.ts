@@ -7,6 +7,10 @@
 // Student A, Kolegij A, B and C, the tasks t1 to t3, today 5. 11. 2026.).
 export const SCENARIJI = ["puno", "prazno", "ucitavanje", "greska", "dugi-tekst"] as const;
 export type Scenarij = (typeof SCENARIJI)[number];
+import { mentorstvo } from "./viz-mentorstvo";
+import { nastavnik } from "./viz-nastavnik";
+import { DOKUMENT_T1, predaja, type IshodPredaje } from "./viz-predaja";
+
 export type VizRole = "student" | "teacher" | "institution_admin" | "network_engineer" | null;
 
 /** The prototype's "today" (5. 11. 2026.), fixed in the page clock so shots are stable. */
@@ -19,7 +23,7 @@ export const imeScenarija = (value: string | undefined): Scenarij => {
   throw new Error(`VIZ_SCENARIJ "${name}" nije poznat; dopušteno: ${SCENARIJI.join(", ")}`);
 };
 
-export type Answer = { readonly status: number; readonly contentType?: string; readonly body?: string };
+export type Answer = { readonly status: number; readonly contentType?: string; readonly body?: string; readonly headers?: Readonly<Record<string, string>> };
 /** "hang": the request is never answered (the loading state stays on screen). */
 export type Result = Answer | "hang";
 
@@ -81,7 +85,8 @@ function teacherData(n: Names) {
       ] },
     ] },
     "teacher.mentorships.get": { works: [
-      { mentorshipId: "7f6e5d4c-3b2a-4190-8f7e-6d5c4b3a2901", assignmentId: T1, documentId: "izmisljeni-rad-0001",
+      // MK-16: T1's mentored work is the document the student's workspace opens.
+      { mentorshipId: "7f6e5d4c-3b2a-4190-8f7e-6d5c4b3a2901", assignmentId: T1, documentId: DOKUMENT_T1,
         student: { givenName: "Student", familyName: "A" }, title: n.title(1), workType: "master_thesis", workState: "in_progress" },
       { mentorshipId: "7f6e5d4c-3b2a-4190-8f7e-6d5c4b3a2902", assignmentId: T3, documentId: "izmisljeni-rad-0003",
         student: { givenName: "Student", familyName: "C" }, title: n.title(3), workType: "bachelor_thesis", workState: "submitted" },
@@ -125,7 +130,7 @@ export function sameIds(value: unknown, ids: Readonly<Record<string, string>>): 
 }
 
 export type Contract = Record<string, { path: string; method: string; responses?: Record<string, unknown> }>;
-export type Vector = { route: string; name: string; response?: { status: number; body?: unknown; contentType?: string } };
+export type Vector = { route: string; name: string; response?: { status: number; body?: unknown; contentType?: string; headers?: Record<string, string> } };
 
 const size = (v: Vector) => JSON.stringify(v.response?.body ?? null).length;
 
@@ -143,7 +148,17 @@ const VEKTOR: Readonly<Record<string, string>> = {
   "evidence.open.post": "opened-after-commit",
 };
 
-export function vizServer(contract: Contract, vectors: readonly Vector[], scenarij: Scenarij) {
+/** Choices of one run of a scenario: what the submission of T1 answers (PR-19). */
+export type Opcije = { readonly predaja?: IshodPredaje };
+
+const T1_ROK = "2026-11-08T23:59:00+01:00";
+
+const parse = (text: string | null | undefined): unknown => {
+  if (text === undefined || text === null || text === "") return undefined;
+  try { return JSON.parse(text) as unknown; } catch { return undefined; }
+};
+
+export function vizServer(contract: Contract, vectors: readonly Vector[], scenarij: Scenarij, opcije: Opcije = {}) {
   const routes = Object.entries(contract).map(([operation, { path, method, responses }]) => {
     const names = (path.match(/\{[^}]+\}/g) ?? []).map((p) => p.slice(1, -1));
     const params = names.length;
@@ -155,10 +170,18 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
     return { operation, method: method.toUpperCase(), pattern, capture, names, params, vector: ranked[0], has204: responses !== undefined && "204" in responses };
   }).sort((a, b) => a.params - b.params);
   const own = podaci(scenarij);
-  const json = (body: unknown, status = 200): Answer => ({ status, contentType: "application/json", body: JSON.stringify(body) });
+  // PR-19: the submission of T1 keeps its state for the life of this server (one page).
+  const t1 = scenarij === "prazno" ? undefined : predaja(vectors, { id: T1, dueAt: T1_ROK }, opcije.predaja ?? "predano", FIKSNI_DATUM);
+  // NZ-18, PG-15: the teacher's reads joined to T1 and T2.
+  const teacher = scenarij === "prazno" ? undefined : nastavnik(vectors, { t1: T1, t2: T2 });
+  // MK-16: the mentorship of T1 and T3, and the answers that say back what was sent.
+  const mentor = scenarij === "prazno" ? undefined : mentorstvo(vectors, { t1: T1, t1Rok: T1_ROK, t3: T3 }, FIKSNI_DATUM);
+  const json = (body: unknown, status = 200, headers?: Readonly<Record<string, string>>): Answer =>
+    ({ status, contentType: "application/json", body: JSON.stringify(body), ...(headers === undefined ? {} : { headers }) });
 
   return {
-    answer(role: VizRole, method: string, pathname: string): Result {
+    /** `requestBody` is the request's own text (POST, PUT), for the answers that depend on what was sent. */
+    answer(role: VizRole, method: string, pathname: string, requestBody?: string | null): Result {
       const route = routes.find((r) => r.method === method.toUpperCase() && r.pattern.test(pathname));
       if (route === undefined) return json({ code: "not_found" }, 404);
       if (route.operation === "profile.me.get") {
@@ -179,16 +202,24 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
       if (route.operation === "platform.status.get") return json(STATUS);
       if (scenarij === "ucitavanje") return "hang";
       if (scenarij === "greska") return json({ code: "unavailable" }, 503);
+      const ids = Object.fromEntries(route.names.map((name, i) => [name, decodeURIComponent(route.capture.exec(pathname)?.[i + 1] ?? "")]));
+      const sent = parse(requestBody);
+      const dynamic = t1?.(route.operation, ids.assignmentId, sent);
+      if (dynamic !== undefined) return json(dynamic.body, dynamic.status);
+      const mentored = mentor?.(route.operation, ids, sent);
+      if (mentored !== undefined) return json(mentored.body, mentored.status);
+      const joined = teacher?.(route.operation, ids);
+      if (joined !== undefined) return json(joined.body, joined.status, joined.headers);
       if (route.operation in own) return json(own[route.operation]);
       if (route.vector?.response !== undefined) {
-        const { status, contentType } = route.vector.response;
+        // The vector's own headers too: live.document.get is read only with its ETag.
+        const { status, contentType, headers } = route.vector.response;
         const patch = DOPUNA[route.operation];
         const patched = patch !== undefined && typeof route.vector.response.body === "object" ? patch(route.vector.response.body as Record<string, unknown>) : route.vector.response.body;
         // A vector names its own invented ids; the screens check the answer is about the id they asked
         // for, so every field named as a path parameter carries the id of this request.
-        const ids = Object.fromEntries(route.names.map((name, i) => [name, decodeURIComponent(route.capture.exec(pathname)?.[i + 1] ?? "")]));
         const body = route.names.length === 0 ? patched : sameIds(patched, ids);
-        return { status, contentType: contentType ?? (body === undefined ? undefined : "application/json"),
+        return { status, contentType: contentType ?? (body === undefined ? undefined : "application/json"), ...(headers === undefined ? {} : { headers }),
           body: body === undefined ? undefined : typeof body === "string" && contentType !== "application/json" ? body : JSON.stringify(body) };
       }
       return route.has204 ? { status: 204 } : json({ code: "not_found" }, 404);

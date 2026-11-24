@@ -35,6 +35,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/StatusBar.tsx",
   "editor/StatusBarLive.tsx",
   "editor/StatusLength.tsx",
+  "editor/stopped-report/StoppedReport.tsx", // ED-07: shown only beside a stopped submission; awaits its entry with that screen.
   "editor/ToolbarMenu.tsx",
   "editor/WorkspaceTopBar.tsx",
   "editor/citations/CitationPopover.tsx",

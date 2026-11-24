@@ -2,8 +2,9 @@
 
 // PIL-P1-PODUDARANJE-EDITOR (P-1 rule 13): the student's notice of an assistant match, mounted in
 // the student's own writing (/rad, the full editor) over the real route. The server stores no
-// finding while the faculty switch is off, so the notice then shows nothing. It has no route for
-// the explanation yet, so the notice asks for none.
+// finding while the faculty switch is off, so the notice then shows nothing.
+// ED-13 (NF2-P13): "Objasni, ako želiš…" sends the explanation over its own route, but only from the
+// writable editor: a submitted work or a replay shows the notice without it.
 // PIL-P1-PODUDARANJE-PROVJERA-WEB: a finding exists only once a segment is checked, so the host also
 // sends the segments the student changed, after a pause in writing, and reads the notice again when
 // one of them matched. Only the writable editor is followed: a submitted work or a replay is
@@ -84,5 +85,5 @@ export function AssistantMatchNoticeHost({ documentId, call, check }: { document
     };
   }, [dom, documentId, send]);
 
-  return <AssistantMatchNotice call={port} documentId={documentId} explainable={false} version={version} />;
+  return <AssistantMatchNotice call={port} documentId={documentId} explainable={dom !== null} version={version} />;
 }

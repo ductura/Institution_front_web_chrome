@@ -36,3 +36,28 @@ export function mentorshipsOf(works: readonly MentoredWork[]): readonly { readon
   }
   return out;
 }
+
+/** WEB-NF6-ETAPE (MK-6): the works whose plan can be shown, one per mentorship, in the list's order; a not started work has no document yet. */
+export function startedWorks(works: readonly MentoredWork[]): readonly (MentoredWork & { readonly documentId: string })[] {
+  const seen = new Set<string>();
+  const out: (MentoredWork & { readonly documentId: string })[] = [];
+  for (const work of byFamilyName(works)) {
+    if (work.documentId === null || seen.has(work.documentId)) continue;
+    seen.add(work.documentId);
+    out.push(work as MentoredWork & { readonly documentId: string });
+  }
+  return out;
+}
+
+/** WEB-NF6-ETAPE (MK-5): the latest consultation by its day (the server's order breaks a tie); null for none. */
+export function latestRecord<T extends { readonly heldOn: string }>(records: readonly T[]): T | null {
+  let last: T | null = null;
+  for (const record of records) if (last === null || record.heldOn >= last.heldOn) last = record;
+  return last;
+}
+
+/** "2026-11-05" as "5. 11. 2026."; a day is a calendar day, so no time zone applies. */
+export function dayText(day: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  return match === null ? day : `${Number(match[3])}. ${Number(match[2])}. ${match[1]}.`;
+}
