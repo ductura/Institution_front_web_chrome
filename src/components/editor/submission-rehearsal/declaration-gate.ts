@@ -7,10 +7,10 @@
 // sending closed (PRODUCT §5 rule 11); the server checks again on submission.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { createApi } from "@/client/api";
-import { pluralHr } from "@/lib/i18n/hr";
-import { zagrebEpochMs, zagrebWall } from "@/lib/i18n/zagreb";
-import { declarationDetailOf, readDeclarationGate, type DeclarationGate } from "@/client/declaration";
+import { createApi } from "../../../client/api";
+import { pluralHr } from "../../../lib/i18n/hr";
+import { zagrebEpochMs, zagrebWall } from "../../../lib/i18n/zagreb";
+import { declarationDetailOf, readDeclarationGate, type DeclarationGate } from "../../../client/declaration";
 
 import { rehearsalMessagesHr as t } from "./messages.hr";
 

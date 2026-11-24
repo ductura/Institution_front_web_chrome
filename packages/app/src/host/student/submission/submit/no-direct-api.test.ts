@@ -27,7 +27,7 @@ describe("no direct API in step 4 (WEB-2109)", () => {
     expect(BROWSER_DECLARATION.test(host)).toBe(false);
     const gate = readFileSync(join(import.meta.dirname, "../../../../../../../src/components/editor/submission-rehearsal/declaration-gate.ts"), "utf8");
     expect(BROWSER_DECLARATION.test(gate)).toBe(false);
-    expect(gate).toMatch(/import \{ declarationDetailOf, readDeclarationGate, type DeclarationGate \} from "@\/client\/declaration";/);
-    expect(gate).toMatch(/import \{ createApi \} from "@\/client\/api";/);
+    expect(gate).toMatch(/import \{ declarationDetailOf, readDeclarationGate, type DeclarationGate \} from "[./]+\/client\/declaration";/);
+    expect(gate).toMatch(/import \{ createApi \} from "[./]+\/client\/api";/);
   });
 });
