@@ -1,0 +1,75 @@
+{
+  "faculty": "vancouver",
+  "style": "numeric",
+  "version": "2026-11-24.1",
+  "provenance": {
+    "decision": "Val 20, WEB-V20-STIL-IEEE-VANCOUVER: numerički stil za hrvatsko sučelje; zaseban katalog stilova uz config/faculties/fpzg/citation.json",
+    "source": "Vancouver stil citiranja (numerički, broj i točka u popisu)",
+    "note": "Oblik je sažet vlastitim riječima iz općepoznatih pravila stila; nije prepisan tuđi tekst. Hrvatske oznake (str., ur., U:, pristupljeno) i en crtica raspona prilagodba su sučelja. Za potvrdu pravila s nositeljem stila prije stvarne uporabe.",
+    "verified": false
+  },
+  "numeric": {
+    "open": "(",
+    "close": ")",
+    "listMarker": "dot",
+    "pageLabel": "str. ",
+    "pageSeparator": ", "
+  },
+  "inText": {
+    "open": "(",
+    "close": ")",
+    "authorYearSeparator": ", ",
+    "pageSeparator": ", ",
+    "twoAuthorsJoiner": " i ",
+    "maxNamedAuthors": 2,
+    "manyAuthorsSuffix": " i sur."
+  },
+  "bibliography": {
+    "authorJoiner": " i ",
+    "periodAfterYear": false,
+    "editorLabel": "ur.",
+    "inLabel": "U:",
+    "accessedLabel": "pristupljeno",
+    "hangingIndentCm": 1.25
+  },
+  "rangeDash": "–",
+  "rules": [
+    {
+      "id": "in-text",
+      "status": "explicit",
+      "rule": "Broj izvora u okruglim zagradama, npr. (1); uz stranicu (1, str. 12–14)",
+      "examples": [
+        "(1)",
+        "(2, str. 12–14)"
+      ],
+      "source": "Vancouver stil citiranja (numerički, broj i točka u popisu)"
+    },
+    {
+      "id": "numbering",
+      "status": "explicit",
+      "rule": "Brojevi se dodjeljuju po prvom navodu u tekstu; isti izvor zadržava isti broj pri ponovnom navođenju",
+      "source": "Vancouver stil citiranja (numerički, broj i točka u popisu)"
+    },
+    {
+      "id": "list-order",
+      "status": "explicit",
+      "rule": "Popis je poredan po redu prvog navođenja; svaki redak počinje brojem i točkom",
+      "examples": [
+        "1. Horvat, Ana (2020) Primjer knjige. Zagreb: Izmišljena naklada."
+      ],
+      "source": "Vancouver stil citiranja (numerički, broj i točka u popisu)"
+    },
+    {
+      "id": "page-label",
+      "status": "derived",
+      "rule": "Stranica uz broj: oznaka „str.“ i en crtica za raspon",
+      "source": "Prilagodba hrvatskom sučelju; za potvrdu"
+    },
+    {
+      "id": "range-dash",
+      "status": "explicit",
+      "rule": "En crtica (–) za raspone stranica",
+      "source": "Usklađeno s config/faculties/fpzg/citation.json"
+    }
+  ]
+}
