@@ -36,6 +36,8 @@ import { VERIFY_PATH } from "../../public/verify/model";
 import WithdrawSubmission from "./withdraw/WithdrawSubmission";
 import SubmitStep from "./submit/SubmitStep";
 import { extendedDueOf, submitStageOf } from "./submit/model";
+import { readException } from "./submit/exception";
+import { timingOf, type Timing } from "./submit/timing";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
@@ -111,6 +113,18 @@ async function requestedAtOf(assignmentId: string): Promise<string | null> {
   return read.kind === "ceka" ? atOf(read.requestedAt) : null;
 }
 
+/**
+ * Where the deadline stands for steps 3 and 4 (NF-3 PR-17): late, extended, or late by the teacher's
+ * exception for this student (student.deadline-history.get, read only when it can matter).
+ */
+async function timingFor(checked: Checked, id: string): Promise<Timing> {
+  if (checked.kind !== "ready") return { kind: "unavailable" };
+  const now = Date.now();
+  const stage = submitStageOf(checked.workState, checked.dueAt, checked.extendedDueAt, now);
+  const exception = stage.kind === "extended" ? await readException(id, checked.dueAt, checked.extendedDueAt, now) : false;
+  return timingOf(stage, checked.dueAt, exception, now);
+}
+
 /** The host's base on every path a step opens. */
 function useHrefOf(): (path: string) => string {
   const { base } = useHost();
@@ -175,13 +189,16 @@ export function BeforeSubmitStepPage({ assignmentId, declaredFor }: { assignment
   const { base } = useHost();
   const hrefOf = useHrefOf();
   const workHref = useWorkHref(assignmentId);
-  const shown = useChecked(assignmentId, "pregled", opened);
+  const shown = useChecked(assignmentId, "pregled", async (checked, id) => {
+    const [open, timing] = await Promise.all([opened(checked, id), timingFor(checked, id)]);
+    return { ...open, timing };
+  });
   return (
     <Shown shown={shown} loading={{ title: stepsText.panelTitle, message: stepsText.loadingWork, label: stepsText.panelLabel, workHref }}>
-      {({ checked, id, requestedAt }) => (
+      {({ checked, id, requestedAt, timing }) => (
         <StepsShell step="beforeSubmit" work={checked} workHref={workHref} label={stepsText.beforeSubmitTitle} wide
           receiptHref={hrefOf(stepPath(id, "potvrda"))} requestedAt={requestedAt} onRetry={shown.reload}>
-          <BeforeSubmitStep assignmentId={id} declaredFor={declaredFor} hrefOf={hrefOf} workHref={workHref}
+          <BeforeSubmitStep assignmentId={id} declaredFor={declaredFor} hrefOf={hrefOf} workHref={workHref} timing={timing}
             stage={checked.kind === "ready" ? checked.stage : { kind: "unavailable" }}
             onSignIn={() => goToSignIn(appHref(base, stepPath(id, "pregled")))} />
         </StepsShell>
@@ -201,15 +218,16 @@ export function SubmitStepPage({ assignmentId }: { assignmentId: string }) {
       router.replace(nextPath(base, stepPath(id, "potvrda")));
       return null;
     }
-    return { checked, id };
+    return { checked, id, timing: await timingFor(checked, id) };
   });
   return (
     <Shown shown={shown} loading={{ title: stepsText.panelTitle, message: stepsText.loadingWork, label: stepsText.panelLabel, workHref }}>
-      {({ checked, id }) => (
+      {({ checked, id, timing }) => (
         <StepsShell step="submit" work={checked} workHref={workHref} label={stepsText.panelLabel}
           receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}>
           <SubmitStep assignmentId={id} title={checked.kind === "ready" ? checked.title : ""} dueAt={checked.kind === "ready" ? checked.dueAt : null}
-            stage={checked.kind === "ready" ? submitStageOf(checked.workState, checked.dueAt, checked.extendedDueAt, Date.now()) : { kind: "unavailable" }} />
+            stage={checked.kind === "ready" ? submitStageOf(checked.workState, checked.dueAt, checked.extendedDueAt, Date.now()) : { kind: "unavailable" }}
+            timing={timing} />
         </StepsShell>
       )}
     </Shown>

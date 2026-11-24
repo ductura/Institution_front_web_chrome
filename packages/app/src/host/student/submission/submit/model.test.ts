@@ -23,21 +23,39 @@ describe("submitStageOf (C-15)", () => {
 });
 
 describe("nextOf", () => {
-  it("names the workspace and that the work is not submitted when refused", () => {
+  // NF-3 PR-8: a refusal is a panel of its own; "Pokušaj ponovno" waits for the text to be on the server.
+  it("names the workspace and that the work is not submitted when refused, in a panel of its own", () => {
     const next = nextOf({ kind: "odbijeno", reason: "segment_unsigned" });
-    expect(next).toMatchObject({ go: null, offer: "workspace", retry: true });
-    expect((next as unknown as { text: string[] }).text[0]).toContain("Rad nije predan.");
+    expect(next).toMatchObject({ go: null, title: t.refusedTitle, offer: "retryWhenSaved", retry: false, alertAt: 0 });
+    expect((next as unknown as { text: string[] }).text).toEqual([t.blocked.segment_unsigned, t.notSavedLine]);
+    expect(t.notSavedLine).toContain("Rad nije predan.");
+    for (const reason of ["record_discontinuous", "no_evidence"] as const) {
+      expect(nextOf({ kind: "odbijeno", reason })).toMatchObject({ text: [t.blocked[reason], t.notSavedLine], retry: false });
+    }
   });
-  it("says 'zamjenski postupak' only when the server names one", () => {
-    expect(nextOf({ kind: "nedovrseno" })).toMatchObject({ title: t.incompleteTitle, text: [t.incompleteUnavailable] });
+  it("says 'zamjenski postupak' only when the server names one, and the request time only when it is known", () => {
+    expect(nextOf({ kind: "nedovrseno" })).toMatchObject({ title: t.incompleteTitle, text: [t.incompleteMismatch, t.incompleteUnavailable], retry: false });
     const named = nextOf({ kind: "nedovrseno" }, { requestedAt: "2026-11-20T09:00:00.000000Z", alternative: true }) as unknown as { text: string[] };
-    expect(named.text[0]).toContain("zamjenskim postupkom");
-    expect(named.text[0]).toContain(whenOf("2026-11-20T09:00:00.000000Z"));
+    expect(named.text[1]).toContain(whenOf("2026-11-20T09:00:00.000000Z"));
+    expect(named.text[2]).toBe(t.incompleteAlternative);
+    expect(t.incompleteTitle).not.toContain("zamjenski");
   });
-  it("an unknown outcome offers the check and never says 'nije predano'", () => {
-    const next = nextOf({ kind: "nepoznato" }) as unknown as { text: string[]; offer: string };
-    expect(next.offer).toBe("check");
+  it("a newer version on the server is its own panel with 'Učitaj ponovno'", () => {
+    expect(nextOf({ kind: "greska", code: "stale_revision" })).toMatchObject({ title: t.refusedTitle, offer: "reload", retry: false, text: [t.errors.stale_revision, t.notSubmitted] });
+  });
+  it("an unknown outcome offers the check, is read again, and never says 'nije predano' (PR-9)", () => {
+    const next = nextOf({ kind: "nepoznato" }) as unknown as { text: string[]; offer: string; recheck: boolean; retry: boolean };
+    expect(next).toMatchObject({ offer: "check", recheck: true, retry: false });
+    expect(next.text).toEqual([t.unknown, t.unknownAlert]);
     expect(next.text.join(" ")).not.toMatch(/nije predan/);
+    const known = nextOf({ kind: "nepoznato" }, { requestedAt: "2026-11-20T09:00:00.000000Z", alternative: false }) as unknown as { text: string[] };
+    expect(known.text[0]).toBe(t.unknownRequested.replace("{when}", whenOf("2026-11-20T09:00:00.000000Z")));
+  });
+  it("409 not_open is the panel 'Predaja nije otvorena' with the deadline, without 'Predaj rad' (PR-17)", () => {
+    const next = nextOf({ kind: "greska", code: "not_open" }, { requestedAt: null, alternative: false, dueAt: "2026-11-10T22:59:00.000Z" }) as unknown as { title: string; text: string[]; offer: string; retry: boolean };
+    expect(next).toMatchObject({ title: t.late.forbiddenTitle, offer: "back", retry: false });
+    expect(next.text[0]).toContain("Rok je bio 10. 11. 2026. u 23:59.");
+    expect(nextOf({ kind: "greska", code: "not_open" })).toMatchObject({ text: [t.late.forbiddenNoDue, t.late.forbiddenMeta] });
   });
   it("a state from the server leads to the receipt, the waiting line or the notice", () => {
     expect(nextOf({ kind: "check", state: { kind: "none" } })).toMatchObject({ retry: true });

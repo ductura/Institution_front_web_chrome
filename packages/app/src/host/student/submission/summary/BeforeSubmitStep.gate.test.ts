@@ -35,7 +35,7 @@ async function mount(read: ReturnType<typeof gateServer>["read"], declaredFor?: 
   await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
   return host;
 }
-const buttons = (host: HTMLElement) => [...host.querySelectorAll("button")].map((b) => b.textContent);
+const nextButton = (host: HTMLElement) => [...host.querySelectorAll("button")].find((b) => b.textContent === c.next);
 
 describe("step 3 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
   it("a confirmation kept in sessionStorage or handed over in ?izjava= does not open the next step", async () => {
@@ -46,15 +46,18 @@ describe("step 3 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     // WEB-NUZ-PREDAJA-1 (PR-2): the draft is named as a draft, and "Što još fali" names the confirmation.
     expect(host.textContent).toContain(r.declarationDraft);
     expect(host.textContent).toContain(r.missingDeclaration);
-    expect(buttons(host)).not.toContain(c.next);
-    expect(buttons(host)).toContain(c.toDeclaration);
+    // NF-3 PR-3: "Dalje" stays, closed with its reason; it does not lead on.
+    expect(nextButton(host)?.getAttribute("aria-disabled")).toBe("true");
+    expect(host.querySelector(`#${nextButton(host)?.getAttribute("aria-describedby")}`)?.textContent).toBe(c.nextWhy);
+    await act(async () => { nextButton(host)?.click(); });
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("a declaration the server holds as confirmed opens the next step", async () => {
     const host = await mount(gateServer(() => CONFIRMED).read);
     expect(host.textContent).toContain(r.declarationConfirmedAt.replace("{at}", "20. 11. 2026. u 11:00"));
     expect(host.textContent).toContain(r.missingNothing);
-    expect(buttons(host)).toContain(c.next);
+    expect(nextButton(host)?.hasAttribute("aria-disabled")).toBe(false);
   });
 
   it("a failed read does not open the next step and offers to read again", async () => {
@@ -62,11 +65,11 @@ describe("step 3 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     const server = gateServer(() => answer);
     const host = await mount(server.read, "tag-1");
     expect(host.textContent).toContain(c.declarationUnavailable);
-    expect(buttons(host)).not.toContain(c.next);
+    expect(nextButton(host)?.getAttribute("aria-disabled")).toBe("true");
     answer = "offline";
     const retry = [...host.querySelectorAll("button")].find((b) => b.textContent === c.declarationRetry);
     await act(async () => { retry?.click(); await new Promise((r) => setTimeout(r, 0)); });
     expect(server.paths).toHaveLength(2);
-    expect(buttons(host)).not.toContain(c.next);
+    expect(nextButton(host)?.getAttribute("aria-disabled")).toBe("true");
   });
 });
