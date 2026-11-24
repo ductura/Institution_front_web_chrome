@@ -65,6 +65,8 @@ export const pageLabelsHr = {
   receiptCheck: "Provjera potvrde",
   originThresholds: "Pragovi po vrsti podrijetla",
   pilotMetrics: "Mjerila pilota",
+  actionLog: "Dnevnik radnji",
+  problemReports: "Prijave problema",
   facultySettings: "Postavke fakulteta",
   facultyAssistant: "Asistent na fakultetu",
   myRights: "Moja prava",

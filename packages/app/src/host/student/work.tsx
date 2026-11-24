@@ -130,8 +130,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               comments: ({ editor, documentId, session, submitted, signedOut }) =>
                 <CommentsHost editor={editor} documentId={documentId} session={session} submitted={submitted} signedOut={signedOut} />,
               // ED-09 (NF2-P9): the assignment's rules under the Asistent card, its instructions in "Prvi redak".
-              assistant: ({ submitted, signedOut }) => <>
-                <AssistantChat assignmentId={assignmentId} readOnly={submitted || signedOut} />
+              assistant: ({ submitted, signedOut, scope }) => <>
+                <AssistantChat assignmentId={assignmentId} scope={scope} readOnly={submitted || signedOut} />
                 <AssistantRules assignmentId={assignmentId} base={base} />
               </>,
               instructions: () => <NoticeInstructions assignmentId={assignmentId} />,

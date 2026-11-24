@@ -114,7 +114,10 @@ const COUNT = { type: "integer", minimum: 0, maximum: Number.MAX_SAFE_INTEGER } 
 const REQUIREMENTS: Schema = closed({ wordRange: { anyOf: [{ type: "null" }, closed({ min: COUNT, max: COUNT })] } });
 export const NOTE_MAX = 600;
 const NOTE_TEXT = { type: "string", minLength: 1, maxLength: NOTE_MAX } as const;
-const NOTE: Schema = closed({ id: { type: "string", minLength: 1 }, text: NOTE_TEXT, createdAt: TIME });
+// NF-3 PR-6 (G-9): the notes route writes its time with milliseconds (student.submission-notes.get|post),
+// not with the receipt's microseconds; with TIME every note was "nepoznato".
+const NOTE_TIME = { type: "string", format: "date-time", pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$" } as const;
+const NOTE: Schema = closed({ id: { type: "string", minLength: 1 }, text: NOTE_TEXT, createdAt: NOTE_TIME });
 const NOTES: Schema = closed({ notes: { type: "array", items: NOTE } });
 const NOTE_ADDED: Schema = closed({ note: NOTE });
 

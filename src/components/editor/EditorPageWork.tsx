@@ -58,6 +58,8 @@ export type ToolbarSlot = (ctx: {
 export type HostSectionContext = {
   editor: Editor | null; assignmentId: string; documentId: string;
   session: SessionMark; submitted: boolean; signedOut: boolean;
+  /** The person's journal scope (WEB-14c): what a card keeps on this device is kept under it. */
+  scope: string;
 };
 /**
  * `comments` is the host's Comments card (PIL-K-KOMENTARI-EDITOR); when the host gives one, the
@@ -253,7 +255,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   const [printOpen, setPrintOpen] = useState(false);
   const signedOut = useLocalSignedOut();
   const submitted = useLocalSubmitted();
-  const ctx: HostSectionContext = { editor, assignmentId, documentId, session, submitted, signedOut };
+  const ctx: HostSectionContext = { editor, assignmentId, documentId, session, submitted, signedOut, scope };
   const { phase, state, receiptVerified } = useLocalSaveRead();
   const savingLocally = useLocalSavingOnDevice();
   const online = useOnline();

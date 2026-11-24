@@ -47,3 +47,34 @@
     min-width: 24px;
   }
 }
+
+/* NF-5 PG-12: below the prototype's 760 px break a dialog takes the whole screen, and in the review
+   (data-touch="large") every control is a 44 px target (--target). Nothing here applies from 760 px up. */
+@media (max-width: 759px) {
+  .review dialog[open] {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+
+  .review[data-touch="large"] button,
+  .review[data-touch="large"] [role="tab"],
+  .review[data-touch="large"] a:global(.btn),
+  .review[data-touch="large"] summary {
+    min-height: var(--target);
+  }
+
+  /* Stand-alone links only; a link inside a sentence keeps the flow of the sentence. */
+  .review[data-touch="large"] p > a:only-child,
+  .review[data-touch="large"] dd a,
+  .review[data-touch="large"] td a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
+  }
+}

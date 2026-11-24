@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { appHref } from "../../../../../../src/components/index.ts";
-import type { MyCourse } from "../../../../../../src/components/student/my-assignments-read.ts";
-import { readMyWorks, type WorksRead } from "../../../../../../src/components/student/radovi/works-read.ts";
+import type { MyCourse } from "../read/assignments.ts";
+import { readMyWorks, type WorksRead } from "../read/works.ts";
 import { createApi, signInHref } from "../../../../../../src/client/api.ts";
 
 import { nextPath, type Base } from "../../../bases";

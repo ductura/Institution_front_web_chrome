@@ -5,7 +5,7 @@ import { assignmentFormHr } from "./messages.hr";
 
 const e = assignmentFormHr.errors;
 
-export type FormField = "title" | "instructions" | "opensAt" | "dueAt" | "wordMax";
+export type FormField = "title" | "instructions" | "opensAt" | "dueAt" | "wordMax" | "groups";
 export type FormErrors = Partial<Record<FormField, string>>;
 
 /** All checks of the one form (zs-1 and zs-2) in the order the fields appear. */
@@ -25,7 +25,7 @@ export function checkForm(draft: AssignmentDraft): FormErrors {
 
 /** The text of the summary box `#wz-err`: every error, in field order. */
 export function errorSummary(errors: FormErrors): string {
-  const order: FormField[] = ["title", "instructions", "opensAt", "dueAt", "wordMax"];
+  const order: FormField[] = ["title", "instructions", "opensAt", "dueAt", "wordMax", "groups"];
   return order.flatMap((field) => errors[field] ?? []).join(" ");
 }
 

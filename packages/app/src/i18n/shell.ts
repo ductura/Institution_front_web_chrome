@@ -51,6 +51,8 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/ustanova/postavke/asistent": (c) => c.app.pages.facultyAssistant,
   "/moja-prava": (c) => c.app.pages.myRights,
   "/operater/mjerila-pilota": (c) => c.app.pages.pilotMetrics,
+  "/operater/dnevnik-radnji": (c) => c.app.pages.actionLog,
+  "/operater/prijave-problema": (c) => c.app.pages.problemReports,
 };
 
 /**

@@ -325,11 +325,13 @@ describe("readRequirements (TODO(ugovor))", () => {
 });
 
 describe("notes (TODO(ugovor))", () => {
-  const note = { id: "izmisljena-napomena-1", text: "Izmišljena napomena uz predaju.", createdAt: "2026-12-20T21:00:00.000000Z" };
+  const note = { id: "izmisljena-napomena-1", text: "Izmišljena napomena uz predaju.", createdAt: "2026-12-20T21:00:00.000Z" };
 
   it("reads the list, and nothing out of shape", async () => {
     expect(await readNotes(local(200, { notes: [note] }), ASSIGNMENT)).toEqual({ kind: "ready", notes: [note] });
     expect(await readNotes(local(200, { notes: [{ ...note, author: "x" }] }), ASSIGNMENT)).toEqual({ kind: "nepoznato" });
+    // NF-3 PR-6 (G-9): the route's milliseconds, not the receipt's microseconds.
+    expect(await readNotes(local(200, { notes: [{ ...note, createdAt: "2026-12-20T21:00:00.000000Z" }] }), ASSIGNMENT)).toEqual({ kind: "nepoznato" });
     expect(await readNotes(local(401, null), ASSIGNMENT)).toEqual({ kind: "session-expired" });
   });
 

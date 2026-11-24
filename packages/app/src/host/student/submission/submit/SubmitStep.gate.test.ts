@@ -9,6 +9,7 @@ import { ASSIGNMENT, CONFIRMED, DRAFT, gateServer } from "../summary/declaration
 import { submitText as t } from "./messages.hr";
 import { rehearsalMessagesHr as r } from "../../../../../../../src/components/editor/submission-rehearsal/messages.hr.ts";
 import SubmitStep from "./SubmitStep";
+import { dialogTexts as d } from "../declaration/dialog-model";
 
 const push = vi.fn();
 const submitWork = vi.fn();
@@ -82,7 +83,8 @@ describe("step 4 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     expect(submitWork.mock.calls[0]?.[0]).toEqual({ assignmentId: ASSIGNMENT, documentId: "izmisljeni-dokument-1", revision: 2 });
   });
 
-  it("409 declaration_required stays visible as a warning with the way to step 2, and sending closes", async () => {
+  // NF-3 PR-5 (PD-10): the way to the declaration is now its dialog on this step, not a link to step 2.
+  it("409 declaration_required stays visible as a warning with the declaration's dialog, and sending closes", async () => {
     submitWork.mockResolvedValue({ kind: "izjava" });
     let state: unknown = CONFIRMED;
     const server = gateServer(() => state);
@@ -91,9 +93,11 @@ describe("step 4 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     await trySubmit(host);
     expect(host.textContent).toContain(t.declarationRequired);
     expect(host.textContent).not.toContain(t.unknown);
-    const link = [...host.querySelectorAll("a")].find((a) => a.textContent === t.openDeclaration);
-    expect(link?.getAttribute("href")).toContain(`/rad/${ASSIGNMENT}/predaja/izjava`);
     expect(server.paths).toHaveLength(2);
+    const open = [...host.querySelectorAll("button")].find((b) => b.textContent === d.open);
+    expect(open).toBeDefined();
+    await act(async () => { open?.click(); });
+    expect(document.querySelector("dialog h2")?.textContent).toBe(d.title);
     expect(submitButton(host)?.getAttribute("aria-disabled")).toBe("true");
     expect(push).not.toHaveBeenCalled();
   });

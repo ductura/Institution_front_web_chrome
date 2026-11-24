@@ -26,4 +26,8 @@ export const pilotMetricsMessages = {
   median: "Vrijeme do potvrde (medijan)",
   p95: "Vrijeme do potvrde (95. percentil)",
   milliseconds: "{value} ms",
+  /** NF-7 OA-3, OA-7: the operator has no side navigation, so its home leads to its other pages. */
+  more: "Druge stranice operatera",
+  actionLog: "Dnevnik radnji",
+  problemReports: "Prijave problema",
 } as const;
