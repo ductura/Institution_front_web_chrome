@@ -145,7 +145,31 @@ test("NZ-1: Brz put without an assignment shows the first one with the chooser",
   await page.goto("/app/web/nastavnik/brz-put");
   await expect(page.getByLabel("Zadatak")).toHaveValue(A1);
   await page.getByLabel("Zadatak").selectOption(A2);
+  await expect(page).toHaveURL("/app/web/nastavnik/brz-put");
+  await page.getByRole("button", { name: "Otvori" }).click();
   await expect(page).toHaveURL(`/app/web/nastavnik/brz-put?zadatak=${A2}`);
+});
+
+test("NZ-1: the Brz put chooser opens an assignment only through Otvori, by keyboard, and keeps the focus", async ({ page }) => {
+  await teacher(page);
+  await page.route("**/api/v1/teacher/fast-path", (route) => route.fulfill(json({ kind: "ok", students: [] })));
+  await page.goto(`/app/web/nastavnik/brz-put?zadatak=${A1}`);
+  const chooser = page.getByLabel("Zadatak");
+  await expect(chooser).toHaveValue(A1);
+  await chooser.focus();
+  // An arrow key on the closed select only chooses (WCAG 3.2.2): no navigation, the focus stays.
+  await page.keyboard.press("ArrowDown");
+  await expect(page).toHaveURL(`/app/web/nastavnik/brz-put?zadatak=${A1}`);
+  await expect(chooser).toBeFocused();
+  await chooser.selectOption(A2);
+  await expect(page).toHaveURL(`/app/web/nastavnik/brz-put?zadatak=${A1}`);
+  await page.keyboard.press("Tab");
+  const open = page.getByRole("button", { name: "Otvori" });
+  await expect(open).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(`/app/web/nastavnik/brz-put?zadatak=${A2}`);
+  await expect(page.getByLabel("Zadatak")).toHaveValue(A2);
+  await expect(open).toBeFocused();
 });
 
 test("NZ-1 and NZ-2: the empty overview leads to the assignment form", async ({ page }) => {

@@ -56,8 +56,8 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
               {cardDeadline(card, Date.now()) === null ? null : <p className="meta">{cardDeadline(card, Date.now())}</p>}
               <div className="acts" role="group" aria-label={`${text.taskActions}: ${card.title}`}>
                 <a className="btn secondary small" href={task(card.assignmentId, "predaje")}>{text.submissions}</a>
-                <a className="btn secondary small" href={task(card.assignmentId, "produljenje")}>{text.extension}</a>
-                <a className="btn secondary small" href={task(card.assignmentId, "merlin")}>{text.merlin}</a>
+                {card.role === "holder" ? <a className="btn secondary small" href={task(card.assignmentId, "produljenje")}>{text.extension}</a> : null}
+                {card.role === "holder" ? <a className="btn secondary small" href={task(card.assignmentId, "merlin")}>{text.merlin}</a> : null}
               </div>
               {card.rows === null ? (
                 <>

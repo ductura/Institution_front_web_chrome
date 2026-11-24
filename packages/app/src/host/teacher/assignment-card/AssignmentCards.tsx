@@ -53,7 +53,8 @@ export function TaskActions({ assignment }: { assignment: { readonly id: string;
   const { base } = useHost();
   const role = useContext(CardRoleContext);
   const paths = taskPaths(assignment.id);
-  const writes = role !== "collaborator";
+  // Only a known holder: while the team view is unread (or failed), no entry that writes is offered.
+  const writes = role === "holder";
   const link = (path: string, label: string, primary = false) => (
     <a className={primary ? "btn small" : "btn secondary small"} href={appHref(base, path)} aria-label={`${label}: ${assignment.title}`}>{label}</a>
   );
@@ -195,10 +196,10 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode =
       <div className="acts">
         <a className={small} href={link(`/nastavnik/kolegiji/${encodeURIComponent(course.id)}/studenti`)}>{t.studentList}</a>
         {role !== "collaborator" ? <a className={small} href={link(newAssignmentHref(course.id))}>{t.addTask}</a> : null}
-        {role !== "collaborator" && hasTasks
+        {role === "holder" && hasTasks
           ? <button type="button" className={small} aria-haspopup="dialog" onClick={() => setPick("extension")}>{t.extension}</button> : null}
         <a className={small} href={link(courseOverviewPath(course.id))}>{t.overview}</a>
-        {role !== "collaborator" && hasTasks
+        {role === "holder" && hasTasks
           ? <button type="button" className={small} aria-haspopup="dialog" onClick={() => setPick("merlin")}>{t.merlin}</button> : null}
         {role === "holder" ? <button type="button" className={small} onClick={() => setOpen(true)} aria-label={`${t.newCode}: ${course.name}`}>{t.newCode}</button> : null}
       </div>

@@ -2,6 +2,7 @@
 // a meta line of counts and a six-column table. The server's overview says submitted or not; the states
 // "u pisanju", "obavijest nije potvrđena", the extended deadline and the revision are optional fields:
 // when the read does not give them they are shown as such ("nedostupno"), never guessed. No network call here.
+import type { CardRole } from "../assignment-card/model";
 import { compareHr } from "../../../../../editor-core/src/document/text/compare-hr";
 import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
 import { deadlineOf, whenHr, type Extension } from "../assignment-facts/model";
@@ -36,6 +37,8 @@ export type N17Card = {
   /** NZ-1/NZ-2: the course and the assignment's own deadline, for the card's meta line and entries. */
   readonly courseId?: string;
   readonly dueAt?: string;
+  /** The caller's role in the course; only the holder gets the entries that write (as TaskActions, INVENTAR §7 t. 5). */
+  readonly role?: CardRole;
   /** null: the read of this assignment failed. */
   readonly rows: readonly N17Row[] | null;
 };

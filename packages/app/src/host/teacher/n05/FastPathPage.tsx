@@ -1,8 +1,8 @@
 "use client";
 
-import { Select } from "@ductura/ui";
+import { Button, Select } from "@ductura/ui";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createApi } from "../../../../../../src/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
@@ -40,17 +40,29 @@ function useTasks(): Tasks | null {
   return tasks;
 }
 
-/** The chooser "Zadatak": a change opens that assignment's works. */
+/**
+ * The chooser "Zadatak": choosing only selects, the button "Otvori" opens that assignment's works (as in
+ * TaskPicker; WCAG 3.2.2, an arrow key on a closed select must not navigate). The chooser stays mounted
+ * across the new read, so the focus stays on it.
+ */
 function TaskChooser({ tasks, current }: { tasks: Tasks; current: string }) {
   const { base } = useHost();
   const router = useRouter();
+  const listed = tasks.some((o) => o.value === current);
+  const [chosen, setChosen] = useState(listed ? current : "");
+  useEffect(() => {
+    setChosen(tasks.some((o) => o.value === current) ? current : "");
+  }, [tasks, current]);
   if (tasks.length === 0) return null;
   return (
-    <div className="card">
-      <Select label={t.task} value={tasks.some((o) => o.value === current) ? current : ""} options={[...tasks]}
-        placeholder={tasks.some((o) => o.value === current) ? undefined : fp.pickAssignment}
-        onChange={(event) => { if (event.target.value !== "") router.push(nextPath(base, fastPathPath(event.target.value))); }} />
-    </div>
+    <form className="card" onSubmit={(event) => {
+      event.preventDefault();
+      if (chosen !== "" && chosen !== current) router.push(nextPath(base, fastPathPath(chosen)));
+    }}>
+      <Select label={t.task} value={chosen} options={[...tasks]} placeholder={listed ? undefined : fp.pickAssignment}
+        onChange={(event) => setChosen(event.target.value)} />
+      <div className="acts"><Button type="submit" tone="secondary">{t.open}</Button></div>
+    </form>
   );
 }
 
@@ -67,18 +79,25 @@ export default function FastPathPage({ read = readFastPath }: { read?: (assignme
       </>
     );
   }
-  return <AssignmentFastPath key={assignmentId} assignmentId={assignmentId} read={read}
+  return <AssignmentFastPath assignmentId={assignmentId} read={read}
     chooser={tasks === null ? null : <TaskChooser tasks={tasks} current={assignmentId} />} />;
 }
 
+/** Not keyed by the assignment: another assignment reads anew, but the chooser above keeps its place and focus. */
 function AssignmentFastPath({ assignmentId, read, chooser }: {
   assignmentId: string; read: (id: string) => Promise<FastPathAnswer>; chooser: React.ReactNode;
 }) {
   const { base } = useHost();
   const [answer, retry] = useTeacherRead(base, async () => fastPathRead(await read(assignmentId)));
+  const shown = useRef(assignmentId);
+  useEffect(() => {
+    if (shown.current === assignmentId) return;
+    shown.current = assignmentId;
+    retry();
+  }, [assignmentId, retry]);
   return (
     <TeacherPage title={t.title} lead={t.lead} read={answer} retry={retry} unavailable={t.unavailable} retryLabel={t.retry}
-      notice={chooser} ready={(students) => <FastPathBody students={students} hrefOf={(path) => appHref(base, path)} />} />
+      notice={chooser} ready={(students) => <FastPathBody key={assignmentId} students={students} hrefOf={(path) => appHref(base, path)} />} />
   );
 }
 

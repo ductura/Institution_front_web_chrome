@@ -13,6 +13,9 @@ import { appHref, readTeacherCourses, type TeacherCoursesCall } from "../../../.
 import { createApi } from "../../../../../src/client/api.ts";
 import { readDeadlineExtensions, readExtensionStudents, recordDeadlineExtension } from "../../../../../src/client/deadline-extensions.ts";
 import { readAssignmentOverview, type TeacherCall } from "../../../../../src/client/teacher-reads.ts";
+import { createTeachingTeam } from "../../../../../src/client/teaching-team.ts";
+
+import { roleOf, type CardRole } from "./assignment-card/model";
 
 import N17Overview from "./n17/Overview";
 import { joinRows, type N17Port, type N17Read, type RowJoin } from "./n17/model";
@@ -39,6 +42,12 @@ async function courseWorks(call: OverviewCall, courseId: string): Promise<Readon
   return byTask;
 }
 
+/** The caller's role in one course (holder or collaborator); "unknown" when the team view cannot be read. */
+async function roleIn(call: OverviewCall, courseId: string): Promise<CardRole> {
+  const answer = await createTeachingTeam(courseId, call).read().catch(() => null);
+  return roleOf(answer?.kind === "ready" ? answer.view : null);
+}
+
 /** teacher.submissions.get of one assignment, by student; null when it fails. */
 async function submissionsOf(call: OverviewCall, assignmentId: string): Promise<RowJoin["submissions"]> {
   const answer = await call("teacher.submissions.get", { params: { assignmentId }, ...none }).catch(() => null);
@@ -49,7 +58,8 @@ async function submissionsOf(call: OverviewCall, assignmentId: string): Promise<
 /**
  * N-17 reads teacher.courses.get and then, per assignment, the overview (the rows) joined with the course's
  * students, the submissions and the extensions (NZ-10). One failed overview fails only its card; another
- * failed read only leaves its fields as "nedostupno". An unknown `?kolegij=` shows every course.
+ * failed read only leaves its fields as "nedostupno". An unknown `?kolegij=` shows every course, and a known
+ * `?zadatak=` only that assignment (NZ-2).
  */
 export function overviewPort(scope: OverviewScope = { course: null, task: null }, client: () => OverviewCall = () => createApi()): N17Port {
   return {
@@ -61,12 +71,17 @@ export function overviewPort(scope: OverviewScope = { course: null, task: null }
       const one = courses.courses.find((c) => c.id === scope.course);
       const chosen = one === undefined ? courses.courses : [one];
       const now = Date.now();
+      // `?zadatak=` narrows every chosen course to that assignment; a course without it shows no card. Only an
+      // assignment that none of the chosen courses has (a stale link) falls back to all of their assignments.
+      const known = scope.task !== null && chosen.some((course) => course.assignments.some((a) => a.id === scope.task));
       const cards = await Promise.all(chosen.flatMap((course) => {
+        const tasks = known ? course.assignments.filter((a) => a.id === scope.task) : course.assignments;
+        if (tasks.length === 0) return [];
         const works = courseWorks(call, course.id);
-        const tasks = course.assignments.filter((a) => scope.task === null || a.id === scope.task);
-        return (tasks.length === 0 ? course.assignments : tasks).map(async (a) => {
-          const [overview, byTask, submissions, extensions] = await Promise.all([
-            readAssignmentOverview(call as unknown as TeacherCall, a.id), works, submissionsOf(call, a.id), readDeadlineExtensions(call, a.id),
+        const role = roleIn(call, course.id);
+        return tasks.map(async (a) => {
+          const [overview, byTask, submissions, extensions, cardRole] = await Promise.all([
+            readAssignmentOverview(call as unknown as TeacherCall, a.id), works, submissionsOf(call, a.id), readDeadlineExtensions(call, a.id), role,
           ]);
           const join: RowJoin = {
             dueAt: a.dueAt,
@@ -75,7 +90,7 @@ export function overviewPort(scope: OverviewScope = { course: null, task: null }
             extensions: extensions.kind === "ready" ? extensions.extensions : null,
           };
           return {
-            assignmentId: a.id, title: a.title, courseName: course.name, courseId: course.id, dueAt: a.dueAt,
+            assignmentId: a.id, title: a.title, courseName: course.name, courseId: course.id, dueAt: a.dueAt, role: cardRole,
             rows: overview.kind === "ready" ? joinRows(overview.rows, join, now) : null,
           };
         });
