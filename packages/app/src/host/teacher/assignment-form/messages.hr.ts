@@ -115,3 +115,10 @@ export const assignmentFormHr = {
   publish: "Objavi zadatak",
   backToForm: "Natrag na obrazac",
 } as const;
+
+/** NF-4 NZ-15: the teacher's question beside the declaration, shown honestly until the server can set it. */
+export const declarationQuestionHr = {
+  label: "Pitanje studentu uz izjavu (nije obavezno)",
+  hint: "Do {max} znakova. Student ga vidi na koraku „Izjava”; odgovor vidite uz izjavu na pregledu rada. Bez pitanja izjava radi kao i dosad.",
+  unavailable: "Postavljanje pitanja uz izjavu trenutačno nije dostupno. Zadatak se objavljuje bez pitanja.",
+} as const;

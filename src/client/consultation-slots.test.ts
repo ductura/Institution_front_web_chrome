@@ -2,7 +2,8 @@
 import { createApi } from "./api";
 import { describe, expect, it } from "vitest";
 import {
-  readConsultationSlots, requestConsultationSlot, updateConsultationSlot, validStartsAt, type SlotsApi,
+  REASON_MAX, TOPIC_MAX, closeConsultationSlot, optionalText, readConsultationSlots, readSlotDetails,
+  requestConsultationSlot, updateConsultationSlot, validStartsAt, type SlotsApi,
 } from "./consultation-slots";
 
 const DOC = "1a2b3c4d-5e6f-4a01-9c3d-4e5f6a7b8c9d";
@@ -120,5 +121,100 @@ describe("validStartsAt", () => {
     expect(validStartsAt(T1)).toBe(true);
     expect(validStartsAt("2026-13-45T99:00:00Z")).toBe(false);
     expect(validStartsAt("21.11.2026.")).toBe(false);
+  });
+});
+
+// WEB-NF6-KONZ (MK-3): topic, closed slots and closing, over invented answers.
+const detail = { ...slot, topic: "Izmišljena tema: metoda", closing: null, preparation: null };
+const closed = (state: string, by: string, reason: string | null) =>
+  ({ ...detail, state, closing: { by, reason, at: "2026-11-23T12:00:00.000Z" } });
+
+describe("limits from the contract", () => {
+  it("the topic is at most 200 and the reason at most 600 code points, as the server says", () => {
+    expect(TOPIC_MAX).toBe(200);
+    expect(REASON_MAX).toBe(600);
+  });
+  it("optionalText trims, gives none for blank and refuses what is too long", () => {
+    expect(optionalText("  Metoda  ", 200)).toBe("Metoda");
+    expect(optionalText("   ", 200)).toBeUndefined();
+    expect(optionalText("😀".repeat(200), 200)).toBe("😀".repeat(200));
+    expect(optionalText("a".repeat(201), 200)).toBeNull();
+  });
+});
+
+describe("requestConsultationSlot with a topic", () => {
+  it("sends the topic and needs it back", async () => {
+    const calls: Call[] = [];
+    const asked = { ...slot, topic: "Metoda" };
+    expect(await requestConsultationSlot(answer(201, asked, calls), DOC, T1, "Metoda")).toEqual({ kind: "saved", slot: asked });
+    expect(calls[0]![2]).toEqual({ startsAt: T1, topic: "Metoda" });
+    expect(await requestConsultationSlot(answer(201, { ...slot, topic: null }), DOC, T1, "Metoda")).toEqual(nepoznato);
+  });
+  it("a blank, untrimmed or over-long topic is not sent", async () => {
+    const calls: Call[] = [];
+    for (const topic of ["", " Metoda", "a".repeat(TOPIC_MAX + 1)]) {
+      expect(await requestConsultationSlot(answer(201, slot, calls), DOC, T1, topic)).toEqual({ kind: "greska", code: "invalid" });
+    }
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("readSlotDetails", () => {
+  it("one GET of every slot, closed ones too", async () => {
+    const calls: Call[] = [];
+    const list = [detail, { ...closed("withdrawn", "student", null), id: OTHER }];
+    expect(await readSlotDetails(answer(200, { slots: list }, calls), DOC)).toEqual({ kind: "ready", slots: list });
+    expect(calls).toEqual([["GET", `/api/v1/works/${DOC}/consultation-slot-details`, undefined]]);
+  });
+  it("the same slot twice, an unknown field or state is nepoznato; 401 and 404 are told apart", async () => {
+    expect(await readSlotDetails(answer(200, { slots: [detail, detail] }), DOC)).toEqual(nepoznato);
+    expect(await readSlotDetails(answer(200, { slots: [{ ...detail, room: "A" }] }), DOC)).toEqual(nepoznato);
+    expect(await readSlotDetails(answer(200, { slots: [{ ...detail, state: "deleted" }] }), DOC)).toEqual(nepoznato);
+    expect(await readSlotDetails(answer(401, null), DOC)).toEqual({ kind: "session-expired" });
+    expect(await readSlotDetails(answer(404, null), DOC)).toEqual({ kind: "greska", code: "not_found" });
+    expect(await readSlotDetails(broken, DOC)).toEqual(nepoznato);
+  });
+});
+
+describe("closeConsultationSlot", () => {
+  it.each([
+    ["withdraw", "withdrawn", "student"],
+    ["decline", "declined", "teacher"],
+    ["cancel", "cancelled", "teacher"],
+  ] as const)("%s POSTs the action and is saved from a %s slot", async (action, state, by) => {
+    const calls: Call[] = [];
+    const done = closed(state, by, null);
+    expect(await closeConsultationSlot(answer(200, done, calls), DOC, SLOT, action)).toEqual({ kind: "saved", slot: done });
+    expect(calls).toEqual([["POST", `/api/v1/works/${DOC}/consultation-slots/${SLOT}/close`, { action }]]);
+  });
+  it("sends the reason and needs it back", async () => {
+    const calls: Call[] = [];
+    const done = closed("declined", "teacher", "Termin je zauzet.");
+    expect(await closeConsultationSlot(answer(200, done, calls), DOC, SLOT, "decline", "Termin je zauzet.")).toEqual({ kind: "saved", slot: done });
+    expect(calls[0]![2]).toEqual({ action: "decline", reason: "Termin je zauzet." });
+    expect(await closeConsultationSlot(answer(200, closed("declined", "teacher", null)), DOC, SLOT, "decline", "Termin je zauzet.")).toEqual(nepoznato);
+  });
+  it("another slot, another state or no closing is nepoznato", async () => {
+    expect(await closeConsultationSlot(answer(200, { ...closed("withdrawn", "student", null), id: OTHER }), DOC, SLOT, "withdraw")).toEqual(nepoznato);
+    expect(await closeConsultationSlot(answer(200, closed("cancelled", "student", null)), DOC, SLOT, "withdraw")).toEqual(nepoznato);
+    expect(await closeConsultationSlot(answer(200, { ...detail, state: "withdrawn" }), DOC, SLOT, "withdraw")).toEqual(nepoznato);
+  });
+  it("a bad id, an unknown action or a bad reason is not sent", async () => {
+    const calls: Call[] = [];
+    const ok = answer(200, detail, calls);
+    expect(await closeConsultationSlot(ok, DOC, "bad", "withdraw")).toEqual({ kind: "greska", code: "invalid" });
+    expect(await closeConsultationSlot(ok, DOC, SLOT, "delete" as never)).toEqual({ kind: "greska", code: "invalid" });
+    for (const reason of ["", " razlog", "a".repeat(REASON_MAX + 1)]) {
+      expect(await closeConsultationSlot(ok, DOC, SLOT, "cancel", reason)).toEqual({ kind: "greska", code: "invalid" });
+    }
+    expect(calls).toEqual([]);
+  });
+  it("403 and 409 read again, 401 ends the session, 404 is not found, the rest is nepoznato", async () => {
+    expect(await closeConsultationSlot(answer(409, null), DOC, SLOT, "cancel")).toEqual({ kind: "promijenjeno" });
+    expect(await closeConsultationSlot(answer(403, null), DOC, SLOT, "decline")).toEqual({ kind: "promijenjeno" });
+    expect(await closeConsultationSlot(answer(401, null), DOC, SLOT, "cancel")).toEqual({ kind: "session-expired" });
+    expect(await closeConsultationSlot(answer(404, null), DOC, SLOT, "cancel")).toEqual({ kind: "greska", code: "not_found" });
+    for (const s of [408, 503]) expect(await closeConsultationSlot(answer(s, null), DOC, SLOT, "cancel")).toEqual(nepoznato);
+    expect(await closeConsultationSlot(broken, DOC, SLOT, "cancel")).toEqual(nepoznato);
   });
 });

@@ -3,27 +3,40 @@
 // WEB-2122 (prototype mentor2, "Konzultacije"): the student asks for a slot and takes the mentor's
 // counter-proposal; the teacher confirms or proposes another time. A write that did not save keeps
 // the form as typed; a success shows only from the server's answer (B-6). The collaborator only reads.
-import { Button } from "@ductura/ui";
+// WEB-NF6-KONZ (MK-3): the topic of a request, every slot with its closing (consultation-slot-details),
+// and "Povuci zahtjev", "Odbij" and "Otkaži termin" through work.consultation-slot-close.post.
+import { Button, TextArea, TextField } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
-  readConsultationSlots, requestConsultationSlot, updateConsultationSlot,
-  type ConsultationSlot, type SlotAction, type SlotsApi, type SlotWrite,
+  REASON_MAX, TOPIC_MAX, closeConsultationSlot, optionalText, readSlotDetails, requestConsultationSlot, updateConsultationSlot,
+  type CloseAction, type ConsultationSlot, type SlotAction, type SlotDetail, type SlotsApi, type SlotWrite,
 } from "../../../../../../../src/client/consultation-slots";
 
 import styles from "./Consult.module.css";
-import { IDLE_FORM, actionsFor, afterSlotWrite, lineText, localToIso, slotsHeading, statusText, timeText, withSlot, type Form, type Role } from "./consult-model";
+import {
+  IDLE_FORM, actionsFor, afterSlotWrite, asDetail, closeActionsFor, closeFailure, closingText, lineText, localToIso,
+  slotsHeading, statusText, timeText, topicText, withSlot, type Closing, type Form, type Role,
+} from "./consult-model";
 import { consultHr } from "./messages.hr";
 
 const t = consultHr.slots;
-type Load = { kind: "loading" } | { kind: "ready"; slots: readonly ConsultationSlot[] } | { kind: "unavailable" | "notFound" | "signedOut" };
+type Load = { kind: "loading" } | { kind: "ready"; slots: readonly SlotDetail[] } | { kind: "unavailable" | "notFound" | "signedOut" };
+const CLOSE_LABEL: Record<CloseAction, string> = { withdraw: t.withdraw, decline: t.decline, cancel: t.cancelSlot };
+const max = (text: string, n: number) => text.replace("{max}", String(n));
 
-export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
+export function ConsultSlots({ documentId, role, call, onSessionEnd, now = Date.now, heading: Heading = "h3" }: {
   documentId: string; role: Role; call: SlotsApi | null; onSessionEnd?: () => void;
+  /** The heading's level where the list is mounted (h2 under a page's h1, h3 inside the Mentor card). */
+  heading?: "h2" | "h3";
+  /** The clock that decides whether a slot still lies ahead (tests pass a fixed one). */
+  now?: () => number;
 }) {
   const [load, setLoad] = useState<Load>({ kind: "loading" });
   const [request, setRequest] = useState<Form>(IDLE_FORM);
   const [forms, setForms] = useState<Record<string, Form>>({});
+  const [closings, setClosings] = useState<Record<string, Closing>>({});
+  const [notice, setNotice] = useState<string | null>(null);
   const alive = useRef(true);
   const inFlight = useRef(new Set<string>());
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
@@ -31,7 +44,7 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
   const read = useCallback(async () => {
     setLoad({ kind: "loading" });
     if (!call) { setLoad({ kind: "unavailable" }); return; }
-    const result = await readConsultationSlots(call, documentId);
+    const result = await readSlotDetails(call, documentId);
     if (!alive.current) return;
     if (result.kind === "ready") setLoad(result);
     else if (result.kind === "session-expired") { setLoad({ kind: "signedOut" }); onSessionEnd?.(); }
@@ -40,15 +53,21 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
   useEffect(() => { void read(); }, [read]);
 
   const patch = (id: string, next: Partial<Form>) => setForms((all) => ({ ...all, [id]: { ...(all[id] ?? IDLE_FORM), ...next } }));
+  const place = (saved: SlotDetail | ConsultationSlot) => setLoad((l) => {
+    if (l.kind !== "ready") return l;
+    const detail = "closing" in saved ? saved : asDetail(saved, l.slots.find((s) => s.id === saved.id));
+    return { kind: "ready", slots: withSlot(l.slots, detail) };
+  });
   const settle = (outcome: SlotWrite) => {
-    if (outcome.kind === "saved") setLoad((l) => (l.kind === "ready" ? { kind: "ready", slots: withSlot(l.slots, outcome.slot) } : l));
+    if (outcome.kind === "saved") place(outcome.slot);
     if (outcome.kind === "session-expired") onSessionEnd?.();
     if (outcome.kind === "promijenjeno") void read();
   };
 
-  const act = async (slot: ConsultationSlot, action: SlotAction, startsAt?: string) => {
+  const act = async (slot: { readonly id: string }, action: SlotAction, startsAt?: string) => {
     if (!call || role === "collaborator" || inFlight.current.has(slot.id)) return;
     inFlight.current.add(slot.id);
+    setNotice(null);
     patch(slot.id, { busy: true, error: null });
     const outcome = await updateConsultationSlot(call, documentId, slot.id, action, startsAt);
     inFlight.current.delete(slot.id);
@@ -57,13 +76,37 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
     setForms((all) => ({ ...all, [slot.id]: afterSlotWrite(all[slot.id] ?? IDLE_FORM, outcome) }));
   };
 
+  const closeOpen = (id: string, next: Partial<Closing>) =>
+    setClosings((all) => { const was = all[id]; return was ? { ...all, [id]: { ...was, ...next } } : all; });
+  const closeShut = (id: string) => setClosings((all) => { const { [id]: _gone, ...rest } = all; return rest; });
+
+  const close = async (slot: SlotDetail) => {
+    const form = closings[slot.id];
+    if (!form || !call || role === "collaborator" || inFlight.current.has(slot.id)) return;
+    const reason = optionalText(form.reason, REASON_MAX);
+    if (reason === null) { closeOpen(slot.id, { error: max(t.reasonTooLong, REASON_MAX) }); return; }
+    inFlight.current.add(slot.id);
+    setNotice(null);
+    closeOpen(slot.id, { busy: true, error: null });
+    const outcome = await closeConsultationSlot(call, documentId, slot.id, form.action, reason);
+    inFlight.current.delete(slot.id);
+    if (!alive.current) return;
+    if (outcome.kind === "saved") { place(outcome.slot); closeShut(slot.id); setNotice(t.closed[form.action]); return; }
+    if (outcome.kind === "session-expired") onSessionEnd?.();
+    closeOpen(slot.id, { busy: false, error: closeFailure(outcome) });
+    if (outcome.kind === "promijenjeno") void read();
+  };
+
   const sendRequest = async () => {
     const iso = localToIso(request.draft);
     if (iso === null) { setRequest((f) => ({ ...f, error: t.needTime })); return; }
+    const topic = optionalText(request.topic ?? "", TOPIC_MAX);
+    if (topic === null) { setRequest((f) => ({ ...f, error: max(t.topicTooLong, TOPIC_MAX) })); return; }
     if (!call || role !== "student" || inFlight.current.has("new")) return;
     inFlight.current.add("new");
+    setNotice(null);
     setRequest((f) => ({ ...f, busy: true, error: null }));
-    const outcome = await requestConsultationSlot(call, documentId, iso);
+    const outcome = await requestConsultationSlot(call, documentId, iso, topic);
     inFlight.current.delete("new");
     if (!alive.current) return;
     settle(outcome);
@@ -82,16 +125,22 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
   }
   return (
     <section className={styles.card} aria-labelledby="konzultacije-termini">
-      <h3 id="konzultacije-termini">{slotsHeading(load.slots)}</h3>
-      {load.slots.length === 0 ? <p className={styles.muted}>{t.empty}</p> : null}
+      <Heading id="konzultacije-termini">{slotsHeading(load.slots)}</Heading>
+      {load.slots.length === 0 ? <p className={styles.muted}>{role === "teacher" ? t.emptyTeacher : t.empty}</p> : null}
+      <p role="status" className={styles.muted}>{notice ?? ""}</p>
       <ul className={styles.list}>
         {load.slots.map((slot) => {
           const form = forms[slot.id] ?? IDLE_FORM;
           const actions = actionsFor(role, slot);
+          const closeActions = closeActionsFor(role, slot, now());
+          const closing = closings[slot.id];
+          const closedText = closingText(role, slot);
           return (
             <li key={slot.id} className={styles.item}>
               <b>{statusText(role, slot)}</b>
               <p className={styles.muted}>{lineText(slot)}</p>
+              <p className={styles.noteText}>{topicText(slot)}</p>
+              {closedText ? <p className={styles.muted}>{closedText}</p> : null}
               {actions.includes("confirm") ? <Button size="dense" disabled={form.busy} onClick={() => void act(slot, "confirm")}>{t.confirm}</Button> : null}
               {actions.includes("accept") ? <Button size="dense" disabled={form.busy} onClick={() => void act(slot, "accept")}>{t.accept.replace("{time}", timeText(slot.startsAt))}</Button> : null}
               {actions.includes("counter") && !form.open ? <Button size="dense" tone="secondary" disabled={form.busy} onClick={() => patch(slot.id, { open: true, error: null })}>{t.propose}</Button> : null}
@@ -109,6 +158,28 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
                   </div>
                 </div>
               ) : null}
+              {closeActions.length > 0 && !closing ? (
+                <div className={styles.row}>
+                  {closeActions.map((action) => (
+                    <Button key={action} size="dense" tone="secondary" disabled={form.busy}
+                      onClick={() => { setNotice(null); setClosings((all) => ({ ...all, [slot.id]: { action, reason: "", busy: false, error: null } })); }}>
+                      {CLOSE_LABEL[action]}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
+              {closing ? (
+                <div className={styles.card} role="group" aria-label={t.closeTitle[closing.action]}>
+                  <h4>{t.closeTitle[closing.action]}</h4>
+                  <TextArea label={t.reasonLabel} hint={max(t.reasonHint, REASON_MAX)} rows={2} value={closing.reason} busy={closing.busy}
+                    onChange={(e) => closeOpen(slot.id, { reason: e.target.value })} />
+                  <div className={styles.row}>
+                    <Button size="dense" disabled={closing.busy} onClick={() => void close(slot)}>{closing.busy ? t.sending : t.closeSend}</Button>
+                    <Button size="dense" tone="secondary" disabled={closing.busy} onClick={() => closeShut(slot.id)}>{t.cancel}</Button>
+                  </div>
+                  {closing.error ? <p role="alert" className={styles.error}>{closing.error}</p> : null}
+                </div>
+              ) : null}
               {form.error ? <p role="alert" className={styles.error}>{form.error}</p> : null}
             </li>
           );
@@ -120,6 +191,8 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd }: {
             <label>{t.requestLabel}
               <input className={styles.field} type="datetime-local" value={request.draft} disabled={request.busy} onChange={(e) => setRequest((f) => ({ ...f, draft: e.target.value }))} />
             </label>
+            <TextField label={t.topicLabel} hint={max(t.topicHint, TOPIC_MAX)} value={request.topic ?? ""} busy={request.busy}
+              onChange={(e) => setRequest((f) => ({ ...f, topic: e.target.value }))} />
             <div className={styles.row}>
               <Button size="dense" disabled={request.busy} onClick={() => void sendRequest()}>{request.busy ? t.sending : t.requestSend}</Button>
               <Button size="dense" tone="secondary" disabled={request.busy} onClick={() => setRequest(IDLE_FORM)}>{t.cancel}</Button>

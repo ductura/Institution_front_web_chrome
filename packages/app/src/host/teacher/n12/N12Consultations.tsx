@@ -4,10 +4,12 @@ import { Button, Select, TextArea, TextField } from "@ductura/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
+import { pageSlotsCall } from "../../../../../../src/client/consultation-slots";
 import {
   addConsultationNote, readConsultations, readConsultationVersions, saveConsultation,
   type ConsultationRecord, type VersionsPage,
 } from "../../../../../../src/client/consultation-records";
+import { ConsultSlots } from "../../editor/work/consult/ConsultSlots";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { n12Messages as t } from "./messages.hr";
 import { checkAddition, checkForm, dayHr, momentHr, recordTitle, revisionLabel, sortRecords, todayIso, versionOptions } from "./model";
@@ -97,9 +99,12 @@ export function N12Consultations({ documentId, workHref, appPath }: {
           ? { ...item, additions: [...item.additions, addition] } : item))} />
     ));
   }
+  // WEB-NF6-KONZ (MK-2, MK-3): the mentor answers, declines or cancels the student's slots above the records.
+  const slots = <ConsultSlots documentId={documentId} role="teacher" call={pageSlotsCall} heading="h2" />;
   if (records.length === 0) {
     return frame(t.title, (
       <>
+        {slots}
         <p className="note">{t.empty}</p>
         <div className={styles.acts}><Button onClick={toNew}>{t.new}</Button></div>
       </>
@@ -107,6 +112,7 @@ export function N12Consultations({ documentId, workHref, appPath }: {
   }
   return frame(t.title, (
     <>
+      {slots}
       <div className="tbl" tabIndex={0} role="region" aria-label={t.list}>
         <table>
           <thead><tr><th scope="col">{t.date}</th><th scope="col">{t.topic}</th><th scope="col">{t.version}</th></tr></thead>

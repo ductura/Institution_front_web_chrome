@@ -30,6 +30,7 @@ const extras = (over: Partial<ReviewExtras> = {}): ReviewExtras => ({
   comments: async () => ({ kind: "ok", threads: [{ id: "t1", number: 1, state: "open", anchor: null, revision: 1, comments: [
     { id: "c1", role: "teacher", isOwn: true, body: "Izmišljen komentar.", createdWindow: "2026-11-12T10:00:00.000Z", deletedWindow: null }] }] }),
   drafts: async () => ({ kind: "ready", drafts: [{ id: "d1", body: "Izmišljen nacrt.", state: "draft", savedAt: "2026-11-12T12:00:00.000Z" }] }),
+  seen: async () => ({ kind: "ready", items: [{ kind: "comment", id: "c1", firstSeenAt: "2026-11-12T11:00:00.000Z" }] }),
   ...over,
 });
 
@@ -129,7 +130,21 @@ describe("NF-5 sections of Pregled rada", () => {
     expect(rows).toHaveLength(2);
     expect(rows[0]).toContain("objavljeno studentu");
     expect(rows[1]).toContain("nije objavljeno");
-    expect(el.querySelector('[data-missing="seen"]')).not.toBeNull();
+    expect(rows[0]).toContain("Student je vidio ·");
+    expect(rows[1]).not.toContain("Student je vidio");
+    expect(rows[1]).not.toContain("Student još nije otvorio");
+  });
+
+  it("PG-9: without a seen record it says „Student još nije otvorio”", async () => {
+    const el = await mount(h(Given, { documentId: DOC, extras: extras({ seen: async () => ({ kind: "ready", items: [] }) }) }));
+    expect(el.querySelector("tbody tr")!.textContent).toContain("Student još nije otvorio");
+  });
+
+  it("PG-9: a failed seen read is said, never shown as „nije otvorio”", async () => {
+    const el = await mount(h(Given, { documentId: DOC, extras: extras({ seen: () => Promise.reject(new Error("mreža")) }) }));
+    expect(el.textContent).not.toContain("Student još nije otvorio");
+    expect(el.querySelector('[data-seen-state="unavailable"]')).not.toBeNull();
+    expect(el.querySelectorAll("tbody tr")).toHaveLength(2);
   });
 
   it("PG-9: a failed draft read keeps the published comments and says so", async () => {

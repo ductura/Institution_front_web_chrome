@@ -98,9 +98,9 @@ export function outcomeOf(result: ConfirmResult, putStatus: number | null): Conf
 const joined = (parts: readonly string[]) => parts.filter((p) => p !== "").join(", ");
 
 /**
- * The step's view of the two halves. The server's read carries no record of transfers, no
- * conversation text and no teacher's question (declaration-v1), so those blocks are empty; the
- * declared part is what the draft or the bound declaration holds, and null when there is neither.
+ * The step's view of the two halves. The server's read carries no record of transfers and no
+ * conversation text (declaration-v1), so those blocks are empty; the teacher's question travels in
+ * the statement half and is shown by TeacherQuestion (NF-3 PR-20), not here. The declared part is what the draft or the bound declaration holds, and null when there is neither.
  */
 export function viewOf(student: StudentDeclarationRead, statement: StatementRead): DeclarationRead {
   if (statement.kind !== "ready" || (student.kind !== "ready" && student.kind !== "no_use" && student.kind !== "ai_disabled")) return { kind: "error" };

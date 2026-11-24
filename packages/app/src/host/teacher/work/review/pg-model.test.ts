@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CommentThread } from "../../../../../../../src/client/comments";
 import { readOfParts } from "../../../student/work/origin/model";
 import type { OriginComposition } from "../../provenance/origin";
-import { compositionRows, givenRows, hasUnknown, importantPlaces, noteRows } from "./pg-model";
+import { compositionRows, givenRows, hasUnknown, importantPlaces, noteRows, seenComments, seenText } from "./pg-model";
 
 const composition = (parts: { kind: string; percent: number }[]): OriginComposition => {
   const read = readOfParts(parts);
@@ -88,5 +88,25 @@ describe("PG-9 givenRows", () => {
   it("does not call the comment of another teacher or mentor the viewer's own", () => {
     const other: CommentThread[] = [{ ...threads[0]!, comments: [{ ...threads[0]!.comments[0]!, isOwn: false }] }];
     expect(givenRows(other, [])[0]!.who).toBe("Komentar nastavnika");
+  });
+});
+
+describe("PG-9 seenText", () => {
+  const th: CommentThread[] = [{ id: "t1", number: 1, state: "open", anchor: null, revision: 1, comments: [
+    { id: "c1", role: "teacher", isOwn: true, body: "Izmišljen komentar.", createdWindow: "2026-11-12T10:00:00.000Z", deletedWindow: null },
+    { id: "c2", role: "teacher", isOwn: false, body: "Kolegin komentar.", createdWindow: "2026-11-12T11:00:00.000Z", deletedWindow: null },
+    { id: "c3", role: "student", isOwn: false, body: "Odgovor.", createdWindow: "2026-11-12T12:00:00.000Z", deletedWindow: null },
+  ] }];
+  const rows = givenRows(th, [{ id: "d1", body: "Nacrt.", state: "draft", savedAt: "2026-11-12T13:00:00.000Z" }]);
+  const seen = seenComments([{ kind: "comment", id: "c1", firstSeenAt: "2026-11-12T11:30:00.000Z" }, { kind: "message", id: "c2", firstSeenAt: "2026-11-12T11:31:00.000Z" }]);
+  it("only own published comments get a line; others and drafts get none", () => {
+    expect(seenText(rows[0]!, seen)).toContain("Student je vidio ·");
+    expect(seenText(rows[1]!, seen)).toBeNull();
+    expect(seenText(rows[2]!, seen)).toBeNull();
+    expect(seenText(rows[3]!, seen)).toBeNull();
+  });
+  it("no record is „još nije otvorio”; a missing read gives no line", () => {
+    expect(seenText(rows[0]!, new Map())).toBe("Student još nije otvorio");
+    expect(seenText(rows[0]!, null)).toBeNull();
   });
 });

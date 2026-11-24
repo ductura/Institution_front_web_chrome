@@ -7,6 +7,7 @@ import type { DeclarationPort, TeacherDeclarationRead } from "../../../../../../
 import { teacherAiLabels } from "../work/ai-attachments/messages.hr";
 import { aiDeclarationMessages as text } from "./messages.hr";
 import { createTeacherDeclarationPort } from "./ports";
+import QuestionAnswer from "./QuestionAnswer";
 
 type Ready = Extract<TeacherDeclarationRead, { kind: "ready" }>;
 
@@ -46,6 +47,7 @@ export default function AiDeclarationSection({ port: given, submissionId }: {
     <section className="card" aria-label={text.heading}>
       <h2>{text.heading}</h2>
       <TeacherAiAttachments labels={teacherAiLabels} state={state} onRetry={retry} />
+      <QuestionAnswer read={read} />
       {ready && ready.conversations.length > 0 && (
         <>
           <h3 className="sb-sub">{`${text.conversationsHeading} (${ready.conversations.length})`}</h3>

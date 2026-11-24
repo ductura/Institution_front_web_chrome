@@ -1,24 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@ductura/ui";
+import { useEffect, useRef, useState } from "react";
+import { Button, Dialog } from "@ductura/ui";
 
 import { explainAssistantMatch, MAX_EXPLANATION_LENGTH, readAssistantMatch, type AssistantMatch, type MatchCall, type MatchRead } from "./contract";
 import { noticeText as t } from "./messages.hr";
+import styles from "./AssistantMatchNotice.module.css";
 
-type Status = "idle" | "sending" | "saved" | "failed" | "rejected" | "signedOut";
+type Status = "idle" | "empty" | "sending" | "failed" | "rejected" | "conflict" | "signedOut";
 
 /**
- * The student's notice at the moment the server attaches the conversation automatically (WEB-1230), with the
- * option to explain the match. Behind the faculty flag: while the flag is off the component renders nothing.
- * The notice never blocks writing or submitting and is not a verdict. `explainable` is false while the
- * server has no route that stores the explanation: then no field asks for one. A new `version` reads
- * the matches again (the host raises it when a checked segment matched).
+ * The student's notice at the moment the server attaches the conversation automatically (WEB-1230), as the
+ * prototype's banner (NF2-P13), with "Objasni, ako želiš…" opening the explanation dialog. Behind the faculty
+ * flag: while the flag is off the component renders nothing. The notice never blocks writing or submitting,
+ * the explanation is optional and not part of the grade. `explainable` is false where nothing may be written
+ * (a submitted work, a replay). A new `version` reads the matches again (the host raises it when a checked
+ * segment matched).
  */
 export default function AssistantMatchNotice({ call, documentId, explainable = true, version = 0 }: { call: MatchCall; documentId: string; explainable?: boolean; version?: number }) {
   const [read, setRead] = useState<MatchRead | null>(null);
   const [matches, setMatches] = useState<readonly AssistantMatch[]>([]);
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
+  const [savedNow, setSavedNow] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -34,7 +37,7 @@ export default function AssistantMatchNotice({ call, documentId, explainable = t
   const open = matches.filter((m) => !dismissed.has(m.segmentId));
   if (open.length === 0) return null;
   return (
-    <div data-assistant-match-notice>
+    <div data-assistant-match-notice className={styles.list}>
       {open.map((m) => (
         <Item
           key={m.segmentId}
@@ -42,7 +45,11 @@ export default function AssistantMatchNotice({ call, documentId, explainable = t
           call={call}
           documentId={documentId}
           explainable={explainable}
-          onSaved={(next) => setMatches((all) => all.map((x) => (x.segmentId === next.segmentId ? next : x)))}
+          savedNow={savedNow === m.segmentId}
+          onSaved={(next) => {
+            setMatches((all) => all.map((x) => (x.segmentId === next.segmentId ? next : x)));
+            setSavedNow(next.segmentId);
+          }}
           onDismiss={() => setDismissed((s) => new Set(s).add(m.segmentId))}
         />
       ))}
@@ -50,41 +57,61 @@ export default function AssistantMatchNotice({ call, documentId, explainable = t
   );
 }
 
-function Item({ match, call, documentId, explainable, onSaved, onDismiss }: { match: AssistantMatch; call: MatchCall; documentId: string; explainable: boolean; onSaved: (m: AssistantMatch) => void; onDismiss: () => void }) {
+function Item({ match, call, documentId, explainable, savedNow, onSaved, onDismiss }: {
+  match: AssistantMatch; call: MatchCall; documentId: string; explainable: boolean; savedNow: boolean;
+  onSaved: (m: AssistantMatch) => void; onDismiss: () => void;
+}) {
+  const [dialog, setDialog] = useState(false);
   const [text, setText] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  const field = useRef<HTMLTextAreaElement>(null);
+  const canExplain = explainable && match.explanation === undefined && match.messageId !== undefined;
+
+  const close = () => {
+    if (status === "sending") return;
+    setDialog(false);
+    setStatus("idle");
+  };
   const send = async () => {
+    if (text.trim().length === 0) {
+      setStatus("empty");
+      field.current?.focus();
+      return;
+    }
     setStatus("sending");
-    const result = await explainAssistantMatch(call, documentId, match.segmentId, text);
+    const result = await explainAssistantMatch(call, documentId, match, text);
     if (result.kind === "saved") {
+      setDialog(false);
+      setStatus("idle");
+      setText("");
       onSaved(result.match);
-      setStatus("saved");
     } else setStatus(result.kind);
   };
+  const error = status === "empty" ? t.empty
+    : status === "failed" ? t.failed
+    : status === "rejected" ? t.rejected
+    : status === "conflict" ? t.conflict
+    : status === "signedOut" ? t.signedOut
+    : undefined;
+
   return (
-    <aside role="status" aria-labelledby={`am-${match.segmentId}`} data-match={match.segmentId}>
-      <h3 id={`am-${match.segmentId}`}>{t.title}</h3>
-      <p>{t.body}</p>
-      <p>{t.neutral}</p>
-      {match.explanation !== undefined ? (
-        <p>{t.yourExplanation} {match.explanation.text}</p>
-      ) : !explainable ? null : (
-        <>
-          <label>
-            {t.explainLabel}
-            <textarea value={text} maxLength={MAX_EXPLANATION_LENGTH} onChange={(e) => setText(e.target.value)} aria-describedby={`am-hint-${match.segmentId}`} />
-          </label>
-          <p id={`am-hint-${match.segmentId}`}>{t.explainHint}</p>
-          <Button onClick={() => void send()} disabled={status === "sending" || text.trim().length === 0}>
-            {status === "sending" ? t.sending : t.send}
-          </Button>
-        </>
-      )}
-      {status === "saved" && <p role="status">{t.saved}</p>}
-      {status === "failed" && <p role="alert">{t.failed}</p>}
-      {status === "rejected" && <p role="alert">{t.rejected}</p>}
-      {status === "signedOut" && <p role="alert">{t.signedOut}</p>}
-      <Button onClick={onDismiss}>{t.dismiss}</Button>
-    </aside>
+    <>
+    <div role="status" className={styles.banner} data-match={match.segmentId}>
+      <span><b>{t.title}.</b> {t.neutral}{match.explanation !== undefined && <> {savedNow ? t.saved : t.explained}</>}</span>
+      <span className={styles.grow} />
+      {canExplain && <button type="button" className={styles.lnk} onClick={() => setDialog(true)}>{t.explainOpen}</button>}
+      <button type="button" className={styles.lnk} onClick={onDismiss}>{t.dismiss}</button>
+    </div>
+      <Dialog open={dialog} title={t.dialogTitle} onClose={close} dismissible={status !== "sending"} initialFocus={field} error={error}
+        actions={<>
+          <Button onClick={close} disabled={status === "sending"}>{t.close}</Button>
+          <Button tone="primary" onClick={() => void send()} disabled={status === "sending"}>{status === "sending" ? t.sending : t.send}</Button>
+        </>}>
+        <p className={styles.muted}>{t.dialogBody}</p>
+        <textarea ref={field} className={styles.ta} rows={4} maxLength={MAX_EXPLANATION_LENGTH} aria-label={t.field}
+          aria-invalid={status === "empty" || status === "rejected" ? true : undefined}
+          value={text} onChange={(e) => { setText(e.target.value); if (status === "empty") setStatus("idle"); }} />
+      </Dialog>
+    </>
   );
 }

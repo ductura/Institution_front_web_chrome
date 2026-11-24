@@ -41,13 +41,6 @@ export function enrolledText(view: TeachingTeamView | null): string | null {
   return `${students} ${noun}${groups.length > 0 ? ` · ${groups.join(", ")}` : ""}`;
 }
 
-/** The "Kod za upis" field: the server has no read-back (A-8), so only this visit's issues are known. */
-export function codeFieldText(role: CardRole, issued: "now" | "before" | null): string {
-  if (role === "collaborator") return t.codeHolderIssues;
-  if (issued === "now") return t.codeIssuedNow;
-  return issued === "before" ? t.codeIssuedBefore : t.codeUnknown;
-}
-
 // P-D1: teacher.courses.get has no practice flag; institution.assignment.get has `isPractice`.
 export type AssignmentRead = Awaited<ReturnType<typeof readAssignmentVersion>>;
 export type ReadAssignment = (assignmentId: string) => Promise<AssignmentRead>;
