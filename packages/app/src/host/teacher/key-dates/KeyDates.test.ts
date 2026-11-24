@@ -13,11 +13,14 @@ import type { KeyDatesPort } from "./model";
 
 let root: Root | null = null;
 
+// Invented "today": 1. 12. 2026. at noon, Zagreb.
+const NOW = Date.parse("2026-12-01T11:00:00.000Z");
+
 async function show(port: KeyDatesPort) {
   const host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => { root!.render(h(KeyDates, { mentorshipId: "00000000-0000-4000-8000-0000000000aa", port, title: text.forStudent("Iva Izmišljena") })); });
+  await act(async () => { root!.render(h(KeyDates, { mentorshipId: "00000000-0000-4000-8000-0000000000aa", port, title: text.forStudent("Iva Izmišljena"), now: () => NOW })); });
   return host;
 }
 
@@ -28,11 +31,20 @@ afterEach(() => {
 });
 
 describe("KeyDates card", () => {
-  it("lists the dates in order, in Zagreb time, under the student's name", async () => {
+  it("lists the dates in order, in Zagreb time, split at today with days to go or gone (MK-13)", async () => {
     const host = await show(fakeKeyDatesPort());
-    expect(host.querySelector("h2")?.textContent).toBe("Ključni rokovi: Iva Izmišljena");
-    const items = [...host.querySelectorAll("li")].map((li) => li.textContent);
-    expect(items).toEqual(["Etapa „Nacrt uvoda”: 2. 11. 2026. u 09:00", "Rok predaje: 14. 12. 2026. u 23:59", "Konzultacije (potvrđene): 20. 1. 2027. u 11:00"]);
+    expect(host.querySelector("h2")?.textContent).toBe("Vremenska crta rada: Iva Izmišljena");
+    expect([...host.querySelectorAll("h3")].map((h) => h.textContent)).toEqual([text.past, text.ahead]);
+    const items = (list: string) => [...host.querySelectorAll(`ol[data-list="${list}"] li`)].map((li) => li.textContent);
+    expect(items("past")).toEqual(["Etapa „Nacrt uvoda”: 2. 11. 2026. u 09:00 (prije 29 dana)"]);
+    expect(host.querySelector("[data-today]")?.textContent).toBe("Danas je 1. 12. 2026.");
+    expect(items("ahead")).toEqual(["Rok predaje: 14. 12. 2026. u 23:59 (za 13 dana)", "Konzultacije (potvrđene): 20. 1. 2027. u 11:00 (za 50 dana)"]);
+  });
+
+  it("says when nothing is past yet", async () => {
+    const host = await show(fakeKeyDatesPort({ kind: "ready", dates: [{ id: "00000000-0000-4000-8000-000000000009", kind: "deadline", at: "2026-12-01T22:00:00.000Z" }] }));
+    expect(host.textContent).toContain(text.nothingPast);
+    expect(host.querySelector('ol[data-list="ahead"] li')?.textContent).toBe("Rok predaje: 1. 12. 2026. u 23:00 (danas)");
   });
 
   it("an unreachable route says unavailable with a retry, never the empty text", async () => {
