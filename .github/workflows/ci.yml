@@ -2,8 +2,9 @@ name: CI
 on:
   push: { branches: [main, "migracija/kopija-ductus-front"] }
   pull_request:
-  # Full e2e matrix and the pixel baselines once a day (a pull request runs
-  # chromium only); both also by hand (ZEL-CI-RED).
+  # Full e2e matrix once a day (a pull request runs chromium only). The
+  # schedule runs on the default branch main only. Every job also by hand
+  # (ZEL-CI-RED).
   schedule: [{ cron: "17 3 * * *" }]
   workflow_dispatch:
 permissions:
@@ -27,9 +28,10 @@ jobs:
   # tests of every workspace package) and app (it imports src/), so a change
   # there runs both. `app-build` follows `app`; the client checks run in the
   # ui part `checks` and every path of `client` also turns `ui` on.
-  # `baselines` (report only, outside ci-ok) is on for the schedule, a run by
-  # hand and a pull request that changes catalog/ or a root or .github/ file;
-  # never on a push (ZEL-CI-RED).
+  # `baselines` (report only, outside ci-ok) is on for a run by hand, the
+  # schedule (main only) and a pull request that changes catalog/,
+  # packages/ui/ (the components the catalogue shows) or a root or .github/
+  # file; never on a push (ZEL-CI-RED).
   #
   # These rules only fit checks that read the paths they list. A check that
   # reads the whole repository (the index, every tracked file, the lockfiles)
@@ -85,7 +87,7 @@ jobs:
           c="$(hit '^(src/client/|packages/editor-core/)')"
           u="$(hit '^(packages/|catalog/|src/|scripts/forbidden-terms/|locales/)')"
           a="$(hit '^(packages/|src/|locales/)')"
-          b="$(hit '^catalog/')"
+          b="$(hit '^(catalog/|packages/ui/)')"
           emit "$t" "$c" "$u" "$a" "$b"
           # changes:end
       - uses: actions/setup-node@v4
@@ -342,9 +344,10 @@ jobs:
   # own outside ci-ok's needs (ZEL-CI-WEB), so ci-ok does not wait for a check
   # that cannot fail it; three Playwright shards. Listed in REPORT_ONLY in
   # test/unit/ci-ok.test.js. Since ZEL-CI-RED it no longer runs on every push
-  # (three runners each time) but when `changes` says `baselines`: the nightly
-  # schedule, a run by hand, and a pull request that changes catalog/ (or a
-  # root or .github/ file).
+  # (three runners each time) but when `changes` says `baselines`: on every
+  # pull request that changes catalog/ or packages/ui/ (or a root or .github/
+  # file), so each change that can move a pixel of the catalogue is reported
+  # before it reaches the base; also by hand and on the schedule of main.
   ui-baselines:
     needs: changes
     if: ${{ needs.changes.outputs.baselines == 'true' }}

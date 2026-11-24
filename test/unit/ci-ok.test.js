@@ -277,12 +277,15 @@ test('changes: app-build equals app and client implies ui, for every case', () =
   }
 });
 
-// ZEL-CI-RED: the report-only pixel baselines run on the schedule, by hand and
-// on a pull request that changes catalog/ or a root or .github/ file; never
-// on a push.
+// ZEL-CI-RED: the report-only pixel baselines run on a pull request that
+// changes catalog/, packages/ui/ or a root or .github/ file, by hand and on
+// the schedule (main only); never on a push. A change that can move a pixel
+// of the catalogue is reported on its pull request.
 const baselineCases = [
   [['catalog/a.ts'], 'pull_request', 'true'],
-  [['packages/ui/src/a.tsx'], 'pull_request', 'false'],
+  [['packages/ui/src/a.tsx'], 'pull_request', 'true'],
+  [['packages/ui/src/a.module.css'], 'pull_request', 'true'],
+  [['packages/editor-core/src/a.ts'], 'pull_request', 'false'],
   [['packages/app/src/host/a.tsx'], 'pull_request', 'false'],
   [['docs/x.md'], 'pull_request', 'false'],
   [['.github/workflows/ci.yml'], 'pull_request', 'true'],
