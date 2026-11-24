@@ -31,6 +31,10 @@ describe("editor triggers", () => {
     const items = triggerItems({ mode: "slash", query: "", from: 0, to: 1 }, [], {}, vi.fn());
     expect(items[0]).toMatchObject({ label: "/navod", disabled: true });
     expect(items.find(({ id }) => id === "tablica")?.disabled).toBe(true);
+    // ED-03 (NF2-P5): a grey command says why, beside its name; an offered one does not.
+    for (const item of items.filter(({ disabled }) => disabled)) expect(item.hint).toMatch(/ · nije u pilotu$/);
+    const offered = triggerItems({ mode: "slash", query: "", from: 0, to: 1 }, [], { cite: vi.fn() }, vi.fn());
+    expect(offered.find(({ id }) => id === "navod")).toMatchObject({ disabled: false, hint: "isto kao @" });
     expect(moveItem(items, -1, 1)).toBe(1);
     expect(items[moveItem(items, 1, -1)]?.id).toBe("popis");
     expect(moveItem([{ id: "demo", label: "", hint: "", disabled: true }], -1, 1)).toBe(-1);

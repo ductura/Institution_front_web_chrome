@@ -44,7 +44,9 @@ export function triggerItems(trigger: Trigger, sources: readonly Source[], actio
       if (!id.startsWith(query) && !label.toLocaleLowerCase("hr").startsWith(query)) return [];
       const transform = id in builtIn ? builtIn[id as BuiltIn] : undefined;
       const run = id === "navod" && (actions.cite || actions.addSource) ? openCite : actions.commands?.[id as keyof NonNullable<Actions["commands"]>];
-      return [{ id, label: `/${id}`, hint, transform, run, disabled: !transform && !run }];
+      const disabled = !transform && !run;
+      // ED-03 (NF2-P5): a command the pilot does not offer says why, beside its name.
+      return [{ id, label: `/${id}`, hint: disabled ? `${hint} · ${t.notInPilot}` : hint, transform, run, disabled }];
     });
   }
 

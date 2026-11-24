@@ -7,6 +7,7 @@ export const editorTriggersHr = {
   author: "autor: {query}",
   sourceHint: "upišite podatke",
   empty: "Nema takve naredbe.",
+  notInPilot: "nije u pilotu",
   noSources: "Nema izvora. Dodajte ih u kartici Literatura.",
   command: {
     navod: ["Navod", "isto kao @"],

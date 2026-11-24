@@ -8,6 +8,7 @@ import { useLocalEditor, useLocalSignedOut } from "../LocalDocument";
 import { FindRow } from "../find/FindRow";
 import { editorCommandsHr as t } from "./messages.hr";
 import { paletteActions } from "./palette";
+import { requestShortcutList } from "./shortcut-definitions";
 import { editorShortcut, shortcutGroups } from "./shortcuts";
 import styles from "./EditorCommands.module.css";
 
@@ -44,13 +45,18 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
         return;
       }
       event.preventDefault();
+      // ED-03: one list. The host's list takes Ctrl+/ like its button; without a host, the same list here.
+      if (action === "shortcuts" && dialog !== "shortcuts" && requestShortcutList()) {
+        setDialog(null);
+        return;
+      }
       setDialog(dialog === action ? null : action);
     };
     document.addEventListener("keydown", keyDown);
     return () => document.removeEventListener("keydown", keyDown);
   }, [editor, dialog]);
 
-  const actions = editor && dialog === "palette" ? paletteActions(editor, () => setDialog("shortcuts"), () => setFinding(true)) : [];
+  const actions = editor && dialog === "palette" ? paletteActions(editor, () => setDialog(requestShortcutList() ? null : "shortcuts"), () => setFinding(true)) : [];
   const close = () => setDialog(null);
   const closeFind = () => {
     setFinding(false);
