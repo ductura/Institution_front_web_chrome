@@ -1,0 +1,24 @@
+/* WEB-V20-NACIN-CITANJA: the look of the sheet by the reading preferences on <html> (data-reading-*, set by the preferences store).
+   Only the sheet's text (.editor-surface .ProseMirror) changes; the shell stays. The step "standard" has no rule on purpose:
+   without a change of the preference nothing on the sheet moves. Layout only, on the existing tokens. */
+
+/* Širina retka: the measure of the sheet's text, centred. */
+:global(html[data-reading-width="narrow"] .editor-surface .ProseMirror) { max-width: 52ch; margin-inline: auto; }
+:global(html[data-reading-width="wide"] .editor-surface .ProseMirror) { max-width: 84ch; margin-inline: auto; }
+
+/* Razmak redaka. */
+:global(html[data-reading-line-height="relaxed"] .editor-surface .ProseMirror) { line-height: 1.9; }
+:global(html[data-reading-line-height="loose"] .editor-surface .ProseMirror) { line-height: 2.25; }
+
+/* Razmak slova i riječi. */
+:global(html[data-reading-letter-spacing="wide"] .editor-surface .ProseMirror) { letter-spacing: 0.04em; word-spacing: 0.12em; }
+:global(html[data-reading-letter-spacing="wider"] .editor-surface .ProseMirror) { letter-spacing: 0.08em; word-spacing: 0.24em; }
+
+/* Razmak odlomaka. */
+:global(html[data-reading-paragraph-gap="wide"] .editor-surface .ProseMirror p) { margin-block-end: 14pt; }
+:global(html[data-reading-paragraph-gap="wider"] .editor-surface .ProseMirror p) { margin-block-end: 22pt; }
+
+.controls { display: grid; gap: 12px; }
+.help { margin: 0; }
+.group { display: grid; gap: 4px; }
+.label { margin: 0; }
