@@ -2,6 +2,7 @@
 
 // N-18 "Izvoz za Merlin" in the host (WEB-2163): reads only through src/client (merlin-export.ts, teacher
 // reads). A failed read is said as such with "Pokušaj ponovno", never shown as an empty list.
+import { useEffect, useState } from "react";
 import { Button } from "@ductura/ui";
 import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
 import { hostText } from "../../../text";
@@ -15,7 +16,7 @@ import { useHost } from "../../context";
 import { useTeacherRead, type TeacherRead } from "../../pages";
 import Merlin from "./Merlin";
 import { merlinMessages as text } from "./messages.hr";
-import { merlinHref, type AssignmentChoice, type MerlinData, type MerlinPort } from "./model";
+import { merlinHref, wantsChooserFocus, CHOOSER_PARAM, type AssignmentChoice, type MerlinData, type MerlinPort } from "./model";
 
 /** The port over the client: a session that ended goes to sign-in and the screen says nothing more. */
 export function clientPort(returnTo: string): MerlinPort {
@@ -47,6 +48,15 @@ export function MerlinExportPage({ assignmentId }: { assignmentId: string }) {
     return { kind: "ready", value: { rows: roster.rows, extensionReasons: roster.extensionReasons, assignments } };
   });
   const here = appHref(base, merlinHref(assignmentId));
+  // NZ-16: read `?izbor=1` once and drop it from the address, so a reload does not take the focus again.
+  const [focusChooser, setFocusChooser] = useState(false);
+  useEffect(() => {
+    if (!wantsChooserFocus(globalThis.location.search)) return;
+    setFocusChooser(true);
+    const url = new URL(globalThis.location.href);
+    url.searchParams.delete(CHOOSER_PARAM);
+    globalThis.history.replaceState(globalThis.history.state, "", url);
+  }, []);
   // The prototype's side page (sideState): .pagehead, then a card for loading or an error, never a bare line.
   return (
     <div className="page">
@@ -65,7 +75,7 @@ export function MerlinExportPage({ assignmentId }: { assignmentId: string }) {
           <div className="sb-acts"><Button tone="secondary" onClick={retry}>{text.retry}</Button></div>
         </section>
       ) : <Merlin assignmentId={assignmentId} data={read.value} port={clientPort(here)}
-        onChoose={(id) => leaveFor(appHref(base, merlinHref(id)))} />}
+        focusChooser={focusChooser} onChoose={(id) => leaveFor(appHref(base, merlinHref(id, true)))} />}
     </div>
   );
 }

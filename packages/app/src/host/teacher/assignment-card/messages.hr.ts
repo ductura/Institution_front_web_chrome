@@ -22,8 +22,6 @@ export const assignmentCardMessages = {
   at: "u",
   students: { one: "student", few: "studenta", many: "studenata" },
   codeUnknown: "Stanje koda nije dostupno. Novi kod izdajte ako ga trebate.",
-  codeIssuedNow: "Novi kod izdan; prikazuje se samo sada.",
-  codeIssuedBefore: "Izdan. Ne prikazuje se ponovno.",
   codeHolderIssues: "Izdaje nositelj kolegija.",
   codeValidUntil: (until: string): string => `Vrijedi do ${until}.`,
   codeExpiredAt: (until: string): string => `Istekao ${until}.`,
