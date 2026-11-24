@@ -7,6 +7,7 @@
 // Student A, Kolegij A, B and C, the tasks t1 to t3, today 5. 11. 2026.).
 export const SCENARIJI = ["puno", "prazno", "ucitavanje", "greska", "dugi-tekst"] as const;
 export type Scenarij = (typeof SCENARIJI)[number];
+import { nastavnik } from "./viz-nastavnik";
 import { predaja, type IshodPredaje } from "./viz-predaja";
 
 export type VizRole = "student" | "teacher" | "institution_admin" | "network_engineer" | null;
@@ -21,7 +22,7 @@ export const imeScenarija = (value: string | undefined): Scenarij => {
   throw new Error(`VIZ_SCENARIJ "${name}" nije poznat; dopušteno: ${SCENARIJI.join(", ")}`);
 };
 
-export type Answer = { readonly status: number; readonly contentType?: string; readonly body?: string };
+export type Answer = { readonly status: number; readonly contentType?: string; readonly body?: string; readonly headers?: Readonly<Record<string, string>> };
 /** "hang": the request is never answered (the loading state stays on screen). */
 export type Result = Answer | "hang";
 
@@ -127,7 +128,7 @@ export function sameIds(value: unknown, ids: Readonly<Record<string, string>>): 
 }
 
 export type Contract = Record<string, { path: string; method: string; responses?: Record<string, unknown> }>;
-export type Vector = { route: string; name: string; response?: { status: number; body?: unknown; contentType?: string } };
+export type Vector = { route: string; name: string; response?: { status: number; body?: unknown; contentType?: string; headers?: Record<string, string> } };
 
 const size = (v: Vector) => JSON.stringify(v.response?.body ?? null).length;
 
@@ -169,7 +170,10 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
   const own = podaci(scenarij);
   // PR-19: the submission of T1 keeps its state for the life of this server (one page).
   const t1 = scenarij === "prazno" ? undefined : predaja(vectors, { id: T1, dueAt: T1_ROK }, opcije.predaja ?? "predano", FIKSNI_DATUM);
-  const json = (body: unknown, status = 200): Answer => ({ status, contentType: "application/json", body: JSON.stringify(body) });
+  // NZ-18, PG-15: the teacher's reads joined to T1 and T2.
+  const teacher = scenarij === "prazno" ? undefined : nastavnik(vectors, { t1: T1, t2: T2 });
+  const json = (body: unknown, status = 200, headers?: Readonly<Record<string, string>>): Answer =>
+    ({ status, contentType: "application/json", body: JSON.stringify(body), ...(headers === undefined ? {} : { headers }) });
 
   return {
     /** `requestBody` is the request's own text (POST, PUT), for the answers that depend on what was sent. */
@@ -198,15 +202,18 @@ export function vizServer(contract: Contract, vectors: readonly Vector[], scenar
       const sent = parse(requestBody);
       const dynamic = t1?.(route.operation, ids.assignmentId, sent);
       if (dynamic !== undefined) return json(dynamic.body, dynamic.status);
+      const joined = teacher?.(route.operation, ids);
+      if (joined !== undefined) return json(joined.body, joined.status, joined.headers);
       if (route.operation in own) return json(own[route.operation]);
       if (route.vector?.response !== undefined) {
-        const { status, contentType } = route.vector.response;
+        // The vector's own headers too: live.document.get is read only with its ETag.
+        const { status, contentType, headers } = route.vector.response;
         const patch = DOPUNA[route.operation];
         const patched = patch !== undefined && typeof route.vector.response.body === "object" ? patch(route.vector.response.body as Record<string, unknown>) : route.vector.response.body;
         // A vector names its own invented ids; the screens check the answer is about the id they asked
         // for, so every field named as a path parameter carries the id of this request.
         const body = route.names.length === 0 ? patched : sameIds(patched, ids);
-        return { status, contentType: contentType ?? (body === undefined ? undefined : "application/json"),
+        return { status, contentType: contentType ?? (body === undefined ? undefined : "application/json"), ...(headers === undefined ? {} : { headers }),
           body: body === undefined ? undefined : typeof body === "string" && contentType !== "application/json" ? body : JSON.stringify(body) };
       }
       return route.has204 ? { status: 204 } : json({ code: "not_found" }, 404);
