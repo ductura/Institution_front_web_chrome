@@ -19,9 +19,11 @@ export function WorkPlan({ documentId, name, title, base, onSignedOut, plan, rec
 }) {
   const [revision, setRevision] = useState(0);
   const reread = useCallback(() => setRevision((n) => n + 1), []);
-  const heading = t.work.replace("{name}", name).replace("{title}", title);
+  // The visible heading names the student; the work's title is already on the list above, so it is only in
+  // the section's name (two works of one student stay two named sections).
+  const heading = t.work.replace("{name}", name);
   return (
-    <section aria-label={heading} data-testid="mentor-work-plan">
+    <section aria-label={t.workLabel.replace("{name}", name).replace("{title}", title)} data-testid="mentor-work-plan">
       <h2>{heading}</h2>
       <StagesCard key={revision} mentor documentId={documentId} current={always} onSessionEnd={onSignedOut} />
       <PlanActions documentId={documentId} onChanged={reread} onSignedOut={onSignedOut} call={plan} />

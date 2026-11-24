@@ -15,7 +15,8 @@ export const mentorPlanText = {
     button: "Otvori mentorstvo",
     unavailable: "Otvaranje mentorstva iz Ducture još nije dostupno. Dok ne bude, mentorstvo nastaje kad odobrite zahtjev studenta.",
   },
-  work: "Etape i dogovoreno: {name} · „{title}”",
+  work: "Etape i dogovoreno: {name}",
+  workLabel: "Etape i dogovoreno: {name} · „{title}”",
   plan: {
     template: "Primijeni predložak fakulteta",
     templateTitle: "Primijeniti predložak fakulteta?",
