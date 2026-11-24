@@ -5,7 +5,7 @@ import { findForbiddenTerms } from "../../../../../../../scripts/forbidden-terms
 import { givenLines, type GivenInput } from "./given";
 import { receiptText } from "./messages.hr";
 
-const NOTE = { id: "n1", text: "Izmišljena napomena.", createdAt: "2026-11-04T10:00:00.000000Z" };
+const NOTE = { id: "n1", text: "Izmišljena napomena.", createdAt: "2026-11-04T10:00:00.000Z" };
 const FULL: GivenInput = {
   revision: 4, words: 5120,
   declaration: { kind: "confirmed", detail: "bound", confirmedAt: "2026-11-04T10:00:00.000000Z" },
