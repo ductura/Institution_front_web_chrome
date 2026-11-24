@@ -40,7 +40,7 @@ async function server(page: Page, options: { startDelayMs?: number } = {}) {
 
 const startButton = (page: Page) => page.getByRole("button", { name: s.startFor.replace("{title}", TITLE) });
 
-test("the student starts the work, refreshes, and the work is there; a second click opens the same work", async ({ page }) => {
+test("the student starts the work, refreshes, and the work is there; the row then opens the same work", async ({ page }) => {
   const seen = await server(page);
   await page.goto("/app/web/zadaci");
   await expect(startButton(page)).toBeVisible();
@@ -55,10 +55,12 @@ test("the student starts the work, refreshes, and the work is there; a second cl
   await expect(page.getByText("Rad još nije započet.")).toHaveCount(0);
   expect(seen).toEqual({ starts: 1, made: 1 });
 
+  // INT-31: a started work no longer offers "Započni rad"; its row opens the same work without a new start.
   await page.goto("/app/web/zadaci");
-  await startButton(page).click();
+  await page.getByRole("link", { name: "Otvori rad" }).first().click();
   await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
-  expect(seen).toEqual({ starts: 2, made: 1 });
+  await expect(startButton(page)).toHaveCount(0);
+  expect(seen).toEqual({ starts: 1, made: 1 });
 });
 
 test("a double click makes one work and sends one request", async ({ page }) => {

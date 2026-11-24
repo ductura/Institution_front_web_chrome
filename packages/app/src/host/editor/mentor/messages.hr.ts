@@ -72,7 +72,7 @@ export const mentorCardHr = {
     sendFailed: "Priprema nije poslana. Tekst je ostao ovdje, pokušajte ponovno.",
     signedOut: "Prijava je istekla. Prijavite se ponovno; tekst pripreme nije poslan.",
     tooLong: "Poruka smije imati najviše {max} znakova. Skratite pripremu.",
-    copyFailed: "Kopiranje nije uspjelo. Označite tekst i kopirajte ga ručno.",
+    copyFailed: "Priprema nije stavljena u međuspremnik. Označite tekst i prenesite ga ručno.",
     note: "Priprema je zapis o unosu u tekst, ne o autorstvu.",
   },
   /** MK-8: the mentor's word on the revision, in one place. */
@@ -103,10 +103,10 @@ export const mentorCardHr = {
     stopSet: "Označi dokle sam stao",
     stopClear: "Obriši oznaku",
     stopSaving: "Spremam oznaku…",
-    stopSaved: "Oznaka je spremljena. Vidite je i na drugom računalu.",
+    stopSaved: "Oznaka je spremljena na poslužitelju. Vidite je i na drugom računalu.",
     stopCleared: "Oznaka je obrisana.",
     stopNoPlace: "Postavite kursor u odlomak teksta pa pokušajte ponovno.",
-    stopFailed: "Oznaka nije spremljena. Pokušajte ponovno.",
-    stopSignedOut: "Prijava je istekla. Prijavite se ponovno; oznaka nije spremljena.",
+    stopFailed: "Oznaka nije spremljena na poslužitelju. Pokušajte ponovno.",
+    stopSignedOut: "Prijava je istekla. Prijavite se ponovno; oznaka nije spremljena na poslužitelju.",
   },
 } as const;

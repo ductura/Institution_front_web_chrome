@@ -736,3 +736,24 @@ export function studentDataDownloadCall(transport: typeof fetch = browserTranspo
     credentials: "omit",
   });
 }
+
+/**
+ * ED-10 (NF2-P10): student.assistant-request.post. The server requires an Idempotency-Key header,
+ * which createApi does not send, so the path comes from the contract and the caller
+ * (host/editor/assistant-chat) reads the answer with responseMatches. The same key repeats a retry
+ * of the same question; a new question gets a new key.
+ */
+const ASSISTANT_REQUEST = migrationContracts["student.assistant-request.post"];
+
+export type AssistantRequestTransport = (body: unknown, idempotencyKey: string) => Promise<Response>;
+
+export function assistantRequestCall(transport: typeof fetch = browserTransport, baseUrl: string = globalThis.location.origin): AssistantRequestTransport {
+  return (body, idempotencyKey) => transport(new URL(ASSISTANT_REQUEST.path, baseUrl), {
+    method: ASSISTANT_REQUEST.method,
+    redirect: "manual",
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
+    body: JSON.stringify(body),
+  });
+}

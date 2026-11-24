@@ -21,6 +21,8 @@ import { goToSignIn } from "../../../../../../src/client/api";
 import { studentName } from "../../../../../../src/components/teacher/mentored-works-view";
 import { mentorshipsOf, roundWorks, startedWorks } from "./model";
 import { RoundReview } from "./RoundReview";
+import { MyStudents } from "./MyStudents";
+import type { OverviewCall } from "./overview-read";
 import { OpenMentorshipCard } from "./OpenMentorshipCard";
 import { WorkPlan } from "./WorkPlan";
 import type { PlanCall } from "./plan-actions";
@@ -30,6 +32,7 @@ const HREF = "/nastavnik/mentorstva";
 const requestsCall = () => createApi() as unknown as MentorshipCall;
 const worksCall = () => createApi() as unknown as MentoredWorksCall;
 const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
+const overviewCall = () => createApi() as unknown as OverviewCall;
 
 /**
  * N-16 (WEB-1404): the requests of students (approve or decline), "Moji studenti"
@@ -39,9 +42,11 @@ const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
  * key-dates card (mentorship.key-dates.get), read on its own; its failure never hides the page.
  * WEB-NF6-ETAPE (MK-5, MK-6, MK-7): "Novo mentorstvo" (not available yet), and per started work its stages,
  * plan writes and what was agreed at the latest consultation, each read on its own.
+ * WEB-NF6-PREGLED (MK-11): "Moji studenti" under the works list, what waits on the mentor first.
  */
-export default function MentorshipsPage({ requests = requestsCall, works = worksCall, keyDates = keyDatesCall, plan, records }:
-  { requests?: () => MentorshipCall; works?: () => MentoredWorksCall; keyDates?: () => KeyDatesCall; plan?: () => PlanCall; records?: RecordsRead }) {
+export default function MentorshipsPage({ requests = requestsCall, works = worksCall, keyDates = keyDatesCall, overview = overviewCall, plan, records }:
+  { requests?: () => MentorshipCall; works?: () => MentoredWorksCall; keyDates?: () => KeyDatesCall; overview?: () => OverviewCall;
+    plan?: () => PlanCall; records?: RecordsRead }) {
   const { base } = useHost();
   const datesPort = useMemo(() => keyDatesPort(keyDates), [keyDates]);
   const here = appHref(base, HREF);
@@ -61,6 +66,7 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
       ready={(value) => (
         <>
           <WorksList works={value.works} base={base} />
+          <MyStudents works={value.works} call={overview} base={base} />
           {/* WEB-NF6-RUNDA (MK-8): "Pregled runde" of each started work. */}
           {roundWorks(value.works).map((w) => (
             <RoundReview key={w.documentId} work={{ documentId: w.documentId, name: w.name, href: appHref(base, w.path) }} />
