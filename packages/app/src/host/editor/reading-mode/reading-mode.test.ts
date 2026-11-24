@@ -54,7 +54,8 @@ describe("reading mode (WEB-V20-NACIN-CITANJA)", () => {
   });
 
   it("scopes the rules to the sheet's text, never the shell, and uses no external URL", () => {
-    for (const line of css.split("\n").filter((l) => l.startsWith(":global("))) expect(line).toContain(".editor-surface .ProseMirror");
+    for (const line of css.split("\n").filter((l) => l.startsWith(":global("))) expect(line).toMatch(/\.editor-surface \.ProseMirror|\.sheet\)/);
+    expect(css).toContain('html[data-reading-width="wide"] .sheet');
     expect(css).not.toMatch(/url\(|@import|https?:/);
   });
 
@@ -67,11 +68,20 @@ describe("reading mode (WEB-V20-NACIN-CITANJA)", () => {
   it("draws one pressed step per field and disables the reset while all is default", () => {
     const html = renderToStaticMarkup(createElement(ReadingModeControls, { prefs: { ...DEFAULT_READING_PREFS }, onChange: vi.fn(), onReset: vi.fn() }));
     expect(html).toContain(readingModeHr.title);
-    for (const f of READING_MODE_FIELDS) expect(html).toContain(readingModeHr[f].label);
+    for (const f of READING_MODE_FIELDS) expect(html).toContain(`>${readingModeHr[f].label}</p>`);
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(READING_MODE_FIELDS.length);
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Vrati na zadano/);
     const changed = renderToStaticMarkup(createElement(ReadingModeControls, { prefs: { ...DEFAULT_READING_PREFS, width: "narrow" }, onChange: vi.fn(), onReset: vi.fn() }));
     expect(changed).not.toMatch(/<button[^>]*disabled=""[^>]*>Vrati na zadano/);
+  });
+
+  it("lifts the sheet's cap for the wide step and covers the closing list and quote paragraphs", () => {
+    expect(css).toMatch(/html\[data-reading-width="wide"\] \.sheet\) \{ max-width: (\d+)px/);
+    expect(Number(/data-reading-width="wide"\] \.sheet\) \{ max-width: (\d+)px/.exec(css)?.[1])).toBeGreaterThan(720);
+    for (const gap of ["wide", "wider"]) {
+      expect(css).toContain(`html[data-reading-paragraph-gap="${gap}"] .editor-surface .ProseMirror p[data-block="bullet-item"]:not(:has(+ p[data-block="bullet-item"]))`);
+      expect(css).toContain(`html[data-reading-paragraph-gap="${gap}"] .editor-surface .ProseMirror p[data-block="quote"]:not(:has(+ p[data-block="quote"]))`);
+    }
   });
 
   it("reset returns the stored preferences and the attributes to the default", () => {

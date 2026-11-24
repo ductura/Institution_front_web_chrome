@@ -4,7 +4,8 @@
 
 /* Širina retka: the measure of the sheet's text, centred. */
 :global(html[data-reading-width="narrow"] .editor-surface .ProseMirror) { max-width: 52ch; margin-inline: auto; }
-:global(html[data-reading-width="wide"] .editor-surface .ProseMirror) { max-width: 84ch; margin-inline: auto; }
+/* "Šira" must give more room than the default: the sheet itself is capped at 720px, so the cap is lifted on the sheet. */
+:global(html[data-reading-width="wide"] .sheet) { max-width: 960px; }
 
 /* Razmak redaka. */
 :global(html[data-reading-line-height="relaxed"] .editor-surface .ProseMirror) { line-height: 1.9; }
@@ -17,6 +18,12 @@
 /* Razmak odlomaka. */
 :global(html[data-reading-paragraph-gap="wide"] .editor-surface .ProseMirror p) { margin-block-end: 14pt; }
 :global(html[data-reading-paragraph-gap="wider"] .editor-surface .ProseMirror p) { margin-block-end: 22pt; }
+
+/* The list and quote paragraphs that end a run have their own margin rule in the tokens; the same gap applies to them. */
+:global(html[data-reading-paragraph-gap="wide"] .editor-surface .ProseMirror p[data-block="bullet-item"]:not(:has(+ p[data-block="bullet-item"]))),
+:global(html[data-reading-paragraph-gap="wide"] .editor-surface .ProseMirror p[data-block="quote"]:not(:has(+ p[data-block="quote"]))) { margin-bottom: 14pt; }
+:global(html[data-reading-paragraph-gap="wider"] .editor-surface .ProseMirror p[data-block="bullet-item"]:not(:has(+ p[data-block="bullet-item"]))),
+:global(html[data-reading-paragraph-gap="wider"] .editor-surface .ProseMirror p[data-block="quote"]:not(:has(+ p[data-block="quote"]))) { margin-bottom: 22pt; }
 
 .controls { display: grid; gap: 12px; }
 .help { margin: 0; }

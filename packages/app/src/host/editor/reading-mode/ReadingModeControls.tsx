@@ -23,6 +23,7 @@ export function ReadingModeControls({ prefs, onChange, onReset }: ReadingModeCon
       <p className={styles.help}>{t.help}</p>
       {groups.map((group) => (
         <div key={group.field} className={styles.group}>
+          <p className={styles.label} aria-hidden="true">{group.label}</p>
           <SegmentedControl
             label={group.label}
             options={group.options}
