@@ -16,19 +16,20 @@ import { dueText } from "../assignment-card/model";
 import { TaskActions } from "../assignment-card/AssignmentCards";
 import { usePractice } from "../assignment-card/practice";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
+import { LateException, type LateResult } from "./LateException";
+import { offersLate } from "./late-exception";
 import { assignmentFactsMessages as text } from "./messages.hr";
 import { factsOf, interruptedOf, publishedIn, type AssignmentReads } from "./model";
 import { readCourseFacts, type CourseFactsRead } from "./read";
 import { AssignmentRhythm } from "../input-rhythm/mounts";
 
 /** The facts of one course, read once per visit and per "Pokušaj ponovno". */
-function useCourseFacts(course: TeacherCourse): [CourseFactsRead | null, () => void] {
+function useCourseFacts(course: TeacherCourse): [CourseFactsRead | null, () => void, () => void] {
   const { base } = useHost();
   const [read, setRead] = useState<CourseFactsRead | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let live = true;
-    setRead(null);
     void readCourseFacts(createApi(), course.id, course.assignments).then((answer) => {
       if (!live) return;
       if (answer.kind === "signedOut") goToSignIn(appHref(base, "/nastavnik"));
@@ -39,10 +40,11 @@ function useCourseFacts(course: TeacherCourse): [CourseFactsRead | null, () => v
     };
     // The course id and its assignments are what is read; `attempt` asks again.
   }, [base, course.id, course.assignments, attempt]);
-  return [read, () => setAttempt((n) => n + 1)];
+  // `retry` shows the loading state again; `reload` reads again and keeps what is on screen until the answer.
+  return [read, () => { setRead(null); setAttempt((n) => n + 1); }, () => setAttempt((n) => n + 1)];
 }
 
-function Facts({ reads }: { reads: AssignmentReads }) {
+function Facts({ reads, assignmentId, onResult }: { reads: AssignmentReads; assignmentId: string; onResult: (result: LateResult) => void }) {
   const { base } = useHost();
   const facts = factsOf(reads, Date.now());
   if (facts.opened === null) return <p className="note">{text.noStudents}</p>;
@@ -59,6 +61,7 @@ function Facts({ reads }: { reads: AssignmentReads }) {
               <a className="btn secondary small" href={appHref(base, `/nastavnik/rad/${encodeURIComponent(row.documentId)}`)}
                 aria-label={`${text.openWork}: ${row.name}`}>{text.openWork}</a>
             ) : null}
+          {offersLate(row, reads) ? <LateException assignmentId={assignmentId} studentId={row.studentId} name={row.name} onResult={onResult} /> : null}
         </div>
       ))}
     </>
@@ -67,10 +70,17 @@ function Facts({ reads }: { reads: AssignmentReads }) {
 
 /** The tasks of one course card (N-01 korak A i B): title, deadline, facts and a row per student. */
 export function CourseTasks({ course }: { course: TeacherCourse }) {
-  const [read, retry] = useCourseFacts(course);
+  const [read, retry, reload] = useCourseFacts(course);
+  const [late, setLate] = useState<LateResult | null>(null);
+  const { base } = useHost();
   const practice = usePractice(course.assignments);
   return (
     <>
+      {late ? (
+        <p className="note" role={late.tone === "alert" ? "alert" : "status"}>
+          {late.text}{late.assignmentId ? <> <a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(late.assignmentId)}/produljenje`)}>{text.late.list}</a></> : null}
+        </p>
+      ) : null}
       {course.assignments.map((assignment) => (
         <div key={assignment.id} className={cardStyles.task}>
           <h3>{assignment.title}</h3>
@@ -83,7 +93,7 @@ export function CourseTasks({ course }: { course: TeacherCourse }) {
               <p role="alert" className="note">{text.unavailable}</p>
               <div className="acts"><button type="button" className="btn secondary small" onClick={retry}>{text.retry}</button></div>
             </div>
-          ) : read.reads.get(assignment.id) ? <Facts reads={read.reads.get(assignment.id) as AssignmentReads} /> : null}
+          ) : read.reads.get(assignment.id) ? <Facts reads={read.reads.get(assignment.id) as AssignmentReads} assignmentId={assignment.id} onResult={(result) => { setLate(result); reload(); }} /> : null}
           <AssignmentRhythm courseId={course.id} assignmentId={assignment.id} title={assignment.title} />
           <TaskActions assignment={assignment} />
         </div>
