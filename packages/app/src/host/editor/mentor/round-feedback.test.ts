@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
 
-import { latestReturn, openRequests, saidView, withReturn } from "./round-feedback";
+import { currentReturn, latestReturn, openRequests, saidView, withReturn } from "./round-feedback";
 
 const NOW = new Date("2026-11-22T10:00:00");
 const ret = (documentId: string, createdAt: string, revisionDueAt: string | null = "2026-11-27T22:59:59.000Z") =>
@@ -45,5 +45,16 @@ describe("saidView", () => {
     expect(saidView(ret("rad-a", "2026-11-20T10:00:00.000Z", null), [], NOW)).toMatchObject({ due: "Rok dorade nije naveden.", open: "Nema otvorenih zahtjeva uz tekst." });
     expect(saidView(null, [req("open")], NOW)).toMatchObject({ returned: null, due: null, comment: null, open: "1 otvoren zahtjev uz tekst" });
     expect(openRequests([req("open"), req("responded"), req("withdrawn")])).toBe(1);
+  });
+});
+
+describe("currentReturn (#631 review 2, point 5)", () => {
+  const accepted = (window: string) => ({ id: window, state: "accepted", versions: [{ closed: { as: "accepted", window } }] }) as unknown as RevisionRequest;
+  it("drops a return the mentor already reviewed past, and keeps one still in its round", () => {
+    const old = ret("rad-a", "2026-11-10T10:00:00.000Z");
+    expect(currentReturn(old, [accepted("2026-11-12T10:00:00.000Z"), req("open")])).toBeNull();
+    expect(currentReturn(old, [accepted("2026-11-08T10:00:00.000Z"), req("open")])).toBe(old);
+    expect(currentReturn(old, [])).toBe(old);
+    expect(currentReturn(null, [req("open")])).toBeNull();
   });
 });

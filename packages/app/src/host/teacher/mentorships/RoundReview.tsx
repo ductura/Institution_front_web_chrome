@@ -15,14 +15,15 @@ import { changesPort } from "../changes-since-review/port";
 import { RevisionSection } from "../revision";
 import { revisionPort, type RevisionPort } from "../revision/port";
 import { roundText as t } from "./messages.hr";
-import { newsLine, requestsLine } from "./round-model";
+import { newsLine, requestsLine, seenLine, type SeenItem } from "./round-model";
+import { readSeen, type SeenRead } from "./seen-port";
 
-type Read = { news: ChangesRead; requests: RevisionListOutcome } | null;
+type Read = { news: ChangesRead; requests: RevisionListOutcome; seen: readonly SeenItem[] | null } | null;
 
 export type RoundWork = { readonly documentId: string; readonly name: string; readonly href: string | null };
 
-export function RoundReview({ work, changes = changesPort, revision = revisionPort }: {
-  work: RoundWork; changes?: ChangesPort; revision?: RevisionPort;
+export function RoundReview({ work, changes = changesPort, revision = revisionPort, seen = readSeen }: {
+  work: RoundWork; changes?: ChangesPort; revision?: RevisionPort; seen?: SeenRead;
 }) {
   const watch = useRef<ReturnType<typeof watchSessionEnd> | null>(null);
   useLayoutEffect(() => {
@@ -39,9 +40,10 @@ export function RoundReview({ work, changes = changesPort, revision = revisionPo
     void Promise.all([
       changes.read(work.documentId).catch((): ChangesRead => ({ kind: "unavailable" })),
       revision.list(work.documentId, current).catch((): RevisionListOutcome => ({ kind: "unavailable" })),
-    ]).then(([news, requests]) => { if (live) setRead({ news, requests }); });
+      seen(work.documentId).catch(() => null),
+    ]).then(([news, requests, items]) => { if (live) setRead({ news, requests, seen: items }); });
     return () => { live = false; };
-  }, [work.documentId, changes, revision, current, attempt]);
+  }, [work.documentId, changes, revision, seen, current, attempt]);
 
   const failed = read !== null && (read.news.kind !== "ready" || read.requests.kind !== "ok");
   return (
@@ -53,7 +55,8 @@ export function RoundReview({ work, changes = changesPort, revision = revisionPo
           <p role={read.news.kind === "ready" ? undefined : "alert"}>{newsLine(read.news)}</p>
           <h3>{t.requestsTitle}</h3>
           <p role={read.requests.kind === "ok" ? undefined : "alert"}>{requestsLine(read.requests)}</p>
-          <p className="note">{t.seenUnknown}</p>
+          {seenLine(read.requests, read.seen) !== null && <p>{seenLine(read.requests, read.seen)}</p>}
+          <p className="note">{t.seenReturnUnknown}</p>
           {failed && <Button tone="quiet" size="dense" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>}
         </>
       )}

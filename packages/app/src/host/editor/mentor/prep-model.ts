@@ -1,6 +1,6 @@
 // WEB-NF6-RUNDA (NF-6 MK-10): "Priprema za konzultacije" composed in the browser from what the student
-// already sees: the last consultation record (date, revision), the change of the text since that revision
-// and the requests on the text. No assistant and no conclusion about authorship; a count the page cannot
+// already sees: the last consultation record (date, revision), the tasks agreed on it
+// (work.consultation-tasks.get), the change of the text since that revision and the requests on the text. No assistant and no conclusion about authorship; a count the page cannot
 // know is left out of the text (prepText drops it), never guessed.
 import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
 
@@ -9,7 +9,15 @@ import type { PrepInput } from "./mentor-model";
 /** The largest message work.messages.post takes. */
 export const MAX_MESSAGE = 2000;
 
-export type RecordFacts = { readonly heldOn: string; readonly revision: number };
+export type RecordFacts = { readonly id?: string; readonly heldOn: string; readonly revision: number };
+/** A task the mentor wrote on a record, as work.consultation-tasks.get gives it. */
+export type TaskFacts = { readonly recordId: string; readonly position: number; readonly text: string; readonly done: boolean };
+
+/** "Od dogovorenog": the tasks of the record, in the mentor's order; none without a record. */
+export function agreedOf(record: RecordFacts | null, tasks: readonly TaskFacts[] | null): { text: string; done: boolean }[] {
+  if (record?.id === undefined || tasks === null) return [];
+  return tasks.filter((x) => x.recordId === record.id).sort((a, b) => a.position - b.position).map((x) => ({ text: x.text, done: x.done }));
+}
 export type BlockChange = { readonly kind: string; readonly change: "unchanged" | "removed" | "added" };
 
 /** The newest record by date; on the same day the later revision. */
@@ -37,6 +45,8 @@ export type PrepFacts = {
   readonly blocks: readonly BlockChange[] | null;
   readonly requests: readonly RevisionRequest[] | null;
   readonly words: number | null;
+  /** null when the tasks could not be read; the preparation then names no agreed task. */
+  readonly tasks?: readonly TaskFacts[] | null;
 };
 
 export function prepFrom(f: PrepFacts): PrepInput {
@@ -45,7 +55,7 @@ export function prepFrom(f: PrepFacts): PrepInput {
     since,
     changed: f.blocks === null ? null : changedBlocks(f.blocks),
     resolved: f.requests === null ? null : resolvedSince(f.requests, since),
-    agreed: [],
+    agreed: agreedOf(f.record, f.tasks ?? null),
     openComments: f.requests === null ? null : f.requests.filter((r) => r.state === "open" || r.state === "reopened").length,
     words: f.words,
     toReview: null,

@@ -53,7 +53,7 @@ export function PrepPanel({ port, words, editable, onCopy }: {
       {step.kind === "unavailable" && <p role="alert">{t.unavailable}</p>}
       {step.kind === "ready" && (
         <>
-          <TextArea label={t.edit} rows={9} value={step.text} readOnly={!editable} hint={t.noAgreed}
+          <TextArea label={t.edit} rows={9} value={step.text} readOnly={!editable}
             onChange={(e) => setStep({ kind: "ready", text: e.currentTarget.value })} />
           <ActionRow>
             {editable && <Button size="dense" disabled={busy || step.text.trim() === ""} onClick={() => void send(step.text)}>{busy ? t.sending : t.send}</Button>}

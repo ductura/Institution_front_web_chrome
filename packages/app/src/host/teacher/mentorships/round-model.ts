@@ -22,3 +22,19 @@ export function requestsLine(read: RevisionListOutcome): string {
   const count = (...states: string[]) => live.filter((r) => states.includes(r.state)).length;
   return t.requests(count("open", "reopened"), count("responded"), count("accepted"));
 }
+
+/** One item of work.seen-by-student.get: what the student first opened, and when. */
+export type SeenItem = { readonly kind: string; readonly id: string; readonly firstSeenAt: string };
+
+/**
+ * #631 review 2, point 3: how many of the mentor's live requests on the text the student has seen. null when
+ * either read failed or there is no request; the return of the whole work is not in that route.
+ */
+export function seenLine(read: RevisionListOutcome, seen: readonly SeenItem[] | null): string | null {
+  if (read.kind !== "ok") return null;
+  const live = read.requests.filter((r) => r.state !== "withdrawn");
+  if (live.length === 0) return null;
+  if (seen === null) return t.seenUnavailable;
+  const ids = new Set(seen.filter((i) => i.kind === "revision_request").map((i) => i.id));
+  return t.seen(live.filter((r) => ids.has(r.id)).length, live.length);
+}

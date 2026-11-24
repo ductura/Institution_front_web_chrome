@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
 
 import { prepText } from "./mentor-model";
-import { changedBlocks, docWords, lastRecord, prepFrom, resolvedSince, textWords } from "./prep-model";
+import { agreedOf, changedBlocks, docWords, lastRecord, prepFrom, resolvedSince, textWords } from "./prep-model";
 
 const answered = (state: RevisionRequest["state"], window: string | null) => ({
   id: `${state}-${window}`, state,
@@ -42,6 +42,21 @@ describe("prep model", () => {
     const lines = prepText(input).split("\n");
     expect(lines[1]).toMatch(/^Od konzultacija .* · izmijenjeno odlomaka: 1 · riješeni komentari: 1$/);
     expect(lines).toContain("Otvoreni komentari: 1");
+  });
+  it("takes the agreed tasks of the last record only, in the mentor's order (#631 review 2, point 2)", () => {
+    const record = { id: "zapis-2", heldOn: "2026-11-09", revision: 5 };
+    const tasks = [
+      { recordId: "zapis-2", position: 2, text: "Izmišljeno: dopuniti zaključak", done: false },
+      { recordId: "zapis-1", position: 1, text: "Izmišljeno: stari zadatak", done: true },
+      { recordId: "zapis-2", position: 1, text: "Izmišljeno: nova literatura", done: true },
+    ];
+    expect(agreedOf(record, tasks)).toEqual([{ text: "Izmišljeno: nova literatura", done: true }, { text: "Izmišljeno: dopuniti zaključak", done: false }]);
+    expect(agreedOf(record, null)).toEqual([]);
+    expect(agreedOf(null, tasks)).toEqual([]);
+    const lines = prepText(prepFrom({ record, blocks: null, requests: null, words: null, tasks })).split("\n");
+    expect(lines).toContain("✓ Izmišljeno: nova literatura");
+    expect(lines).toContain("○ Izmišljeno: dopuniti zaključak");
+    expect(lines).not.toContain("✓ Izmišljeno: stari zadatak");
   });
   it("counts words", () => {
     expect(textWords("  Izmišljeni   tekst rada \n")).toBe(3);

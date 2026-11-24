@@ -87,9 +87,40 @@ describe("OwnPanel", () => {
     const loading = await mount(h(OwnPanel, { documentId: "rad-a", reading: undefined, note }));
     expect(loading.textContent).toContain(t.own.intro);
     expect(loading.textContent).toContain(t.own.stopLoading);
-    expect(loading.textContent).toContain(t.own.stopCannotSet);
     expect((await mount(h(OwnPanel, { documentId: "rad-a", reading: null, note }))).querySelector('[role="alert"]')?.textContent).toBe(t.own.stopUnavailable);
     expect((await mount(h(OwnPanel, { documentId: "rad-a", reading: { place: null, updatedAt: null }, note }))).textContent).toContain(t.own.stopNone);
+  });
+  it("sets the mark at the cursor and clears it, saying so only from the server's answer (#631 review 2)", async () => {
+    const at = { nodeId: "00000000-0000-4000-8000-0000000000b2", offset: 7 };
+    const set = vi.fn(async (place: typeof at) => ({ kind: "ok" as const, reading: { place, updatedAt: "2026-11-24T10:00:00.000Z" } }));
+    const clear = vi.fn(async () => ({ kind: "ok" as const, reading: { place: null, updatedAt: null } }));
+    const host = await mount(h(OwnPanel, { documentId: "rad-a", reading: { place: null, updatedAt: null }, mark: { set, clear }, currentPlace: () => at, note }));
+    expect([...host.querySelectorAll("button")].map((b) => b.textContent)).not.toContain(t.own.stopClear);
+    await click(host, t.own.stopSet);
+    expect(set).toHaveBeenCalledWith(at);
+    expect(host.textContent).toContain(t.own.stopSaved);
+    expect(host.textContent).toMatch(/^.*Ovdje ste stali prošli put/);
+    await click(host, t.own.stopClear);
+    expect(clear).toHaveBeenCalledOnce();
+    expect(host.textContent).toContain(t.own.stopCleared);
+    expect(host.textContent).toContain(t.own.stopNone);
+  });
+  it("keeps the old mark and says why when the write fails, and asks for a cursor when there is none", async () => {
+    const place = { nodeId: "00000000-0000-4000-8000-0000000000a1", offset: 4 };
+    const set = vi.fn(async () => ({ kind: "failed" as const }));
+    const host = await mount(h(OwnPanel, { documentId: "rad-a", reading: { place, updatedAt: "2026-11-20T10:00:00.000Z" },
+      mark: { set, clear: async () => ({ kind: "signedOut" as const }) }, currentPlace: () => place, note }));
+    await click(host, t.own.stopSet);
+    expect(host.querySelector('[role="alert"]')?.textContent).toBe(t.own.stopFailed);
+    expect(host.textContent).toContain("Ovdje ste stali prošli put");
+    await click(host, t.own.stopClear);
+    expect(host.querySelector('[role="alert"]')?.textContent).toBe(t.own.stopSignedOut);
+    const none = await mount(h(OwnPanel, { documentId: "rad-a", reading: { place: null, updatedAt: null },
+      mark: { set, clear: async () => ({ kind: "failed" as const }) }, currentPlace: () => null, note }));
+    set.mockClear();
+    await click(none, t.own.stopSet);
+    expect(set).not.toHaveBeenCalled();
+    expect(none.querySelector('[role="alert"]')?.textContent).toBe(t.own.stopNoPlace);
   });
   it("goes to the kept place, and says so when its paragraph is gone", async () => {
     const place = { nodeId: "00000000-0000-4000-8000-0000000000a1", offset: 4 };

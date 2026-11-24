@@ -22,7 +22,9 @@ export const roundText = {
   requests: (open: number, answered: number, accepted: number) =>
     `otvoreno ${open} · student je odgovorio ${answered} · prihvaćeno ${accepted}`,
   requestsUnavailable: "Zahtjevi uz tekst trenutačno nisu dostupni.",
-  seenUnknown: "Je li student vidio Vašu povratnu informaciju, Ductura još ne prikazuje.",
+  seen: (seen: number, all: number) => `Student je vidio ${seen} od ${all} zahtjeva uz tekst.`,
+  seenUnavailable: "Je li student vidio zahtjeve uz tekst, trenutačno nije dostupno.",
+  seenReturnUnknown: "Je li student vidio vraćanje cijelog rada na doradu, Ductura još ne prikazuje.",
   retry: "Pokušaj ponovno",
   openWork: "Otvori rad za pregled",
 } as const;

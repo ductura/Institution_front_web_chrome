@@ -15,17 +15,30 @@ const RETURN = {
 const RECORD = { id: "00000000-0000-4000-8000-0000000000f1", heldOn: "2026-11-02", revision: 2, topic: "Izmišljena tema", agreement: "", additions: [] };
 const PLACE = { place: { nodeId: "00000000-0000-4000-8000-0000000000d1", offset: 0 }, updatedAt: "2026-11-03T10:00:00.000Z" };
 
-async function student(page: Page, posted: unknown[], failReturns = false) {
+const TASKS = { tasks: [
+  { id: "00000000-0000-4000-8000-0000000000f2", recordId: RECORD.id, position: 1, text: "Izmišljeno: nova literatura", done: true, markedAt: null, createdAt: "2026-11-02T10:00:00.000Z" },
+] };
+
+/** `ownReturn`: the return is this work's (its document id is taken from the editor's first work read). */
+async function student(page: Page, posted: unknown[], failReturns = false, ownReturn = false) {
   const server = generatedServer("puno");
+  let workId = "";
+  let reading: unknown = PLACE;
   await page.clock.setFixedTime(new Date(FIKSNI_DATUM));
   await page.route("**/api/v1/**", (route) => {
     const req = route.request();
     const path = new URL(req.url()).pathname;
+    if (workId === "" && path.includes("/works/")) workId = decodeURIComponent(path.split("/works/")[1]!.split("/")[0]!);
     if (req.method() === "POST" && path.endsWith("/revision-requests/list")) return route.fulfill({ json: { requests: [] } });
     if (req.method() === "GET" && path.endsWith("/notifications/returned-for-revision")) {
       return failReturns ? route.fulfill({ status: 503, json: { error: "unavailable" } })
-        : route.fulfill({ json: { notifications: [{ ...RETURN, documentId: "SVAKI" }], nextBefore: null } });
+        : route.fulfill({ json: { notifications: [{ ...RETURN, documentId: ownReturn ? workId : "SVAKI" }], nextBefore: null } });
     }
+    if (path.endsWith("/reading-place")) {
+      reading = req.method() === "PUT" ? { ...(req.postDataJSON() as object), updatedAt: "2026-11-05T22:30:00.000Z" } : null;
+      return route.fulfill({ json: { note: null, readingPlace: reading } });
+    }
+    if (req.method() === "GET" && path.endsWith("/consultation-tasks")) return route.fulfill({ json: TASKS });
     if (req.method() === "GET" && path.endsWith("/messages")) return route.fulfill({ json: { messages: [] } });
     if (req.method() === "POST" && path.endsWith("/messages")) {
       const body = req.postDataJSON() as { text: string };
@@ -41,7 +54,7 @@ async function student(page: Page, posted: unknown[], failReturns = false) {
     if (req.method() === "GET" && path.endsWith("/compare")) {
       return route.fulfill({ json: { from: 2, to: 4, blocks: [{ kind: "paragraph", change: "added", text: "Izmišljeni novi odlomak." }] } });
     }
-    if (req.method() === "GET" && path.endsWith("/sealed-self-note")) return route.fulfill({ json: { note: null, readingPlace: PLACE } });
+    if (req.method() === "GET" && path.endsWith("/sealed-self-note")) return route.fulfill({ json: { note: null, readingPlace: reading } });
     const result = server.answer("student", req.method(), path);
     if (result === "hang") return undefined;
     return route.fulfill(result);
@@ -83,7 +96,10 @@ for (const width of [390, 1280]) {
       const own = page.locator("[data-own-panel]");
       await expect(own.getByText("Ovo ne vidi ni mentor ni nastavnik.")).toBeVisible();
       await expect(own.getByText(/^Ovdje ste stali prošli put/)).toBeVisible();
-      await expect(own.getByText("Novu oznaku Ductura zasad ne može spremiti na poslužitelj.")).toBeVisible();
+      // The mark is cleared on the server; the panel says so only from its answer.
+      await own.getByRole("button", { name: "Obriši oznaku" }).click();
+      await expect(own.getByText("Oznaka je obrisana.")).toBeVisible();
+      await expect(own.getByText("Oznaka još nije postavljena.")).toBeVisible();
       // MK-10: composed from the record, the comparison and the requests; sent only after the server confirms.
       await card.getByText("Priprema za konzultacije", { exact: true }).first().click();
       const prep = card.locator("[data-prep-panel]");
@@ -93,6 +109,7 @@ for (const width of [390, 1280]) {
       await page.keyboard.press("Enter");
       const area = prep.getByLabel("Tekst pripreme (možete ga promijeniti prije slanja)");
       await expect(area).toHaveValue(/izmijenjeno odlomaka: 1/);
+      await expect(area).toHaveValue(/✓ Izmišljeno: nova literatura/);
       await area.fill("Priprema za konzultacije\nIzmišljeno: dopunio sam zaključak.");
       await prep.getByRole("button", { name: "Pošalji mentoru" }).click();
       await expect(prep.getByText("Priprema je poslana mentoru kao poruka.")).toBeVisible();
@@ -101,6 +118,18 @@ for (const width of [390, 1280]) {
     });
   }
 }
+
+test("MK-8: this work's return gives the mentor's comment and the revision deadline", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await student(page, [], false, true);
+  await page.goto(`/app/web/rad/${T1}`);
+  await skipGuide(page);
+  const card = await openMentor(page, 1280);
+  const said = card.locator("[data-mentor-said]");
+  await expect(said.getByText(RETURN.comment)).toBeVisible();
+  await expect(said.getByText(/^Rok dorade: .* \(za 3 dana\)$/)).toBeVisible();
+  await expect(said.getByText(/^Vraćeno na doradu /)).toBeVisible();
+});
 
 test("MK-8: a failed read of the returns says unavailable and reads again on request", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -138,6 +167,7 @@ for (const width of [390, 1280]) {
           ] } });
         }
         if (path.endsWith("/revision-requests/list")) return route.fulfill({ json: { requests: [] } });
+        if (path.endsWith("/seen-by-student")) return route.fulfill({ json: { items: [] } });
         return route.fulfill({ status: 503, json: { code: "unavailable" } });
       });
       await page.goto("/app/web/nastavnik/mentorstva");
@@ -146,6 +176,7 @@ for (const width of [390, 1280]) {
       await expect(round.getByRole("heading", { name: "Pregled runde: Iva Izmišljena" })).toBeVisible();
       await expect(round.getByText("Od zadnjeg pregleda: novih ili izmijenjenih odlomaka 1, uklonjenih 1.")).toBeVisible();
       await expect(round.getByText("Nema zahtjeva uz tekst.")).toBeVisible();
+      await expect(round.getByText("Je li student vidio vraćanje cijelog rada na doradu, Ductura još ne prikazuje.")).toBeVisible();
       const open = round.getByRole("link", { name: "Otvori rad za pregled" });
       await open.focus();
       await expect(open).toBeFocused();

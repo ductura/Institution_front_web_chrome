@@ -6,7 +6,10 @@ import { readTimeMachineComparison, readTimeMachineVersions } from "../../../../
 import { sendWorkMessage } from "../../../../../../src/client/work-messages";
 
 import type { PrepInput } from "./mentor-model";
-import { lastRecord, prepFrom, type BlockChange } from "./prep-model";
+import { lastRecord, prepFrom, type BlockChange, type TaskFacts } from "./prep-model";
+
+/** Reads the tasks agreed at consultations (work.consultation-tasks.get); null when unread. Given by the mount. */
+export type TasksRead = (documentId: string) => Promise<readonly TaskFacts[] | null>;
 
 export type SendOutcome = "sent" | "signedOut" | "failed";
 
@@ -18,11 +21,12 @@ export type PrepPort = {
 
 const quiet = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null);
 
-export function prepPort(documentId: string): PrepPort {
+export function prepPort(documentId: string, readTasks: TasksRead = async () => null): PrepPort {
   return {
     async compose(words) {
-      const [records, list, versions] = await Promise.all([
+      const [records, list, versions, tasks] = await Promise.all([
         quiet(readConsultations(documentId)), quiet(listRevisionRequests(documentId)), quiet(readTimeMachineVersions(documentId)),
+        quiet(readTasks(documentId)),
       ]);
       const requests = list?.kind === "ok" ? list.requests : null;
       if (records === null && requests === null) return null;
@@ -33,7 +37,7 @@ export function prepPort(documentId: string): PrepPort {
         const compared = await quiet(readTimeMachineComparison(documentId, record.revision, latest));
         blocks = compared?.kind === "ready" ? compared.blocks : null;
       }
-      return prepFrom({ record, blocks, requests, words });
+      return prepFrom({ record, blocks, requests, words, tasks });
     },
     async send(text) {
       try {

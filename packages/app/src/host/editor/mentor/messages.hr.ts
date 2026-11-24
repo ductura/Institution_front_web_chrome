@@ -74,7 +74,6 @@ export const mentorCardHr = {
     tooLong: "Poruka smije imati najviše {max} znakova. Skratite pripremu.",
     copyFailed: "Kopiranje nije uspjelo. Označite tekst i kopirajte ga ručno.",
     note: "Priprema je zapis o unosu u tekst, ne o autorstvu.",
-    noAgreed: "Dogovorene zadatke s kvačicama Ductura još ne prima od poslužitelja.",
   },
   /** MK-8: the mentor's word on the revision, in one place. */
   said: {
@@ -101,6 +100,13 @@ export const mentorCardHr = {
     stopKept: "Ovdje ste stali prošli put (oznaka od {date}).",
     stopGo: "Idi tamo",
     stopGone: "Odlomak s oznakom više ne postoji u radu.",
-    stopCannotSet: "Novu oznaku Ductura zasad ne može spremiti na poslužitelj.",
+    stopSet: "Označi dokle sam stao",
+    stopClear: "Obriši oznaku",
+    stopSaving: "Spremam oznaku…",
+    stopSaved: "Oznaka je spremljena. Vidite je i na drugom računalu.",
+    stopCleared: "Oznaka je obrisana.",
+    stopNoPlace: "Postavite kursor u odlomak teksta pa pokušajte ponovno.",
+    stopFailed: "Oznaka nije spremljena. Pokušajte ponovno.",
+    stopSignedOut: "Prijava je istekla. Prijavite se ponovno; oznaka nije spremljena.",
   },
 } as const;

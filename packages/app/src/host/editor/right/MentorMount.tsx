@@ -11,7 +11,10 @@ import { listRevisionRequests, type RevisionRequest } from "../../../../../../sr
 import { readWorkMessages, type WorkMessage } from "../../../../../../src/client/work-messages.ts";
 import { readWorkMilestones, type WorkMilestone } from "../../../../../../src/client/work-milestones.ts";
 
-import { MentorCard, OwnPanel, PrepPanel, prepPort, SaidPanel, withReturn, type ReadingPlace, type ReturnNotice } from "../mentor";
+import {
+  currentReturn, MentorCard, OwnPanel, PrepPanel, prepPort, SaidPanel, withReturn,
+  type ReadingPlace, type ReadingPort, type ReadingWrite, type ReturnNotice, type TasksRead,
+} from "../mentor";
 import { placeOf, positionOf, type PlaceEditor } from "../mentor/own-place";
 import { ConsultPanel } from "../work/consult/ConsultPanel";
 import { docWords } from "../mentor/prep-model";
@@ -36,10 +39,47 @@ type Reads = {
 const slotsCall = ((...args: Parameters<SlotsApi>) => createApi()(...args)) as SlotsApi;
 const LOADING: Reads = { requests: undefined, milestones: undefined, messages: undefined, slots: undefined, returns: undefined, reading: undefined };
 
-/** WEB-NF6-RUNDA (MK-8): the first page of whole-work returns (comment and deadline). */
-async function readReturns(): Promise<readonly ReturnNotice[] | null> {
-  const answer = await createApi()("notifications.returned-for-revision.list.get", { params: undefined, query: {}, body: undefined });
-  return answer.ok ? answer.body.notifications : null;
+/** The most pages of returns read before the list counts as unread (50 returns a page). */
+const RETURN_PAGES = 20;
+
+/**
+ * WEB-NF6-RUNDA (MK-8): the whole-work returns of this work. The list holds every work, newest first, so it
+ * is paged (`nextBefore`) until this work's newest return is found or the list ends; a list not read to its
+ * end is null ("nedostupno"), never "no return" (#631 review 2, point 4).
+ */
+async function readReturns(documentId: string): Promise<readonly ReturnNotice[] | null> {
+  let before: string | null = null;
+  for (let page = 0; page < RETURN_PAGES; page += 1) {
+    const query: { before?: string } = before === null ? {} : { before };
+    const answer = await createApi()("notifications.returned-for-revision.list.get", { params: undefined, query, body: undefined });
+    if (!answer.ok) return null;
+    const mine = answer.body.notifications.filter((n) => n.documentId === documentId);
+    if (mine.length > 0) return mine;
+    if (answer.body.nextBefore === null) return [];
+    before = answer.body.nextBefore;
+  }
+  return null;
+}
+
+/** WEB-NF6-RUNDA (MK-10): the tasks agreed at consultations, for "Od dogovorenog". */
+const readTasks: TasksRead = async (documentId) => {
+  const answer = await createApi()("work.consultation-tasks.get", { params: { documentId }, query: undefined, body: undefined });
+  return answer.ok ? answer.body.tasks : null;
+};
+
+/** WEB-NF6-RUNDA (MK-9): sets and clears "Dokle sam stao"; the state shown is the server's answer. */
+function readingPort(documentId: string): ReadingPort {
+  const outcome = (answer: Awaited<ReturnType<ReturnType<typeof createApi>>>): ReadingWrite => {
+    if (answer.ok) {
+      const body = answer.body as { readingPlace: { place: { nodeId: string; offset: number }; updatedAt: string } | null };
+      return { kind: "ok", reading: { place: body.readingPlace?.place ?? null, updatedAt: body.readingPlace?.updatedAt ?? null } };
+    }
+    return { kind: answer.status === 401 ? "signedOut" : "failed" };
+  };
+  return {
+    set: async (place) => outcome(await createApi()("work.reading-place.put", { params: { documentId }, query: undefined, body: { place } })),
+    clear: async () => outcome(await createApi()("work.reading-place.delete", { params: { documentId }, query: undefined, body: undefined })),
+  };
 }
 
 /** WEB-NF6-RUNDA (MK-9): only the reading place of the sealed note's read; the note itself stays SealedSelfNote's. */
@@ -55,7 +95,7 @@ async function readAll(documentId: string): Promise<Reads> {
   const quiet = <T,>(p: Promise<T>) => p.catch(() => null);
   const [requests, milestones, messages, slots, returns, reading] = await Promise.all([
     quiet(listRevisionRequests(documentId)), quiet(readWorkMilestones(documentId)),
-    quiet(readWorkMessages(documentId)), quiet(readConsultationSlots(slotsCall, documentId)), quiet(readReturns()),
+    quiet(readWorkMessages(documentId)), quiet(readConsultationSlots(slotsCall, documentId)), quiet(readReturns(documentId)),
     quiet(readReading(documentId)),
   ]);
   return {
@@ -92,11 +132,12 @@ export function MentorMount({ documentId, submitted, editor }: {
   }, [editor]);
 
   // WEB-NF6-RUNDA (MK-8): the latest whole-work return gives the revision its deadline and the mentor's comment.
-  const ret = reads.returns ? latestReturn(reads.returns, documentId) : null;
+  const ret = reads.returns ? currentReturn(latestReturn(reads.returns, documentId), reads.requests ?? []) : null;
   const state = reads.requests === undefined && !submitted ? undefined : withReturn(workStateOf(submitted, reads.requests ?? null), ret);
   const said = reads.requests === undefined || reads.returns === undefined ? undefined
     : reads.requests === null || reads.returns === null ? null : { ret, requests: reads.requests };
-  const prep = useMemo(() => prepPort(documentId), [documentId]);
+  const prep = useMemo(() => prepPort(documentId, readTasks), [documentId]);
+  const mark = useMemo(() => readingPort(documentId), [documentId]);
   const placeEditor = editor as unknown as (PlaceEditor & { commands?: { focus(pos?: number): boolean } }) | null;
   return (
     <>
@@ -107,7 +148,7 @@ export function MentorMount({ documentId, submitted, editor }: {
         prepPanel={<PrepPanel port={prep} words={allWords} editable={!submitted} onCopy={copyText} />}
         consult={<ConsultPanel documentId={documentId} role="student" revision={1} slotsCall={slotsCall} criteriaCall={null} />} />
       {/* WEB-NF6-RUNDA (MK-9): only in the student's own editor, only before submission. */}
-      {!submitted && <OwnPanel documentId={documentId} reading={reads.reading}
+      {!submitted && <OwnPanel documentId={documentId} reading={reads.reading} mark={mark}
         currentPlace={placeEditor ? () => placeOf(placeEditor) : undefined}
         onGoToPlace={placeEditor ? (place) => {
           const pos = positionOf(placeEditor.state.doc, place);

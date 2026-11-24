@@ -5,7 +5,7 @@ import type { RevisionRequest } from "../../../../../../src/client/revision-requ
 
 import { roundText as t } from "./messages.hr";
 import { roundWorks } from "./model";
-import { newsLine, requestsLine } from "./round-model";
+import { newsLine, requestsLine, seenLine } from "./round-model";
 
 const snap = (reviewedRevision: number | null, changed: boolean, blocks: { kind: "paragraph" | "heading"; change: "added" | "removed" | "unchanged" }[]) =>
   ({ kind: "ready", snapshot: { reviewedRevision, currentRevision: 9, changed, blocks: blocks.map((b) => ({ ...b, text: "x", level: 1 })) } }) as never;
@@ -33,5 +33,19 @@ describe("Pregled runde", () => {
     const rows = roundWorks([work("a", "rad-a", "Zmišljena"), work("b", null, "Amišljena"), work("c", "rad-c", "Izmišljena")]);
     expect(rows.map((r) => r.documentId)).toEqual(["rad-c", "rad-a"]);
     expect(rows[0]!.path).toBe("/nastavnik/rad/rad-c");
+  });
+});
+
+describe("seenLine (#631 review 2, point 3)", () => {
+  const ok = (...states: RevisionRequest["state"][]) => ({ kind: "ok" as const, requests: states.map((state, i) => ({ id: `z-${i}`, state }) as unknown as RevisionRequest) });
+  it("counts the live requests the student has seen, by id and kind", () => {
+    const seen = [{ kind: "revision_request", id: "z-0", firstSeenAt: "2026-11-20T10:00:00.000Z" },
+      { kind: "comment", id: "z-1", firstSeenAt: "2026-11-20T10:00:00.000Z" }];
+    expect(seenLine(ok("open", "responded", "withdrawn"), seen)).toBe(t.seen(1, 2));
+  });
+  it("says unavailable for an unread list, and nothing without requests", () => {
+    expect(seenLine(ok("open"), null)).toBe(t.seenUnavailable);
+    expect(seenLine(ok("withdrawn"), [])).toBeNull();
+    expect(seenLine({ kind: "unavailable" }, [])).toBeNull();
   });
 });

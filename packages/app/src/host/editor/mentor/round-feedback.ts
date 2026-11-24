@@ -25,6 +25,17 @@ export function latestReturn(notices: readonly ReturnNotice[], documentId: strin
 export const openRequests = (requests: readonly RevisionRequest[]): number =>
   requests.filter((r) => r.state === "open" || r.state === "reopened").length;
 
+/**
+ * The return still belongs to the round in progress: once the mentor accepted a request on the text after
+ * it, that round was reviewed, so its comment and deadline must not be shown for a later round
+ * (#631 review 2, point 5). null when there is no current return.
+ */
+export function currentReturn(ret: ReturnNotice | null, requests: readonly RevisionRequest[]): ReturnNotice | null {
+  if (ret === null) return null;
+  const reviewedAfter = requests.some((r) => r.versions.some((v) => v.closed?.as === "accepted" && v.closed.window > ret.createdAt));
+  return reviewedAfter ? null : ret;
+}
+
 /** A state in revision takes the deadline (and, without an instruction, the comment) of the latest return. */
 export function withReturn(state: WorkState | null | undefined, ret: ReturnNotice | null): WorkState | null | undefined {
   if (!state || state.kind !== "revise" || ret === null) return state;
