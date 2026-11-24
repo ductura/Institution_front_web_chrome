@@ -63,12 +63,22 @@ describe("assignment form rendering (WEB-2146)", () => {
     expect(html).toContain(f.practice.off);
   });
 
-  it("shows summary-only, external tools and groups as unavailable, never as a working choice", () => {
+  it("offers summary-only and external tools as working choices, and says groups are loading (NZ-3)", () => {
     const html = render("partially_allowed");
     expect(html).toContain(f.rules.aiSummary);
-    expect(html).toContain(f.rules.toolsUnavailable);
-    expect(html).toContain(f.groups.unavailable);
-    expect(html).toMatch(/<input(?=[^>]*value="summary")(?=[^>]*disabled)[^>]*>/);
+    expect(html).toMatch(/<input(?=[^>]*value="summary")(?![^>]*disabled)[^>]*>/);
+    expect(html).toMatch(/<input(?=[^>]*value="no")(?=[^>]*name="tools")(?![^>]*disabled)[^>]*>/);
+    expect(html).toContain(f.groups.loading);
+  });
+
+  it("has the section Pravila predaje with the late rule honestly unavailable (NZ-4)", () => {
+    const html = render("partially_allowed");
+    expect(html).toContain('id="zs-5"');
+    expect(html).toContain(f.sections.submitRules);
+    expect(html).toContain(f.submitRules.lateUnavailable);
+    expect(html).toMatch(/<fieldset[^>]*disabled=""[^>]*><legend>Predaja nakon roka<\/legend>/);
+    expect(html).toMatch(/<input(?=[^>]*name="pr-withdrawal")(?![^>]*disabled)[^>]*>/);
+    expect(html).toContain(`${f.submitRules.seesIntro} ${f.submitRules.seesWithdrawal.on}; ${f.submitRules.seesDeclaration.on}.`);
   });
 
   it("offers only the no-help choice when the course prohibits AI help (D-52)", () => {
