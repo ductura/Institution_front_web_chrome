@@ -6,6 +6,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "./fixtures/test";
 
 const ME = (roles: string[]) => ({ roles, displayName: "Operater A", institution: { slug: "izm", displayName: "Izmišljeni fakultet za testove" } });
+const WARNING = "Za ovog studenta već postoji otvoren zahtjev za izvoz. Novi zahtjev nije zabilježen.";
 const STUDENT = "0b6d6f1e-3c1a-4f7e-9a51-2f4a7d3c9e10";
 const EXPORTS = {
   exports: [
@@ -16,12 +17,16 @@ const EXPORTS = {
   ],
 };
 
+const SHELL = ["/api/v1/notifications", "/api/v1/profile/interface-locale"];
+
 /** The session of `roles`; every other /api/v1 call is counted, so a page that must read nothing can be checked. */
 async function fakeServer(page: Page, roles: string[]) {
   const seen: string[] = [];
   await page.route("**/api/v1/**", (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith("/api/v1/me")) return route.fulfill({ json: ME(roles) });
+    // The shell's own reads (notifications, interface language) are not the page's.
+    if (SHELL.some((path) => url.pathname.endsWith(path))) return route.fulfill({ status: 404, json: { error: "not_found" } });
     seen.push(`${route.request().method()} ${url.pathname}`);
     return route.fulfill({ status: 404, json: { error: "not_found" } });
   });
@@ -108,12 +113,14 @@ for (const width of [390, 1280]) {
     await expect(page.getByText("Preuzet ili istekao: zahtjev je zatvoren", { exact: false })).toBeVisible();
     expect(await serious(page)).toEqual([]);
 
+    await expect(page.getByText("Čeka odobrenje", { exact: true })).toBeVisible();
+    const before = seen.list;
     await requestFor(page, STUDENT);
     await expect(page.getByText("Zahtjev je zabilježen i dodan na popis.")).toBeVisible();
-    await expect.poll(() => seen.list).toBe(2);
+    await expect.poll(() => seen.list).toBe(before + 1);
 
     await requestFor(page, STUDENT.toUpperCase());
-    await expect(page.getByRole("alert")).toHaveText("Za ovog studenta već postoji otvoren zahtjev za izvoz. Novi zahtjev nije zabilježen.");
+    await expect(page.locator("main").getByRole("alert")).toHaveText(WARNING);
     expect(seen.posts).toBe(1);
     expect(await serious(page)).toEqual([]);
   });
@@ -123,11 +130,14 @@ test("OA-6: the server's 409 is the same warning, and the student is then refuse
   await page.emulateMedia({ colorScheme: "dark" });
   const seen = await fakeExports(page, [409]);
   await page.goto("/app/web/ustanova/izvoz-podataka");
+  await expect(page.getByText("Čeka odobrenje", { exact: true })).toBeVisible();
+  const before = seen.list;
   await requestFor(page, STUDENT);
-  await expect(page.getByRole("alert")).toHaveText("Za ovog studenta već postoji otvoren zahtjev za izvoz. Novi zahtjev nije zabilježen.");
+  await expect(page.locator("main").getByRole("alert")).toHaveText(WARNING);
   await requestFor(page, STUDENT);
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.locator("main").getByRole("alert")).toHaveText(WARNING);
   expect(seen.posts).toBe(1);
-  expect(seen.list).toBe(1);
+  // A refused request changes nothing, so the list is not read again.
+  expect(seen.list).toBe(before);
   expect(await serious(page)).toEqual([]);
 });
