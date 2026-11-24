@@ -78,6 +78,7 @@ export function createReadAloud(
     utterance.onend = () => {
       if (mine !== generation) return; // cancelled or replaced: the old reading must stay silent
       callbacks.onChunkEnd?.(chunk, index);
+      if (mine !== generation) return; // the callback stopped or replaced the reading
       index += 1;
       if (index >= queue.length) finish("completed");
       else speakCurrent();
@@ -96,6 +97,7 @@ export function createReadAloud(
       if (chunks.length === 0) return false;
       generation += 1; // invalidates callbacks of the previous reading
       host.speechSynthesis?.cancel();
+      host.speechSynthesis?.resume(); // cancel() and speak() keep a paused synthesiser paused
       queue = chunks;
       index = 0;
       setState("reading");
@@ -116,6 +118,7 @@ export function createReadAloud(
       if (state !== "reading" && state !== "paused") return;
       generation += 1;
       host.speechSynthesis?.cancel();
+      host.speechSynthesis?.resume();
       finish("stopped");
     },
     setRate(next) { rate = clampRate(next); }, // applies from the next chunk
