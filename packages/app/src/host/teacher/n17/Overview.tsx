@@ -6,7 +6,10 @@ import { appHref } from "../../../../../../src/components/shell/nav";
 import { goToSignIn } from "../../../../../../src/client/api";
 import { useHost } from "../../context";
 import { TeacherPage, type TeacherRead } from "../shell/TeacherPage";
-import { afterDeadlineText, loadN17, recordText, revisionText, sortedRows, stateText, summaryLine, timeText, unavailablePort, workHref, type N17Card, type N17Port, type N17Read } from "./model";
+import {
+  afterDeadlineText, cardDeadline, deadlineText, loadN17, recordText, revisionText, sortedRows, stateText, summaryLine, timeText,
+  unavailablePort, workHref, type N17Card, type N17Port, type N17Read,
+} from "./model";
 import { n17Messages as text } from "./messages.hr";
 
 /**
@@ -31,20 +34,31 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
 
   const retry = () => setAttempt((n) => n + 1);
   const teacherRead: TeacherRead<readonly N17Card[]> | null = read === null ? null : read.kind === "ready" ? { kind: "ready", value: read.cards } : { kind: read.kind };
+  const task = (id: string, rest: string) => appHref(base, `/nastavnik/zadatak/${encodeURIComponent(id)}/${rest}`);
+  // NZ-2: the overview of one course (from its card) says so and leads back to all courses.
+  const scope = read?.kind === "ready" && read.course !== undefined ? (
+    <p className="meta">{text.courseScope(read.course)} <a href={appHref(base, "/nastavnik/zbirni")}>{text.allCourses}</a></p>
+  ) : null;
   return (
     <TeacherPage title={text.title} lead={text.lead} loading={text.loading} read={teacherRead} retry={retry}
-      unavailable={text.unavailable} retryLabel={text.retry}
+      unavailable={text.unavailable} retryLabel={text.retry} notice={scope}
       ready={(cards) => cards.length === 0 ? (
         <section className="card center" aria-labelledby="n17-prazno">
           <h2 id="n17-prazno">{text.emptyTitle}</h2>
           <p className="note">{text.emptyBody}</p>
-          <a className="btn" href={appHref(base, "/nastavnik/novi-zadatak")}>{text.emptyAction}</a>
+          <a className="btn" href={appHref(base, "/nastavnik/zadatak/novi")}>{text.emptyAction}</a>
         </section>
       ) : (
         <>
           {cards.map((card) => (
             <section key={card.assignmentId} className="card" aria-labelledby={`n17-${card.assignmentId}`} data-testid="n17-card">
               <h2 id={`n17-${card.assignmentId}`}>{text.cardTitle(card.courseName, card.title)}</h2>
+              {cardDeadline(card, Date.now()) === null ? null : <p className="meta">{cardDeadline(card, Date.now())}</p>}
+              <div className="acts" role="group" aria-label={`${text.taskActions}: ${card.title}`}>
+                <a className="btn secondary small" href={task(card.assignmentId, "predaje")}>{text.submissions}</a>
+                <a className="btn secondary small" href={task(card.assignmentId, "produljenje")}>{text.extension}</a>
+                <a className="btn secondary small" href={task(card.assignmentId, "merlin")}>{text.merlin}</a>
+              </div>
               {card.rows === null ? (
                 <>
                   <p className="note" role="alert">{text.cardUnavailable}</p>
@@ -68,6 +82,7 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
                               <td>{stateText(row)}</td>
                               <td>{timeText(row)}</td>
                               <td>{afterDeadlineText(row)}</td>
+                              <td>{deadlineText(row)}</td>
                               <td>{recordText(row)}</td>
                               <td>{revisionText(row)}</td>
                             </tr>

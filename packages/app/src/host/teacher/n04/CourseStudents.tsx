@@ -7,11 +7,12 @@ import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
 import { TeacherPage, type TeacherRead } from "../shell/TeacherPage";
 import {
-  groupOptions, loadRoster, revisionLine, seminarDocumentId, stateLine, unavailablePort, visibleStudents, workLabel,
+  extensionLine, groupOptions, loadRoster, revisionLine, seminarDocumentId, stateLine, unavailablePort, visibleStudents, workLabel,
   type CourseStudentsPort, type RosterData, type RosterRead,
 } from "./model";
 import { courseStudentsMessages as text } from "./messages.hr";
 import { aggregatePath } from "../course-aggregate/model";
+import { issueCodePath } from "../assignment-card/model";
 import { signInWhenSignedOut } from "./port";
 
 /**
@@ -50,7 +51,7 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
         <section className="card center" aria-labelledby="n04-prazno">
           <h2 id="n04-prazno">{text.emptyTitle}</h2>
           <p className="note">{text.emptyBody}</p>
-          <a className="btn" href={appHref(base, "/nastavnik/kolegiji")}>{text.emptyAction}</a>
+          <a className="btn" href={appHref(base, issueCodePath(courseId))}>{text.emptyAction}</a>
         </section>
       ) : (
         <>
@@ -67,7 +68,8 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
                 {student.works.length === 0 && <span className="note">{text.noWorks}</span>}
                 {student.works.map((work) => {
                   const waits = revisionLine(work);
-                  return <span key={work.assignmentId} className="note" data-testid="n04-work">{workLabel(work)}: {stateLine(work)}.{waits === null ? "" : ` ${waits}`}</span>;
+                  const extended = extensionLine(work);
+                  return <span key={work.assignmentId} className="note" data-testid="n04-work">{workLabel(work)}: {stateLine(work)}.{extended === null ? "" : ` ${extended}`}{waits === null ? "" : ` ${waits}`}</span>;
                 })}
                 {student.works.map((work) => {
                   const doc = seminarDocumentId(work);

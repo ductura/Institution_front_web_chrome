@@ -1,9 +1,12 @@
 "use client";
 
+import { Select } from "@ductura/ui";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { createApi } from "../../../../../../src/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
+import { readTeacherCourses, type TeacherCoursesCall } from "../../../../../../src/components/teacher/teacher-courses-read";
 import { ProcessSummaryView } from "../../../../../../src/components/summary/ProcessSummaryView";
 import { bySurname, fullName, textRuns, type FastPathRecord, type FastPathStudent } from "../../../../../../src/components/teacher/fast-path";
 import { readFastPath } from "../../../../../../src/components/teacher/fast-path/read";
@@ -14,30 +17,66 @@ import { useHost } from "../../context";
 import { TeacherPage, useTeacherRead } from "../../pages";
 import { PageHead } from "../shell/TeacherPage";
 import { fastPathHostText as t } from "./messages.hr";
-import { assignmentOf, detailLines, fastPathRead, stateText, type FastPathAnswer } from "./model";
+import { assignmentOf, detailLines, fastPathPath, fastPathRead, fastPathTasks, stateText, type FastPathAnswer } from "./model";
 
 const fp = messagesHr.fastPath;
 
 /** N-05 "Brz put" (WEB-2142): the works of the assignment in `?zadatak=`, one after another, read only. */
+type Tasks = readonly { value: string; label: string }[];
+
+/** NZ-1: the teacher's assignments for the chooser; null while unread, empty when the read fails or has none. */
+function useTasks(): Tasks | null {
+  const [tasks, setTasks] = useState<Tasks | null>(null);
+  useEffect(() => {
+    let live = true;
+    void readTeacherCourses(createApi() as unknown as TeacherCoursesCall).catch(() => null).then((read) => {
+      if (live) setTasks(read?.kind === "ready" ? fastPathTasks(read.courses, Date.now()) : []);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return tasks;
+}
+
+/** The chooser "Zadatak": a change opens that assignment's works. */
+function TaskChooser({ tasks, current }: { tasks: Tasks; current: string }) {
+  const { base } = useHost();
+  if (tasks.length === 0) return null;
+  return (
+    <div className="card">
+      <Select label={t.task} value={tasks.some((o) => o.value === current) ? current : ""} options={[...tasks]}
+        placeholder={tasks.some((o) => o.value === current) ? undefined : fp.pickAssignment}
+        onChange={(event) => { if (event.target.value !== "") window.location.assign(appHref(base, fastPathPath(event.target.value))); }} />
+    </div>
+  );
+}
+
 export default function FastPathPage({ read = readFastPath }: { read?: (assignmentId: string) => Promise<FastPathAnswer> }) {
-  const assignmentId = assignmentOf(useSearchParams().get("zadatak"));
+  const asked = assignmentOf(useSearchParams().get("zadatak"));
+  const tasks = useTasks();
+  // NZ-1: without `?zadatak=` the first assignment of the teacher's courses is shown, with the chooser.
+  const assignmentId = asked ?? (tasks?.[0]?.value ?? null);
   if (assignmentId === null) {
     return (
       <>
         <PageHead title={t.title} lead={t.lead} />
-        <section className="card"><p className="note" role="status">{fp.pickAssignment}</p></section>
+        <section className="card"><p className="note" role="status">{tasks === null ? t.tasksLoading : fp.pickAssignment}</p></section>
       </>
     );
   }
-  return <AssignmentFastPath key={assignmentId} assignmentId={assignmentId} read={read} />;
+  return <AssignmentFastPath key={assignmentId} assignmentId={assignmentId} read={read}
+    chooser={tasks === null ? null : <TaskChooser tasks={tasks} current={assignmentId} />} />;
 }
 
-function AssignmentFastPath({ assignmentId, read }: { assignmentId: string; read: (id: string) => Promise<FastPathAnswer> }) {
+function AssignmentFastPath({ assignmentId, read, chooser }: {
+  assignmentId: string; read: (id: string) => Promise<FastPathAnswer>; chooser: React.ReactNode;
+}) {
   const { base } = useHost();
   const [answer, retry] = useTeacherRead(base, async () => fastPathRead(await read(assignmentId)));
   return (
     <TeacherPage title={t.title} lead={t.lead} read={answer} retry={retry} unavailable={t.unavailable} retryLabel={t.retry}
-      ready={(students) => <FastPathBody students={students} hrefOf={(path) => appHref(base, path)} />} />
+      notice={chooser} ready={(students) => <FastPathBody students={students} hrefOf={(path) => appHref(base, path)} />} />
   );
 }
 

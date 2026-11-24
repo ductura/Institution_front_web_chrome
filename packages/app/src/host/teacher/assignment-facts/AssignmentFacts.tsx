@@ -13,6 +13,7 @@ import { useHost } from "../../context";
 import cardStyles from "../assignment-card/AssignmentCards.module.css";
 import { assignmentCardMessages as card } from "../assignment-card/messages.hr";
 import { dueText } from "../assignment-card/model";
+import { TaskActions } from "../assignment-card/AssignmentCards";
 import { usePractice } from "../assignment-card/practice";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { assignmentFactsMessages as text } from "./messages.hr";
@@ -66,12 +67,11 @@ function Facts({ reads }: { reads: AssignmentReads }) {
 
 /** The tasks of one course card (N-01 korak A i B): title, deadline, facts and a row per student. */
 export function CourseTasks({ course }: { course: TeacherCourse }) {
-  const { base } = useHost();
   const [read, retry] = useCourseFacts(course);
   const practice = usePractice(course.assignments);
   return (
     <>
-      {course.assignments.map((assignment, index) => (
+      {course.assignments.map((assignment) => (
         <div key={assignment.id} className={cardStyles.task}>
           <h3>{assignment.title}</h3>
           <p className="meta">{card.due} {dueText(assignment.dueAt)}{Date.parse(assignment.dueAt) < Date.now() ? ` · ${text.deadlinePassed}` : ""}{" "}
@@ -85,9 +85,7 @@ export function CourseTasks({ course }: { course: TeacherCourse }) {
             </div>
           ) : read.reads.get(assignment.id) ? <Facts reads={read.reads.get(assignment.id) as AssignmentReads} /> : null}
           <AssignmentRhythm courseId={course.id} assignmentId={assignment.id} title={assignment.title} />
-          {index === 0 ? (
-            <div className="acts"><a className="btn small" href={appHref(base, "/nastavnik/brz-put")}>{text.fastPath}</a></div>
-          ) : null}
+          <TaskActions assignment={assignment} />
         </div>
       ))}
     </>

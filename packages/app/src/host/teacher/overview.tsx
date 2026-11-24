@@ -2,35 +2,96 @@
 
 // HOST-T3 (graditelj, 20. 11. 2026.): the teacher's overviews in the host,
 // read only through src/client. N-17 "Zbirni" (teacher.assignment-overview.get,
-// handler SRV-29) and N-13 "Produljenje roka" (WEB-1113 over SRV-1108). A read
-// that fails is said as such, never shown as an empty list.
+// handler SRV-29, joined in WEB-NUZ-NZ NZ-10 with teacher.course-students.get,
+// teacher.submissions.get and teacher.deadline-extensions.get) and N-13
+// "Produljenje roka" (WEB-1113 over SRV-1108). A read that fails is said as
+// such, never shown as an empty list.
+import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
+
 import { appHref, readTeacherCourses, type TeacherCoursesCall } from "../../../../../src/components/index.ts";
 import { createApi } from "../../../../../src/client/api.ts";
 import { readDeadlineExtensions, readExtensionStudents, recordDeadlineExtension } from "../../../../../src/client/deadline-extensions.ts";
 import { readAssignmentOverview, type TeacherCall } from "../../../../../src/client/teacher-reads.ts";
 
 import N17Overview from "./n17/Overview";
-import type { N17Port, N17Read } from "./n17/model";
+import { joinRows, type N17Port, type N17Read, type RowJoin } from "./n17/model";
 import N13Extensions from "./n13/Extensions";
 import type { N13Port, N13Read } from "./n13/model";
 
-/** N-17 reads teacher.courses.get and then the overview of every assignment; one failed assignment fails only its card. */
-const n17Port: N17Port = {
-  async read(): Promise<N17Read> {
-    const courses = await readTeacherCourses(createApi() as unknown as TeacherCoursesCall);
-    if (courses.kind === "signedOut") return { kind: "signedOut" };
-    if (courses.kind !== "ready") return { kind: "unavailable" };
-    const cards = await Promise.all(courses.courses.flatMap((course) => course.assignments.map(async (a) => {
-      const overview = await readAssignmentOverview(createApi() as unknown as TeacherCall, a.id);
-      return { assignmentId: a.id, title: a.title, courseName: course.name, rows: overview.kind === "ready" ? overview.rows : null };
-    })));
-    return { kind: "ready", cards };
-  },
-};
+export type OverviewCall = ReturnType<typeof createApi>;
+/** `?kolegij=` and `?zadatak=` of the page: the overview of one course or one assignment (NZ-2). */
+export type OverviewScope = { readonly course: string | null; readonly task: string | null };
+const none = { query: undefined, body: undefined } as const;
 
-/** N-17 "Zbirni pregled" (WEB-2149): a card per assignment, see ./n17. */
+/** teacher.course-students.get of one course, as the works of each assignment by student; null when it fails. */
+async function courseWorks(call: OverviewCall, courseId: string): Promise<ReadonlyMap<string, NonNullable<RowJoin["works"]>> | null> {
+  const answer = await call("teacher.course-students.get", { params: { courseId }, ...none }).catch(() => null);
+  if (answer === null || !answer.ok) return null;
+  const byTask = new Map<string, Map<string, { state: "not_started" | "in_progress" | "submitted"; documentId: string | null }>>();
+  for (const student of answer.body.students) {
+    for (const work of student.assignments) {
+      const map = byTask.get(work.assignmentId) ?? new Map();
+      map.set(student.studentId, { state: work.workState, documentId: work.documentId });
+      byTask.set(work.assignmentId, map);
+    }
+  }
+  return byTask;
+}
+
+/** teacher.submissions.get of one assignment, by student; null when it fails. */
+async function submissionsOf(call: OverviewCall, assignmentId: string): Promise<RowJoin["submissions"]> {
+  const answer = await call("teacher.submissions.get", { params: { assignmentId }, ...none }).catch(() => null);
+  if (answer === null || !answer.ok) return null;
+  return new Map(answer.body.submissions.map((s) => [s.studentId, { revision: s.revision, documentId: s.documentId }]));
+}
+
+/**
+ * N-17 reads teacher.courses.get and then, per assignment, the overview (the rows) joined with the course's
+ * students, the submissions and the extensions (NZ-10). One failed overview fails only its card; another
+ * failed read only leaves its fields as "nedostupno". An unknown `?kolegij=` shows every course.
+ */
+export function overviewPort(scope: OverviewScope = { course: null, task: null }, client: () => OverviewCall = () => createApi()): N17Port {
+  return {
+    async read(): Promise<N17Read> {
+      const call = client();
+      const courses = await readTeacherCourses(call as unknown as TeacherCoursesCall);
+      if (courses.kind === "signedOut") return { kind: "signedOut" };
+      if (courses.kind !== "ready") return { kind: "unavailable" };
+      const one = courses.courses.find((c) => c.id === scope.course);
+      const chosen = one === undefined ? courses.courses : [one];
+      const now = Date.now();
+      const cards = await Promise.all(chosen.flatMap((course) => {
+        const works = courseWorks(call, course.id);
+        const tasks = course.assignments.filter((a) => scope.task === null || a.id === scope.task);
+        return (tasks.length === 0 ? course.assignments : tasks).map(async (a) => {
+          const [overview, byTask, submissions, extensions] = await Promise.all([
+            readAssignmentOverview(call as unknown as TeacherCall, a.id), works, submissionsOf(call, a.id), readDeadlineExtensions(call, a.id),
+          ]);
+          const join: RowJoin = {
+            dueAt: a.dueAt,
+            works: byTask === null ? null : byTask.get(a.id) ?? new Map(),
+            submissions,
+            extensions: extensions.kind === "ready" ? extensions.extensions : null,
+          };
+          return {
+            assignmentId: a.id, title: a.title, courseName: course.name, courseId: course.id, dueAt: a.dueAt,
+            rows: overview.kind === "ready" ? joinRows(overview.rows, join, now) : null,
+          };
+        });
+      }));
+      return { kind: "ready", cards, ...(one === undefined ? {} : { course: one.name }) };
+    },
+  };
+}
+
+/** N-17 "Zbirni pregled" (WEB-2149): a card per assignment, see ./n17; `?kolegij=` narrows it to one course (NZ-2). */
 export function AssignmentOverviewPage() {
-  return <N17Overview port={n17Port} />;
+  const query = useSearchParams();
+  const course = query.get("kolegij");
+  const task = query.get("zadatak");
+  const port = useMemo(() => overviewPort({ course, task }), [course, task]);
+  return <N17Overview port={port} />;
 }
 
 /** N-13 reads the extensions, the students and the task facts of teacher.courses.get; a part that fails is "unavailable", never empty. */
