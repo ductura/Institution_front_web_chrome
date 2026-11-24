@@ -69,6 +69,8 @@ export function createEditorReading(editor: EditorLike, speech: SpeechHost = glo
       }
       source = next;
       notice = null;
+      // cancel() and speak() keep a paused synthesiser paused: wake it, or the new reading would stay silent.
+      if (controller.state === "paused") speech.speechSynthesis?.resume();
       const started = controller.start(next.text);
       if (!started) { source = null; notice = "noText"; }
       emit();
@@ -76,7 +78,12 @@ export function createEditorReading(editor: EditorLike, speech: SpeechHost = glo
     },
     pause() { controller.pause(); emit(); },
     resume() { controller.resume(); emit(); },
-    stop() { controller.stop(); emit(); },
+    stop() {
+      const wasPaused = controller.state === "paused";
+      controller.stop();
+      if (wasPaused) speech.speechSynthesis?.resume(); // the next reading must not start paused
+      emit();
+    },
     snapshot: () => snap,
     subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; },
   };
@@ -111,9 +118,16 @@ export function ReadAloudHost() {
       const state = reading.snapshot().state;
       if (event.key === "Escape" && (state === "reading" || state === "paused")) reading.stop();
     };
+    // The read positions are those of the text when reading began: an edit ends the reading instead of highlighting stale text.
+    const onUpdate = () => {
+      const state = reading.snapshot().state;
+      if (state === "reading" || state === "paused") reading.stop();
+    };
     window.addEventListener("keydown", onKey);
+    editor.on("update", onUpdate);
     return () => {
       window.removeEventListener("keydown", onKey);
+      editor.off("update", onUpdate);
       reading.stop();
       if (!editor.isDestroyed) editor.unregisterPlugin(READ_ALOUD_KEY);
     };

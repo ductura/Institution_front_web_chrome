@@ -101,6 +101,19 @@ describe("reading in the editor", () => {
     expect(reading.snapshot()).toMatchObject({ state: "idle", notice: "stopped" });
     expect(READ_ALOUD_KEY.getState(editor.state)!.find().length).toBe(0);
   });
+  it("wakes a paused synthesiser when a new reading starts or the paused one is stopped", () => {
+    const { editor } = fakeEditor(3);
+    const { host, calls } = fakeSpeech();
+    const reading = createEditorReading(editor as never, host);
+    reading.read("paragraph");
+    reading.pause();
+    reading.read("work"); // another scope while paused
+    expect(calls.slice(calls.indexOf("pause"))).toEqual(["pause", "resume", "cancel", "speak"]);
+    reading.pause();
+    calls.length = 0;
+    reading.stop();
+    expect(calls).toEqual(["cancel", "resume"]);
+  });
   it("shows a message, not an error, in an unsupported browser", () => {
     const { editor } = fakeEditor(3);
     const reading = createEditorReading(editor as never, {});
