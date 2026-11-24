@@ -1,8 +1,9 @@
 "use client";
 
-import type { ComponentProps, ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 
 import { useLocalSaveRead, useLocalStatus } from "./LocalDocument";
+import { levelAnnouncement, saveLevelOf, waitingText, type SaveLevel } from "./save-level";
 import StatusBar, { statusSaveOf } from "./StatusBar";
 
 /**
@@ -14,17 +15,22 @@ import StatusBar, { statusSaveOf } from "./StatusBar";
  * state without it, such as one read back from the journal, shows as saved
  * on the device. Without `evidence` the local saver never sends and nothing
  * is verified.
+ *
+ * With `online` (ED-01c, NF2-P2): only a change of level is announced, and
+ * offline the chip says how many changes wait (`pending`, from the journal).
  */
 export default function StatusBarLive({
   evidence,
   length,
   online,
+  pending = null,
   liveWords = false,
   children,
 }: {
   evidence: boolean;
   length?: ComponentProps<typeof StatusBar>["length"];
   online?: boolean;
+  pending?: number | null;
   /** Count the words of the open text live instead of taking `length.words` (the host passes null). */
   liveWords?: boolean;
   children?: ReactNode;
@@ -35,5 +41,23 @@ export default function StatusBarLive({
   const save = online !== undefined && phase === "unavailable"
     ? { state: "ERROR", receiptSigned: false, blocked: false } as const
     : statusSaveOf({ phase, state, receiptVerifiedHere: evidence && receiptVerified });
-  return <StatusBar save={save} length={shown} online={online}>{children}</StatusBar>;
+  const level = saveLevelOf(save, online);
+  const said = useLevelAnnouncement(level);
+  return (
+    <StatusBar save={save} length={shown} online={online} said={said}
+      waiting={pending !== null && pending > 0 ? waitingText(pending) : null}>{children}</StatusBar>
+  );
+}
+
+/** The last change of level, as said; the level the page opens on is not announced. */
+function useLevelAnnouncement(level: SaveLevel | null): string | null {
+  const lastRef = useRef<SaveLevel | null>(null);
+  const [said, setSaid] = useState<string | null>(null);
+  useEffect(() => {
+    if (level === null) return;
+    const text = levelAnnouncement(lastRef.current, level);
+    lastRef.current = level;
+    if (text !== null) setSaid(text);
+  }, [level]);
+  return said;
 }

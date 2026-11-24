@@ -1,5 +1,6 @@
 export const editorNoticesHr = {
   resumeSync: "Slanje na poslužitelj nastavlja se kad se mreža vrati.",
+  reconnected: "Veza je vraćena.",
   outline: "Prikaz samo naslova. Pisanje je isključeno dok je ovaj prikaz uključen.",
   resume: "Nastavi pisati",
   chapter: "Prikazano samo poglavlje „{title}”.",

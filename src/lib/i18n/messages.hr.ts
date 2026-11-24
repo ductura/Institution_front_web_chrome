@@ -1098,6 +1098,17 @@ export const hr = {
     scopeMax: "opseg najviše {max}",
     scopePrivate: "vidite samo Vi",
     readOnly: "Samo za čitanje",
+    saveLevel: {
+      device: "Spremljeno na uređaju.",
+      server: "Spremljeno na poslužitelju.",
+      error: "Slanje je zaustavljeno. Tekst je na uređaju.",
+      conflict: "Sukob: tekst ostaje na uređaju.",
+      offline: "Izvan mreže. Tekst se sprema na uređaju.",
+    },
+    waiting: "čeka slanje: {n}",
+    reconnectSending: "Šalje se {n}.",
+    reconnectSendingText: "Šalje se tekst s ovog uređaja.",
+    offlineWaiting: "Čeka slanje: {n}.",
   },
   editor: {
     placeholder: "Počnite pisati…",

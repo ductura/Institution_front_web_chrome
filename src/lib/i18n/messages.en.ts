@@ -1041,6 +1041,17 @@ const en = {
     scopeMax: "length at most {max}",
     scopePrivate: "only you see this",
     readOnly: "Read only",
+    saveLevel: {
+      device: "Saved on this device.",
+      server: "Saved on the server.",
+      error: "Sending has stopped. The text is on this device.",
+      conflict: "Conflict: the text stays on this device.",
+      offline: "Offline. The text is saved on this device.",
+    },
+    waiting: "waiting to be sent: {n}",
+    reconnectSending: "Sending {n}.",
+    reconnectSendingText: "Sending the text from this device.",
+    offlineWaiting: "Waiting to be sent: {n}.",
   },
   editor: {
     placeholder: "Start writing…",
