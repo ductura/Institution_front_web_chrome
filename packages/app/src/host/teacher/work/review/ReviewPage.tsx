@@ -14,6 +14,8 @@ import ProvenanceMap from "../../provenance/ProvenanceMap";
 import type { ProvenanceCall } from "../../provenance/read";
 import { isSubmitted } from "../../n06/model";
 import ProcessOverview from "./ProcessOverview";
+import { realExtras, type ReviewExtras } from "./extras";
+import { Composition, Given, Notes, Places } from "./PgSections";
 import { contextLine, DEFAULT_TAB, gradeNote, headingOf, reviewPath, stateOf, tabOf, taskPath, type TabId } from "./model";
 import { reviewReads, type HeaderRead, type ReviewReads } from "./read";
 import { reviewMessages as t } from "./messages.hr";
@@ -27,9 +29,9 @@ const firstTab = (): TabId => (typeof window === "undefined" ? DEFAULT_TAB : tab
  * it the views of the work are tabs. The open tab is kept in the address, so "Prethodni/Sljedeći rad" open the
  * other work on the same tab. Read only: nothing here writes, and no mark goes into a grade (the grade is in Merlin and Studomat).
  */
-export default function ReviewPage({ documentId, current = ALWAYS, reads: given, matchCall, provenanceCall, declarationPort }: {
+export default function ReviewPage({ documentId, current = ALWAYS, reads: given, matchCall, provenanceCall, declarationPort, extras = realExtras }: {
   documentId: string; current?: () => boolean; reads?: ReviewReads; matchCall?: MatchCall;
-  provenanceCall?: ProvenanceCall; declarationPort?: DeclarationPort;
+  provenanceCall?: ProvenanceCall; declarationPort?: DeclarationPort; extras?: ReviewExtras;
 }) {
   const { base } = useHost();
   const reads = useMemo(() => given ?? reviewReads(current), [given, current]);
@@ -78,14 +80,20 @@ export default function ReviewPage({ documentId, current = ALWAYS, reads: given,
     { id: "tekst", label: t.tabText, content: view(t.tabText, <>
       <p className="note">{t.textNote}</p>
       <p><a href={workHref}>{t.textOpen}</a></p>
+      <Given documentId={documentId} extras={extras} />
     </>) },
     { id: "sazetak", label: t.tabSummary, content: view(t.tabSummary,
       <ProcessOverview documentId={documentId} reads={reads} matchCall={matchCall} summaryHref={`${workHref}/sazetak`}
         declarationHref={appHref(base, reviewPath(workPath, "izjava"))} />) },
-    { id: "podrijetlo", label: t.tabOrigin, content: <ProvenanceMap documentId={documentId} call={provenanceCall} matchCall={matchCall} /> },
+    { id: "podrijetlo", label: t.tabOrigin, content: <>
+      <ProvenanceMap documentId={documentId} call={provenanceCall} matchCall={matchCall} />
+      <Composition documentId={documentId} extras={extras} />
+      <Notes documentId={documentId} extras={extras} />
+    </> },
     { id: "reprodukcija", label: t.tabReplay, content: view(t.tabReplay, <>
       <p className="note">{t.replayNote}</p>
       <p><a href={`${workHref}/reprodukcija`}>{t.replayOpen}</a></p>
+      <Places documentId={documentId} reads={reads} replayHref={`${workHref}/reprodukcija`} />
     </>) },
     { id: "usporedba", label: t.tabCompare, content: view(t.tabCompare, submitted ? <>
       <p className="note">{t.compareNote}</p>

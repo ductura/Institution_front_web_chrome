@@ -10,6 +10,7 @@ import { AssignmentCopy } from "../assignment-copy/AssignmentCopy";
 import { NoticePreview } from "../publish/NoticePreview";
 import { PracticeReadBack } from "../assignment-form/PracticeField";
 import { AssignmentPage, useAssignmentRead } from "./page-state";
+import SubmissionRulesLive from "./SubmissionRulesLive";
 
 const t = messagesHr.teacher.newVersion;
 
@@ -26,6 +27,7 @@ export default function AssignmentVersionPage({ assignmentId }: { assignmentId: 
         <NoticePreview fields={{ versionNo: current.versionNo, dueAt: current.dueAt, aiPolicy: current.aiPolicy, aiPurposes: current.aiPurposes, importAllowed: current.importAllowed, wordMin: current.wordMin ?? null, wordMax: current.wordMax ?? null }} />
         <PracticeReadBack current={current} />
         <AssignmentVersionForm current={current} backHref={href("/nastavnik")} onReload={retry} />
+        <SubmissionRulesLive assignmentId={assignmentId} />
       </>}
     </AssignmentPage>
   );
