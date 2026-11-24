@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, DataTable, type DataTableColumn } from "@ductura/ui";
+import { Button, type DataTableColumn } from "@ductura/ui";
 import { useEffect, useState, type ReactNode } from "react";
 
 import type { ListOutcome } from "../../../../../../../src/client/comments";
@@ -11,6 +11,7 @@ import { givenRows, hasUnknown, compositionRows, importantPlaces, noteRows, type
 import { pgMessages as t } from "./pg-messages.hr";
 import type { ReviewReads } from "./read";
 import type { ReviewExtras } from "./extras";
+import { CardTable } from "./CardTable";
 
 /** Reads once per key; a retry reads again. A read that throws is an error, never a blank. */
 function useRead<T>(read: () => Promise<T>, key: string, failed: T): [T | null, () => void] {
@@ -47,7 +48,7 @@ export function CompositionView({ read, onRetry }: { read: OriginRead | null; on
   else if (read.kind === "unavailable") body = <><p className="note" role="alert">{t.compositionUnavailable}</p><Retry onRetry={onRetry} /></>;
   else body = (
     <>
-      <DataTable caption={t.compositionCaption} columns={COMPOSITION_COLUMNS} rows={compositionRows(read.composition)} rowKey={(row) => row.kind} empty={t.compositionEmpty} />
+      <CardTable caption={t.compositionCaption} columns={COMPOSITION_COLUMNS} rows={compositionRows(read.composition)} rowKey={(row) => row.kind} empty={t.compositionEmpty} />
       {hasUnknown(read.composition) && <p className="note" data-unknown-notice>{t.unknownNotice}</p>}
     </>
   );
@@ -88,7 +89,7 @@ export function NotesView({ read, onRetry }: { read: DisputeListOutcome | null; 
   else body = (
     <>
       <p>{t.notesCount(read.disputes.length)}</p>
-      <DataTable caption={t.notesCaption} columns={NOTE_COLUMNS} rows={noteRows(read.disputes)} rowKey={(row) => row.key} empty={t.notesNone} />
+      <CardTable caption={t.notesCaption} columns={NOTE_COLUMNS} rows={noteRows(read.disputes)} rowKey={(row) => row.key} empty={t.notesNone} />
     </>
   );
   return (
@@ -133,7 +134,7 @@ export function Places({ documentId, reads, replayHref }: { documentId: string; 
       <>
         {!detailsOk && <><p className="note" role="alert" data-details-unavailable>{t.placesDetailsUnavailable}</p><Retry onRetry={retryDetails} /></>}
         {rows.length === 0 ? (detailsOk ? <p className="note">{t.placesNone}</p> : null)
-          : <DataTable caption={t.placesCaption} columns={PLACE_COLUMNS(replayHref)} rows={rows} rowKey={(row) => row.key} empty={t.placesNone} />}
+          : <CardTable caption={t.placesCaption} columns={PLACE_COLUMNS(replayHref)} rows={rows} rowKey={(row) => row.key} empty={t.placesNone} />}
       </>
     );
   } else body = null;
@@ -168,7 +169,7 @@ export function GivenView({ comments, drafts, onRetry }: { comments: ListOutcome
       <>
         {drafts.kind === "unavailable" && <><p className="note" role="alert">{t.givenUnavailable}</p><Retry onRetry={onRetry} /></>}
         {rows.length === 0 ? <p className="note">{t.givenNone}</p>
-          : <DataTable caption={t.givenCaption} columns={GIVEN_COLUMNS} rows={rows} rowKey={(row) => row.key} empty={t.givenNone} />}
+          : <CardTable caption={t.givenCaption} columns={GIVEN_COLUMNS} rows={rows} rowKey={(row) => row.key} empty={t.givenNone} />}
       </>
     );
   }
