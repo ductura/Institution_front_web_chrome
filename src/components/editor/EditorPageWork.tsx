@@ -17,7 +17,6 @@
 import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 
-import { signInHref } from "@/client/api";
 import { openWork, type OpenOutcome } from "@/client/evidence-ingest";
 import { useOnline } from "@/client/online-status";
 import type { SessionMark } from "@/client/session-marks";
@@ -25,6 +24,7 @@ import SessionObserver from "@/components/shell/SessionObserver";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import EditorPage, { SheetNote } from "./EditorPage";
+import { openFailureExit, openFailureText, type OpenFailure } from "./open-failure";
 import { readJournalScope, type ScopeRead } from "./EditorPage.scope";
 import EditorToolbar from "./EditorToolbar";
 import type { FootnoteDialogComponent } from "./footnotes/useV3EditorDialogs";
@@ -71,10 +71,10 @@ export type HostSections = {
 export type OpenRead =
   | { readonly kind: "opening" }
   | { readonly kind: "ready"; readonly documentId: string; readonly scope: string; readonly session: SessionMark; readonly schemaVersion?: number }
-  | { readonly kind: "signedOut" }
-  | { readonly kind: "closed" }
-  | { readonly kind: "reload" }
-  | { readonly kind: "unavailable" };
+  /** ED-01b: the cause of a failed open, said with its one way out. */
+  | { readonly kind: "failed"; readonly failure: OpenFailure };
+
+const failed = (failure: OpenFailure): OpenRead => ({ kind: "failed", failure });
 
 /** What the page does with one answer of the open route, under the person's journal scope and session. */
 export function openReadOf(outcome: OpenOutcome, scope: string, session: SessionMark): OpenRead {
@@ -83,14 +83,15 @@ export function openReadOf(outcome: OpenOutcome, scope: string, session: Session
       return { kind: "ready", documentId: outcome.work.documentId, scope, session,
         ...(outcome.work.schemaVersion === undefined ? {} : { schemaVersion: outcome.work.schemaVersion }) };
     case "unauthenticated":
-      return { kind: "signedOut" };
+      return failed("signedOut");
     case "not_found":
+      return failed("missing");
     case "not_accepting":
-      return { kind: "closed" };
+      return failed("closed");
     case "upgrade_required":
-      return { kind: "reload" };
-    default:
-      return { kind: "unavailable" };
+      return failed("reload");
+    case "unavailable":
+      return failed(outcome.offline ? "offline" : "server");
   }
 }
 
@@ -107,28 +108,35 @@ const LIVE_READERS: WorkReaders = { readScope: () => readJournalScope(), open: (
  */
 export async function readWork(assignmentId: string, readers: WorkReaders = LIVE_READERS): Promise<OpenRead> {
   const scope = await readers.readScope().catch((): ScopeRead => ({ kind: "unavailable" }));
-  if (scope.kind === "signedOut") return { kind: "signedOut" };
-  if (scope.kind !== "scope") return { kind: "unavailable" };
+  // A sign-in without a journal scope cannot open a work: the way out is to sign in again (NF2-P1).
+  if (scope.kind === "signedOut" || scope.kind === "noScope") return failed("signedOut");
+  if (scope.kind === "unavailable") return failed(scope.offline ? "offline" : "server");
   const outcome = await readers.open(assignmentId).catch((): OpenOutcome => ({ status: "unavailable" }));
   return openReadOf(outcome, scope.scope, scope.session);
 }
 
-function Note({ read, here }: { read: Exclude<OpenRead, { kind: "ready" }>; here: string }) {
+/**
+ * ED-01b: the opening note, or the cause of a failed open in `role="alert"` with
+ * its one way out. The frame says the same sentence for the same cause.
+ */
+function Note({ read, assignmentId, base, onRetry }: {
+  read: Exclude<OpenRead, { kind: "ready" }>; assignmentId: string; base: string; onRetry: () => void;
+}) {
   if (read.kind === "opening") return <SheetNote>{t.workspace.openLoading}</SheetNote>;
-  if (read.kind === "signedOut") {
-    return (
-      <SheetNote>
-        {t.auth.signedOutElsewhere} <a href={signInHref(here)}>{t.auth.signInAgain}</a>
-      </SheetNote>
-    );
-  }
-  if (read.kind === "reload") return <SheetNote>{t.workspace.openReload}</SheetNote>;
-  if (read.kind === "closed") return <SheetNote>{t.workspace.openNotAccepting}</SheetNote>;
-  return <SheetNote>{t.workspace.openError}</SheetNote>;
+  const exit = openFailureExit(read.failure, { assignmentId, base });
+  return (
+    <div role="alert" data-open-failure={read.failure}>
+      <p>{openFailureText(read.failure)}</p>
+      {exit.kind === "link"
+        ? <a className="btn" href={exit.href}>{exit.label}</a>
+        : <button type="button" className="btn" onClick={exit.kind === "retry" ? onRetry : () => globalThis.location.reload()}>{exit.label}</button>}
+    </div>
+  );
 }
 
 export default function EditorPageWork({
   assignmentId,
+  base = "",
   course,
   title,
   topBar,
@@ -145,6 +153,8 @@ export default function EditorPageWork({
   toolbar,
 }: {
   assignmentId: string;
+  /** The host's base path, for the links of a failed open (ED-01b); "" at the root. */
+  base?: string;
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -171,18 +181,20 @@ export default function EditorPageWork({
   toolbar?: ToolbarSlot;
 }) {
   const [read, setRead] = useState<OpenRead>({ kind: "opening" });
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let live = true;
+    if (attempt > 0) setRead({ kind: "opening" });
     void readWork(assignmentId)
-      .catch((): OpenRead => ({ kind: "unavailable" }))
+      .catch((): OpenRead => failed("server"))
       .then((next) => { if (live) setRead(next); });
     return () => { live = false; };
-  }, [assignmentId]);
+  }, [assignmentId, attempt]);
 
   if (read.kind !== "ready") {
     return (
       <EditorPage course={course} title={title} topBar={topBar} status={<StatusBar save={null} length={length} />}>
-        <Note read={read} here={`/rad/${assignmentId}`} />
+        <Note read={read} assignmentId={assignmentId} base={base} onRetry={() => setAttempt((n) => n + 1)} />
       </EditorPage>
     );
   }

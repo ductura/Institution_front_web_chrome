@@ -10,6 +10,7 @@ import { useOnline } from "../../../../../../src/client/online-status.ts";
 import statusStyles from "../../../../../../src/components/editor/StatusBar.module.css";
 import { scopeLine, type ScopeRange } from "../../../../../../src/components/editor/StatusBar.tsx";
 import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
+import { openFailureExit, openFailureText } from "../../../../../../src/components/editor/open-failure.ts";
 
 import { workText } from "./messages.hr";
 import styles from "./frame.module.css";
@@ -57,12 +58,17 @@ export function LoadingCard() {
   );
 }
 
-/** E-7 `greska`: the alert and the way to try again. */
-export function ErrorCard({ onRetry }: { onRetry: () => void }) {
+/**
+ * E-7 `greska`: the cause in `role="alert"` and its way out (ED-01b). The frame
+ * reads no work yet, so its causes are the network and the server; the sheet
+ * of the editor says the same sentence for the same cause.
+ */
+export function ErrorCard({ failure = "server", onRetry }: { failure?: "offline" | "server"; onRetry: () => void }) {
+  const exit = openFailureExit(failure, { assignmentId: "" });
   return (
-    <div className={styles.banner} role="alert">
-      <p>{workText.errorBanner}</p>
-      <div><Button tone="secondary" size="small" onClick={onRetry}>{workText.retry}</Button></div>
+    <div className={styles.banner} role="alert" data-open-failure={failure}>
+      <p>{openFailureText(failure)}</p>
+      <div><Button tone="secondary" size="small" onClick={onRetry}>{exit.label}</Button></div>
     </div>
   );
 }

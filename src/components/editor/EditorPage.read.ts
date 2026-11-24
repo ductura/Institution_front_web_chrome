@@ -52,3 +52,12 @@ export function editorWorkRead(assignmentId: string, assignments: Answer<Assignm
   }
   return { kind: "notFound" };
 }
+
+/**
+ * ED-01b: why the frame could not read the work. No answer from either read is
+ * the network; any other unusable answer is the server's. Signed out and not
+ * found never reach here: the page leaves for the sign-in or the 404.
+ */
+export function frameFailureOf(assignments: { readonly status: number }, work: { readonly status: number }): "offline" | "server" {
+  return assignments.status === 0 || work.status === 0 ? "offline" : "server";
+}

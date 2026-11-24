@@ -13,7 +13,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { appHref } from "../../../../../src/components/index.ts";
 import EditorPage, { SheetNote } from "../../../../../src/components/editor/EditorPage.tsx";
-import { editorWorkRead } from "../../../../../src/components/editor/EditorPage.read.ts";
+import { editorWorkRead, frameFailureOf } from "../../../../../src/components/editor/EditorPage.read.ts";
 import EditorPageWork from "../../../../../src/components/editor/EditorPageWork.tsx";
 import { ReadOnlyMentor } from "../../../../../src/components/editor/mentor/work-state/ReadOnlyMentor.tsx";
 import { readSubmittedWork } from "../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
@@ -109,7 +109,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       if (read.kind === "ready" && frame.variant === "puno") {
         return setShown({
           kind: "page",
-          node: <EditorPageWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={topBar} length={length}
+          node: <EditorPageWork assignmentId={assignmentId} base={base} course={read.course} title={read.title} topBar={topBar} length={length}
             statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
             toolbar={(ctx) => <StudentToolbar {...ctx} />} useSupplements={useRehearsalSupplements}
             triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
@@ -151,7 +151,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             banner={frame.variant === "predano"
               ? <Banner lead={submittedAt === null ? undefined : workText.submittedLead.replace("{at}", submittedAt)}>{workText.submittedBody}</Banner>
               : frame.variant === "greska" ? null : <OfflineBanner />}
-            stand={frame.variant === "greska" ? <ErrorCard onRetry={() => setAttempt((n) => n + 1)} /> : undefined}
+            stand={frame.variant === "greska" ? <ErrorCard failure={frameFailureOf(assignments, work)} onRetry={() => setAttempt((n) => n + 1)} /> : undefined}
             status={frame.variant === "greska"
               ? <FrameStatus chip={<SaveState state="ERROR" label={workText.errorStatus} />} />
               : frame.variant === "prazno"

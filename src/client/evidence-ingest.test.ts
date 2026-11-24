@@ -423,8 +423,8 @@ describe("F-8 3c: the open route", () => {
     expect(await openWork(ASSIGNMENT, scripted(json(http, body)).fetchImpl)).toEqual({ status });
   });
 
-  it("no network is unavailable", async () => {
-    expect(await openWork(ASSIGNMENT, scripted(new TypeError("offline")).fetchImpl)).toEqual({ status: "unavailable" });
+  it("no network is unavailable and says so (ED-01b: the page offers to try again)", async () => {
+    expect(await openWork(ASSIGNMENT, scripted(new TypeError("offline")).fetchImpl)).toEqual({ status: "unavailable", offline: true });
   });
 });
 
