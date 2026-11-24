@@ -1,12 +1,12 @@
 "use client";
 
-import { Button, PracticeBadge, Tag } from "@ductura/ui";
+import { Button, PracticeBadge, Select, Tag } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { appHref } from "../../../../../../src/components/index.ts";
-import type { MyCourse } from "../../../../../../src/components/student/my-assignments-read.ts";
-import { readMyWorks, type WorksRead } from "../../../../../../src/components/student/radovi/works-read.ts";
+import type { MyCourse } from "../read/assignments.ts";
+import { readMyWorks, type WorksRead } from "../read/works.ts";
 import { createApi, signInHref } from "../../../../../../src/client/api.ts";
 
 import { nextPath, type Base } from "../../../bases";
@@ -16,7 +16,7 @@ import { CodeCard, CodeForm } from "./CodeForm";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
-import { continueRow, deadlineTag, flatRows, nearTag, rowAction, rowRoute, type RowKind, type TaskRow } from "./model";
+import { continueRow, coursesWithoutTask, deadlineTag, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, startsWork, type Order, type RowKind, type TaskRow } from "./model";
 
 const dueText = protoDateTime;
 
@@ -78,14 +78,18 @@ function Empty() {
   );
 }
 
-function CourseWithoutTask({ course }: { course: MyCourse }) {
+/** P-12: every course without a task, each with its message, then the one code card. */
+function CoursesWithoutTask({ courses }: { courses: readonly MyCourse[] }) {
   return (
     <>
-      <div className={styles.course}>
-        <span className={styles.eyebrow}>{t.courseLabel}</span>
-        <h2>{course.name}</h2>
-        <p className={styles.note}>{t.noTask}</p>
-      </div>
+      {courses.length > 1 ? <h2 className={styles.hidden}>{t.coursesWithoutTask}</h2> : null}
+      {courses.map((course) => (
+        <div className={styles.course} key={course.id}>
+          <span className={styles.eyebrow}>{t.courseLabel}</span>
+          <h2>{course.name}</h2>
+          <p className={styles.note}>{t.noTask}</p>
+        </div>
+      ))}
       <CodeCard />
     </>
   );
@@ -102,6 +106,7 @@ export function HomePage() {
   const router = useRouter();
   const [read, setRead] = useState<WorksRead | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [order, setOrder] = useState<Order>("rok");
   useEffect(() => {
     let live = true;
     setRead(null);
@@ -145,7 +150,7 @@ export function HomePage() {
     const rows = flatRows(read.courses, read.states);
     const now = Date.now();
     const current = continueRow(rows);
-    body = rows.length === 0 ? <CourseWithoutTask course={read.courses[0]!} /> : (
+    body = rows.length === 0 ? <CoursesWithoutTask courses={coursesWithoutTask(read.courses)} /> : (
       <>
         {current === null ? null : (
           <section className={styles.continue} aria-labelledby="po-n">
@@ -158,12 +163,19 @@ export function HomePage() {
         )}
         <section className={styles.section} aria-labelledby="po-h">
           <h2 id="po-h">{t.tasksHeading}</h2>
-          <ul className={styles.list}>
-            {rows.map((row) => (
-              <Row key={row.id} row={row} now={now} base={base}
-                action={row.kind === "predano" || row.kind === "obavijest" ? null : startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false })} />
-            ))}
-          </ul>
+          <Select label={t.orderLabel} value={order} onChange={(event) => setOrder(event.target.value as Order)}
+            options={ORDERS.map((value) => ({ value, label: t.orders[value] }))} />
+          {sections(rows, now, order).map((group) => (
+            <div className={styles.group} key={group.key}>
+              {order === "rok" ? <h3 className={styles.groupHeading}>{t.sections[group.key]}</h3> : null}
+              <ul className={styles.list}>
+                {group.rows.map((row) => (
+                  <Row key={row.id} row={row} now={now} base={base}
+                    action={startsWork(row.kind) ? startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false }) : null} />
+                ))}
+              </ul>
+            </div>
+          ))}
         </section>
         <CodeCard />
       </>

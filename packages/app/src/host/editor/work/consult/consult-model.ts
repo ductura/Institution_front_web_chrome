@@ -1,4 +1,4 @@
-import type { ConsultationSlot, SlotAction, SlotWrite } from "../../../../../../../src/client/consultation-slots";
+import type { CloseAction, CloseWrite, ConsultationSlot, DetailState, SlotAction, SlotDetail, SlotWrite } from "../../../../../../../src/client/consultation-slots";
 import { NOTE_MAX, type Assessment, type CriterionInput, type CriterionWrite, type WorkingCriterion } from "../../../../../../../src/client/teacher-working-criteria";
 
 import { consultHr as t } from "./messages.hr";
@@ -7,7 +7,7 @@ import { consultHr as t } from "./messages.hr";
 export type Role = "student" | "teacher" | "collaborator";
 
 /** The teacher answers a request, the student takes a proposal; nobody else acts on a slot. */
-export function actionsFor(role: Role, slot: ConsultationSlot): readonly SlotAction[] {
+export function actionsFor(role: Role, slot: { readonly state: DetailState }): readonly SlotAction[] {
   if (role === "teacher" && slot.state === "requested") return ["confirm", "counter"];
   if (role === "student" && slot.state === "countered") return ["accept"];
   return [];
@@ -22,17 +22,50 @@ export function localToIso(value: string): string | null {
 
 export const timeText = (iso: string): string => new Intl.DateTimeFormat("hr-HR", { dateStyle: "long", timeStyle: "short" }).format(new Date(iso));
 export const dateText = (day: string): string => new Intl.DateTimeFormat("hr-HR", { dateStyle: "long" }).format(new Date(`${day}T12:00:00`));
-export const statusText = (role: Role, slot: ConsultationSlot): string => t.slots.status[slot.state][role];
+export const statusText = (role: Role, slot: { readonly state: DetailState }): string => t.slots.status[slot.state][role];
 export const slotsHeading = (slots: readonly unknown[]): string => t.slots.title.replace("{count}", String(slots.length));
 
-export function lineText(slot: ConsultationSlot): string {
-  const line = slot.state === "confirmed" ? t.slots.confirmedLine : slot.state === "countered" ? t.slots.proposedLine : t.slots.requestedLine;
+export function lineText(slot: { readonly state: DetailState; readonly startsAt: string }): string {
+  const line = slot.state === "confirmed" ? t.slots.confirmedLine : slot.state === "countered" ? t.slots.proposedLine
+    : slot.state === "requested" ? t.slots.requestedLine : t.slots.closedLine;
   return line.replace("{time}", timeText(slot.startsAt));
 }
 
 /** The list with the server's slot in its place (or added first). */
-export const withSlot = (slots: readonly ConsultationSlot[], saved: ConsultationSlot): ConsultationSlot[] =>
+export const withSlot = <S extends { readonly id: string }>(slots: readonly S[], saved: S): S[] =>
   slots.some((s) => s.id === saved.id) ? slots.map((s) => (s.id === saved.id ? saved : s)) : [saved, ...slots];
+
+/**
+ * MK-3: who may close a slot, and how (work.consultation-slot-close.post). The student withdraws a request
+ * the teacher has not answered, the teacher declines it; either side cancels a proposed or confirmed slot
+ * that still lies ahead. The collaborator only reads; a closed slot has no action.
+ */
+export function closeActionsFor(role: Role, slot: { readonly state: DetailState; readonly startsAt: string }, now: number): readonly CloseAction[] {
+  if (role === "collaborator") return [];
+  if (slot.state === "requested") return [role === "student" ? "withdraw" : "decline"];
+  if ((slot.state === "countered" || slot.state === "confirmed") && Date.parse(slot.startsAt) > now) return ["cancel"];
+  return [];
+}
+
+/** A slot from the older routes (no closing, maybe no topic) as a detail, keeping what the list already knew. */
+export function asDetail(saved: ConsultationSlot, known?: SlotDetail): SlotDetail {
+  return { ...saved, topic: saved.topic !== undefined ? saved.topic : (known?.topic ?? null), closing: null, preparation: known?.preparation ?? null };
+}
+
+export const topicText = (slot: { readonly topic: string | null }): string =>
+  slot.topic === null ? t.slots.noTopic : t.slots.topicLine.replace("{topic}", slot.topic);
+
+/** Who closed the slot and why, as the student and the teacher see it; null while it is open. */
+export function closingText(role: Role, slot: SlotDetail): string | null {
+  if (slot.closing === null) return null;
+  const who = slot.closing.by === (role === "teacher" ? "teacher" : "student") ? t.slots.closedByYou : slot.closing.by === "teacher" ? t.slots.closedByTeacher : t.slots.closedByStudent;
+  const reason = slot.closing.reason === null ? "" : ` ${t.slots.reasonLine.replace("{reason}", slot.closing.reason)}`;
+  return `${who.replace("{time}", timeText(slot.closing.at))}${reason}`;
+}
+
+export function closeFailure(outcome: Exclude<CloseWrite, { kind: "saved" }>): string {
+  return outcome.kind === "promijenjeno" ? t.slots.errors.changedClose : slotFailure(outcome);
+}
 
 export function slotFailure(outcome: Exclude<SlotWrite, { kind: "saved" }>): string {
   if (outcome.kind === "session-expired") return t.slots.errors.signedOut;
@@ -41,8 +74,11 @@ export function slotFailure(outcome: Exclude<SlotWrite, { kind: "saved" }>): str
   return t.slots.errors.unknown;
 }
 
-export type Form = { readonly open: boolean; readonly draft: string; readonly busy: boolean; readonly error: string | null };
+export type Form = { readonly open: boolean; readonly draft: string; readonly busy: boolean; readonly error: string | null; readonly topic?: string };
 export const IDLE_FORM: Form = { open: false, draft: "", busy: false, error: null };
+
+/** The open confirmation of one closing, with the optional reason as typed. */
+export type Closing = { readonly action: CloseAction; readonly reason: string; readonly busy: boolean; readonly error: string | null };
 
 /** After a write: saved closes and clears the form; anything else keeps it as typed, with the reason. */
 export const afterSlotWrite = (form: Form, outcome: SlotWrite): Form =>

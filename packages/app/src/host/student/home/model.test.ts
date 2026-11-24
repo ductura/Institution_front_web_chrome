@@ -1,10 +1,13 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import type { MyCourse } from "../../../../../../src/components/student/my-assignments-read";
-import { normalizeCode as enrollRule } from "../../../../../../src/components/student/upis/enroll";
+import type { MyCourse } from "../read/assignments";
+import { normalizeCode as enrollRule } from "../enrol/enroll";
 import { CODE_MAX, cleanCode } from "../enrol/code";
 import { codeFromQuery } from "../enrol/model";
-import { continueRow, deadlineTag, enrollRoute, flatRows, kindOf, nearTag, normalizeCode, rowAction, rowRoute, type TaskRow } from "./model";
+import { continueRow, coursesWithoutTask, deadlineTag, sections, enrollRoute, flatRows, kindOf, nearTag, normalizeCode, rowAction, rowRoute, startsWork, type TaskRow } from "./model";
 
 const NOW = Date.parse("2026-11-20T10:00:00Z");
 const A = { id: "a1", title: "Esej o izmišljenoj temi", dueAt: "2026-11-23T10:00:00Z", noticeFirst: false };
@@ -39,7 +42,7 @@ describe("E-2 rows", () => {
     expect(rows[0]!.typeLabel).toBe("Esej");
     expect(rows[3]!.typeLabel).toBe("Zadatak");
   });
-  it("continues the first started work with an acknowledged notice only", () => {
+  it("continues the started work with an acknowledged notice only", () => {
     const rows = flatRows(COURSES, new Map([["a2", "in_progress" as const], ["a4", "in_progress" as const]]));
     expect(continueRow(rows)?.id).toBe("a4");
     expect(continueRow(flatRows(COURSES, new Map()))).toBeNull();
@@ -124,5 +127,71 @@ describe("P-11 one code rule (E-5b)", () => {
     expect(enrollRoute("kol-d-2026")).toBe("/upis?kod=KOLD2026");
     expect(enrollRoute(" - ")).toBe("/upis");
     expect(CODE_MAX).toBe(32);
+  });
+});
+
+describe("P-4 urgency and order", () => {
+  const started = (ids: string[]) => new Map(ids.map((id) => [id, "in_progress" as const]));
+  it("continues the started work with the nearest deadline, not the first in the list", () => {
+    // a3 (extended to 2027-01-10) comes before a4 (2026-12-01) in the read; a4 is nearer.
+    expect(continueRow(flatRows(COURSES, started(["a3", "a4"])))?.id).toBe("a4");
+    expect(continueRow(flatRows(COURSES, started(["a1", "a3", "a4"])))?.id).toBe("a1");
+  });
+  it("keeps the read's order for equal deadlines and puts a broken date last", () => {
+    const rows = flatRows(COURSES, started(["a1", "a4"])).map((r) => (r.id === "a1" ? { ...r, dueAt: r.id === "a1" ? "2026-12-01T10:00:00Z" : r.dueAt } : r));
+    expect(continueRow(rows)?.id).toBe("a1");
+    const broken = flatRows(COURSES, started(["a1", "a4"])).map((r) => (r.id === "a1" ? { ...r, dueAt: "?" } : r));
+    expect(continueRow(broken)?.id).toBe("a4");
+  });
+  it("lists by deadline in Uskoro, Kasnije and Predano, submitted at the bottom", () => {
+    const states = new Map([["a4", "submitted" as const]]);
+    const groups = sections(flatRows(COURSES, states), NOW);
+    expect(groups.map((g) => [g.key, g.rows.map((r) => r.id)])).toEqual([
+      ["uskoro", ["a1"]], ["kasnije", ["a2", "a3"]], ["predano", ["a4"]],
+    ]);
+  });
+  it("puts a passed deadline into Uskoro, first, and leaves empty sections out", () => {
+    const late = { id: "x", title: "Zakašnjeli", dueAt: "2026-11-01T10:00:00Z", noticeFirst: false };
+    const groups = sections(flatRows([{ id: "c", name: "K", assignments: [A, late] }], null), NOW);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.rows.map((r) => r.id)).toEqual(["x", "a1"]);
+  });
+  it("order kolegij is the read's own order and nothing is lost or doubled", () => {
+    const rows = flatRows(COURSES, new Map([["a1", "submitted" as const]]));
+    expect(sections(rows, NOW, "kolegij").flatMap((g) => g.rows.map((r) => r.id))).toEqual(["a1", "a2", "a3", "a4"]);
+    expect(sections(rows, NOW).flatMap((g) => g.rows).map((r) => r.id).sort()).toEqual(["a1", "a2", "a3", "a4"]);
+    expect(sections([], NOW)).toEqual([]);
+  });
+});
+
+describe("P-12 courses without a task", () => {
+  it("returns every course with no assignment, not only the first", () => {
+    const courses: MyCourse[] = [
+      { id: "c1", name: "Kolegij A", assignments: [] }, { id: "c2", name: "Kolegij B", assignments: [] },
+    ];
+    expect(coursesWithoutTask(courses).map((c) => c.name)).toEqual(["Kolegij A", "Kolegij B"]);
+    expect(coursesWithoutTask(COURSES)).toEqual([]);
+  });
+});
+
+describe("INT-31 start only where no work exists", () => {
+  it("offers \"Započni rad\" on a row with no work, never on a started, submitted or notice-first one", () => {
+    expect(startsWork("zadatak")).toBe(true);
+    expect(startsWork("rad")).toBe(false);
+    expect(startsWork("predano")).toBe(false);
+    expect(startsWork("obavijest")).toBe(false);
+  });
+
+  it("a started work keeps its own \"Otvori rad\"", () => {
+    const rows = flatRows(COURSES, new Map([["a1", "in_progress"]]));
+    const kind = rows.find((row) => row.id === "a1")?.kind;
+    expect(kind).toBe("rad");
+    expect(startsWork("rad")).toBe(false);
+    expect(rowAction("rad").label).toBe("Otvori rad");
+  });
+
+  it("the home page draws the start only through startsWork", () => {
+    const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "HomePage.tsx"), "utf8");
+    expect(page).toMatch(/action=\{startsWork\(row\.kind\) \? startWorkAction\(/);
   });
 });

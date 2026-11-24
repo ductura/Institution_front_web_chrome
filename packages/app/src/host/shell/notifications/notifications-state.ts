@@ -1,7 +1,7 @@
 import type { NotificationEntry } from "@ductura/ui";
 
 import type { InboxItem, InboxRead } from "./inbox";
-import { notificationKindText } from "./text";
+import { deadlineReminderLine, notificationKindText } from "./text";
 
 export type NotificationsState = { status: "ready" | "unavailable"; items: readonly InboxItem[] };
 
@@ -20,11 +20,23 @@ export function applyMarked(state: NotificationsState, id: string, readAt: strin
 
 export const unreadOf = (state: NotificationsState): number => state.items.filter((n) => n.readAt === null).length;
 
+/** What a reminder needs of its assignment: the title and the deadline that applies (the extended one when given). */
+export type Deadlines = ReadonlyMap<string, { readonly title: string; readonly dueAt: string }>;
+
+const zagreb = (iso: string) => new Date(iso).toLocaleString("hr-HR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Zagreb" });
+
+/** P-2: "Rok za zadatak {naslov}: {rok}" when the assignment is known, else the plain line by kind. */
+export function textOf(item: InboxItem, deadlines?: Deadlines): string {
+  const known = item.kind === "deadline_reminder" ? deadlines?.get(item.targetId) : undefined;
+  if (known === undefined || Number.isNaN(Date.parse(known.dueAt))) return notificationKindText[item.kind];
+  return deadlineReminderLine.replace("{title}", known.title).replace("{due}", zagreb(known.dueAt));
+}
+
 /** The bell's lines: Croatian text by kind, Zagreb time, and the route of each entry. */
-export function entriesOf(state: NotificationsState, hrefOf: (item: InboxItem) => string): NotificationEntry[] {
+export function entriesOf(state: NotificationsState, hrefOf: (item: InboxItem) => string, deadlines?: Deadlines): NotificationEntry[] {
   return state.items.map((n) => ({
     id: n.id,
-    text: notificationKindText[n.kind],
+    text: textOf(n, deadlines),
     when: new Date(n.createdAt).toLocaleString("hr-HR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Zagreb" }),
     read: n.readAt !== null,
     href: hrefOf(n),

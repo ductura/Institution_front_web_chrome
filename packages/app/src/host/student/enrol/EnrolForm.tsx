@@ -5,9 +5,9 @@
 import { Button, CodeField } from "@ductura/ui";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
-import { courseHref } from "../../../../../../src/components/student/upis/course-read.ts";
-import { enroll, type EnrollResult } from "../../../../../../src/components/student/upis/enroll.ts";
-import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
+import { courseHref } from "./course-read.ts";
+import { enroll, type EnrollResult } from "./enroll.ts";
+import { studentHostHr as t } from "../i18n/messages.hr.ts";
 
 import { CODE_MAX } from "./code";
 import styles from "./Enrol.module.css";

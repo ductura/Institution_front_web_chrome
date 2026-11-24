@@ -1097,6 +1097,12 @@ export const hr = {
     scopeMin: "opseg najmanje {min}",
     scopeMax: "opseg najviše {max}",
     scopePrivate: "vidite samo Vi",
+    scopeBelow: "još {n} do donje granice",
+    scopeWithin: "unutar opsega",
+    scopeAbove: "iznad gornje granice za {n}",
+    scopeSaidBelow: "Opseg: ispod donje granice.",
+    scopeSaidWithin: "Opseg: unutar granica.",
+    scopeSaidAbove: "Opseg: iznad gornje granice za {n} {words}.",
     readOnly: "Samo za čitanje",
     saveLevel: {
       device: "Spremljeno na uređaju.",
@@ -1113,9 +1119,11 @@ export const hr = {
   editor: {
     placeholder: "Počnite pisati…",
     // 3d-2c2b, owner approved 25 Oct (contract #476 c.6391714810 §3): the
-    // server's work differs (CONFLICT, RECOVERY_REQUIRED).
+    // server's work differs (CONFLICT, RECOVERY_REQUIRED). ED-08 (NF2-P3): the
+    // server has no decision for a conflict yet, so the notice promises none and
+    // says what the student can do now, as sendStopped (INVENTAR §5.1).
     evidenceConflict:
-      "Rad na poslužitelju razlikuje se od teksta na ovom uređaju. Tekst ostaje na uređaju i ništa se ne šalje dok ne odlučite kako dalje.",
+      "Rad na poslužitelju razlikuje se od teksta na ovom uređaju. Tekst ostaje na uređaju i zasad se ništa ne šalje. Izvezite tekst i javite se podršci.",
     // 3d-2c2b, owner approved 25 Oct (#87 c.6397773534): a send refused for
     // good. The contract's "spremljen na ovom uređaju" fails the PRODUCT §5
     // scan, so "ovom" is dropped.

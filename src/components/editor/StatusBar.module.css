@@ -10,6 +10,8 @@
 /* The length goes to the right edge. */
 .scope { margin-left: auto; }
 .net { color: var(--ink); font-weight: 600; }
+/* ED-04: the crossing of a limit is heard, not seen (the fact is already in the line). */
+.said { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 /* On a narrow screen the row wraps instead of scrolling sideways: a scrolling row with nothing
    focusable in it cannot be reached by keyboard (axe scrollable-region-focusable at 400 px). */
 @media (max-width: 640px) {

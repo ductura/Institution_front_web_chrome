@@ -33,9 +33,12 @@ import { ImportHost } from "../editor/import/ImportHost";
 import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
+import { AssistantRules, NoticeInstructions } from "../editor/assistant-rules/AssistantRules";
+import { AssistantChat } from "../editor/assistant-chat/AssistantChat";
 import PdfExport from "../editor/export/PdfExport";
 import { StatusExtras, beforeSubmissionFor, rehearsalSupplementsFor } from "../editor/status/StatusExtras";
 import { PregledHost } from "../editor/right/PregledHost";
+import { MentorMount } from "../editor/right/MentorMount";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
@@ -56,7 +59,7 @@ const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
 
 /** What the sheet holds when no editor is mounted. */
-function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: string | null): ReactNode {
+function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: string | null, reread: () => void): ReactNode {
   if (variant === "predano") return <SheetNote>{t.editor.submittedReadOnly}</SheetNote>;
   // WEB-2105: E-7 `prazno`: the empty sheet with its placeholder, and the way to start (the server decides).
   if (variant === "prazno") {
@@ -64,7 +67,7 @@ function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: strin
       <>
         <SheetNote>{workText.notStarted}</SheetNote>
         <p aria-hidden="true">{workText.placeholder}</p>
-        <StartWork assignmentId={assignmentId} title={title ?? ""} />
+        <StartWork assignmentId={assignmentId} title={title ?? ""} onOpened={reread} />
       </>
     );
   }
@@ -118,10 +121,20 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             literature={() => <LiteratureList />}
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
-              work: ({ documentId }) => <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />,
+              // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
+              work: ({ editor, documentId, submitted }) => <>
+                <MentorMount editor={editor} documentId={documentId} submitted={submitted} />
+                <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />
+              </>,
               // PIL-K-KOMENTARI-EDITOR: the Comments card over the real port, in place of the old CommentPanel.
               comments: ({ editor, documentId, session, submitted, signedOut }) =>
                 <CommentsHost editor={editor} documentId={documentId} session={session} submitted={submitted} signedOut={signedOut} />,
+              // ED-09 (NF2-P9): the assignment's rules under the Asistent card, its instructions in "Prvi redak".
+              assistant: ({ submitted, signedOut, scope }) => <>
+                <AssistantChat assignmentId={assignmentId} scope={scope} readOnly={submitted || signedOut} />
+                <AssistantRules assignmentId={assignmentId} base={base} />
+              </>,
+              instructions: () => <NoticeInstructions assignmentId={assignmentId} />,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
@@ -165,7 +178,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               {receipt?.documentId === undefined ? null : <CommentsHost editor={null} documentId={receipt.documentId} session={null} submitted />}
             </>}
           >
-            {sheetBody(frame.variant, assignmentId, title)}
+            {sheetBody(frame.variant, assignmentId, title, () => setAttempt((n) => n + 1))}
           </EditorPage>
         ),
       });

@@ -6,50 +6,33 @@ import { Button, RouteLoading } from "@ductura/ui";
 import { goToSignIn } from "@/client/api";
 import { readStudentNotice, type StudentNoticeRead } from "@/client/student-notice";
 import { appHref } from "@/components/shell/nav";
-import styles from "@/components/student/AssignmentNotice.module.css";
-import { markNoticeRead } from "@/components/student/obavijest/notice-read-mark";
-import { noticeWindow } from "@/components/student/notice-window";
-import { messagesHr as t } from "@/lib/i18n/messages.hr";
+import styles from "./Notice.module.css";
+import { noticeWindow } from "./window";
+import { studentHostHr as t } from "../i18n/messages.hr";
 import { useHost } from "../../context";
 import HostNotice from "../enrol/HostNotice";
 import { editorPath } from "../enrol/model";
-import { noticeReadText } from "./messages.hr";
-
-type ReadStatus = "idle" | "sending" | "read" | "stale" | "failed";
+import NoticeSummary from "./NoticeSummary";
 
 export default function NoticePage({ assignmentId }: { assignmentId: string }) {
   const { base } = useHost();
   const here = appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}`);
   const [attempt, setAttempt] = useState(0);
   const [notice, setNotice] = useState<StudentNoticeRead | null>(null);
-  const [readStatus, setReadStatus] = useState<ReadStatus>("idle");
 
   useEffect(() => {
     let active = true;
-    void readStudentNotice(assignmentId).then(async (loaded) => {
+    void readStudentNotice(assignmentId).then((loaded) => {
+      // P-9 (a): opening the notice sends nothing; only the acknowledgment is written.
       if (!active) return;
       setNotice(loaded);
-      if (loaded.kind === "signedOut") {
-        goToSignIn(here);
-        return;
-      }
-      if (loaded.kind !== "available" || loaded.readAt !== null) return;
-
-      setReadStatus("sending");
-      const mark = await markNoticeRead(loaded.view.assignmentId, loaded.view.versionNo);
-      if (!active) return;
-      if (mark.kind === "signedOut") {
-        goToSignIn(here);
-        return;
-      }
-      setReadStatus(mark.kind === "read" || mark.kind === "stale" ? mark.kind : "failed");
+      if (loaded.kind === "signedOut") goToSignIn(here);
     });
     return () => { active = false; };
   }, [assignmentId, attempt, here]);
 
   const retry = () => {
     setNotice(null);
-    setReadStatus("idle");
     setAttempt((previous) => previous + 1);
   };
 
@@ -60,20 +43,12 @@ export default function NoticePage({ assignmentId }: { assignmentId: string }) {
       </p>
       {notice === null ? <RouteLoading label={t.student.loading} /> : notice.kind === "available" ? (
         <>
+          <NoticeSummary view={notice.view} />
           <HostNotice
             view={notice.view}
             timing={noticeWindow(notice.view.opensAt, notice.view.dueAt, Date.now())}
             editorHref={appHref(base, editorPath(notice.view.assignmentId))}
           />
-          {readStatus === "sending" || readStatus === "read" ? (
-            <p className={styles.status} role="status">{noticeReadText[readStatus]}</p>
-          ) : null}
-          {readStatus === "failed" || readStatus === "stale" ? (
-            <div className={styles.card}>
-              <p className={styles.error} role="alert">{noticeReadText[readStatus]}</p>
-              <Button onClick={retry}>{t.auth.retry}</Button>
-            </div>
-          ) : null}
         </>
       ) : (
         <section className={styles.card} aria-labelledby="zadatak">

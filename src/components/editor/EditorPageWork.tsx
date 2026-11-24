@@ -59,6 +59,8 @@ export type ToolbarSlot = (ctx: {
 export type HostSectionContext = {
   editor: Editor | null; assignmentId: string; documentId: string;
   session: SessionMark; submitted: boolean; signedOut: boolean;
+  /** The person's journal scope (WEB-14c): what a card keeps on this device is kept under it. */
+  scope: string;
 };
 /**
  * `comments` is the host's Comments card (PIL-K-KOMENTARI-EDITOR); when the host gives one, the
@@ -68,6 +70,13 @@ export type HostSections = {
   review?: (ctx: HostSectionContext) => ReactNode;
   work?: (ctx: HostSectionContext) => ReactNode;
   comments?: (ctx: HostSectionContext) => ReactNode;
+  /**
+   * The host's Asistent tab (ED-10, NF2-P10: the conversation, then ED-09's "Pravila za ovaj
+   * zadatak"); when the host gives one, the "uskoro" card is not rendered.
+   */
+  assistant?: (ctx: HostSectionContext) => ReactNode;
+  /** ED-09 (NF2-P9): the assignment's instructions in "Prvi redak"; none without it. */
+  instructions?: (ctx: HostSectionContext) => ReactNode;
 };
 
 export type OpenRead =
@@ -254,7 +263,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
     document.addEventListener(PRINT_PREVIEW_EVENT, asked);
     return () => document.removeEventListener(PRINT_PREVIEW_EVENT, asked);
   }, [signedOut]);
-  const ctx: HostSectionContext = { editor, assignmentId, documentId, session, submitted, signedOut };
+  const ctx: HostSectionContext = { editor, assignmentId, documentId, session, submitted, signedOut, scope };
   const { phase, state, receiptVerified } = useLocalSaveRead();
   const savingLocally = useLocalSavingOnDevice();
   const online = useOnline();
@@ -277,7 +286,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       rightSections={{ sources: <>{literature?.({ documentId })}<EditorSourceProofs assignmentId={assignmentId} documentId={documentId} /></>,
         comments: hostSections?.comments ? hostSections.comments(ctx) : <CommentPanel documentId={documentId} session={session} />,
         review: hostSections?.review?.(ctx),
-        assistant: <AssistantComingSoonCard /> }}
+        assistant: hostSections?.assistant ? hostSections.assistant(ctx) : <AssistantComingSoonCard /> }}
       renderWork={(closeDrawer) => <>
         {!signedOut && <SubmissionRehearsal editor={editor} assignmentId={assignmentId} documentId={documentId}
           sessionTag={session.tag} session={session} onJumpToDocument={closeDrawer}
@@ -292,7 +301,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId}
         fresh={phase === "ready" && editor?.isEmpty}
-        notice={{ course, title, length: length?.range ?? undefined, instructions: null }} />
+        notice={{ course, title, length: length?.range ?? undefined, instructions: hostSections?.instructions?.(ctx) ?? null }} />
     </EditorPanelLayout>
   );
 }

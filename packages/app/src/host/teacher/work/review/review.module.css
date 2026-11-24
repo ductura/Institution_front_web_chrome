@@ -1,0 +1,27 @@
+/* NF-5 PG-11: the print of "Pregled rada". Every view prints one under the other with its heading; the tab
+   strip, the steps between works and the buttons stay off paper. On screen the print-only lines are hidden. */
+.printOnly {
+  display: none;
+}
+
+@media print {
+  .printOnly {
+    display: block;
+  }
+
+  .review [role="tablist"],
+  .review header,
+  .review nav,
+  .review button,
+  .review [data-print-hide] {
+    display: none !important;
+  }
+
+  .review [role="tabpanel"][hidden] {
+    display: block !important;
+  }
+
+  .review [role="tabpanel"] {
+    break-inside: auto;
+  }
+}

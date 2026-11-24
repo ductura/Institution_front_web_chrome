@@ -58,3 +58,77 @@ export function practiceOf(assignment: object): boolean {
 export function effectiveDue(dueAt: string, extendedDueAt: string | null | undefined): string {
   return typeof extendedDueAt === "string" && extendedDueAt !== "" ? extendedDueAt : dueAt;
 }
+
+// ---- NF-1 P-5: the state filter of "Moji radovi" -------------------------------------------------
+
+export const STATE_FILTERS = ["sve", "zapredati", "predano", "obavijest"] as const;
+export type StateFilter = (typeof STATE_FILTERS)[number];
+
+/** `?stanje=`: a value outside the closed set is "sve", never a guess. */
+export function stateFilterOf(raw: string | null | undefined): StateFilter {
+  return (STATE_FILTERS as readonly string[]).includes(raw ?? "") ? (raw as StateFilter) : "sve";
+}
+
+/** Narrows the row kinds only: "Za predati" is work and tasks not yet submitted, "Čeka potvrdu uputa" the notice rows. */
+export function matchesState(kind: RowKind, filter: StateFilter): boolean {
+  if (filter === "sve") return true;
+  if (filter === "predano") return kind === "submitted";
+  if (filter === "obavijest") return kind === "notice";
+  return kind === "work" || kind === "task";
+}
+
+// ---- NF-1 P-6: the submission time, only when the server's answer carries it ---------------------
+
+export type Submitted = { submittedAt: string; afterDeadline: boolean };
+
+const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
+
+/**
+ * The time of a submission from one item of student.assignment-work.get, or null. The contract does not
+ * carry it yet ("Nedostaje na poslužitelju"); when the answer has a valid `submittedAt`, it is shown, and
+ * `afterDeadline` only when it is the boolean true. Nothing is computed from the deadline here.
+ */
+export function submittedOf(item: object): Submitted | null {
+  const at = "submittedAt" in item ? item.submittedAt : undefined;
+  if (typeof at !== "string" || !INSTANT.test(at) || Number.isNaN(Date.parse(at))) return null;
+  return { submittedAt: at, afterDeadline: "afterDeadline" in item && item.afterDeadline === true };
+}
+
+export function submittedLine(s: Submitted | null | undefined, format: (iso: string) => string): string {
+  if (s === null || s === undefined) return t.submittedNoTime;
+  return (s.afterDeadline ? t.submittedLate : t.submittedAt).replace("{time}", format(s.submittedAt));
+}
+
+// ---- NF-1 P-7: the history of a deadline extension ----------------------------------------------
+
+export type ExtensionNote = { previousDueAt: string; scope: "one" | "all"; reasonId: keyof typeof t.extensionReason | null };
+
+/**
+ * The extension behind the deadline in force: from the student's own history, the latest record whose
+ * `dueAt` is the extended deadline. No such record (or a body of another shape) is null, and the row then
+ * shows only "Produljeni rok" without a history, never an invented one.
+ */
+export function extensionOf(body: unknown, extendedDueAt: string): ExtensionNote | null {
+  const list = typeof body === "object" && body !== null && "extensions" in body ? body.extensions : null;
+  if (!Array.isArray(list)) return null;
+  const until = Date.parse(extendedDueAt);
+  let best: { note: ExtensionNote; created: number } | null = null;
+  for (const e of list as unknown[]) {
+    if (typeof e !== "object" || e === null) continue;
+    const r = e as Record<string, unknown>;
+    if (typeof r.dueAt !== "string" || Date.parse(r.dueAt) !== until || typeof r.previousDueAt !== "string" || Number.isNaN(Date.parse(r.previousDueAt))) continue;
+    if (r.scope !== "one" && r.scope !== "all") continue;
+    const reasonId = typeof r.reasonId === "string" && r.reasonId in t.extensionReason ? (r.reasonId as keyof typeof t.extensionReason) : null;
+    const created = typeof r.createdAt === "string" ? Date.parse(r.createdAt) : 0;
+    if (best === null || created >= best.created) best = { note: { previousDueAt: r.previousDueAt, scope: r.scope, reasonId }, created };
+  }
+  return best?.note ?? null;
+}
+
+export function extensionText(note: ExtensionNote, format: (iso: string) => string): string {
+  const scope = t.extensionScope[note.scope];
+  const prev = format(note.previousDueAt);
+  return note.reasonId === null
+    ? t.extensionNoReason.replace("{prev}", prev).replace("{scope}", scope)
+    : t.extension.replace("{prev}", prev).replace("{reason}", t.extensionReason[note.reasonId]).replace("{scope}", scope);
+}

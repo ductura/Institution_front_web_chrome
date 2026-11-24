@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { codeFieldText, enrolledText, nextDeadline, practiceOf, readPractice, roleOf, type AssignmentRead } from "./model";
+import { enrolledText, nextDeadline, practiceOf, readPractice, roleOf, type AssignmentRead } from "./model";
 
 const a = (id: string, dueAt: string) => ({ id, title: id, workType: "x", opensAt: dueAt, dueAt, currentVersion: 1, enrolledStudents: 1 });
 
@@ -19,11 +19,6 @@ describe("N-01 card model", () => {
     const view = { role: "holder", students: [{}, {}, {}, {}], groups: [{ name: "grupa 2" }, { name: "grupa 4" }] } as never;
     expect(enrolledText(view)).toBe("4 studenta · grupa 2, grupa 4");
     expect(enrolledText(null)).toBeNull();
-  });
-  it("never claims a code state the server cannot give", () => {
-    expect(codeFieldText("holder", null)).toContain("nije dostupno");
-    expect(codeFieldText("holder", "now")).toBe("Novi kod izdan; prikazuje se samo sada.");
-    expect(codeFieldText("collaborator", "now")).toBe("Izdaje nositelj kolegija.");
   });
 });
 

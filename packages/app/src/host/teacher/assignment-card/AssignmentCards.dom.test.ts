@@ -114,6 +114,75 @@ describe("N-01 course card entries (NZ-1, NZ-2)", () => {
     expect(host.querySelector("dialog")?.textContent).toContain(t.dialogLead);
   });
 
+  // NZ-13: state, deadline, revocation, copy and instruction of the enrolment code.
+  function stubServer(state: unknown, onPost: (url: string, body: string) => unknown = () => ({ revoked: true })) {
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", async (input: URL | string, init?: RequestInit) => {
+      const url = String(input);
+      calls.push(`${init?.method ?? "GET"} ${url}`);
+      const body = url.includes("enrollment-code/state") ? state
+        : url.includes("enrollment-code/revocation") ? onPost(url, String(init?.body))
+        : url.includes("enrollment-code") ? { code: "ABCD-1234-ABCD-1234" } : null;
+      if (body === null) throw new Error("offline");
+      return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    return calls;
+  }
+
+  it("NZ-13: the holder sees until when the code is valid and can revoke it after a confirmation", async () => {
+    const calls = stubServer({ current: { validUntil: "2099-12-01T22:59:00.000Z" } });
+    const host = await mount();
+    expect(host.textContent).toContain("Vrijedi do 1. 12. 2099. u 23:59.");
+    await act(async () => button(host, t.revokeCode).click());
+    const dialog = host.querySelector("dialog")!;
+    expect(dialog.textContent).toContain(t.revokeLead);
+    expect(calls.filter((c) => c.includes("revocation"))).toEqual([]);
+    await act(async () => [...dialog.querySelectorAll("button")].find((b) => b.textContent === t.revokeCode)!.click());
+    expect(calls.filter((c) => c.startsWith("POST") && c.includes("revocation"))).toHaveLength(1);
+    expect(host.textContent).toContain(t.codeNone);
+    expect(button(host, t.revokeCode)).toBeUndefined();
+  });
+
+  it("NZ-13: an expired code says so and is not offered for revocation", async () => {
+    stubServer({ current: { validUntil: "2020-01-01T22:59:00.000Z" } });
+    const host = await mount();
+    expect(host.textContent).toContain("Istekao 1. 1. 2020. u 23:59.");
+    expect(button(host, t.revokeCode)).toBeUndefined();
+  });
+
+  it("NZ-13: a state that cannot be read says so and never claims there is no code", async () => {
+    vi.stubGlobal("fetch", async () => { throw new Error("offline"); });
+    const host = await mount();
+    expect(host.textContent).toContain(t.codeUnknown);
+    expect(host.textContent).not.toContain(t.codeNone);
+  });
+
+  it("NZ-13: a new code asks for the deadline, refuses a past one, shows the code once with copy and the instruction", async () => {
+    stubServer({ current: null });
+    const writeText = vi.fn(async () => undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    const host = await mount();
+    await act(async () => button(host, t.newCode).click());
+    const dialog = host.querySelector("dialog")!;
+    const field = dialog.querySelector("input[type=datetime-local]") as HTMLInputElement;
+    expect(field).not.toBeNull();
+    const setField = async (value: string) => act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(field, value);
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await setField("2020-01-01T10:00");
+    await act(async () => [...dialog.querySelectorAll("button")].find((b) => b.textContent === t.issue)!.click());
+    expect(dialog.textContent).toContain(t.validUntilInvalid);
+    await setField("2099-12-14T23:59");
+    await act(async () => [...dialog.querySelectorAll("button")].find((b) => b.textContent === t.issue)!.click());
+    expect(host.textContent).toContain("ABCD-1234-ABCD-1234");
+    expect(host.textContent).toContain(t.codeHowTo);
+    expect(host.textContent).toContain("Vrijedi do 14. 12. 2099. u 23:59.");
+    await act(async () => button(host, t.copyCode).click());
+    expect(writeText).toHaveBeenCalledWith("ABCD-1234-ABCD-1234");
+    expect(host.textContent).toContain(t.copied);
+  });
+
   it("a collaborator reads only: Predaje and Brz put, no chooser and no dk-h", async () => {
     role.value = "assistant";
     search.value = `kod=${K1}`;

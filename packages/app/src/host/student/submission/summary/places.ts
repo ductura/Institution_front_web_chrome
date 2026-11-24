@@ -2,7 +2,7 @@
 // not a fixed sentence. The places are read from the text the server holds (evidence.open.post), the
 // text that would be submitted, with the same marks the editor's review finds ("[izvor]", "[?]" …);
 // the pastes come from the process summary. Neither holds the submission (PRODUCT §5). Pure.
-import type { TextNode } from "../../../../../../../src/components/student/SubmissionView";
+import type { TextNode } from "../work-read";
 import type { ProcessSummaryV1 } from "../../../../../../../src/client/process-summary";
 import { checksText as c } from "./messages.hr";
 

@@ -8,6 +8,7 @@ import { teacherAiLabels } from "../ai-attachments/messages.hr";
 import { teacherWorkMessages } from "../messages.hr";
 import { forbiddenInReview, NEVER } from "./forbidden";
 import { reviewMessages } from "./messages.hr";
+import { pgMessages } from "./pg-messages.hr";
 
 /** Every text of a table: strings as they are, functions with invented arguments, nested tables flattened. */
 function texts(table: Record<string, unknown>): string[] {
@@ -22,7 +23,7 @@ function texts(table: Record<string, unknown>): string[] {
 // PG-14 (WEB-NUZ-PG): one pass over the texts of the work review: the new review, the work page, the provenance map,
 // the assistant match and the declaration on the teacher's side.
 const OWN = {
-  review: reviewMessages, work: teacherWorkMessages, provenance: provenanceText, origin: originText,
+  review: reviewMessages, pg: pgMessages, work: teacherWorkMessages, provenance: provenanceText, origin: originText,
   match: matchText, declaration: aiDeclarationMessages,
 };
 

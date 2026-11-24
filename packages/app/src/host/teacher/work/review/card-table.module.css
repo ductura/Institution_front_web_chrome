@@ -1,0 +1,29 @@
+/* NF-5 PG-12: the rows of a review table as cards on a phone. Layout only; the card itself is the prototype's .panel. */
+.cards {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  min-width: 0;
+}
+
+.fields {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.field dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

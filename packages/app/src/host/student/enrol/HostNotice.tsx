@@ -6,19 +6,22 @@
 import { useReducer, useRef, useSyncExternalStore, type FormEvent } from "react";
 
 import { AI_PURPOSES } from "../../../../../../src/components/teacher/assignment-create.ts";
-import type { NoticeView } from "../../../../../../src/components/student/assignment-notice-read.ts";
-import { NoticeMeta } from "../../../../../../src/components/student/AssignmentNotice.tsx";
+import type { StudentNoticeRead } from "../../../../../../src/client/student-notice.ts";
 import { acknowledgeNotice, initialNotice, noticeStep, type NoticeEvent, type NoticeState } from "../../../../../../src/components/student/notice-gate.ts";
-import type { NoticeWindow } from "../../../../../../src/components/student/notice-window.ts";
-import styles from "../../../../../../src/components/student/AssignmentNotice.module.css";
 import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr.ts";
 import { wordRangeHr } from "../../../../../../src/lib/i18n/length-line.ts";
-import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
+import { studentHostHr as t } from "../i18n/messages.hr.ts";
 
 import { noticeText } from "./messages.hr";
 import { editorPath } from "./model";
 
+import { NoticeMeta } from "../notice/NoticeMeta";
+import styles from "../notice/Notice.module.css";
+import type { NoticeWindow } from "../notice/window";
 import own from "./HostNotice.module.css";
+
+/** The notice as student.notice reads it (the shape of src/client, no copy). */
+type NoticeView = Extract<StudentNoticeRead, { kind: "available" }>["view"];
 
 const s = t.student;
 const tools = t.teacher.tools;

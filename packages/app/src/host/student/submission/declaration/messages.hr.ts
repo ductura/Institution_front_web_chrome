@@ -5,11 +5,13 @@ export const declarationStepText = {
   meta: "po čl. 9 i 15 pravilnika fakulteta",
   recorded: "Zabilježeno u Ducturi",
   recordedTag: "zabilježeno",
-  transferLine: "Prijenos iz AI pomoćnika, {at}",
-  transferWho: "{model} · {target}",
-  chatLine: "Razgovor s AI pomoćnikom bez prijenosa, {date}",
-  chatWho: "{model}",
-  addNote: "Dodaj objašnjenje",
+  // NF-3 PR-4 (Q-10): only "Asistent", never a provider or a model.
+  transferLine: "Prijenos iz Asistenta, {at}",
+  transferWho: "Asistent · {target}",
+  chatLine: "Razgovor s Asistentom bez prijenosa, {date}",
+  chatWho: "Asistent",
+  // NF-3 PR-4 (E-9a): what the block holds and where outside tools go.
+  recordedExplained: "Ovdje se bilježi ono što napravi sama Ductura, uključujući razgovore s Asistentom. Alate izvan Ducture navedite u „Vašoj izjavi”.",
   declared: "Vaša izjava",
   declaredTag: "izjavljeno",
   tools: "Vanjski alati",
@@ -18,7 +20,6 @@ export const declarationStepText = {
   humanHelp: "Ljudska pomoć",
   editDeclaration: "Uredi izjavu",
   fillDeclaration: "Ispuni izjavu",
-  notDone: "Ovaj dio izjave nije dio ove inačice aplikacije.",
   attachments: "Prilozi",
   attachmentsNote: "Uz izjavu se prilaže cijeli razgovor, točno kako je zabilježen. Pregledajte ga prije potvrde.",
   required: "Obvezno: iz ovog razgovora prenesen je tekst.",
@@ -28,7 +29,7 @@ export const declarationStepText = {
   form: "Obrazac izjave",
   formNone: "Nisam koristio ni koristila generativnu umjetnu inteligenciju",
   formUsed: "Koristio sam ili koristila generativnu umjetnu inteligenciju uz izjavu",
-  mismatch: "Zapis bilježi prijenos iz AI pomoćnika na {target}. Provjerite odabrani obrazac.",
+  mismatch: "Zapis bilježi prijenos iz Asistenta na {target}. Provjerite odabrani obrazac.",
   confirm: "Potvrđujem izjavu",
   confirming: "Spremam potvrdu izjave na poslužitelj…",
   confirmSaved: "Potvrda izjave je spremljena na poslužitelju. Ako promijenite izjavu, potvrdite je ponovno.",
@@ -44,7 +45,7 @@ export const declarationStepText = {
   why: "Dalje je moguće kad potvrdite izjavu.",
   next: "Dalje",
   back: "Natrag",
-  emptyRecorded: "U ovom radu nije zabilježen razgovor s AI pomoćnikom.",
+  emptyRecorded: "U ovom radu nije zabilježen razgovor s Asistentom.",
   emptyDeclared: "Izjava još nije ispunjena.",
   emptyChats: "Nema razgovora za prilaganje.",
   submitted: "Izjava je predana s radom i više se ne mijenja.",
@@ -55,13 +56,36 @@ export const declarationStepText = {
   // The confirmation is written on the server: without a read there is nothing to confirm (PIL-K-IZJAVA).
   error: "Izjavu trenutačno nije moguće učitati s poslužitelja. Pokušajte ponovno; potvrda je moguća kad se izjava učita.",
   retry: "Pokušaj ponovno",
+  // NF-3 PR-5 (PD-10, E-9c): the declaration as a dialog from steps 3 and 4, and a confirmation that went stale.
+  dialogMeta: "po čl. 9 i 15 pravilnika fakulteta. Po zatvaranju ostajete na istom koraku predaje.",
+  dialogLoading: "Učitavam izjavu s poslužitelja.",
+  dialogClose: "Zatvori",
+  staleNotice: "Tekst rada se promijenio nakon potvrde. Izjavu treba potvrditi ponovno.",
+  confirmAgain: "Potvrđujem izjavu ponovno",
+  openDialog: "Otvori izjavu",
+  reconfirm: "Potvrdi izjavu ponovno",
 } as const;
 
 export const chatDialogText = {
   title: "Razgovor {n} · {date}",
   meta: "Točno kako je zabilježen i kako će ga vidjeti nastavnik.",
   you: "Vi",
-  ai: "AI pomoćnik, {model}",
+  ai: "Asistent",
   transfer: "Prijenos u tekst",
   close: "Zatvori",
+} as const;
+
+// NF-3 PR-14 (E-9b, R-57): the note beside a submitted declaration, tagged for legal review.
+export const correctionText = {
+  title: "Ispravak izjave",
+  tag: "za pravni pregled",
+  legal: "Tekst ovog odjeljka čeka pravni pregled.",
+  lead: "Potvrđena izjava se ne mijenja. Ako ste nešto izostavili, uz izjavu možete dodati napomenu; nastavnik je vidi uz sažetak.",
+  open: "Dodaj napomenu uz izjavu",
+  label: "Napomena uz izjavu",
+  hint: "Napomene se samo dodaju; potvrđena izjava ostaje kakva jest.",
+  seenBy: "Vidi je nastavnik uz sažetak.",
+  added: "Napomena uz izjavu je dodana.",
+  withdraw: "Dok rok traje, predaju možete i povući, ispraviti izjavu i rad predati ponovno.",
+  toWithdraw: "Povlačenje predaje",
 } as const;

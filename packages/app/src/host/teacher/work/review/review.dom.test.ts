@@ -11,6 +11,7 @@ import type { MatchRead } from "../../provenance/match-model";
 import type { ProvenanceCall } from "../../provenance/read";
 import type { Outcome } from "./model";
 import type { HeaderRead, ReviewReads } from "./read";
+import type { ReviewExtras } from "./extras";
 import ReviewPage from "./ReviewPage";
 import { reviewMessages as t } from "./messages.hr";
 
@@ -45,6 +46,10 @@ function reads(over: Partial<ReviewReads> = {}): ReviewReads {
   };
 }
 
+const QUIET: ReviewExtras = {
+  composition: async () => ({ kind: "empty" }), disputes: async () => ({ kind: "ok", disputes: [] }),
+  comments: async () => ({ kind: "ok", threads: [] }), drafts: async () => ({ kind: "ready", drafts: [] }), seen: async () => ({ kind: "ready", items: [] }),
+};
 const provenance: ProvenanceCall = async () => ({ kind: "noMarks" });
 const DECLARATION: DeclarationPort = {
   readStudent: async () => ({ kind: "unavailable" }),
@@ -71,7 +76,7 @@ describe("WEB-NUZ-PG Pregled rada", () => {
     root = createRoot(el);
     await act(async () => {
       root!.render(h(HostContext.Provider, { value: HOST },
-        h(ReviewPage, { documentId: DOCUMENT, reads: given, matchCall, provenanceCall: provenance, declarationPort: DECLARATION })));
+        h(ReviewPage, { documentId: DOCUMENT, reads: given, matchCall, extras: QUIET, provenanceCall: provenance, declarationPort: DECLARATION })));
     });
     await settle();
     return el;

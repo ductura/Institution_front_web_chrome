@@ -9,10 +9,10 @@ import { useEffect, useState } from "react";
 import { appHref } from "../../../../../src/components/index.ts";
 import EnrolForm from "./enrol/EnrolForm";
 import enrolStyles from "./enrol/Enrol.module.css";
-import styles from "../../../../../src/components/student/upis/Enroll.module.css";
-import { courseHref, noticeHref, readCourse, type CourseRead } from "../../../../../src/components/student/upis/course-read.ts";
+import styles from "./enrol/EnrolledCourse.module.css";
+import { courseHref, noticeHref, readCourse, type CourseRead } from "./enrol/course-read.ts";
 import { createApi, leaveFor, signInHref } from "../../../../../src/client/api.ts";
-import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
+import { studentHostHr as t } from "./i18n/messages.hr.ts";
 
 import { hostText } from "../../text";
 import { nextPath } from "../../bases";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { InboxItem } from "./inbox";
-import { applyMarked, applyRead, entriesOf, INITIAL, unreadOf } from "./notifications-state";
+import { applyMarked, applyRead, entriesOf, INITIAL, textOf, unreadOf } from "./notifications-state";
 
 const n = (id: string, readAt: string | null, kind: InboxItem["kind"] = "comment_posted"): InboxItem =>
   ({ id, kind, targetId: "t" + id, createdAt: "2026-11-03T09:14:00.000Z", readAt });
@@ -28,5 +28,25 @@ describe("notifications state", () => {
     const [e] = entriesOf(applyRead(INITIAL, page([n("1", null)])), (item) => `/rad/${item.targetId}`);
     expect(e).toMatchObject({ href: "/rad/t1", text: "Novi komentar uz rad", read: false });
     expect(e!.when).toContain("10:14");
+  });
+});
+
+describe("P-2 deadline reminder", () => {
+  const reminder = n("1", null, "deadline_reminder");
+  const known = new Map([["t1", { title: "Esej o izmišljenom gradu", dueAt: "2026-12-15T22:59:00.000Z" }]]);
+  it("names the assignment and its deadline in Zagreb time when the assignment is known", () => {
+    expect(textOf(reminder, known)).toBe("Rok za zadatak Esej o izmišljenom gradu: " + new Date("2026-12-15T22:59:00.000Z")
+      .toLocaleString("hr-HR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Zagreb" }));
+    expect(textOf(reminder, known)).toContain("23:59");
+  });
+  it("falls back to the plain line when the assignment or its date is not known, and for other kinds", () => {
+    expect(textOf(reminder)).toBe("Podsjetnik na rok zadatka");
+    expect(textOf(reminder, new Map())).toBe("Podsjetnik na rok zadatka");
+    expect(textOf(reminder, new Map([["t1", { title: "X", dueAt: "no" }]]))).toBe("Podsjetnik na rok zadatka");
+    expect(textOf(n("2", null, "comment_posted"), known)).toBe("Novi komentar uz rad");
+  });
+  it("shows it in the bell's entries", () => {
+    const [e] = entriesOf(applyRead(INITIAL, page([reminder])), () => "/zadatak/t1", known);
+    expect(e!.text.startsWith("Rok za zadatak Esej o izmišljenom gradu: ")).toBe(true);
   });
 });
