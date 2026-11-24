@@ -4,6 +4,7 @@ import type { SubmissionRead, SubmitOutcome } from "../../../../../../../src/cli
 import type { TextNode } from "../../../../../../../src/components/student/SubmissionView";
 import { atOf as atText, clockOf, dayOf } from "../steps/time";
 import { submitText as t } from "./messages.hr";
+import { forbiddenLines, type Timing } from "./timing";
 
 export type SubmitStage =
   | { readonly kind: "open" }
@@ -54,24 +55,39 @@ export type Line = {
   readonly go: null;
   readonly title?: string;
   readonly text: readonly string[];
-  readonly offer?: "check" | "reload" | "workspace" | "declaration";
+  /** The line read out first (role="alert"); the last one when not given. */
+  readonly alertAt?: number;
+  /**
+   * What the panel offers: "retryWhenSaved" a "Pokušaj ponovno" open only once the device holds nothing the
+   * server has not confirmed (PR-8); "back" the way to the workspace and to step 3 (not open, PR-17).
+   */
+  readonly offer?: "check" | "reload" | "workspace" | "declaration" | "retryWhenSaved" | "back";
+  /** False: the outcome is a panel of its own, without "Predaj rad" (PR-8, PR-9). */
   readonly retry: boolean;
+  /** PR-9: the outcome is unknown, so the state is read again on reconnection and after 10 s. */
+  readonly recheck?: boolean;
 };
 export type Next = { readonly go: "receipt" | "notice" | "signIn" } | Line;
 export type Answer = SubmitOutcome | { readonly kind: "check"; readonly state: SubmissionRead };
 
-/** `requestedAt`: when the server says the request arrived, if it does; `alternative`: the procedure the server names, if any (P-2156). */
-export type Known = { readonly requestedAt: string | null; readonly alternative: boolean };
+/**
+ * `requestedAt`: when the server says the request arrived, if it does; `alternative`: the procedure the server
+ * names, if any (P-2156); `timing`: where the deadline stands, for the panel of a submission not open (409 not_open).
+ */
+export type Known = { readonly requestedAt: string | null; readonly alternative: boolean; readonly timing?: Timing };
 
+const NOTHING_KNOWN: Known = { requestedAt: null, alternative: false };
+
+/** PR-9: one true message. A known request time says the submission was asked for; without it, it may be submitted. */
 const unknown = (requestedAt: string | null): Line => ({
-  go: null, offer: "check", retry: false,
-  text: requestedAt === null ? [t.unknown, t.unknownLines] : [fill(t.unknownRequested, { when: whenOf(requestedAt) }), t.unknownLines],
+  go: null, title: t.panelTitle, offer: "check", retry: false, recheck: true, alertAt: 1,
+  text: [requestedAt === null ? t.unknown : fill(t.unknownRequested, { when: whenOf(requestedAt) }), t.unknownAlert],
 });
 
 function fromState(state: SubmissionRead): Next {
   switch (state.kind) {
     case "potvrdeno": return { go: "receipt" };
-    case "ceka": return { go: null, text: [fill(t.unknownRequested, { when: whenOf(state.requestedAt) }), t.waiting], offer: "check", retry: false };
+    case "ceka": return { go: null, title: t.panelTitle, text: [fill(t.unknownRequested, { when: whenOf(state.requestedAt) }), t.waiting], offer: "check", retry: false };
     case "none": return { go: null, text: [t.notRecorded], retry: true };
     case "session-expired": return { go: "signIn" };
     case "greska": return state.code === "not_found" ? { go: null, text: [t.errors.not_found], retry: false } : unknown(null);
@@ -79,21 +95,30 @@ function fromState(state: SubmissionRead): Next {
   }
 }
 
-export function nextOf(answer: Answer, known: Known = { requestedAt: null, alternative: false }): Next {
+/** PR-8: `record_mismatch`, with the request time and the procedure only when the server names them. */
+function incomplete(known: Known): Line {
+  const text: string[] = [t.incompleteMismatch];
+  if (known.requestedAt !== null) text.push(fill(t.incompleteRequested, { when: whenOf(known.requestedAt) }));
+  text.push(known.alternative ? t.incompleteAlternative : t.incompleteUnavailable);
+  return { go: null, title: t.incompleteTitle, text, alertAt: 0, retry: false };
+}
+
+export function nextOf(answer: Answer, known: Known = NOTHING_KNOWN): Next {
   switch (answer.kind) {
     case "predano": return { go: "receipt" };
     case "session-expired": return { go: "signIn" };
-    case "odbijeno": return { go: null, text: [t.blocked[answer.reason]], offer: "workspace", retry: true };
+    // PR-8: not submitted; the same request is not offered again until the device has nothing unconfirmed.
+    case "odbijeno": return { go: null, title: t.refusedTitle, text: [t.blocked[answer.reason], t.notSavedLine], alertAt: 0, offer: "retryWhenSaved", retry: false };
     // PIL-K-IZJAVA-VRATA: 409 declaration_required is a warning with the way to step 2, not a technical error.
     case "izjava": return { go: null, title: t.declarationRequiredTitle, text: [t.declarationRequired], offer: "declaration", retry: true };
-    case "nedovrseno":
-      return { go: null, title: t.incompleteTitle, retry: false,
-        text: known.alternative ? [known.requestedAt === null ? t.incompleteText : t.incompleteText.replace("Vrijeme Vašeg zahtjeva", `Vrijeme Vašeg zahtjeva (${whenOf(known.requestedAt)})`)] : [t.incompleteUnavailable] };
+    case "nedovrseno": return incomplete(known);
     case "stanje":
     case "check": return fromState(answer.state);
     case "greska":
       if (answer.code === "not_acknowledged") return { go: "notice" };
-      if (answer.code === "stale_revision") return { go: null, text: [t.errors.stale_revision], offer: "reload", retry: false };
+      if (answer.code === "stale_revision") return { go: null, title: t.refusedTitle, text: [t.errors.stale_revision, t.notSubmitted], alertAt: 0, offer: "reload", retry: false };
+      // PR-17, Daniel's answer 3: the assignment does not take a submission after the deadline.
+      if (answer.code === "not_open") return { go: null, title: t.late.forbiddenTitle, text: forbiddenLines(known.timing ?? { kind: "unavailable" }), alertAt: 0, offer: "back", retry: false };
       return { go: null, text: [Object.hasOwn(t.errors, answer.code) ? t.errors[answer.code as keyof typeof t.errors] : t.errors.other], retry: true };
     default: return unknown(known.requestedAt);
   }

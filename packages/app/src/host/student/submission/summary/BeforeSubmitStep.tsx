@@ -5,7 +5,7 @@
 // unconfirmed declaration sends the student back to step 2 (C-3); pastes, gaps in the record and the form
 // check never hold the submission (PRODUCT §5 rule 11). Whether the declaration is confirmed is read from the
 // server (PIL-K-IZJAVA-VRATA), never from this browser; a failed read does not open the next step.
-import { Button, StepActions, StepNav, StepPanel, StepSection } from "@ductura/ui";
+import { Button, StepActions, StepNav, StepPanel, StepPlaces, StepSection } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -13,19 +13,21 @@ import { createApi } from "../../../../../../../src/client/api.ts";
 import { createEventDisputes } from "../../../../../../../src/client/event-disputes.ts";
 import { useOnline } from "../../../../../../../src/client/online-status.ts";
 import { fetchProcessSummary } from "../../../../../../../src/client/process-summary.ts";
-import { loadNotes, pastedText, saveNote, type NotesRead, type SummaryRead } from "../../../../../../../src/components/predaja/BeforeSubmit.tsx";
+import { loadNotes, saveNote, type NotesRead, type SummaryRead } from "../../../../../../../src/components/predaja/BeforeSubmit.tsx";
 import { stepHref } from "../../../../../../../src/components/predaja/flow.ts";
 import type { Stage } from "../../../../../../../src/components/predaja/stage.ts";
 import { readWork } from "../../../../../../../src/components/student/Submission.tsx";
 
 import StepLink from "../steps/StepLink";
 import { stepsText } from "../steps/messages.hr";
-import { atOf } from "../steps/time";
 import { checksText as c } from "./messages.hr";
 import SummaryPanel from "./SummaryPanel";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "./declaration-gate";
 import { beforeSubmission, declarationText as declarationWords } from "./declaration-gate";
-import { notesCall, readStepSummary, type ClientAnswer, type NotesClient, type SummaryPorts } from "./model";
+import { notesCall, readStepChecks, type ClientAnswer, type NotesClient, type SummaryPorts } from "./model";
+import { pastesOf, type Place } from "./places";
+import { pasteWhen } from "./panel-model";
+import { lateLine, timingTag, type Timing } from "../submit/timing";
 import { routerPath } from "../../../../bases";
 
 const PORTS: SummaryPorts = { readWork: (id) => readWork(id), readSummary: (documentId) => fetchProcessSummary(documentId) };
@@ -52,14 +54,18 @@ export type BeforeSubmitStepProps = {
   readonly onSignIn: () => void;
   /** The declaration's gate; the server's by default, a recorded one in tests. */
   readonly declarationGate?: GateRead;
+  /** Where the deadline stands, with the teacher's exception (NF-3 PR-17); from `stage` when not given. */
+  readonly timing?: Timing;
 };
 
-export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, workHref, onSignIn, declarationGate = serverGate }: BeforeSubmitStepProps) {
+export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, workHref, onSignIn, declarationGate = serverGate, timing: given }: BeforeSubmitStepProps) {
   const router = useRouter();
   const online = useOnline();
   const hint = useId();
   const [summary, setSummary] = useState<SummaryRead>({ kind: "loading" });
   const [documentId, setDocumentId] = useState<string | null>(null);
+  // NF-3 PR-3: the places left for a source in the server's text; null while unread or unreadable.
+  const [places, setPlaces] = useState<readonly Place[] | null | "loading">("loading");
   const [attempt, setAttempt] = useState(0);
   const [notes, setNotes] = useState<NotesRead>({ kind: "loading" });
   const [noteOpen, setNoteOpen] = useState(false);
@@ -73,8 +79,10 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
   useEffect(() => {
     let live = true;
     setSummary({ kind: "loading" });
-    void readStepSummary(assignmentId, PORTS).then((read) => {
+    setPlaces("loading");
+    void readStepChecks(assignmentId, PORTS).then(({ summary: read, places: found }) => {
       if (!live) return;
+      setPlaces(found);
       if (read.kind === "signIn") signIn.current();
       else {
         setSummary(read);
@@ -95,10 +103,14 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
   // WEB-NUZ-PREDAJA-1 (PR-2): the same words and the same "Što još fali" as the rehearsal in the editor.
   const declarationText = declarationWords(gate);
   const missing = beforeSubmission(gate, null);
-  // G-8: the reason of a closed "Dalje" is the declaration row itself, said once; offline it is its own line.
-  const nextHint = !online ? c.offline : confirmed ? undefined : declarationText;
+  // G-8, PR-3: "Dalje" is always there; closed, it names its one reason (offline, or the declaration).
+  const nextHint = confirmed ? undefined : gate.kind === "missing" ? c.nextWhy : declarationText;
   const declarationId = `${hint}-izjava`;
-  const describedBy = !online ? hint : confirmed ? undefined : declarationId;
+  const nextClosed = !online || nextHint !== undefined;
+  const describedBy = !online ? "sb-off" : nextHint === undefined ? undefined : hint;
+  const timing: Timing = given ?? (stage.kind === "closed" ? { kind: "late", dueAt: stage.dueAt } : stage);
+  const late = lateLine(timing);
+  const pastes = summary.kind === "ready" ? pastesOf(summary.summary) : null;
   const go = (step: "izjava" | "slanje" | "potvrda") => router.push(routerPath(hrefOf(stepHref(assignmentId, step))));
   const openNote = () => {
     if (!online || notes.kind !== "ready") return;
@@ -108,12 +120,12 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
 
   return (
     <>
-      <StepPanel title={c.title} tag={online ? kind : c.offlineTag} sticky>
+      <StepPanel title={c.title} tag={online ? timingTag(timing) ?? kind : c.offlineTag} sticky>
         <StepNav current={3} />
         <p className="note">{stepsText.intro}</p>
-        {stage.kind === "closed" && <p className="note" role="note">{`${c.closed}: ${atOf(stage.dueAt)}.`}</p>}
+        {late !== null && <p className="note" id="sb-late">{late}</p>}
         {stage.kind === "unavailable" && <p className="note" role="alert">{c.unavailable}</p>}
-        {!online && !submitted && <p className="note" role="status" id="sb-off">{c.offline}</p>}
+        {!online && <p className="note" role="status" id="sb-off">{c.offline}</p>}
         <StepSection label={c.missingTitle}>
           <span>{gate.kind === "loading" ? c.declarationChecking : missing.count === 0 ? c.missingNothing : missing.items.map((item) => item.text).join(" ")}</span>
           <span className="meta">{c.missingMeta}</span>
@@ -124,17 +136,32 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
           {gate.kind === "unavailable" && <Button tone="secondary" onClick={readGate}>{c.declarationRetry}</Button>}
         </StepSection>
         <StepSection label={c.conversations}><span>{c.conversationsUnavailable}</span></StepSection>
-        <StepSection label={c.placeholders}><span>{c.placeholdersInfo}</span></StepSection>
-        <StepSection label={c.pasted}><span>{pastedText(summary)}</span></StepSection>
+        <StepSection label={c.placeholders}>
+          {places === "loading" ? <span>{c.placesLoading}</span>
+            : places === null ? <span>{c.placeholdersUnknown}</span>
+            : places.length === 0 ? <span>{c.placeholdersNone}</span>
+            : <>
+              <StepPlaces>{places.map((place, i) => <li key={`${place.where}-${i}`}><a href={workHref}>{`${place.where} (${place.mark})`}</a></li>)}</StepPlaces>
+              <span className="meta">{c.placeMeta}</span>
+            </>}
+        </StepSection>
+        <StepSection label={c.pasted}>
+          {summary.kind === "loading" ? <span>{c.pastedLoading}</span>
+            : pastes === null ? <span>{c.pastedUnknown}</span>
+            : <>
+              {pastes.listed.length === 0 ? <span>{c.pastedNone}</span>
+                : <StepPlaces>{pastes.listed.map((paste, i) => <li key={`${paste.at.from}-${i}`}><a href={workHref}>{pasteWhen(paste.at)}</a></li>)}</StepPlaces>}
+              <span className="meta">{c.pastedMeta.replace("{n}", String(pastes.threshold)).replace("{smaller}", String(pastes.smaller))}</span>
+            </>}
+        </StepSection>
         <StepSection label={c.form}><span>{c.formNotRun}</span></StepSection>
         <StepLink href="#sb-notes" onClick={openNote}>{c.addNote}</StepLink>
+        {online && nextHint !== undefined && <p className="meta" id={hint}>{nextHint}</p>}
         <StepActions>
-          {confirmed
-            ? <Button aria-disabled={!online || undefined} aria-describedby={describedBy} onClick={() => { if (online) go("slanje"); }}>{c.next}</Button>
-            : <Button aria-describedby={describedBy} onClick={() => go("izjava")}>{c.toDeclaration}</Button>}
+          <Button aria-disabled={nextClosed || undefined} aria-describedby={describedBy}
+            onClick={() => { if (!nextClosed) go("slanje"); }}>{c.next}</Button>
           <Button tone="secondary" onClick={() => go("izjava")}>{c.back}</Button>
         </StepActions>
-        {!online && nextHint && <p className="meta" id={hint}>{nextHint}</p>}
       </StepPanel>
       <SummaryPanel summary={summary} notes={notes} submitted={submitted} confirmed={confirmed} kind={kind}
         online={online} workHref={workHref} onRetry={retry}

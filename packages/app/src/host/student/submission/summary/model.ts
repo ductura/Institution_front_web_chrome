@@ -1,6 +1,8 @@
 import type { SummaryRead } from "../../../../../../../src/components/predaja/BeforeSubmit.tsx";
 import type { SummaryOutcome } from "../../../../../../../src/client/process-summary.ts";
 import type { LocalCall } from "../../../../../../../src/client/submission.ts";
+import type { TextNode } from "../../../../../../../src/components/student/SubmissionView.tsx";
+import { placesOf, type Place } from "./places";
 
 // WEB-2108 (PD-1, PD-4): step 3 reads the process summary and the notes from
 // the server instead of the fixed "unavailable". The summary needs the work's
@@ -8,7 +10,7 @@ import type { LocalCall } from "../../../../../../../src/client/submission.ts";
 
 /** The work as evidence.open.post gave it; only `ready` names a document. */
 export type StepWork =
-  | { readonly kind: "ready"; readonly documentId: string }
+  | { readonly kind: "ready"; readonly documentId: string; readonly nodes?: readonly TextNode[] }
   | { readonly kind: "empty" | "unavailable" | "loading" | "notice" | "signIn" };
 
 export type SummaryPorts = {
@@ -30,13 +32,22 @@ const UNREACHED = { kind: "unavailable" } as const;
  * Neither holds the submission (§5 rule 11).
  */
 export async function readStepSummary(assignmentId: string, ports: SummaryPorts): Promise<StepSummary> {
+  return (await readStepChecks(assignmentId, ports)).summary;
+}
+
+/** NF-3 PR-3: the summary and the places left for a source in the server's text (null when it was not read). */
+export type StepChecks = { readonly summary: StepSummary; readonly places: readonly Place[] | null };
+
+/** One read of the work for both: evidence.open.post is not asked twice. */
+export async function readStepChecks(assignmentId: string, ports: SummaryPorts): Promise<StepChecks> {
   const work: StepWork = await ports.readWork(assignmentId).catch(() => UNREACHED);
-  if (work.kind === "signIn") return { kind: "signIn" };
-  if (work.kind === "empty") return { kind: "unavailable" };
-  if (work.kind !== "ready") return { kind: "error" };
+  if (work.kind === "signIn") return { summary: { kind: "signIn" }, places: null };
+  if (work.kind === "empty") return { summary: { kind: "unavailable" }, places: [] };
+  if (work.kind !== "ready") return { summary: { kind: "error" }, places: null };
+  const places = work.nodes === undefined ? null : placesOf(work.nodes);
   const outcome: SummaryOutcome = await ports.readSummary(work.documentId).catch(() => UNREACHED);
-  if (outcome.kind === "ok") return { kind: "ready", summary: outcome.summary, documentId: work.documentId };
-  return outcome.kind === "signedOut" ? { kind: "signIn" } : { kind: "error" };
+  if (outcome.kind === "ok") return { summary: { kind: "ready", summary: outcome.summary, documentId: work.documentId }, places };
+  return { summary: outcome.kind === "signedOut" ? { kind: "signIn" } : { kind: "error" }, places };
 }
 
 /** The summary sections whose items are events a student can supplement or dispute (WEB-1305). */
