@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Button, Card, RouteLoading, Select, Tag } from "@ductura/ui";
 
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
@@ -15,7 +15,7 @@ import KeyDates from "../../teacher/key-dates/KeyDates";
 import { keyDatesPort, type KeyDatesCall } from "../../teacher/key-dates/contract";
 import { keyDatesMessages } from "../../teacher/key-dates/messages.hr";
 import { mentorshipRequestText as t } from "./messages.hr";
-import { readMentorCandidates, readMyMentorshipRequests, sendRequest, statusText, withdrawRequest, type Note } from "./model";
+import { approvedOf, canRetarget, readMentorCandidates, readMyMentorshipRequests, sendRequest, statusText, withdrawRequest, type Note } from "./model";
 
 /** The student's transport: the contract routes of mentorship.* through createApi. */
 const defaultCall = () => studentMentorshipCall();
@@ -26,6 +26,8 @@ const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
  * Student: "Zahtjev za mentorstvo" (WEB-1404). The form sends a request, the list
  * shows each as "Čeka odluku", "Odobreno" or "Odbijeno" (never the reason, P-6),
  * and a pending one can be withdrawn. A note follows only the server's answer (B-6).
+ * WEB-NF6-ETAPE (MK-7): "Moje mentorstvo" names the mentor of each approved request; a declined one says
+ * its reason is not available yet (2148; not in the contract) and can go to another teacher.
  * `call` is for tests; the page uses the client.
  */
 export default function MentorshipRequestPage({ call = defaultCall, keyDates = keyDatesCall }:
@@ -40,6 +42,7 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
   const [workType, setWorkType] = useState<MentorshipWorkType>("bachelor_thesis");
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<Note | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     let live = true;
@@ -84,7 +87,17 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
     finish(await withdrawRequest(call(), requestId));
   }
 
+  function retarget(type: MentorshipWorkType) {
+    setWorkType(type);
+    setTeacherId("");
+    setNote({ tone: "status", text: t.retargetNote });
+    const select = formRef.current?.querySelector("select");
+    select?.focus();
+    select?.scrollIntoView?.({ block: "center" });
+  }
+
   let list;
+  let mine = null;
   if (read === null || read.kind === "session-expired") list = <RouteLoading label={hostText.loading} />;
   else if (read.kind === "nepoznato") {
     list = (
@@ -94,6 +107,25 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
       </Card>
     );
   } else {
+    const approved = approvedOf(read.requests);
+    mine = (
+      <Card level={2} title={t.mine.title}>
+        {approved.length === 0 ? <p>{t.mine.empty}</p> : (
+          <>
+            <ul>
+              {approved.map((request) => (
+                <li key={request.requestId} data-testid="my-mentorship">
+                  <strong>{t.mine.mentor.replace("{type}", t.workTypes[request.workType]).replace("{name}", nameText(request.teacherName) ?? t.teacherUnnamed)}</strong>
+                  <br />
+                  <span>{t.mine.openedOn.replace("{date}", formatDateHr(request.endedAt ?? request.requestedAt))}</span>
+                </li>
+              ))}
+            </ul>
+            <p>{t.mine.start} <a href={appHref(base, "/zadaci")}>{t.mine.toTasks}</a></p>
+          </>
+        )}
+      </Card>
+    );
     list = (
       <Card level={2} title={t.listTitle}>
         {read.requests.length === 0 ? <p>{t.empty}</p> : (
@@ -109,6 +141,14 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
                   {t.teacherLabel.replace("{name}", nameText(request.teacherName) ?? t.teacherUnnamed)} · {t.sentOn.replace("{date}", formatDateHr(request.requestedAt))}
                   {request.endedAt === null ? "" : ` · ${t.decidedOn.replace("{date}", formatDateHr(request.endedAt))}`}
                 </span>
+                {canRetarget(request) && (
+                  <>
+                    <br />
+                    <span>{t.declinedReason}</span>{" "}
+                    <Button tone="quiet" disabled={busy !== null} aria-label={`${t.retarget}: ${t.workTypes[request.workType]}`}
+                      onClick={() => retarget(request.workType)}>{t.retarget}</Button>
+                  </>
+                )}
                 {canWithdraw(request) && (
                   <>
                     {" "}
@@ -133,9 +173,10 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
         <h1>{t.title}</h1>
         <p>{t.lead}</p>
       </header>
+      {mine}
       {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
       <Card level={2} title={t.formTitle}>
-        <form onSubmit={(event) => void send(event)}>
+        <form ref={formRef} onSubmit={(event) => void send(event)}>
           {candidates !== null && candidates.kind === "nepoznato" && <p role="alert">{t.candidatesUnavailable}</p>}
           {candidates !== null && candidates.kind === "ready" && candidates.candidates.length === 0 && <p>{t.noCandidates}</p>}
           <Select label={t.fieldTeacher} value={teacherId}

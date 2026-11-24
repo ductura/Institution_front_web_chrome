@@ -7,10 +7,10 @@ import type { ListOutcome } from "../../../../../../../src/client/comments";
 import type { DisputeListOutcome } from "../../../../../../../src/client/event-disputes";
 import type { DraftsRead } from "../../comment-bank/model";
 import type { OriginRead } from "../../provenance/origin";
-import { givenRows, hasUnknown, compositionRows, importantPlaces, noteRows, type CompositionRow, type GivenRow, type NoteRow, type Place } from "./pg-model";
+import { givenRows, hasUnknown, seenComments, seenText, compositionRows, importantPlaces, noteRows, type CompositionRow, type GivenRow, type NoteRow, type Place } from "./pg-model";
 import { pgMessages as t } from "./pg-messages.hr";
 import type { ReviewReads } from "./read";
-import type { ReviewExtras } from "./extras";
+import type { ReviewExtras, SeenRead } from "./extras";
 import { CardTable } from "./CardTable";
 
 /** Reads once per key; a retry reads again. A read that throws is an error, never a blank. */
@@ -151,13 +151,20 @@ export function Places({ documentId, reads, replayHref }: { documentId: string; 
 
 // ---- PG-9 ----
 
-const GIVEN_COLUMNS: readonly DataTableColumn<GivenRow>[] = [
-  { id: "when", header: t.colGivenWhen, cell: (row) => row.when },
-  { id: "who", header: t.colGivenWhat, cell: (row) => <><b>{row.who}</b>{": "}{row.what}</> },
-  { id: "state", header: t.colGivenState, cell: (row) => (row.state === "draft" ? t.givenDraft : row.state === "student" ? t.givenStudentState : t.givenPublished) },
-];
+function givenColumns(seen: ReadonlyMap<string, string> | null): readonly DataTableColumn<GivenRow>[] {
+  return [
+    { id: "when", header: t.colGivenWhen, cell: (row) => row.when },
+    { id: "who", header: t.colGivenWhat, cell: (row) => <><b>{row.who}</b>{": "}{row.what}</> },
+    { id: "state", header: t.colGivenState, cell: (row) => {
+      const base = row.state === "draft" ? t.givenDraft : row.state === "student" ? t.givenStudentState : t.givenPublished;
+      const line = seenText(row, seen);
+      return line === null ? base : <>{base}<br /><span data-seen={line === t.seenNot ? "no" : "yes"}>{line}</span></>;
+    } },
+  ];
+}
 
-export function GivenView({ comments, drafts, onRetry }: { comments: ListOutcome | null; drafts: DraftsRead | null; onRetry: () => void }) {
+export function GivenView({ comments, drafts, seen = null, onRetry }: { comments: ListOutcome | null; drafts: DraftsRead | null; seen?: SeenRead | null; onRetry: () => void }) {
+  const seenMap = seen !== null && seen.kind === "ready" ? seenComments(seen.items) : null;
   let body: ReactNode;
   if (comments === null || drafts === null) body = <p className="meta" role="status">{t.givenLoading}</p>;
   else if (comments.kind === "signedOut" || drafts.kind === "signedOut") body = null;
@@ -169,7 +176,7 @@ export function GivenView({ comments, drafts, onRetry }: { comments: ListOutcome
       <>
         {drafts.kind === "unavailable" && <><p className="note" role="alert">{t.givenUnavailable}</p><Retry onRetry={onRetry} /></>}
         {rows.length === 0 ? <p className="note">{t.givenNone}</p>
-          : <CardTable caption={t.givenCaption} columns={GIVEN_COLUMNS} rows={rows} rowKey={(row) => row.key} empty={t.givenNone} />}
+          : <CardTable caption={t.givenCaption} columns={givenColumns(seenMap)} rows={rows} rowKey={(row) => row.key} empty={t.givenNone} />}
       </>
     );
   }
@@ -178,7 +185,8 @@ export function GivenView({ comments, drafts, onRetry }: { comments: ListOutcome
       <h3 id="pg9-h">{t.givenHeading}</h3>
       <p className="note">{t.givenIntro}</p>
       {body}
-      <p className="meta" data-missing="seen">{t.givenSeen}</p>
+      {seen !== null && (seen.kind === "unavailable" || seen.kind === "notFound") && <p className="note" role="alert" data-seen-state="unavailable">{t.givenSeenUnavailable}</p>}
+      <p className="meta">{t.givenSeenScope}</p>
       <p className="meta">{t.givenOther}</p>
     </section>
   );
@@ -187,5 +195,6 @@ export function GivenView({ comments, drafts, onRetry }: { comments: ListOutcome
 export function Given({ documentId, extras }: { documentId: string; extras: ReviewExtras }) {
   const [comments, retryComments] = useRead(() => extras.comments(documentId), `pg9c:${documentId}`, { kind: "unavailable" });
   const [drafts, retryDrafts] = useRead(() => extras.drafts(documentId), `pg9d:${documentId}`, { kind: "unavailable" });
-  return <GivenView comments={comments} drafts={drafts} onRetry={() => { retryComments(); retryDrafts(); }} />;
+  const [seen, retrySeen] = useRead(() => extras.seen(documentId), `pg9s:${documentId}`, { kind: "unavailable" } as SeenRead);
+  return <GivenView comments={comments} drafts={drafts} seen={seen} onRetry={() => { retryComments(); retryDrafts(); retrySeen(); }} />;
 }

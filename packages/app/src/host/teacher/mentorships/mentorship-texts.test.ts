@@ -7,7 +7,7 @@ import { consultHr } from "../../editor/work/consult/messages.hr";
 import { mentorshipRequestText } from "../../student/mentorship-request/messages.hr";
 import { keyDatesMessages } from "../key-dates/messages.hr";
 import { n12Messages } from "../n12/messages.hr";
-import { myStudentsText, overviewText } from "./messages.hr";
+import { mentorPlanText, myStudentsText, overviewText } from "./messages.hr";
 
 // NF-6 MK-17: one pass over every text of mentoring (the Mentor card, consultations, the record, the mentor's
 // pages, the timeline, the student's mentorship page). Functions are called with invented values so their
@@ -25,12 +25,12 @@ function strings(value: unknown, path: string, out: Array<[string, string]>): Ar
 }
 
 const CATALOGS = {
-  overviewText, myStudentsText, keyDatesMessages, mentorshipRequestText, mentorCardHr, consultHr, n12Messages,
+  overviewText, myStudentsText, mentorPlanText, keyDatesMessages, mentorshipRequestText, mentorCardHr, consultHr, n12Messages,
   mentoredWorks: messagesHr.mentoredWorks, mentorshipRequests: messagesHr.mentorshipRequests,
 };
 const ALL = Object.entries(CATALOGS).flatMap(([name, catalog]) => strings(catalog, name, []));
 /** The catalogs of this task's lane (teacher/mentorships, teacher/key-dates, student/mentorship-request). */
-const OWN = ["overviewText", "myStudentsText", "keyDatesMessages", "mentorshipRequestText"];
+const OWN = ["overviewText", "myStudentsText", "mentorPlanText", "keyDatesMessages", "mentorshipRequestText"];
 
 /**
  * Findings of the MK-17 pass in catalogs of the editor's lane (host/editor/**), which this task does not touch
@@ -56,7 +56,7 @@ describe("texts of mentoring (MK-17)", () => {
   });
 
   it("never punish or accuse, name no model or provider, and use 'izvornost' only as the faculty's form", () => {
-    const words = /kazn|sankcij|varanj|varal|plagij|sumnjiv|prekršaj|provjer\w* ai|ai[- ]detekt|\bgpt\b|openai|anthropic|claude|gemini|mistral|llama/i;
+    const words = /\bkazn|sankcij|\bvaranj|\bvaral|plagij|sumnjiv|prekršaj|provjer\w* ai|ai[- ]detekt|\bgpt\b|openai|anthropic|claude|gemini|mistral|llama/i;
     expect(ALL.filter(([, text]) => words.test(text))).toEqual([]);
     expect(ALL.filter(([, text]) => /izvornost/i.test(text) && !/Izjava o izvornosti rada/.test(text))).toEqual([]);
   });

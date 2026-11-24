@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FAKE_TEACHERS, fakeMentorshipServer } from "./fake-port";
-import { sendRequest, withdrawRequest } from "./model";
+import { approvedOf, canRetarget, sendRequest, withdrawRequest } from "./model";
 import { mentorshipRequestText as t } from "./messages.hr";
 import { readMentorCandidates, readMyMentorshipRequests, studentMentorshipCall } from "../../../../../../src/client/mentorship";
 import { decideMentorshipRequest, readMentorshipRequests } from "../../../../../../src/client/mentorship-requests";
@@ -177,3 +177,21 @@ async function worksOf(server: ReturnType<typeof fakeMentorshipServer>) {
   if (read.kind !== "ready") throw new Error("expected works");
   return read.works;
 }
+
+describe("WEB-NF6-ETAPE (MK-7): the student's mentorship and a declined request", () => {
+  const row = (requestId: string, state: "requested" | "approved" | "declined" | "withdrawn", endedAt: string | null) => ({
+    requestId, teacherId: FAKE_TEACHERS[0].teacherId, teacherName: { givenName: "Marko", familyName: "Izmišljeni" },
+    workType: "bachelor_thesis" as const, state, requestedAt: "2026-11-01T10:00:00.000Z", endedAt,
+    mentorshipId: state === "approved" ? `00000000-0000-4000-8000-0000000000${requestId}` : null,
+  });
+  it("lists only the approved requests, newest decision first", () => {
+    const rows = [row("a1", "approved", "2026-11-02T10:00:00.000Z"), row("b2", "declined", "2026-11-05T10:00:00.000Z"),
+      row("c3", "approved", "2026-11-09T10:00:00.000Z"), row("d4", "requested", null)];
+    expect(approvedOf(rows).map((r) => r.requestId)).toEqual(["c3", "a1"]);
+    expect(approvedOf([])).toEqual([]);
+  });
+  it("sends only a declined request to another teacher", () => {
+    expect(canRetarget(row("b2", "declined", "2026-11-05T10:00:00.000Z"))).toBe(true);
+    for (const state of ["requested", "approved", "withdrawn"] as const) expect(canRetarget(row("x", state, state === "requested" ? null : "2026-11-05T10:00:00.000Z"))).toBe(false);
+  });
+});

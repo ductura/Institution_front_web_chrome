@@ -1,0 +1,25 @@
+/* The prototype's banner (editor.css .banner, nf2.js nf2-b) and its explanation dialog (nf2expl). */
+.list { display: grid; gap: 8px; margin: 8px 0; }
+.banner {
+  font-family: var(--ff-ui); font-size: 13px; background: var(--well); color: var(--ink);
+  border-radius: var(--radius); padding: 10px 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.banner b { font-weight: 600; }
+.grow { flex: 1; }
+.lnk {
+  background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  color: var(--accent); font-size: 12.5px; text-decoration: underline; text-decoration-color: var(--link-rule); text-underline-offset: 3px;
+}
+.lnk:hover { color: var(--accent-hover); }
+.lnk:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.muted { color: var(--ink-3); font-size: 12px; margin: 0 0 10px; }
+.ta {
+  width: 100%; box-sizing: border-box; background: var(--field); color: var(--ink); border: 1px solid var(--field-rule);
+  border-radius: var(--radius-control); padding: 7px 9px; font: inherit; font-size: 13px;
+  resize: vertical; min-height: 64px; line-height: 1.45;
+}
+.ta::placeholder { color: var(--field-placeholder); }
+.ta:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ta[aria-invalid="true"] { border-color: var(--danger, var(--field-rule)); }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@media (max-width: 640px) { .banner { font-size: 12.5px; padding: 8px 10px; } }

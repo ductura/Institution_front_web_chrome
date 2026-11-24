@@ -17,6 +17,7 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { checkForm, errorSummary, withPractice, type FormErrors } from "./form-checks";
 import { ImportAllowedField } from "./ImportAllowedField";
 import { PracticeField } from "./PracticeField";
+import { QuestionField } from "./QuestionField";
 import { SubmissionRules, seesLine } from "./SubmissionRules";
 import { applyRules, bodyExtras, defaultChoices, groupsMissing, readGroups, type Call, type GroupsRead, type RuleChoices, type RuleName } from "./rules";
 import { assignmentFormHr as f } from "./messages.hr";
@@ -228,6 +229,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
             onChange={(value) => setChoices((current) => ({ ...current, externalTools: value === "yes" }))} />
           <p className="meta">{f.rules.toolsHint}</p>
           <ImportAllowedField value={draft.importAllowed === true} onChange={(value) => set("importAllowed", value)} />
+          <QuestionField />
           <p className="meta">{f.rules.seen}</p>
         </Section>
 

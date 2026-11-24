@@ -41,4 +41,16 @@ export const mentorshipRequestText = {
   notFound: "Zahtjev više nije dostupan.",
   invalid: "Zahtjev nije ispravan. Provjerite nastavnika i vrstu rada pa pokušajte ponovno.",
   unknown: "Nije poznato je li zahtjev zabilježen. Osvježite popis prije novog pokušaja.",
+  // WEB-NF6-ETAPE (NF-6 MK-7): the student's view of the decision and the mentor.
+  mine: {
+    title: "Moje mentorstvo",
+    empty: "Nastavnik Vam još nije otvorio mentorstvo.",
+    mentor: "{type}: mentor {name}",
+    openedOn: "Mentorstvo je otvoreno {date}",
+    start: "Rad uz mentora započinjete s popisa zadataka.",
+    toTasks: "Otvori moje zadatke",
+  },
+  declinedReason: "Razlog odbijanja trenutačno nije dostupan.",
+  retarget: "Zatraži drugog mentora",
+  retargetNote: "Odaberite drugog nastavnika i pošaljite zahtjev.",
 } as const;

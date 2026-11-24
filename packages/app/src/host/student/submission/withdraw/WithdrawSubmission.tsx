@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, Card, Dialog, RouteLoading } from "@ductura/ui";
 
+import StepLink from "../steps/StepLink";
+
 import { createApi, goToSignIn } from "../../../../../../../src/client/api";
 import { downloadBlob } from "../../../../../../../src/components/editor/EarlierDraft";
 import { appHref } from "../../../../../../../src/components/shell/nav";
 import { useHost } from "../../../context";
 import type { StateRead, WithdrawCall } from "./contract";
 import { withdrawText as t } from "./messages.hr";
-import { canWithdraw, opensOnArrival, readWithdrawalState, receiptFile, receiptLine, withdraw, type Note } from "./model";
+import { opensOnArrival, readWithdrawalState, receiptFile, receiptLine, withdraw, withdrawView, type Note, type WithdrawContext } from "./model";
 import type { WithdrawalReceipt } from "./contract";
 
 /** Saves the signed confirmation from the browser's memory through the shared download; no request is made. */
@@ -27,7 +29,20 @@ const defaultCall = () => createApi() as unknown as WithdrawCall;
  * note follows only the server's answer (B-6), and every signed confirmation can be downloaded.
  * `call` is for tests; the page uses the client.
  */
-export default function WithdrawSubmission({ assignmentId, call = defaultCall }: { assignmentId: string; call?: () => WithdrawCall }) {
+export type WithdrawSubmissionProps = {
+  readonly assignmentId: string;
+  readonly call?: () => WithdrawCall;
+  /** NF-3 PR-13: the history's `withdrawalAllowed` (null while unknown), the deadline, and whether the newest event is a withdrawal. */
+  readonly context?: Omit<WithdrawContext, "now">;
+  /** "Otvori radni prostor" after a withdrawal (E-11e); without it the link is not shown. */
+  readonly workHref?: string;
+  /** Called after a recorded withdrawal, so the history around it is read again. */
+  readonly onWithdrawn?: () => void;
+};
+
+const UNKNOWN_CONTEXT: Omit<WithdrawContext, "now"> = { allowed: null, deadline: null, withdrawn: false };
+
+export default function WithdrawSubmission({ assignmentId, call = defaultCall, context = UNKNOWN_CONTEXT, workHref, onWithdrawn }: WithdrawSubmissionProps) {
   const { base } = useHost();
   const here = appHref(base, `/rad/${encodeURIComponent(assignmentId)}/predaja/potvrda`);
   const [read, setRead] = useState<StateRead | null>(null);
@@ -36,6 +51,7 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
   const [kept, setKept] = useState<readonly WithdrawalReceipt[]>([]);
+  const [withdrewHere, setWithdrewHere] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -62,7 +78,11 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
     setAsking(false);
     if (followup === null) { goToSignIn(here); return; }
     setNote(followup.note);
-    if (followup.receipt !== undefined) setKept((list) => [...list, followup.receipt as WithdrawalReceipt]);
+    if (followup.receipt !== undefined) {
+      setKept((list) => [...list, followup.receipt as WithdrawalReceipt]);
+      setWithdrewHere(true);
+      onWithdrawn?.();
+    }
     if (followup.refresh) setAttempt((n) => n + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busy, assignmentId, here]);
@@ -81,18 +101,25 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
       </Card>
     );
   }
-  const { state } = read;
+  const view = withdrawView(read.state, { ...context, withdrawn: context.withdrawn || withdrewHere, now: Date.now() });
   return (
-    <Card level={2} title={t.title}>
+    <Card level={2} title={view.kind === "withdrawn" ? t.withdrawnTitle : t.title}>
       {note !== null && (note.tone === "alert" ? <p role="alert">{note.text}</p> : <p role="status">{note.text}</p>)}
-      {canWithdraw(state)
-        ? (
-          <>
-            <p>{t.lead}</p>
-            <p><Button tone="quiet" onClick={() => setAsking(true)}>{t.withdraw}</Button></p>
-          </>
-        )
-        : <p>{t.closed}</p>}
+      {view.kind === "open" && (
+        <>
+          <p>{view.lead}</p>
+          <p><Button tone="quiet" onClick={() => setAsking(true)}>{t.withdraw}</Button></p>
+        </>
+      )}
+      {view.kind === "closed" && <p>{view.reason}</p>}
+      {view.kind === "withdrawn" && (
+        <>
+          {/* E-11e: what comes next, the way back to writing, and who sees the withdrawal. */}
+          <p>{view.next}</p>
+          {workHref !== undefined && <StepLink href={workHref}>{t.openWorkspace}</StepLink>}
+          <p className="meta">{t.teacherSees}</p>
+        </>
+      )}
       <Receipts receipts={shownReceipts} />
       <Dialog open={asking} title={t.dialogTitle} dismissible={!busy} onClose={() => setAsking(false)}
         actions={(
@@ -102,6 +129,8 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
           </>
         )}>
         <p>{t.explain}</p>
+        {view.kind === "open" && view.explainDue !== null && <p>{view.explainDue}</p>}
+        {busy && <p role="status">{t.withdrawingStatus}</p>}
       </Dialog>
     </Card>
   );
