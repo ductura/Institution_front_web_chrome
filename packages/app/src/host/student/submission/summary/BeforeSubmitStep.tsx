@@ -5,7 +5,7 @@
 // unconfirmed declaration sends the student back to step 2 (C-3); pastes, gaps in the record and the form
 // check never hold the submission (PRODUCT §5 rule 11). Whether the declaration is confirmed is read from the
 // server (PIL-K-IZJAVA-VRATA), never from this browser; a failed read does not open the next step.
-import { Button, StepActions, StepNav, StepPanel, StepPlaces, StepSection } from "@ductura/ui";
+import { Button, OptionGroup, StepActions, StepNav, StepPanel, StepPlaces, StepSection } from "@ductura/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -29,6 +29,12 @@ import { pastesOf, type Place } from "./places";
 import { pasteWhen } from "./panel-model";
 import { lateLine, timingTag, type Timing } from "../submit/timing";
 import { routerPath } from "../../../../bases";
+import DeclarationDialog from "../declaration/DeclarationDialog";
+import { useFocusAfterDialog, useOpener } from "../declaration/dialog-model";
+import { deviceHasNewer } from "../submit/local-hold";
+import { rememberChoice } from "../submit/newer-choice";
+import type { Confirmed, NewerChoice } from "../submit/newer-local";
+import { submitText } from "../submit/messages.hr";
 
 const PORTS: SummaryPorts = { readWork: (id) => readWork(id), readSummary: (documentId) => fetchProcessSummary(documentId) };
 
@@ -56,9 +62,13 @@ export type BeforeSubmitStepProps = {
   readonly declarationGate?: GateRead;
   /** Where the deadline stands, with the teacher's exception (NF-3 PR-17); from `stage` when not given. */
   readonly timing?: Timing;
+  /** NF-3 PR-10 (INT-16): whether this device holds text the server has not confirmed; the journal by default. */
+  readonly hasNewer?: (documentId: string) => Promise<boolean>;
 };
 
-export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, workHref, onSignIn, declarationGate = serverGate, timing: given }: BeforeSubmitStepProps) {
+export default function BeforeSubmitStep({
+  assignmentId, stage, kind, hrefOf, workHref, onSignIn, declarationGate = serverGate, timing: given, hasNewer = deviceHasNewer,
+}: BeforeSubmitStepProps) {
   const router = useRouter();
   const online = useOnline();
   const hint = useId();
@@ -69,6 +79,13 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
   const [attempt, setAttempt] = useState(0);
   const [notes, setNotes] = useState<NotesRead>({ kind: "loading" });
   const [noteOpen, setNoteOpen] = useState(false);
+  // NF-3 PR-5 (PD-10): the declaration as a dialog, without leaving this step.
+  const [declaring, setDeclaring] = useState(false);
+  const nextButton = useRef<HTMLButtonElement>(null);
+  // NF-3 PR-10 (E-8c): the revision the server confirmed, a newer one on this device, and the student's choice.
+  const [confirmedWork, setConfirmedWork] = useState<Confirmed | null>(null);
+  const [newer, setNewer] = useState(false);
+  const [version, setVersion] = useState<NewerChoice | null>(null);
   // The declaration as the server holds it for the current revision (PIL-K-IZJAVA-VRATA).
   const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
   const confirmed = opensSending(gate);
@@ -80,9 +97,10 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
     let live = true;
     setSummary({ kind: "loading" });
     setPlaces("loading");
-    void readStepChecks(assignmentId, PORTS).then(({ summary: read, places: found }) => {
+    void readStepChecks(assignmentId, PORTS).then(({ summary: read, places: found, confirmed: work }) => {
       if (!live) return;
       setPlaces(found);
+      setConfirmedWork(work ?? null);
       if (read.kind === "signIn") signIn.current();
       else {
         setSummary(read);
@@ -98,13 +116,24 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
     return () => { live = false; };
   }, [assignmentId]);
 
+  // Looked at once the confirmed revision is known, and again when the connection comes back.
+  useEffect(() => {
+    if (confirmedWork === null) return undefined;
+    let live = true;
+    const look = () => { void hasNewer(confirmedWork.documentId).then((found) => found === true, () => false).then((found) => { if (live) setNewer(found); }); };
+    look();
+    window.addEventListener("online", look);
+    return () => { live = false; window.removeEventListener("online", look); };
+  }, [confirmedWork, hasNewer]);
+
   const retry = () => setAttempt((n) => n + 1);
   const submitted = stage.kind === "submitted";
   // WEB-NUZ-PREDAJA-1 (PR-2): the same words and the same "Što još fali" as the rehearsal in the editor.
   const declarationText = declarationWords(gate);
   const missing = beforeSubmission(gate, null);
   // G-8, PR-3: "Dalje" is always there; closed, it names its one reason (offline, or the declaration).
-  const nextHint = confirmed ? undefined : gate.kind === "missing" ? c.nextWhy : declarationText;
+  const choosing = newer && confirmedWork !== null;
+  const nextHint = !confirmed ? (gate.kind === "missing" ? c.nextWhy : declarationText) : choosing && version === null ? c.newerWhy : undefined;
   const declarationId = `${hint}-izjava`;
   const nextClosed = !online || nextHint !== undefined;
   const describedBy = !online ? "sb-off" : nextHint === undefined ? undefined : hint;
@@ -112,6 +141,13 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
   const late = lateLine(timing);
   const pastes = summary.kind === "ready" ? pastesOf(summary.summary) : null;
   const go = (step: "izjava" | "slanje" | "potvrda") => router.push(routerPath(hrefOf(stepHref(assignmentId, step))));
+  const onward = () => {
+    if (nextClosed) return;
+    if (choosing && version !== null) rememberChoice(assignmentId, confirmedWork, version);
+    go("slanje");
+  };
+  const declareLabel = useOpener(gate);
+  useFocusAfterDialog(declaring, declareLabel, nextButton);
   const openNote = () => {
     if (!online || notes.kind !== "ready") return;
     setNoteOpen(true);
@@ -132,9 +168,21 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
         </StepSection>
         <StepSection label={c.declaration}>
           <span id={declarationId}>{declarationText}</span>
-          {gate.kind === "missing" && <StepLink href={hrefOf(stepHref(assignmentId, "izjava"))}>{c.openDeclaration}</StepLink>}
+          {declareLabel !== null && <Button tone="secondary" size="small" onClick={() => setDeclaring(true)}>{declareLabel}</Button>}
           {gate.kind === "unavailable" && <Button tone="secondary" onClick={readGate}>{c.declarationRetry}</Button>}
         </StepSection>
+        {choosing && (
+          <StepSection label={submitText.newer.title}>
+            <span>{submitText.newer.text}</span>
+            <OptionGroup legend={c.newerLegend} name="sb-ver" value={version ?? ""}
+              onChange={(value) => setVersion(value as NewerChoice)}
+              options={[
+                { value: "latest", label: submitText.newer.latest },
+                { value: "confirmed", label: submitText.newer.confirmed.replace("{n}", String(confirmedWork.revision)) },
+              ]} />
+            <span className="meta">{c.newerMeta}</span>
+          </StepSection>
+        )}
         <StepSection label={c.conversations}><span>{c.conversationsUnavailable}</span></StepSection>
         <StepSection label={c.placeholders}>
           {places === "loading" ? <span>{c.placesLoading}</span>
@@ -158,11 +206,13 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
         <StepLink href="#sb-notes" onClick={openNote}>{c.addNote}</StepLink>
         {online && nextHint !== undefined && <p className="meta" id={hint}>{nextHint}</p>}
         <StepActions>
-          <Button aria-disabled={nextClosed || undefined} aria-describedby={describedBy}
-            onClick={() => { if (!nextClosed) go("slanje"); }}>{c.next}</Button>
+          <Button ref={nextButton} aria-disabled={nextClosed || undefined} aria-describedby={describedBy}
+            onClick={onward}>{c.next}</Button>
           <Button tone="secondary" onClick={() => go("izjava")}>{c.back}</Button>
         </StepActions>
       </StepPanel>
+      <DeclarationDialog assignmentId={assignmentId} open={declaring} declarationGate={declarationGate} onSignIn={() => signIn.current()}
+        onClose={() => { setDeclaring(false); readGate(); }} />
       <SummaryPanel summary={summary} notes={notes} submitted={submitted} confirmed={confirmed} kind={kind}
         online={online} workHref={workHref} onRetry={retry}
         disputes={documentId === null ? undefined : { port: DISPUTES, documentId }} noteOpen={noteOpen} onNoteOpen={setNoteOpen}

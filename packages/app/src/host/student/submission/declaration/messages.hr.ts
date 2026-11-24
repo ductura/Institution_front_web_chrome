@@ -56,6 +56,14 @@ export const declarationStepText = {
   // The confirmation is written on the server: without a read there is nothing to confirm (PIL-K-IZJAVA).
   error: "Izjavu trenutačno nije moguće učitati s poslužitelja. Pokušajte ponovno; potvrda je moguća kad se izjava učita.",
   retry: "Pokušaj ponovno",
+  // NF-3 PR-5 (PD-10, E-9c): the declaration as a dialog from steps 3 and 4, and a confirmation that went stale.
+  dialogMeta: "po čl. 9 i 15 pravilnika fakulteta. Po zatvaranju ostajete na istom koraku predaje.",
+  dialogLoading: "Učitavam izjavu s poslužitelja.",
+  dialogClose: "Zatvori",
+  staleNotice: "Tekst rada se promijenio nakon potvrde. Izjavu treba potvrditi ponovno.",
+  confirmAgain: "Potvrđujem izjavu ponovno",
+  openDialog: "Otvori izjavu",
+  reconfirm: "Potvrdi izjavu ponovno",
 } as const;
 
 export const chatDialogText = {

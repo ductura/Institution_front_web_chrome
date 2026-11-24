@@ -134,7 +134,7 @@ describe("PR-11: SubmittedReceipt reads what the receipt stands for", () => {
   const ports = (revision: number): SubmittedPorts => ({
     readWork: async () => ({ kind: "ready", documentId: "izmisljeni-dokument-1", revision, nodes: [{ children: [{ text: "Izmišljeni tekst od pet riječi." }] }] }) as never,
     readSummary: async () => ({ kind: "unavailable" }),
-    listNotes: async () => ({ ok: true, status: 200, body: { notes: [{ id: "n1", text: "Izmišljena napomena.", createdAt: "2026-11-04T10:00:00.000000Z" }] } }),
+    listNotes: async () => ({ ok: true, status: 200, body: { notes: [{ id: "n1", text: "Izmišljena napomena.", createdAt: "2026-11-04T10:00:00.000Z" }] } }),
     gate: async () => ({ kind: "confirmed", detail: "bound", confirmedAt: "2026-11-04T10:00:00.000000Z" }),
   });
   const lines = () => [...host!.querySelectorAll("#sb-given li")].map((li) => li.textContent);
