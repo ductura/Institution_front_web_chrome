@@ -1,5 +1,7 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
 import { readAssignmentVersion } from "@/client/teacher-assignment";
 import AssignmentVersionForm from "@/components/teacher/AssignmentVersionForm";
 import { messagesHr } from "@/lib/i18n/messages.hr";
@@ -13,11 +15,13 @@ const t = messagesHr.teacher.newVersion;
 export default function AssignmentVersionPage({ assignmentId }: { assignmentId: string }) {
   const path = `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}/uredi`;
   const [read, retry] = useAssignmentRead(path, () => readAssignmentVersion(assignmentId));
+  // NZ-1: "Kopiraj zadatak" on the course card opens the copy dialog here.
+  const copy = useSearchParams().get("kopiraj") === "1";
 
   return (
     <AssignmentPage title={t.title} read={read} retry={retry} unavailable={t.unavailable} missing={t.missing}>
       {(current, href) => <>
-        <AssignmentCopy current={current} href={href} />
+        <AssignmentCopy current={current} href={href} startOpen={copy} />
         <PracticeReadBack current={current} />
         <AssignmentVersionForm current={current} backHref={href("/nastavnik")} onReload={retry} />
       </>}

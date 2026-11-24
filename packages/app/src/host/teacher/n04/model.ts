@@ -23,6 +23,8 @@ export type RosterWork = {
   readonly version?: number | null;
   readonly record?: EvidenceRecord | null;
   readonly documentId?: string | null;
+  /** NZ-10: this student's extended deadline ("Rok produljen do …"); absent or null when none or not read. */
+  readonly extendedTo?: string | null;
   /** Absent: the read does not say. That is not "no revision". */
   readonly revision?: { readonly state: RevisionState; readonly deadline: string | null } | null;
 };
@@ -95,6 +97,13 @@ export function workStatusOf(state: unknown): WorkStatus {
 /** This screen's own path: where sign-in returns after a 401. */
 export function rosterPath(courseId: string): string {
   return `/nastavnik/kolegiji/${encodeURIComponent(courseId)}/studenti`;
+}
+
+/** NZ-10: "Rok produljen do …" for an extended deadline of an unsubmitted work; null otherwise. */
+export function extensionLine(work: RosterWork): string | null {
+  if (work.status === "submitted") return null;
+  const due = whenHr(work.extendedTo);
+  return due === null ? null : text.extendedTo(due);
 }
 
 /** "Čeka doradu …" only for a request that still waits for the student; null otherwise. */

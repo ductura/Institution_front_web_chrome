@@ -108,8 +108,11 @@ describe("registry configuration", () => {
     for (const file of WORKFLOWS.filter((f) => f !== ".github/workflows/ci.yml")) expect(read(file)).not.toMatch(TOKEN_USE);
   });
 
-  it("the client job keeps no git credentials after checkout", () => {
-    const client = read(".github/workflows/ci.yml").split(/\n {2}client:\n/)[1] ?? "";
-    expect(client).toMatch(/- uses: actions\/checkout@v4\n {8}with: \{ persist-credentials: false \}\n/);
+  // ZEL-CI-RED: the client checks run in the part `checks` of the job ui,
+  // which holds the packages: read token; none of its parts keeps credentials.
+  it("the job that installs the client keeps no git credentials after checkout", () => {
+    const ui = read(".github/workflows/ci.yml").split(/\n {2}ui:\n/)[1]?.split(/\n {2}[a-z-]+:\n/)[0] ?? "";
+    expect(ui).toMatch(/packages: read\n/);
+    expect(ui).toMatch(/- uses: actions\/checkout@v4\n {8}with: \{ persist-credentials: false \}\n/);
   });
 });

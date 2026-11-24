@@ -88,3 +88,10 @@ export function detailText(extension: DeadlineExtension): string {
 export function titleText(extension: DeadlineExtension, students: readonly ExtensionStudent[] | null): string {
   return `${whoText(extension, students)} · ${text.newDue} ${formatDateTimeHr(extension.dueAt)}`;
 }
+
+/** NZ-2: whether the assignment's own deadline has passed; false when the read does not give it. */
+export function deadlinePassed(context: N13Context, now: number): boolean {
+  if (context.dueAt === null) return false;
+  const ms = Date.parse(context.dueAt);
+  return Number.isFinite(ms) && ms < now;
+}
