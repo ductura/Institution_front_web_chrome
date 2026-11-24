@@ -1,0 +1,17 @@
+/* ED-09: prototype editor.css .ptitle, .card, .nf2-pur, .nf2-y, .nf2-n, .btn.sm, .sr, .muted. */
+.rules { margin-top: 16px; }
+.title { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; }
+.card { background: var(--card); border: 1px solid var(--rule-2); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 8px; color: var(--ink); }
+.policy { margin: 0 0 6px; }
+.none { margin: 0; color: var(--ink-3); }
+.list { margin: 0; padding: 0; list-style: none; }
+.purpose { display: flex; gap: 8px; align-items: baseline; padding: 2px 0; }
+.yes { color: var(--synced); font-weight: 600; width: 14px; }
+.no { color: var(--ink-3); font-weight: 600; width: 14px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.muted { color: var(--ink-3); margin: 0 0 8px; }
+.links { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { display: inline-flex; align-items: center; height: 28px; padding: 0 9px; border-radius: var(--radius-control); border: 1px solid var(--rule); color: var(--ink); font-size: 12px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 640px) { .btn { height: 34px; } }
+.instructions { white-space: pre-line; margin: 8px 0 0; }

@@ -67,11 +67,18 @@ describe("NZ-16 option title and focus", () => {
     expect(choiceLabel({ id: "a", title: null }, NOW)).toBe("Naziv zadatka nije dostupan");
     expect(choiceLabel({ id: "a", title: "X", workType: "nepoznato", dueAt: "sutra" }, NOW)).toBe("X");
   });
-  it("asks for focus once and gives it only to the next page", async () => {
-    const { askFocusAfterChoose, takeFocusAfterChoose } = await import("./model");
-    expect(takeFocusAfterChoose()).toBe(false);
-    askFocusAfterChoose();
-    expect(takeFocusAfterChoose()).toBe(true);
-    expect(takeFocusAfterChoose()).toBe(false);
+  it("names all seven kinds of work of the contract", async () => {
+    const { choiceLabel } = await import("./model");
+    const kinds = ["short_paper", "essay", "seminar_paper", "bachelor_thesis", "master_thesis", "specialist_thesis", "doctoral_thesis"];
+    const labels = kinds.map((workType) => choiceLabel({ id: "a", title: "X", workType, dueAt: "2099-01-01T00:00:00Z" }, NOW));
+    expect(labels).toEqual(["X · Podnesak", "X · Esej", "X · Seminarski rad", "X · Završni rad", "X · Diplomski rad",
+      "X · Specijalistički rad", "X · Doktorski rad"]);
+  });
+  it("carries the wish for focus only in the address of the chosen page", async () => {
+    const { merlinHref, wantsChooserFocus } = await import("./model");
+    expect(merlinHref("a1", true)).toBe("/nastavnik/zadatak/a1/merlin?izbor=1");
+    expect(wantsChooserFocus("?izbor=1")).toBe(true);
+    expect(wantsChooserFocus("")).toBe(false);
+    expect(wantsChooserFocus("?izbor=0")).toBe(false);
   });
 });

@@ -64,7 +64,19 @@ export function noteRows(disputes: readonly EventDispute[]): readonly NoteRow[] 
 
 // ---- PG-9 ----
 
-export type GivenRow = { readonly key: string; readonly at: string; readonly when: string; readonly what: string; readonly who: string; readonly state: "published" | "draft" | "student"; readonly deleted: boolean };
+export type GivenRow = { readonly key: string; readonly at: string; readonly when: string; readonly what: string; readonly who: string; readonly state: "published" | "draft" | "student"; readonly deleted: boolean; readonly seenable: boolean; readonly commentId: string | null };
+
+/** Comment id -> time the student first opened it; from work.seen-by-student.get, comments only. */
+export function seenComments(items: readonly { readonly kind: string; readonly id: string; readonly firstSeenAt: string }[]): ReadonlyMap<string, string> {
+  return new Map(items.filter((i) => i.kind === "comment").map((i) => [i.id, i.firstSeenAt]));
+}
+
+/** „Student je vidio · time”, or „Student još nije otvorio”; null where the line does not apply (drafts, replies, colleagues) or the read is missing. */
+export function seenText(row: GivenRow, seen: ReadonlyMap<string, string> | null): string | null {
+  if (!row.seenable || seen === null || row.commentId === null) return null;
+  const at = seen.get(row.commentId);
+  return at === undefined ? t.seenNot : t.seenAt(formatDateTimeHr(at));
+}
 
 /** Published comments of the threads and unpublished drafts, oldest first; a draft is marked „nije objavljeno”. */
 export function givenRows(threads: readonly CommentThread[], drafts: readonly WorkComment[]): readonly GivenRow[] {
@@ -72,9 +84,10 @@ export function givenRows(threads: readonly CommentThread[], drafts: readonly Wo
     key: `c:${c.id}`, at: c.createdWindow, when: formatDateTimeHr(c.createdWindow), what: c.body ?? t.deleted,
     who: c.role === "student" ? t.givenStudent : c.isOwn ? t.givenOwn : t.givenColleague,
     state: c.role === "student" ? "student" as const : "published" as const, deleted: c.body === null,
+    seenable: c.role !== "student" && c.isOwn && c.body !== null, commentId: c.id,
   })));
   const unpublished: GivenRow[] = drafts.filter((d) => d.state === "draft").map((d) => ({
-    key: `d:${d.id}`, at: d.savedAt, when: formatDateTimeHr(d.savedAt), what: d.body, who: t.givenDraftLabel, state: "draft" as const, deleted: false,
+    key: `d:${d.id}`, at: d.savedAt, when: formatDateTimeHr(d.savedAt), what: d.body, who: t.givenDraftLabel, state: "draft" as const, deleted: false, seenable: false, commentId: null,
   }));
   return [...published, ...unpublished].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : a.key.localeCompare(b.key)));
 }

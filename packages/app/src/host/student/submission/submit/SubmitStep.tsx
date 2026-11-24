@@ -19,7 +19,6 @@ import { SERVER_PREFIX } from "../../../../../../../src/client/api";
 import { appHref } from "../../../../../../../src/components/index";
 import { useHost } from "../../../context";
 import { submitText as t } from "./messages.hr";
-import StepLink from "../steps/StepLink";
 import { clockOf, dayOf } from "../steps/time";
 import { atOf, fill, nextOf, thousands, wordCount, type Answer, type Known, type Next, type SubmitStage } from "./model";
 import OutcomePanel, { OUTCOME_ID } from "./OutcomePanel";
@@ -28,6 +27,9 @@ import { useRecheck } from "./use-recheck";
 import { useSavedOnServer } from "./use-saved-on-server";
 import { submitConfirmed, type Confirmed, type NewerChoice } from "./newer-local";
 import { deviceHasNewer, sendLatestFromDevice } from "./local-hold";
+import { takeChoice } from "./newer-choice";
+import DeclarationDialog from "../declaration/DeclarationDialog";
+import { useFocusAfterDialog, useOpener } from "../declaration/dialog-model";
 import { routerPath } from "../../../../bases";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "../summary/declaration-gate";
 // Review #590, 3: the declaration in the words of the one source (PR-2), not step 4's own.
@@ -90,6 +92,8 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
   const root = useRef<HTMLDivElement>(null);
   const [work, setWork] = useState<WorkRead>({ kind: "loading" });
   const [dialog, setDialog] = useState(false);
+  // NF-3 PR-5 (PD-10): the declaration as a dialog, without leaving this step.
+  const [declaring, setDeclaring] = useState(false);
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
   // INT-16: the warning of a newer version on this device, in the same dialog; `notSent` after a send that did not arrive.
@@ -133,6 +137,9 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
 
   const { gate, reload: readGate } = useDeclarationGate(assignmentId, declarationGate);
   const confirmed = opensSending(gate);
+  const declareLabel = useOpener(gate);
+  const mainSubmit = useRef<HTMLButtonElement>(null);
+  useFocusAfterDialog(declaring, declareLabel, mainSubmit);
   useEffect(() => { if (gate.kind === "signedOut") goToSignIn(href(here)); }, [gate.kind]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { shown.current = true; return () => { shown.current = false; }; }, []);
   useEffect(() => { void load(); return () => { ticket.current += 1; }; }, [load]);
@@ -144,13 +151,17 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
     // Only a revision the server confirmed is submitted (INT-16); a newer one on this device is named first.
     const result = await submitConfirmed({ documentId: ready.documentId, revision: ready.revision }, {
       hasNewer: deviceHasNewer,
-      ask: (confirmed, notSent) => new Promise<NewerChoice | null>((resolve) => {
+      // NF-3 PR-10: a choice made on step 3 for this very revision is not asked again (once).
+      ask: (confirmed, notSent) => {
+        const kept = notSent ? null : takeChoice(assignmentId, confirmed);
+        return kept !== null ? Promise.resolve(kept) : new Promise<NewerChoice | null>((resolve) => {
         setSending(false);
         setSendingLatest(false);
         setNewer({ confirmed, notSent });
         choose.current = resolve;
         requestAnimationFrame(() => latestButton.current?.focus());
-      }),
+      });
+      },
       sendLatest: (confirmed) => { setSendingLatest(true); return sendLatestFromDevice(assignmentId, confirmed); },
       submitRevision: (target) => { setSending(true); return send({ assignmentId, documentId: target.documentId, revision: target.revision }); },
     });
@@ -268,19 +279,21 @@ function Step({ assignmentId, title, stage, dueAt, timing: given, declarationGat
           ))}
           {!offline && !confirmed && ready !== null && next?.offer !== "declaration" && (
             <p className="note" id={WHY_ID}>{declarationWhy}{" "}
-              {gate.kind === "missing" && <StepLink href={href(`${idPath}/predaja/izjava`)}>{t.openDeclaration}</StepLink>}
+              {declareLabel !== null && <Button tone="secondary" size="small" onClick={() => setDeclaring(true)}>{declareLabel}</Button>}
             </p>
           )}
           {!offline && gate.kind === "unavailable" && ready !== null && <StepActions><Button tone="secondary" onClick={readGate}>{t.declarationRetry}</Button></StepActions>}
-          {next?.retry && next.offer === "declaration" && <StepLink href={href(`${idPath}/predaja/izjava`)}>{t.openDeclaration}</StepLink>}
+          {next?.retry && next.offer === "declaration" && <Button tone="secondary" onClick={() => setDeclaring(true)}>{declareLabel ?? t.openDeclaration}</Button>}
           {sending && <p className="note" role="status" id={WHY_ID}><StepSpinner /> {t.inProgress}</p>}
           <StepActions>
-            <Button aria-disabled={!canSend || undefined} aria-describedby={why || sending ? WHY_ID : undefined}
+            <Button ref={mainSubmit} aria-disabled={!canSend || undefined} aria-describedby={why || sending ? WHY_ID : undefined}
               onClick={openDialog}>{sending ? t.inProgress : t.submit}</Button>
             <Button tone="secondary" onClick={goBack}>{t.back}</Button>
           </StepActions>
         </StepPanel>
       )}
+      <DeclarationDialog assignmentId={assignmentId} open={declaring} declarationGate={declarationGate} onSignIn={() => goToSignIn(href(here))}
+        onClose={() => { setDeclaring(false); readGate(); }} />
       {newer === null ? (
         // PD-3 (PR-7): the focus on "Predaj rad"; for a late submission on its confirmation, the dialog's first control.
         <Dialog open={dialog} title={t.dialogTitle} onClose={closeDialog} dismissible={!sending} initialFocus={late ? undefined : submitButton}

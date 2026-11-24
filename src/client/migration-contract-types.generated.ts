@@ -21,6 +21,8 @@
 // Faza 3: auth.backchannel-logout.post, auth.callback.get, auth.login.get, auth.logout-all.post, auth.logout.post, auth.webauthn-assertion.post, auth.webauthn-challenge.post, auth.webauthn-registration.post, client.context.post, collaboration.comments.post, collaboration.revision-requests.post, course.aggregate.get, downloads.manifest.get, evidence.commit.post, evidence.open.post, evidence.replay.post, institution.academic-years.get, institution.acknowledgment.post, institution.admin-courses.get, institution.admin-courses.post, institution.assignment-versions.post, institution.assignment.get, institution.config-versions.post, institution.config.get, institution.course-assignments.post, institution.course-group-teachers.post, institution.course-groups.get, institution.course-groups.post, institution.courses.post, institution.enrollment-code-revocation.post, institution.enrollment-code-state.get, institution.enrollment-code.post, institution.enrollments.post, institution.faculty-rules.get, institution.faculty-rules.post, institution.legal-hold-release.post, institution.legal-holds.get, institution.legal-holds.post, institution.milestone-template.get, institution.milestone-template.put, institution.origin-threshold.delete, institution.origin-threshold.put, institution.origin-thresholds.get, institution.retention.get, institution.role-confirmation.post, institution.role-revocation.post, institution.student-data-exports-approve.post, institution.student-data-exports.get, institution.student-data-exports.post, institution.student-removal.post, institution.student-return.post, institution.student-work-language.post, institution.teacher-roles.get, institution.teaching-group-members.put, institution.teaching-team-view.get, institution.teaching-team.get, institution.teaching-team.post, institution.work-language.post, institution.work-work-language.get, institution.work-work-language.post, live.document.get, live.document.put, mentorship.key-dates.get, mentorship.notes.get, mentorship.notes.post, mentorship.request-approve.post, mentorship.request-decline.post, mentorship.request-withdraw.post, mentorship.requests.post, mentorship.student-mentor-candidates.get, mentorship.student-requests.get, notifications.list.get, notifications.read.post, notifications.returned-for-revision.list.get, ops.pilot-metrics.get, platform.health.get, platform.ready.get, platform.status.get, profile.interface-locale.get, profile.interface-locale.post, profile.me.get, profile.staff-affiliation.get, projection.process-summary-details.post, projection.process-summary.post, public.verification.post, settings.catalogue.get, settings.values.get, settings.values.put, sources.lookup.post, student-work.start.post, student-work.works.get, student.access-log.get, student.assignment-requirements.get, student.assignment-work.get, student.assignments.get, student.assistant-conversation.get, student.assistant-request.post, student.course-literature.get, student.data-export.get, student.deadline-history.get, student.declaration-attachments.post, student.declaration.get, student.declaration.put, student.enrollments.post, student.notice-read.post, student.notice.get, student.portable-record.get, student.receipt-pdf.get, student.source-proof-image.get, student.source-proof-requests.get, student.source-proofs.get, student.source-proofs.post, student.submission-history.get, student.submission-notes.get, student.submission-notes.post, student.submission-package-link.post, student.submission-package.get, student.submission-withdrawal.get, student.submission-withdrawal.post, student.submission.get, student.text-check-config.get, student.work-sources.delete, student.work-sources.put, student.work-sources.get, submission.submit-second.post, submission.submit.post, support.problem-report.post, support.problem-reports.post, teacher.access.get, teacher.assignment-copy.post, teacher.assignment-grade.get, teacher.assignment-overview.get, teacher.assignment-submissions.post, teacher.comment-bank.delete, teacher.comment-bank.get, teacher.comment-bank.post, teacher.course-input-rhythm.get, teacher.course-input-rhythm.put, teacher.course-literature.delete, teacher.course-literature.put, teacher.course-literature.get, teacher.course-students.get, teacher.courses.get, teacher.deadline-extension.post, teacher.deadline-extensions.get, teacher.declaration-required.get, teacher.declaration-required.put, teacher.declaration.get, teacher.fast-path.post, teacher.input-rhythm.delete, teacher.input-rhythm.get, teacher.input-rhythm.put, teacher.literature-seen.put, teacher.mentorship-request-decision.post, teacher.mentorship-requests.get, teacher.mentorship.get, teacher.mentorships.get, teacher.merlin-package-download.get, teacher.merlin-package.get, teacher.merlin-packages.post, teacher.merlin-roster-csv.get, teacher.merlin-roster.get, teacher.receipt-pdf.get, teacher.source-guidance.get, teacher.source-proof-image.get, teacher.source-proof-request.delete, teacher.source-proof-request.put, teacher.source-proofs.get, teacher.source-recommendation.delete, teacher.source-recommendation.put, teacher.submission-detail.get, teacher.submission-history.get, teacher.submission-receipt.get, teacher.submission-withdrawal.get, teacher.submission-withdrawal.post, teacher.submissions-bulk-link.post, teacher.submissions-bulk.get, teacher.submissions.get, teacher.work.get, teacher.working-criteria.get, teacher.working-criterion.put, work.access.get, work.assistant-match-explanation.post, work.assistant-match.get, work.assistant-match.post, work.attachments.get, work.attachments.post, work.changes-since-review.get, work.comment-draft.delete, work.comment-drafts.get, work.comment-drafts.post, work.comments.publish-selected.post, work.comments.publish.post, work.compare.get, work.consultation-additions.post, work.consultation-records.get, work.consultation-records.post, work.consultation-slots.get, work.consultation-slots.post, work.consultation-slots.patch, work.direct-edit.get, work.direct-edit.put, work.event-disputes.get, work.event-disputes.post, work.export-pdf.get, work.export.get, work.imports.confirm.post, work.imports.post, work.input-rhythm-setting.get, work.input-rhythm.delete, work.input-rhythm.get, work.input-rhythm.post, work.interview-appointment.put, work.interview-explanations.post, work.interview-held.post, work.interview-invite.post, work.interview-notes.post, work.interview-pdf.get, work.interview-questions.delete, work.interview-questions.post, work.interview.get, work.messages.get, work.messages.post, work.milestone-plan.add.post, work.milestone-plan.apply-template.post, work.milestone-plan.get, work.milestone-states.get, work.milestones.approve.post, work.milestones.delete, work.milestones.patch, work.milestones.details.patch, work.milestones.get, work.milestones.request-revision.post, work.milestones.submit.post, work.origin-composition.get, work.origin-thresholds.get, work.restore.post, work.return-for-revision.post, work.review.post, work.source-notes.delete, work.source-notes.get, work.source-notes.patch, work.source-notes.post, work.version.get, work.versions.get from Institution_server ffb96c57 (API 1.97.0).
 // Faza 3: institution.retention.get, student.declaration.get, student.declaration.put, support.problem-reports.post, teacher.declaration.get from Institution_server 928db7c6 (API 1.110.0).
 // Faza 3: profile.self-note-key.get, profile.self-note-key.put, profile.self-note-key-checked.delete, work.sealed-self-note.delete, work.sealed-self-note.get, work.sealed-self-note.put from Institution_server 451084cb (API 1.112.0).
+// Faza 3 (WEB-NF6-KONZ): work.consultation-slots.get, work.consultation-slots.post, work.consultation-slots.patch, work.consultation-slot-close.post, work.consultation-slot-details.get from Institution_server 869800e5 (API 1.113.0).
+// Faza 3: auth.backchannel-logout.post, auth.callback.get, auth.login.get, auth.logout-all.post, auth.logout.post, auth.webauthn-assertion.post, auth.webauthn-challenge.post, auth.webauthn-registration.post, client.context.post, collaboration.comments.post, collaboration.revision-requests.post, course.aggregate.get, downloads.manifest.get, evidence.commit.post, evidence.open.post, evidence.replay.post, institution.academic-years.get, institution.acknowledgment.post, institution.admin-actions.get, institution.admin-courses.get, institution.admin-courses.post, institution.assignment-versions.post, institution.assignment.get, institution.assistant-setting.get, institution.config-versions.post, institution.config.get, institution.course-assignments.post, institution.course-group-teachers.post, institution.course-groups.get, institution.course-groups.post, institution.courses.post, institution.enrollment-code-revocation.post, institution.enrollment-code-state.get, institution.enrollment-code.post, institution.enrollments.post, institution.faculty-rules.get, institution.faculty-rules.post, institution.legal-hold-release.post, institution.legal-holds.get, institution.legal-holds.post, institution.milestone-template.get, institution.milestone-template.put, institution.origin-threshold.delete, institution.origin-threshold.put, institution.origin-thresholds.get, institution.retention.get, institution.role-confirmation.post, institution.role-revocation.post, institution.roster-import-confirm.post, institution.roster-imports.post, institution.student-data-exports-approve.post, institution.student-data-exports.get, institution.student-data-exports.post, institution.student-removal.post, institution.student-return.post, institution.student-work-language.post, institution.teacher-roles.get, institution.teaching-group-members.put, institution.teaching-team-view.get, institution.teaching-team.get, institution.teaching-team.post, institution.thesis-forms.get, institution.thesis-forms.post, institution.thesis-settings.get, institution.thesis-settings.put, institution.work-language.post, institution.work-work-language.get, institution.work-work-language.post, live.document.get, live.document.put, mentorship.key-dates.get, mentorship.notes.get, mentorship.notes.post, mentorship.open.post, mentorship.overview.get, mentorship.request-approve.post, mentorship.request-decline.post, mentorship.request-withdraw.post, mentorship.requests.post, mentorship.student-mentor-candidates.get, mentorship.student-mentorships.get, mentorship.student-requests.get, notifications.list.get, notifications.mentorship-opened.list.get, notifications.read.post, notifications.returned-for-revision.list.get, ops.events.get, ops.pilot-metrics.get, platform.health.get, platform.ready.get, platform.status.get, profile.interface-locale.get, profile.interface-locale.post, profile.me.get, profile.self-note-key-checked.delete, profile.self-note-key.delete, profile.self-note-key.get, profile.self-note-key.put, profile.staff-affiliation.get, projection.process-summary-details.post, projection.process-summary.post, public.verification.post, settings.catalogue.get, settings.values.get, settings.values.put, sources.lookup.post, student-work.start.post, student-work.works.get, student.access-log.get, student.assignment-requirements.get, student.assignment-work.get, student.assignments.get, student.assistant-conversation.get, student.assistant-request.post, student.course-literature.get, student.data-export.get, student.deadline-history.get, student.declaration-attachments.post, student.declaration.get, student.declaration.put, student.enrollments.post, student.notice-read.post, student.notice.get, student.portable-record.get, student.receipt-pdf.get, student.source-proof-image.get, student.source-proof-requests.get, student.source-proofs.get, student.source-proofs.post, student.submission-history.get, student.submission-notes.get, student.submission-notes.post, student.submission-package-link.post, student.submission-package.get, student.submission-withdrawal.get, student.submission-withdrawal.post, student.submission.get, student.text-check-config.get, student.work-sources.delete, student.work-sources.put, student.work-sources.get, submission.submit-second.post, submission.submit.post, support.problem-report-status.post, support.problem-report.post, support.problem-reports.get, support.problem-reports.post, teacher.access.get, teacher.assignment-copy.post, teacher.assignment-grade.get, teacher.assignment-overview.get, teacher.assignment-submissions.post, teacher.comment-bank.delete, teacher.comment-bank.get, teacher.comment-bank.post, teacher.course-input-rhythm.get, teacher.course-input-rhythm.put, teacher.course-literature.delete, teacher.course-literature.put, teacher.course-literature.get, teacher.course-students.get, teacher.courses.get, teacher.deadline-extension.post, teacher.deadline-extensions.get, teacher.declaration-question.get, teacher.declaration-question.put, teacher.declaration-required.get, teacher.declaration-required.put, teacher.declaration.get, teacher.fast-path.post, teacher.input-rhythm.delete, teacher.input-rhythm.get, teacher.input-rhythm.put, teacher.literature-seen.put, teacher.mentorship-request-decision.post, teacher.mentorship-requests.get, teacher.mentorship.get, teacher.mentorships.get, teacher.merlin-package-download.get, teacher.merlin-package.get, teacher.merlin-packages.post, teacher.merlin-roster-csv.get, teacher.merlin-roster.get, teacher.receipt-pdf.get, teacher.source-guidance.get, teacher.source-proof-image.get, teacher.source-proof-request.delete, teacher.source-proof-request.put, teacher.source-proofs.get, teacher.source-recommendation.delete, teacher.source-recommendation.put, teacher.submission-detail.get, teacher.submission-history.get, teacher.submission-receipt.get, teacher.submission-withdrawal.get, teacher.submission-withdrawal.post, teacher.submissions-bulk-link.post, teacher.submissions-bulk.get, teacher.submissions.get, teacher.work.get, teacher.working-criteria.get, teacher.working-criterion.put, work.access.get, work.assistant-match-explanation.post, work.assistant-match.get, work.assistant-match.post, work.attachments.get, work.attachments.post, work.changes-since-review.get, work.comment-draft.delete, work.comment-drafts.get, work.comment-drafts.post, work.comments.publish-selected.post, work.comments.publish.post, work.compare.get, work.consultation-additions.post, work.consultation-records.get, work.consultation-records.post, work.consultation-slot-close.post, work.consultation-slot-details.get, work.consultation-slot-requests.post, work.consultation-slots.get, work.consultation-slots.post, work.consultation-slots.patch, work.consultation-task-mark.post, work.consultation-tasks.get, work.consultation-tasks.post, work.direct-edit.get, work.direct-edit.put, work.event-disputes.get, work.event-disputes.post, work.export-pdf.get, work.export.get, work.imports.confirm.post, work.imports.post, work.input-rhythm-setting.get, work.input-rhythm.delete, work.input-rhythm.get, work.input-rhythm.post, work.interview-appointment.put, work.interview-explanations.post, work.interview-held.post, work.interview-invite.post, work.interview-notes.post, work.interview-pdf.get, work.interview-questions.delete, work.interview-questions.post, work.interview.get, work.mentor-consent.get, work.mentor-consent.put, work.messages.get, work.messages.post, work.milestone-plan.add.post, work.milestone-plan.apply-template.post, work.milestone-plan.get, work.milestone-states.get, work.milestones.approve.post, work.milestones.delete, work.milestones.patch, work.milestones.details.patch, work.milestones.get, work.milestones.request-revision.post, work.milestones.submit.post, work.origin-composition.get, work.origin-segments.get, work.origin-thresholds.get, work.reading-place.delete, work.reading-place.put, work.restore.post, work.return-for-revision.post, work.review.post, work.sealed-self-note.delete, work.sealed-self-note.get, work.sealed-self-note.put, work.seen-by-student.get, work.seen.post, work.self-note.delete, work.self-note.get, work.self-note.put, work.source-notes.delete, work.source-notes.get, work.source-notes.patch, work.source-notes.post, work.thesis-form.put, work.thesis-forms.get, work.thesis-stage.get, work.thesis-stage.put, work.version.get, work.versions.get from Institution_server 869800e5 (API 1.113.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -376,21 +378,21 @@ export type MigrationOperations = {
     params: { "documentId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "slots": ({ "id": string; "startsAt": string; "proposedAt": string; "state": "requested" | "countered" | "confirmed" })[] }; headers: {  } };
+    success: { status: 200; body: { "slots": ({ "id": string; "startsAt": string; "proposedAt": string; "state": "requested" | "countered" | "confirmed"; "topic"?: string | null })[] }; headers: {  } };
     errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
   };
   "work.consultation-slots.post": {
     params: { "documentId": string };
     query: undefined;
-    body: { "startsAt": string };
-    success: { status: 201; body: { "id": string; "startsAt": string; "proposedAt": string; "state": "requested" | "countered" | "confirmed" }; headers: {  } };
+    body: { "startsAt": string; "topic"?: string };
+    success: { status: 201; body: { "id": string; "startsAt": string; "proposedAt": string; "state": "requested" | "countered" | "confirmed"; "topic"?: string | null }; headers: {  } };
     errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "unsupported_media_type" | "invalid_input";
   };
   "work.consultation-slots.patch": {
     params: { "documentId": string; "slotId": string };
     query: undefined;
     body: { "action": "confirm" } | { "action": "counter"; "startsAt": string } | { "action": "accept" };
-    success: { status: 200; body: { "id": string; "startsAt": string; "proposedAt": string; "state": "requested" | "countered" | "confirmed" }; headers: {  } };
+    success: { status: 200; body: { "id": string; "startsAt": string; "proposedAt": string; "state": "requested" | "countered" | "confirmed"; "topic"?: string | null }; headers: {  } };
     errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "invalid_json" | "unsupported_media_type" | "invalid_input" | "conflict";
   };
   "mentorship.student-mentor-candidates.get": {
@@ -1778,5 +1780,271 @@ export type MigrationOperations = {
     body: { "sealed": { "v": 1; "keyId": string; "iv": string; "ct": string } };
     success: { status: 200; body: { "note": { "sealed": { "v": 1; "keyId": string; "iv": string; "ct": string }; "updatedAt": string } | null; "readingPlace": { "place": { "nodeId": string; "offset": number }; "updatedAt": string } | null }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "conflict" | "unavailable";
+  };
+  "work.consultation-slot-close.post": {
+    params: { "documentId": string; "slotId": string };
+    query: undefined;
+    body: { "action": "withdraw" | "decline" | "cancel"; "reason"?: string };
+    success: { status: 200; body: { "id": string; "startsAt": string; "proposedAt": string; "state": "requested" | "countered" | "confirmed" | "withdrawn" | "declined" | "cancelled"; "topic": string | null; "closing": { "by": "student" | "teacher"; "reason": string | null; "at": string } | null; "preparation": { "text": string; "changedParagraphs": number; "resolvedComments": number } | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "conflict";
+  };
+  "work.consultation-slot-details.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "slots": ({ "id": string; "startsAt": string; "proposedAt": string; "state": "requested" | "countered" | "confirmed" | "withdrawn" | "declined" | "cancelled"; "topic": string | null; "closing": { "by": "student" | "teacher"; "reason": string | null; "at": string } | null; "preparation": { "text": string; "changedParagraphs": number; "resolvedComments": number } | null })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable";
+  };
+  "institution.admin-actions.get": {
+    params: undefined;
+    query: { [key: string]: unknown };
+    body: undefined;
+    success: { status: 200; body: { "entries": ({ "at": string; "actorRole": "institution_admin" | "registry_clerk" | "operator"; "action": "role_confirmed" | "role_revoked" | "rule_published" | "threshold_changed" | "hold_placed" | "hold_released" | "export_requested" | "export_approved"; "subjectRole": "teacher" | "institution_admin" | "network_engineer" | "registry_clerk" | null; "outcome": "completed" })[]; "truncated": boolean }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "institution.assistant-setting.get": {
+    params: undefined;
+    query: { [key: string]: unknown };
+    body: undefined;
+    success: { status: 200; body: { "assistant": boolean; "transcription": boolean; "tools": boolean; "settingVersion": number | null; "changeable": false }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "institution.roster-import-confirm.post": {
+    params: { "importId": string };
+    query: undefined;
+    body: { [key: string]: unknown };
+    success: { status: 200; body: { "enrolled": number; "alreadyEnrolled": number; "skipped": number; "alreadyConfirmed": boolean }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "invalid_input" | "unsupported_media_type" | "invalid_json" | "forbidden" | "not_found" | "unavailable" | "import_expired";
+  };
+  "institution.roster-imports.post": {
+    params: { "courseId": string };
+    query: undefined;
+    body: { "source": "merlin" | "isvu"; "csv": string };
+    success: { status: 200; body: { "importId": string; "source": "merlin" | "isvu"; "expiresAt": string; "counts": { "new": number; "alreadyEnrolled": number; "unsuitable": number }; "rows": ({ "line": number; "identifier": string; "givenName": string; "familyName": string; "status": "new"; "reason": null } | { "line": number; "identifier": string; "givenName": string; "familyName": string; "status": "already_enrolled"; "reason": null } | { "line": number; "identifier": string; "givenName": string; "familyName": string; "status": "unsuitable"; "reason": "invalid_identifier" | "missing_name" | "duplicate" | "unknown_account" | "ineligible_account" | "name_mismatch" | "removed" | "course_teacher" })[] }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "invalid_input" | "unsupported_media_type" | "invalid_json" | "forbidden" | "not_found" | "unavailable" | "roster_columns_missing" | "roster_too_many_rows" | "roster_malformed";
+  };
+  "institution.thesis-forms.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "forms": ({ "code": string; "version": number; "title": string; "workTypes": ("bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis")[]; "active": boolean; "publishedAt": string })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "unavailable";
+  };
+  "institution.thesis-forms.post": {
+    params: undefined;
+    query: undefined;
+    body: { "code": string; "title": string; "workTypes": ("bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis")[]; "active": boolean };
+    success: { status: 201; body: { "code": string; "version": number; "title": string; "workTypes": ("bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis")[]; "active": boolean; "publishedAt": string }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unavailable" | "invalid_json" | "forbidden" | "conflict" | "unsupported_media_type" | "invalid_input";
+  };
+  "institution.thesis-settings.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "mentorConsentRequired": boolean; "changedAt": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "unavailable";
+  };
+  "institution.thesis-settings.put": {
+    params: undefined;
+    query: undefined;
+    body: { "mentorConsentRequired": boolean };
+    success: { status: 200; body: { "mentorConsentRequired": boolean; "changedAt": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unavailable" | "invalid_json" | "forbidden" | "unsupported_media_type" | "invalid_input";
+  };
+  "mentorship.open.post": {
+    params: undefined;
+    query: undefined;
+    body: { "studentId": string; "workType": "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "topic"?: string };
+    success: { status: 201; body: { "mentorshipId": string }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "conflict" | "unavailable";
+  };
+  "mentorship.overview.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "students": ({ "mentorshipId": string; "assignmentId": string; "documentId": string | null; "givenName": string | null; "familyName": string | null; "workType": "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "title": string; "stage": { "milestoneId": string; "title": string; "position": number; "state": "not_submitted" | "submitted" | "revision_requested" } | null; "stageCount": number; "waitingOn": "mentor" | "student" | "none"; "nextDeadlineAt": string | null; "daysToNextDeadline": number | null; "newMessages": number })[] }; headers: {  } };
+    errorCode: "unauthorized" | "unavailable";
+  };
+  "mentorship.student-mentorships.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "mentorships": ({ "mentorshipId": string; "assignmentId": string | null; "workType": "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "topic": string | null; "mentorId": string; "mentorName": { "givenName": string; "familyName": string } | null; "startedAt": string; "openedBy": "teacher" | "request" })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "unavailable";
+  };
+  "notifications.mentorship-opened.list.get": {
+    params: undefined;
+    query: { "before"?: string };
+    body: undefined;
+    success: { status: 200; body: { "notifications": ({ "id": string; "targetId": string; "workType": "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "topic": string | null; "mentorName": { "givenName": string; "familyName": string } | null; "createdAt": string; "readAt": string | null })[]; "nextBefore": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
+  };
+  "ops.events.get": {
+    params: undefined;
+    query: { "from": string; "to": string; "after"?: string };
+    body: undefined;
+    success: { status: 200; body: { "events": ({ "seq": number; "at": string; "kind": string; "requestId": string | null; "accountKind": string | null; "fields": { [key: string]: string | number | boolean | null } })[]; "next": null } | { "events": ({ "seq": number; "at": string; "kind": string; "requestId": string | null; "accountKind": string | null; "fields": { [key: string]: string | number | boolean | null } })[]; "next": number }; headers: {  } };
+    errorCode: "unauthenticated" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "profile.self-note-key.delete": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "key": { "v": 1; "keyId": string; "kdf": { "alg": "PBKDF2-SHA-256"; "iterations": number }; "phrase": { "salt": string; "iv": string; "ct": string }; "recovery": { "salt": string; "iv": string; "ct": string }; "version": number; "updatedAt": string } | null }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unavailable";
+  };
+  "support.problem-report-status.post": {
+    params: { "reference": string };
+    query: undefined;
+    body: { "status": "received" | "resolved" };
+    success: { status: 200; body: { "reference": string; "status": "received" | "resolved"; "statusChangedAt": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "forbidden" | "not_found" | "unavailable";
+  };
+  "support.problem-reports.get": {
+    params: undefined;
+    query: { [key: string]: unknown };
+    body: undefined;
+    success: { status: 200; body: { "reports": ({ "reference": string; "category": "technical" | "account" | "course"; "routedTo": "network_engineer" | "course_teacher" | "institution_admin"; "courseId": string | null; "description": string; "route": string | null; "appVersion": string; "browser": { "family": "chromium" | "firefox" | "safari" | "other"; "major": number | null }; "syncState": "EDITING" | "SAVING_LOCAL" | "LOCAL_DURABLE" | "SYNCING" | "SYNCED" | "CONFLICT" | "ERROR" | "RECOVERY_REQUIRED" | null; "createdAt": string; "status": "received" | "resolved"; "statusChangedAt": string | null; "statusChangedByRole": "network_engineer" | "course_teacher" | "institution_admin" | null; "statusChangedByMe": boolean })[]; "truncated": boolean }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "teacher.declaration-question.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "question": string | null; "changedAt": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.declaration-question.put": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: { "question": string | null };
+    success: { status: 200; body: { "question": string | null; "changedAt": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
+  };
+  "work.consultation-slot-requests.post": {
+    params: { "documentId": string };
+    query: undefined;
+    body: { "startsAt": string; "topic"?: string; "preparation"?: { "text": string; "changedParagraphs": number; "resolvedComments": number } };
+    success: { status: 201; body: { "id": string; "startsAt": string; "proposedAt": string; "state": "requested" | "countered" | "confirmed" | "withdrawn" | "declined" | "cancelled"; "topic": string | null; "closing": { "by": "student" | "teacher"; "reason": string | null; "at": string } | null; "preparation": { "text": string; "changedParagraphs": number; "resolvedComments": number } | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "not_found" | "unavailable" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unsupported_media_type" | "invalid_json" | "invalid_input";
+  };
+  "work.consultation-task-mark.post": {
+    params: { "documentId": string; "taskId": string };
+    query: undefined;
+    body: { "done": boolean };
+    success: { status: 200; body: { "id": string; "recordId": string; "position": number; "text": string; "done": boolean; "markedAt": string | null; "createdAt": string }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unsupported_media_type" | "invalid_json" | "invalid_input";
+  };
+  "work.consultation-tasks.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "tasks": ({ "id": string; "recordId": string; "position": number; "text": string; "done": boolean; "markedAt": string | null; "createdAt": string })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.consultation-tasks.post": {
+    params: { "documentId": string; "recordId": string };
+    query: undefined;
+    body: { "text": string };
+    success: { status: 201; body: { "id": string; "recordId": string; "position": number; "text": string; "done": boolean; "markedAt": string | null; "createdAt": string }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable" | "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unsupported_media_type" | "invalid_json" | "invalid_input";
+  };
+  "work.mentor-consent.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "state": "none" | "given" | "withdrawn"; "changedBy": string | null; "changedAt": string | null; "comment": string | null; "requiredForSubmission": boolean; "history": ({ "given": boolean; "changedBy": string; "changedAt": string; "comment": string | null })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.mentor-consent.put": {
+    params: { "documentId": string };
+    query: undefined;
+    body: { "given": boolean; "comment"?: string };
+    success: { status: 200; body: { "state": "none" | "given" | "withdrawn"; "changedBy": string | null; "changedAt": string | null; "comment": string | null; "requiredForSubmission": boolean; "history": ({ "given": boolean; "changedBy": string; "changedAt": string; "comment": string | null })[] }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "invalid_json" | "forbidden" | "conflict" | "unsupported_media_type" | "invalid_input";
+  };
+  "work.origin-segments.get": {
+    params: { "documentId": string };
+    query: { "revision"?: string };
+    body: undefined;
+    success: { status: 200; body: { "revision": number | null; "segments": ({ "blockId": string; "start": number; "end": number; "kind": "typed" | "assistant_inserted" | "assistant_match" | "imported_file" | "pasted_known" | "pasted_unknown"; "segmentRef": string | null })[] }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
+  };
+  "work.reading-place.delete": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "note": { "text": string; "place": { "nodeId": string; "offset": number } | null; "updatedAt": string } | null; "readingPlace": { "place": { "nodeId": string; "offset": number }; "updatedAt": string } | null }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.reading-place.put": {
+    params: { "documentId": string };
+    query: undefined;
+    body: { "place": { "nodeId": string; "offset": number } };
+    success: { status: 200; body: { "note": { "text": string; "place": { "nodeId": string; "offset": number } | null; "updatedAt": string } | null; "readingPlace": { "place": { "nodeId": string; "offset": number }; "updatedAt": string } | null }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
+  };
+  "work.seen-by-student.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "items": ({ "kind": "comment" | "revision_request" | "milestone_revision" | "message"; "id": string; "firstSeenAt": string })[] }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.seen.post": {
+    params: { "documentId": string };
+    query: undefined;
+    body: { "items": ({ "kind": "comment" | "revision_request" | "milestone_revision" | "message"; "id": string })[] };
+    success: { status: 200; body: { "items": ({ "kind": "comment" | "revision_request" | "milestone_revision" | "message"; "id": string; "firstSeenAt": string })[] }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
+  };
+  "work.self-note.delete": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "note": { "text": string; "place": { "nodeId": string; "offset": number } | null; "updatedAt": string } | null; "readingPlace": { "place": { "nodeId": string; "offset": number }; "updatedAt": string } | null }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.self-note.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "note": { "text": string; "place": { "nodeId": string; "offset": number } | null; "updatedAt": string } | null; "readingPlace": { "place": { "nodeId": string; "offset": number }; "updatedAt": string } | null }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.self-note.put": {
+    params: { "documentId": string };
+    query: undefined;
+    body: { "text": string; "place"?: { "nodeId": string; "offset": number } | null };
+    success: { status: 200; body: { "note": { "text": string; "place": { "nodeId": string; "offset": number } | null; "updatedAt": string } | null; "readingPlace": { "place": { "nodeId": string; "offset": number }; "updatedAt": string } | null }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
+  };
+  "work.thesis-form.put": {
+    params: { "documentId": string; "code": string };
+    query: undefined;
+    body: { "state": "not_submitted" | "submitted" | "accepted" };
+    success: { status: 200; body: { "code": string; "version": number; "title": string; "state": "not_submitted" | "submitted" | "accepted"; "stateFormVersion": number | null; "changedAt": string | null; "changedBy": string | null; "changedByPart": "student" | "mentor" | "faculty" | null }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "invalid_json" | "forbidden" | "conflict" | "unsupported_media_type" | "invalid_input";
+  };
+  "work.thesis-forms.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "forms": ({ "code": string; "version": number; "title": string; "state": "not_submitted" | "submitted" | "accepted"; "stateFormVersion": number | null; "changedAt": string | null; "changedBy": string | null; "changedByPart": "student" | "mentor" | "faculty" | null })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.thesis-stage.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "stage": "none" | "submitted_to_office" | "defense_scheduled" | "defended"; "defenseAt": string | null; "changedBy": string | null; "changedAt": string | null; "changedByPart": "mentor" | "faculty" | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.thesis-stage.put": {
+    params: { "documentId": string };
+    query: undefined;
+    body: { "stage": "none" | "submitted_to_office" | "defense_scheduled" | "defended"; "defenseAt"?: string };
+    success: { status: 200; body: { "stage": "none" | "submitted_to_office" | "defense_scheduled" | "defended"; "defenseAt": string | null; "changedBy": string | null; "changedAt": string | null; "changedByPart": "mentor" | "faculty" | null }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "invalid_json" | "forbidden" | "unsupported_media_type" | "invalid_input";
   };
 };

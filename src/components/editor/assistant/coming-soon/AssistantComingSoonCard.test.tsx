@@ -8,7 +8,9 @@ describe("AssistantComingSoonCard", () => {
   const html = renderToStaticMarkup(<AssistantComingSoonCard />);
   it("shows the soon badge and the pilot text", () => {
     expect(html).toContain("uskoro");
-    expect(html).toContain("Asistent u pilotu nije uključen");
+    expect(html).toContain("Asistent u pilotu radi prema pravilima ovog zadatka");
+    expect(html).toContain("Razgovor s Asistentom u editoru još nije dostupan.");
+    expect(html).not.toContain("nije uključen");
     for (const purpose of assistantComingSoonHr.purposes) expect(html).toContain(purpose);
   });
   it("offers no send field and no key entry", () => {

@@ -30,7 +30,7 @@ const EMPTY: ProcessSummaryV1 = {
   gaps: { evidenceKind: "observed", items: [] },
   recordState: "complete",
 };
-const NOTE: SubmissionNote = { id: "note-1", text: "Izmišljena napomena uz predaju.", createdAt: "2026-11-10T10:05:00.000000Z" };
+const NOTE: SubmissionNote = { id: "note-1", text: "Izmišljena napomena uz predaju.", createdAt: "2026-11-10T10:05:00.000Z" };
 const ASSIGNMENT = "00000000-0000-4000-8000-000000000025";
 const nothing = () => undefined;
 
@@ -161,7 +161,7 @@ function fakeNotes(): LocalCall {
   return async (id, input) => {
     if (id === "student.submission-notes.get") return { ok: true, status: 200, body: { notes: [...kept] } };
     if (id === "student.submission-notes.post" && input.body !== undefined) {
-      const note = { id: `note-${kept.length + 1}`, text: input.body.text, createdAt: "2026-11-19T12:00:00.000000Z" };
+      const note = { id: `note-${kept.length + 1}`, text: input.body.text, createdAt: "2026-11-19T12:00:00.000Z" };
       kept.push(note);
       return { ok: true, status: 201, body: { note } };
     }
@@ -175,7 +175,7 @@ describe("notes (PD-4)", () => {
     const added = await saveNote(local, ASSIGNMENT, "Izmišljena napomena.");
     expect(added.kind).toBe("added");
     expect(await loadNotes(local, ASSIGNMENT)).toEqual<NotesRead>({
-      kind: "ready", notes: [{ id: "note-1", text: "Izmišljena napomena.", createdAt: "2026-11-19T12:00:00.000000Z" }],
+      kind: "ready", notes: [{ id: "note-1", text: "Izmišljena napomena.", createdAt: "2026-11-19T12:00:00.000Z" }],
     });
   });
 

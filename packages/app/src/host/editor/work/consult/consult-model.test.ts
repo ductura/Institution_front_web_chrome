@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import type { ConsultationSlot } from "../../../../../../../src/client/consultation-slots";
+import type { ConsultationSlot, SlotDetail } from "../../../../../../../src/client/consultation-slots";
 import { CRITERION_IDS, NOTE_MAX, type WorkingCriterion } from "../../../../../../../src/client/teacher-working-criteria";
 
+import {
+  asDetail, closeActionsFor, closeFailure, closingText, lineText, statusText, topicText,
+} from "./consult-model";
 import { actionsFor, assessmentChange, canEditCriteria, canWriteRecords, criteriaHeading, criterionTitle, localToIso, noteChange, withCriterion, withSlot } from "./consult-model";
 
 const slot = (state: ConsultationSlot["state"], id = "s1"): ConsultationSlot => ({ id, startsAt: "2026-12-01T10:00:00.000Z", proposedAt: "2026-11-22T10:00:00.000Z", state });
@@ -56,5 +59,63 @@ describe("criteria", () => {
     expect(canEditCriteria("student")).toBe(false);
     expect(canEditCriteria("collaborator")).toBe(false);
     expect(canWriteRecords("collaborator")).toBe(false);
+  });
+});
+
+// WEB-NF6-KONZ (MK-3): topic, closing and who may close. All data is invented.
+const NOW = Date.parse("2026-11-24T12:00:00.000Z");
+const detail = (state: SlotDetail["state"], extra: Partial<SlotDetail> = {}): SlotDetail =>
+  ({ id: "s1", startsAt: "2026-12-01T10:00:00.000Z", proposedAt: "2026-11-22T10:00:00.000Z", state, topic: null, closing: null, preparation: null, ...extra });
+
+describe("closing a slot (MK-3)", () => {
+  it("the student withdraws and the teacher declines a request nobody has answered", () => {
+    expect(closeActionsFor("student", detail("requested"), NOW)).toEqual(["withdraw"]);
+    expect(closeActionsFor("teacher", detail("requested"), NOW)).toEqual(["decline"]);
+  });
+  it("either side cancels a proposed or confirmed slot that lies ahead, not one that has passed", () => {
+    for (const role of ["student", "teacher"] as const) {
+      for (const state of ["countered", "confirmed"] as const) {
+        expect(closeActionsFor(role, detail(state), NOW)).toEqual(["cancel"]);
+        expect(closeActionsFor(role, detail(state, { startsAt: "2026-11-20T10:00:00.000Z" }), NOW)).toEqual([]);
+      }
+    }
+  });
+  it("the collaborator and a closed slot have no action", () => {
+    for (const state of ["requested", "countered", "confirmed"] as const) expect(closeActionsFor("collaborator", detail(state), NOW)).toEqual([]);
+    for (const state of ["withdrawn", "declined", "cancelled"] as const) {
+      for (const role of ["student", "teacher"] as const) {
+        expect(closeActionsFor(role, detail(state), NOW)).toEqual([]);
+        expect(actionsFor(role, detail(state))).toEqual([]);
+      }
+    }
+  });
+  it("says the closed state by role and the time of the slot", () => {
+    expect(statusText("teacher", detail("withdrawn"))).toBe("student je povukao zahtjev");
+    expect(statusText("student", detail("declined"))).toBe("mentor je odbio zahtjev");
+    expect(statusText("student", detail("cancelled"))).toBe("otkazano");
+    expect(lineText(detail("cancelled"))).toMatch(/^Termin: /);
+  });
+  it("shows the topic or says there is none", () => {
+    expect(topicText(detail("requested", { topic: "Izmišljena tema" }))).toBe("Tema: Izmišljena tema");
+    expect(topicText(detail("requested"))).toBe("Tema nije upisana.");
+  });
+  it("tells who closed it, with the reason only when there is one", () => {
+    const at = "2026-11-23T11:00:00.000Z";
+    const byStudent = detail("cancelled", { closing: { by: "student", reason: "Izmišljeni razlog.", at } });
+    expect(closingText("student", byStudent)).toMatch(/^Zatvorili ste .+\. Razlog: Izmišljeni razlog\.$/);
+    expect(closingText("teacher", byStudent)).toMatch(/^Student je zatvorio /);
+    expect(closingText("student", detail("declined", { closing: { by: "teacher", reason: null, at } }))).not.toContain("Razlog");
+    expect(closingText("student", detail("requested"))).toBeNull();
+  });
+  it("keeps the known topic and preparation when an older route answers without them", () => {
+    const known = detail("requested", { topic: "Metoda", preparation: { text: "Izmišljeno.", changedParagraphs: 1, resolvedComments: 0 } });
+    const answered: ConsultationSlot = { id: "s1", startsAt: known.startsAt, proposedAt: known.proposedAt, state: "confirmed" };
+    expect(asDetail(answered, known)).toEqual({ ...known, state: "confirmed" });
+    expect(asDetail({ ...answered, topic: null }, known).topic).toBeNull();
+    expect(asDetail(answered).topic).toBeNull();
+  });
+  it("a refused closing says the slot changed; the rest as for any write", () => {
+    expect(closeFailure({ kind: "promijenjeno" })).toMatch(/više se ne može zatvoriti/);
+    expect(closeFailure({ kind: "nepoznato" })).toMatch(/Nije poznato/);
   });
 });

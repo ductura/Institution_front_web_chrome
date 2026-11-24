@@ -10,7 +10,7 @@ import { placesOf, type Place } from "./places";
 
 /** The work as evidence.open.post gave it; only `ready` names a document. */
 export type StepWork =
-  | { readonly kind: "ready"; readonly documentId: string; readonly nodes?: readonly TextNode[] }
+  | { readonly kind: "ready"; readonly documentId: string; readonly revision?: number; readonly nodes?: readonly TextNode[] }
   | { readonly kind: "empty" | "unavailable" | "loading" | "notice" | "signIn" };
 
 export type SummaryPorts = {
@@ -36,7 +36,12 @@ export async function readStepSummary(assignmentId: string, ports: SummaryPorts)
 }
 
 /** NF-3 PR-3: the summary and the places left for a source in the server's text (null when it was not read). */
-export type StepChecks = { readonly summary: StepSummary; readonly places: readonly Place[] | null };
+export type StepChecks = {
+  readonly summary: StepSummary;
+  readonly places: readonly Place[] | null;
+  /** NF-3 PR-10: the revision the server confirmed, which step 4 submits; null when it was not read. */
+  readonly confirmed?: { readonly documentId: string; readonly revision: number } | null;
+};
 
 /** One read of the work for both: evidence.open.post is not asked twice. */
 export async function readStepChecks(assignmentId: string, ports: SummaryPorts): Promise<StepChecks> {
@@ -45,9 +50,10 @@ export async function readStepChecks(assignmentId: string, ports: SummaryPorts):
   if (work.kind === "empty") return { summary: { kind: "unavailable" }, places: [] };
   if (work.kind !== "ready") return { summary: { kind: "error" }, places: null };
   const places = work.nodes === undefined ? null : placesOf(work.nodes);
+  const confirmed = Number.isInteger(work.revision) ? { documentId: work.documentId, revision: work.revision as number } : null;
   const outcome: SummaryOutcome = await ports.readSummary(work.documentId).catch(() => UNREACHED);
-  if (outcome.kind === "ok") return { summary: { kind: "ready", summary: outcome.summary, documentId: work.documentId }, places };
-  return { summary: outcome.kind === "signedOut" ? { kind: "signIn" } : { kind: "error" }, places };
+  if (outcome.kind === "ok") return { summary: { kind: "ready", summary: outcome.summary, documentId: work.documentId }, places, confirmed };
+  return { summary: outcome.kind === "signedOut" ? { kind: "signIn" } : { kind: "error" }, places, confirmed };
 }
 
 /** The summary sections whose items are events a student can supplement or dispute (WEB-1305). */

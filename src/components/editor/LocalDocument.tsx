@@ -73,6 +73,7 @@ import {
 } from "./document-saver";
 import type { EvidenceSession, SheetDocument } from "./evidence-session";
 import LogoutDialog from "./LogoutDialog";
+import { StoppedReport } from "./stopped-report/StoppedReport";
 import { endRun } from "./run-refs";
 import { livePublishAction } from "./live-hold";
 import { nothingHeld, type LogoutPlan } from "./logout-plan";
@@ -851,6 +852,7 @@ export function LocalEditor({ lang = null }: { lang?: WorkLanguage | null } = {}
           {t.editor.exportText}
         </button>
       ) : null}
+      {notice === "stopped" ? <StoppedReport /> : null}
       {/* `data-phase` is for tests and styling only; it carries no text. */}
       <EditorContent editor={editor} className="editor-surface" data-phase={phase} lang={lang ?? undefined} />
     </>

@@ -99,7 +99,10 @@ export const pgMessages = {
   givenNone: "Studentu još nije objavljena povratna informacija.",
   givenLoading: "Učitavam povratnu informaciju…",
   givenUnavailable: "Povratnu informaciju trenutačno nije moguće dohvatiti. To ne znači da je nema.",
-  givenSeen: "Je li student ovo vidio: poslužitelj to još ne daje, pa se ne prikazuje.",
+  seenAt: (when: string): string => `Student je vidio · ${when}`,
+  seenNot: "Student još nije otvorio",
+  givenSeenUnavailable: "Je li student vidio vaše komentare, trenutačno nije moguće dohvatiti. To ne znači da nije.",
+  givenSeenScope: "„Student je vidio” prikazuje se samo uz vaše vlastite objavljene komentare.",
   givenOther: "Dorada, etape i konzultacije imaju svoje poglede i ovdje se još ne spajaju.",
   deleted: "Student je obrisao ovaj odgovor.",
 } as const;

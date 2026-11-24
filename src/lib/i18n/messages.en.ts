@@ -1058,7 +1058,7 @@ const en = {
     // 3d-2c2b, owner approved 25 Oct (contract #476 c.6391714810 §3): the
     // server's work differs (CONFLICT, RECOVERY_REQUIRED).
     evidenceConflict:
-      "The work on the server differs from the text on this device. The text stays on the device and nothing is sent until you decide how to continue.",
+      "The work on the server differs from the text on this device. The text stays on the device and nothing is sent for now. Export the text and contact support.",
     // 3d-2c2b, owner approved 25 Oct (#87 c.6397773534): a send refused for
     // good. The contract's "spremljen na ovom uređaju" fails the PRODUCT §5
     // scan, so "ovom" is dropped.
