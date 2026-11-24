@@ -29,7 +29,7 @@ export const studentDataExportMessages = {
     empty: "Nema zahtjeva za izvoz.",
     loading: "Učitavanje zahtjeva…",
     retry: "Pokušaj ponovno",
-    states: { requested: "Zatražen", approved: "Odobren", ready: "Spreman", downloaded: "Preuzet", expired: "Istekao" },
+    states: { requested: "Čeka odobrenje", approved: "Odobren", ready: "Spreman za preuzimanje", downloaded: "Preuzet", expired: "Istekao" },
     requestedAt: (at: string) => `Zatraženo: ${at}`,
     expiresAt: (at: string) => `Poveznica vrijedi do: ${at}`,
     approve: "Pokreni izvoz",
@@ -42,13 +42,16 @@ export const studentDataExportMessages = {
   } satisfies StudentDataExportLabels,
   requested: "Zahtjev je poslan. Izvoz će pokrenuti administrator ustanove.",
   approved: "Izvoz je pokrenut. Student će dobiti poveznicu za preuzimanje.",
+  /** NF-7 OA-6: what each state means, under the list, in the prototype's words. */
+  statesNote: "Čeka odobrenje: zahtjev je zabilježen. Odobren i spreman za preuzimanje: student može preuzeti izvoz jednom. Preuzet ili istekao: zahtjev je zatvoren i za studenta se može zabilježiti novi.",
+  recordedHere: "Zahtjev je zabilježen i dodan na popis.",
   errors: {
     unauthorized: "Prijava nije valjana. Prijavite se ponovno.",
     forbidden: "Zahtjeve za izvoz podataka predaje referada, a pokreće ih administrator ustanove.",
     unavailable: "Poslužitelj trenutačno nije dostupan. Ništa nije promijenjeno; pokušajte ponovno.",
     invalid: "Poslužitelj nije prihvatio ove vrijednosti. Provjerite polja i pokušajte ponovno.",
     notFound: "Student s tom oznakom nije pronađen u ustanovi.",
-    exists: "Za ovog studenta već postoji otvoren zahtjev za izvoz.",
+    exists: "Za ovog studenta već postoji otvoren zahtjev za izvoz. Novi zahtjev nije zabilježen.",
     stale: "Zahtjev više ne čeka odobrenje. Popis je ponovno učitan.",
   },
 } as const;

@@ -3,6 +3,8 @@
 import { Button, Card, DataTable, type DataTableColumn } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
+import { ACTION_LOG, PROBLEM_REPORTS } from "../paths";
+import { appHref } from "@/components/index";
 import { useHost } from "../../context";
 import { pilotMetricsMessages as t } from "./messages.hr";
 import { readPilotMetrics, type PilotMetricsData, type PilotMetricsState } from "./read";
@@ -58,7 +60,7 @@ function MetricsView({ data }: { data: PilotMetricsData }) {
  * The states of the prototype: loading, empty, error with "Pokušaj ponovno", and the measures.
  */
 export function PilotMetrics() {
-  const { role } = useHost();
+  const { base, role } = useHost();
   const [view, setView] = useState<PilotMetricsState>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -71,6 +73,10 @@ export function PilotMetrics() {
     <section className="page" data-role={role ?? undefined} data-nf7="OA-1">
       <h1>{t.title}</h1>
       <p>{t.lead}</p>
+      <nav aria-label={t.more}>
+        <p><a href={appHref(base, ACTION_LOG)}>{t.actionLog}</a></p>
+        <p><a href={appHref(base, PROBLEM_REPORTS)}>{t.problemReports}</a></p>
+      </nav>
       {view.kind === "loading" && <Card title={t.overview} level={2} busy />}
       {view.kind === "denied" && <Card title={t.overview} level={2} error={t.denied} />}
       {view.kind === "unavailable" && (

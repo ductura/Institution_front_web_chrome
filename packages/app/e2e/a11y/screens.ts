@@ -82,4 +82,6 @@ export const SCREENS: readonly Screen[] = [
   { name: "student: moja prava", path: "/moja-prava", role: "student" },
   { name: "administrator: čuvanje podataka", path: "/ustanova/cuvanje", role: "institution_admin" },
   { name: "administrator: izvoz podataka studenta", path: "/ustanova/izvoz-podataka", role: "institution_admin" },
+  { name: "administrator: dnevnik radnji", path: "/operater/dnevnik-radnji", role: "institution_admin" },
+  { name: "administrator: prijave problema", path: "/operater/prijave-problema", role: "institution_admin" },
 ];
