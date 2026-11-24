@@ -54,7 +54,7 @@ export const assignmentFactsMessages = {
     reasonPlaceholder: "Odaberite razlog",
     reasons: { justified: "Opravdan razlog", technical: "Tehnička poteškoća", agreement: "Dogovor s nastavnikom" },
     due: "Novi rok (po zagrebačkom vremenu)",
-    visibilityUnavailable: "Prikaz razloga studentu trenutačno nije dostupan: razlog vidite Vi i student.",
+    studentSees: "Student vidi novi rok i razlog, a zapis se ne briše.",
     record: "Zabilježi iznimku",
     cancel: "Odustani",
     needReason: "Odaberite razlog s popisa.",

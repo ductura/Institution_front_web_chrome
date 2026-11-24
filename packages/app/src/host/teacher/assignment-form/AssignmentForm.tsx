@@ -89,7 +89,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
     const body = assignmentBody(draft, course.aiPolicy);
     if (!body) { setPhase("form"); setFailure(a.errors.invalid); return; }
     const base = courseProhibits || body.aiPurposes.length === 0 ? body : { ...body, aiPolicy: course.aiPolicy };
-    const aiBody = withPractice({ ...base, ...bodyExtras({ ...choices, summaryOnly: choices.summaryOnly && allowsHelp }) }, draft);
+    const aiBody = withPractice({ ...base, ...bodyExtras({ ...choices, summaryOnly: choices.summaryOnly && allowsHelp }, groups?.kind === "ready" ? groups.groups.length : null) }, draft);
     const serialized = JSON.stringify(aiBody);
     // One retry key per body, so a repeated click after an unclear reply cannot create a second assignment.
     if (request.current?.body !== serialized) request.current = { body: serialized, key: crypto.randomUUID() };

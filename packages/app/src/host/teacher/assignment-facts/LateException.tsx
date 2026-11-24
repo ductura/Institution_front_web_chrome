@@ -12,16 +12,17 @@ import { assignmentFactsMessages as text } from "./messages.hr";
 import { whenHr } from "./model";
 
 const l = text.late;
-type Note = { tone: "status" | "alert"; text: string; list?: boolean };
 type Record = typeof recordDeadlineExtension;
+/** What the parent shows after an answer; `assignmentId` is set when the record may exist (a link to the list). */
+export type LateResult = { tone: "status" | "alert"; text: string; assignmentId: string | null };
 
 /**
  * "Dopusti predaju nakon roka…" (NZ-5, variant A) on the row of a student whose deadline passed without a submission:
  * a reason from the closed list and a new deadline; the server records it as an extension for that one student.
  * The success note and the reload follow only the server's answer (B-6).
  */
-export function LateException({ assignmentId, studentId, name, onRecorded, record = recordDeadlineExtension, now = Date.now }: {
-  assignmentId: string; studentId: string; name: string; onRecorded: () => void; record?: Record; now?: () => number;
+export function LateException({ assignmentId, studentId, name, onResult, record = recordDeadlineExtension, now = Date.now }: {
+  assignmentId: string; studentId: string; name: string; onResult: (result: LateResult) => void; record?: Record; now?: () => number;
 }) {
   const { base } = useHost();
   const [open, setOpen] = useState(false);
@@ -29,7 +30,6 @@ export function LateException({ assignmentId, studentId, name, onRecorded, recor
   const [reasonId, setReasonId] = useState("");
   const [dueLocal, setDueLocal] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [note, setNote] = useState<Note | null>(null);
 
   async function submit() {
     if (busy) return;
@@ -44,20 +44,15 @@ export function LateException({ assignmentId, studentId, name, onRecorded, recor
       setOpen(false);
       setReasonId("");
       setDueLocal("");
-      setNote({ tone: "status", text: l.recorded(whenHr(outcome.extension.dueAt) ?? outcome.extension.dueAt) });
-      onRecorded();
+      // The message goes to the parent: the row is mounted again once the facts are read again.
+      onResult({ tone: "status", text: l.recorded(whenHr(outcome.extension.dueAt) ?? outcome.extension.dueAt), assignmentId: null });
     } else if (outcome.kind === "greska") setError(l.notRecorded);
-    else { setOpen(false); setNote({ tone: "alert", text: l.unknown, list: true }); }
+    else { setOpen(false); onResult({ tone: "alert", text: l.unknown, assignmentId }); }
   }
 
   return (
     <>
       <button type="button" className="btn secondary small" aria-label={`${l.open} ${name}`} onClick={() => { setError(null); setOpen(true); }}>{l.open}</button>
-      {note ? (
-        <span className="note" role={note.tone === "alert" ? "alert" : "status"}>
-          {note.text}{note.list ? <> <a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}/produljenje`)}>{l.list}</a></> : null}
-        </span>
-      ) : null}
       <Dialog open={open} title={`${l.title}: ${name}`} onClose={() => !busy && setOpen(false)} dismissible={!busy} error={error ?? undefined}
         actions={<>
           <Button type="button" disabled={busy} onClick={() => void submit()}>{l.record}</Button>
@@ -67,7 +62,7 @@ export function LateException({ assignmentId, studentId, name, onRecorded, recor
         <Select label={l.reason} value={reasonId} placeholder={l.reasonPlaceholder}
           options={LATE_REASONS.map((value) => ({ value, label: l.reasons[value] }))} onChange={(event) => setReasonId(event.target.value)} />
         <TextField label={l.due} type="datetime-local" value={dueLocal} onChange={(event) => setDueLocal(event.target.value)} />
-        <p className="meta">{l.visibilityUnavailable}</p>
+        <p className="meta">{l.studentSees}</p>
       </Dialog>
     </>
   );

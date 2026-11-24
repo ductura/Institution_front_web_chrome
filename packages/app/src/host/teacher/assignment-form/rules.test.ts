@@ -19,8 +19,16 @@ describe("groups and extra create fields (NZ-3)", () => {
 
   it("sends groupIds only when groups are read and ticked; tools and summary always as booleans", () => {
     expect(bodyExtras(defaultChoices)).toEqual({ externalToolsAllowed: true, aiSummaryOnly: false });
-    expect(bodyExtras({ ...defaultChoices, groupIds: ["g1"], externalTools: false, summaryOnly: true }))
+    expect(bodyExtras({ ...defaultChoices, groupIds: ["g1"], externalTools: false, summaryOnly: true }, 2))
       .toEqual({ groupIds: ["g1"], externalToolsAllowed: false, aiSummaryOnly: true });
+  });
+
+  it("leaves groupIds out when every group is ticked, so a course with more than 20 groups still publishes", () => {
+    expect(bodyExtras({ ...defaultChoices, groupIds: ["g1", "g2"] }, 2)).toEqual({ externalToolsAllowed: true, aiSummaryOnly: false });
+    const many = Array.from({ length: 25 }, (_, i) => `g${i}`);
+    expect(bodyExtras({ ...defaultChoices, groupIds: many }, 25)).not.toHaveProperty("groupIds");
+    // A narrowed list is never dropped: past the contract maximum the server refuses it, the assignment is not widened.
+    expect(bodyExtras({ ...defaultChoices, groupIds: many.slice(0, 21) }, 25)).toHaveProperty("groupIds");
   });
 
   it("asks for at least one group only when the course has groups", () => {

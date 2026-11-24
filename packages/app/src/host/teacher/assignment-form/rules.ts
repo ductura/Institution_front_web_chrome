@@ -37,12 +37,18 @@ export async function readGroups(call: Call, courseId: string): Promise<GroupsRe
   }
 }
 
-/** The extra create-body fields. Groups are sent only once they are read; a course without groups sends none. */
-export function bodyExtras(choices: RuleChoices): {
+/**
+ * The extra create-body fields. `groupIds` only when the teacher narrowed the assignment: with every group ticked (the
+ * start) or none read, the field is left out and the assignment goes to all enrolled students, which also keeps a course
+ * with more than 20 groups within the contract.
+ */
+export function bodyExtras(choices: RuleChoices, groupCount: number | null = null): {
   groupIds?: string[]; externalToolsAllowed: boolean; aiSummaryOnly: boolean;
 } {
+  const narrowed = choices.groupIds !== null && choices.groupIds.length > 0 && choices.groupIds.length < (groupCount ?? Infinity);
+  // More than MAX_GROUP_IDS ticked is still sent as it is: the server refuses it, never a silently wider assignment.
   return {
-    ...(choices.groupIds !== null && choices.groupIds.length > 0 ? { groupIds: [...choices.groupIds] } : {}),
+    ...(narrowed ? { groupIds: [...choices.groupIds!] } : {}),
     externalToolsAllowed: choices.externalTools,
     aiSummaryOnly: choices.summaryOnly,
   };

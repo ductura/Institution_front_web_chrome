@@ -72,8 +72,8 @@ export default function SubmissionRulesLive({ assignmentId, client }: { assignme
   }
   const changed = edit.withdrawal !== saved.withdrawal || edit.declarationRequired !== saved.declarationRequired;
   return (
-    <section className="card" aria-labelledby="pr-live-h">
-      <h2 id="pr-live-h">{l.heading}</h2>
+    // The section brings its own heading "Pravila predaje"; the wrapper is only the card.
+    <div className="card">
       <Section id="zs-5" title={f.sections.submitRules}>
         <SubmissionRules prefix="live" value={edit} disabled={busy} onChange={(next) => { setNote(null); setEdit({ ...edit, ...next }); }} />
       </Section>
@@ -88,6 +88,6 @@ export default function SubmissionRulesLive({ assignmentId, client }: { assignme
         </>}>
         <p>{l.confirmBody}</p>
       </Dialog>
-    </section>
+    </div>
   );
 }

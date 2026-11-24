@@ -25,7 +25,7 @@ describe("exception for a late submission (NZ-5, variant A)", () => {
   it("offers a button named after the student and keeps the dialog closed", () => {
     const host = { base: "app", page: { kind: "teacher" }, role: "teacher" } as never;
     const html = renderToStaticMarkup(createElement(HostContext.Provider, { value: host },
-      createElement(LateException, { assignmentId: "a1", studentId: "s1", name: "Ana Izmišljena", onRecorded: () => undefined })));
+      createElement(LateException, { assignmentId: "a1", studentId: "s1", name: "Ana Izmišljena", onResult: () => undefined })));
     expect(html).toContain(`aria-label="${text.late.open} Ana Izmišljena"`);
     expect(html).not.toContain("<dialog open");
     expect(html).not.toMatch(/plagijat|varanje|sumnjiv/i);

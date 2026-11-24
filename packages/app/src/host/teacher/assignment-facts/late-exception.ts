@@ -4,6 +4,7 @@
 import type { ExtensionDraft } from "../../../../../../src/client/deadline-extensions";
 import { zagrebInstant } from "../../../../../../src/lib/i18n/zagreb";
 import { assignmentFactsMessages as text } from "./messages.hr";
+import { deadlineOf, type AssignmentReads, type FactRow } from "./model";
 
 export const LATE_REASONS = ["justified", "technical", "agreement"] as const;
 export type LateReason = (typeof LATE_REASONS)[number];
@@ -18,4 +19,15 @@ export function lateDraft(choice: LateChoice, now: number): { ok: true; draft: E
   const ms = Date.parse(dueAt);
   if (!Number.isFinite(ms) || ms <= now) return { ok: false, error: text.late.dueNotLater };
   return { ok: true, draft: { scope: "one", studentId: choice.studentId, dueAt: new Date(ms).toISOString(), reasonId: choice.reasonId } };
+}
+
+/**
+ * The row gets "Dopusti predaju nakon roka…" when its student has no submission and that student's deadline (an
+ * extension counts) has passed: "nije predano", and a work that was never opened ("nije započelo") after the deadline.
+ */
+export function offersLate(row: Pick<FactRow, "kind" | "studentId">, reads: Pick<AssignmentReads, "dueAt" | "extensions">, now: number = Date.now()): boolean {
+  if (row.kind === "notSubmitted") return true;
+  if (row.kind !== "notOpened") return false;
+  const due = Date.parse(deadlineOf(row.studentId, reads.dueAt, reads.extensions).dueAt);
+  return Number.isFinite(due) && now >= due;
 }
