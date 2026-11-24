@@ -137,8 +137,12 @@ export function clockOf(iso: string): string {
  */
 export type Kept = { readonly id: string; readonly purposeKey: string };
 
+/** How many conversations the card keeps and reads: each one shown is also read, so none waits for ever. */
+export const SHOWN = 10;
+
 type Store = Pick<Storage, "getItem" | "setItem">;
-const keyOf = (assignmentId: string) => `ductura.asistent.razgovori.${assignmentId}`;
+// Under the person's journal scope: another person signed in on this device never sees these conversations.
+const keyOf = (scope: string, assignmentId: string) => `ductura.asistent.razgovori.${scope}.${assignmentId}`;
 
 function storage(): Store | null {
   try {
@@ -148,9 +152,9 @@ function storage(): Store | null {
   }
 }
 
-export function keptConversations(assignmentId: string, store: Store | null = storage()): Kept[] {
+export function keptConversations(scope: string, assignmentId: string, store: Store | null = storage()): Kept[] {
   try {
-    const raw: unknown = JSON.parse(store?.getItem(keyOf(assignmentId)) ?? "[]");
+    const raw: unknown = JSON.parse(store?.getItem(keyOf(scope, assignmentId)) ?? "[]");
     if (!Array.isArray(raw)) return [];
     return raw.filter((k): k is Kept =>
       typeof k === "object" && k !== null && typeof k.id === "string" && UUID.test(k.id) && typeof k.purposeKey === "string");
@@ -159,12 +163,12 @@ export function keptConversations(assignmentId: string, store: Store | null = st
   }
 }
 
-export function keepConversation(assignmentId: string, kept: Kept, store: Store | null = storage()): Kept[] {
-  const list = keptConversations(assignmentId, store);
+export function keepConversation(scope: string, assignmentId: string, kept: Kept, store: Store | null = storage()): Kept[] {
+  const list = keptConversations(scope, assignmentId, store);
   if (list.some((k) => k.id === kept.id)) return list;
-  const next = [...list, kept].slice(-50);
+  const next = [...list, kept].slice(-SHOWN);
   try {
-    store?.setItem(keyOf(assignmentId), JSON.stringify(next));
+    store?.setItem(keyOf(scope, assignmentId), JSON.stringify(next));
   } catch {
     // Storage full or blocked: the conversation stays on the server and in this view.
   }

@@ -152,6 +152,29 @@ test.describe("ED-10 Asistent", () => {
     expect(state.requests[1]!.key).toBe(state.requests[0]!.key);
   });
 
+  test("another purpose after a failed answer is a new question with a new key", async ({ page }) => {
+    const { chat, state } = await openChat(page, noticeBody(), [{ status: 503, json: { error: "unavailable" } }]);
+    await chat.getByLabel("Svrha upita").selectOption("formatting");
+    await chat.getByLabel("Upit Asistentu").fill("Izmišljeno pitanje koje ne stigne");
+    await chat.getByRole("button", { name: "Pošalji Asistentu" }).click();
+    await expect(chat.getByRole("alert")).toContainText("Asistent trenutačno ne odgovara.");
+    await chat.getByLabel("Svrha upita").selectOption("proofreading");
+    await chat.getByRole("button", { name: "Pošalji Asistentu" }).click();
+    await expect(chat.getByText(ANSWER)).toBeVisible();
+    expect(state.requests).toHaveLength(2);
+    expect(state.requests[1]!.body.purposeKey).toBe("proofreading");
+    expect(state.requests[1]!.key).not.toBe(state.requests[0]!.key);
+  });
+
+  test("conversations are kept per person: another sign-in on the device sees none of them", async ({ page }) => {
+    await page.addInitScript(([id, conv]) => {
+      localStorage.setItem(`ductura.asistent.razgovori.${"b".repeat(64)}.${id}`, JSON.stringify([{ id: conv, purposeKey: "proofreading" }]));
+    }, [ID, CONV]);
+    const { chat } = await openChat(page);
+    await expect(chat.getByText("Još nema razgovora.", { exact: false })).toBeVisible();
+    await expect(chat.getByText("Učitavam razgovor…")).toHaveCount(0);
+  });
+
   test("the usage limit stops new questions, without a number", async ({ page }) => {
     const { chat } = await openChat(page, noticeBody(), [settled("budget_exceeded")]);
     await chat.getByLabel("Upit Asistentu").fill("Izmišljeno pitanje");

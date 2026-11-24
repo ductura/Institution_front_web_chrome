@@ -8,7 +8,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useAssignmentNotice } from "../assistant-rules/assistant-rules";
 import { assistantRulesHr } from "../assistant-rules/messages.hr";
 import {
-  askablePurposes, clockOf, createAssistantPort, exchangesOf, keepConversation, keptConversations, newKey, titleOf,
+  SHOWN, askablePurposes, clockOf, createAssistantPort, exchangesOf, keepConversation, keptConversations, newKey, titleOf,
   type AssistantPort, type ConversationRead, type Kept,
 } from "./assistant-chat";
 import { assistantChatHr as t } from "./messages.hr";
@@ -76,7 +76,7 @@ function Conversation({ kept, read, open }: { kept: Kept; read: ConversationRead
   );
 }
 
-export function AssistantChatView({ assignmentId, readOnly, port }: { assignmentId: string; readOnly: boolean; port: AssistantPort }) {
+export function AssistantChatView({ assignmentId, scope, readOnly, port }: { assignmentId: string; scope: string; readOnly: boolean; port: AssistantPort }) {
   const notice = useAssignmentNotice(assignmentId);
   const online = useOnline();
   const ids = useId();
@@ -99,10 +99,11 @@ export function AssistantChatView({ assignmentId, readOnly, port }: { assignment
   }, [port]);
 
   useEffect(() => {
-    const list = keptConversations(assignmentId);
+    // Only the last SHOWN are kept and shown, and every one shown is read: none stays on "Učitavam razgovor…".
+    const list = keptConversations(scope, assignmentId).slice(-SHOWN);
     setKept(list);
-    for (const k of list.slice(-10)) void load(k.id);
-  }, [assignmentId, load]);
+    for (const k of list) void load(k.id);
+  }, [scope, assignmentId, load]);
 
   const available = notice?.kind === "available" ? notice.view : null;
   const prohibited = available?.aiPolicy === "prohibited";
@@ -139,7 +140,7 @@ export function AssistantChatView({ assignmentId, readOnly, port }: { assignment
     setPendingKey(null);
     if (outcome.conversationId !== null) {
       const id = outcome.conversationId;
-      setKept(keepConversation(assignmentId, { id, purposeKey: chosen }));
+      setKept(keepConversation(scope, assignmentId, { id, purposeKey: chosen }));
       setCurrent(id);
       await load(id);
     }
@@ -188,7 +189,7 @@ export function AssistantChatView({ assignmentId, readOnly, port }: { assignment
         <form className={styles.form} onSubmit={(e) => { e.preventDefault(); void send(); }} aria-busy={busy || undefined}>
           <fieldset className={styles.fieldset} disabled={!online || busy}>
             <label className={styles.f} htmlFor={purposeId}>{t.purpose}</label>
-            <select id={purposeId} className={styles.in} value={purpose} onChange={(e) => setPurpose(e.target.value)}>
+            <select id={purposeId} className={styles.in} value={purpose} onChange={(e) => { setPurpose(e.target.value); setPendingKey(null); }}>
               {purposes.map((p) => <option key={p} value={p}>{purposeLabel(p)}</option>)}
             </select>
             <label className={styles.f} htmlFor={promptId}>{t.prompt}</label>
@@ -214,7 +215,7 @@ export function AssistantChatView({ assignmentId, readOnly, port }: { assignment
   );
 }
 
-export function AssistantChat({ assignmentId, readOnly }: { assignmentId: string; readOnly: boolean }) {
+export function AssistantChat({ assignmentId, scope, readOnly }: { assignmentId: string; scope: string; readOnly: boolean }) {
   const port = useMemo(() => createAssistantPort(), []);
-  return <AssistantChatView assignmentId={assignmentId} readOnly={readOnly} port={port} />;
+  return <AssistantChatView assignmentId={assignmentId} scope={scope} readOnly={readOnly} port={port} />;
 }

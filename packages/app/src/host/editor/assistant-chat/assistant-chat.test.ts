@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { AssistantChatView } from "./AssistantChat";
 import {
+  SHOWN,
   PURPOSE_CATALOG_VERSION, askablePurposes, createAssistantPort, exchangesOf, keepConversation, keptConversations, titleOf,
   type AssistantPort, type Message,
 } from "./assistant-chat";
@@ -13,6 +14,8 @@ const ASSIGNMENT = "0f0e0d0c-0b0a-4908-8706-050403020100";
 const CONV = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 const REQ = "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e";
 const RESP = "3c4d5e6f-7a8b-4c9d-8e1f-2a3b4c5d6e7f";
+const SCOPE = "a".repeat(64);
+const OTHER = "b".repeat(64);
 const input = { assignmentId: ASSIGNMENT, conversationId: null, purposeKey: "proofreading" as const, paragraph: "Izmišljena rečenica." };
 
 const json = (body: unknown, status = 200) =>
@@ -83,15 +86,24 @@ describe("ED-10 Asistent: the record", () => {
     expect(await port.read("nije-id")).toEqual({ kind: "unavailable" });
   });
 
-  it("keeps conversation ids per assignment, once, and survives a damaged store", () => {
+  it("keeps conversation ids per person and assignment, once, and survives a damaged store", () => {
     const store = memoryStore();
-    keepConversation(ASSIGNMENT, { id: CONV, purposeKey: "proofreading" }, store);
-    keepConversation(ASSIGNMENT, { id: CONV, purposeKey: "proofreading" }, store);
-    expect(keptConversations(ASSIGNMENT, store)).toEqual([{ id: CONV, purposeKey: "proofreading" }]);
-    expect(keptConversations(REQ, store)).toEqual([]);
-    store.setItem(`ductura.asistent.razgovori.${ASSIGNMENT}`, "{pokvareno");
-    expect(keptConversations(ASSIGNMENT, store)).toEqual([]);
-    expect(keptConversations(ASSIGNMENT, null)).toEqual([]);
+    keepConversation(SCOPE, ASSIGNMENT, { id: CONV, purposeKey: "proofreading" }, store);
+    keepConversation(SCOPE, ASSIGNMENT, { id: CONV, purposeKey: "proofreading" }, store);
+    expect(keptConversations(SCOPE, ASSIGNMENT, store)).toEqual([{ id: CONV, purposeKey: "proofreading" }]);
+    expect(keptConversations(SCOPE, REQ, store)).toEqual([]);
+    // Another person signed in on the same device does not see them.
+    expect(keptConversations(OTHER, ASSIGNMENT, store)).toEqual([]);
+    store.setItem(`ductura.asistent.razgovori.${SCOPE}.${ASSIGNMENT}`, "{pokvareno");
+    expect(keptConversations(SCOPE, ASSIGNMENT, store)).toEqual([]);
+    expect(keptConversations(SCOPE, ASSIGNMENT, null)).toEqual([]);
+  });
+
+  it("keeps only the last SHOWN conversations, so every one shown is read", () => {
+    const store = memoryStore();
+    const ids = Array.from({ length: SHOWN + 3 }, (_, i) => `${String(i).padStart(8, "0")}-0000-4000-8000-000000000000`);
+    for (const id of ids) keepConversation(SCOPE, ASSIGNMENT, { id, purposeKey: "proofreading" }, store);
+    expect(keptConversations(SCOPE, ASSIGNMENT, store).map((k) => k.id)).toEqual(ids.slice(-SHOWN));
   });
 
   it("offers only the purposes the notice allows, never transcription", () => {
@@ -103,7 +115,7 @@ describe("ED-10 Asistent: the record", () => {
 describe("ED-10 Asistent: the card", () => {
   const idle: AssistantPort = { ask: async () => ({ kind: "unavailable" }), read: async () => ({ kind: "unavailable" }) };
   const out = (readOnly: boolean) =>
-    renderToStaticMarkup(createElement(AssistantChatView, { assignmentId: ASSIGNMENT, readOnly, port: idle }));
+    renderToStaticMarkup(createElement(AssistantChatView, { assignmentId: ASSIGNMENT, scope: SCOPE, readOnly, port: idle }));
 
   it("says who answers and what is sent, before anything is asked", () => {
     const html = out(false);
