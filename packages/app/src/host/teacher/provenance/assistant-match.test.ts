@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { findForbiddenTerms } from "../../../../../../scripts/forbidden-terms/terms.ts";
+import { forbiddenInReview } from "../work/review/forbidden";
 import { AssistantMatchView } from "./AssistantMatchSection";
 import { ProvenanceMapView } from "./ProvenanceMap";
 import { assistantMatchReader } from "./contract";
@@ -60,8 +60,8 @@ describe("PIL-P1-PODUDARANJE-KARTA: model", () => {
   it("keeps the server's share and order, and names a share below one percent", () => {
     expect(matchOf([], fakeParts(0))).toEqual({ kind: "none" });
     expect(matchOf([], fakeParts(2))).toEqual({ kind: "ready", percent: 2, findings: [] });
-    expect(shareLabel(4)).toBe(`${LABEL} · 4 %`);
-    expect(shareLabel(0.4)).toBe(`${LABEL} · manje od 1 %`);
+    expect(shareLabel(4)).toBe(`${LABEL} · 4 % · nije dokaz autorstva`);
+    expect(shareLabel(0.4)).toBe(`${LABEL} · manje od 1 % · nije dokaz autorstva`);
     expect(shareLabel(0)).toBe(LABEL);
     const second = { ...FAKE_FINDING, messageId: "00000000-0000-4000-8000-00000000a002", runWords: 21 };
     expect(matchRows([FAKE_FINDING, second]).map((row) => row.words)).toEqual(["11 riječi", "21 riječ"]);
@@ -111,8 +111,9 @@ describe("PIL-P1-PODUDARANJE-KARTA: view", () => {
 
   it("holds no forbidden term and no verdict", () => {
     const texts = Object.values(matchText as Record<string, unknown>).filter((v): v is string => typeof v === "string");
-    for (const text of [...texts, matchText.words(11)]) {
-      expect(findForbiddenTerms(text, "hr")).toEqual([]);
+    // „dokaz autorstva” only in the negation next to a share (WEB-NUZ-PG PG-14); every other term still fails.
+    for (const text of [...texts, matchText.words(11), shareLabel(4)]) {
+      expect(forbiddenInReview(text)).toEqual([]);
       expect(text.toLowerCase()).not.toMatch(/prepis|plagij|varan|sumnj/);
     }
   });

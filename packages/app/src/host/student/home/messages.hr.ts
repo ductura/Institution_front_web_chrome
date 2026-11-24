@@ -15,6 +15,8 @@ export const homeText = {
   nearOne: "Rok za 1 dan",
   nearMany: "Rok za {n} dana",
   nearToday: "Rok je danas",
+  late: "Rok je prošao {date}",
+  originalPassed: "Izvorni rok je prošao {date}",
   noticeFirst: "Prvo pročitajte obavijest",
   extendedDue: "Produljeni rok: {due}",
   codeHeading: "Imate kod novog kolegija?",

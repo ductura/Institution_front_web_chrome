@@ -4,6 +4,8 @@ export const matchText = {
   heading: "Podudaranje s odgovorom pomoćnika",
   intro: "Osam ili više riječi zaredom jednako je odgovoru pomoćnika u Ducturi. Razgovor je automatski priložen izjavi kao preneseni tekst.",
   neutral: "Ovo je obična usporedba teksta i ništa ne govori o autorstvu.",
+  /** Next to every share (Ustav v1.6 C-6); the scanner allows „dokaz autorstva” only in this negation. */
+  notProof: "nije dokaz autorstva",
   caption: "Priloženi razgovori s pomoćnikom",
   noConversation: "Uz ovaj udio još nema priloženog razgovora.",
   colWords: "Riječi zaredom",

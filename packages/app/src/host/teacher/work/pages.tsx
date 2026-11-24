@@ -51,6 +51,8 @@ import CommentBank from "../comment-bank/CommentBank";
 import { commentBankPort, draftCommentsPort } from "../comment-bank/port";
 import { teacherWorkMessages as workText } from "./messages.hr";
 import { useShownRevision } from "./shown-revision";
+import ReviewPage from "./review/ReviewPage";
+import { reviewMessages } from "./review/messages.hr";
 import linkStyles from "./links.module.css";
 
 const VIEWS = {
@@ -61,6 +63,8 @@ const VIEWS = {
   comparison: { suffix: "/usporedba", title: n11Messages.title },
   summary: { suffix: "/sazetak", title: n10Messages.title },
   interview: { suffix: "/priprema-razgovora", title: interviewMessages.title },
+  // WEB-NUZ-PG (NF-5 PG-1): one review of the work, the views as tabs.
+  review: { suffix: "/pregled", title: reviewMessages.title },
 } as const;
 
 type View = keyof typeof VIEWS;
@@ -130,6 +134,9 @@ function OpenWork({ documentId, path, view, session }: {
     return <InterviewPage key={documentId} port={interviewPort} documentId={documentId} workHref={workHref}
       summaryHref={`${workHref}${VIEWS.summary.suffix}`} />;
   }
+  if (view === "review") {
+    return <ReviewPage key={documentId} documentId={documentId} current={current} />;
+  }
   if (view === "receipt") {
     // N-07 "Što je student predao" (WEB-2155).
     return <N07ReceiptPage key={documentId} documentId={documentId} workHref={workHref} current={current} />;
@@ -172,6 +179,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
               <LiveText view={view} marks={openMarks(placed)} textRef={textRef} onSelect={select} />
             </>}
           {!stopped && <ul className={linkStyles.links}>
+            <li><a href={`${workHref}${VIEWS.review.suffix}`}>{reviewMessages.entry}</a></li>
             <li><a href={receiptHref}>{VIEWS.receipt.title}</a></li>
             <li><a href={`${workHref}${VIEWS.replay.suffix}`}>{VIEWS.replay.title}</a></li>
             <li><a href={`${workHref}${VIEWS.consultations.suffix}`}>{VIEWS.consultations.title}</a></li>

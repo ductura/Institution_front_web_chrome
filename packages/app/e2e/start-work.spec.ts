@@ -1,4 +1,4 @@
-// WEB-1402 (plan M2.1): "Započni rad" on the assignment card, with an invented /api/v1 that
+// WEB-1402 (plan M2.1), ED-01a: "Započni rad" on the assignment card, with an invented /api/v1 that
 // keeps the server's rule: one work per student and assignment, made by the first call.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "./fixtures/test";
@@ -7,7 +7,7 @@ import { startWorkText as s } from "../src/host/student/start-work/messages.hr";
 
 const ID = "6e2f3a41-5b6c-4d7e-8f90-a1b2c3d4e5f7";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d1f";
-const DOCUMENT = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+const WORK = "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
 const TITLE = "Izmišljeni seminar o gradskim vrtovima";
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const START = `**/api/v1/assignments/${ID}/start`;
@@ -31,12 +31,9 @@ async function server(page: Page, options: { startDelayMs?: number } = {}) {
     seen.starts += 1;
     expect(route.request().method()).toBe("POST");
     if (options.startDelayMs) await new Promise((resolve) => setTimeout(resolve, options.startDelayMs));
-    const created = !started;
-    if (created) { started = true; seen.made += 1; }
-    return route.fulfill({
-      status: created ? 201 : 200,
-      json: { assignmentId: ID, documentId: DOCUMENT, created, workLanguage: "hr", facultyRulesVersion: 3 },
-    });
+    if (!started) { started = true; seen.made += 1; }
+    // The shape of student-work.start.post: always 200, the same work to every call.
+    return route.fulfill({ status: 200, json: { workId: WORK, rulesVersion: 3, language: "hr" } });
   });
   return seen;
 }
@@ -93,6 +90,15 @@ test("a 404 leads to the no-access screen of WEB-1401, which does not say whethe
   await startButton(page).click();
   await expect(page).toHaveURL(/\/app\/web\/nema-ovlasti\?kind=denied&returnTo=%2Fzadaci$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nemate ovlasti za ovaj prikaz");
+});
+
+test("a 409 conflict (notice not acknowledged or not open yet) leads to the assignment, not to an unknown note", async ({ page }) => {
+  await server(page);
+  await page.route(START, (route) => route.fulfill({ status: 409, json: { code: "conflict" } }));
+  await page.goto("/app/web/zadaci");
+  await startButton(page).click();
+  await expect(page).toHaveURL(new RegExp(`/app/web/zadatak/${ID}$`));
+  await expect(page.getByText(s.unknown)).toHaveCount(0);
 });
 
 test("an unknown answer stays on the card with a note, and the next click opens the work", async ({ page }) => {

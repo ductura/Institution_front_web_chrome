@@ -25,6 +25,7 @@ import { originText } from "./host/teacher/provenance/origin-messages.hr";
 import { interviewMessages as studentInterviewText } from "./host/student/interview/messages.hr";
 import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
 import { hostText } from "./text";
+import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 
 export { BASES, type Base } from "./bases";
 
@@ -115,6 +116,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/rad/[id]/usporedba", label: n11Messages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/sazetak", label: n10Messages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/priprema-razgovora", label: interviewMessages.title, kind: "pending", roles: ["teacher"] },
+  // WEB-NUZ-PG (NF-5 PG-1): one review of the work, reached from the work's views.
+  { path: "/nastavnik/rad/[id]/pregled", label: reviewMessages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/konzultacije", label: consultationMessages.title, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/zadatak/novi", label: t.teacher.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/zadatak/[assignmentId]/uredi", label: t.teacher.newVersion.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },

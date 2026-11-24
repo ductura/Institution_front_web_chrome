@@ -15,6 +15,8 @@ export type PanelTabsProps = {
   tabs: readonly PanelTab[];
   /** The tab open on first render; the first tab when absent or unknown. */
   initial?: string;
+  /** Told the id of every tab that opens (click or keys); the page may keep it, e.g. in the address. */
+  onChange?: (id: string) => void;
 };
 
 /**
@@ -29,10 +31,11 @@ export type PanelTabsProps = {
  * Keyboard (WAI-ARIA tabs pattern, automatic activation): the list is one Tab
  * stop; Left/Right move and open, Home/End go to the ends.
  */
-export function PanelTabs({ label, tabs, initial }: PanelTabsProps) {
+export function PanelTabs({ label, tabs, initial, onChange }: PanelTabsProps) {
   const base = useId();
   const first = tabs.some((tab) => tab.id === initial) ? initial : tabs[0]?.id;
-  const [open, setOpen] = useState(first);
+  const [open, setShown] = useState(first);
+  const setOpen = (id: string) => { setShown(id); onChange?.(id); };
   const buttons = useRef(new Map<string, HTMLButtonElement>());
 
   const move = (event: KeyboardEvent<HTMLDivElement>) => {

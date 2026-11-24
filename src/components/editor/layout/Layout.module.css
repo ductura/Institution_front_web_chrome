@@ -37,7 +37,7 @@
   .top { gap: 6px; padding: 0 8px; }
   .tools { min-height: 50px; padding: 0 6px; }
   .stage { padding: 10px 0 70px; }
-  .status { min-height: 34px; }
+  .status { min-height: 34px; overflow-x: visible; white-space: normal; }
 }
 
 @media (prefers-reduced-motion: reduce) { .rail, .panel { transition: none; } }

@@ -9,9 +9,10 @@ import { courseHref } from "../../../../../../src/components/student/upis/course
 import { enroll, type EnrollResult } from "../../../../../../src/components/student/upis/enroll.ts";
 import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
 
+import { CODE_MAX } from "./code";
 import styles from "./Enrol.module.css";
 import { enrolText } from "./messages.hr";
-import { codeFromQuery, enrolError } from "./model";
+import { codeFromQuery, enrolErrorPlace } from "./model";
 
 const e = t.student.enroll;
 
@@ -71,7 +72,7 @@ export default function EnrolForm({ signInHref, navigate }: {
       </section>
     );
   }
-  const error = enrolError(result);
+  const error = enrolErrorPlace(result);
   return (
     <section className={styles.card} aria-labelledby="up-h" aria-busy={sending || undefined}>
       {heading}
@@ -79,12 +80,12 @@ export default function EnrolForm({ signInHref, navigate }: {
         <CodeField
           label={e.label}
           hint={e.hint}
-          error={error ?? undefined}
+          error={error.field ?? undefined}
           busy={sending}
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          maxLength={64}
+          maxLength={CODE_MAX}
           placeholder="KOD-KOLEGIJA"
           value={code}
           onChange={(event) => setCode(event.target.value)}
@@ -95,6 +96,7 @@ export default function EnrolForm({ signInHref, navigate }: {
           )}
         />
         {sending ? <p className={styles.meta} role="status">{enrolText.sendingStatus}</p> : null}
+        {error.form === null ? null : <p className={styles.note} role="alert">{error.form}</p>}
         {result?.kind === "signedOut" ? <p><a href={signInHref}>{t.student.signIn}</a></p> : null}
       </form>
     </section>
