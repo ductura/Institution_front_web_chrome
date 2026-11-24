@@ -1,7 +1,14 @@
 // NZ-7a (NF-4): "Ovako će student vidjeti obavijest". Pure: built from the fields of the loaded version
 // (institution.assignment.get), the same fields the student notice shows; no student names, no work content.
+import { AI_PURPOSES } from "@/components/teacher/assignment-create";
+import { wordRangeHr } from "@/lib/i18n/length-line";
+import { messagesHr } from "@/lib/i18n/messages.hr";
+
 import { momentHr } from "../n12/model";
 import { noticePreviewHr as text } from "./messages.hr";
+
+/** The short labels of the five FPZG čl. 8 purposes (D-80), one catalogue for every teacher and admin screen. */
+const purposeLabels = messagesHr.facultyRuleVersions.purposeLabels;
 
 export type NoticeFields = {
   readonly versionNo: number;
@@ -15,25 +22,23 @@ export type NoticeFields = {
 
 export type NoticeLine = { readonly label: string; readonly value: string };
 
-const PURPOSES: Readonly<Record<string, string>> = {
-  idea_generation: "smišljanje ideja",
-  language_editing: "jezična korektura",
-  summarising: "sažimanje",
-  translation: "prevođenje",
-  feedback: "povratna informacija",
-};
-
+/** The word range as the student reads it (S3 notice: "2 000–2 500 riječi"); no limit is said in words. */
 export function wordsText(min: number | null, max: number | null): string {
-  if (min !== null && max !== null) return `${min}–${max} riječi`;
-  if (min !== null) return `najmanje ${min} riječi`;
-  if (max !== null) return `najviše ${max} riječi`;
-  return text.noLimit;
+  return wordRangeHr({ min, max }) ?? text.noLimit;
 }
 
-/** The lines a student reads, in a fixed order. An unknown purpose is shown as it is not, never invented. */
+/**
+ * The allowed purposes exactly as the student notice picks them (host/student/enrol/HostNotice.tsx): the closed
+ * list AI_PURPOSES, in its order, kept when the version lists it. A key outside the list is never shown.
+ */
+export function allowedPurposes(aiPurposes: readonly string[]): readonly string[] {
+  return AI_PURPOSES.filter((p) => aiPurposes.includes(p)).map((p) => purposeLabels[p]);
+}
+
+/** The lines a student reads, in a fixed order. */
 export function noticeLines(f: NoticeFields): readonly NoticeLine[] {
-  const purposes = f.aiPurposes.map((p) => PURPOSES[p]).filter((p): p is string => p !== undefined);
-  const tools = f.aiPolicy === "prohibited" || purposes.length === 0 ? text.toolsNone : text.toolsSome(purposes.join(", "));
+  const purposes = allowedPurposes(f.aiPurposes);
+  const tools = purposes.length === 0 ? text.toolsNone : text.toolsSome(purposes.join(", "));
   return [
     { label: text.due, value: momentHr(f.dueAt) },
     { label: text.tools, value: tools },

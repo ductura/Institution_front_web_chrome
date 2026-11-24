@@ -1,7 +1,7 @@
 // WEB-2103: one read of student.assignments.get (and, for E-4, the work states) with
 // the A-3 fields (groups, workType, mentor) the shared MyCourse type does not carry.
 import { createApi } from "../../../../../../src/client/api";
-import type { MyAssignment } from "../../../../../../src/components/student/my-assignments-read";
+import type { MyAssignment } from "../read/assignments";
 import { extensionOf, submittedOf, type ExtensionNote, type Group, type Mentor, type Submitted } from "./model";
 
 export type Assignment = {

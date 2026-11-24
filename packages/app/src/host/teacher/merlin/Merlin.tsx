@@ -7,7 +7,7 @@ import { newRequestKey, packageView } from "../../../../../../src/client/merlin-
 import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr.ts";
 import { merlinMessages as text } from "./messages.hr";
 import {
-  COLUMN_HEADERS, POLL_MS, askFocusAfterChoose, canDownload, choiceLabel, takeFocusAfterChoose, hasSubmitted, reasonLines, rowCells, statusLines,
+  COLUMN_HEADERS, POLL_MS, canDownload, choiceLabel, hasSubmitted, reasonLines, rowCells, statusLines,
   type ExportStatus, type MerlinData, type MerlinPackage, type MerlinPort,
 } from "./model";
 
@@ -18,12 +18,14 @@ const IDS = ["familyName", "givenName", "submitted", "submittedMinute", "afterDe
  * downloadable package only while ready and before its expiry (C-16), the server's fingerprint as it is.
  * Read-only for a collaborator is the server's rule; this screen only asks and shows.
  */
-export default function Merlin({ assignmentId, data, port, onChoose, now = () => Date.now() }: {
+export default function Merlin({ assignmentId, data, port, onChoose, focusChooser = false, now = () => Date.now() }: {
   assignmentId: string;
   data: MerlinData;
   port: MerlinPort;
   /** Called with another assignment's id from the "Zadatak" select. */
   onChoose?: (assignmentId: string) => void;
+  /** NZ-16: this page was opened by a choice in the "Zadatak" select, so the select takes the focus once. */
+  focusChooser?: boolean;
   now?: () => number;
 }) {
   const [status, setStatus] = useState<ExportStatus>({ kind: "none" });
@@ -34,8 +36,8 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
 
   // NZ-16: after the teacher chose another assignment, the select keeps the keyboard focus on the new page.
   useEffect(() => {
-    if (takeFocusAfterChoose()) selectBox.current?.querySelector("select")?.focus();
-  }, [assignmentId]);
+    if (focusChooser) selectBox.current?.querySelector("select")?.focus();
+  }, [assignmentId, focusChooser]);
 
   async function refresh(packageId: string): Promise<void> {
     const read = await port.readPackage(assignmentId, packageId);
@@ -95,7 +97,7 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
   const selectField = options.some((option) => option.value === assignmentId) ? (
     <div ref={selectBox} style={{ maxWidth: 420 }}>
       <Select label={text.taskLabel} options={options} value={assignmentId}
-        onChange={(event) => { askFocusAfterChoose(); onChoose?.(event.target.value); }} />
+        onChange={(event) => onChoose?.(event.target.value)} />
     </div>
   ) : null;
 
