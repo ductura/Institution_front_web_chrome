@@ -174,7 +174,7 @@ describe("NF-5 PG-11, PG-12, PG-13", () => {
     beforeEach(() => { window.history.replaceState(null, "", `/app/web/nastavnik/rad/${DOCUMENT}/pregled`); });
 
     const page = (grade: "eligible" | "practice", d: ExportDeps) => mount(h(HostContext.Provider, { value: HOST },
-      h(ReviewPage, { documentId: DOCUMENT, reads: reads(grade), extras: QUIET, provenanceCall: provenance, matchCall: async () => ({ kind: "none" }), exportDeps: d })));
+      h(ReviewPage, { documentId: DOCUMENT, reads: reads(grade), extras: QUIET, provenanceCall: provenance, matchCall: async () => ({ kind: "none" as const }), exportDeps: d })));
 
     it("PG-11, PG-12: the export sits under the header, inside the review region with 44 px controls", async () => {
       const el = await page("eligible", deps({ ok: true, status: 200, body: PDF }).value);
