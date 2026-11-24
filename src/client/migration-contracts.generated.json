@@ -6055,6 +6055,39 @@
                             "type": "null"
                           }
                         ]
+                      },
+                      "periodStatus": {
+                        "description": "decided: retentionDays is a number; awaiting_decision: retentionDays is null because the faculty has not set the period yet (none is ever made up); never_deleted: the class proves a submission and is never deleted.",
+                        "anyOf": [
+                          {
+                            "const": "decided",
+                            "type": "string"
+                          },
+                          {
+                            "const": "awaiting_decision",
+                            "type": "string"
+                          },
+                          {
+                            "const": "never_deleted",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "periodStatusKey": {
+                        "anyOf": [
+                          {
+                            "const": "adminSettings.retentionPeriod.decided",
+                            "type": "string"
+                          },
+                          {
+                            "const": "adminSettings.retentionPeriod.awaitingDecision",
+                            "type": "string"
+                          },
+                          {
+                            "const": "adminSettings.retentionPeriod.neverDeleted",
+                            "type": "string"
+                          }
+                        ]
                       }
                     }
                   }
@@ -20282,6 +20315,67 @@
                 },
                 "declarationRequired": {
                   "type": "boolean"
+                },
+                "teacherQuestion": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "questionId",
+                        "text"
+                      ],
+                      "properties": {
+                        "questionId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "text": {
+                          "minLength": 1,
+                          "maxLength": 1000,
+                          "description": "Up to 500 Unicode code points.",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "questionAnswer": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "questionId",
+                        "questionText",
+                        "text"
+                      ],
+                      "properties": {
+                        "questionId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "questionText": {
+                          "minLength": 1,
+                          "maxLength": 1000,
+                          "description": "Up to 500 Unicode code points.",
+                          "type": "string"
+                        },
+                        "text": {
+                          "minLength": 1,
+                          "maxLength": 4000,
+                          "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -20421,6 +20515,33 @@
         },
         "confirm": {
           "type": "boolean"
+        },
+        "questionAnswer": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "questionId",
+                "text"
+              ],
+              "properties": {
+                "questionId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "text": {
+                  "minLength": 1,
+                  "maxLength": 4000,
+                  "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -21124,6 +21245,67 @@
                 },
                 "declarationRequired": {
                   "type": "boolean"
+                },
+                "teacherQuestion": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "questionId",
+                        "text"
+                      ],
+                      "properties": {
+                        "questionId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "text": {
+                          "minLength": 1,
+                          "maxLength": 1000,
+                          "description": "Up to 500 Unicode code points.",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "questionAnswer": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "questionId",
+                        "questionText",
+                        "text"
+                      ],
+                      "properties": {
+                        "questionId": {
+                          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                          "type": "string"
+                        },
+                        "questionText": {
+                          "minLength": 1,
+                          "maxLength": 1000,
+                          "description": "Up to 500 Unicode code points.",
+                          "type": "string"
+                        },
+                        "text": {
+                          "minLength": 1,
+                          "maxLength": 4000,
+                          "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               }
             }
@@ -24042,6 +24224,10 @@
         "appVersion": {
           "pattern": "^(?:(?:0|[1-9][0-9]{0,3})\\.(?:0|[1-9][0-9]{0,3})\\.(?:0|[1-9][0-9]{0,3})(?:\\+[0-9a-f]{7,40})?|[0-9a-f]{7,40})(?![\\s\\S])",
           "type": "string"
+        },
+        "courseId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+          "type": "string"
         }
       }
     },
@@ -25043,6 +25229,67 @@
                     },
                     "declarationSha256": {
                       "type": "null"
+                    },
+                    "question": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "questionId",
+                            "text"
+                          ],
+                          "properties": {
+                            "questionId": {
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                              "type": "string"
+                            },
+                            "text": {
+                              "minLength": 1,
+                              "maxLength": 1000,
+                              "description": "Up to 500 Unicode code points.",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "questionAnswer": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "questionId",
+                            "questionText",
+                            "text"
+                          ],
+                          "properties": {
+                            "questionId": {
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                              "type": "string"
+                            },
+                            "questionText": {
+                              "minLength": 1,
+                              "maxLength": 1000,
+                              "description": "Up to 500 Unicode code points.",
+                              "type": "string"
+                            },
+                            "text": {
+                              "minLength": 1,
+                              "maxLength": 4000,
+                              "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   }
                 },
@@ -25346,6 +25593,67 @@
                     "declarationSha256": {
                       "pattern": "^[0-9a-f]{64}$",
                       "type": "string"
+                    },
+                    "question": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "questionId",
+                            "text"
+                          ],
+                          "properties": {
+                            "questionId": {
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                              "type": "string"
+                            },
+                            "text": {
+                              "minLength": 1,
+                              "maxLength": 1000,
+                              "description": "Up to 500 Unicode code points.",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "questionAnswer": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "questionId",
+                            "questionText",
+                            "text"
+                          ],
+                          "properties": {
+                            "questionId": {
+                              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                              "type": "string"
+                            },
+                            "questionText": {
+                              "minLength": 1,
+                              "maxLength": 1000,
+                              "description": "Up to 500 Unicode code points.",
+                              "type": "string"
+                            },
+                            "text": {
+                              "minLength": 1,
+                              "maxLength": 4000,
+                              "description": "Up to 2000 Unicode code points, NFC, no leading or trailing space, no control character but the line feed.",
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   }
                 }
