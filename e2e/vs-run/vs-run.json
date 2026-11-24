@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-11-24T04:59:26.580Z",
-  "runUrl": "https://github.com/ductura/Institution_front_web_chrome/actions/runs/45329813911",
+  "generatedAt": "2026-11-24T12:58:00.227Z",
+  "runUrl": "https://github.com/ductura/Institution_front_web_chrome/actions/runs/45398145047",
   "ok": true,
   "sha": {
-    "web": "14d5c37393dd3de134a74b448bffeb4cf280f0e3",
-    "server": "928db7c650431905d5e2fb611d80cd298402b62e",
-    "preloader": "73d0462f11a0775c51a66232a545932ef5597907"
+    "web": "a0ef55d0f493ecb3fffe166d865f73884e72cc57",
+    "server": "71a446ad55cd3c8dff6bf4da3378c0fbf5d76ae2",
+    "preloader": "0fadb6dd46159dd0337c2720d64f9fa1d7ee47c6"
   },
   "host": "packages/app",
   "entry": "http://localhost:8000/ → http://localhost:8000/app/web/",
   "serverPid": {
-    "before": 4894,
-    "after": 5886,
+    "before": 5084,
+    "after": 6029,
     "changed": true
   },
   "restart": {
-    "pidBefore": 4894,
-    "pidAfter": 5886,
+    "pidBefore": 5084,
+    "pidAfter": 6029,
     "stop": "SIGTERM",
     "command": [
       "/opt/hostedtoolcache/node/24.22.3/x64/bin/node",
       "--disallow-code-generation-from-strings",
       "/home/runner/work/Institution_front_web_chrome/Institution_front_web_chrome/Institution_server/dist/server.js"
     ],
-    "stoppedAt": "2026-11-24T04:59:08.140Z",
-    "healthyAt": "2026-11-24T04:59:08.981Z"
+    "stoppedAt": "2026-11-24T12:57:43.169Z",
+    "healthyAt": "2026-11-24T12:57:44.001Z"
   },
   "freshContext": {
     "kind": "browser.newContext()",
@@ -32,16 +32,16 @@
   },
   "values": {
     "before": {
-      "documentId": "a30d6945-eb72-4872-b1ec-bbc4c37e1c59",
+      "documentId": "df52b1ca-c9b9-4f98-8fdd-3bba5634dd9e",
       "revision": 7,
-      "text": "Izmišljeni odlomak o kompostu 1795496311893\nIzmišljeni odlomak bez mreže 1795496316912\nIzmišljeni odlomak za traku 1795496324309\nObični izmišljeni odlomak 1795496324663\nIzmišljeni odlomak za poništavanje 1795496328859\nPristupačan izmišljeni odlomak 1795496332373\nPristupačan izmišljeni odlomak 1795496335990 U izmišljenom vrtu nastaje kompost (VS-1 948459dc-b695-4b56-bb88-614ed784f799).",
-      "hash": "d2aeed986bb1d8879a35a3239e204b748e28801a9fdb1e17addd97c35c4e5720"
+      "text": "Izmišljeni odlomak o kompostu 1795525028126\nIzmišljeni odlomak bez mreže 1795525033612\nIzmišljeni odlomak za traku 1795525040990\nObični izmišljeni odlomak 1795525041280\nIzmišljeni odlomak za poništavanje 1795525045141\nPristupačan izmišljeni odlomak 1795525048508\nPristupačan izmišljeni odlomak 1795525051988 U izmišljenom vrtu nastaje kompost (VS-1 2e661209-913b-4a66-a864-515f50dd4fff).",
+      "hash": "bfcd956e5fc4359dd85d896b4beee2fff3db0c6955a827f62634aa4129f32586"
     },
     "after": {
-      "documentId": "a30d6945-eb72-4872-b1ec-bbc4c37e1c59",
+      "documentId": "df52b1ca-c9b9-4f98-8fdd-3bba5634dd9e",
       "revision": 7,
-      "text": "Izmišljeni odlomak o kompostu 1795496311893\nIzmišljeni odlomak bez mreže 1795496316912\nIzmišljeni odlomak za traku 1795496324309\nObični izmišljeni odlomak 1795496324663\nIzmišljeni odlomak za poništavanje 1795496328859\nPristupačan izmišljeni odlomak 1795496332373\nPristupačan izmišljeni odlomak 1795496335990 U izmišljenom vrtu nastaje kompost (VS-1 948459dc-b695-4b56-bb88-614ed784f799).",
-      "hash": "d2aeed986bb1d8879a35a3239e204b748e28801a9fdb1e17addd97c35c4e5720"
+      "text": "Izmišljeni odlomak o kompostu 1795525028126\nIzmišljeni odlomak bez mreže 1795525033612\nIzmišljeni odlomak za traku 1795525040990\nObični izmišljeni odlomak 1795525041280\nIzmišljeni odlomak za poništavanje 1795525045141\nPristupačan izmišljeni odlomak 1795525048508\nPristupačan izmišljeni odlomak 1795525051988 U izmišljenom vrtu nastaje kompost (VS-1 2e661209-913b-4a66-a864-515f50dd4fff).",
+      "hash": "bfcd956e5fc4359dd85d896b4beee2fff3db0c6955a827f62634aa4129f32586"
     },
     "match": true
   },
@@ -59,7 +59,7 @@
     {
       "id": "VS-1.3",
       "status": "PROLAZ",
-      "evidence": "isporučeni host packages/app poslužuje /app/web/rad/8f7ff659-dc2a-4388-b7cb-6a8b8932e3ee"
+      "evidence": "isporučeni host packages/app poslužuje /app/web/rad/775d4047-3303-4173-a00c-c277d987df90"
     },
     {
       "id": "VS-1.4",
@@ -104,12 +104,12 @@
     {
       "id": "VS-1.12",
       "status": "PROLAZ",
-      "evidence": "SHA weba 14d5c37393dd3de134a74b448bffeb4cf280f0e3, servera 928db7c650431905d5e2fb611d80cd298402b62e, Preloadera 73d0462f11a0775c51a66232a545932ef5597907; host packages/app"
+      "evidence": "SHA weba a0ef55d0f493ecb3fffe166d865f73884e72cc57, servera 71a446ad55cd3c8dff6bf4da3378c0fbf5d76ae2, Preloadera 0fadb6dd46159dd0337c2720d64f9fa1d7ee47c6; host packages/app"
     },
     {
       "id": "VS-1.13",
       "status": "PROLAZ",
-      "evidence": "PID 4894 → 5886 (SIGTERM); novi kontekst: iste četiri vrijednosti kroz API kao student"
+      "evidence": "PID 5084 → 6029 (SIGTERM); novi kontekst: iste četiri vrijednosti kroz API kao student"
     }
   ],
   "scenarios": [
@@ -150,8 +150,8 @@
     }
   ],
   "stats": {
-    "startTime": "2026-11-24T04:58:18.809Z",
-    "duration": 67676.403,
+    "startTime": "2026-11-24T12:56:56.586Z",
+    "duration": 63552.053,
     "expected": 13,
     "skipped": 0,
     "unexpected": 0,
