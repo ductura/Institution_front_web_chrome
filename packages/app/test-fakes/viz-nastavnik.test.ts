@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { RESPONSES } from "../../../src/client/api";
 import { matchesSchema, type Schema } from "../../../src/client/schema-check";
 import { generatedServer } from "../e2e/viz/server";
-import { etag, PREDANI_RAD, ZIVI_TEKST } from "./viz-nastavnik";
+import { PREDANI_RAD, ZIVI_ETAG, ZIVI_TEKST } from "./viz-nastavnik";
 import { T1, T2, type Answer, type Result } from "./viz-scenariji";
 
 const answered = (r: Result) => r as Answer;
@@ -48,11 +48,14 @@ describe("NZ-18, PG-15: the puno teacher", () => {
     expect(body(s.answer("teacher", "GET", "/api/v1/teacher/works/izmisljeni-rad-0002"))).toMatchObject({ documentId: "izmisljeni-rad-0002", assignmentId: T1 });
   });
 
-  it("the live text carries the ETag of its exact bytes, and the submitted version is that text", () => {
+  it("the live text carries the ETag of its exact bytes, and the submitted version is that text", async () => {
     const s = generatedServer("puno");
     const live = answered(s.answer("teacher", "GET", `/api/v1/live/${PREDANI_RAD}`));
     expect(live.body).toBe(JSON.stringify(ZIVI_TEKST));
-    expect(live.headers?.etag).toBe(etag(live.body!));
+    const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(live.body!));
+    const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    expect(live.headers?.etag).toBe(ZIVI_ETAG);
+    expect(ZIVI_ETAG).toBe(`"${hex}"`);
     expect(live.headers?.etag).toMatch(/^"[0-9a-f]{64}"$/);
     const detail = body(s.answer("teacher", "GET", `/api/v1/teacher/assignments/${T1}/submissions/00000000-0000-4000-8000-0000000000e2`));
     expect(detail.studentId).toBe("00000000-0000-4000-8000-0000000000e2");

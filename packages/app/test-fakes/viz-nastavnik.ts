@@ -2,8 +2,7 @@
 // aggregate, the work and its review, not "unavailable". The contract's vectors carry ids of
 // their own that do not join the scenario's tasks (assignmentId ...a1, bbbbbbbb-...), and a few
 // are rewritten by `sameIds` where they must not be; the answers below join them to T1 and T2.
-// Pure apart from hashing the live text for its ETag. Invented people and texts only.
-import { createHash } from "node:crypto";
+// Pure, no network (no node: imports here: no-direct-api). Invented people and texts only.
 
 type Vector = { route: string; name: string; response?: { status: number; body?: unknown } };
 export type Odgovor = { readonly status: number; readonly body: unknown; readonly headers?: Readonly<Record<string, string>> };
@@ -19,8 +18,8 @@ export const ZIVI_TEKST = {
   schemaVersion: 1,
 };
 
-/** The ETag of the live text: the SHA-256 of its exact bytes (live.document.get), quoted. */
-export const etag = (text: string) => `"${createHash("sha256").update(text, "utf8").digest("hex")}"`;
+/** The ETag of ZIVI_TEKST: the SHA-256 of its exact JSON bytes (live.document.get), quoted; the unit test recomputes it. */
+export const ZIVI_ETAG = "\"a0b4f3ca485a8b6f7723668bf4404bf99de5fd7e8144be771828064447b2de2b\"";
 
 function vektor(vectors: readonly Vector[], route: string, name: string): unknown {
   const body = vectors.find((v) => v.route === route && v.name === name)?.response?.body;
@@ -58,7 +57,7 @@ export function nastavnik(vectors: readonly Vector[], tasks: { t1: string; t2: s
         documentId: ids.documentId, studentId: STUDENT_1, studentName: "Demo Kompost", assignmentId: tasks.t1,
         state: "predano", prevDocumentId: null, nextDocumentId: "izmisljeni-rad-0002",
       } };
-      case "live.document.get": return { status: 200, body: ZIVI_TEKST, headers: { etag: etag(live) } };
+      case "live.document.get": return { status: 200, body: ZIVI_TEKST, headers: { etag: ZIVI_ETAG } };
       case "teacher.submission-detail.get": return { status: 200, body: {
         ...detail, studentId: ids.studentId, document: live,
       } };
