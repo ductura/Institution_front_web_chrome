@@ -20,7 +20,7 @@ export function stoppedReportBody(note: string, pathname: string, userAgent: str
   });
 }
 
-/** The transport: the generated client, so no direct fetch leaves src/client. */
+/** The transport: the generated client, so every network call goes through src/client. */
 export const stoppedReportCall: ProblemReportCall = async (id, input) => {
   const api = createApi() as unknown as (id: string, input: unknown) => Promise<{ ok: boolean; status: number; body?: unknown }>;
   const answer = await api(id, input);
