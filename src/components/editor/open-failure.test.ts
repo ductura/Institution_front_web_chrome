@@ -20,8 +20,13 @@ describe("openFailureText", () => {
   });
 
   it("promises the device's text only where the device still holds it unsent", () => {
-    expect(openFailureText("offline")).toContain("ostaje netaknut");
-    expect(openFailureText("server")).toContain("ostaje netaknut");
+    for (const f of ["offline", "server"] as const) {
+      expect(openFailureText(f)).toContain("Ako ste na ovom uređaju već pisali, taj tekst ostaje netaknut.");
+      expect(openFailureText(f)).not.toMatch(/spremljen/);
+    }
+    for (const f of FAILURES.filter((x) => x !== "offline" && x !== "server")) {
+      expect(openFailureText(f)).not.toContain("netaknut");
+    }
   });
 
   it("uses no technical words", () => {

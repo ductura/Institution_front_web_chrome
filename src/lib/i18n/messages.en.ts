@@ -1005,10 +1005,10 @@ const en = {
     openReload: "This version of the page can no longer open the work. Reload it.",
     openReloadButton: "Reload",
     openFailure: {
-      offline: "There is no network connection, so the work cannot be opened. Text saved on this device stays untouched.",
+      offline: "There is no network connection, so the work cannot be opened. If you have already written on this device, that text stays untouched.",
       signedOut: "Your sign-in is no longer valid. Sign in again to open the work.",
       missing: "This work does not exist or this account has no access to it.",
-      server: "The work cannot be opened right now. Text saved on this device stays untouched.",
+      server: "The work cannot be opened right now. If you have already written on this device, that text stays untouched.",
       reload: "This version of the page can no longer open the work. Reload it.",
       closed: "The assignment notice has changed, or the assignment is not accepting work right now.",
     },

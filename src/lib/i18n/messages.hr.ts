@@ -1061,10 +1061,10 @@ export const hr = {
     openReloadButton: "Učitaj ponovno",
     // ED-01b (NF2-P1, G-1 i G-2): uzrok neuspjelog otvaranja i jedan izlaz; ista rečenica u okviru i na listu.
     openFailure: {
-      offline: "Nema veze s mrežom, pa se rad ne može otvoriti. Tekst spremljen na ovom uređaju ostaje netaknut.",
+      offline: "Nema veze s mrežom, pa se rad ne može otvoriti. Ako ste na ovom uređaju već pisali, taj tekst ostaje netaknut.",
       signedOut: "Prijava više ne vrijedi. Prijavite se ponovno da biste otvorili rad.",
       missing: "Ovaj rad ne postoji ili mu ovaj račun nema pristup.",
-      server: "Rad trenutačno nije moguće otvoriti. Tekst spremljen na ovom uređaju ostaje netaknut.",
+      server: "Rad trenutačno nije moguće otvoriti. Ako ste na ovom uređaju već pisali, taj tekst ostaje netaknut.",
       reload: "Ova verzija stranice više ne može otvoriti rad. Učitajte je ponovno.",
       closed: "Obavijest zadatka se promijenila ili zadatak trenutačno ne prima rad.",
     },
