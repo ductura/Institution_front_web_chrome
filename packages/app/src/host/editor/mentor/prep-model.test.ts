@@ -1,0 +1,48 @@
+// WEB-NF6-RUNDA (MK-10): the preparation composed in the browser. Invented records and requests only.
+import { describe, expect, it } from "vitest";
+
+import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
+
+import { prepText } from "./mentor-model";
+import { changedBlocks, lastRecord, prepFrom, resolvedSince, textWords } from "./prep-model";
+
+const answered = (state: RevisionRequest["state"], window: string | null) => ({
+  id: `${state}-${window}`, state,
+  versions: [{ response: window === null ? null : { window }, closed: null }],
+}) as unknown as RevisionRequest;
+
+describe("prep model", () => {
+  it("takes the newest consultation record", () => {
+    expect(lastRecord([{ heldOn: "2026-11-02", revision: 3 }, { heldOn: "2026-11-09", revision: 5 }, { heldOn: "2026-11-09", revision: 7 }]))
+      .toEqual({ heldOn: "2026-11-09", revision: 7 });
+    expect(lastRecord([])).toBeNull();
+  });
+  it("counts only new or rewritten blocks of text, not headings", () => {
+    expect(changedBlocks([
+      { kind: "paragraph", change: "added" }, { kind: "paragraph", change: "removed" },
+      { kind: "heading", change: "added" }, { kind: "quote", change: "added" }, { kind: "paragraph", change: "unchanged" },
+    ])).toBe(2);
+  });
+  it("counts the requests answered since the record", () => {
+    const list = [answered("responded", "2026-11-10T08:00:00.000Z"), answered("accepted", "2026-11-01T08:00:00.000Z"), answered("open", null)];
+    expect(resolvedSince(list, "2026-11-09")).toBe(1);
+    expect(resolvedSince(list, null)).toBe(2);
+  });
+  it("leaves out what it could not read, and never claims an agreed task", () => {
+    const input = prepFrom({ record: null, blocks: null, requests: null, words: 1200 });
+    expect(input).toMatchObject({ since: null, changed: null, resolved: null, openComments: null, agreed: [] });
+    expect(prepText(input).split("\n")).toEqual(["Priprema za konzultacije", "Opseg: 1200 riječi", "Što trebam od mentora:"]);
+  });
+  it("composes the whole text from a record, a comparison and requests", () => {
+    const input = prepFrom({
+      record: { heldOn: "2026-11-09", revision: 5 }, blocks: [{ kind: "paragraph", change: "added" }],
+      requests: [answered("responded", "2026-11-10T08:00:00.000Z"), answered("open", null)], words: null,
+    });
+    const lines = prepText(input).split("\n");
+    expect(lines[1]).toMatch(/^Od konzultacija .* · izmijenjeno odlomaka: 1 · riješeni komentari: 1$/);
+    expect(lines).toContain("Otvoreni komentari: 1");
+  });
+  it("counts words", () => {
+    expect(textWords("  Izmišljeni   tekst rada \n")).toBe(3);
+  });
+});

@@ -17,7 +17,8 @@ import { TeacherPage } from "../shell/TeacherPage";
 import KeyDates from "../key-dates/KeyDates";
 import { keyDatesPort, type KeyDatesCall } from "../key-dates/contract";
 import { keyDatesMessages } from "../key-dates/messages.hr";
-import { mentorshipsOf } from "./model";
+import { mentorshipsOf, roundWorks } from "./model";
+import { RoundReview } from "./RoundReview";
 
 const HREF = "/nastavnik/mentorstva";
 const requestsCall = () => createApi() as unknown as MentorshipCall;
@@ -51,6 +52,10 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
       ready={(value) => (
         <>
           <WorksList works={value.works} base={base} />
+          {/* WEB-NF6-RUNDA (MK-8): "Pregled runde" of each started work. */}
+          {roundWorks(value.works).map((w) => (
+            <RoundReview key={w.documentId} work={{ documentId: w.documentId, name: w.name, href: appHref(base, w.path) }} />
+          ))}
           {mentorshipsOf(value.works).map((m) => (
             <KeyDates key={m.mentorshipId} mentorshipId={m.mentorshipId} port={datesPort} title={keyDatesMessages.forStudent(m.name)} />
           ))}

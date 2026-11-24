@@ -1,5 +1,5 @@
 import type { MentoredWork } from "../../../../../../src/components/teacher/mentored-works-read";
-import { byFamilyName, studentName } from "../../../../../../src/components/teacher/mentored-works-view";
+import { byFamilyName, liveHref, studentName } from "../../../../../../src/components/teacher/mentored-works-view";
 
 export type MentoredStudent = {
   /** The mentorship: the work has no student identifier, so a name never joins two rows. */
@@ -35,4 +35,15 @@ export function mentorshipsOf(works: readonly MentoredWork[]): readonly { readon
     out.push({ mentorshipId: work.mentorshipId, name: studentName(work) });
   }
   return out;
+}
+
+/**
+ * WEB-NF6-RUNDA (MK-8): one "Pregled runde" per started work (it has a document), in the works list order;
+ * a work not started has nothing to review yet. `href` is the work's page relative to the app.
+ */
+export function roundWorks(works: readonly MentoredWork[]): readonly { readonly documentId: string; readonly name: string; readonly path: string }[] {
+  return byFamilyName(works).flatMap((work) => {
+    const path = liveHref(work);
+    return work.documentId === null || path === null ? [] : [{ documentId: work.documentId, name: studentName(work), path }];
+  });
 }
