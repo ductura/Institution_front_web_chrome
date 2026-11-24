@@ -7,10 +7,10 @@
 // sending closed (PRODUCT §5 rule 11); the server checks again on submission.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { createApi } from "@/client/api";
-import { pluralHr } from "@/lib/i18n/hr";
-import { zagrebEpochMs, zagrebWall } from "@/lib/i18n/zagreb";
-import { declarationDetailOf, readDeclarationGate, type DeclarationGate } from "@/client/declaration";
+import { createApi } from "../../../client/api";
+import { pluralHr } from "../../../lib/i18n/hr";
+import { zagrebEpochMs, zagrebWall } from "../../../lib/i18n/zagreb";
+import { declarationDetailOf, readDeclarationGate, type DeclarationGate } from "../../../client/declaration";
 
 import { rehearsalMessagesHr as t } from "./messages.hr";
 
@@ -72,11 +72,13 @@ export type BeforeItem = { readonly id: "declaration" | "places"; readonly text:
  * "Što još fali" (E-8a, P-17): what is still open before the submission, from the same gate and, where
  * the text is open, the places left for later. Only an unconfirmed declaration stops the submission;
  * places in the text are listed but never hold it (PRODUCT §5). `places` is null where the text is not
- * read (the steps read the server, not the editor).
+ * read (the steps read the server, not the editor). A declaration that cannot be read counts as blocking.
  */
 export function beforeSubmission(gate: GateState, places: number | null): { readonly items: readonly BeforeItem[]; readonly count: number } {
   const items: BeforeItem[] = [];
   if (gate.kind === "missing") items.push({ id: "declaration", text: t.missingDeclaration, blocks: true });
+  // A read that failed is not "nothing missing": sending stays closed until the server answers (PRODUCT §5 rule 11).
+  if (gate.kind === "unavailable" || gate.kind === "signedOut") items.push({ id: "declaration", text: t.missingUnknown, blocks: true });
   if (places !== null && places > 0) items.push({ id: "places", text: t.missingPlaces.replace("{count}", String(places)), blocks: false });
   return { items, count: items.length };
 }

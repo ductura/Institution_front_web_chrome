@@ -33,6 +33,7 @@ export const rehearsalMessagesHr = {
   missingTitle: "Što još fali",
   missingNothing: "Ništa ne blokira predaju.",
   missingDeclaration: "Potvrda izjave (blokira predaju).",
+  missingUnknown: "Stanje izjave nije poznato, pa predaja još nije moguća.",
   missingPlaces: "Mjesta ostavljena za kasnije: {count} (ne zaustavljaju predaju).",
   missingMeta: "Mjesta za izvor, lijepljenja i pravila oblika ne zaustavljaju predaju.",
   beforeCount: "{count} {word} prije predaje",

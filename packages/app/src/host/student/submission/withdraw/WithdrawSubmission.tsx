@@ -9,7 +9,7 @@ import { appHref } from "../../../../../../../src/components/shell/nav";
 import { useHost } from "../../../context";
 import type { StateRead, WithdrawCall } from "./contract";
 import { withdrawText as t } from "./messages.hr";
-import { canWithdraw, opensOnArrival, readWithdrawalState, receiptFile, receiptLine, withdraw, WITHDRAW_HASH, type Note } from "./model";
+import { canWithdraw, opensOnArrival, readWithdrawalState, receiptFile, receiptLine, withdraw, type Note } from "./model";
 import type { WithdrawalReceipt } from "./contract";
 
 /** Saves the signed confirmation from the browser's memory through the shared download; no request is made. */
@@ -45,7 +45,7 @@ export default function WithdrawSubmission({ assignmentId, call = defaultCall }:
       setRead(result);
       // E-7a (R-55): "Povuci predaju" in the workspace's banner leads here and opens the confirmation, once.
       if (result.kind === "ready" && opensOnArrival(window.location.hash, result.state)) {
-        window.history.replaceState(window.history.state, "", window.location.href.replace(`#${WITHDRAW_HASH}`, ""));
+        window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}`);
         setAsking(true);
       }
     });

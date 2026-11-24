@@ -65,6 +65,9 @@ describe("step 3 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     const server = gateServer(() => answer);
     const host = await mount(server.read, "tag-1");
     expect(host.textContent).toContain(c.declarationUnavailable);
+    // "Što još fali" says the state is unknown, never that nothing blocks (review c.7133358436, 1).
+    expect(host.textContent).toContain(r.missingUnknown);
+    expect(host.textContent).not.toContain(r.missingNothing);
     expect(nextButton(host)?.getAttribute("aria-disabled")).toBe("true");
     answer = "offline";
     const retry = [...host.querySelectorAll("button")].find((b) => b.textContent === c.declarationRetry);
