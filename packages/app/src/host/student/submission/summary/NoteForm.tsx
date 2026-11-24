@@ -27,6 +27,8 @@ export default function NoteForm({ online, onAdd, onAdded, onCancel }: NoteFormP
   const field = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState("");
   const [error, setError] = useState<string>();
+  // NF-3 PR-6 (E-8d, R-66): an answer that did not add the note is an alert of its own, not a field error.
+  const [failure, setFailure] = useState<string>();
   const [sending, setSending] = useState(false);
   useEffect(() => { field.current?.focus(); }, []);
 
@@ -40,11 +42,14 @@ export default function NoteForm({ online, onAdd, onAdded, onCancel }: NoteFormP
       return;
     }
     setSending(true);
+    setFailure(undefined);
     const result = await onAdd(text.trim());
     setSending(false);
     if (result.kind === "added") onAdded(result.note);
     else {
-      setError(noteFailure(result));
+      // The server's 422 is about the text; anything else leaves it unknown whether the note was added.
+      if (result.kind === "greska" && result.code === "invalid") setError(noteFailure(result));
+      else setFailure(noteFailure(result));
       field.current?.focus();
     }
   }
@@ -54,6 +59,8 @@ export default function NoteForm({ online, onAdd, onAdded, onCancel }: NoteFormP
       <TextArea ref={field} label={t.label} name="note" maxLength={NOTE_MAX} value={text} busy={sending}
         error={error} hint={online ? t.hint : t.offline}
         onChange={(event) => { setText(event.currentTarget.value); if (error !== undefined) setError(undefined); }} />
+      <p className="meta">{t.seenBy}</p>
+      {failure !== undefined && <p className="note" role="alert">{failure}</p>}
       <StepActions>
         <Button type="submit" aria-disabled={!online || undefined} busy={sending}>{sending ? t.sending : t.add}</Button>
         <Button type="button" tone="secondary" onClick={onCancel}>{t.cancel}</Button>

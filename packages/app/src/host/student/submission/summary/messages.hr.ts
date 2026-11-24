@@ -78,6 +78,8 @@ export const summaryText = {
     sending: "Dodaje se…",
     cancel: "Odustani",
     added: "Napomena je dodana.",
+    // NF-3 PR-6 (E-8d): who reads the note.
+    seenBy: "Vidi je nastavnik uz sažetak.",
     offline: "Nema mreže. Napomenu možete dodati kad se mreža vrati.",
     toastLabel: "Obavijesti",
     toastClose: "Zatvori",
