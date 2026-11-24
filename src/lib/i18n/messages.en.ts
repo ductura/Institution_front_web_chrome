@@ -1040,6 +1040,12 @@ const en = {
     scopeMin: "length at least {min}",
     scopeMax: "length at most {max}",
     scopePrivate: "only you see this",
+    scopeBelow: "{n} to the lower limit",
+    scopeWithin: "within the length",
+    scopeAbove: "over the upper limit by {n}",
+    scopeSaidBelow: "Length: below the lower limit.",
+    scopeSaidWithin: "Length: within the limits.",
+    scopeSaidAbove: "Length: over the upper limit by {n} {words}.",
     readOnly: "Read only",
     saveLevel: {
       device: "Saved on this device.",

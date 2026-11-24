@@ -1097,6 +1097,12 @@ export const hr = {
     scopeMin: "opseg najmanje {min}",
     scopeMax: "opseg najviše {max}",
     scopePrivate: "vidite samo Vi",
+    scopeBelow: "još {n} do donje granice",
+    scopeWithin: "unutar opsega",
+    scopeAbove: "iznad gornje granice za {n}",
+    scopeSaidBelow: "Opseg: ispod donje granice.",
+    scopeSaidWithin: "Opseg: unutar granica.",
+    scopeSaidAbove: "Opseg: iznad gornje granice za {n} {words}.",
     readOnly: "Samo za čitanje",
     saveLevel: {
       device: "Spremljeno na uređaju.",
