@@ -32,6 +32,9 @@ async function fakeServer(page: Page, me: Me) {
     seen.meCredentials.push(route.request().headers()["cookie"] ?? null);
     await route.fulfill({ status: me.status, contentType: "application/json", body: JSON.stringify(me.body ?? { code: "unauthenticated" }) });
   });
+  // WEB-NUZ-NF1 (P-1): the shell's bell reads the inbox; it is empty here.
+  await page.route("**/api/v1/notifications", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ notifications: [], nextBefore: null }) }));
   // WEB-1804: the host reads the saved interface language once signed in; none is saved here.
   await page.route("**/api/v1/profile/interface-locale", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ locale: null }) }));
@@ -187,7 +190,7 @@ test("a 403 from /me shows the no-role card with Odjava, not the retry screen (E
   const card = page.getByRole("status").filter({ hasText: "Prijava je uspjela" });
   await expect(card.getByRole("heading", { level: 2 })).toHaveText("Prijava je uspjela");
   await expect(card).toContainText("Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.");
-  await expect(card).toContainText("Javite se koordinatoru na svojoj ustanovi.");
+  await expect(card).toContainText("Javite se koordinatoru (administratoru fakulteta) na svojoj ustanovi.");
   await axe(page);
   await card.getByRole("button", { name: "Odjava" }).click();
   await page.getByRole("dialog", { name: "Odjava" }).getByRole("button", { name: "Odjavi se" }).click();
