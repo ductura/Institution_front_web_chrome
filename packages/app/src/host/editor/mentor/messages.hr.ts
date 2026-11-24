@@ -95,6 +95,12 @@ export const mentorCardHr = {
     title: "Samo za Vas",
     intro: "Ovo ne vidi ni mentor ni nastavnik.",
     stopTitle: "Dokle sam stao",
-    stopUnavailable: "Oznaka „Dokle sam stao” trenutačno nije dostupna: poslužitelj je još ne čuva.",
+    stopLoading: "Dohvaćam oznaku s poslužitelja…",
+    stopUnavailable: "Oznaka „Dokle sam stao” trenutačno nije dostupna. Tekst rada nije dirnut.",
+    stopNone: "Oznaka još nije postavljena.",
+    stopKept: "Ovdje ste stali prošli put (oznaka od {date}).",
+    stopGo: "Idi tamo",
+    stopGone: "Odlomak s oznakom više ne postoji u radu.",
+    stopCannotSet: "Novu oznaku Ductura zasad ne može spremiti na poslužitelj.",
   },
 } as const;

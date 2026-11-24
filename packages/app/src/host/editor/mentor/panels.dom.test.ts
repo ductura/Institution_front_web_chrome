@@ -55,10 +55,10 @@ describe("PrepPanel", () => {
   });
 
   it("says unavailable when nothing could be read, and never draws a send after submission", async () => {
-    const host = await mount(h(PrepPanel, { port: { compose: async () => null, send: async () => "sent" }, words: null, editable: false }));
+    const host = await mount(h(PrepPanel, { port: { compose: async () => null, send: async () => "sent" as const }, words: null, editable: false }));
     await click(host, t.prep.make);
     expect(host.querySelector('[role="alert"]')?.textContent).toBe(t.prep.unavailable);
-    const ready = await mount(h(PrepPanel, { port: { compose: async () => INPUT, send: async () => "sent" }, words: null, editable: false }));
+    const ready = await mount(h(PrepPanel, { port: { compose: async () => INPUT, send: async () => "sent" as const }, words: null, editable: false }));
     await click(ready, t.prep.make);
     expect([...ready.querySelectorAll("button")].map((b) => b.textContent)).not.toContain(t.prep.send);
   });
@@ -82,9 +82,21 @@ describe("SaidPanel", () => {
 });
 
 describe("OwnPanel", () => {
-  it("says it is only the student's, and that Dokle sam stao is not kept yet", async () => {
-    const host = await mount(h(OwnPanel, { documentId: "rad-a", note: h("p", null, "zamjena za poruku") }));
-    expect(host.textContent).toContain(t.own.intro);
-    expect(host.textContent).toContain(t.own.stopUnavailable);
+  const note = h("p", null, "zamjena za poruku");
+  it("says it is only the student's, and words each state of Dokle sam stao", async () => {
+    const loading = await mount(h(OwnPanel, { documentId: "rad-a", reading: undefined, note }));
+    expect(loading.textContent).toContain(t.own.intro);
+    expect(loading.textContent).toContain(t.own.stopLoading);
+    expect(loading.textContent).toContain(t.own.stopCannotSet);
+    expect((await mount(h(OwnPanel, { documentId: "rad-a", reading: null, note }))).querySelector('[role="alert"]')?.textContent).toBe(t.own.stopUnavailable);
+    expect((await mount(h(OwnPanel, { documentId: "rad-a", reading: { place: null, updatedAt: null }, note }))).textContent).toContain(t.own.stopNone);
+  });
+  it("goes to the kept place, and says so when its paragraph is gone", async () => {
+    const place = { nodeId: "00000000-0000-4000-8000-0000000000a1", offset: 4 };
+    const go = vi.fn((_: typeof place) => false);
+    const host = await mount(h(OwnPanel, { documentId: "rad-a", reading: { place, updatedAt: "2026-11-20T10:00:00.000Z" }, onGoToPlace: go, note }));
+    await click(host, t.own.stopGo);
+    expect(go).toHaveBeenCalledWith(place);
+    expect(host.querySelector('[role="alert"]')?.textContent).toBe(t.own.stopGone);
   });
 });

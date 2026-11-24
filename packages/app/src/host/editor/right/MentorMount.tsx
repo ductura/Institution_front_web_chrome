@@ -11,7 +11,7 @@ import { listRevisionRequests, type RevisionRequest } from "../../../../../../sr
 import { readWorkMessages, type WorkMessage } from "../../../../../../src/client/work-messages.ts";
 import { readWorkMilestones, type WorkMilestone } from "../../../../../../src/client/work-milestones.ts";
 
-import { MentorCard, OwnPanel, PrepPanel, prepPort, SaidPanel, withReturn, type ReturnNotice } from "../mentor";
+import { MentorCard, OwnPanel, PrepPanel, prepPort, SaidPanel, withReturn, type ReadingPlace, type ReturnNotice } from "../mentor";
 import { placeOf, positionOf, type PlaceEditor } from "../mentor/own-place";
 import { ConsultPanel } from "../work/consult/ConsultPanel";
 import { latestReturn } from "../mentor/round-feedback";
@@ -31,10 +31,12 @@ type Reads = {
   messages: Read<readonly WorkMessage[]>; slots: Read<readonly ConsultationSlot[]>;
   /** WEB-NF6-RUNDA (MK-8): the whole-work returns; null when unread. */
   returns: Read<readonly ReturnNotice[]>;
+  /** MK-9: the student's own "Dokle sam stao" (readingPlace of the sealed note's read). */
+  reading: ReadingPlace;
 };
 /** The slots' client, made at call time (the page's origin is read then, not while rendering). */
 const slotsCall = ((...args: Parameters<SlotsApi>) => createApi()(...args)) as SlotsApi;
-const LOADING: Reads = { requests: undefined, milestones: undefined, messages: undefined, slots: undefined, returns: undefined };
+const LOADING: Reads = { requests: undefined, milestones: undefined, messages: undefined, slots: undefined, returns: undefined, reading: undefined };
 
 /** WEB-NF6-RUNDA (MK-8): the first page of whole-work returns (comment and deadline). */
 async function readReturns(): Promise<readonly ReturnNotice[] | null> {
@@ -42,12 +44,20 @@ async function readReturns(): Promise<readonly ReturnNotice[] | null> {
   return answer.ok ? answer.body.notifications : null;
 }
 
+/** WEB-NF6-RUNDA (MK-9): only the reading place of the sealed note's read; the note itself stays SealedSelfNote's. */
+async function readReading(documentId: string): Promise<ReadingPlace> {
+  const answer = await createApi()("work.sealed-self-note.get", { params: { documentId }, query: undefined, body: undefined });
+  if (answer.ok) return { place: answer.body.readingPlace?.place ?? null, updatedAt: answer.body.readingPlace?.updatedAt ?? null };
+  return answer.status === 404 ? { place: null, updatedAt: null } : null;
+}
+
 /** One read of everything the card shows, again when the work is submitted. Never throws. */
 async function readAll(documentId: string): Promise<Reads> {
   const quiet = <T,>(p: Promise<T>) => p.catch(() => null);
-  const [requests, milestones, messages, slots, returns] = await Promise.all([
+  const [requests, milestones, messages, slots, returns, reading] = await Promise.all([
     quiet(listRevisionRequests(documentId)), quiet(readWorkMilestones(documentId)),
     quiet(readWorkMessages(documentId)), quiet(readConsultationSlots(slotsCall, documentId)), quiet(readReturns()),
+    quiet(readReading(documentId)),
   ]);
   return {
     requests: requests?.kind === "ok" ? requests.requests : null,
@@ -55,6 +65,7 @@ async function readAll(documentId: string): Promise<Reads> {
     messages: messages?.ok ? messages.body.messages : null,
     slots: slots?.kind === "ready" ? slots.slots : null,
     returns,
+    reading,
   };
 }
 
@@ -85,7 +96,7 @@ export function MentorMount({ documentId, submitted, editor }: {
   const ret = reads.returns ? latestReturn(reads.returns, documentId) : null;
   const state = reads.requests === undefined && !submitted ? undefined : withReturn(workStateOf(submitted, reads.requests ?? null), ret);
   const said = reads.requests === undefined || reads.returns === undefined ? undefined
-    : reads.requests === null ? null : { ret, requests: reads.requests };
+    : reads.requests === null || reads.returns === null ? null : { ret, requests: reads.requests };
   const prep = useMemo(() => prepPort(documentId), [documentId]);
   const placeEditor = editor as unknown as (PlaceEditor & { commands?: { focus(pos?: number): boolean } }) | null;
   return (
@@ -97,11 +108,12 @@ export function MentorMount({ documentId, submitted, editor }: {
         prepPanel={<PrepPanel port={prep} words={allWords} editable={!submitted} onCopy={copyText} />}
         consult={<ConsultPanel documentId={documentId} role="student" revision={1} slotsCall={slotsCall} criteriaCall={null} />} />
       {/* WEB-NF6-RUNDA (MK-9): only in the student's own editor, only before submission. */}
-      {!submitted && <OwnPanel documentId={documentId}
+      {!submitted && <OwnPanel documentId={documentId} reading={reads.reading}
         currentPlace={placeEditor ? () => placeOf(placeEditor) : undefined}
         onGoToPlace={placeEditor ? (place) => {
           const pos = positionOf(placeEditor.state.doc, place);
           if (pos !== null) placeEditor.commands?.focus(pos);
+          return pos !== null;
         } : undefined} />}
     </>
   );

@@ -1,6 +1,6 @@
 export { MentorCard, type MentorCardProps } from "./MentorCard";
 export type { Role, WorkState } from "./mentor-model";
-export { OwnPanel } from "./OwnPanel";
+export { OwnPanel, type ReadingPlace } from "./OwnPanel";
 export { PrepPanel } from "./PrepPanel";
 export { prepPort, type PrepPort } from "./prep-port";
 export { SaidPanel, type SaidRead } from "./SaidPanel";
