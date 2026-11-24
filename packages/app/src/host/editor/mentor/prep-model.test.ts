@@ -1,10 +1,11 @@
 // WEB-NF6-RUNDA (MK-10): the preparation composed in the browser. Invented records and requests only.
+import { Schema } from "@tiptap/pm/model";
 import { describe, expect, it } from "vitest";
 
 import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
 
 import { prepText } from "./mentor-model";
-import { changedBlocks, lastRecord, prepFrom, resolvedSince, textWords } from "./prep-model";
+import { changedBlocks, docWords, lastRecord, prepFrom, resolvedSince, textWords } from "./prep-model";
 
 const answered = (state: RevisionRequest["state"], window: string | null) => ({
   id: `${state}-${window}`, state,
@@ -44,5 +45,14 @@ describe("prep model", () => {
   });
   it("counts words", () => {
     expect(textWords("  Izmišljeni   tekst rada \n")).toBe(3);
+  });
+  it("counts the words of a document block by block (#631 review, point 1)", () => {
+    const schema = new Schema({ nodes: { doc: { content: "block+" }, paragraph: { group: "block", content: "text*" },
+      bulletList: { group: "block", content: "paragraph+" }, text: {} } });
+    const p = (text: string) => schema.node("paragraph", null, [schema.text(text)]);
+    const doc = schema.node("doc", null, [p("a b"), p("c d"), schema.node("bulletList", null, [p("e"), p("f g")])]);
+    // The joined text ("a bc def g") reads as 4 words; block by block it is 7.
+    expect(textWords(doc.textContent)).toBe(4);
+    expect(docWords(doc)).toBe(7);
   });
 });

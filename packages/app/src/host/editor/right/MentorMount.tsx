@@ -14,12 +14,10 @@ import { readWorkMilestones, type WorkMilestone } from "../../../../../../src/cl
 import { MentorCard, OwnPanel, PrepPanel, prepPort, SaidPanel, withReturn, type ReadingPlace, type ReturnNotice } from "../mentor";
 import { placeOf, positionOf, type PlaceEditor } from "../mentor/own-place";
 import { ConsultPanel } from "../work/consult/ConsultPanel";
+import { docWords } from "../mentor/prep-model";
 import { latestReturn } from "../mentor/round-feedback";
 import { abstractWords, seenAtOf, workStateOf } from "./mentor-mount";
 
-/** Words of the whole text, for the preparation's "Opseg". */
-const wordsOf = (doc: { readonly textContent?: string }): number | null =>
-  typeof doc.textContent === "string" ? doc.textContent.split(/\s+/).filter((w) => w !== "").length : null;
 /** The clipboard, when the browser gives it. */
 const copyText = (text: string): Promise<boolean> =>
   navigator.clipboard ? navigator.clipboard.writeText(text).then(() => true, () => false) : Promise.resolve(false);
@@ -48,7 +46,8 @@ async function readReturns(): Promise<readonly ReturnNotice[] | null> {
 async function readReading(documentId: string): Promise<ReadingPlace> {
   const answer = await createApi()("work.sealed-self-note.get", { params: { documentId }, query: undefined, body: undefined });
   if (answer.ok) return { place: answer.body.readingPlace?.place ?? null, updatedAt: answer.body.readingPlace?.updatedAt ?? null };
-  return answer.status === 404 ? { place: null, updatedAt: null } : null;
+  // A missing note is `readingPlace: null` in a 200; any other answer (404 included) is "nedostupno".
+  return null;
 }
 
 /** One read of everything the card shows, again when the work is submitted. Never throws. */
@@ -86,7 +85,7 @@ export function MentorMount({ documentId, submitted, editor }: {
   }, [documentId, submitted, attempt]);
   useEffect(() => {
     if (!editor) { setWords(null); setAllWords(null); return; }
-    const count = () => { setWords(abstractWords(editor.state.doc)); setAllWords(wordsOf(editor.state.doc as { readonly textContent?: string })); };
+    const count = () => { setWords(abstractWords(editor.state.doc)); setAllWords(docWords(editor.state.doc as unknown as Parameters<typeof docWords>[0])); };
     count();
     editor.on("update", count);
     return () => { editor.off("update", count); };

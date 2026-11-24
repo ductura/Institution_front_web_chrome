@@ -52,5 +52,21 @@ export function prepFrom(f: PrepFacts): PrepInput {
   };
 }
 
-/** Words of the whole text. */
+/** Words of a piece of text. */
 export const textWords = (text: string): number => text.split(/\s+/).filter((w) => w !== "").length;
+
+type TextBlock = { readonly isTextblock: boolean; readonly textContent: string };
+
+/**
+ * Words of the whole document, counted block by block: the document's own textContent joins blocks
+ * without a space, so "a b" and "c d" would read as three words (#631 review, point 1).
+ */
+export function docWords(doc: { descendants(fn: (node: TextBlock) => boolean | void): void }): number {
+  let words = 0;
+  doc.descendants((node) => {
+    if (!node.isTextblock) return true;
+    words += textWords(node.textContent);
+    return false;
+  });
+  return words;
+}

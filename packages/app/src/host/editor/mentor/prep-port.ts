@@ -38,7 +38,8 @@ export function prepPort(documentId: string): PrepPort {
     async send(text) {
       try {
         const answer = await sendWorkMessage(documentId, text);
-        if (answer.ok) return answer.body.text === text ? "sent" : "failed";
+        // A stored message is sent, even if the server normalised its text: "failed" would invite a second send.
+        if (answer.ok) return "sent";
         return answer.status === 401 ? "signedOut" : "failed";
       } catch {
         return "failed";
