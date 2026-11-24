@@ -33,6 +33,7 @@ import { ImportHost } from "../editor/import/ImportHost";
 import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
+import { AssistantRules, NoticeInstructions } from "../editor/assistant-rules/AssistantRules";
 import PdfExport from "../editor/export/PdfExport";
 import { StatusExtras, beforeSubmissionFor, rehearsalSupplementsFor } from "../editor/status/StatusExtras";
 import { PregledHost } from "../editor/right/PregledHost";
@@ -127,6 +128,9 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               // PIL-K-KOMENTARI-EDITOR: the Comments card over the real port, in place of the old CommentPanel.
               comments: ({ editor, documentId, session, submitted, signedOut }) =>
                 <CommentsHost editor={editor} documentId={documentId} session={session} submitted={submitted} signedOut={signedOut} />,
+              // ED-09 (NF2-P9): the assignment's rules under the Asistent card, its instructions in "Prvi redak".
+              assistant: () => <AssistantRules assignmentId={assignmentId} base={base} />,
+              instructions: () => <NoticeInstructions assignmentId={assignmentId} />,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
