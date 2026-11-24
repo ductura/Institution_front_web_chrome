@@ -58,7 +58,7 @@ const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
 
 /** What the sheet holds when no editor is mounted. */
-function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: string | null): ReactNode {
+function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: string | null, reread: () => void): ReactNode {
   if (variant === "predano") return <SheetNote>{t.editor.submittedReadOnly}</SheetNote>;
   // WEB-2105: E-7 `prazno`: the empty sheet with its placeholder, and the way to start (the server decides).
   if (variant === "prazno") {
@@ -66,7 +66,7 @@ function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: strin
       <>
         <SheetNote>{workText.notStarted}</SheetNote>
         <p aria-hidden="true">{workText.placeholder}</p>
-        <StartWork assignmentId={assignmentId} title={title ?? ""} />
+        <StartWork assignmentId={assignmentId} title={title ?? ""} onOpened={reread} />
       </>
     );
   }
@@ -174,7 +174,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               {receipt?.documentId === undefined ? null : <CommentsHost editor={null} documentId={receipt.documentId} session={null} submitted />}
             </>}
           >
-            {sheetBody(frame.variant, assignmentId, title)}
+            {sheetBody(frame.variant, assignmentId, title, () => setAttempt((n) => n + 1))}
           </EditorPage>
         ),
       });
