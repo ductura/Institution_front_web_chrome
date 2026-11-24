@@ -4,7 +4,7 @@
 // Saving after publication changes rules students have already seen, so the dialog dz-h asks first; the note
 // "spremljeno" follows only the server's answer (B-6).
 import { ActionRow, Button, Dialog, FormSection as Section } from "@ductura/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { createApi, goToSignIn } from "@/client/api";
 import { appHref } from "@/components/shell/nav";
@@ -18,8 +18,10 @@ const l = f.submitRules.live;
 type Read = { kind: "ready"; rules: CurrentRules } | { kind: "signedOut" | "unavailable" };
 type Note = { tone: "status" | "alert"; text: string };
 
-export default function SubmissionRulesLive({ assignmentId, call = createApi() as Call }: { assignmentId: string; call?: Call }) {
+export default function SubmissionRulesLive({ assignmentId, client }: { assignmentId: string; client?: Call }) {
   const { base } = useHost();
+  // One client per mount: a new one on every render would make the read effect run again and again.
+  const call = useMemo(() => client ?? (createApi() as Call), [client]);
   const [read, setRead] = useState<Read | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [saved, setSaved] = useState<CurrentRules | null>(null);
