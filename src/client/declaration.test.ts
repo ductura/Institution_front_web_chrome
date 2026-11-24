@@ -306,16 +306,26 @@ const NOT_ASKED = { ...STATE, state: "none", currentForm: null, formText: null, 
 describe("declaration gate (PIL-K-IZJAVA-VRATA)", () => {
   it("is confirmed only for a confirmed declaration of the current revision", async () => {
     const s = server(() => json(200, CONFIRMED_STATE));
-    expect(await readDeclarationGate(s.call, ASSIGNMENT)).toEqual({ kind: "confirmed" });
+    // WEB-NUZ-PREDAJA-1 (PR-2): the gate also carries which state it is and the form, for the words.
+    const REF = { formId: FORM.formId, formVersion: FORM.formVersion };
+    expect(await readDeclarationGate(s.call, ASSIGNMENT)).toEqual({ kind: "confirmed", detail: "confirmed", confirmedAt: "2026-11-20T10:00:00.000000Z", form: REF });
     expect(s.sent).toEqual([{ method: "GET", path: `/api/v1/student/assignments/${ASSIGNMENT}/declaration`, body: undefined }]);
     const older = server(() => json(200, { ...CONFIRMED_STATE, currentRevision: 3 }));
-    expect(await readDeclarationGate(older.call, ASSIGNMENT)).toEqual({ kind: "missing" });
+    expect(await readDeclarationGate(older.call, ASSIGNMENT)).toEqual({ kind: "missing", detail: "stale", form: REF });
+    const bound = server(() => json(200, { ...CONFIRMED_STATE, state: "bound", submitted: true }));
+    expect(await readDeclarationGate(bound.call, ASSIGNMENT)).toMatchObject({ kind: "confirmed", detail: "bound" });
   });
 
   it("a draft, a stale and an empty declaration of an assignment that asks for one are missing", () => {
-    expect(declarationGateFrom(STATE as never)).toEqual({ kind: "missing" });
-    expect(declarationGateFrom({ ...CONFIRMED_STATE, state: "stale" } as never)).toEqual({ kind: "missing" });
-    expect(declarationGateFrom({ ...STATE, state: "none", draft: null } as never)).toEqual({ kind: "missing" });
+    const REF = { formId: FORM.formId, formVersion: FORM.formVersion };
+    expect(declarationGateFrom(STATE as never)).toEqual({ kind: "missing", detail: "draft", form: REF });
+    expect(declarationGateFrom({ ...CONFIRMED_STATE, state: "stale" } as never)).toEqual({ kind: "missing", detail: "stale", form: REF });
+    expect(declarationGateFrom({ ...STATE, state: "none", draft: null } as never)).toEqual({ kind: "missing", detail: "none", form: REF });
+  });
+
+  it("an assignment the server says asks for no declaration is not missing anything (G-11)", () => {
+    expect(declarationGateFrom({ ...STATE, state: "none", draft: null, declarationRequired: false } as never)).toEqual({ kind: "not_required" });
+    expect(declarationGateFrom({ ...STATE, state: "none", draft: null, declarationRequired: true } as never)).toMatchObject({ kind: "missing" });
   });
 
   it("an assignment with no form and nothing declared asks for no declaration (OD-6)", async () => {

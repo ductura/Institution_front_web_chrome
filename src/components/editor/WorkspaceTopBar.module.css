@@ -1,17 +1,26 @@
 /* VIZ-E1: the prototype's `.top`, `.mark`, `.crumb` (editor.css, INVENTAR-editor §1.2, §1.5). The 48 px row itself is Layout's `.top`. */
 .bar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; height: 100%; font-family: var(--ff-ui); color: var(--ink); }
+/*
+ * PR-1 (G-1): the bar takes the row's free space ahead of the layout's own spacer, so "Predaja" fits at
+ * 390 px. SidePanels.module.css sets `flex: 1` on this header with a stronger selector (another lane's
+ * file), so only the growth is raised here, with a selector strong enough to hold.
+ */
+.bar.bar.bar { flex-grow: 999; }
 .mark {
   flex: none; font-family: var(--ff-display); font-size: 19px; font-weight: 600; letter-spacing: -.01em;
   color: var(--ink); text-decoration: none; border-radius: var(--radius-sm);
 }
 .mark b { font-weight: 600; color: var(--accent); }
-.crumb { min-width: 0; color: var(--ink-2); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crumb { flex: 0 100 auto; min-width: 0; color: var(--ink-2); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .crumb b { font-weight: 600; color: var(--ink); }
 .crumb i {
   font-style: normal; color: var(--ink-3); margin-left: 8px; font-size: 12px;
   border: 1px solid var(--rule-2); border-radius: 999px; padding: 1px 8px;
 }
 .grow { flex: 1; }
+/* WEB-NUZ-PREDAJA-1 (PR-1, G-1): the shell's view switches shrink and scroll; the mark and the actions never do. */
+.slot { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 12px; overflow-x: auto; scrollbar-width: none; }
+.slot::-webkit-scrollbar { display: none; }
 .actions { flex: none; display: flex; align-items: center; gap: 6px; }
 .theme {
   flex: none; height: 30px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: transparent;
@@ -26,8 +35,15 @@
 .link:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-ink); }
 .primary { white-space: nowrap; }
 .submit { display: inline-flex; align-items: center; gap: 8px; }
-.note { color: var(--ink-2); font-size: 12px; }
+.note { color: var(--ink-2); font-size: 12px; white-space: nowrap; }
+/* WEB-NUZ-PREDAJA-1 (PR-1, P-17): the count beside "Predaja rada", the short name up to 640 px. */
+.narrow { display: none; }
+.count {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-left: 6px; padding: 0 5px;
+  border-radius: 999px; background: var(--accent-ink); color: var(--accent); font-size: 11px; font-weight: 700;
+}
 .mark:focus-visible, .theme:focus-visible, .link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* The prototype hides the crumb up to 1050 px, then (v0.20) shows it from 641 px without the pill. */
-@media (max-width: 1050px) { .crumb { max-width: 38vw; } .crumb i { display: none; } }
-@media (max-width: 640px) { .bar { gap: 4px; padding-right: 2px; overflow-x: auto; scrollbar-width: none; } .bar::-webkit-scrollbar { display: none; } .bar > * { flex: none; } .crumb, .theme { display: none; } .link { height: 36px; padding: 0 10px; } .mark { font-size: 16px; } }
+@media (max-width: 1050px) { .crumb { max-width: 38vw; } .crumb i { display: none; } .submit .note { display: none; } }
+@media (max-width: 640px) { .bar { gap: 4px; padding-right: 2px; } .slot { gap: 4px; } .crumb, .theme { display: none; } .link { height: 36px; padding: 0 10px; } .mark { font-size: 16px; }
+  .wide { display: none; } .narrow { display: inline; } }

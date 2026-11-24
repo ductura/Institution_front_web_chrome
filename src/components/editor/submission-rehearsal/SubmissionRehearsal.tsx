@@ -12,14 +12,13 @@ import { createAnchorPlacer } from "@/editor";
 import { countTextWords } from "@/lib/i18n/length-line";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { readConfirmed } from "../../predaja/Declaration";
-import { confirmationKey } from "../../predaja/flow";
 import { jumpTo } from "../review/ReviewPanel";
 import { reviewMessagesHr as review } from "../review/messages.hr";
 import { rowsOf } from "../review/view";
 import { submissionPackageMessages as packageText } from "../submission-package/messages.hr";
 import { packageRows, type PackageInput } from "../submission-package/package-rows";
 import styles from "./SubmissionRehearsal.module.css";
+import { beforeSubmission, declarationText, useDeclarationGate, type GateRead } from "./declaration-gate";
 import { rehearsalMessagesHr as t } from "./messages.hr";
 import { loadRequirements, rangeDetail, readRehearsal, wordsLabel, type Requirements } from "./rehearsal-model";
 
@@ -42,6 +41,8 @@ export type SubmissionRehearsalProps = {
   onComments?: () => void;
   onPrintPreview?: () => void;
   onJumpToDocument?: () => void;
+  /** The declaration's read; the server's by default (student.declaration.get), a recorded one in tests. */
+  declarationGate?: GateRead;
 };
 
 function Row({ title, children, open }: { title: string; children: ReactNode; open?: () => void }) {
@@ -72,8 +73,8 @@ function Rehearsal(props: SubmissionRehearsalProps) {
 }
 
 function RehearsalDialog({
-  editor, assignmentId, documentId, sessionTag, session, enabledChecks = null, comments, approval,
-  supplements, onComments, onPrintPreview, onJumpToDocument, close,
+  editor, assignmentId, documentId, session, enabledChecks = null, comments, approval,
+  supplements, onComments, onPrintPreview, onJumpToDocument, close, declarationGate,
 }: Omit<SubmissionRehearsalProps, "editor"> & { editor: Editor; close: () => void }) {
   const intro = useRef<HTMLParagraphElement>(null);
   const packageIntro = useRef<HTMLParagraphElement>(null);
@@ -83,7 +84,9 @@ function RehearsalDialog({
   const [loadedComments, setLoadedComments] = useState<readonly CommentThread[]>();
   const doc = useEditorState({ editor, selector: ({ editor }) => editor.state.doc, equalityFn: (a, b) => a === b });
   const model = useMemo(() => readRehearsal(doc, enabledChecks), [doc, enabledChecks]);
-  const declared = readConfirmed(sessionTag === null ? null : confirmationKey(sessionTag, assignmentId));
+  // WEB-NUZ-PREDAJA-1 (PR-2): the declaration as the server holds it, the same read the steps of the
+  // submission make; this browser's own mark no longer says "confirmed" while the server refuses.
+  const { gate } = useDeclarationGate(assignmentId, declarationGate);
   useEffect(() => {
     let active = true;
     const watch = watchSessionEnd(session ?? null, close);
@@ -128,11 +131,14 @@ function RehearsalDialog({
   const { abstract, summary, keywords } = model;
   const rows = packageRows({
     approval: approval ?? "none", openPlaces: places.length, summaryWritten: Boolean(abstract?.text && summary?.text),
-    declaration: declared ? "filled" : "missing",
+    declaration: gate.kind === "confirmed" || gate.kind === "not_required" ? "filled" : "missing",
   });
   const approvalDetail = approval === undefined ? t.approvalUnavailable : rows.find((row) => row.id === "approval")?.detail;
   const form = messagesHr.beforeSubmit;
   const firstPlace = model.places[0];
+  const missing = beforeSubmission(gate, places.length);
+  const missingLine = gate.kind === "loading" ? t.declarationChecking
+    : missing.count === 0 ? t.missingNothing : missing.items.map((item) => item.text).join(" ");
 
   function switchView(next: boolean) {
     flushSync(() => setShowPackage(next));
@@ -155,6 +161,8 @@ function RehearsalDialog({
       <p>{packageText.codeNever}</p>
     </> : <>
     <p ref={intro} tabIndex={-1}>{t.intro}</p>
+    <h3>{t.missingTitle}</h3>
+    <p>{missingLine}</p>
     <h3>{t.blockers} ({places.length})</h3>
     <CheckActionList findings={places} labels={{ ...advisoryLabels, list: t.blockers, empty: t.noBlockers }}
       onAction={({ findingId }) => {
@@ -176,7 +184,7 @@ function RehearsalDialog({
       <Row title={t.keywords} open={keywords && (() => select(keywords.pos))}>
         {keywords?.text || t.unwritten}
       </Row>
-      <Row title={t.declaration}>{declared ? t.confirmed : t.unconfirmed}</Row>
+      <Row title={t.declaration}>{declarationText(gate)}</Row>
       <Row title={t.comments} open={commentRange ? () => select(commentRange.from, commentRange.to)
         : onComments && (() => leaveFor(onComments))}>
         {openComments === undefined ? t.approvalUnavailable : t.unresolved.replace("{count}", String(openComments.length))}

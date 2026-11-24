@@ -138,20 +138,55 @@ export async function readStudentState(call: Call, session: DeclarationSession, 
  * and never opens sending; the server checks the declaration again when the work is submitted.
  */
 export type DeclarationGate =
-  | { readonly kind: "confirmed" }
+  | {
+      readonly kind: "confirmed";
+      /** WEB-NUZ-PREDAJA-1 (PR-2): `bound` once the declaration went with a submission. */
+      readonly detail?: "confirmed" | "bound";
+      readonly confirmedAt?: string | null;
+      readonly form?: DeclarationFormRef | null;
+    }
   /** The assignment asks for no declaration: the server holds no form and nothing declared. */
   | { readonly kind: "not_required" }
   /** Asked for, and not confirmed for the current revision (none, a draft, or stale). */
-  | { readonly kind: "missing" }
+  | { readonly kind: "missing"; readonly detail?: "none" | "draft" | "stale"; readonly form?: DeclarationFormRef | null }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
 
-/** The gate as one read of student.declaration.get gives it. */
+/** The faculty's form the declaration is written on, as the server names it (OD-11). */
+export type DeclarationFormRef = { readonly formId: string; readonly formVersion: number };
+
+/** The words of one declaration state, the same everywhere the student sees it (PR-2, P-11). */
+export type DeclarationDetail = "none" | "draft" | "stale" | "confirmed" | "bound";
+
+/** The detail of a gate: which of the five states, or null when the gate names none. */
+export function declarationDetailOf(gate: DeclarationGate): DeclarationDetail | null {
+  if (gate.kind === "confirmed") return gate.detail ?? "confirmed";
+  if (gate.kind === "missing") return gate.detail ?? null;
+  return null;
+}
+
+/**
+ * The gate as one read of student.declaration.get gives it. This is the one selector of the
+ * declaration's state (WEB-NUZ-PREDAJA-1, PR-2): the steps of the submission, the rehearsal and
+ * the workspace's top bar all read it, so none of them can say "confirmed" while another refuses.
+ */
 export function declarationGateFrom(state: StudentState): DeclarationGate {
+  const form = formRefOf(state);
   const settled = state.state === "confirmed" || state.state === "bound";
-  if (settled && state.payload !== null && state.currentRevision !== null && state.payload.revision === state.currentRevision) return { kind: "confirmed" };
+  if (settled && state.payload !== null && state.currentRevision !== null && state.payload.revision === state.currentRevision) {
+    return { kind: "confirmed", detail: state.state === "bound" ? "bound" : "confirmed", confirmedAt: state.payload.confirmedAt, form };
+  }
   if (state.state === "none" && state.currentForm === null && state.draft === null && state.payload === null) return { kind: "not_required" };
-  return { kind: "missing" };
+  // The server says outright that the assignment asks for no declaration (G-11): nothing is missing.
+  if (state.declarationRequired === false) return { kind: "not_required" };
+  // A confirmation for an earlier revision is stale, whatever the server's own word for it.
+  const detail = state.state === "stale" || (settled && state.payload !== null) ? "stale" : state.state === "draft" || state.draft !== null ? "draft" : "none";
+  return { kind: "missing", detail, form };
+}
+
+function formRefOf(state: StudentState): DeclarationFormRef | null {
+  const form = state.currentForm ?? state.payload?.form ?? null;
+  return form === null ? null : { formId: form.formId, formVersion: form.formVersion };
 }
 
 /** Reads the gate from the server; anything but a read that matches the contract is `unavailable`. */

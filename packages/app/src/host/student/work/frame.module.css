@@ -14,6 +14,7 @@
   font-size: 14px;
 }
 .banner p { margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .load {
   box-sizing: border-box;
   max-width: 720px;

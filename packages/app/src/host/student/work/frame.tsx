@@ -4,7 +4,7 @@
 // the notes of the prototype's `.ed-banner`, the loading card `.ed-load` and the
 // footer for the variants without an editor. Texts are in messages.hr.ts.
 import { Button, Skeleton } from "@ductura/ui";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { useOnline } from "../../../../../../src/client/online-status.ts";
 import statusStyles from "../../../../../../src/components/editor/StatusBar.module.css";
@@ -12,6 +12,10 @@ import { scopeLine, type ScopeRange } from "../../../../../../src/components/edi
 import { messagesHr as t } from "../../../../../../src/lib/i18n/messages.hr.ts";
 import { openFailureExit, openFailureText } from "../../../../../../src/components/editor/open-failure.ts";
 
+import { createApi } from "../../../../../../src/client/api.ts";
+import { appHref } from "../../../../../../src/components/shell/nav.ts";
+import { readWithdrawalState, type StateRead, type WithdrawCall } from "../submission/withdraw/contract";
+import { WITHDRAW_HASH } from "../submission/withdraw/model";
 import { workText } from "./messages.hr";
 import styles from "./frame.module.css";
 
@@ -39,6 +43,40 @@ export function Banner({ lead, children }: { lead?: string; children: ReactNode 
   return (
     <div className={styles.banner} role="status">
       <p>{lead ? <b>{lead} </b> : null}{children}</p>
+    </div>
+  );
+}
+
+/** The withdrawal's state of one work; the server's (student.submission-withdrawal.get) by default. */
+export type WithdrawalRead = (assignmentId: string) => Promise<StateRead>;
+const serverWithdrawal: WithdrawalRead = (assignmentId) => readWithdrawalState(createApi() as unknown as WithdrawCall, assignmentId);
+
+/**
+ * E-7a (NF-3 PR-1, G-21): the banner of a submitted work with its ways on. "Otvori potvrdu o predaji"
+ * always; "Povuci predaju" only while the server says the submission can be withdrawn (the same read as
+ * the receipt's E-11b), and it leads to the receipt, where the confirmation of the withdrawal opens.
+ * The client never compares a time with a deadline.
+ */
+export function SubmittedBanner({ assignmentId, base, lead, read = serverWithdrawal }: {
+  assignmentId: string; base: string; lead?: string; read?: WithdrawalRead;
+}) {
+  const [withdrawable, setWithdrawable] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void read(assignmentId).then(
+      (state) => { if (live) setWithdrawable(state.kind === "ready" && state.state.withdrawable); },
+      () => undefined,
+    );
+    return () => { live = false; };
+  }, [assignmentId, read]);
+  const receipt = appHref(base, `/rad/${encodeURIComponent(assignmentId)}/predaja/potvrda`);
+  return (
+    <div className={styles.banner} role="status">
+      <p>{lead ? <b>{lead} </b> : null}{workText.submittedBody}</p>
+      <div className={styles.actions}>
+        <a href={receipt}>{workText.openReceipt}</a>
+        {withdrawable ? <a href={`${receipt}#${WITHDRAW_HASH}`}>{workText.withdraw}</a> : null}
+      </div>
     </div>
   );
 }

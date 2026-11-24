@@ -1,6 +1,8 @@
 // WEB-2108: the process summary panel (PD-1) and the note form (PD-4) on
 // step 3, the texts as the student prototype (summary(), noteForm()) and
 // INVENTAR-student §2 give them. `{n}` is filled in by model.ts.
+import { rehearsalMessagesHr as rehearsal } from "../../../../../../../src/components/editor/submission-rehearsal/messages.hr.ts";
+
 export const summaryText = {
   title: "Sažetak procesa",
   observed: "opaženo",
@@ -104,6 +106,10 @@ export const checksText = {
   declarationUnavailable: "Stanje izjave trenutačno nije moguće provjeriti, pa predaja još nije moguća.",
   declarationNotRequired: "Ovaj zadatak ne traži izjavu.",
   declarationRetry: "Provjeri ponovno",
+  // WEB-NUZ-PREDAJA-1 (E-8a, PR-2): the same sentences as the rehearsal's "Što još fali".
+  missingTitle: rehearsal.missingTitle,
+  missingNothing: rehearsal.missingNothing,
+  missingMeta: rehearsal.missingMeta,
   openDeclaration: "Otvori izjavu",
   conversations: "Razgovori uz izjavu",
   conversationsUnavailable: "Broj priloženih razgovora trenutačno nije dostupan.",

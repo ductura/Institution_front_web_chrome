@@ -1,7 +1,32 @@
 const { expect, test } = require("@playwright/test");
 
 const fixture = "/__fixture/submission-rehearsal";
-const requirements = "/api/v1/student/assignments/a8ee8f83-2949-4a99-b358-be77cd4938dd/requirements";
+const assignmentId = "a8ee8f83-2949-4a99-b358-be77cd4938dd";
+const requirements = `/api/v1/student/assignments/${assignmentId}/requirements`;
+const declaration = `/api/v1/student/assignments/${assignmentId}/declaration`;
+// WEB-NUZ-PREDAJA-1 (PR-2): invented declaration states as student.declaration.get gives them.
+const FORM = { formId: "test-izjava", formVersion: 1, formSha256: "a".repeat(64) };
+const BASE = {
+  submitted: false, currentRevision: 2, version: 4, formText: "Izmišljeni obrazac.",
+  currentForm: { ...FORM, text: "Izmišljeni obrazac." }, declarationSha256: null, uploads: [],
+};
+const DRAFT = {
+  ...BASE, state: "draft", payload: null,
+  draft: {
+    baseVersion: 3, revision: 2, form: FORM, ownWork: { confirmed: false }, humanHelp: { received: false, entries: [] },
+    ai: { use: "not_used", declaredTools: [], attachments: [], externalAttachmentIds: [] }, confirm: false,
+  },
+};
+const CONFIRMED = {
+  ...BASE, state: "confirmed", version: 5, draft: null, declarationSha256: "d".repeat(64),
+  payload: {
+    declarationSchema: "ductura-declaration-v1", declarationId: "00000000-0000-4000-8000-0000000000d1", declarationVersion: 5,
+    principalId: "00000000-0000-4000-8000-0000000000e1", assignmentId, assignmentVersion: 1,
+    documentId: "izmisljeni-dokument-1", revision: 2, form: FORM, ownWork: { confirmed: true },
+    humanHelp: { received: false, entries: [] }, ai: { use: "not_used", declaredTools: [], recorded: [], attachments: [] },
+    confirmedAt: "2026-11-20T10:00:00.000000Z",
+  },
+};
 
 test.beforeEach(async ({ page }) => {
   await page.route(`**${fixture}*`, (route) => route.fulfill({
@@ -17,8 +42,9 @@ test("uses the assignment's GET range, displays the prototype form row and selec
   const requests = [];
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
-    requests.push([new URL(request.url()).pathname, request.method(), request.postData()]);
-    await route.fulfill({ json: { wordRange: { min: 1234, max: 2345 } } });
+    const at = new URL(request.url()).pathname;
+    requests.push([at, request.method(), request.postData()]);
+    await route.fulfill({ json: at === declaration ? CONFIRMED : { wordRange: { min: 1234, max: 2345 } } });
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(fixture);
@@ -28,7 +54,8 @@ test("uses the assignment's GET range, displays the prototype form row and selec
   await expect(dialog.getByRole("status")).toContainText(/1\s234–2\s345 riječi/);
   await expect(dialog.getByText("Pravila oblika", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Provjera oblika još nije pokrenuta.", { exact: true })).toBeVisible();
-  await expect(dialog.getByText("Potvrđena.", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Potvrđena 20. 11. 2026. u 11:00.", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Mjesta ostavljena za kasnije: 1 (ne zaustavljaju predaju).", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Predaj rad", { exact: true })).toHaveCount(0);
   await expect(dialog.getByRole("button", { name: /pravila oblika|pokreni provjeru/i })).toHaveCount(0);
   await dialog.getByRole("button", { name: "Predajni paket" }).click();
@@ -41,7 +68,34 @@ test("uses the assignment's GET range, displays the prototype form row and selec
   await expect(dialog).toBeHidden();
   await expect(page.locator(".tiptap")).toBeFocused();
   expect(await page.evaluate(() => window.getSelection()?.toString())).toBe("[izvor]");
-  expect(requests).toEqual([[requirements, "GET", null]]);
+  expect(requests.sort()).toEqual([[declaration, "GET", null], [requirements, "GET", null]]);
+});
+
+test("says what the server holds for the declaration, not this browser's own mark (PR-2, G-2)", async ({ page }) => {
+  // The fixture keeps a confirmation in sessionStorage; the server has only a draft.
+  await page.route("**/api/v1/**", (route) => route.fulfill({
+    json: new URL(route.request().url()).pathname === declaration ? DRAFT : { wordRange: null },
+  }));
+  await page.goto(fixture);
+  await page.getByRole("button", { name: "Proba predaje" }).click();
+  const dialog = page.getByRole("dialog", { name: "Proba predaje" });
+  await expect(dialog.getByText("Izjava je ispunjena, ali još nije potvrđena.", { exact: true })).toBeVisible();
+  await expect(dialog.getByText(/^Potvrda izjave \(blokira predaju\)\./)).toBeVisible();
+  await expect(dialog.getByText(/^Potvrđena/)).toHaveCount(0);
+});
+
+test("never says confirmed when the declaration cannot be read", async ({ page }) => {
+  await page.route("**/api/v1/**", (route) => new URL(route.request().url()).pathname === declaration
+    ? route.fulfill({ status: 503, json: { error: "unavailable", code: "unavailable", messageKey: "errors.x", status: 503, requestId: "00000000-0000-4000-8000-000000000000" } })
+    : route.fulfill({ json: { wordRange: null } }));
+  await page.goto(fixture);
+  await page.getByRole("button", { name: "Proba predaje" }).click();
+  const dialog = page.getByRole("dialog", { name: "Proba predaje" });
+  await expect(dialog.getByText("Stanje izjave trenutačno nije moguće provjeriti, pa predaja još nije moguća.", { exact: true })).toBeVisible();
+  await expect(dialog.getByText(/^Potvrđena/)).toHaveCount(0);
+  // "Što još fali" never says nothing blocks while the declaration cannot be read (review c.7133358436, 1).
+  await expect(dialog.getByText(/^Stanje izjave nije poznato, pa predaja još nije moguća\./)).toBeVisible();
+  await expect(dialog.getByText("Ništa ne blokira predaju.", { exact: true })).toHaveCount(0);
 });
 
 test("reopens with a fresh read and jumps to the summary, while Escape restores focus", async ({ page }) => {

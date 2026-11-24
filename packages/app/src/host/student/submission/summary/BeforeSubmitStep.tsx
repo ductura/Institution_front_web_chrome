@@ -24,6 +24,7 @@ import { atOf } from "../steps/time";
 import { checksText as c } from "./messages.hr";
 import SummaryPanel from "./SummaryPanel";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "./declaration-gate";
+import { beforeSubmission, declarationText as declarationWords } from "./declaration-gate";
 import { notesCall, readStepSummary, type ClientAnswer, type NotesClient, type SummaryPorts } from "./model";
 import { routerPath } from "../../../../bases";
 
@@ -91,9 +92,13 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
 
   const retry = () => setAttempt((n) => n + 1);
   const submitted = stage.kind === "submitted";
-  const declarationText = gate.kind === "loading" ? c.declarationChecking : gate.kind === "unavailable" ? c.declarationUnavailable
-    : gate.kind === "not_required" ? c.declarationNotRequired : confirmed ? c.declarationConfirmed : c.declarationMissing;
+  // WEB-NUZ-PREDAJA-1 (PR-2): the same words and the same "Što još fali" as the rehearsal in the editor.
+  const declarationText = declarationWords(gate);
+  const missing = beforeSubmission(gate, null);
+  // G-8: the reason of a closed "Dalje" is the declaration row itself, said once; offline it is its own line.
   const nextHint = !online ? c.offline : confirmed ? undefined : declarationText;
+  const declarationId = `${hint}-izjava`;
+  const describedBy = !online ? hint : confirmed ? undefined : declarationId;
   const go = (step: "izjava" | "slanje" | "potvrda") => router.push(routerPath(hrefOf(stepHref(assignmentId, step))));
   const openNote = () => {
     if (!online || notes.kind !== "ready") return;
@@ -109,8 +114,12 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
         {stage.kind === "closed" && <p className="note" role="note">{`${c.closed}: ${atOf(stage.dueAt)}.`}</p>}
         {stage.kind === "unavailable" && <p className="note" role="alert">{c.unavailable}</p>}
         {!online && !submitted && <p className="note" role="status" id="sb-off">{c.offline}</p>}
+        <StepSection label={c.missingTitle}>
+          <span>{gate.kind === "loading" ? c.declarationChecking : missing.count === 0 ? c.missingNothing : missing.items.map((item) => item.text).join(" ")}</span>
+          <span className="meta">{c.missingMeta}</span>
+        </StepSection>
         <StepSection label={c.declaration}>
-          <span>{declarationText}</span>
+          <span id={declarationId}>{declarationText}</span>
           {gate.kind === "missing" && <StepLink href={hrefOf(stepHref(assignmentId, "izjava"))}>{c.openDeclaration}</StepLink>}
           {gate.kind === "unavailable" && <Button tone="secondary" onClick={readGate}>{c.declarationRetry}</Button>}
         </StepSection>
@@ -121,11 +130,11 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
         <StepLink href="#sb-notes" onClick={openNote}>{c.addNote}</StepLink>
         <StepActions>
           {confirmed
-            ? <Button aria-disabled={!online || undefined} aria-describedby={nextHint ? hint : undefined} onClick={() => { if (online) go("slanje"); }}>{c.next}</Button>
-            : <Button aria-describedby={hint} onClick={() => go("izjava")}>{c.toDeclaration}</Button>}
+            ? <Button aria-disabled={!online || undefined} aria-describedby={describedBy} onClick={() => { if (online) go("slanje"); }}>{c.next}</Button>
+            : <Button aria-describedby={describedBy} onClick={() => go("izjava")}>{c.toDeclaration}</Button>}
           <Button tone="secondary" onClick={() => go("izjava")}>{c.back}</Button>
         </StepActions>
-        {nextHint && <p className="meta" id={hint}>{nextHint}</p>}
+        {!online && nextHint && <p className="meta" id={hint}>{nextHint}</p>}
       </StepPanel>
       <SummaryPanel summary={summary} notes={notes} submitted={submitted} confirmed={confirmed} kind={kind}
         online={online} workHref={workHref} onRetry={retry}

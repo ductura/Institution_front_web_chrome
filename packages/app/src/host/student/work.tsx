@@ -34,7 +34,7 @@ import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import PdfExport from "../editor/export/PdfExport";
-import { StatusExtras, useRehearsalSupplements } from "../editor/status/StatusExtras";
+import { StatusExtras, beforeSubmissionFor, rehearsalSupplementsFor } from "../editor/status/StatusExtras";
 import { PregledHost } from "../editor/right/PregledHost";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
@@ -49,7 +49,7 @@ import { StartWork } from "./start-work/StartWork";
 import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
-import { Banner, ErrorCard, FrameStatus, LoadingCard, OfflineBanner, courseLine, momentHr } from "./work/frame";
+import { ErrorCard, FrameStatus, LoadingCard, OfflineBanner, SubmittedBanner, courseLine, momentHr } from "./work/frame";
 import { unavailableTransport } from "../../../../../src/client/import.ts";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
@@ -101,8 +101,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       const frame = workspaceFrame(read, undefined, { kind: "ready", wordRange });
       const title = read.kind === "ready" ? read.title : null;
       const subtitle = read.kind === "ready" ? courseLine(read.course, read.dueAt) : null;
+      // WEB-NUZ-PREDAJA-1 (P-17): only the full editor has the text the count reads, so only it counts.
       const bar = <WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle}
-        readOnly={frame.variant === "predano"} inert={frame.variant === "greska"} />;
+        readOnly={frame.variant === "predano"} inert={frame.variant === "greska"}
+        useBeforeCount={frame.variant === "puno" ? beforeSubmissionFor(assignmentId) : undefined} />;
       // WEB-2136: view mode, "samo naslovi" and panel widths, only where the panels are (the full editor).
       const topBar = frame.variant === "puno" ? <ShellView>{bar}</ShellView> : bar;
       const length = { words: null, range: frame.range };
@@ -111,7 +113,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} base={base} course={read.course} title={read.title} topBar={topBar} length={length}
             statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
-            toolbar={(ctx) => <StudentToolbar {...ctx} />} useSupplements={useRehearsalSupplements}
+            toolbar={(ctx) => <StudentToolbar {...ctx} />} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
             literature={() => <LiteratureList />}
             hostSections={{
@@ -149,7 +151,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             topBar={topBar}
             heading={frame.variant === "predano"}
             banner={frame.variant === "predano"
-              ? <Banner lead={submittedAt === null ? undefined : workText.submittedLead.replace("{at}", submittedAt)}>{workText.submittedBody}</Banner>
+              ? <SubmittedBanner assignmentId={assignmentId} base={base} lead={submittedAt === null ? undefined : workText.submittedLead.replace("{at}", submittedAt)} />
               : frame.variant === "greska" ? null : <OfflineBanner />}
             stand={frame.variant === "greska" ? <ErrorCard failure={frameFailureOf(assignments, work)} onRetry={() => setAttempt((n) => n + 1)} /> : undefined}
             status={frame.variant === "greska"

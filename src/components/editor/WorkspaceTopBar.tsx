@@ -7,6 +7,8 @@ import { useOnline } from "../../client/online-status";
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
 import type { SheetTheme } from "../../lib/ui/sheet-theme";
 import { setSheetTheme, useSheetTheme } from "../shell/useSheetTheme";
+import { beforeCountText } from "./submission-rehearsal/declaration-gate";
+import { rehearsalMessagesHr as rehearsal } from "./submission-rehearsal/messages.hr";
 
 import styles from "./WorkspaceTopBar.module.css";
 
@@ -20,6 +22,11 @@ export type WorkspaceTopBarProps = {
   readonly readOnly?: boolean;
   /** The work cannot be opened (greška, učitavanje): "Predaja rada" stays but does nothing. */
   readonly inert?: boolean;
+  /**
+   * WEB-NUZ-PREDAJA-1 (P-17): a hook of the host that counts what is left before the submission
+   * (the rehearsal's "Što još fali"); null while it cannot say. Constant for the bar's life.
+   */
+  readonly useBeforeCount?: () => number | null;
 };
 
 /**
@@ -50,8 +57,13 @@ export function WorkspaceTopBarView({
   online,
   theme,
   onTheme,
-}: WorkspaceTopBarProps & { online: boolean; theme: SheetTheme; onTheme: (theme: SheetTheme) => void }) {
+  before = null,
+}: Omit<WorkspaceTopBarProps, "useBeforeCount"> & { online: boolean; theme: SheetTheme; onTheme: (theme: SheetTheme) => void; before?: number | null }) {
   const light = theme === "light";
+  const count = before !== null && before > 0 ? before : null;
+  const things = count === null ? null : beforeCountText(count);
+  // PR-1 (G-1): the whole name on wide screens, "Predaja" up to 640 px; the name read aloud is always the whole one.
+  const label = <><span className={styles.wide}>{t.workspace.submitWork}</span><span className={styles.narrow} aria-hidden="true">{rehearsal.submitShort}</span></>;
   const slot = useContext(TopBarSlot);
   return (
     <header className={styles.bar} aria-label={t.workspace.barLabel}>
@@ -63,18 +75,26 @@ export function WorkspaceTopBarView({
         {subtitle ? <i>{subtitle}</i> : null}
       </span>
       <span className={styles.grow} />
-      {slot}
+      {/* PR-1 (G-1): the shell's switches give way (they scroll) before "Predaja rada" is cut. */}
+      {slot === null ? null : <span className={styles.slot}>{slot}</span>}
       <div className={styles.actions} role="group" aria-label={t.workspace.sheetTheme}>
         <button type="button" className={styles.theme} aria-pressed={light} onClick={() => onTheme(light ? "dark" : "light")}>
           {light ? t.workspace.sheetThemeDark : t.workspace.sheetThemeLight}
         </button>
         {readOnly ? null : inert ? (
-          <Button size="small" className={styles.primary} aria-disabled="true">{t.workspace.submitWork}</Button>
+          <Button size="small" className={styles.primary} aria-disabled="true" aria-label={t.workspace.submitWork}>{label}</Button>
         ) : online ? (
-          <a className={styles.link} href={`/rad/${encodeURIComponent(assignmentId)}/predaja`}>{t.workspace.submitWork}</a>
+          <span className={styles.submit}>
+            <a className={styles.link} href={`/rad/${encodeURIComponent(assignmentId)}/predaja`}
+              aria-label={things === null ? t.workspace.submitWork : `${t.workspace.submitWork}: ${things}`}>
+              {label}
+              {count === null ? null : <b className={styles.count} aria-hidden="true">{count}</b>}
+            </a>
+            {things === null ? null : <span className={styles.note} aria-hidden="true">{things}</span>}
+          </span>
         ) : (
           <span className={styles.submit}>
-            <Button size="small" className={styles.primary} disabled aria-describedby={OFFLINE_NOTE}>{t.workspace.submitWork}</Button>
+            <Button size="small" className={styles.primary} disabled aria-label={t.workspace.submitWork} aria-describedby={OFFLINE_NOTE}>{label}</Button>
             <span id={OFFLINE_NOTE} className={styles.note}>{t.workspace.submitOffline}</span>
           </span>
         )}
@@ -84,8 +104,11 @@ export function WorkspaceTopBarView({
 }
 
 /** The top bar of /rad/[assignmentId], reading the browser's network and the page's sheet theme. */
-export default function WorkspaceTopBar(props: WorkspaceTopBarProps) {
+export default function WorkspaceTopBar({ useBeforeCount = noCount, ...props }: WorkspaceTopBarProps) {
   const online = useOnline();
   const theme = useSheetTheme();
-  return <WorkspaceTopBarView {...props} online={online} theme={theme} onTheme={setSheetTheme} />;
+  const before = useBeforeCount();
+  return <WorkspaceTopBarView {...props} online={online} theme={theme} onTheme={setSheetTheme} before={before} />;
 }
+
+const noCount = (): number | null => null;
