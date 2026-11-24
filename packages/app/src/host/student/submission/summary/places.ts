@@ -7,7 +7,7 @@ import type { ProcessSummaryV1 } from "../../../../../../../src/client/process-s
 import { checksText as c } from "./messages.hr";
 
 /** The marks of src/components/editor/citations/review-places.ts, kept equal by places.test.ts. */
-export const PLACE_MARK = /\[(?:\?|izvor|provjeri|broj|stranica|citat)[^\]￼]{0,40}\]/giu;
+export const PLACE_MARK = /\[(?:\?|izvor|provjeri|broj|stranica|citat)[^\]\uFFFC]{0,40}\]/giu;
 
 /** One place left for a source: where it stands ("2. Teorijski okvir, odlomak 4") and its mark. */
 export type Place = { readonly where: string; readonly mark: string };
