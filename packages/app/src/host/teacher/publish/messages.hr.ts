@@ -12,3 +12,27 @@ export const publishHr = {
   published: "Zadatak je objavljen. Upisani studenti vide ga u „Mojim zadacima”.",
   toCourses: "Na kolegije",
 } as const;
+
+/** NZ-7a: the block "Ovako će student vidjeti obavijest" on the edit page. */
+export const noticePreviewHr = {
+  title: "Ovako će student vidjeti obavijest",
+  lead: "Isti podaci kao u obavijesti koju student potvrđuje. Imena studenata i sadržaj rada ovdje se ne prikazuju.",
+  due: "Rok",
+  tools: "Alati",
+  scope: "Opseg",
+  importing: "Uvoz teksta",
+  version: "Verzija obavijesti",
+  noLimit: "bez ograničenja",
+  toolsNone: "Asistent nije dopušten",
+  toolsSome: (list: string): string => `Asistent je dopušten za: ${list}`,
+  importYes: "dopušten",
+  importNo: "nije dopušten",
+} as const;
+
+/** NZ-8: who confirmed the notice. The server does not say per student yet, so the page says so. */
+export const noticeAckHr = {
+  title: "Tko je potvrdio obavijest",
+  unavailable: "Potvrda obavijesti po studentu još nije dostupna. Broj „Potvrdilo n od m” prikazat će se čim ga poslužitelj bude davao.",
+  count: (n: number, m: number): string => `Potvrdilo ${n} od ${m}`,
+  newVersion: "nova verzija",
+} as const;
