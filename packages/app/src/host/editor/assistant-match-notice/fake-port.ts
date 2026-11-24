@@ -7,6 +7,7 @@ export const DOCUMENT = "demo-rad";
 export const FAKE_MATCH: AssistantMatch = {
   segmentId: "s3",
   conversationId: "demo-razgovor-1",
+  messageId: "0d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f40",
   attachedAt: "2026-11-18T09:40:00.000Z",
   words: 11,
 };
@@ -25,9 +26,9 @@ export function fakeMatchServer(opts: { enabled?: boolean; matches?: readonly As
     const found = matches.find((m) => m.segmentId === segmentId);
     if (found === undefined) return { ok: false as const, status: 404, code: "not_found" };
     const text = (input.body as { text: string }).text;
-    const next: AssistantMatch = { ...found, explanation: { text, at: "2026-11-18T10:00:00.000Z" } };
-    matches = matches.map((m) => (m === found ? next : m));
-    return { ok: true as const, status: 200, body: next };
+    const explanation = { text, at: "2026-11-18T10:00:00.000Z" };
+    matches = matches.map((m) => (m === found ? { ...found, explanation } : m));
+    return { ok: true as const, status: 201, body: explanation };
   };
   return { call, calls };
 }

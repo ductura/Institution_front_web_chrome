@@ -21,11 +21,15 @@ const defaultCall = () => startWorkCall();
  * while the first is in flight, opens the same work: the client sends one call
  * at a time and the server makes one work per student and assignment.
  * `call` is for tests; the page uses the client.
+ * On the work page itself the editor's address is the one already open, and
+ * going there again would not read the work again (INT-31): that page passes
+ * `onOpened`, which reads it again in place of going to the editor.
  */
-export function StartWork({ assignmentId, title, call = defaultCall }: {
+export function StartWork({ assignmentId, title, call = defaultCall, onOpened }: {
   assignmentId: string;
   title: string;
   call?: () => StartWorkTransport;
+  onOpened?: () => void;
 }) {
   const { base } = useHost();
   const router = useRouter();
@@ -44,7 +48,8 @@ export function StartWork({ assignmentId, title, call = defaultCall }: {
       return;
     }
     if (step.kind === "open") setOpened(step.work);
-    // Busy stays on until the page leaves, so the opening editor is not asked twice.
+    // Busy stays on until the page leaves (or reads the work again), so the opening editor is not asked twice.
+    if (step.kind === "open" && onOpened) return onOpened();
     router.push(nextPath(base, step.route));
   }
 
