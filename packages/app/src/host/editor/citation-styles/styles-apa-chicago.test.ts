@@ -25,7 +25,7 @@ const kovac = p("Kovač", "Marko");
 const babic = p("Babić", "Iva");
 const maric = p("Marić", "Petra");
 
-const book: Source = { type: "book", authors: [p("Marić", "A.")], year: 2003, title: "Politički marketing", place: "Zagreb", publisher: "Izmišljena naklada" };
+const book: Source = { type: "book", authors: [p("Marić", "A.")], year: 2003, title: "Atlas izmišljenih općina", place: "Zagreb", publisher: "Izmišljena naklada" };
 const article: Source = { type: "article", authors: [horvat], year: 2019, title: "Mala javna politika", journal: "Izmišljeni časopis", volume: "12", issue: "3", pages: "45-60" };
 const chapter: Source = { type: "chapter", authors: [kovac], year: 2021, title: "Lokalna uprava", editors: [horvat, babic], bookTitle: "Zbornik o upravi", place: "Split", publisher: "Probna naklada", pages: "10-24" };
 const web: Source = { type: "web", authors: [{ kind: "organization", name: "Izmišljeni institut", acronym: "IZI" }], year: 2022, title: "Godišnje izvješće", url: "https://primjer.invalid/izvjesce", accessed: "2026-11-24" };
@@ -71,7 +71,7 @@ describe("APA in-text", () => {
 
 describe("APA bibliography", () => {
   it("book", () => {
-    expect(formatBibliographyEntry(book, apa)).toBe("Marić, A. (2003). Politički marketing. Zagreb: Izmišljena naklada.");
+    expect(formatBibliographyEntry(book, apa)).toBe("Marić, A. (2003). Atlas izmišljenih općina. Zagreb: Izmišljena naklada.");
   });
   it("article, chapter, web", () => {
     expect(formatBibliographyEntry(article, apa)).toBe("Horvat, Ana (2019). Mala javna politika. Izmišljeni časopis 12/3: 45–60.");
@@ -103,7 +103,7 @@ describe("Chicago in-text", () => {
 describe("Chicago bibliography", () => {
   it("book, article, chapter, web", () => {
     expect(formatBibliographyEntry({ ...book, authors: [p("Marić", "Ana")] }, chicago)).toBe(
-      "Marić, Ana (2003). Politički marketing. Zagreb: Izmišljena naklada.",
+      "Marić, Ana (2003). Atlas izmišljenih općina. Zagreb: Izmišljena naklada.",
     );
     expect(formatBibliographyEntry(article, chicago)).toBe("Horvat, Ana (2019). Mala javna politika. Izmišljeni časopis 12/3: 45–60.");
     expect(formatBibliographyEntry(chapter, chicago)).toContain("U: Ana Horvat i Iva Babić (ur.) Zbornik o upravi.");
@@ -153,7 +153,7 @@ describe("rule examples in the files agree with the formatter", () => {
     expect(ex).toBe(formatBibliographyEntry(book, apa));
   });
   it("APA/Chicago in-text examples", () => {
-    expect(apaFile.rules.find((r) => r.id === "in-text")?.examples).toContain(formatInText({ ...book, authors: [p("Becker", "X")], year: 2007 }, apa, "9"));
-    expect(chicagoFile.rules.find((r) => r.id === "in-text")?.examples).toContain(formatInText({ ...book, authors: [p("Becker", "X")], year: 2007 }, chicago, "9"));
+    expect(apaFile.rules.find((r) => r.id === "in-text")?.examples).toContain(formatInText({ ...book, authors: [p("Novak", "X")], year: 2007 }, apa, "9"));
+    expect(chicagoFile.rules.find((r) => r.id === "in-text")?.examples).toContain(formatInText({ ...book, authors: [p("Novak", "X")], year: 2007 }, chicago, "9"));
   });
 });

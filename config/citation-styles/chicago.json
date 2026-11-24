@@ -34,8 +34,8 @@
       "status": "derived",
       "rule": "Autor i godina bez zareza među njima, stranica iza zareza bez oznake „str.“",
       "examples": [
-        "(Becker 2007, 9)",
-        "(Becker 2007)"
+        "(Novak 2007, 9)",
+        "(Novak 2007)"
       ],
       "source": "CMOS 17, autor-datum (sažeto)"
     },
@@ -44,7 +44,7 @@
       "status": "derived",
       "rule": "Dva autora povezana veznikom „i“",
       "examples": [
-        "(Swanson i Mancini 1996)"
+        "(Pavić i Radić 1996)"
       ],
       "source": "CMOS 17; veznik prilagođen hrvatskom"
     },
@@ -71,7 +71,7 @@
       "status": "derived",
       "rule": "Prezime, Ime (godina). Naslov. Mjesto: Nakladnik.",
       "examples": [
-        "Marić, Ana (2003). Politički marketing. Zagreb: Izmišljena naklada."
+        "Marić, Ana (2003). Atlas izmišljenih općina. Zagreb: Izmišljena naklada."
       ],
       "source": "CMOS 17; puno ime autora"
     },
