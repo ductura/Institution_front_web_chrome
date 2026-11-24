@@ -1,16 +1,15 @@
+// Q-10 (NF-3 PR-4): the view names no provider and no model, only "Asistent".
 // The view's model of E-9 "Izjava" and PD-2 "Razgovor N" (WEB-2107). The host reads it from
 // declaration-v1 through step-ports.ts (PIL-K-IZJAVA); only tests and the catalogue pass a fake.
 import { chatDialogText, declarationStepText as t } from "./messages.hr";
 
 export type RecordedItem =
-  | { readonly kind: "transfer"; readonly at: string; readonly model: string; readonly target: string }
-  | { readonly kind: "chat"; readonly date: string; readonly model: string };
+  | { readonly kind: "transfer"; readonly at: string; readonly target: string }
+  | { readonly kind: "chat"; readonly date: string };
 
 export type ChatEntry = {
   readonly who: "you" | "ai" | "transfer";
   readonly time: string;
-  /** Model of an "ai" entry. */
-  readonly model?: string;
   readonly text: string;
 };
 
@@ -76,7 +75,7 @@ export function chatTitle(chat: Pick<Chat, "n" | "date">): string {
 
 export function entryLabel(entry: ChatEntry): string {
   const who = entry.who === "you" ? chatDialogText.you
-    : entry.who === "ai" ? chatDialogText.ai.replace("{model}", entry.model ?? "")
+    : entry.who === "ai" ? chatDialogText.ai
       : chatDialogText.transfer;
   return `${who} · ${entry.time}`;
 }
@@ -116,6 +115,6 @@ export function confirmLine(confirm: ConfirmState): { readonly role: "status" | 
 
 export function recordedLine(item: RecordedItem): { readonly line: string; readonly who: string } {
   return item.kind === "transfer"
-    ? { line: t.transferLine.replace("{at}", item.at), who: t.transferWho.replace("{model}", item.model).replace("{target}", item.target) }
-    : { line: t.chatLine.replace("{date}", item.date), who: t.chatWho.replace("{model}", item.model) };
+    ? { line: t.transferLine.replace("{at}", item.at), who: t.transferWho.replace("{target}", item.target) }
+    : { line: t.chatLine.replace("{date}", item.date), who: t.chatWho };
 }
