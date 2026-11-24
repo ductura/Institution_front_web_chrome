@@ -8,6 +8,7 @@ import { confirmationKey } from "../../../../../../../src/components/predaja/flo
 import BeforeSubmitStep from "./BeforeSubmitStep";
 import { ASSIGNMENT, CONFIRMED, DRAFT, gateServer } from "./declaration-gate.fixture";
 import { checksText as c } from "./messages.hr";
+import { rehearsalMessagesHr as r } from "../../../../../../../src/components/editor/submission-rehearsal/messages.hr.ts";
 
 const push = vi.fn();
 const router = { push };
@@ -42,14 +43,17 @@ describe("step 3 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     const server = gateServer(() => DRAFT);
     const host = await mount(server.read, "tag-1");
     expect(server.paths).toEqual([`/api/v1/student/assignments/${ASSIGNMENT}/declaration`]);
-    expect(host.textContent).toContain(c.declarationMissing);
+    // WEB-NUZ-PREDAJA-1 (PR-2): the draft is named as a draft, and "Što još fali" names the confirmation.
+    expect(host.textContent).toContain(r.declarationDraft);
+    expect(host.textContent).toContain(r.missingDeclaration);
     expect(buttons(host)).not.toContain(c.next);
     expect(buttons(host)).toContain(c.toDeclaration);
   });
 
   it("a declaration the server holds as confirmed opens the next step", async () => {
     const host = await mount(gateServer(() => CONFIRMED).read);
-    expect(host.textContent).toContain(c.declarationConfirmed);
+    expect(host.textContent).toContain(r.declarationConfirmedAt.replace("{at}", "20. 11. 2026. u 11:00"));
+    expect(host.textContent).toContain(r.missingNothing);
     expect(buttons(host)).toContain(c.next);
   });
 

@@ -23,6 +23,9 @@ export const workText = {
   submittedLead: "Predano {at}.",
   submittedBody: "Rad je predan, pa se ovdje više ne može pisati.",
   submittedStatus: "Predano {at}",
+  /** E-7a (NF-3 PR-1): the banner's ways on, as in the prototype (R-70, R-55). */
+  openReceipt: "Otvori potvrdu o predaji",
+  withdraw: "Povuci predaju",
   courseLine: "{course} · rok {due}",
   notStarted: "Rad još nije započet. Započnite ga da biste mogli pisati.",
 } as const;

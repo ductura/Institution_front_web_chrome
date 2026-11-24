@@ -24,6 +24,7 @@ import { atOf } from "../steps/time";
 import { checksText as c } from "./messages.hr";
 import SummaryPanel from "./SummaryPanel";
 import { opensSending, serverGate, useDeclarationGate, type GateRead } from "./declaration-gate";
+import { beforeSubmission, declarationText as declarationWords } from "./declaration-gate";
 import { notesCall, readStepSummary, type ClientAnswer, type NotesClient, type SummaryPorts } from "./model";
 import { routerPath } from "../../../../bases";
 
@@ -91,8 +92,9 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
 
   const retry = () => setAttempt((n) => n + 1);
   const submitted = stage.kind === "submitted";
-  const declarationText = gate.kind === "loading" ? c.declarationChecking : gate.kind === "unavailable" ? c.declarationUnavailable
-    : gate.kind === "not_required" ? c.declarationNotRequired : confirmed ? c.declarationConfirmed : c.declarationMissing;
+  // WEB-NUZ-PREDAJA-1 (PR-2): the same words and the same "Što još fali" as the rehearsal in the editor.
+  const declarationText = declarationWords(gate);
+  const missing = beforeSubmission(gate, null);
   const nextHint = !online ? c.offline : confirmed ? undefined : declarationText;
   const go = (step: "izjava" | "slanje" | "potvrda") => router.push(routerPath(hrefOf(stepHref(assignmentId, step))));
   const openNote = () => {
@@ -109,6 +111,10 @@ export default function BeforeSubmitStep({ assignmentId, stage, kind, hrefOf, wo
         {stage.kind === "closed" && <p className="note" role="note">{`${c.closed}: ${atOf(stage.dueAt)}.`}</p>}
         {stage.kind === "unavailable" && <p className="note" role="alert">{c.unavailable}</p>}
         {!online && !submitted && <p className="note" role="status" id="sb-off">{c.offline}</p>}
+        <StepSection label={c.missingTitle}>
+          <span>{gate.kind === "loading" ? c.declarationChecking : missing.count === 0 ? c.missingNothing : missing.items.map((item) => item.text).join(" ")}</span>
+          <span className="meta">{c.missingMeta}</span>
+        </StepSection>
         <StepSection label={c.declaration}>
           <span>{declarationText}</span>
           {gate.kind === "missing" && <StepLink href={hrefOf(stepHref(assignmentId, "izjava"))}>{c.openDeclaration}</StepLink>}

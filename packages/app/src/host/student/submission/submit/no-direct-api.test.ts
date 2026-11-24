@@ -21,8 +21,13 @@ describe("no direct API in step 4 (WEB-2109)", () => {
     }
     const step = readFileSync(join(import.meta.dirname, "SubmitStep.tsx"), "utf8");
     expect(step).toMatch(/import \{ opensSending, serverGate, useDeclarationGate, type GateRead \} from "\.\.\/summary\/declaration-gate";/);
-    const gate = readFileSync(join(import.meta.dirname, "../summary/declaration-gate.ts"), "utf8");
-    expect(gate).toMatch(/import \{ readDeclarationGate, type DeclarationGate \} from "[./]+\/src\/client\/declaration\.ts";/);
-    expect(gate).toMatch(/import \{ createApi \} from "[./]+\/src\/client\/api\.ts";/);
+    // WEB-NUZ-PREDAJA-1 (PR-2): the steps' gate is the rehearsal's one source; follow it there.
+    const host = readFileSync(join(import.meta.dirname, "../summary/declaration-gate.ts"), "utf8");
+    expect(host).toMatch(/from "[./]+\/src\/components\/editor\/submission-rehearsal\/declaration-gate\.ts";/);
+    expect(BROWSER_DECLARATION.test(host)).toBe(false);
+    const gate = readFileSync(join(import.meta.dirname, "../../../../../../../src/components/editor/submission-rehearsal/declaration-gate.ts"), "utf8");
+    expect(BROWSER_DECLARATION.test(gate)).toBe(false);
+    expect(gate).toMatch(/import \{ declarationDetailOf, readDeclarationGate, type DeclarationGate \} from "@\/client\/declaration";/);
+    expect(gate).toMatch(/import \{ createApi \} from "@\/client\/api";/);
   });
 });

@@ -2,6 +2,14 @@ import { formatDateTimeHr } from "../../../../../../../src/lib/i18n/hr";
 import { readWithdrawalState, withdrawSubmission, type WithdrawalReceipt, type WithdrawalState, type WithdrawCall, type WithdrawOutcome } from "./contract";
 import { withdrawText as t } from "./messages.hr";
 
+/** E-7a (NF-3 PR-1, R-55): the receipt's address fragment that opens the confirmation of a withdrawal. */
+export const WITHDRAW_HASH = "povuci";
+
+/** Whether the confirmation opens on arrival: asked for by the address, and the server says it can be withdrawn. */
+export function opensOnArrival(hash: string, state: WithdrawalState): boolean {
+  return hash === `#${WITHDRAW_HASH}` && canWithdraw(state);
+}
+
 export type Note = { readonly tone: "status" | "alert"; readonly text: string };
 /** What the page says after an action, and whether the state is read again. */
 export type Followup = { readonly note: Note; readonly refresh: boolean; /** The signed confirmation of a recorded withdrawal, kept even when the state cannot be read again. */ readonly receipt?: WithdrawalReceipt };
