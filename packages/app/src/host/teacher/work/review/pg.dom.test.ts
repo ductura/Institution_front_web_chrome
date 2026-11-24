@@ -80,6 +80,32 @@ describe("NF-5 sections of Pregled rada", () => {
     expect(el.textContent).toContain("razmak");
   });
 
+  it("PG-5: without the details the list is never „nema”; it says so and reads again on retry", async () => {
+    let fail = true;
+    const empty = { ...(SUMMARY as object), pastes: { evidenceKind: "observed", listedAboveCharacters: 200, smallerCount: 0, listed: [] } } as never;
+    const reads = { summary: () => ok(empty), details: () => (fail ? Promise.resolve({ kind: "unavailable" as const }) : ok({ activeEditingMinutes: 1, keyEvents: [] })) } as unknown as ReviewReads;
+    const el = await mount(h(Places, { documentId: DOC, reads, replayHref: "/x" }));
+    expect(el.querySelector("[data-details-unavailable]")).not.toBeNull();
+    expect(el.textContent).not.toContain("U zapisu nema lijepljenja");
+    fail = false;
+    await act(async () => { el.querySelector("button")!.click(); });
+    await settle();
+    expect(el.querySelector("[data-details-unavailable]")).toBeNull();
+    expect(el.textContent).toContain("U zapisu nema lijepljenja");
+  });
+
+  it("a read that throws becomes an error with a retry, never a permanent „Učitavam”", async () => {
+    const el = await mount(h(Notes, { documentId: DOC, extras: extras({ disputes: () => Promise.reject(new Error("mreža")) }) }));
+    expect(el.querySelector('[role="alert"]')).not.toBeNull();
+    expect(el.textContent).not.toContain("Učitavam");
+    expect(el.querySelector("button")).not.toBeNull();
+  });
+
+  it("PG-9: a failed draft read offers a retry", async () => {
+    const el = await mount(h(Given, { documentId: DOC, extras: extras({ drafts: async () => ({ kind: "unavailable" }) }) }));
+    expect(el.querySelector("button")).not.toBeNull();
+  });
+
   it("PG-7: shows the student's explanation, or says there is none, and says the finding read is missing", async () => {
     const el = await mount(h(Notes, { documentId: DOC, extras: extras() }));
     expect(el.textContent).toContain("Izmišljeno objašnjenje studenta.");

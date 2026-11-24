@@ -13,13 +13,13 @@ import type { ReviewReads } from "./read";
 import type { ReviewExtras } from "./extras";
 
 /** Reads once per key; a retry reads again. A read that throws is an error, never a blank. */
-function useRead<T>(read: () => Promise<T>, key: string): [T | null, () => void] {
+function useRead<T>(read: () => Promise<T>, key: string, failed: T): [T | null, () => void] {
   const [value, setValue] = useState<T | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let live = true;
     setValue(null);
-    void read().then((next) => { if (live) setValue(next); }, () => undefined);
+    void read().then((next) => { if (live) setValue(next); }, () => { if (live) setValue(failed); });
     return () => { live = false; };
     // `read` is rebuilt on every render; the key names what it reads.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -65,14 +65,15 @@ export function CompositionView({ read, onRetry }: { read: OriginRead | null; on
 }
 
 export function Composition({ documentId, extras }: { documentId: string; extras: ReviewExtras }) {
-  const [read, retry] = useRead(() => extras.composition(documentId), `composition:${documentId}`);
+  const [read, retry] = useRead(() => extras.composition(documentId), `composition:${documentId}`, { kind: "unavailable" });
   return <CompositionView read={read} onRetry={retry} />;
 }
 
 // ---- PG-7 ----
 
 const NOTE_COLUMNS: readonly DataTableColumn<NoteRow>[] = [
-  { id: "head", header: t.notesCaption, cell: (row) => row.head },
+  { id: "event", header: t.colEvent, cell: (row) => row.event },
+  { id: "head", header: t.colWritten, cell: (row) => row.head },
   { id: "text", header: t.colWhat, cell: (row) => row.text },
 ];
 
@@ -95,6 +96,7 @@ export function NotesView({ read, onRetry }: { read: DisputeListOutcome | null; 
       <h3 id="pg7-h">{t.notesHeading}</h3>
       <p className="note">{t.notesIntro}</p>
       {body}
+      <p className="meta">{t.eventNote}</p>
       <p className="note" data-missing="finding-explanation">{t.notesFinding}</p>
       <p className="meta">{t.notesFindingReason}</p>
     </section>
@@ -102,7 +104,7 @@ export function NotesView({ read, onRetry }: { read: DisputeListOutcome | null; 
 }
 
 export function Notes({ documentId, extras }: { documentId: string; extras: ReviewExtras }) {
-  const [read, retry] = useRead(() => extras.disputes(documentId), `notes:${documentId}`);
+  const [read, retry] = useRead(() => extras.disputes(documentId), `notes:${documentId}`, { kind: "unavailable" });
   return <NotesView read={read} onRetry={retry} />;
 }
 
@@ -116,20 +118,27 @@ const PLACE_COLUMNS = (jumpHref: string): readonly DataTableColumn<Place>[] => [
 
 /** „Važna mjesta”: no automatic playback, no live region; the jump opens the replay (no session in the record yet, D-239). */
 export function Places({ documentId, reads, replayHref }: { documentId: string; reads: ReviewReads; replayHref: string }) {
-  const [summary, retrySummary] = useRead(() => reads.summary(documentId), `pg5s:${documentId}`);
-  const [details] = useRead(() => reads.details(documentId), `pg5d:${documentId}`);
+  const [summary, retrySummary] = useRead(() => reads.summary(documentId), `pg5s:${documentId}`, { kind: "unavailable" });
+  const [details, retryDetails] = useRead(() => reads.details(documentId), `pg5d:${documentId}`, { kind: "unavailable" });
   let body: ReactNode;
-  if (summary === null) body = <p className="meta" role="status">{t.notesLoading}</p>;
+  if (summary === null || details === null) body = <p className="meta" role="status">{t.placesLoading}</p>;
   else if (summary.kind === "notFound") body = <p className="note">{t.placesNotGiven}</p>;
   else if (summary.kind === "signedOut") body = null;
   else if (summary.kind === "unavailable") body = <><p className="note" role="alert">{t.placesError}</p><Retry onRetry={retrySummary} /></>;
   else if (summary.kind === "ok") {
-    const rows = importantPlaces(summary.value, details?.kind === "ok" ? details.value : null);
-    body = rows.length === 0 ? <p className="note">{t.placesNone}</p>
-      : <DataTable caption={t.placesCaption} columns={PLACE_COLUMNS(replayHref)} rows={rows} rowKey={(row) => row.key} empty={t.placesNone} />;
+    // Without the details the transfers and imports are unknown: an empty list is never shown as „nema”.
+    const detailsOk = details.kind === "ok";
+    const rows = importantPlaces(summary.value, detailsOk ? details.value : null);
+    body = (
+      <>
+        {!detailsOk && <><p className="note" role="alert" data-details-unavailable>{t.placesDetailsUnavailable}</p><Retry onRetry={retryDetails} /></>}
+        {rows.length === 0 ? (detailsOk ? <p className="note">{t.placesNone}</p> : null)
+          : <DataTable caption={t.placesCaption} columns={PLACE_COLUMNS(replayHref)} rows={rows} rowKey={(row) => row.key} empty={t.placesNone} />}
+      </>
+    );
   } else body = null;
   return (
-    <section aria-labelledby="pg5-h" data-nf5="PG-5" data-state={summary === null ? "loading" : summary.kind}>
+    <section aria-labelledby="pg5-h" data-nf5="PG-5" data-state={summary === null || details === null ? "loading" : summary.kind}>
       <h3 id="pg5-h">{t.placesHeading}</h3>
       <p className="note">{t.placesIntro}</p>
       {body}
@@ -144,7 +153,7 @@ export function Places({ documentId, reads, replayHref }: { documentId: string; 
 const GIVEN_COLUMNS: readonly DataTableColumn<GivenRow>[] = [
   { id: "when", header: t.colGivenWhen, cell: (row) => row.when },
   { id: "who", header: t.colGivenWhat, cell: (row) => <><b>{row.who}</b>{": "}{row.what}</> },
-  { id: "state", header: t.colGivenState, cell: (row) => (row.state === "draft" ? t.givenDraft : t.givenPublished) },
+  { id: "state", header: t.colGivenState, cell: (row) => (row.state === "draft" ? t.givenDraft : row.state === "student" ? t.givenStudentState : t.givenPublished) },
 ];
 
 export function GivenView({ comments, drafts, onRetry }: { comments: ListOutcome | null; drafts: DraftsRead | null; onRetry: () => void }) {
@@ -157,7 +166,7 @@ export function GivenView({ comments, drafts, onRetry }: { comments: ListOutcome
     const rows = givenRows(comments.threads, drafts.kind === "ready" ? drafts.drafts : []);
     body = (
       <>
-        {drafts.kind === "unavailable" && <p className="note" role="alert">{t.givenUnavailable}</p>}
+        {drafts.kind === "unavailable" && <><p className="note" role="alert">{t.givenUnavailable}</p><Retry onRetry={onRetry} /></>}
         {rows.length === 0 ? <p className="note">{t.givenNone}</p>
           : <DataTable caption={t.givenCaption} columns={GIVEN_COLUMNS} rows={rows} rowKey={(row) => row.key} empty={t.givenNone} />}
       </>
@@ -175,7 +184,7 @@ export function GivenView({ comments, drafts, onRetry }: { comments: ListOutcome
 }
 
 export function Given({ documentId, extras }: { documentId: string; extras: ReviewExtras }) {
-  const [comments, retryComments] = useRead(() => extras.comments(documentId), `pg9c:${documentId}`);
-  const [drafts, retryDrafts] = useRead(() => extras.drafts(documentId), `pg9d:${documentId}`);
+  const [comments, retryComments] = useRead(() => extras.comments(documentId), `pg9c:${documentId}`, { kind: "unavailable" });
+  const [drafts, retryDrafts] = useRead(() => extras.drafts(documentId), `pg9d:${documentId}`, { kind: "unavailable" });
   return <GivenView comments={comments} drafts={drafts} onRetry={() => { retryComments(); retryDrafts(); }} />;
 }

@@ -40,7 +40,7 @@ export function importantPlaces(summary: ProcessSummaryV1, details: SummaryDetai
       key: `gap:${i}`, at: g.previousEndedAt, when: t.gapRange(minute(g.previousEndedAt), minute(g.nextStartedAt)), what: t.gap,
     })),
     ...(details?.keyEvents ?? []).map((e, i) => ({
-      key: `event:${i}`, at: e.at.from, when: minute(e.at.from), what: e.kind === "ai-transfer" ? t.transfer : t.importFile,
+      key: `event:${i}`, at: e.at.from, when: minute(e.at.from), what: e.kind === "import" ? t.importFile : t.transfer,
     })),
   ];
   return places.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : a.key.localeCompare(b.key)));
@@ -48,23 +48,30 @@ export function importantPlaces(summary: ProcessSummaryV1, details: SummaryDetai
 
 // ---- PG-7 ----
 
-export type NoteRow = { readonly key: string; readonly head: string; readonly text: string };
+export type NoteRow = { readonly key: string; readonly event: string; readonly head: string; readonly text: string };
 
 const NOTE_KIND: Record<DisputeKind, string> = { supplement: t.noteSupplement, dispute: t.noteDispute };
 
 /** The student's notes in the order the server gave them. */
-export const noteRows = (disputes: readonly EventDispute[]): readonly NoteRow[] =>
-  disputes.map((d) => ({ key: d.id, head: t.noteBy(NOTE_KIND[d.kind], formatDateTimeHr(d.createdWindow)), text: d.text }));
+export function noteRows(disputes: readonly EventDispute[]): readonly NoteRow[] {
+  // The same event keeps the same ordinal, in order of first appearance; no technical id reaches the screen.
+  const ordinals = new Map<string, number>();
+  for (const d of disputes) if (!ordinals.has(d.eventId)) ordinals.set(d.eventId, ordinals.size + 1);
+  return disputes.map((d) => ({
+    key: d.id, event: t.eventOrdinal(ordinals.get(d.eventId)!), head: t.noteBy(NOTE_KIND[d.kind], formatDateTimeHr(d.createdWindow)), text: d.text,
+  }));
+}
 
 // ---- PG-9 ----
 
-export type GivenRow = { readonly key: string; readonly at: string; readonly when: string; readonly what: string; readonly who: string; readonly state: "published" | "draft"; readonly deleted: boolean };
+export type GivenRow = { readonly key: string; readonly at: string; readonly when: string; readonly what: string; readonly who: string; readonly state: "published" | "draft" | "student"; readonly deleted: boolean };
 
 /** Published comments of the threads and unpublished drafts, oldest first; a draft is marked „nije objavljeno”. */
 export function givenRows(threads: readonly CommentThread[], drafts: readonly WorkComment[]): readonly GivenRow[] {
   const published: GivenRow[] = threads.flatMap((thread) => thread.comments.map((c) => ({
     key: `c:${c.id}`, at: c.createdWindow, when: formatDateTimeHr(c.createdWindow), what: c.body ?? t.deleted,
-    who: c.role === "teacher" ? t.givenOwn : t.givenStudent, state: "published" as const, deleted: c.body === null,
+    who: c.role === "student" ? t.givenStudent : c.isOwn ? t.givenOwn : t.givenColleague,
+    state: c.role === "student" ? "student" as const : "published" as const, deleted: c.body === null,
   })));
   const unpublished: GivenRow[] = drafts.filter((d) => d.state === "draft").map((d) => ({
     key: `d:${d.id}`, at: d.savedAt, when: formatDateTimeHr(d.savedAt), what: d.body, who: t.givenDraftLabel, state: "draft" as const, deleted: false,

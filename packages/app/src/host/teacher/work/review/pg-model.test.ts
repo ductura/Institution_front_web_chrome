@@ -65,6 +65,7 @@ describe("PG-7 noteRows", () => {
     expect(rows.map((r) => r.key)).toEqual(["a", "b"]);
     expect(rows[0]!.head.startsWith("Prigovor")).toBe(true);
     expect(rows[1]!.head.startsWith("Dopuna")).toBe(true);
+    expect(rows.map((r) => r.event)).toEqual(["Događaj 1", "Događaj 2"]);
   });
 });
 
@@ -78,8 +79,14 @@ describe("PG-9 givenRows", () => {
       { id: "d1", body: "Nacrt.", state: "draft", savedAt: "2026-11-12T12:00:00.000Z" },
       { id: "d2", body: "Već objavljeno.", state: "published", savedAt: "2026-11-12T09:00:00.000Z" },
     ]);
-    expect(rows.map((r) => [r.key, r.state])).toEqual([["c:c1", "published"], ["d:d1", "draft"], ["c:c2", "published"]]);
+    expect(rows.map((r) => [r.key, r.state])).toEqual([["c:c1", "published"], ["d:d1", "draft"], ["c:c2", "student"]]);
     expect(rows[2]!.deleted).toBe(true);
     expect(rows[2]!.what).toBe("Student je obrisao ovaj odgovor.");
+    expect(rows[2]!.state).toBe("student");
+    expect(rows[0]!.who).toBe("Vaš komentar");
+  });
+  it("does not call the comment of another teacher or mentor the viewer's own", () => {
+    const other: CommentThread[] = [{ ...threads[0]!, comments: [{ ...threads[0]!.comments[0]!, isOwn: false }] }];
+    expect(givenRows(other, [])[0]!.who).toBe("Komentar nastavnika");
   });
 });
