@@ -12,7 +12,8 @@ export const editorOnboardingMessages = { hr: onboardingHr, en: onboardingEn };
 type Props = {
   locale: keyof typeof editorOnboardingMessages;
   mode: "automatic" | "help" | null;
-  onClose: () => void;
+  /** How it was closed: "finish" and "skip" mark the guide seen for the host, "dismiss" (Esc) does not. */
+  onClose: (how: "finish" | "skip" | "dismiss") => void;
 };
 
 export function EditorOnboarding({ locale, mode, onClose }: Props) {
@@ -25,13 +26,17 @@ export function EditorOnboarding({ locale, mode, onClose }: Props) {
   const last = step === t.steps.length - 1;
   const progress = t.progress.replace("{step}", String(step + 1)).replace("{total}", String(t.steps.length));
 
+  // NF2-P20: focus goes to the heading when the guide opens; one opening by itself never takes it from
+  // a student who is already writing or working in a field.
   useEffect(() => {
-    if (mode === "help") heading.current?.focus();
+    if (mode === null) return;
+    const active = document.activeElement;
+    if (mode === "help" || active === null || active === document.body) heading.current?.focus();
   }, [mode]);
 
-  function close() {
+  function close(how: "finish" | "skip" | "dismiss") {
     setStep(0);
-    onClose();
+    onClose(how);
   }
 
   return <>
@@ -41,7 +46,7 @@ export function EditorOnboarding({ locale, mode, onClose }: Props) {
     {mode && <section className={styles.guide} lang={locale} aria-labelledby={id} onKeyDown={(event) => {
       if (event.key === "Escape") {
         event.stopPropagation();
-        close();
+        close("dismiss");
       }
     }}>
       <h2 id={id} ref={heading} tabIndex={-1}>{t.title}</h2>
@@ -55,8 +60,8 @@ export function EditorOnboarding({ locale, mode, onClose }: Props) {
         }}>
           {t.previous}
         </Button>
-        <Button ref={next} onClick={last ? close : () => setStep(step + 1)}>{last ? t.finish : t.next}</Button>
-        <Button tone="quiet" onClick={close}>{t.skip}</Button>
+        <Button ref={next} onClick={last ? () => close("finish") : () => setStep(step + 1)}>{last ? t.finish : t.next}</Button>
+        <Button tone="quiet" onClick={() => close("skip")}>{t.skip}</Button>
       </div>
     </section>}
   </>;
