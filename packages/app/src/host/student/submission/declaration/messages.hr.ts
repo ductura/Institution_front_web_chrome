@@ -74,3 +74,18 @@ export const chatDialogText = {
   transfer: "Prijenos u tekst",
   close: "Zatvori",
 } as const;
+
+// NF-3 PR-14 (E-9b, R-57): the note beside a submitted declaration, tagged for legal review.
+export const correctionText = {
+  title: "Ispravak izjave",
+  tag: "za pravni pregled",
+  legal: "Tekst ovog odjeljka čeka pravni pregled.",
+  lead: "Potvrđena izjava se ne mijenja. Ako ste nešto izostavili, uz izjavu možete dodati napomenu; nastavnik je vidi uz sažetak.",
+  open: "Dodaj napomenu uz izjavu",
+  label: "Napomena uz izjavu",
+  hint: "Napomene se samo dodaju; potvrđena izjava ostaje kakva jest.",
+  seenBy: "Vidi je nastavnik uz sažetak.",
+  added: "Napomena uz izjavu je dodana.",
+  withdraw: "Dok rok traje, predaju možete i povući, ispraviti izjavu i rad predati ponovno.",
+  toWithdraw: "Povlačenje predaje",
+} as const;
