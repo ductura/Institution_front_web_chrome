@@ -2,6 +2,8 @@ import type { FastPathRecord, FastPathStudent } from "../../../../../../src/comp
 import { whenText } from "../../../../../../src/components/teacher/fast-path.ts";
 import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr.ts";
 import type { TeacherRead } from "../../pages";
+import type { TeacherCourse } from "../../../../../../src/components/teacher/teacher-courses-read.ts";
+import { taskOptionLabel } from "../assignment-card/model.ts";
 
 import { fastPathHostText as t } from "./messages.hr";
 
@@ -44,4 +46,17 @@ export function detailLines(student: FastPathStudent, record: FastPathRecord): D
 export function assignmentOf(query: string | null): string | null {
   const id = query?.trim() ?? "";
   return id === "" ? null : id;
+}
+
+/**
+ * NZ-1: the assignments of the teacher's courses for the chooser "Zadatak" ("Kolegij · Naslov · rok …"), in the
+ * order of teacher.courses.get. Without `?zadatak=` the page shows the first one of them.
+ */
+export function fastPathTasks(courses: readonly Pick<TeacherCourse, "name" | "assignments">[], now: number): readonly { value: string; label: string }[] {
+  return courses.flatMap((course) => course.assignments.map((a) => ({ value: a.id, label: `${course.name} · ${taskOptionLabel(a, now)}` })));
+}
+
+/** The page of one assignment's works. */
+export function fastPathPath(assignmentId: string): string {
+  return `/nastavnik/brz-put?zadatak=${encodeURIComponent(assignmentId)}`;
 }

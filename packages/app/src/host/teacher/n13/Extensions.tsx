@@ -7,7 +7,7 @@ import { appHref } from "../../../../../../src/components/shell/nav";
 import { goToSignIn } from "../../../../../../src/client/api";
 import { zagrebInstant } from "../../../../../../src/lib/i18n/zagreb";
 import { useHost } from "../../context";
-import { detailText, leadText, loadN13, noteOf, reasonOptions, recordN13, titleText, unavailablePort, type N13Port, type N13Read, type Note } from "./model";
+import { deadlinePassed, detailText, leadText, loadN13, noteOf, reasonOptions, recordN13, titleText, unavailablePort, type N13Port, type N13Read, type Note } from "./model";
 import { n13Messages as text } from "./messages.hr";
 
 /**
@@ -81,6 +81,12 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
       )}
       {data !== null && (
         <>
+          {deadlinePassed(data.context, Date.now()) && (
+            <div className="banner" role="status">
+              <p><b>{text.passedTitle}</b> {text.passedBody}</p>
+              <p className="note">{text.exceptionUnavailable}</p>
+            </div>
+          )}
           {note !== null && (
             <div className="banner" role={note.tone}>
               <p><b>{note.bold}</b>{note.rest === null ? null : ` ${note.rest}`}</p>

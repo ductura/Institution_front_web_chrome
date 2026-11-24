@@ -2,8 +2,10 @@
 // a meta line of counts and a six-column table. The server's overview says submitted or not; the states
 // "u pisanju", "obavijest nije potvrđena", the extended deadline and the revision are optional fields:
 // when the read does not give them they are shown as such ("nedostupno"), never guessed. No network call here.
+import type { CardRole } from "../assignment-card/model";
 import { compareHr } from "../../../../../editor-core/src/document/text/compare-hr";
 import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
+import { deadlineOf, whenHr, type Extension } from "../assignment-facts/model";
 import { n17Messages as text } from "./messages.hr";
 
 export type Revision = { readonly state: "open" | "reopened" | "accepted" | "closed" };
@@ -17,9 +19,13 @@ export type N17Row = {
   readonly afterDeadline: boolean;
   readonly evidenceRecord: "continuous" | "with_gaps" | null;
   readonly documentId?: string;
-  /** Optional until the server says them. */
-  readonly phase?: "writing" | "unconfirmed";
+  /** Optional until the server says them; `notStarted` comes from teacher.course-students.get (NZ-10). */
+  readonly phase?: "writing" | "unconfirmed" | "notStarted";
   readonly deadlineExtended?: boolean;
+  /** NZ-10: the version of the submission (teacher.submissions.get `revision`); absent when not read. */
+  readonly version?: number | null;
+  /** NZ-10: this student's deadline (the assignment's, or the latest extension); absent when not read. */
+  readonly dueAt?: string;
   /** Absent: the read does not say. `null`: no revision was requested. */
   readonly revision?: Revision | null;
 };
@@ -28,12 +34,17 @@ export type N17Card = {
   readonly assignmentId: string;
   readonly title: string;
   readonly courseName: string;
+  /** NZ-1/NZ-2: the course and the assignment's own deadline, for the card's meta line and entries. */
+  readonly courseId?: string;
+  readonly dueAt?: string;
+  /** The caller's role in the course; only the holder gets the entries that write (as TaskActions, INVENTAR §7 t. 5). */
+  readonly role?: CardRole;
   /** null: the read of this assignment failed. */
   readonly rows: readonly N17Row[] | null;
 };
 
 export type N17Read =
-  | { readonly kind: "ready"; readonly cards: readonly N17Card[] }
+  | { readonly kind: "ready"; readonly cards: readonly N17Card[]; readonly course?: string }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
 
@@ -56,11 +67,63 @@ export function stateText(row: N17Row): string {
   if (row.submitted) return text.state.submitted;
   if (row.phase === "writing") return row.deadlineExtended ? text.state.writingExtended : text.state.writing;
   if (row.phase === "unconfirmed") return text.state.unconfirmed;
+  if (row.phase === "notStarted") return text.state.notStarted;
   return text.state.notSubmitted;
 }
 
+/** NZ-10: "5. 11. 2026. u 21:14 · verzija 2", in the short form of the prototype; "nema" when not submitted. */
 export function timeText(row: N17Row): string {
-  return row.submitted && row.requestedMinute !== null ? formatDateTimeHr(row.requestedMinute) : text.none;
+  if (!row.submitted || row.requestedMinute === null) return text.none;
+  const when = whenHr(row.requestedMinute) ?? formatDateTimeHr(row.requestedMinute);
+  return typeof row.version === "number" && Number.isInteger(row.version) && row.version > 0 ? `${when} · ${text.version(row.version)}` : when;
+}
+
+/** NZ-10: "Rok produljen do …" or "Rok …"; "nedostupno" when the deadline was not read. */
+export function deadlineText(row: N17Row): string {
+  const due = row.dueAt === undefined ? null : whenHr(row.dueAt);
+  if (due === null) return text.revisionUnavailable;
+  return row.deadlineExtended ? text.extendedTo(due) : text.dueAt(due);
+}
+
+/** The card's meta "Rok 8. 11. 2026. u 23:59" (· "rok je prošao"); null without a readable deadline. */
+export function cardDeadline(card: Pick<N17Card, "dueAt">, now: number): string | null {
+  const due = card.dueAt === undefined ? null : whenHr(card.dueAt);
+  if (due === null || card.dueAt === undefined) return null;
+  return Date.parse(card.dueAt) < now ? `${text.dueAt(due)} · ${text.deadlinePassed}` : text.dueAt(due);
+}
+
+/** What NZ-10 joins to the overview rows; a part that was not read is null and leaves its field absent. */
+export type RowJoin = {
+  readonly dueAt: string;
+  /** teacher.course-students.get for this assignment, by student. */
+  readonly works: ReadonlyMap<string, { readonly state: "not_started" | "in_progress" | "submitted"; readonly documentId: string | null }> | null;
+  /** teacher.submissions.get, by student. */
+  readonly submissions: ReadonlyMap<string, { readonly revision: number | null; readonly documentId: string | null }> | null;
+  readonly extensions: readonly Extension[] | null;
+};
+
+/**
+ * NZ-10: the overview rows with the facts the other reads give: the state (not started, writing; writing
+ * whose deadline passed is "nije predano"), the document to open, the version and this student's deadline.
+ * Nothing is guessed: a part that was not read leaves its field as it was.
+ */
+export function joinRows(rows: readonly N17Row[], join: RowJoin, now: number): readonly N17Row[] {
+  return rows.map((row) => {
+    const work = join.works?.get(row.studentId);
+    const sub = join.submissions?.get(row.studentId);
+    const documentId = work?.documentId ?? sub?.documentId ?? row.documentId ?? null;
+    const deadline = join.extensions === null ? null : deadlineOf(row.studentId, join.dueAt, join.extensions);
+    const passed = deadline !== null && Date.parse(deadline.dueAt) <= now;
+    const phase: N17Row["phase"] = row.submitted || work === undefined ? row.phase
+      : work.state === "not_started" ? "notStarted" : work.state === "in_progress" && !passed ? "writing" : row.phase;
+    return {
+      ...row,
+      ...(documentId === null ? {} : { documentId }),
+      ...(phase === undefined ? {} : { phase }),
+      ...(sub === undefined ? {} : { version: sub.revision }),
+      ...(deadline === null ? {} : { dueAt: deadline.dueAt, deadlineExtended: deadline.extended }),
+    };
+  });
 }
 
 export function afterDeadlineText(row: N17Row): string {
@@ -85,11 +148,13 @@ export function summaryLine(rows: readonly N17Row[]): string {
   const count = (f: (r: N17Row) => boolean) => rows.filter((r) => !r.submitted && f(r)).length;
   const writing = count((r) => r.phase === "writing");
   const unconfirmed = count((r) => r.phase === "unconfirmed");
+  const notStarted = count((r) => r.phase === "notStarted");
   const not = count((r) => r.phase === undefined);
   const parts: string[] = [];
   if (submitted.length > 0) parts.push(text.summary.submitted(submitted.length, submitted.filter((r) => r.afterDeadline).length));
   if (writing > 0) parts.push(text.summary.writing(writing));
   if (not > 0) parts.push(text.summary.notSubmitted(not));
+  if (notStarted > 0) parts.push(text.summary.notStarted(notStarted));
   if (unconfirmed > 0) parts.push(text.summary.unconfirmed(unconfirmed));
   return parts.length === 0 ? text.summary.noRows : parts.join(", ");
 }

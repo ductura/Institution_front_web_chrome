@@ -6,6 +6,10 @@ export const fastPathHostText = {
   loading: "Učitavanje radova…",
   unavailable: "Radovi trenutačno nisu dostupni. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",
+  // NZ-1: the chooser of the assignment (prototype `brz-put`, izbornik „Zadatak”).
+  task: "Zadatak",
+  open: "Otvori",
+  tasksLoading: "Učitavanje zadataka…",
   emptyTitle: "Nema radova",
   emptyText: "Nijedan student još nije započeo rad u ovom zadatku.",
   previous: "Prethodni",

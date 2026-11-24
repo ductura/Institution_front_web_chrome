@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Dialog, Select } from "@ductura/ui";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { signInHref, type ApiResult } from "@/client/api";
 import type { TeacherCoursesRead } from "@/components/teacher/teacher-courses-read";
@@ -41,7 +41,11 @@ function CopyPreview({ current }: { current: Current }) {
   );
 }
 
-export function AssignmentCopy({ current, href }: { current: Current; href: (path: string) => string }) {
+export function AssignmentCopy({ current, href, startOpen = false }: {
+  current: Current; href: (path: string) => string;
+  /** NZ-1: "Kopiraj zadatak" on the course card comes here with `?kopiraj=1` and the dialog open. */
+  startOpen?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [read, setRead] = useState<TeacherCoursesRead | null>(null);
   const [courseId, setCourseId] = useState("");
@@ -82,6 +86,14 @@ export function AssignmentCopy({ current, href }: { current: Current; href: (pat
     setPending(false);
     inFlight.current = false;
   }
+
+  const started = useRef(false);
+  useEffect(() => {
+    if (!startOpen || started.current) return;
+    started.current = true;
+    show();
+    // Once, on the first draw: `show` is a fresh closure each render.
+  }, [startOpen]);
 
   const done = copy?.kind === "copied";
   const signedOut = read?.kind === "signedOut" || copy?.kind === "signedOut";

@@ -1,18 +1,21 @@
 "use client";
 
-import { Button, Dialog, PracticeBadge, ToastRegion, useToasts } from "@ductura/ui";
-import { useEffect, useState } from "react";
+import { Button, Dialog, PracticeBadge, Select, ToastRegion, useToasts } from "@ductura/ui";
+import { useSearchParams } from "next/navigation";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { createTeachingTeam, type TeachingTeamView } from "../../../../../../src/client/teaching-team";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { codeOutcome, defaultValidUntil, validUntilInstant } from "../../../../../../src/components/teacher/kolegiji/course-codes";
-import { extensionsHref, newAssignmentHref } from "../../../../../../src/components/teacher/links";
+import { newAssignmentHref } from "../../../../../../src/components/teacher/links";
 import type { TeacherCourse } from "../../../../../../src/components/teacher/teacher-courses-read";
 import { useHost } from "../../context";
-import { submissionsHref } from "../submissions/port";
 import { assignmentCardMessages as t } from "./messages.hr";
-import { codeFieldText, dueText, enrolledText, nextDeadline, roleOf, type CardRole } from "./model";
+import {
+  codeFieldText, courseOverviewPath, dueText, enrolledText, nextDeadline, pickedPath, roleOf, taskOptions, taskPaths,
+  type CardRole, type TaskPick,
+} from "./model";
 import { usePractice } from "./practice";
 import styles from "./AssignmentCards.module.css";
 
@@ -38,17 +41,73 @@ function Field({ name, children }: { name: string; children: string }) {
   return <div><span className={styles.label}>{name}</span>{children}</div>;
 }
 
-/** The card's own task list (title, deadline, "Probni"), used when no task facts are passed in. */
-function CardTasks({ course }: { course: TeacherCourse }) {
+/** The caller's role in the card being drawn, for the task entries inside it (NZ-1). */
+const CardRoleContext = createContext<CardRole>("unknown");
+
+/**
+ * NZ-1: the entries of one assignment, each a page of the host: Predaje, Uredi (nova verzija), Kopiraj zadatak,
+ * Produljenje, Izvoz and Brz put kroz radove (with `?zadatak=`). A collaborator reads and comments only
+ * (INVENTAR §7 t. 5), so the entries that write are not offered to them; the server decides the rest.
+ */
+export function TaskActions({ assignment }: { assignment: { readonly id: string; readonly title: string } }) {
   const { base } = useHost();
+  const role = useContext(CardRoleContext);
+  const paths = taskPaths(assignment.id);
+  // Only a known holder: while the team view is unread (or failed), no entry that writes is offered.
+  const writes = role === "holder";
+  const link = (path: string, label: string, primary = false) => (
+    <a className={primary ? "btn small" : "btn secondary small"} href={appHref(base, path)} aria-label={`${label}: ${assignment.title}`}>{label}</a>
+  );
+  return (
+    <div className="acts" role="group" aria-label={`${t.taskActions}: ${assignment.title}`}>
+      {link(paths.submissions, t.submissions)}
+      {writes ? link(paths.edit, t.edit) : null}
+      {writes ? link(paths.copy, t.copy) : null}
+      {writes ? link(paths.extension, t.taskExtension) : null}
+      {writes ? link(paths.merlin, t.taskMerlin) : null}
+      {link(paths.fastPath, t.fastPath, true)}
+    </div>
+  );
+}
+
+/** The card's own task list (title, deadline, "Probni", the entries), used when no task facts are passed in. */
+function CardTasks({ course }: { course: TeacherCourse }) {
   const practice = usePractice(course.assignments);
   return course.assignments.map((assignment) => (
     <div key={assignment.id} className={styles.task}>
       <h3>{assignment.title}</h3>
       <p className="meta">{t.due} {dueText(assignment.dueAt)} <PracticeBadge practice={practice.get(assignment.id)} /></p>
-      <a className="btn secondary small" href={appHref(base, submissionsHref(assignment.id))} aria-label={`${t.submissions}: ${assignment.title}`}>{t.submissions}</a>
+      <TaskActions assignment={assignment} />
     </div>
   ));
+}
+
+/**
+ * NZ-2: "Produljenje roka…" and "Izvoz za Merlin…" ask which assignment of the course; every assignment is
+ * offered, one whose deadline has passed too (Daniel, NF-4 odluka 5). "Nastavi" is a link to that page.
+ */
+function TaskPicker({ course, pick, onClose }: { course: TeacherCourse; pick: TaskPick | null; onClose: () => void }) {
+  const { base } = useHost();
+  const [chosen, setChosen] = useState("");
+  const [tried, setTried] = useState(false);
+  useEffect(() => {
+    setChosen("");
+    setTried(false);
+  }, [pick]);
+  const path = pick === null ? null : pickedPath(course, pick, chosen);
+  return (
+    <Dialog open={pick !== null} title={pick === null ? "" : t.pickTitle[pick]} onClose={onClose}
+      actions={<>
+        {path === null ? <Button onClick={() => setTried(true)}>{t.pickGo}</Button>
+          : <a className="btn" href={appHref(base, path)}>{t.pickGo}</a>}
+        <Button tone="secondary" onClick={onClose}>{t.cancel}</Button>
+      </>}>
+      {pick === null ? null : <p className="note">{t.pickLead[pick]}</p>}
+      <Select label={t.pickLabel} placeholder={t.pickPlaceholder} value={chosen} options={taskOptions(course, Date.now())}
+        error={tried && path === null ? t.pickNone : undefined}
+        onChange={(event) => { setChosen(event.target.value); setTried(false); }} />
+    </Dialog>
+  );
 }
 
 /** "Novi kolegij i zadatak": the head's action when there are courses, the card's when there are none. */
@@ -58,10 +117,12 @@ export function NewCourseLink() {
 }
 
 /** One course card (N-01): role, enrolled, code state, next deadline, the buttons and the tasks. */
-export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
+export function AssignmentCard({ course, here, onIssued, extra, tasks, askCode = false }: {
   course: TeacherCourse; here: string; onIssued: () => void; extra?: React.ReactNode;
   /** The tasks with their facts (WEB-2145); without it, title and deadline only. */
   tasks?: React.ReactNode;
+  /** NZ-1: `?kod=<courseId>` (from the empty N-04 "Izdaj novi kod") opens dk-h once the holder is known. */
+  askCode?: boolean;
 }) {
   const { base } = useHost();
   const team = useTeam(course.id);
@@ -71,7 +132,15 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
+  const [pick, setPick] = useState<TaskPick | null>(null);
   const next = nextDeadline(course, Date.now());
+  const hasTasks = course.assignments.length > 0;
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!askCode || asked.current || role !== "holder") return;
+    asked.current = true;
+    setOpen(true);
+  }, [askCode, role]);
   const id = `kolegij-${course.id}`;
   const link = (path: string) => appHref(base, path);
 
@@ -108,6 +177,7 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
   const roleText = role === "holder" ? t.roleHolder : role === "collaborator" ? t.roleCollaborator : null;
   const small = "btn secondary small";
   return (
+    <CardRoleContext.Provider value={role}>
     <section className={`card ${styles.course}`} aria-labelledby={id}>
       <h2 id={id}>{course.name}</h2>
       <div className={styles.kv}>
@@ -126,10 +196,11 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
       <div className="acts">
         <a className={small} href={link(`/nastavnik/kolegiji/${encodeURIComponent(course.id)}/studenti`)}>{t.studentList}</a>
         {role !== "collaborator" ? <a className={small} href={link(newAssignmentHref(course.id))}>{t.addTask}</a> : null}
-        {role !== "collaborator" && next ? <a className={small} href={link(extensionsHref(next.id))}>{t.extension}</a> : null}
-        <a className={small} href={link("/nastavnik/zbirni")}>{t.overview}</a>
-        {role !== "collaborator" && course.assignments[0] !== undefined
-          ? <a className={small} href={link(`/nastavnik/zadatak/${encodeURIComponent(course.assignments[0].id)}/merlin`)}>{t.merlin}</a> : null}
+        {role === "holder" && hasTasks
+          ? <button type="button" className={small} aria-haspopup="dialog" onClick={() => setPick("extension")}>{t.extension}</button> : null}
+        <a className={small} href={link(courseOverviewPath(course.id))}>{t.overview}</a>
+        {role === "holder" && hasTasks
+          ? <button type="button" className={small} aria-haspopup="dialog" onClick={() => setPick("merlin")}>{t.merlin}</button> : null}
         {role === "holder" ? <button type="button" className={small} onClick={() => setOpen(true)} aria-label={`${t.newCode}: ${course.name}`}>{t.newCode}</button> : null}
       </div>
       {tasks ?? <CardTasks course={course} />}
@@ -142,7 +213,9 @@ export function AssignmentCard({ course, here, onIssued, extra, tasks }: {
         </>}>
         <p className="note">{t.dialogLead}</p>
       </Dialog>
+      <TaskPicker course={course} pick={pick} onClose={() => setPick(null)} />
     </section>
+    </CardRoleContext.Provider>
   );
 }
 
@@ -153,6 +226,7 @@ export function AssignmentCards({ courses, here, extra, tasks }: {
 }) {
   const { base } = useHost();
   const { toasts, show, dismiss } = useToasts();
+  const askCode = useSearchParams().get("kod");
   if (courses.length === 0) {
     return (
       <section className="card center">
@@ -166,7 +240,7 @@ export function AssignmentCards({ courses, here, extra, tasks }: {
     <>
       {courses.map((course) => (
         <AssignmentCard key={course.id} course={course} here={here} onIssued={() => show(t.issued)} extra={extra?.(course)}
-          tasks={tasks?.(course)} />
+          tasks={tasks?.(course)} askCode={askCode === course.id} />
       ))}
       <ToastRegion toasts={toasts} onDismiss={dismiss} label={t.toastLabel} closeLabel={t.toastClose} />
     </>
