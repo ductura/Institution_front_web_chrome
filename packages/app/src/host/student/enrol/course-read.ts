@@ -39,10 +39,10 @@ export function noticeHref(assignmentId: string): string {
   return `/zadatak/${encodeURIComponent(assignmentId)}`;
 }
 
-export async function readCourse(api: Api, courseId: string, now: Date = new Date()): Promise<CourseRead> {
+export async function readCourse(call: Api, courseId: string, now: Date = new Date()): Promise<CourseRead> {
   let result: Awaited<ReturnType<Api>>;
   try {
-    result = await api("student.assignments.get", { params: undefined, query: undefined, body: undefined });
+    result = await call("student.assignments.get", { params: undefined, query: undefined, body: undefined });
   } catch {
     return { kind: "unavailable" };
   }
