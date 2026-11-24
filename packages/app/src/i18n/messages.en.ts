@@ -68,6 +68,9 @@ export const pageLabelsEn = {
   receiptCheck: "Receipt check",
   originThresholds: "Thresholds per origin kind",
   pilotMetrics: "Pilot measures",
+  facultySettings: "Faculty settings",
+  facultyAssistant: "Assistant at the faculty",
+  myRights: "My rights",
 };
 
 export const accessDeniedEn = {
