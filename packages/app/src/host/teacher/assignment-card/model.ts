@@ -62,3 +62,49 @@ export async function readPractice(ids: readonly string[], read: ReadAssignment)
   const flags = await Promise.all(ids.map((id) => read(id).then(practiceOf, () => false)));
   return new Map(ids.map((id, index) => [id, flags[index] === true]));
 }
+
+// NZ-1 and NZ-2 (WEB-NUZ-NZ): the entries of one assignment and the course's task chooser. Every path is a
+// route of the host (src/routes.ts); none is invented here.
+const task = (id: string, rest: string) => `/nastavnik/zadatak/${encodeURIComponent(id)}/${rest}`;
+
+/** The screens one assignment is reached from the card: each one is a page of the host. */
+export function taskPaths(assignmentId: string) {
+  return {
+    submissions: task(assignmentId, "predaje"),
+    edit: task(assignmentId, "uredi"),
+    copy: `${task(assignmentId, "uredi")}?kopiraj=1`,
+    extension: task(assignmentId, "produljenje"),
+    merlin: task(assignmentId, "merlin"),
+    fastPath: `/nastavnik/brz-put?zadatak=${encodeURIComponent(assignmentId)}`,
+  } as const;
+}
+
+/** "Zbirni pregled" of the card: the overview of this course's assignments only. */
+export function courseOverviewPath(courseId: string): string {
+  return `/nastavnik/zbirni?kolegij=${encodeURIComponent(courseId)}`;
+}
+
+export type TaskPick = "extension" | "merlin";
+
+/** The chooser's option: "Naslov · rok 8. 11. 2026. u 23:59", or "· rok je prošao" (NZ-2: a passed deadline is offered too). */
+export function taskOptionLabel(assignment: Pick<TeacherCourse["assignments"][number], "title" | "dueAt">, now: number): string {
+  const ms = Date.parse(assignment.dueAt);
+  return `${assignment.title} · ${!Number.isNaN(ms) && ms < now ? t.deadlinePassed : `${t.due.toLowerCase()} ${dueText(assignment.dueAt)}`}`;
+}
+
+/** Every assignment of the course, in the order of the read; none is left out for a passed deadline. */
+export function taskOptions(course: Pick<TeacherCourse, "assignments">, now: number): readonly { value: string; label: string }[] {
+  return course.assignments.map((a) => ({ value: a.id, label: taskOptionLabel(a, now) }));
+}
+
+/** The path the chooser goes to; null until a task of this course is chosen. */
+export function pickedPath(course: Pick<TeacherCourse, "assignments">, pick: TaskPick, assignmentId: string): string | null {
+  if (!course.assignments.some((a) => a.id === assignmentId)) return null;
+  const paths = taskPaths(assignmentId);
+  return pick === "extension" ? paths.extension : paths.merlin;
+}
+
+/** NZ-1: "Izdaj novi kod" of an empty course roster opens dk-h on that course's card. */
+export function issueCodePath(courseId: string): string {
+  return `/nastavnik?kod=${encodeURIComponent(courseId)}`;
+}

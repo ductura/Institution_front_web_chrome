@@ -2,17 +2,23 @@ name: CI
 on:
   push: { branches: [main, "migracija/kopija-ductus-front"] }
   pull_request:
-  # Full e2e matrix once a day (a pull request runs chromium only).
+  # Full e2e matrix once a day (a pull request runs chromium only). The
+  # schedule runs on the default branch main only. Every job also by hand
+  # (ZEL-CI-RED).
   schedule: [{ cron: "17 3 * * *" }]
+  workflow_dispatch:
 permissions:
   contents: read
 # A newer push to the same PR cancels the older run, so runners are not spent on
-# commits nobody will merge (Daniel, 22. 11. 2026: speed up). A push to a base
-# branch is never cancelled: every merged head needs its own finished ci-ok, or
-# fast merges leave the base head red with cancelled jobs.
+# commits nobody will merge (Daniel, 22. 11. 2026: speed up). The same holds for
+# a push to the migration base (ZEL-CI-RED, Daniel 24. 11. 2026: less waiting
+# in the queue): only the newest base commit is checked, so two quick merges do
+# not run two full sets of jobs against the org's limit of 20 at once. A push
+# to main is never cancelled. The schedule and a run by hand have groups of
+# their own, so they never cancel a push and a push never cancels them.
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-${{ github.event.pull_request.number || format('{0}-{1}', github.event_name, github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/migracija/kopija-ductus-front') }}
 jobs:
   # Which jobs a change needs (Daniel, 22. 11. 2026: skip what a change cannot
   # touch). A push to the base, a change to a root file (package.json, the
@@ -20,14 +26,24 @@ jobs:
   # file included), or a diff that cannot be read, runs EVERY job. Otherwise a
   # job runs when a path it reads changed. src/ feeds ui (pnpm -r runs the
   # tests of every workspace package) and app (it imports src/), so a change
-  # there runs both.
+  # there runs both. `app-build` follows `app`; the client checks run in the
+  # ui part `checks` and every path of `client` also turns `ui` on.
+  # `baselines` (report only, outside ci-ok) is on for a run by hand, the
+  # schedule (main only) and a pull request that changes catalog/,
+  # packages/ui/ (the components the catalogue shows) or a root or .github/
+  # file; never on a push (ZEL-CI-RED).
   #
   # These rules only fit checks that read the paths they list. A check that
   # reads the whole repository (the index, every tracked file, the lockfiles)
   # can be broken by a change in any path, so it must not hide behind these
-  # rules: give it its own job with no `if`, listed in ALWAYS_ON in
-  # test/unit/ci-ok.test.js, like `line-endings`, or make every path it reads
-  # turn its job on here (ZEL-W20a, review of #435).
+  # rules: run it as a step of this job, which has no `if` and needs nothing,
+  # like the CRLF check below, or make every path it reads turn its job on
+  # here (ZEL-W20a, review of #435).
+  #
+  # The CRLF check of the index (DAN-952) is a step of this job since
+  # ZEL-CI-RED: one runner less per run, a few seconds more here. It runs on
+  # EVERY event; a CRLF file fails `changes`, so every other job is skipped
+  # and ci-ok fails ("job changes result: failure").
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -38,6 +54,8 @@ jobs:
       client: ${{ steps.paths.outputs.client }}
       ui: ${{ steps.paths.outputs.ui }}
       app: ${{ steps.paths.outputs.app }}
+      app-build: ${{ steps.paths.outputs.app-build }}
+      baselines: ${{ steps.paths.outputs.baselines }}
     steps:
       # Depth 2 is enough: on a pull request HEAD is the merge commit and the
       # base sha is its first parent. If the base moved after the merge commit
@@ -54,7 +72,8 @@ jobs:
         run: |
           # changes:begin
           set -uo pipefail
-          all() { for j in test client ui app; do echo "$j=true" >> "$GITHUB_OUTPUT"; done; echo "changes: running every job ($1)"; exit 0; }
+          emit() { printf 'test=%s\nclient=%s\nui=%s\napp=%s\napp-build=%s\nbaselines=%s\n' "$1" "$2" "$3" "$4" "$4" "$5" | tee -a "$GITHUB_OUTPUT"; }
+          all() { b=true; [ "$EVENT" != "push" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b"; exit 0; }
           [ "$EVENT" = "pull_request" ] || all "not a pull request"
           [ -n "$BASE" ] || all "no base sha"
           files="$(git diff --name-only "$BASE" HEAD)" || all "diff failed"
@@ -68,23 +87,15 @@ jobs:
           c="$(hit '^(src/client/|packages/editor-core/)')"
           u="$(hit '^(packages/|catalog/|src/|scripts/forbidden-terms/|locales/)')"
           a="$(hit '^(packages/|src/|locales/)')"
-          printf 'test=%s\nclient=%s\nui=%s\napp=%s\n' "$t" "$c" "$u" "$a" | tee -a "$GITHUB_OUTPUT"
+          b="$(hit '^(catalog/|packages/ui/)')"
+          emit "$t" "$c" "$u" "$a" "$b"
           # changes:end
-  # No CRLF in the index (DAN-952), on EVERY pull request (ZEL-W20a): a CRLF
-  # file can come in any path, also docs/, packages/, catalog/ or a .md file
-  # that `changes` sends to no job. So this job has no `if` and does not need
-  # `changes`; ci-ok needs it, and a skipped or failed run fails ci-ok. Node's
-  # own test runner and git only, no install.
-  line-endings:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with: { persist-credentials: false }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      # No CRLF in the index (DAN-952), on every event (ZEL-W20a): a CRLF file
+      # can come in any path, also docs/, packages/, catalog/ or a .md file
+      # that the step above sends to no job. Node's own test runner and git
+      # only, no install.
       - name: No tracked text file has CRLF in the index
         shell: bash
         run: |
@@ -133,45 +144,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with: { name: playwright-report, path: test-results/ }
-  client:
-    needs: changes
-    if: ${{ needs.changes.outputs.client == 'true' }}
-    # src/client (DAN-752, web 2.c3): the client generated from @ductura/contracts.
-    # Its own package and lockfile, so only this job reads GitHub Packages; the
-    # job token, read only, is passed to the install step only.
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-    defaults:
-      run:
-        working-directory: src/client
-    steps:
-      - uses: actions/checkout@v4
-        with: { persist-credentials: false }
-      - uses: pnpm/action-setup@v4
-        with: { version: 10.33.0 }
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          registry-url: https://npm.pkg.github.com
-          scope: '@ductura'
-      # The evidence modules reach packages/editor-core (drain runner, journal,
-      # replayer) and with it @tiptap/* and dexie: the workspace install, as in
-      # ui and app (WEB-38 2/2, Ductus#2028). No token.
-      - name: Install workspace
-        working-directory: .
-        run: pnpm install --frozen-lockfile
-      - name: Install (GitHub Packages, read only)
-        run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Typecheck
-        run: pnpm run typecheck
-      - name: Tests (contract vectors, schema check, no direct API call, registry)
-        run: pnpm run test
-
   # @ductura/ui and its catalogue (DAN-750, web 2.c1): typecheck, unit tests,
   # visual baselines and axe. Moved from ui.yml so ci-ok can need it (DAN-885).
   # The ui job runs as parts of one matrix job, each on its own runner:
@@ -182,18 +154,29 @@ jobs:
   # (ZEL-CI-WEB): `checks` (typecheck and the coverage check of the parts) and
   # `unit` (the unit tests of every workspace package); only the browser parts
   # (`browser: true`) install a browser.
+  #
+  # The part `checks` also runs the checks of src/client (DAN-752, web 2.c3:
+  # the client generated from @ductura/contracts) when `changes` says `client`
+  # (ZEL-CI-RED): before, they were a job of their own that took a runner for
+  # 35 to 45 s. Every path of `client` also turns `ui` on, so they never run
+  # nowhere; a failure fails `ui` and with it ci-ok. src/client is its own
+  # package and lockfile and only this part reads GitHub Packages: the job
+  # token, read only, is passed to its install step only, and no part keeps
+  # git credentials after checkout.
   ui:
     needs: changes
     if: ${{ needs.changes.outputs.ui == 'true' }}
     name: ui (${{ matrix.part }}${{ matrix.leg && format(' {0}/3', matrix.leg) || '' }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     # The behaviour tests run in three legs: one job of them took 8 of the 9
     # minutes of a PR's ci-ok. Ten "every state" tests of states.spec.ts take
     # about 2.5 minutes each and sit next to each other, so a Playwright shard
     # would get nine of them; the legs split them by width instead (4, 4 and
     # the 360 px pair with every other behaviour test). The coverage check below
-    # proves each behaviour test runs in exactly one leg. On push the baselines
-    # run as three Playwright shards.
+    # proves each behaviour test runs in exactly one leg.
     strategy:
       fail-fast: false
       matrix:
@@ -215,19 +198,41 @@ jobs:
       STATES_2: "shell at (768|390) px: every state of every component"
     steps:
       - uses: actions/checkout@v4
+        with: { persist-credentials: false }
       - uses: pnpm/action-setup@v4
         with: { version: 10.33.0 }
+      # Only the part checks names the GitHub Packages registry of the
+      # @ductura scope, as the client job did; an empty value sets none.
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: ${{ matrix.part == 'checks' && 'https://npm.pkg.github.com' || '' }}
+          scope: ${{ matrix.part == 'checks' && '@ductura' || '' }}
       - run: pnpm install --frozen-lockfile
       # packages/app imports src/client, its own package and lockfile; the
       # tarballs are public GitHub Releases, so no token.
       - name: Install src/client
+        if: matrix.part != 'checks'
         working-directory: src/client
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+      - name: Install src/client (GitHub Packages, read only)
+        if: matrix.part == 'checks'
+        working-directory: src/client
+        run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Typecheck
         if: matrix.part == 'checks'
         run: pnpm -r run typecheck
+      - name: Typecheck of src/client
+        if: matrix.part == 'checks' && needs.changes.outputs.client == 'true'
+        working-directory: src/client
+        run: pnpm run typecheck
+      - name: Tests of src/client (contract vectors, schema check, no direct API call, registry)
+        if: matrix.part == 'checks' && needs.changes.outputs.client == 'true'
+        working-directory: src/client
+        run: pnpm run test
       - name: Unit tests (tokens, provenance, save state, catalogue coverage)
         if: matrix.part == 'unit'
         run: pnpm -r run test
@@ -256,9 +261,12 @@ jobs:
             exit 1
           fi
       - name: Playwright version
-        if: matrix.browser
         id: pw
-        run: echo "version=$(grep -m1 -oP "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
+        if: matrix.browser
+        run: |
+          echo "version=$(grep -m1 -oP "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
+          echo "os=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+          echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
       - name: Browser cache
         if: matrix.browser
         id: pw-cache
@@ -266,12 +274,47 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
+      # The browser's system packages (ZEL-CI-RED): apt sometimes fetches the
+      # same ~22 MB at 80 kB/s and the step takes 4 to 5 minutes. The .deb
+      # files come from a cache (key: runner image and Playwright version), so
+      # apt only installs them. apt-get update still runs and a package that
+      # changed is still fetched, so the installed packages are the same.
+      - name: System package cache
+        if: matrix.browser
+        id: apt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/apt-debs
+          key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
+          restore-keys: apt-${{ runner.arch }}-${{ steps.pw.outputs.os }}-
+      - name: System packages from the cache
+        if: matrix.browser
+        run: |
+          set -euo pipefail
+          echo 'APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/99ductura-keep-debs > /dev/null
+          mkdir -p ~/.cache/apt-debs
+          n=$(find ~/.cache/apt-debs -maxdepth 1 -name '*.deb' | wc -l)
+          if [ "$n" -gt 0 ]; then sudo cp ~/.cache/apt-debs/*.deb /var/cache/apt/archives/; fi
+          echo "apt cache: $n package file(s)"
       - name: Browser
         if: matrix.browser && steps.pw-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @ductura/catalog exec playwright install --with-deps chromium
       - name: Browser system dependencies (browser cached)
         if: matrix.browser && steps.pw-cache.outputs.cache-hit == 'true'
         run: pnpm --filter @ductura/catalog exec playwright install-deps chromium
+      - name: Keep the fetched system packages
+        id: apt-keep
+        if: matrix.browser
+        run: |
+          set -euo pipefail
+          find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/apt-debs {} +
+          echo "count=$(find ~/.cache/apt-debs -maxdepth 1 -name '*.deb' | wc -l)" >> "$GITHUB_OUTPUT"
+      - name: Save the system package cache
+        if: matrix.browser && steps.apt-cache.outputs.cache-hit != 'true' && steps.apt-keep.outputs.count != '0'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/apt-debs
+          key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
       - name: Behaviour tests of the catalogue
         if: matrix.part == 'behaviour'
         run: |
@@ -296,14 +339,18 @@ jobs:
           path: catalog/test-results/
 
   # Daniel (22. 11. 2026): while the features are still being built, the pixel
-  # baselines of the catalogue only report and do not block ci-ok, and run only
-  # on pushes to the base, not on PRs; behaviour and axe still block. They
-  # become required again with VIZ-0. A job of its own outside ci-ok's needs
-  # (ZEL-CI-WEB), so ci-ok does not wait for a check that cannot fail it; it
-  # still runs on every push, as three Playwright shards. Listed in REPORT_ONLY
-  # in test/unit/ci-ok.test.js.
+  # baselines of the catalogue only report and do not block ci-ok; behaviour
+  # and axe still block. They become required again with VIZ-0. A job of its
+  # own outside ci-ok's needs (ZEL-CI-WEB), so ci-ok does not wait for a check
+  # that cannot fail it; three Playwright shards. Listed in REPORT_ONLY in
+  # test/unit/ci-ok.test.js. Since ZEL-CI-RED it no longer runs on every push
+  # (three runners each time) but when `changes` says `baselines`: on every
+  # pull request that changes catalog/ or packages/ui/ (or a root or .github/
+  # file), so each change that can move a pixel of the catalogue is reported
+  # before it reaches the base; also by hand and on the schedule of main.
   ui-baselines:
-    if: ${{ github.event_name == 'push' }}
+    needs: changes
+    if: ${{ needs.changes.outputs.baselines == 'true' }}
     name: ui-baselines (${{ matrix.shard }})
     runs-on: ubuntu-latest
     strategy:
@@ -324,19 +371,54 @@ jobs:
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
       - name: Playwright version
         id: pw
-        run: echo "version=$(grep -m1 -oP "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=$(grep -m1 -oP "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
+          echo "os=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+          echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
       - name: Browser cache
         id: pw-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
+      # The browser's system packages (ZEL-CI-RED): apt sometimes fetches the
+      # same ~22 MB at 80 kB/s and the step takes 4 to 5 minutes. The .deb
+      # files come from a cache (key: runner image and Playwright version), so
+      # apt only installs them. apt-get update still runs and a package that
+      # changed is still fetched, so the installed packages are the same.
+      - name: System package cache
+        id: apt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/apt-debs
+          key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
+          restore-keys: apt-${{ runner.arch }}-${{ steps.pw.outputs.os }}-
+      - name: System packages from the cache
+        run: |
+          set -euo pipefail
+          echo 'APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/99ductura-keep-debs > /dev/null
+          mkdir -p ~/.cache/apt-debs
+          n=$(find ~/.cache/apt-debs -maxdepth 1 -name '*.deb' | wc -l)
+          if [ "$n" -gt 0 ]; then sudo cp ~/.cache/apt-debs/*.deb /var/cache/apt/archives/; fi
+          echo "apt cache: $n package file(s)"
       - name: Browser
         if: steps.pw-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @ductura/catalog exec playwright install --with-deps chromium
       - name: Browser system dependencies (browser cached)
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: pnpm --filter @ductura/catalog exec playwright install-deps chromium
+      - name: Keep the fetched system packages
+        id: apt-keep
+        run: |
+          set -euo pipefail
+          find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/apt-debs {} +
+          echo "count=$(find ~/.cache/apt-debs -maxdepth 1 -name '*.deb' | wc -l)" >> "$GITHUB_OUTPUT"
+      - name: Save the system package cache
+        if: steps.apt-cache.outputs.cache-hit != 'true' && steps.apt-keep.outputs.count != '0'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/apt-debs
+          key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
       - name: Visual baselines of the catalogue (report only)
         id: baselines
         continue-on-error: true
@@ -347,6 +429,41 @@ jobs:
           name: catalog-baselines-${{ strategy.job-index }}
           path: catalog/test-results/
 
+  # The one build of the host for the e2e (ZEL-CI-RED): before, each of the
+  # three app shards built the same app (about 40 s each). `next build` runs
+  # once here and the shards download .next (without its cache). The rewrites
+  # read the server URL at build time, so it is the same fake one as in
+  # packages/app/playwright.config.ts. It follows `app` (`changes` gives
+  # `app-build` the same value), and ci-ok needs it.
+  app-build:
+    needs: changes
+    if: ${{ needs.changes.outputs.app-build == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.33.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Install src/client
+        working-directory: src/client
+        run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
+      - name: Build
+        env:
+          INSTITUTION_SERVER_URL: http://127.0.0.1:9
+        run: pnpm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: |
+            packages/app/.next
+            !packages/app/.next/cache
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
   # The institution front's host (#2028 c.6993786629 §1, §3.3): packages/app
   # built and served by dev-server.mjs under /app/web/ and /app/chrome/, over a
   # fake institution server (page.route), with axe.
@@ -354,7 +471,7 @@ jobs:
   # The browser tests run as three shards of one job (ZEL-W23). ci-ok needs the
   # job `app`, whose result is success only when every shard succeeded.
   app:
-    needs: changes
+    needs: [changes, app-build]
     if: ${{ needs.changes.outputs.app == 'true' }}
     name: app (${{ matrix.shard }})
     runs-on: ubuntu-latest
@@ -364,6 +481,7 @@ jobs:
         shard: ["1/3", "2/3", "3/3"]
     steps:
       - uses: actions/checkout@v4
+        with: { persist-credentials: false }
       - uses: pnpm/action-setup@v4
         with: { version: 10.33.0 }
       - uses: actions/setup-node@v4
@@ -372,28 +490,63 @@ jobs:
       - name: Install src/client
         working-directory: src/client
         run: pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
-      # The one build of the e2e (ZEL-CI-WEB): in CI the Playwright webServer
-      # only starts it (packages/app/playwright.config.ts). The rewrites read
-      # the server URL at build time, so it is the same fake one as there.
-      - name: Build
-        env:
-          INSTITUTION_SERVER_URL: http://127.0.0.1:9
-        run: pnpm run build
+      # The build of the job app-build: in CI the Playwright webServer only
+      # starts it (packages/app/playwright.config.ts).
+      - name: The built app
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build
+          path: packages/app/.next
       - name: Playwright version
         id: pw
-        run: echo "version=$(grep -m1 -oP "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=$(grep -m1 -oP "^  '@playwright/test@\K[0-9.]+(?=':)" pnpm-lock.yaml)" >> "$GITHUB_OUTPUT"
+          echo "os=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+          echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
       - name: Browser cache
         id: pw-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
+      # The browser's system packages (ZEL-CI-RED): apt sometimes fetches the
+      # same ~22 MB at 80 kB/s and the step takes 4 to 5 minutes. The .deb
+      # files come from a cache (key: runner image and Playwright version), so
+      # apt only installs them. apt-get update still runs and a package that
+      # changed is still fetched, so the installed packages are the same.
+      - name: System package cache
+        id: apt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/apt-debs
+          key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
+          restore-keys: apt-${{ runner.arch }}-${{ steps.pw.outputs.os }}-
+      - name: System packages from the cache
+        run: |
+          set -euo pipefail
+          echo 'APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/99ductura-keep-debs > /dev/null
+          mkdir -p ~/.cache/apt-debs
+          n=$(find ~/.cache/apt-debs -maxdepth 1 -name '*.deb' | wc -l)
+          if [ "$n" -gt 0 ]; then sudo cp ~/.cache/apt-debs/*.deb /var/cache/apt/archives/; fi
+          echo "apt cache: $n package file(s)"
       - name: Browser
         if: steps.pw-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @ductura/app exec playwright install --with-deps chromium
       - name: Browser system dependencies (browser cached)
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: pnpm --filter @ductura/app exec playwright install-deps chromium
+      - name: Keep the fetched system packages
+        id: apt-keep
+        run: |
+          set -euo pipefail
+          find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/.cache/apt-debs {} +
+          echo "count=$(find ~/.cache/apt-debs -maxdepth 1 -name '*.deb' | wc -l)" >> "$GITHUB_OUTPUT"
+      - name: Save the system package cache
+        if: steps.apt-cache.outputs.cache-hit != 'true' && steps.apt-keep.outputs.count != '0'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/apt-debs
+          key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
       - name: Session, routes and axe in the browser (shard ${{ matrix.shard }})
         run: pnpm --filter @ductura/app run test:e2e --shard=${{ matrix.shard }}
       - uses: actions/upload-artifact@v4
@@ -406,7 +559,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: ${{ always() }}
-    needs: [changes, line-endings, test, client, ui, app]
+    needs: [changes, test, ui, app-build, app]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

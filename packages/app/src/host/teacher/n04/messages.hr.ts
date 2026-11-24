@@ -32,5 +32,6 @@ export const courseStudentsMessages = {
   unknownState: "Stanje rada nije poznato",
   awaitsRevision: (deadline: string): string => `Čeka doradu, rok za doradu ${deadline}.`,
   awaitsRevisionNoDeadline: "Čeka doradu.",
+  extendedTo: (due: string): string => `Rok produljen do ${due}.`,
   at: "u",
 } as const;

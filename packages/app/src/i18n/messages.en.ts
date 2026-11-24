@@ -58,6 +58,7 @@ export const pageLabelsEn = {
   versionComparison: "Version comparison",
   processSummary: "Process summary",
   interviewPreparation: "Interview preparation",
+  workReview: "Review of the work",
   studentDataExport: "Student data export",
   studentDataDownload: "Export of my data",
   merlinExport: "Export for Merlin",

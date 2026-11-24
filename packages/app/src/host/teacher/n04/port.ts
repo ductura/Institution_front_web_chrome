@@ -9,6 +9,8 @@
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { readTeacherCourses, type TeacherCoursesCall } from "../../../../../../src/components/teacher/teacher-courses-read";
+import { deadlineOf, type Extension, type SubmissionDetail } from "../assignment-facts/model";
+import { details, extensions } from "../assignment-facts/read";
 import { rosterPath, workStatusOf, type CourseStudentsPort, type RosterRead, type RosterWork } from "./model";
 
 export type RosterCall = ReturnType<typeof createApi>;
@@ -20,6 +22,28 @@ async function roster(call: RosterCall, courseId: string) {
   } catch {
     return null;
   }
+}
+
+type AssignmentFacts = {
+  readonly dueAt: string;
+  readonly details: ReadonlyMap<string, SubmissionDetail> | null;
+  readonly extensions: readonly Extension[] | null;
+};
+
+/** NZ-10: the fields of one work the reads give; a part that was not read is left out, never guessed. */
+export function factsOf(facts: AssignmentFacts | undefined, studentId: string): Partial<RosterWork> {
+  if (facts === undefined) return {};
+  const detail = facts.details?.get(studentId);
+  const deadline = facts.extensions === null ? null : deadlineOf(studentId, facts.dueAt, facts.extensions);
+  return {
+    ...(detail === undefined ? {} : {
+      submittedAt: detail.requestedMinute,
+      ...(detail.afterDeadline === null ? {} : { afterDeadline: detail.afterDeadline }),
+      version: detail.revision,
+      record: detail.record,
+    }),
+    ...(deadline === null ? {} : { extendedTo: deadline.extended ? deadline.dueAt : null }),
+  };
 }
 
 export function courseStudentsPort(client: () => RosterCall = () => createApi()): CourseStudentsPort {
@@ -34,6 +58,12 @@ export function courseStudentsPort(client: () => RosterCall = () => createApi())
       if (!answer.ok) return answer.status === 401 ? { kind: "signedOut" } : { kind: "unavailable" };
       const course = courses.kind === "ready" ? courses.courses.find((c) => c.id === courseId) : undefined;
       const assignments = new Map((course?.assignments ?? []).map((a) => [a.id, a]));
+      // NZ-10: per assignment the submission facts (time, version, record) and the extensions; a read that
+      // fails leaves its fields out, as before.
+      const facts = new Map(await Promise.all([...assignments.values()].map(async (a) => {
+        const [d, e] = await Promise.all([details(call, a.id).catch(() => null), extensions(call, a.id).catch(() => null)]);
+        return [a.id, { dueAt: a.dueAt, details: d, extensions: e }] as const;
+      })));
       return {
         kind: "ready",
         data: {
@@ -48,6 +78,7 @@ export function courseStudentsPort(client: () => RosterCall = () => createApi())
               workType: assignments.get(w.assignmentId)?.workType ?? null,
               status: workStatusOf(w.workState),
               documentId: w.documentId,
+              ...factsOf(facts.get(w.assignmentId), s.studentId),
             })),
           })),
         },

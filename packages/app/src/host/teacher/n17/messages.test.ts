@@ -9,6 +9,6 @@ describe("N-17 messages", () => {
     expect(m.emptyBody).toBe("Zbirni pregled pojavljuje se kad objavite prvi zadatak.");
     expect(m.emptyAction).toBe("Dodaj zadatak");
     expect(m.cardTitle("Kolegij A", "Esej")).toBe("Kolegij A: „Esej”");
-    expect(Object.values(m.columns)).toEqual(["Student", "Stanje", "Vrijeme predaje", "Nakon roka", "Stanje zapisa", "Dorada"]);
+    expect(Object.values(m.columns)).toEqual(["Student", "Stanje", "Predaja", "Nakon roka", "Rok", "Stanje zapisa", "Dorada"]);
   });
 });

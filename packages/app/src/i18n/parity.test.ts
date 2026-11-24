@@ -11,6 +11,7 @@ import { messagesHr as workHr } from "../../../../src/lib/i18n/messages.hr.ts";
 import { consultationMessages } from "../../../../src/components/teacher/consultation-records/messages.hr.ts";
 
 import { appMessagesEn, appMessagesHr, cataloguesFor } from "./catalogue";
+import { reviewMessages } from "../host/teacher/work/review/messages.hr";
 
 const none = { missing: [], extra: [], placeholders: [] };
 
@@ -53,6 +54,7 @@ describe("the app's own texts", () => {
 
   it("name a page exactly as its screen does in Croatian", () => {
     expect(appMessagesHr.pages.consultations).toBe(consultationMessages.title);
+    expect(appMessagesHr.pages.workReview).toBe(reviewMessages.title);
   });
 
   it("give one language's tables together", () => {

@@ -55,6 +55,7 @@ export const pageLabelsHr = {
   versionComparison: "Usporedba verzija",
   processSummary: "Sažetak procesa",
   interviewPreparation: "Priprema za razgovor",
+  workReview: "Pregled rada",
   studentDataExport: "Izvoz podataka studenta",
   studentDataDownload: "Izvoz mojih podataka",
   merlinExport: "Izvoz za Merlin",

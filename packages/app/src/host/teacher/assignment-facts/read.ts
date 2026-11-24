@@ -16,7 +16,8 @@ export type CourseFactsRead =
 type Assignment = { readonly id: string; readonly dueAt: string };
 const none = { query: undefined, body: undefined } as const;
 
-async function details(call: FactsCall, assignmentId: string): Promise<ReadonlyMap<string, SubmissionDetail> | null> {
+/** The submission facts of one assignment by student (also N-04, NZ-10); null when neither read answers. */
+export async function details(call: FactsCall, assignmentId: string): Promise<ReadonlyMap<string, SubmissionDetail> | null> {
   const params = { assignmentId };
   const [subs, overview] = await Promise.all([
     call("teacher.submissions.get", { params, ...none }).catch(() => null),
@@ -42,7 +43,8 @@ async function details(call: FactsCall, assignmentId: string): Promise<ReadonlyM
   return map;
 }
 
-async function extensions(call: FactsCall, assignmentId: string): Promise<readonly Extension[] | null> {
+/** The extensions of one assignment (also N-04, NZ-10); null when the read fails. */
+export async function extensions(call: FactsCall, assignmentId: string): Promise<readonly Extension[] | null> {
   const read = await readDeadlineExtensions(call, assignmentId);
   return read.kind === "ready" ? read.extensions : null;
 }

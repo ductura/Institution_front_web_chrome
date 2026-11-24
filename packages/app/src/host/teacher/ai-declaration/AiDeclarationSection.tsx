@@ -70,7 +70,7 @@ export default function AiDeclarationSection({ port: given, submissionId }: {
           <>
             <p className="meta">{text.dialogNote}</p>
             <EntryList entries={open.turns.filter((t) => t.seq <= open.throughSeq).map((turn) => ({
-              id: String(turn.seq), who: turn.author === "student" ? text.student : open.assistantName, text: turn.text,
+              id: String(turn.seq), who: turn.author === "student" ? text.student : text.assistant, text: turn.text,
             }))} />
           </>
         )}
