@@ -1,6 +1,6 @@
 // Rules of the statement view (WEB-1503), kept apart from React so they are tested directly.
 import {
-  checkPrintout, type HumanHelp, type HumanHelpKind, type StatementFile, type StatementPort, type StatementRead,
+  checkPrintout, type AnswerWrite, type HumanHelp, type HumanHelpKind, type StatementFile, type StatementPort, type StatementRead,
   type StatementWrite, type AttachmentLimits,
 } from "../../../../../../src/client/statement.ts";
 import { megabytes, statementMessages as text } from "./messages.hr";
@@ -66,4 +66,46 @@ export function writeNotice(write: StatementWrite): { readonly tone: "status" | 
     case "rejected": case "readOnly": return { tone: "alert", message: text.rejected };
     default: return { tone: "alert", message: text.failed };
   }
+}
+
+// ---------------------------------------------------------------------------
+// NF-3 PR-20: the answer to the teacher's question.
+
+/** OD-4: the answer's limit in declaration-v1 (Unicode code points); the server checks it again. */
+export const ANSWER_MAX_CHARS = 2000;
+
+export type AnswerCheck =
+  | { readonly kind: "ok"; readonly text: string }
+  /** Nothing to keep: the answer is taken back (it is not obligatory). */
+  | { readonly kind: "empty" }
+  | { readonly kind: "tooLong" }
+  | { readonly kind: "badCharacter" };
+
+/** NFC, line feeds only, no leading or trailing space, within the limit, no other control character. */
+export function checkAnswer(raw: string): AnswerCheck {
+  const text = raw.replace(/\r\n?/g, "\n").normalize("NFC").trim();
+  if (text === "") return { kind: "empty" };
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/.test(text)) return { kind: "badCharacter" };
+  if ([...text].length > ANSWER_MAX_CHARS) return { kind: "tooLong" };
+  return { kind: "ok", text };
+}
+
+/** The field after a read: an unsaved edit is kept; otherwise the held answer to the question asked now. */
+export function answerAfterRead(draft: string | null, read: StatementRead): string | null {
+  if (draft !== null || read.kind !== "ready" || read.question === null) return draft;
+  return read.answer !== null && read.answer.questionId === read.question.questionId ? read.answer.text : "";
+}
+
+/**
+ * Sends the answer (or takes it back) only while the view is open for writing and a question is
+ * asked; a write the server cannot take is refused before the port is called.
+ */
+export async function saveAnswer(port: StatementPort, id: string, read: StatementRead, raw: string): Promise<StatementWrite | { kind: "invalid"; check: AnswerCheck }> {
+  if (read.kind !== "ready" || isReadOnly(read) || read.question === null) return { kind: "readOnly" };
+  const check = checkAnswer(raw);
+  if (check.kind === "tooLong" || check.kind === "badCharacter") return { kind: "invalid", check };
+  const answer: AnswerWrite = check.kind === "ok" ? { questionId: read.question.questionId, text: check.text } : null;
+  try { return await port.saveAnswer(id, answer); }
+  catch { return { kind: "unavailable" }; }
 }
