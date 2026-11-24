@@ -5,7 +5,7 @@ const css = readFileSync(new URL("../styles/reading-font.css", import.meta.url),
 const code = css.replace(/\/\*[\s\S]*?\*\//g, "");
 const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
 const layout = readFileSync(new URL("../../../app/app/layout.tsx", import.meta.url), "utf8");
-const selectors = [...code.matchAll(/([^{}]+)\{/g)].map((m) => m[1].trim().replace(/\([^)]*\)/g, "(…)")).filter((s) => !s.startsWith("@"));
+const selectors = [...code.matchAll(/([^{}]+)\{/g)].map((m) => (m[1] ?? "").trim().replace(/\([^)]*\)/g, "(…)")).filter((s) => !s.startsWith("@"));
 
 describe("reading font for dyslexia", () => {
   it("changes nothing without the attribute: every rule is scoped to data-reading-font=dyslexia", () => {
@@ -27,7 +27,8 @@ describe("reading font for dyslexia", () => {
     expect(code).not.toMatch(/https?:|\/\//);
     expect(code).not.toContain("@import");
     for (const m of code.matchAll(/url\(\s*["']?([^"')]+)/g)) {
-      expect(m[1].startsWith("./dyslexia/"), m[1]).toBe(true);
+      const target = m[1] ?? "";
+      expect(target.startsWith("./dyslexia/"), target).toBe(true);
     }
   });
 
