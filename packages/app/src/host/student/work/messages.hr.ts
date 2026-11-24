@@ -15,7 +15,7 @@ export const workText = {
   placeholder: "Počnite pisati…",
   /** E-7 `ucitavanje`, `greska`, `bez-mreze` and `predano`: the canvas notes and the bar's words. */
   loading: "Učitavanje…",
-  errorBanner: "Rad trenutačno nije moguće otvoriti. Tekst spremljen na ovom uređaju ostaje netaknut.",
+  // ED-01b: the alert of `greska` is the shared sentence of the cause (src/components/editor/open-failure.ts).
   errorStatus: "Greška pri otvaranju",
   offlineLead: "Bez mreže.",
   offlineBody: "Tekst se i dalje sprema na ovom uređaju i čeka slanje na poslužitelj kad se veza vrati.",

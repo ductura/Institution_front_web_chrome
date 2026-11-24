@@ -22,7 +22,8 @@ export type ScopeRead =
   | { readonly kind: "signedOut" }
   /** 200, but no valid `journalScope` or `sessionTag`: the editor stays closed. */
   | { readonly kind: "noScope" }
-  | { readonly kind: "unavailable" };
+  /** `offline`: the read got no answer at all (ED-01b). */
+  | { readonly kind: "unavailable"; readonly offline?: true };
 
 const SCOPE = /^[0-9a-f]{64}$/;
 /** Opaque, but one token: hex, base64, base64url or a UUID fit; spaces, quotes, ";" and "," never. */
@@ -55,13 +56,19 @@ export type ScopeReadOptions = {
 export async function readJournalScope(options: ScopeReadOptions = {}): Promise<ScopeRead> {
   const baseUrl = options.baseUrl ?? globalThis.location.origin;
   const transport = options.transport ?? browserTransport;
+  let res: Response;
   try {
-    const res = await transport(new URL(SESSION_PATH, baseUrl), {
+    res = await transport(new URL(SESSION_PATH, baseUrl), {
       method: "GET",
       credentials: "include",
       redirect: "manual",
       headers: { accept: "application/json" },
     });
+  } catch {
+    // No answer at all: the network, not the server.
+    return { kind: "unavailable", offline: true };
+  }
+  try {
     if (res.status === 401) return { kind: "signedOut" };
     if (res.status !== 200 || !res.headers.get("content-type")?.startsWith("application/json")) return { kind: "unavailable" };
     const body: unknown = await res.json();

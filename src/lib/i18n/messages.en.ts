@@ -1004,6 +1004,16 @@ const en = {
     openNoticeLink: "Open the assignment notice",
     openReload: "This version of the page can no longer open the work. Reload it.",
     openReloadButton: "Reload",
+    openFailure: {
+      offline: "There is no network connection, so the work cannot be opened. If you have already written on this device, that text stays untouched.",
+      signedOut: "Your sign-in is no longer valid. Sign in again to open the work.",
+      missing: "This work does not exist or this account has no access to it.",
+      server: "The work cannot be opened right now. If you have already written on this device, that text stays untouched.",
+      reload: "This version of the page can no longer open the work. Reload it.",
+      closed: "The assignment notice has changed, or the assignment is not accepting work right now.",
+    },
+    openSignIn: "Sign in",
+    openBackToTasks: "Back to assignments",
     lateNote: "The assignment deadline has passed. You can keep writing, and the submission will be marked as submitted after the deadline.",
     // #711 F1b (contract §4): the earlier draft of this device, offered only to read and copy.
     earlierDraftSummary: "This device keeps an earlier text of yours that is not in this work.",

@@ -38,14 +38,16 @@ describe("openReadOf", () => {
     expect(openReadOf({ status: "opened", work: work(DOC_A) }, SCOPE, SESSION)).not.toHaveProperty("schemaVersion");
   });
 
+  // ED-01b: each answer names its own cause, so the sheet can offer its own way out.
   it.each([
-    ["unauthenticated", "signedOut"],
-    ["not_found", "closed"],
-    ["not_accepting", "closed"],
-    ["upgrade_required", "reload"],
-    ["unavailable", "unavailable"],
-  ] as const)("%s mounts no editor (%s)", (status, kind) => {
-    expect(openReadOf({ status } as OpenOutcome, SCOPE, SESSION)).toEqual({ kind });
+    [{ status: "unauthenticated" }, "signedOut"],
+    [{ status: "not_found" }, "missing"],
+    [{ status: "not_accepting" }, "closed"],
+    [{ status: "upgrade_required" }, "reload"],
+    [{ status: "unavailable" }, "server"],
+    [{ status: "unavailable", offline: true }, "offline"],
+  ] as const)("%j mounts no editor (%s)", (outcome, failure) => {
+    expect(openReadOf(outcome as OpenOutcome, SCOPE, SESSION)).toEqual({ kind: "failed", failure });
   });
 });
 
@@ -57,24 +59,25 @@ describe("readWork (fail closed on the scope)", () => {
   });
 
   it.each([
-    [{ kind: "noScope" }, "unavailable"],
-    [{ kind: "unavailable" }, "unavailable"],
+    [{ kind: "noScope" }, "signedOut"],
+    [{ kind: "unavailable" }, "server"],
+    [{ kind: "unavailable", offline: true }, "offline"],
     [{ kind: "signedOut" }, "signedOut"],
-  ] as const)("%j opens nothing, not even the evidence session (%s)", async (scope, kind) => {
+  ] as const)("%j opens nothing, not even the evidence session (%s)", async (scope, failure) => {
     const r = readers(scope);
-    expect(await readWork("zadatak-a", r)).toEqual({ kind });
+    expect(await readWork("zadatak-a", r)).toEqual({ kind: "failed", failure });
     expect(r.open).not.toHaveBeenCalled();
   });
 
   it("a scope read that throws opens nothing", async () => {
     const r = { ...readers({ kind: "scope", scope: SCOPE, session: SESSION }), readScope: vi.fn(async (): Promise<ScopeRead> => { throw new Error("izmišljeni kvar"); }) };
-    expect(await readWork("zadatak-a", r)).toEqual({ kind: "unavailable" });
+    expect(await readWork("zadatak-a", r)).toEqual({ kind: "failed", failure: "server" });
     expect(r.open).not.toHaveBeenCalled();
   });
 
-  it("an open that throws is unavailable", async () => {
+  it("an open that throws is a server fault", async () => {
     const r = { ...readers({ kind: "scope", scope: SCOPE, session: SESSION }), open: vi.fn(async (): Promise<OpenOutcome> => { throw new Error("izmišljeni kvar"); }) };
-    expect(await readWork("zadatak-a", r)).toEqual({ kind: "unavailable" });
+    expect(await readWork("zadatak-a", r)).toEqual({ kind: "failed", failure: "server" });
   });
 });
 

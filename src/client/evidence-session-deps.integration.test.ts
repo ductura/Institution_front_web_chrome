@@ -187,7 +187,8 @@ describe("WEB-38: F-154 through the drain", () => {
     const { pending, meta } = await journal.readEvidence(DOC);
     expect(pending).toHaveLength(1);
     expect(meta?.state).not.toBe("SYNCED");
-    expect(await deps.open()).toEqual({ status: "unavailable" });
+    // Nothing left the tab, so the open reads "unavailable" (with no answer at all, ED-01b); the session reads only the status.
+    expect(await deps.open()).toMatchObject({ status: "unavailable" });
     expect(sent.open).toBe(1);
   });
 });

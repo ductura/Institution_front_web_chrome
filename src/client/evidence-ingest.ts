@@ -77,8 +77,8 @@ export type OpenOutcome =
   | { status: "unauthenticated" | "not_found" | "not_accepting" }
   /** The app is older than the server's protocol: reload it. */
   | { status: "upgrade_required" }
-  /** No answer, or one this client cannot vouch for. */
-  | { status: "unavailable" };
+  /** No answer, or one this client cannot vouch for; `offline` when no answer came at all (ED-01b). */
+  | { status: "unavailable"; offline?: true };
 
 export type EvidenceCommitInput = {
   documentId: string;
@@ -277,6 +277,7 @@ export async function openWork(
     "evidence.open.post", options.start === true ? { assignmentId, start: true } : { assignmentId },
     fetchImpl, DUCTUS_PROTOCOL_VERSION,
   );
+  if (answer === "lost" || (typeof answer !== "string" && answer.http === 0)) return { status: "unavailable", offline: true };
   if (typeof answer === "string") return { status: "unavailable" };
   const status = isObject(answer.body) ? answer.body.status : undefined;
   if (answer.http === 200) {

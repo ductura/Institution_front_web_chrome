@@ -89,6 +89,6 @@ describe("readJournalScope", () => {
     expect(await readJournalScope({ baseUrl: BASE, transport: me({}, { status: 403 }) })).toEqual({ kind: "unavailable" });
     expect(await readJournalScope({ baseUrl: BASE, transport: me({ journalScope: SCOPE }, { type: "text/html" }) })).toEqual({ kind: "unavailable" });
     const broken = vi.fn(async () => { throw new TypeError("offline"); }) as unknown as typeof fetch;
-    expect(await readJournalScope({ baseUrl: BASE, transport: broken })).toEqual({ kind: "unavailable" });
+    expect(await readJournalScope({ baseUrl: BASE, transport: broken })).toEqual({ kind: "unavailable", offline: true });
   });
 });
