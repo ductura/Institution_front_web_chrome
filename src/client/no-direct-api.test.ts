@@ -95,7 +95,7 @@ export function isPackagesDir(dir: string, separator: string = sep): boolean {
 }
 
 const BARE_IMPORTS = new Set(["react", "react-dom/client", "react/jsx-runtime", "@ductura/ui", "@ductura/ui/fonts.css",
-  "@ductura/ui/tokens.css", "@ductura/ui/assistant-thread", "@ductura/ui/save-status",
+  "@ductura/ui/tokens.css", "@ductura/ui/reading-font.css", "@ductura/ui/assistant-thread", "@ductura/ui/save-status",
   "@ductura/contracts/openapi/v1.json"]);
 /** Bare imports that are not network libraries: the Next, editor and storage stack of the app trees (WEB-01), and the "@/" alias. */
 const BARE_PREFIXES = ["@/", "next/", "@tiptap/"];
