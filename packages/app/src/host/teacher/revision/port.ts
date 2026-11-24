@@ -4,7 +4,7 @@
 import { createApi, type ApiOptions, type Input } from "@/client/api";
 import { returnStatus } from "@/client/return-for-revision";
 import { listRevisionRequests, type RevisionListOutcome, type RevisionRequest } from "@/client/revision-requests";
-import { acceptBody, reopenBody, type RevisionBody } from "./model";
+import { acceptBody, reopenBody, withdrawBody, type RevisionBody } from "./model";
 
 export type ActionOutcome = "ok" | "signedOut" | "forbidden" | "conflict" | "invalid" | "unavailable";
 
@@ -13,9 +13,10 @@ export type RevisionPort = {
   create(documentId: string, body: RevisionBody): Promise<ActionOutcome>;
   accept(request: RevisionRequest): Promise<ActionOutcome>;
   reopen(request: RevisionRequest): Promise<ActionOutcome>;
+  withdraw(request: RevisionRequest): Promise<ActionOutcome>;
 };
 
-async function send(action: "accept" | "reopen", body: object | null, options?: ApiOptions): Promise<ActionOutcome> {
+async function send(action: "accept" | "reopen" | "withdraw", body: object | null, options?: ApiOptions): Promise<ActionOutcome> {
   if (body === null) return "invalid";
   try {
     const call = { params: { action }, query: undefined, body } as unknown as Input<"collaboration.revision-requests.post">;
@@ -37,4 +38,5 @@ export const revisionPort: RevisionPort = {
   create: async (documentId, body) => outcomeOf(await returnStatus(documentId, body.instruction, body.dueAt)),
   accept: (request) => send("accept", acceptBody(request)),
   reopen: (request) => send("reopen", reopenBody(request)),
+  withdraw: (request) => send("withdraw", withdrawBody(request)),
 };

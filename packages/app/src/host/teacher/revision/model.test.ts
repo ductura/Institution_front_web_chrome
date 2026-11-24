@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RevisionRequest } from "@/client/revision-requests";
-import { acceptBody, bannerOf, buildRevision, reopenBody } from "./model";
+import { acceptBody, bannerOf, buildRevision, reopenBody, withdrawBody } from "./model";
 import { revisionMessages as t } from "./messages.hr";
 
 const anchor = { nodeId: "n", quote: "q", prefix: "", suffix: "", startHint: 0, endHint: 1 };
@@ -42,5 +42,17 @@ describe("doradaBanner", () => {
     expect(reopenBody(request("responded", answered))).toMatchObject({ expectedSeq: 3, requestedRevision: 9, instruction: "Dopunite izvor." });
     expect(acceptBody(request("open"))).toBeNull();
     expect(reopenBody(request("open"))).toBeNull();
+  });
+});
+
+describe("Povuci zahtjev", () => {
+  it("is offered only while the student has not answered", () => {
+    expect(bannerOf([request("open")])?.canWithdraw).toBe(true);
+    expect(bannerOf([request("reopened")])?.canWithdraw).toBe(true);
+    expect(bannerOf([request("responded", answered)])?.canWithdraw).toBe(false);
+    expect(bannerOf([request("accepted", answered)])?.canWithdraw).toBe(false);
+  });
+  it("withdraw body carries only the request and the counter", () => {
+    expect(withdrawBody(request("open"))).toEqual({ requestId: "0b6c7f1e-1111-4222-8333-444455556666", expectedSeq: 3 });
   });
 });

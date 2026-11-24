@@ -146,6 +146,68 @@ export function visibleStudents(students: readonly RosterStudent[], group: strin
     .sort((a, b) => (a.name === null ? (b.name === null ? 0 : 1) : b.name === null ? -1 : compareHr(a.name, b.name)));
 }
 
+// NZ-11 (WEB-NF4-KOLEGIJ): filters by state, order by surname or by state, and "Nije započelo n". Reading only:
+// nothing here ranks students by a figure; the order by state is the order of what needs the teacher first.
+export type StateFilter = "" | "notStarted" | "writing" | "submitted" | "late" | "revision";
+export type StudentOrder = "surname" | "state";
+export const STATE_FILTERS: readonly Exclude<StateFilter, "">[] = ["notStarted", "writing", "submitted", "late", "revision"];
+
+/** Whether one work is in the state; "late" is a submitted work the server marked after the deadline. */
+export function workInState(work: RosterWork, filter: Exclude<StateFilter, "">): boolean {
+  switch (filter) {
+    case "notStarted": return work.status === "not_submitted";
+    case "writing": return work.status === "writing";
+    case "submitted": return work.status === "submitted";
+    case "late": return work.status === "submitted" && work.afterDeadline === true;
+    case "revision": return revisionLine(work) !== null;
+  }
+}
+
+const inState = (student: RosterStudent, filter: StateFilter): boolean =>
+  filter === "" || student.works.some((work) => workInState(work, filter));
+
+/** "Svi (n)" and one option per state with the number of students in it; a state nobody is in stays listed with 0. */
+export function stateOptions(students: readonly RosterStudent[]): readonly GroupOption[] {
+  return [
+    { value: "", label: `${text.allStates} (${students.length})` },
+    ...STATE_FILTERS.map((value) => ({ value, label: `${text.stateFilter[value]} (${students.filter((s) => inState(s, value)).length})` })),
+  ];
+}
+
+/** "Nije započelo n": the students with at least one work not started. */
+export function notStartedCount(students: readonly RosterStudent[]): number {
+  return students.filter((s) => inState(s, "notStarted")).length;
+}
+
+const surnameKey = (name: string): [string, string] => {
+  const words = name.trim().split(/\s+/);
+  return [words[words.length - 1] ?? "", words.slice(0, -1).join(" ")];
+};
+const compareName = (a: string | null, b: string | null): number => {
+  if (a === null || b === null) return a === b ? 0 : a === null ? 1 : -1;
+  const [sa, fa] = surnameKey(a);
+  const [sb, fb] = surnameKey(b);
+  return compareHr(sa, sb) || compareHr(fa, fb);
+};
+
+/** What needs the teacher first: a request waiting for the student, then not started, writing, the rest. */
+const needRank = (student: RosterStudent): number => {
+  if (student.works.some((w) => revisionLine(w) !== null)) return 0;
+  if (student.works.some((w) => w.status === "not_submitted")) return 1;
+  if (student.works.some((w) => w.status === "writing")) return 2;
+  return 3;
+};
+
+/** Group, state and order together; ties keep the order by surname. */
+export function listedStudents(
+  students: readonly RosterStudent[], group: string, state: StateFilter, order: StudentOrder,
+): readonly RosterStudent[] {
+  return students
+    .filter((s) => (group === "" || s.group === group) && inState(s, state))
+    .slice()
+    .sort((a, b) => (order === "state" ? needRank(a) - needRank(b) : 0) || compareName(a.name, b.name));
+}
+
 /** A student or an assignment of one student twice makes the whole read unavailable. */
 export function consistent(data: RosterData): boolean {
   const ids = data.students.map((s) => s.studentId);

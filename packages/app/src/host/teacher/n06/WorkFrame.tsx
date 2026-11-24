@@ -56,7 +56,7 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
       : <a href={appHref(base, href)} rel={rel} className="btn secondary">{label}</a>;
   };
   return (
-    <RevisionSection documentId={documentId} current={current}>
+    <RevisionSection documentId={documentId} current={current} compareHref={isSubmitted(facts) ? appHref(base, `${workPath}/usporedba`) : undefined}>
       {(rev) => (
         <WorkPage back={backHref} backLabel={text.backToCourses} crumb={heading(facts)} wide>
           <section className={`panel ${styles.head}`}>

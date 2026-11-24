@@ -47,3 +47,7 @@
 .open:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .open[data-tone="secondary"] { background: transparent; color: var(--ink); border-color: var(--rule); }
 .open[data-tone="secondary"]:hover { background: var(--hover); border-color: var(--rule); }
+
+/* P-4: the sections of the list by deadline. Layout only. */
+.group { display: grid; gap: 8px; }
+.groupHeading { margin: 0; font: 600 13.5px/1.4 var(--ff-ui); color: var(--ink-2); }

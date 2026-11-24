@@ -1,14 +1,13 @@
 "use client";
 
 import {
-  Button, StepActions, StepDetails, StepKv, StepLoading, StepMono, StepNav, StepPanel, StepQr, StepSub, ToastRegion, useToasts,
+  Button, StepActions, StepDetails, StepKv, StepLoading, StepMono, StepNav, StepPanel, StepQr, StepSection, StepSub, ToastRegion, useToasts,
 } from "@ductura/ui";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import type { ReceiptRead } from "../../../../../../../src/components/predaja/ReceiptPanel";
-import { browserTransport, goToSignIn } from "../../../../../../../src/client/api";
+import { createApi, goToSignIn } from "../../../../../../../src/client/api";
 import { downloadBlob } from "../../../../../../../src/components/editor/EarlierDraft";
-import { fetchRecord } from "../../portable-record/model";
 import { verifyHref } from "../../../public/verify/model";
 import PortfolioExport from "../../portfolio/PortfolioExport";
 import type { PortfolioPort } from "../../portfolio/model";
@@ -16,6 +15,7 @@ import { browserPortfolioPort } from "../../portfolio/port";
 import StepLink from "../steps/StepLink";
 import { fingerprintGroups, receiptPath, receiptView, type Row } from "./model";
 import { receiptText as t } from "./messages.hr";
+import { receiptPdf, type PdfOutcome } from "./pdf";
 
 export type ReceiptScreenProps = {
   readonly read: ReceiptRead;
@@ -27,8 +27,12 @@ export type ReceiptScreenProps = {
   readonly homeHref: string;
   /** The public check /provjera under the base (WEB-2111); without it the section says the check is not available. */
   readonly checkHref?: string;
-  /** The process summary: not in the contract yet, so the host passes the "unavailable" panel. */
+  /** The process summary (PD-1) of the submitted work, a panel with the id `sb-sum-h`; without it the panel says it is unavailable. */
   readonly summary?: ReactNode;
+  /** NF-3 PR-11: the lines of "Što je predano" (given.ts); without them the block is not shown. */
+  readonly given?: readonly string[];
+  /** NF-3 PR-12: the receipt's PDF (student.receipt-pdf.get); the real read by default. */
+  readonly loadPdf?: (assignmentId: string) => Promise<PdfOutcome>;
   /** The kind of work, the tag beside the title, when the server names it. */
   readonly kind?: string;
   /** The list of submitted versions for "Izvoz za portfelj"; made only when the section is opened. */
@@ -45,18 +49,31 @@ function Utc({ rows }: { rows: readonly Row[] }) {
   );
 }
 
-function RecordDownload({ submissionId, onProblem }: { submissionId: string; onProblem: (message: string | null) => void }) {
+const realPdf = (assignmentId: string) => receiptPdf(createApi(), assignmentId);
+
+/**
+ * NF-3 PR-12 (E-11a): "Sačuvaj potvrdu", one section with the one record the student saves in the
+ * pilot, the PDF with the QR code (answer 1: no package for the registrar, no portable record).
+ */
+function SaveReceipt({ assignmentId, loadPdf }: { assignmentId: string; loadPdf: (assignmentId: string) => Promise<PdfOutcome> }) {
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const run = async () => {
     setBusy(true);
-    onProblem(null);
-    const { state, file } = await fetchRecord(submissionId, { baseUrl: window.location.origin, transport: browserTransport });
+    setFailed(false);
+    const outcome = await loadPdf(assignmentId);
     setBusy(false);
-    if (state === "signedOut") return goToSignIn(window.location.pathname);
-    if (file !== null) downloadBlob(new Blob([file.bytes], { type: file.type }), file.filename);
-    else if (state.kind === "error") onProblem(state.message);
+    if (outcome.kind === "signedOut") return goToSignIn(window.location.pathname);
+    if (outcome.kind === "failed") return setFailed(true);
+    try { downloadBlob(outcome.blob, outcome.filename); } catch { setFailed(true); }
   };
-  return <StepLink href="#potvrda" onClick={() => { if (!busy) void run(); }}>{busy ? t.pdfLoading : t.pdf}</StepLink>;
+  return (
+    <StepSection id="sb-save" label={t.saveTitle} heading>
+      <p className="note">{t.saveLead}</p>
+      {failed && <p className="note" role="alert">{t.downloadFailed}</p>}
+      <StepLink href="#potvrda" aria-disabled={busy || undefined} onClick={() => { if (!busy) void run(); }}>{busy ? t.pdfLoading : t.pdf}</StepLink>
+    </StepSection>
+  );
 }
 
 /** "Izvoz za portfelj" on this page; after sign-in the student comes back to this receipt (`here`). */
@@ -66,10 +83,20 @@ function Portfolio({ make, here }: { make: () => PortfolioPort; here: string }) 
 }
 
 /** E-11 in every variant of the prototype; "Predano" only with the signed receipt (B-6). */
-export default function ReceiptScreen({ read, retryHref, onRetry, workHref, homeHref, checkHref, summary, kind, portfolioPort = browserPortfolioPort }: ReceiptScreenProps) {
+export default function ReceiptScreen({
+  read, retryHref, onRetry, workHref, homeHref, checkHref, summary, kind, given, loadPdf = realPdf, portfolioPort = browserPortfolioPort,
+}: ReceiptScreenProps) {
   const [open, setOpen] = useState(false);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
-  const [problem, setProblem] = useState<string | null>(null);
+  // NF-3 PR-11, PR-18 (R-67): the opened summary is brought into view and its title takes the focus.
+  useEffect(() => {
+    if (!open) return;
+    const heading = document.getElementById("sb-sum-h");
+    if (heading === null) return;
+    heading.setAttribute("tabindex", "-1");
+    heading.scrollIntoView?.({ block: "start" });
+    heading.focus();
+  }, [open]);
   const { toasts, show, dismiss } = useToasts();
   const view = receiptView(read);
   const home = <StepActions><LinkButton href={homeHref}>{t.home}</LinkButton></StepActions>;
@@ -105,6 +132,7 @@ export default function ReceiptScreen({ read, retryHref, onRetry, workHref, home
     );
   }
   const submissionId = read.kind === "potvrdeno" ? read.receipt.payload.submissionId : "";
+  const assignmentId = read.kind === "potvrdeno" ? read.receipt.payload.assignmentId : "";
   const here = read.kind === "potvrdeno" ? receiptPath(read.receipt.payload.assignmentId) : "/";
   const copy = async () => {
     try { await navigator.clipboard.writeText(view.fingerprint); show(t.copiedToast); } catch { show(t.copyFailed); }
@@ -119,22 +147,29 @@ export default function ReceiptScreen({ read, retryHref, onRetry, workHref, home
         {groups !== null && (
           <>
             <StepSub>{t.fingerprintTitle}</StepSub>
-            <StepMono>{groups.join(" ")}</StepMono>
+            {/* NF-3 PR-18: the groups are for the eye; a screen reader reads the whole string once, not sixteen words. */}
+            <div aria-hidden="true"><StepMono>{groups.join(" ")}</StepMono></div>
+            <p className="visually-hidden">{view.fingerprint}</p>
             <p className="meta">{t.fingerprintNote}</p>
             <StepActions><Button tone="secondary" onClick={() => { void copy(); }}>{t.copy}</Button></StepActions>
           </>
+        )}
+        {given !== undefined && (
+          <StepSection id="sb-given" label={t.givenTitle} heading>
+            <ul className="facts">{given.map((line) => <li key={line}>{line}</li>)}</ul>
+          </StepSection>
         )}
         {view.gaps && <p className="note">{t.gaps}</p>}
         <StepLink href="#potvrda" aria-expanded={open} aria-controls="sb-sum-h" onClick={() => setOpen(!open)}>
           {open ? t.closeSummary : t.openSummary}
         </StepLink>
+        <p className={open ? "meta" : "visually-hidden"} role="status">{open ? t.summaryOpened : ""}</p>
         <p className="note">{t.verifyLead}</p>
         {checkHref === undefined
           ? <p className="note" role="note">{t.verifyUnavailable}</p>
           : <StepLink href={verifyHref(checkHref, submissionId, view.fingerprint)}>{t.verifyTitle}</StepLink>}
         <StepQr>{t.qrNote}</StepQr>
-        <RecordDownload submissionId={submissionId} onProblem={setProblem} />
-        {problem !== null && <p className="note" role="alert">{problem}</p>}
+        <SaveReceipt assignmentId={assignmentId} loadPdf={loadPdf} />
         <StepLink href="#potvrda" aria-expanded={portfolioOpen} aria-controls="sb-portfolio" onClick={() => setPortfolioOpen(!portfolioOpen)}>
           {portfolioOpen ? t.portfolioClose : t.portfolioOpen}
         </StepLink>

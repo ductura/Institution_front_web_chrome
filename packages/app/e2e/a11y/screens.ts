@@ -77,6 +77,9 @@ export const SCREENS: readonly Screen[] = [
   { name: "administrator: korisnici", path: "/ustanova/korisnici", role: "institution_admin" },
   { name: "administrator: pravila", path: "/ustanova/pravila", role: "institution_admin" },
   { name: "administrator: pragovi po vrsti podrijetla", path: "/ustanova/pragovi", role: "institution_admin" },
+  { name: "administrator: postavke fakulteta", path: "/ustanova/postavke", role: "institution_admin" },
+  { name: "administrator: asistent na fakultetu", path: "/ustanova/postavke/asistent", role: "institution_admin" },
+  { name: "student: moja prava", path: "/moja-prava", role: "student" },
   { name: "administrator: čuvanje podataka", path: "/ustanova/cuvanje", role: "institution_admin" },
   { name: "administrator: izvoz podataka studenta", path: "/ustanova/izvoz-podataka", role: "institution_admin" },
 ];

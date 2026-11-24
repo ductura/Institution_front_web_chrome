@@ -97,6 +97,23 @@ function HolderEditor({ view, port, save, busy, groupId, setGroupId }: {
   );
 }
 
+/** NZ-14: the three roles with what each may do, the caller's own, and the way to the mentored works. */
+export function TeamRoles({ role, mentorHref }: { role: TeachingTeamView["role"]; mentorHref: string }) {
+  const id = useId();
+  return (
+    <section aria-labelledby={id}>
+      <h3 id={id}>{text.rolesTitle}</h3>
+      <p>{text.yourRole(role === "holder" ? text.roleHolder : text.roleCollaborator)}</p>
+      <ul>
+        {text.roles.map((item) => (
+          <li key={item.id}><strong>{item.name}</strong>: {item.can}{item.id === "mentor" && <> <a href={mentorHref}>{text.mentorLink}</a></>}</li>
+        ))}
+      </ul>
+      {role === "holder" && <p>{text.adminNote}</p>}
+    </section>
+  );
+}
+
 function Panel({ courseId, busy, setBusy }: { courseId: string; busy: boolean; setBusy: (busy: boolean) => void }) {
   const { base } = useHost();
   const [port] = useState(() => createTeachingTeam(courseId));
@@ -147,8 +164,8 @@ function Panel({ courseId, busy, setBusy }: { courseId: string; busy: boolean; s
       {busy && <p role="status">{text.saving}</p>}
       {feedback && <p role={feedback.error ? "alert" : "status"}>{feedback.label}</p>}
       {read === null ? <p role="status">{text.loading}</p>
-        : read.kind === "ready" ? <TeachingTeamContent key={revision} view={read.view} port={port} save={save}
-          busy={busy} groupId={groupId} setGroupId={setGroupId} />
+        : read.kind === "ready" ? <><TeamRoles role={read.view.role} mentorHref={appHref(base, "/nastavnik/mentorstva")} /><TeachingTeamContent key={revision} view={read.view} port={port} save={save}
+          busy={busy} groupId={groupId} setGroupId={setGroupId} /></>
         : <>
           <p role="alert">{text.error[read.kind]}</p>
           {read.kind !== "signedOut" && <div><Button type="button" onClick={() => {

@@ -7,7 +7,7 @@ import { newRequestKey, packageView } from "../../../../../../src/client/merlin-
 import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr.ts";
 import { merlinMessages as text } from "./messages.hr";
 import {
-  COLUMN_HEADERS, POLL_MS, canDownload, hasSubmitted, reasonLines, rowCells, statusLines,
+  COLUMN_HEADERS, POLL_MS, askFocusAfterChoose, canDownload, choiceLabel, takeFocusAfterChoose, hasSubmitted, reasonLines, rowCells, statusLines,
   type ExportStatus, type MerlinData, type MerlinPackage, type MerlinPort,
 } from "./model";
 
@@ -30,6 +30,12 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
   const [pkg, setPkg] = useState<MerlinPackage | null>(null);
   const [busy, setBusy] = useState(false);
   const pendingKey = useRef<string | null>(null);
+  const selectBox = useRef<HTMLDivElement>(null);
+
+  // NZ-16: after the teacher chose another assignment, the select keeps the keyboard focus on the new page.
+  useEffect(() => {
+    if (takeFocusAfterChoose()) selectBox.current?.querySelector("select")?.focus();
+  }, [assignmentId]);
 
   async function refresh(packageId: string): Promise<void> {
     const read = await port.readPackage(assignmentId, packageId);
@@ -85,10 +91,11 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
   const preparing = busy || status.kind === "pending" || (status.kind === "view" && status.view.kind === "priprema");
   const ended = status.kind === "view" && status.view.kind !== "priprema";
   const rows = data.rows.map((row, i) => ({ key: String(i), cells: rowCells(row) }));
-  const options = data.assignments === null ? [] : data.assignments.map((a) => ({ value: a.id, label: a.title ?? text.taskUnnamed }));
+  const options = data.assignments === null ? [] : data.assignments.map((a) => ({ value: a.id, label: choiceLabel(a, now()) }));
   const selectField = options.some((option) => option.value === assignmentId) ? (
-    <div style={{ maxWidth: 420 }}>
-      <Select label={text.taskLabel} options={options} value={assignmentId} onChange={(event) => onChoose?.(event.target.value)} />
+    <div ref={selectBox} style={{ maxWidth: 420 }}>
+      <Select label={text.taskLabel} options={options} value={assignmentId}
+        onChange={(event) => { askFocusAfterChoose(); onChoose?.(event.target.value); }} />
     </div>
   ) : null;
 
@@ -147,6 +154,7 @@ export default function Merlin({ assignmentId, data, port, onChoose, now = () =>
           <p>{text.reasonsNote}</p>
         </Card>
       ) : null}
+      <p className="meta" data-testid="merlin-personal-data">{text.personalData}</p>
       <div className="acts">
         <Button onClick={prepare} busy={preparing}>{ended ? text.prepareAgain : text.prepare}</Button>
         <Button tone="secondary" onClick={() => port.leaveFor(port.csvPath(assignmentId))}>{text.csv}</Button>
