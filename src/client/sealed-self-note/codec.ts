@@ -102,23 +102,29 @@ export type NoteContent = { readonly text: string; readonly place: NotePlace | n
 
 const UUID_ANY = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 export const KEY_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-// Controls other than tab and line feed; a lone surrogate has no UTF-8 form.
+// Controls other than tab and line feed (C0, DEL and C1, U+0080–U+009F, as SRV mentorship-follow);
+// a lone surrogate has no UTF-8 form.
 // eslint-disable-next-line no-control-regex
-const NOT_TEXT = /[\u0000-\u0008\u000b-\u001f\u007f]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u;
+const NOT_TEXT = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u;
 /** Direction controls the contract forbids (§4.1): U+200E, U+200F, U+202A–U+202E, U+2066–U+2069. */
 const DIRECTION = /[\u200e\u200f\u202a-\u202e\u2066-\u2069]/u;
 
 export type TextProblem = "empty" | "tooLong" | "notAllowed";
+/** At least one sign that is not white space (SRV mentorship-follow-v1, moved to the client by §4.1). */
+const HAS_SIGN = /\S/u;
+/** True when the text is only white space (or nothing): the note is empty. */
+export const blankText = (text: string): boolean => !HAS_SIGN.test(text);
 
 /**
  * Why a note's text breaks the contract's rules (§4.1), or null when it keeps them: 1 to 280
- * code points, Unicode NFC, no controls but tab and line feed, no direction controls and no
- * lone surrogates. Applied before sealing and again after opening.
+ * code points with at least one that is not white space, Unicode NFC, no controls but tab and
+ * line feed, no direction controls and no lone surrogates. Applied before sealing and again
+ * after opening.
  */
 export function textProblem(text: string): TextProblem | null {
   if (NOT_TEXT.test(text) || DIRECTION.test(text) || text !== text.normalize("NFC")) return "notAllowed";
   const chars = [...text].length;
-  if (chars < MIN_TEXT_CHARS) return "empty";
+  if (chars < MIN_TEXT_CHARS || !HAS_SIGN.test(text)) return "empty";
   return chars > MAX_TEXT_CHARS ? "tooLong" : null;
 }
 

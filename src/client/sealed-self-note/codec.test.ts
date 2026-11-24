@@ -111,6 +111,33 @@ describe("the text rules of the contract (§4.1), before sealing and after openi
     expect(unpadMessage(rawPadded("a".repeat(281)))).toBeNull();
   });
 
+  it("refuses a text of only white space: at least one sign that is not white space", () => {
+    for (const text of [" ", "   ", "\n", "\t\n ", "\u00a0", "\u3000", " \n\t\u2003 "]) {
+      expect(textProblem(text), JSON.stringify(text)).toBe("empty");
+      expect(padMessage({ text, place: PLACE })).toBeNull();
+      expect(unpadMessage(rawPadded(text))).toBeNull();
+    }
+    expect(textProblem(" a ")).toBeNull();
+    expect(textProblem("\n.\n")).toBeNull();
+  });
+
+  it.each(Array.from({ length: 0x20 }, (_, i) => 0x80 + i))("refuses the C1 control U+%s on both ways", (code) => {
+    const sign = String.fromCodePoint(code);
+    for (const text of [sign, `a${sign}`, `${sign}a`, `ab${sign}cd`]) {
+      expect(textProblem(text)).toBe("notAllowed");
+      expect(padMessage({ text, place: PLACE })).toBeNull();
+      expect(unpadMessage(rawPadded(text))).toBeNull();
+    }
+  });
+
+  it("still allows DEL's neighbours outside the control ranges", () => {
+    for (const code of [0x7e, 0xa0, 0xa1]) {
+      const text = `a${String.fromCodePoint(code)}b`;
+      expect(textProblem(text)).toBeNull();
+      expect(unpadMessage(padMessage({ text, place: null })!)).toEqual({ text, place: null });
+    }
+  });
+
   it("allows only text in NFC", () => {
     const composed = "Bilješka: č i ž";
     const decomposed = composed.normalize("NFD");

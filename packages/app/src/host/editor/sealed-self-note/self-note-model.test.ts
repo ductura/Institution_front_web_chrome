@@ -240,6 +240,8 @@ describe("saving", () => {
     const opened = asOpen(await confirmSetup(p, DOC, (await startSetup(p) as Extract<View, { kind: "setup" }>).setup));
     const before = server.seen.length;
     expect(await save(p, DOC, opened, "", null)).toEqual({ error: "empty" });
+    expect(await save(p, DOC, opened, " \n\t ", null)).toEqual({ error: "empty" });
+    expect(await save(p, DOC, opened, "Izmišljeno \u0085x", null)).toEqual({ error: "notAllowed" });
     for (const code of [0x200e, 0x200f, 0x202a, 0x202b, 0x202c, 0x202d, 0x202e, 0x2066, 0x2067, 0x2068, 0x2069]) {
       expect(await save(p, DOC, opened, `Izmišljeno ${String.fromCodePoint(code)}x`, null)).toEqual({ error: "notAllowed" });
     }

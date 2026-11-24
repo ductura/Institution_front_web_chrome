@@ -125,13 +125,37 @@ describe("a sealed note", () => {
       message.set(new TextEncoder().encode(JSON.stringify({ place: null, text })));
       const iv = webcrypto.getRandomValues(new Uint8Array(IV_BYTES));
       const ct = new Uint8Array(await webcrypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: ab(noteAad(DOC)) }, deviceKey, message));
-      return { v: 1, keyId, iv: Buffer.from(iv).toString("base64url"), ct: Buffer.from(ct).toString("base64url") };
+      return { v: 1 as const, keyId, iv: Buffer.from(iv).toString("base64url"), ct: Buffer.from(ct).toString("base64url") };
     };
     expect(await openNote(deviceKey, keyId, DOC, await sealRaw("Izmišljeno."))).toEqual({ text: "Izmišljeno.", place: null });
     expect(await openNote(deviceKey, keyId, DOC, await sealRaw("a".repeat(280)))).toEqual({ text: "a".repeat(280), place: null });
     const broken = ["", "a".repeat(281), "Izmišljeno.".normalize("NFD"),
       ...[0x200e, 0x200f, 0x202a, 0x202b, 0x202c, 0x202d, 0x202e, 0x2066, 0x2067, 0x2068, 0x2069].map((code) => `a${String.fromCodePoint(code)}b`)];
     for (const text of broken) expect(await openNote(deviceKey, keyId, DOC, await sealRaw(text))).toBeNull();
+  });
+});
+
+describe("opening a note that breaks the text rules (§4.1)", () => {
+  // Sealed directly with WebCrypto, bypassing sealNote's own check: what another client might send.
+  const sealRaw = async (raw: Uint8Array, text: string) => {
+    const message = new Uint8Array(1280);
+    message.set(new TextEncoder().encode(JSON.stringify({ place: null, text })));
+    const iv = webcrypto.getRandomValues(new Uint8Array(12));
+    const key = await webcrypto.subtle.importKey("raw", ab(raw), { name: "AES-GCM" }, false, ["encrypt"]);
+    const ct = new Uint8Array(await webcrypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: ab(noteAad(DOC)) }, key, message));
+    return { v: 1 as const, keyId: "6f1e2d3c-4b5a-4968-8776-6554433221a1", iv: Buffer.from(iv).toString("base64url"), ct: Buffer.from(ct).toString("base64url") };
+  };
+
+  it("returns nothing for a C1 control or only white space, and opens a valid one", async () => {
+    const raw = webcrypto.getRandomValues(new Uint8Array(32));
+    const deviceKey = await browserCrypto().subtle.importKey("raw", ab(raw), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+    const keyId = "6f1e2d3c-4b5a-4968-8776-6554433221a1";
+    for (const text of ["a\u0085b", "\u009f", "   ", "\n\t"]) {
+      expect(await openNote(deviceKey, keyId, DOC, await sealRaw(raw, text)), JSON.stringify(text)).toBeNull();
+    }
+    expect(await openNote(deviceKey, keyId, DOC, await sealRaw(raw, " a "))).toEqual({ text: " a ", place: null });
+    expect(await sealNote(deviceKey, keyId, DOC, { text: "a\u0085b", place: null })).toBeNull();
+    expect(await sealNote(deviceKey, keyId, DOC, { text: "  \n ", place: null })).toBeNull();
   });
 });
 

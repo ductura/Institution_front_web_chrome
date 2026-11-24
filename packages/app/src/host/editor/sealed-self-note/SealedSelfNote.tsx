@@ -6,7 +6,7 @@
 
 import { ActionRow, Button, Checkbox, Dialog, KeyValueList, Notice as Banner, TextArea, TextField } from "@ductura/ui";
 import { useEffect, useRef, useState } from "react";
-import type { NotePlace } from "@/client/sealed-self-note/codec";
+import { blankText, type NotePlace } from "@/client/sealed-self-note/codec";
 import { forgetDeviceKey } from "@/client/sealed-self-note/device-key";
 import { watchSessionEnd } from "@/client/session-end";
 import { browserMarkStore, currentSession } from "@/client/session-marks";
@@ -202,7 +202,7 @@ function Open({ view, port, documentId, currentPlace, onGoToPlace, onView }: {
       {onGoToPlace && <Button tone="quiet" onClick={() => onGoToPlace(place)}>{t.goToPlace}</Button>}
     </p>}
     <ActionRow>
-      <Button busy={busy} disabled={left < 0 || text.length === 0} onClick={() => void act(() => save(port, documentId, view, text, currentPlace?.() ?? place))}>
+      <Button busy={busy} disabled={left < 0 || blankText(text)} onClick={() => void act(() => save(port, documentId, view, text, currentPlace?.() ?? place))}>
         {busy ? t.saveBusy : t.save}
       </Button>
       {(view.note !== null || view.old) && <Button tone="quiet" disabled={busy} onClick={() => void act(() => removeNote(port, documentId, view))}>{t.remove}</Button>}
