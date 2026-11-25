@@ -96,6 +96,7 @@ export const consultHr = {
     loading: "Učitavanje kriterija…",
     unavailable: "Kriteriji trenutačno nisu dostupni. Pokušajte ponovno.",
     notFound: "Kriteriji za ovaj rad nisu dostupni.",
+    byRubric: "Za ovaj rad vrijede kriteriji ocjenjivanja iz uputa zadatka.",
     retry: "Pokušaj ponovno",
     unrated: "još nije ocijenjeno",
     /** The criteria's text by id; the server sends only the id and a message key (LOK-WEB-20). */
