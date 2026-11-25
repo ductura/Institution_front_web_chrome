@@ -166,6 +166,66 @@ test.describe("ED-10 Asistent", () => {
     expect(state.requests[1]!.key).not.toBe(state.requests[0]!.key);
   });
 
+  test("the form stays busy until the conversation is read; a newer draft is never cleared", async ({ page }) => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const { chat, state } = await openChat(page);
+    // Registered last, so it wins over the conversation route of server(): the read waits for the gate.
+    await page.route(`**/api/v1/student/assistant/conversations/${CONV}`, async (route) => { await gate; await route.fallback(); });
+    const field = chat.getByLabel("Upit Asistentu");
+    await field.fill("Izmišljeno pitanje sa sporim čitanjem");
+    await chat.getByRole("button", { name: "Pošalji Asistentu" }).click();
+    await expect.poll(() => state.requests.length).toBe(1);
+    await expect(field).toBeDisabled();
+    await expect(chat.getByRole("button", { name: "Pošalji Asistentu" })).toBeDisabled();
+    release();
+    await expect(chat.getByText(ANSWER)).toBeVisible();
+    await expect(field).toBeEnabled();
+    await expect(field).toHaveValue("");
+    expect(state.requests).toHaveLength(1);
+  });
+
+  test("an in-progress answer keeps the request: asking again repeats the same key", async ({ page }) => {
+    const { chat, state } = await openChat(page, noticeBody(), [settled("in_progress")]);
+    const field = chat.getByLabel("Upit Asistentu");
+    await field.fill("Izmišljeno pitanje koje još traje");
+    await chat.getByRole("button", { name: "Pošalji Asistentu" }).click();
+    await expect(field).toHaveValue("Izmišljeno pitanje koje još traje");
+    await expect(field).toBeEnabled();
+    await chat.getByRole("button", { name: "Pošalji Asistentu" }).click();
+    await expect(chat.getByText(ANSWER)).toBeVisible();
+    expect(state.requests).toHaveLength(2);
+    expect(state.requests[1]!.key).toBe(state.requests[0]!.key);
+    expect(state.requests[1]!.body).toEqual(state.requests[0]!.body);
+  });
+
+  test("closing the panel on a narrow screen keeps the draft, the conversation and a failed request's key", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    const { chat, state } = await openChat(page, noticeBody(), [completed(), { status: 503, json: { error: "unavailable" } }]);
+    const field = chat.getByLabel("Upit Asistentu");
+    await field.fill("Prvo izmišljeno pitanje");
+    await chat.getByRole("button", { name: "Pošalji Asistentu" }).click();
+    await expect(chat.getByText(ANSWER)).toBeVisible();
+    await field.fill("Drugo izmišljeno pitanje koje ne stigne");
+    await chat.getByRole("button", { name: "Pošalji Asistentu" }).click();
+    await expect(chat.getByRole("alert")).toContainText("Asistent trenutačno ne odgovara.");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("[data-assistant-chat]")).toHaveCount(0);
+    const drawer = page.getByRole("button", { name: "Bočni panel" });
+    await drawer.focus();
+    await page.keyboard.press("Enter");
+    const tab = page.getByRole("tab", { name: "Asistent" });
+    await tab.focus();
+    await page.keyboard.press("Enter");
+    const again = page.locator("[data-assistant-chat]");
+    await expect(again.getByLabel("Upit Asistentu")).toHaveValue("Drugo izmišljeno pitanje koje ne stigne");
+    await again.getByRole("button", { name: "Pošalji Asistentu" }).click();
+    await expect(again.getByText("2 upita")).toBeVisible();
+    expect(state.requests).toHaveLength(3);
+    expect(state.requests[2]!.key).toBe(state.requests[1]!.key);
+    expect(state.requests[2]!.body.conversationId).toBe(CONV);
+  });
+
   test("conversations are kept per person: another sign-in on the device sees none of them", async ({ page }) => {
     await page.addInitScript(([id, conv]) => {
       localStorage.setItem(`ductura.asistent.razgovori.${"b".repeat(64)}.${id}`, JSON.stringify([{ id: conv, purposeKey: "proofreading" }]));
