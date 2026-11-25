@@ -142,7 +142,7 @@ describe("TeamsPage in the browser", () => {
   it("shows the contribution of one team on request with the notice, and a pending one as 'not ready'", async () => {
     const d = apiOf({ ...BASE, "teacher.work-team-contribution.get": () => ok(READY) });
     await render(d.call);
-    expect(host.querySelector("table")).toBeNull();
+    expect(host.querySelector("[data-testid=contribution-table]")).toBeNull();
     await click(button(t.teams.showContribution));
     expect(d.calls.find((c) => c.id === "teacher.work-team-contribution.get")!.input.params).toEqual({ assignmentId: A, teamId: T1 });
     expect(host.querySelector("[data-testid=contribution-notice]")!.textContent).toBe(workTeamText.contribution.notice);
@@ -151,7 +151,7 @@ describe("TeamsPage in the browser", () => {
     await render(pending.call);
     await click(button(t.teams.showContribution));
     expect(text()).toContain(workTeamText.contribution.pending);
-    expect(host.querySelector("table")).toBeNull();
+    expect(host.querySelector("[data-testid=contribution-table]")).toBeNull();
   });
 
   it("sends a signed-out teacher to sign in", async () => {

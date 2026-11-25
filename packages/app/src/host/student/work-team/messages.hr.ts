@@ -63,6 +63,5 @@ export const workTeamText = {
       imported: "uvezeno",
       unattributed: "bez zabilježenog načina unosa",
     },
-    memberColumn: "Član tima",
   },
 } as const;

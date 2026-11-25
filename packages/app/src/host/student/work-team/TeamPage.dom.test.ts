@@ -59,7 +59,7 @@ describe("TeamPage in the browser", () => {
     expect(host.querySelector<HTMLAnchorElement>("a.btn")!.getAttribute("href")).toContain(`/rad/${A}`);
     expect(host.querySelector("[data-testid=contribution-notice]")!.textContent).toBe(t.contribution.notice);
     // By name, not by amount: Babić (12) comes before Vukić (9 000).
-    expect([...host.querySelectorAll("[data-testid=contribution-member] th")].map((e) => e.textContent)).toEqual(["Ivo Babić", "Zora Vukić"]);
+    expect([...host.querySelectorAll("[data-testid=contribution-member] strong")].map((e) => e.textContent)).toEqual(["Ivo Babić", "Zora Vukić"]);
   });
 
   it("shows no share, rank, mean or mark anywhere on the contribution", async () => {
@@ -87,11 +87,11 @@ describe("TeamPage in the browser", () => {
     let d = apiOf({ "student.work-team.get": () => ok(MEMBER_VIEW), "student.work-team-contribution.get": () => fail(503, "unavailable") });
     await render(d.call);
     expect(text()).toContain(t.contribution.unavailable);
-    expect(host.querySelector("table")).toBeNull();
+    expect(host.querySelector("[data-testid=contribution-table]")).toBeNull();
     d = apiOf({ "student.work-team.get": () => ok(MEMBER_VIEW), "student.work-team-contribution.get": () => ok({ state: "pending" }) });
     await render(d.call);
     expect(text()).toContain(t.contribution.pending);
-    expect(host.querySelector("table")).toBeNull();
+    expect(host.querySelector("[data-testid=contribution-table]")).toBeNull();
   });
 
   it("offers to found or join a team only when the students form them, and joins by the team's id", async () => {
