@@ -18,4 +18,5 @@ export const hostText = {
   deadlineExtensions: "Produljenje roka",
   mentorshipRequest: "Zahtjev za mentorstvo",
   practiceJournal: "Dnevnik prakse",
+  mentorPracticeJournal: "Dnevnik prakse studenata",
 } as const;

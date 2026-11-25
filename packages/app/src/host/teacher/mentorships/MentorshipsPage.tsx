@@ -25,6 +25,7 @@ import { MyStudents } from "./MyStudents";
 import type { OverviewCall } from "./overview-read";
 import { OpenMentorshipCard } from "./OpenMentorshipCard";
 import { WorkPlan } from "./WorkPlan";
+import { mentorJournalText } from "../practice-journal/messages.hr";
 import type { PlanCall } from "./plan-actions";
 import type { RecordsRead } from "./AgreedCard";
 
@@ -67,6 +68,8 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
         <>
           <WorksList works={value.works} base={base} />
           <MyStudents works={value.works} call={overview} base={base} />
+          {/* WEB-V19-DNEVNIK-MENTOR: the way into the practice journals of the mentored students. */}
+          <p><a href={appHref(base, "/nastavnik/mentorstva/dnevnik-prakse")} data-testid="practice-journal-link">{mentorJournalText.linkFromMentorships}</a></p>
           {/* WEB-NF6-RUNDA (MK-8): "Pregled runde" of each started work. */}
           {roundWorks(value.works).map((w) => (
             <RoundReview key={w.documentId} work={{ documentId: w.documentId, name: w.name, href: appHref(base, w.path) }} />

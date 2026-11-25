@@ -103,6 +103,7 @@ export const hostTextEn = {
   deadlineExtensions: "Deadline extension",
   mentorshipRequest: "Mentorship request",
   practiceJournal: "Practice journal",
+  mentorPracticeJournal: "Students' practice journals",
 };
 
 export const institutionEn = {
