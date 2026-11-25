@@ -1,5 +1,6 @@
 import "@ductura/ui/fonts.css";
 import "@ductura/ui/tokens.css";
+import "@ductura/ui/reading-font.css";
 
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
