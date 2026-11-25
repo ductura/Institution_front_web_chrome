@@ -5,6 +5,7 @@
 // EditorToolbarFor, same checks at the click), so a change reaches the journal as before. What the new bar has
 // no button for (Umetni, Pretvori, Posebni znak, Prikaz, Izvezi and their dialogs) stays here as menus over
 // the same helpers and the same words; nothing is new in look or in text.
+// ED-30 (P2-1a): the bar now has its behaviour: "Više", folding by width and the tool tips (ToolbarBehaviour.tsx).
 import { useEffect, useState } from "react";
 import { Button, ContextMenu, type MenuEntry, type MenuPoint } from "@ductura/ui";
 import type { Editor } from "@tiptap/core";
@@ -35,6 +36,7 @@ import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr } from "./messages.hr";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
+import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
 
 /** "Stavi tekst rada u međuspremnik": text with [n] marks and the footnote list (v3). False when refused. */
 async function copyWorkText(editor: Editor | null): Promise<boolean> {
@@ -132,6 +134,11 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
+  // ED-30: the bar's tool choice and look, kept in this browser (toolbar-prefs).
+  // Read after mount, so the server's markup and the first client render agree.
+  const [prefs, setPrefs] = useState<ToolbarPrefs>(DEFAULT_PREFS);
+  useEffect(() => { setPrefs(loadPrefs()); }, []);
+  const onPrefs = (next: ToolbarPrefs) => { setPrefs(next); savePrefs(next); };
 
   const insert: Item[] = [
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
@@ -154,7 +161,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   ];
   return (
     <>
-      <EditorToolbarHost state={toolbarStateOf(state)} commands={toolbarCommands(editor)} label={KEPT_TOOLBAR_LABEL} labels={KEPT_LABELS} omit={["numberedList"]} />
+      <EditorToolbarHost state={toolbarStateOf(state)} commands={toolbarCommands(editor)} label={KEPT_TOOLBAR_LABEL} labels={KEPT_LABELS} omit={["numberedList"]}
+        behaviour={{ prefs, onPrefs, fit: true, intro: state.editable ? "write" : "locked" }} />
       <Menu label={t.toolbar.insert} items={insert} onSelect={(id) => {
         if (id === "footnote") v3.openInsert?.("footnote");
         else if (id === "xref") v3.openInsert?.("crossReference");

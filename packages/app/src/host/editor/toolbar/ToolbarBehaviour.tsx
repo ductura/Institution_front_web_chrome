@@ -11,6 +11,7 @@ import { toolbarBehaviourHr as t } from "./messages.hr";
 import { quickBarVisible, QUICK_TOOLS, QUICK_MAX_WIDTH, keyboardInset, type QuickTool } from "./quick-tools";
 import { displayShortcut, showDelay, TIP_HIDE_MS, TIP_TOUCH_HIDE_MS, tipPlace, toolTip, type ToolTip } from "./tool-tip";
 import { arrangeToolbar, arrangedIds, customisableIds, moveTool, resetPrefs, setLook, toggleTool, type ToolbarLook, type ToolbarPrefs } from "./toolbar-prefs";
+import { nextToFold, wrapsToSecondRow } from "./toolbar-fit";
 import { ReadingSettingsDialog, readingStore } from "../reading-settings/ReadingSettingsDialog";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { canStep, stepZoom, zoomPercent } from "./text-size";
@@ -164,19 +165,60 @@ export type ToolbarBehaviourProps = {
   onPrefs: (next: ToolbarPrefs) => void;
   /** Tools that do not fit the width go to Više; the shell measures and reports them (the prototype's fit()). */
   collapsed?: readonly string[];
+  /** ED-30: the toolbar measures itself and folds what does not fit one row; `collapsed` is then not used. */
+  fit?: boolean;
+  /** The bar's accessible name (PIL-K-TRAKA keeps the one of the toolbar it replaced). */
+  label?: string;
   place?: CursorPlace;
   editable: boolean;
   intro?: "write" | "review" | "locked";
   onContextAction?: (id: ContextAction) => void;
 };
 
+/**
+ * ED-30: the tools folded into Više so the bar keeps one row. Measured before paint: a width change or a new
+ * arrangement starts again from none folded, then one tool at a time goes until the bar fits.
+ */
+function useFold(wrap: RefObject<HTMLDivElement | null>, on: boolean, groups: readonly EditorToolbarGroup[], prefs: ToolbarPrefs): string[] {
+  const [folded, setFolded] = useState<string[]>([]);
+  const [width, setWidth] = useState(0);
+  const onBar = customisableIds(groups).filter((id) => !prefs.off.includes(id));
+  const key = `${onBar.join(",")}|${prefs.look}|${prefs.order.join(",")}|${width}`;
+  const last = useRef(key);
+  useLayoutEffect(() => {
+    if (!on) return;
+    if (last.current !== key) {
+      last.current = key;
+      if (folded.length > 0) { setFolded([]); return; }
+    }
+    const bar = wrap.current?.querySelector<HTMLElement>('[role="toolbar"]');
+    if (!bar) return;
+    const tops = [...bar.children].filter((c): c is HTMLElement => c instanceof HTMLElement).map((c) => c.offsetTop);
+    if (!wrapsToSecondRow(tops)) return;
+    const next = nextToFold(onBar, folded);
+    if (next !== null) setFolded([...folded, next]);
+  });
+  useEffect(() => {
+    const el = wrap.current;
+    if (!on || !el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      const w = Math.round(entry?.contentRect.width ?? 0);
+      setWidth((prev) => (prev === w ? prev : w));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [wrap, on]);
+  return folded;
+}
+
 /** The toolbar with its tool tips, look, Više, customising and context button. */
-export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], place = { kind: "text" }, editable, intro = "write", onContextAction }: ToolbarBehaviourProps) {
+export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], fit = false, label, place = { kind: "text" }, editable, intro = "write", onContextAction }: ToolbarBehaviourProps) {
   const wrap = useRef<HTMLDivElement>(null);
   const [customising, setCustomising] = useState(false);
   const [readingOpen, setReadingOpen] = useState(false);
   const [moreAt, setMoreAt] = useState<MenuPoint | null>(null);
-  const arranged = arrangeToolbar(groups, prefs, collapsed);
+  const folded = useFold(wrap, fit, groups, prefs);
+  const arranged = arrangeToolbar(groups, prefs, fit ? folded : collapsed);
   const moreGroup: EditorToolbarGroup = { id: "more", label: t.more, actions: [{
     id: MORE_ID, label: t.more, icon: "chevronDown",
     onSelect: () => {
@@ -205,7 +247,7 @@ export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], p
 
   return (
     <div ref={wrap} className={styles.wrap} data-look={prefs.look}>
-      <EditorToolbar groups={drawn} />
+      <EditorToolbar groups={drawn} label={label} />
       <ContextButton place={place} editable={editable} onAction={onContextAction ?? (() => undefined)} />
       <ContextMenu anchor={moreAt} entries={moreEntries} label={t.more} onClose={() => setMoreAt(null)}
         onSelect={(id) => {

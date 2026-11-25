@@ -18,6 +18,8 @@ export type Actions = {
   commands?: Partial<Record<Exclude<Command, BuiltIn | "navod">, () => void>>;
 };
 type BuiltInChain = ReturnType<Editor["chain"]>;
+/** Commands whose content the current text schema cannot hold (NF2-P25: shema v4). */
+const NEW_SCHEMA: ReadonlySet<Command> = new Set(["tablica", "slika"]);
 export const builtIn: Record<BuiltIn, (chain: BuiltInChain) => BuiltInChain> = {
   provjera: (chain) => chain.insertContent("[?] "),
   izvor: (chain) => chain.insertContent("[izvor] "),
@@ -46,7 +48,9 @@ export function triggerItems(trigger: Trigger, sources: readonly Source[], actio
       const run = id === "navod" && (actions.cite || actions.addSource) ? openCite : actions.commands?.[id as keyof NonNullable<Actions["commands"]>];
       const disabled = !transform && !run;
       // ED-03 (NF2-P5): a command the pilot does not offer says why, beside its name.
-      return [{ id, label: `/${id}`, hint: disabled ? `${hint} · ${t.notInPilot}` : hint, transform, run, disabled }];
+      // ED-24 (NF2-P25): a table or figure also says what it waits for.
+      const why = NEW_SCHEMA.has(id) ? `${t.notInPilot}, ${t.newSchema}` : t.notInPilot;
+      return [{ id, label: `/${id}`, hint: disabled ? `${hint} · ${why}` : hint, transform, run, disabled }];
     });
   }
 
