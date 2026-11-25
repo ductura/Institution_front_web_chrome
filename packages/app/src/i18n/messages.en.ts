@@ -76,6 +76,7 @@ export const pageLabelsEn = {
   myRights: "My rights",
   isvuImport: "Connection to ISVU (trial source)",
   isvuGrades: "Grade export to ISVU (trial source)",
+  analysis: "Statistical analysis",
   studomatEntry: "Entry from Studomat",
 };
 
@@ -110,6 +111,9 @@ export const hostTextEn = {
   mentorPracticeJournal: "Students' practice journals",
   workTeam: "My team",
   workTeams: "Teams on the assignment",
+  peerReview: "Peer review of works",
+  peerReviewReceived: "Reviews received",
+  peerReviewWork: "Review of a work",
 };
 
 export const institutionEn = {
