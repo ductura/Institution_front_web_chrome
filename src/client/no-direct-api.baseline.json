@@ -177,9 +177,6 @@
   "test file import",
   "import katex/dist/katex.min.css"
  ],
- "src/components/editor/rich/blocks/katex-render.ts": [
-  "import katex"
- ],
  "src/components/editor/spelling/engine.ts": [
   "fetch",
   "import hunspell-asm"

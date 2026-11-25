@@ -6,7 +6,7 @@
  * shows its source instead of throwing. Inputs over the v4 schema limits are
  * refused before KaTeX sees them.
  *
- * The stylesheet and fonts come from `katex/dist/katex.min.css` (relative
+ * The stylesheet and fonts come from the katex package stylesheet (relative
  * font URLs only); import it where the formula is mounted.
  */
 
