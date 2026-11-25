@@ -137,7 +137,8 @@ function Grid({ doc, onChange, readOnly, newSheetId }: { doc: SheetDocument; onC
     const ctrl = event.ctrlKey || event.metaKey;
     if (ctrl && event.key.toLowerCase() === "z") {
       event.preventDefault();
-      if (event.shiftKey) runRedo(); else if (!readOnly) runUndo();
+      if (readOnly) return;
+      if (event.shiftKey) runRedo(); else runUndo();
       return;
     }
     if (ctrl && event.key.toLowerCase() === "y") {
@@ -175,6 +176,8 @@ function Grid({ doc, onChange, readOnly, newSheetId }: { doc: SheetDocument; onC
   };
 
   const pointerDown = (event: MouseEvent, at: Position) => {
+    // A press inside the open editor is the caret and text selection of the input, not a cell choice.
+    if (event.target instanceof HTMLInputElement) return;
     if (edit !== null && !commit()) { event.preventDefault(); return; }
     dragging.current = true;
     wantFocus.current = true;
@@ -190,9 +193,23 @@ function Grid({ doc, onChange, readOnly, newSheetId }: { doc: SheetDocument; onC
     setSelection(startSelection());
   };
   const onAddSheet = () => {
-    if (edit !== null && !commit()) return;
-    const result = addSheet(doc, newSheetId);
-    if (apply(result) && result.ok) { setSheetId(result.doc.sheets[result.doc.sheets.length - 1]!.id); setSelection(startSelection()); }
+    // A pending edit is committed into the same document the new sheet is added to, so neither is lost.
+    let base = doc;
+    const pending = live.current;
+    if (pending !== null && pending.draft !== cellInputText(sheet.cells[pending.ref])) {
+      const written = setCellText(doc, sheet.id, pending.ref, pending.draft);
+      if (!written.ok) { refuse(written.error); return; }
+      base = written.doc;
+    }
+    const result = addSheet(base, newSheetId);
+    if (!result.ok) { refuse(result.error); return; }
+    live.current = null;
+    setEdit(null);
+    setProblem(null);
+    setHistory(recordEdit(history, doc));
+    onChange(result.doc);
+    setSheetId(result.doc.sheets[result.doc.sheets.length - 1]!.id);
+    setSelection(startSelection());
   };
 
   const barValue = edit ? edit.draft : cellInputText(sheet.cells[activeRef]);

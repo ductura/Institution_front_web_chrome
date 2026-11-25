@@ -216,3 +216,45 @@ describe("SheetGrid sheets", () => {
     expect(add().hasAttribute("disabled")).toBe(true);
   });
 });
+
+describe("SheetGrid review findings", () => {
+  it("keeps a pending formula-bar edit when a sheet is added", async () => {
+    await mount({ initial: start() });
+    await focus("A1");
+    await type(bar(), "Zadržano");
+    const add = [...document.querySelectorAll("button")].find((b) => b.textContent === "Dodaj list")!;
+    await act(async () => { add.click(); });
+    expect(latest!.sheets).toHaveLength(2);
+    expect(latest!.sheets[0]!.cells.A1).toEqual({ value: "Zadržano" });
+  });
+
+  it("does not redo through Ctrl+Shift+Z once the grid is read-only", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    let setRead: (v: boolean) => void = () => {};
+    function Wrap() {
+      const [ro, setRo] = useState(false);
+      setRead = setRo;
+      return h(Page, { initial: start(), readOnly: ro });
+    }
+    await act(async () => { root?.render(h(Wrap)); });
+    await enter("A1", "1");
+    await focus("A1");
+    await key(cell("A1"), "z", { ctrlKey: true });
+    const afterUndo = JSON.stringify(latest);
+    await act(async () => { setRead(true); });
+    await key(cell("A1"), "z", { ctrlKey: true, shiftKey: true });
+    expect(JSON.stringify(latest)).toBe(afterUndo);
+  });
+
+  it("does not commit when the mouse is pressed inside the open editor", async () => {
+    await mount({ initial: start() });
+    await focus("A1");
+    await key(cell("A1"), "F2");
+    await type(editor(), "pola");
+    await act(async () => { editor().dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true })); });
+    expect(editor()).not.toBeNull();
+    expect(editor().value).toBe("pola");
+  });
+});
