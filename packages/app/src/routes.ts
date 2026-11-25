@@ -32,6 +32,7 @@ import { problemReportsMessages } from "./host/operator/problem-reports/messages
 import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
+import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
 
 export { BASES, type Base } from "./bases";
 
@@ -108,6 +109,10 @@ export const PAGES: readonly Page[] = [
   { path: "/upis/kolegij/[courseId]", label: t.student.enroll.title, kind: "pending", roles: ["student"], current: "/upis" },
   // WEB-1404: the student's request for a mentor.
   { path: "/zadaci/mentorstvo", label: hostText.mentorshipRequest, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-DNEVNIK-STUDENT: the student's journal of a professional practice.
+  { path: "/zadaci/dnevnik-prakse", label: practiceJournalText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-DNEVNIK-MENTOR: the mentor's side of the journal, entered from N-16 by a link.
+  { path: "/nastavnik/mentorstva/dnevnik-prakse", label: hostText.mentorPracticeJournal, kind: "pending", roles: ["teacher"], current: "/nastavnik/mentorstva" },
   // HOST-S1: the editor of one work.
   { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },

@@ -69,7 +69,7 @@ for (const width of [390, 1280]) {
       await page.goto("/app/web/nastavnik/mentorstva");
       await setTheme(page, theme);
       await expect(main(page).getByText("Rok predaje: 8. 11. 2026. u 23:59")).toBeVisible();
-      await expect(main(page).getByText("Za ovo mentorstvo još nema ključnih rokova.")).toBeVisible();
+      await expect(main(page).getByText("Za ovo mentorstvo još nema rokova ni termina.")).toBeVisible();
       await axe(page, info, `mentorstva-${width}-${theme}`);
       await follow(page, "Otvori rad");
       await expect(page).toHaveURL(new RegExp(`/nastavnik/rad/${DOKUMENT_T1}$`));

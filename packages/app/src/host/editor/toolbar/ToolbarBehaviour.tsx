@@ -11,6 +11,8 @@ import { toolbarBehaviourHr as t } from "./messages.hr";
 import { quickBarVisible, QUICK_TOOLS, QUICK_MAX_WIDTH, keyboardInset, type QuickTool } from "./quick-tools";
 import { displayShortcut, showDelay, TIP_HIDE_MS, TIP_TOUCH_HIDE_MS, tipPlace, toolTip, type ToolTip } from "./tool-tip";
 import { arrangeToolbar, arrangedIds, customisableIds, moveTool, resetPrefs, setLook, toggleTool, type ToolbarLook, type ToolbarPrefs } from "./toolbar-prefs";
+import { ReadingSettingsDialog, readingStore } from "../reading-settings/ReadingSettingsDialog";
+import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { canStep, stepZoom, zoomPercent } from "./text-size";
 import styles from "./ToolbarBehaviour.module.css";
 
@@ -172,6 +174,7 @@ export type ToolbarBehaviourProps = {
 export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], place = { kind: "text" }, editable, intro = "write", onContextAction }: ToolbarBehaviourProps) {
   const wrap = useRef<HTMLDivElement>(null);
   const [customising, setCustomising] = useState(false);
+  const [readingOpen, setReadingOpen] = useState(false);
   const [moreAt, setMoreAt] = useState<MenuPoint | null>(null);
   const arranged = arrangeToolbar(groups, prefs, collapsed);
   const moreGroup: EditorToolbarGroup = { id: "more", label: t.more, actions: [{
@@ -196,6 +199,7 @@ export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], p
 
   const moreEntries: MenuEntry[] = [
     ...arranged.more.map((a): MenuEntry => ({ kind: "item", id: a.id, label: a.label, hint: displayShortcut(a.shortcut) ?? undefined, disabled: a.disabled })),
+    { kind: "item", id: "reading-settings", label: readingSettingsHr.menu },
     { kind: "item", id: "customise", label: t.customise },
   ];
 
@@ -207,9 +211,11 @@ export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], p
         onSelect={(id) => {
           setMoreAt(null);
           if (id === "customise") return setCustomising(true);
+          if (id === "reading-settings") return setReadingOpen(true);
           arranged.more.find((a) => a.id === id)?.onSelect();
         }} />
       {tip}
+      <ReadingSettingsDialog open={readingOpen} store={readingStore()} onClose={() => setReadingOpen(false)} />
       <CustomiseToolbarDialog open={customising} groups={groups} prefs={prefs} intro={intro} onChange={onPrefs} onClose={() => setCustomising(false)} />
     </div>
   );

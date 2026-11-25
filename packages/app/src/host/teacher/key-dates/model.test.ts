@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FAKE_KEY_DATES, fakeKeyDatesPort } from "./fake-port";
-import { KINDS, keyDatesView, loadKeyDates, whenOf, type KeyDateEntry } from "./model";
+import { KINDS, keyDatesView, loadKeyDates, relativeDays, timelineOf, whenOf, type KeyDateEntry } from "./model";
 
 const id = (n: number): string => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
@@ -50,5 +50,28 @@ describe("key dates", () => {
     expect(await loadKeyDates(fakeKeyDatesPort({ kind: "signedOut" }), "m")).toEqual({ kind: "signedOut" });
     expect(await loadKeyDates(fakeKeyDatesPort({ kind: "unavailable" }), "m")).toEqual({ kind: "unavailable" });
     expect(await loadKeyDates({ read: async () => { throw new Error("x"); } }, "m")).toEqual({ kind: "unavailable" });
+  });
+});
+
+describe("MK-13: days to go or gone, by Zagreb calendar day", () => {
+  const noon = Date.parse("2026-12-01T11:00:00.000Z");
+  it("counts calendar days, not 24-hour spans", () => {
+    expect(relativeDays(Date.parse("2026-12-01T23:30:00.000Z"), noon)).toBe("za 1 dan"); // 00:30 on 2. 12. in Zagreb
+    expect(relativeDays(Date.parse("2026-12-01T22:00:00.000Z"), noon)).toBe("danas");
+    expect(relativeDays(Date.parse("2026-11-30T12:00:00.000Z"), noon)).toBe("prije 1 dan");
+    expect(relativeDays(Date.parse("2026-12-22T12:00:00.000Z"), noon)).toBe("za 21 dan");
+    expect(relativeDays(Date.parse("2026-12-12T12:00:00.000Z"), noon)).toBe("za 11 dana");
+    expect(relativeDays(Date.parse("2026-11-26T12:00:00.000Z"), noon)).toBe("prije 5 dana");
+  });
+  it("puts today's dates ahead, never among the missed ones", () => {
+    const view = keyDatesView({ kind: "ready", dates: [
+      { id: "a", kind: "deadline", at: "2026-12-01T08:00:00.000Z" },
+      { id: "b", kind: "milestone", at: "2026-11-30T08:00:00.000Z", title: "Izmišljena etapa" },
+    ] });
+    if (view.kind !== "ready") throw new Error("ready expected");
+    const line = timelineOf(view.rows, noon);
+    expect(line.past.map((r) => r.id)).toEqual(["b"]);
+    expect(line.ahead.map((r) => [r.id, r.relative])).toEqual([["a", "danas"]]);
+    expect(line.today).toBe("Danas je 1. 12. 2026.");
   });
 });

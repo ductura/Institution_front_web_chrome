@@ -152,7 +152,8 @@ test("a teacher lands on /nastavnik and an administrator on /ustanova", async ({
   await page.getByRole("navigation", { name: "Radni prostor" }).getByRole("link", { name: "Radovi uz mentora" }).click();
   await expect(page).toHaveURL(/\/app\/web\/nastavnik\/mentorstva$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Radovi uz mentora");
-  await expect(page.getByText("Izmišljeni diplomski rad")).toBeVisible();
+  // WEB-NF6-PREGLED: the title also stands in "Moji studenti", so the works list is named.
+  await expect(page.getByTestId("mentored-work").getByText("Izmišljeni diplomski rad")).toBeVisible();
   await axe(page);
 
   await page.unrouteAll({ behavior: "wait" });

@@ -16,7 +16,7 @@ import { CodeCard, CodeForm } from "./CodeForm";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
-import { continueRow, coursesWithoutTask, deadlineTag, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, type Order, type RowKind, type TaskRow } from "./model";
+import { continueRow, coursesWithoutTask, deadlineTag, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, startsWork, type Order, type RowKind, type TaskRow } from "./model";
 
 const dueText = protoDateTime;
 
@@ -171,7 +171,7 @@ export function HomePage() {
               <ul className={styles.list}>
                 {group.rows.map((row) => (
                   <Row key={row.id} row={row} now={now} base={base}
-                    action={row.kind === "predano" || row.kind === "obavijest" ? null : startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false })} />
+                    action={startsWork(row.kind) ? startWorkAction({ id: row.id, title: row.title, dueAt: row.dueAt, noticeFirst: false }) : null} />
                 ))}
               </ul>
             </div>

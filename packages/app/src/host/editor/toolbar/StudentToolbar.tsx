@@ -23,6 +23,9 @@ import {
 import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
+import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
+import { readingSettingsHr } from "../reading-settings/messages.hr";
+import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 
@@ -105,7 +108,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const state = useEditorSnapshot(editor);
   const theme = useSheetTheme();
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
-  const [dialog, setDialog] = useState<"parts" | "citation" | null>(null);
+  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
 
@@ -125,6 +128,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "dark", label: `${theme === "dark" ? "✓ " : ""}${t.workspace.sheetThemeDark}` },
     { id: "light", label: `${theme === "light" ? "✓ " : ""}${t.workspace.sheetThemeLight}` },
     { id: "citationSettings", label: workPartsMessages.citationTitle },
+    { id: "readingSettings", label: readingSettingsHr.menu },
   ];
   return (
     <>
@@ -147,12 +151,16 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       }} />
       <Menu label={t.toolbar.view} items={view} onSelect={(id) => {
         if (id === "citationSettings") setDialog("citation");
+        else if (id === "readingSettings") setDialog("reading");
         else setSheetTheme(id === "light" ? "light" : "dark");
       }} />
       <Menu label={t.toolbar.export} items={[{ id: "copy", label: t.toolbar.exportItems.copy, disabled: !editor || editor.isDestroyed }]}
         onSelect={(id) => { if (id === "copy") void copyWorkText(editor); }} />
+      <ReadAloudControls editor={editor} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
+      {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
+      <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />
       {v3.dialog}
     </>
   );
