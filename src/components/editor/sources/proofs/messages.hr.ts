@@ -59,7 +59,7 @@ export const proofsHr = {
   quoteScan: "Ova stranica je sken bez teksta, pa se navod ne može naći sam. Povucite okvir oko dijela koji trebate.",
   // View dialog.
   viewTitle: "Priložena potvrda",
-  viewMeta: "str. {page} · priloženo {when}",
+  viewMeta: "str. {page}",
   viewNote: "Bilješka: {note}",
   viewAlt: "Isječak izvora, str. {page}",
   viewDisclaimer: "Potvrdu je priložio student. Ductura ne provjerava odgovara li isječak navodu; to prosuđuje čitatelj.",

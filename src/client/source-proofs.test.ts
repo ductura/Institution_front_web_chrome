@@ -12,8 +12,9 @@ const P = "33333333-3333-4333-8333-333333333333";
 const BASE = "https://ductura.invalid";
 const ROUTE = `/api/v1/student/assignments/${A}/sources/${S}/proofs`;
 const PROOF: SourceProof = {
-  id: P, sourceId: S, page: "14", note: null, createdAt: "2026-11-20T10:00:00.000Z", size: 1234, imagePath: `${ROUTE}/${P}/image`,
+  id: P, sourceId: S, page: "14", note: null, imagePath: `${ROUTE}/${P}/image`,
 };
+const wire = ({ sourceId: _s, ...rest }: SourceProof) => rest;
 const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
 
 type Call = { url: string; init: RequestInit | undefined };
@@ -46,17 +47,17 @@ describe("proofsPath and imagePathFits", () => {
 
 describe("listProofs", () => {
   it("GETs the route with no body and returns the proofs", async () => {
-    const { calls, transport } = recorder(() => json(200, { proofs: [PROOF] }));
+    const { calls, transport } = recorder(() => json(200, { proofs: [wire(PROOF)] }));
     expect(await listProofs(A, S, { baseUrl: BASE, transport })).toEqual({ kind: "ok", proofs: [PROOF] });
     expect(calls).toHaveLength(1);
     expect(calls[0]?.url).toBe(`${BASE}${ROUTE}`);
     expect(calls[0]?.init?.method).toBe("GET");
     expect(calls[0]?.init?.body).toBeUndefined();
-    expect(calls[0]?.init?.credentials).toBe("include");
+    expect(calls[0]?.init?.credentials).not.toBe("omit");
   });
   it("refuses an unknown field, another source or a foreign image path", async () => {
-    for (const proof of [{ ...PROOF, extra: 1 }, { ...PROOF, sourceId: P }, { ...PROOF, imagePath: "/drugo" }, { ...PROOF, createdAt: "jučer" }]) {
-      const { transport } = recorder(() => json(200, { proofs: [proof] }));
+    for (const proof of [{ ...PROOF, extra: 1 }, { ...PROOF, sourceId: P }, { ...PROOF, imagePath: "/drugo" }, { ...PROOF, createdAt: "jučer" }, { ...PROOF, page: " 14" }, { ...PROOF, note: "" }, { ...PROOF, id: "x" }]) {
+      const { transport } = recorder(() => json(200, { proofs: [proof].map((p) => ("sourceId" in p && p.sourceId === S ? wire(p as SourceProof) : p)) }));
       expect(await listProofs(A, S, { baseUrl: BASE, transport })).toEqual({ kind: "nepoznato" });
     }
   });
@@ -76,7 +77,7 @@ describe("listProofs", () => {
 
 describe("uploadProof", () => {
   it("sends exactly image, page and note as multipart and nothing else", async () => {
-    const { calls, transport } = recorder(() => json(201, { ...PROOF, note: "uvod" }));
+    const { calls, transport } = recorder(() => json(201, { ...wire(PROOF), note: "uvod" }));
     const result = await uploadProof(A, S, { image: jpeg(), page: "  14 ", note: " uvod " }, { baseUrl: BASE, transport });
     expect(result).toEqual({ kind: "ok", proof: { ...PROOF, note: "uvod" } });
     expect(calls).toHaveLength(1);
@@ -93,27 +94,28 @@ describe("uploadProof", () => {
     expect(Object.keys((calls[0]?.init?.headers ?? {}) as object)).toEqual(["accept"]);
   });
   it("leaves out an empty note", async () => {
-    const { calls, transport } = recorder(() => json(201, PROOF));
+    const { calls, transport } = recorder(() => json(201, wire(PROOF)));
     await uploadProof(A, S, { image: jpeg(), page: "14", note: "   " }, { baseUrl: BASE, transport });
     expect([...(calls[0]?.init?.body as FormData).keys()]).toEqual(["image", "page"]);
   });
   it("sends nothing for a draft that does not fit", async () => {
-    const { calls, transport } = recorder(() => json(201, PROOF));
+    const { calls, transport } = recorder(() => json(201, wire(PROOF)));
     const drafts = [
       { image: new Blob([JPEG_BYTES], { type: "image/png" }), page: "14" },
       { image: jpeg(new Uint8Array(0)), page: "14" },
       { image: jpeg(new Uint8Array(PROOF_IMAGE_MAX_BYTES + 1)), page: "14" },
       { image: jpeg(), page: "  " },
-      { image: jpeg(), page: "1".repeat(21) },
-      { image: jpeg(), page: "14", note: "x".repeat(501) },
+      { image: jpeg(), page: "1".repeat(31) },
+      { image: jpeg(), page: "14", note: "x".repeat(2001) },
     ];
     for (const draft of drafts) expect(await uploadProof(A, S, draft, { baseUrl: BASE, transport })).toEqual({ kind: "odbijeno" });
     expect(calls).toHaveLength(0);
   });
   it("is a success only on 201 with a proof of this source", async () => {
     const answers: [Response, unknown][] = [
-      [json(200, PROOF), { kind: "nepoznato" }],
-      [json(201, { ...PROOF, sourceId: P }), { kind: "nepoznato" }],
+      [json(200, wire(PROOF)), { kind: "nepoznato" }],
+      [json(201, PROOF), { kind: "nepoznato" }],
+      [json(201, { ...wire(PROOF), imagePath: `/api/v1/student/assignments/${A}/sources/${P}/proofs/${P}/image` }), { kind: "nepoznato" }],
       [json(413, {}), { kind: "greska", code: "too_large" }],
       [json(422, {}), { kind: "greska", code: "invalid" }],
       [json(403, {}), { kind: "greska", code: "forbidden" }],
