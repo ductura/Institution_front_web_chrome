@@ -12,7 +12,8 @@ import type { useLocalEditor } from "@/components/editor/LocalDocument";
 import { jumpToBlock } from "./jump";
 import { ReviewPanel } from "../../../../../../src/components/editor/review/ReviewPanel";
 import { readReviewDoc } from "../../../../../../src/components/editor/review/model";
-import { readAloud, speechSupport, stopReading } from "../../../../../../src/components/editor/addons/speech";
+import { createReadAloud, READ_ALOUD_DEFAULT_RATE, READ_ALOUD_MAX_RATE, READ_ALOUD_MIN_RATE, type ReadAloudController, type ReadAloudState } from "../read-aloud/controller";
+import { readAloudSupported } from "../read-aloud/support";
 
 import { pregledHr as t } from "./messages.hr";
 import {
@@ -77,29 +78,55 @@ function useEditorSnapshot(editor: Editor | null | undefined): { doc: Editor["st
   return snapshot;
 }
 
+const RATES = [READ_ALOUD_MIN_RATE, 1, 1.25, READ_ALOUD_MAX_RATE] as const;
+
 function Nacrt({ editor, doc, scope }: { editor: Editor; doc: NonNullable<ReturnType<typeof readReviewDoc>>; scope: PregledScope }) {
   const rows = useMemo(() => outlineRows(doc, scope), [doc, scope]);
   const text = useMemo(() => listenText(doc, scope), [doc, scope]);
-  const [support, setSupport] = useState<{ reading: boolean } | null>(null);
-  const [listening, setListening] = useState(false);
+  const [state, setState] = useState<ReadAloudState>("idle");
+  const [supported, setSupported] = useState<boolean | null>(null);
+  const [rate, setRate] = useState<number>(READ_ALOUD_DEFAULT_RATE);
+  const [fallback, setFallback] = useState(false);
   const [note, setNote] = useState("");
-  const live = useRef(true);
-  useEffect(() => { live.current = true; setSupport(speechSupport()); return () => { live.current = false; stopReading(); }; }, []);
-  useEffect(() => { stopReading(); setListening(false); }, [scope]);
+  const reader = useRef<ReadAloudController | null>(null);
+  useEffect(() => {
+    setSupported(readAloudSupported());
+    const controller = createReadAloud({ onStateChange: setState });
+    reader.current = controller;
+    return () => { reader.current = null; controller.stop(); };
+  }, []);
+  // A different scope is a different text: the reading of the old one stops.
+  useEffect(() => { reader.current?.stop(); setNote(""); }, [scope]);
 
+  const active = state === "reading" || state === "paused";
   const toggle = () => {
-    if (listening) { stopReading(); setListening(false); return; }
-    const started = readAloud(text, () => { if (live.current) setListening(false); });
+    const controller = reader.current;
+    if (!controller) return;
+    if (active) { controller.stop(); return; }
+    const started = controller.start(text);
     setNote(started ? "" : t.listenEmpty);
-    setListening(started);
+    setFallback(started && controller.voiceFallback);
   };
+  const pauseOrResume = () => { if (state === "paused") reader.current?.resume(); else reader.current?.pause(); };
+  const changeRate = (value: string) => { const next = Number(value); setRate(next); reader.current?.setRate(next); };
   return (
     <div>
       <p>{t.nacrtIntro}</p>
-      {support?.reading
-        ? <Button tone="quiet" aria-pressed={listening} onClick={toggle}>{listening ? t.listenStop : t.listen}</Button>
-        : support && <p role="status">{t.listenUnsupported}</p>}
-      {support?.reading && <p>{t.listenLocal}</p>}
+      {supported
+        ? (
+          <div>
+            <Button tone="quiet" aria-pressed={active} onClick={toggle}>{active ? t.listenStop : t.listen}</Button>
+            {active && <Button tone="quiet" aria-pressed={state === "paused"} onClick={pauseOrResume}>{state === "paused" ? t.listenResume : t.listenPause}</Button>}
+            <label>{t.listenRate}{" "}
+              <select value={rate} onChange={(e) => changeRate(e.currentTarget.value)}>
+                {RATES.map((r) => <option key={r} value={r}>{t.listenRateValue(r)}</option>)}
+              </select>
+            </label>
+          </div>
+        )
+        : supported === false && <p role="status">{t.listenUnsupported}</p>}
+      {supported && <p>{t.listenLocal}</p>}
+      {fallback && active && <p role="status">{t.listenVoiceFallback}</p>}
       {note && <p role="status">{note}</p>}
       {rows.length === 0 ? <p>{t.nacrtEmpty}</p> : (
         <ol>
