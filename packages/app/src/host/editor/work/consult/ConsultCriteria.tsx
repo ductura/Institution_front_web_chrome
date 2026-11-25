@@ -79,9 +79,9 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
             <li key={c.id} className={styles.item}>
               <b>{title}</b>
               {editable ? (
-                <div className={styles.seg} role="group" aria-label={t.assessmentGroup.replace("{title}", title)}>
+                <div className={`segmented ${styles.seg}`} role="group" aria-label={t.assessmentGroup.replace("{title}", title)}>
                   {ASSESSMENTS.map((a) => (
-                    <Button size="dense" tone="secondary" key={a} aria-pressed={c.assessment === a} disabled={row.busy} onClick={() => void send(c, assessmentChange(c, a), {})}>{t.assessments[a]}</Button>
+                    <Button tone="segment" key={a} aria-pressed={c.assessment === a} disabled={row.busy} onClick={() => void send(c, assessmentChange(c, a), {})}>{t.assessments[a]}</Button>
                   ))}
                 </div>
               ) : c.assessment !== null ? <span>{t.assessments[c.assessment]}</span> : null}

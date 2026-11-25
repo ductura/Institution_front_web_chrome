@@ -36,7 +36,5 @@
 .printItem:last-child { border-bottom: 0; }
 .printItem blockquote { margin: 6px 0; padding: 4px 10px; font-family: var(--ff-display); background: var(--well); border-radius: var(--radius-sm); }
 .printItem p { margin: 4px 0; }
-.kind { display: flex; background: var(--well); border-radius: var(--radius); padding: 2px; margin-bottom: 6px; flex-wrap: wrap; }
-.kind button { flex: 1; height: 30px; padding: 0 6px; border: 0; background: none; border-radius: var(--radius-sm); font-size: 12px; color: var(--ink-2); cursor: pointer; }
-.kind button[aria-pressed="true"] { background: var(--chrome); color: var(--ink); font-weight: 500; }
-@media (max-width: 640px) { .kind button { height: 38px; } .actions button { min-height: 34px; } }
+.kind { margin-bottom: 6px; }
+@media (max-width: 640px) { .actions button { min-height: 34px; } }

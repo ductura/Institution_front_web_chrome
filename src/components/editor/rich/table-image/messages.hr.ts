@@ -24,6 +24,7 @@ export const tableImageMessages = {
   replace: "Zamijeni",
   crop: "Izreži",
   remove: "Ukloni",
+  align: "Poravnanje",
   alignLeft: "Lijevo",
   alignCenter: "Sredina",
   alignRight: "Desno",

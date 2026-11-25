@@ -76,8 +76,8 @@ export function StartWizard({ open, chapterCount, profileLabel, onClose, onCreat
           <p>{t.wizard.profile(profileLabel)}</p>
           <TextField label={t.wizard.titleLabel} placeholder={t.wizard.titlePlaceholder} value={title} onChange={(e) => setTitle(e.target.value)} />
           <p><b>{t.wizard.kind}</b></p>
-          <div className={styles.chips}>{KIND_KEYS.map((k) => (
-            <button key={k} type="button" className={styles.chip} aria-pressed={kind === k} onClick={() => setKind(k)}>{t.wizard.kinds[k].label}</button>
+          <div className="segmented">{KIND_KEYS.map((k) => (
+            <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>{t.wizard.kinds[k].label}</button>
           ))}</div>
         </>
       )}

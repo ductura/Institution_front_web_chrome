@@ -1,11 +1,13 @@
-/* The prototype's `.seg` (editor.css): a recessed pill; the pressed button is raised. */
-.seg { display: flex; flex: none; padding: 2px; background: var(--well); border-radius: var(--radius); }
+/* The glass switch of the public landing page (25 Nov 2026), as `.segmented` in prototype.css: a faint pill; the pressed choice a brighter pill in full ink. */
+.seg { display: flex; flex: none; gap: 2px; padding: 3px; background: color-mix(in srgb, var(--ink) 4%, transparent); border-radius: 999px; }
 .seg :is(button, a) {
-  height: 30px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: transparent;
-  color: var(--ink-2); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box;
+  min-height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--ink-3); font: 500 13.5px / 1.2 var(--ff-ui); white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; box-sizing: border-box;
+  transition: color .2s, background .2s;
 }
 .seg :is(button, a):hover:not(:disabled, [aria-pressed="true"]) { color: var(--ink); }
-.seg :is(button, a)[aria-pressed="true"] { background: var(--sheet); color: var(--ink); font-weight: 500; }
+.seg :is(button, a)[aria-pressed="true"] { background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink); }
 .seg button:disabled:not([aria-pressed="true"]) { opacity: .45; cursor: default; }
 .seg :is(button, a):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-@media (max-width: 640px) { .seg :is(button, a) { height: 36px; padding: 0 7px; } }
+@media (max-width: 640px) { .seg :is(button, a) { min-height: 36px; padding: 0 10px; } }
+@media (pointer: coarse) { .seg :is(button, a) { min-height: var(--target); } }

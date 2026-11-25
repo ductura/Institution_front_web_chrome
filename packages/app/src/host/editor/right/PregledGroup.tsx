@@ -42,13 +42,13 @@ export function PregledGroup({ editor, documentId, enabledCheckIds = null }: {
   const scope: PregledScope = wholeWork || here < 0 ? WHOLE : { kind: "chapter", index: here };
   return (
     <section aria-label={t.title} data-pregled="">
-      <div role="group" aria-label={t.views}>
-        {VIEWS.map((id) => <Button key={id} tone={view === id ? "primary" : "quiet"} aria-pressed={view === id} onClick={() => setView(id)}>{t[id]}</Button>)}
+      <div className="segmented" role="group" aria-label={t.views}>
+        {VIEWS.map((id) => <Button key={id} tone="segment" aria-pressed={view === id} onClick={() => setView(id)}>{t[id]}</Button>)}
       </div>
       {view !== "provjere" && <>
-        <div role="group" aria-label={t.scope}>
-          <Button tone="quiet" aria-pressed={!wholeWork} onClick={() => setWholeWork(false)}>{t.scopeChapter}</Button>
-          <Button tone="quiet" aria-pressed={wholeWork} onClick={() => setWholeWork(true)}>{t.scopeWork}</Button>
+        <div className="segmented" role="group" aria-label={t.scope}>
+          <Button tone="segment" aria-pressed={!wholeWork} onClick={() => setWholeWork(false)}>{t.scopeChapter}</Button>
+          <Button tone="segment" aria-pressed={wholeWork} onClick={() => setWholeWork(true)}>{t.scopeWork}</Button>
         </div>
         {here < 0 && !wholeWork && <p role="status">{t.noChapter}</p>}
       </>}

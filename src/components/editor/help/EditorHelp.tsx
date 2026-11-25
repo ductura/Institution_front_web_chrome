@@ -52,9 +52,9 @@ export function EditorHelpDialogs({ view, onClose, help, counts, notice, documen
   return <>
     <Dialog open={view === "writing"} title={t.settingsTitle} actions={close} onClose={onClose}>
       <p className={styles.quiet}>{t.settingsIntro}</p>
-      <div className={styles.levels}>
+      <div className="segmented">
         {(Object.keys(t.levels) as Level[]).map((level) => (
-          <Button key={level} tone="quiet" aria-pressed={help.level === level} onClick={() => help.choose(level)}>
+          <Button key={level} tone="segment" aria-pressed={help.level === level} onClick={() => help.choose(level)}>
             {t.levels[level]}
           </Button>
         ))}

@@ -24,6 +24,6 @@
 .row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px; align-items: center; }
 .rowName { font-size: 14px; }
 .rowNote { display: block; font-size: 12px; color: var(--ink-3); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.chips { margin: 8px 0; }
 .help { margin: 4px 0 8px; font-size: 13px; color: var(--ink-3); }
 .sizeGroup { display: inline-flex; gap: 2px; }

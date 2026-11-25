@@ -32,9 +32,11 @@ export function ImageBar({ image, onAction, onAlign, onWidth }: Props) {
     <div role="toolbar" aria-label={t.imageBar} className={styles.bar} contentEditable={false}>
       <Button tone="quiet" onClick={() => onAction("pick")}>{t.replace}</Button>
       <Button tone="quiet" onClick={() => onAction("crop")} aria-pressed={image.crop !== undefined}>{t.crop}</Button>
-      {ALIGNS.map(([value, label]) => (
-        <Button key={value} tone="quiet" aria-pressed={image.align === value} onClick={() => onAlign(value)}>{label}</Button>
-      ))}
+      <div className="segmented" role="group" aria-label={t.align}>
+        {ALIGNS.map(([value, label]) => (
+          <Button key={value} tone="segment" aria-pressed={image.align === value} onClick={() => onAlign(value)}>{label}</Button>
+        ))}
+      </div>
       <label className={styles.width}>
         <span>{t.widthLabel}</span>
         <input

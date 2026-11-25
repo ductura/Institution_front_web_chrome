@@ -59,9 +59,9 @@ export function CriteriaView({ load, rows, onPick, onEdit, onDraft, onSaveNote, 
           return (
             <li key={c.id} className={styles.item}>
               <b>{title}</b>
-              <div className={styles.seg} role="group" aria-label={t.assessmentGroup.replace("{title}", title)}>
+              <div className="segmented" role="group" aria-label={t.assessmentGroup.replace("{title}", title)}>
                 {ASSESSMENTS.map((a) => (
-                  <Button key={a} aria-pressed={c.assessment === a} disabled={row.busy} onClick={() => onPick(c, a)}>
+                  <Button key={a} tone="segment" aria-pressed={c.assessment === a} disabled={row.busy} onClick={() => onPick(c, a)}>
                     {t.assessments[a]}
                   </Button>
                 ))}

@@ -43,8 +43,8 @@ function VersionPicker({ client, documentId, versions, mode }: Pick<VersionCompa
   const options = versions.map(({ revision, savedMinute }) => ({ value: String(revision), label: t.version(revision, savedMinute) }));
   return (
     <>
-      {mode === "submissions" && <div role="group" aria-label={t.timeline}>
-        {options.map(({ value, label }) => <Button key={value} tone="quiet" aria-pressed={Number(value) === from}
+      {mode === "submissions" && <div className="segmented" role="group" aria-label={t.timeline}>
+        {options.map(({ value, label }) => <Button key={value} tone="segment" aria-pressed={Number(value) === from}
           onClick={() => setFrom(Number(value))}>{label}</Button>)}
       </div>}
       {mode !== "round" && <>

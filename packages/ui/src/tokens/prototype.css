@@ -648,26 +648,34 @@ textarea.input {
   font-weight: 400;
 }
 
+/* The tabs are the glass switch too (see the end of this file). */
 .tabs {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
-  border-bottom: 1px solid var(--rule-2);
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
 .tabs button {
-  min-height: var(--target, 44px);
-  padding: 0 var(--space-3);
+  min-height: 34px;
+  padding: 7px 16px;
   border: 0;
-  border-bottom: 2px solid transparent;
+  border-radius: 999px;
   background: transparent;
-  color: var(--ink-2);
+  color: var(--ink-3);
+  font: 500 13.5px / 1.2 var(--ff-ui);
+  transition: color .2s, background .2s;
+}
+
+.tabs button:hover {
+  color: var(--ink);
 }
 
 .tabs button[aria-selected="true"] {
-  border-bottom-color: var(--accent);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--ink);
-  font-weight: 600;
 }
 
 /* N-05 text of the work: the white sheet of Ductura_nastavnik.html (.ed-sheet), light in both themes (VIZ-N3). */
@@ -713,5 +721,110 @@ textarea.input {
 
   .ed-sheet p {
     text-align: left;
+  }
+}
+
+/*
+ * The glass switch of the public landing page (25 Nov 2026), the one look
+ * for every choice of a few: a faint pill, the open choice a brighter pill in
+ * full ink. The ink mix follows the theme and the sheet. Buttons of the
+ * package take tone="segment"; plain buttons inside `.segmented` look the same.
+ */
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.segmented > button:not([data-tone]) {
+  min-height: 34px;
+  padding: 7px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  font: 500 13.5px / 1.2 var(--ff-ui);
+  cursor: pointer;
+  transition: color .2s, background .2s;
+}
+
+.segmented > button:not([data-tone]):hover {
+  color: var(--ink);
+}
+
+.segmented > button:not([data-tone]):is([aria-pressed="true"], [aria-selected="true"]) {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+/* The ported strips (globals.css stays as the source) take the same look. */
+.modes,
+.sheet-theme__options {
+  gap: 2px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.modes__item,
+.sheet-theme__option,
+.panel-tabs__tab {
+  border-radius: 999px;
+  color: var(--ink-3);
+  font-weight: 500;
+  transition: color .2s, background .2s;
+}
+
+.modes__item,
+.sheet-theme__option {
+  padding: 0 16px;
+  font-size: 13.5px;
+}
+
+.panel-tabs__list {
+  gap: 2px;
+  padding: 6px 12px;
+}
+
+.panel-tabs__tab {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+
+.sheet-theme__option:hover,
+.panel-tabs__tab:hover {
+  color: var(--ink);
+}
+
+.modes__item[aria-current="page"],
+.sheet-theme__option[aria-pressed="true"],
+.panel-tabs__tab[aria-selected="true"] {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.sheet-theme__option[aria-pressed="true"]::before {
+  content: none;
+}
+
+/* The phone floor of interface text (globals.css) holds for the tabs. */
+@media (max-width: 640px) {
+  .panel-tabs__tab {
+    font-size: 13px;
+  }
+}
+
+@media (pointer: coarse) {
+  .segmented > button:not([data-tone]),
+  .tabs button {
+    min-height: var(--target);
   }
 }

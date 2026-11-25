@@ -72,9 +72,9 @@ export function ShellView({ children, teacherHref, mode = "write", editable = tr
           {(["rail", "panel"] as const).map((side) => (
             <div key={side} className={styles.group} role="group" aria-label={`${t.widthsLabel}: ${t[side]}`}>
               <span>{t[side]}</span>
-              <div className={styles.row}>
+              <div className="segmented">
                 {WIDTH_KEYS.map((size) => (
-                  <Button key={size} tone="quiet" size="small" aria-pressed={view.widths[side] === size} onClick={() => pick(side, size)}>{t.width[size]}</Button>
+                  <Button key={size} tone="segment" aria-pressed={view.widths[side] === size} onClick={() => pick(side, size)}>{t.width[size]}</Button>
                 ))}
               </div>
             </div>

@@ -39,10 +39,12 @@ export function PanelSettings({ side, value, onChange }: {
         </fieldset>
         <fieldset className={styles.mobileChoices}>
           <legend>{t.mobile}</legend>
-          {(["same", ...LAYOUTS] as const).map((mobile) => <Button key={mobile} tone="quiet"
-            aria-pressed={mobile === value.mobile} onClick={() => onChange({ ...value, mobile })}>
-            {mobile === "same" ? t.same : labels[mobile]}
-          </Button>)}
+          <div className="segmented">
+            {(["same", ...LAYOUTS] as const).map((mobile) => <Button key={mobile} tone="segment"
+              aria-pressed={mobile === value.mobile} onClick={() => onChange({ ...value, mobile })}>
+              {mobile === "same" ? t.same : labels[mobile]}
+            </Button>)}
+          </div>
         </fieldset>
       </Dialog>
     </div>}

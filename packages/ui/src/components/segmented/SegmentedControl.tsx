@@ -27,9 +27,9 @@ export type SegmentedControlProps = {
 };
 
 /**
- * The prototype's `.seg` (editor top bar: "Pisanje / Kako vidi nastavnik"):
- * a recessed pill holding buttons, the pressed one raised in the chrome colour
- * and set in weight 500, so the choice never rests on colour alone. Each button
+ * The glass switch (public landing page, 25 Nov 2026; editor top bar:
+ * "Pisanje / Kako vidi nastavnik"): a faint pill holding buttons, the pressed
+ * one a brighter pill in full ink, so the choice shows in lightness. Each button
  * carries `aria-pressed`; none is a tab, because the choice does not swap panels.
  */
 export function SegmentedControl({ label, options, value, onChange, className }: SegmentedControlProps) {

@@ -87,7 +87,7 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
     </>}
     {layout === "c" && <>
       <div className={styles.iconStrip} role="group" aria-label={messagesHr.workspace.panelTabs}>
-        {groups.map((group) => <Button key={group} tone="quiet" aria-pressed={shown === group}
+        {groups.map((group) => <Button key={group} tone="segment" aria-pressed={shown === group}
           onClick={() => onSelect(!drawer && shown === group ? null : group)}>
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={icons[group]} /></svg>

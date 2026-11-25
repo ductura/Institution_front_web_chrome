@@ -467,27 +467,42 @@ main:focus {
   overflow-wrap: anywhere;
 }
 
+/*
+ * The glass switch of the public landing page (25 Nov 2026), the one look
+ * for every choice of a few in the app: a faint pill, the open choice a
+ * brighter pill in full ink. The ink mix follows the theme and the sheet.
+ */
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
 .modes {
   display: flex;
   gap: 2px;
   margin-left: auto;
-  padding: 2px;
-  border-radius: var(--radius);
-  background: var(--well);
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
 .modes__item {
   display: inline-flex;
   align-items: center;
   min-height: 32px;
-  padding: 0 12px;
+  padding: 0 16px;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   background: transparent;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--ink-2);
+  font: 500 13.5px / 1.2 var(--ff-ui);
+  color: var(--ink-3);
   text-decoration: none;
+  transition: color .2s, background .2s;
 }
 
 .modes__item:not([aria-disabled="true"]):hover {
@@ -498,12 +513,10 @@ main:focus {
   cursor: not-allowed;
 }
 
-/* The open view: raised segment, full ink and weight, not colour alone. */
+/* The open view: the brighter pill in full ink. */
 .modes__item[aria-current="page"] {
-  background: var(--hover);
-  font-weight: 600;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--ink);
-  box-shadow: 0 1px 2px #0000000f;
 }
 
 .workspace__body {
@@ -548,8 +561,8 @@ main:focus {
   top: 0;
   z-index: 2;
   display: flex;
-  gap: 14px;
-  padding: 0 16px;
+  gap: 2px;
+  padding: 6px 12px;
   overflow-x: auto;
   background: var(--chrome);
   border-bottom: 1px solid var(--rule-2);
@@ -557,23 +570,24 @@ main:focus {
 
 .panel-tabs__tab {
   flex: none;
-  min-height: 36px;
-  padding: 10px 0 9px;
+  min-height: 32px;
+  padding: 6px 12px;
   border: 0;
+  border-radius: 999px;
   background: transparent;
-  font-size: 12px;
+  font: 500 12.5px / 1.2 var(--ff-ui);
   color: var(--ink-3);
+  transition: color .2s, background .2s;
 }
 
 .panel-tabs__tab:hover {
   color: var(--ink);
 }
 
-/* The open tab: underline and weight as well as colour. */
+/* The open tab: the glass switch's brighter pill in full ink. */
 .panel-tabs__tab[aria-selected="true"] {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--ink);
-  font-weight: 600;
-  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .panel-tabs__panel {
@@ -762,31 +776,32 @@ main:focus {
 
 .sheet-theme__options {
   display: inline-flex;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  overflow: hidden;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
 .sheet-theme__option {
   min-height: 32px;
-  padding: 0 12px;
+  padding: 0 16px;
   border: 0;
+  border-radius: 999px;
   background: transparent;
-  color: var(--ink-2);
-  font: inherit;
-  font-size: 13px;
+  color: var(--ink-3);
+  font: 500 13.5px / 1.2 var(--ff-ui);
   cursor: pointer;
+  transition: color .2s, background .2s;
 }
 
-/* Pressed is shown by a check mark and weight as well as by colour. */
-.sheet-theme__option[aria-pressed="true"] {
-  background: var(--accent-soft);
+.sheet-theme__option:hover {
   color: var(--ink);
-  font-weight: 700;
 }
 
-.sheet-theme__option[aria-pressed="true"]::before {
-  content: "\2713\00a0";
+/* The glass switch: the chosen sheet is the brighter pill in full ink. */
+.sheet-theme__option[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
 }
 
 @media (max-width: 640px) {

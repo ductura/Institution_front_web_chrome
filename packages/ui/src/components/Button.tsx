@@ -6,8 +6,9 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   /**
    * The prototype's buttons (VIZ-0): primary (gold), secondary (outlined),
    * ghost (underlined text). "quiet" is the older name of secondary and looks the same.
+   * segment: one choice of a few, the glass switch; put the buttons in a `.segmented` group.
    */
-  tone?: "primary" | "secondary" | "quiet" | "ghost";
+  tone?: "primary" | "secondary" | "quiet" | "ghost" | "segment";
   /** regular: 44 px, 14 px sides; small: 44 px, 10 px sides; dense: 32 px for dense bars. */
   size?: "regular" | "small" | "dense";
   /** Work in progress: the button stays focusable but does nothing (aria-disabled). */

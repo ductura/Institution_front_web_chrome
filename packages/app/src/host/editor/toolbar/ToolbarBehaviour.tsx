@@ -114,9 +114,9 @@ export function CustomiseToolbarDialog({ open, groups, prefs, intro, onChange, o
       <p>{introText}</p>
       <p className={styles.help}>{t.customiseHelp}</p>
       <h3>{t.lookTitle}</h3>
-      <div className={styles.chips} role="group" aria-label={t.lookTitle}>
+      <div className={`segmented ${styles.chips}`} role="group" aria-label={t.lookTitle}>
         {LOOKS.map((l) => (
-          <Button key={l.id} tone={prefs.look === l.id ? "primary" : "quiet"} aria-pressed={prefs.look === l.id} onClick={() => onChange(setLook(prefs, l.id))}>{l.label}</Button>
+          <Button key={l.id} tone="segment" aria-pressed={prefs.look === l.id} onClick={() => onChange(setLook(prefs, l.id))}>{l.label}</Button>
         ))}
       </div>
       <p className={styles.help}>{t.lookHelp}</p>

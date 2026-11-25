@@ -267,7 +267,7 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
         <p className={styles.muted}>{t.newQuote}</p>
         <p className={styles.quote}>„{form.place?.quote}”</p>
         {role === "teacher" && (
-          <div className={styles.kind} role="group" aria-label={t.newKind}>
+          <div className={`segmented ${styles.kind}`} role="group" aria-label={t.newKind}>
             {KINDS.map((k) => (
               <button key={k} type="button" aria-pressed={form.kind === k} onClick={() => setForm((f) => ({ ...f, kind: k }))}>{t.kinds[k]}</button>
             ))}

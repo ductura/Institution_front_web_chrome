@@ -97,9 +97,9 @@ function Bibliography({ documentId, editor, proofCounts }: Props) {
   return <div className={styles.content}>
     <p>{proofCounts ? t.summary(sources.length, cited, stats.filter((s) => s.proofs > 0).length) : t.summaryNoProofs(sources.length, cited)}</p>
     <p><small>{t.stateDevice}</small></p>
-    {counts.any && <div className={styles.row} role="group" aria-label={t.stateLabel}>
+    {counts.any && <div className="segmented" role="group" aria-label={t.stateLabel}>
       {(["all", "get", "unread"] as const).map((f) =>
-        <Button key={f} tone="quiet" aria-pressed={filter === f} onClick={() => setFilter(f)}>
+        <Button key={f} tone="segment" aria-pressed={filter === f} onClick={() => setFilter(f)}>
           {f === "all" ? t.filterAll : f === "get" ? t.filterGet(counts.get) : t.filterUnread(counts.unread)}
         </Button>)}
     </div>}
@@ -117,9 +117,9 @@ function Bibliography({ documentId, editor, proofCounts }: Props) {
         <strong>{s.label}</strong>
         <span>{s.title}</span>
         <small>{s.places.length ? t.cited(s.places.length) : t.notCited}</small>
-        <div className={styles.row} role="group" aria-label={`${t.stateLabel}: ${s.label}`}>
+        <div className="segmented" role="group" aria-label={`${t.stateLabel}: ${s.label}`}>
           {([["get", t.stateGet], ["have", t.stateHave], ["read", t.stateRead]] as const).map(([v, label]) =>
-            <Button key={v} tone="quiet" aria-pressed={states[s.id] === v} disabled={!editable}
+            <Button key={v} tone="segment" aria-pressed={states[s.id] === v} disabled={!editable}
               onClick={() => setState(s.id, v)}>{label}</Button>)}
         </div>
         {s.places.length > 0 && <Where places={s.places} onJump={jump} onNext={() => next(s.id, s.places)} />}
