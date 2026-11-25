@@ -25,6 +25,8 @@ import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { useStudentToast } from "../../student/toast/StudentToasts";
+import { useFormulaHost } from "../formula/FormulaHost";
+import { formulaHostHr } from "../formula/messages.hr";
 import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
@@ -86,11 +88,11 @@ export function toolbarCommands(editor: Editor | null): ToolbarCommands {
   };
 }
 
-type Item = { id: string; label: string; disabled?: boolean };
+type Item = { id: string; label: string; disabled?: boolean; /** The reason an item is off, shown beside it. */ hint?: string };
 
 function Menu({ label, items, onSelect }: { label: string; items: readonly Item[]; onSelect: (id: string) => void }) {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const entries: MenuEntry[] = items.map((i) => ({ kind: "item", id: i.id, label: i.label, disabled: i.disabled }));
+  const entries: MenuEntry[] = items.map((i) => ({ kind: "item", id: i.id, label: i.label, disabled: i.disabled, hint: i.hint }));
   return (
     <>
       <Button tone="quiet" aria-haspopup="menu"
@@ -122,6 +124,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const state = useEditorSnapshot(editor);
   const theme = useSheetTheme();
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
+  const formula = useFormulaHost(editor, confirmedWorkSchemaVersion);
   const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
@@ -130,6 +133,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const insert: Item[] = [
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
     { id: "xref", label: crossReferenceMessages.title, disabled: !writeOk || !v3.openInsert },
+    { id: "formula", label: formulaHostHr.insertBlock, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
+    { id: "inlineFormula", label: formulaHostHr.insertInline, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
     { id: "workParts", label: workPartsMessages.title, disabled: !writeOk },
   ];
@@ -152,6 +157,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         if (id === "footnote") v3.openInsert?.("footnote");
         else if (id === "xref") v3.openInsert?.("crossReference");
         else if (id === "workParts" && writeOk) setDialog("parts");
+        else if (id === "formula" || id === "inlineFormula") formula.open(id === "formula" ? "block" : "inline");
         else if (id === "hole") insertHole(editor);
       }} />
       <Menu label={t.toolbar.convert} items={convert} onSelect={(id) => {
@@ -180,6 +186,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
       <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />
       {v3.dialog}
+      {formula.dialog}
     </>
   );
 }

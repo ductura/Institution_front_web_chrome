@@ -24,3 +24,13 @@ export const formulaDialogHr = {
   confirm: "Spremi",
   cancel: "Odustani",
 } as const;
+
+// WEB-V21-STEM-FORMULA-UREDNIK: stavka „Formula…” u izborniku Umetni i prikaz formule u tekstu.
+export const formulaHostHr = {
+  insertBlock: "Formula…",
+  insertInline: "Formula u retku…",
+  editHint: "Dvaput kliknite za izmjenu formule.",
+  disabledSchema: "Formule nisu dostupne u ovom radu.",
+  disabledTool: "Područje ovog rada ne nudi formule.",
+  disabledReadOnly: "Rad se ne može uređivati.",
+} as const;
