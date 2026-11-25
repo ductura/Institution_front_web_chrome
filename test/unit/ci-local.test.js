@@ -15,7 +15,7 @@ const running = (w, files) => plan(w, decide(w, files)).filter((j) => j.on).map(
 const cases = [
   [['docs/x.md'], 'changes'],
   [['src/components/editor/a.tsx'], 'app,app-build,changes,test,ui'],
-  [['catalog/src/a.ts'], 'changes,ui'],
+  [['catalog/src/a.ts'], 'changes,ui,ui-baselines'],
   [['src/client/api.ts'], 'app,app-build,changes,ui'],
 ];
 for (const [files, expected] of cases) {
@@ -27,7 +27,7 @@ for (const [files, expected] of cases) {
 test('ci:local reads the rules from ci.yml: a changed rule in the workflow changes the plan', () => {
   const changed = readWorkflow(workflowText.replace("u=\"$(hit '^(packages/|catalog/|", "u=\"$(hit '^(packages/|"));
   assert.notEqual(changed, wf);
-  assert.equal(running(changed, ['catalog/src/a.ts']), 'changes');
+  assert.equal(running(changed, ['catalog/src/a.ts']), 'changes,ui-baselines');
 });
 
 test('ci:local: with no change list every job runs, as on a push', () => {

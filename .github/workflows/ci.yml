@@ -29,8 +29,11 @@ jobs:
   # there runs both. `app-build` follows `app`; the client checks run in the
   # ui part `checks` and every path of `client` also turns `ui` on.
   # `baselines` (report only, outside ci-ok) is on for a push, a run by hand
-  # and the schedule (main only); never on a pull request (CI-BRZINA, Daniel
-  # 25. 11. 2026): its three runners went to the checks ci-ok waits for.
+  # and the schedule (main only). On a pull request it is on only when the
+  # pull request changes the catalogue or packages/ui/, what the baselines
+  # show; a root file, .github/ or a failed diff does not turn it on
+  # (CI-BRZINA, Daniel 25. 11. 2026): its three runners go to the checks
+  # ci-ok waits for.
   #
   # These rules only fit checks that read the paths they list. A check that
   # reads the whole repository (the index, every tracked file, the lockfiles)
@@ -94,7 +97,8 @@ jobs:
           c="$(hit '^(src/client/|packages/editor-core/)')"
           u="$(hit '^(packages/|catalog/|src/|scripts/forbidden-terms/|locales/)')"
           a="$(hit '^(packages/|src/|locales/)')"
-          emit "$t" "$c" "$u" "$a" false
+          b="$(hit '^(catalog/|packages/ui/)')"
+          emit "$t" "$c" "$u" "$a" "$b"
           # changes:end
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
@@ -364,9 +368,10 @@ jobs:
   # that cannot fail it; three Playwright shards. Listed in REPORT_ONLY in
   # test/unit/ci-ok.test.js. It runs when `changes` says `baselines`: on a
   # push (after a merge into main or the migration base), by hand and on the
-  # schedule of main, never on a pull request (CI-BRZINA, Daniel 25. 11.
-  # 2026): a pull request run already holds about twenty jobs, the limit of
-  # the organisation's concurrent runners, and these three only report.
+  # schedule of main, and on a pull request only when it changes catalog/ or
+  # packages/ui/ (CI-BRZINA, Daniel 25. 11. 2026): a pull request run already
+  # holds about twenty jobs, the limit of the organisation's concurrent
+  # runners, and these three only report.
   ui-baselines:
     needs: changes
     if: ${{ needs.changes.outputs.baselines == 'true' }}
