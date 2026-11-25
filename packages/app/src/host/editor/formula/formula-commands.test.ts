@@ -53,6 +53,14 @@ describe("insertFormula", () => {
     expect(JSON.stringify(e.getJSON())).toBe(before);
     expect(insertFormula(e, "inline", "x".repeat(1000))).toBe(true);
   });
+  it("refuses a % comment followed by a line break instead of silently commenting out the rest", () => {
+    const e = setUp();
+    const before = JSON.stringify(e.getJSON());
+    expect(insertFormula(e, "inline", "x % note\n+y")).toBe(false);
+    expect(JSON.stringify(e.getJSON())).toBe(before);
+    expect(insertFormula(e, "inline", "x \\% note\n+y")).toBe(true);
+    expect(insertFormula(e, "inline", "x % trailing comment only")).toBe(true);
+  });
   it("counts code points, not UTF-16 units", () => {
     const e = setUp();
     expect(insertFormula(e, "inline", "😀".repeat(1000))).toBe(true);
