@@ -1,0 +1,26 @@
+// WEB-V21-STEM-FORMULA-DIJALOG: tekstovi dijaloga „Formula” i „Formula u retku”.
+export const formulaDialogHr = {
+  title: "Formula",
+  inlineTitle: "Formula u retku",
+  hint: "Kliknite oblik pa upišite što ide u prazna mjesta (□). Tab vodi na sljedeće prazno mjesto.",
+  inlineHint: "Stoji unutar rečenice, bez broja.",
+  field: "Zapis (LaTeX); možete ga i sami upisati",
+  placeholder: "npr. \\bar{x} = \\frac{1}{n}\\sum_{i=1}^{n} x_i",
+  previewLabel: "Pregled formule",
+  previewEmpty: "Ovdje se vidi kako formula izgleda.",
+  templates: "Oblici",
+  templateNames: {
+    fraction: "razlomak",
+    root: "korijen",
+    sum: "suma",
+    integral: "integral",
+    matrix: "matrica 2×2",
+  },
+  holes: "Popunite sva prazna mjesta (□) ili ih obrišite.",
+  broken: "Zapis formule nije ispravan. Unos je zadržan, ispravite ga.",
+  tooLong: (length: number, max: number) => `Zapis je predug: ${length} od najviše ${max} znakova.`,
+  counter: (length: number, max: number) => `${length} / ${max} znakova`,
+  refused: "Formulu nije moguće spremiti. Unos je zadržan, provjerite zapis.",
+  confirm: "Spremi",
+  cancel: "Odustani",
+} as const;
