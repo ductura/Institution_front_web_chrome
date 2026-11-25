@@ -188,9 +188,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { part: checks }
-          - { part: unit, leg: 1, of: 2, packages: "./src/**" }
-          - { part: unit, leg: 2, of: 2, packages: "!./src/**" }
+          # The unit tests of ./src/** take about 25 s; as a job of their own
+          # they took a runner and about 45 s of setup for that. checks runs
+          # them after the typecheck and still ends before the longest
+          # behaviour leg. Every package still runs in exactly one part.
+          - { part: checks, packages: "./src/**" }
+          - { part: unit, packages: "!./src/**" }
           - { part: behaviour, leg: 1, of: 3, browser: true }
           - { part: behaviour, leg: 2, of: 3, browser: true }
           - { part: behaviour, leg: 3, of: 3, browser: true }
@@ -242,7 +245,7 @@ jobs:
         working-directory: src/client
         run: pnpm run test
       - name: Unit tests (tokens, provenance, save state, catalogue coverage)
-        if: matrix.part == 'unit'
+        if: matrix.packages
         env:
           PACKAGES: ${{ matrix.packages }}
         run: pnpm -r --filter "$PACKAGES" --filter "!{.}" run test
