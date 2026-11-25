@@ -979,7 +979,7 @@ const proofPage: ProofPicture = {
   },
 };
 const sampleProof = (id: string, sourceId: string, page: string, note: string | null = null): SourceProof => ({
-  id, sourceId, page, note, createdAt: "2026-11-20T10:15:00.000Z", size: 24000,
+  id, sourceId, page, note,
   imagePath: `${proofsPath(PROOF_WORK, sourceId) ?? ""}/${id}/image`,
 });
 const proofSources = [{ id: PROOF_S1, label: "Izmišljenić (2020)" }, { id: PROOF_S2, label: "Primjerić i Uzorak (2019)" }];
