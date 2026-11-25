@@ -131,12 +131,11 @@ describe("ductus-edit-steps-v4 · blocks, atoms", () => {
     expect(code([blockStep(heading)])).toBe("invalid_node");
   });
 
-  it("reads a numbered item with its level (WEB-1608) and refuses it in v3 and with a wrong level", () => {
-    const item = (attrs: Record<string, unknown>) => ({ attrs, content: [text("stavka")], type: "numberedItem" });
-    expect(code([blockStep(item({ level: 2, nodeId: null }))])).toBe("ok");
-    expect(code([blockStep(item({ level: 4, nodeId: null }))])).not.toBe("ok");
-    expect(code([blockStep(item({ nodeId: null }))])).not.toBe("ok");
-    expect(code([blockStep(item({ level: 1, nodeId: null }))], EDIT_STEP_FORMAT_V3)).not.toBe("ok");
+  it("reads an ordered item (contract v4 §2.2) with the node id only, and refuses it in v3 and with a level", () => {
+    const item = (attrs: Record<string, unknown>) => ({ attrs, content: [text("stavka")], type: "orderedItem" });
+    expect(code([blockStep(item({ nodeId: null }))])).toBe("ok");
+    expect(code([blockStep(item({ level: 1, nodeId: null }))])).not.toBe("ok");
+    expect(code([blockStep(item({ nodeId: null }))], EDIT_STEP_FORMAT_V3)).not.toBe("ok");
   });
 });
 

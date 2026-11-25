@@ -6,7 +6,7 @@ import "./katex/katex.css";
 import type {
   CanonicalDocumentV4, DocumentNodeV4, InlineNodeV4, ParagraphNodeV4, TextNodeV4,
 } from "../../../../../../editor-core/src/document/document/schema.ts";
-import { numberedListNumbers } from "../../../../../../editor-core/src/lists/numbering.ts";
+import { orderedListNumbers } from "../../../../../../editor-core/src/lists/numbering.ts";
 import { renderTex } from "../../../editor/formula/render.ts";
 import { v4ViewMessages as text } from "./messages.hr";
 
@@ -17,7 +17,7 @@ import { v4ViewMessages as text } from "./messages.hr";
  * package `dist` folder is an unwaivable "test file import" in src/client/no-direct-api.test.ts. Nothing is editable and no link is followed: a link mark shows its text only.
  */
 export default function V4Blocks({ document }: { document: CanonicalDocumentV4 }) {
-  const numbers = numberedListNumbers(document.nodes);
+  const numbers = orderedListNumbers(document.nodes);
   return <article data-v4="true">{document.nodes.map((node, i) => <Block key={node.id ?? i} node={node} number={numbers[i] ?? null} />)}</article>;
 }
 
@@ -26,11 +26,8 @@ function Block({ node, number }: { node: DocumentNodeV4; number: string | null }
     case "heading": return <h4><Texts nodes={node.children} /></h4>;
     case "paragraph": return <p><Inlines nodes={node.children} /></p>;
     case "bulletItem": return <p>• <Inlines nodes={node.children} /></p>;
-    case "numberedItem": {
-      // The number is derived from the block order (never stored), as the editor and the export do.
-      const depth = Math.min(3, Math.max(1, node.level)) - 1;
-      return <p data-level={node.level} style={{ paddingInlineStart: `${depth * 1.5}em` }}>{number} <Inlines nodes={node.children} /></p>;
-    }
+    // The number is derived from the block order (never stored), as the editor and the export do.
+    case "orderedItem": return <p>{number} <Inlines nodes={node.children} /></p>;
     case "quote": return <blockquote><Inlines nodes={node.children} /></blockquote>;
     case "formula": return <Formula tex={node.tex} display />;
     case "codeBlock": return <Code node={node} />;
