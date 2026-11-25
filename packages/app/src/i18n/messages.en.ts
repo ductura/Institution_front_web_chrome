@@ -111,6 +111,7 @@ export const hostTextEn = {
   mentorPracticeJournal: "Students' practice journals",
   workTeam: "My team",
   workTeams: "Teams on the assignment",
+  teacherPeerReview: "Peer review among students",
   peerReview: "Peer review of works",
   peerReviewReceived: "Reviews received",
   peerReviewWork: "Review of a work",
