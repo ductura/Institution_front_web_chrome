@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button, Card } from "@ductura/ui";
 
 import { thesisHr } from "./messages.hr";
-import { panelVisible, readSafely, type SectionState, type ThesisRole, type ThesisSectionDef } from "./model";
+import { orderSections, panelVisible, readSafely, type SectionState, type ThesisRole, type ThesisSectionDef } from "./model";
 import { registeredSections } from "./sections";
 
 function Section({ section, documentId, role, onState }: {
@@ -56,11 +56,12 @@ export function ThesisPanel({ documentId, role, inMentorship = true, sections = 
   const [states, setStates] = useState<Readonly<Record<string, SectionState>>>({});
   const onState = useCallback((id: string, s: SectionState) => setStates((all) => ({ ...all, [id]: s })), []);
   // A section that has not reported yet counts as loading, so the panel is shown while reads are pending.
-  const all = sections.map((s) => states[s.id] ?? ({ kind: "loading" } as const));
+  const ordered = orderSections(sections);
+  const all = ordered.map((s) => states[s.id] ?? ({ kind: "loading" } as const));
   if (!panelVisible(inMentorship, all)) return null;
   return (
     <section aria-label={thesisHr.title} data-testid="thesis-panel">
-      {sections.map((s) => <Section key={s.id} section={s} documentId={documentId} role={role} onState={onState} />)}
+      {ordered.map((s) => <Section key={s.id} section={s} documentId={documentId} role={role} onState={onState} />)}
     </section>
   );
 }

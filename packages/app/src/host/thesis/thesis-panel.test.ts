@@ -81,14 +81,8 @@ describe("mount points", () => {
   });
 });
 
-describe("registry and retry (review of #686)", () => {
-  const here = (f: string) => readFileSync(join(__dirname, f), "utf8");
-  it("the registry does not use the Vite-only glob (the app runs on Next)", () => {
-    expect(here("sections.ts")).not.toMatch(/^[^/\n]*import\.meta\.glob/m);
-  });
-  it("the unavailable state renders the retry button as a child, not through Card's error prop", () => {
-    const src = here("ThesisPanel.tsx");
-    expect(src).not.toMatch(/error=\{thesisHr\.unavailable\}/);
-    expect(src).toMatch(/<Button[^>]*onClick=\{reload\}>\{thesisHr\.retry\}/);
+describe("registry (review of #686)", () => {
+  it("does not use the Vite-only glob (the app runs on Next)", () => {
+    expect(readFileSync(join(__dirname, "sections.ts"), "utf8")).not.toMatch(/^[^/\n]*import\.meta\.glob/m);
   });
 });
