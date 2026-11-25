@@ -277,20 +277,19 @@ test('changes: app-build equals app and client implies ui, for every case', () =
   }
 });
 
-// ZEL-CI-RED: the report-only pixel baselines run on a pull request that
-// changes catalog/, packages/ui/ or a root or .github/ file, by hand and on
-// the schedule (main only); never on a push. A change that can move a pixel
-// of the catalogue is reported on its pull request.
+// CI-BRZINA (Daniel 25. 11. 2026): the report-only pixel baselines run on a
+// push, by hand and on the schedule (main only); never on a pull request,
+// whatever it changes, so its runners go to the checks ci-ok waits for.
 const baselineCases = [
-  [['catalog/a.ts'], 'pull_request', 'true'],
-  [['packages/ui/src/a.tsx'], 'pull_request', 'true'],
-  [['packages/ui/src/a.module.css'], 'pull_request', 'true'],
+  [['catalog/a.ts'], 'pull_request', 'false'],
+  [['packages/ui/src/a.tsx'], 'pull_request', 'false'],
+  [['packages/ui/src/a.module.css'], 'pull_request', 'false'],
   [['packages/editor-core/src/a.ts'], 'pull_request', 'false'],
   [['packages/app/src/host/a.tsx'], 'pull_request', 'false'],
   [['docs/x.md'], 'pull_request', 'false'],
-  [['.github/workflows/ci.yml'], 'pull_request', 'true'],
-  [['pnpm-lock.yaml'], 'pull_request', 'true'],
-  [['catalog/a.ts'], 'push', 'false'],
+  [['.github/workflows/ci.yml'], 'pull_request', 'false'],
+  [['pnpm-lock.yaml'], 'pull_request', 'false'],
+  [['catalog/a.ts'], 'push', 'true'],
   [['docs/x.md'], 'schedule', 'true'],
   [['docs/x.md'], 'workflow_dispatch', 'true'],
 ];
