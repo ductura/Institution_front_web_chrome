@@ -101,33 +101,47 @@ export function useEditorReading(editor: (object & EditorLike) | null): ReadSnap
   );
 }
 
+type Bindable = EditorLike & {
+  registerPlugin(plugin: unknown): void;
+  unregisterPlugin(key: unknown): void;
+  on(event: "update", fn: () => void): unknown;
+  off(event: "update", fn: () => void): unknown;
+};
+
+/** Text of the live region for a snapshot. */
+export function statusText(snap: ReadSnapshot): string {
+  const text = snap.notice ? t.status[snap.notice] : snap.state === "reading" ? t.status.reading : snap.state === "paused" ? t.status.paused : "";
+  return snap.voiceFallback && snap.state !== "idle" ? `${text} ${t.status.voiceFallback}` : text;
+}
+
+/** Registers the highlight plugin, Escape and the stop-on-edit; returns the cleanup. Escape that another control already used (menu, dialog) is not ours. */
+export function bindReading(editor: Bindable, reading: EditorReading, target: Pick<EventTarget, "addEventListener" | "removeEventListener">): () => void {
+  editor.registerPlugin(readAloudPlugin());
+  const active = () => { const state = reading.snapshot().state; return state === "reading" || state === "paused"; };
+  const onKey = (event: Event) => {
+    const key = event as KeyboardEvent;
+    if (key.key === "Escape" && !key.defaultPrevented && active()) reading.stop();
+  };
+  // The read positions are those of the text when reading began: an edit ends the reading instead of highlighting stale text.
+  const onUpdate = () => { if (active()) reading.stop(); };
+  target.addEventListener("keydown", onKey);
+  editor.on("update", onUpdate);
+  return () => {
+    target.removeEventListener("keydown", onKey);
+    editor.off("update", onUpdate);
+    reading.stop();
+    if (!editor.isDestroyed) editor.unregisterPlugin(READ_ALOUD_KEY);
+  };
+}
+
 export function ReadAloudHost() {
   const editor = useLocalEditor();
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
-    editor.registerPlugin(readAloudPlugin());
-    const reading = readingOf(editor as never);
-    const onKey = (event: KeyboardEvent) => {
-      const state = reading.snapshot().state;
-      if (event.key === "Escape" && (state === "reading" || state === "paused")) reading.stop();
-    };
-    // The read positions are those of the text when reading began: an edit ends the reading instead of highlighting stale text.
-    const onUpdate = () => {
-      const state = reading.snapshot().state;
-      if (state === "reading" || state === "paused") reading.stop();
-    };
-    window.addEventListener("keydown", onKey);
-    editor.on("update", onUpdate);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      editor.off("update", onUpdate);
-      reading.stop();
-      if (!editor.isDestroyed) editor.unregisterPlugin(READ_ALOUD_KEY);
-    };
+    return bindReading(editor as never, readingOf(editor as never), window);
   }, [editor]);
   const snap = useEditorReading((editor as never) ?? null);
   if (!editor || editor.isDestroyed) return null;
-  const text = snap.notice ? t.status[snap.notice] : snap.state === "reading" ? t.status.reading : snap.state === "paused" ? t.status.paused : "";
   // One polite live region: the screen reader hears the state, nothing else is drawn here.
-  return <span role="status" aria-live="polite" data-read-aloud-status="">{snap.voiceFallback && snap.state !== "idle" ? `${text} ${t.status.voiceFallback}` : text}</span>;
+  return <span role="status" aria-live="polite" data-read-aloud-status="">{statusText(snap)}</span>;
 }

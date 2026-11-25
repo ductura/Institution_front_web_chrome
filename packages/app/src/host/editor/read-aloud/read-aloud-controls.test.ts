@@ -3,7 +3,7 @@ import { Schema } from "@tiptap/pm/model";
 import { EditorState, TextSelection } from "@tiptap/pm/state";
 
 import { readAloudEntries } from "./ReadAloudControls";
-import { createEditorReading } from "./ReadAloudHost";
+import { bindReading, createEditorReading, statusText } from "./ReadAloudHost";
 import { docRangeOf, readAloudPlugin, READ_ALOUD_KEY, scopeRange, sourceOfScope } from "./highlight";
 import type { ReadAloudHost, SpeechUtteranceLike } from "./support";
 
@@ -137,5 +137,63 @@ describe("reading in the editor", () => {
     expect(ids("idle")).toEqual(["paragraph", "selection", "work"]);
     expect(ids("reading")).toEqual(["paragraph", "selection", "work", "pause", "stop"]);
     expect(ids("paused")).toEqual(["paragraph", "selection", "work", "resume", "stop"]);
+  });
+});
+
+describe("ReadAloudHost wiring", () => {
+  function bound() {
+    const base = fakeEditor(3);
+    const listeners: Record<string, (() => void)[]> = {};
+    const plugins: unknown[] = [];
+    const removed: unknown[] = [];
+    const editor = Object.assign(base.editor, {
+      registerPlugin: (p: unknown) => { plugins.push(p); },
+      unregisterPlugin: (k: unknown) => { removed.push(k); },
+      on: (e: string, fn: () => void) => { (listeners[e] ??= []).push(fn); },
+      off: (e: string, fn: () => void) => { listeners[e] = (listeners[e] ?? []).filter((f) => f !== fn); },
+    });
+    const { host } = fakeSpeech();
+    const reading = createEditorReading(editor as never, host);
+    const target = new EventTarget();
+    const unbind = bindReading(editor as never, reading, target);
+    const escape = (prevented = false) => {
+      const event = new Event("keydown", { cancelable: true });
+      Object.assign(event, { key: "Escape" });
+      if (prevented) event.preventDefault();
+      target.dispatchEvent(event);
+    };
+    return { editor, listeners, plugins, removed, reading, unbind, escape };
+  }
+
+  it("stops the reading on Escape, but not on an Escape a menu or dialog already used", () => {
+    const { reading, escape } = bound();
+    reading.read("paragraph");
+    escape(true);
+    expect(reading.snapshot().state).toBe("reading");
+    escape();
+    expect(reading.snapshot()).toMatchObject({ state: "idle", notice: "stopped" });
+  });
+  it("stops the reading when the text is edited", () => {
+    const { reading, listeners } = bound();
+    reading.read("work");
+    listeners.update!.forEach((fn) => fn());
+    expect(reading.snapshot().state).toBe("idle");
+  });
+  it("registers the plugin and removes plugin, listeners and reading on cleanup", () => {
+    const { reading, plugins, removed, listeners, unbind, escape } = bound();
+    expect(plugins.length).toBe(1);
+    reading.read("work");
+    unbind();
+    expect(removed).toEqual([READ_ALOUD_KEY]);
+    expect(listeners.update).toEqual([]);
+    expect(reading.snapshot().state).toBe("idle");
+    escape(); // no listener left: nothing throws, nothing changes
+  });
+  it("words the live region from the state", () => {
+    expect(statusText({ state: "idle", notice: null, voiceFallback: false })).toBe("");
+    expect(statusText({ state: "reading", notice: null, voiceFallback: false })).toBe("Čitanje u tijeku");
+    expect(statusText({ state: "paused", notice: null, voiceFallback: false })).toBe("Čitanje je na pauzi");
+    expect(statusText({ state: "unsupported", notice: "unsupported", voiceFallback: false })).toBe("Ovaj preglednik ne podržava čitanje naglas.");
+    expect(statusText({ state: "reading", notice: null, voiceFallback: true })).toContain("zadani glas");
   });
 });
