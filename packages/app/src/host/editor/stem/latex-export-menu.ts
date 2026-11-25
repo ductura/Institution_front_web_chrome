@@ -7,6 +7,7 @@
 import type { Editor } from "@tiptap/core";
 import { useEffect, useState } from "react";
 
+import { downloadBlob } from "../../../../../../src/components/editor/EarlierDraft";
 import {
   assignYearSuffixes, formatBibliographyEntry, formatCitationInText, formatNumberedBibliographyEntry, formatNumericCitation,
   sortBibliography,
@@ -107,20 +108,12 @@ export function buildLatexOf(editor: Editor | null, schemaVersion: number | unde
   return { ok: true, tex: buildTex(candidate.doc, { title, citations: texCitationsOf(style.style, candidate.doc.sources) }) };
 }
 
-function saveBlob(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  try { link.click(); } finally { setTimeout(() => URL.revokeObjectURL(url), 10_000); }
-}
-
 /** Downloads rad.tex; false (and no file) when the work cannot be built or the browser refuses. */
 export function downloadLatex(editor: Editor | null, schemaVersion: number | undefined, style: LatexStyle, title = ""): boolean {
   const built = buildLatexOf(editor, schemaVersion, style, title);
   if (!built.ok) return false;
   try {
-    saveBlob(new Blob([built.tex], { type: "application/x-tex;charset=utf-8" }), TEX_FILE);
+    downloadBlob(new Blob([built.tex], { type: "application/x-tex;charset=utf-8" }), TEX_FILE);
     return true;
   } catch {
     return false;
