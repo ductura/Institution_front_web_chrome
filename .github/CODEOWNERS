@@ -1,0 +1,24 @@
+# ductura/Institution_front_web_chrome: owners of the agent instructions and CI.
+#
+# As in Ductus .github/CODEOWNERS, these entries only RECORD ownership. GitHub
+# requests a code-owner review only when the author is not the owner, and the
+# "Require review from Code Owners" setting is not changed by this file.
+# The machine protection is independent review and QA and the owner's merge
+# command (D-97).
+#
+# The last matching rule wins; every rule has an owner.
+/.github/ @danielrisavi77-create
+/CLAUDE.md @danielrisavi77-create
+/AGENTS.md @danielrisavi77-create
+/scripts/ci/ @danielrisavi77-create
+
+# Agent instructions and configuration at any depth.
+CLAUDE*.md @danielrisavi77-create
+AGENTS*.md @danielrisavi77-create
+GEMINI*.md @danielrisavi77-create
+copilot-instructions.md @danielrisavi77-create
+*.instructions.md @danielrisavi77-create
+.mcp.json @danielrisavi77-create
+.claude/ @danielrisavi77-create
+.agents/ @danielrisavi77-create
+.codex/ @danielrisavi77-create
