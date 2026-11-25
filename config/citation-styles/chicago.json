@@ -1,0 +1,127 @@
+{
+  "faculty": "chicago",
+  "style": "author-date",
+  "version": "2026-11-24.1",
+  "provenance": {
+    "decision": "Val 20, WEB-V20-STIL-APA-CHICAGO: Chicago (varijanta autor-datum) prilagođen hrvatskom; pravila su sažeta vlastitim riječima, bez prepisivanja tuđeg teksta",
+    "sourceWork": "The Chicago Manual of Style, 17. izdanje (2017.), poglavlje o sustavu autor-datum; hrvatska prilagodba veznika i kratica je naša (izvedena)",
+    "sourceUrl": "https://www.chicagomanualofstyle.org/",
+    "createdAt": "2026-11-24",
+    "verifiedWith": "nije potvrđeno s nositeljem stila ni s fakultetom; stavke status=derived čekaju potvrdu",
+    "limits": "Samo varijanta autor-datum (bez bilježaka). Format popisa je zajednička jezgra: godina je uvijek u zagradi (Chicago bi je pisao iza točke bez zagrade), pa je to poznato odstupanje"
+  },
+  "inText": {
+    "open": "(",
+    "close": ")",
+    "authorYearSeparator": " ",
+    "pageSeparator": ", ",
+    "twoAuthorsJoiner": " i ",
+    "maxNamedAuthors": 3,
+    "manyAuthorsSuffix": " i sur."
+  },
+  "bibliography": {
+    "authorJoiner": " i ",
+    "periodAfterYear": true,
+    "editorLabel": "ur.",
+    "inLabel": "U:",
+    "accessedLabel": "pristupljeno",
+    "hangingIndentCm": 1.27
+  },
+  "rangeDash": "–",
+  "rules": [
+    {
+      "id": "in-text",
+      "status": "derived",
+      "rule": "Autor i godina bez zareza među njima, stranica iza zareza bez oznake „str.“",
+      "examples": [
+        "(Novak 2007, 9)",
+        "(Novak 2007)"
+      ],
+      "source": "CMOS 17, autor-datum (sažeto)"
+    },
+    {
+      "id": "in-text-two-authors",
+      "status": "derived",
+      "rule": "Dva autora povezana veznikom „i“",
+      "examples": [
+        "(Pavić i Radić 1996)"
+      ],
+      "source": "CMOS 17; veznik prilagođen hrvatskom"
+    },
+    {
+      "id": "in-text-three-authors",
+      "status": "derived",
+      "rule": "Tri autora navedena sva, povezana zarezom i „i“",
+      "examples": [
+        "(Horvat, Kovač i Babić 2019)"
+      ],
+      "source": "CMOS 17"
+    },
+    {
+      "id": "in-text-four-or-more-authors",
+      "status": "derived",
+      "rule": "Četiri ili više autora: prvo prezime i „i sur.“",
+      "examples": [
+        "(Horvat i sur. 2019)"
+      ],
+      "source": "CMOS 17; „i sur.“ prilagođeno hrvatskom"
+    },
+    {
+      "id": "book",
+      "status": "derived",
+      "rule": "Prezime, Ime (godina). Naslov. Mjesto: Nakladnik.",
+      "examples": [
+        "Marić, Ana (2003). Atlas izmišljenih općina. Zagreb: Izmišljena naklada."
+      ],
+      "source": "CMOS 17; puno ime autora"
+    },
+    {
+      "id": "article",
+      "status": "derived",
+      "rule": "Prezime, Ime (godina). Naslov članka. Naziv časopisa volumen/broj: stranice.",
+      "source": "CMOS 17; zapis broja i stranica ograničen zajedničkom jezgrom"
+    },
+    {
+      "id": "chapter",
+      "status": "derived",
+      "rule": "Prezime, Ime (godina). Naslov poglavlja. U: Ime Prezime (ur.) Naslov knjige. Mjesto: Nakladnik: stranice.",
+      "source": "CMOS 17; „U:“ i „(ur.)“ prilagođeno hrvatskom"
+    },
+    {
+      "id": "web",
+      "status": "derived",
+      "rule": "Prezime, Ime (godina). Naslov. URL (pristupljeno D. M. GGGG.)",
+      "source": "CMOS 17; datum pristupa je obavezan u ovoj jezgri"
+    },
+    {
+      "id": "full-name",
+      "status": "derived",
+      "rule": "Puno ime autora u popisu, ne inicijal",
+      "source": "CMOS 17"
+    },
+    {
+      "id": "same-year",
+      "status": "derived",
+      "rule": "Isti autori iste godine: 2013a, 2013b",
+      "source": "CMOS 17"
+    },
+    {
+      "id": "order",
+      "status": "derived",
+      "rule": "Abecedno po prezimenu, potom kronološki",
+      "source": "CMOS 17"
+    },
+    {
+      "id": "range-dash",
+      "status": "derived",
+      "rule": "En crtica (–) za raspone stranica",
+      "source": "CMOS 17"
+    },
+    {
+      "id": "hanging-indent",
+      "status": "derived",
+      "rule": "Viseća uvlaka u popisu literature, 1,27 cm",
+      "source": "CMOS 17"
+    }
+  ]
+}
