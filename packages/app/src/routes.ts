@@ -170,7 +170,7 @@ export const PAGES: readonly Page[] = [
   { path: "/ustanova/postavke/asistent", label: facultySettingsMessages.assistant.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
   // WEB-V16-ETAPE-ADMIN: the institution's milestone template.
   { path: "/ustanova/etape", label: milestoneTemplateMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
-  // WEB-V22-RUTE: the trial ISVU roster import (administrator), the grade export (teacher of the course) and the public entry from Studomat.
+  // WEB-V22-RUTE: the trial ISVU roster link, for the administrator, the grade export (teacher of the course) and the public entry from Studomat.
   { path: "/ustanova/isvu", label: pageLabelsHr.isvuImport, kind: "pending", roles: ["admin"], current: "/ustanova" },
   { path: "/nastavnik/kolegiji/[courseId]/isvu-ocjene", label: pageLabelsHr.isvuGrades, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/ulaz/studomat", label: pageLabelsHr.studomatEntry, kind: "pending", roles: [], public: true },
