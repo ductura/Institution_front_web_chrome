@@ -406,6 +406,8 @@ test('line-endings: CRLF in docs/ and a root .md file fails the check too', () =
 // ZEL-CI-WEB: the ui checks run as two parts of the matrix `ui`, `checks`
 // (typecheck and the coverage check) and `unit` (every package's unit tests).
 // ci-ok needs `ui`, so it needs both: a failure in either part fails `ui`.
+// CI-BRZINA: `unit` runs in two legs whose pnpm filters are each other's
+// complement, so every workspace package runs in exactly one leg.
 const ui = jobsOf(workflow).ui;
 const uiStep = (pattern) => ui.steps.filter((s) => typeof s.run === 'string' && pattern.test(s.run));
 
@@ -415,7 +417,11 @@ test('ui runs typecheck and unit tests in two blocking parts of its matrix', () 
   assert.ok(needsOf(ciOk).includes('ui'), 'ci-ok needs ui');
   assert.equal(ui.strategy['fail-fast'], false);
   const [typecheck] = uiStep(/^pnpm -r run typecheck$/);
-  const [unit] = uiStep(/^pnpm -r run test$/);
+  const [unit] = uiStep(/^pnpm -r --filter "\$PACKAGES" run test$/);
+  assert.equal(unit?.env?.PACKAGES, '${{ matrix.packages }}');
+  const legs = ui.strategy.matrix.include.filter((p) => p.part === 'unit');
+  assert.deepEqual(legs.map((p) => p.packages), ['./src/**', '!./src/**'], 'unit legs are src/ and its complement');
+  assert.deepEqual(legs.map((p) => `${p.leg}/${p.of}`), ['1/2', '2/2']);
   assert.equal(typecheck?.if, "matrix.part == 'checks'");
   assert.equal(unit?.if, "matrix.part == 'unit'");
   const [coverage] = uiStep(/the ui parts do not cover every catalogue test exactly once/);
