@@ -25,7 +25,7 @@ for (const [files, expected] of cases) {
 }
 
 test('ci:local reads the rules from ci.yml: a changed rule in the workflow changes the plan', () => {
-  const changed = readWorkflow(workflowText.replace("b=\"$(hit '^(catalog/|packages/ui/)')\"", "b=\"$(hit '^(packages/ui/)')\""));
+  const changed = readWorkflow(workflowText.replace("b=\"$(hit '^(catalog/|packages/ui/|", "b=\"$(hit '^(packages/ui/|"));
   assert.notEqual(changed, wf);
   assert.equal(running(changed, ['catalog/src/a.ts']), 'changes,ui');
 });

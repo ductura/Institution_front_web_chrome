@@ -73,21 +73,33 @@ jobs:
           # changes:begin
           set -uo pipefail
           emit() { printf 'test=%s\nclient=%s\nui=%s\napp=%s\napp-build=%s\nbaselines=%s\n' "$1" "$2" "$3" "$4" "$4" "$5" | tee -a "$GITHUB_OUTPUT"; }
-          all() { b=true; [ "$EVENT" != "push" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b"; exit 0; }
+          # The baselines follow every job except where a second argument
+          # says otherwise; never on a push.
+          all() { b="${2:-true}"; [ "$EVENT" != "push" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b"; exit 0; }
+          hit() { if grep -Eq "$1" <<< "$files"; then echo true; else echo false; fi; }
           [ "$EVENT" = "pull_request" ] || all "not a pull request"
           [ -n "$BASE" ] || all "no base sha"
-          files="$(git diff --name-only "$BASE" HEAD)" || all "diff failed"
+          # If the base moved after the merge commit was made, the base sha is
+          # not in this depth-2 checkout and the diff fails. HEAD is then still
+          # the merge commit, and its first parent is the base it was made on:
+          # that diff is exactly this change. Anything else runs every job.
+          if ! files="$(git diff --name-only "$BASE" HEAD 2>/dev/null)"; then
+            [ "$(git rev-list --parents -n 1 HEAD | wc -w)" -eq 3 ] || all "diff failed"
+            files="$(git diff --name-only HEAD^1 HEAD)" || all "diff failed"
+            echo "changes: base sha not in the checkout, diffing the merge commit's first parent"
+          fi
           [ -n "$files" ] || all "empty diff"
           # Root files, .github/, the lockfiles and the workspace file.
           # Root markdown files are documentation: they need no job.
-          if grep -Ev '^[^/]+\.md$' <<< "$files" | grep -Eq '^([^/]+|\.github/.*)$'; then all "root file or .github/"; fi
-          hit() { if grep -Eq "$1" <<< "$files"; then echo true; else echo false; fi; }
+          # The report-only baselines run only when the catalogue, its
+          # snapshots (catalog/), packages/ui/ or the dependencies change.
+          b="$(hit '^(catalog/|packages/ui/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$)')"
+          if grep -Ev '^[^/]+\.md$' <<< "$files" | grep -Eq '^([^/]+|\.github/.*)$'; then all "root file or .github/" "$b"; fi
           t=false
           if grep -Ev '^src/client/' <<< "$files" | grep -Eq '^(src/|test/|tests/|e2e/|locales/|config/|public/|scripts/)'; then t=true; fi
           c="$(hit '^(src/client/|packages/editor-core/)')"
           u="$(hit '^(packages/|catalog/|src/|scripts/forbidden-terms/|locales/)')"
           a="$(hit '^(packages/|src/|locales/)')"
-          b="$(hit '^(catalog/|packages/ui/)')"
           emit "$t" "$c" "$u" "$a" "$b"
           # changes:end
       - uses: actions/setup-node@v4
@@ -355,9 +367,11 @@ jobs:
   # that cannot fail it; three Playwright shards. Listed in REPORT_ONLY in
   # test/unit/ci-ok.test.js. Since ZEL-CI-RED it no longer runs on every push
   # (three runners each time) but when `changes` says `baselines`: on every
-  # pull request that changes catalog/ or packages/ui/ (or a root or .github/
-  # file), so each change that can move a pixel of the catalogue is reported
-  # before it reaches the base; also by hand and on the schedule of main.
+  # pull request that changes catalog/ (with its snapshots), packages/ui/ or
+  # the dependencies (Daniel 25. 11. 2026.: a workflow or other root file
+  # alone no longer turns it on), so each change that can move a pixel of the
+  # catalogue is reported before it reaches the base; also by hand and on the
+  # schedule of main.
   ui-baselines:
     needs: changes
     if: ${{ needs.changes.outputs.baselines == 'true' }}
