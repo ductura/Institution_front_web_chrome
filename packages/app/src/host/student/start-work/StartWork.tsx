@@ -78,8 +78,9 @@ export function StartWork({ assignmentId, title, call = defaultCall, onOpened, t
         <div role="status">
           <p className={styles.facts}>{t.template.replace("{version}", String(tpl.template.version)).replace("{sections}", String(tpl.template.sections.length))}</p>
           <ul className={styles.skeleton}>
-            {templateBlocks(tpl.template, t.titleFields).map((b, k) => (
-              <li key={k}>{b.type === "heading" ? <strong>{b.content?.[0]?.text}</strong> : b.content?.[0]?.text ?? null}</li>
+            {/* An empty hint is an empty paragraph in the editor, but no line in this preview. */}
+            {templateBlocks(tpl.template, t.titleFields).filter((b) => (b.content?.[0]?.text ?? "") !== "").map((b, k) => (
+              <li key={k}>{b.type === "heading" ? <strong>{b.content?.[0]?.text}</strong> : b.content?.[0]?.text}</li>
             ))}
           </ul>
         </div>

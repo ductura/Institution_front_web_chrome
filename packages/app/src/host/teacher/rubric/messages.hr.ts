@@ -18,7 +18,7 @@ export const rubricFormHr = {
   reviewLabel: "Kriteriji",
   none: "Zadani",
   failed: {
-    failed: "Rubrika nije spremljena. Zadatak je objavljen; rubriku možete ponovno unijeti kasnije.",
+    failed: "Rubrika nije spremljena. Zadatak je objavljen bez rubrike pa student vidi zadane kriterije.",
     conflict: "Rubrika nije spremljena jer je poslužitelj već ima u drugoj verziji. Zadatak je objavljen.",
     signedOut: "Rubrika nije spremljena jer ste odjavljeni. Zadatak je objavljen.",
   },

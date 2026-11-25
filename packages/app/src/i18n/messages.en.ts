@@ -72,7 +72,12 @@ export const pageLabelsEn = {
   problemReports: "Problem reports",
   facultySettings: "Faculty settings",
   facultyAssistant: "Assistant at the faculty",
+  milestoneTemplate: "Milestone template",
   myRights: "My rights",
+  isvuImport: "Connection to ISVU (trial source)",
+  isvuGrades: "Grade export to ISVU (trial source)",
+  analysis: "Statistical analysis",
+  studomatEntry: "Entry from Studomat",
 };
 
 export const accessDeniedEn = {
@@ -106,6 +111,10 @@ export const hostTextEn = {
   mentorPracticeJournal: "Students' practice journals",
   workTeam: "My team",
   workTeams: "Teams on the assignment",
+  teacherPeerReview: "Peer review among students",
+  peerReview: "Peer review of works",
+  peerReviewReceived: "Reviews received",
+  peerReviewWork: "Review of a work",
 };
 
 export const institutionEn = {

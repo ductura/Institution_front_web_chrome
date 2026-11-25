@@ -7,6 +7,7 @@ import { serverApi } from "../../../../../client/server";
 import { screenProvenance } from "../../../../../client/provenance-fake";
 import { readSubmissionState, type LocalCall } from "../../../../../client/submission";
 import { assignmentIdOf, editorWorkRead } from "../../../../../components/editor/EditorPage.read";
+import { readAssignmentsWithMentored } from "../../../../../components/student/mentored-assignments";
 import { ProvenancePanel, readProvenance } from "../../../../../components/predaja/ProvenancePanel";
 import { ReceiptPanel, studentReceiptRead } from "../../../../../components/predaja/ReceiptPanel";
 import RoleShell from "../../../../../components/shell/RoleShell";
@@ -56,7 +57,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ assign
   const cookie = (await headers()).get("cookie") ?? "";
   const server = serverApi(cookie);
   const [assignments, work, submission, provenance] = await Promise.all([
-    server("student.assignments.get", NONE).catch(() => UNREACHED),
+    readAssignmentsWithMentored(server),
     server("student.assignment-work.get", NONE).catch(() => UNREACHED),
     readSubmissionState(submissionCall(server), assignmentId),
     readProvenance(PROVENANCE, assignmentId),

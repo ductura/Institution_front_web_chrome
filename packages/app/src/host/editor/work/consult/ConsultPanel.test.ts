@@ -17,6 +17,14 @@ describe("ConsultPanel", () => {
     expect(html).not.toContain("<button");
   });
 
+  it("with a rubric on the assignment says where the criteria are and draws no working criteria", () => {
+    const html = renderToStaticMarkup(createElement(ConsultPanel, { documentId: ID, role: "student", revision: 1, slotsCall: null, criteriaCall: null, byRubric: true }));
+    expect(html).toContain("Za ovaj rad vrijede kriteriji ocjenjivanja iz uputa zadatka.");
+    expect(html).not.toContain("Učitavanje kriterija…");
+    expect(html).not.toContain("Kriteriji ocjene");
+    expect(html).toContain("Učitavanje termina…");
+  });
+
   it("leaves requests to the shared client", () => {
     const files = readdirSync(import.meta.dirname).filter((n) => /\.tsx?$/.test(n) && !/\.test\./.test(n));
     expect(files).toContain("ConsultPanel.tsx");

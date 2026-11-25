@@ -5,6 +5,7 @@ import { cookieTransport, signInHref } from "../../../client/api";
 import { institutionServerUrl, serverApi } from "../../../client/server";
 import EditorPage, { SheetNote } from "../../../components/editor/EditorPage";
 import { assignmentIdOf, editorWorkRead } from "../../../components/editor/EditorPage.read";
+import { readAssignmentsWithMentored } from "../../../components/student/mentored-assignments";
 import EditorPageWork from "../../../components/editor/EditorPageWork";
 import { ReadOnlyMentor } from "../../../components/editor/mentor/work-state/ReadOnlyMentor";
 import { readSubmittedWork } from "../../../components/editor/mentor/work-state/submitted-work-read";
@@ -62,7 +63,7 @@ export default async function WorkPage({ params }: { params: Promise<{ assignmen
   const api = serverApi(cookie);
   // A server that cannot be reached is an unavailable read, not an error page.
   const [assignments, work] = await Promise.all([
-    api("student.assignments.get", NONE).catch(() => UNREACHED),
+    readAssignmentsWithMentored(api),
     api("student.assignment-work.get", NONE).catch(() => UNREACHED),
   ]);
   const read = editorWorkRead(assignmentId, assignments, work);

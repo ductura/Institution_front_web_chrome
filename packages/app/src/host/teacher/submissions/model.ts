@@ -3,16 +3,22 @@
 // compares a time with a deadline. This module makes no network call; the page that mounts the
 // screen passes the port (src/client/teacher-submissions.ts).
 import type { SubmissionsRead, SubmittedRow, VersionRead } from "../../../../../../src/client/teacher-submissions.ts";
+import { validateDocumentV4 } from "../../../../../editor-core/src/document/document/validate-v4.ts";
+import type { CanonicalDocumentV4 } from "../../../../../editor-core/src/document/document/schema.ts";
 import { submissionsMessages as text } from "./messages.hr";
 
 export type DocumentBlock = { readonly kind: "heading" | "paragraph" | "bulletItem" | "quote"; readonly text: string };
-export type DocumentView = { readonly kind: "ready"; readonly blocks: readonly DocumentBlock[] } | { readonly kind: "unreadable" };
+export type DocumentView =
+  | { readonly kind: "ready"; readonly blocks: readonly DocumentBlock[] }
+  | { readonly kind: "v4"; readonly document: CanonicalDocumentV4 }
+  | { readonly kind: "unreadable" };
 
 const KINDS: ReadonlySet<string> = new Set(["heading", "paragraph", "bulletItem", "quote"]);
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
- * The blocks of a submitted v1 or v2 document. Anything this view cannot show as it was submitted
+ * The blocks of a submitted v1 or v2 document, or the whole validated document of a v4 one (formula,
+ * code, box, table and image are shown by `v4-view/V4Blocks`, read only). Anything this view cannot show as it was submitted
  * (another schema version, an unknown block, a citation) makes the whole document unreadable
  * instead of being left out. TODO(ugovor): citations through editor-core's textBlocksOf once the
  * citation style of the assignment reaches the teacher's read.
@@ -23,6 +29,10 @@ export function documentBlocks(document: string): DocumentView {
     parsed = JSON.parse(document);
   } catch {
     return { kind: "unreadable" };
+  }
+  if (isObject(parsed) && parsed.schemaVersion === 4) {
+    const outcome = validateDocumentV4(parsed);
+    return outcome.ok ? { kind: "v4", document: outcome.doc } : { kind: "unreadable" };
   }
   if (!isObject(parsed) || (parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2) || !Array.isArray(parsed.nodes)) {
     return { kind: "unreadable" };

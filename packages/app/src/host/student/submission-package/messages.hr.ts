@@ -11,3 +11,11 @@ export const submissionPackageText = {
   notFound: "Predaja nije pronađena.",
   unknown: "Poveznicu trenutačno nije moguće dobiti. Pokušajte ponovno.",
 } as const;
+
+/** The same card for the verifiable package (kind "package"), as the portfolio export offers it (WEB-1807). */
+export const portablePackageText = {
+  ...submissionPackageText,
+  title: "Prenosivi zapis",
+  lead: "Paket se preuzima kao jedna ZIP datoteka.",
+  start: "Preuzmi provjerljivi paket",
+} as const;
