@@ -9,7 +9,18 @@ name: Sistem
 # required check i ne ulazi u ci-ok.
 # Prijava je samo lažni OIDC (D-09), svi podaci su izmišljeni (demo seed),
 # bez tajni.
+# Okidači (Daniel 25. 11.): ručno, svaki push u migracijsku bazu (regresije
+# poput #591 hvataju se odmah) i PR-ovi koji diraju editor ili e2e/sistem.
 on:
+  push:
+    branches: [migracija/kopija-ductus-front]
+  pull_request:
+    branches: [migracija/kopija-ductus-front]
+    paths:
+      - 'packages/app/src/host/editor/**'
+      - 'e2e/sistem/**'
+      - 'playwright.sistem.config.ts'
+      - '.github/workflows/sistem.yml'
   workflow_dispatch:
     inputs:
       server_ref:
