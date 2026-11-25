@@ -5,6 +5,7 @@ import { pickVoice, readAloudSupported, type ReadAloudHost, type SpeechUtterance
 
 // WEB-V20-NAGLAS-JEZGRA: invented text only; fake speechSynthesis.
 function fakeHost(voices: SpeechVoice[] = []) {
+  let paused = false; // like a real synthesiser, cancel() and speak() do not clear it
   const spoken: (SpeechUtteranceLike & { text: string })[] = [];
   const calls: string[] = [];
   class Utterance {
@@ -17,13 +18,13 @@ function fakeHost(voices: SpeechVoice[] = []) {
     speechSynthesis: {
       speak: (u) => { calls.push("speak"); spoken.push(u as never); },
       cancel: () => { calls.push("cancel"); },
-      pause: () => { calls.push("pause"); },
-      resume: () => { calls.push("resume"); },
+      pause: () => { calls.push("pause"); paused = true; },
+      resume: () => { calls.push("resume"); paused = false; },
       getVoices: () => voices,
     },
   };
   const endCurrent = () => spoken[spoken.length - 1]?.onend?.();
-  return { host, spoken, calls, endCurrent };
+  return { host, spoken, calls, endCurrent, isPaused: () => paused };
 }
 
 describe("support", () => {
@@ -110,10 +111,10 @@ describe("createReadAloud", () => {
     expect(c.state).toBe("reading");
     c.stop();
     expect(c.state).toBe("idle");
-    expect(f.calls).toEqual(["cancel", "speak", "pause", "resume", "cancel"]);
+    expect(f.calls).toEqual(["cancel", "resume", "speak", "pause", "resume", "cancel", "resume"]);
     expect(finished).toHaveBeenCalledWith("stopped");
     c.pause(); // no-op when idle
-    expect(f.calls.at(-1)).toBe("cancel");
+    expect(f.calls.at(-1)).toBe("resume");
   });
 
   it("cancels an older reading when a new one starts; the old callbacks stay silent", () => {
@@ -123,7 +124,7 @@ describe("createReadAloud", () => {
     c.start("Stara prva. Stara druga.");
     const old = f.spoken[0];
     c.start("Nova.");
-    expect(f.calls).toEqual(["cancel", "speak", "cancel", "speak"]);
+    expect(f.calls).toEqual(["cancel", "resume", "speak", "cancel", "resume", "speak"]);
     old?.onend?.(); // late event of the cancelled utterance
     expect(f.spoken).toHaveLength(2);
     expect(log).toEqual([]);
@@ -154,5 +155,41 @@ describe("createReadAloud", () => {
     c.setRate(1.5);
     f.endCurrent();
     expect(f.spoken.map((u) => u.rate)).toEqual([1, 1.5]);
+  });
+
+  it("does not stay silent when a new reading starts after a pause", () => {
+    const f = fakeHost();
+    const c = createReadAloud({}, f.host);
+    c.start("Prva.");
+    c.pause();
+    c.start("Nova."); // replaces a paused reading
+    expect(f.isPaused()).toBe(false);
+    c.pause();
+    c.stop();
+    c.start("Opet.");
+    expect(f.isPaused()).toBe(false);
+  });
+
+  it("keeps index and state consistent when onChunkEnd stops or replaces the reading", () => {
+    const f = fakeHost();
+    const finished = vi.fn();
+    let c: ReturnType<typeof createReadAloud>;
+    c = createReadAloud({ onChunkEnd: () => c.stop(), onFinish: finished }, f.host);
+    c.start("Prva. Druga.");
+    f.endCurrent();
+    expect(finished.mock.calls).toEqual([["stopped"]]);
+    expect(f.spoken).toHaveLength(1);
+
+    const starts: number[] = [];
+    let replaced = false;
+    c = createReadAloud({
+      onChunkEnd: () => { if (!replaced) { replaced = true; c.start("Nova prva. Nova druga."); } },
+      onChunkStart: (_ch, i) => starts.push(i),
+    }, f.host);
+    c.start("Stara.");
+    f.endCurrent();
+    f.spoken.at(-1)?.onstart?.();
+    expect(f.spoken.at(-1)).toMatchObject({ text: "Nova prva." });
+    expect(starts).toEqual([0]);
   });
 });
