@@ -34,6 +34,7 @@ import { RevisionActionsHost } from "../editor/work/review/ReviewHost";
 import { ShellView } from "../editor/shell/ShellView";
 import { RulesHost } from "../editor/rules/RulesHost";
 import { AssistantRules, NoticeInstructions } from "../editor/assistant-rules/AssistantRules";
+import { AssistantChat } from "../editor/assistant-chat/AssistantChat";
 import PdfExport from "../editor/export/PdfExport";
 import { StatusExtras, beforeSubmissionFor, rehearsalSupplementsFor } from "../editor/status/StatusExtras";
 import { PregledHost } from "../editor/right/PregledHost";
@@ -41,6 +42,7 @@ import { MentorMount } from "../editor/right/MentorMount";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
+import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
@@ -52,7 +54,6 @@ import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
 import { ErrorCard, FrameStatus, LoadingCard, OfflineBanner, SubmittedBanner, courseLine, momentHr } from "./work/frame";
-import { unavailableTransport } from "../../../../../src/client/import.ts";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
@@ -129,7 +130,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               comments: ({ editor, documentId, session, submitted, signedOut }) =>
                 <CommentsHost editor={editor} documentId={documentId} session={session} submitted={submitted} signedOut={signedOut} />,
               // ED-09 (NF2-P9): the assignment's rules under the Asistent card, its instructions in "Prvi redak".
-              assistant: () => <AssistantRules assignmentId={assignmentId} base={base} />,
+              assistant: ({ submitted, signedOut, scope }) => <>
+                <AssistantChat assignmentId={assignmentId} scope={scope} readOnly={submitted || signedOut} />
+                <AssistantRules assignmentId={assignmentId} base={base} />
+              </>,
               instructions: () => <NoticeInstructions assignmentId={assignmentId} />,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></> })}
@@ -138,9 +142,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />
               <DirectEditSettingHost documentId={documentId} here={here} />
               <AssistantMatchNoticeHost documentId={documentId} />
-              <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
+              <ImportHost documentId={documentId} />
               <RulesHost role="student" />
               <MarksHost />
+              <ReadAloudHost />
             </>} />,
         });
       }

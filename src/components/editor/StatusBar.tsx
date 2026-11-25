@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { pluralHr } from "../../lib/i18n/hr";
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
 
+import { ScopeAnnounce } from "./ScopeAnnounce";
 import styles from "./StatusBar.module.css";
 
 /**
@@ -76,9 +77,34 @@ export function scopeLine(words: number | null, range: ScopeRange): string | nul
   if (range !== null) {
     parts.push(t.workspace.scopeRange.replace("{min}", groupDot(range.min)).replace("{max}", groupDot(range.max)));
   }
+  const standing = scopeStanding(words, range);
+  if (standing !== null && words !== null && range !== null) parts.push(scopeFact(standing, words, range));
   if (parts.length === 0) return null;
   parts.push(t.workspace.scopePrivate);
   return parts.join(" · ");
+}
+
+/** ED-04 (NF2-P6): where the count stands against the assignment's range; null without either. */
+export type ScopeStanding = "below" | "within" | "above";
+
+export function scopeStanding(words: number | null, range: ScopeRange): ScopeStanding | null {
+  if (words === null || range === null) return null;
+  return words < range.min ? "below" : words > range.max ? "above" : "within";
+}
+
+/** The plain fact beside the range, without colour: it describes the task, not the student. */
+function scopeFact(standing: ScopeStanding, words: number, range: NonNullable<ScopeRange>): string {
+  if (standing === "below") return t.workspace.scopeBelow.replace("{n}", groupDot(range.min - words));
+  if (standing === "above") return t.workspace.scopeAbove.replace("{n}", groupDot(words - range.max));
+  return t.workspace.scopeWithin;
+}
+
+/** The one sentence said when the count crosses a limit (never on opening, never while typing inside a band). */
+export function scopeSaid(standing: ScopeStanding, words: number, range: NonNullable<ScopeRange>): string {
+  if (standing === "below") return t.workspace.scopeSaidBelow;
+  if (standing === "within") return t.workspace.scopeSaidWithin;
+  const over = words - range.max;
+  return t.workspace.scopeSaidAbove.replace("{n}", groupDot(over)).replace("{words}", pluralHr(over, "riječ", "riječi", "riječi"));
 }
 
 /**
@@ -125,6 +151,7 @@ export default function StatusBar({
       )}
       {calm ? <span className={styles.said} role="status">{said ?? ""}</span> : null}
       {scope === null ? null : <span className={styles.scope}>{scope}</span>}
+      {length === undefined ? null : <ScopeAnnounce words={length.words} range={length.range} />}
       {children}
     </footer>
   );

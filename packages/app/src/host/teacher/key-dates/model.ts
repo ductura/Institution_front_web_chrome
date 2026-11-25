@@ -54,6 +54,35 @@ export function whenOf(epoch: number): string {
   return text.at(w.day, w.month, w.year, `${pad2(w.hour)}:${pad2(w.minute)}`);
 }
 
+/** Whole Zagreb calendar days from `now` to `epoch`: 0 the same day, 1 tomorrow, -1 yesterday (MK-13). */
+export function dayDiff(epoch: number, now: number): number {
+  const day = (ms: number): number => { const w = zagrebWall(ms); return Date.UTC(w.year, w.month - 1, w.day) / 86_400_000; };
+  return day(epoch) - day(now);
+}
+
+/** "danas", "za n dan(a)" or "prije n dan(a)" by Zagreb calendar day (MK-13). */
+export function relativeDays(epoch: number, now: number): string {
+  const n = dayDiff(epoch, now);
+  if (n === 0) return text.today;
+  const abs = Math.abs(n);
+  return (n > 0 ? text.inDays : text.daysAgo)(abs, abs % 10 === 1 && abs % 100 !== 11 ? text.dayOne : text.dayMany);
+}
+
+export type TimelineRow = KeyDateRow & { readonly relative: string };
+/** MK-13: one timeline for the mentor and the student; what is past, then today, then what is ahead. */
+export type Timeline = { readonly past: readonly TimelineRow[]; readonly today: string; readonly ahead: readonly TimelineRow[] };
+
+/** Splits sorted rows at today (Zagreb): a date of today is ahead, so it is never shown as missed. */
+export function timelineOf(rows: readonly KeyDateRow[], now: number): Timeline {
+  const marked = rows.map((r) => ({ ...r, relative: relativeDays(r.epoch, now) }));
+  const w = zagrebWall(now);
+  return {
+    past: marked.filter((r) => dayDiff(r.epoch, now) < 0),
+    today: text.todayIs(w.day, w.month, w.year),
+    ahead: marked.filter((r) => dayDiff(r.epoch, now) >= 0),
+  };
+}
+
 /** Rows sorted by date (ties by the closed order of kinds, then id); an unreadable or repeated entry is left out. */
 export function keyDatesView(read: KeyDatesRead): KeyDatesView {
   if (read.kind !== "ready") return { kind: read.kind };

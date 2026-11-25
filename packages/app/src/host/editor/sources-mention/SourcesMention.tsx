@@ -2,11 +2,13 @@
 
 import { Button, Dialog, type SourceDraft, type SourceFormAction } from "@ductura/ui";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 
 import { CitationPopover } from "@/components/editor/citations/CitationPopover";
 import { citationRange, insertCitation } from "@/components/editor/citations/citation-document";
 import { useLocalEditor, useLocalSignedOut } from "@/components/editor/LocalDocument";
 import { QuickSource } from "@/components/editor/sources/quick-source/QuickSource";
+import { createSourceLookup } from "@/components/editor/sources/quick-source/server-lookup";
 import { documentSources } from "@/components/editor/sources/proofs/proof-sources";
 import { TriggerPopover } from "@/components/editor/triggers/TriggerPopover";
 import { loadNotebook } from "../source-notebook/notebook";
@@ -50,6 +52,8 @@ function useRead(editor: LocalEditor): Read {
  * list, and the line under the sheet counts citations left as "[izvor]" and jumps to the next one.
  */
 export function SourcesMention({ documentId }: { documentId: string }) {
+  // ED-14: "Brzi izvor" asks the server (`sources.lookup.post`); only the identifier is sent.
+  const lookup = useMemo(() => createSourceLookup(), []);
   const editor = useLocalEditor();
   const signedOut = useLocalSignedOut();
   const [notes, setNotes] = useState<readonly MentionNote[]>([]);
@@ -108,9 +112,11 @@ export function SourcesMention({ documentId }: { documentId: string }) {
       </Button>}
       {problem && <p role="alert">{t[problem]}</p>}
     </div>
-    <Dialog open={quick !== null} title={t.quickTitle} onClose={() => setQuick(null)}
+    {/* Under <body>, not in the sheet: the white sheet sets its own ink but no raised surface (tokens.test.ts),
+        so a dialog inside it would put the sheet's dark ink on the theme's dark dialog. */}
+    {createPortal(<Dialog open={quick !== null} title={t.quickTitle} onClose={() => setQuick(null)}
       actions={<Button tone="quiet" onClick={() => setQuick(null)}>{t.cancel}</Button>}>
-      {quick && <QuickSource allowCite disabled={!read.editable} onSubmit={write} />}
-    </Dialog>
+      {quick && <QuickSource allowCite disabled={!read.editable} lookup={lookup} onSubmit={write} />}
+    </Dialog>, document.body)}
   </>;
 }
