@@ -37,6 +37,18 @@ export function pagesOf(words: number): number {
 
 const DAY = 86_400_000;
 
+/**
+ * ED-37 (P2-6): the calendar day of an instant in Zagreb (YYYY-MM-DD), the day
+ * a deadline such as the submission's `dueAt` falls on; null for no instant.
+ */
+export function zagrebDay(iso: string): string | null {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zagreb", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(at);
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 /** Whole calendar days from `now` to the ISO date (YYYY-MM-DD); null for anything else. */
 export function daysUntil(isoDate: string, now: Date): number | null {
   if (!/^\d{4}-\d{2}-\d{2}$/u.test(isoDate)) return null;
