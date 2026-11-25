@@ -44,9 +44,15 @@ describe("golden vectors", () => {
     });
   }
 
-  it("covers every validation code at least once", () => {
-    const codes = new Set((vectors.vectors as Vector[]).filter((v) => !v.valid).map((v) => v.code));
-    expect(codes.size).toBeGreaterThanOrEqual(18);
+  it("covers every validation code: vectors hold all but too_many_cells (built in code below)", () => {
+    const all = [
+      "bad_cell", "bad_cell_ref", "bad_cell_value", "bad_dimension", "bad_formula",
+      "bad_kind", "bad_schema_version", "bad_sheet_id", "bad_sheet_name", "bad_sheets",
+      "cell_out_of_bounds", "duplicate_sheet_id", "duplicate_sheet_name", "empty_cell_stored",
+      "missing_field", "not_object", "too_many_cells", "too_many_sheets", "unknown_field",
+    ];
+    const inVectors = new Set((vectors.vectors as Vector[]).filter((v) => !v.valid).map((v) => v.code));
+    expect([...inVectors].sort()).toEqual(all.filter((c) => c !== "too_many_cells"));
   });
 });
 
@@ -93,9 +99,13 @@ describe("length limits count code points and arrays have no holes", () => {
     const r = validateSheetDocument(d);
     expect(r.ok === false && r.code).toBe("bad_cell_value");
   });
-  it("accepts a 31 code point name made of emoji", () => {
-    const d = createSheetDocument({ id: "s1", name: "😀".repeat(31) });
-    expect(validateSheetDocument(d).ok).toBe(true);
+  it("counts a sheet name in UTF-16 units, as .xlsx does", () => {
+    const ok = createSheetDocument({ id: "s1", name: "😀".repeat(15) });
+    expect(validateSheetDocument(ok).ok).toBe(true);
+    for (const n of [16, 31]) {
+      const r = validateSheetDocument(createSheetDocument({ id: "s1", name: "😀".repeat(n) }));
+      expect(r.ok === false && r.code).toBe("bad_sheet_name");
+    }
   });
   it("rejects sheet names .xlsx cannot hold", () => {
     for (const name of ["a/b", "a\\b", "a?", "a*", "[a]", "a:b", "'a", "a'"]) {

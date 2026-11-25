@@ -129,7 +129,10 @@ function checkSheet(raw: unknown, path: string): Sheet {
   if (typeof name !== "string" || name.length < 1 || name.trim() !== name) {
     throw new Invalid("bad_sheet_name", `${path}.name`);
   }
-  checkText(name, MAX_SHEET_NAME_LENGTH, `${path}.name`, "bad_sheet_name");
+  // .xlsx limits a sheet name to 31 UTF-16 code units (not code points).
+  if (name.length > MAX_SHEET_NAME_LENGTH || hasLoneSurrogate(name)) {
+    throw new Invalid("bad_sheet_name", `${path}.name`);
+  }
   // Assumption: characters .xlsx forbids in sheet names, and a leading or
   // trailing apostrophe, are refused here so the later export cannot fail.
   if (/[\\/?*[\]:]/.test(name) || name.startsWith("'") || name.endsWith("'")) {
