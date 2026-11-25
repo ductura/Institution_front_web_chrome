@@ -24,6 +24,11 @@ export default function StudomatEntryRoute() {
     let live = true;
     void readSession().then((read) => {
       if (!live) return;
+      // Only a signed-out read starts login; an unavailable one (no role, 5xx) goes home, where the Host shows its own screen.
+      if (read.kind === "unavailable") {
+        router.replace(nextPath(base, "/"));
+        return;
+      }
       const target = studomatTarget({
         session: read.kind === "signedIn",
         role: read.kind === "signedIn" ? shellRole(read.session.role) : null,

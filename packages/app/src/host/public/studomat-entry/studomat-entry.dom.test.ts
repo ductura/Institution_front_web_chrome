@@ -66,6 +66,11 @@ describe("StudomatEntryRoute", () => {
     expect(replace).toHaveBeenCalledWith("/web/");
     expect(assign).not.toHaveBeenCalled();
   });
+  it.each([403, 500])("sends an unavailable session (%i) home and does not start login", async (status) => {
+    await mount(status, null, `kolegij=${ID}`);
+    expect(replace).toHaveBeenCalledWith("/web/");
+    expect(assign).not.toHaveBeenCalled();
+  });
   it("sends a teacher home", async () => {
     await mount(200, "teacher", `kolegij=${ID}`);
     expect(replace).toHaveBeenCalledWith("/web/");
