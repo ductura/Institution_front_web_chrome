@@ -55,7 +55,6 @@ import { WorkHistoryHost } from "../editor/work-history/WorkHistoryHost";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
 import { ErrorCard, FrameStatus, LoadingCard, OfflineBanner, SubmittedBanner, courseLine, momentHr } from "./work/frame";
-import { unavailableTransport } from "../../../../../src/client/import.ts";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
@@ -146,7 +145,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               <AssistantMatchNoticeHost documentId={documentId} />
               {/* ED-16 (NF2-P14): the one "Povijest i usporedba" dialog, asked by the header, Prikaz, Ctrl+K and the left panel. */}
               <WorkHistoryHost documentId={documentId} replayHref={appHref(base, `/rad/${assignmentId}/reprodukcija`)} />
-              <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
+              <ImportHost documentId={documentId} />
               <RulesHost role="student" />
               <MarksHost />
               <ReadAloudHost />

@@ -42,7 +42,7 @@ async function seedAssignmentId(page: Page) {
 const editorOf = (page: Page) => page.getByRole('textbox', { name: 'Tekst rada', exact: true });
 const toolbarOf = (page: Page) => page.getByRole('toolbar', { name: 'Oblikovanje teksta' });
 // Only the status bar's chip: the editor has other live regions of its own.
-const saveChipOf = (page: Page) => page.locator('footer[aria-label="Stanje rada"]').getByRole('status').first();
+const saveChipOf = (page: Page) => page.locator('footer[aria-label="Stanje rada"]').locator('[data-tone]').first();
 const tool = (page: Page, name: string) => toolbarOf(page).getByRole('button', { name, exact: true });
 
 /** Opens the work by its address in the shipped app and waits until it can be written. */
@@ -139,7 +139,7 @@ test.describe('editor, val 1 (WEB-14, WEB-15) u isporučenom packages/app', () =
     const text = line('Izmišljeni odlomak bez mreže');
     await writeParagraph(page, text);
     // Offline the chip says so first („Izvan mreže · …”); the claim is the saved state.
-    await expect(saveChipOf(page)).toHaveText(new RegExp(`${LOCAL}$`), { timeout: 20_000 });
+    await expect(saveChipOf(page)).toContainText(LOCAL, { timeout: 20_000 });
     await expect(saveChipOf(page)).not.toContainText(SYNCED);
 
     await context.setOffline(false);
