@@ -136,6 +136,20 @@ describe("stranica", () => {
     expect(run.mock.calls[1]![0]).toEqual(sent);
   });
 
+  it("primjer nakon CSV-a: pregled učitanog skupa se ne zadržava (jedan aktivan skup)", async () => {
+    const out = await mount({ read: async () => ({ kind: "ready", data: CATALOGUE }) });
+    const area = out.querySelector("textarea")!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(area, "xx;yy\n1;2\n3;4\n");
+      area.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => button(out, "Učitaj")!.click());
+    expect(out.textContent).toContain("xx");
+    const sample = [...out.querySelectorAll("button")].find((b) => b.getAttribute("aria-label")?.startsWith("Učitaj primjer:"))!;
+    await act(async () => sample.click());
+    expect(out.textContent).not.toContain("xx");
+  });
+
   it("tekstovi stranice ne sadrže zabranjene izraze", () => {
     expect(findForbiddenTerms(Object.values(analysisPageMessages).flatMap((v) => (typeof v === "string" ? [v] : Object.values(v))).join("\n"))).toEqual([]);
   });

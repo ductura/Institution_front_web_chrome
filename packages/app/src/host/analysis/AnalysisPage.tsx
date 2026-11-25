@@ -42,6 +42,8 @@ export function AnalysisPage({ read = () => readCatalogue(), run = (request) => 
   const [result, setResult] = useState<AnalysisRunState | null>(null);
   const lastRequest = useRef<AnalysisRequest | null>(null);
   const generation = useRef(0);
+  // A sample replaces the set, so the loader (which keeps its own preview) starts over with a new key.
+  const [loaderKey, setLoaderKey] = useState(0);
 
   useEffect(() => {
     let live = true;
@@ -103,8 +105,8 @@ export function AnalysisPage({ read = () => readCatalogue(), run = (request) => 
       <p>{t.stepOf.replace("{n}", String(index + 1))}</p>
       {step === "dataset" && (
         <>
-          <DatasetLoader onLoaded={load} onCleared={() => { forget(); setDataset(null); }} />
-          <SamplePicker onLoaded={load} />
+          <DatasetLoader key={loaderKey} onLoaded={load} onCleared={() => { forget(); setDataset(null); }} />
+          <SamplePicker onLoaded={(next) => { setLoaderKey((n) => n + 1); load(next); }} />
           {dataset === null && <p role="status">{t.needDataset}</p>}
           <Button disabled={!canEnter("analysis", dataset, result)} onClick={() => go("analysis")}>{t.next}</Button>
         </>
