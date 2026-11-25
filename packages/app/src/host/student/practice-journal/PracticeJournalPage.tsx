@@ -11,7 +11,7 @@ import { hostText } from "../../../text";
 import { practiceJournalText as t } from "./messages.hr";
 import {
   checkDraft, correctedIds, countText, groupByDate, isSigned, lastEntryDate, placementState, signedThroughOf, signoffsNewestFirst,
-  activePlacements, HOUR_STEPS, MAX_TEXT, todayOf, type Draft, type FieldError,
+  activePlacements, HOUR_STEPS, todayOf, type Draft, type FieldError,
 } from "./model";
 import { addEntry, readEntries, readPlacements, type AddOutcome, type EntriesRead, type Entry, type Placement, type PlacementsRead } from "./read";
 
@@ -226,11 +226,11 @@ function Journal({ placement, today, call, here, onChanged }: { placement: Place
         <Card level={2} title={correcting === null ? t.formTitle : t.formTitleCorrection.replace("{date}", formatDateHr(correcting.date))}>
           <form ref={formRef} onSubmit={(event) => void send(event)} noValidate>
             {error?.field === "form" && <p role="alert">{t.errors[error.error]}</p>}
-            <TextField label={t.fieldDate} type="date" value={draft.date} min={placement.startsOn} max={lastEntryDate(placement, today)}
+            <TextField label={t.fieldDate} type="date" value={draft.date} busy={busy} min={placement.startsOn} max={lastEntryDate(placement, today)}
               error={fieldError("date")} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
-            <Select label={t.fieldHours} value={draft.hours.replace(",", ".")} options={HOUR_STEPS.map((h) => ({ value: String(h), label: String(h).replace(".", ",") }))}
+            <Select label={t.fieldHours} disabled={busy} value={draft.hours.replace(",", ".")} options={HOUR_STEPS.map((h) => ({ value: String(h), label: String(h).replace(".", ",") }))}
               onChange={(e) => setDraft({ ...draft, hours: e.target.value })} />
-            <TextArea label={t.fieldText} hint={t.fieldTextHint} value={draft.text} maxLength={MAX_TEXT + 200} error={fieldError("text")}
+            <TextArea label={t.fieldText} busy={busy} hint={t.fieldTextHint} value={draft.text} error={fieldError("text")}
               onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
             <p>
               <Button type="submit" busy={busy}>{busy ? t.saving : t.save}</Button>{" "}

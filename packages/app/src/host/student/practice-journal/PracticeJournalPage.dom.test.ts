@@ -116,6 +116,34 @@ describe("PracticeJournalPage in the browser", () => {
     expect(text()).not.toContain(t.savedCorrection);
   });
 
+  it("locks the form while saving, so an edit cannot be lost, and unlocks it after a lost answer", async () => {
+    let release: (a: Answer) => void = () => undefined;
+    const pending = new Promise<Answer>((resolve) => { release = resolve; });
+    const fn = vi.fn(async (id: string) => {
+      if (id === "practice.placements.get") return ok({ placements: [PLACEMENT] });
+      if (id === "practice.entries.get") return ok({ entries: [], signoffs: [] });
+      return pending;
+    });
+    await render(() => fn as never);
+    const area = host.querySelector("textarea")!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(area, "Izmišljeni zapis.");
+      area.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => { host.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    expect(host.querySelector("textarea")!.readOnly).toBe(true);
+    expect(host.querySelector("select")!.disabled).toBe(true);
+    await act(async () => { release({ ok: false, status: 503, code: "unavailable" }); });
+    expect(host.querySelector("textarea")!.readOnly).toBe(false);
+    expect(text()).toContain(t.unknown);
+  });
+
+  it("does not cap the text by UTF-16 units", async () => {
+    const { call } = apiOf({ "practice.placements.get": () => ok({ placements: [PLACEMENT] }), "practice.entries.get": () => ok({ entries: [], signoffs: [] }) });
+    await render(call);
+    expect(host.querySelector("textarea")!.hasAttribute("maxlength")).toBe(false);
+  });
+
   it("goes to sign-in when the session is gone", async () => {
     const { call } = apiOf({ "practice.placements.get": () => ({ ok: false, status: 401, code: "unauthorized" }) });
     await render(call);

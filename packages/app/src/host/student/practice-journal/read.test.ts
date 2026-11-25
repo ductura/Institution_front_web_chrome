@@ -20,6 +20,15 @@ describe("readPlacements", () => {
   });
 });
 
+describe("a rejected transport", () => {
+  const boom = vi.fn(async () => { throw new TypeError("network"); }) as never;
+  it("is unavailable for a read and unknown for a write, never an exception", async () => {
+    expect(await readPlacements(boom)).toEqual({ kind: "unavailable" });
+    expect(await readEntries(boom, "p1")).toEqual({ kind: "unavailable" });
+    expect(await addEntry(boom, "p1", ENTRY)).toEqual({ kind: "unknown" });
+  });
+});
+
 describe("readEntries", () => {
   it("asks for the practice by its id", async () => {
     const call = vi.fn(async () => ({ ok: true as const, status: 200, body: { entries: [], signoffs: [] } }));
