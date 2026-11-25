@@ -66,6 +66,11 @@ describe("parseDataset", () => {
     expect(errorsOf("a;b;c\n")).toEqual([{ code: "noRows" }]);
   });
 
+  it("detects the separator after leading blank lines", () => {
+    expect(parseDataset("\n\na;b\n1;2")).toEqual(parseDataset("a;b\n1;2"));
+    expect(parseDataset("\na;b\nx;1,5").ok).toBe(true);
+  });
+
   it("takes 500 rows and refuses the 501st", () => {
     const rows = (n: number) => Array.from({ length: n }, (_, i) => `r${i};${i}`).join("\n");
     expect(parseDataset(`a;b\n${rows(ANALYSIS_LIMITS.maxRows)}`).ok).toBe(true);

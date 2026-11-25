@@ -86,7 +86,7 @@ export function parseDataset(input: string): ParsedDataset {
   const text = input.charCodeAt(0) === 0xfeff ? input.slice(1) : input;
   if (text.length > MAX_CSV_LENGTH) return { ok: false, errors: [{ code: "tooLong" }] };
   if (text.trim() === "") return { ok: false, errors: [{ code: "empty" }] };
-  const read = readRecords(text, detectSeparator(text));
+  const read = readRecords(text, detectSeparator(text.trimStart()));
   if (!read.ok) return { ok: false, errors: [read.error] };
   const [header, ...body] = read.records;
   if (header === undefined) return { ok: false, errors: [{ code: "empty" }] };

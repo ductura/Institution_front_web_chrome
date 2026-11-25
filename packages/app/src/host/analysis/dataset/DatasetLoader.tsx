@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, DataTable, TextArea, TextField, type DataTableColumn } from "@ductura/ui";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { Dataset } from "./infer-kinds";
 import { describeError } from "./describe-error";
@@ -40,6 +40,8 @@ const COLUMN_TABLE: DataTableColumn<ColumnRow>[] = [
 export function DatasetLoader({ onLoaded, onCleared }: { onLoaded: (dataset: Dataset) => void; onCleared?: () => void }) {
   const [state, setState] = useState<LoaderState>({ kind: "idle" });
   const [text, setText] = useState("");
+  // Counts reads; a read that is no longer the latest (cleared, or another file chosen) is dropped when it ends.
+  const generation = useRef(0);
 
   function apply(next: LoaderState) {
     setState(next);
@@ -49,15 +51,17 @@ export function DatasetLoader({ onLoaded, onCleared }: { onLoaded: (dataset: Dat
 
   async function chooseFile(file: File | undefined) {
     if (!file) return;
+    const mine = ++generation.current;
     if (file.size > MAX_CSV_LENGTH * 4) {
       apply({ kind: "refused", errors: [t.fileTooLarge.replace("{max}", String(MAX_CSV_LENGTH))], more: 0 });
       return;
     }
     setState({ kind: "reading" });
     try {
-      apply(stateOfText(await file.text()));
+      const read = await file.text();
+      if (mine === generation.current) apply(stateOfText(read));
     } catch {
-      apply({ kind: "refused", errors: [t.readFailed], more: 0 });
+      if (mine === generation.current) apply({ kind: "refused", errors: [t.readFailed], more: 0 });
     }
   }
 
@@ -71,8 +75,8 @@ export function DatasetLoader({ onLoaded, onCleared }: { onLoaded: (dataset: Dat
       <TextArea label={t.paste} hint={t.pasteHint} value={text} rows={6} spellCheck={false}
         onChange={(event) => setText(event.target.value)} />
       <div className={styles.actions}>
-        <Button busy={state.kind === "reading"} aria-disabled={text.trim() === ""} onClick={() => text.trim() !== "" && apply(stateOfText(text))}>{t.load}</Button>
-        <Button tone="ghost" onClick={() => { setText(""); apply({ kind: "idle" }); }}>{t.clear}</Button>
+        <Button busy={state.kind === "reading"} aria-disabled={text.trim() === ""} onClick={() => { if (text.trim() === "") return; generation.current += 1; apply(stateOfText(text)); }}>{t.load}</Button>
+        <Button tone="ghost" onClick={() => { generation.current += 1; setText(""); apply({ kind: "idle" }); }}>{t.clear}</Button>
       </div>
       {state.kind === "reading" && <p role="status">{t.reading}</p>}
       {refused && (
