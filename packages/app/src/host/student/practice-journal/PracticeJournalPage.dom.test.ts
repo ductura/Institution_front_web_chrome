@@ -144,6 +144,36 @@ describe("PracticeJournalPage in the browser", () => {
     expect(host.querySelector("textarea")!.hasAttribute("maxlength")).toBe(false);
   });
 
+  it("offers no form for a past practice, nor where the entries could not be read", async () => {
+    let d = apiOf({ "practice.placements.get": () => ok({ placements: [{ ...PLACEMENT, endsOn: "2026-03-31" }] }), "practice.entries.get": () => ok({ entries: [ENTRY], signoffs: [] }) });
+    await render(d.call);
+    expect(host.querySelector("form")).toBeNull();
+    expect(host.querySelector("[data-testid=entry] button")).toBeNull();
+    d = apiOf({ "practice.placements.get": () => ok({ placements: [PLACEMENT] }), "practice.entries.get": () => ({ ok: false, status: 404, code: "not_found" }) });
+    await render(d.call);
+    expect(host.querySelector("form")).toBeNull();
+    d = apiOf({ "practice.placements.get": () => ok({ placements: [PLACEMENT] }), "practice.entries.get": () => ({ ok: false, status: 503, code: "unavailable" }) });
+    await render(d.call);
+    expect(host.querySelector("form")).toBeNull();
+  });
+
+  it("shows the error of the hours field", async () => {
+    const d = apiOf({ "practice.placements.get": () => ok({ placements: [PLACEMENT] }), "practice.entries.get": () => ok({ entries: [], signoffs: [] }) });
+    await render(d.call);
+    const area = host.querySelector("textarea")!;
+    const select = host.querySelector("select")!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(area, "Izmišljeni zapis.");
+      area.dispatchEvent(new Event("input", { bubbles: true }));
+      select.innerHTML = '<option value="13">13</option>';
+      select.value = "13";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => { host.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    expect(text()).toContain(t.errors.hoursInvalid);
+    expect(d.calls.some((c) => c.id === "practice.entries.post")).toBe(false);
+  });
+
   it("goes to sign-in when the session is gone", async () => {
     const { call } = apiOf({ "practice.placements.get": () => ({ ok: false, status: 401, code: "unauthorized" }) });
     await render(call);

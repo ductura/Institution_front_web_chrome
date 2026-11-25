@@ -113,7 +113,8 @@ function Journal({ placement, today, call, here, onChanged }: { placement: Place
   const [note, setNote] = useState<{ tone: "status" | "alert"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const open = placementState(placement, today) === "active" || placementState(placement, today) === "ended";
+  // Entries are added only while the practice lasts (the message says so); a past one is read-only.
+  const open = placementState(placement, today) === "active" && read?.kind === "ok";
 
   useEffect(() => {
     let live = true;
@@ -228,7 +229,7 @@ function Journal({ placement, today, call, here, onChanged }: { placement: Place
             {error?.field === "form" && <p role="alert">{t.errors[error.error]}</p>}
             <TextField label={t.fieldDate} type="date" value={draft.date} busy={busy} min={placement.startsOn} max={lastEntryDate(placement, today)}
               error={fieldError("date")} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
-            <Select label={t.fieldHours} disabled={busy} value={draft.hours.replace(",", ".")} options={HOUR_STEPS.map((h) => ({ value: String(h), label: String(h).replace(".", ",") }))}
+            <Select label={t.fieldHours} disabled={busy} error={fieldError("hours")} value={draft.hours.replace(",", ".")} options={HOUR_STEPS.map((h) => ({ value: String(h), label: String(h).replace(".", ",") }))}
               onChange={(e) => setDraft({ ...draft, hours: e.target.value })} />
             <TextArea label={t.fieldText} busy={busy} hint={t.fieldTextHint} value={draft.text} error={fieldError("text")}
               onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
