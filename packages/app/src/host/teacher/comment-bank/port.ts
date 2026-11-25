@@ -8,7 +8,7 @@ import { createApi } from "../../../../../../src/client/api.ts";
 
 import { commentBankMessages as text } from "./messages.hr";
 import type {
-  BankEntry, BankRead, BankRemove, CommentBankPort, DraftAnchor, DraftCommentsPort, DraftSave, DraftsRead,
+  BankEntry, BankInput, BankRead, BankRemove, BankSave, BankUpdate, CommentBankPort, DraftAnchor, DraftCommentsPort, DraftSave, DraftsRead,
   PublishResult, WorkComment,
 } from "./model";
 
@@ -68,13 +68,18 @@ export function draftCommentsPortFor(call: () => Call = () => createApi()): Draf
   };
 }
 
+const entryOf = (id: string, input: BankInput): BankEntry =>
+  ({ id, kind: input.kind, title: text.kinds[input.kind], label: input.label, body: input.text });
+
 export function commentBankPortFor(call: () => Call = () => createApi()): CommentBankPort {
   return {
     async read(): Promise<BankRead> {
       try {
         const answer = await call()("teacher.comment-bank.get", { params: undefined, query: undefined, body: undefined });
         if (!answer.ok) return { kind: "unavailable" };
-        const entries: BankEntry[] = answer.body.entries.map((entry) => ({ id: entry.id, title: text.kinds[entry.kind], body: entry.text }));
+        const entries: BankEntry[] = answer.body.entries.map((entry) => ({
+          id: entry.id, kind: entry.kind, title: text.kinds[entry.kind], label: entry.label ?? null, body: entry.text,
+        }));
         return { kind: "ready", entries };
       } catch {
         return { kind: "unavailable" };
@@ -85,6 +90,32 @@ export function commentBankPortFor(call: () => Call = () => createApi()): Commen
         const answer = await call()("teacher.comment-bank.delete", { params: { entryId }, query: undefined, body: undefined });
         if (answer.ok) return { kind: "removed" };
         if (answer.status === 401) return { kind: "signedOut" };
+        return answer.status >= 400 && answer.status < 500 ? { kind: "rejected" } : { kind: "unknown" };
+      } catch {
+        return { kind: "unknown" };
+      }
+    },
+    async save(input: BankInput): Promise<BankSave> {
+      try {
+        const answer = await call()("teacher.comment-bank.post", { params: undefined, query: undefined, body: { text: input.text, kind: input.kind, label: input.label } });
+        if (!answer.ok) {
+          if (answer.status === 401) return { kind: "signedOut" };
+          return answer.status >= 400 && answer.status < 500 ? { kind: "rejected" } : { kind: "unknown" };
+        }
+        // The entry shown is the one the server named, with exactly what was sent.
+        if (typeof answer.body?.id !== "string") return { kind: "unknown" };
+        return { kind: "saved", entry: entryOf(answer.body.id, input) };
+      } catch {
+        return { kind: "unknown" };
+      }
+    },
+    async update(entryId, input: BankInput): Promise<BankUpdate> {
+      try {
+        const answer = await call()("teacher.comment-bank-entry.put", { params: { entryId }, query: undefined, body: { text: input.text, kind: input.kind, label: input.label } });
+        if (answer.ok) return { kind: "updated", entry: entryOf(entryId, input) };
+        if (answer.status === 401) return { kind: "signedOut" };
+        // Another teacher's entry and a missing one answer alike (404): it is not there for this teacher.
+        if (answer.status === 404) return { kind: "gone" };
         return answer.status >= 400 && answer.status < 500 ? { kind: "rejected" } : { kind: "unknown" };
       } catch {
         return { kind: "unknown" };
