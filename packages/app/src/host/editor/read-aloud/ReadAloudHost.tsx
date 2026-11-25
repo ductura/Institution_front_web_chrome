@@ -138,7 +138,7 @@ export function ReadAloudHost() {
   const editor = useLocalEditor();
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
-    return bindReading(editor as never, readingOf(editor as never), window);
+    return bindReading(editor as never, readingOf(editor as never), document);
   }, [editor]);
   const snap = useEditorReading((editor as never) ?? null);
   if (!editor || editor.isDestroyed) return null;
