@@ -28,6 +28,8 @@ import { messagesHr as t } from "@/lib/i18n/messages.hr";
 import { useStudentToast } from "../../student/toast/StudentToasts";
 import { formulaToolsOf, useFormulaHost } from "../formula/FormulaHost";
 import { formulaHostHr } from "../formula/messages.hr";
+import { useCodeBlockHost } from "../code-block/CodeBlockHost";
+import { codeBlockHr } from "../code-block/messages.hr";
 import { profileById, DEFAULT_PROFILE_ID, type RuleProfile } from "../rules/profiles";
 import { SkeletonDialog } from "../areas/skeleton/SkeletonDialog";
 import { skeletonAvailable } from "../areas/skeleton/skeleton";
@@ -133,6 +135,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const theme = useSheetTheme();
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
   const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(skeletonProfile));
+  const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
   const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
@@ -148,6 +151,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "xref", label: crossReferenceMessages.title, disabled: !writeOk || !v3.openInsert },
     { id: "formula", label: formulaHostHr.insertBlock, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
     { id: "inlineFormula", label: formulaHostHr.insertInline, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
+    { id: "codeBlock", label: code.inBlock ? codeBlockHr.edit : codeBlockHr.insert, disabled: !writeOk || !code.availability.enabled, hint: code.availability.enabled ? undefined : code.availability.reason },
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
     { id: "workParts", label: workPartsMessages.title, disabled: !writeOk },
     { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonAvailable(skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null) },
@@ -173,6 +177,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         else if (id === "xref") v3.openInsert?.("crossReference");
         else if (id === "workParts" && writeOk) setDialog("parts");
         else if (id === "formula" || id === "inlineFormula") formula.open(id === "formula" ? "block" : "inline");
+        else if (id === "codeBlock" && writeOk) code.open(code.inBlock);
         else if (id === "skeleton" && writeOk) setDialog("skeleton");
         else if (id === "hole") insertHole(editor);
       }} />
@@ -204,6 +209,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />
       {v3.dialog}
       {formula.dialog}
+      {code.dialog}
     </>
   );
 }
