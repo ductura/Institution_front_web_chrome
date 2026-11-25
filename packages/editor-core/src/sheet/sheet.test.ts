@@ -84,6 +84,25 @@ describe("lone surrogates (not representable in the JSON vectors file)", () => {
   });
 });
 
+describe("length limits count code points and arrays have no holes", () => {
+  it("accepts 1000 emoji in a cell but not 1001", () => {
+    const d = createSheetDocument();
+    d.sheets[0]!.cells = { A1: { value: "😀".repeat(1000) } };
+    expect(validateSheetDocument(d).ok).toBe(true);
+    d.sheets[0]!.cells = { A1: { value: "😀".repeat(1001) } };
+    const r = validateSheetDocument(d);
+    expect(r.ok === false && r.code).toBe("bad_cell_value");
+  });
+  it("accepts a 31 code point name made of emoji", () => {
+    const d = createSheetDocument({ id: "s1", name: "😀".repeat(31) });
+    expect(validateSheetDocument(d).ok).toBe(true);
+  });
+  it("rejects a sparse sheets array", () => {
+    const r = validateSheetDocument({ schemaVersion: 1, kind: "spreadsheet", sheets: new Array(1) });
+    expect(r.ok === false && r.code).toBe("bad_sheets");
+  });
+});
+
 describe("model helpers", () => {
   it("parses and formats cell references both ways", () => {
     expect(parseCellRef("B3")).toEqual({ row: 3, column: 2 });

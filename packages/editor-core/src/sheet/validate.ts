@@ -69,6 +69,9 @@ function hasLoneSurrogate(text: string): boolean {
   return false;
 }
 
+/** Length in code points, so a character outside the BMP counts as one. */
+const codePointLength = (text: string): number => Array.from(text).length;
+
 function exactKeys(
   obj: Record<string, unknown>,
   required: readonly string[],
@@ -86,7 +89,7 @@ function exactKeys(
 }
 
 function checkText(text: string, max: number, path: string, code: SheetValidationCode): void {
-  if (text.length > max || hasLoneSurrogate(text)) throw new Invalid(code, path);
+  if (codePointLength(text) > max || hasLoneSurrogate(text)) throw new Invalid(code, path);
 }
 
 function checkCell(raw: unknown, path: string): SheetCell {
@@ -106,7 +109,7 @@ function checkCell(raw: unknown, path: string): SheetCell {
       typeof formula !== "string" ||
       !formula.startsWith("=") ||
       formula.length < 2 ||
-      formula.length > MAX_FORMULA_LENGTH ||
+      codePointLength(formula) > MAX_FORMULA_LENGTH ||
       hasLoneSurrogate(formula)
     ) {
       throw new Invalid("bad_formula", `${path}.formula`);
@@ -164,9 +167,11 @@ export function validateSheetDocument(input: unknown): SheetValidationResult {
     const ids = new Set<string>();
     const names = new Set<string>();
     let filled = 0;
-    sheets.forEach((rawSheet, i) => {
+    for (let i = 0; i < sheets.length; i += 1) {
       const path = `$.sheets[${i}]`;
-      const sheet = checkSheet(rawSheet, path);
+      // A hole in a sparse array is not a sheet (forEach would skip it).
+      if (!(i in sheets)) throw new Invalid("bad_sheets", path);
+      const sheet = checkSheet(sheets[i], path);
       if (ids.has(sheet.id)) throw new Invalid("duplicate_sheet_id", `${path}.id`);
       ids.add(sheet.id);
       // Assumption: names are unique ignoring case, as in spreadsheet tools.
@@ -174,7 +179,7 @@ export function validateSheetDocument(input: unknown): SheetValidationResult {
       if (names.has(folded)) throw new Invalid("duplicate_sheet_name", `${path}.name`);
       names.add(folded);
       filled += Object.keys(sheet.cells).length;
-    });
+    }
     if (filled > MAX_SHEET_FILLED_CELLS) throw new Invalid("too_many_cells", "$.sheets");
     return { ok: true, value: input as unknown as SheetDocument };
   } catch (error) {
