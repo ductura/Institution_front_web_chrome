@@ -15,11 +15,18 @@ export type DraftFieldProps = {
   readOnly: boolean;
   hint?: string;
   error?: string;
+  /** Changes when undo or redo replaced the document: the draft is dropped, the element stays (and keeps focus). */
+  epoch?: number;
   onChange: (raw: string) => void;
 };
 
-export function DraftField({ label, value, multiline, readOnly, hint, error, onChange }: DraftFieldProps) {
+export function DraftField({ label, value, multiline, readOnly, hint, error, epoch = 0, onChange }: DraftFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
+  const [seen, setSeen] = useState(epoch);
+  if (seen !== epoch) {
+    setSeen(epoch);
+    setDraft(null);
+  }
   const shown = draft ?? value;
   const change = (raw: string) => {
     setDraft(raw);

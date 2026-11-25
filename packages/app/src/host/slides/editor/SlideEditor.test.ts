@@ -107,4 +107,29 @@ describe("SlideEditor", () => {
     await act(async () => { el.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true })); });
     expect(steps).toEqual([]);
   });
+  it("undo from inside a field keeps that field in the page and shows the document's text", async () => {
+    const el = await mount({ source: ready() });
+    const notes = field(el, "Bilješke govornika")!;
+    await type(notes, "Prva");
+    notes.focus();
+    await act(async () => { notes.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true })); });
+    await settle();
+    const after = field(el, "Bilješke govornika")!;
+    expect(after).toBe(notes);
+    expect(after.value).toBe("");
+  });
+
+  it("clearing a field and typing at once leaves one block with the typed text", async () => {
+    const steps: SlideStep[] = [];
+    const el = await mount({ source: ready(), onSteps: (s) => steps.push(...s) });
+    await type(field(el, "Naslov")!, "Stari");
+    await act(async () => {
+      const input = field(el, "Naslov")!;
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      for (const value of ["", "A", "AB"]) { set.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true })); }
+    });
+    await settle();
+    const replay = await applySlideSteps(slidesRevisionZeroDocument(), steps);
+    expect(replay.ok && replay.doc.slides[0]!.blocks).toMatchObject([{ slot: "title", text: "AB" }]);
+  });
 });

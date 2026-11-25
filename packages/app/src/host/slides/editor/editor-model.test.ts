@@ -189,4 +189,30 @@ describe("slides editor model", () => {
     expect(textRange("abc", "")).toEqual({ from: 0, to: 3, insert: "", removed: "abc" });
     expect(documentText("  Á \r\nB ")).toBe("Á \nB");
   });
+  it("queued edits that still hold the id of a cleared block land in the block made after it", async () => {
+    const id = first(start());
+    const made = await play(start(), (s) => setBlockText(s, id, "title", null, "Stari", ID(1)));
+    const { state } = await play(made.state, (s) => setBlockText(s, id, "title", ID(1), "", ID(2)), (s) => setBlockText(s, id, "title", ID(1), "A", ID(3)), (s) => setBlockText(s, id, "title", ID(1), "AB", ID(4)));
+    expect(state.refusal).toBeNull();
+    expect(state.doc.slides[0]!.blocks).toHaveLength(1);
+    expect(state.doc.slides[0]!.blocks[0]).toMatchObject({ text: "AB" });
+  });
+
+  it("a long run in one field is split into undo entries that each fit one step event", async () => {
+    const id = first(start());
+    let state = start();
+    const record: SlideStep[] = [];
+    for (let n = 1; n <= 1100; n += 1) {
+      const out = await setNotes(state, id, "n".repeat(n % 7 === 0 ? 2 : 1) + (n % 2 === 0 ? "a" : "b"));
+      state = out.state;
+      record.push(...out.steps);
+    }
+    expect(state.past.length).toBeGreaterThan(1);
+    for (const command of state.past) {
+      expect(parseSlideSteps(JSON.parse(JSON.stringify(command.forward))).ok).toBe(true);
+      expect(parseSlideSteps(JSON.parse(JSON.stringify(command.inverse))).ok).toBe(true);
+    }
+    const back = await undo(state);
+    expect(parseSlideSteps(JSON.parse(JSON.stringify(back.steps))).ok).toBe(true);
+  });
 });

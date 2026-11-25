@@ -86,13 +86,13 @@ function ReadyEditor({ doc, readOnly, onSteps, newId }: { doc: SlidesDocument; r
           onAdd={() => run((s) => addSlide(s, "titleContent", newId()))}
           onRemove={() => run((s) => removeSlide(s, slide.id))}
           onMove={(delta) => run((s) => moveSlide(s, slide.id, delta))} />
-        <div className={styles.stack} key={`${slide.id}:${state.epoch}`}>
+        <div className={styles.stack} key={slide.id}>
           <p>{fill(t.slideOf, { n: index + 1, total: state.doc.slides.length })}</p>
-          <SlideCanvas slide={slide} readOnly={readOnly}
+          <SlideCanvas slide={slide} readOnly={readOnly} epoch={state.epoch}
             onLayout={(layout: SlideLayout) => run((s) => setLayout(s, slide.id, layout))}
             onText={(slot: SlideSlot, blockId, raw) => run((s) => setBlockText(s, slide.id, slot, blockId, raw, newId()))}
             onItem={(blockId, item, raw) => run((s) => setListItem(s, slide.id, blockId, item, raw))} />
-          <NotesField notes={slide.notes} readOnly={readOnly} onChange={(raw) => run((s) => setNotes(s, slide.id, raw))} />
+          <NotesField notes={slide.notes} readOnly={readOnly} epoch={state.epoch} onChange={(raw) => run((s) => setNotes(s, slide.id, raw))} />
         </div>
       </div>
     </div>

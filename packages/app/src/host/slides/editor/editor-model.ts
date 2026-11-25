@@ -10,6 +10,8 @@ import {
   MAX_HEADING_CODE_POINTS,
   MAX_LIST_ITEM_CODE_POINTS,
   MAX_NOTES_CODE_POINTS,
+  MAX_SLIDE_STEPS_BYTES,
+  MAX_SLIDE_STEPS_PER_EVENT,
   MAX_SLIDE_PARAGRAPH_CODE_POINTS,
   SLIDE_LAYOUTS,
   applySlideSteps,
@@ -72,12 +74,19 @@ async function perform(state: EditorState, command: Command, selectedId?: string
   if (!applied.ok) return refused(state, applied.error);
   const last = state.past[state.past.length - 1];
   const merged: Command | null =
-    command.key !== undefined && last?.key === command.key
+    command.key !== undefined && last?.key === command.key && fitsOneEvent(last, command)
       ? { key: command.key, forward: [...last.forward, ...command.forward], inverse: [...command.inverse, ...last.inverse] }
       : null;
   const past = merged === null ? [...state.past, command] : [...state.past.slice(0, -1), merged];
   const next: EditorState = { ...state, doc: applied.doc, past, future: [], refusal: null };
   return { state: { ...next, selectedId: keepSelection(applied.doc, selectedId ?? state.selectedId, state) }, steps: command.forward };
+}
+
+/** A merged command stays one event of the step format: within its step and byte limits (half the byte limit, as steps carry hashes too). */
+function fitsOneEvent(a: Command, b: Command): boolean {
+  const steps = (c: Command) => Math.max(c.forward.length, c.inverse.length);
+  if (steps(a) + steps(b) > MAX_SLIDE_STEPS_PER_EVENT) return false;
+  return JSON.stringify([a.forward, a.inverse, b.forward, b.inverse]).length <= MAX_SLIDE_STEPS_BYTES / 2;
 }
 
 /** The selected slide if it still exists, else the slide that took its place. */
@@ -212,8 +221,9 @@ export async function setBlockText(
   if (slide === undefined) return refused(state, "unknown_slide");
   const target = documentText(raw);
   // `null` means "the slot's text block, if it has one by now": a second keystroke can run before the render that shows the block the first one made.
-  const block = slide.blocks.find((candidate) =>
-    blockId === null ? candidate.slot === slot && (candidate.type === "heading" || candidate.type === "paragraph") : candidate.id === blockId);
+  const inSlot = slide.blocks.find((candidate) => candidate.slot === slot && (candidate.type === "heading" || candidate.type === "paragraph"));
+  // An id the slide no longer has (the block was cleared and made again by an earlier queued edit) means the slot's block now.
+  const block = (blockId === null ? undefined : slide.blocks.find((candidate) => candidate.id === blockId)) ?? inSlot;
   if (block === undefined) {
     if (target === "") return unchanged(state);
     const created = { type: slotBlockType(slot), id: newBlockId, slot, text: target } as SlideBlock;

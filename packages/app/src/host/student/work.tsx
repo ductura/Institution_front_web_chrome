@@ -118,9 +118,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       const topBar = frame.variant === "puno" ? <ShellView>{bar}</ShellView> : bar;
       const length = { words: null, range: frame.range };
       // WEB-V13-UREDNIK: a slides work in progress opens the slides editor, anything else the text editor below.
+      // Its top bar is the plain one: the shell view switches and the history buttons only work on the text editor.
       const kind = workKindOf(assignments, assignmentId);
       if (read.kind === "ready" && frame.variant === "puno" && kind !== "text") {
-        return setShown({ kind: "page", node: <SlidesWork course={read.course} title={read.title} topBar={topBar} length={length} unreadable={kind === "unreadable"} onRetry={() => setAttempt((n) => n + 1)} /> });
+        return setShown({ kind: "page", node: <SlidesWork course={read.course} title={read.title} topBar={<WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle} />} length={length} unreadable={kind === "unreadable"} onRetry={() => setAttempt((n) => n + 1)} /> });
       }
       if (read.kind === "ready" && frame.variant === "puno") {
         return setShown({
