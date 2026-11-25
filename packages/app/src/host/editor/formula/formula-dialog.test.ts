@@ -136,6 +136,39 @@ describe("formula dialog", () => {
   });
 });
 
+describe("formula dialog sessions and Tab", () => {
+  it("reopening with another formula starts from that formula, not the old draft", async () => {
+    mount = document.createElement("div");
+    document.body.append(mount);
+    root = createRoot(mount);
+    const draw = (props: Partial<FormulaDialogProps>) => act(async () => {
+      root!.render(createElement(FormulaDialog, { open: true, kind: "block", onConfirm: () => false, onClose: () => {}, ...props }));
+    });
+    await draw({ initialTex: "a+b" });
+    await type("edited");
+    await click(button(t.confirm));
+    expect(document.querySelector("[role=alert]")?.textContent).toBe(t.refused);
+    await draw({ open: false, initialTex: "a+b" });
+    await draw({ open: true, initialTex: "c+d" });
+    expect(field().value).toBe("c+d");
+    expect(document.querySelector("[role=alert]")).toBeNull();
+    await draw({ open: true, initialTex: "e+f" });
+    expect(field().value).toBe("e+f");
+  });
+
+  it("Tab on a blank selects it and keeps the focus in the field", async () => {
+    await render();
+    await click(button(t.templateNames.fraction));
+    field().focus();
+    field().setSelectionRange(0, 0);
+    const tab = new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true });
+    await act(async () => { field().dispatchEvent(tab); });
+    expect(tab.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(field());
+    expect([field().selectionStart, field().selectionEnd]).toEqual([6, 7]);
+  });
+});
+
 describe("templates", () => {
   it("finds blanks, wraps round, and a selection fills the first blank", () => {
     expect(hasHoles("a")).toBe(false);

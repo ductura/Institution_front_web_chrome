@@ -10,7 +10,7 @@
  */
 
 import { Button, Dialog, TextArea } from "@ductura/ui";
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import "katex/dist/katex.min.css";
 
@@ -36,6 +36,9 @@ export function FormulaDialog({ open, kind, initialTex = "", onConfirm, onClose 
   const [refused, setRefused] = useState(false);
   const field = useRef<HTMLTextAreaElement | null>(null);
   const pendingSelection = useRef<[number, number] | null>(null);
+
+  // A kept-mounted dialog starts a new session on every opening or new target: no stale draft or message.
+  useEffect(() => { if (open) { setTex(initialTex); setRefused(false); } }, [open, initialTex]);
 
   const limit = checkFormulaLimit(tex, kind);
   const holes = hasHoles(tex);
@@ -66,6 +69,8 @@ export function FormulaDialog({ open, kind, initialTex = "", onConfirm, onClose 
     const at = nextHole(tex, event.currentTarget.selectionEnd);
     if (at === -1) return;
     event.preventDefault();
+    // The shared Dialog would otherwise move the focus on to the next control.
+    event.stopPropagation();
     event.currentTarget.setSelectionRange(at, at + 1);
   };
   const confirm = () => {
