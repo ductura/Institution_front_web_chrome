@@ -32,7 +32,11 @@ describe("editor triggers", () => {
     expect(items[0]).toMatchObject({ label: "/navod", disabled: true });
     expect(items.find(({ id }) => id === "tablica")?.disabled).toBe(true);
     // ED-03 (NF2-P5): a grey command says why, beside its name; an offered one does not.
-    for (const item of items.filter(({ disabled }) => disabled)) expect(item.hint).toMatch(/ · nije u pilotu$/);
+    for (const item of items.filter(({ disabled }) => disabled)) expect(item.hint).toMatch(/ · nije u pilotu(, dolazi s novom shemom teksta)?$/);
+    // ED-24 (NF2-P25): /tablica and /slika say they wait for the new text schema; other grey commands do not.
+    expect(items.find(({ id }) => id === "tablica")?.hint).toBe("s brojem i izvorom · nije u pilotu, dolazi s novom shemom teksta");
+    expect(items.find(({ id }) => id === "slika")?.hint).toBe("s brojem, naslovom i izvorom · nije u pilotu, dolazi s novom shemom teksta");
+    expect(items.find(({ id }) => id === "fusnota")?.hint).toBe("objašnjenje na dnu · nije u pilotu");
     const offered = triggerItems({ mode: "slash", query: "", from: 0, to: 1 }, [], { cite: vi.fn() }, vi.fn());
     expect(offered.find(({ id }) => id === "navod")).toMatchObject({ disabled: false, hint: "isto kao @" });
     expect(moveItem(items, -1, 1)).toBe(1);

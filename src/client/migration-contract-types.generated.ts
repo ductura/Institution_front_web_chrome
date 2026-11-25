@@ -30,6 +30,7 @@
 // Faza 3: student.assignment-format-rules.get, student.assignment-rubric.get, student.assignment-template.get, teacher.assignment-rubric.get, teacher.assignment-rubric.put, teacher.assignment-template.put, teacher.work-rubric-mark.put, teacher.work-rubric.get, institution.work-template.get, institution.work-template.put from Institution_server 59e17d83 (API 1.133.0).
 // Faza 3: student.mentored-assignments.get from Institution_server 1e42edb9 (API 1.135.0).
 // Faza 3: analysis.catalogue.get, analysis.runs.post from Institution_server bcd6b12a (API 1.136.0).
+// Faza 3: student.assignment-work.get, student.text-check-config.get, teacher.comment-bank.get, teacher.comment-bank.post from Institution_server 1bcc6348 (API 1.137.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -252,7 +253,7 @@ export type MigrationOperations = {
     params: { "assignmentId": string };
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "enabledCheckIds": (string)[]; "lektaProfileId": string | null }; headers: {  } };
+    success: { status: 200; body: { "enabledCheckIds": (string)[]; "lektaProfileId": string | null; "citationStyle"?: "fpzg" | "apa" | "chicago" | "ieee" | "vancouver" | "fusnote" }; headers: {  } };
     errorCode: "unauthorized" | "not_found" | "unavailable";
   };
   "student.assignment-requirements.get": {
@@ -973,7 +974,7 @@ export type MigrationOperations = {
     params: undefined;
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "assignments": ({ "assignmentId": string; "workState": "not_started" | "in_progress" | "submitted" })[] }; headers: {  } };
+    success: { status: 200; body: { "assignments": ({ "assignmentId": string; "workState": "not_started" | "in_progress" | "submitted"; "lateException"?: { "untilAt": string } })[] }; headers: {  } };
     errorCode: "unauthorized" | "unavailable";
   };
   "student.assistant-conversation.get": {
@@ -1155,13 +1156,13 @@ export type MigrationOperations = {
     params: undefined;
     query: undefined;
     body: undefined;
-    success: { status: 200; body: { "entries": ({ "id": string; "kind": "must" | "sugg" | "q" | "praise"; "text": string; "createdAt": string })[] }; headers: {  } };
+    success: { status: 200; body: { "entries": ({ "id": string; "kind": "must" | "sugg" | "q" | "praise"; "text": string; "label"?: string | null; "createdAt": string })[] }; headers: {  } };
     errorCode: "unauthorized" | "unavailable";
   };
   "teacher.comment-bank.post": {
     params: undefined;
     query: undefined;
-    body: { "text": string; "kind": "must" | "sugg" | "q" | "praise" };
+    body: { "text": string; "kind": "must" | "sugg" | "q" | "praise"; "label"?: string | null };
     success: { status: 201; body: { "id": string; "createdAt": string }; headers: {  } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
   };
