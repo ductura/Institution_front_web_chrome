@@ -18,7 +18,7 @@ describe("orderedListNumbers (contract v4 §2.2)", () => {
   });
 
   it("has no levels: a stray level field does not nest", () => {
-    expect(orderedListNumbers([{ type: "orderedItem", level: 3 }, { type: "orderedItem", level: 1 }])).toEqual(["1.", "2."]);
+    expect(orderedListNumbers([{ type: "orderedItem", level: 3 } as { type: string }, { type: "orderedItem", level: 1 } as { type: string }])).toEqual(["1.", "2."]);
   });
 
   it("is empty for an empty document", () => {
