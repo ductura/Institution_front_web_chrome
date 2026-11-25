@@ -12,6 +12,7 @@ import type { useLocalEditor } from "@/components/editor/LocalDocument";
 import { jumpToBlock } from "./jump";
 import { ReviewPanel } from "../../../../../../src/components/editor/review/ReviewPanel";
 import { readReviewDoc } from "../../../../../../src/components/editor/review/model";
+import { TextFixesPanel } from "../../../../../../src/components/editor/text-fixes/TextFixesPanel";
 import { createReadAloud, READ_ALOUD_MAX_RATE, READ_ALOUD_MIN_RATE, type ReadAloudController, type ReadAloudState } from "../read-aloud/controller";
 import { readAloudSupported } from "../read-aloud/support";
 import { readAloudRate } from "../reading-settings/rate-store";
@@ -56,7 +57,10 @@ export function PregledGroup({ editor, documentId, enabledCheckIds = null }: {
       </>}
       {view === "nacrt" && <Nacrt editor={editor} doc={doc} scope={scope} />}
       {view === "pojmovnik" && <Pojmovnik doc={doc} scope={scope} workId={documentId} />}
-      {view === "provjere" && <ReviewPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />}
+      {view === "provjere" && <>
+        <ReviewPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />
+        <TextFixesPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />
+      </>}
     </section>
   );
 }

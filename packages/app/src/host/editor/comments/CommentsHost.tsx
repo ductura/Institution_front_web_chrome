@@ -91,6 +91,12 @@ function SessionComments({ editor, documentId, session, submitted, signedOut = f
     e.chain().setTextSelection(range).scrollIntoView().run();
     e.view.focus();
   }, [port]);
+  const currentText = useCallback((place: Place): string | null => {
+    const e = liveOf(editorRef);
+    const anchor = e ? port.anchorOf(place) : null;
+    const range = e && anchor ? anchorRange(e.state.doc, anchor) : null;
+    return e && range ? e.state.doc.textBetween(range.from, range.to, " ") : null;
+  }, [port]);
   const onSessionEnd = useCallback(() => setEnded(true), []);
 
   if (stopped) return <p role="status" className={styles.muted}>{t.signedOut}</p>;
@@ -98,7 +104,7 @@ function SessionComments({ editor, documentId, session, submitted, signedOut = f
     <>
       {submitted && <p className={styles.muted}>{t.submittedNote}</p>}
       {/* No record of the student's last visit exists: nothing is claimed new. */}
-      <CommentsPanel workId={documentId} role="student" submitted={submitted} port={port} selection={selection} docSize={docSize}
+      <CommentsPanel workId={documentId} role="student" submitted={submitted} port={port} selection={selection} docSize={docSize} currentText={currentText}
         seen={Number.POSITIVE_INFINITY} onJump={onJump} onSessionEnd={onSessionEnd} />
     </>
   );

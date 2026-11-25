@@ -10,6 +10,13 @@ export const textFixesMessagesHr = {
   fixedAll: "Popravljeno: {n}. Jedan Ctrl+Z vraća sve.",
   stale: "Tekst se u međuvremenu promijenio; pogledajte popis ponovno.",
   skipped: "Preskočeno: {n} u zalijepljenom ili uvezenom tekstu. Takav tekst ne mijenjamo.",
+  beforeAfter: "Prije i poslije",
+  before: "Prije",
+  after: "Poslije",
+  space: "razmak",
+  undo: "Vrati",
+  undone: "Vraćeno kako je bilo.",
+  undoStale: "Tekst se u međuvremenu promijenio, pa ovdje ne vraćamo. Ctrl+Z u tekstu vraća korak po korak.",
   kind: {
     spaces: "Dvostruki razmak",
     before: "Razmak ispred interpunkcije",
