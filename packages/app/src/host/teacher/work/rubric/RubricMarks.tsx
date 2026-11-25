@@ -1,12 +1,13 @@
 "use client";
 
-import { Button, TextArea } from "@ductura/ui";
+import { Button, OptionGroup, TextArea } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { rubricMarksHr as t } from "./messages.hr";
 import { readRubricMarks, saveMark, type Call, type MarksRead } from "./port";
 import { isChanged, joinRows, noteValue, NOTE_MAX, withMark, type Level, type Mark } from "./rubric-marks-model";
 
+const NONE = "none";
 type Form = { level: Level | null; note: string; busy: boolean; message: string | null };
 
 /**
@@ -72,27 +73,17 @@ export function RubricMarks({ documentId, call, onSessionEnd }: { documentId: st
           const title = criterion?.title ?? mark.criterionId;
           return (
             <li key={mark.criterionId}>
-              <fieldset disabled={f.busy}>
-                <legend>{title}</legend>
-                <div role="radiogroup" aria-label={t.levelGroup(title)}>
-                  {criterion?.levels.map((level, i) => (
-                    <label key={i}>
-                      <input type="radio" name={`rubric-${mark.criterionId}`} checked={f.level === i}
-                        onChange={() => patch(mark, { level: i as Level, message: null })} />
-                      {level.label}{level.descriptor !== "" ? ` — ${level.descriptor}` : ""}
-                    </label>
-                  ))}
-                  <label>
-                    <input type="radio" name={`rubric-${mark.criterionId}`} checked={f.level === null}
-                      onChange={() => patch(mark, { level: null, message: null })} />
-                    {t.noLevel}
-                  </label>
-                </div>
-                <TextArea label={t.noteLabel(title)} rows={2} value={f.note} maxLength={NOTE_MAX}
-                  onChange={(event) => patch(mark, { note: event.target.value, message: null })} />
-                <Button type="button" disabled={f.busy || !isChanged(mark, f.level, f.note)} onClick={() => void save(mark)}>{t.save}</Button>
-                <p role="status" aria-live="polite">{f.message}</p>
-              </fieldset>
+              <OptionGroup legend={title} name={`rubric-${mark.criterionId}`} disabled={f.busy}
+                value={f.level === null ? NONE : String(f.level)}
+                options={[
+                  ...(criterion?.levels.map((level, i) => ({ value: String(i), label: level.descriptor !== "" ? `${level.label} — ${level.descriptor}` : level.label })) ?? []),
+                  { value: NONE, label: t.noLevel },
+                ]}
+                onChange={(value) => patch(mark, { level: value === NONE ? null : (Number(value) as Level), message: null })} />
+              <TextArea label={t.noteLabel(title)} rows={2} value={f.note} maxLength={NOTE_MAX}
+                onChange={(event) => patch(mark, { note: event.target.value, message: null })} />
+              <Button type="button" disabled={f.busy || !isChanged(mark, f.level, f.note)} onClick={() => void save(mark)}>{t.save}</Button>
+              <p role="status" aria-live="polite">{f.message}</p>
             </li>
           );
         })}
