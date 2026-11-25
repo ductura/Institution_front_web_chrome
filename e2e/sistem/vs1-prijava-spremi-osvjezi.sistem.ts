@@ -36,7 +36,7 @@ async function recordSaveChip(context: BrowserContext) {
     const seen: { at: number; text: string }[] = [];
     (window as unknown as { __vs1Chip: typeof seen }).__vs1Chip = seen;
     const read = () => {
-      const chip = document.querySelector('footer[aria-label="Stanje rada"] [role="status"]');
+      const chip = document.querySelector('footer[aria-label="Stanje rada"] [data-tone]');
       const text = chip?.textContent?.trim() ?? '';
       if (text !== '' && seen.at(-1)?.text !== text) seen.push({ at: Date.now(), text });
     };
@@ -100,7 +100,7 @@ test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje 
   const shas = repoRevisions();
   await recordSaveChip(context);
   const editor = page.getByRole('textbox', { name: 'Tekst rada', exact: true });
-  const chip = page.locator('footer[aria-label="Stanje rada"]').getByRole('status');
+  const chip = page.locator('footer[aria-label="Stanje rada"]').locator('[data-tone]').first();
   const claims: Record<string, string> = {};
 
   const { workPath, opened } = await test.step('VS-1.1–VS-1.4: ulaz kroz Preloader, prijava preko AAI@EduHr i otvaranje vlastitog rada', async () => {
