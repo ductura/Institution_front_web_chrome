@@ -9,7 +9,7 @@ export const provenanceText = {
   typedHint: "„Napisano u Ducturi” znači da je tekst nastao u uređivaču Ducture; oznaka navodi mjesto, ne osobu. Vidi se samo dok je uključeno „Podrijetlo teksta”.",
   legendLabel: "Legenda karte",
   legendPaste: "zalijepljeno · crtkana crta",
-  legendAi: "prijenos iz AI pomoćnika · dvostruka crta",
+  legendAi: "umetnuto iz Asistenta · dvostruka crta",
   legendImport: "uvezeno iz datoteke · točkasta crta",
   legendTeacher: "izmjena nastavnika · valovita crta",
   legendOpen: "mjesto za izvor · crtkani okvir",
