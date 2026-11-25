@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createEditorExtensionsV3, NODE_ID_ATTRIBUTE } from "../../../../../editor-core/src/editor/schema";
 import { BLOCK_STYLES, stateOf, TOOLS } from "../../../../../../src/components/editor/EditorToolbarFor.tsx";
 import { EditorToolbarHost } from "./EditorToolbarHost";
-import { copyToastText, exportMenuItems, KEPT_LABELS, KEPT_TOOLBAR_LABEL, toolbarCommands, toolbarStateOf } from "./StudentToolbar";
+import { copyToastText, exportMenuItems, KEPT_LABELS, KEPT_TOOLBAR_LABEL, PENDING_INSERTS, toolbarCommands, toolbarStateOf, withPendingInserts } from "./StudentToolbar";
 import { toolbarGroups } from "./toolbar-model";
 
 const ID = "00000000-0000-4000-8000-000000000001";
@@ -109,6 +109,28 @@ describe("student toolbar over the editor", () => {
       ["print", "Pregled ispisa", false], ["copy", "Stavi tekst rada u međuspremnik", false],
     ]);
     expect(exportMenuItems(null).find((i) => i.id === "copy")!.disabled).toBe(true);
+  });
+
+  // ED-44 (P2-16): every "Umetni" item of the prototype is there; those the host cannot do yet are off, never hidden.
+  it("shows the prototype's whole Umetni, with what is not there yet disabled", () => {
+    const items = withPendingInserts([
+      { id: "footnote", label: "Fusnota" },
+      { id: "hole", label: "Za provjeru" },
+      { id: "workParts", label: "Dijelovi rada", disabled: true },
+    ]);
+    expect(items.map((i) => i.label)).toEqual([
+      "Navod", "Novi izvor", "Tablica", "Slika", "Fusnota", "Za provjeru", "Fraza", "Inačica odlomka", "Dijelovi rada",
+    ]);
+    for (const id of PENDING_INSERTS) {
+      expect(items.find((i) => i.id === id)).toMatchObject({ disabled: true, hint: "nedostupno" });
+    }
+    expect(items.find((i) => i.id === "footnote")!.disabled).toBeUndefined();
+    expect(items.find((i) => i.id === "workParts")!.disabled).toBe(true);
+  });
+
+  it("keeps the host's own item when it can do one of the pending ones", () => {
+    const items = withPendingInserts([{ id: "table", label: "Tablica" }]);
+    expect(items.filter((i) => i.id === "table")).toEqual([{ id: "table", label: "Tablica" }]);
   });
 
   it("says how the copy went", () => {
