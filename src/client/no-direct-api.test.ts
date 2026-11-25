@@ -98,7 +98,7 @@ const BARE_IMPORTS = new Set(["react", "react-dom/client", "react/jsx-runtime", 
   "@ductura/ui/tokens.css", "@ductura/ui/reading-font.css", "@ductura/ui/assistant-thread", "@ductura/ui/save-status",
   "@ductura/contracts/openapi/v1.json", "katex/dist/katex.min.css"]);
 /** Bare imports that are not network libraries: the Next, editor and storage stack of the app trees (WEB-01), and the "@/" alias. */
-const BARE_PREFIXES = ["@/", "next/", "@tiptap/"];
+const BARE_PREFIXES = ["@/", "next/", "@tiptap/", "highlight.js/lib/"];
 const BARE_PACKAGES = new Set(["next", "dexie", "react-dom", "katex"]);
 const CONFIG_IMPORTS = new Set(["vite", "vitest/config", "@playwright/test", "@vitejs/plugin-react"]);
 

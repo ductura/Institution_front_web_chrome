@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { fakeCommentBankPort, fakeDraftCommentsPort, FAKE_BANK } from "./fake-port";
 import {
-  draftsAfterPublish, publishDraftGroup, saveDraftComment, searchBank, visibleToStudent, type DraftCommentsPort,
+  draftsAfterPublish, insertIntoComment, normalizeBankInput, publishDraftGroup, saveDraftComment, searchBank, visibleToStudent, type DraftCommentsPort,
 } from "./model";
 
 const ID = "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60";
@@ -51,6 +51,14 @@ describe("comment bank search (WEB-1704)", () => {
     expect(searchBank(FAKE_BANK, "ništa takvo")).toEqual([]);
   });
 
+  it("filters by kind and finds an entry by the teacher's label", () => {
+    expect(searchBank(FAKE_BANK, "", "must").map((e) => e.id)).toEqual(["b1"]);
+    expect(searchBank(FAKE_BANK, "", "praise")).toEqual([]);
+    expect(searchBank(FAKE_BANK, "struktura").map((e) => e.id)).toEqual(["b2"]);
+    expect(searchBank(FAKE_BANK, "izvor", "sugg")).toEqual([]);
+    expect(searchBank(FAKE_BANK, "prijedlog").map((e) => e.id)).toEqual(["b2"]);
+  });
+
   it("reads the bank through its port", async () => {
     expect((await fakeCommentBankPort().read()).kind).toBe("ready");
   });
@@ -72,5 +80,24 @@ describe("drafts after a publication (409 reload)", () => {
     expect(await draftsAfterPublish(failing, ID, { kind: "changed" })).toBeNull();
     const throwing: DraftCommentsPort = { ...port, listDrafts: async () => { throw new Error("mreža"); } };
     expect(await draftsAfterPublish(throwing, ID, { kind: "changed" })).toBeNull();
+  });
+});
+
+describe("bank input and insertion (WEB-V17-BANK-INSERT)", () => {
+  it("normalizes the label (empty = none) and refuses what the server refuses", () => {
+    expect(normalizeBankInput("Tekst", "q", "  ")).toEqual({ ok: true, input: { text: "Tekst", kind: "q", label: null } });
+    expect(normalizeBankInput("Tekst", "q", " Izvor ")).toEqual({ ok: true, input: { text: "Tekst", kind: "q", label: "Izvor" } });
+    expect(normalizeBankInput(" \n ", "q", "")).toEqual({ ok: false, error: "emptyText" });
+    expect(normalizeBankInput("a".repeat(2001), "q", "")).toEqual({ ok: false, error: "textTooLong" });
+    expect(normalizeBankInput("😀".repeat(2000), "q", "").ok).toBe(true);
+    expect(normalizeBankInput("Tekst", "q", "x".repeat(41))).toEqual({ ok: false, error: "labelTooLong" });
+    expect(normalizeBankInput("Tekst", "q", "a\tb")).toEqual({ ok: false, error: "labelInvalid" });
+  });
+
+  it("adds a bank text after what is written, within the limit", () => {
+    expect(insertIntoComment("", "Banka", 2000)).toBe("Banka");
+    expect(insertIntoComment("  ", "Banka", 2000)).toBe("Banka");
+    expect(insertIntoComment("Moj tekst. ", "Banka", 2000)).toBe("Moj tekst.\n\nBanka");
+    expect(insertIntoComment("a".repeat(1999), "bcd", 2000)).toBe(`${"a".repeat(1999)}\n`);
   });
 });

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@ductura/ui": "workspace:*",
+    "highlight.js": "11.11.1",
     "katex": "0.16.22",
     "next": "16.4.6",
     "react": "19.3.1",
