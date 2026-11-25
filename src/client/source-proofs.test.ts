@@ -53,7 +53,8 @@ describe("listProofs", () => {
     expect(calls[0]?.url).toBe(`${BASE}${ROUTE}`);
     expect(calls[0]?.init?.method).toBe("GET");
     expect(calls[0]?.init?.body).toBeUndefined();
-    expect(calls[0]?.init?.credentials).not.toBe("omit");
+    // createApi sends no credentials option: fetch's default (same-origin) carries the cookie to this same-origin route.
+    expect(calls[0]?.init?.credentials).toBeUndefined();
   });
   it("refuses an unknown field, another source or a foreign image path", async () => {
     for (const proof of [{ ...PROOF, extra: 1 }, { ...PROOF, sourceId: P }, { ...PROOF, imagePath: "/drugo" }, { ...PROOF, createdAt: "jučer" }, { ...PROOF, page: " 14" }, { ...PROOF, note: "" }, { ...PROOF, id: "x" }]) {
