@@ -50564,5 +50564,604 @@
         "unavailable"
       ]
     }
+  },
+  "analysis.catalogue.get": {
+    "path": "/api/v1/analysis/catalogue",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the analyses and the limits",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "limits",
+                "analyses"
+              ],
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "maxRows",
+                    "maxColumns",
+                    "maxCellLength",
+                    "maxBodyBytes"
+                  ],
+                  "properties": {
+                    "maxRows": {
+                      "const": 500,
+                      "type": "number"
+                    },
+                    "maxColumns": {
+                      "const": 12,
+                      "type": "number"
+                    },
+                    "maxCellLength": {
+                      "const": 64,
+                      "type": "number"
+                    },
+                    "maxBodyBytes": {
+                      "const": 131072,
+                      "type": "number"
+                    }
+                  }
+                },
+                "analyses": {
+                  "maxItems": 3,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "version",
+                      "variables"
+                    ],
+                    "properties": {
+                      "id": {
+                        "anyOf": [
+                          {
+                            "const": "descriptive",
+                            "type": "string"
+                          },
+                          {
+                            "const": "frequencies",
+                            "type": "string"
+                          },
+                          {
+                            "const": "correlation",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "version": {
+                        "pattern": "^(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})$",
+                        "type": "string"
+                      },
+                      "variables": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "min",
+                          "max"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "anyOf": [
+                              {
+                                "const": "numeric",
+                                "type": "string"
+                              },
+                              {
+                                "const": "any",
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "min": {
+                            "minimum": 1,
+                            "maximum": 12,
+                            "type": "integer"
+                          },
+                          "max": {
+                            "minimum": 1,
+                            "maximum": 12,
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "analysis.runs.post": {
+    "path": "/api/v1/analysis/runs",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "analysisId",
+        "analysisVersion",
+        "variables",
+        "columns",
+        "rows"
+      ],
+      "properties": {
+        "analysisId": {
+          "anyOf": [
+            {
+              "const": "descriptive",
+              "type": "string"
+            },
+            {
+              "const": "frequencies",
+              "type": "string"
+            },
+            {
+              "const": "correlation",
+              "type": "string"
+            }
+          ]
+        },
+        "analysisVersion": {
+          "pattern": "^(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})$",
+          "type": "string"
+        },
+        "variables": {
+          "minItems": 1,
+          "maxItems": 12,
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          }
+        },
+        "columns": {
+          "minItems": 1,
+          "maxItems": 12,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "name",
+              "kind"
+            ],
+            "properties": {
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "numeric",
+                    "type": "string"
+                  },
+                  {
+                    "const": "category",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "rows": {
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "minItems": 1,
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the result and the fingerprints",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "analysisId",
+                "analysisVersion",
+                "datasetSha256",
+                "resultSha256",
+                "rowCount",
+                "result"
+              ],
+              "properties": {
+                "analysisId": {
+                  "anyOf": [
+                    {
+                      "const": "descriptive",
+                      "type": "string"
+                    },
+                    {
+                      "const": "frequencies",
+                      "type": "string"
+                    },
+                    {
+                      "const": "correlation",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "analysisVersion": {
+                  "pattern": "^(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})$",
+                  "type": "string"
+                },
+                "datasetSha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "resultSha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "rowCount": {
+                  "minimum": 0,
+                  "maximum": 500,
+                  "type": "integer"
+                },
+                "result": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "columns"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "descriptive",
+                          "type": "string"
+                        },
+                        "columns": {
+                          "maxItems": 12,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "n",
+                              "missing",
+                              "mean",
+                              "sd",
+                              "median",
+                              "min",
+                              "q1",
+                              "q3",
+                              "max"
+                            ],
+                            "properties": {
+                              "name": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "type": "string"
+                              },
+                              "n": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "missing": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "mean": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "sd": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "median": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "min": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "q1": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "q3": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "max": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "columns"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "frequencies",
+                          "type": "string"
+                        },
+                        "columns": {
+                          "maxItems": 12,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "n",
+                              "missing",
+                              "values",
+                              "otherCount"
+                            ],
+                            "properties": {
+                              "name": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "type": "string"
+                              },
+                              "n": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "missing": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "values": {
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "value",
+                                    "count",
+                                    "share"
+                                  ],
+                                  "properties": {
+                                    "value": {
+                                      "maxLength": 64,
+                                      "type": "string"
+                                    },
+                                    "count": {
+                                      "minimum": 0,
+                                      "maximum": 500,
+                                      "type": "integer"
+                                    },
+                                    "share": {
+                                      "minimum": 0,
+                                      "maximum": 1,
+                                      "type": "number"
+                                    }
+                                  }
+                                }
+                              },
+                              "otherCount": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "pairs"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "correlation",
+                          "type": "string"
+                        },
+                        "pairs": {
+                          "maxItems": 66,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "a",
+                              "b",
+                              "n",
+                              "r"
+                            ],
+                            "properties": {
+                              "a": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "type": "string"
+                              },
+                              "b": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "type": "string"
+                              },
+                              "n": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "r": {
+                                "anyOf": [
+                                  {
+                                    "minimum": -1,
+                                    "maximum": 1,
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input",
+        "unknown_analysis_version"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
