@@ -49,6 +49,8 @@ export const SCREENS: readonly Screen[] = [
   { name: "student: razgovor o radu", path: `/rad/${A}/razgovor`, role: "student" },
   { name: "student: kako Ductura radi", path: "/kako-radi", role: "student" },
   { name: "student: postavke profila", path: "/profil", role: "student" },
+  // WEB-V15-E2E: "Statistička analiza" (the function is off until the server switches it on; the scenario answers the catalogue).
+  { name: "student: statistička analiza", path: "/analiza", role: "student" },
   // Operator (WEB-NUZ-OPERATER): its own page in the host, no longer public.
   { name: "operater: mjerila pilota", path: "/operater/mjerila-pilota", role: "network_engineer" },
   // Teacher.
