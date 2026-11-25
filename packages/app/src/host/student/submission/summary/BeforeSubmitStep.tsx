@@ -18,6 +18,7 @@ import { stepHref } from "../../../../../../../src/components/predaja/flow.ts";
 import type { Stage } from "../../../../../../../src/components/predaja/stage.ts";
 import { readWork } from "../../../../../../../src/components/student/Submission.tsx";
 
+import FormatCheck from "../../../editor/format-check/FormatCheck";
 import StepLink from "../steps/StepLink";
 import { stepsText } from "../steps/messages.hr";
 import { checksText as c } from "./messages.hr";
@@ -197,7 +198,7 @@ export default function BeforeSubmitStep({
               <span className="meta">{c.pastedMeta.replace("{n}", String(pastes.threshold)).replace("{smaller}", String(pastes.smaller))}</span>
             </>}
         </StepSection>
-        <StepSection label={c.form}><span>{c.formNotRun}</span></StepSection>
+        <FormatCheck assignmentId={assignmentId} readWork={PORTS.readWork} />
         <StepLink href="#sb-notes" onClick={openNote}>{c.addNote}</StepLink>
         {online && nextHint !== undefined && <p className="meta" id={hint}>{nextHint}</p>}
         <StepActions>
