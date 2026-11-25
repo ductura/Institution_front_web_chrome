@@ -41,6 +41,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/nastavnik/mentorstva/dnevnik-prakse": (c) => c.app.host.mentorPracticeJournal,
   "/zadatak/[id]/tim": (c) => c.app.host.workTeam,
   "/nastavnik/zadatak/[assignmentId]/timovi": (c) => c.app.host.workTeams,
+  "/nastavnik/zadatak/[assignmentId]/recenzija": (c) => c.app.host.teacherPeerReview,
   "/zadatak/[id]/recenzija": (c) => c.app.host.peerReview,
   "/zadatak/[id]/recenzija/primljene": (c) => c.app.host.peerReviewReceived,
   "/zadatak/[id]/recenzija/rad/[taskId]": (c) => c.app.host.peerReviewWork,

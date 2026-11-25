@@ -31,6 +31,7 @@ describe("frame per screen (prototype shell: side | none, narrow)", () => {
     expect(frameOf("/zadatak/a1/recenzija/primljene", "student")).toMatchObject({ shell: "side", narrow: true });
     expect(frameOf("/zadatak/a1/recenzija/rad/t1", "student")).toMatchObject({ shell: "side", narrow: true });
     expect(frameOf("/nastavnik/zadatak/a1/timovi", "teacher")).toMatchObject({ shell: "side", narrow: false });
+    expect(frameOf("/nastavnik/zadatak/a1/recenzija", "teacher")).toMatchObject({ shell: "side", narrow: false });
     expect(frameOf("/nastavnik/mentorstva/dnevnik-prakse", "teacher")).toMatchObject({ shell: "side", narrow: false });
     expect(frameOf("/nema", "student")).toBeNull();
   });
