@@ -48,6 +48,7 @@ import { CommentsHost } from "../editor/comments/CommentsHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
+import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
@@ -119,7 +120,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} base={base} course={read.course} title={read.title} topBar={topBar} length={length}
             statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
-            toolbar={(ctx) => <StudentToolbar {...ctx} />} useSupplements={rehearsalSupplementsFor(assignmentId)}
+            toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
             literature={() => <LiteratureList />}
             hostSections={{
