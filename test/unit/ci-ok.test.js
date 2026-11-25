@@ -278,12 +278,16 @@ test('changes: app-build equals app and client implies ui, for every case', () =
 });
 
 // CI-BRZINA (Daniel 25. 11. 2026): the report-only pixel baselines run on a
-// push, by hand and on the schedule (main only); never on a pull request,
-// whatever it changes, so its runners go to the checks ci-ok waits for.
+// push, by hand and on the schedule (main only); on a pull request only when
+// it changes what they show, catalog/ or packages/ui/. Anything else on a
+// pull request, a root file and .github/ included, leaves them off.
 const baselineCases = [
-  [['catalog/a.ts'], 'pull_request', 'false'],
-  [['packages/ui/src/a.tsx'], 'pull_request', 'false'],
-  [['packages/ui/src/a.module.css'], 'pull_request', 'false'],
+  [['catalog/a.ts'], 'pull_request', 'true'],
+  [['packages/ui/src/a.tsx'], 'pull_request', 'true'],
+  [['packages/ui/src/a.module.css'], 'pull_request', 'true'],
+  [['docs/x.md', 'catalog/src/b.tsx'], 'pull_request', 'true'],
+  [['.github/workflows/ci.yml', 'catalog/a.ts'], 'pull_request', 'false'],
+  [['src/catalog/a.ts'], 'pull_request', 'false'],
   [['packages/editor-core/src/a.ts'], 'pull_request', 'false'],
   [['packages/app/src/host/a.tsx'], 'pull_request', 'false'],
   [['docs/x.md'], 'pull_request', 'false'],
