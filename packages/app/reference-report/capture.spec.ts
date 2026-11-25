@@ -2,7 +2,8 @@
 // widths, dark and light, and writes one HTML file that lays each capture
 // next to its reference image and their difference. It compares nothing to
 // the catalogue's baselines and fails only when a screen does not open.
-//   DUCTURA_REFERENCES=<docs/design/ductura> pnpm --filter @ductura/app run reference:report
+//   pnpm --filter @ductura/app run reference:report
+// The references are docs/design/reference of this repository; DUCTURA_REFERENCES names another folder.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,7 +31,7 @@ const ME: Readonly<Record<ReportScreen["role"], unknown>> = {
   teacher: { roles: ["teacher"], institutionName: INSTITUTION },
 };
 
-const referenceRoot = process.env.DUCTURA_REFERENCES ? resolve(process.env.DUCTURA_REFERENCES) : null;
+const referenceRoot = resolve(process.env.DUCTURA_REFERENCES ?? join(here, "../../../docs/design/reference"));
 const outDir = resolve(process.env.DUCTURA_REFERENCE_REPORT ?? join(here, "dist"));
 
 /** The institution server of one role: invented data only, and nothing leaves the browser. */
@@ -66,10 +67,9 @@ test("writes the report of real screens next to their reference images", async (
         const actual = shot.toString("base64");
         const base = { screen: screen.id, route: screen.route, theme: theme.id, width, actual };
         const file = referencePath(screen, theme, width);
-        const full = file !== null && referenceRoot !== null ? join(referenceRoot, file) : null;
+        const full = file === null ? null : join(referenceRoot, file);
         if (full === null || !existsSync(full)) {
-          const missing = file === null ? "za ovaj ekran nije zadana"
-            : referenceRoot === null ? "DUCTURA_REFERENCES nije zadan" : `nema datoteke ${file}`;
+          const missing = file === null ? "za ovaj ekran nije zadana" : `nema datoteke ${file}`;
           rows.push({ ...base, missing });
         } else {
           const reference = readFileSync(full).toString("base64");
@@ -83,7 +83,7 @@ test("writes the report of real screens next to their reference images", async (
       }
     }
   }
-  const source = referenceRoot === null ? "bez referentnih slika" : `reference: ${referenceRoot}`;
+  const source = `reference: ${referenceRoot}`;
   writeFileSync(join(outDir, "index.html"), buildReport(rows, { generatedAt: new Date().toISOString(), source }));
   expect(rows).toHaveLength(SCREENS.length * THEMES.length * WIDTHS.length);
   console.log(`Izvještaj: ${join(outDir, "index.html")}`);

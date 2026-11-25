@@ -3,7 +3,7 @@
 Usporedni izvještaj stvarnih ekrana prema referentnim slikama (DAN-1565). Katalog komponenti uspoređuje komponente s vlastitim prethodnim snimkama; ovaj alat snima stvarnu aplikaciju i stavlja je uz referentnu sliku (Ductus `docs/SESSIONS.md` §6).
 
 ```bash
-DUCTURA_REFERENCES=<put do docs/design/ductura> pnpm --filter @ductura/app run reference:report
+pnpm --filter @ductura/app run reference:report
 ```
 
 Izvještaj je `packages/app/reference-report/dist/index.html` (mapa se ne sprema u git; `DUCTURA_REFERENCE_REPORT` je mijenja). To je jedna datoteka sa svim slikama u sebi i otvara se bez mreže. Uz nju su u `dist/snimke/` same snimke ekrana.
@@ -24,9 +24,9 @@ Izvještaj je `packages/app/reference-report/dist/index.html` (mapa se ne sprema
 
 ## Odakle referentne slike
 
-Alat ih čita iz mape zadane u `DUCTURA_REFERENCES` i ne kopira ih. Danas su samo u repou Ductus (`docs/design/ductura/*-reference/snimke`). Hoće li se preseliti ovamo, odluka je vlasnika; do tada treba lokalni klon Ductusa.
+Iz `docs/design/reference/` ovog repoa (odluka vlasnika 25. 11. 2026.: referentne slike idu u novi repo). `DUCTURA_REFERENCES` zadaje drugu mapu. `html.test.ts` provjerava da slika postoji za svaki ekran, temu i širinu koji je navode.
 
-Ekran bez referentne slike (nije zadana, nema datoteke ili `DUCTURA_REFERENCES` nije postavljen) u izvještaju piše „nema reference” i nema postotak.
+Ekran bez referentne slike (nije zadana ili nema datoteke) u izvještaju piše „nema reference” i nema postotak.
 
 ## Poznate granice
 
