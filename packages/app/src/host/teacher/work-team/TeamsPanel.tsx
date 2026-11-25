@@ -137,7 +137,9 @@ export function TeamsPanel({ assignmentId, call, setting, version, onSignedOut }
             {open.length === 0 && <p>{t.unassigned.noTeams}</p>}
             <ul>
               {peopleByName(unassigned).map((s) => {
-                const chosen = pick[s.studentId] ?? "";
+                // A stale choice (the team filled up meanwhile) is no choice.
+                const picked = pick[s.studentId] ?? "";
+                const chosen = open.some((team) => team.teamId === picked) ? picked : "";
                 return (
                   <li key={s.studentId} data-testid="unassigned">
                     <strong>{fullName(s)}</strong>

@@ -53,10 +53,14 @@ export function TeamSettingPanel({ assignmentId, call, onSignedOut, onChanged }:
     setError(null);
     setBusy(true);
     const outcome = await putSetting(call(), assignmentId, checked.value);
-    setBusy(false);
-    if (outcome.kind === "signedOut") { onSignedOut(); return; }
+    if (outcome.kind === "signedOut") { setBusy(false); onSignedOut(); return; }
     setNote(outcome.kind === "done" ? { tone: "status", text: t.setting.saved } : { tone: "alert", text: FAILURE[outcome.kind] });
-    setAttempt((n) => n + 1);
+    // The form stays locked until the setting is read again, so a late answer cannot overwrite a newer edit.
+    const fresh = await readSetting(call(), assignmentId);
+    setBusy(false);
+    if (fresh.kind === "signedOut") { onSignedOut(); return; }
+    setRead(fresh);
+    if (fresh.kind === "ok") { setDraft(draftOf(fresh.value)); onChanged(fresh.value); }
   }
 
   if (read === null || read.kind === "signedOut") return <Card level={2} title={t.setting.title}><RouteLoading label={t.setting.loading} /></Card>;

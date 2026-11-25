@@ -159,4 +159,31 @@ describe("TeamsPage in the browser", () => {
     await render(call);
     expect(signIn).toHaveBeenCalled();
   });
+
+  it("keeps the setting form locked until the refresh after a save has answered", async () => {
+    let release: (a: Answer) => void = () => undefined;
+    let gets = 0;
+    const pending = new Promise<Answer>((resolve) => { release = resolve; });
+    const fn = vi.fn(async (id: string, input: { body?: unknown }) => {
+      if (id === "institution.assignment-team-setting.get") { gets += 1; return gets === 1 ? ok(SETTING) : pending; }
+      if (id === "institution.assignment-team-setting.put") return ok(input.body);
+      return ok(TEAMS);
+    });
+    await render(() => fn as never);
+    await submit();
+    expect(host.querySelector("select")!.disabled).toBe(true);
+    await act(async () => { release(ok(SETTING)); });
+    expect(host.querySelector("select")!.disabled).toBe(false);
+  });
+
+  it("does not submit a team choice that stopped being open", async () => {
+    let max = 3;
+    const d = apiOf({ ...BASE, "institution.assignment-team-setting.get": () => ok({ ...SETTING, maxSize: max }), "institution.assignment-team-setting.put": (b) => ok(b), "teacher.work-team-member.post": () => ok({ updated: true }) });
+    await render(d.call);
+    await pickValue(host.querySelector<HTMLSelectElement>("[data-testid=unassigned] select")!, T1);
+    max = 2; // the team (two members) is now full
+    await submit();
+    expect(host.querySelector("[data-testid=unassigned] select")).toBeNull();
+    expect(d.calls.some((c) => c.id === "teacher.work-team-member.post")).toBe(false);
+  });
 });
