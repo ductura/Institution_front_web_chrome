@@ -569,6 +569,14 @@ main:focus {
   color: var(--ink);
 }
 
+/* A count beside a tab's name (open comments): quiet, never the only cue. */
+.panel-tabs__count {
+  margin-left: 4px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
 /* The open tab: underline and weight as well as colour. */
 .panel-tabs__tab[aria-selected="true"] {
   color: var(--ink);
