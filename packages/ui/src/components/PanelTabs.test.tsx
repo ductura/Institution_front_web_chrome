@@ -12,7 +12,7 @@ describe("PanelTabs count", () => {
 
   it("shows the digit to the eye and the whole phrase to a screen reader", () => {
     const out = html(3);
-    expect(out).toContain('<span class="panel-tabs__count" aria-hidden="true">3</span>');
+    expect(out).toMatch(/<span class="panel-tabs__count[^"]*" aria-hidden="true">3<\/span>/);
     expect(out).toContain('<span class="visually-hidden">(3 otvorena komentara)</span>');
   });
 

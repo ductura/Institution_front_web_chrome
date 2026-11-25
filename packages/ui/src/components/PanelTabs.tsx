@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import styles from "./PanelTabs.module.css";
 
 export type PanelTab = {
   /** Stable key, also part of the element ids. */
@@ -29,7 +30,7 @@ export type PanelTabsProps = {
 export function TabCount({ value, label }: { value: number; label: string }) {
   return (
     <>
-      <span className="panel-tabs__count" aria-hidden="true">{value}</span>
+      <span className={`panel-tabs__count ${styles.count}`} aria-hidden="true">{value}</span>
       {/* In parentheses: a hidden span is read as its own block, so a leading comma would get a space before it. */}
       <span className="visually-hidden">({label})</span>
     </>
