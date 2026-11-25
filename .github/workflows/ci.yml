@@ -75,7 +75,15 @@ jobs:
           all() { b=true; [ "$EVENT" != "pull_request" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b"; exit 0; }
           [ "$EVENT" = "pull_request" ] || all "not a pull request"
           [ -n "$BASE" ] || all "no base sha"
-          files="$(git diff --name-only "$BASE" HEAD)" || all "diff failed"
+          # If the base moved after the merge commit was made, the base sha is
+          # not in this depth-2 checkout and the diff fails. HEAD is then still
+          # the merge commit, and its first parent is the base it was made on:
+          # that diff is exactly this change. Anything else runs every job.
+          if ! files="$(git diff --name-only "$BASE" HEAD 2>/dev/null)"; then
+            [ "$(git rev-list --parents -n 1 HEAD | wc -w)" -eq 3 ] || all "diff failed"
+            files="$(git diff --name-only HEAD^1 HEAD)" || all "diff failed"
+            echo "changes: base sha not in the checkout, diffing the merge commit's first parent"
+          fi
           [ -n "$files" ] || all "empty diff"
           # Root files, .github/, the lockfiles and the workspace file.
           # Root markdown files are documentation: they need no job.
