@@ -51,7 +51,7 @@ export default function PortfolioExport({ port, here }: { port: PortfolioPort; h
                 <PdfExport assignmentId={e.assignmentId} version={{ documentId: e.documentId, versionId: e.versionId, title: e.title }} here={here} />
                 <h3>{t.packageHeading}</h3>
                 <p>{t.packageLead}</p>
-                <SubmissionPackage assignmentId={e.assignmentId} submissionId={e.submissionId} />
+                <SubmissionPackage assignmentId={e.assignmentId} submissionId={e.submissionId} kind="package" />
               </Card>
             </li>
           ))}

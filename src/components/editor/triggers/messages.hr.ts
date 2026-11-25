@@ -8,6 +8,8 @@ export const editorTriggersHr = {
   sourceHint: "upišite podatke",
   empty: "Nema takve naredbe.",
   notInPilot: "nije u pilotu",
+  // ED-24 (NF2-P25): tables and figures need the next text schema (v4), not just a command.
+  newSchema: "dolazi s novom shemom teksta",
   noSources: "Nema izvora. Dodajte ih u kartici Literatura.",
   command: {
     navod: ["Navod", "isto kao @"],

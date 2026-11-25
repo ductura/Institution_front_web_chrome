@@ -1441,6 +1441,8 @@ export const hr = {
       noAssignments: "U ovom kolegiju zasad nema zadatka.",
       due: "Rok {time}",
       noticeFirst: "Prvo pročitajte obavijest",
+      // INT-31: the works of the student's open mentorships, which have no course.
+      mentoredGroup: "Radovi uz mentora",
     },
     // DAN-309 (M2.3-P02, B2): "Moji radovi" on /zadaci/radovi. Each state is
     // told only from what the server read returned; nothing about the text.

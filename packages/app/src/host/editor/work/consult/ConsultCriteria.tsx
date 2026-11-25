@@ -20,8 +20,10 @@ type Row = { busy: boolean; error: string | null; editing: boolean; draft: strin
 const IDLE: Row = { busy: false, error: null, editing: false, draft: "" };
 type Load = { kind: "loading" } | { kind: "ready"; criteria: readonly WorkingCriterion[] } | { kind: "unavailable" | "notFound" | "signedOut" };
 
-export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
+export function ConsultCriteria({ documentId, role, call, onSessionEnd, byRubric = false }: {
   documentId: string; role: Role; call: CriteriaCall | null; onSessionEnd?: () => void;
+  /** WEB-V17-DORADE: the assignment has a rubric, which replaces the six working criteria; they are not read or shown. */
+  byRubric?: boolean;
 }) {
   const [load, setLoad] = useState<Load>({ kind: "loading" });
   const [rows, setRows] = useState<Record<string, Row>>({});
@@ -37,7 +39,7 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
     else if (result.kind === "session-expired") { setLoad({ kind: "signedOut" }); onSessionEnd?.(); }
     else setLoad({ kind: result.kind === "greska" && result.code === "not_found" ? "notFound" : "unavailable" });
   }, [call, documentId, onSessionEnd]);
-  useEffect(() => { void read(); }, [read]);
+  useEffect(() => { if (!byRubric) void read(); }, [read, byRubric]);
 
   const patch = (id: string, next: Partial<Row>) => setRows((all) => ({ ...all, [id]: { ...(all[id] ?? IDLE), ...next } }));
   const send = async (c: WorkingCriterion, input: CriterionInput, done: Partial<Row>) => {
@@ -57,6 +59,7 @@ export function ConsultCriteria({ documentId, role, call, onSessionEnd }: {
     }
   };
 
+  if (byRubric) return <p className={styles.muted} data-criteria-by-rubric="">{t.byRubric}</p>;
   if (load.kind === "loading") return <p role="status" className={styles.muted}>{t.loading}</p>;
   if (load.kind !== "ready") {
     const text = load.kind === "signedOut" ? t.errors.signedOut : load.kind === "notFound" ? t.notFound : t.unavailable;

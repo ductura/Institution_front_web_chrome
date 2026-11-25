@@ -52,6 +52,8 @@ describe("StartWork after the server opened the work", () => {
     expect(host.textContent).toContain("Predložak fakulteta (verzija 2). Odjeljaka: 1.");
     expect(host.textContent).toContain("Autor:");
     expect(host.textContent).toContain("Uvod");
+    // The empty hint of "Uvod" draws no line: the title-page label and the heading only.
+    expect([...host.querySelectorAll("li")].map((li) => li.textContent)).toEqual(["Autor: ", "Uvod"]);
     expect(host.querySelector("button")!.hasAttribute("disabled")).toBe(false);
   });
 

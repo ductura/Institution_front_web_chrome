@@ -5,6 +5,7 @@
 // EditorToolbarFor, same checks at the click), so a change reaches the journal as before. What the new bar has
 // no button for (Umetni, Pretvori, Posebni znak, Prikaz, Izvezi and their dialogs) stays here as menus over
 // the same helpers and the same words; nothing is new in look or in text.
+// ED-30 (P2-1a): the bar now has its behaviour: "Više", folding by width and the tool tips (ToolbarBehaviour.tsx).
 import { useEffect, useState } from "react";
 import { Button, ContextMenu, type MenuEntry, type MenuPoint } from "@ductura/ui";
 import type { Editor } from "@tiptap/core";
@@ -25,12 +26,17 @@ import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { useStudentToast } from "../../student/toast/StudentToasts";
+import { profileById, DEFAULT_PROFILE_ID, type RuleProfile } from "../rules/profiles";
+import { SkeletonDialog } from "../areas/skeleton/SkeletonDialog";
+import { skeletonAvailable } from "../areas/skeleton/skeleton";
+import { skeletonMessages } from "../areas/skeleton/messages.hr";
 import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr } from "./messages.hr";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
+import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
 
 /** "Stavi tekst rada u međuspremnik": text with [n] marks and the footnote list (v3). False when refused. */
 async function copyWorkText(editor: Editor | null): Promise<boolean> {
@@ -115,23 +121,31 @@ function useEditorSnapshot(editor: Editor | null): EditorState {
 }
 
 /** The student's toolbar, bound to the local document. */
-export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSchemaVersion }: {
+export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSchemaVersion, skeletonProfile }: {
   workPartsKey: string; footnoteDialog?: FootnoteDialogComponent; confirmedWorkSchemaVersion?: number;
+  /** Profile whose sections the "Kostur rada" dialog offers; the general academic work when absent. */
+  skeletonProfile?: RuleProfile | null;
 }) {
   const editor = useLocalEditor();
   const state = useEditorSnapshot(editor);
   const theme = useSheetTheme();
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
-  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | null>(null);
+  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
+  // ED-30: the bar's tool choice and look, kept in this browser (toolbar-prefs).
+  // Read after mount, so the server's markup and the first client render agree.
+  const [prefs, setPrefs] = useState<ToolbarPrefs>(DEFAULT_PREFS);
+  useEffect(() => { setPrefs(loadPrefs()); }, []);
+  const onPrefs = (next: ToolbarPrefs) => { setPrefs(next); savePrefs(next); };
 
   const insert: Item[] = [
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
     { id: "xref", label: crossReferenceMessages.title, disabled: !writeOk || !v3.openInsert },
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
     { id: "workParts", label: workPartsMessages.title, disabled: !writeOk },
+    { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonAvailable(skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null) },
   ];
   const convert: Item[] = [
     { id: "toQuote", label: t.toolbar.convertItems.toQuote, disabled: !writeOk || state.quote },
@@ -147,11 +161,13 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   ];
   return (
     <>
-      <EditorToolbarHost state={toolbarStateOf(state)} commands={toolbarCommands(editor)} label={KEPT_TOOLBAR_LABEL} labels={KEPT_LABELS} omit={["numberedList"]} />
+      <EditorToolbarHost state={toolbarStateOf(state)} commands={toolbarCommands(editor)} label={KEPT_TOOLBAR_LABEL} labels={KEPT_LABELS} omit={["numberedList"]}
+        behaviour={{ prefs, onPrefs, fit: true, intro: state.editable ? "write" : "locked" }} />
       <Menu label={t.toolbar.insert} items={insert} onSelect={(id) => {
         if (id === "footnote") v3.openInsert?.("footnote");
         else if (id === "xref") v3.openInsert?.("crossReference");
         else if (id === "workParts" && writeOk) setDialog("parts");
+        else if (id === "skeleton" && writeOk) setDialog("skeleton");
         else if (id === "hole") insertHole(editor);
       }} />
       <Menu label={t.toolbar.convert} items={convert} onSelect={(id) => {
@@ -176,6 +192,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         }} />
       <ReadAloudControls editor={editor} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
+      {dialog === "skeleton" && editor && <SkeletonDialog editor={editor} profile={skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null} onClose={() => setDialog(null)} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
       {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
       <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />

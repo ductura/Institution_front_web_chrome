@@ -86,6 +86,6 @@ describe("MentorMount", () => {
   it("is mounted in the student's editor in the Mentor tab, above the round's actions", () => {
     const work = readFileSync(join(import.meta.dirname, "..", "..", "student", "work.tsx"), "utf8");
     expect(work).toMatch(/import \{ MentorMount \} from "\.\.\/editor\/right\/MentorMount"/);
-    expect(work).toMatch(/work: \(\{ editor, documentId, submitted \}\) => <>\s*<MentorMount editor=\{editor\} documentId=\{documentId\} submitted=\{submitted\} \/>\s*<RevisionActionsHost /);
+    expect(work).toMatch(/work: \(\{ editor, assignmentId: id, documentId, submitted \}\) => <>\s*<MentorMount editor=\{editor\} assignmentId=\{id\} documentId=\{documentId\} submitted=\{submitted\} \/>\s*<RevisionActionsHost /);
   });
 });

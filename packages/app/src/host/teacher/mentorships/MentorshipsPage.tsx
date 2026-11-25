@@ -7,7 +7,7 @@ import { readMentorshipRequests } from "../../../../../../src/client/mentorship-
 import { type RequestsRead } from "../../../../../../src/components/teacher/MentorshipRequests";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { messagesHr as t } from "../../../../../../locales/hr";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { useHost } from "../../context";
 import { useTeacherRead } from "../../pages";
 import { teacherShellHr } from "../shell/messages.hr";
@@ -24,6 +24,7 @@ import { RoundReview } from "./RoundReview";
 import { MyStudents } from "./MyStudents";
 import type { OverviewCall } from "./overview-read";
 import { OpenMentorshipCard } from "./OpenMentorshipCard";
+import { ThesisPanel } from "../../thesis/ThesisPanel";
 import { WorkPlan } from "./WorkPlan";
 import { mentorJournalText } from "../practice-journal/messages.hr";
 import type { PlanCall } from "./plan-actions";
@@ -80,8 +81,12 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
           <RequestsCard read={value.asked} here={here} call={requests()} onDecided={retry} />
           <OpenMentorshipCard />
           {startedWorks(value.works).map((work) => (
-            <WorkPlan key={work.documentId} documentId={work.documentId} name={studentName(work)} title={work.title} base={base}
-              onSignedOut={signedOut} plan={plan} records={records} />
+            <Fragment key={work.documentId}>
+              <WorkPlan documentId={work.documentId} name={studentName(work)} title={work.title} base={base}
+                onSignedOut={signedOut} plan={plan} records={records} />
+              {/* WEB-V16-KOSTUR: the shared "Završni rad" panel of this mentored work. */}
+              <ThesisPanel documentId={work.documentId} role="mentor" />
+            </Fragment>
           ))}
         </>
       )} />

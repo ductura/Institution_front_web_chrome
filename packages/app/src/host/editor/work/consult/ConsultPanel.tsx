@@ -20,14 +20,16 @@ export type ConsultPanelProps = {
   /** Null until the server's working-criteria operations exist: the card says "nedostupno". */
   criteriaCall: CriteriaCall | null;
   onSessionEnd?: () => void;
+  /** The assignment has a rubric: it replaces the working criteria (WEB-V17-DORADE). */
+  byRubric?: boolean;
 };
 
-export function ConsultPanel({ documentId, role, revision, slotsCall, criteriaCall, onSessionEnd }: ConsultPanelProps) {
+export function ConsultPanel({ documentId, role, revision, slotsCall, criteriaCall, onSessionEnd, byRubric }: ConsultPanelProps) {
   return (
     <div data-consult-panel="">
       <ConsultSlots documentId={documentId} role={role} call={slotsCall} onSessionEnd={onSessionEnd} />
       <ConsultRecords documentId={documentId} role={role} revision={revision} />
-      <ConsultCriteria documentId={documentId} role={role} call={criteriaCall} onSessionEnd={onSessionEnd} />
+      <ConsultCriteria documentId={documentId} role={role} call={criteriaCall} onSessionEnd={onSessionEnd} byRubric={byRubric} />
     </div>
   );
 }

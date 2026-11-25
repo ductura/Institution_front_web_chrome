@@ -21,6 +21,7 @@ import StatusBar from "../../../../../src/components/editor/StatusBar.tsx";
 import WorkspaceTopBar from "../../../../../src/components/editor/WorkspaceTopBar.tsx";
 import { workspaceFrame, type WorkspaceVariant } from "../../../../../src/components/editor/workspace-variant.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../src/client/api.ts";
+import { withMentoredAssignments } from "../../../../../src/components/student/mentored-assignments.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 
 import { SaveState } from "@ductura/ui";
@@ -92,7 +93,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
     if (attempt > 0) setShown({ kind: "loading" });
     const here = appHref(base, `/rad/${assignmentId}`);
     void (async () => {
-      const client = createApi();
+      const client = withMentoredAssignments(createApi());
       const [assignments, work, wordRange] = await Promise.all([
         client("student.assignments.get", NONE).catch(() => UNREACHED),
         client("student.assignment-work.get", NONE).catch(() => UNREACHED),
@@ -124,8 +125,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
-              work: ({ editor, documentId, submitted }) => <>
-                <MentorMount editor={editor} documentId={documentId} submitted={submitted} />
+              work: ({ editor, assignmentId: id, documentId, submitted }) => <>
+                <MentorMount editor={editor} assignmentId={id} documentId={documentId} submitted={submitted} />
                 <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />
               </>,
               // PIL-K-KOMENTARI-EDITOR: the Comments card over the real port, in place of the old CommentPanel.

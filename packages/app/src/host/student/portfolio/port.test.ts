@@ -91,6 +91,8 @@ it("the PDF and the package go through the existing components, not a route of t
   const source = readFileSync(join(import.meta.dirname, "PortfolioExport.tsx"), "utf8");
   expect(source).toMatch(/from "\.\.\/\.\.\/editor\/export\/PdfExport"/);
   expect(source).toMatch(/from "\.\.\/submission-package\/SubmissionPackage"/);
+  // INT-31: "Provjerljivi paket" is the verifiable package, not the registrar's confirmation.
+  expect(source).toMatch(/<SubmissionPackage [^>]*kind="package"/);
   expect(source).not.toMatch(/createApi|\/api\/v1/);
 });
 
