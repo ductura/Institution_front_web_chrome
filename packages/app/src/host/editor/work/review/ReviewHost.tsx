@@ -48,7 +48,7 @@ export function useRound(documentId: string): RoundView {
 }
 
 function Compare({ documentId }: { documentId: string }) {
-  const [state, setState] = useState<"loading" | "none" | "error" | "ready">("loading");
+  const [state, setState] = useState<"loading" | "none" | "one" | "error" | "ready">("loading");
   const [attempt, setAttempt] = useState(0);
   const client = createApi() as unknown as ComparisonApi;
   useEffect(() => {
@@ -57,14 +57,17 @@ function Compare({ documentId }: { documentId: string }) {
     void readSubmittedVersions(client, documentId).then((read) => {
       if (!live) return;
       if (read.kind !== "ready") return setState("error");
-      setState(compareOptions(read.value).length < 2 ? "none" : "ready");
+      const sent = compareOptions(read.value).length;
+      setState(sent === 1 ? "one" : sent < 2 ? "none" : "ready");
     });
     return () => { live = false; };
     // `client` is a fresh closure each render; the attempt asks again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId, attempt]);
   if (state === "loading") return <p role="status" className={styles.status}>…</p>;
-  if (state === "none") return <p role="status" className={styles.status}>{t.compareNone}</p>;
+  if (state === "none" || state === "one") {
+    return <p role="status" className={styles.status}>{state === "one" ? `${t.compareNone} ${t.compareOne}` : t.compareNone}</p>;
+  }
   if (state === "error") {
     return <div><p role="alert" className={styles.alert}>{t.compareUnavailable}</p><Button tone="secondary" size="dense" onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button></div>;
   }

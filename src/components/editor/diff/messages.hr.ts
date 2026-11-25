@@ -20,6 +20,7 @@ export const comparisonHr = {
   compareError: "Usporedba se nije učitala.",
   notFound: "Tražene verzije nisu dostupne.",
   empty: "Za usporedbu su potrebne dvije poslane verzije.",
+  oneVersion: "Za sada postoji jedna verzija, pa se usporedba ne nudi.",
   samePoint: "Odabrali ste istu točku dvaput.",
   noChanges: "Nema razlike između odabranih verzija.",
   truncated: "Prikazan je samo dio razlika.",
