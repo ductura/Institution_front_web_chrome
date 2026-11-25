@@ -10,6 +10,7 @@ import { createReadAloud, type ReadAloudController, type ReadAloudState } from "
 import { docRangeOf, readAloudPlugin, READ_ALOUD_KEY, setReadHighlight, sourceOfScope, type ReadScope, type ReadSource } from "./highlight";
 import type { ReadAloudHost as SpeechHost } from "./support";
 import { readAloudHr as t } from "./messages.hr";
+import { readAloudRate } from "../reading-settings/rate-store";
 
 type EditorLike = Parameters<typeof sourceOfScope>[0] extends infer S
   ? { state: S; view: { dispatch(tr: never): void }; isDestroyed: boolean }
@@ -69,6 +70,7 @@ export function createEditorReading(editor: EditorLike, speech: SpeechHost = glo
       }
       source = next;
       notice = null;
+      controller.setRate(readAloudRate()); // the speed chosen in "Prikaz i čitanje"
       const started = controller.start(next.text);
       if (!started) { source = null; notice = "noText"; }
       emit();
