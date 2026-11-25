@@ -18,5 +18,5 @@ export function nextToFold(onBar: readonly string[], folded: readonly string[]):
 /** Whether boxes laid out in a wrapping row went onto a second row (their tops, in order). */
 export function wrapsToSecondRow(tops: readonly number[]): boolean {
   const first = tops[0];
-  return first !== undefined && tops.some((top) => top > first + 2);
+  return first !== undefined && tops.some((y) => y > first + 2);
 }
