@@ -34,6 +34,8 @@ import { profileById, DEFAULT_PROFILE_ID, type RuleProfile } from "../rules/prof
 import { SkeletonDialog } from "../areas/skeleton/SkeletonDialog";
 import { skeletonAvailable } from "../areas/skeleton/skeleton";
 import { skeletonMessages } from "../areas/skeleton/messages.hr";
+import { assignmentIdFromPath, downloadLatex, latexMenuItem, useLatexStyle } from "../stem/latex-export-menu";
+import { stemHr } from "../stem/messages.hr";
 import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
@@ -136,6 +138,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
   const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(skeletonProfile));
   const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
+  const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
   const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
@@ -196,9 +199,10 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         else if (id === "readingSettings") setDialog("reading");
         else setSheetTheme(id === "light" ? "light" : "dark");
       }} />
-      <Menu label={t.toolbar.export} items={exportMenuItems(editor)}
+      <Menu label={t.toolbar.export} items={[...exportMenuItems(editor), latexMenuItem(editor, confirmedWorkSchemaVersion, latexStyle)]}
         onSelect={(id) => {
           if (id === "print") askPrintPreview();
+          else if (id === "latex") toast(downloadLatex(editor, confirmedWorkSchemaVersion, latexStyle) ? stemHr.latex.done : stemHr.latex.failed);
           else if (id === "copy") void copyWorkText(editor).then((ok) => toast(copyToastText(ok)));
         }} />
       <ReadAloudControls editor={editor} />
