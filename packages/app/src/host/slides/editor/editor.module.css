@@ -1,0 +1,12 @@
+/* WEB-V13-UREDNIK: layout only (stack and grid); colours, type and shadows come from @ductura/ui. */
+.editor { display: grid; gap: 16px; }
+.layout { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.listItem { display: grid; gap: 4px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.canvas { display: grid; gap: 12px; }
+.columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.stack { display: grid; gap: 12px; }
+@media (max-width: 720px) {
+  .layout, .columns { grid-template-columns: minmax(0, 1fr); }
+}

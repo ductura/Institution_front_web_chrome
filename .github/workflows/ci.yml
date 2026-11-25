@@ -28,10 +28,9 @@ jobs:
   # tests of every workspace package) and app (it imports src/), so a change
   # there runs both. `app-build` follows `app`; the client checks run in the
   # ui part `checks` and every path of `client` also turns `ui` on.
-  # `baselines` (report only, outside ci-ok) is on for a run by hand, the
-  # schedule (main only) and a pull request that changes catalog/,
-  # packages/ui/ (the components the catalogue shows) or a root or .github/
-  # file; never on a push (ZEL-CI-RED).
+  # `baselines` (report only, outside ci-ok) is on for a push, a run by hand
+  # and the schedule (main only); never on a pull request (CI-BRZINA, Daniel
+  # 25. 11. 2026): its three runners went to the checks ci-ok waits for.
   #
   # These rules only fit checks that read the paths they list. A check that
   # reads the whole repository (the index, every tracked file, the lockfiles)
@@ -73,7 +72,7 @@ jobs:
           # changes:begin
           set -uo pipefail
           emit() { printf 'test=%s\nclient=%s\nui=%s\napp=%s\napp-build=%s\nbaselines=%s\n' "$1" "$2" "$3" "$4" "$4" "$5" | tee -a "$GITHUB_OUTPUT"; }
-          all() { b=true; [ "$EVENT" != "push" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b"; exit 0; }
+          all() { b=true; [ "$EVENT" != "pull_request" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b"; exit 0; }
           [ "$EVENT" = "pull_request" ] || all "not a pull request"
           [ -n "$BASE" ] || all "no base sha"
           files="$(git diff --name-only "$BASE" HEAD)" || all "diff failed"
@@ -87,8 +86,7 @@ jobs:
           c="$(hit '^(src/client/|packages/editor-core/)')"
           u="$(hit '^(packages/|catalog/|src/|scripts/forbidden-terms/|locales/)')"
           a="$(hit '^(packages/|src/|locales/)')"
-          b="$(hit '^(catalog/|packages/ui/)')"
-          emit "$t" "$c" "$u" "$a" "$b"
+          emit "$t" "$c" "$u" "$a" false
           # changes:end
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
@@ -197,8 +195,7 @@ jobs:
           - { part: behaviour, leg: 1, of: 3, browser: true }
           - { part: behaviour, leg: 2, of: 3, browser: true }
           - { part: behaviour, leg: 3, of: 3, browser: true }
-          - { part: axe-dark, browser: true }
-          - { part: axe-light, browser: true }
+          - { part: axe, browser: true }
     # One place for the filters: the parts below and the coverage check use them.
     env:
       BASELINES: "matches its baselines"
@@ -260,7 +257,7 @@ jobs:
           behaviour=$(count --grep-invert "$BASELINES|$AXE_ANY")
           dark=$(count --grep "$AXE_DARK")
           light=$(count --grep "$AXE_LIGHT")
-          echo "all $all = behaviour $behaviour + axe-dark $dark + axe-light $light"
+          echo "all $all = behaviour $behaviour + axe dark $dark + axe light $light"
           if [ "$all" -eq 0 ] || [ $((behaviour + dark + light)) -ne "$all" ]; then
             echo "::error::the ui parts do not cover every catalogue test exactly once"
             exit 1
@@ -339,11 +336,15 @@ jobs:
             *) echo "::error::unknown behaviour leg"; exit 1 ;;
           esac
           pnpm --filter @ductura/catalog run test:visual "$@"
+      # One job for both shells (CI-BRZINA, 25. 11.): each took about a minute
+      # of tests after a minute of setup, and a pull request run is at the
+      # organisation's limit of concurrent runners. The light shell also runs
+      # when the dark one failed, so a run reports both.
       - name: Axe tests of the catalogue (dark shell)
-        if: matrix.part == 'axe-dark'
+        if: matrix.part == 'axe'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_DARK"
       - name: Axe tests of the catalogue (light shell)
-        if: matrix.part == 'axe-light'
+        if: always() && matrix.part == 'axe'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_LIGHT"
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -356,11 +357,11 @@ jobs:
   # and axe still block. They become required again with VIZ-0. A job of its
   # own outside ci-ok's needs (ZEL-CI-WEB), so ci-ok does not wait for a check
   # that cannot fail it; three Playwright shards. Listed in REPORT_ONLY in
-  # test/unit/ci-ok.test.js. Since ZEL-CI-RED it no longer runs on every push
-  # (three runners each time) but when `changes` says `baselines`: on every
-  # pull request that changes catalog/ or packages/ui/ (or a root or .github/
-  # file), so each change that can move a pixel of the catalogue is reported
-  # before it reaches the base; also by hand and on the schedule of main.
+  # test/unit/ci-ok.test.js. It runs when `changes` says `baselines`: on a
+  # push (after a merge into main or the migration base), by hand and on the
+  # schedule of main, never on a pull request (CI-BRZINA, Daniel 25. 11.
+  # 2026): a pull request run already holds about twenty jobs, the limit of
+  # the organisation's concurrent runners, and these three only report.
   ui-baselines:
     needs: changes
     if: ${{ needs.changes.outputs.baselines == 'true' }}
