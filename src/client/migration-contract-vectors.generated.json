@@ -36156,6 +36156,34 @@
   },
   {
     "route": "student.assignment-work.get",
+    "name": "ready-late-exception",
+    "request": {
+      "headers": {
+        "cookie": "__Host-ductus_session=izmisljeni-token-popisa-radova-000000000001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "contentType": "application/json",
+      "body": {
+        "assignments": [
+          {
+            "assignmentId": "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e01",
+            "workState": "in_progress",
+            "lateException": {
+              "untilAt": "2026-12-03T13:00:00.000Z"
+            }
+          },
+          {
+            "assignmentId": "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e02",
+            "workState": "not_started"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "route": "student.assignment-work.get",
     "name": "ready-empty",
     "request": {
       "headers": {
@@ -44335,7 +44363,8 @@
           "abbr",
           "hole"
         ],
-        "lektaProfileId": "agr-diplomski"
+        "lektaProfileId": "agr-diplomski",
+        "citationStyle": "apa"
       }
     }
   },
@@ -44365,7 +44394,8 @@
           "abbr",
           "hole"
         ],
-        "lektaProfileId": null
+        "lektaProfileId": null,
+        "citationStyle": "fpzg"
       }
     }
   },
@@ -50661,7 +50691,8 @@
             "id": "6a5b4c3d-2e1f-4a0b-9c8d-7e6f5a4b3c11",
             "kind": "must",
             "text": "Izmišljeno: navedite izvor.",
-            "createdAt": "2026-11-21T09:00:00.000Z"
+            "createdAt": "2026-11-21T09:00:00.000Z",
+            "label": "Izmišljeno: izvor"
           }
         ]
       }
