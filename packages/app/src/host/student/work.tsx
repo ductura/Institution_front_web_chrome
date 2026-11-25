@@ -52,6 +52,8 @@ import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
+import { SlidesWork } from "../slides/editor/SlidesWork";
+import { workKindOf } from "../slides/editor/work-kind";
 import { RubricCard } from "./rubric/RubricCard";
 import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { WorkHistoryHost } from "../editor/work-history/WorkHistoryHost";
@@ -115,6 +117,12 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       // WEB-2136: view mode, "samo naslovi" and panel widths, only where the panels are (the full editor).
       const topBar = frame.variant === "puno" ? <ShellView>{bar}</ShellView> : bar;
       const length = { words: null, range: frame.range };
+      // WEB-V13-UREDNIK: a slides work in progress opens the slides editor, anything else the text editor below.
+      // Its top bar is the plain one: the shell view switches and the history buttons only work on the text editor.
+      const kind = workKindOf(assignments, assignmentId);
+      if (read.kind === "ready" && frame.variant === "puno" && kind !== "text") {
+        return setShown({ kind: "page", node: <SlidesWork course={read.course} title={read.title} topBar={<WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle} />} length={length} unreadable={kind === "unreadable"} onRetry={() => setAttempt((n) => n + 1)} /> });
+      }
       if (read.kind === "ready" && frame.variant === "puno") {
         return setShown({
           kind: "page",

@@ -202,7 +202,7 @@ test('no other workflow runs jobs that ci-ok cannot see', () => {
 // a throwaway git repository, so a wrong path rule shows up as a failing case.
 const changesScript = jobsOf(workflow).changes?.steps?.find((s) => typeof s?.run === 'string' && s.run.includes('# changes:begin'))?.run;
 
-function changesFor(files, { event = 'pull_request', base = true, mergeCommit = false } = {}) {
+function changesFor(files, { event = 'pull_request', base = true, mergeCommit = false, missingBase = false } = {}) {
   const repo = mkdtempSync(join(tmpdir(), 'changes-'));
   try {
     const git = (...a) => spawnSync('git', a, { cwd: repo, encoding: 'utf8' });
@@ -229,8 +229,8 @@ function changesFor(files, { event = 'pull_request', base = true, mergeCommit = 
       git('add', '.');
       git('commit', '-q', '-m', 'newer base');
       git('merge', '-q', '--no-ff', '-m', 'merge', change);
-      baseEnv = '0123456789abcdef0123456789abcdef01234567';
     }
+    if (mergeCommit || missingBase) baseEnv = '0123456789abcdef0123456789abcdef01234567';
     const out = join(repo, '..', `out-${process.pid}-${Math.random()}`);
     writeFileSync(out, '');
     const r = spawnSync('bash', ['-c', changesScript], {
@@ -284,8 +284,7 @@ test('changes: a base sha missing from the checkout diffs the merge commit', () 
   assert.equal(on(changesFor(['catalog/a.ts'], { mergeCommit: true })), 'ui');
 });
 test('changes: a missing base sha and no merge commit still runs every job', () => {
-  const o = changesFor(['docs/x.md'], { base: false });
-  assert.equal(on(o), 'app,client,test,ui');
+  assert.equal(on(changesFor(['docs/x.md'], { missingBase: true })), 'app,client,test,ui');
 });
 
 // ZEL-CI-RED: app-build always follows app, and the checks of src/client run
@@ -300,27 +299,19 @@ test('changes: app-build equals app and client implies ui, for every case', () =
   }
 });
 
-// ZEL-CI-RED: the report-only pixel baselines run on a pull request that
-// changes catalog/ (with its snapshots), packages/ui/ or the dependencies
-// (package.json, the lockfile, the workspace file; Daniel 25. 11. 2026., a
-// workflow or other root file alone no longer turns them on), by hand and on
-// the schedule (main only); never on a push. A change that can move a pixel
-// of the catalogue is reported on its pull request.
+// CI-BRZINA (Daniel 25. 11. 2026): the report-only pixel baselines run on a
+// push, by hand and on the schedule (main only); never on a pull request,
+// whatever it changes, so its runners go to the checks ci-ok waits for.
 const baselineCases = [
-  [['catalog/a.ts'], 'pull_request', 'true'],
-  [['packages/ui/src/a.tsx'], 'pull_request', 'true'],
-  [['packages/ui/src/a.module.css'], 'pull_request', 'true'],
+  [['catalog/a.ts'], 'pull_request', 'false'],
+  [['packages/ui/src/a.tsx'], 'pull_request', 'false'],
+  [['packages/ui/src/a.module.css'], 'pull_request', 'false'],
   [['packages/editor-core/src/a.ts'], 'pull_request', 'false'],
   [['packages/app/src/host/a.tsx'], 'pull_request', 'false'],
   [['docs/x.md'], 'pull_request', 'false'],
   [['.github/workflows/ci.yml'], 'pull_request', 'false'],
-  [['.github/CODEOWNERS'], 'pull_request', 'false'],
-  [['playwright.config.js'], 'pull_request', 'false'],
-  [['pnpm-lock.yaml'], 'pull_request', 'true'],
-  [['package.json'], 'pull_request', 'true'],
-  [['pnpm-workspace.yaml'], 'pull_request', 'true'],
-  [['.github/workflows/ci.yml', 'catalog/a.ts'], 'pull_request', 'true'],
-  [['catalog/a.ts'], 'push', 'false'],
+  [['pnpm-lock.yaml'], 'pull_request', 'false'],
+  [['catalog/a.ts'], 'push', 'true'],
   [['docs/x.md'], 'schedule', 'true'],
   [['docs/x.md'], 'workflow_dispatch', 'true'],
 ];
@@ -454,6 +445,13 @@ test('ui runs typecheck and unit tests in two blocking parts of its matrix', () 
   assert.deepEqual(legs.map((p) => `${p.leg}/${p.of}`), ['1/2', '2/2']);
   assert.equal(typecheck?.if, "matrix.part == 'checks'");
   assert.equal(unit?.if, "matrix.part == 'unit'");
+  // CI-BRZINA: both axe shells run in one part; the light shell runs also
+  // when the dark one failed, and nothing else may skip them.
+  assert.deepEqual(ui.strategy.matrix.include.filter((p) => p.part.startsWith('axe')).map((p) => p.part), ['axe']);
+  const [dark] = uiStep(/--grep "\$AXE_DARK"$/);
+  const [light] = uiStep(/--grep "\$AXE_LIGHT"$/);
+  assert.equal(dark?.if, "matrix.part == 'axe'");
+  assert.equal(light?.if, "always() && matrix.part == 'axe'");
   const [coverage] = uiStep(/the ui parts do not cover every catalogue test exactly once/);
   assert.equal(coverage?.if, "matrix.part == 'checks'");
   assert.ok(!ui.steps.some((s) => s['continue-on-error']), 'no step of ui is report-only');
