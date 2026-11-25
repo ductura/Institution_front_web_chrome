@@ -21,6 +21,8 @@ export type ToolbarBehaviourInput = {
   place?: CursorPlace;
   intro?: "write" | "review" | "locked";
   onContextAction?: (id: ContextAction) => void;
+  /** ED-31: context actions the shell's editor cannot run yet. */
+  hideContext?: readonly ContextAction[];
 };
 
 export function EditorToolbarHost({ state, commands, behaviour, label, labels, omit }: {
