@@ -55,8 +55,9 @@ describe("step 3 lists (PR-3)", () => {
     expect(links).toContainEqual(["Odlomak 1 ([izvor])", "/rad/x"]);
     expect(links).toContainEqual(["2. Analiza, odlomak 1 ([?])", "/rad/x"]);
     expect(host.textContent).toContain("Manja lijepljenja (do 200 znakova): 2.");
-    expect(host.textContent).toContain(c.formNotRun);
-    expect(c.formNotRun).toBe("Provjera oblika nije dostupna u pilotu.");
+    // WEB-V17-FORMAT-CHECK: the form check is now a real section (its own tests are in editor/format-check).
+    expect(host.textContent).toContain(c.form);
+    expect(host.textContent).not.toContain(c.formNotRun);
     expect(host.textContent).not.toContain("Ovaj redak samo obavještava");
   });
 
