@@ -65,6 +65,8 @@ import {
 } from "@/client/logout-hold";
 import { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
 import { CroatianQuotes } from "../../../packages/editor-core/src/typography/croatian-quotes";
+// ED-33 (P2-2): Alt+Shift+↑/↓ moves the chapter, Alt+↑/↓ the sentence (listed in commands/shortcut-definitions.ts).
+import { ChapterMove, SentenceMove } from "../../../packages/editor-core/src/outline";
 import type { SaverFailure } from "@/lib/journal/local-document-saver";
 
 import {
@@ -364,7 +366,7 @@ export function LocalDocumentProvider({
     // ChapterNumbers: heading numbers as decorations, never text (DAN-395).
     // CroatianQuotes: a typed straight quote becomes „ ” or ‚ ’ (WEB-1605).
     // PIL-K-SPREMANJE-V3: the v3 schema (footnote, cross reference) only for a confirmed v3 work.
-    extensions: [...(sheet === 3 ? createEditorExtensionsV3(t.editor.placeholder) : createEditorExtensions(t.editor.placeholder)), StorableInput, ArrowCollapse, ChapterNumbers, CroatianQuotes, observer.extension],
+    extensions: [...(sheet === 3 ? createEditorExtensionsV3(t.editor.placeholder) : createEditorExtensions(t.editor.placeholder)), StorableInput, ArrowCollapse, ChapterNumbers, ChapterMove, SentenceMove, CroatianQuotes, observer.extension],
     editable: false,
     immediatelyRender: false,
     injectCSS: false, // app/prosemirror.css (DAN-489)

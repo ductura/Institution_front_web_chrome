@@ -15,3 +15,4 @@ export { blockPosition, ChapterNumbers, numberedHeadings, type NumberedHeading }
 export * from "./toc";
 export * from "./move";
 export * from "./editor";
+export * from "./sentence-move";

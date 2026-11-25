@@ -99,6 +99,30 @@ const PROBES: Record<string, Probe> = {
     await page.keyboard.press("Control+.");
     await expect(page.locator('[data-focus="true"]')).toHaveCount(0);
   },
+  // ED-33 (P2-2): Alt+↑/↓ swaps the sentence with its neighbour, Alt+Shift+↑/↓ the chapter.
+  moveSentence: async (page) => {
+    const paragraph = page.locator(".ProseMirror p", { hasText: "Izmišljena prva." });
+    await page.keyboard.type("Izmišljena prva. Izmišljena druga.");
+    await page.keyboard.press("Alt+ArrowUp");
+    await expect(paragraph).toHaveText("Izmišljena druga. Izmišljena prva.");
+    await page.keyboard.press("Alt+ArrowDown");
+    await expect(paragraph).toHaveText("Izmišljena prva. Izmišljena druga.");
+  },
+  moveChapter: async (page) => {
+    const order = () => page.locator(".ProseMirror h2").filter({ hasText: /Izmišljeno (prvo|drugo) poglavlje/ }).allInnerTexts();
+    for (const name of ["Izmišljeno prvo poglavlje", "Izmišljeno drugo poglavlje"]) {
+      await page.keyboard.type(name);
+      await page.keyboard.press("Control+Alt+2");
+      await page.keyboard.press("End");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Tekst poglavlja.");
+      await page.keyboard.press("Enter");
+    }
+    // The cursor is in the second chapter; Alt+Shift+↑ puts that chapter before the first.
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("Alt+Shift+ArrowUp");
+    await expect.poll(async () => (await order()).map((t) => t.replace(/^[\d.\s]+/, ""))).toEqual(["Izmišljeno drugo poglavlje", "Izmišljeno prvo poglavlje"]);
+  },
   shortcuts: async (page) => {
     await page.keyboard.press("Control+/");
     await expect(list(page)).toBeVisible();
