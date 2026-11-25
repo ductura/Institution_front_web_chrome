@@ -126,4 +126,25 @@ describe("style and address", () => {
     expect(apa.entry(source)).toContain("Izmišljeni naslov");
     expect(apa.order([source])).toHaveLength(1);
   });
+  const src = (n: number, family: string, title: string) => ({ id: ID(n), authors: [{ kind: "person", family, given: "Ana" }], title, year: 2020, type: "book", place: "Zagreb", publisher: "Izmišljena naklada" }) as never;
+  it("gives same-author same-year sources the same suffix in the text and in the list", () => {
+    const [a, b] = [src(9, "Primjer", "Alfa"), src(10, "Primjer", "Beta")];
+    const apa = texCitationsOf(citationStyleOf("apa")!, [a, b]);
+    expect(apa.inText(a)).toContain("2020a");
+    expect(apa.inText(b)).toContain("2020b");
+    const entries = apa.order([b, a]).map(apa.entry);
+    expect(entries[0]).toContain("2020a");
+    expect(entries[1]).toContain("2020b");
+  });
+  it("numbers a numeric style by first citation and lists the entries in that order", () => {
+    const [a, b] = [src(9, "Primjer", "Alfa"), src(10, "Zorić", "Beta")];
+    const ieee = texCitationsOf(citationStyleOf("ieee")!, [a, b]);
+    expect(ieee.inText(b)).toBe("[1]");
+    expect(ieee.inText(a)).toBe("[2]");
+    expect(ieee.inText(b)).toBe("[1]");
+    const entries = ieee.order([a, b]).map(ieee.entry);
+    expect(entries[0]).toMatch(/^\[1\]/);
+    expect(entries[0]).toContain("Beta");
+    expect(entries[1]).toMatch(/^\[2\]/);
+  });
 });

@@ -8,7 +8,8 @@ import type { Editor } from "@tiptap/core";
 import { useEffect, useState } from "react";
 
 import {
-  assignYearSuffixes, formatBibliographyEntry, formatCitationInText, sortBibliography,
+  assignYearSuffixes, formatBibliographyEntry, formatCitationInText, formatNumberedBibliographyEntry, formatNumericCitation,
+  sortBibliography,
 } from "../../../../../editor-core/src/document/citation/format.ts";
 import type { CitationStyle } from "../../../../../editor-core/src/document/citation/index.ts";
 import type { DocumentSource } from "../../../../../editor-core/src/document/document/index.ts";
@@ -26,14 +27,33 @@ export function assignmentIdFromPath(pathname: string): string | null {
   return match?.[1] ?? null;
 }
 
-/** The institution's style as TexCitations; the sources are cited as the editor's style formats them. */
-export function texCitationsOf(style: CitationStyle): TexCitations {
+/**
+ * The institution's style as TexCitations for one build (it keeps state: the numbers of a numeric style are given
+ * in the order `buildTex` meets the citations). Author-date styles use one suffixed copy of every source for the
+ * in-text citations and the bibliography alike, so `2020a` and `2020b` read the same in both places.
+ */
+export function texCitationsOf(style: CitationStyle, sources: readonly DocumentSource[] = []): TexCitations {
   type Src = Parameters<typeof formatBibliographyEntry>[0];
-  const as = (s: DocumentSource) => s as unknown as Src;
+  const suffixed = new Map<string, Src>(
+    (assignYearSuffixes(sources.map((s) => s as unknown as Src)) as unknown as { id: string }[]).map((s) => [s.id, s as unknown as Src]),
+  );
+  const as = (s: DocumentSource): Src => suffixed.get(s.id) ?? (s as unknown as Src);
+  if (style.style === "numeric") {
+    const numbers = new Map<string, number>();
+    const numberOf = (s: DocumentSource): number => {
+      if (!numbers.has(s.id)) numbers.set(s.id, numbers.size + 1);
+      return numbers.get(s.id)!;
+    };
+    return {
+      inText: (source, locator) => formatNumericCitation(numberOf(source), style, locator),
+      entry: (source) => formatNumberedBibliographyEntry(numberOf(source), as(source), style),
+      order: (list) => [...list].sort((x, y) => numberOf(x) - numberOf(y)),
+    };
+  }
   return {
     inText: (source, locator) => formatCitationInText(as(source), style, locator),
     entry: (source) => formatBibliographyEntry(as(source), style),
-    order: (sources) => sortBibliography(assignYearSuffixes(sources.map(as))) as unknown as readonly DocumentSource[],
+    order: (list) => sortBibliography(list.map(as)) as unknown as readonly DocumentSource[],
   };
 }
 
@@ -84,7 +104,7 @@ export function buildLatexOf(editor: Editor | null, schemaVersion: number | unde
   if (item.disabled || !editor || style.kind !== "ready") return { ok: false, reason: item.hint ?? t.latex.menuInvalid };
   const candidate = tiptapToCanonicalV4(editor.getJSON());
   if (!candidate.ok) return { ok: false, reason: t.latex.menuInvalid };
-  return { ok: true, tex: buildTex(candidate.doc, { title, citations: texCitationsOf(style.style) }) };
+  return { ok: true, tex: buildTex(candidate.doc, { title, citations: texCitationsOf(style.style, candidate.doc.sources) }) };
 }
 
 function saveBlob(blob: Blob, fileName: string): void {
