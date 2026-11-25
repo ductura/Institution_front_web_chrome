@@ -98,4 +98,45 @@ describe("ImportHost", () => {
     expect(document.querySelector("input[type=file]")).not.toBeNull();
     expect(inserted).toEqual([]);
   });
+
+  const NOTEBOOK = JSON.stringify({ metadata: { kernelspec: { language: "python" } }, cells: [
+    { cell_type: "markdown", source: "# Izmišljeno" },
+    { cell_type: "code", source: "print(1)", outputs: [{ output_type: "stream", name: "stdout", text: "1\n" }, { output_type: "display_data", data: { "text/html": "<b>1</b>" } }] },
+  ] });
+  async function chooseNotebook(text: string) {
+    const input = document.querySelector<HTMLInputElement>("input[type=file]")!;
+    const file = new File([text], "izmisljeno.ipynb");
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    await act(async () => button("Pregledaj uvoz").click());
+    await settle();
+  }
+
+  it("reads a notebook in the browser without any call, previews it and inserts only after Potvrdi uvoz", async () => {
+    let calls = 0;
+    const api = (async () => { calls += 1; return {}; }) as unknown as NonNullable<Parameters<typeof ImportHost>[0]["api"]>;
+    (editor.value as Record<string, unknown>).schema = { nodes: { codeBlock: {} } };
+    act(() => root.render(h(ImportHost, { documentId: D, api })));
+    act(() => button("Uvezi tekst iz datoteke").click());
+    await chooseNotebook(NOTEBOOK);
+    const dialog = document.querySelector("dialog")!;
+    expect(dialog.textContent).toContain("Odbačeno izlaza (HTML, JavaScript, slike i ostalo): 1.");
+    expect(dialog.textContent).not.toContain("<b>");
+    expect(inserted).toEqual([]);
+    await act(async () => button("Potvrdi uvoz").click());
+    expect(calls).toBe(0);
+    expect(inserted).toHaveLength(1);
+    expect(JSON.stringify(inserted[0])).toContain('"imported"');
+    expect(host.querySelector("[role=status]")?.textContent).toBe("Uvezeno blokova: 3, označeno kao uvezeno. Odbačeno izlaza: 1.");
+  });
+
+  it("refuses a broken notebook with a message, and inserts nothing when the editor has no code blocks", async () => {
+    act(() => root.render(h(ImportHost, { documentId: D })));
+    act(() => button("Uvezi tekst iz datoteke").click());
+    await chooseNotebook("{ nije json");
+    expect(document.querySelector("[role=alert]")?.textContent).toBe("Bilježnicu nije moguće pročitati. Provjerite je li ispravna.");
+    await chooseNotebook(NOTEBOOK);
+    await act(async () => button("Potvrdi uvoz").click());
+    expect(document.querySelector("[role=alert]")?.textContent).toContain("ne podržava blokove kôda");
+    expect(inserted).toEqual([]);
+  });
 });
