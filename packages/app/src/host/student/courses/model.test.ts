@@ -131,6 +131,11 @@ describe("NF-1 P-6: the submission time", () => {
     const r = await readCourses(thrown, true);
     expect(r.kind === "ready" && r.states?.get("a")).toBe("submitted");
   });
+  it("does not ask for the times when the reader shows none (withTimes false)", async () => {
+    const asked: string[] = [];
+    await readCourses(submissions({ ok: true, status: 200, body: { assignments: [] } }, asked), true, false);
+    expect(asked).not.toContain("student.assignment-submissions.get");
+  });
   it("does not ask for the times when the states were not asked for", async () => {
     const asked: string[] = [];
     await readCourses(submissions({ ok: true, status: 200, body: { assignments: [] } }, asked), false);

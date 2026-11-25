@@ -31,8 +31,8 @@ export type CoursesCall = {
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 
-/** 401 is signed out; anything else that fails is unavailable, never an empty list. States only when asked and proven. */
-export async function readCourses(call: CoursesCall, withStates: boolean): Promise<CoursesRead> {
+/** 401 is signed out; anything else that fails is unavailable, never an empty list. States only when asked and proven; the submission times only when `withTimes` (a reader that shows none, as the portfolio, passes false). */
+export async function readCourses(call: CoursesCall, withStates: boolean, withTimes = true): Promise<CoursesRead> {
   let courses: Course[];
   try {
     const r = await call("student.assignments.get", NONE);
@@ -47,7 +47,7 @@ export async function readCourses(call: CoursesCall, withStates: boolean): Promi
     if (!r.ok) return { kind: "ready", courses, states: null };
     const states = new Map(r.body.assignments.map((a) => [a.assignmentId, a.workState]));
     // NF-1 P-6: one call to student.assignment-submissions.get for the whole list (never one per row).
-    const submitted = await readSubmitted(call, states);
+    const submitted = withTimes ? await readSubmitted(call, states) : new Map<string, Submitted>();
     return { kind: "ready", courses, states, submitted };
   } catch {
     return { kind: "ready", courses, states: null };
