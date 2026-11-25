@@ -29,11 +29,12 @@ describe("templateBlocks", () => {
 });
 
 describe("readTemplate", () => {
-  it("ready on 200", async () => expect((await readTemplate("a", async () => ({ ok: true, status: 200, body }))).kind).toBe("ready"));
-  it("none on 404, the same for foreign and unknown", async () => expect(await readTemplate("a", async () => ({ ok: false, status: 404 }))).toEqual({ kind: "none" }));
+  it("ready on 200", async () => expect((await readTemplate("a", (async () => ({ ok: true, status: 200, body })) as never)).kind).toBe("ready"));
+  it("none on 404, the same for foreign and unknown", async () => expect(await readTemplate("a", (async () => ({ ok: false, status: 404 })) as never)).toEqual({ kind: "none" }));
+  it("signedOut on 401, not unavailable", async () => expect(await readTemplate("a", (async () => ({ ok: false, status: 401 })) as never)).toEqual({ kind: "signedOut" }));
   it("unavailable, not none, on a server error, a throw or a wrong shape", async () => {
-    expect((await readTemplate("a", async () => ({ ok: false, status: 503 }))).kind).toBe("unavailable");
-    expect((await readTemplate("a", async () => { throw new Error("x"); })).kind).toBe("unavailable");
-    expect((await readTemplate("a", async () => ({ ok: true, status: 200, body: {} }))).kind).toBe("unavailable");
+    expect((await readTemplate("a", (async () => ({ ok: false, status: 503 })) as never)).kind).toBe("unavailable");
+    expect((await readTemplate("a", (async () => { throw new Error("x"); }) as never)).kind).toBe("unavailable");
+    expect((await readTemplate("a", (async () => ({ ok: true, status: 200, body: {} })) as never)).kind).toBe("unavailable");
   });
 });

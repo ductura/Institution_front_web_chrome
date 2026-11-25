@@ -42,16 +42,36 @@ describe("StartWork after the server opened the work", () => {
     expect(host.textContent).toContain("Jezik rada: hrvatski");
   });
 
-  it("says what the template holds", async () => {
-    const ready = async () => ({ kind: "ready" as const, template: { version: 2, titlePage: [], sections: [{ title: "Uvod", hint: "" }], citationStyle: "fpzg" as const } });
-    await act(async () => { root?.render(h(StartWork, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", call: started as never, template: ready })); });
-    await click();
-    expect(host.textContent).toContain("Predložak fakulteta (verzija 2): 1 odjeljaka.");
+  const mount = async (template: never) => {
+    await act(async () => { root?.render(h(StartWork, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", call: started as never, template })); });
+  };
+
+  it("shows the skeleton before the student starts, and the start does not wait for it", async () => {
+    const ready = async () => ({ kind: "ready" as const, template: { version: 2, titlePage: ["author"] as const, sections: [{ title: "Uvod", hint: "" }], citationStyle: "fpzg" as const } });
+    await mount(ready as never);
+    expect(host.textContent).toContain("Predložak fakulteta (verzija 2). Odjeljaka: 1.");
+    expect(host.textContent).toContain("Autor:");
+    expect(host.textContent).toContain("Uvod");
+    expect(host.querySelector("button")!.hasAttribute("disabled")).toBe(false);
   });
 
-  it("says unavailable, not nothing, when the template read throws", async () => {
-    await act(async () => { root?.render(h(StartWork, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", call: started as never, template: async () => { throw new Error("x"); } })); });
+  it("opens the editor even while the template read never answers", async () => {
+    await mount((() => new Promise(() => {})) as never);
     await click();
-    expect(host.textContent).toContain("nije dostupan");
+    expect(push).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["throws", async () => { throw new Error("x"); }, "nije dostupan"],
+    ["unavailable", async () => ({ kind: "unavailable" as const }), "nije dostupan"],
+    ["signedOut", async () => ({ kind: "signedOut" as const }), "Sesija je istekla"],
+  ])("says so, not nothing, when the template read %s", async (_n, template, said) => {
+    await mount(template as never);
+    expect(host.textContent).toContain(said);
+  });
+
+  it("says nothing about a template when there is none", async () => {
+    await mount(none as never);
+    expect(host.textContent).not.toContain("Predložak");
   });
 });

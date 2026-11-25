@@ -17,6 +17,8 @@ export type TemplateRead =
   | { readonly kind: "ready"; readonly template: WorkTemplate }
   /** 404: no template pinned to the assignment, or not this student's; both read the same. */
   | { readonly kind: "none" }
+  /** 401: the session is over; said as that, not as "unavailable". */
+  | { readonly kind: "signedOut" }
   /** Loading failed: said as such, never as "no template". */
   | { readonly kind: "unavailable" };
 
