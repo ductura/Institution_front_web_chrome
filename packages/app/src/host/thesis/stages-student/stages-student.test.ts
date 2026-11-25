@@ -16,6 +16,7 @@ vi.mock("../../../../../../src/client/milestone-submit", async (original) => ({
   readStudentMilestones: (...a: unknown[]) => readStudentMilestones(...a),
 }));
 const { section } = await import("./section");
+const { ThesisPanel } = await import("../ThesisPanel");
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -72,6 +73,18 @@ describe("showDate", () => {
 });
 
 describe("StagesView", () => {
+  it("through the real panel: the 409 notice is still visible after the section reads again", async () => {
+    readStudentMilestones.mockResolvedValue(ok([m(ID1, "not_submitted")]));
+    submitMilestone.mockResolvedValueOnce({ kind: "promijenjeno" });
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root!.render(h(ThesisPanel, { documentId: "izmisljeni-rad-panel", role: "student", sections: [section as never] })); });
+    await act(async () => { button(host).click(); });
+    expect(readStudentMilestones).toHaveBeenCalledTimes(2);
+    expect(host.querySelector('[role="alert"]')?.textContent).toBe(t.changed);
+  });
+
   it("keeps the notice when the panel unmounts the view and mounts it again", async () => {
     submitMilestone.mockResolvedValueOnce({ kind: "promijenjeno" });
     const host = await mountView([m(ID1, "not_submitted")]);
