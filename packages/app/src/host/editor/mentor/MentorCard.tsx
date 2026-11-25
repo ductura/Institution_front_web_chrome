@@ -32,6 +32,10 @@ export type MentorCardProps = {
   prep: Read<PrepInput>;
   /** Consultations and criteria (ConsultPanel), mounted by the caller. */
   consult?: ReactNode;
+  /** MK-8: "Što je mentor rekao" (SaidPanel), mounted by the caller under the state. */
+  said?: ReactNode;
+  /** MK-10: the composing preparation (PrepPanel); without it the card shows the given `prep` read-only. */
+  prepPanel?: ReactNode;
   onAction?: (action: ActionId) => void;
   onOpenAbstract?: () => void;
   onCopyPrep?: (text: string) => Promise<boolean>;
@@ -68,9 +72,10 @@ export function MentorCard(p: MentorCardProps) {
         )}
         {next !== null && <p className={styles.line}>{next}</p>}
       </section>
+      {p.said}
       {p.consult}
       <Details className={styles.rpd} summary={t.prep.title}>
-        {text === null ? <p>{p.prep === undefined ? t.stateLoading : t.prep.unavailable}</p> : (
+        {p.prepPanel !== undefined ? p.prepPanel : text === null ? <p>{p.prep === undefined ? t.stateLoading : t.prep.unavailable}</p> : (
           <>
             <p className={styles.muted}>{t.prep.intro}</p>
             <textarea className={styles.field} rows={9} readOnly aria-label={t.prep.title} value={text} />

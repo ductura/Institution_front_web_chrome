@@ -19,7 +19,8 @@ import { keyDatesPort, type KeyDatesCall } from "../key-dates/contract";
 import { keyDatesMessages } from "../key-dates/messages.hr";
 import { goToSignIn } from "../../../../../../src/client/api";
 import { studentName } from "../../../../../../src/components/teacher/mentored-works-view";
-import { mentorshipsOf, startedWorks } from "./model";
+import { mentorshipsOf, roundWorks, startedWorks } from "./model";
+import { RoundReview } from "./RoundReview";
 import { MyStudents } from "./MyStudents";
 import type { OverviewCall } from "./overview-read";
 import { OpenMentorshipCard } from "./OpenMentorshipCard";
@@ -66,6 +67,10 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
         <>
           <WorksList works={value.works} base={base} />
           <MyStudents works={value.works} call={overview} base={base} />
+          {/* WEB-NF6-RUNDA (MK-8): "Pregled runde" of each started work. */}
+          {roundWorks(value.works).map((w) => (
+            <RoundReview key={w.documentId} work={{ documentId: w.documentId, name: w.name, href: appHref(base, w.path) }} />
+          ))}
           {mentorshipsOf(value.works).map((m) => (
             <KeyDates key={m.mentorshipId} mentorshipId={m.mentorshipId} port={datesPort} title={keyDatesMessages.forStudent(m.name)} />
           ))}
