@@ -34,15 +34,15 @@ describe("teacher's read-only view of a v4 document", () => {
     expect(out).toContain("<hr");
   });
 
-  it("numbers list items from the block order, with nesting", () => {
-    const item = (n: number, level: number) => ({
-      type: "numberedItem", id: `aaaaaaaa-aaaa-4aaa-8aaa-0000000001${n}0`, level, children: [{ type: "text", text: `Stavka ${n}`, marks: [] }],
+  it("numbers list items from the block order, a run restarting after another block", () => {
+    const item = (n: number) => ({
+      type: "orderedItem", id: `aaaaaaaa-aaaa-4aaa-8aaa-0000000001${n}0`, children: [{ type: "text", text: `Stavka ${n}`, marks: [] }],
     });
-    const out = html(json({ ...FIXTURE_V4, nodes: [item(1, 1), item(2, 2), item(3, 1)] }));
+    const out = html(json({ ...FIXTURE_V4, nodes: [item(1), item(2), { type: "paragraph", id: "aaaaaaaa-aaaa-4aaa-8aaa-000000000199", children: [] }, item(3)] }));
     const plain = out.replace(/<[^>]+>/g, "");
     expect(plain).toMatch(/1\. ?Stavka 1/);
-    expect(plain).toMatch(/1\.1\. ?Stavka 2/);
-    expect(plain).toMatch(/2\. ?Stavka 3/);
+    expect(plain).toMatch(/2\. ?Stavka 2/);
+    expect(plain).toMatch(/1\. ?Stavka 3/);
   });
 
   it("leaves the MathML readable: no role or label on the formula wrapper", () => {
