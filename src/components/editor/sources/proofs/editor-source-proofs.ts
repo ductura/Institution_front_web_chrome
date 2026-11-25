@@ -12,6 +12,7 @@ import { createElement as h, Fragment, useMemo } from "react";
 import { CITATION } from "@/editor";
 
 import { StudentBibliographyHost } from "../../../../../packages/app/src/host/editor/bibliography/student/StudentBibliographyHost";
+import { ProofRequests } from "../../../../../packages/app/src/host/editor/proof-requests/ProofRequests";
 import { SourceNotebookHost } from "../../../../../packages/app/src/host/editor/source-notebook/SourceNotebookHost";
 import { useLocalEditor, useLocalSignedOut } from "../../LocalDocument";
 import { citationRange } from "../../citations/citation-document";
@@ -45,6 +46,7 @@ export function EditorSourceProofs({ assignmentId, documentId }: { assignmentId:
   // The proofs and private notes belong to this session only.
   if (signedOut) return null;
   return h(Fragment, null,
+    h(ProofRequests, { assignmentId, sources: read.sources }),
     editor && !editor.isDestroyed && h(StudentBibliographyHost, { documentId, editor }),
     editor && !editor.isDestroyed && h(SourceNotebookHost, {
       documentId, editor, sources: read.sources, canInsert: read.canInsert, supported: Boolean(editor.schema.nodes[CITATION]),
