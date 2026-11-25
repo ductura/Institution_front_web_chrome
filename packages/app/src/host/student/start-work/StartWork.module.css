@@ -19,3 +19,11 @@
   font-size: 13px;
   color: var(--ink);
 }
+
+.skeleton {
+  flex-basis: 100%;
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--ink);
+}
