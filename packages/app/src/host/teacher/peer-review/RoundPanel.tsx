@@ -5,7 +5,7 @@ import { Button, Card, Dialog, RouteLoading, Select, TextField } from "@ductura/
 
 import type { createApi } from "@/client/api";
 import { teacherPeerReviewText as t } from "./messages.hr";
-import { checkRound, draftOf, mayAllocate, mayEdit, nextKey, MAX_RUBRICS, PER_STUDENT, type RoundDraft, type RoundError } from "./model";
+import { checkRound, draftOf, isSaved, mayAllocate, mayEdit, nextKey, MAX_RUBRICS, PER_STUDENT, type RoundDraft, type RoundError } from "./model";
 import { allocate, putRound, readRound, type Read, type RoundView, type Write } from "./read";
 
 type Api = ReturnType<typeof createApi>;
@@ -52,12 +52,12 @@ export function RoundPanel({ assignmentId, call, onSignedOut, onChanged }: {
   }, [attempt, assignmentId]);
 
   /** The form stays locked until the round is read again, so a late answer cannot overwrite a newer edit. */
-  async function refresh() {
+  async function refresh(keepDraft = false) {
     const fresh = await readRound(call(), assignmentId);
     setBusy(false);
     if (fresh.kind === "signedOut") { onSignedOut(); return; }
     setRead(fresh);
-    if (fresh.kind === "ok") setDraft(draftOf(fresh.value.round));
+    if (fresh.kind === "ok" && !(keepDraft && mayEdit(fresh.value.round))) setDraft(draftOf(fresh.value.round));
     onChanged();
   }
 
@@ -65,7 +65,7 @@ export function RoundPanel({ assignmentId, call, onSignedOut, onChanged }: {
     event.preventDefault();
     if (busy || draft === null) return;
     setNote(null);
-    const checked = checkRound(draft);
+    const checked = checkRound(draft, read !== null && read.kind === "ok" ? read.value.round : null);
     if (!checked.ok) { setError({ field: checked.field, error: checked.error }); return; }
     setError(null);
     setBusy(true);
@@ -73,7 +73,8 @@ export function RoundPanel({ assignmentId, call, onSignedOut, onChanged }: {
     if (outcome.kind === "signedOut") { setBusy(false); onSignedOut(); return; }
     if (outcome.kind === "done") setNote({ tone: "status", text: t.round.saved });
     else setNote({ tone: "alert", text: outcome.kind === "tooFew" || outcome.kind === "conflict" ? t.round.invalid : SAVE_FAILURE[outcome.kind] });
-    await refresh();
+    // A save that did not succeed keeps what the teacher typed (while the round still takes it), so a retry is possible.
+    await refresh(outcome.kind !== "done");
   }
 
   async function doAllocate() {
@@ -136,12 +137,13 @@ export function RoundPanel({ assignmentId, call, onSignedOut, onChanged }: {
       </form>
       {view.round !== null && view.state === "not_allocated" && (
         <p>
-          <Button tone="secondary" disabled={busy || !mayAllocate(view)} busy={busy} onClick={() => setConfirm(true)}>
+          <Button tone="secondary" disabled={busy || !mayAllocate(view) || !isSaved(draft, view.round)} busy={busy} onClick={() => setConfirm(true)}>
             {busy ? t.allocate.working : t.allocate.button}
           </Button>
         </p>
       )}
       {view.round === null && <p>{t.allocate.needRound}</p>}
+      {view.round !== null && view.state === "not_allocated" && !isSaved(draft, view.round) && <p data-testid="unsaved">{t.allocate.unsaved}</p>}
       <Dialog open={confirm} title={t.allocate.confirmTitle} onClose={() => setConfirm(false)} initialFocus={no}
         actions={<>
           <Button ref={no} tone="secondary" onClick={() => setConfirm(false)}>{t.allocate.confirmNo}</Button>

@@ -61,6 +61,7 @@ export const teacherPeerReviewText = {
     notFound: "Zadatak više nije dostupan. Stanje je osvježeno.",
     unknown: "Nije poznato je li dodjela izvršena. Osvježite stanje prije novog pokušaja.",
     needRound: "Prvo spremite postavku kruga.",
+    unsaved: "Spremite izmjene postavke prije dodjele: dodjela koristi spremljenu postavku.",
   },
   overview: {
     title: "Dodjele",

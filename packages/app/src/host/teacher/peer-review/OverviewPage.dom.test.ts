@@ -92,6 +92,16 @@ describe("the teacher's peer-review page in the browser", () => {
         expect(text()).not.toContain(t.round.saved);
       }
     });
+    it("a refused save keeps what the teacher typed", async () => {
+      await render(h(OverviewPage, { assignmentId: A, call: apiOf({ "peer-review.round.get": () => roundView("none", null, 0), "peer-review.round.put": () => fail(503, "unavailable"), ...idle }).call }));
+      await type(field(t.round.opensAt), "2026-12-01T09:00");
+      await type(field(t.round.dueAt), "2026-12-10T18:30");
+      await type(field(t.round.rubricLabel.replace("{n}", "1")), "Argument");
+      await submit();
+      expect(text()).toContain(t.round.unknown);
+      expect(field(t.round.dueAt).value).toBe("2026-12-10T18:30");
+      expect(field(t.round.rubricLabel.replace("{n}", "1")).value).toBe("Argument");
+    });
     it("is read-only once the reviews are allocated", async () => {
       await render(h(OverviewPage, { assignmentId: A, call: apiOf({ "peer-review.round.get": () => roundView("allocated", { ...ROUND, allocatedAt: "2026-12-02T10:00:00.000Z" }), ...idle }).call }));
       expect(host.querySelector("[data-testid=round-locked]")).not.toBeNull();
@@ -128,6 +138,13 @@ describe("the teacher's peer-review page in the browser", () => {
       expect(text()).toContain(t.allocate.done.replace("{n}", "8"));
       expect(host.querySelectorAll("[data-testid=allocation]")).toHaveLength(1);
       expect(button(t.allocate.button)).toBeUndefined();
+    });
+    it("is not offered while an edit is unsaved", async () => {
+      await render(h(OverviewPage, { assignmentId: A, call: base(() => ok({ allocated: 1 }, 201)).call }));
+      expect(button(t.allocate.button)!.hasAttribute("disabled")).toBe(false);
+      await type(field(t.round.rubricLabel.replace("{n}", "1")), "Drugi naziv");
+      expect(button(t.allocate.button)!.hasAttribute("disabled")).toBe(true);
+      expect(host.querySelector("[data-testid=unsaved]")).not.toBeNull();
     });
     it("declining the question sends nothing", async () => {
       const { call, calls } = base(() => ok({ allocated: 1 }, 201));

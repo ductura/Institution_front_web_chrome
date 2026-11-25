@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkReason, checkRound, draftOf, EMPTY_DRAFT, fromLocalInput, inNameOrder, mayAllocate, mayEdit, mayWithdraw, nextKey, toLocalInput, type RoundDraft } from "./model";
+import { checkReason, checkRound, draftOf, EMPTY_DRAFT, fromLocalInput, inNameOrder, isSaved, mayAllocate, mayEdit, mayWithdraw, nextKey, toLocalInput, type RoundDraft } from "./model";
 import type { Allocation, Round } from "./read";
 
 const good: RoundDraft = { opensAt: "2026-12-01T09:00", dueAt: "2026-12-10T18:30", reviewsPerStudent: "2", rubrics: [{ key: "kriterij-1", label: "Argument" }, { key: "kriterij-2", label: "Struktura" }] };
@@ -117,5 +117,27 @@ describe("withdrawing", () => {
     expect(checkReason("a\u0000b")).toEqual({ reason: null, error: "badChars" });
     expect(checkReason("a‮b")).toEqual({ reason: null, error: "badChars" });
     expect(checkReason("a\r\nb")).toEqual({ reason: "a\nb", error: null });
+  });
+});
+
+describe("an unchanged date keeps its saved instant", () => {
+  // 2027-10-31 00:30Z is 02:30 CEST, the first of the two 02:30s; reading "02:30" back gives 01:30Z, an hour later.
+  const AUTUMN: Round = { ...ROUND, opensAt: "2027-10-31T00:30:00.000Z", dueAt: "2027-11-10T17:30:00.000Z" };
+  it("a rubric-only change does not move the schedule", () => {
+    const draft = { ...draftOf(AUTUMN), rubrics: [{ key: "argument", label: "Nova" }] };
+    expect(checkRound(draft)).toMatchObject({ ok: true, value: { opensAt: "2027-10-31T01:30:00.000Z" } });
+    expect(checkRound(draft, AUTUMN)).toMatchObject({ ok: true, value: { opensAt: "2027-10-31T00:30:00.000Z" } });
+  });
+  it("an edited date is read as typed", () => {
+    expect(checkRound({ ...draftOf(AUTUMN), opensAt: "2027-10-30T09:00" }, AUTUMN)).toMatchObject({ ok: true, value: { opensAt: "2027-10-30T07:00:00.000Z" } });
+  });
+});
+
+describe("isSaved", () => {
+  it("is true for the saved round's own draft and false after any edit", () => {
+    expect(isSaved(draftOf(ROUND), ROUND)).toBe(true);
+    expect(isSaved({ ...draftOf(ROUND), reviewsPerStudent: "3" }, ROUND)).toBe(false);
+    expect(isSaved({ ...draftOf(ROUND), rubrics: [{ key: "argument", label: "Drugo" }] }, ROUND)).toBe(false);
+    expect(isSaved(EMPTY_DRAFT, null)).toBe(true);
   });
 });

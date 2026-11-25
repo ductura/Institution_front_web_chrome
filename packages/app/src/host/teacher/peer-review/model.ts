@@ -79,10 +79,17 @@ export const checkLabel = (raw: string): boolean => {
   return n >= 1 && n <= MAX_LABEL && label === label.trim() && !REFUSED_LABEL.test(label);
 };
 
-export function checkRound(draft: RoundDraft): Checked {
-  const opensAt = fromLocalInput(draft.opensAt);
+/**
+ * A field the teacher did not touch keeps its saved instant: the repeated autumn hour has two instants for one wall
+ * time, and reading the wall time back would silently move the first one an hour later.
+ */
+const instantOf = (local: string, saved: string | undefined): string | null =>
+  saved !== undefined && toLocalInput(saved) === local ? saved : fromLocalInput(local);
+
+export function checkRound(draft: RoundDraft, saved: Round | null = null): Checked {
+  const opensAt = instantOf(draft.opensAt, saved?.opensAt);
   if (opensAt === null) return { ok: false, field: "opensAt", error: "date" };
-  const dueAt = fromLocalInput(draft.dueAt);
+  const dueAt = instantOf(draft.dueAt, saved?.dueAt);
   if (dueAt === null) return { ok: false, field: "dueAt", error: "date" };
   if (Date.parse(dueAt) <= Date.parse(opensAt)) return { ok: false, field: "dueAt", error: "order" };
   const per = Number(draft.reviewsPerStudent);
@@ -94,6 +101,13 @@ export function checkRound(draft: RoundDraft): Checked {
   if (new Set(rubrics.map((r) => r.label.toLowerCase())).size !== rubrics.length) return { ok: false, field: "rubrics", error: "rubricDuplicate" };
   return { ok: true, value: { opensAt, dueAt, reviewsPerStudent: per, rubrics } };
 }
+
+/** Is the form what the server holds: allocating uses the saved round, so it is offered only when nothing is unsaved. */
+export const isSaved = (draft: RoundDraft, round: Round | null): boolean => {
+  const saved = draftOf(round);
+  return draft.opensAt === saved.opensAt && draft.dueAt === saved.dueAt && draft.reviewsPerStudent === saved.reviewsPerStudent
+    && draft.rubrics.length === saved.rubrics.length && draft.rubrics.every((r, i) => r.key === saved.rubrics[i]!.key && r.label === saved.rubrics[i]!.label);
+};
 
 /** Does the round take a change: not once the reviews are allocated (the server answers 409 then). */
 export const mayEdit = (round: Round | null): boolean => round === null || round.allocatedAt === null;
