@@ -1,7 +1,6 @@
 // Interface copy of the read-only view of a submitted v4 document (WEB-V21-STEM-NASTAVNIK-PRIKAZ).
 export const v4ViewMessages = {
   formulaInvalid: "Formulu nije moguće prikazati; prikazan je izvorni zapis.",
-  formulaLabel: "Formula",
   codeLabel: "Blok koda",
   codeNoLanguage: "bez jezika",
   codeRunNote: "Kod se ovdje ne izvršava.",

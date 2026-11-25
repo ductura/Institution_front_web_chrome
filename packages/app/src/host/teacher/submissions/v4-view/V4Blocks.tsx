@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import "./katex/katex.css";
 
 import type {
   CanonicalDocumentV4, DocumentNodeV4, InlineNodeV4, ParagraphNodeV4, TextNodeV4,
@@ -12,9 +13,8 @@ import { v4ViewMessages as text } from "./messages.hr";
 /**
  * A submitted v4 document for the teacher, read only (WEB-V21-STEM-NASTAVNIK-PRIKAZ): formula (KaTeX,
  * local), code with line numbers (never run), box, table and the place of an image (the picture is
- * not fetched here). The KaTeX stylesheet is not imported here: a specifier through `dist` is an
- * unwaivable "test file import" in src/client/no-direct-api.test.ts, so it must be loaded centrally
- * (PR note "Otvoreno"). Nothing is editable and no link is followed: a link mark shows its text only.
+ * not fetched here). The KaTeX stylesheet is a local copy (`./katex/`, fonts included): a specifier through the
+ * package `dist` folder is an unwaivable "test file import" in src/client/no-direct-api.test.ts. Nothing is editable and no link is followed: a link mark shows its text only.
  */
 export default function V4Blocks({ document }: { document: CanonicalDocumentV4 }) {
   const numbers = numberedListNumbers(document.nodes);
@@ -34,7 +34,7 @@ function Block({ node, number }: { node: DocumentNodeV4; number: string | null }
     case "quote": return <blockquote><Inlines nodes={node.children} /></blockquote>;
     case "formula": return <Formula tex={node.tex} display />;
     case "codeBlock": return <Code node={node} />;
-    case "box": return <Box kind={node.kind} children={node.children} />;
+    case "box": return <Box kind={node.kind}>{node.children}</Box>;
     case "table": return <Table node={node} />;
     case "image": return <Figure node={node} />;
     case "pageBreak": return <hr aria-label={text.pageBreak} />;

@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -47,6 +49,17 @@ describe("teacher's read-only view of a v4 document", () => {
     const out = html(json(FIXTURE_V4));
     expect(out).toContain("<math");
     expect(out).not.toContain('role="math"');
+  });
+
+  it("loads the KaTeX stylesheet from a local copy whose fonts all exist, with no external URL", () => {
+    const dir = join(import.meta.dirname, "katex");
+    const css = readFileSync(join(dir, "katex.css"), "utf8");
+    expect(readFileSync(join(import.meta.dirname, "V4Blocks.tsx"), "utf8")).toContain('import "./katex/katex.css"');
+    expect(css).toContain(".katex-html");
+    expect(css).not.toMatch(/https?:|\/\//);
+    const fonts = [...css.matchAll(/url\(([^)]+)\)/g)].map((m) => m[1]!);
+    expect(fonts.length).toBeGreaterThan(10);
+    for (const f of fonts) expect({ f, ok: existsSync(join(dir, f)) }).toEqual({ f, ok: true });
   });
 
   it("does not run code, fetch the image or follow a link", () => {
