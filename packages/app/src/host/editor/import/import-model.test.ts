@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { afterConfirm, afterPreview, editorContent, START } from "./import-model";
+import { afterConfirm, afterNotebook, afterPreview, editorContent, notebookContent, START } from "./import-model";
 
 // ED-20 (NF2-P19): invented text only.
 const preview = {
@@ -36,6 +36,28 @@ describe("editorContent", () => {
       { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Uvod" }] },
       { type: "quote", content: [{ type: "text", text: "Navod", marks: [{ type: "italic" }] }] },
       { type: "bulletItem", content: [{ type: "text", text: "Stavka", marks: [{ type: "bold" }, { type: "italic" }] }] },
+    ]);
+  });
+});
+
+describe("notebook import (7b)", () => {
+  const book = (cells: unknown[]) => JSON.stringify({ metadata: { kernelspec: { language: "python" } }, cells });
+  it("previews the blocks, counts what was dropped and refuses a bad file back to the choose step", () => {
+    const state = afterNotebook("izmisljeno.ipynb", book([
+      { cell_type: "markdown", source: "# Naslov" },
+      { cell_type: "code", source: "print(1)", outputs: [{ output_type: "display_data", data: { "text/html": "<b>1</b>" } }] },
+    ]));
+    expect(state).toMatchObject({ step: "notebook", fileName: "izmisljeno.ipynb", discarded: 1 });
+    expect(afterNotebook("a.ipynb", "{")).toEqual({ step: "choose", error: "Bilježnicu nije moguće pročitati. Provjerite je li ispravna." });
+    expect(afterNotebook("a.ipynb", book([]))).toEqual({ step: "choose", error: "U bilježnici nema teksta ni kôda za uvoz." });
+  });
+  it("makes editor content where every text run carries the imported mark", () => {
+    const state = afterNotebook("a.ipynb", book([{ cell_type: "markdown", source: "<script>x</script>" }, { cell_type: "code", source: "a = 1", outputs: [] }]));
+    if (state.step !== "notebook") throw new Error("expected a preview");
+    const imported = [{ type: "imported" }];
+    expect(notebookContent(state.blocks)).toEqual([
+      { type: "paragraph", content: [{ type: "text", text: "<script>x</script>", marks: imported }] },
+      { type: "codeBlock", attrs: { language: "python", caption: null }, content: [{ type: "text", text: "a = 1", marks: imported }] },
     ]);
   });
 });
