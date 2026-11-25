@@ -1,4 +1,4 @@
-import type { ConfirmResult, ImportConfirmed, ImportPermission, ImportPreview, PreviewResult } from "../../../../../../src/client/import.ts";
+import type { ConfirmResult, ImportBlock, ImportPreview, PreviewResult } from "../../../../../../src/client/import.ts";
 
 import { importHostHr as t } from "./messages.hr";
 
@@ -6,33 +6,31 @@ import { importHostHr as t } from "./messages.hr";
 export type ImportState =
   | { step: "choose"; error?: string }
   | { step: "reading" }
-  | { step: "preview"; preview: ImportPreview; declared: boolean; error?: string }
+  | { step: "preview"; preview: ImportPreview; error?: string }
   | { step: "confirming"; preview: ImportPreview }
-  | { step: "done"; confirmed: ImportConfirmed };
+  | { step: "done"; words: number };
 
 export const START: ImportState = { step: "choose" };
 
-/** The button exists only on an explicit "allowed" (M8.2b criterion 1). */
-export const showImportButton = (permission: ImportPermission | null): boolean => permission?.kind === "allowed";
-
-const message = (kind: "notAllowed" | "signedOut" | "expired" | "unavailable") => t[kind];
-
 export function afterPreview(result: PreviewResult): ImportState {
-  if (result.kind === "preview") return { step: "preview", preview: result.preview, declared: false };
+  if (result.kind === "preview") return { step: "preview", preview: result.preview };
   if (result.kind === "refused") return { step: "choose", error: t.refused[result.reason] };
-  return { step: "choose", error: message(result.kind) };
+  return { step: "choose", error: t[result.kind] };
 }
-
-export const declare = (state: ImportState, declared: boolean): ImportState =>
-  state.step === "preview" ? { ...state, declared, error: undefined } : state;
-
-/** Confirm needs the preview on screen and the declaration ticked. */
-export const canConfirm = (state: ImportState): state is Extract<ImportState, { step: "preview" }> =>
-  state.step === "preview" && state.declared;
 
 export function afterConfirm(state: ImportState, result: ConfirmResult): ImportState {
   if (state.step !== "confirming") return state;
-  if (result.kind === "confirmed") return { step: "done", confirmed: result.confirmed };
-  if (result.kind === "expired") return { step: "choose", error: t.expired };
-  return { step: "preview", preview: state.preview, declared: true, error: message(result.kind) };
+  if (result.kind === "confirmed") return { step: "done", words: state.preview.words };
+  if (result.kind === "expired" || result.kind === "changed") return { step: "choose", error: t[result.kind] };
+  return { step: "preview", preview: state.preview, error: t[result.kind] };
 }
+
+type EditorText = { type: "text"; text: string; marks?: { type: "bold" | "italic" }[] };
+export type EditorBlock = { type: string; attrs?: { level: number }; content?: EditorText[] };
+
+/** The previewed blocks as editor content; the editor gives them their own ids. */
+export const editorContent = (blocks: readonly ImportBlock[]): EditorBlock[] => blocks.map((block) => {
+  const content = block.children.filter((child) => child.text !== "").map(({ text, marks }): EditorText =>
+    marks.length === 0 ? { type: "text", text } : { type: "text", text, marks: marks.map((type) => ({ type })) });
+  return block.type === "heading" ? { type: "heading", attrs: { level: block.level }, content } : { type: block.type, content };
+});
