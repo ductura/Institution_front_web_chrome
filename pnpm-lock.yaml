@@ -88,6 +88,9 @@ importers:
       '@ductura/ui':
         specifier: workspace:*
         version: link:../ui
+      katex:
+        specifier: 0.16.22
+        version: 0.16.22
       next:
         specifier: 16.4.6
         version: 16.4.6(@playwright/test@1.63.0)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -104,6 +107,9 @@ importers:
       '@playwright/test':
         specifier: 1.63.0
         version: 1.63.0
+      '@types/katex':
+        specifier: 0.16.8
+        version: 0.16.8
       '@types/node':
         specifier: 26.6.4
         version: 26.6.4
