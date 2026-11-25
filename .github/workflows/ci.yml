@@ -28,10 +28,12 @@ jobs:
   # tests of every workspace package) and app (it imports src/), so a change
   # there runs both. `app-build` follows `app`; the client checks run in the
   # ui part `checks` and every path of `client` also turns `ui` on.
-  # `baselines` (report only, outside ci-ok) is on for a run by hand, the
-  # schedule (main only) and a pull request that changes catalog/,
-  # packages/ui/ (the components the catalogue shows) or a root or .github/
-  # file; never on a push (ZEL-CI-RED).
+  # `baselines` (report only, outside ci-ok) is on for a push, a run by hand
+  # and the schedule (main only). On a pull request it is on only when the
+  # pull request changes the catalogue or packages/ui/, what the baselines
+  # show; a root file, .github/ or a failed diff does not turn it on
+  # (CI-BRZINA, Daniel 25. 11. 2026): its three runners go to the checks
+  # ci-ok waits for.
   #
   # These rules only fit checks that read the paths they list. A check that
   # reads the whole repository (the index, every tracked file, the lockfiles)
@@ -73,10 +75,18 @@ jobs:
           # changes:begin
           set -uo pipefail
           emit() { printf 'test=%s\nclient=%s\nui=%s\napp=%s\napp-build=%s\nbaselines=%s\n' "$1" "$2" "$3" "$4" "$4" "$5" | tee -a "$GITHUB_OUTPUT"; }
-          all() { b=true; [ "$EVENT" != "push" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b"; exit 0; }
+          all() { b=true; [ "$EVENT" != "pull_request" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b"; exit 0; }
           [ "$EVENT" = "pull_request" ] || all "not a pull request"
           [ -n "$BASE" ] || all "no base sha"
-          files="$(git diff --name-only "$BASE" HEAD)" || all "diff failed"
+          # If the base moved after the merge commit was made, the base sha is
+          # not in this depth-2 checkout and the diff fails. HEAD is then still
+          # the merge commit, and its first parent is the base it was made on:
+          # that diff is exactly this change. Anything else runs every job.
+          if ! files="$(git diff --name-only "$BASE" HEAD 2>/dev/null)"; then
+            [ "$(git rev-list --parents -n 1 HEAD | wc -w)" -eq 3 ] || all "diff failed"
+            files="$(git diff --name-only HEAD^1 HEAD)" || all "diff failed"
+            echo "changes: base sha not in the checkout, diffing the merge commit's first parent"
+          fi
           [ -n "$files" ] || all "empty diff"
           # Root files, .github/, the lockfiles and the workspace file.
           # Root markdown files are documentation: they need no job.
@@ -190,14 +200,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { part: checks }
-          - { part: unit, leg: 1, of: 2, packages: "./src/**" }
-          - { part: unit, leg: 2, of: 2, packages: "!./src/**" }
+          # The unit tests of ./src/** take about 25 s; as a job of their own
+          # they took a runner and about 45 s of setup for that. checks runs
+          # them after the typecheck and still ends before the longest
+          # behaviour leg. Every package still runs in exactly one part.
+          - { part: checks, packages: "./src/**" }
+          - { part: unit, packages: "!./src/**" }
           - { part: behaviour, leg: 1, of: 3, browser: true }
           - { part: behaviour, leg: 2, of: 3, browser: true }
           - { part: behaviour, leg: 3, of: 3, browser: true }
-          - { part: axe-dark, browser: true }
-          - { part: axe-light, browser: true }
+          - { part: axe, browser: true }
     # One place for the filters: the parts below and the coverage check use them.
     env:
       BASELINES: "matches its baselines"
@@ -244,7 +256,7 @@ jobs:
         working-directory: src/client
         run: pnpm run test
       - name: Unit tests (tokens, provenance, save state, catalogue coverage)
-        if: matrix.part == 'unit'
+        if: matrix.packages
         env:
           PACKAGES: ${{ matrix.packages }}
         run: pnpm -r --filter "$PACKAGES" --filter "!{.}" run test
@@ -259,7 +271,7 @@ jobs:
           behaviour=$(count --grep-invert "$BASELINES|$AXE_ANY")
           dark=$(count --grep "$AXE_DARK")
           light=$(count --grep "$AXE_LIGHT")
-          echo "all $all = behaviour $behaviour + axe-dark $dark + axe-light $light"
+          echo "all $all = behaviour $behaviour + axe dark $dark + axe light $light"
           if [ "$all" -eq 0 ] || [ $((behaviour + dark + light)) -ne "$all" ]; then
             echo "::error::the ui parts do not cover every catalogue test exactly once"
             exit 1
@@ -338,11 +350,15 @@ jobs:
             *) echo "::error::unknown behaviour leg"; exit 1 ;;
           esac
           pnpm --filter @ductura/catalog run test:visual "$@"
+      # One job for both shells (CI-BRZINA, 25. 11.): each took about a minute
+      # of tests after a minute of setup, and a pull request run is at the
+      # organisation's limit of concurrent runners. The light shell also runs
+      # when the dark one failed, so a run reports both.
       - name: Axe tests of the catalogue (dark shell)
-        if: matrix.part == 'axe-dark'
+        if: matrix.part == 'axe'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_DARK"
       - name: Axe tests of the catalogue (light shell)
-        if: matrix.part == 'axe-light'
+        if: always() && matrix.part == 'axe'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_LIGHT"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
@@ -355,11 +371,12 @@ jobs:
   # and axe still block. They become required again with VIZ-0. A job of its
   # own outside ci-ok's needs (ZEL-CI-WEB), so ci-ok does not wait for a check
   # that cannot fail it; three Playwright shards. Listed in REPORT_ONLY in
-  # test/unit/ci-ok.test.js. Since ZEL-CI-RED it no longer runs on every push
-  # (three runners each time) but when `changes` says `baselines`: on every
-  # pull request that changes catalog/ or packages/ui/ (or a root or .github/
-  # file), so each change that can move a pixel of the catalogue is reported
-  # before it reaches the base; also by hand and on the schedule of main.
+  # test/unit/ci-ok.test.js. It runs when `changes` says `baselines`: on a
+  # push (after a merge into main or the migration base), by hand and on the
+  # schedule of main, and on a pull request only when it changes catalog/ or
+  # packages/ui/ (CI-BRZINA, Daniel 25. 11. 2026): a pull request run already
+  # holds about twenty jobs, the limit of the organisation's concurrent
+  # runners, and these three only report.
   ui-baselines:
     needs: changes
     if: ${{ needs.changes.outputs.baselines == 'true' }}
