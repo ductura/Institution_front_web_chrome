@@ -30,27 +30,3 @@
 :root[data-reading-font="dyslexia"] .manuscript :is(p, h1, h2, h3, li, blockquote) {
   font-family: var(--ff-reading);
 }
-
-/*
- * ED-31 (P2-1b): the text size on the screen ("Manji / Veći tekst" in Prikaz, text-size.ts).
- * Active only on the screen while <html data-text-size> is set; 100 % sets nothing. --tz multiplies the
- * sheet's own sizes (globals.css), so the sheet keeps its proportions; print and export do not change.
- */
-@media screen {
-  :root[data-text-size] .manuscript {
-    font-size: calc(16.5px * var(--tz, 1));
-  }
-
-  :root[data-text-size] .manuscript__title {
-    font-size: calc(19px * var(--tz, 1));
-  }
-
-  :root[data-text-size] .editor-surface .ProseMirror h1 {
-    font-size: calc(18.7px * var(--tz, 1));
-  }
-
-  :root[data-text-size] .editor-surface .ProseMirror h2,
-  :root[data-text-size] .editor-surface .ProseMirror h3 {
-    font-size: calc(16px * var(--tz, 1));
-  }
-}

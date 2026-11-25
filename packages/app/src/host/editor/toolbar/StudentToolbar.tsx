@@ -8,6 +8,8 @@
 // ED-30 (P2-1a): the bar now has its behaviour: "Više", folding by width and the tool tips (ToolbarBehaviour.tsx).
 // ED-31 (P2-1b): the context button knows where the cursor is, Prikaz has the text size on the screen, and a
 // phone gets "Brzi alati" above the keyboard. Only actions this editor has are offered; the rest stay hidden.
+import "./text-size.css";
+
 import { useEffect, useState } from "react";
 import { Button, ContextMenu, type MenuEntry, type MenuPoint } from "@ductura/ui";
 import type { Editor } from "@tiptap/core";
