@@ -12,8 +12,9 @@ import type { useLocalEditor } from "@/components/editor/LocalDocument";
 import { jumpToBlock } from "./jump";
 import { ReviewPanel } from "../../../../../../src/components/editor/review/ReviewPanel";
 import { readReviewDoc } from "../../../../../../src/components/editor/review/model";
-import { createReadAloud, READ_ALOUD_DEFAULT_RATE, READ_ALOUD_MAX_RATE, READ_ALOUD_MIN_RATE, type ReadAloudController, type ReadAloudState } from "../read-aloud/controller";
+import { createReadAloud, READ_ALOUD_MAX_RATE, READ_ALOUD_MIN_RATE, type ReadAloudController, type ReadAloudState } from "../read-aloud/controller";
 import { readAloudSupported } from "../read-aloud/support";
+import { readAloudRate } from "../reading-settings/rate-store";
 
 import { pregledHr as t } from "./messages.hr";
 import {
@@ -85,13 +86,13 @@ function Nacrt({ editor, doc, scope }: { editor: Editor; doc: NonNullable<Return
   const text = useMemo(() => listenText(doc, scope), [doc, scope]);
   const [state, setState] = useState<ReadAloudState>("idle");
   const [supported, setSupported] = useState<boolean | null>(null);
-  const [rate, setRate] = useState<number>(READ_ALOUD_DEFAULT_RATE);
+  const [rate, setRate] = useState<number>(() => readAloudRate());
   const [fallback, setFallback] = useState(false);
   const [note, setNote] = useState("");
   const reader = useRef<ReadAloudController | null>(null);
   useEffect(() => {
     setSupported(readAloudSupported());
-    const controller = createReadAloud({ onStateChange: setState });
+    const controller = createReadAloud({ onStateChange: setState }, undefined, rate);
     reader.current = controller;
     return () => { reader.current = null; controller.stop(); };
   }, []);
