@@ -19,6 +19,7 @@ export type Run =
   | { readonly kind: null; readonly text: string }
   | { readonly kind: OriginKind; readonly text: string; readonly mark: number | null };
 
+/** `typed`: every code point of the block is in a typed range, so the whole block may carry the typed line. */
 export type MarkedBlock = { readonly id: string; readonly heading: boolean; readonly typed: boolean; readonly runs: readonly Run[] };
 export type Mark = { readonly mark: number; readonly kind: OriginKind; readonly text: string; readonly block: number };
 
@@ -70,14 +71,12 @@ export function placeRanges(revision: number, blocks: readonly TextBlock[], rang
     const points = Array.from(block.text);
     const runs: Run[] = [];
     let at = 0;
-    let typed = false;
     const sorted = [...(byBlock.get(block.id) ?? [])].sort((a, b) => a.start - b.start || a.end - b.end);
     for (const range of sorted) {
       if (range.start < at || range.end > points.length || range.end <= range.start) { skipped += 1; continue; }
       if (range.start > at) runs.push({ kind: null, text: points.slice(at, range.start).join("") });
       const text = points.slice(range.start, range.end).join("");
       if (range.kind === "typed") {
-        typed = true;
         runs.push({ kind: "typed", text, mark: null });
       } else {
         marks.push({ mark: marks.length + 1, kind: range.kind, text, block: index + 1 });
@@ -86,6 +85,7 @@ export function placeRanges(revision: number, blocks: readonly TextBlock[], rang
       at = range.end;
     }
     if (at < points.length || runs.length === 0) runs.push({ kind: null, text: points.slice(at).join("") });
+    const typed = runs.every((run) => run.kind === "typed");
     return { id: block.id, heading: block.heading, typed, runs };
   });
   return { revision, blocks: out, marks, skipped };

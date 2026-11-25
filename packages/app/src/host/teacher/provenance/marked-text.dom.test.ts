@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import ProvenanceMap from "./ProvenanceMap";
 import { fakeMatchCall } from "./fake-match";
 import { placeRanges } from "./marked-text";
+import { readOfParts } from "./model";
 import type { ProvenanceCall } from "./read";
 import { markedTextMessages as t } from "./text-messages.hr";
 import type { TextCall, TextRead } from "./text-read";
@@ -59,6 +60,17 @@ describe("PG-2 Karta podrijetla: the mounted map with the text of the work", () 
     await act(async () => { origin?.click(); });
     expect(host.querySelector("[data-map-text]")?.getAttribute("data-origin")).toBe("off");
     expect(button(host)?.disabled).toBe(true);
+  });
+
+  // PG-2: a work whose only mark is the match with an answer of the Asistent still reads and shows its marked text.
+  it("reads the text of a work whose only mark is the assistant match", async () => {
+    const parts = [{ kind: "typed", percent: 92 }, { kind: "assistant_inserted", percent: 0 }, { kind: "assistant_match", percent: 8 },
+      { kind: "imported_file", percent: 0 }, { kind: "pasted_known", percent: 0 }, { kind: "pasted_unknown", percent: 0 }];
+    const matched: TextRead = { kind: "text", text: placeRanges(7, BLOCKS, [{ blockId: "b2", start: 0, end: 22, kind: "assistant_match", segmentRef: "odsjecak-1" }]) };
+    const { host, asked } = await mount(async () => readOfParts(parts), matched);
+    expect(asked).toEqual([DOCUMENT]);
+    expect(host.querySelector('[data-kind="assistant_match"]')?.textContent).toBe("Rečenica iz Asistenta.");
+    expect(host.textContent).toContain(t.markLabel("assistant_match", 1));
   });
 
   it("does not read the text of a work without marks", async () => {

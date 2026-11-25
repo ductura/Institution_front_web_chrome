@@ -79,16 +79,23 @@ export default function MarkedText({ state, origin, typed, onRetry }: {
   );
 }
 
+/**
+ * A block wholly in typed ranges carries the typed line and words once; in a block of several kinds the typed words
+ * stand after each typed range only, so the display never claims more than the record (a paste stays a paste).
+ */
 function Block({ block, prefix, typed }: { block: MarkedBlock; prefix: string; typed: boolean }) {
-  const runs = block.runs.map((run, index) => <Piece key={index} run={run} prefix={prefix} />);
-  const typedLabel = typed && block.typed ? <span className={styles.pvLabel}>{t.kind("typed")}</span> : null;
+  const runs = block.runs.map((run, index) => <Piece key={index} run={run} prefix={prefix} typed={typed && !block.typed} />);
+  const typedLabel = typed && block.typed ? <span className={styles.pvLabel} data-typed-label>{t.kind("typed")}</span> : null;
   return block.heading
     ? <h2 data-block={block.id}>{runs}{typedLabel}</h2>
     : <p data-block={block.id} className={block.typed ? styles.pvTyped : undefined}>{runs}{typedLabel}</p>;
 }
 
-function Piece({ run, prefix }: { run: Run; prefix: string }) {
-  if (run.kind === null || run.kind === "typed" || run.mark === null) return <>{run.text}</>;
+function Piece({ run, prefix, typed }: { run: Run; prefix: string; typed: boolean }) {
+  if (run.kind === "typed") {
+    return typed ? <><span data-kind="typed">{run.text}</span><span className={styles.pvLabel} data-typed-label>{t.kind("typed")}</span></> : <>{run.text}</>;
+  }
+  if (run.kind === null || run.mark === null) return <>{run.text}</>;
   return <>
     <span id={`${prefix}-m${run.mark}`} tabIndex={-1} data-kind={run.kind} className={LINE[run.kind]}>{run.text}</span>
     <span className={styles.pvLabel} data-mark-label>{t.markLabel(run.kind, run.mark)}</span>

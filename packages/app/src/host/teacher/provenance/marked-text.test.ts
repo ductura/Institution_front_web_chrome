@@ -48,7 +48,7 @@ describe("PG-2 marked text: model", () => {
 
   it("splits a block at the ranges in code points and numbers the marks in reading order, typed text unnumbered", () => {
     const text = placeRanges(4, textBlocksOfDocument(DOC) ?? [], RANGES);
-    expect(text.blocks[1]).toEqual({ id: P1, heading: false, typed: true, runs: [
+    expect(text.blocks[1]).toEqual({ id: P1, heading: false, typed: false, runs: [
       { kind: "typed", text: "Prva rečenica. ", mark: null },
       { kind: "pasted_unknown", text: "Druga rečenica čćž.", mark: 1 },
     ] });
@@ -58,6 +58,12 @@ describe("PG-2 marked text: model", () => {
     ]);
     expect(text.marks.map((m) => [m.mark, m.kind, m.block])).toEqual([[1, "pasted_unknown", 2], [2, "assistant_inserted", 3]]);
     expect(text.skipped).toBe(0);
+  });
+
+  it("calls a block typed only when typed ranges cover all of it", () => {
+    const blocks = textBlocksOfDocument(DOC) ?? [];
+    const whole = placeRanges(4, blocks, [range(H, 0, 2, "typed"), range(H, 2, 4, "typed"), range(P1, 0, 15, "typed")]);
+    expect(whole.blocks.map((b) => b.typed)).toEqual([true, false, false]);
   });
 
   it("leaves out and counts a range of an unknown block, past the end, empty or overlapping; never guesses", () => {
@@ -146,9 +152,24 @@ describe("PG-2 marked text: view", () => {
 
   it("labels typed text only while „Napisano u Ducturi” is on; origin off turns the sheet and the step off", () => {
     expect(view(READY, true, true)).toContain(t.kind("typed"));
+    expect(view(READY, true, false)).not.toContain(t.kind("typed"));
     const off = view(READY, false, false);
     expect(off).toContain('data-origin="off"');
     expect(off.match(/<button[^>]*data-next-mark[^>]*>/)?.[0]).toContain("disabled");
+  });
+
+  // A paragraph of a typed and a pasted range: the typed words follow the typed range only, the paragraph carries no
+  // typed line, and the pasted range keeps its own words (the display never claims more than the record).
+  it("marks only the typed range of a mixed paragraph as typed, never the whole paragraph", () => {
+    const out = view(READY, true, true);
+    const paragraph = out.match(new RegExp(`<p data-block="${P1}"[^>]*>.*?</p>`))?.[0] ?? "";
+    expect(paragraph).not.toMatch(/class="[^"]*pvTyped/);
+    expect(paragraph).toMatch(/<span data-kind="typed">Prva rečenica\. <\/span><span[^>]*data-typed-label[^>]*>napisano u Ducturi<\/span>/);
+    expect(paragraph.match(/data-typed-label/g)).toHaveLength(1);
+    expect(paragraph).toMatch(/data-kind="pasted_unknown"[^>]*>Druga rečenica čćž\.<\/span><span[^>]*>zalijepljeno · izvor nije opažen · oznaka 1</);
+    const whole = renderToStaticMarkup(createElement(MarkedText, { state: { kind: "text", text: placeRanges(4, [{ id: "t", heading: false, text: "Sve tipkano." }], [range("t", 0, 12, "typed")]) },
+      origin: true, typed: true, onRetry: () => {} }));
+    expect(whole).toMatch(/<p data-block="t" class="[^"]*pvTyped[^"]*">Sve tipkano\.<span[^>]*data-typed-label/);
   });
 
   it("shows loading, an error with retry, no ranges, not found and signed out", () => {

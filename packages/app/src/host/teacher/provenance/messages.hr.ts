@@ -14,7 +14,7 @@ export const provenanceText = {
   legendTeacher: "izmjena nastavnika · valovita crta",
   legendOpen: "mjesto za izvor · crtkani okvir",
   legendTyped: "napisano u Ducturi · crta uz lijevi rub",
-  noMarks: "U ovom radu nema lijepljenja, uvoza ni prijenosa iz AI pomoćnika, pa karta nema oznaka.",
+  noMarks: "U ovom radu nema lijepljenja, uvoza, prijenosa iz Asistenta ni podudaranja s njegovim odgovorom, pa karta nema oznaka.",
   unavailable: "Kartu podrijetla trenutačno nije moguće učitati. Pokušajte ponovno; zapis time nije zahvaćen.",
   retry: "Pokušaj ponovno",
   notFound: "Rad nije pronađen.",

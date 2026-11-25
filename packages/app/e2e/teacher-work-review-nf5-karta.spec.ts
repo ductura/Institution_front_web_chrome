@@ -104,6 +104,17 @@ test("PG-2: with „Podrijetlo teksta” off the words and lines go, the step is
   await expect(page.getByRole("table", { name: t.tableCaption }).getByRole("row")).toHaveCount(3);
 });
 
+test("PG-2: „Napisano u Ducturi” names only the typed range of a paragraph that also holds a paste", async ({ page }) => {
+  await fakeServer(page);
+  await page.goto(review);
+  await expect(sheet(page).locator("[data-typed-label]")).toHaveCount(0);
+  await page.locator('input[data-sw="typed"]').check();
+  const paragraph = sheet(page).locator(`[data-block="${P1}"]`);
+  await expect(paragraph.locator("[data-typed-label]")).toHaveText([t.kind("typed")]);
+  await expect(paragraph.locator('[data-kind="typed"]')).toHaveText("Lokalni mediji imaju dvostruku ulogu.");
+  await expect(paragraph.getByText(t.markLabel("pasted_unknown", 1))).toBeVisible();
+});
+
 test("PG-2: a failed read of the ranges is an error with a retry, never a text without marks", async ({ page }) => {
   const server = await fakeServer(page, true);
   await page.goto(review);
