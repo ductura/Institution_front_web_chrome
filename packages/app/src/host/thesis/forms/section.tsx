@@ -13,9 +13,10 @@ import { formsHr as t } from "./messages.hr";
 import { readForms, type Call, type FormsValue, type FormState, type ThesisForm } from "./read";
 
 const when = (iso: string | null) => (iso === null ? "" : new Date(iso).toLocaleDateString("hr-HR"));
-const say = (o: Outcome) => (o === "saved" ? t.saved : o === "unchanged" ? t.unchanged : t[o]);
+export type Source = "form" | "consent";
+export const say = (o: Outcome, source: Source) => (o === "saved" ? t.saved : o === "unchanged" ? (source === "consent" ? t.consentUnchanged : t.unchanged) : t[o]);
 
-function FormRow({ form, role, documentId, call, onDone }: { form: ThesisForm; role: ThesisRole; documentId: string; call: Call; onDone: (o: Outcome) => void }) {
+function FormRow({ form, role, documentId, call, onDone }: { form: ThesisForm; role: ThesisRole; documentId: string; call: Call; onDone: (o: Outcome, source: Source) => void }) {
   const [busy, setBusy] = useState(false);
   const [next, setNext] = useState<FormState>(form.state);
   const options = allowedStates(role, form.state);
@@ -23,7 +24,7 @@ function FormRow({ form, role, documentId, call, onDone }: { form: ThesisForm; r
     setBusy(true);
     const o = await setFormState(call, documentId, role, form, state);
     setBusy(false);
-    onDone(o);
+    onDone(o, "form");
   };
   return (
     <li data-testid={`form-${form.code}`}>
@@ -46,7 +47,7 @@ function FormRow({ form, role, documentId, call, onDone }: { form: ThesisForm; r
   );
 }
 
-function Consent({ value, role, documentId, call, onDone }: { value: FormsValue["consent"]; role: ThesisRole; documentId: string; call: Call; onDone: (o: Outcome) => void }) {
+function Consent({ value, role, documentId, call, onDone }: { value: FormsValue["consent"]; role: ThesisRole; documentId: string; call: Call; onDone: (o: Outcome, source: Source) => void }) {
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const run = async (given: boolean) => {
@@ -54,7 +55,7 @@ function Consent({ value, role, documentId, call, onDone }: { value: FormsValue[
     const o = await setConsent(call, documentId, role, value.state, given, comment);
     setBusy(false);
     if (o === "saved") setComment("");
-    onDone(o);
+    onDone(o, "consent");
   };
   return (
     <div data-testid="consent">
@@ -85,9 +86,9 @@ function Consent({ value, role, documentId, call, onDone }: { value: FormsValue[
 
 export function FormsView({ documentId, role, value: first, reload, call = createApi() }: SectionViewProps<FormsValue> & { call?: Call }) {
   const [value, setValue] = useState(first);
-  const [message, setMessage] = useState<Outcome | null>(null);
-  const done = (o: Outcome) => {
-    setMessage(o);
+  const [message, setMessage] = useState<string | null>(null);
+  const done = (o: Outcome, source: Source) => {
+    setMessage(say(o, source));
     // After a write the truth is the server's: read again here, so the view stays mounted and keeps its message;
     // if that read gives nothing usable, the frame reloads the whole section.
     if (o !== "saved" && o !== "conflict") return;
@@ -101,7 +102,7 @@ export function FormsView({ documentId, role, value: first, reload, call = creat
       )}
       <p><small>{t.stateNote}</small></p>
       <Consent value={value.consent} role={role} documentId={documentId} call={call} onDone={done} />
-      {message !== null && <Notice tone={message === "saved" || message === "unchanged" ? "info" : "warn"}>{say(message)}</Notice>}
+      {message !== null && <Notice tone={message === t.saved || message === t.unchanged || message === t.consentUnchanged ? "info" : "warn"}>{message}</Notice>}
     </div>
   );
 }

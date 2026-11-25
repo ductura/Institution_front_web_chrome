@@ -8,7 +8,7 @@ import { findForbiddenTerms } from "../../../../../../scripts/forbidden-terms/te
 import { allowedStates, setConsent, setFormState } from "./actions";
 import { formsHr } from "./messages.hr";
 import { parseConsent, parseForms, readForms, type Call, type ThesisForm } from "./read";
-import { FormsView } from "./section";
+import { FormsView, say } from "./section";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -112,6 +112,17 @@ describe("FormsView", () => {
     const { host: h2 } = await mount("mentor", call, { forms: [form()], consent: consent("none") });
     await act(async () => { button(h2, formsHr.give)!.click(); });
     expect(call.mock.calls.filter((c) => c[0] === "work.mentor-consent.put")).toHaveLength(1);
+  });
+  it("setting a form to the state it already has shows 'unchanged' and sends no write", async () => {
+    const call = fake(() => ok({}));
+    const { host } = await mount("mentor", call, { forms: [form("submitted")], consent: consent("none") });
+    await act(async () => { button(host, formsHr.setState)!.click(); });
+    expect(host.textContent).toContain(formsHr.unchanged);
+    expect(call.mock.calls.filter((c) => c[0] === "work.thesis-form.put")).toHaveLength(0);
+  });
+  it("the 'unchanged' text is the consent's own for consent and the form's for a form", () => {
+    expect(say("unchanged", "consent")).toBe(formsHr.consentUnchanged);
+    expect(say("unchanged", "form")).toBe(formsHr.unchanged);
   });
 });
 
