@@ -72,4 +72,11 @@ export const bibliographyStudentHr = {
   scanFound: (isbn: string) => `Pročitan ISBN ${isbn}. Upišite ga u brzi unos izvora.`,
   scanCopy: "Kopiraj ISBN",
   scanCopied: "ISBN je kopiran.",
+  // WEB-V20-STIL-POPIS: the list and in-text citations in the style of the institution (read only).
+  styledTitle: "Popis literature u stilu ustanove",
+  styledNone: "Nijedan izvor još nije citiran, pa popis literature ostaje prazan.",
+  styledReadOnly: "Samo prikaz: rad se ne mijenja, a stil određuje ustanova.",
+  styledInText: "Navodi u tekstu",
+  styledOrphans: (n: number) => (n === 1 ? "1 navod upućuje na izvor kojeg nema među izvorima rada." : `${n} navoda upućuje na izvore kojih nema među izvorima rada.`),
+  styledUnformatted: (labels: string) => `Nepotpuni izvori izostavljeni iz popisa: ${labels}.`,
 } as const;

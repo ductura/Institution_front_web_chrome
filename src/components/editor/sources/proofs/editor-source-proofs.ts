@@ -47,7 +47,7 @@ export function EditorSourceProofs({ assignmentId, documentId }: { assignmentId:
   if (signedOut) return null;
   return h(Fragment, null,
     h(ProofRequests, { assignmentId, sources: read.sources }),
-    editor && !editor.isDestroyed && h(StudentBibliographyHost, { documentId, editor }),
+    editor && !editor.isDestroyed && h(StudentBibliographyHost, { documentId, editor, assignmentId }),
     editor && !editor.isDestroyed && h(SourceNotebookHost, {
       documentId, editor, sources: read.sources, canInsert: read.canInsert, supported: Boolean(editor.schema.nodes[CITATION]),
     }),
