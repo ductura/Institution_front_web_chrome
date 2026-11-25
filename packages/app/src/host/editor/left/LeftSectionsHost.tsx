@@ -2,8 +2,9 @@
 
 // WEB-2126: the sections of the left panel (Zahtjevi, Prikazi i fusnote,
 // Odloženo, Napredak, Rokovi, Nit rada). Only what the work itself holds is
-// shown; the faculty's rules, the submission and revision deadlines and the
-// sources count come from the server and say "nedostupno" until it gives them.
+// shown; the faculty's rules, the revision deadline and the sources count come
+// from the server and say "nedostupno" until it gives them. ED-37 (P2-6): the
+// submission deadline is the assignment's `dueAt`, which the page already reads.
 import { Button, TextField } from "@ductura/ui";
 import { useRef, useState, type ReactNode } from "react";
 
@@ -12,14 +13,27 @@ import { ChapterLength } from "../chapter-length/ChapterLength";
 import { useChapterTargets } from "../chapter-length/use-chapter-targets";
 import {
   addDeadline, daysUntil, EMPTY_THREAD, goalStatus, MAX_HYPOTHESES, pagesOf, parseDeadlines, parseStash, parseThread, preview,
-  progressRatio, stashAdd, stashRemove, type OwnDeadline,
+  progressRatio, stashAdd, stashRemove, zagrebDay, type OwnDeadline,
 } from "./left-model";
 import { leftHr as t } from "./messages.hr";
 import { useDeviceValue, useWorkSnapshot } from "./use-left";
 import { HistorySection } from "./HistorySection";
+import { momentHr } from "../../student/work/frame";
 import styles from "./Left.module.css";
 
 type Props = { workId: string };
+/** The submission deadline of the assignment (an instant), or null when the page has none. */
+type Due = { dueAt?: string | null };
+
+/** "15. 12. 2099., 23:59 · za 3 dana", or null when there is no readable deadline. */
+function dueLine(dueAt: string | null | undefined, now: Date): string | null {
+  if (!dueAt) return null;
+  const moment = momentHr(dueAt);
+  const day = zagrebDay(dueAt);
+  if (moment === null || day === null) return null;
+  const days = daysUntil(day, now);
+  return days === null ? moment : `${moment} · ${days < 0 ? t.deadlines.late(-days) : t.deadlines.in(days)}`;
+}
 const newId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
 
 function Requirements() {
@@ -110,7 +124,8 @@ function Stash({ workId }: Props) {
   );
 }
 
-function Progress() {
+function Progress({ dueAt, now = new Date() }: Due & { now?: Date }) {
+  const due = dueLine(dueAt, now);
   const snap = useWorkSnapshot();
   const targets = useChapterTargets(true);
   const start = useRef<number | null>(null);
@@ -124,7 +139,7 @@ function Progress() {
       <p>{t.progress.words(snap.total)} · {t.progress.pages(pagesOf(snap.total))}</p>
       <p className={styles.muted}>{t.progress.session(snap.total - (start.current ?? snap.total))}</p>
       <p className={styles.muted}>{t.progress.sources}: {t.progress.sourcesUnavailable}</p>
-      <p className={styles.muted}>{t.progress.deadline}: {t.progress.deadlineUnavailable}</p>
+      <p className={styles.muted} data-due={due === null ? undefined : ""}>{t.progress.deadline}: {due ?? t.progress.deadlineUnavailable}</p>
       {goals.length > 0 && <p>{t.progress.goals(met, goals.length)}</p>}
       {current && <p className={styles.muted}>{t.progress.footer(snap.words[snap.current] ?? 0, goal?.min ?? null, goal?.max ?? null)}</p>}
       <h3>{t.progress.byChapter}</h3>
@@ -144,7 +159,8 @@ function Progress() {
   );
 }
 
-function Deadlines({ workId, now = new Date() }: Props & { now?: Date }) {
+function Deadlines({ workId, dueAt, now = new Date() }: Props & Due & { now?: Date }) {
+  const due = dueLine(dueAt, now);
   const [items, setItems] = useDeviceValue<OwnDeadline[]>("deadlines", workId, parseDeadlines, []);
   const [label, setLabel] = useState("");
   const [date, setDate] = useState("");
@@ -161,7 +177,7 @@ function Deadlines({ workId, now = new Date() }: Props & { now?: Date }) {
   };
   return (
     <div className={styles.stack}>
-      <p>{t.deadlines.submission}: <span className={styles.muted}>{t.deadlines.submissionUnavailable}</span></p>
+      <p data-due={due === null ? undefined : ""}>{t.deadlines.submission}: {due ?? <span className={styles.muted}>{t.deadlines.submissionUnavailable}</span>}</p>
       <p>{t.deadlines.revision}: <span className={styles.muted}>{t.deadlines.revisionUnavailable}</span></p>
       <p>{t.deadlines.faculty}: <span className={styles.muted}>{t.deadlines.facultyUnavailable}</span></p>
       <h3>{t.deadlines.own}</h3>
@@ -212,12 +228,12 @@ function Thread({ workId }: Props) {
 type SectionKey = "requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "history";
 
 /** The sections, keyed as the left panel expects them; "Povijest dokumenta" once the work's document is known. */
-export function leftSectionsFor(workId: string, documentId?: string): Partial<Record<SectionKey, ReactNode>> {
+export function leftSectionsFor(workId: string, documentId?: string, dueAt?: string | null): Partial<Record<SectionKey, ReactNode>> {
   return {
     requirements: <Requirements />, figures: <Figures />, stash: <Stash workId={workId} />,
-    progress: <Progress />, deadlines: <Deadlines workId={workId} />, thread: <Thread workId={workId} />,
+    progress: <Progress dueAt={dueAt} />, deadlines: <Deadlines workId={workId} dueAt={dueAt} />, thread: <Thread workId={workId} />,
     ...(documentId ? { history: <HistorySection documentId={documentId} /> } : {}),
   };
 }
 
-export { Deadlines, Figures, Progress, Requirements, Stash, Thread };
+export { Deadlines, dueLine, Figures, Progress, Requirements, Stash, Thread };

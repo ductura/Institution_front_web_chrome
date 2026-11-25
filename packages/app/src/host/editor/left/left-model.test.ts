@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  addDeadline, clean, daysUntil, defaultState, goalStatus, pagesOf, parseDeadlines, parseStash, parseStates, parseTextMap,
+  addDeadline, clean, daysUntil, zagrebDay, defaultState, goalStatus, pagesOf, parseDeadlines, parseStash, parseStates, parseTextMap,
   parseThread, preview, progressRatio, readJson, stashAdd, stashRemove, withText, writeJson, MAX_STASH,
 } from "./left-model";
 
@@ -28,6 +28,15 @@ describe("chapter state and goal", () => {
   it("counts about 300 words to a page", () => {
     expect(pagesOf(0)).toBe(0);
     expect(pagesOf(900)).toBe(3);
+  });
+});
+
+describe("zagrebDay (ED-37)", () => {
+  it("gives the calendar day in Zagreb, also across midnight UTC", () => {
+    expect(zagrebDay("2026-11-25T22:59:00.000Z")).toBe("2026-11-25");
+    expect(zagrebDay("2026-11-25T23:30:00.000Z")).toBe("2026-11-26");
+    expect(zagrebDay("2026-07-01T22:30:00.000Z")).toBe("2026-07-02");
+    expect(zagrebDay("nije datum")).toBeNull();
   });
 });
 
