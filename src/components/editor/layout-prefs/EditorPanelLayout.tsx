@@ -8,7 +8,9 @@ import { editorPanelLayoutsHr as t, messagesHr } from "@/lib/i18n/messages.hr";
 import { useSheetTheme } from "../../shell/useSheetTheme";
 import sheet from "../EditorPage.module.css";
 import { EditorShellFrame } from "../layout/EditorShell";
-import { BREAKPOINTS, DEFAULT_SETTINGS, loadSettings, PANEL_WIDTHS, RAIL_WIDTHS } from "../layout/layout-settings";
+import {
+  BREAKPOINTS, DEFAULT_SETTINGS, loadSettings, onSettingsChange, PANEL_WIDTHS, RAIL_WIDTHS, saveSettings,
+} from "../layout/layout-settings";
 import shell from "../layout/Layout.module.css";
 import styles from "../SidePanels.module.css";
 import { LeftPanel, type LeftSections } from "./LeftPanel";
@@ -67,6 +69,8 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
   useEffect(() => {
     setPrefs(readPreferences());
     setSizes(loadSettings());
+    // ED-39: a width chosen in the shell's "Raspored" menu shows at once, and in the dialog.
+    return onSettingsChange(setSizes);
   }, []);
 
   useEffect(() => {
@@ -108,12 +112,19 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
   const rightLayout = effectiveLayout(prefs.right, phone);
   const vars = { "--rail-w": `${RAIL_WIDTHS[sizes.rail]}px`, "--panel-w": `${PANEL_WIDTHS[sizes.panel]}px` } as CSSProperties;
   const close = () => setDrawer(null);
-  const left = <LeftPanel layout={leftLayout} sections={leftSections} onJump={close}
-    settings={<PanelSettings side="left" value={prefs.left} onChange={(value) => setSide("left", value)} />} />;
+  const pickWidth = (key: "rail" | "panel") => (size: "narrow" | "medium" | "wide") => { saveSettings({ ...sizes, [key]: size }); setSizes({ ...sizes, [key]: size }); };
+  // ED-39 "Gustoća: Zbijeno": one class on the side's content; `display: contents` keeps the layout.
+  // Always the same wrapper, only its density changes: a new element would mount the side again and
+  // close the open dialog, the open tab and the comments with it.
+  const withDensity = (side: Side, node: ReactNode) => <div className={styles.density} data-density={prefs[side].dense ? "dense" : "airy"}>{node}</div>;
+  const left = withDensity("left", <LeftPanel layout={leftLayout} sections={leftSections} onJump={close}
+    settings={<PanelSettings side="left" value={prefs.left} onChange={(value) => setSide("left", value)}
+      width={sizes.rail} onWidth={pickWidth("rail")} />} />);
   const sections = renderWork ? { ...rightSections, work: renderWork(close) } : rightSections;
-  const right = <RightPanel layout={rightLayout} sections={sections} drawer={narrowPanel}
+  const right = withDensity("right", <RightPanel layout={rightLayout} sections={sections} drawer={narrowPanel}
     selection={rightLayout === "b" ? contextView : selection} onSelect={rightLayout === "b" ? setContextView : setSelection}
-    settings={<PanelSettings side="right" value={prefs.right} onChange={(value) => setSide("right", value)} />} />;
+    settings={<PanelSettings side="right" value={prefs.right} onChange={(value) => setSide("right", value)}
+      width={sizes.panel} onWidth={pickWidth("panel")} />} />);
 
   return <EditorShellFrame className={styles.workspace} focus={focus} style={vars}
     header={<>
