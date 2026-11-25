@@ -158,7 +158,9 @@ jobs:
   # The unit tests run in two legs (CI-BRZINA, 25. 11.): pnpm -r ran the eleven
   # packages on one four-core runner in about 3 minutes, CPU-bound. Leg 1 runs
   # the packages under src/, leg 2 every other one; the two pnpm filters are
-  # each other's complement, so every package runs in exactly one leg.
+  # each other's complement, so every package runs in exactly one leg. `!{.}`
+  # keeps the workspace root out of both, as pnpm -r did: with a negative
+  # filter pnpm 10 would otherwise select the root and run its browser tests.
   #
   # The part `checks` also runs the checks of src/client (DAN-752, web 2.c3:
   # the client generated from @ductura/contracts) when `changes` says `client`
@@ -243,7 +245,7 @@ jobs:
         if: matrix.part == 'unit'
         env:
           PACKAGES: ${{ matrix.packages }}
-        run: pnpm -r --filter "$PACKAGES" run test
+        run: pnpm -r --filter "$PACKAGES" --filter "!{.}" run test
       # Every blocking catalogue test must run in exactly one part: a new axe
       # test outside both shell filters would otherwise run nowhere.
       - name: Every catalogue test runs in one part

@@ -417,7 +417,7 @@ test('ui runs typecheck and unit tests in two blocking parts of its matrix', () 
   assert.ok(needsOf(ciOk).includes('ui'), 'ci-ok needs ui');
   assert.equal(ui.strategy['fail-fast'], false);
   const [typecheck] = uiStep(/^pnpm -r run typecheck$/);
-  const [unit] = uiStep(/^pnpm -r --filter "\$PACKAGES" run test$/);
+  const [unit] = uiStep(/^pnpm -r --filter "\$PACKAGES" --filter "!\{\.\}" run test$/);
   assert.equal(unit?.env?.PACKAGES, '${{ matrix.packages }}');
   const legs = ui.strategy.matrix.include.filter((p) => p.part === 'unit');
   assert.deepEqual(legs.map((p) => p.packages), ['./src/**', '!./src/**'], 'unit legs are src/ and its complement');
