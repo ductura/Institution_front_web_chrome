@@ -9,21 +9,34 @@ export type SourceLookup = (identifier: Identifier) => Promise<LookupAnswer>;
 
 export type LookupOutcome =
   | { state: "found"; draft: SourceDraft }
-  | { state: "invalid" | "not_found" | "unavailable" | "failed" };
+  | { state: "invalid" | "not_found" | "unavailable" | "offline" | "failed" };
 
-/** Thrown by a lookup whose route the contract does not have yet. */
+/** Thrown by a lookup whose route is missing or whose server cannot answer now (503, timeout). */
 export class LookupUnavailable extends Error {}
+/** Thrown when the server refuses the identifier (422): the same message as a badly typed one. */
+export class LookupInvalid extends Error {}
+/** Thrown when the request does not reach the server: there is no network. */
+export class LookupOffline extends Error {}
 
 /** The lookup until the server route exists: a clear "unavailable" state, no request is made. */
 export const unavailableLookup: SourceLookup = () => Promise.reject(new LookupUnavailable("source-lookup route missing"));
 
+/** The browser knows it has no network: nothing is sent, the student is told why. */
+function knownOffline(): boolean {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
 export async function lookupSource(input: string, lookup: SourceLookup = unavailableLookup): Promise<LookupOutcome> {
   const identifier = parseIdentifier(input);
   if (!identifier) return { state: "invalid" };
+  if (knownOffline()) return { state: "offline" };
   try {
     const answer = await lookup(identifier);
     return answer.status === "found" ? { state: "found", draft: answer.draft } : { state: "not_found" };
   } catch (error) {
-    return { state: error instanceof LookupUnavailable ? "unavailable" : "failed" };
+    if (error instanceof LookupUnavailable) return { state: "unavailable" };
+    if (error instanceof LookupInvalid) return { state: "invalid" };
+    if (error instanceof LookupOffline) return { state: "offline" };
+    return { state: "failed" };
   }
 }

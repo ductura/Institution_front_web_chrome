@@ -13,7 +13,7 @@ export type QuickSourceProps = {
   lookup?: SourceLookup;
 };
 
-const message = { invalid: t.invalid, not_found: t.notFound, unavailable: t.unavailable, failed: t.failed } as const;
+const message = { invalid: t.invalid, not_found: t.notFound, unavailable: t.unavailable, offline: t.offline, failed: t.failed } as const;
 
 /** Quick source (E§3.3): a DOI or ISBN looked up on the server, or manual entry; the form always checks the result. */
 export function QuickSource({ onSubmit, allowCite, disabled, lookup }: QuickSourceProps) {
