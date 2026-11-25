@@ -4,7 +4,7 @@
   "private": true,
   "description": "Ductura editor core ported from Ductus: Tiptap schema, document model, edit steps, citations, diff, collaboration anchors, sync states and the local journal",
   "type": "module",
-  "exports": { ".": "./src/index.ts", "./outline": "./src/outline/index.ts" },
+  "exports": { ".": "./src/index.ts", "./outline": "./src/outline/index.ts", "./slides": "./src/slides/index.ts" },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
