@@ -193,8 +193,9 @@ if (process.env.DUCTURA_STOG === '1') {
       await dialog.getByRole('button', { name: 'Pregledaj uvoz', exact: true }).click();
       await expect(dialog.getByText('Odbačeno izlaza (HTML, JavaScript, slike i ostalo): 1.')).toBeVisible();
       await dialog.getByRole('button', { name: 'Potvrdi uvoz', exact: true }).click();
-      await expect(dialog.getByText(/^Uvezeno blokova: \d+, označeno kao uvezeno\. Odbačeno izlaza: 1\.$/)).toBeVisible();
-      await dialog.getByRole('button', { name: 'Zatvori', exact: true }).click();
+      // The dialog closes on success; the message stays in the page's status region.
+      await expect(page.getByRole('status').filter({ hasText: /^Uvezeno blokova: \d+, označeno kao uvezeno\. Odbačeno izlaza: 1\.$/ })).toHaveCount(1);
+      await expect(dialog).toBeHidden();
 
       const editor = editorOf(page);
       await expect(editor).toContainText('Izmišljeni ispis');
@@ -209,7 +210,8 @@ if (process.env.DUCTURA_STOG === '1') {
       await signInThroughPreloader(page, 'demo-student');
       await openWork(page, assignmentId);
       const editor = editorOf(page);
-      const block = editor.locator('pre').filter({ hasText: 'function solve' }).first();
+      // The action bar is a sibling of <pre> inside the [data-code-block] wrapper.
+      const block = editor.locator('[data-code-block]').filter({ hasText: 'function solve' }).first();
       await expect(block).toBeVisible();
       await block.getByRole('button', { name: 'Pokreni testove', exact: true }).click();
       const result = page.getByRole('dialog', { name: 'Rezultat testova', exact: true });
