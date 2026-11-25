@@ -10,4 +10,5 @@ export const editorCommandsHr = {
   comment: "Komentar ili pitanje mentoru",
   selectedText: "označeni tekst",
   copyWork: "Tekst rada u međuspremnik",
+  history: "Povijest i usporedba",
 } as const;

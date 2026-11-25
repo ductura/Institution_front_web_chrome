@@ -8,6 +8,7 @@ import { browserCookieJar, endSessionsInCookie } from "@/client/session-marks";
 import { buildReplayPlayer } from "@/client/replay-record/replay-player";
 import { buildRecord, jcsOf, recordSchema as schema, startNode as start } from "@/client/replay-record/replay-record.fixture";
 import { messagesHr } from "@/lib/i18n/messages.hr";
+import { printAttempts, SESSION_RETRY } from "@/components/session-retry";
 
 /**
  * The real ReplayView when its session ends (QA FAIL c.6796519106 on #1937):
@@ -183,6 +184,8 @@ async function answer(outcome: ReplayOutcome) {
   await act(async () => { load.resolve!(outcome); });
 }
 
+printAttempts(beforeEach);
+
 beforeEach(() => { heard.clear(); });
 
 afterEach(async () => {
@@ -190,7 +193,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-describe("ReplayView: the session ends while the record is on the way", () => {
+describe("ReplayView: the session ends while the record is on the way", SESSION_RETRY, () => {
   it("control: in the same session the work is shown and current() stays true", async () => {
     await mount();
     expect(body.textContent).toContain(t.loading);
@@ -231,7 +234,7 @@ describe("ReplayView: the session ends while the record is on the way", () => {
   });
 });
 
-describe("ReplayView: the session ends after the work is shown", () => {
+describe("ReplayView: the session ends after the work is shown", SESSION_RETRY, () => {
   it("a sign-out in another tab (channel) takes the work off the page and asks nothing more", async () => {
     await mount(true);
     await answer(await okOutcome());

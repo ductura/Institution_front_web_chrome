@@ -36,7 +36,7 @@ function schemaOf(vector: Vector): Json | undefined {
 }
 
 /** Vectors (`route name`) whose answer has no field this test can mutate (fields behind $ref/anyOf/oneOf, or an empty object). */
-// 52 answers are a top-level anyOf (no `properties` to mutate) and 2 have properties without a plain type/const.
+// 69 answers are a top-level anyOf (no `properties` to mutate) and 2 have properties without a plain type/const.
 const NO_MUTABLE_FIELDS = new Set<string>([
   "auth.webauthn-challenge.post assertion",
   "auth.webauthn-challenge.post registration",
@@ -73,6 +73,19 @@ const NO_MUTABLE_FIELDS = new Set<string>([
   "student.submission.get ceka",
   "student.submission.get none",
   "student.submission.get potvrdeno",
+  // work-team (SRV#729): answers are a top-level anyOf discriminated by `state`.
+  "student.work-team-contribution.get disabled",
+  "student.work-team-contribution.get failed",
+  "student.work-team-contribution.get none",
+  "student.work-team-contribution.get pending",
+  "student.work-team-contribution.get ready",
+  "student.work-team.get disabled",
+  "student.work-team.get member",
+  "student.work-team.get none",
+  "student.work-team.get none-teacher-forms",
+  "student.work-team.post created",
+  "student.work-team.post joined",
+  "student.work-team.post left",
   "teacher.declaration.get bound-declaration",
   "teacher.declaration.get no-live-submission",
   "teacher.mentorship-request-decision.post approve",
@@ -85,6 +98,11 @@ const NO_MUTABLE_FIELDS = new Set<string>([
   "teacher.submission-receipt.get ceka",
   "teacher.submission-receipt.get none",
   "teacher.submission-receipt.get potvrdeno",
+  "teacher.work-team-contribution.get disabled",
+  "teacher.work-team-contribution.get failed",
+  "teacher.work-team-contribution.get none",
+  "teacher.work-team-contribution.get pending",
+  "teacher.work-team-contribution.get ready",
   "work.comment-drafts.post reply-created",
   "work.comment-drafts.post thread-created",
   "work.export-pdf.get ordinary",

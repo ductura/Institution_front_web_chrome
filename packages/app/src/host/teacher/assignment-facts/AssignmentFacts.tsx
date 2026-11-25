@@ -22,6 +22,7 @@ import { assignmentFactsMessages as text } from "./messages.hr";
 import { factsOf, interruptedOf, publishedIn, type AssignmentReads } from "./model";
 import { readCourseFacts, type CourseFactsRead } from "./read";
 import { AssignmentRhythm } from "../input-rhythm/mounts";
+import { teacherTeamText } from "../work-team/messages.hr";
 
 /** The facts of one course, read once per visit and per "Pokušaj ponovno". */
 function useCourseFacts(course: TeacherCourse): [CourseFactsRead | null, () => void, () => void] {
@@ -94,6 +95,9 @@ export function CourseTasks({ course }: { course: TeacherCourse }) {
               <div className="acts"><button type="button" className="btn secondary small" onClick={retry}>{text.retry}</button></div>
             </div>
           ) : read.reads.get(assignment.id) ? <Facts reads={read.reads.get(assignment.id) as AssignmentReads} assignmentId={assignment.id} onResult={(result) => { setLate(result); reload(); }} /> : null}
+          {/* WEB-V19-GRUPA: the way into the teams of this task. */}
+          <p className="note"><a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(assignment.id)}/timovi`)} data-testid="work-teams-link"
+            aria-label={`${teacherTeamText.title}: ${assignment.title}`}>{teacherTeamText.title}</a></p>
           <AssignmentRhythm courseId={course.id} assignmentId={assignment.id} title={assignment.title} />
           <TaskActions assignment={assignment} />
         </div>

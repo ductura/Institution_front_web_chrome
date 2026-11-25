@@ -163,8 +163,12 @@ export function keptConversations(scope: string, assignmentId: string, store: St
   }
 }
 
-export function keepConversation(scope: string, assignmentId: string, kept: Kept, store: Store | null = storage()): Kept[] {
-  const list = keptConversations(scope, assignmentId, store);
+/**
+ * Adds a conversation to the list the card holds. The held list is the source: storage is only a
+ * best-effort copy, so blocked or full storage never drops a conversation already on the card.
+ */
+export function keepConversation(scope: string, assignmentId: string, kept: Kept, store: Store | null = storage(), held?: readonly Kept[]): Kept[] {
+  const list = held ? [...held] : keptConversations(scope, assignmentId, store);
   if (list.some((k) => k.id === kept.id)) return list;
   const next = [...list, kept].slice(-SHOWN);
   try {
@@ -173,6 +177,31 @@ export function keepConversation(scope: string, assignmentId: string, kept: Kept
     // Storage full or blocked: the conversation stays on the server and in this view.
   }
   return next;
+}
+
+/**
+ * What the card holds for one person and assignment while the page lives. On a narrow screen the card
+ * sits in a drawer that unmounts when closed; this keeps the draft, the open conversation and the key
+ * of an unresolved request, so reopening continues instead of starting over. Never written to storage.
+ */
+export type HeldChat = {
+  kept: readonly Kept[] | null;
+  current: string | null;
+  purpose: string;
+  draft: string;
+  pendingKey: string | null;
+};
+
+const held = new Map<string, HeldChat>();
+
+export function heldChat(scope: string, assignmentId: string): HeldChat {
+  const key = `${scope}.${assignmentId}`;
+  let slot = held.get(key);
+  if (slot === undefined) {
+    slot = { kept: null, current: null, purpose: "", draft: "", pendingKey: null };
+    held.set(key, slot);
+  }
+  return slot;
 }
 
 export function newKey(): string {

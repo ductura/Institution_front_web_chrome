@@ -89,7 +89,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     });
     expect(Number.isSafeInteger(saved.revision)).toBe(true);
     expect(saved.revision).toBeGreaterThan(0);
-    await expect(statusBar.getByRole('status')).toHaveText('Spremljeno na poslužitelju', { timeout: 30_000 });
+    await expect(statusBar.locator('[data-tone]').first()).toHaveText('Spremljeno na poslužitelju', { timeout: 30_000 });
     return {
       revision: saved.revision as number,
       documentId: request.documentId as string,

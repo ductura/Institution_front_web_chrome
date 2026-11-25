@@ -104,6 +104,8 @@ export const hostTextEn = {
   mentorshipRequest: "Mentorship request",
   practiceJournal: "Practice journal",
   mentorPracticeJournal: "Students' practice journals",
+  workTeam: "My team",
+  workTeams: "Teams on the assignment",
 };
 
 export const institutionEn = {

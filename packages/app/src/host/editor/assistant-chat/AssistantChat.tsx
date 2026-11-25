@@ -8,8 +8,8 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useAssignmentNotice } from "../assistant-rules/assistant-rules";
 import { assistantRulesHr } from "../assistant-rules/messages.hr";
 import {
-  SHOWN, askablePurposes, clockOf, createAssistantPort, exchangesOf, keepConversation, keptConversations, newKey, titleOf,
-  type AssistantPort, type ConversationRead, type Kept,
+  SHOWN, askablePurposes, clockOf, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, newKey, titleOf,
+  type AssistantPort, type ConversationRead, type HeldChat, type Kept,
 } from "./assistant-chat";
 import { assistantChatHr as t } from "./messages.hr";
 import styles from "./AssistantChat.module.css";
@@ -29,6 +29,16 @@ function useOnline(): boolean {
     };
   }, []);
   return online;
+}
+
+/** State that outlives the card: read from and written through to the held slot (see heldChat). */
+function useHeld<K extends keyof HeldChat>(slot: HeldChat, field: K): [HeldChat[K], (value: HeldChat[K]) => void] {
+  const [value, setValue] = useState<HeldChat[K]>(slot[field]);
+  const set = useCallback((next: HeldChat[K]) => {
+    slot[field] = next;
+    setValue(next);
+  }, [slot, field]);
+  return [value, set];
 }
 
 const purposeLabel = (key: string) =>
@@ -81,15 +91,19 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
   const online = useOnline();
   const ids = useId();
   const field = useRef<HTMLTextAreaElement>(null);
+  const refocus = useRef(false);
 
-  const [kept, setKept] = useState<Kept[]>([]);
+  // Held above the drawer's mount boundary: closing the panel on a narrow screen keeps all of this.
+  const slot = useMemo(() => heldChat(scope, assignmentId), [scope, assignmentId]);
+  const [keptHeld, setKeptHeld] = useHeld(slot, "kept");
+  const kept: readonly Kept[] = keptHeld ?? [];
   const [reads, setReads] = useState<Readonly<Record<string, ConversationRead>>>({});
-  const [current, setCurrent] = useState<string | null>(null);
-  const [purpose, setPurpose] = useState<string>("");
-  const [draft, setDraft] = useState("");
+  const [current, setCurrent] = useHeld(slot, "current");
+  const [purpose, setPurpose] = useHeld(slot, "purpose");
+  const [draft, setDraft] = useHeld(slot, "draft");
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState<Banner | null>(null);
-  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [pendingKey, setPendingKey] = useHeld(slot, "pendingKey");
   const [say, setSay] = useState("");
   const [fieldError, setFieldError] = useState(false);
 
@@ -100,17 +114,17 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
 
   useEffect(() => {
     // Only the last SHOWN are kept and shown, and every one shown is read: none stays on "Učitavam razgovor…".
-    const list = keptConversations(scope, assignmentId).slice(-SHOWN);
-    setKept(list);
+    const list = (slot.kept ?? keptConversations(scope, assignmentId)).slice(-SHOWN);
+    setKeptHeld(list);
     for (const k of list) void load(k.id);
-  }, [scope, assignmentId, load]);
+  }, [slot, scope, assignmentId, load, setKeptHeld]);
 
   const available = notice?.kind === "available" ? notice.view : null;
   const prohibited = available?.aiPolicy === "prohibited";
   const purposes = useMemo(() => askablePurposes(available?.aiPurposes ?? []), [available]);
   useEffect(() => {
     if (purposes.length > 0 && !purposes.includes(purpose as (typeof purposes)[number])) setPurpose(purposes[0]!);
-  }, [purposes, purpose]);
+  }, [purposes, purpose, setPurpose]);
 
   const blocked = banner === "disabled" || banner === "limit" || banner === "forbidden";
   const canAsk = !readOnly && available !== null && !prohibited && purposes.length > 0 && !blocked;
@@ -125,34 +139,50 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
     const chosen = purposes.find((p) => p === purpose);
     if (chosen === undefined) return;
     const key = pendingKey ?? newKey();
+    const sent = draft;
+    // Held before asking: if the drawer closes mid-request, reopening retries this request, not a new one.
+    setPendingKey(key);
     setFieldError(false);
     setBusy(true);
     setBanner(null);
     setSay(t.say.asking);
-    const outcome = await port.ask({ assignmentId, conversationId: current, purposeKey: chosen, paragraph: draft }, key);
-    setBusy(false);
-    if (outcome.kind === "unavailable" || outcome.kind === "signedOut") {
-      setPendingKey(key);
-      setBanner(outcome.kind === "signedOut" ? "signedOut" : "failed");
-      setSay(t.say.failed);
-      return;
+    try {
+      const outcome = await port.ask({ assignmentId, conversationId: current, purposeKey: chosen, paragraph: sent }, key);
+      if (outcome.kind === "unavailable" || outcome.kind === "signedOut") {
+        setBanner(outcome.kind === "signedOut" ? "signedOut" : "failed");
+        setSay(t.say.failed);
+        return;
+      }
+      // in_progress (busy): the original request still runs, so its outcome is unknown. Keep its key, so
+      // asking again recovers that request instead of recording and charging a duplicate.
+      if (outcome.kind !== "busy") setPendingKey(null);
+      if (outcome.conversationId !== null) {
+        const id = outcome.conversationId;
+        setKeptHeld(keepConversation(scope, assignmentId, { id, purposeKey: chosen }, undefined, slot.kept ?? []));
+        setCurrent(id);
+        await load(id);
+      }
+      if (outcome.kind === "answered") {
+        // Only the question that was sent is cleared: never a newer draft.
+        if (slot.draft === sent) setDraft("");
+        setSay(t.say.answered);
+      } else {
+        setBanner(outcome.kind);
+        setSay(t.say.failed);
+      }
+    } finally {
+      // The form stays busy until the conversation is read and the draft is settled. Focus returns once
+      // the fieldset is enabled again (the effect below), since a disabled field cannot take it.
+      refocus.current = true;
+      setBusy(false);
     }
-    setPendingKey(null);
-    if (outcome.conversationId !== null) {
-      const id = outcome.conversationId;
-      setKept(keepConversation(scope, assignmentId, { id, purposeKey: chosen }));
-      setCurrent(id);
-      await load(id);
-    }
-    if (outcome.kind === "answered") {
-      setDraft("");
-      setSay(t.say.answered);
-    } else {
-      setBanner(outcome.kind);
-      setSay(t.say.failed);
-    }
-    field.current?.focus();
   }
+
+  useEffect(() => {
+    if (busy || !refocus.current) return;
+    refocus.current = false;
+    field.current?.focus();
+  }, [busy]);
 
   function fresh() {
     setCurrent(null);

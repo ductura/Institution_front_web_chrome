@@ -19,4 +19,6 @@ export const hostText = {
   mentorshipRequest: "Zahtjev za mentorstvo",
   practiceJournal: "Dnevnik prakse",
   mentorPracticeJournal: "Dnevnik prakse studenata",
+  workTeam: "Moj tim",
+  workTeams: "Timovi na zadatku",
 } as const;
