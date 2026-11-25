@@ -55,7 +55,13 @@ function ReadyEditor({ doc, readOnly, onSteps, newId }: { doc: SlidesDocument; r
   // Changes run one after another against the newest state: hashing is async and typing is fast.
   const run = useCallback((op: (current: EditorState) => Promise<Outcome>) => {
     queue.current = queue.current.then(async () => {
-      const out = await op(latest.current);
+      let out: Outcome;
+      try {
+        out = await op(latest.current);
+      } catch {
+        // A change that throws (e.g. no Web Crypto for the hash) is refused with a message; the queue stays usable.
+        out = { state: { ...latest.current, refusal: "failed" }, steps: [] };
+      }
       latest.current = out.state;
       setState(out.state);
       if (out.steps.length > 0) onSteps?.(out.steps);

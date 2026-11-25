@@ -50,6 +50,7 @@ export const slotLabels: Readonly<Record<SlideSlot, string>> = {
 
 /** What a refused change says; the document is unchanged, so the text says so. */
 export const refusalText: Readonly<Record<Refusal, string>> = {
+  failed: "Izmjena nije napravljena zbog greške u pregledniku. Pokušajte ponovno.",
   last_slide: "Zadnji slajd se ne može ukloniti. Izmjena nije napravljena.",
   unknown_slide: "Slajd više ne postoji. Izmjena nije napravljena.",
   document_invalid: "Slajdovi nisu u ispravnom obliku. Izmjena nije napravljena.",

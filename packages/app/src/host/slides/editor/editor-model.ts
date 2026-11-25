@@ -35,7 +35,7 @@ export type Command = {
 };
 
 /** Why a change was not made; the document is unchanged. */
-export type Refusal = ApplySlideStepErrorCode | "last_slide" | "unknown_slide";
+export type Refusal = ApplySlideStepErrorCode | "last_slide" | "unknown_slide" | "failed";
 
 export type EditorState = {
   doc: SlidesDocument;

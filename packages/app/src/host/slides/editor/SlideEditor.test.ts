@@ -132,4 +132,16 @@ describe("SlideEditor", () => {
     const replay = await applySlideSteps(slidesRevisionZeroDocument(), steps);
     expect(replay.ok && replay.doc.slides[0]!.blocks).toMatchObject([{ slot: "title", text: "AB" }]);
   });
+  it("a change that throws is reported and does not stop the later ones", async () => {
+    const el = await mount({ source: ready() });
+    const digest = vi.spyOn(globalThis.crypto.subtle, "digest").mockRejectedValueOnce(new Error("no crypto"));
+    await act(async () => button(el, "Dodaj slajd")!.click());
+    await settle();
+    expect(el.querySelector("[role='alert']")?.textContent).toContain("greške u pregledniku");
+    expect(el.textContent).toContain("Slajd 1 od 1");
+    await act(async () => button(el, "Dodaj slajd")!.click());
+    await settle();
+    expect(el.textContent).toContain("Slajd 2 od 2");
+    digest.mockRestore();
+  });
 });
