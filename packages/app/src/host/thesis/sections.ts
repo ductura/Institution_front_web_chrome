@@ -1,10 +1,9 @@
-// WEB-V16-KOSTUR: the registry of the panel's sections. Each later task adds `host/thesis/<name>/section.tsx`
-// exporting `section`; nothing is edited here. If the glob ever fails lint or the build, the fallback is one
-// import line per task in this file.
-import { orderSections, sectionOf, type ThesisSectionDef } from "./model";
+// WEB-V16-KOSTUR: the registry of the panel's sections. The app runs on Next.js, which has no
+// `import.meta.glob` (Vite only), so each later task adds ONE import line and ONE array entry here:
+//   import { section as forms } from "./forms/section";   …   [forms]
+// Each `section.tsx` exports `section` (see ThesisSectionDef in model.ts).
+import { orderSections, type ThesisSectionDef } from "./model";
 
-const modules = import.meta.glob("./*/section.tsx", { eager: true });
+const modules: readonly ThesisSectionDef<never>[] = [];
 
-export const registeredSections: readonly ThesisSectionDef<never>[] = orderSections(
-  Object.values(modules).map(sectionOf).filter((s): s is ThesisSectionDef<never> => s !== null),
-);
+export const registeredSections: readonly ThesisSectionDef<never>[] = orderSections(modules);

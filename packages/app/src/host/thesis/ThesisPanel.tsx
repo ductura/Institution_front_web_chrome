@@ -32,8 +32,10 @@ function Section({ section, documentId, role, onState }: {
   if (state.kind === "notFound") return null;
   if (state.kind === "loading") return <Card title={section.title} busy />;
   if (state.kind === "unavailable") {
+    // Card's `error` replaces its children, so the message and the retry are children together.
     return (
-      <Card title={section.title} error={thesisHr.unavailable}>
+      <Card title={section.title}>
+        <p role="alert">{thesisHr.unavailable}</p>
         <Button tone="secondary" onClick={reload}>{thesisHr.retry}</Button>
       </Card>
     );
