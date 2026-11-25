@@ -61,7 +61,7 @@ jobs:
       # base sha is its first parent. If the base moved after the merge commit
       # was made, the base sha is missing, the diff fails and the filter below
       # runs every job (the safe side).
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 2, persist-credentials: false }
       - name: Which jobs does this change need
         id: paths
@@ -90,7 +90,7 @@ jobs:
           b="$(hit '^(catalog/|packages/ui/)')"
           emit "$t" "$c" "$u" "$a" "$b"
           # changes:end
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 22 }
       # No CRLF in the index (DAN-952), on every event (ZEL-W20a): a CRLF file
       # can come in any path, also docs/, packages/, catalog/ or a .md file
@@ -108,12 +108,14 @@ jobs:
     if: ${{ needs.changes.outputs.test == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
-      - run: npm install
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with: { version: 10.33.0 }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
       - name: Testovi pomoćnih funkcija
-        run: npm run test:helpers
+        run: pnpm run test:helpers
       # Preglednici iz predmemorije, kao u ui i app (ZEL-CI-WEB): ključ je
       # verzija Playwrighta i skup preglednika. Koraci instalacije ostaju isti;
       # s predmemorijom `playwright install` ne preuzima ponovno, a --with-deps
@@ -123,7 +125,7 @@ jobs:
         id: pw
         run: echo "version=$(node -p "require('./package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
       - name: Browser cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-root-${{ github.event_name == 'pull_request' && 'chromium' || 'matrix' }}
@@ -133,15 +135,15 @@ jobs:
       # na push (baza, main) i na noćnom rasporedu.
       - name: Instalacija preglednika
         if: ${{ github.event_name != 'pull_request' }}
-        run: npx playwright install --with-deps chromium chrome msedge firefox webkit
+        run: pnpm exec playwright install --with-deps chromium chrome msedge firefox webkit
       - name: Instalacija preglednika (pull request, samo chromium)
         if: ${{ github.event_name == 'pull_request' }}
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
       - name: Funkcionalni testovi
         env:
           DUCTURA_PR_CHROMIUM_ONLY: ${{ github.event_name == 'pull_request' }}
-        run: npm run test:functional
-      - uses: actions/upload-artifact@v4
+        run: pnpm run test:functional
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with: { name: playwright-report, path: test-results/ }
   # @ductura/ui and its catalogue (DAN-750, web 2.c1): typecheck, unit tests,
@@ -205,13 +207,13 @@ jobs:
       STATES_1: "shell at (1440|1024) px: every state of every component"
       STATES_2: "shell at (768|390) px: every state of every component"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with: { version: 10.33.0 }
       # Only the part checks names the GitHub Packages registry of the
       # @ductura scope, as the client job did; an empty value sets none.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: pnpm
@@ -280,7 +282,7 @@ jobs:
       - name: Browser cache
         if: matrix.browser
         id: pw-cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
@@ -292,7 +294,7 @@ jobs:
       - name: System package cache
         if: matrix.browser
         id: apt-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/apt-debs
           key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
@@ -321,7 +323,7 @@ jobs:
           echo "count=$(find ~/.cache/apt-debs -maxdepth 1 -name '*.deb' | wc -l)" >> "$GITHUB_OUTPUT"
       - name: Save the system package cache
         if: matrix.browser && steps.apt-cache.outputs.cache-hit != 'true' && steps.apt-keep.outputs.count != '0'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/apt-debs
           key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
@@ -342,7 +344,7 @@ jobs:
       - name: Axe tests of the catalogue (light shell)
         if: matrix.part == 'axe-light'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_LIGHT"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: catalog-report-${{ matrix.part }}${{ matrix.leg }}
@@ -370,10 +372,10 @@ jobs:
     env:
       BASELINES: "matches its baselines"
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with: { version: 10.33.0 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Install src/client
@@ -387,7 +389,7 @@ jobs:
           echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
       - name: Browser cache
         id: pw-cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
@@ -398,7 +400,7 @@ jobs:
       # changed is still fetched, so the installed packages are the same.
       - name: System package cache
         id: apt-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/apt-debs
           key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
@@ -425,7 +427,7 @@ jobs:
           echo "count=$(find ~/.cache/apt-debs -maxdepth 1 -name '*.deb' | wc -l)" >> "$GITHUB_OUTPUT"
       - name: Save the system package cache
         if: steps.apt-cache.outputs.cache-hit != 'true' && steps.apt-keep.outputs.count != '0'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/apt-debs
           key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
@@ -433,7 +435,7 @@ jobs:
         id: baselines
         continue-on-error: true
         run: pnpm --filter @ductura/catalog run test:visual --grep "$BASELINES" --shard="${{ matrix.shard }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.baselines.outcome == 'failure'
         with:
           name: catalog-baselines-${{ strategy.job-index }}
@@ -450,11 +452,11 @@ jobs:
     if: ${{ needs.changes.outputs.app-build == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with: { version: 10.33.0 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Install src/client
@@ -464,7 +466,7 @@ jobs:
         env:
           INSTITUTION_SERVER_URL: http://127.0.0.1:9
         run: pnpm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: app-build
           path: |
@@ -494,11 +496,11 @@ jobs:
       matrix:
         shard: ["1/6", "2/6", "3/6", "4/6", "5/6", "6/6"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with: { version: 10.33.0 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Install src/client
@@ -507,7 +509,7 @@ jobs:
       # The build of the job app-build: in CI the Playwright webServer only
       # starts it (packages/app/playwright.config.ts).
       - name: The built app
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: app-build
           path: packages/app/.next
@@ -519,7 +521,7 @@ jobs:
           echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
       - name: Browser cache
         id: pw-cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
@@ -530,7 +532,7 @@ jobs:
       # changed is still fetched, so the installed packages are the same.
       - name: System package cache
         id: apt-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/apt-debs
           key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
@@ -557,13 +559,13 @@ jobs:
           echo "count=$(find ~/.cache/apt-debs -maxdepth 1 -name '*.deb' | wc -l)" >> "$GITHUB_OUTPUT"
       - name: Save the system package cache
         if: steps.apt-cache.outputs.cache-hit != 'true' && steps.apt-keep.outputs.count != '0'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/apt-debs
           key: apt-${{ runner.arch }}-${{ steps.pw.outputs.image }}-pw${{ steps.pw.outputs.version }}
       - name: Session, routes and axe in the browser (shard ${{ matrix.shard }})
         run: pnpm --filter @ductura/app run test:e2e --shard=${{ matrix.shard }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with: { name: "app-report-${{ strategy.job-index }}", path: packages/app/test-results/ }
 
