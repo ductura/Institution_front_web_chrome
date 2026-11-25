@@ -24,6 +24,7 @@ import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { EditorToolbarHost } from "./EditorToolbarHost";
+import styles from "./ToolbarBehaviour.module.css";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 
 /** "Stavi tekst rada u međuspremnik": text with [n] marks and the footnote list (v3). False when refused. */
@@ -127,7 +128,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "citationSettings", label: workPartsMessages.citationTitle },
   ];
   return (
-    <>
+    <div className={styles.studentBar}>
       <EditorToolbarHost state={toolbarStateOf(state)} commands={toolbarCommands(editor)} label={KEPT_TOOLBAR_LABEL} labels={KEPT_LABELS} omit={["numberedList"]} />
       <Menu label={t.toolbar.insert} items={insert} onSelect={(id) => {
         if (id === "footnote") v3.openInsert?.("footnote");
@@ -154,6 +155,6 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
       {v3.dialog}
-    </>
+    </div>
   );
 }

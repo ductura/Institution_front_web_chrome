@@ -1,5 +1,7 @@
 /* WEB-2131: the look of the buttons, the tool tip, the quick bar and the customise rows, on the tokens of @ductura/ui. */
 .wrap { position: relative; }
+/* The student's bar is one item of the tools row: the icon bar and its menus (Umetni … Izvezi) flow in one line and wrap only on a narrow window. */
+.studentBar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-width: 0; }
 /* Ikone: the words stay out of sight (the name is in aria-label). Riječi: the icons go. Ikone i riječi: both. */
 .wrap[data-look="icons"] button > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .wrap[data-look="words"] button > svg { display: none; }
