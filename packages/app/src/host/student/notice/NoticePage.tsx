@@ -14,6 +14,7 @@ import HostNotice from "../enrol/HostNotice";
 import { editorPath } from "../enrol/model";
 import NoticeSummary from "./NoticeSummary";
 import { workTeamText } from "../work-team/messages.hr";
+import { peerReviewText } from "../peer-review/messages.hr";
 
 export default function NoticePage({ assignmentId }: { assignmentId: string }) {
   const { base } = useHost();
@@ -47,6 +48,8 @@ export default function NoticePage({ assignmentId }: { assignmentId: string }) {
           <NoticeSummary view={notice.view} />
           {/* WEB-V19-GRUPA: the way into the student's team on this assignment. */}
           <p><a href={appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}/tim`)} data-testid="work-team-link">{workTeamText.title}</a></p>
+          {/* WEB-V19-RECENZIJA-STUDENT: the way into the anonymous peer review of this assignment. */}
+          <p><a href={appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}/recenzija`)} data-testid="peer-review-link">{peerReviewText.title}</a></p>
           <HostNotice
             view={notice.view}
             timing={noticeWindow(notice.view.opensAt, notice.view.dueAt, Date.now())}

@@ -96,10 +96,10 @@ export function isPackagesDir(dir: string, separator: string = sep): boolean {
 
 const BARE_IMPORTS = new Set(["react", "react-dom/client", "react/jsx-runtime", "@ductura/ui", "@ductura/ui/fonts.css",
   "@ductura/ui/tokens.css", "@ductura/ui/reading-font.css", "@ductura/ui/assistant-thread", "@ductura/ui/save-status",
-  "@ductura/contracts/openapi/v1.json"]);
+  "@ductura/contracts/openapi/v1.json", "katex/dist/katex.min.css"]);
 /** Bare imports that are not network libraries: the Next, editor and storage stack of the app trees (WEB-01), and the "@/" alias. */
 const BARE_PREFIXES = ["@/", "next/", "@tiptap/"];
-const BARE_PACKAGES = new Set(["next", "dexie", "react-dom"]);
+const BARE_PACKAGES = new Set(["next", "dexie", "react-dom", "katex"]);
 const CONFIG_IMPORTS = new Set(["vite", "vitest/config", "@playwright/test", "@vitejs/plugin-react"]);
 
 const RULES: readonly (readonly [string, RegExp])[] = [
@@ -117,7 +117,7 @@ const RULES: readonly (readonly [string, RegExp])[] = [
   ["generated client outside api.ts", /["'`]@ductura\/contracts["'`]/],
   ["test fakes", /@ductura\/test-fakes/],
   // A test file or anything in a directory the scan skips (catalog/e2e, dist ...).
-  ["test file import", /["'`][^"'`\n]*(?:\.(?:test|spec)(?:\.[cm]?[jt]sx?)?|(?:^|[/\\"'`])(?:e2e|dist|test-results|playwright-report)(?:[/\\][^"'`\n]*)?)["'`]/i],
+  ["test file import", /["'`](?!katex\/dist\/katex\.min\.css["'`])[^"'`\n]*(?:\.(?:test|spec)(?:\.[cm]?[jt]sx?)?|(?:^|[/\\"'`])(?:e2e|dist|test-results|playwright-report)(?:[/\\][^"'`\n]*)?)["'`]/i],
   ["computed global", /\b(?:globalThis|window|self|top|parent|frames|opener|defaultView)\s*(?:\?\.)?\s*\[/],
   ["global alias", /(?:[=(,:]|\breturn)\s*(?:globalThis|window|self|top|parent|frames|opener)\b\s*(?![\s.?\w])|\(\s*(?:globalThis|window|self)\s+as\b/],
   ["Reflect", /\bReflect\b/],
