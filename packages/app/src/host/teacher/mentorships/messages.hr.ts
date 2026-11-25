@@ -1,11 +1,66 @@
 export const myStudentsText = {
   title: "Moji studenti",
-  lead: "Studenti čiji ste zahtjev za mentorstvo odobrili.",
+  lead: "Studenti kojima ste mentor.",
   empty: "Još nemate odobrenih studenata.",
   unnamed: "Ime nije dostupno",
   unavailable: "Popis studenata trenutačno nije dostupan. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",
   open: "Otvori rad",
+} as const;
+
+/** NF-6 MK-11: the mentor's overview "Moji studenti" on N-16 (prototype `mentorstva`, card `ms-h`). */
+export const overviewText = {
+  title: "Moji studenti",
+  lead: "Prvo je ono što čeka Vas. Stanje opisuje rad i rok, ne studenta; nema poretka po uspjehu ni ocjene aktivnosti.",
+  caption: "Radovi uz mentora: etapa i tko je na redu",
+  colWork: "Student i rad",
+  colStage: "Etapa",
+  colState: "Stanje",
+  filter: "Vrsta rada",
+  filterAll: "Sve vrste rada",
+  emptyFilter: "Nema radova ove vrste.",
+  loading: "Učitavam stanje radova…",
+  unavailable: "Stanje radova trenutačno nije moguće učitati. Popis radova iznad je ostao. Pokušajte ponovno.",
+  partly: "Za neke radove stanje trenutačno nije dostupno.",
+  signedOut: "Sesija je istekla. Prijavite se ponovno.",
+  retry: "Pokušaj ponovno",
+  stageNotStarted: "Rad još nije započet",
+  stageNone: "Etape još nisu zadane",
+  stageAllApproved: "Sve etape su odobrene",
+  stageFinal: "Predajna verzija",
+  stageUnknown: "Nije poznato",
+  yoursMilestone: (title: string): string => `čeka Vas: etapa „${title}” je na pregledu`,
+  yoursSlot: (when: string): string => `čeka Vas: termin konzultacija ${when} za potvrdu`,
+  student: "kod studenta",
+  studentNotStarted: "kod studenta: rad još nije započet",
+  studentDue: (relative: string): string => `kod studenta, rok ${relative}`,
+  studentRevision: (relative: string): string => `kod studenta: dorada, rok ${relative}`,
+  dueToday: "je danas",
+  dueAhead: (days: string): string => `je ${days}`,
+  dueGone: (days: string): string => `je bio ${days}`,
+  submitted: "predano",
+  unknown: "Stanje trenutačno nije dostupno.",
+} as const;
+
+/** WEB-NF6-RUNDA (NF-6 MK-8): "Pregled runde" of each started mentored work (prototype mentor3 m3In). */
+export const roundText = {
+  title: (name: string) => `Pregled runde: ${name}`,
+  loading: "Učitavam pregled runde…",
+  newsTitle: "Što je novo",
+  neverReviewed: "Rad još niste označili pregledanim, pa je cijeli tekst nov.",
+  noChange: "Nema promjena od zadnjeg pregleda.",
+  changed: (added: number, removed: number) => `Od zadnjeg pregleda: novih ili izmijenjenih odlomaka ${added}, uklonjenih ${removed}.`,
+  newsUnavailable: "Promjene od zadnjeg pregleda trenutačno nisu dostupne.",
+  requestsTitle: "Vaši zahtjevi uz tekst",
+  noRequests: "Nema zahtjeva uz tekst.",
+  requests: (open: number, answered: number, accepted: number) =>
+    `otvoreno ${open} · student je odgovorio ${answered} · prihvaćeno ${accepted}`,
+  requestsUnavailable: "Zahtjevi uz tekst trenutačno nisu dostupni.",
+  seen: (seen: number, all: number) => `Student je vidio ${seen} od ${all} zahtjeva uz tekst.`,
+  seenUnavailable: "Je li student vidio zahtjeve uz tekst, trenutačno nije dostupno.",
+  seenReturnUnknown: "Je li student vidio vraćanje cijelog rada na doradu, Ductura još ne prikazuje.",
+  retry: "Pokušaj ponovno",
+  openWork: "Otvori rad za pregled",
 } as const;
 
 /** WEB-NF6-ETAPE (NF-6 MK-5, MK-6, MK-7): etape, dogovoreno i otvaranje mentorstva na N-16. */

@@ -42,6 +42,7 @@ import { MentorMount } from "../editor/right/MentorMount";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
+import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
@@ -145,6 +146,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
               <RulesHost role="student" />
               <MarksHost />
+              <ReadAloudHost />
             </>} />,
         });
       }
