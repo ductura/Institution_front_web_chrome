@@ -16,6 +16,8 @@ import type { Editor } from "@tiptap/core";
 
 import { BLOCK_STYLES, blockStyleOf, stateOf, TOOLS, type ToolbarState as EditorState } from "@/components/editor/EditorToolbarFor";
 import { useLocalEditor } from "@/components/editor/LocalDocument";
+import { useOpenFind } from "@/components/editor/commands/open-find";
+import { editorCommandsHr } from "@/components/editor/commands/messages.hr";
 import { crossReferenceMessages } from "@/components/editor/crossref/messages.hr";
 import { useV3EditorDialogs, type FootnoteDialogComponent } from "@/components/editor/footnotes/useV3EditorDialogs";
 import { EditorCitationSettings } from "@/components/editor/parts/EditorCitationSettings";
@@ -218,6 +220,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
+  const openFind = useOpenFind();
   // ED-30: the bar's tool choice and look, kept in this browser (toolbar-prefs).
   // Read after mount, so the server's markup and the first client render agree.
   const [prefs, setPrefs] = useState<ToolbarPrefs>(DEFAULT_PREFS);
@@ -285,6 +288,9 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         setRecent(next);
         writeRecent(next);
       }} />
+      {/* ED-34 (P2-9): "Traži" as in the prototype's bar, also on a submitted work; it opens the row Ctrl+F opens. */}
+      {openFind && <Button tone="quiet" data-find-open="" aria-keyshortcuts="Control+F Meta+F"
+        title={`${editorCommandsHr.findAndReplace} (Ctrl+F)`} onClick={openFind}>{editorCommandsHr.find}</Button>}
       <Menu label={t.toolbar.view} items={view} onSelect={(id) => {
         if (id === "citationSettings") setDialog("citation");
         else if (id === "readingSettings") setDialog("reading");

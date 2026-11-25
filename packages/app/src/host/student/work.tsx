@@ -121,7 +121,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
           node: <EditorPageWork assignmentId={assignmentId} base={base} course={read.course} title={read.title} topBar={topBar} length={length}
             statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
             toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
-            triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
+            triggers={({ documentId }) => <SourcesMention documentId={documentId}
+              openOrigin={() => router.push(nextPath(base, `/rad/${encodeURIComponent(assignmentId)}/podrijetlo`))} />}
             literature={() => <LiteratureList />}
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
