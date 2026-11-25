@@ -97,6 +97,13 @@ describe("length limits count code points and arrays have no holes", () => {
     const d = createSheetDocument({ id: "s1", name: "😀".repeat(31) });
     expect(validateSheetDocument(d).ok).toBe(true);
   });
+  it("rejects sheet names .xlsx cannot hold", () => {
+    for (const name of ["a/b", "a\\b", "a?", "a*", "[a]", "a:b", "'a", "a'"]) {
+      const r = validateSheetDocument(createSheetDocument({ id: "s1", name }));
+      expect(r.ok === false && r.code, name).toBe("bad_sheet_name");
+    }
+    expect(validateSheetDocument(createSheetDocument({ id: "s1", name: "Ana's" })).ok).toBe(true);
+  });
   it("rejects a sparse sheets array", () => {
     const r = validateSheetDocument({ schemaVersion: 1, kind: "spreadsheet", sheets: new Array(1) });
     expect(r.ok === false && r.code).toBe("bad_sheets");
