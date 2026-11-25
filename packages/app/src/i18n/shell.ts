@@ -59,6 +59,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/ustanova/postavke": (c) => c.app.pages.facultySettings,
   "/ustanova/postavke/asistent": (c) => c.app.pages.facultyAssistant,
   "/ustanova/etape": (c) => c.app.pages.milestoneTemplate,
+  "/ustanova/predlozak-rada": (c) => c.app.pages.workTemplate,
   "/moja-prava": (c) => c.app.pages.myRights,
   "/ustanova/isvu": (c) => c.app.pages.isvuImport,
   "/nastavnik/kolegiji/[courseId]/isvu-ocjene": (c) => c.app.pages.isvuGrades,

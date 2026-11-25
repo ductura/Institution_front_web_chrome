@@ -14,7 +14,7 @@
   var PRELUDE = [
     "'use strict';",
     "var __post = self.postMessage.bind(self);",
-    "['fetch','XMLHttpRequest','WebSocket','EventSource','WebTransport','importScripts','Request','Response','BroadcastChannel','indexedDB','caches','navigator']",
+    "['fetch','XMLHttpRequest','WebSocket','EventSource','WebTransport','importScripts','Worker','SharedWorker','Request','Response','BroadcastChannel','indexedDB','caches','navigator']",
     ".forEach(function (n) { try { Object.defineProperty(self, n, { value: undefined, writable: false, configurable: false }); } catch (e) {} });",
     ""
   ].join("\n");
@@ -35,8 +35,9 @@
     "  if (typeof solve !== 'function') { __post({ kind: 'no-solve' }); return; }",
     "  try {",
     "    var actual = await solve(run.input);",
-    "    var plain; try { plain = JSON.parse(JSON.stringify(actual === undefined ? null : actual)); } catch (e) { __post({ kind: 'error', message: 'Rezultat se ne može prikazati.' }); return; }",
-    "    __post({ kind: eq(plain, run.expected) ? 'passed' : 'failed', actual: plain });",
+    "    var same = eq(actual, run.expected);",
+    "    var plain = null; try { plain = JSON.parse(JSON.stringify(actual === undefined ? null : actual)); } catch (e) { if (same) plain = run.expected; else { __post({ kind: 'error', message: 'Rezultat se ne može prikazati.' }); return; } }",
+    "    __post({ kind: same ? 'passed' : 'failed', actual: plain });",
     "  } catch (e) {",
     "    __post({ kind: 'error', message: String(e && e.message ? e.message : e).slice(0, 300) });",
     "  }",
@@ -69,7 +70,14 @@
     };
   }
 
+  // Fail closed: without the frame's own CSP (script-src 'self') eval would be allowed, and nothing would stop the
+  // code from reaching the network. Nothing runs then.
+  function policyHolds() {
+    try { (new Function("return 1"))(); return false; } catch (e) { return true; }
+  }
+
   function runAll(request) {
+    if (!policyHolds()) { parent.postMessage({ type: "results", runId: request.runId, blocked: true, results: [] }, "*"); return; }
     var results = [];
     var missing = false;
     var i = 0;

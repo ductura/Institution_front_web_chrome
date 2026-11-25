@@ -123,6 +123,23 @@
  "packages/app/next.config.ts": [
   "import node:path"
  ],
+ "packages/app/public/code-run/frame.js": [
+  "Cache API",
+  "EventSource",
+  "Function constructor",
+  "WebSocket",
+  "WebTransport",
+  "XMLHttpRequest",
+  "code from URL",
+  "eval",
+  "fetch",
+  "global alias",
+  "importScripts",
+  "worker"
+ ],
+ "packages/app/src/host/editor/code-run/runner-frame.ts": [
+  "image or src"
+ ],
  "packages/app/src/rewrites.ts": [
   "API URL"
  ],

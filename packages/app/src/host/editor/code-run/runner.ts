@@ -34,8 +34,9 @@ export function parseCodeTests(body: unknown): readonly CodeTest[] | null {
 /** The answer of the frame for run `runId`, or null when it is not a well-formed answer to that run. */
 export function parseFrameAnswer(data: unknown, runId: string, tests: readonly CodeTest[]): RunOutcome | null {
   if (typeof data !== "object" || data === null) return null;
-  const d = data as { type?: unknown; runId?: unknown; missingSolve?: unknown; results?: unknown };
+  const d = data as { type?: unknown; runId?: unknown; missingSolve?: unknown; blocked?: unknown; results?: unknown };
   if (d.type !== "results" || d.runId !== runId) return null;
+  if (d.blocked === true) return { kind: "failed" };
   if (d.missingSolve === true) return { kind: "missing-solve" };
   if (!Array.isArray(d.results) || d.results.length !== tests.length) return null;
   const results: TestResult[] = [];

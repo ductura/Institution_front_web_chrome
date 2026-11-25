@@ -35,6 +35,12 @@ describe("parseFrameAnswer", () => {
   });
 });
 
+describe("a frame without its policy", () => {
+  it("is a failed run, not a result", () => {
+    expect(parseFrameAnswer({ type: "results", runId: "r1", blocked: true, results: [] }, "r1", tests)).toEqual({ kind: "failed" });
+  });
+});
+
 describe("show", () => {
   it("cuts long values and survives what JSON cannot write", () => {
     expect(show([1, "a"])).toBe('[1,"a"]');

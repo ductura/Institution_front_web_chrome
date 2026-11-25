@@ -6,12 +6,18 @@
 // no button for (Umetni, Pretvori, Posebni znak, Prikaz, Izvezi and their dialogs) stays here as menus over
 // the same helpers and the same words; nothing is new in look or in text.
 // ED-30 (P2-1a): the bar now has its behaviour: "Više", folding by width and the tool tips (ToolbarBehaviour.tsx).
+// ED-31 (P2-1b): the context button knows where the cursor is, Prikaz has the text size on the screen, and a
+// phone gets "Brzi alati" above the keyboard. Only actions this editor has are offered; the rest stay hidden.
+import "./text-size.css";
+
 import { useEffect, useState } from "react";
 import { Button, ContextMenu, type MenuEntry, type MenuPoint } from "@ductura/ui";
 import type { Editor } from "@tiptap/core";
 
 import { BLOCK_STYLES, blockStyleOf, stateOf, TOOLS, type ToolbarState as EditorState } from "@/components/editor/EditorToolbarFor";
 import { useLocalEditor } from "@/components/editor/LocalDocument";
+import { useOpenFind } from "@/components/editor/commands/open-find";
+import { editorCommandsHr } from "@/components/editor/commands/messages.hr";
 import { crossReferenceMessages } from "@/components/editor/crossref/messages.hr";
 import { useV3EditorDialogs, type FootnoteDialogComponent } from "@/components/editor/footnotes/useV3EditorDialogs";
 import { EditorCitationSettings } from "@/components/editor/parts/EditorCitationSettings";
@@ -34,11 +40,18 @@ import { profileById, DEFAULT_PROFILE_ID, type RuleProfile } from "../rules/prof
 import { SkeletonDialog } from "../areas/skeleton/SkeletonDialog";
 import { skeletonAvailable } from "../areas/skeleton/skeleton";
 import { skeletonMessages } from "../areas/skeleton/messages.hr";
+import { assignmentIdFromPath, downloadLatex, latexMenuItem, useLatexStyle } from "../stem/latex-export-menu";
+import { stemHr } from "../stem/messages.hr";
 import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
+import { moveChapterInEditor } from "../../../../../editor-core/src/outline/index.ts";
+import { placeFromFlags, type ContextAction, type CursorPlace } from "./context-button";
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr } from "./messages.hr";
+import { MOBILE_MORE, type QuickTool } from "./quick-tools";
+import { canStep, DEFAULT_ZOOM, loadZoom, saveZoom, snapZoom, stepZoom, zoomPercent, zoomToast } from "./text-size";
+import { MobileQuickBar } from "./ToolbarBehaviour";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
 
@@ -96,6 +109,72 @@ export function toolbarCommands(editor: Editor | null): ToolbarCommands {
   };
 }
 
+/**
+ * ED-31: where the cursor is, for the context button. The block styles are the design's levels: heading 1 the
+ * work's title (no button), 2 the chapter, 3 the subchapter. List and quote are flat paragraphs here (E1).
+ */
+export function cursorPlaceOf(s: EditorState): CursorPlace {
+  const headingLevel = s.heading1 ? 1 : s.heading2 ? 2 : s.heading3 ? 3 : undefined;
+  return placeFromFlags({ headingLevel, quote: s.quote, list: s.bulletItem });
+}
+
+/** Context actions this editor cannot run yet (no citation picker in the bar; cross-references only with v3). */
+export function hiddenContextActions(canCrossReference: boolean): ContextAction[] {
+  return ["quote.cite", ...(canCrossReference ? [] : ["heading.xref" as const])];
+}
+
+/** Runs a context action over the editor; the cross-reference dialog comes from the shell. */
+export function runContextAction(editor: Editor | null, id: ContextAction, openCrossReference?: () => void): void {
+  if (!live(editor)) return;
+  const commands = toolbarCommands(editor);
+  if (id === "heading.level2") commands.setBlock("heading2");
+  else if (id === "heading.level3") commands.setBlock("heading3");
+  else if (id === "heading.up" || id === "heading.down") moveChapterInEditor(editor, id === "heading.up" ? "up" : "down");
+  else if (id === "heading.xref") openCrossReference?.();
+  else if (id === "quote.back") convertBlock(editor, "paragraph");
+  else if (id === "list.leave") commands.toggleBulletList();
+}
+
+/** Quick tools with no action in this editor yet: Navod needs the citation picker, Komentar the comment action. */
+export const HIDDEN_QUICK_TOOLS: readonly QuickTool["id"][] = ["cite", "comment"];
+
+/** The phone's "Više" as far as this editor has the actions (MOBILE_MORE without its three submenus and the palette). */
+export function quickMoreItems(s: EditorState): { id: string; label: string; disabled?: boolean }[] {
+  return MOBILE_MORE.filter((m) => m.id === "redo" || m.id === "bold" || m.id === "italic")
+    .map((m) => ({ id: m.id, label: m.id === "bold" && s.bold || m.id === "italic" && s.italic ? `✓ ${m.label}` : m.label, disabled: m.id === "redo" && !s.canRedo }));
+}
+
+/** Manji / Veći tekst in Prikaz: off at the ends of the five steps; Veći shows the size now. */
+export function textSizeItems(zoom: number): { id: "textSmaller" | "textLarger"; label: string; disabled: boolean }[] {
+  return [
+    { id: "textSmaller", label: toolbarBehaviourHr.textSmaller, disabled: !canStep(zoom, -1) },
+    { id: "textLarger", label: `${toolbarBehaviourHr.textLarger} (${zoomPercent(zoom)} %)`, disabled: !canStep(zoom, 1) },
+  ];
+}
+
+/** Puts the size on <html>: the sheet's type is multiplied by --tz (reading-font.css); 100 % leaves no trace. */
+export function applyZoom(zoom: number, root: HTMLElement = document.documentElement): void {
+  const z = snapZoom(zoom);
+  if (z === DEFAULT_ZOOM) { root.removeAttribute("data-text-size"); root.style.removeProperty("--tz"); return; }
+  root.setAttribute("data-text-size", String(zoomPercent(z)));
+  root.style.setProperty("--tz", String(z));
+}
+
+/** Whether the editor has the focus, read again on its focus and blur (the quick bar shows only then). */
+function useEditorFocused(editor: Editor | null): boolean {
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const on = () => setFocused(true);
+    const off = () => setFocused(false);
+    setFocused(editor.isFocused);
+    editor.on("focus", on);
+    editor.on("blur", off);
+    return () => { editor.off("focus", on); editor.off("blur", off); };
+  }, [editor]);
+  return focused;
+}
+
 type Item = { id: string; label: string; disabled?: boolean; /** The reason an item is off, shown beside it. */ hint?: string };
 
 function Menu({ label, items, onSelect }: { label: string; items: readonly Item[]; onSelect: (id: string) => void }) {
@@ -136,15 +215,28 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
   const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(skeletonProfile));
   const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
+  const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
   const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
+  const openFind = useOpenFind();
   // ED-30: the bar's tool choice and look, kept in this browser (toolbar-prefs).
   // Read after mount, so the server's markup and the first client render agree.
   const [prefs, setPrefs] = useState<ToolbarPrefs>(DEFAULT_PREFS);
   useEffect(() => { setPrefs(loadPrefs()); }, []);
   const onPrefs = (next: ToolbarPrefs) => { setPrefs(next); savePrefs(next); };
+  // ED-31: the text size on the screen, kept in this browser (text-size); read after mount like the prefs.
+  const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM);
+  useEffect(() => { const z = loadZoom(); setZoom(z); applyZoom(z); }, []);
+  const onZoom = (direction: -1 | 1) => {
+    const next = stepZoom(zoom, direction);
+    if (next === zoom) return;
+    setZoom(next); saveZoom(next); applyZoom(next); toast(zoomToast(next));
+  };
+  const focused = useEditorFocused(editor);
+  const [quickMore, setQuickMore] = useState<MenuPoint | null>(null);
+  const openCrossReference = v3.openInsert ? () => v3.openInsert?.("crossReference") : undefined;
 
   const insert: Item[] = [
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
@@ -167,11 +259,16 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "light", label: `${theme === "light" ? "✓ " : ""}${t.workspace.sheetThemeLight}` },
     { id: "citationSettings", label: workPartsMessages.citationTitle },
     { id: "readingSettings", label: readingSettingsHr.menu },
+    ...textSizeItems(zoom),
   ];
   return (
     <>
       <EditorToolbarHost state={toolbarStateOf(state)} commands={toolbarCommands(editor)} label={KEPT_TOOLBAR_LABEL} labels={KEPT_LABELS} omit={["numberedList"]}
-        behaviour={{ prefs, onPrefs, fit: true, intro: state.editable ? "write" : "locked" }} />
+        behaviour={{
+          prefs, onPrefs, fit: true, intro: state.editable ? "write" : "locked",
+          place: cursorPlaceOf(state), hideContext: hiddenContextActions(Boolean(openCrossReference)),
+          onContextAction: (id) => runContextAction(editor, id, openCrossReference),
+        }} />
       <Menu label={t.toolbar.insert} items={insert} onSelect={(id) => {
         if (id === "footnote") v3.openInsert?.("footnote");
         else if (id === "xref") v3.openInsert?.("crossReference");
@@ -191,17 +288,37 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         setRecent(next);
         writeRecent(next);
       }} />
+      {/* ED-34 (P2-9): "Traži" as in the prototype's bar, also on a submitted work; it opens the row Ctrl+F opens. */}
+      {openFind && <Button tone="quiet" data-find-open="" aria-keyshortcuts="Control+F Meta+F"
+        title={`${editorCommandsHr.findAndReplace} (Ctrl+F)`} onClick={openFind}>{editorCommandsHr.find}</Button>}
       <Menu label={t.toolbar.view} items={view} onSelect={(id) => {
         if (id === "citationSettings") setDialog("citation");
         else if (id === "readingSettings") setDialog("reading");
+        else if (id === "textSmaller" || id === "textLarger") onZoom(id === "textSmaller" ? -1 : 1);
         else setSheetTheme(id === "light" ? "light" : "dark");
       }} />
-      <Menu label={t.toolbar.export} items={exportMenuItems(editor)}
+      <Menu label={t.toolbar.export} items={[...exportMenuItems(editor), latexMenuItem(editor, confirmedWorkSchemaVersion, latexStyle)]}
         onSelect={(id) => {
           if (id === "print") askPrintPreview();
+          else if (id === "latex") toast(downloadLatex(editor, confirmedWorkSchemaVersion, latexStyle) ? stemHr.latex.done : stemHr.latex.failed);
           else if (id === "copy") void copyWorkText(editor).then((ok) => toast(copyToastText(ok)));
         }} />
       <ReadAloudControls editor={editor} />
+      <MobileQuickBar editable={writeOk} focused={focused} dialogOpen={dialog !== null} canUndo={state.canUndo} hide={HIDDEN_QUICK_TOOLS}
+        onTool={(id, at) => {
+          if (id === "undo") toolbarCommands(editor).undo();
+          else if (id === "hole") insertHole(editor);
+          else if (id === "more") setQuickMore(at);
+        }} />
+      <ContextMenu anchor={quickMore} label={toolbarBehaviourHr.mobileMore} onClose={() => setQuickMore(null)}
+        entries={quickMoreItems(state).map((i): MenuEntry => ({ kind: "item", ...i }))}
+        onSelect={(id) => {
+          setQuickMore(null);
+          const run = toolbarCommands(editor);
+          if (id === "redo") run.redo();
+          else if (id === "bold") run.toggleBold();
+          else if (id === "italic") run.toggleItalic();
+        }} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
       {dialog === "skeleton" && editor && <SkeletonDialog editor={editor} profile={skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null} onClose={() => setDialog(null)} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
