@@ -100,9 +100,9 @@ function components(entries: Map<number, Entry>): number[][] {
         continue;
       }
       work.pop();
-      const parent = work[work.length - 1];
-      if (parent !== undefined)
-        low.set(parent.id, Math.min(low.get(parent.id)!, low.get(frame.id)!));
+      const caller = work[work.length - 1];
+      if (caller !== undefined)
+        low.set(caller.id, Math.min(low.get(caller.id)!, low.get(frame.id)!));
       if (low.get(frame.id) === index.get(frame.id)) {
         const group: number[] = [];
         for (;;) {
