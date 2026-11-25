@@ -40,6 +40,7 @@ export const SCREEN_FRAMES: readonly ScreenFrame[] = [
   s("/upis/kolegij/[courseId]", "S-04 Upis kodom", "side", true),
   s("/zadatak/[id]", "S-05 Obavijest o zadatku", "side", true),
   s("/zadaci/radovi", "Moji radovi", "side"),
+  s("/zadaci/dnevnik-prakse", "Dnevnik prakse", "side"),
   s("/rad/[assignmentId]", "Radni prostor", "none", false, true),
   s("/rad/[assignmentId]/predaja", "S-31 Izjava", "none", false, true),
   s("/rad/[assignmentId]/predaja/pregled", "S-30 Pregled prije predaje", "none", false, true),

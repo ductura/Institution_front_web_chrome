@@ -25,6 +25,7 @@ describe("frame per screen (prototype shell: side | none, narrow)", () => {
     expect(isNarrow("/nastavnik/zadatak/novi", "teacher")).toBe(true);
     expect(isNarrow("/nastavnik/zadatak/3/produljenje", "teacher")).toBe(true);
     expect(isNarrow("/zadaci", "student")).toBe(false);
+    expect(frameOf("/zadaci/dnevnik-prakse", "student")).toMatchObject({ shell: "side", narrow: false });
     expect(frameOf("/nema", "student")).toBeNull();
   });
 });
