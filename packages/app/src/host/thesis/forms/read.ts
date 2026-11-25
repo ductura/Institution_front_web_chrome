@@ -62,6 +62,5 @@ export async function readForms(call: Call, documentId: string): Promise<Section
   const f = parseForms(forms.body);
   const c = parseConsent(consent.body);
   if (f === null || c === null) return { kind: "unavailable" };
-  if (f.length === 0 && c.state === "none" && c.history.length === 0) return { kind: "empty" };
   return { kind: "ready", value: { forms: f, consent: c } };
 }

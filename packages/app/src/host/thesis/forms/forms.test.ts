@@ -28,8 +28,8 @@ describe("read", () => {
     expect(await readForms(fake((id) => (id.includes("forms") ? fail(500) : ok(consent()))), "d1")).toEqual({ kind: "unavailable" });
     expect(await readForms(fake((id) => (id.includes("forms") ? ok({ forms: "x" }) : ok(consent()))), "d1")).toEqual({ kind: "unavailable" });
   });
-  it("nothing to show is empty; a form is ready", async () => {
-    expect(await readForms(fake((id) => (id.includes("forms") ? ok({ forms: [] }) : ok(consent()))), "d1")).toEqual({ kind: "empty" });
+  it("no forms and no consent yet is still ready, so the mentor can give the first consent", async () => {
+    expect((await readForms(fake((id) => (id.includes("forms") ? ok({ forms: [] }) : ok(consent()))), "d1")).kind).toBe("ready");
     const r = await readForms(fake((id) => (id.includes("forms") ? ok({ forms: [wire(form())] }) : ok(consent()))), "d1");
     expect(r.kind).toBe("ready");
   });
@@ -82,15 +82,15 @@ afterEach(() => { act(() => root?.unmount()); root = null; document.body.innerHT
 const button = (host: HTMLElement, text: string) => [...host.querySelectorAll("button")].find((b) => b.textContent === text);
 
 describe("FormsView", () => {
-  it("the student sees no consent button, flips the form, and the section reads again", async () => {
-    const call = fake(() => ok(wire(form("submitted"))));
+  it("the student sees no consent button, flips the form, and the message survives the re-read", async () => {
+    const call = fake((id) => (id === "work.thesis-forms.get" ? ok({ forms: [wire(form("submitted"))] }) : id === "work.mentor-consent.get" ? ok(consent()) : ok(wire(form("submitted")))));
     const { host, reload } = await mount("student", call);
     expect(host.textContent).toContain("Izmišljeni obrazac A");
     expect(button(host, formsHr.give)).toBeUndefined();
     expect(button(host, formsHr.withdraw)).toBeUndefined();
     await act(async () => { button(host, formsHr.markSubmitted)!.click(); });
     expect(call).toHaveBeenCalledWith("work.thesis-form.put", { params: { documentId: "d1", code: "obrazac-a" }, query: undefined, body: { state: "submitted" } });
-    expect(reload).toHaveBeenCalled();
+    expect(call).toHaveBeenCalledWith("work.thesis-forms.get", expect.anything());
     expect(host.textContent).toContain(formsHr.saved);
   });
   it("an accepted form is read-only for the student", async () => {
@@ -99,10 +99,11 @@ describe("FormsView", () => {
     expect(button(host, formsHr.markSubmitted) ?? button(host, formsHr.markNotSubmitted)).toBeUndefined();
   });
   it("a 403/409 from the server is shown as a message, not thrown; 409 also reads again", async () => {
-    const { host, reload } = await mount("mentor", fake(() => fail(409)), { forms: [form()], consent: consent() });
+    const call = fake(() => fail(409));
+    const { host } = await mount("mentor", call, { forms: [form()], consent: consent() });
     await act(async () => { button(host, formsHr.give)!.click(); });
     expect(host.textContent).toContain(formsHr.conflict);
-    expect(reload).toHaveBeenCalled();
+    expect(call).toHaveBeenCalledWith("work.thesis-forms.get", expect.anything());
   });
   it("the mentor gives consent; the same state twice shows 'unchanged' and sends nothing", async () => {
     const call = fake(() => ok(consent("given")));

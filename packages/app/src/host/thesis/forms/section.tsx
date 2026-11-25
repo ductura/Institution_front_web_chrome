@@ -83,12 +83,15 @@ function Consent({ value, role, documentId, call, onDone }: { value: FormsValue[
   );
 }
 
-export function FormsView({ documentId, role, value, reload, call = createApi() }: SectionViewProps<FormsValue> & { call?: Call }) {
+export function FormsView({ documentId, role, value: first, reload, call = createApi() }: SectionViewProps<FormsValue> & { call?: Call }) {
+  const [value, setValue] = useState(first);
   const [message, setMessage] = useState<Outcome | null>(null);
   const done = (o: Outcome) => {
     setMessage(o);
-    // After a write the truth is the server's: read again (also after a refusal, so a stale state is replaced).
-    if (o === "saved" || o === "conflict") reload();
+    // After a write the truth is the server's: read again here, so the view stays mounted and keeps its message;
+    // if that read gives nothing usable, the frame reloads the whole section.
+    if (o !== "saved" && o !== "conflict") return;
+    void readForms(call, documentId).then((r) => { if (r.kind === "ready") setValue(r.value); else reload(); }, () => reload());
   };
   return (
     <div>
