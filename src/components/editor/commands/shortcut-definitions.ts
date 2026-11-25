@@ -1,8 +1,9 @@
 // WEB-1908 (P-D8), ED-03 (NF2-P5, P2-2): the one definition of the editor's keyboard shortcuts.
 // The one list (Ctrl+/, "?" and the "Prečaci" button), the toolbar's aria-keyshortcuts and the
 // palette hints all read it, so a command's shortcut cannot differ between them. A row is here only
-// while the editor answers it (e2e shortcut-list.spec.ts presses every row): the comment, sentence,
-// chapter and outline keys come back when they are wired (P2-2). Command ids match WEB-6D.
+// while the editor answers it (e2e shortcut-list.spec.ts presses every row). ED-33 (P2-2) wired the
+// sentence and chapter moves; the comment (Ctrl+Alt+M) and outline keys come back when the student editor
+// has those actions. Command ids match WEB-6D.
 import type { ShortcutListGroup } from "@ductura/ui";
 
 export type ShortcutDefinition = {
@@ -32,6 +33,8 @@ export const SHORTCUTS: readonly ShortcutDefinition[] = [
   { id: "palette", group: "moving", label: "Naredbe: sve na jednom mjestu", keys: "Mod+K" },
   { id: "find", group: "moving", label: "Traži i zamijeni", keys: "Mod+F" },
   { id: "toolbar", group: "moving", label: "Na alatnu traku", keys: "Alt+F10" },
+  { id: "moveSentence", group: "moving", label: "Rečenica gore ili dolje u odlomku", keys: "Alt+↑ ili Alt+↓", writes: true },
+  { id: "moveChapter", group: "moving", label: "Poglavlje gore ili dolje", keys: "Alt+Shift+↑ ili Alt+Shift+↓", writes: true },
   { id: "focus", group: "view", label: "Način fokusa", keys: "Mod+." },
   { id: "shortcuts", group: "view", label: "Ovaj popis", keys: "Mod+/ ili ?" },
   { id: "close", group: "view", label: "Zatvara prozor ili izbornik", keys: "Esc" },
