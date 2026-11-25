@@ -8,16 +8,19 @@
   max-height: 60vh;
   overflow: auto;
   padding: 6px;
-  border: 1px solid var(--raised-rule);
-  border-radius: var(--radius);
-  background: var(--raised);
+  border: 1px solid var(--glass-rim);
+  border-radius: var(--radius-card);
+  /* Glass (25 Nov 2026, prototype.css): what lies under it is blurred, never seen raw. */
+  background: var(--glass-fill), var(--glass-raised);
   color: var(--ink);
-  box-shadow: var(--lift);
+  box-shadow: var(--glass-sheen), var(--glass-float);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   font-size: 13px;
   line-height: 1.5;
 }
 
 .inline {
   position: static;
-  box-shadow: none;
+  box-shadow: var(--glass-sheen);
 }

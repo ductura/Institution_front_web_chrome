@@ -2,7 +2,9 @@
 .wrap { display: grid; grid-template-rows: auto 1fr; }
 .bar {
   position: sticky; top: 0; z-index: 5; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px;
-  padding: 6px var(--gutter-r) 6px var(--gutter-l); background: var(--chrome); border-bottom: 1px solid var(--rule-2);
+  padding: 6px var(--gutter-r) 6px var(--gutter-l); background: var(--glass-fill), var(--glass-bar); border-bottom: 1px solid var(--glass-rim);
+  /* Glass (25 Nov 2026, @ductura/ui prototype.css): the work scrolls blurred under the bar. */
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
 }
 .bar > a { min-height: 44px; padding: 0 10px; }
 .page {

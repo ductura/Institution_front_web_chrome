@@ -4,7 +4,9 @@
 
 .bar {
   position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 4px 12px; flex-wrap: wrap;
-  padding: 6px var(--gutter-r) 6px var(--gutter-l); background: var(--chrome); border-bottom: 1px solid var(--rule-2);
+  padding: 6px var(--gutter-r) 6px var(--gutter-l); background: var(--glass-fill), var(--glass-bar); border-bottom: 1px solid var(--glass-rim);
+  /* Glass (25 Nov 2026, prototype.css): the page scrolls blurred under the step bar. */
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
 }
 .bar :global(.btn) { min-height: 44px; padding: 0 10px; }
 .crumb { margin: 0; color: var(--ink-3); font-size: 12.5px; min-width: 0; overflow-wrap: anywhere; }

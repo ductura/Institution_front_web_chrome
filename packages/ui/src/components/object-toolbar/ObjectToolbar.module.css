@@ -5,17 +5,20 @@
   display: flex;
   gap: 2px;
   padding: 4px;
-  border: 1px solid var(--raised-rule);
-  border-radius: var(--radius);
-  background: var(--raised);
+  border: 1px solid var(--glass-rim);
+  border-radius: var(--radius-card);
+  /* Glass (25 Nov 2026, prototype.css): it floats over the sheet, so it keeps the raised base's 88 %. */
+  background: var(--glass-fill), var(--glass-raised);
   color: var(--ink);
-  box-shadow: var(--lift);
+  box-shadow: var(--glass-sheen), var(--glass-float);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   font-size: 13px;
 }
 
 .inline {
   position: static;
-  box-shadow: none;
+  box-shadow: var(--glass-sheen);
 }
 
 .action {

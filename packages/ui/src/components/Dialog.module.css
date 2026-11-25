@@ -13,11 +13,25 @@
   margin: auto;
   padding: var(--space-4);
   overflow: auto;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-card);
-  background: var(--raised);
+  border: 1px solid var(--glass-rim);
+  border-radius: var(--radius-glass);
+  /* Glass (25 Nov 2026, prototype.css). The blur is on a layer under the content,
+     so the dialog never becomes the containing block of a fixed popover inside it. */
+  isolation: isolate;
+  background: var(--glass-fill), var(--glass-raised);
   color: var(--ink);
-  box-shadow: var(--lift);
+  box-shadow: var(--glass-sheen), var(--glass-float);
+}
+
+.dialog::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
 .dialog[open] {
@@ -27,6 +41,8 @@
 
 .dialog::backdrop {
   background: var(--scrim);
+  -webkit-backdrop-filter: var(--glass-scrim-blur);
+  backdrop-filter: var(--glass-scrim-blur);
 }
 
 .inline {
@@ -35,8 +51,15 @@
   max-width: 100%;
   max-height: none;
   margin: 0;
+  border-color: var(--rule);
+  border-radius: var(--radius-card);
   background: var(--card);
   box-shadow: none;
+}
+
+/* Inline, in the flow of a page or a sheet, the dialog is no glass. */
+.inline::before {
+  content: none;
 }
 
 .body {

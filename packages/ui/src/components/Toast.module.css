@@ -42,6 +42,9 @@
 /* In the flow of a page (a sheet included) the toast sits on --card, which both sheets set under their own ink. */
 .inline .toast {
   background: var(--card);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .toast {
@@ -49,11 +52,14 @@
   gap: var(--space-3);
   align-items: center;
   padding: var(--space-2h) var(--space-3h);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--raised);
+  border: 1px solid var(--glass-rim);
+  border-radius: var(--radius-card);
+  /* Glass (25 Nov 2026, prototype.css): the page under the toast is blurred. */
+  background: var(--glass-fill), var(--glass-raised);
   color: var(--ink);
-  box-shadow: var(--lift);
+  box-shadow: var(--glass-sheen), var(--glass-float);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   max-width: calc(100vw - 32px);
 }
 

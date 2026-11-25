@@ -1,7 +1,14 @@
 /* The editor toolbar, outline and progress (M5.2): on the tokens of this package, paper and graphite. */
+/* Glass (25 Nov 2026, prototype.css): the blur is on a layer under the tools, so the
+   bar never becomes the containing block of the fixed popovers it opens. */
 .toolbar {
+  position: relative; isolation: isolate;
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 10px;
-  background: var(--chrome); border-bottom: 1px solid var(--rule-2); color: var(--ink);
+  background: var(--glass-fill), var(--glass-bar); border-bottom: 1px solid var(--glass-rim); color: var(--ink);
+}
+.toolbar::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
 }
 .group { display: flex; align-items: center; gap: 2px; flex: none; }
 .group + .group { margin-inline-start: 6px; padding-inline-start: 6px; border-inline-start: 1px solid var(--rule-2); }

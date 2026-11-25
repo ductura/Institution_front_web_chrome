@@ -9,7 +9,9 @@
   grid-template-columns: var(--side-w) minmax(0, 1fr);
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--ground);
+  /* The ground with the glass light fields (prototype.css), fixed like the body's. */
+  background: var(--ambient), var(--ground);
+  background-attachment: fixed;
   color: var(--ink);
 }
 
@@ -24,8 +26,22 @@
   height: 100dvh;
   padding: var(--space-3h) var(--space-1);
   overflow-y: auto;
-  background: var(--chrome);
-  border-right: 1px solid var(--rule-2);
+  /* Glass rail (25 Nov 2026): the light fields show blurred through it. */
+  background: var(--glass-fill), var(--glass-bar);
+  border-right: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-sheen);
+  /* The blur sits on a layer, not the rail: a filter on the rail would trap the bell's fixed popover. */
+  isolation: isolate;
+}
+
+.side::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
 .brand {
@@ -212,7 +228,7 @@
   }
 
   .side {
-    position: static;
+    position: relative;
     z-index: 5;
     flex-direction: row;
     flex-wrap: wrap;
@@ -222,7 +238,7 @@
     padding: var(--space-2) var(--gutter-r) var(--space-2) var(--gutter-l);
     overflow: visible;
     border-right: 0;
-    border-bottom: 1px solid var(--rule-2);
+    border-bottom: 1px solid var(--glass-rim);
   }
 
   .mark {

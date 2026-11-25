@@ -12,10 +12,23 @@
   height: 100dvh;
   max-height: none;
   border: 0;
-  background: var(--chrome);
+  /* Glass (25 Nov 2026, prototype.css). The blur is on a layer under the content,
+     so the drawer never becomes the containing block of a fixed popover inside it. */
+  isolation: isolate;
+  background: var(--glass-fill), var(--glass-raised);
   color: var(--ink);
-  box-shadow: var(--lift);
+  box-shadow: var(--glass-sheen), var(--glass-float);
   overflow: auto;
+}
+
+.drawer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
 .left {
@@ -36,6 +49,8 @@
 
 .drawer::backdrop {
   background: var(--scrim);
+  -webkit-backdrop-filter: var(--glass-scrim-blur);
+  backdrop-filter: var(--glass-scrim-blur);
 }
 
 .inline {
@@ -43,7 +58,13 @@
   width: auto;
   height: auto;
   animation: none;
+  background: var(--chrome);
   box-shadow: none;
+}
+
+/* Inline, in the flow of a page, the drawer is no glass. */
+.inline::before {
+  content: none;
 }
 
 .header {

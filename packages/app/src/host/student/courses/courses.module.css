@@ -5,9 +5,14 @@
 .eyebrow, .meta { display: block; margin: 0; color: var(--ink-3); font-size: 12.5px; }
 .note { margin: 0; color: var(--ink-2); }
 .hidden { position: absolute; left: -9999px; }
-.card, .course { background: var(--card); border: 1px solid var(--rule-2); border-radius: 10px; display: grid; gap: 12px; width: 100%; min-width: 0; color: var(--ink); }
+/* Glass (25 Nov 2026, @ductura/ui prototype.css): the ground's light fields show blurred through. */
+.card, .course {
+  background: var(--glass-fill), var(--glass-card); border: 1px solid var(--glass-rim); border-radius: var(--radius-glass); box-shadow: var(--glass-sheen);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  display: grid; gap: 12px; width: 100%; min-width: 0; color: var(--ink);
+}
 .card { padding: 24px; }
-.course { background: var(--chrome); padding: 14px 16px; gap: 10px; }
+.course { background: var(--glass-fill), var(--glass-panel); padding: 14px 16px; gap: 10px; }
 .course h2, .card h2 { margin: 0; font: 500 20px/1.15 var(--ff-display); letter-spacing: -0.015em; }
 .center { text-align: center; justify-items: center; }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }

@@ -57,7 +57,8 @@
   padding: var(--space-1h) var(--space-1h) var(--space-1h) var(--space-3);
   border: 1px solid var(--rule-2);
   border-radius: 6px;
-  background: var(--ground);
+  /* An inset of the ground in the glass card (25 Nov 2026): the card's blur shows through. */
+  background: color-mix(in srgb, var(--ground) 55%, transparent);
 }
 
 .who {

@@ -93,6 +93,36 @@
   --err-bar: 0px;
   --err-pad: 0px;
   --field-invalid-width: 1px;
+
+  /*
+   * Glass (owner decision 25 Nov 2026): the translucent surfaces of the
+   * public landing page, for the whole app. A glass surface is a translucent
+   * base of its own token (--glass-bar, --glass-panel, --glass-raised,
+   * --glass-card) under the fill, with the rim, the sheen and the blur, so
+   * what lies behind is blurred, never seen raw. The bases are mixed at the
+   * root, so they are shell surfaces only (like --raised): never inside the
+   * sheet. Bars and floating surfaces keep 86-88 % of their colour, so the
+   * quietest text (--ink-3) stays 4.5:1 or more even over the white sheet;
+   * panels and cards lie on the ground only and may be clearer. The writing
+   * sheet stays opaque.
+   */
+  --glass-fill: linear-gradient(180deg, #ffffff10, #ffffff05);
+  --glass-rim: #ffffff17;
+  --glass-sheen: inset 0 1px 0 #ffffff24, inset 0 -1px 0 #ffffff08;
+  --glass-blur: blur(22px) saturate(165%);
+  /* The curtain behind a dialog or drawer softens the page a little. */
+  --glass-scrim-blur: blur(6px);
+  --glass-float: 0 50px 90px -40px #000000c8;
+  --glass-bar: color-mix(in srgb, var(--chrome) 86%, transparent);
+  --glass-panel: color-mix(in srgb, var(--chrome) 78%, transparent);
+  --glass-raised: color-mix(in srgb, var(--raised) 88%, transparent);
+  --glass-card: color-mix(in srgb, var(--card) 76%, transparent);
+  --radius-glass: 14px;
+  /* The light fields behind everything, in the logo's gold and blue. */
+  --ambient:
+    radial-gradient(48vw 48vw at 8% -6%, #c8aa6e38, transparent 70%),
+    radial-gradient(42vw 42vw at 100% 30%, #8fb0e02e, transparent 70%),
+    radial-gradient(38vw 38vw at 45% 110%, #c8aa6e1a, transparent 70%);
 }
 
 :root[data-theme="light"]:not(:has(#prijava-kartica, #pocetna-naslov)) {
@@ -100,6 +130,15 @@
   --p-ai: #a8642a;
   --p-match: #8a7420;
   --p-imp: #6d55a3;
+  /* Glass on paper: a white fill, a graphite rim and a softer float and ambient. */
+  --glass-fill: linear-gradient(180deg, #ffffff66, #ffffff26);
+  --glass-rim: #2424221c;
+  --glass-sheen: inset 0 1px 0 #ffffffb3, inset 0 -1px 0 #2424220a;
+  --glass-float: 0 40px 80px -40px #24242247;
+  --ambient:
+    radial-gradient(48vw 48vw at 8% -6%, #c8aa6e24, transparent 70%),
+    radial-gradient(42vw 42vw at 100% 30%, #8fb0e01f, transparent 70%),
+    radial-gradient(38vw 38vw at 45% 110%, #c8aa6e12, transparent 70%);
 }
 
 [data-shell-role="teacher"] {
@@ -826,5 +865,121 @@ textarea.input {
   .segmented > button:not([data-tone]),
   .tabs button {
     min-height: var(--target);
+  }
+}
+
+/*
+ * Glass for the whole app (owner decision 25 Nov 2026, the public landing
+ * page). The light fields lie on the ground behind everything (fixed, so
+ * they stay put while a page scrolls); the sign-in screen and the public
+ * home page keep their own ground. Shells that paint the ground over the
+ * body (SideShell, the editor's frame) paint the same fields.
+ */
+body:not(:has(#prijava-kartica, #pocetna-naslov)) {
+  background: var(--ambient), var(--ground);
+  background-attachment: fixed;
+}
+
+/*
+ * A surface that holds other parts takes its blur on a ::before layer under
+ * its content, not on itself: backdrop-filter on the surface would make it
+ * the containing block of every fixed popover and tooltip inside it. The
+ * layer stays inside the surface (isolation), and a surface with focus
+ * inside comes forward, so an open popover is not drawn under the next one.
+ * Floating leaves (menus, popovers) take the blur on themselves.
+ */
+:is(.card, .item, .row, .panel):not(.sheet *, .ed-sheet *),
+.app-header,
+.workspace__bar,
+.workspace__status,
+.workspace__rail,
+.workspace__panel,
+.workspace__main > .editor-toolbar {
+  position: relative;
+  isolation: isolate;
+}
+
+:is(.card, .item, .row, .panel):not(.sheet *, .ed-sheet *)::before,
+.app-header::before,
+.workspace__bar::before,
+.workspace__status::before,
+.workspace__rail::before,
+.workspace__panel::before,
+.panel-tabs__list::before,
+.workspace__main > .editor-toolbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+:is(.card, .item, .row, .panel):not(.sheet *, .ed-sheet *):focus-within {
+  z-index: 1;
+}
+
+/* The prototype's surfaces on the ground: cards, items and panels. */
+:is(.card, .item, .row, .panel):not(.sheet *, .ed-sheet *) {
+  border-color: var(--glass-rim);
+  background: var(--glass-fill), var(--glass-card);
+  box-shadow: var(--glass-sheen);
+}
+
+.panel:not(.sheet *, .ed-sheet *) {
+  background: var(--glass-fill), var(--glass-panel);
+}
+
+:is(.card, .panel):not(.sheet *, .ed-sheet *) {
+  border-radius: var(--radius-glass);
+}
+
+/* The ported shell of globals.css (kept as the source): bars, rails, menus. */
+.app-header,
+.workspace__bar,
+.workspace__status,
+.workspace__rail,
+.workspace__panel,
+.panel-tabs__list {
+  background: var(--glass-fill), var(--glass-bar);
+}
+
+.workspace {
+  border-color: var(--glass-rim);
+  border-radius: var(--radius-glass);
+}
+
+.workspace__main > .editor-toolbar {
+  border-color: var(--glass-rim);
+  border-radius: var(--radius-glass);
+  background: var(--glass-fill), var(--glass-bar);
+  box-shadow: var(--glass-sheen);
+}
+
+.editor-menu__list {
+  border-color: var(--glass-rim);
+  background: var(--glass-fill), var(--glass-raised);
+  box-shadow: var(--glass-sheen), var(--glass-float);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/*
+ * Reduced transparency: every glass base is its own opaque colour again and
+ * nothing is blurred; the ground keeps its plain colour.
+ */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root[data-theme="light"]:not(:has(#prijava-kartica, #pocetna-naslov)) {
+    --glass-fill: linear-gradient(transparent, transparent);
+    --glass-blur: none;
+    --glass-scrim-blur: none;
+    --glass-bar: var(--chrome);
+    --glass-panel: var(--chrome);
+    --glass-raised: var(--raised);
+    --glass-card: var(--card);
+    --ambient: linear-gradient(transparent, transparent);
   }
 }

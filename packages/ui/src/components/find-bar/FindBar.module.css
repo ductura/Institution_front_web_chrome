@@ -1,7 +1,8 @@
-/* The find bar (prototype .find): a strip under the toolbar, on --chrome. */
+/* The find bar (prototype .find): a strip under the toolbar, glass on --chrome (25 Nov 2026). */
 .bar {
   flex: none; display: flex; align-items: center; gap: 6px; padding: 6px 10px;
-  background: var(--chrome); border-bottom: 1px solid var(--rule-2); overflow-x: auto; color: var(--ink);
+  background: var(--glass-fill), var(--glass-bar); border-bottom: 1px solid var(--glass-rim); overflow-x: auto; color: var(--ink);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
 }
 .input {
   flex: none; width: 170px; min-height: 32px; padding: 0 8px; font: inherit; color: var(--ink);

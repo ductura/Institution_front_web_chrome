@@ -5,8 +5,10 @@
 .wrap[data-look="words"] button > svg { display: none; }
 .tip {
   position: fixed; z-index: 65; max-width: 240px; padding: 8px 10px; font-size: 13px; line-height: 1.35;
-  color: var(--ink); background: var(--card); border: 1px solid var(--rule-2); border-radius: var(--radius-control);
-  box-shadow: 0 4px 14px rgb(0 0 0 / 18%); pointer-events: none;
+  color: var(--ink); background: var(--glass-fill), var(--glass-raised); border: 1px solid var(--glass-rim); border-radius: var(--radius-card);
+  box-shadow: var(--glass-sheen), 0 4px 14px rgb(0 0 0 / 18%); pointer-events: none;
+  /* Glass (25 Nov 2026, @ductura/ui prototype.css): it floats over the sheet on the raised base's 88 %. */
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
 }
 .tipName { font-weight: 600; }
 .kbd { margin-inline-start: 8px; padding: 0 4px; font-size: 11px; color: var(--ink-3); border: 1px solid var(--rule-2); border-radius: 3px; }
@@ -14,7 +16,9 @@
 .ctx { margin-inline-start: 6px; }
 .quick {
   position: fixed; inset-inline: 0; z-index: 36; display: flex; justify-content: space-around; gap: 4px; padding: 4px 6px;
-  background: var(--chrome); border-top: 1px solid var(--rule-2);
+  background: var(--glass-fill), var(--glass-bar); border-top: 1px solid var(--glass-rim); box-shadow: var(--glass-sheen);
+  /* Glass (25 Nov 2026): the sheet scrolls blurred under the quick bar. */
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
 }
 .quick button { min-width: 42px; min-height: 42px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: var(--radius-control); }
 .quick button:disabled { color: var(--ink-3); }

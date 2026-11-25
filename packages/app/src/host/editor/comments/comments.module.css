@@ -5,7 +5,17 @@
 .tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
 .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 2px; }
 .list { list-style: none; margin: 0; padding: 0; }
-.card { background: var(--card); border: 1px solid var(--rule-2); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 8px; overflow-wrap: anywhere; }
+/* Glass (25 Nov 2026, @ductura/ui prototype.css). The blur is on a layer under the card, so the
+   card is never the containing block of a fixed popover; with focus inside, its menu comes forward. */
+.card {
+  position: relative; isolation: isolate; background: var(--glass-fill), var(--glass-card); border: 1px solid var(--glass-rim);
+  border-radius: var(--radius-card); box-shadow: var(--glass-sheen); padding: 10px 12px; margin-bottom: 8px; overflow-wrap: anywhere;
+}
+.card::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+}
+.card:focus-within { z-index: 1; }
 .active { border-color: var(--accent); }
 .meta { color: var(--ink-3); font-size: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .quote { font-family: var(--ff-display); font-size: 14px; color: var(--ink-2); margin: 6px 0; padding: 4px 8px; background: var(--well); border-radius: var(--radius-sm); }
@@ -28,7 +38,11 @@
 .more > summary::-webkit-details-marker { display: none; }
 .more > summary:hover { background: var(--hover); }
 .more[open] > summary { background: var(--selected); }
-.menu { position: absolute; right: 0; top: 100%; z-index: 5; min-width: 210px; background: var(--raised); border: 1px solid var(--rule-2); border-radius: var(--radius); box-shadow: var(--lift); padding: 6px; display: flex; flex-direction: column; }
+.menu {
+  position: absolute; right: 0; top: 100%; z-index: 5; min-width: 210px; background: var(--glass-fill), var(--glass-raised); border: 1px solid var(--glass-rim);
+  border-radius: var(--radius-card); box-shadow: var(--glass-sheen), var(--glass-float); padding: 6px; display: flex; flex-direction: column;
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+}
 .menu > button { text-align: left; padding: 8px; border-radius: var(--radius-sm); border: 0; background: none; color: var(--ink); font: inherit; font-size: 12.5px; cursor: pointer; }
 .menu > button:hover { background: var(--hover); }
 .print { border: 1px solid var(--rule-2); border-radius: var(--radius); padding: 12px 14px; max-height: 54vh; overflow: auto; background: var(--card); }

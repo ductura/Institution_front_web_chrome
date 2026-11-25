@@ -7,7 +7,11 @@
 .button:hover:not(:disabled) { background: var(--hover); }
 .button:disabled { cursor: not-allowed; color: var(--ink-3); }
 .error { margin: 0; font-size: 12.5px; }
-.popup { padding: 8px; background: var(--chrome); border: 1px solid var(--rule-2); border-radius: var(--radius-control); width: max-content; max-width: 100%; }
+/* Glass (25 Nov 2026, prototype.css). */
+.popup {
+  padding: 8px; background: var(--glass-fill), var(--glass-raised); border: 1px solid var(--glass-rim); border-radius: var(--radius-card);
+  box-shadow: var(--glass-sheen); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); width: max-content; max-width: 100%;
+}
 .nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-weight: 600; }
 .grid { border-collapse: collapse; }
 .grid th { font-size: 12px; font-weight: 600; color: var(--ink-3); padding: 2px; }
