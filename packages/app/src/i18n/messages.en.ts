@@ -76,6 +76,7 @@ export const pageLabelsEn = {
   myRights: "My rights",
   isvuImport: "Connection to ISVU (trial source)",
   isvuGrades: "Grade export to ISVU (trial source)",
+  analysis: "Statistical analysis",
   studomatEntry: "Entry from Studomat",
 };
 

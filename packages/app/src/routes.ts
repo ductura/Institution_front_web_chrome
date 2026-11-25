@@ -36,6 +36,7 @@ import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
 import { workTeamText } from "./host/student/work-team/messages.hr";
 import { teacherTeamText } from "./host/teacher/work-team/messages.hr";
+import { analysisPageMessages } from "./host/analysis/messages.hr";
 
 export { BASES, type Base } from "./bases";
 
@@ -157,6 +158,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/merlin", label: merlinMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // PIL-D2-PREDAJE: the submissions of one assignment (WEB-1502), reached from the course card (N-01).
   { path: "/nastavnik/zadatak/[assignmentId]/predaje", label: submissionsMessages.pageTitle, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // WEB-V15-STRANICA: "Statistička analiza", not in the navigation (hidden until the server switches the function on).
+  { path: "/analiza", label: analysisPageMessages.title, kind: "pending", roles: ["teacher", "student"] },
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
   // WEB-1804 (M11.5): interface language, name and notifications, for everyone signed in.
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },

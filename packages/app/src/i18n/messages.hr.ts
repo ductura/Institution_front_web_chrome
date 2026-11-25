@@ -73,6 +73,7 @@ export const pageLabelsHr = {
   myRights: "Moja prava",
   isvuImport: "Povezivanje s ISVU-om (probni izvor)",
   isvuGrades: "Izvoz ocjena u ISVU (probni izvor)",
+  analysis: "Statistička analiza",
   studomatEntry: "Ulaz iz Studomata",
 };
 
