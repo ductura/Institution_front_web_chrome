@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  BREAKPOINTS, DEFAULT_SETTINGS, PANEL_WIDTHS, RAIL_WIDTHS, STORAGE_KEY, loadSettings, parseSettings, saveSettings,
+  BREAKPOINTS, DEFAULT_SETTINGS, PANEL_WIDTHS, RAIL_WIDTHS, STORAGE_KEY, loadSettings, onSettingsChange, parseSettings, saveSettings,
 } from "./layout-settings";
 
 describe("layout settings (E§1)", () => {
@@ -25,5 +25,27 @@ describe("layout settings (E§1)", () => {
     const bad = { getItem: () => { throw new Error("x"); }, setItem: () => { throw new Error("x"); } };
     expect(loadSettings(bad)).toEqual(DEFAULT_SETTINGS);
     expect(saveSettings(DEFAULT_SETTINGS, bad)).toBe(false);
+  });
+});
+
+// ED-39: the shell menu and the dialog "Prilagodi panel" choose the same widths; a choice is told to the other.
+describe("layout settings on the page (ED-39)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("tells every listener of a choice, read as the stored value would be, until it unsubscribes", () => {
+    vi.stubGlobal("window", new EventTarget());
+    const seen: unknown[] = [];
+    const stop = onSettingsChange((settings) => seen.push(settings));
+    const storage = { setItem: () => undefined };
+    saveSettings({ rail: "wide", panel: "narrow" }, storage);
+    window.dispatchEvent(new CustomEvent("ductura:editor-layout", { detail: { rail: "huge" } }));
+    stop();
+    saveSettings({ rail: "narrow", panel: "wide" }, storage);
+    expect(seen).toEqual([{ rail: "wide", panel: "narrow" }, DEFAULT_SETTINGS]);
+  });
+
+  it("keeps the choice without a page to tell", () => {
+    expect(saveSettings({ rail: "wide", panel: "wide" }, { setItem: () => undefined })).toBe(true);
+    expect(onSettingsChange(() => undefined)).toBeTypeOf("function");
   });
 });

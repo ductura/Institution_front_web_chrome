@@ -3,7 +3,7 @@
 // key, so the panel layout reads the choice at its next mount); the outline
 // choice is kept in the tab only, as the prototype keeps `#ed.outline-only`.
 import {
-  loadSettings, PANEL_WIDTHS, RAIL_WIDTHS, saveSettings, type LayoutSettings, type PanelSize, type RailSize,
+  loadSettings, onSettingsChange, PANEL_WIDTHS, RAIL_WIDTHS, saveSettings, type LayoutSettings, type PanelSize, type RailSize,
 } from "../../../../../../src/components/editor/layout/layout-settings.ts";
 
 export type ShellMode = "write" | "teacher";
@@ -41,5 +41,7 @@ export function shellCss(view: ShellView): string {
 
 /** The stored widths, or the defaults; the stored value never throws. */
 export const readWidths = (): LayoutSettings => loadSettings();
+/** ED-39: a width chosen elsewhere on the page (the dialog "Prilagodi panel"). */
+export const watchWidths = (onChange: (widths: LayoutSettings) => void): (() => void) => onSettingsChange(onChange);
 /** True when the browser kept the choice. */
 export const keepWidths = (widths: LayoutSettings): boolean => saveSettings(widths);

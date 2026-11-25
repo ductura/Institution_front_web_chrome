@@ -185,3 +185,13 @@
     font-size: 13px;
   }
 }
+
+/* ED-39 "Prilagodi panel": the note under the title, and "Gustoća: Zbijeno" (prototype .rail.dense, .rp-dense). */
+.settingsNote { margin: 0 0 12px; color: var(--ink-3); font-size: 12.5px; }
+.density { display: contents; }
+.density[data-density="dense"] :global(.outline__link) { min-height: 28px; padding-top: 1px; padding-bottom: 1px; }
+.density[data-density="dense"] .chapterCards { gap: 3px; margin: 4px 0; }
+.density[data-density="dense"] :global(.panel-tabs__panel) { padding: 10px; font-size: 12.5px; }
+@media (max-width: 640px) {
+  .density[data-density="dense"] :global(.outline__link) { min-height: 40px; }
+}

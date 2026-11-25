@@ -20,6 +20,11 @@ export const editorPanelLayoutsHr = {
   layout: "Raspored",
   mobile: "Na mobitelu",
   same: "Kao na računalu",
+  density: "Gustoća",
+  densities: { airy: "Prozračno", dense: "Zbijeno" },
+  width: "Širina na računalu",
+  widths: { narrow: "Uska", medium: "Srednja", wide: "Široka" },
+  settingsNote: "Postavke vrijede samo za Vas i pamte se u ovom pregledniku.",
   reset: "Vrati zadano",
   done: "Gotovo",
   variants: {
