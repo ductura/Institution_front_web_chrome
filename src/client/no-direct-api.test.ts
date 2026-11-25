@@ -16,6 +16,7 @@ import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, posix, relative, resolve, sep, win32 } from "node:path";
 import { describe, expect, it } from "vitest";
+import baselineJson from "./no-direct-api.baseline.json" with { type: "json" };
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const SCANNED = ["src", "public", "packages", "catalog", "app"];
@@ -23,9 +24,13 @@ const SCANNED = ["src", "public", "packages", "catalog", "app"];
 const SKIP_ANYWHERE = new Set(["node_modules", ".git"]);
 /** Skipped only directly under catalog/ or packages/<name>/ (their own e2e and build output). */
 const SKIP_TOP = new Set(["e2e", "dist", "test-results", "playwright-report"]);
+/** Skipped directly under src/: pages parked until their own PR moves them back (WEB-01), not built, not shipped. */
+const SKIP_SRC = new Set(["_cekanje"]);
 const SOURCE = /\.(?:[cm]?[jt]sx?|html?|xhtml|svg|css|svelte|vue)$/;
 const TEST = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
-const CONFIG = /^(?:catalog|packages\/[^/]+)\/(?:vite|vitest|playwright)\.config\.[cm]?[jt]s$/;
+/** A stylesheet: "global alias" reads `top;` in `vertical-align: top;` as the window alias, so it is not checked there. */
+const STYLESHEET = /\.css$/;
+const CONFIG = /^(?:catalog|packages\/[^/]+|src\/[^/]+)\/(?:vite|vitest|playwright)\.config\.[cm]?[jt]s$/;
 
 /** The client itself. */
 const CLIENT = "src/client/api.ts";
@@ -39,6 +44,15 @@ const CLIENT = "src/client/api.ts";
 export const EXCEPTIONS: Readonly<Record<string, { readonly fetchCalls: number }>> = {
   "public/app.js": { fetchCalls: 3 },
 };
+
+/**
+ * Known findings of the pages copied from the database front and not yet moved
+ * onto src/client (the "_cekanje" pages are skipped, these are the rest), by
+ * file. It only shrinks: a file may break no rule outside its entry, a file
+ * that no longer breaks any rule must leave the list, and a new file has no
+ * entry. Each page PR (WEB-xx) deletes its files' entries.
+ */
+export const BASELINE: Readonly<Record<string, readonly string[]>> = baselineJson;
 
 /**
  * Closed list of rules waived for one exact file (ODLUKA Ductus#2028
@@ -81,7 +95,11 @@ export function isPackagesDir(dir: string, separator: string = sep): boolean {
 }
 
 const BARE_IMPORTS = new Set(["react", "react-dom/client", "react/jsx-runtime", "@ductura/ui", "@ductura/ui/fonts.css",
-  "@ductura/ui/tokens.css", "@ductura/contracts/openapi/v1.json"]);
+  "@ductura/ui/tokens.css", "@ductura/ui/reading-font.css", "@ductura/ui/assistant-thread", "@ductura/ui/save-status",
+  "@ductura/contracts/openapi/v1.json"]);
+/** Bare imports that are not network libraries: the Next, editor and storage stack of the app trees (WEB-01), and the "@/" alias. */
+const BARE_PREFIXES = ["@/", "next/", "@tiptap/"];
+const BARE_PACKAGES = new Set(["next", "dexie", "react-dom"]);
 const CONFIG_IMPORTS = new Set(["vite", "vitest/config", "@playwright/test", "@vitejs/plugin-react"]);
 
 const RULES: readonly (readonly [string, RegExp])[] = [
@@ -130,8 +148,9 @@ export function normalise(text: string): string {
     .replace(/(["'`])\s*,\s*(["'`])/g, "$1/$2");
 }
 
+// An "import" or "from" inside a string literal (a generated enum value "kind": "import", a generated key "from": string) is not a statement.
 function bareImports(text: string): string[] {
-  const found = [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
+  const found = [...text.matchAll(/(?:(?<!["'`])\bfrom\s*|(?<!["'`])\bimport\s*\(?\s*|\brequire\s*\(\s*|@import\s+(?:url\()?)["'`]([^"'`]+)["'`]/g)];
   return found.map((m) => m[1] ?? "").filter((spec) => !spec.startsWith(".") && !spec.startsWith("/"));
 }
 
@@ -139,10 +158,13 @@ function bareImports(text: string): string[] {
 export function directCalls(text: string, file = ""): string[] {
   const plain = normalise(text);
   const config = CONFIG.test(file);
-  const broken = RULES.filter(([name, rule]) => !(config && name === "test file import") && (rule.test(text) || rule.test(plain)))
+  const broken = RULES.filter(([name, rule]) => !(config && name === "test file import") && !(STYLESHEET.test(file) && name === "global alias")
+    && (rule.test(text) || rule.test(plain)))
     .map(([name]) => name);
   const allowed = config ? new Set([...BARE_IMPORTS, ...CONFIG_IMPORTS]) : BARE_IMPORTS;
-  for (const spec of bareImports(plain)) if (!allowed.has(spec)) broken.push(`import ${spec}`);
+  for (const spec of bareImports(plain)) {
+    if (!allowed.has(spec) && !BARE_PACKAGES.has(spec) && !BARE_PREFIXES.some((prefix) => spec.startsWith(prefix))) broken.push(`import ${spec}`);
+  }
   return broken;
 }
 
@@ -171,6 +193,7 @@ function sources(dir: string, top: boolean, walk: Walk): string[] {
     const path = walk.join(dir, name);
     if (walk.isDirectory(path)) {
       if (SKIP_ANYWHERE.has(name) || (top && SKIP_TOP.has(name))) return [];
+      if (SKIP_SRC.has(name) && /\/src$/.test(toPosix(dir, walk.sep))) return [];
       return sources(path, isPackagesDir(dir, walk.sep), walk);
     }
     return SOURCE.test(name) && !TEST.test(name) ? [path] : [];
@@ -186,6 +209,20 @@ export function scannedFiles(root: string, walk: Walk = nodeWalk()): string[] {
 /** The files checked for direct calls: all but the client and the closed exception list. */
 export function checkedFiles(files: readonly string[], list: object = EXCEPTIONS): string[] {
   return files.filter((file) => file !== CLIENT && listed(list, file) === undefined);
+}
+
+/**
+ * The findings that the BASELINE entry of their file does not name. Both lists
+ * hold together: a finding passes only if the file's BASELINE entry names its
+ * rule or a current SHA-256 waiver (violations) lifted it; anything else is left.
+ */
+export function outsideBaseline(found: readonly (readonly [string, readonly string[]])[],
+  baseline: Readonly<Record<string, readonly string[]>> = BASELINE): [string, string[]][] {
+  return found.flatMap(([file, rules]): [string, string[]][] => {
+    const listed = Object.prototype.hasOwnProperty.call(baseline, file) ? baseline[file] ?? [] : [];
+    const left = rules.filter((rule) => !listed.includes(rule));
+    return left.length > 0 ? [[file, left]] : [];
+  });
 }
 
 /** A waiver's rules if it is a plain object of exactly two own data fields, a 64-digit lower-case sha256 and distinct rule names; else why not. */
@@ -266,14 +303,29 @@ describe("no API call outside src/client/api.ts", () => {
     }
   });
 
-  it("finds no direct call in any other file, and every waiver is current", () => {
-    expect(violations(checkedFiles(files), (file) => readFileSync(join(ROOT, file)))).toEqual({ found: [], problems: [] });
+  it("finds no direct call in any other file outside the baseline, and every waiver is current", () => {
+    const { found, problems } = violations(checkedFiles(files), (file) => readFileSync(join(ROOT, file)));
+    expect(problems).toEqual([]);
+    expect(outsideBaseline(found)).toEqual([]);
   });
 
   it("the waiver list is closed and empty until its files arrive", () => {
     expect(Reflect.ownKeys(WAIVED_RULES)).toEqual([]);
     expect(Object.isFrozen(WAIVED_RULES)).toBe(true);
     expect(Object.getPrototypeOf(WAIVED_RULES)).toBe(Object.prototype);
+  });
+
+  it("the baseline lists only files that still break the rule it names", () => {
+    const stale = Object.entries(BASELINE).flatMap(([file, rules]) => {
+      if (!files.includes(file)) return [`${file}: not scanned`];
+      const now = new Set(directCalls(readFileSync(join(ROOT, file), "utf8"), file));
+      return rules.filter((rule) => !now.has(rule)).map((rule) => `${file}: ${rule}`);
+    });
+    expect(stale).toEqual([]);
+  });
+
+  it("the baseline holds no file of the client or the closed exception list", () => {
+    expect(Object.keys(BASELINE).filter((file) => file === CLIENT || listed(EXCEPTIONS, file) !== undefined)).toEqual([]);
   });
 
   it("the exception list is closed", () => {
@@ -355,6 +407,8 @@ describe("paths read the same with Windows separators", () => {
     expect(directCalls(vite, toPosix("catalog\\vite.config.ts", win32.sep))).toEqual([]);
     expect(directCalls(vite, toPosix("packages/ui\\vite.config.ts", win32.sep))).toEqual([]);
     expect(directCalls(vite, toPosix("catalog\\src\\main.tsx", win32.sep))).toEqual(["import vite"]);
+    expect(directCalls('type T = { "kind": "import" | "ai-transfer"; "at": { "from": string; "to": string } };', "src/x.ts")).toEqual([]);
+    expect(directCalls('import{a}from"evil-net";', "src/x.ts")).toEqual(["import evil-net"]);
     expect(["C:\\repo\\packages", "C:\\repo\\packages\\", "/repo/packages", "/repo/packages/", "C:\\repo\\src", "C:\\repo\\mypackages"]
       .map((dir) => isPackagesDir(dir, dir.startsWith("C:") ? win32.sep : posix.sep))).toEqual([true, true, true, true, false, false]);
   });
@@ -608,5 +662,42 @@ describe("the scan catches the ways around it", () => {
   it("allows tool imports only in the config files of the catalogue and packages", () => {
     expect(directCalls('import { defineConfig } from "vite";', "catalog/vite.config.ts")).toEqual([]);
     expect(directCalls('import { defineConfig } from "vite";', "catalog/src/main.tsx")).toEqual(["import vite"]);
+  });
+});
+
+describe("the baseline and the SHA-256 waivers hold together", () => {
+  const FILE = "pkg/b/page.ts";
+  const TEXT = 'Reflect.ownKeys(o);\nfetch("/x");\n';
+  const bytes = (text: string) => Buffer.from(text, "utf8");
+  const current = { [FILE]: { rules: ["Reflect"], sha256: contentSha256(bytes(TEXT)) } };
+  const check = (list: object, baseline: Record<string, readonly string[]>, text = TEXT) => {
+    const { found, problems } = violations([FILE], () => bytes(text), list);
+    return { problems, left: outsideBaseline(found, baseline) };
+  };
+
+  it("a finding passes only when the baseline names it or a current waiver lifts it", () => {
+    expect(directCalls(TEXT, FILE)).toEqual(expect.arrayContaining(["Reflect", "fetch"]));
+    expect(check({}, {})).toEqual({ problems: [], left: [[FILE, directCalls(TEXT, FILE)]] });
+    expect(check(current, {})).toEqual({ problems: [], left: [[FILE, ["fetch"]]] });
+    expect(check({}, { [FILE]: ["fetch"] })).toEqual({ problems: [], left: [[FILE, ["Reflect"]]] });
+    expect(check(current, { [FILE]: ["fetch"] })).toEqual({ problems: [], left: [] });
+  });
+
+  it("a stale waiver is a problem even where the baseline names its rule", () => {
+    const changed = `${TEXT}// one more line\n`;
+    expect(check(current, { [FILE]: ["Reflect", "fetch"] }, changed))
+      .toEqual({ problems: [`${FILE}: stale, the content changed (sha256)`], left: [] });
+  });
+
+  it("the baseline of one file covers nothing in another, and a key from the prototype is no entry", () => {
+    expect(outsideBaseline([[FILE, ["fetch"]]], { "pkg/b/other.ts": ["fetch"] })).toEqual([[FILE, ["fetch"]]]);
+    expect(outsideBaseline([["constructor", ["fetch"]], ["toString", ["fetch"]]], {}))
+      .toEqual([["constructor", ["fetch"]], ["toString", ["fetch"]]]);
+  });
+
+  it("an unwaivable rule is still refused by the waiver list when the baseline names it", () => {
+    const text = `${TEXT}import "./net.test";\n`;
+    const list = { [FILE]: { rules: ["Reflect", "test file import"], sha256: contentSha256(bytes(text)) } };
+    expect(check(list, { [FILE]: ["test file import", "fetch"] }, text).problems).toEqual([`${FILE}: test file import cannot be waived`]);
   });
 });
