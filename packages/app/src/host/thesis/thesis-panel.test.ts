@@ -6,7 +6,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { orderSections, panelVisible, readSafely, sectionOf, type SectionRead, type ThesisSectionDef } from "./model";
-import { registeredSections } from "./sections";
 import { ThesisPanel } from "./ThesisPanel";
 
 const def = (id: string, order: number, read: ThesisSectionDef<string>["read"] = async () => ({ kind: "empty" })): ThesisSectionDef<string> =>
@@ -54,9 +53,8 @@ describe("sectionOf", () => {
 });
 
 describe("ThesisPanel", () => {
-  it("renders nothing with no registered sections (the registry starts empty)", () => {
-    expect(registeredSections).toEqual([]);
-    expect(renderToStaticMarkup(createElement(ThesisPanel, { documentId: "izmisljeni-dokument-1", role: "student" }))).toBe("");
+  it("renders nothing with no sections", () => {
+    expect(renderToStaticMarkup(createElement(ThesisPanel, { documentId: "izmisljeni-dokument-1", role: "student", sections: [] }))).toBe("");
   });
   it("renders nothing when the work is not in a mentorship", () => {
     const html = renderToStaticMarkup(createElement(ThesisPanel, { documentId: "d1", role: "mentor", inMentorship: false, sections: [def("a", 1)] as never }));
