@@ -192,8 +192,7 @@ jobs:
           - { part: behaviour, leg: 1, of: 3, browser: true }
           - { part: behaviour, leg: 2, of: 3, browser: true }
           - { part: behaviour, leg: 3, of: 3, browser: true }
-          - { part: axe-dark, browser: true }
-          - { part: axe-light, browser: true }
+          - { part: axe, browser: true }
     # One place for the filters: the parts below and the coverage check use them.
     env:
       BASELINES: "matches its baselines"
@@ -255,7 +254,7 @@ jobs:
           behaviour=$(count --grep-invert "$BASELINES|$AXE_ANY")
           dark=$(count --grep "$AXE_DARK")
           light=$(count --grep "$AXE_LIGHT")
-          echo "all $all = behaviour $behaviour + axe-dark $dark + axe-light $light"
+          echo "all $all = behaviour $behaviour + axe dark $dark + axe light $light"
           if [ "$all" -eq 0 ] || [ $((behaviour + dark + light)) -ne "$all" ]; then
             echo "::error::the ui parts do not cover every catalogue test exactly once"
             exit 1
@@ -334,11 +333,15 @@ jobs:
             *) echo "::error::unknown behaviour leg"; exit 1 ;;
           esac
           pnpm --filter @ductura/catalog run test:visual "$@"
+      # One job for both shells (CI-BRZINA, 25. 11.): each took about a minute
+      # of tests after a minute of setup, and a pull request run is at the
+      # organisation's limit of concurrent runners. The light shell also runs
+      # when the dark one failed, so a run reports both.
       - name: Axe tests of the catalogue (dark shell)
-        if: matrix.part == 'axe-dark'
+        if: matrix.part == 'axe'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_DARK"
       - name: Axe tests of the catalogue (light shell)
-        if: matrix.part == 'axe-light'
+        if: always() && matrix.part == 'axe'
         run: pnpm --filter @ductura/catalog run test:visual --grep "$AXE_LIGHT"
       - uses: actions/upload-artifact@v4
         if: failure()
