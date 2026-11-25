@@ -23,6 +23,7 @@ import {
 import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
+import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 
@@ -151,6 +152,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       }} />
       <Menu label={t.toolbar.export} items={[{ id: "copy", label: t.toolbar.exportItems.copy, disabled: !editor || editor.isDestroyed }]}
         onSelect={(id) => { if (id === "copy") void copyWorkText(editor); }} />
+      <ReadAloudControls editor={editor} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
       {v3.dialog}
