@@ -16,6 +16,7 @@ import {
   type ReadingPlace, type ReadingPort, type ReadingWrite, type ReturnNotice, type TasksRead,
 } from "../mentor";
 import { placeOf, positionOf, type PlaceEditor } from "../mentor/own-place";
+import { ThesisPanel } from "../../thesis/ThesisPanel";
 import { ConsultPanel } from "../work/consult/ConsultPanel";
 import { docWords } from "../mentor/prep-model";
 import { latestReturn } from "../mentor/round-feedback";
@@ -155,6 +156,8 @@ export function MentorMount({ documentId, submitted, editor }: {
           if (pos !== null) placeEditor.commands?.focus(pos);
           return pos !== null;
         } : undefined} />}
+      {/* WEB-V16-KOSTUR: "Završni rad"; the server's 404 hides it for a work without a mentorship. */}
+      <ThesisPanel documentId={documentId} role="student" />
     </>
   );
 }
