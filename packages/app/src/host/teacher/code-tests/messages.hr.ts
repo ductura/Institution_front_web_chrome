@@ -1,0 +1,53 @@
+// WEB-V21-KOD-TESTOVI-OBRAZAC: the texts of the teacher's "Testovi uz zadatak" page. Invented examples only.
+// Tests are visible to the student and the result is the student's alone (val21-razlika §5): nothing here says
+// that a test is hidden or that its result counts towards a mark.
+export const codeTestsText = {
+  title: "Testovi uz zadatak",
+  lead: "Dodajte do 10 testova za programski zadatak (JavaScript). Studenti vide svaki test i mogu ga pokrenuti u svom pregledniku; rezultat vide samo oni i ne ulazi u ocjenu.",
+  back: "Natrag na kolegije",
+  link: "Testovi uz zadatak",
+  gone: "Ovaj zadatak nije dostupan.",
+  loading: "Učitavanje testova…",
+  unavailable: "Testovi trenutačno nisu dostupni. Pokušajte ponovno.",
+  retry: "Pokušaj ponovno",
+  empty: "Za ovaj zadatak još nema testova.",
+  revision: "Spremljena revizija: {n}",
+  limits: "Najviše {max} testova, ukupno najviše 16 KiB. Ulaz i očekivani izlaz pišu se kao JSON.",
+  count: "Testova: {n} od {max}",
+  size: "Veličina: {n} od 16384 bajtova",
+  language: "Jezik: JavaScript",
+  test: {
+    group: "Test {n}",
+    title: "Naziv testa",
+    input: "Ulaz (JSON)",
+    expected: "Očekivani izlaz (JSON)",
+    remove: "Ukloni test {n}",
+  },
+  add: "Dodaj test",
+  addLimit: "Dosegnut je najveći broj testova (10).",
+  save: "Spremi testove",
+  saving: "Sprema se…",
+  saved: "Testovi su spremljeni.",
+  reset: "Odbaci promjene",
+  errors: {
+    title: "Naziv testa ima 1 do 120 znakova.",
+    input: "Ulaz mora biti ispravan JSON.",
+    expected: "Očekivani izlaz mora biti ispravan JSON.",
+    count: "Najviše 10 testova.",
+    size: "Testovi su preveliki: ukupno najviše 16 KiB.",
+  },
+  writeFailure: {
+    notFound: "Ovaj zadatak nije dostupan, testovi nisu spremljeni.",
+    invalid: "Poslužitelj je odbio testove. Provjerite nazive, JSON i veličinu.",
+    forbidden: "Testove može spremiti samo nastavnik kolegija.",
+    unknown: "Nije poznato je li spremanje uspjelo. Učitajte testove ponovno prije nego što spremite.",
+  },
+  preview: {
+    title: "Pregled kako ga vidi student",
+    lead: "Student vidi ove testove i napomenu ispod njih.",
+    note: "Pokrenuto u vašem pregledniku; to nije provjera nastavnika i ne ulazi u ocjenu.",
+    input: "Ulaz",
+    expected: "Očekivano",
+    none: "Student neće vidjeti nijedan test.",
+  },
+} as const;

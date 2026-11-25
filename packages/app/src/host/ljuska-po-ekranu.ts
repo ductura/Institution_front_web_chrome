@@ -70,6 +70,7 @@ export const SCREEN_FRAMES: readonly ScreenFrame[] = [
   n("/nastavnik/zadatak/[assignmentId]/produljenje", "N-13 Produljenje roka", "side", true),
   n("/nastavnik/zadatak/[assignmentId]/timovi", "Timovi na zadatku", "side"),
   n("/nastavnik/zadatak/[assignmentId]/recenzija", "Recenzija među studentima", "side"),
+  n("/nastavnik/zadatak/[assignmentId]/testovi", "Testovi uz zadatak", "side"),
   n("/nastavnik/zadatak/[assignmentId]/merlin", "N-18 Izvoz za Merlin", "side"),
 ];
 
