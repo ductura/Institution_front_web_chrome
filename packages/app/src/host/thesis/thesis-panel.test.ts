@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { orderSections, panelVisible, readSafely, sectionOf, type SectionRead, type ThesisSectionDef } from "./model";
 import { ThesisPanel } from "./ThesisPanel";
+import { registeredSections } from "./sections";
 
 const def = (id: string, order: number, read: ThesisSectionDef<string>["read"] = async () => ({ kind: "empty" })): ThesisSectionDef<string> =>
   ({ id, order, title: `Odjeljak ${id}`, read, View: () => null });
@@ -53,7 +54,8 @@ describe("sectionOf", () => {
 });
 
 describe("ThesisPanel", () => {
-  it("renders nothing with no sections", () => {
+  it("renders nothing with no sections, and the registry holds the forms section (WEB-V16-OBRASCI)", () => {
+    expect(registeredSections.map((s) => s.id)).toContain("forms");
     expect(renderToStaticMarkup(createElement(ThesisPanel, { documentId: "izmisljeni-dokument-1", role: "student", sections: [] }))).toBe("");
   });
   it("renders nothing when the work is not in a mentorship", () => {
