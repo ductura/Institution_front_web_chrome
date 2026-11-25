@@ -52,6 +52,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/nema-ovlasti": (c) => c.app.accessDenied.pageTitle,
   "/profil": (c) => c.app.profile.title,
   "/pristupacnost": (c) => c.t.shell.accessibilityStatement,
+  "/o-aplikaciji": (c) => c.t.landing.demo.pageTitle,
   "/ustanova/izvoz-podataka": (c) => c.app.pages.studentDataExport,
   "/izvoz-podataka/[token]": (c) => c.app.pages.studentDataDownload,
   "/provjera": (c) => c.app.pages.receiptCheck,

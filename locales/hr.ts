@@ -100,6 +100,23 @@ export const hr = {
     intro: `Student piše, a nastavnik prati kako rad nastaje i komentira uz odlomke. ${APP_NAME} ne procjenjuje autorstvo ni korištenje AI-ja, a prije početka vidite što nastavnik vidi i od kada.`,
     enter: "Prijavi se i počni",
     aaiOnly: "Prijava isključivo preko AAI@EduHr.",
+    // DEMO-1: the public home at /o-aplikaciji, outside the shell, with screenshots
+    // of invented data and the way to the demo (NEXT_PUBLIC_DEMO_URL).
+    demo: {
+      pageTitle: "O aplikaciji",
+      screensTitle: "Kako izgleda",
+      screensLead: "Snimke zaslona iz aplikacije. Ustanova, kolegiji, osobe i radovi na njima su izmišljeni.",
+      shots: {
+        studentTasks: "Student: zadaci s rokovima na jednom mjestu",
+        studentWriting: "Student: pisanje rada u uređivaču zadatka",
+        teacherCourses: "Nastavnik: kolegiji i zadaci",
+        teacherWork: "Nastavnik: rad studenta s komentarima uz odlomke",
+      },
+      tryTitle: "Isprobaj demo",
+      tryBody: "Demo je zasebna inačica aplikacije s izmišljenom ustanovom, kolegijima i radovima. U njoj nema stvarnih osoba ni radova.",
+      tryButton: "Isprobaj demo",
+      signInTitle: "Imate račun ustanove?",
+    },
     previewLabel: "Primjer radnog prostora: list rada i komentar nastavnika, izmišljeni podaci",
     previewSignature: "DUC · 371.3 · rad 07",
     previewTitle: "Gradski promet i održiva mobilnost",

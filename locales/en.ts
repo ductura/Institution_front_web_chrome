@@ -98,6 +98,23 @@ const en = {
     intro: `The student writes, and the teacher follows how the work takes shape and comments next to paragraphs. ${APP_NAME} does not assess authorship or AI use, and before you start you see what the teacher sees and from when.`,
     enter: "Sign in and start",
     aaiOnly: "Sign-in only through AAI@EduHr.",
+    // DEMO-1: the public home at /o-aplikaciji, outside the shell, with screenshots
+    // of invented data and the way to the demo (NEXT_PUBLIC_DEMO_URL).
+    demo: {
+      pageTitle: "About the app",
+      screensTitle: "What it looks like",
+      screensLead: "Screenshots of the app. The institution, courses, people and works in them are invented.",
+      shots: {
+        studentTasks: "Student: assignments and deadlines in one place",
+        studentWriting: "Student: writing the work in the assignment editor",
+        teacherCourses: "Teacher: courses and assignments",
+        teacherWork: "Teacher: a student's work with comments next to paragraphs",
+      },
+      tryTitle: "Try the demo",
+      tryBody: "The demo is a separate instance of the app with an invented institution, courses and works. It holds no real people or works.",
+      tryButton: "Try the demo",
+      signInTitle: "Do you have an institution account?",
+    },
     previewLabel: "Example workspace: a page of the work and a teacher comment, invented data",
     previewSignature: "DUC · 371.3 · work 07",
     previewTitle: "Urban transport and sustainable mobility",

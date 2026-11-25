@@ -204,6 +204,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nema-ovlasti", label: accessDeniedHr.pageTitle, kind: "pending", roles: [], public: true },
   // WEB-1805 (M11.6, F-03): the accessibility statement; public, as the law asks.
   { path: "/pristupacnost", label: t.shell.accessibilityStatement, kind: "pending", roles: [], public: true },
+  // DEMO-1: what the app is and the way to the demo; public, it reads no session.
+  { path: "/o-aplikaciji", label: t.landing.demo.pageTitle, kind: "pending", roles: [], public: true },
   // WEB-1302: the student's one-time download; public, the token in the link is the only key.
   { path: "/izvoz-podataka/[token]", label: studentDataDownloadMessages.labels.title, kind: "pending", roles: [], public: true },
   // WEB-2111 (R-41, V-5, C-6): the check of a receipt; public, anyone holding the receipt checks it.
