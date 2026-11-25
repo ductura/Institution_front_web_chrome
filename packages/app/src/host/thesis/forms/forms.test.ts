@@ -111,7 +111,7 @@ describe("FormsView", () => {
     expect(button(host, formsHr.give)!.disabled).toBe(true);
     const { host: h2 } = await mount("mentor", call, { forms: [form()], consent: consent("none") });
     await act(async () => { button(h2, formsHr.give)!.click(); });
-    expect(call).toHaveBeenCalledTimes(1);
+    expect(call.mock.calls.filter((c) => c[0] === "work.mentor-consent.put")).toHaveLength(1);
   });
 });
 
