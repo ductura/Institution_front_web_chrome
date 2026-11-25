@@ -120,16 +120,18 @@ describe("the section", () => {
     expect(call).not.toHaveBeenCalled();
     expect(host.textContent).toContain("unesite datum i vrijeme obrane");
   });
-  it("mentor: a correction of the date is the same stage sent again, and no success note on a refusal", async () => {
-    const call = vi.fn(async () => fail(503, "unavailable"));
+  it("mentor: a correction of the date is the same stage sent again; an unknown outcome keeps the notice and the edited date, reading in place", async () => {
+    const call = vi.fn(async (op: string) => op === "work.thesis-stage.put" ? fail(503, "unavailable") : ok(stage("defense_scheduled", "2026-12-14T09:30:00.000Z")));
     const reload = vi.fn();
     const host = await view(stage("defense_scheduled", "2026-12-14T09:30:00.000Z"), "mentor", () => call, reload);
     await change(host.querySelector('input[name="defenseAt"]')!, "2026-12-15T11:00");
     await act(async () => { host.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
     expect(call).toHaveBeenCalledWith("work.thesis-stage.put", { params: { documentId: DOC }, query: undefined,
       body: { stage: "defense_scheduled", defenseAt: "2026-12-15T10:00:00.000Z" } });
+    expect(call).toHaveBeenCalledWith("work.thesis-stage.get", { params: { documentId: DOC }, query: undefined, body: undefined });
     expect(host.querySelector('[role="status"]')).toBeNull();
     expect(host.querySelector('[role="alert"]')?.textContent).toContain("Nije poznato");
-    expect(reload).toHaveBeenCalled();
+    expect((host.querySelector('input[name="defenseAt"]') as HTMLInputElement).value).toBe("2026-12-15T11:00");
+    expect(reload).not.toHaveBeenCalled();
   });
 });

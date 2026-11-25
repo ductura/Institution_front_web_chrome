@@ -47,8 +47,14 @@ export function StageSection({ documentId, role, value, reload, call = defaultCa
     }
     if (result.kind === "signedOut") { goToSignIn(window.location.pathname); return; }
     setNote({ tone: "alert", text: FAILURE[result.kind] });
-    // After a refusal the server may know more than this page: read the stage again.
-    if (result.kind === "notFound" || result.kind === "unknown") reload();
+    // The server may know more than this page. A work that is gone hides the whole section (reload); after an
+    // unknown outcome the stage is read again in place, so the notice and the mentor's edited date stay.
+    if (result.kind === "notFound") { reload(); return; }
+    if (result.kind === "unknown") {
+      const again = await readStage(call(), documentId);
+      if (again.kind === "ok") setShown(again.view);
+      else if (again.kind === "notFound") reload();
+    }
   }
 
   const when = formatDefense(shown.defenseAt);
