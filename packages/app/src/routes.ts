@@ -37,6 +37,7 @@ import { practiceJournalText } from "./host/student/practice-journal/messages.hr
 import { peerReviewText } from "./host/student/peer-review/messages.hr";
 import { workTeamText } from "./host/student/work-team/messages.hr";
 import { teacherTeamText } from "./host/teacher/work-team/messages.hr";
+import { teacherPeerReviewText } from "./host/teacher/peer-review/messages.hr";
 import { analysisPageMessages } from "./host/analysis/messages.hr";
 
 export { BASES, type Base } from "./bases";
@@ -126,6 +127,8 @@ export const PAGES: readonly Page[] = [
   { path: "/zadatak/[id]/recenzija/rad/[taskId]", label: peerReviewText.work.title, kind: "pending", roles: ["student"], current: "/zadaci" },
   // WEB-V19-GRUPA: the teacher's teams of one assignment, entered from the task's card in N-01 by a link.
   { path: "/nastavnik/zadatak/[assignmentId]/timovi", label: teacherTeamText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // WEB-V19-RECENZIJA-NASTAVNIK: the teacher's peer-review round of one assignment, entered from the task's card in N-01 by a link.
+  { path: "/nastavnik/zadatak/[assignmentId]/recenzija", label: teacherPeerReviewText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // HOST-S1: the editor of one work.
   { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },
