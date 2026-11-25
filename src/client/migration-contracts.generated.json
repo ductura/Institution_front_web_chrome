@@ -47529,5 +47529,1352 @@
         "unavailable"
       ]
     }
+  },
+  "institution.assignment-team-setting.put": {
+    "path": "/api/v1/institution/assignments/{assignmentId}/team-setting",
+    "method": "PUT",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled",
+        "minSize",
+        "maxSize",
+        "formation"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minSize": {
+          "minimum": 2,
+          "maximum": 6,
+          "type": "integer"
+        },
+        "maxSize": {
+          "minimum": 2,
+          "maximum": 6,
+          "type": "integer"
+        },
+        "formation": {
+          "anyOf": [
+            {
+              "const": "student_choice",
+              "type": "string"
+            },
+            {
+              "const": "teacher_assigned",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the setting now in force",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "enabled",
+                "minSize",
+                "maxSize",
+                "formation"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "minSize": {
+                  "minimum": 2,
+                  "maximum": 6,
+                  "type": "integer"
+                },
+                "maxSize": {
+                  "minimum": 2,
+                  "maximum": 6,
+                  "type": "integer"
+                },
+                "formation": {
+                  "anyOf": [
+                    {
+                      "const": "student_choice",
+                      "type": "string"
+                    },
+                    {
+                      "const": "teacher_assigned",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.assignment-team-setting.get": {
+    "path": "/api/v1/institution/assignments/{assignmentId}/team-setting",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the setting in force",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "enabled",
+                "minSize",
+                "maxSize",
+                "formation"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "minSize": {
+                  "minimum": 2,
+                  "maximum": 6,
+                  "type": "integer"
+                },
+                "maxSize": {
+                  "minimum": 2,
+                  "maximum": 6,
+                  "type": "integer"
+                },
+                "formation": {
+                  "anyOf": [
+                    {
+                      "const": "student_choice",
+                      "type": "string"
+                    },
+                    {
+                      "const": "teacher_assigned",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.work-team.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/team",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the student's team state",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "disabled",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state",
+                    "formation",
+                    "openTeams"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "none",
+                      "type": "string"
+                    },
+                    "formation": {
+                      "anyOf": [
+                        {
+                          "const": "student_choice",
+                          "type": "string"
+                        },
+                        {
+                          "const": "teacher_assigned",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "openTeams": {
+                      "maxItems": 500,
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "teamId",
+                          "memberCount"
+                        ],
+                        "properties": {
+                          "teamId": {
+                            "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "memberCount": {
+                            "minimum": 1,
+                            "maximum": 6,
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state",
+                    "team"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "member",
+                      "type": "string"
+                    },
+                    "team": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "teamId",
+                        "members"
+                      ],
+                      "properties": {
+                        "teamId": {
+                          "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "members": {
+                          "minItems": 1,
+                          "maxItems": 6,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "givenName",
+                              "familyName"
+                            ],
+                            "properties": {
+                              "givenName": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "familyName": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.work-team.post": {
+    "path": "/api/v1/student/assignments/{assignmentId}/team",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "action"
+          ],
+          "properties": {
+            "action": {
+              "const": "create",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "action",
+            "teamId"
+          ],
+          "properties": {
+            "action": {
+              "const": "join",
+              "type": "string"
+            },
+            "teamId": {
+              "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "action"
+          ],
+          "properties": {
+            "action": {
+              "const": "leave",
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "responses": {
+      "200": {
+        "description": "the student's team state after the action",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "disabled",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state",
+                    "formation",
+                    "openTeams"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "none",
+                      "type": "string"
+                    },
+                    "formation": {
+                      "anyOf": [
+                        {
+                          "const": "student_choice",
+                          "type": "string"
+                        },
+                        {
+                          "const": "teacher_assigned",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "openTeams": {
+                      "maxItems": 500,
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "teamId",
+                          "memberCount"
+                        ],
+                        "properties": {
+                          "teamId": {
+                            "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "memberCount": {
+                            "minimum": 1,
+                            "maximum": 6,
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state",
+                    "team"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "member",
+                      "type": "string"
+                    },
+                    "team": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "teamId",
+                        "members"
+                      ],
+                      "properties": {
+                        "teamId": {
+                          "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                          "type": "string"
+                        },
+                        "members": {
+                          "minItems": 1,
+                          "maxItems": 6,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "givenName",
+                              "familyName"
+                            ],
+                            "properties": {
+                              "givenName": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "familyName": {
+                                "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.work-teams.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/teams",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the teams and the students without a team",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "teams",
+                "unassigned"
+              ],
+              "properties": {
+                "teams": {
+                  "maxItems": 500,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "teamId",
+                      "members"
+                    ],
+                    "properties": {
+                      "teamId": {
+                        "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "members": {
+                        "maxItems": 6,
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "studentId",
+                            "givenName",
+                            "familyName",
+                            "workState"
+                          ],
+                          "properties": {
+                            "studentId": {
+                              "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                              "type": "string"
+                            },
+                            "givenName": {
+                              "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                              "type": "string"
+                            },
+                            "familyName": {
+                              "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                              "type": "string"
+                            },
+                            "workState": {
+                              "anyOf": [
+                                {
+                                  "const": "not_started",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "in_progress",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "submitted",
+                                  "type": "string"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "unassigned": {
+                  "maxItems": 5000,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "studentId",
+                      "givenName",
+                      "familyName"
+                    ],
+                    "properties": {
+                      "studentId": {
+                        "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "givenName": {
+                        "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "familyName": {
+                        "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.work-teams.post": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/teams",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "201": {
+        "description": "the created team",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "teamId"
+              ],
+              "properties": {
+                "teamId": {
+                  "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.work-team-member.post": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/teams/{teamId}/members",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId",
+        "teamId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        },
+        "teamId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "studentId",
+        "action"
+      ],
+      "properties": {
+        "studentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "const": "add",
+              "type": "string"
+            },
+            {
+              "const": "remove",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the member list changed",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "updated"
+              ],
+              "properties": {
+                "updated": {
+                  "const": true,
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.work-team-contribution.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/team/contribution",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the contribution state of the student's team",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "disabled",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "none",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "pending",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "failed",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state",
+                    "members",
+                    "notice"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "ready",
+                      "type": "string"
+                    },
+                    "members": {
+                      "minItems": 1,
+                      "maxItems": 6,
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "givenName",
+                          "familyName",
+                          "categories",
+                          "totalCodePoints"
+                        ],
+                        "properties": {
+                          "givenName": {
+                            "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "familyName": {
+                            "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "categories": {
+                            "minItems": 5,
+                            "maxItems": 5,
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "category",
+                                "codePoints"
+                              ],
+                              "properties": {
+                                "category": {
+                                  "anyOf": [
+                                    {
+                                      "const": "written",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "ai_transferred",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "pasted",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "imported",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "unattributed",
+                                      "type": "string"
+                                    }
+                                  ]
+                                },
+                                "codePoints": {
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991,
+                                  "type": "integer"
+                                }
+                              }
+                            }
+                          },
+                          "totalCodePoints": {
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "notice": {
+                      "const": "not_authorship_evidence",
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.work-team-contribution.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/teams/{teamId}/contribution",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId",
+        "teamId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        },
+        "teamId": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the contribution state of the team",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "disabled",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "none",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "pending",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "failed",
+                      "type": "string"
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "state",
+                    "members",
+                    "notice"
+                  ],
+                  "properties": {
+                    "state": {
+                      "const": "ready",
+                      "type": "string"
+                    },
+                    "members": {
+                      "minItems": 1,
+                      "maxItems": 6,
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "givenName",
+                          "familyName",
+                          "categories",
+                          "totalCodePoints"
+                        ],
+                        "properties": {
+                          "givenName": {
+                            "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "familyName": {
+                            "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,100}(?<!\\s)(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          "categories": {
+                            "minItems": 5,
+                            "maxItems": 5,
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "category",
+                                "codePoints"
+                              ],
+                              "properties": {
+                                "category": {
+                                  "anyOf": [
+                                    {
+                                      "const": "written",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "ai_transferred",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "pasted",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "imported",
+                                      "type": "string"
+                                    },
+                                    {
+                                      "const": "unattributed",
+                                      "type": "string"
+                                    }
+                                  ]
+                                },
+                                "codePoints": {
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991,
+                                  "type": "integer"
+                                }
+                              }
+                            }
+                          },
+                          "totalCodePoints": {
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "notice": {
+                      "const": "not_authorship_evidence",
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
