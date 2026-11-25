@@ -50,6 +50,7 @@ import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
+import { RubricCard } from "./rubric/RubricCard";
 import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { WorkHistoryHost } from "../editor/work-history/WorkHistoryHost";
 import { readWordRange } from "./work/requirements";
@@ -135,7 +136,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
                 <AssistantChat assignmentId={assignmentId} scope={scope} readOnly={submitted || signedOut} />
                 <AssistantRules assignmentId={assignmentId} base={base} />
               </>,
-              instructions: () => <NoticeInstructions assignmentId={assignmentId} />,
+              instructions: () => <><NoticeInstructions assignmentId={assignmentId} /><RubricCard assignmentId={assignmentId} here={here} /></>,
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
