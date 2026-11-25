@@ -478,9 +478,12 @@ jobs:
   # built and served by dev-server.mjs under /app/web/ and /app/chrome/, over a
   # fake institution server (page.route), with axe.
   #
-  # The browser tests run as four shards of one job (ZEL-W23; four since
-  # CI-BRZINA, 25. 11., when a shard took 4 to 5 minutes). ci-ok needs the
-  # job `app`, whose result is success only when every shard succeeded.
+  # The browser tests run as six shards of one job (ZEL-W23; six since
+  # CI-BRZINA, 25. 11.). With four, the shards took 1.9 to 4.4 minutes of
+  # tests: the slow tests (a11y and the assistant) come first alphabetically
+  # and Playwright splits by test count, so shard 1 was the critical path of
+  # the whole workflow. ci-ok needs the job `app`, whose result is success
+  # only when every shard succeeded.
   app:
     needs: [changes, app-build]
     if: ${{ needs.changes.outputs.app == 'true' }}
@@ -489,7 +492,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: ["1/4", "2/4", "3/4", "4/4"]
+        shard: ["1/6", "2/6", "3/6", "4/6", "5/6", "6/6"]
     steps:
       - uses: actions/checkout@v4
         with: { persist-credentials: false }
