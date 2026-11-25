@@ -6,13 +6,14 @@ import { Button, RouteLoading } from "@ductura/ui";
 import { goToSignIn } from "@/client/api";
 import { readStudentNotice, type StudentNoticeRead } from "@/client/student-notice";
 import { appHref } from "@/components/shell/nav";
-import styles from "@/components/student/AssignmentNotice.module.css";
-import { noticeWindow } from "@/components/student/notice-window";
+import styles from "./Notice.module.css";
+import { noticeWindow } from "./window";
 import { studentHostHr as t } from "../i18n/messages.hr";
 import { useHost } from "../../context";
 import HostNotice from "../enrol/HostNotice";
 import { editorPath } from "../enrol/model";
 import NoticeSummary from "./NoticeSummary";
+import { workTeamText } from "../work-team/messages.hr";
 
 export default function NoticePage({ assignmentId }: { assignmentId: string }) {
   const { base } = useHost();
@@ -44,6 +45,8 @@ export default function NoticePage({ assignmentId }: { assignmentId: string }) {
       {notice === null ? <RouteLoading label={t.student.loading} /> : notice.kind === "available" ? (
         <>
           <NoticeSummary view={notice.view} />
+          {/* WEB-V19-GRUPA: the way into the student's team on this assignment. */}
+          <p><a href={appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}/tim`)} data-testid="work-team-link">{workTeamText.title}</a></p>
           <HostNotice
             view={notice.view}
             timing={noticeWindow(notice.view.opensAt, notice.view.dueAt, Date.now())}

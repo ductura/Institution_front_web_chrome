@@ -1,16 +1,21 @@
-// Copy of the student's notice about an assistant match (WEB-1230; D-41; D-58). It never says "prepisano".
+// The student's notice about an assistant match (WEB-1230; D-41; D-58), as in the prototype (nf2.js, NF2-P13).
+// It never says "prepisano" and is never a verdict.
 export const noticeText = {
   title: "Dio teksta podudara se s odgovorom pomoćnika",
-  body: "Osam ili više riječi zaredom jednako je odgovoru koji si dobio/la od pomoćnika u Ducturi. Razgovor je priložen izjavi kao preneseni tekst, a nastavnik ga vidi isto kao ti.",
   neutral: "Ovo je obična usporedba teksta i ništa ne govori o autorstvu.",
-  explainLabel: "Objasni, ako želiš, kako je taj dio nastao",
-  explainHint: "Objašnjenje je neobavezno. Vidi ga i nastavnik.",
+  explainOpen: "Objasni, ako želiš…",
+  dialogTitle: "Objasni, ako želiš",
+  dialogBody: "Napiši kako je taj dio nastao. Nije obvezno, ne blokira predaju i ne ulazi u ocjenu. Isto vidi i nastavnik.",
+  field: "Objašnjenje",
+  close: "Zatvori",
   send: "Pošalji objašnjenje",
   sending: "Šalje se…",
-  saved: "Poslužitelj je zabilježio tvoje objašnjenje.",
+  empty: "Upišite objašnjenje ili zatvorite prozor.",
+  saved: "Objašnjenje je zabilježeno uz nalaz. Vidi ga i nastavnik.",
+  explained: "Objašnjenje je zabilježeno uz nalaz.",
   failed: "Objašnjenje nije stiglo na poslužitelj. Pokušaj ponovno.",
   rejected: "Objašnjenje mora imati tekst, najviše 2000 znakova.",
+  conflict: "Za ovaj dio objašnjenje je već zabilježeno.",
   signedOut: "Sesija je istekla. Prijavi se ponovno.",
-  dismiss: "Zatvori obavijest",
-  yourExplanation: "Tvoje objašnjenje:",
+  dismiss: "Sakrij obavijest",
 } as const;

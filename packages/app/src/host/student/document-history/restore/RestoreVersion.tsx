@@ -1,17 +1,28 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Button } from "@ductura/ui";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Button, DiffView } from "@ductura/ui";
 
-import type { Version } from "../../time-machine/model";
-import { restorableVersions, restoreVersion, type RestoreOutcome, type RestorePort } from "./model";
+import { diffParts, type CompareRead, type Version } from "../../time-machine/model";
+import { headRevision, restorableVersions, restoreVersion, type RestoreOutcome, type RestorePort } from "./model";
 import { restoreMessages as text } from "./messages.hr";
+import { paragraphs, readRestoreDiff, type DiffRead } from "./restore-diff";
+
+const onLine = (change: () => void) => {
+  window.addEventListener("online", change);
+  window.addEventListener("offline", change);
+  return () => { window.removeEventListener("online", change); window.removeEventListener("offline", change); };
+};
+/** Without a network the restore cannot reach the server, so "Da, vrati" waits for it (NF2-P15). */
+const useOnline = () => useSyncExternalStore(onLine, () => navigator.onLine !== false, () => true);
 
 /** "Vrati raniju verziju" (WEB-1907; P-D7): pick an earlier version, confirm, save it as a new revision. */
 export default function RestoreVersion({
-  documentId, versions, port, onRestored, onRecorded, onStale,
+  documentId, versions, port, compare, onRestored, onRecorded, onStale,
 }: {
   documentId: string; versions: readonly Version[]; port: RestorePort; onRestored?: () => void;
+  /** ED-17: the history's comparison (`work.compare.get`), for the preview before "Da, vrati". */
+  compare?: (from: number, to: number) => Promise<CompareRead>;
   /** A restore is in the sheet, confirmed or waiting for the receipt; the caller keeps its label (INT-21). */
   onRecorded?: (fromRevision: number, confirmed: boolean) => void;
   /** The list is older than the server's head: the caller reads it again (PIL-D7-OBNOVA). */
@@ -27,9 +38,23 @@ export default function RestoreVersion({
   const [result, setResult] = useState<RestoreOutcome | null>(null);
   const [from, setFrom] = useState(0);
   const options = restorableVersions(versions);
+  const online = useOnline();
+  const [diff, setDiff] = useState<DiffRead | null>(null);
+  const head = headRevision(versions);
+
+  // The preview is read when the step opens, for the version picked then; a later answer for an
+  // earlier pick is dropped.
+  useEffect(() => {
+    if (!confirming || compare === undefined || picked === "") { setDiff(null); return undefined; }
+    let live = true;
+    setDiff({ kind: "loading" });
+    void readRestoreDiff(compare, Number(picked), head).then((read) => { if (live) setDiff(read); });
+    return () => { live = false; };
+  }, [confirming, compare, picked, head]);
+  const chosen = options.find((v) => String(v.revision) === picked);
 
   const run = async () => {
-    if (running.current) return;
+    if (running.current || !online) return;
     running.current = true;
     const revision = Number(picked);
     setBusy(true);
@@ -62,10 +87,28 @@ export default function RestoreVersion({
           </label>
           <Button disabled={picked === "" || busy} onClick={() => setConfirming(true)}>{text.action}</Button>
           {confirming ? (
-            <div role="alertdialog" aria-label={text.confirmTitle}>
+            <div role="alertdialog" aria-labelledby="vrati-naslov">
+              <h3 id="vrati-naslov">{text.confirmTitle}</h3>
+              {chosen ? <p><b>{text.version(chosen.revision, chosen.savedMinute)}</b></p> : null}
               <p>{text.confirmBody}</p>
-              <Button disabled={busy} onClick={() => void run()}>{text.confirm}</Button>
+              {diff === null ? null : (
+                <section aria-label={text.diffTitle} data-restore-diff={diff.kind}>
+                  <h4>{text.diffTitle}</h4>
+                  {diff.kind === "loading" ? <p role="status">{text.diffLoading}</p> : null}
+                  {diff.kind === "unavailable" ? <p>{text.diffUnavailable}</p> : null}
+                  {diff.kind === "ready" && diff.diff.first.length === 0 ? <p>{text.diffNone}</p> : null}
+                  {diff.kind === "ready" && diff.diff.first.length > 0 ? (
+                    <>
+                      <p>{text.diffCount(paragraphs(diff.diff.added), paragraphs(diff.diff.removed))}</p>
+                      <DiffView parts={diffParts(diff.diff.first)} />
+                    </>
+                  ) : null}
+                </section>
+              )}
+              <p>{text.newVersionNote}</p>
+              {online ? null : <p role="status">{text.offline}</p>}
               <Button onClick={() => setConfirming(false)}>{text.cancel}</Button>
+              <Button disabled={busy || !online} onClick={() => void run()}>{text.confirm}</Button>
             </div>
           ) : null}
         </>
@@ -76,7 +119,7 @@ export default function RestoreVersion({
         {result?.kind === "stale" ? <p role="alert">{text.stale}</p> : null}
         {result?.kind === "signedOut" ? <p role="alert">{text.signedOut}</p> : null}
         {/* "pending" is announced by RestoreHost, which also says when the receipt comes (INT-21). */}
-        {result?.kind === "unavailable" ? <><p role="alert">{text.unavailable}</p><Button disabled={busy} onClick={() => void run()}>{text.retry}</Button></> : null}
+        {result?.kind === "unavailable" ? <><p role="alert">{text.unavailable}</p><Button disabled={busy || !online} onClick={() => void run()}>{text.retry}</Button></> : null}
       </div>
     </section>
   );

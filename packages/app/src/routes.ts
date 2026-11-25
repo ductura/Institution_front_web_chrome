@@ -32,6 +32,9 @@ import { problemReportsMessages } from "./host/operator/problem-reports/messages
 import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
+import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
+import { workTeamText } from "./host/student/work-team/messages.hr";
+import { teacherTeamText } from "./host/teacher/work-team/messages.hr";
 
 export { BASES, type Base } from "./bases";
 
@@ -108,6 +111,14 @@ export const PAGES: readonly Page[] = [
   { path: "/upis/kolegij/[courseId]", label: t.student.enroll.title, kind: "pending", roles: ["student"], current: "/upis" },
   // WEB-1404: the student's request for a mentor.
   { path: "/zadaci/mentorstvo", label: hostText.mentorshipRequest, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-DNEVNIK-STUDENT: the student's journal of a professional practice.
+  { path: "/zadaci/dnevnik-prakse", label: practiceJournalText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-DNEVNIK-MENTOR: the mentor's side of the journal, entered from N-16 by a link.
+  { path: "/nastavnik/mentorstva/dnevnik-prakse", label: hostText.mentorPracticeJournal, kind: "pending", roles: ["teacher"], current: "/nastavnik/mentorstva" },
+  // WEB-V19-GRUPA: the student's team on one assignment, entered from the assignment's notice by a link.
+  { path: "/zadatak/[id]/tim", label: workTeamText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-GRUPA: the teacher's teams of one assignment, entered from the task's card in N-01 by a link.
+  { path: "/nastavnik/zadatak/[assignmentId]/timovi", label: teacherTeamText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // HOST-S1: the editor of one work.
   { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },

@@ -24,12 +24,15 @@ export type CoursesCall = {
   (id: "student.assignments.get", input: { params: undefined; query: undefined; body: undefined }): Promise<Result<{ courses: Course[] }>>;
   (id: "student.assignment-work.get", input: { params: undefined; query: undefined; body: undefined }):
     Promise<Result<{ assignments: { assignmentId: string; workState: WorkState }[] }>>;
+  /** SRV#701: one list for all rows; an assignment not yet submitted has both fields null. */
+  (id: "student.assignment-submissions.get", input: { params: undefined; query: undefined; body: undefined }):
+    Promise<Result<{ assignments: { assignmentId: string; submittedAt: string | null; afterDeadline: boolean | null }[] }>>;
 };
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 
-/** 401 is signed out; anything else that fails is unavailable, never an empty list. States only when asked and proven. */
-export async function readCourses(call: CoursesCall, withStates: boolean): Promise<CoursesRead> {
+/** 401 is signed out; anything else that fails is unavailable, never an empty list. States only when asked and proven; the submission times only when `withTimes` (a reader that shows none, as the portfolio, passes false). */
+export async function readCourses(call: CoursesCall, withStates: boolean, withTimes = true): Promise<CoursesRead> {
   let courses: Course[];
   try {
     const r = await call("student.assignments.get", NONE);
@@ -42,16 +45,28 @@ export async function readCourses(call: CoursesCall, withStates: boolean): Promi
   try {
     const r = await call("student.assignment-work.get", NONE);
     if (!r.ok) return { kind: "ready", courses, states: null };
-    // NF-1 P-6: a time only where the answer carries a valid one (the contract has none yet).
-    const submitted = new Map<string, Submitted>();
-    for (const a of r.body.assignments) {
-      const s = a.workState === "submitted" ? submittedOf(a) : null;
-      if (s !== null) submitted.set(a.assignmentId, s);
-    }
-    return { kind: "ready", courses, states: new Map(r.body.assignments.map((a) => [a.assignmentId, a.workState])), submitted };
+    const states = new Map(r.body.assignments.map((a) => [a.assignmentId, a.workState]));
+    // NF-1 P-6: one call to student.assignment-submissions.get for the whole list (never one per row).
+    const submitted = withTimes ? await readSubmitted(call, states) : new Map<string, Submitted>();
+    return { kind: "ready", courses, states, submitted };
   } catch {
     return { kind: "ready", courses, states: null };
   }
+}
+
+/** A time only for an assignment the work states prove submitted; a failed or unreadable answer leaves "Predano" alone. */
+async function readSubmitted(call: CoursesCall, states: ReadonlyMap<string, WorkState>): Promise<ReadonlyMap<string, Submitted>> {
+  const submitted = new Map<string, Submitted>();
+  try {
+    const r = await call("student.assignment-submissions.get", NONE);
+    if (!r.ok || !Array.isArray(r.body?.assignments)) return submitted;
+    for (const a of r.body.assignments) {
+      if (typeof a !== "object" || a === null || states.get(a.assignmentId) !== "submitted") continue;
+      const s = submittedOf(a);
+      if (s !== null) submitted.set(a.assignmentId, s);
+    }
+  } catch { /* no time, no guess */ }
+  return submitted;
 }
 
 export type HistoryCall = (assignmentId: string) => Promise<{ readonly ok: boolean; readonly body?: unknown }>;

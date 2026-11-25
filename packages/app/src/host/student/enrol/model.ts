@@ -1,8 +1,17 @@
-import { enrollError } from "../../../../../../src/components/student/upis/EnrollForm.tsx";
-import type { EnrollResult } from "../../../../../../src/components/student/upis/enroll.ts";
+import { studentHostHr } from "../i18n/messages.hr.ts";
 
 import { CODE_RAW_MAX, cleanCode } from "./code";
 import { enrolErrors } from "./messages.hr";
+import type { EnrollResult } from "./enroll.ts";
+
+const e = studentHostHr.student.enroll;
+
+/** The shared text of a refusal (as src/components/student/upis/EnrollForm.tsx gave it); null without one. */
+function enrollError(result: EnrollResult | null): string | null {
+  if (result === null || "courseId" in result) return null;
+  const { kind } = result;
+  return kind === "invalidCode" || kind === "expiredCode" || kind === "signedOut" ? e.codeErrors[kind] : e.errors[kind];
+}
 
 /** The text of a refusal: the prototype's MSG for the states it names, the shared one otherwise. */
 export function enrolError(result: EnrollResult | null): string | null {

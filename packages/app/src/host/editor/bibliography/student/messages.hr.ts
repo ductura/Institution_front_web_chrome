@@ -43,8 +43,8 @@ export const bibliographyStudentHr = {
   overviewUnavailable: "Oznaka „novo” i označavanje pregleda ovise o mentoru; zasad nisu dostupni.",
   typeBook: "knjiga", typeArticle: "članak", typeChapter: "poglavlje u knjizi", typeWeb: "mrežni izvor",
   // Server-side features without a route.
-  requests: "Zatražene potvrde",
-  requestsUnavailable: "Zatražene potvrde zasad nisu dostupne.",
+  // The requested proofs are read above this card (ED-15, proof-requests).
+  notYet: "Preporuke i obvezna literatura",
   recommended: "Preporučeni izvori",
   recommendedUnavailable: "Preporuke mentora zasad nisu dostupne.",
   mandatory: "Obvezna literatura kolegija",

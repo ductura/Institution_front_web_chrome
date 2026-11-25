@@ -9,6 +9,7 @@ import { editorPanelLayoutsHr } from "@/lib/i18n/messages.hr";
 import { fakeTimeMachinePort } from "../../student/time-machine/fake-port";
 import { restoreMessages } from "../../student/document-history/restore/messages.hr";
 import { timeMachineMessages } from "../../student/time-machine/messages.hr";
+import { workHistoryHr } from "../work-history/messages.hr";
 import { HistorySection } from "./HistorySection";
 import { leftSectionsFor } from "./LeftSectionsHost";
 
@@ -62,7 +63,7 @@ describe("Povijest dokumenta in the left panel (PIL-D7-POVIJEST, mount)", () => 
     expect(withHistory.textContent).toContain("sadržaj povijesti");
   });
 
-  it("HistorySection holds the versions, the restore and the comparison, all on the same port", async () => {
+  it("HistorySection holds the versions and the restore on the same port, and the way into Povijest i usporedba (ED-16)", async () => {
     const port = fakeTimeMachinePort();
     const versions = vi.spyOn(port, "versions");
     const el = await mount(createElement(HistorySection, { documentId: "dok-1", port }));
@@ -71,7 +72,7 @@ describe("Povijest dokumenta in the left panel (PIL-D7-POVIJEST, mount)", () => 
     // RestoreHost reads the list through the same port and, with an older version in it, offers the restore.
     expect(el.querySelector(`section[aria-label="${restoreMessages.title}"]`)).not.toBeNull();
     expect([...el.querySelectorAll("select option")].map((o) => o.textContent)).toContain(restoreMessages.choose);
-    expect(el.textContent).toContain(timeMachineMessages.open);
+    expect(el.querySelector("button[aria-haspopup=dialog]")?.textContent).toBe(workHistoryHr.title);
     expect(versions).toHaveBeenCalledWith("dok-1");
     expect(versions.mock.calls.length).toBeGreaterThanOrEqual(2);
   });

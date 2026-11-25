@@ -1,8 +1,8 @@
 // "Podudara se s odgovorom pomoćnika" (WEB-1230; P-1 rule 13; SRV-1230). Server operations:
 //   work.assistant-match.get      { documentId }                    -> 200 { enabled, matches }
-//   work.assistant-match.explain  { documentId, segmentId, text }   -> 200 the match with the explanation
-// Neither is in the contract extract yet, so the names follow the `work.*` operations and the shape is the
-// smallest the spec implies; both are listed as assumptions in the pull request. `enabled` mirrors the faculty
+//   work.assistant-match.explain  { documentId, segmentId } + { text, messageId } -> 200/201 { text, at }
+// The adapter in src/client/assistant-match.ts maps them onto work.assistant-match.get and
+// work.assistant-match-explanation.post (ED-13, NF2-P13). `enabled` mirrors the faculty
 // flag `assistantMatchEnabled`: when it is false the server computes and stores nothing, and this client shows
 // nothing. The answer is held to a closed schema: no claim of copying, no verdict, no score.
 // PIL-P1-PODUDARANJE-KARTA moved this file here from teacher/origin-map unchanged: the notice is its only user.
@@ -23,6 +23,8 @@ export type AssistantMatch = {
   readonly segmentId: string;
   /** The conversation attached to the declaration by the server, as transferred text (D-41). */
   readonly conversationId: string;
+  /** The answer of the assistant an explanation is sent for; without it nothing can be explained. */
+  readonly messageId?: string;
   readonly attachedAt: string;
   readonly words: number;
   readonly explanation?: { readonly text: string; readonly at: string };
@@ -36,7 +38,7 @@ export type MatchRead =
   | { readonly kind: "notFound" }
   | { readonly kind: "unavailable" };
 
-export type ExplainResult = { readonly kind: "saved"; readonly match: AssistantMatch } | { readonly kind: "signedOut" | "rejected" | "failed" };
+export type ExplainResult = { readonly kind: "saved"; readonly match: AssistantMatch } | { readonly kind: "signedOut" | "rejected" | "conflict" | "failed" };
 
 const MATCH_SCHEMA: Schema = {
   type: "object",
@@ -45,6 +47,7 @@ const MATCH_SCHEMA: Schema = {
   properties: {
     segmentId: { type: "string", minLength: 1 },
     conversationId: { type: "string", minLength: 1 },
+    messageId: { type: "string", minLength: 1 },
     attachedAt: { type: "string", format: "date-time" },
     words: { type: "integer", minimum: MIN_MATCH_WORDS },
     explanation: {
@@ -54,6 +57,12 @@ const MATCH_SCHEMA: Schema = {
       properties: { text: { type: "string", minLength: 1, maxLength: MAX_EXPLANATION_LENGTH }, at: { type: "string", format: "date-time" } },
     },
   },
+};
+const EXPLANATION_SCHEMA: Schema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["text", "at"],
+  properties: { text: { type: "string", minLength: 1, maxLength: MAX_EXPLANATION_LENGTH }, at: { type: "string", format: "date-time" } },
 };
 const STATE_SCHEMA: Schema = {
   type: "object",
@@ -82,17 +91,25 @@ export async function readAssistantMatch(call: MatchCall, documentId: string): P
   return new Set(ids).size === ids.length ? { kind: "ready", state } : UNAVAILABLE;
 }
 
-/** The student's explanation of one match. Only the student of the work may send it; the server decides. */
-export async function explainAssistantMatch(call: MatchCall, documentId: string, segmentId: string, text: string): Promise<ExplainResult> {
+/**
+ * The student's explanation of one match (P-1 rule 13). Optional; it never blocks the submission and is
+ * not part of the grade. Only the student of the work may send it; the server decides.
+ */
+export async function explainAssistantMatch(call: MatchCall, documentId: string, match: AssistantMatch, text: string): Promise<ExplainResult> {
   const trimmed = text.trim();
   if (trimmed.length === 0 || trimmed.length > MAX_EXPLANATION_LENGTH) return { kind: "rejected" };
+  if (match.messageId === undefined) return { kind: "failed" };
   let result: Awaited<ReturnType<MatchCall>>;
   try {
-    result = await call("work.assistant-match.explain", { params: { documentId, segmentId }, body: { text: trimmed } });
+    result = await call("work.assistant-match.explain", { params: { documentId, segmentId: match.segmentId }, body: { text: trimmed, messageId: match.messageId } });
   } catch {
     return { kind: "failed" };
   }
-  if (!result.ok) return result.status === 401 ? { kind: "signedOut" } : result.status === 400 || result.status === 422 ? { kind: "rejected" } : { kind: "failed" };
-  if (result.status !== 200 || !matchesSchema(MATCH_SCHEMA, result.body)) return { kind: "failed" };
-  return { kind: "saved", match: result.body as AssistantMatch };
+  if (!result.ok) {
+    if (result.status === 401) return { kind: "signedOut" };
+    if (result.status === 409) return { kind: "conflict" };
+    return result.status === 400 || result.status === 422 ? { kind: "rejected" } : { kind: "failed" };
+  }
+  if ((result.status !== 200 && result.status !== 201) || !matchesSchema(EXPLANATION_SCHEMA, result.body)) return { kind: "failed" };
+  return { kind: "saved", match: { ...match, explanation: result.body as { text: string; at: string } } };
 }

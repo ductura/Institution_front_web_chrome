@@ -64,6 +64,8 @@ async function student(page: Page, answers: Answers = {}) {
     const path = new URL(req.url()).pathname;
     if (req.method() === "GET" && path.endsWith("/declaration")) return route.fulfill({ json: CONFIRMED });
     if (req.method() === "POST" && path === "/api/v1/evidence/open") return route.fulfill({ json: OPENED });
+    // WEB-V17-FORMAT-CHECK: invented format rules for the form check of step 3.
+    if (req.method() === "GET" && path.endsWith("/format-rules")) return route.fulfill({ json: { wordMin: 100, wordMax: null, minSources: 0, requiredSections: [], citationStyle: "fpzg", font: null, size: null, spacing: null } });
     if (req.method() === "POST" && path === "/api/v1/submission/v2" && answers.submit !== undefined) {
       return route.fulfill({ status: answers.submit.status, json: answers.submit.body });
     }
@@ -97,7 +99,9 @@ for (const width of [390, 1280]) {
       await setTheme(page, theme);
       await expect(page.getByRole("link", { name: "Odlomak 1 ([izvor])" })).toBeVisible();
       await expect(page.getByRole("link", { name: "2. Izmišljena analiza, odlomak 1 ([?])" })).toBeVisible();
-      await expect(page.getByText("Provjera oblika nije dostupna u pilotu.", { exact: true })).toBeVisible();
+      // WEB-V17-FORMAT-CHECK: the form check is real now; the invented text is below the invented 100-word minimum.
+      await expect(page.getByText(/Broj riječi: odstupa\. \d+ riječi, najmanje 100\./)).toBeVisible();
+      await expect(page.getByText("Savjetodavno: provjera oblika ne zaustavlja predaju.")).toBeVisible();
       await expect(page.getByText(/Možete dodati oznaku podrijetla\. Nije obavezno\./)).toBeVisible();
       await axe(page, info, `pregled-popisi-${width}-${theme}`);
       const next = page.getByRole("button", { name: "Dalje", exact: true });

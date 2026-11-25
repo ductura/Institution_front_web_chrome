@@ -172,8 +172,7 @@ function Overview({ open, onClose, stats, showProofs }: { open: boolean; onClose
 }
 
 function Unavailable() {
-  return <Details summary={t.requests}>
-    <p>{t.requestsUnavailable}</p>
+  return <Details summary={t.notYet}>
     <p><b>{t.recommended}.</b> {t.recommendedUnavailable}</p>
     <p><b>{t.mandatory}.</b> {t.mandatoryUnavailable}</p>
   </Details>;
