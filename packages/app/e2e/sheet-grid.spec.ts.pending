@@ -1,3 +1,5 @@
+// PENDING (not run by Playwright: the name does not end in .spec.ts). WEB-V14-SHEET-PAGE mounts the grid and renames this
+// file to sheet-grid.spec.ts in the same PR, then adjusts the page set-up below. Review of #713: no red test before then.
 // WEB-V14-SHEET-GRID: keyboard use and accessibility of the spreadsheet grid at 1250 and 400 px.
 // ASSUMPTION (see the PR, "Otvoreno"): the grid is mounted by WEB-V14-SHEET-PAGE on the work page of a task whose
 // documentKind is "spreadsheet", so this spec opens that page; until that task is merged the page shows the text editor

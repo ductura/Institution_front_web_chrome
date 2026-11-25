@@ -10,6 +10,8 @@ import {
   MAX_SHEET_FILLED_CELLS,
   countFilledCells,
   formatCellRef,
+  addColumn,
+  addRow,
   isFilledCell,
   parseCellRef,
   parseDecimalText,
@@ -29,6 +31,8 @@ export type RefusalCode =
   | "formula_empty"
   | "sheet_not_found"
   | "out_of_range"
+  | "rows_limit"
+  | "columns_limit"
   | "invalid";
 
 export type EditResult = { ok: true; doc: SheetDocument } | { ok: false; error: RefusalCode };
@@ -223,4 +227,13 @@ export const isTypingKey = (e: { key: string; ctrlKey: boolean; metaKey: boolean
 
 export function columnName(column: number): string {
   return String.fromCharCode(64 + column);
+}
+
+/** Inserts an empty row or column so that it becomes line `at` (1..size+1); refused at 200 rows / 26 columns. */
+export function insertLine(doc: SheetDocument, sheetId: string, axis: "row" | "column", at: number): EditResult {
+  const result = axis === "row" ? addRow(doc, sheetId, at) : addColumn(doc, sheetId, at);
+  if (result.ok) return validateSheetDocument(result.doc).ok ? { ok: true, doc: result.doc } : { ok: false, error: "invalid" };
+  if (result.error === "sheet_not_found") return { ok: false, error: "sheet_not_found" };
+  if (result.error === "limit_reached") return { ok: false, error: axis === "row" ? "rows_limit" : "columns_limit" };
+  return { ok: false, error: "out_of_range" };
 }

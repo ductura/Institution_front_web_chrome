@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
+import { useId, type KeyboardEvent } from "react";
 import { Button } from "@ductura/ui";
 
 import { sheetGridHr as t } from "./messages.hr";
@@ -21,6 +21,7 @@ export type FormulaBarProps = {
 
 /** Name box and formula field above the grid. Enter commits, Esc cancels (like the cell editor). */
 export function FormulaBar({ cellRef, value, readOnly = false, onChange, onCommit, onCancel, problem }: FormulaBarProps) {
+  const hintId = useId();
   const keys = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -37,7 +38,7 @@ export function FormulaBar({ cellRef, value, readOnly = false, onChange, onCommi
         <input
           type="text"
           aria-label={t.formulaBar.label}
-          aria-describedby="sheet-formula-hint"
+          aria-describedby={hintId}
           aria-invalid={problem !== null}
           autoComplete="off"
           spellCheck={false}
@@ -50,7 +51,7 @@ export function FormulaBar({ cellRef, value, readOnly = false, onChange, onCommi
         <Button tone="secondary" size="dense" disabled={readOnly} onClick={onCommit}>{t.formulaBar.confirm}</Button>
         <Button tone="ghost" size="dense" disabled={readOnly} onClick={onCancel}>{t.formulaBar.cancel}</Button>
       </div>
-      <p id="sheet-formula-hint" className="visually-hidden">{t.formulaBar.hint}</p>
+      <p id={hintId} className="visually-hidden">{t.formulaBar.hint}</p>
       {problem !== null ? <p role="alert" data-sheet-problem>{problem}</p> : null}
     </div>
   );

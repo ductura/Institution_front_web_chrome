@@ -24,6 +24,8 @@ export const sheetGridHr = {
     formula_empty: "Formula nakon znaka = mora imati sadržaj.",
     sheet_not_found: "List ne postoji.",
     out_of_range: "Ćelija je izvan tablice.",
+    rows_limit: "Tablica može imati najviše 200 redaka.",
+    columns_limit: "Tablica može imati najviše 26 stupaca.",
     invalid: "Taj sadržaj nije moguće spremiti u ćeliju.",
   },
   errors: {
@@ -32,6 +34,13 @@ export const sheetGridHr = {
     "#CIRC!": "kružna referenca",
     "#NAME?": "nepoznato ime ili funkcija",
     "#VALUE!": "vrijednost nije valjana za taj izračun",
+  },
+  lines: {
+    label: "Veličina tablice",
+    addRow: "Dodaj redak",
+    addColumn: "Dodaj stupac",
+    rowAdded: (row: number) => `Dodan redak ${row}.`,
+    columnAdded: (column: string) => `Dodan stupac ${column}.`,
   },
   formulaBar: {
     label: "Traka formule",

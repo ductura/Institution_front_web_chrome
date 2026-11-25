@@ -258,3 +258,21 @@ describe("SheetGrid review findings", () => {
     expect(editor().value).toBe("pola");
   });
 });
+
+describe("SheetGrid size", () => {
+  const btn = (name: string) => [...document.querySelectorAll("button")].find((b) => b.textContent === name)!;
+  it("grows by a row or a column, keeps a pending edit, and stops at the limits", async () => {
+    await mount({ initial: start() });
+    await focus("A1");
+    await type(bar(), "ostaje");
+    await act(async () => { btn("Dodaj redak").click(); });
+    expect(latest!.sheets[0]!.rows).toBe(5);
+    expect(latest!.sheets[0]!.cells.A1).toEqual({ value: "ostaje" });
+    await act(async () => { btn("Dodaj stupac").click(); });
+    expect(latest!.sheets[0]!.columns).toBe(4);
+    expect(document.querySelectorAll('th[scope="col"]')).toHaveLength(4);
+    for (let i = 0; i < 30; i += 1) await act(async () => { btn("Dodaj stupac").click(); });
+    expect(latest!.sheets[0]!.columns).toBe(26);
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain("najviše 26 stupaca");
+  });
+});

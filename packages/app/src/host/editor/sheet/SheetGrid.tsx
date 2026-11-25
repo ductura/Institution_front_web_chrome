@@ -7,7 +7,7 @@ import { computeSheet, countFilledCells, formatCellRef, type SheetDocument } fro
 import { FormulaBar } from "./FormulaBar";
 import { SheetTabs } from "./SheetTabs";
 import {
-  addSheet, cellInputText, clampSelection, clearRange, columnName, displayCell, emptyHistory, inRange, isTypingKey, moveSelection,
+  addSheet, cellInputText, clampSelection, clearRange, columnName, insertLine, displayCell, emptyHistory, inRange, isTypingKey, moveSelection,
   rangeName, rangeOf, recordEdit, redo, setCellText, startSelection, stepAfterCommit, undo,
   type EditResult, type History, type MoveKey, type Position, type RefusalCode, type Selection,
 } from "./grid-model";
@@ -192,24 +192,43 @@ function Grid({ doc, onChange, readOnly, newSheetId }: { doc: SheetDocument; onC
     setSheetId(id);
     setSelection(startSelection());
   };
-  const onAddSheet = () => {
-    // A pending edit is committed into the same document the new sheet is added to, so neither is lost.
-    let base = doc;
+  /** The document with a pending edit written into it (null: that edit is refused and stays open). */
+  const withPendingEdit = (): SheetDocument | null => {
     const pending = live.current;
-    if (pending !== null && pending.draft !== cellInputText(sheet.cells[pending.ref])) {
-      const written = setCellText(doc, sheet.id, pending.ref, pending.draft);
-      if (!written.ok) { refuse(written.error); return; }
-      base = written.doc;
-    }
-    const result = addSheet(base, newSheetId);
-    if (!result.ok) { refuse(result.error); return; }
+    if (pending === null || pending.draft === cellInputText(sheet.cells[pending.ref])) return doc;
+    const written = setCellText(doc, sheet.id, pending.ref, pending.draft);
+    if (!written.ok) { refuse(written.error); return null; }
+    return written.doc;
+  };
+
+  /** Hands up a structural change built on the document that includes the pending edit, so neither is lost. */
+  const structural = (build: (base: SheetDocument) => EditResult, announce = ""): SheetDocument | null => {
+    const base = withPendingEdit();
+    if (base === null) return null;
+    const result = build(base);
+    if (!result.ok) { refuse(result.error); return null; }
     live.current = null;
     setEdit(null);
     setProblem(null);
     setHistory(recordEdit(history, doc));
     onChange(result.doc);
-    setSheetId(result.doc.sheets[result.doc.sheets.length - 1]!.id);
+    setMessage(announce);
+    return result.doc;
+  };
+
+  const onAddSheet = () => {
+    const next = structural((base) => addSheet(base, newSheetId));
+    if (next === null) return;
+    setSheetId(next.sheets[next.sheets.length - 1]!.id);
     setSelection(startSelection());
+  };
+
+  const onAddLine = (axis: "row" | "column") => {
+    const size = axis === "row" ? sheet.rows : sheet.columns;
+    structural(
+      (base) => insertLine(base, sheet.id, axis, size + 1),
+      axis === "row" ? t.lines.rowAdded(size + 1) : t.lines.columnAdded(columnName(size + 1)),
+    );
   };
 
   const barValue = edit ? edit.draft : cellInputText(sheet.cells[activeRef]);
@@ -229,6 +248,10 @@ function Grid({ doc, onChange, readOnly, newSheetId }: { doc: SheetDocument; onC
         onCancel={cancel}
         problem={problemText}
       />
+      <div role="group" aria-label={t.lines.label} style={{ display: "flex", gap: "var(--space-2, 8px)", flexWrap: "wrap" }}>
+        <Button tone="ghost" size="dense" disabled={readOnly} onClick={() => onAddLine("row")}>{t.lines.addRow}</Button>
+        <Button tone="ghost" size="dense" disabled={readOnly} onClick={() => onAddLine("column")}>{t.lines.addColumn}</Button>
+      </div>
       {empty ? <Notice>{t.emptyNote}</Notice> : null}
       <p role="status" className="visually-hidden">{message === "" ? t.rangeLabel(rangeName(range)) : message}</p>
       <div role="tabpanel" id={panelId} aria-labelledby={`${panelId}-tab-${sheet.id}`} style={{ overflow: "auto", maxWidth: "100%" }}>
