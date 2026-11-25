@@ -17,8 +17,12 @@ async function axe(page: Page) {
 }
 
 /** A student with a started work, a submitted one, a notice not yet confirmed and an extended deadline. */
-async function student(page: Page, work: Record<string, unknown>[], history: { status: number; json?: unknown } = { status: 200, json: { extensions: [] } }) {
+let submissionCalls = 0;
+
+async function student(page: Page, work: Record<string, unknown>[], history: { status: number; json?: unknown } = { status: 200, json: { extensions: [] } },
+  submissions: Record<string, unknown>[] | null = [{ assignmentId: A_SENT, submittedAt: "2026-10-30T09:15:00.123456Z", afterDeadline: false }]) {
   const asked: string[] = [];
+  submissionCalls = 0;
   await page.route("**/api/v1/me", (route) => route.fulfill({
     json: { role: "student", displayName: "Iva Izmišljena", institution: { slug: "izm", displayName: "Izmišljeni fakultet" } },
   }));
@@ -31,6 +35,7 @@ async function student(page: Page, work: Record<string, unknown>[], history: { s
     ] }] },
   }));
   await page.route("**/api/v1/student/assignment-work", (route) => route.fulfill({ json: { assignments: work } }));
+  await page.route("**/api/v1/student/assignment-submissions", (route) => { submissionCalls += 1; return submissions === null ? route.fulfill({ status: 503, json: { error: "unavailable" } }) : route.fulfill({ json: { assignments: submissions } }); });
   await page.route("**/api/v1/student/assignments/*/deadline-extensions", (route) => {
     asked.push(new URL(route.request().url()).pathname);
     return route.fulfill(history.json === undefined ? { status: history.status } : { status: history.status, json: history.json });
@@ -63,9 +68,11 @@ for (const width of [390, 1280]) {
       await expect(ext.getByText("Prethodni rok: 2. 11. 2026., 11:00. Razlog: tehnički razlog. Vrijedi za samo Vas.")).toBeVisible();
       expect(asked).toEqual([`/api/v1/student/assignments/${A_EXT}/deadline-extensions`]);
 
-      // P-6: the work states carry no time, so "Predano" stands alone (no guessed time).
+      // P-6: the time comes from student.assignment-submissions.get (one call for the list), not guessed.
       const sent = rows.filter({ hasText: "Sažetak izmišljenog članka" });
-      await expect(sent.getByText("Predano", { exact: true })).toBeVisible();
+      await expect(sent.getByText("Predano 30. 10. 2026., 10:15")).toBeVisible();
+      await expect(sent.getByText("nakon roka")).toHaveCount(0);
+      expect(submissionCalls).toBe(1);
 
       // P-13: one primary button per row, named with the title and described by the date line (and the history).
       for (let i = 0; i < 4; i += 1) await expect(rows.nth(i).getByRole("link")).toHaveCount(1);
@@ -109,4 +116,18 @@ test("P-7: a history that cannot be read leaves the row with 'Produljeni rok' al
   const ext = page.getByRole("listitem").filter({ hasText: "Osvrt na izmišljeni film" });
   await expect(ext.getByText("Produljeni rok", { exact: true })).toBeVisible();
   await expect(ext.getByText(/Prethodni rok/)).toHaveCount(0);
+});
+
+test("P-6: a submission after the deadline says so, and an unreadable answer leaves Predano alone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await student(page, STATES, undefined, [{ assignmentId: A_SENT, submittedAt: "2026-11-02T09:15:00.000000Z", afterDeadline: true }]);
+  await page.goto("/app/web/zadaci/radovi");
+  const sent = page.getByRole("list", { name: "Popis radova" }).getByRole("listitem").filter({ hasText: "Sažetak izmišljenog članka" });
+  await expect(sent.getByText("Predano 2. 11. 2026., 10:15, nakon roka")).toBeVisible();
+  await axe(page);
+
+  await student(page, STATES, undefined, null);
+  await page.goto("/app/web/zadaci/radovi");
+  const alone = page.getByRole("list", { name: "Popis radova" }).getByRole("listitem").filter({ hasText: "Sažetak izmišljenog članka" });
+  await expect(alone.getByText("Predano", { exact: true })).toBeVisible();
 });

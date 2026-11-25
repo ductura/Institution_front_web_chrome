@@ -3,6 +3,7 @@
 import { Button } from "@ductura/ui";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { createApi } from "@/client/api";
 import { watchSessionEnd } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
 import { readTeacherWorkAccess } from "@/client/teacher-work";
@@ -49,6 +50,7 @@ import ChangesSinceReview from "../changes-since-review/ChangesSinceReview";
 import { changesPort } from "../changes-since-review/port";
 import CommentBank from "../comment-bank/CommentBank";
 import { commentBankPort, draftCommentsPort } from "../comment-bank/port";
+import { RubricMarks } from "./rubric/RubricMarks";
 import { teacherWorkMessages as workText } from "./messages.hr";
 import { useShownRevision } from "./shown-revision";
 import ReviewPage from "./review/ReviewPage";
@@ -148,6 +150,7 @@ function OpenWork({ documentId, path, view, session }: {
 }
 
 function LiveWork({ documentId, workHref, session }: { documentId: string; workHref: string; session: SessionMark }) {
+  const rubricCall = useMemo(() => createApi(), []);
   const { view, current } = useLiveView(documentId, session);
   const stopped = liveStopped(view);
   const summary = useProcessSummary(documentId, current, !stopped);
@@ -199,6 +202,7 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
             {/* WEB-1704 (M6.7): deferred comments and the bank; a draft is anchored to the text selected in the work. */}
             <CommentBank key={documentId} assignmentId={documentId} drafts={draftCommentsPort} bank={commentBankPort}
               anchor={placeAnchor(view.document, draft) ? draft : null} />
+            <RubricMarks key={documentId} documentId={documentId} call={rubricCall} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
             {/* WEB-1704 (M6.7): changes since the last review, read from the server; marking only with a route. */}
             <ChangesSinceReview key={documentId} documentId={documentId} port={changesPort} />

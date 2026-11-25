@@ -88,3 +88,67 @@ describe("AssignmentForm flow (NZ-3, NZ-4)", () => {
     expect(host.textContent).toContain(f.groups.unavailable);
   });
 });
+
+describe("AssignmentForm rubric (WEB-V17-RUBRIC-FORM)", () => {
+  let root: Root | undefined;
+  afterEach(() => { act(() => root?.unmount()); document.body.innerHTML = ""; });
+  const click = async (el: Element) => { await act(async () => { (el as HTMLElement).click(); }); };
+  const type = async (el: HTMLInputElement | HTMLTextAreaElement, value: string) => {
+    const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    await act(async () => { Object.getOwnPropertyDescriptor(proto, "value")!.set!.call(el, value); el.dispatchEvent(new Event("input", { bubbles: true })); });
+  };
+  const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === label)!;
+
+  async function start(props: Record<string, unknown>) {
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root?.render(h(HostContext.Provider, { value: HOST }, h(AssignmentForm, { course, loadGroups: async () => ({ kind: "ready", groups: [] }), ...props } as never))); });
+    await type([...host.querySelectorAll("input")].find((i) => i.maxLength === 160)!, "Izmišljeni seminar");
+    const when = host.querySelectorAll<HTMLInputElement>('input[type="datetime-local"]');
+    await type(when[0]!, "2027-01-10T10:00");
+    await type(when[1]!, "2027-01-30T16:00");
+    return host;
+  }
+
+  it("blocks the review while a criterion is incomplete, then saves the rubric after publishing", async () => {
+    const publish = vi.fn(async () => ({ kind: "available" as const, id: "a-new" }));
+    const setRubricFor = vi.fn(async () => "saved" as const);
+    const host = await start({ publish, setRules: async () => [], setRubricFor });
+    await click(button("Dodaj kriterij"));
+    await click(button(f.review));
+    expect(host.textContent).toContain("Rubrika nije potpuna");
+    expect(host.querySelector("#zs-rubric")).not.toBeNull();
+    expect(publish).not.toHaveBeenCalled();
+    await type(host.querySelector<HTMLInputElement>('input[maxlength="120"]')!, "Struktura");
+    for (const input of host.querySelectorAll<HTMLInputElement>('input[maxlength="80"]')) await type(input, "Razina");
+    await click(button(f.review));
+    await click(button(f.publish));
+    expect(publish).toHaveBeenCalledTimes(1);
+    expect(setRubricFor).toHaveBeenCalledTimes(1);
+    const [id, sent] = setRubricFor.mock.calls[0] as unknown as [string, { title: string }[]];
+    expect(id).toBe("a-new");
+    expect(sent[0]!.title).toBe("Struktura");
+  });
+
+  it("publishes without a rubric and says so when the rubric is not saved", async () => {
+    const publish = async () => ({ kind: "available" as const, id: "a-new" });
+    const none = vi.fn(async () => "none" as const);
+    await start({ publish, setRules: async () => [], setRubricFor: none });
+    await click(button(f.review));
+    const review = [...document.querySelectorAll("dt")].find((dt) => dt.textContent === "Kriteriji");
+    expect(review?.nextElementSibling?.textContent).toBe("Zadani");
+    await click(button(f.publish));
+    expect(none).toHaveBeenCalledTimes(1);
+    expect(none).toHaveBeenCalledWith("a-new", []);
+    expect(document.body.textContent).not.toContain("Rubrika nije spremljena");
+    act(() => root?.unmount()); document.body.innerHTML = "";
+    const host = await start({ publish, setRules: async () => [], setRubricFor: async () => "conflict" as const });
+    await click(button("Dodaj kriterij"));
+    await type(host.querySelector<HTMLInputElement>('input[maxlength="120"]')!, "Struktura");
+    for (const input of host.querySelectorAll<HTMLInputElement>('input[maxlength="80"]')) await type(input, "Razina");
+    await click(button(f.review));
+    await click(button(f.publish));
+    expect(document.body.textContent).toContain("Rubrika nije spremljena");
+  });
+});

@@ -1,0 +1,20 @@
+// WEB-V17-RUBRIC-MARK: texts of the teacher's level marks on a work. No number, sum, grade or ranking is named.
+export const rubricMarksHr = {
+  heading: "Kriteriji vrednovanja",
+  note: "Označite razinu po kriteriju i, ako želite, dodajte bilješku. Bilješka je privatna. Razine nemaju bodove i ne tvore zbroj.",
+  loading: "Učitavanje kriterija…",
+  unavailable: "Kriteriji trenutačno nisu dostupni.",
+  retry: "Pokušaj ponovno",
+  signedOut: "Sesija je istekla. Prijavite se ponovno.",
+  notFound: "Rad nije pronađen.",
+  versionNote: "Rubrika je u međuvremenu izmijenjena; oznake se odnose na stariju verziju.",
+  noLevel: "Bez oznake",
+  levelGroup: (title: string) => `Razina za kriterij ${title}`,
+  noteLabel: (title: string) => `Bilješka za kriterij ${title}`,
+  save: "Spremi",
+  saved: "Spremljeno.",
+  failed: "Oznaka nije spremljena. Pokušajte ponovno.",
+  conflictGone: "Kriterij više ne postoji. Učitajte kriterije ponovno.",
+  noteTooLong: (max: number) => `Bilješka može imati najviše ${max} znakova.`,
+  unmarked: "Nije označeno",
+} as const;

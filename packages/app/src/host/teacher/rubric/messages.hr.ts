@@ -1,0 +1,25 @@
+// WEB-V17-RUBRIC-FORM: texts of the rubric field in the assignment form. No points, sum or ranking is named.
+export const rubricFormHr = {
+  heading: "Kriteriji vrednovanja",
+  note: "Neobavezno. Do 12 kriterija, svaki s tri razine opisa. Student ih vidi prije predaje. Razine nemaju bodove.",
+  empty: "Rubrika nije zadana. Student vidi zadane kriterije.",
+  add: "Dodaj kriterij",
+  limit: "Najviše 12 kriterija.",
+  remove: (n: number) => `Ukloni kriterij ${n}`,
+  criterion: (n: number) => `Kriterij ${n}`,
+  title: "Naziv kriterija",
+  level: (n: number) => `Razina ${n}`,
+  label: "Oznaka razine",
+  descriptor: "Opis razine",
+  required: "Obavezno polje.",
+  tooLong: (max: number) => `Najviše ${max} znakova.`,
+  summary: "Rubrika nije potpuna: ispunite označena polja.",
+  review: (n: number) => (n === 1 ? "1 kriterij" : `${n} kriterija`),
+  reviewLabel: "Kriteriji",
+  none: "Zadani",
+  failed: {
+    failed: "Rubrika nije spremljena. Zadatak je objavljen bez rubrike pa student vidi zadane kriterije.",
+    conflict: "Rubrika nije spremljena jer je poslužitelj već ima u drugoj verziji. Zadatak je objavljen.",
+    signedOut: "Rubrika nije spremljena jer ste odjavljeni. Zadatak je objavljen.",
+  },
+} as const;

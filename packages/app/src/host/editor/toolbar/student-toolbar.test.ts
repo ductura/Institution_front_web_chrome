@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createEditorExtensionsV3, NODE_ID_ATTRIBUTE } from "../../../../../editor-core/src/editor/schema";
 import { BLOCK_STYLES, stateOf, TOOLS } from "../../../../../../src/components/editor/EditorToolbarFor.tsx";
 import { EditorToolbarHost } from "./EditorToolbarHost";
-import { KEPT_LABELS, KEPT_TOOLBAR_LABEL, toolbarCommands, toolbarStateOf } from "./StudentToolbar";
+import { copyToastText, exportMenuItems, KEPT_LABELS, KEPT_TOOLBAR_LABEL, toolbarCommands, toolbarStateOf } from "./StudentToolbar";
 import { toolbarGroups } from "./toolbar-model";
 
 const ID = "00000000-0000-4000-8000-000000000001";
@@ -100,5 +100,19 @@ describe("student toolbar over the editor", () => {
       state: toolbarStateOf(stateOf(e)), commands: toolbarCommands(e), label: KEPT_TOOLBAR_LABEL, labels: KEPT_LABELS, omit: ["numberedList"],
     }));
     expect(html).toContain('role="toolbar" aria-label="Oblikovanje teksta"');
+  });
+
+  // ED-06 (NF2-P23): Izvezi offers the print preview before the copy; the copy says how it went (prototype ACT.copy).
+  it("offers the print preview and the copy in Izvezi", () => {
+    const e = editorWith();
+    expect(exportMenuItems(e).map((i) => [i.id, i.label, !!i.disabled])).toEqual([
+      ["print", "Pregled ispisa", false], ["copy", "Stavi tekst rada u međuspremnik", false],
+    ]);
+    expect(exportMenuItems(null).find((i) => i.id === "copy")!.disabled).toBe(true);
+  });
+
+  it("says how the copy went", () => {
+    expect(copyToastText(true)).toBe("Tekst je stavljen u međuspremnik.");
+    expect(copyToastText(false)).toBe("Nije uspjelo. Označite tekst i upotrijebite Ctrl+C.");
   });
 });
