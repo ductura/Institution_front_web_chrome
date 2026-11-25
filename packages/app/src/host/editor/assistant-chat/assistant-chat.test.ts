@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { AssistantChatView } from "./AssistantChat";
 import {
   SHOWN,
-  PURPOSE_CATALOG_VERSION, askablePurposes, createAssistantPort, exchangesOf, keepConversation, keptConversations, titleOf,
+  PURPOSE_CATALOG_VERSION, askablePurposes, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, titleOf,
   type AssistantPort, type Message,
 } from "./assistant-chat";
 import { assistantChatHr } from "./messages.hr";
@@ -104,6 +104,29 @@ describe("ED-10 Asistent: the record", () => {
     const ids = Array.from({ length: SHOWN + 3 }, (_, i) => `${String(i).padStart(8, "0")}-0000-4000-8000-000000000000`);
     for (const id of ids) keepConversation(SCOPE, ASSIGNMENT, { id, purposeKey: "proofreading" }, store);
     expect(keptConversations(SCOPE, ASSIGNMENT, store).map((k) => k.id)).toEqual(ids.slice(-SHOWN));
+  });
+
+  it("with blocked or full storage the held list keeps every conversation already on the card", () => {
+    const second = "4d5e6f7a-8b9c-4d0e-8f1a-2b3c4d5e6f7a";
+    const blocked = { getItem: () => { throw new Error("blokirano"); }, setItem: () => { throw new Error("blokirano"); } };
+    const first = keepConversation(SCOPE, ASSIGNMENT, { id: CONV, purposeKey: "proofreading" }, blocked, []);
+    expect(keepConversation(SCOPE, ASSIGNMENT, { id: second, purposeKey: "formatting" }, blocked, first).map((k) => k.id)).toEqual([CONV, second]);
+    // A write that fails once: the next update still starts from what the card holds, not from storage.
+    let fail = true;
+    const store = memoryStore();
+    const flaky = { getItem: store.getItem, setItem: (k: string, v: string) => { if (fail) throw new Error("puno"); store.setItem(k, v); } };
+    const held = keepConversation(SCOPE, ASSIGNMENT, { id: CONV, purposeKey: "proofreading" }, flaky, []);
+    fail = false;
+    expect(keepConversation(SCOPE, ASSIGNMENT, { id: second, purposeKey: "formatting" }, flaky, held).map((k) => k.id)).toEqual([CONV, second]);
+    expect(keptConversations(SCOPE, ASSIGNMENT, store).map((k) => k.id)).toEqual([CONV, second]);
+  });
+
+  it("the held chat outlives the card per person and assignment, and is the same slot on reopening", () => {
+    const slot = heldChat(SCOPE, ASSIGNMENT);
+    slot.draft = "Nedovršeno izmišljeno pitanje";
+    slot.pendingKey = "k-1";
+    expect(heldChat(SCOPE, ASSIGNMENT)).toBe(slot);
+    expect(heldChat(OTHER, ASSIGNMENT)).toEqual({ kept: null, current: null, purpose: "", draft: "", pendingKey: null });
   });
 
   it("offers only the purposes the notice allows, never transcription", () => {
