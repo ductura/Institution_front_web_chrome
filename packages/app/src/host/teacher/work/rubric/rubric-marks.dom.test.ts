@@ -73,4 +73,20 @@ describe("RubricMarks", () => {
     expect(host.textContent).toContain("Oznaka nije spremljena");
     expect(host.textContent).not.toContain("Spremljeno.");
   });
+
+  it("handles a criterion whose id is an Object.prototype name", async () => {
+    const call = client({
+      "teacher.assignment-rubric.get": () => ok({ version: 1, criteria: [{ id: "constructor", title: "Izmišljeni", levels: LEVELS }] }),
+      "teacher.work-rubric.get": () => ok({ rubricVersion: 1, marks: [{ criterionId: "constructor", level: 2, note: "too-long" }] }),
+      "teacher.work-rubric-mark.put": ({ body }) => ok({ criterionId: "constructor", ...(body as object) }),
+    });
+    const host = await mount(call);
+    const radios = host.querySelectorAll<HTMLInputElement>('input[type="radio"]');
+    expect(radios[2]!.checked).toBe(true);
+    expect(host.querySelector("textarea")!.value).toBe("too-long");
+    await act(async () => { radios[0]!.click(); });
+    await act(async () => { [...host.querySelectorAll("button")].find((b) => b.textContent === "Spremi")!.click(); });
+    await settle();
+    expect(call.mock.calls.find((c) => c[0] === "teacher.work-rubric-mark.put")![1]).toMatchObject({ body: { level: 0, note: "too-long" } });
+  });
 });

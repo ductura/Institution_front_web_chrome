@@ -18,11 +18,12 @@ export function joinRows(rubric: Rubric, marks: readonly Mark[]): readonly Row[]
 export const withMark = (marks: readonly Mark[], next: Mark): readonly Mark[] =>
   marks.map((m) => (m.criterionId === next.criterionId ? next : m));
 
-/** The note as the contract wants it: trimmed, null when empty, null (invalid) when over the limit. */
-export function noteValue(text: string): string | null | "too-long" {
+/** The note as the contract wants it: trimmed, null when empty; an object (never a string) when over the limit. */
+export type NoteValue = { readonly ok: true; readonly note: string | null } | { readonly ok: false };
+export function noteValue(text: string): NoteValue {
   const trimmed = text.trim();
-  if (trimmed === "") return null;
-  return trimmed.length > NOTE_MAX ? "too-long" : trimmed;
+  if (trimmed === "") return { ok: true, note: null };
+  return trimmed.length > NOTE_MAX ? { ok: false } : { ok: true, note: trimmed };
 }
 
 /** True when the shown form differs from the saved mark (so Save has something to send). */

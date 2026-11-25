@@ -36,10 +36,12 @@ describe("marks model", () => {
     expect(withMark(marks, { criterionId: "k1", level: 2, note: "n" }).map((m) => m.level)).toEqual([2, 2]);
   });
   it("trims the note, sends null when empty and refuses one over the limit", () => {
-    expect(noteValue("  dobro  ")).toBe("dobro");
-    expect(noteValue("   ")).toBeNull();
-    expect(noteValue("x".repeat(NOTE_MAX))).toHaveLength(NOTE_MAX);
-    expect(noteValue("x".repeat(NOTE_MAX + 1))).toBe("too-long");
+    expect(noteValue("  dobro  ")).toEqual({ ok: true, note: "dobro" });
+    expect(noteValue("   ")).toEqual({ ok: true, note: null });
+    expect(noteValue("x".repeat(NOTE_MAX))).toEqual({ ok: true, note: "x".repeat(NOTE_MAX) });
+    expect(noteValue("x".repeat(NOTE_MAX + 1))).toEqual({ ok: false });
+    // The old sentinel text is an ordinary note.
+    expect(noteValue(" too-long ")).toEqual({ ok: true, note: "too-long" });
   });
   it("sees a change in level or note and ignores whitespace-only edits", () => {
     const saved: Mark = { criterionId: "k1", level: 1, note: "a" };

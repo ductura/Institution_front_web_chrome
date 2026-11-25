@@ -39,17 +39,17 @@ export function RubricMarks({ documentId, call, onSessionEnd }: { documentId: st
     return <section aria-label={t.heading}><p role="alert">{t.unavailable}</p><Button onClick={() => void load()}>{t.retry}</Button></section>;
   }
 
-  const form = (m: Mark): Form => forms[m.criterionId] ?? { level: m.level, note: m.note ?? "", busy: false, message: null };
+  const form = (m: Mark): Form => (Object.hasOwn(forms, m.criterionId) ? forms[m.criterionId] : undefined) ?? { level: m.level, note: m.note ?? "", busy: false, message: null };
   const patch = (m: Mark, next: Partial<Form>) => setForms((all) => ({ ...all, [m.criterionId]: { ...form(m), ...next } }));
 
   const save = async (m: Mark) => {
     const f = form(m);
     const note = noteValue(f.note);
-    if (note === "too-long") { patch(m, { message: t.noteTooLong(NOTE_MAX) }); return; }
+    if (!note.ok) { patch(m, { message: t.noteTooLong(NOTE_MAX) }); return; }
     if (sending.current.has(m.criterionId)) return;
     sending.current.add(m.criterionId);
     patch(m, { busy: true, message: null });
-    const result = await saveMark(call, documentId, m.criterionId, f.level, note);
+    const result = await saveMark(call, documentId, m.criterionId, f.level, note.note);
     sending.current.delete(m.criterionId);
     if (!alive.current) return;
     if (result.kind === "saved") {
