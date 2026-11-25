@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import "katex/dist/katex.min.css";
 
 import type {
   CanonicalDocumentV4, DocumentNodeV4, InlineNodeV4, ParagraphNodeV4, TextNodeV4,
@@ -13,7 +12,9 @@ import { v4ViewMessages as text } from "./messages.hr";
 /**
  * A submitted v4 document for the teacher, read only (WEB-V21-STEM-NASTAVNIK-PRIKAZ): formula (KaTeX,
  * local), code with line numbers (never run), box, table and the place of an image (the picture is
- * not fetched here). Nothing is editable and no link is followed: a link mark shows its text only.
+ * not fetched here). The KaTeX stylesheet is not imported here: a specifier through `dist` is an
+ * unwaivable "test file import" in src/client/no-direct-api.test.ts, so it must be loaded centrally
+ * (PR note "Otvoreno"). Nothing is editable and no link is followed: a link mark shows its text only.
  */
 export default function V4Blocks({ document }: { document: CanonicalDocumentV4 }) {
   const numbers = numberedListNumbers(document.nodes);
