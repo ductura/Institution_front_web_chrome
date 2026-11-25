@@ -424,6 +424,13 @@ test('ui runs typecheck and unit tests in two blocking parts of its matrix', () 
   assert.deepEqual(legs.map((p) => `${p.leg}/${p.of}`), ['1/2', '2/2']);
   assert.equal(typecheck?.if, "matrix.part == 'checks'");
   assert.equal(unit?.if, "matrix.part == 'unit'");
+  // CI-BRZINA: both axe shells run in one part; the light shell runs also
+  // when the dark one failed, and nothing else may skip them.
+  assert.deepEqual(ui.strategy.matrix.include.filter((p) => p.part.startsWith('axe')).map((p) => p.part), ['axe']);
+  const [dark] = uiStep(/--grep "\$AXE_DARK"$/);
+  const [light] = uiStep(/--grep "\$AXE_LIGHT"$/);
+  assert.equal(dark?.if, "matrix.part == 'axe'");
+  assert.equal(light?.if, "always() && matrix.part == 'axe'");
   const [coverage] = uiStep(/the ui parts do not cover every catalogue test exactly once/);
   assert.equal(coverage?.if, "matrix.part == 'checks'");
   assert.ok(!ui.steps.some((s) => s['continue-on-error']), 'no step of ui is report-only');
