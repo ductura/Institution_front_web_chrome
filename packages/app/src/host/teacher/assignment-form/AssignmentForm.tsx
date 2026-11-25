@@ -20,7 +20,8 @@ import { PracticeField } from "./PracticeField";
 import { QuestionField } from "./QuestionField";
 import { SubmissionRules, seesLine } from "./SubmissionRules";
 import { applyRules, bodyExtras, defaultChoices, groupsMissing, readGroups, type Call, type GroupsRead, type RuleChoices, type RuleName } from "./rules";
-import { assignmentFormHr as f } from "./messages.hr";
+import { assignmentFormHr as f, templateFieldHr } from "./messages.hr";
+import { readOutline, saveTemplate, TemplateField, type LoadOutline, type TemplateOutcome } from "./TemplateField";
 import { rubricFormHr } from "../rubric/messages.hr";
 import { saveRubric, type SaveOutcome } from "../rubric/port";
 import { RubricField } from "../rubric/RubricField";
@@ -35,6 +36,8 @@ type PracticeBody = NonNullable<ReturnType<typeof assignmentBody>> & { isPractic
 type Publish = (courseId: string, body: PracticeBody, requestKey: string) => Promise<AssignmentCreation>;
 type LoadGroups = (courseId: string) => Promise<GroupsRead>;
 type SaveRubric = (assignmentId: string, rubric: Rubric) => Promise<SaveOutcome>;
+type SaveTemplate = (assignmentId: string, use: boolean) => Promise<TemplateOutcome>;
+const loadOutlineDefault: LoadOutline = (workType) => readOutline(createApi() as Call, workType);
 type ApplyRules = (assignmentId: string, choices: RuleChoices) => Promise<RuleName[]>;
 type FormDraft = AssignmentDraft & { practice?: boolean };
 type Phase = "form" | "review" | "publishing" | "published";
@@ -51,8 +54,9 @@ const initialDraft: FormDraft = {
  * "Pregled i objava" with "Objavi zadatak" and "Natrag na obrazac" (kartice: not a five-step wizard).
  * Publishing calls the existing create-assignment route (`publishAssignment`); `publish` is injectable for tests.
  */
-export default function AssignmentForm({ course, publish = publishAssignment, cancelHref = "/nastavnik", loadGroups, setRules, setRubricFor }: {
+export default function AssignmentForm({ course, publish = publishAssignment, cancelHref = "/nastavnik", loadGroups, setRules, setRubricFor, setTemplateFor, loadOutline = loadOutlineDefault }: {
   course: Course; publish?: Publish; cancelHref?: string; loadGroups?: LoadGroups; setRules?: ApplyRules; setRubricFor?: SaveRubric;
+  setTemplateFor?: SaveTemplate; loadOutline?: LoadOutline;
 }) {
   const request = useRef<{ body: string; key: string } | null>(null);
   const summary = useRef<HTMLParagraphElement>(null);
@@ -67,6 +71,8 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
   const [rubric, setRubric] = useState<Rubric>([]);
   const [rubricErrors, setRubricErrors] = useState<RubricErrors | undefined>(undefined);
   const [rubricOutcome, setRubricOutcome] = useState<SaveOutcome>("none");
+  const [useTemplate, setUseTemplate] = useState(false);
+  const [templateOutcome, setTemplateOutcome] = useState<TemplateOutcome>("none");
   const courseProhibits = course.aiPolicy === "prohibited";
   const set = <K extends keyof FormDraft>(key: K, value: FormDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
   const allowsHelp = !courseProhibits && draft.aiPurposes.length > 0;
@@ -115,6 +121,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
       const id = result.kind === "available" ? result.id : null;
       setRuleFailures(id === null ? [] : await (setRules ?? ((assignmentId, picked) => applyRules(createApi() as Call, assignmentId, picked)))(id, choices).catch((): RuleName[] => ["withdrawal", "declaration"]));
       setRubricOutcome(id === null ? "none" : await (setRubricFor ?? ((assignmentId, picked) => saveRubric(createApi() as Call, assignmentId, picked)))(id, rubric).catch((): SaveOutcome => "failed"));
+      setTemplateOutcome(id === null ? "none" : await (setTemplateFor ?? ((assignmentId, use) => saveTemplate(createApi() as Call, assignmentId, use)))(id, useTemplate).catch((): TemplateOutcome => "failed"));
       setPhase("published");
     }
     else { setFailure(outcome.error ?? a.errors.unavailable); setPhase("review"); }
@@ -127,6 +134,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
       <section aria-label={`${course.name} · ${course.academicYear}`} className="card">
         <PublishDone />
         {rubricOutcome !== "saved" && rubricOutcome !== "none" && <p className="note" role="alert">{rubricFormHr.failed[rubricOutcome]}</p>}
+        {templateOutcome !== "saved" && templateOutcome !== "none" && <p className="note" role="alert">{templateFieldHr.failed[templateOutcome]}</p>}
         {ruleFailures.map((name) => <p key={name} className="note" role="alert">{f.submitRules.failed[name]}</p>)}
       </section>
     );
@@ -154,6 +162,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
       { id: "ai", label: f.labels.ai, value: !allowsHelp ? f.values.aiNone : choices.summaryOnly ? f.values.aiSummary : f.values.aiCourse },
       { id: "tools", label: f.labels.tools, value: choices.externalTools ? f.values.toolsYes : f.values.toolsNo },
       { id: "rubric", label: rubricFormHr.reviewLabel, value: rubric.length > 0 ? rubricFormHr.review(rubric.length) : rubricFormHr.none },
+      { id: "template", label: templateFieldHr.reviewLabel, value: useTemplate ? templateFieldHr.reviewOn : templateFieldHr.reviewOff },
       { id: "late", label: f.labels.late, value: f.values.lateServer },
       { id: "withdrawal", label: f.labels.withdrawal, value: choices.withdrawal ? f.values.withdrawalOn : f.values.withdrawalOff },
       { id: "declaration", label: f.labels.declaration, value: choices.declarationRequired ? f.values.declarationOn : f.values.declarationOff },
@@ -259,6 +268,8 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
         </Section>
 
         <RubricField value={rubric} onChange={setRubric} errors={rubricErrors} />
+
+        <TemplateField value={useTemplate} onChange={setUseTemplate} workType={draft.workType} load={loadOutline} />
 
         <p className="meta">{f.submitHint}</p>
         <ActionRow>
