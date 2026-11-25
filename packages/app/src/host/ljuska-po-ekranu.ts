@@ -41,6 +41,7 @@ export const SCREEN_FRAMES: readonly ScreenFrame[] = [
   s("/zadatak/[id]", "S-05 Obavijest o zadatku", "side", true),
   s("/zadaci/radovi", "Moji radovi", "side"),
   s("/zadaci/dnevnik-prakse", "Dnevnik prakse", "side"),
+  s("/zadatak/[id]/tim", "Moj tim", "side", true),
   s("/rad/[assignmentId]", "Radni prostor", "none", false, true),
   s("/rad/[assignmentId]/predaja", "S-31 Izjava", "none", false, true),
   s("/rad/[assignmentId]/predaja/pregled", "S-30 Pregled prije predaje", "none", false, true),
@@ -64,6 +65,7 @@ export const SCREEN_FRAMES: readonly ScreenFrame[] = [
   n("/nastavnik/rad/[id]/konzultacije", "N-12 Konzultacije", "none"),
   n("/nastavnik/rad/[id]/pregled", "NF5-P Pregled rada", "none"),
   n("/nastavnik/zadatak/[assignmentId]/produljenje", "N-13 Produljenje roka", "side", true),
+  n("/nastavnik/zadatak/[assignmentId]/timovi", "Timovi na zadatku", "side"),
   n("/nastavnik/zadatak/[assignmentId]/merlin", "N-18 Izvoz za Merlin", "side"),
 ];
 
