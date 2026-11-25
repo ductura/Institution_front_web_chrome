@@ -75,7 +75,11 @@ function drawCodeBlock(initial: PmNode, getPos: () => number | undefined, action
     caption.textContent = text === "" ? "" : t.listing(text);
     caption.hidden = text === "";
     if (isCodeLanguage(node.attrs.language)) dom.setAttribute("data-language", node.attrs.language); else dom.removeAttribute("data-language");
-    gutter.textContent = Array.from({ length: lineCount(node.textContent) }, (_, i) => String(i + 1)).join("\n");
+    gutter.replaceChildren(...Array.from({ length: lineCount(node.textContent) }, (_, i) => {
+      const line = document.createElement("div"); // one block per number: survives the editor's `white-space: normal` on non-editable nodes
+      line.textContent = String(i + 1);
+      return line;
+    }));
     bar.replaceChildren();
     const pos = getPos();
     const list = pos === undefined ? [] : actions()?.({ pos, language: isCodeLanguage(node.attrs.language) ? node.attrs.language : null, code: node.textContent }) ?? [];

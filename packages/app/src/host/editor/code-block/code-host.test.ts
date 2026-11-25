@@ -66,7 +66,8 @@ describe("useCodeBlockHost", () => {
     const block = element.querySelector("[data-code-block]")!;
     expect(block.textContent).toContain("Ispis: Zbroj");
     expect(block.querySelector("pre code")!.textContent).toBe("let a = 1;\nlet b = 2;");
-    expect(Array.from(block.children).find((c) => c.getAttribute("aria-hidden") === "true")!.textContent).toBe("1\n2");
+    expect(Array.from(block.children).find((c) => c.getAttribute("aria-hidden") === "true")!.textContent).toBe("12");
+    expect(Array.from(block.querySelectorAll("[aria-hidden='true'] > div")).map((n) => n.textContent)).toEqual(["1", "2"]);
     expect(block.querySelector("pre code [class*='hljs-'], pre code .hljs-keyword")).not.toBeNull();
   });
   it("still shows the block, uncoloured, when the library is unavailable", async () => {
@@ -87,6 +88,26 @@ describe("useCodeBlockHost", () => {
     act(() => root?.unmount()); mount?.remove(); editor?.destroy();
     const plain = await render(4, undefined, block);
     expect(plain.element.querySelector("[data-code-action]")).toBeNull();
+  });
+  it("refreshes the buttons of existing blocks when `actions` changes, document unchanged", async () => {
+    const first = vi.fn(); const second = vi.fn();
+    const block = { type: "doc", content: [{ type: "codeBlock", attrs: { language: "c", caption: null }, content: [{ type: "text", text: "int x;" }] }] } as JSONContent;
+    const { element } = await render(4, undefined, block);
+    expect(element.querySelector("[data-code-action]")).toBeNull();
+    const before = JSON.stringify(editor!.getJSON());
+    const rerender = async (actions?: CodeBlockActions) => act(async () => {
+      root!.render(createElement(() => { const api = useCodeBlockHost(editor, 4, actions); return createElement("div", null, api.dialog); }));
+    });
+    await rerender(() => [{ id: "a", label: "Prva", run: first }]);
+    element.querySelector<HTMLButtonElement>("[data-code-action='a']")!.click();
+    expect(first).toHaveBeenCalledOnce();
+    await rerender(() => [{ id: "b", label: "Druga", run: second }]);
+    expect(element.querySelector("[data-code-action='a']")).toBeNull();
+    element.querySelector<HTMLButtonElement>("[data-code-action='b']")!.click();
+    expect(second).toHaveBeenCalledOnce();
+    await rerender(undefined);
+    expect(element.querySelector("[data-code-action]")).toBeNull();
+    expect(JSON.stringify(editor!.getJSON())).toBe(before);
   });
   it("keeps the dialog open and the document unchanged for a caption over 300 characters", async () => {
     const { api } = await render(4);

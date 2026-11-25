@@ -28,15 +28,14 @@ export function useCodeBlockHost(editor: Editor | null, schemaVersion: number | 
   const [session, setSession] = useState<Session | null>(null);
   const available = useRef(availability.enabled);
   available.current = availability.enabled;
-  const actionsRef = useRef(actions);
-  actionsRef.current = actions;
   const supported = live && supportsCodeBlocks(editor.schema, schemaVersion);
 
   useEffect(() => {
     if (!editor || editor.isDestroyed || !supported) return;
-    editor.registerPlugin(codeViewPlugin(() => actionsRef.current));
+    // A new `actions` re-registers the plugin, which makes ProseMirror redraw every block (new buttons, no stale `run`).
+    editor.registerPlugin(codeViewPlugin(() => actions));
     return () => { if (!editor.isDestroyed) editor.unregisterPlugin(codeViewKey); };
-  }, [editor, supported]);
+  }, [editor, supported, actions]);
 
   const open = useCallback((change = false) => {
     if (!available.current || !editor) return false;

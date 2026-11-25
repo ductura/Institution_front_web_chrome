@@ -1,7 +1,7 @@
 /* WEB-V21-STEM-KOD-BLOK: samo raspored i postojeći tokeni; bez vlastitih boja i fontova. */
 .block { display: grid; grid-template-columns: auto 1fr; margin-block: 0.75em; }
 .caption { grid-column: 1 / -1; color: var(--ink-muted); }
-.gutter { color: var(--ink-muted); text-align: end; padding-inline: 0.5em; user-select: none; white-space: pre; font-family: var(--ff-mono); }
+.gutter { color: var(--ink-muted); text-align: end; padding-inline: 0.5em; user-select: none; font-family: var(--ff-mono); }
 .pre { margin: 0; overflow-x: auto; background: var(--well); font-family: var(--ff-mono); }
 .pre code { font-family: inherit; white-space: pre; }
 .actions { grid-column: 1 / -1; display: flex; gap: 0.5em; }
