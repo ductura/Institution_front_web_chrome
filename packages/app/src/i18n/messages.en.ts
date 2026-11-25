@@ -72,6 +72,7 @@ export const pageLabelsEn = {
   problemReports: "Problem reports",
   facultySettings: "Faculty settings",
   facultyAssistant: "Assistant at the faculty",
+  milestoneTemplate: "Milestone template",
   myRights: "My rights",
 };
 
