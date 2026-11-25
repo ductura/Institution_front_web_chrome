@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
@@ -56,6 +58,16 @@ describe("screens", () => {
     expect(referencePath({ ...screen!, reference: null }, THEMES[0]!, 400)).toBeNull();
     expect(captureName(screen!, THEMES[1]!, 400)).toBe("S-02-svijetla-400.png");
     expect(new Set(SCREENS.map((s) => s.id)).size).toBe(SCREENS.length);
+  });
+});
+
+describe("reference images", () => {
+  it("exist in this repository for every screen, theme and width that names one", () => {
+    const root = new URL("../../../docs/design/reference/", import.meta.url);
+    const missing = SCREENS.flatMap((screen) => THEMES.flatMap((theme) => WIDTHS.map((width) => referencePath(screen, theme, width))))
+      .filter((file): file is string => file !== null)
+      .filter((file) => !existsSync(new URL(file, root)));
+    expect(missing).toEqual([]);
   });
 });
 
