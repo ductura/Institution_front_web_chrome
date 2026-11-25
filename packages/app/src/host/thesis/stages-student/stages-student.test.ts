@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { StudentMilestone } from "../../../../../../src/client/milestone-submit";
 import { stagesStudentHr as t } from "./messages.hr";
+import { ThesisPanel } from "../ThesisPanel";
 import { showDate, stagesRead } from "./model";
 
 const submitMilestone = vi.fn();
@@ -126,5 +127,19 @@ describe("StagesView", () => {
     submitMilestone.mockResolvedValueOnce({ kind: "session-expired" });
     await act(async () => { button(host).click(); });
     expect(host.querySelector('[role="alert"]')?.textContent).toBe(t.sessionExpired);
+  });
+});
+
+describe("through the real ThesisPanel", () => {
+  it("a 409 message is still visible after the panel reads again", async () => {
+    readStudentMilestones.mockResolvedValue(ok([m(ID1, "not_submitted")]));
+    submitMilestone.mockResolvedValueOnce({ kind: "promijenjeno" });
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root!.render(h(ThesisPanel, { documentId: "izmisljeni-rad-panel", role: "student", sections: [section as never] })); });
+    await act(async () => { button(host).click(); });
+    expect(readStudentMilestones).toHaveBeenCalledTimes(2);
+    expect(host.querySelector('[role="alert"]')?.textContent).toBe(t.changed);
   });
 });
