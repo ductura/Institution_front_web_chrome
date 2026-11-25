@@ -42,15 +42,17 @@ async function fakeSpeech(page) {
   await page.addInitScript(() => {
     const log = { spoken: [], paused: 0, resumed: 0, cancelled: 0 };
     window.__speech = log;
-    window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; this.lang = ''; this.rate = 1; this.voice = null; } };
-    // The utterance never ends by itself: the test decides when a reading stops.
-    window.speechSynthesis = {
+    // speechSynthesis is a getter-only property in Chromium, so plain assignment would keep the real one.
+    const define = (name, value) => Object.defineProperty(window, name, { value, configurable: true, writable: true });
+    define('SpeechSynthesisUtterance', class { constructor(text) { this.text = text; this.lang = ''; this.rate = 1; this.voice = null; } });
+    // The utterance never ends by itself: the test decides when a reading stops. A Croatian voice exists, so no fallback notice.
+    define('speechSynthesis', {
       speak(utterance) { log.spoken.push({ text: utterance.text, rate: utterance.rate }); setTimeout(() => utterance.onstart?.(), 0); },
       pause() { log.paused += 1; },
       resume() { log.resumed += 1; },
       cancel() { log.cancelled += 1; },
-      getVoices: () => [],
-    };
+      getVoices: () => [{ lang: 'hr-HR', name: 'Izmišljeni hrvatski glas', voiceURI: 'izmisljeni-hr', default: true }],
+    });
   });
 }
 
@@ -132,10 +134,12 @@ if (process.env.DUCTURA_STOG === '1') {
       await expect(live).toHaveText('Čitanje je na pauzi');
       expect(await page.evaluate(() => window.__speech.paused)).toBe(1);
 
+      // Starting a reading also wakes the synthesiser (controller.ts), so count the increment made by "Nastavi".
+      const resumedBefore = await page.evaluate(() => window.__speech.resumed);
       await menu.click();
       await page.getByRole('menuitem', { name: 'Nastavi', exact: true }).click();
       await expect(live).toHaveText('Čitanje u tijeku');
-      expect(await page.evaluate(() => window.__speech.resumed)).toBe(1);
+      expect(await page.evaluate(() => window.__speech.resumed)).toBe(resumedBefore + 1);
 
       await menu.click();
       await page.getByRole('menuitem', { name: 'Zaustavi čitanje', exact: true }).click();
@@ -151,7 +155,9 @@ if (process.env.DUCTURA_STOG === '1') {
     });
 
     test('preglednik bez čitanja naglas: poruka, ne greška', async ({ page }) => {
-      await page.addInitScript(() => { delete window.speechSynthesis; delete window.SpeechSynthesisUtterance; });
+      await page.addInitScript(() => {
+        for (const name of ['speechSynthesis', 'SpeechSynthesisUtterance']) Object.defineProperty(window, name, { value: undefined, configurable: true });
+      });
       await openWork(page, assignmentId);
       await toolbarOf(page).getByRole('button', { name: /^Čitaj naglas/ }).click();
       const item = page.getByRole('menuitem', { name: 'Čitaj rad', exact: true });
