@@ -26,6 +26,7 @@ import { interviewMessages as studentInterviewText } from "./host/student/interv
 import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
 import { facultySettingsMessages } from "./host/admin/faculty-settings/messages.hr";
 import { milestoneTemplateMessages } from "./host/admin/milestone-template/messages.hr";
+import { workTemplateMessages } from "./host/admin/work-template/messages.hr";
 import { myRightsMessages } from "./host/public/my-rights/messages.hr";
 import { pilotMetricsMessages } from "./host/operator/pilot-metrics/messages.hr";
 import { actionLogMessages } from "./host/operator/action-log/messages.hr";
@@ -181,6 +182,8 @@ export const PAGES: readonly Page[] = [
   { path: "/ustanova/postavke/asistent", label: facultySettingsMessages.assistant.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
   // WEB-V16-ETAPE-ADMIN: the institution's milestone template.
   { path: "/ustanova/etape", label: milestoneTemplateMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  // WEB-V17-TEMPLATE-ADMIN: the faculty's template of a work per type of work.
+  { path: "/ustanova/predlozak-rada", label: workTemplateMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
   // WEB-V22-RUTE: the trial ISVU roster link, for the administrator, the grade export (teacher of the course) and the public entry from Studomat.
   { path: "/ustanova/isvu", label: pageLabelsHr.isvuImport, kind: "pending", roles: ["admin"], current: "/ustanova" },
   { path: "/nastavnik/kolegiji/[courseId]/isvu-ocjene", label: pageLabelsHr.isvuGrades, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
