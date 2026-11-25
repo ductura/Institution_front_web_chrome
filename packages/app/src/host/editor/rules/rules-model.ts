@@ -1,4 +1,5 @@
 // WEB-2135: pure model of the "Zahtjevi rada" list and of the faculty set-up (prototype rules.js, faks.js).
+import { areaChecksOf } from "./area-checks";
 import { fill, rulesHr as t } from "./messages.hr";
 import {
   AREAS, STUDY_RULES, UNIT_TOOLS, UNITS, profilesOf, unitById,
@@ -100,6 +101,9 @@ export function itemsOf(profile: RuleProfile, stats: WorkStats | null): RuleItem
       key: `check:${check.text}`, group: check.kind, title: check.text, detail: "",
       state: check.kind === "manual" ? "tick" : "note",
     });
+  }
+  for (const c of areaChecksOf(setupOf(profile).area, profile.manualChecks.map((m) => m.text))) {
+    out.push({ key: `area:${c.key}`, group: "manual", title: c.text, detail: "", state: "tick" });
   }
   if (profile.font && profile.size && profile.spacing) {
     out.push({
