@@ -29,6 +29,8 @@ export async function readFormatCheck(
   if (rules.kind !== "ready") return { kind: "unavailable" };
   if (work.kind === "empty") return { kind: "noText" };
   if (work.kind !== "ready" || work.nodes === undefined) return { kind: "unavailable" };
+  // A saved blank work (all text deleted) is "ready" on the server; it gets the same treatment as an unstarted one.
+  if (work.nodes.every((node) => node.children.every((child) => child.text.trim() === ""))) return { kind: "noText" };
   return { kind: "ready", result: checkFormat(work.nodes, rules.rules) };
 }
 

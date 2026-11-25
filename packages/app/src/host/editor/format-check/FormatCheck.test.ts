@@ -21,6 +21,9 @@ describe("readFormatCheck", () => {
     expect(html).toContain("Uvod");
     expect(html).toContain(t.advisory);
   });
+  it("treats a saved blank work as no text, not as all fine", async () => {
+    expect((await readFormatCheck("a-1", async () => ready("  "), rules)).kind).toBe("noText");
+  });
   it("keeps loading, failure, no text and no rules apart", async () => {
     expect((await readFormatCheck("a-1", async () => ({ kind: "empty" }), rules)).kind).toBe("noText");
     expect((await readFormatCheck("a-1", async () => ({ kind: "unavailable" }), rules)).kind).toBe("unavailable");
