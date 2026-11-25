@@ -23,7 +23,9 @@ describe("checkFormat", () => {
     const bad = [h("Uvod"), p("Premalo (Horvat 2019)."), h("Literatura"), p("Jedan izvor.")];
     expect(status(bad)).toMatchObject({ words: "deviation", sources: "deviation", sections: "deviation", citations: "deviation" });
     expect(checkFormat(bad, RULES).items.find((i) => i.id === "sections")?.values.names).toBe("Zaključak");
-    expect(checkFormat([...GOOD, p("x ".repeat(20))].slice(0, 2).concat(GOOD.slice(2)), RULES).deviations).toBeLessThanOrEqual(1);
+    const long = [GOOD[0]!, p("Izmišljeni kompost raste (Horvat, 2019: 4) " + "riječ ".repeat(10)), ...GOOD.slice(2)];
+    expect(checkFormat(long, RULES).deviations).toBe(1);
+    expect(status(long)).toMatchObject({ words: "deviation", sources: "ok", sections: "ok", citations: "ok" });
     expect(status([h("Uvod"), p("riječ ".repeat(13))], { requiredSections: [], minSources: 0 })).toMatchObject({ words: "deviation", sources: "none", sections: "none" });
   });
   it("leaves unset rules out and flags a numeric citation as outside the FPZG form", () => {

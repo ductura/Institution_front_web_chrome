@@ -124,8 +124,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
-              work: ({ editor, documentId, submitted }) => <>
-                <MentorMount editor={editor} documentId={documentId} submitted={submitted} />
+              work: ({ editor, assignmentId: id, documentId, submitted }) => <>
+                <MentorMount editor={editor} assignmentId={id} documentId={documentId} submitted={submitted} />
                 <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />
               </>,
               // PIL-K-KOMENTARI-EDITOR: the Comments card over the real port, in place of the old CommentPanel.
