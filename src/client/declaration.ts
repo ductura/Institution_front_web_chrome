@@ -63,12 +63,22 @@ export type TeacherConversation = {
 export type TeacherTransfer = { readonly id: string; readonly heading: string; readonly source: string; readonly text: string };
 export type ExternalConversation = { readonly id: string; readonly title: string };
 
+/** The teacher's question beside the declaration (NF-3 PR-20, R-33), as the server holds it. */
+export type TeacherQuestion = { readonly questionId: string; readonly text: string };
+/** The student's answer, with the wording of the question it answers. */
+export type QuestionAnswer = { readonly questionId: string; readonly questionText: string; readonly text: string };
+/** What the student sends: the answer to one question, or null to take it back. */
+export type AnswerWrite = { readonly questionId: string; readonly text: string } | null;
+
+/** The question and the answer of a teacher read, when the server gives them (PG-6); absent is none. */
+export type TeacherQuestionPart = { readonly question?: TeacherQuestion | null; readonly answer?: QuestionAnswer | null };
+
 export type TeacherDeclarationRead =
-  | { readonly kind: "pending" }
+  | ({ readonly kind: "pending" } & TeacherQuestionPart)
   | { readonly kind: "unavailable" }
   | { readonly kind: "signedOut" }
-  | { readonly kind: "no_use"; readonly confirmedAt: string }
-  | {
+  | ({ readonly kind: "no_use"; readonly confirmedAt: string } & TeacherQuestionPart)
+  | ({
       readonly kind: "ready";
       readonly confirmedAt: string;
       readonly assistantAllowed: boolean;
@@ -76,7 +86,7 @@ export type TeacherDeclarationRead =
       readonly transfers: readonly TeacherTransfer[];
       readonly conversations: readonly TeacherConversation[];
       readonly external: readonly ExternalConversation[];
-    };
+    } & TeacherQuestionPart);
 
 export interface DeclarationPort {
   readStudent(submissionId: string): Promise<StudentDeclarationRead>;
@@ -198,7 +208,22 @@ export async function readDeclarationGate(call: Call, assignmentId: string): Pro
 const NO_HELP: WireHelp = { received: false, entries: [] };
 const NO_AI: WireAi = { use: null, declaredTools: [], attachments: [], externalAttachmentIds: [] };
 
-type Change = { readonly ownWork?: boolean; readonly humanHelp?: WireHelp; readonly ai?: Partial<Omit<WireAi, "attachments">>; readonly confirm?: boolean };
+type Change = {
+  readonly ownWork?: boolean; readonly humanHelp?: WireHelp; readonly ai?: Partial<Omit<WireAi, "attachments">>; readonly confirm?: boolean;
+  /** NF-3 PR-20: set only by the answer's own write; every other write keeps the answer the server holds. */
+  readonly questionAnswer?: AnswerWrite;
+};
+
+/**
+ * The answer a write carries when it does not change it: the held one, while it answers the
+ * question the server asks now. Without an answer the field is left out, as before PR-20.
+ */
+export function heldAnswer(state: StudentState): AnswerWrite | undefined {
+  const answer = state.questionAnswer ?? null;
+  const question = state.teacherQuestion ?? null;
+  if (answer === null || question === null || answer.questionId !== question.questionId) return undefined;
+  return { questionId: answer.questionId, text: answer.text };
+}
 
 /**
  * The next whole draft on top of `state`, or null when the server gives nothing to write on
@@ -211,6 +236,7 @@ export function nextDraft(state: StudentState, change: Change): PutBody | null {
   const draft = state.draft;
   const help = change.humanHelp ?? draft?.humanHelp ?? NO_HELP;
   const ai = { ...(draft?.ai ?? NO_AI), ...change.ai };
+  const answer = change.questionAnswer !== undefined ? change.questionAnswer : heldAnswer(state);
   return {
     baseVersion: state.version,
     revision: state.currentRevision,
@@ -219,6 +245,7 @@ export function nextDraft(state: StudentState, change: Change): PutBody | null {
     humanHelp: { received: help.received, entries: help.entries },
     ai: { use: ai.use, declaredTools: ai.declaredTools, attachments: [], externalAttachmentIds: ai.externalAttachmentIds },
     confirm: change.confirm ?? false,
+    ...(answer === undefined ? {} : { questionAnswer: answer }),
   };
 }
 
@@ -340,10 +367,15 @@ export function createDeclarationPort(call: Call = createApi(), options: Declara
         return { kind: "unavailable" };
       }
       if (!result.ok) return { kind: result.status === 401 ? "signedOut" : "unavailable" };
-      if (result.body.state === "none") return { kind: "pending" };
+      // Present only when the server gives them, so a read without a question is what it was before PR-20.
+      const asked = result.body.question ?? null;
+      const answered = result.body.questionAnswer ?? null;
+      const qa: TeacherQuestionPart = { ...(asked === null ? {} : { question: asked }), ...(answered === null ? {} : { answer: answered }) };
+      if (result.body.state === "none") return { kind: "pending", ...qa };
       const payload = result.body.payload;
-      if (payload.ai.use === "not_used") return { kind: "no_use", confirmedAt: payload.confirmedAt };
+      if (payload.ai.use === "not_used") return { kind: "no_use", confirmedAt: payload.confirmedAt, ...qa };
       return {
+        ...qa,
         kind: "ready",
         confirmedAt: payload.confirmedAt,
         // The payload does not say whether the assistant was allowed; nothing is claimed off.

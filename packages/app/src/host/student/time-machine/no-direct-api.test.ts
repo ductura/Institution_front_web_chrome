@@ -9,7 +9,7 @@ const FORBIDDEN = /\bfetch\s*\(|XMLHttpRequest|\bWebSocket\b|\bEventSource\b|sen
 describe("no direct API in the time machine module", () => {
   it("source files hold no network primitive and no API URL", () => {
     const files = readdirSync(import.meta.dirname).filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f));
-    expect(files).toEqual(expect.arrayContaining(["client-port.ts", "VersionHistory.tsx", "TimeMachine.tsx", "model.ts"]));
+    expect(files).toEqual(expect.arrayContaining(["client-port.ts", "VersionHistory.tsx", "model.ts"]));
     for (const file of files) expect({ file, hit: FORBIDDEN.test(readFileSync(join(import.meta.dirname, file), "utf8")) }).toEqual({ file, hit: false });
   });
   it("the real port imports only the time machine client and createApi", () => {

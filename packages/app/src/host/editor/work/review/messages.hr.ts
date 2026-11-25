@@ -12,6 +12,7 @@ export const reviewHostHr = {
   compareOpen: "Usporedi s …",
   compareTitle: "Usporedi s …",
   compareNone: "Za usporedbu su potrebne dvije poslane verzije.",
+  compareOne: "Za sada postoji jedna verzija, pa se usporedba ne nudi.",
   compareUnavailable: "Usporedba trenutačno nije dostupna.",
   retry: "Pokušaj ponovno",
   close: "Zatvori",

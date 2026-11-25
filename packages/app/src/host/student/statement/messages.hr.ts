@@ -25,6 +25,20 @@ export const statementMessages = {
   failed: "Izjavu nije bilo moguće spremiti. Pokušaj ponovno.",
   rejected: "Poslužitelj nije prihvatio izjavu.",
   conflict: "Izjava se u međuvremenu promijenila. Učitana je verzija s poslužitelja; Vaš unos je zadržan, provjerite ga i spremite ponovno.",
+  // NF-3 PR-20 (E-9): the teacher's question beside the declaration and the student's answer.
+  question: {
+    title: "Pitanje nastavnika",
+    answer: "Odgovor (nije obavezan)",
+    hint: "Odgovor vidi nastavnik uz izjavu. Do {max} znakova.",
+    save: "Spremi odgovor",
+    remove: "Ukloni odgovor",
+    saved: "Odgovor je spremljen na poslužitelju.",
+    removed: "Odgovor je uklonjen.",
+    tooLong: "Odgovor je predug. Najviše {max} znakova.",
+    badCharacter: "Odgovor sadrži znak koji se ne može spremiti. Uklonite ga i pokušajte ponovno.",
+    noAnswer: "Niste odgovorili na pitanje.",
+    readOnly: "Rad je predan. Odgovor je samo za čitanje.",
+  },
   errors: {
     format: "Ovaj format nije dopušten. Dopušteni su: {formats}.",
     tooLarge: "Datoteka je prevelika. Najveća dopuštena veličina je {size}.",

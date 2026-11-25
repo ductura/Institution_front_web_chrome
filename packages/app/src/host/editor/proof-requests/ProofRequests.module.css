@@ -1,0 +1,2 @@
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; }
+.item { display: grid; gap: 0.25rem; border-block-start: 1px solid var(--rule-2); padding-block-start: 0.65rem; overflow-wrap: anywhere; }

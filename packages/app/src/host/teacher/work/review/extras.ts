@@ -9,12 +9,24 @@ import { readOrigin } from "../../../student/work/origin/read";
 import type { DraftsRead } from "../../comment-bank/model";
 import { draftCommentsPort } from "../../comment-bank/port";
 
+export type SeenItem = { readonly kind: "comment" | "revision_request" | "milestone_revision" | "message"; readonly id: string; readonly firstSeenAt: string };
+/** work.seen-by-student.get: only the caller's own items the student has opened. Not shown when the read fails. */
+export type SeenRead = { readonly kind: "ready"; readonly items: readonly SeenItem[] } | { readonly kind: "signedOut" | "notFound" | "unavailable" };
+
 export type ReviewExtras = {
   readonly composition: (documentId: string) => Promise<OriginRead>;
   readonly disputes: (documentId: string) => Promise<DisputeListOutcome>;
   readonly comments: (documentId: string) => Promise<ListOutcome>;
   readonly drafts: (documentId: string) => Promise<DraftsRead>;
+  readonly seen: (documentId: string) => Promise<SeenRead>;
 };
+
+export async function readSeen(documentId: string): Promise<SeenRead> {
+  const answer = await createApi()("work.seen-by-student.get", { params: { documentId }, query: undefined, body: undefined });
+  if (answer.ok) return { kind: "ready", items: answer.body.items };
+  if (answer.status === 401) return { kind: "signedOut" };
+  return answer.status === 404 ? { kind: "notFound" } : { kind: "unavailable" };
+}
 
 const guard = <T,>(read: () => Promise<T>, fallback: T): Promise<T> => read().catch(() => fallback);
 
@@ -23,4 +35,5 @@ export const realExtras: ReviewExtras = {
   disputes: (id) => guard(() => createEventDisputes(createApi()).list(id), { kind: "unavailable" }),
   comments: (id) => guard(() => listComments(id), { kind: "unavailable" }),
   drafts: (id) => guard(() => draftCommentsPort.listDrafts(id), { kind: "unavailable" }),
+  seen: (id) => guard(() => readSeen(id), { kind: "unavailable" }),
 };

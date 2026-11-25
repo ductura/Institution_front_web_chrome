@@ -20,10 +20,16 @@ import { setSheetTheme, useSheetTheme } from "@/components/shell/useSheetTheme";
 import {
   convertBlock, glyphOf, insertChar, insertHole, pushRecent, readRecent, SPECIAL_CHARS, writeRecent,
 } from "@/components/editor/toolbar-menu";
+import { askPrintPreview } from "@/components/editor/print-export/print-event";
 import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
+import { useStudentToast } from "../../student/toast/StudentToasts";
+import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
+import { readingSettingsHr } from "../reading-settings/messages.hr";
+import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
 import { EditorToolbarHost } from "./EditorToolbarHost";
+import { toolbarBehaviourHr } from "./messages.hr";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 
 /** "Stavi tekst rada u međuspremnik": text with [n] marks and the footnote list (v3). False when refused. */
@@ -35,6 +41,17 @@ async function copyWorkText(editor: Editor | null): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** What the toast says after "Stavi tekst rada u međuspremnik" (prototype ACT.copy). */
+export const copyToastText = (ok: boolean): string => ok ? toolbarBehaviourHr.copyDone : toolbarBehaviourHr.copyFailed;
+
+/** The "Izvezi" menu: the print preview, then the copy (prototype toolbar2: Pregled ispisa before Kopiraj). */
+export function exportMenuItems(editor: Editor | null): { id: string; label: string; disabled?: boolean }[] {
+  return [
+    { id: "print", label: t.toolbar.exportItems.print },
+    { id: "copy", label: t.toolbar.exportItems.copy, disabled: !editor || editor.isDestroyed },
+  ];
 }
 
 const live = (editor: Editor | null): editor is Editor => !!editor && !editor.isDestroyed && editor.isEditable;
@@ -105,9 +122,10 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const state = useEditorSnapshot(editor);
   const theme = useSheetTheme();
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
-  const [dialog, setDialog] = useState<"parts" | "citation" | null>(null);
+  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
+  const toast = useStudentToast();
 
   const insert: Item[] = [
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
@@ -125,6 +143,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "dark", label: `${theme === "dark" ? "✓ " : ""}${t.workspace.sheetThemeDark}` },
     { id: "light", label: `${theme === "light" ? "✓ " : ""}${t.workspace.sheetThemeLight}` },
     { id: "citationSettings", label: workPartsMessages.citationTitle },
+    { id: "readingSettings", label: readingSettingsHr.menu },
   ];
   return (
     <>
@@ -147,12 +166,19 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       }} />
       <Menu label={t.toolbar.view} items={view} onSelect={(id) => {
         if (id === "citationSettings") setDialog("citation");
+        else if (id === "readingSettings") setDialog("reading");
         else setSheetTheme(id === "light" ? "light" : "dark");
       }} />
-      <Menu label={t.toolbar.export} items={[{ id: "copy", label: t.toolbar.exportItems.copy, disabled: !editor || editor.isDestroyed }]}
-        onSelect={(id) => { if (id === "copy") void copyWorkText(editor); }} />
+      <Menu label={t.toolbar.export} items={exportMenuItems(editor)}
+        onSelect={(id) => {
+          if (id === "print") askPrintPreview();
+          else if (id === "copy") void copyWorkText(editor).then((ok) => toast(copyToastText(ok)));
+        }} />
+      <ReadAloudControls editor={editor} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
+      {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
+      <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />
       {v3.dialog}
     </>
   );

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
-import StatusBar, { scopeLine, shownSaveState, statusSaveOf, type DocumentPhase, type StatusSave } from "./StatusBar";
+import StatusBar, { scopeLine, scopeSaid, scopeStanding, shownSaveState, statusSaveOf, type DocumentPhase, type StatusSave } from "./StatusBar";
 
 // WEB-14: the status bar claims "on the server" only with a signed receipt (B-6),
 // shows the other tab's block instead of any state (A-12), and claims nothing
@@ -112,9 +112,30 @@ describe("statusSaveOf", () => {
 // WEB-23 (S: E-7): the scope line beside the save state, and the read-only bar.
 describe("scopeLine", () => {
   it("writes the count and the range as E-7 does", () => {
-    expect(scopeLine(340, { min: 1200, max: 1600 })).toBe("340 riječi · opseg 1.200 do 1.600 · vidite samo Vi");
+    expect(scopeLine(340, { min: 1200, max: 1600 })).toBe("340 riječi · opseg 1.200 do 1.600 · još 860 do donje granice · vidite samo Vi");
     expect(scopeLine(1, null)).toBe("1 riječ · vidite samo Vi");
     expect(scopeLine(12500, null)).toBe("12.500 riječi · vidite samo Vi");
+  });
+
+  it("names the standing against the range as a fact about the task, never about the student (ED-04, NF2-P6)", () => {
+    const range = { min: 1200, max: 1600 };
+    expect(scopeStanding(1199, range)).toBe("below");
+    expect(scopeStanding(1200, range)).toBe("within");
+    expect(scopeStanding(1600, range)).toBe("within");
+    expect(scopeStanding(1601, range)).toBe("above");
+    expect(scopeStanding(null, range)).toBeNull();
+    expect(scopeStanding(500, null)).toBeNull();
+    expect(scopeLine(1400, range)).toBe("1.400 riječi · opseg 1.200 do 1.600 · unutar opsega · vidite samo Vi");
+    expect(scopeLine(1640, range)).toBe("1.640 riječi · opseg 1.200 do 1.600 · iznad gornje granice za 40 · vidite samo Vi");
+    expect(scopeLine(0, { min: 2000, max: 2500 })).toBe("0 riječi · opseg 2.000 do 2.500 · još 2.000 do donje granice · vidite samo Vi");
+  });
+
+  it("says a crossing of a limit in one sentence, the same for every direction (NF2-P6)", () => {
+    const range = { min: 1200, max: 1600 };
+    expect(scopeSaid("below", 1100, range)).toBe("Opseg: ispod donje granice.");
+    expect(scopeSaid("within", 1300, range)).toBe("Opseg: unutar granica.");
+    expect(scopeSaid("above", 1640, range)).toBe("Opseg: iznad gornje granice za 40 riječi.");
+    expect(scopeSaid("above", 1601, range)).toBe("Opseg: iznad gornje granice za 1 riječ.");
   });
 
   it("shows the range alone while no editor counts", () => {

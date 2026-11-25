@@ -1,7 +1,7 @@
 // WEB-2109: pure parts of step 4 (E-10, PD-3): the stage with an extended deadline, the answer of the
 // submission as a line, and the counts the dialog and page state.
 import type { SubmissionRead, SubmitOutcome } from "../../../../../../../src/client/submission";
-import type { TextNode } from "../../../../../../../src/components/student/SubmissionView";
+import type { TextNode } from "../work-read";
 import { atOf as atText, clockOf, dayOf } from "../steps/time";
 import { submitText as t } from "./messages.hr";
 import { forbiddenLines, type Timing } from "./timing";

@@ -88,16 +88,58 @@ describe("NF-1 P-6: the submission time", () => {
     expect(submittedLine({ submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: false }, fmt)).toBe("Predano [2026-11-20T10:00:00.000Z]");
     expect(submittedLine({ submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: true }, fmt)).toBe("Predano [2026-11-20T10:00:00.000Z], nakon roka");
   });
-  it("reads the time from the work states when they carry it", async () => {
-    const call = (async (id: string) => (id === "student.assignments.get"
-      ? { ok: true, status: 200, body: { courses: [] } }
-      : { ok: true, status: 200, body: { assignments: [
-        { assignmentId: "a", workState: "submitted", submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: true },
-        { assignmentId: "b", workState: "in_progress", submittedAt: "2026-11-20T10:00:00.000Z" },
-        { assignmentId: "c", workState: "submitted" },
-      ] } })) as unknown as CoursesCall;
+  const work = { ok: true, status: 200, body: { assignments: [
+    { assignmentId: "a", workState: "submitted" }, { assignmentId: "b", workState: "in_progress" },
+    { assignmentId: "c", workState: "submitted" }, { assignmentId: "d", workState: "submitted" },
+  ] } };
+  const submissions = (body: unknown, asked: string[] = []) => (async (id: string) => {
+    asked.push(id);
+    if (id === "student.assignments.get") return { ok: true, status: 200, body: { courses: [] } };
+    if (id === "student.assignment-work.get") return work;
+    return body;
+  }) as unknown as CoursesCall;
+  it("reads the time from student.assignment-submissions.get, one call for the list", async () => {
+    const asked: string[] = [];
+    const call = submissions({ ok: true, status: 200, body: { assignments: [
+      { assignmentId: "a", submittedAt: "2026-11-20T10:00:00.123456Z", afterDeadline: true },
+      { assignmentId: "b", submittedAt: "2026-11-20T10:00:00.123456Z", afterDeadline: false },
+      { assignmentId: "c", submittedAt: null, afterDeadline: null },
+      { assignmentId: "d", submittedAt: "2026-11-21T09:00:00.000000Z", afterDeadline: false },
+    ] } }, asked);
     const r = await readCourses(call, true);
-    expect(r.kind === "ready" && [...(r.submitted ?? new Map()).keys()]).toEqual(["a"]);
+    expect(r.kind === "ready" && [...(r.submitted ?? new Map()).keys()]).toEqual(["a", "d"]);
+    expect(r.kind === "ready" && r.submitted?.get("a")?.afterDeadline).toBe(true);
+    expect(r.kind === "ready" && r.submitted?.get("d")?.afterDeadline).toBe(false);
+    expect(asked.filter((id) => id === "student.assignment-submissions.get")).toHaveLength(1);
+  });
+  it("ignores a time the work states do not prove, and the old work-state fields", async () => {
+    const r = await readCourses(((id: string) => (id === "student.assignment-work.get"
+      ? Promise.resolve({ ok: true, status: 200, body: { assignments: [{ assignmentId: "a", workState: "submitted", submittedAt: "2026-11-20T10:00:00.000Z", afterDeadline: true }] } })
+      : id === "student.assignments.get" ? Promise.resolve({ ok: true, status: 200, body: { courses: [] } }) : Promise.resolve({ ok: true, status: 200, body: { assignments: [] } }))) as unknown as CoursesCall, true);
+    expect(r.kind === "ready" && r.submitted?.size).toBe(0);
+  });
+  it("keeps the states and says Predano alone when the submissions read fails or is unreadable", async () => {
+    for (const bad of [{ ok: false, status: 503 }, { ok: true, status: 200, body: {} }, { ok: true, status: 200, body: { assignments: [null, "x", { assignmentId: "a", submittedAt: "sutra", afterDeadline: true }] } }]) {
+      const r = await readCourses(submissions(bad), true);
+      expect(r.kind === "ready" && r.states?.get("a")).toBe("submitted");
+      expect(r.kind === "ready" && r.submitted?.size).toBe(0);
+    }
+    const thrown = (async (id: string) => {
+      if (id === "student.assignment-submissions.get") throw new Error("mreža");
+      return id === "student.assignments.get" ? { ok: true, status: 200, body: { courses: [] } } : work;
+    }) as unknown as CoursesCall;
+    const r = await readCourses(thrown, true);
+    expect(r.kind === "ready" && r.states?.get("a")).toBe("submitted");
+  });
+  it("does not ask for the times when the reader shows none (withTimes false)", async () => {
+    const asked: string[] = [];
+    await readCourses(submissions({ ok: true, status: 200, body: { assignments: [] } }, asked), true, false);
+    expect(asked).not.toContain("student.assignment-submissions.get");
+  });
+  it("does not ask for the times when the states were not asked for", async () => {
+    const asked: string[] = [];
+    await readCourses(submissions({ ok: true, status: 200, body: { assignments: [] } }, asked), false);
+    expect(asked).toEqual(["student.assignments.get"]);
   });
 });
 

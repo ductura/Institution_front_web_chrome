@@ -115,3 +115,33 @@ export const assignmentFormHr = {
   publish: "Objavi zadatak",
   backToForm: "Natrag na obrazac",
 } as const;
+
+/** NF-4 NZ-15: the teacher's question beside the declaration, shown honestly until the server can set it. */
+export const declarationQuestionHr = {
+  label: "Pitanje studentu uz izjavu (nije obavezno)",
+  hint: "Do {max} znakova. Student ga vidi na koraku „Izjava”; odgovor vidite uz izjavu na pregledu rada. Bez pitanja izjava radi kao i dosad.",
+  unavailable: "Postavljanje pitanja uz izjavu trenutačno nije dostupno. Zadatak se objavljuje bez pitanja.",
+} as const;
+
+/** WEB-V17-TEMPLATE-PICK: the faculty template switch of the form and the outline shown under it. */
+export const templateFieldHr = {
+  label: "Koristi fakultetski predložak rada",
+  off: "Student počinje s praznim radom.",
+  on: "Student pri početku rada dobiva naslovnu i prazne odjeljke predloška. Zamrzava se trenutačna verzija predloška.",
+  loading: "Učitavam kostur predloška.",
+  none: "Za ovu vrstu rada fakultet još nema predložak. Zadatak se objavljuje bez njega.",
+  unavailable: "Kostur predloška trenutačno nije dostupan za pregled. Student ga svejedno dobiva ako je predložak zadan.",
+  version: (n: number) => `Verzija predloška: ${n}`,
+  titlePage: "Naslovna",
+  titleFields: { title: "Naslov", author: "Autor", mentor: "Mentor", course: "Kolegij", date: "Datum" },
+  sections: "Odjeljci",
+  noSections: "Predložak nema odjeljaka.",
+  reviewLabel: "Predložak",
+  reviewOn: "Fakultetski predložak",
+  reviewOff: "Bez predloška",
+  failed: {
+    failed: "Predložak nije uključen na zadatak. Zadatak je objavljen; predložak možete uključiti kasnije.",
+    conflict: "Predložak nije uključen jer je poslužitelj već promijenio zadatak. Zadatak je objavljen.",
+    signedOut: "Predložak nije uključen jer ste odjavljeni. Zadatak je objavljen.",
+  },
+} as const;

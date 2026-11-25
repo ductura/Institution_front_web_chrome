@@ -6,6 +6,7 @@ import type { RevisionListOutcome, RevisionRequest } from "@/client/revision-req
 import type { NodeId } from "@/domain/document";
 import { browserCookieJar, endSessionsInCookie } from "@/client/session-marks";
 import { messagesHr } from "@/lib/i18n/messages.hr";
+import { printAttempts, SESSION_RETRY } from "@/components/session-retry";
 
 /**
  * The real RevisionPanel when its session ends in another tab while `list` is
@@ -18,6 +19,8 @@ import { messagesHr } from "@/lib/i18n/messages.hr";
  * The suite runs in node without a DOM library, so a DOM just large enough
  * for React to render the panel into is set up below.
  */
+
+printAttempts(beforeEach);
 
 const t = messagesHr.revisions;
 
@@ -177,7 +180,7 @@ async function answer(outcome: RevisionListOutcome) {
   await act(async () => { list.resolve!(outcome); });
 }
 
-describe("RevisionPanel: a list that lands after the session ended", () => {
+describe("RevisionPanel: a list that lands after the session ended", SESSION_RETRY, () => {
   it("control: in the same session the list is shown", async () => {
     expect(body.textContent).toContain(t.loading);
     await answer(ok);
@@ -219,7 +222,7 @@ async function answerOnTheWay() {
   expect(respond.calls).toBe(1);
 }
 
-describe("RevisionPanel: an answer that lands after the session ended (Codex c.4532645041)", () => {
+describe("RevisionPanel: an answer that lands after the session ended (Codex c.4532645041)", SESSION_RETRY, () => {
   it("control: in the same session an error keeps the request and the typed explanation", async () => {
     await answerOnTheWay();
     await act(async () => { respond.resolve!({ kind: "unavailable" }); });
@@ -244,7 +247,7 @@ describe("RevisionPanel: an answer that lands after the session ended (Codex c.4
 const fields = () => all(body, "textarea").map((n) => propsOf(n) as unknown as { value: string; readOnly?: boolean });
 const button = (label: string) => all(body, "button").find((b) => b.textContent === label);
 
-describe("RevisionPanel: a 409 whose list read fails (QA FAIL c.6784961513)", () => {
+describe("RevisionPanel: a 409 whose list read fails (QA FAIL c.6784961513)", SESSION_RETRY, () => {
   const EXPLANATION = "Tvrdnja se odnosi na primjer iz uvoda.";
 
   it("keeps the unsent explanation readable and unsendable, and back in the form once the list is read", async () => {

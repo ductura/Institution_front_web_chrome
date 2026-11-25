@@ -27,14 +27,12 @@ export function choiceLabel(choice: AssignmentChoice, now: number): string {
   return parts.join(" · ");
 }
 
-/** NZ-16: a choice made in the "Zadatak" select returns focus to it on the page of the new assignment. */
-let focusSelectAfterChoose = false;
-export const askFocusAfterChoose = (): void => { focusSelectAfterChoose = true; };
-export function takeFocusAfterChoose(): boolean {
-  const asked = focusSelectAfterChoose;
-  focusSelectAfterChoose = false;
-  return asked;
-}
+/**
+ * NZ-16: a choice made in the "Zadatak" select loads the page of the new assignment, so the wish to return focus
+ * to the select travels in that page's address (`?izbor=1`), never in a module variable that outlives a mount.
+ */
+export const CHOOSER_PARAM = "izbor";
+export const wantsChooserFocus = (search: string): boolean => new URLSearchParams(search).get(CHOOSER_PARAM) === "1";
 
 export type MerlinData = {
   readonly rows: readonly MerlinRow[];
@@ -121,4 +119,5 @@ export function statusLines(status: ExportStatus): { tone: "status" | "alert"; l
 export const canDownload = (status: ExportStatus): status is { kind: "view"; view: Extract<PackageView, { kind: "spreman" }> } =>
   status.kind === "view" && status.view.kind === "spreman";
 
-export const merlinHref = (assignmentId: string): string => `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}/merlin`;
+export const merlinHref = (assignmentId: string, chooser = false): string =>
+  `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}/merlin${chooser ? `?${CHOOSER_PARAM}=1` : ""}`;

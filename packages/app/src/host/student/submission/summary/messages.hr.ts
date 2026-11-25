@@ -78,6 +78,8 @@ export const summaryText = {
     sending: "Dodaje se…",
     cancel: "Odustani",
     added: "Napomena je dodana.",
+    // NF-3 PR-6 (E-8d): who reads the note.
+    seenBy: "Vidi je nastavnik uz sažetak.",
     offline: "Nema mreže. Napomenu možete dodati kad se mreža vrati.",
     toastLabel: "Obavijesti",
     toastClose: "Zatvori",
@@ -129,6 +131,10 @@ export const checksText = {
   form: "Pravila oblika",
   formNotRun: "Provjera oblika nije dostupna u pilotu.",
   nextWhy: "Dalje je moguće kad potvrdite izjavu.",
+  // NF-3 PR-10 (E-8c): the choice of version before the dialog, the same two as on step 4.
+  newerLegend: "Koju verziju predajete?",
+  newerWhy: "Odaberite koju verziju predajete.",
+  newerMeta: "Izbor vrijedi za predaju na sljedećem koraku. Predaje se uvijek samo verzija koju je poslužitelj potvrdio.",
   addNote: "Dodaj napomenu (nije obavezna)",
   next: "Dalje",
   toDeclaration: "Natrag na izjavu",

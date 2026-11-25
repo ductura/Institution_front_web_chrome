@@ -1,10 +1,13 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import type { MyCourse } from "../../../../../../src/components/student/my-assignments-read";
-import { normalizeCode as enrollRule } from "../../../../../../src/components/student/upis/enroll";
+import type { MyCourse } from "../read/assignments";
+import { normalizeCode as enrollRule } from "../enrol/enroll";
 import { CODE_MAX, cleanCode } from "../enrol/code";
 import { codeFromQuery } from "../enrol/model";
-import { continueRow, coursesWithoutTask, deadlineTag, sections, enrollRoute, flatRows, kindOf, nearTag, normalizeCode, rowAction, rowRoute, type TaskRow } from "./model";
+import { continueRow, coursesWithoutTask, deadlineTag, sections, enrollRoute, flatRows, kindOf, nearTag, normalizeCode, rowAction, rowRoute, startsWork, type TaskRow } from "./model";
 
 const NOW = Date.parse("2026-11-20T10:00:00Z");
 const A = { id: "a1", title: "Esej o izmišljenoj temi", dueAt: "2026-11-23T10:00:00Z", noticeFirst: false };
@@ -168,5 +171,27 @@ describe("P-12 courses without a task", () => {
     ];
     expect(coursesWithoutTask(courses).map((c) => c.name)).toEqual(["Kolegij A", "Kolegij B"]);
     expect(coursesWithoutTask(COURSES)).toEqual([]);
+  });
+});
+
+describe("INT-31 start only where no work exists", () => {
+  it("offers \"Započni rad\" on a row with no work, never on a started, submitted or notice-first one", () => {
+    expect(startsWork("zadatak")).toBe(true);
+    expect(startsWork("rad")).toBe(false);
+    expect(startsWork("predano")).toBe(false);
+    expect(startsWork("obavijest")).toBe(false);
+  });
+
+  it("a started work keeps its own \"Otvori rad\"", () => {
+    const rows = flatRows(COURSES, new Map([["a1", "in_progress"]]));
+    const kind = rows.find((row) => row.id === "a1")?.kind;
+    expect(kind).toBe("rad");
+    expect(startsWork("rad")).toBe(false);
+    expect(rowAction("rad").label).toBe("Otvori rad");
+  });
+
+  it("the home page draws the start only through startsWork", () => {
+    const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "HomePage.tsx"), "utf8");
+    expect(page).toMatch(/action=\{startsWork\(row\.kind\) \? startWorkAction\(/);
   });
 });

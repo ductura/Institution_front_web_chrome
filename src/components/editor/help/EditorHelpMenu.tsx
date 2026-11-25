@@ -33,8 +33,8 @@ export function EditorHelpMenu({ onSelect }: { onSelect: (view: EditorHelpView) 
     </div>
     {/* The guide hangs below the toolbar: inside the 44 px bar it overflowed upward over the header and covered "Predaja rada". */}
     <div className={styles.guideAnchor}>
-      <EditorOnboarding locale={onboarding.locale} mode={onboarding.mode} onClose={() => {
-        onboarding.close();
+      <EditorOnboarding locale={onboarding.locale} mode={onboarding.mode} onClose={(how) => {
+        onboarding.close(how);
         menu.current?.querySelector<HTMLButtonElement>("button")?.focus();
       }} />
     </div>

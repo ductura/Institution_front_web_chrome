@@ -1,8 +1,7 @@
 "use client";
 
 // HOST-S5 (graditelj, 21. 11. 2026.): the student's other pages in the host:
-// "Moji radovi" (/zadaci/radovi), the access log (/rad/<id>/dnevnik-pristupa)
-// and the replay (/rad/<id>/reprodukcija), read only through src/client.
+// the access log (/rad/<id>/dnevnik-pristupa) and the replay (/rad/<id>/reprodukcija), read only through src/client.
 //
 // The access log and the replay want the work (documentId); the contract has
 // no read-only route from the assignment to it, and evidence.open.post opens
@@ -18,12 +17,9 @@ import { appHref } from "../../../../../../src/components/index.ts";
 import { assignmentIdOf, editorWorkRead } from "../../../../../../src/components/editor/EditorPage.read.ts";
 import { readSubmittedWork } from "../../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
 import ReplayView from "../../../../../../src/components/replay/ReplayView.tsx";
-import { pageHref, readAccessLogPage, type AccessLogCursor, type AccessLogRead } from "../../../../../../src/components/student/access-log-read.ts";
-import { AccessLogDays, AccessLogUnavailable } from "../../../../../../src/components/student/AccessLogView.tsx";
-import MyWorks from "../../../../../../src/components/student/radovi/MyWorks.tsx";
-import { readMyWorks, type WorksRead } from "../../../../../../src/components/student/radovi/works-read.ts";
-import type { WorksFilter } from "../../../../../../src/components/student/radovi/works-view.ts";
-import { browserTransport, createApi, goToSignIn, signInHref } from "../../../../../../src/client/api.ts";
+import { pageHref, readAccessLogPage, type AccessLogCursor, type AccessLogRead } from "../access-log/read.ts";
+import { AccessLogDays, AccessLogUnavailable } from "../access-log/AccessLogView.tsx";
+import { browserTransport, createApi, goToSignIn } from "../../../../../../src/client/api.ts";
 import type { SessionMark } from "../../../../../../src/client/session-marks.ts";
 import { studentHostHr as t } from "../i18n/messages.hr.ts";
 
@@ -33,29 +29,8 @@ import { useHost } from "../../context";
 
 const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
-const WORKS = "/zadaci/radovi";
 
 const workPath = (assignmentId: string) => `/rad/${encodeURIComponent(assignmentId)}`;
-
-/** E-4 "Moji radovi": the reads of /zadaci and the work states, filtered by `?q=` and `?godina=`. */
-export function MyWorksPage({ filter }: { filter: WorksFilter }) {
-  const { base } = useHost();
-  const [read, setRead] = useState<WorksRead | null>(null);
-  useEffect(() => {
-    let live = true;
-    void readMyWorks(createApi() as unknown as Parameters<typeof readMyWorks>[0]).then((result) => {
-      if (live) setRead(result);
-    });
-    return () => {
-      live = false;
-    };
-  }, []);
-  if (read === null) return <p role="status">{hostText.loading}</p>;
-  return (
-    <MyWorks read={read} filter={filter} here={appHref(base, WORKS)} signIn={signInHref}
-      workHref={(id) => appHref(base, workPath(id))} />
-  );
-}
 
 /** What the assignment and its work allow the two pages to read. */
 export type WorkDocument =

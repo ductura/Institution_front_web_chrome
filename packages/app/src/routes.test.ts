@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -76,6 +76,14 @@ describe("the student's pages of Ductus app/", () => {
   it("open for a student under any id, with their own label", () => {
     expect(resolve("/zadatak/izm-1", "student")).toMatchObject({ kind: "page", page: { label: "Zadatak" } });
     expect(resolve("/rad/a1/predaja", "student")).toMatchObject({ kind: "page", page: { label: "Predaja rada" } });
+    expect(resolve("/zadaci/dnevnik-prakse", "student")).toMatchObject({ kind: "page", page: { label: "Dnevnik prakse", current: "/zadaci" } });
+    expect(resolve("/zadaci/dnevnik-prakse", "teacher")).not.toMatchObject({ kind: "page" });
+    expect(resolve("/zadatak/a1/tim", "student")).toMatchObject({ kind: "page", page: { label: "Moj tim", current: "/zadaci" } });
+    expect(resolve("/zadatak/a1/tim", "teacher")).not.toMatchObject({ kind: "page" });
+    expect(resolve("/nastavnik/zadatak/a1/timovi", "teacher")).toMatchObject({ kind: "page", page: { label: "Timovi na zadatku" } });
+    expect(resolve("/nastavnik/zadatak/a1/timovi", "student")).not.toMatchObject({ kind: "page" });
+    expect(resolve("/nastavnik/mentorstva/dnevnik-prakse", "teacher")).toMatchObject({ kind: "page", page: { current: "/nastavnik/mentorstva" } });
+    expect(resolve("/nastavnik/mentorstva/dnevnik-prakse", "student")).not.toMatchObject({ kind: "page" });
     expect(resolve("/rad/a1/dnevnik-pristupa", "student")).toMatchObject({ kind: "page", page: { label: "Dnevnik pristupa" } });
     expect(resolve("/rad/a1/reprodukcija", "student")).toMatchObject({ kind: "page", page: { label: "Reprodukcija Vašeg rada" } });
     expect(resolve("/upis/kolegij/k1", "student")).toMatchObject({ kind: "page", page: { label: "Upis u kolegij", current: "/upis" } });
@@ -164,7 +172,29 @@ describe("the operator's page (WEB-NUZ-OPERATER, NF-7 OA-1)", () => {
   it("is a page of the host, opened in the app, not a public page", () => {
     expect(publicPage(OPERATOR_HOME)).toBeNull();
     expect(internalRoute(`/app/web${OPERATOR_HOME}`, "/app/web")).toBe(OPERATOR_HOME);
-    expect(PAGES.filter((p) => p.accounts !== undefined).map((p) => p.path)).toEqual([OPERATOR_HOME]);
+    // NF-7 OA-3, OA-7 added the two pages shared with the administrator; nothing else is kept by account kind.
+    expect(PAGES.filter((p) => p.accounts !== undefined).map((p) => p.path)).toEqual([OPERATOR_HOME, ACTION_LOG, PROBLEM_REPORTS]);
+  });
+});
+
+describe("the log of actions and the problem reports (NF-7 OA-3, OA-7)", () => {
+  it("open for the operator and for the faculty's administrator, whatever the shell role", () => {
+    for (const path of [ACTION_LOG, PROBLEM_REPORTS]) {
+      expect(resolve(path, null, ["network_engineer"])).toMatchObject({ kind: "page", page: { path } });
+      expect(resolve(path, "admin", ["institution_admin"])).toMatchObject({ kind: "page", page: { path } });
+      expect(resolve(path, "teacher", ["teacher", "network_engineer"])).toMatchObject({ kind: "page", page: { path } });
+    }
+    expect(resolve(ACTION_LOG, null, ["network_engineer"])).toMatchObject({ page: { label: "Dnevnik radnji" } });
+    expect(resolve(PROBLEM_REPORTS, null, ["network_engineer"])).toMatchObject({ page: { label: "Prijave problema" } });
+  });
+
+  it("refuse a teacher, a student and an account without a kind, never leading them home", () => {
+    for (const path of [ACTION_LOG, PROBLEM_REPORTS]) {
+      expect(resolve(path, "teacher", ["teacher"])).toEqual({ kind: "redirect", to: NO_ACCESS });
+      expect(resolve(path, "student", ["student"])).toEqual({ kind: "redirect", to: NO_ACCESS });
+      expect(resolve(path, null, [])).toEqual({ kind: "redirect", to: NO_ACCESS });
+      expect(publicPage(path)).toBeNull();
+    }
   });
 });
 

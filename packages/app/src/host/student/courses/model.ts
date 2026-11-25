@@ -84,9 +84,8 @@ export type Submitted = { submittedAt: string; afterDeadline: boolean };
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
 
 /**
- * The time of a submission from one item of student.assignment-work.get, or null. The contract does not
- * carry it yet ("Nedostaje na poslužitelju"); when the answer has a valid `submittedAt`, it is shown, and
- * `afterDeadline` only when it is the boolean true. Nothing is computed from the deadline here.
+ * The time of a submission from one item of student.assignment-submissions.get (SRV#701), or null. A null
+ * `submittedAt` (not submitted) or an invalid one gives null; `afterDeadline` counts only when it is the boolean true. Nothing is computed from the deadline here.
  */
 export function submittedOf(item: object): Submitted | null {
   const at = "submittedAt" in item ? item.submittedAt : undefined;

@@ -68,6 +68,8 @@ export const pageLabelsEn = {
   receiptCheck: "Receipt check",
   originThresholds: "Thresholds per origin kind",
   pilotMetrics: "Pilot measures",
+  actionLog: "Log of actions",
+  problemReports: "Problem reports",
   facultySettings: "Faculty settings",
   facultyAssistant: "Assistant at the faculty",
   myRights: "My rights",
@@ -100,6 +102,10 @@ export const hostTextEn = {
   signIn: "Sign in",
   deadlineExtensions: "Deadline extension",
   mentorshipRequest: "Mentorship request",
+  practiceJournal: "Practice journal",
+  mentorPracticeJournal: "Students' practice journals",
+  workTeam: "My team",
+  workTeams: "Teams on the assignment",
 };
 
 export const institutionEn = {

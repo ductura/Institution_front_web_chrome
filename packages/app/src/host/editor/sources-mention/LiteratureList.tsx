@@ -9,6 +9,7 @@ import { useLocalEditor, useLocalSignedOut } from "@/components/editor/LocalDocu
 import SourceList from "@/components/editor/sources/panel/SourceList";
 import { documentSources } from "@/components/editor/sources/proofs/proof-sources";
 import { QuickSource } from "@/components/editor/sources/quick-source/QuickSource";
+import { createSourceLookup } from "@/components/editor/sources/quick-source/server-lookup";
 import {
   addSourceTransaction, citationCount, editSourceTransaction, jumpTo, linkPlaceTransaction, listedSources,
   placeExcerpt, unsourcedCitationPlaces, removeSourceTransaction, sourceDraftOf,
@@ -43,6 +44,8 @@ function useDoc(): Doc | null {
  * "Uredi" and "Ukloni". Only the author of a work that is still open edits; others only read.
  */
 export function LiteratureList() {
+  // ED-14: "Brzi izvor" asks the server (`sources.lookup.post`); only the identifier is sent.
+  const lookup = useMemo(() => createSourceLookup(), []);
   const editor = useLocalEditor();
   const signedOut = useLocalSignedOut();
   const doc = useDoc();
@@ -114,7 +117,7 @@ export function LiteratureList() {
     </Dialog>
     <Dialog open={open?.kind === "add"} title={t.quickTitle} onClose={close}
       actions={<Button tone="quiet" onClick={close}>{t.cancel}</Button>}>
-      {open?.kind === "add" && <QuickSource disabled={!editable} onSubmit={(draft) => {
+      {open?.kind === "add" && <QuickSource disabled={!editable} lookup={lookup} onSubmit={(draft) => {
         close();
         const id = crypto.randomUUID();
         // Two steps, as "Dodaj i citiraj": the source must be in the work before the place can point at it.

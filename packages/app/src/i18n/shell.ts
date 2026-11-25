@@ -37,6 +37,10 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/nastavnik/zadatak/[assignmentId]/merlin": (c) => c.app.pages.merlinExport,
   "/nastavnik/zadatak/[assignmentId]/predaje": (c) => c.app.pages.assignmentSubmissions,
   "/zadaci/mentorstvo": (c) => c.app.host.mentorshipRequest,
+  "/zadaci/dnevnik-prakse": (c) => c.app.host.practiceJournal,
+  "/nastavnik/mentorstva/dnevnik-prakse": (c) => c.app.host.mentorPracticeJournal,
+  "/zadatak/[id]/tim": (c) => c.app.host.workTeam,
+  "/nastavnik/zadatak/[assignmentId]/timovi": (c) => c.app.host.workTeams,
   "/kako-radi": (c) => c.t.shell.howItWorks,
   "/stanje": (c) => c.t.statusPage.pageTitle,
   "/prijava": (c) => c.app.host.signIn,
@@ -51,6 +55,8 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/ustanova/postavke/asistent": (c) => c.app.pages.facultyAssistant,
   "/moja-prava": (c) => c.app.pages.myRights,
   "/operater/mjerila-pilota": (c) => c.app.pages.pilotMetrics,
+  "/operater/dnevnik-radnji": (c) => c.app.pages.actionLog,
+  "/operater/prijave-problema": (c) => c.app.pages.problemReports,
 };
 
 /**

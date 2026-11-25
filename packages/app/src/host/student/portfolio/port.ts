@@ -46,7 +46,7 @@ async function entryOf(deps: PortfolioDeps, assignmentId: string, title: string)
 export function portfolioPort(deps: PortfolioDeps): PortfolioPort {
   return {
     async read(): Promise<PortfolioRead> {
-      const courses = await readCourses(deps.call, true);
+      const courses = await readCourses(deps.call, true, false);
       if (courses.kind !== "ready") return { kind: courses.kind };
       if (courses.states === null) return { kind: "unavailable" };
       const states = courses.states;

@@ -20,7 +20,8 @@
     "test:mentor": "playwright test --config src/components/editor/mentor/messages/browser/playwright.config.test.cjs",
     "next:dev": "next dev -p 3000",
     "next:build": "next build",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "ci:local": "node scripts/ci-local.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

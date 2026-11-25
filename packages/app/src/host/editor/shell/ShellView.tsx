@@ -8,6 +8,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Button, SegmentedControl } from "@ductura/ui";
 
 import { TopBarSlot } from "../../../../../../src/components/editor/WorkspaceTopBar.tsx";
+import { requestWorkHistory } from "../../../../../../src/components/editor/commands/work-history-event.ts";
+import { workHistoryHr } from "../work-history/messages.hr";
 import { EditorShortcutListHost } from "../shortcuts/EditorShortcutListHost";
 import { shellHr as t } from "./messages.hr";
 import styles from "./ShellView.module.css";
@@ -61,6 +63,8 @@ export function ShellView({ children, teacherHref, mode = "write", editable = tr
         )}
         {/* PIL-D8-PRECACI (P-D8): the shortcut list, from its button or "?" outside a text field. */}
         <EditorShortcutListHost editable={editable} />
+        {/* ED-16 (NF2-P14): "Povijest" opens the one history dialog the page's host mounts. */}
+        <Button tone="quiet" aria-haspopup="dialog" title={workHistoryHr.title} onClick={() => requestWorkHistory()}>{workHistoryHr.open}</Button>
       </div>
       <details className={styles.view}>
         <summary>{t.viewMenu} ▾</summary>
@@ -68,6 +72,7 @@ export function ShellView({ children, teacherHref, mode = "write", editable = tr
           <div className={styles.group}>
             <Button tone="quiet" size="small" aria-pressed={view.outlineOnly} title={t.outlineOnlyTitle}
               onClick={() => setView(withOutline(view, !view.outlineOnly))}>{t.outlineOnly}</Button>
+            <Button tone="quiet" size="small" aria-haspopup="dialog" onClick={() => requestWorkHistory()}>{workHistoryHr.title}</Button>
           </div>
           {(["rail", "panel"] as const).map((side) => (
             <div key={side} className={styles.group} role="group" aria-label={`${t.widthsLabel}: ${t[side]}`}>

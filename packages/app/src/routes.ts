@@ -27,8 +27,14 @@ import { thresholdMessages } from "./host/institution/origin-thresholds/messages
 import { facultySettingsMessages } from "./host/admin/faculty-settings/messages.hr";
 import { myRightsMessages } from "./host/public/my-rights/messages.hr";
 import { pilotMetricsMessages } from "./host/operator/pilot-metrics/messages.hr";
+import { actionLogMessages } from "./host/operator/action-log/messages.hr";
+import { problemReportsMessages } from "./host/operator/problem-reports/messages.hr";
+import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
+import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
+import { workTeamText } from "./host/student/work-team/messages.hr";
+import { teacherTeamText } from "./host/teacher/work-team/messages.hr";
 
 export { BASES, type Base } from "./bases";
 
@@ -72,6 +78,7 @@ export type Page = {
 
 /** NF-7 OA-1: the operator's own page, the pilot's aggregate measures; the operator's home. */
 export const OPERATOR_HOME = "/operater/mjerila-pilota";
+export { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 /** M1.8: where a refused page leads, with the refusal ("Nemate ovlasti za ovaj prikaz"). */
 export const NO_ACCESS = "/nema-ovlasti?kind=denied";
 
@@ -104,6 +111,14 @@ export const PAGES: readonly Page[] = [
   { path: "/upis/kolegij/[courseId]", label: t.student.enroll.title, kind: "pending", roles: ["student"], current: "/upis" },
   // WEB-1404: the student's request for a mentor.
   { path: "/zadaci/mentorstvo", label: hostText.mentorshipRequest, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-DNEVNIK-STUDENT: the student's journal of a professional practice.
+  { path: "/zadaci/dnevnik-prakse", label: practiceJournalText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-DNEVNIK-MENTOR: the mentor's side of the journal, entered from N-16 by a link.
+  { path: "/nastavnik/mentorstva/dnevnik-prakse", label: hostText.mentorPracticeJournal, kind: "pending", roles: ["teacher"], current: "/nastavnik/mentorstva" },
+  // WEB-V19-GRUPA: the student's team on one assignment, entered from the assignment's notice by a link.
+  { path: "/zadatak/[id]/tim", label: workTeamText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-GRUPA: the teacher's teams of one assignment, entered from the task's card in N-01 by a link.
+  { path: "/nastavnik/zadatak/[assignmentId]/timovi", label: teacherTeamText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // HOST-S1: the editor of one work.
   { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },
@@ -156,6 +171,9 @@ export const PAGES: readonly Page[] = [
   { path: "/moja-prava", label: myRightsMessages.title, kind: "pending", roles: [], current: "/moja-prava" },
   // WEB-NUZ-OPERATER (NF-7 OA-1, OA-12): the operator's view of the institution, the pilot's aggregates only.
   { path: OPERATOR_HOME, label: pilotMetricsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer"], current: OPERATOR_HOME },
+  // NF-7 OA-3, OA-7: the log of actions and the problem reports, for the operator and the faculty's administrator.
+  { path: ACTION_LOG, label: actionLogMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
+  { path: PROBLEM_REPORTS, label: problemReportsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.

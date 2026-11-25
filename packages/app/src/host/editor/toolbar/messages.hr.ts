@@ -2,6 +2,8 @@
 // button, the quick tools on a phone, the text size, the right-click menu). Taken from INVENTAR-editor §2.6 (toolbar2, more2).
 export const toolbarBehaviourHr = {
   more: "Više",
+  copyDone: "Tekst je stavljen u međuspremnik.",
+  copyFailed: "Nije uspjelo. Označite tekst i upotrijebite Ctrl+C.",
   moreDescription: "Alati koji nisu na traci i prilagodba trake",
   blockStyle: "Stil odlomka",
   blockStyleDescription: "Odlomak, naslov rada, poglavlje ili potpoglavlje",

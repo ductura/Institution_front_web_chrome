@@ -5,6 +5,7 @@ import type { RevisionRequest } from "../../../../../../src/client/revision-requ
 import type { WorkMessage } from "../../../../../../src/client/work-messages";
 
 import type { WorkState } from "../mentor";
+import { nodeWords, type WordsNode } from "../mentor/prep-model";
 import { roundOf } from "../work/review/review-model";
 
 /**
@@ -41,7 +42,7 @@ export function seenAtOf(role: "student" | "teacher", messages: readonly WorkMes
 /** The heading the abstract is written under, at the end of the work (prototype mentor2 "Sažetak"). */
 export const ABSTRACT_HEADING = "Sažetak";
 
-type Block = { readonly type: { readonly name: string }; readonly textContent: string };
+type Block = WordsNode & { readonly type: { readonly name: string }; readonly textContent: string };
 type Doc = { forEach(fn: (node: Block) => void): void };
 
 /** Words under the "Sažetak" heading up to the next heading; 0 when the work has no such heading. */
@@ -50,7 +51,8 @@ export function abstractWords(doc: Doc): number {
   let words = 0;
   doc.forEach((node) => {
     if (node.type.name === "heading") { inside = node.textContent.trim().toLocaleLowerCase("hr") === ABSTRACT_HEADING.toLocaleLowerCase("hr"); return; }
-    if (inside) words += node.textContent.split(/\s+/).filter((w) => w !== "").length;
+    // Block by block, so a list or a hard line break under the heading does not glue words (#631 review).
+    if (inside) words += nodeWords(node);
   });
   return words;
 }

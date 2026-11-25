@@ -89,7 +89,7 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     });
     expect(Number.isSafeInteger(saved.revision)).toBe(true);
     expect(saved.revision).toBeGreaterThan(0);
-    await expect(statusBar.getByRole('status')).toHaveText('Spremljeno na poslužitelju', { timeout: 30_000 });
+    await expect(statusBar.locator('[data-tone]').first()).toHaveText('Spremljeno na poslužitelju', { timeout: 30_000 });
     return {
       revision: saved.revision as number,
       documentId: request.documentId as string,
@@ -147,7 +147,13 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     await next.click();
     await expect(page).toHaveURL((url) => url.pathname === `${submissionPath}/pregled`);
     await expect(page.getByRole('heading', { name: 'Prije predaje', exact: true })).toBeVisible();
-    await expect(page.getByText('Potvrđena', { exact: true })).toBeVisible();
+    // WEB-NF3-IZJAVA (#621): the step says when the declaration was confirmed.
+    await expect(page.getByText(/^Potvrđena \d{1,2}\. \d{1,2}\. \d{4}\./)).toBeVisible();
+    // WEB-NF3-IZJAVA (#621): with the unconfirmed local V2 (INT-14) the choice of version is made on
+    // this step; the test keeps the confirmed V<n>, and "Dalje" waits for the choice.
+    const keepConfirmedHere = page.getByRole('radio', { name: `Predaj potvrđenu verziju V${revision}`, exact: true });
+    await expect(keepConfirmedHere).toBeVisible();
+    await keepConfirmedHere.check();
 
     // packages/app reads the server's revision on step 4 ("slanje"), where the text is submitted.
     const [opened] = await Promise.all([
