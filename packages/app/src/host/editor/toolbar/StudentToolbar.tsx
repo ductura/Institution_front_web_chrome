@@ -25,6 +25,10 @@ import { textWithFootnotes } from "@/lib/document/text-with-footnotes";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { useStudentToast } from "../../student/toast/StudentToasts";
+import { profileById, DEFAULT_PROFILE_ID, type RuleProfile } from "../rules/profiles";
+import { SkeletonDialog } from "../areas/skeleton/SkeletonDialog";
+import { skeletonAvailable } from "../areas/skeleton/skeleton";
+import { skeletonMessages } from "../areas/skeleton/messages.hr";
 import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
@@ -115,14 +119,16 @@ function useEditorSnapshot(editor: Editor | null): EditorState {
 }
 
 /** The student's toolbar, bound to the local document. */
-export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSchemaVersion }: {
+export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSchemaVersion, skeletonProfile }: {
   workPartsKey: string; footnoteDialog?: FootnoteDialogComponent; confirmedWorkSchemaVersion?: number;
+  /** Profile whose sections the "Kostur rada" dialog offers; the general academic work when absent. */
+  skeletonProfile?: RuleProfile | null;
 }) {
   const editor = useLocalEditor();
   const state = useEditorSnapshot(editor);
   const theme = useSheetTheme();
   const v3 = useV3EditorDialogs(editor, confirmedWorkSchemaVersion, footnoteDialog);
-  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | null>(null);
+  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
@@ -132,6 +138,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "xref", label: crossReferenceMessages.title, disabled: !writeOk || !v3.openInsert },
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
     { id: "workParts", label: workPartsMessages.title, disabled: !writeOk },
+    { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonAvailable(skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null) },
   ];
   const convert: Item[] = [
     { id: "toQuote", label: t.toolbar.convertItems.toQuote, disabled: !writeOk || state.quote },
@@ -152,6 +159,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         if (id === "footnote") v3.openInsert?.("footnote");
         else if (id === "xref") v3.openInsert?.("crossReference");
         else if (id === "workParts" && writeOk) setDialog("parts");
+        else if (id === "skeleton" && writeOk) setDialog("skeleton");
         else if (id === "hole") insertHole(editor);
       }} />
       <Menu label={t.toolbar.convert} items={convert} onSelect={(id) => {
@@ -176,6 +184,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         }} />
       <ReadAloudControls editor={editor} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
+      {dialog === "skeleton" && editor && <SkeletonDialog editor={editor} profile={skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null} onClose={() => setDialog(null)} />}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
       {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
       <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />
