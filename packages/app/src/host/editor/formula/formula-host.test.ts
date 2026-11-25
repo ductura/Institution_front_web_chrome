@@ -8,7 +8,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { V4_CORE_EXTENSIONS } from "../../../../../editor-core/src/editor/extensions-v4";
 import { createEditorExtensionsV3, createEditorExtensionsV4 } from "../../../../../editor-core/src/editor/schema";
-import { defaultFormulaTools, useFormulaHost, type FormulaHostApi } from "./FormulaHost";
+import { profileById } from "../rules/profiles";
+import { defaultFormulaTools, formulaToolsOf, useFormulaHost, type FormulaHostApi } from "./FormulaHost";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 (globalThis as { requestAnimationFrame?: (cb: () => void) => number }).requestAnimationFrame = (cb) => { cb(); return 0; };
@@ -76,6 +77,11 @@ describe("useFormulaHost", () => {
     const { api } = await render(3, ["formula"]);
     expect(api().availability).toMatchObject({ enabled: false });
     expect(api().open("block")).toBe(false);
+  });
+  it("takes the tools from the work's profile (ef offers the formula tool)", async () => {
+    expect(formulaToolsOf(null)).toEqual([]);
+    expect(formulaToolsOf(profileById("ef-zavrsni"))).toEqual(["formula"]);
+    expect(formulaToolsOf(profileById("df-opci"))).toEqual([]);
   });
   it("offers nothing in a field without the formula tool (the default profile has none)", async () => {
     expect(defaultFormulaTools()).toEqual([]);

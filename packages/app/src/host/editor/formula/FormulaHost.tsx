@@ -8,7 +8,7 @@ import type { Editor } from "@tiptap/core";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { setupOf } from "../rules/rules-model.ts";
-import { DEFAULT_PROFILE_ID, profileById, type ToolKey } from "../rules/profiles.ts";
+import { DEFAULT_PROFILE_ID, profileById, type RuleProfile, type ToolKey } from "../rules/profiles.ts";
 import { FormulaDialog, type FormulaDialogResult } from "./FormulaDialog.tsx";
 import { insertFormula, updateFormula } from "./formula-commands.ts";
 import { formulaAvailability, formulaViewPlugin, formulaViewKey, supportsFormulas, type FormulaAvailability, type FormulaTarget } from "./formula-view.ts";
@@ -18,6 +18,11 @@ import type { FormulaKind } from "./limits.ts";
 export function defaultFormulaTools(): readonly ToolKey[] {
   const profile = profileById(DEFAULT_PROFILE_ID);
   return profile ? setupOf(profile).tools : [];
+}
+
+/** Tools of the work's profile (the one the toolbar already gets for "Kostur rada"); the general profile, with none, when absent. */
+export function formulaToolsOf(profile: RuleProfile | null | undefined): readonly ToolKey[] {
+  return profile ? setupOf(profile).tools : defaultFormulaTools();
 }
 
 type Session = { kind: FormulaKind; pos: number | null; tex: string };

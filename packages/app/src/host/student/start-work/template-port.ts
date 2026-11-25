@@ -18,3 +18,20 @@ export async function readTemplate(assignmentId: string, call: TemplateCall = vi
   const template = parseTemplate(answer.body);
   return template === null ? { kind: "unavailable" } : { kind: "ready", template };
 }
+
+/**
+ * WEB-V17-DORADE: the cards of one list share one read per assignment, so a card drawn
+ * again (or the same assignment on two lists) does not ask again. A failed read is not
+ * kept: the next card that mounts asks again rather than repeating "unavailable".
+ */
+export function sharedTemplateReads(read: (assignmentId: string) => Promise<TemplateRead> = (id) => readTemplate(id)) {
+  const reads = new Map<string, Promise<TemplateRead>>();
+  return (assignmentId: string): Promise<TemplateRead> => {
+    const known = reads.get(assignmentId);
+    if (known) return known;
+    const next = read(assignmentId).catch((): TemplateRead => ({ kind: "unavailable" }));
+    reads.set(assignmentId, next);
+    void next.then((r) => { if (r.kind === "unavailable" || r.kind === "signedOut") reads.delete(assignmentId); });
+    return next;
+  };
+}

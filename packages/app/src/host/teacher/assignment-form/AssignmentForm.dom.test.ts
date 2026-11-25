@@ -136,7 +136,11 @@ describe("AssignmentForm rubric (WEB-V17-RUBRIC-FORM)", () => {
     const none = vi.fn(async () => "none" as const);
     await start({ publish, setRules: async () => [], setRubricFor: none });
     await click(button(f.review));
+    const review = [...document.querySelectorAll("dt")].find((dt) => dt.textContent === "Kriteriji");
+    expect(review?.nextElementSibling?.textContent).toBe("Zadani");
     await click(button(f.publish));
+    expect(none).toHaveBeenCalledTimes(1);
+    expect(none).toHaveBeenCalledWith("a-new", []);
     expect(document.body.textContent).not.toContain("Rubrika nije spremljena");
     act(() => root?.unmount()); document.body.innerHTML = "";
     const host = await start({ publish, setRules: async () => [], setRubricFor: async () => "conflict" as const });

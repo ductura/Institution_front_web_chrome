@@ -4543,6 +4543,35 @@
                       "type": "null"
                     }
                   ]
+                },
+                "citationStyle": {
+                  "description": "The citation style of the caller's institution (catalogue key citation.style); fpzg when the institution has set none. Always sent.",
+                  "anyOf": [
+                    {
+                      "const": "fpzg",
+                      "type": "string"
+                    },
+                    {
+                      "const": "apa",
+                      "type": "string"
+                    },
+                    {
+                      "const": "chicago",
+                      "type": "string"
+                    },
+                    {
+                      "const": "ieee",
+                      "type": "string"
+                    },
+                    {
+                      "const": "vancouver",
+                      "type": "string"
+                    },
+                    {
+                      "const": "fusnote",
+                      "type": "string"
+                    }
+                  ]
                 }
               }
             }
@@ -19003,7 +19032,7 @@
     "method": "GET",
     "responses": {
       "200": {
-        "description": "ready (an empty list when the student has no course)",
+        "description": "ready (an empty list when the student has no course and no open mentorship with an assignment); the rows also cover every assignment student.mentored-assignments.get would list",
         "content": {
           "application/json": {
             "schema": {
@@ -19042,6 +19071,20 @@
                             "type": "string"
                           }
                         ]
+                      },
+                      "lateException": {
+                        "additionalProperties": false,
+                        "description": "The caller's own latest late-submission exception on the assignment: the teacher's record that this student may still submit until untilAt although the deadline has passed, even when late submission is not allowed (a submission then is still after the deadline). Absent when the caller has none; sent also after untilAt, so a client compares untilAt with the time. Another student's exception is never in the answer.",
+                        "type": "object",
+                        "required": [
+                          "untilAt"
+                        ],
+                        "properties": {
+                          "untilAt": {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                            "type": "string"
+                          }
+                        }
                       }
                     }
                   }
@@ -24721,6 +24764,18 @@
                       "text": {
                         "type": "string"
                       },
+                      "label": {
+                        "anyOf": [
+                          {
+                            "description": "A short label of the teacher's, 1 to 40 characters, NFC; null or missing is none.",
+                            "pattern": "^(?=[^\\u0000-\\u001f\\u007f-\\u009f]*\\S)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,40}(?![\\s\\S])",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
                       "createdAt": {
                         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z(?![\\s\\S])",
                         "type": "string"
@@ -24775,6 +24830,18 @@
             {
               "const": "praise",
               "type": "string"
+            }
+          ]
+        },
+        "label": {
+          "anyOf": [
+            {
+              "description": "A short label of the teacher's, 1 to 40 characters, NFC; null or missing is none.",
+              "pattern": "^(?=[^\\u0000-\\u001f\\u007f-\\u009f]*\\S)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,40}(?![\\s\\S])",
+              "type": "string"
+            },
+            {
+              "type": "null"
             }
           ]
         }
@@ -50418,6 +50485,746 @@
       ],
       "422": [
         "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.mentored-assignments.get": {
+    "path": "/api/v1/student/mentored-assignments",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "ready (an empty list when the student has no open mentorship with an assignment)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "assignments"
+              ],
+              "properties": {
+                "assignments": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "mentorshipId",
+                      "title",
+                      "dueAt",
+                      "noticeFirst",
+                      "workType",
+                      "mentor",
+                      "extendedDueAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                        "type": "string"
+                      },
+                      "mentorshipId": {
+                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                        "type": "string"
+                      },
+                      "title": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "dueAt": {
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "type": "string"
+                      },
+                      "noticeFirst": {
+                        "type": "boolean"
+                      },
+                      "workType": {
+                        "anyOf": [
+                          {
+                            "const": "short_paper",
+                            "type": "string"
+                          },
+                          {
+                            "const": "essay",
+                            "type": "string"
+                          },
+                          {
+                            "const": "seminar_paper",
+                            "type": "string"
+                          },
+                          {
+                            "const": "bachelor_thesis",
+                            "type": "string"
+                          },
+                          {
+                            "const": "master_thesis",
+                            "type": "string"
+                          },
+                          {
+                            "const": "specialist_thesis",
+                            "type": "string"
+                          },
+                          {
+                            "const": "doctoral_thesis",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "mentor": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "givenName",
+                              "familyName"
+                            ],
+                            "properties": {
+                              "id": {
+                                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                                "type": "string"
+                              },
+                              "givenName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "familyName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "extendedDueAt": {
+                        "anyOf": [
+                          {
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "analysis.catalogue.get": {
+    "path": "/api/v1/analysis/catalogue",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the analyses and the limits",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "limits",
+                "analyses"
+              ],
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "maxRows",
+                    "maxColumns",
+                    "maxCellLength",
+                    "maxBodyBytes"
+                  ],
+                  "properties": {
+                    "maxRows": {
+                      "const": 500,
+                      "type": "number"
+                    },
+                    "maxColumns": {
+                      "const": 12,
+                      "type": "number"
+                    },
+                    "maxCellLength": {
+                      "const": 64,
+                      "type": "number"
+                    },
+                    "maxBodyBytes": {
+                      "const": 131072,
+                      "type": "number"
+                    }
+                  }
+                },
+                "analyses": {
+                  "maxItems": 3,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "version",
+                      "variables"
+                    ],
+                    "properties": {
+                      "id": {
+                        "anyOf": [
+                          {
+                            "const": "descriptive",
+                            "type": "string"
+                          },
+                          {
+                            "const": "frequencies",
+                            "type": "string"
+                          },
+                          {
+                            "const": "correlation",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "version": {
+                        "pattern": "^(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})$",
+                        "type": "string"
+                      },
+                      "variables": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "min",
+                          "max"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "anyOf": [
+                              {
+                                "const": "numeric",
+                                "type": "string"
+                              },
+                              {
+                                "const": "any",
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "min": {
+                            "minimum": 1,
+                            "maximum": 12,
+                            "type": "integer"
+                          },
+                          "max": {
+                            "minimum": 1,
+                            "maximum": 12,
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "analysis.runs.post": {
+    "path": "/api/v1/analysis/runs",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "analysisId",
+        "analysisVersion",
+        "variables",
+        "columns",
+        "rows"
+      ],
+      "properties": {
+        "analysisId": {
+          "anyOf": [
+            {
+              "const": "descriptive",
+              "type": "string"
+            },
+            {
+              "const": "frequencies",
+              "type": "string"
+            },
+            {
+              "const": "correlation",
+              "type": "string"
+            }
+          ]
+        },
+        "analysisVersion": {
+          "pattern": "^(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})$",
+          "type": "string"
+        },
+        "variables": {
+          "minItems": 1,
+          "maxItems": 12,
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          }
+        },
+        "columns": {
+          "minItems": 1,
+          "maxItems": 12,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "name",
+              "kind"
+            ],
+            "properties": {
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "numeric",
+                    "type": "string"
+                  },
+                  {
+                    "const": "category",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "rows": {
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "minItems": 1,
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the result and the fingerprints",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "analysisId",
+                "analysisVersion",
+                "datasetSha256",
+                "resultSha256",
+                "rowCount",
+                "result"
+              ],
+              "properties": {
+                "analysisId": {
+                  "anyOf": [
+                    {
+                      "const": "descriptive",
+                      "type": "string"
+                    },
+                    {
+                      "const": "frequencies",
+                      "type": "string"
+                    },
+                    {
+                      "const": "correlation",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "analysisVersion": {
+                  "pattern": "^(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})\\.(?:0|[1-9]\\d{0,5})$",
+                  "type": "string"
+                },
+                "datasetSha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "resultSha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "rowCount": {
+                  "minimum": 0,
+                  "maximum": 500,
+                  "type": "integer"
+                },
+                "result": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "columns"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "descriptive",
+                          "type": "string"
+                        },
+                        "columns": {
+                          "maxItems": 12,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "n",
+                              "missing",
+                              "mean",
+                              "sd",
+                              "median",
+                              "min",
+                              "q1",
+                              "q3",
+                              "max"
+                            ],
+                            "properties": {
+                              "name": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "type": "string"
+                              },
+                              "n": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "missing": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "mean": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "sd": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "median": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "min": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "q1": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "q3": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "max": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "columns"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "frequencies",
+                          "type": "string"
+                        },
+                        "columns": {
+                          "maxItems": 12,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "n",
+                              "missing",
+                              "values",
+                              "otherCount"
+                            ],
+                            "properties": {
+                              "name": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "type": "string"
+                              },
+                              "n": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "missing": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "values": {
+                                "maxItems": 50,
+                                "type": "array",
+                                "items": {
+                                  "additionalProperties": false,
+                                  "type": "object",
+                                  "required": [
+                                    "value",
+                                    "count",
+                                    "share"
+                                  ],
+                                  "properties": {
+                                    "value": {
+                                      "maxLength": 64,
+                                      "type": "string"
+                                    },
+                                    "count": {
+                                      "minimum": 0,
+                                      "maximum": 500,
+                                      "type": "integer"
+                                    },
+                                    "share": {
+                                      "minimum": 0,
+                                      "maximum": 1,
+                                      "type": "number"
+                                    }
+                                  }
+                                }
+                              },
+                              "otherCount": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "pairs"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "const": "correlation",
+                          "type": "string"
+                        },
+                        "pairs": {
+                          "maxItems": 66,
+                          "type": "array",
+                          "items": {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "a",
+                              "b",
+                              "n",
+                              "r"
+                            ],
+                            "properties": {
+                              "a": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "type": "string"
+                              },
+                              "b": {
+                                "minLength": 1,
+                                "maxLength": 40,
+                                "type": "string"
+                              },
+                              "n": {
+                                "minimum": 0,
+                                "maximum": 500,
+                                "type": "integer"
+                              },
+                              "r": {
+                                "anyOf": [
+                                  {
+                                    "minimum": -1,
+                                    "maximum": 1,
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input",
+        "unknown_analysis_version"
       ],
       "503": [
         "unavailable"

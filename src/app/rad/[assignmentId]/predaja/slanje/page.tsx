@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { signInHref } from "../../../../../client/api";
 import { serverApi } from "../../../../../client/server";
 import { assignmentIdOf, editorWorkRead } from "../../../../../components/editor/EditorPage.read";
+import { readAssignmentsWithMentored } from "../../../../../components/student/mentored-assignments";
 import { stageOf, type Stage } from "../../../../../components/predaja/stage";
 import RoleShell from "../../../../../components/shell/RoleShell";
 import Submission from "../../../../../components/student/Submission";
@@ -31,10 +32,10 @@ export default async function SubmitPage({ params }: { params: Promise<{ assignm
   const here = `/rad/${assignmentId}/predaja/slanje`;
   // The Cookie header as the browser sent it: re-serialising the cookies could alter a value.
   const cookie = (await headers()).get("cookie") ?? "";
-  const api = serverApi(cookie);
+  const call = serverApi(cookie);
   const [assignments, work] = await Promise.all([
-    api("student.assignments.get", NONE).catch(() => UNREACHED),
-    api("student.assignment-work.get", NONE).catch(() => UNREACHED),
+    readAssignmentsWithMentored(call),
+    call("student.assignment-work.get", NONE).catch(() => UNREACHED),
   ]);
   const read = editorWorkRead(assignmentId, assignments, work);
   if (read.kind === "signedOut") redirect(signInHref(here));
