@@ -14,6 +14,7 @@ const { StartWork } = await import("./StartWork");
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const ASSIGNMENT = "20000000-0000-4000-8000-0000000000a1";
+const none = async () => ({ kind: "none" as const });
 const started = () => async () => ({ ok: true, status: 200, body: { workId: "w-1", rulesVersion: null, language: "hr" } });
 
 describe("StartWork after the server opened the work", () => {
@@ -27,17 +28,30 @@ describe("StartWork after the server opened the work", () => {
   };
 
   it("goes to the editor from the card", async () => {
-    await act(async () => { root?.render(h(StartWork, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", call: started as never })); });
+    await act(async () => { root?.render(h(StartWork, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", call: started as never, template: none })); });
     await click();
     expect(push).toHaveBeenCalledWith(expect.stringMatching(new RegExp(`/rad/${ASSIGNMENT}$`)));
   });
 
   it("on the work page reads the work again in place of going to the address already open", async () => {
     const onOpened = vi.fn();
-    await act(async () => { root?.render(h(StartWork, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", call: started as never, onOpened })); });
+    await act(async () => { root?.render(h(StartWork, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", call: started as never, onOpened, template: none })); });
     await click();
     expect(onOpened).toHaveBeenCalledTimes(1);
     expect(push).not.toHaveBeenCalled();
     expect(host.textContent).toContain("Jezik rada: hrvatski");
+  });
+
+  it("says what the template holds", async () => {
+    const ready = async () => ({ kind: "ready" as const, template: { version: 2, titlePage: [], sections: [{ title: "Uvod", hint: "" }], citationStyle: "fpzg" as const } });
+    await act(async () => { root?.render(h(StartWork, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", call: started as never, template: ready })); });
+    await click();
+    expect(host.textContent).toContain("Predložak fakulteta (verzija 2): 1 odjeljaka.");
+  });
+
+  it("says unavailable, not nothing, when the template read throws", async () => {
+    await act(async () => { root?.render(h(StartWork, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", call: started as never, template: async () => { throw new Error("x"); } })); });
+    await click();
+    expect(host.textContent).toContain("nije dostupan");
   });
 });

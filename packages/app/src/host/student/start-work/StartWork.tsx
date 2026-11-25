@@ -9,8 +9,11 @@ import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 import { startWorkText as t } from "./messages.hr";
 import { stepFor, workFacts } from "./model";
+import { readTemplate } from "./template-port";
+import type { TemplateRead } from "./template";
 import styles from "./StartWork.module.css";
 
+const defaultRead = (id: string) => readTemplate(id);
 const defaultCall = () => startWorkCall();
 
 /**
@@ -25,16 +28,18 @@ const defaultCall = () => startWorkCall();
  * going there again would not read the work again (INT-31): that page passes
  * `onOpened`, which reads it again in place of going to the editor.
  */
-export function StartWork({ assignmentId, title, call = defaultCall, onOpened }: {
+export function StartWork({ assignmentId, title, call = defaultCall, onOpened, template = defaultRead }: {
   assignmentId: string;
   title: string;
   call?: () => StartWorkTransport;
   onOpened?: () => void;
+  template?: (assignmentId: string) => Promise<TemplateRead>;
 }) {
   const { base } = useHost();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [opened, setOpened] = useState<StartedWork | null>(null);
+  const [tpl, setTpl] = useState<TemplateRead | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
   async function start() {
@@ -47,7 +52,11 @@ export function StartWork({ assignmentId, title, call = defaultCall, onOpened }:
       setNote(step.text);
       return;
     }
-    if (step.kind === "open") setOpened(step.work);
+    if (step.kind === "open") {
+      setOpened(step.work);
+      // Not awaited: the editor never waits for the template card, and a refused read says "unavailable".
+      void template(assignmentId).catch((): TemplateRead => ({ kind: "unavailable" })).then(setTpl);
+    }
     // Busy stays on until the page leaves (or reads the work again), so the opening editor is not asked twice.
     if (step.kind === "open" && onOpened) return onOpened();
     router.push(nextPath(base, step.route));
@@ -61,6 +70,11 @@ export function StartWork({ assignmentId, title, call = defaultCall, onOpened }:
       <p className={styles.facts} role="status">
         {opened === null ? null : `${t.opened} ${workFacts(opened).join(". ")}.`}
       </p>
+      {tpl === null || tpl.kind === "none" ? null : (
+        <p className={styles.facts} role="status">
+          {tpl.kind === "ready" ? t.template.replace("{version}", String(tpl.template.version)).replace("{sections}", String(tpl.template.sections.length)) : t.templateUnavailable}
+        </p>
+      )}
       {note === null ? null : <p className={styles.note} role="alert">{note}</p>}
     </div>
   );

@@ -8,5 +8,8 @@ export const startWorkText = {
   language: "Jezik rada: {language}",
   rules: "Pravila fakulteta: verzija {version}",
   languages: { hr: "hrvatski", en: "engleski" },
+  template: "Predložak fakulteta (verzija {version}): {sections} odjeljaka.",
+  templateUnavailable: "Predložak fakulteta trenutačno nije dostupan.",
+  titleFields: { title: "Naslov", author: "Autor", mentor: "Mentor", course: "Kolegij", date: "Datum" },
   unknown: "Nije poznato je li rad započet. Pokušajte ponovno; otvorit će se isti rad.",
 } as const;
