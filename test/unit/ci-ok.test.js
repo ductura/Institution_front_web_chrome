@@ -405,8 +405,9 @@ test('line-endings: CRLF in docs/ and a root .md file fails the check too', () =
 // ZEL-CI-WEB: the ui checks run as two parts of the matrix `ui`, `checks`
 // (typecheck and the coverage check) and `unit` (every package's unit tests).
 // ci-ok needs `ui`, so it needs both: a failure in either part fails `ui`.
-// CI-BRZINA: `unit` runs in two legs whose pnpm filters are each other's
-// complement, so every workspace package runs in exactly one leg.
+// CI-BRZINA: the unit tests of ./src/** run in `checks`, after the typecheck,
+// and `unit` runs the complement, so every workspace package runs in exactly
+// one part and no part of its own waits for a runner for 25 s of tests.
 const ui = jobsOf(workflow).ui;
 const uiStep = (pattern) => ui.steps.filter((s) => typeof s.run === 'string' && pattern.test(s.run));
 
@@ -418,11 +419,11 @@ test('ui runs typecheck and unit tests in two blocking parts of its matrix', () 
   const [typecheck] = uiStep(/^pnpm -r run typecheck$/);
   const [unit] = uiStep(/^pnpm -r --filter "\$PACKAGES" --filter "!\{\.\}" run test$/);
   assert.equal(unit?.env?.PACKAGES, '${{ matrix.packages }}');
-  const legs = ui.strategy.matrix.include.filter((p) => p.part === 'unit');
-  assert.deepEqual(legs.map((p) => p.packages), ['./src/**', '!./src/**'], 'unit legs are src/ and its complement');
-  assert.deepEqual(legs.map((p) => `${p.leg}/${p.of}`), ['1/2', '2/2']);
+  const withPackages = ui.strategy.matrix.include.filter((p) => p.packages !== undefined);
+  assert.deepEqual(withPackages.map((p) => `${p.part}:${p.packages}`), ['checks:./src/**', 'unit:!./src/**'], 'checks runs src/, unit its complement');
+  assert.ok(withPackages.every((p) => p.leg === undefined), 'one part each, no legs');
   assert.equal(typecheck?.if, "matrix.part == 'checks'");
-  assert.equal(unit?.if, "matrix.part == 'unit'");
+  assert.equal(unit?.if, 'matrix.packages');
   // CI-BRZINA: both axe shells run in one part; the light shell runs also
   // when the dark one failed, and nothing else may skip them.
   assert.deepEqual(ui.strategy.matrix.include.filter((p) => p.part.startsWith('axe')).map((p) => p.part), ['axe']);
