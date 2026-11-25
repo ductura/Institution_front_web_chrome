@@ -12,6 +12,7 @@ export const ipynbHr = {
     invalid: "Bilježnicu nije moguće pročitati. Provjerite je li ispravna.",
     empty: "U bilježnici nema teksta ni kôda za uvoz.",
     unreadable: "Datoteku nije moguće pročitati.",
-    noCodeBlocks: "Uređivač u ovom radu još ne podržava blokove kôda, pa se bilježnica ne može uvesti.",
+    noCodeBlocks: "Uređivač u ovom radu još ne podržava uvezeni kôd ni oznaku uvezenog teksta, pa se bilježnica ne može uvesti.",
+    insertFailed: "Bilježnicu nije bilo moguće umetnuti u rad. Pregled je sačuvan, pokušajte ponovno.",
   },
 } as const;

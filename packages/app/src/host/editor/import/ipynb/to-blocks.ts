@@ -38,18 +38,26 @@ export function notebookToBlocks(notebook: Notebook): IpynbConversion {
   const blocks: IpynbBlock[] = [];
   let discarded = 0;
   for (const cell of notebook.cells) {
-    if (cell.kind === "markdown") { blocks.push(...markdownBlocks(cell.source)); continue; }
+    if (cell.kind === "markdown") { for (const block of markdownBlocks(cell.source)) blocks.push(block); continue; }
     if (cell.source.trim() !== "") blocks.push({ type: "codeBlock", language, caption: null, text: cell.source.replace(/\n+$/, ""), imported: true });
-    const shown: string[] = [];
+    // Chunks of the same stream are joined as they are; a different stream or output starts on a new line.
+    let shown = "";
+    let last = "";
+    const add = (kind: string, piece: string) => {
+      if (piece === "") return;
+      if (shown !== "" && kind !== last && !shown.endsWith("\n")) shown += "\n";
+      shown += piece;
+      last = kind;
+    };
     for (const output of cell.outputs) {
-      if (output.outputType === "stream") { if (output.text !== null && output.text !== "") shown.push(output.text.replace(/\n+$/, "")); continue; }
+      if (output.outputType === "stream") { add(`stream:${output.name ?? ""}`, output.text ?? ""); continue; }
       const mimes = Object.keys(output.data);
       if ((output.outputType === "execute_result" || output.outputType === "display_data") && output.data["text/plain"] !== undefined) {
-        if (output.data["text/plain"] !== "") shown.push(output.data["text/plain"].replace(/\n+$/, ""));
+        add("plain", output.data["text/plain"]);
         discarded += mimes.filter((mime) => mime !== "text/plain").length;
       } else discarded += Math.max(mimes.length, 1);
     }
-    const text = shown.join("\n").replace(/\n+$/, "");
+    const text = shown.replace(/\n+$/, "");
     if (text.trim() !== "") blocks.push({ type: "codeBlock", language: null, caption: OUTPUT_CAPTION, text, imported: true });
   }
   return { blocks, discarded };

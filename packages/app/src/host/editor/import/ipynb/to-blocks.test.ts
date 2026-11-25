@@ -46,4 +46,15 @@ describe("notebookToBlocks", () => {
     expect(blocks).toHaveLength(1);
     expect(discarded).toBe(1);
   });
+  it("joins chunks of one stream as they are and separates different outputs", () => {
+    const { blocks } = convert([code("x", [
+      { output_type: "stream", name: "stdout", text: "hello " }, { output_type: "stream", name: "stdout", text: "world\n\n" },
+      { output_type: "stream", name: "stdout", text: "end\n" }, { output_type: "stream", name: "stderr", text: "warn" },
+    ])]);
+    expect(blocks[1]).toMatchObject({ text: "hello world\n\nend\nwarn" });
+  });
+  it("converts a very long markdown cell without exceeding the argument limit", () => {
+    const { blocks } = convert([{ cell_type: "markdown", source: "# a\n".repeat(150000) }]);
+    expect(blocks).toHaveLength(150000);
+  });
 });

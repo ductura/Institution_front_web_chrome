@@ -114,7 +114,7 @@ describe("ImportHost", () => {
   it("reads a notebook in the browser without any call, previews it and inserts only after Potvrdi uvoz", async () => {
     let calls = 0;
     const api = (async () => { calls += 1; return {}; }) as unknown as NonNullable<Parameters<typeof ImportHost>[0]["api"]>;
-    (editor.value as Record<string, unknown>).schema = { nodes: { codeBlock: {} } };
+    (editor.value as Record<string, unknown>).schema = { nodes: { codeBlock: {} }, marks: { imported: {} } };
     act(() => root.render(h(ImportHost, { documentId: D, api })));
     act(() => button("Uvezi tekst iz datoteke").click());
     await chooseNotebook(NOTEBOOK);
@@ -136,7 +136,18 @@ describe("ImportHost", () => {
     expect(document.querySelector("[role=alert]")?.textContent).toBe("Bilježnicu nije moguće pročitati. Provjerite je li ispravna.");
     await chooseNotebook(NOTEBOOK);
     await act(async () => button("Potvrdi uvoz").click());
-    expect(document.querySelector("[role=alert]")?.textContent).toContain("ne podržava blokove kôda");
+    expect(document.querySelector("[role=alert]")?.textContent).toContain("ne podržava uvezeni kôd");
     expect(inserted).toEqual([]);
+  });
+
+  it("keeps the preview and inserts nothing for a markdown-only notebook when the editor lacks the imported mark", async () => {
+    (editor.value as Record<string, unknown>).schema = { nodes: {}, marks: {} };
+    act(() => root.render(h(ImportHost, { documentId: D })));
+    act(() => button("Uvezi tekst iz datoteke").click());
+    await chooseNotebook(JSON.stringify({ cells: [{ cell_type: "markdown", source: "Izmišljeno" }] }));
+    await act(async () => button("Potvrdi uvoz").click());
+    expect(inserted).toEqual([]);
+    expect(document.querySelector("[role=alert]")?.textContent).toContain("ne podržava");
+    expect(button("Potvrdi uvoz")).toBeDefined();
   });
 });

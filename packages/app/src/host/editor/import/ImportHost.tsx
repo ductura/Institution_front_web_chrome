@@ -74,10 +74,11 @@ export function ImportHost({ documentId, api }: Props) {
 
   const confirmNotebook = () => {
     if (state.step !== "notebook") return;
+    // The text carries the `imported` mark and code needs `codeBlock`; both exist only in the v4 schema.
+    const schema = (editor as { schema?: { nodes?: Record<string, unknown>; marks?: Record<string, unknown> } }).schema;
     const needsCode = state.blocks.some((block) => block.type === "codeBlock");
-    const schema = (editor as { schema?: { nodes?: Record<string, unknown> } }).schema;
-    if (needsCode && !schema?.nodes?.codeBlock) return setState({ ...state, error: ipynbHr.refused.noCodeBlocks });
-    if (!editor.isDestroyed && editor.isEditable) editor.chain().focus("end").insertContent(notebookContent(state.blocks)).run();
+    if (!schema?.marks?.imported || (needsCode && !schema.nodes?.codeBlock)) return setState({ ...state, error: ipynbHr.refused.noCodeBlocks });
+    if (editor.isDestroyed || !editor.isEditable || !editor.chain().focus("end").insertContent(notebookContent(state.blocks)).run()) return setState({ ...state, error: ipynbHr.refused.insertFailed });
     setDone(ipynbHr.done(state.blocks.length, state.discarded));
     setOpen(false);
     setState(START);
