@@ -15,12 +15,17 @@ import { useRestoreEditor } from "./restore-editor";
 
 export default function RestoreHost({ documentId, history, port, onRestored }: {
   documentId: string;
-  history: Pick<TimeMachinePort, "versions">;
+  /** `compare` (ED-17) feeds the preview of the change before "Da, vrati"; without it there is none. */
+  history: Pick<TimeMachinePort, "versions"> & Partial<Pick<TimeMachinePort, "compare">>;
   /** Only tests pass one; the page uses the editor's save path. */
   port?: RestorePort;
   onRestored?: () => void;
 }) {
   const editor = useRestoreEditor();
+  const compare = useMemo(() => {
+    const read = history.compare?.bind(history);
+    return read === undefined ? undefined : (from: number, to: number) => read(documentId, from, to);
+  }, [history, documentId]);
   const real = useMemo(() => port ?? clientRestorePort(editor), [port, editor]);
   const [versions, setVersions] = useState<readonly Version[] | null>(null);
   const [round, setRound] = useState(0);
@@ -86,6 +91,7 @@ export default function RestoreHost({ documentId, history, port, onRestored }: {
         documentId={documentId}
         versions={versions}
         port={real}
+        compare={compare}
         onRecorded={record}
         onRestored={() => { setRound((n) => n + 1); onRestored?.(); }}
         onStale={() => setRound((n) => n + 1)}
