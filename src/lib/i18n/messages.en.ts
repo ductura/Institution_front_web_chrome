@@ -1373,6 +1373,8 @@ const en = {
       noAssignments: "There is no assignment in this course yet.",
       due: "Deadline {time}",
       noticeFirst: "Read the notice first",
+      // INT-31: the works of the student's open mentorships, which have no course.
+      mentoredGroup: "Works with a mentor",
     },
     // DAN-309 (M2.3-P02, B2): "Moji radovi" on /zadaci/radovi. Each state is
     // told only from what the server read returned; nothing about the text.

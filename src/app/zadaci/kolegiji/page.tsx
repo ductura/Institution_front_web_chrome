@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 
 import { serverApi } from "../../../client/server";
 import RoleShell, { signInPage } from "../../../components/shell/RoleShell";
+import { withMentoredCall } from "../../../components/student/mentored-assignments";
 import { readMyAssignments } from "../../../components/student/my-assignments-read";
 import StudentHome from "../../../components/student/StudentHome";
 import { messagesHr as t } from "../../../lib/i18n/messages.hr";
@@ -19,7 +20,7 @@ const workHref = (assignmentId: string) => `/rad/${encodeURIComponent(assignment
 async function Courses() {
   // The Cookie header as the browser sent it: re-serialising the cookies could alter a value.
   const cookie = (await headers()).get("cookie") ?? "";
-  const read = await readMyAssignments(serverApi(cookie));
+  const read = await readMyAssignments(withMentoredCall(serverApi(cookie)));
   const enroll = (
     <p>
       <a className="btn" href="/upis">{t.student.home.enrollLink}</a>

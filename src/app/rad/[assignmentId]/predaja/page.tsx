@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { signInHref } from "../../../../client/api";
 import { serverApi } from "../../../../client/server";
 import { assignmentIdOf, editorWorkRead } from "../../../../components/editor/EditorPage.read";
+import { readAssignmentsWithMentored } from "../../../../components/student/mentored-assignments";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +27,10 @@ export default async function SubmissionStepPage({ params }: { params: Promise<{
   const assignmentId = assignmentIdOf(raw);
   if (assignmentId === null) notFound();
   const cookie = (await headers()).get("cookie") ?? "";
-  const api = serverApi(cookie);
+  const call = serverApi(cookie);
   const [assignments, work] = await Promise.all([
-    api("student.assignments.get", NONE).catch(() => UNREACHED),
-    api("student.assignment-work.get", NONE).catch(() => UNREACHED),
+    readAssignmentsWithMentored(call),
+    call("student.assignment-work.get", NONE).catch(() => UNREACHED),
   ]);
   const read = editorWorkRead(assignmentId, assignments, work);
   if (read.kind === "signedOut") redirect(signInHref(`/rad/${assignmentId}/predaja`));

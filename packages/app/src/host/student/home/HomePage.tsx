@@ -8,6 +8,7 @@ import { appHref } from "../../../../../../src/components/index.ts";
 import type { MyCourse } from "../read/assignments.ts";
 import { readMyWorks, type WorksRead } from "../read/works.ts";
 import { createApi, signInHref } from "../../../../../../src/client/api.ts";
+import { withMentoredAssignments } from "../../../../../../src/components/student/mentored-assignments.ts";
 
 import { nextPath, type Base } from "../../../bases";
 import { useHost } from "../../context";
@@ -110,7 +111,7 @@ export function HomePage() {
   useEffect(() => {
     let live = true;
     setRead(null);
-    void readMyWorks(createApi() as unknown as Parameters<typeof readMyWorks>[0]).then((result) => {
+    void readMyWorks(withMentoredAssignments(createApi()) as unknown as Parameters<typeof readMyWorks>[0]).then((result) => {
       if (live) setRead(result);
     });
     return () => {

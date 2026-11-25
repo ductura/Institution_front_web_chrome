@@ -241,3 +241,37 @@ describe("internalRoute", () => {
     expect(internalRoute("#sadrzaj", "/app/web")).toBeNull();
   });
 });
+
+// WEB-V22-RUTE: the three routes of the trial ISVU link (invented ids only).
+describe("the ISVU routes (WEB-V22-RUTE)", () => {
+  const course = "11111111-1111-4111-8111-111111111111";
+  const grades = `/nastavnik/kolegiji/${course}/isvu-ocjene`;
+
+  it("opens the import for the administrator only, leading other roles home", () => {
+    expect(resolve("/ustanova/isvu", "admin")).toMatchObject({ kind: "page", page: { path: "/ustanova/isvu", current: "/ustanova" } });
+    expect(resolve("/ustanova/isvu", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
+    expect(resolve("/ustanova/isvu", "teacher")).toEqual({ kind: "redirect", to: "/nastavnik" });
+    expect(resolve("/ustanova/isvu", null)).toEqual({ kind: "redirect", to: "/" });
+  });
+
+  it("opens the grade export for the teacher only; any course id resolves and does not throw", () => {
+    expect(resolve(grades, "teacher")).toMatchObject({ kind: "page", page: { current: "/nastavnik" } });
+    expect(resolve("/nastavnik/kolegiji/ne-postoji/isvu-ocjene", "teacher")).toMatchObject({ kind: "page" });
+    expect(resolve("/nastavnik/kolegiji//isvu-ocjene", "teacher")).toEqual({ kind: "notFound" });
+    expect(resolve(grades, "student")).toEqual({ kind: "redirect", to: "/zadaci" });
+    expect(resolve(grades, "admin")).toEqual({ kind: "redirect", to: "/ustanova" });
+  });
+
+  it("opens the entry from Studomat without a session, next to /prijava", () => {
+    expect(publicPage("/ulaz/studomat")).toMatchObject({ public: true, roles: [] });
+    expect(publicPage("/prijava")).not.toBeNull();
+    expect(publicPage("/ulaz")).toBeNull();
+    expect(publicPage("/ulaz/studomat/x")).toBeNull();
+    for (const role of ["student", "teacher", "admin"] as const) expect(resolve("/ulaz/studomat", role)).toMatchObject({ kind: "page" });
+  });
+
+  it("leaves the route as an app link, so the host opens it without a reload", () => {
+    expect(internalRoute("/app/web/ulaz/studomat", "/app/web")).toBe("/ulaz/studomat");
+    expect(internalRoute("/ustanova/isvu", "/app/web")).toBe("/ustanova/isvu");
+  });
+});

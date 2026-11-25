@@ -72,7 +72,11 @@ export const pageLabelsEn = {
   problemReports: "Problem reports",
   facultySettings: "Faculty settings",
   facultyAssistant: "Assistant at the faculty",
+  milestoneTemplate: "Milestone template",
   myRights: "My rights",
+  isvuImport: "Connection to ISVU (trial source)",
+  isvuGrades: "Grade export to ISVU (trial source)",
+  studomatEntry: "Entry from Studomat",
 };
 
 export const accessDeniedEn = {

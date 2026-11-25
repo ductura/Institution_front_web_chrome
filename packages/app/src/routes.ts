@@ -20,11 +20,12 @@ import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
 import { courseAggregateMessages } from "./host/teacher/course-aggregate/messages.hr";
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
-import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
+import { accessDeniedHr, pageLabelsHr, profileHr } from "./i18n/messages.hr";
 import { originText } from "./host/teacher/provenance/origin-messages.hr";
 import { interviewMessages as studentInterviewText } from "./host/student/interview/messages.hr";
 import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
 import { facultySettingsMessages } from "./host/admin/faculty-settings/messages.hr";
+import { milestoneTemplateMessages } from "./host/admin/milestone-template/messages.hr";
 import { myRightsMessages } from "./host/public/my-rights/messages.hr";
 import { pilotMetricsMessages } from "./host/operator/pilot-metrics/messages.hr";
 import { actionLogMessages } from "./host/operator/action-log/messages.hr";
@@ -167,6 +168,12 @@ export const PAGES: readonly Page[] = [
   // NF-7 OA-2 / OA-9: the faculty's settings in one place, and the assistant's settings (read only).
   { path: "/ustanova/postavke", label: facultySettingsMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
   { path: "/ustanova/postavke/asistent", label: facultySettingsMessages.assistant.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  // WEB-V16-ETAPE-ADMIN: the institution's milestone template.
+  { path: "/ustanova/etape", label: milestoneTemplateMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  // WEB-V22-RUTE: the trial ISVU roster link, for the administrator, the grade export (teacher of the course) and the public entry from Studomat.
+  { path: "/ustanova/isvu", label: pageLabelsHr.isvuImport, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  { path: "/nastavnik/kolegiji/[courseId]/isvu-ocjene", label: pageLabelsHr.isvuGrades, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  { path: "/ulaz/studomat", label: pageLabelsHr.studomatEntry, kind: "pending", roles: [], public: true },
   // NF-7 OA-5: "Moja prava", static help for everyone signed in.
   { path: "/moja-prava", label: myRightsMessages.title, kind: "pending", roles: [], current: "/moja-prava" },
   // WEB-NUZ-OPERATER (NF-7 OA-1, OA-12): the operator's view of the institution, the pilot's aggregates only.
