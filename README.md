@@ -24,11 +24,11 @@ pnpm --filter @ductura/app run test:e2e    # lažni /api/v1, axe
 ## Pokretanje
 
 ```bash
-npm install
+pnpm install --frozen-lockfile
 node dev-server.mjs         # stari kostur na http://localhost:5173 s memorijskim API-jem
-npm run test:helpers        # pomoćne funkcije (public/lib/doc.js)
-npx playwright install chromium firefox webkit   # chrome i msedge samo uz DUCTURA_BRANDED=1
-npm run test:functional     # funkcionalni test u pregledniku
+pnpm run test:helpers       # pomoćne funkcije (public/lib/doc.js)
+pnpm exec playwright install chromium firefox webkit   # chrome i msedge samo uz DUCTURA_BRANDED=1
+pnpm run test:functional    # funkcionalni test u pregledniku
 ```
 
 ## Nestabilni testovi: pravilo „3 zelena zaredom”

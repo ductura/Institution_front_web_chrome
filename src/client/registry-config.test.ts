@@ -113,6 +113,6 @@ describe("registry configuration", () => {
   it("the job that installs the client keeps no git credentials after checkout", () => {
     const ui = read(".github/workflows/ci.yml").split(/\n {2}ui:\n/)[1]?.split(/\n {2}[a-z-]+:\n/)[0] ?? "";
     expect(ui).toMatch(/packages: read\n/);
-    expect(ui).toMatch(/- uses: actions\/checkout@v4\n {8}with: \{ persist-credentials: false \}\n/);
+    expect(ui).toMatch(/- uses: actions\/checkout@[0-9a-f]{40}( # v[0-9.]+)?\n {8}with: \{ persist-credentials: false \}\n/);
   });
 });
