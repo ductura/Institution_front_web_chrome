@@ -1,0 +1,87 @@
+/* DEMO-1: the public "O aplikaciji" page on the page's own tokens; no colour
+   of its own beyond the theme's, so contrast is the theme's. */
+.about h2 {
+  margin: 0 0 8px;
+  font-family: var(--ff-display);
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 500;
+}
+
+.about h3 {
+  margin: 16px 0 4px;
+  font-size: 17px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.about section {
+  margin-top: 32px;
+}
+
+.about ul {
+  margin: 8px 0 0;
+  padding-left: 1.25em;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.about a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.header h1 {
+  margin: 4px 0 12px;
+  font-family: var(--ff-display);
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 500;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 14px;
+}
+
+.roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 24px;
+}
+
+.about .shots {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 24px;
+}
+
+.shots figure {
+  margin: 0;
+}
+
+.shots img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+}
+
+.shots figcaption {
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.about .button {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+}
