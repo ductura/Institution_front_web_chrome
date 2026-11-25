@@ -36,12 +36,13 @@ export function RecoveryOffer({ base }: { base: Base }) {
     };
   }, []);
 
-  if (offer === null) return null;
+  const shown = offer !== null && !hidden && offer.copies.length > 0;
+  // NF2-P21: the status region exists before the offer does, so its text is announced when it comes.
   return (
     <>
-      <SessionObserver tag={offer.session.tag} at={offer.session.at} />
-      {!hidden && offer.copies.length > 0 && (
-        <section className="editor-notice" aria-label={t.offer}>
+      {offer !== null && <SessionObserver tag={offer.session.tag} at={offer.session.at} />}
+      <div role="status" className={shown ? "editor-notice" : undefined} data-recovery-offer="">
+        {shown && <>
           <p>{t.offer}</p>
           <ul>
             {offer.copies.map(({ key, copy: { assignmentId, at, text } }) => (
@@ -55,8 +56,8 @@ export function RecoveryOffer({ base }: { base: Base }) {
             ))}
           </ul>
           <Button tone="quiet" onClick={() => setHidden(true)}>{t.hide}</Button>
-        </section>
-      )}
+        </>}
+      </div>
     </>
   );
 }

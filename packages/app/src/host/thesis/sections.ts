@@ -4,7 +4,12 @@
 // Each `section.tsx` exports `section` (see ThesisSectionDef in model.ts).
 import { section as forms } from "./forms/section";
 import { orderSections, type ThesisSectionDef } from "./model";
+import { section as stage } from "./stage/section";
 
-const modules: readonly ThesisSectionDef<never>[] = [forms as unknown as ThesisSectionDef<never>];
+const modules: readonly ThesisSectionDef<never>[] = [
+  // The registry holds sections of any value type; `never` is the frame's erased form (model.ts).
+  forms as unknown as ThesisSectionDef<never>,
+  stage as unknown as ThesisSectionDef<never>,
+];
 
 export const registeredSections: readonly ThesisSectionDef<never>[] = orderSections(modules);
