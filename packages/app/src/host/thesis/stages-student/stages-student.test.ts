@@ -64,9 +64,23 @@ describe("showDate", () => {
     expect(showDate("nije datum")).toBeNull();
     expect(showDate("2027-02-01T00:00:00Z")).toContain("2027");
   });
+  it("shows Zagreb time with the time of day, not the UTC date", () => {
+    const shown = showDate("2027-02-28T23:00:00Z")!;
+    expect(shown).toMatch(/^1\. .+ 2027\./);
+    expect(shown).toMatch(/00:00/);
+  });
 });
 
 describe("StagesView", () => {
+  it("keeps the notice when the panel unmounts the view and mounts it again", async () => {
+    submitMilestone.mockResolvedValueOnce({ kind: "promijenjeno" });
+    const host = await mountView([m(ID1, "not_submitted")]);
+    await act(async () => { button(host).click(); });
+    act(() => root?.unmount()); root = null; document.body.innerHTML = "";
+    const again = await mountView([m(ID1, "not_submitted")]);
+    expect(again.querySelector('[role="alert"]')?.textContent).toBe(t.changed);
+  });
+
   it("shows each state; a returned stage shows the comment and new deadline; only open stages can be sent", async () => {
     const host = await mountView([
       m(ID1, "revision_requested", { revisionComment: "Dopunite uvod.", revisionDueAt: "2027-03-01T00:00:00Z" }),

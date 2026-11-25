@@ -19,9 +19,9 @@ export function stagesRead(
   return list.length === 0 ? { kind: "empty" } : { kind: "ready", value: list };
 }
 
-/** A date for the screen, or null when the value is missing or not a date. */
+/** A deadline for the screen in Zagreb time, with the time of day; null when missing or not a date. */
 export function showDate(iso: string | null): string | null {
   if (iso === null) return null;
   const time = Date.parse(iso);
-  return Number.isNaN(time) ? null : new Date(time).toLocaleDateString("hr-HR", { timeZone: "UTC" });
+  return Number.isNaN(time) ? null : new Date(time).toLocaleString("hr-HR", { timeZone: "Europe/Zagreb", dateStyle: "medium", timeStyle: "short" });
 }

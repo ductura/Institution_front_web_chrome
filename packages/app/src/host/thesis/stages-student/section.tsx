@@ -36,9 +36,16 @@ function Stage({ item, busy, onSubmit }: { item: StudentMilestone; busy: boolean
   );
 }
 
+// The notice outlives the reload: the panel unmounts this view while it reads again, so it is kept per work here.
+const notices = new Map<string, Notice>();
+
 function StagesView({ documentId, value, reload }: SectionViewProps<StageList>) {
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const [notice, setNoticeState] = useState<Notice | null>(() => notices.get(documentId) ?? null);
+  const setNotice = (next: Notice | null) => {
+    if (next === null) notices.delete(documentId); else notices.set(documentId, next);
+    setNoticeState(next);
+  };
   // A ref, not the state: two clicks in the same tick must send one request.
   const sending = useRef(false);
 
