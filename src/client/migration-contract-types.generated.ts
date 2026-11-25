@@ -27,6 +27,7 @@
 // Faza 3: auth.backchannel-logout.post, auth.callback.get, auth.login.get, auth.logout-all.post, auth.logout.post, auth.webauthn-assertion.post, auth.webauthn-challenge.post, auth.webauthn-registration.post, client.context.post, collaboration.comments.post, collaboration.revision-requests.post, course.aggregate.get, downloads.manifest.get, evidence.commit.post, evidence.open.post, evidence.replay.post, institution.academic-years.get, institution.acknowledgment.post, institution.admin-actions.get, institution.admin-courses.get, institution.admin-courses.post, institution.assignment-versions.post, institution.assignment.get, institution.assistant-setting.get, institution.config-versions.post, institution.config.get, institution.course-assignments.post, institution.course-group-teachers.post, institution.course-groups.get, institution.course-groups.post, institution.courses.post, institution.enrollment-code-revocation.post, institution.enrollment-code-state.get, institution.enrollment-code.post, institution.enrollments.post, institution.faculty-rules.get, institution.faculty-rules.post, institution.legal-hold-release.post, institution.legal-holds.get, institution.legal-holds.post, institution.milestone-template.get, institution.milestone-template.put, institution.origin-threshold.delete, institution.origin-threshold.put, institution.origin-thresholds.get, institution.retention.get, institution.role-confirmation.post, institution.role-revocation.post, institution.roster-import-confirm.post, institution.roster-imports.post, institution.student-data-exports-approve.post, institution.student-data-exports.get, institution.student-data-exports.post, institution.student-removal.post, institution.student-return.post, institution.student-work-language.post, institution.teacher-roles.get, institution.teaching-group-members.put, institution.teaching-team-view.get, institution.teaching-team.get, institution.teaching-team.post, institution.thesis-forms.get, institution.thesis-forms.post, institution.thesis-settings.get, institution.thesis-settings.put, institution.work-language.post, institution.work-work-language.get, institution.work-work-language.post, live.document.get, live.document.put, mentorship.key-dates.get, mentorship.notes.get, mentorship.notes.post, mentorship.open.post, mentorship.overview.get, mentorship.request-approve.post, mentorship.request-decline.post, mentorship.request-withdraw.post, mentorship.requests.post, mentorship.student-mentor-candidates.get, mentorship.student-mentorships.get, mentorship.student-requests.get, notifications.list.get, notifications.mentorship-opened.list.get, notifications.read.post, notifications.returned-for-revision.list.get, ops.events.get, ops.pilot-metrics.get, platform.health.get, platform.ready.get, platform.status.get, profile.interface-locale.get, profile.interface-locale.post, profile.me.get, profile.self-note-key-checked.delete, profile.self-note-key.delete, profile.self-note-key.get, profile.self-note-key.put, profile.staff-affiliation.get, projection.process-summary-details.post, projection.process-summary.post, public.verification.post, settings.catalogue.get, settings.values.get, settings.values.put, sources.lookup.post, student-work.start.post, student-work.works.get, student.access-log.get, student.assignment-requirements.get, student.assignment-submissions.get, student.assignment-work.get, student.assignments.get, student.assistant-conversation.get, student.assistant-conversations.get, student.assistant-request.post, student.course-literature.get, student.data-export.get, student.deadline-history.get, student.declaration-attachments.post, student.declaration.get, student.declaration.put, student.enrollments.post, student.notice-read.post, student.notice.get, student.portable-record.get, student.receipt-pdf.get, student.source-proof-image.get, student.source-proof-requests.get, student.source-proofs.get, student.source-proofs.post, student.submission-history.get, student.submission-notes.get, student.submission-notes.post, student.submission-package-link.post, student.submission-package.get, student.submission-withdrawal.get, student.submission-withdrawal.post, student.submission.get, student.text-check-config.get, student.work-sources.delete, student.work-sources.put, student.work-sources.get, submission.submit-second.post, submission.submit.post, support.problem-report-status.post, support.problem-report.post, support.problem-reports.get, support.problem-reports.post, teacher.access.get, teacher.assignment-copy.post, teacher.assignment-grade.get, teacher.assignment-overview.get, teacher.assignment-submissions.post, teacher.comment-bank.delete, teacher.comment-bank.get, teacher.comment-bank.post, teacher.course-input-rhythm.get, teacher.course-input-rhythm.put, teacher.course-literature.delete, teacher.course-literature.put, teacher.course-literature.get, teacher.course-students.get, teacher.courses.get, teacher.deadline-extension.post, teacher.deadline-extensions.get, teacher.declaration-question.get, teacher.declaration-question.put, teacher.declaration-required.get, teacher.declaration-required.put, teacher.declaration.get, teacher.fast-path.post, teacher.input-rhythm.delete, teacher.input-rhythm.get, teacher.input-rhythm.put, teacher.literature-seen.put, teacher.mentorship-request-decision.post, teacher.mentorship-requests.get, teacher.mentorship.get, teacher.mentorships.get, teacher.merlin-package-download.get, teacher.merlin-package.get, teacher.merlin-packages.post, teacher.merlin-roster-csv.get, teacher.merlin-roster.get, teacher.receipt-pdf.get, teacher.source-guidance.get, teacher.source-proof-image.get, teacher.source-proof-request.delete, teacher.source-proof-request.put, teacher.source-proofs.get, teacher.source-recommendation.delete, teacher.source-recommendation.put, teacher.submission-detail.get, teacher.submission-history.get, teacher.submission-receipt.get, teacher.submission-withdrawal.get, teacher.submission-withdrawal.post, teacher.submissions-bulk-link.post, teacher.submissions-bulk.get, teacher.submissions.get, teacher.work.get, teacher.working-criteria.get, teacher.working-criterion.put, work.access.get, work.assistant-match-explanation.post, work.assistant-match.get, work.assistant-match.post, work.attachments.get, work.attachments.post, work.changes-since-review.get, work.comment-draft.delete, work.comment-drafts.get, work.comment-drafts.post, work.comments.publish-selected.post, work.comments.publish.post, work.compare.get, work.consultation-additions.post, work.consultation-records.get, work.consultation-records.post, work.consultation-slot-close.post, work.consultation-slot-details.get, work.consultation-slot-requests.post, work.consultation-slots.get, work.consultation-slots.post, work.consultation-slots.patch, work.consultation-task-mark.post, work.consultation-tasks.get, work.consultation-tasks.post, work.direct-edit.get, work.direct-edit.put, work.event-disputes.get, work.event-disputes.post, work.export-pdf.get, work.export.get, work.imports.confirm.post, work.imports.post, work.input-rhythm-setting.get, work.input-rhythm.delete, work.input-rhythm.get, work.input-rhythm.post, work.interview-appointment.put, work.interview-explanations.post, work.interview-held.post, work.interview-invite.post, work.interview-notes.post, work.interview-pdf.get, work.interview-questions.delete, work.interview-questions.post, work.interview.get, work.mentor-consent.get, work.mentor-consent.put, work.messages.get, work.messages.post, work.milestone-plan.add.post, work.milestone-plan.apply-template.post, work.milestone-plan.get, work.milestone-states.get, work.milestones.approve.post, work.milestones.delete, work.milestones.patch, work.milestones.details.patch, work.milestones.get, work.milestones.request-revision.post, work.milestones.submit.post, work.origin-composition.get, work.origin-segments.get, work.origin-segments.post, work.origin-thresholds.get, work.reading-place.delete, work.reading-place.put, work.restore.post, work.return-for-revision.post, work.review.post, work.sealed-self-note.delete, work.sealed-self-note.get, work.sealed-self-note.put, work.seen-by-student.get, work.seen.post, work.self-note.delete, work.self-note.get, work.self-note.put, work.source-notes.delete, work.source-notes.get, work.source-notes.patch, work.source-notes.post, work.thesis-form.put, work.thesis-forms.get, work.thesis-stage.get, work.thesis-stage.put, work.version.get, work.versions.get from Institution_server 043da5be (API 1.116.0).
 // Faza 3: practice.entries.get, practice.entries.post, practice.placements.get, practice.placements.post, practice.signoffs.get, practice.signoffs.post from Institution_server 879e1ba8 (API 1.121.0).
 // Faza 3: institution.assignment-team-setting.put, institution.assignment-team-setting.get, student.work-team.get, student.work-team.post, teacher.work-teams.get, teacher.work-teams.post, teacher.work-team-member.post, student.work-team-contribution.get, teacher.work-team-contribution.get from Institution_server 59e17d83 (API 1.133.0).
+// Faza 3: student.assignment-format-rules.get, student.assignment-rubric.get, student.assignment-template.get, teacher.assignment-rubric.get, teacher.assignment-rubric.put, teacher.assignment-template.put, teacher.work-rubric-mark.put, teacher.work-rubric.get, institution.work-template.get, institution.work-template.put from Institution_server 59e17d83 (API 1.133.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -2176,5 +2177,75 @@ export type MigrationOperations = {
     body: undefined;
     success: { status: 200; body: { "state": "disabled" } | { "state": "none" } | { "state": "pending" } | { "state": "failed" } | { "state": "ready"; "members": ({ "givenName": string; "familyName": string; "categories": ({ "category": "written" | "ai_transferred" | "pasted" | "imported" | "unattributed"; "codePoints": number })[]; "totalCodePoints": number })[]; "notice": "not_authorship_evidence" }; headers: { "cache-control"?: string } };
     errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "student.assignment-format-rules.get": {
+    params: { "assignmentId": string };
+    query: { [key: string]: unknown };
+    body: undefined;
+    success: { status: 200; body: { "wordMin": number | null; "wordMax": number | null; "minSources": number; "requiredSections": (string)[]; "citationStyle": "fpzg"; "font": string | null; "size": number | null; "spacing": number | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
+  };
+  "student.assignment-rubric.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "version": number; "criteria": ({ "id": string; "title": string; "levels": ({ "label": string; "descriptor": string })[] })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "student.assignment-template.get": {
+    params: { "assignmentId": string };
+    query: { [key: string]: unknown };
+    body: undefined;
+    success: { status: 200; body: { "version": number; "titlePage": ("title" | "author" | "mentor" | "course" | "date")[]; "sections": ({ "title": string; "hint": string })[]; "citationStyle": "fpzg" }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
+  };
+  "teacher.assignment-rubric.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "version": number; "criteria": ({ "id": string; "title": string; "levels": ({ "label": string; "descriptor": string })[] })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.assignment-rubric.put": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: { "expectedVersion": number; "criteria": ({ "id": string; "title": string; "levels": ({ "label": string; "descriptor": string })[] })[] };
+    success: { status: 200; body: { "version": number; "criteria": ({ "id": string; "title": string; "levels": ({ "label": string; "descriptor": string })[] })[] }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "conflict" | "unavailable";
+  };
+  "teacher.assignment-template.put": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: { "useInstitutionTemplate": boolean };
+    success: { status: 200; body: { "useInstitutionTemplate": boolean; "version": number | null }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "not_found" | "conflict" | "invalid_input" | "unavailable";
+  };
+  "teacher.work-rubric-mark.put": {
+    params: { "documentId": string; "criterionId": string };
+    query: undefined;
+    body: { "level": 0 | 1 | 2 | null; "note": string | null };
+    success: { status: 200; body: { "criterionId": string; "level": 0 | 1 | 2 | null; "note": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "unavailable";
+  };
+  "teacher.work-rubric.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "rubricVersion": number; "marks": ({ "criterionId": string; "level": 0 | 1 | 2 | null; "note": string | null })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "institution.work-template.get": {
+    params: { "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis" };
+    query: { [key: string]: unknown };
+    body: undefined;
+    success: { status: 200; body: { "current": { "version": number; "effectiveFrom": string; "titlePage": ("title" | "author" | "mentor" | "course" | "date")[]; "sections": ({ "title": string; "hint": string })[]; "citationStyle": "fpzg" } | null; "versions": ({ "version": number; "effectiveFrom": string; "titlePage": ("title" | "author" | "mentor" | "course" | "date")[]; "sections": ({ "title": string; "hint": string })[]; "citationStyle": "fpzg" })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "institution.work-template.put": {
+    params: { "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis" };
+    query: undefined;
+    body: { "expectedVersion": number; "titlePage": ("title" | "author" | "mentor" | "course" | "date")[]; "sections": ({ "title": string; "hint": string })[]; "citationStyle": "fpzg" };
+    success: { status: 200; body: { "version": number; "effectiveFrom": string; "titlePage": ("title" | "author" | "mentor" | "course" | "date")[]; "sections": ({ "title": string; "hint": string })[]; "citationStyle": "fpzg" }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "forbidden" | "invalid_input" | "conflict" | "unavailable";
   };
 };
