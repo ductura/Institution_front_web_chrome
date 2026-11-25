@@ -28,6 +28,7 @@
 // Faza 3: practice.entries.get, practice.entries.post, practice.placements.get, practice.placements.post, practice.signoffs.get, practice.signoffs.post from Institution_server 879e1ba8 (API 1.121.0).
 // Faza 3: institution.assignment-team-setting.put, institution.assignment-team-setting.get, student.work-team.get, student.work-team.post, teacher.work-teams.get, teacher.work-teams.post, teacher.work-team-member.post, student.work-team-contribution.get, teacher.work-team-contribution.get from Institution_server 59e17d83 (API 1.133.0).
 // Faza 3: student.assignment-format-rules.get, student.assignment-rubric.get, student.assignment-template.get, teacher.assignment-rubric.get, teacher.assignment-rubric.put, teacher.assignment-template.put, teacher.work-rubric-mark.put, teacher.work-rubric.get, institution.work-template.get, institution.work-template.put from Institution_server 59e17d83 (API 1.133.0).
+// Faza 3: student.mentored-assignments.get from Institution_server 1e42edb9 (API 1.135.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -2247,5 +2248,12 @@ export type MigrationOperations = {
     body: { "expectedVersion": number; "titlePage": ("title" | "author" | "mentor" | "course" | "date")[]; "sections": ({ "title": string; "hint": string })[]; "citationStyle": "fpzg" };
     success: { status: 200; body: { "version": number; "effectiveFrom": string; "titlePage": ("title" | "author" | "mentor" | "course" | "date")[]; "sections": ({ "title": string; "hint": string })[]; "citationStyle": "fpzg" }; headers: { "cache-control"?: string } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "forbidden" | "invalid_input" | "conflict" | "unavailable";
+  };
+  "student.mentored-assignments.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "assignments": ({ "id": string; "mentorshipId": string; "title": string; "dueAt": string; "noticeFirst": boolean; "workType": "short_paper" | "essay" | "seminar_paper" | "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "mentor": { "id": string; "givenName": string; "familyName": string } | null; "extendedDueAt": string | null })[] }; headers: {  } };
+    errorCode: "unauthorized" | "unavailable";
   };
 };
