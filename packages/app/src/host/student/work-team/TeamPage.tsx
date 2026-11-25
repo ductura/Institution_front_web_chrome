@@ -64,7 +64,7 @@ export default function TeamPage({ assignmentId, call = defaultCall }: { assignm
   async function act(body: TeamAction) {
     if (busy !== null) return;
     setNote(null);
-    setBusy(body.action === "join" ? `join-${body.teamId}` : body.action);
+    setBusy("teamId" in body ? `join-${body.teamId}` : body.action);
     const outcome = await teamAction(call(), assignmentId, body);
     setBusy(null);
     setConfirming(false);

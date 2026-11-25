@@ -33,7 +33,7 @@ export const workTeamText = {
   confirmLeave: {
     title: "Napustiti tim?",
     body: "Nećete više biti član ovog tima. Ponovno Vas može dodati samo nastavnik.",
-    yes: "Napusti tim",
+    yes: "Da, napusti tim",
     no: "Ostani u timu",
   },
   outcome: {
