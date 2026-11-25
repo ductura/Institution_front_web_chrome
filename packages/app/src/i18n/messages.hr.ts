@@ -69,6 +69,7 @@ export const pageLabelsHr = {
   problemReports: "Prijave problema",
   facultySettings: "Postavke fakulteta",
   facultyAssistant: "Asistent na fakultetu",
+  milestoneTemplate: "Predložak etapa",
   myRights: "Moja prava",
 };
 

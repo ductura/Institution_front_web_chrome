@@ -25,6 +25,7 @@ import { originText } from "./host/teacher/provenance/origin-messages.hr";
 import { interviewMessages as studentInterviewText } from "./host/student/interview/messages.hr";
 import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
 import { facultySettingsMessages } from "./host/admin/faculty-settings/messages.hr";
+import { milestoneTemplateMessages } from "./host/admin/milestone-template/messages.hr";
 import { myRightsMessages } from "./host/public/my-rights/messages.hr";
 import { pilotMetricsMessages } from "./host/operator/pilot-metrics/messages.hr";
 import { actionLogMessages } from "./host/operator/action-log/messages.hr";
@@ -167,6 +168,8 @@ export const PAGES: readonly Page[] = [
   // NF-7 OA-2 / OA-9: the faculty's settings in one place, and the assistant's settings (read only).
   { path: "/ustanova/postavke", label: facultySettingsMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
   { path: "/ustanova/postavke/asistent", label: facultySettingsMessages.assistant.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  // WEB-V16-ETAPE-ADMIN: the institution's milestone template.
+  { path: "/ustanova/etape", label: milestoneTemplateMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
   // NF-7 OA-5: "Moja prava", static help for everyone signed in.
   { path: "/moja-prava", label: myRightsMessages.title, kind: "pending", roles: [], current: "/moja-prava" },
   // WEB-NUZ-OPERATER (NF-7 OA-1, OA-12): the operator's view of the institution, the pilot's aggregates only.
