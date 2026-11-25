@@ -51,6 +51,7 @@ import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
 import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
 import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
+import { WorkHistoryHost } from "../editor/work-history/WorkHistoryHost";
 import { readWordRange } from "./work/requirements";
 import { workText } from "./work/messages.hr";
 import { ErrorCard, FrameStatus, LoadingCard, OfflineBanner, SubmittedBanner, courseLine, momentHr } from "./work/frame";
@@ -143,6 +144,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />
               <DirectEditSettingHost documentId={documentId} here={here} />
               <AssistantMatchNoticeHost documentId={documentId} />
+              {/* ED-16 (NF2-P14): the one "Povijest i usporedba" dialog, asked by the header, Prikaz, Ctrl+K and the left panel. */}
+              <WorkHistoryHost documentId={documentId} replayHref={appHref(base, `/rad/${assignmentId}/reprodukcija`)} />
               <ImportHost assignmentId={assignmentId} transport={unavailableTransport} />
               <RulesHost role="student" />
               <MarksHost />

@@ -4,6 +4,7 @@ import { numberedHeadings } from "@/editor";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { requestFocusMode } from "../layout-prefs/focus-mode";
+import { requestWorkHistory } from "./work-history-event";
 import { BLOCK_STYLES, stateOf, TOOLS } from "../EditorToolbarFor";
 import { convertBlock, copyText, insertHole } from "../toolbar-menu";
 import { editorCommandsHr as text } from "./messages.hr";
@@ -21,6 +22,8 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
   return [
     action("shortcuts", text.shortcuts, showShortcuts, "Ctrl+/"),
     action("find", text.findAndReplace, openFind, "Ctrl+F"),
+    // ED-16 (NF2-P14): the one history dialog; the host that knows the document answers.
+    action("history", text.history, () => { requestWorkHistory(); }),
     ...TOOLS.filter(({ key }) => key !== "blockStyle").map((tool) => action(
       tool.key, tool.label, edit(() => tool.run(editor)), tool.keys,
       !state.editable || !(tool.enabled?.(state) ?? true),
