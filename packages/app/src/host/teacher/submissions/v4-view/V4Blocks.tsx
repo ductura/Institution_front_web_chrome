@@ -45,7 +45,8 @@ export function Formula({ tex, display }: { tex: string; display: boolean }) {
   const out = renderTex(tex, display);
   if (out.html === "") return <code>{tex}</code>;
   const body = <span dangerouslySetInnerHTML={{ __html: out.html }} />;
-  if (out.ok) return display ? <div role="math" aria-label={text.formulaLabel}>{body}</div> : body;
+  if (out.ok) // No role/aria-label on the wrapper: it would hide the MathML that KaTeX writes for screen readers.
+  return display ? <div>{body}</div> : body;
   return (
     <span data-invalid="true">
       <code>{tex}</code> <small role="note">{text.formulaInvalid}</small>

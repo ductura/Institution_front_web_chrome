@@ -43,6 +43,12 @@ describe("teacher's read-only view of a v4 document", () => {
     expect(plain).toMatch(/2\. ?Stavka 3/);
   });
 
+  it("leaves the MathML readable: no role or label on the formula wrapper", () => {
+    const out = html(json(FIXTURE_V4));
+    expect(out).toContain("<math");
+    expect(out).not.toContain('role="math"');
+  });
+
   it("does not run code, fetch the image or follow a link", () => {
     const out = html(json(FIXTURE_V4));
     expect(out).not.toMatch(/<img\b|<a\b|href=|<script/);
