@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { createApi } from "../../../../../../src/client/api.ts";
-import { WORK_HISTORY_EVENT } from "../../../../../../src/components/editor/commands/work-history-event.ts";
+import { offerWorkHistory, WORK_HISTORY_EVENT } from "../../../../../../src/components/editor/commands/work-history-event.ts";
 import type { ComparisonApi } from "../../../../../../src/components/editor/diff/comparison-read.ts";
 import { clientTimeMachinePort } from "../../student/time-machine/client-port";
 import type { TimeMachinePort } from "../../student/time-machine/model";
@@ -23,15 +23,19 @@ export function WorkHistoryHost({ documentId, replayHref, port, client }: WorkHi
   const [open, setOpen] = useState(false);
   const realPort = useMemo(() => port ?? clientTimeMachinePort(), [port]);
   const realClient = useMemo(() => client ?? (createApi() as unknown as ComparisonApi), [client]);
+  // Only once the document is known: before that a request is not taken, so it is not kept for later.
+  const known = documentId !== "";
   useEffect(() => {
+    if (!known) return undefined;
     const asked = (event: Event) => {
       event.preventDefault();
       setOpen(true);
     };
     document.addEventListener(WORK_HISTORY_EVENT, asked);
-    return () => document.removeEventListener(WORK_HISTORY_EVENT, asked);
-  }, []);
-  if (documentId === "") return null;
+    const withdraw = offerWorkHistory();
+    return () => { withdraw(); document.removeEventListener(WORK_HISTORY_EVENT, asked); };
+  }, [known]);
+  if (!known) return null;
   return <WorkHistoryDialog open={open} onClose={() => setOpen(false)} documentId={documentId}
     port={realPort} client={realClient} replayHref={replayHref} />;
 }

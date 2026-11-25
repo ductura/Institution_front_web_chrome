@@ -7,3 +7,13 @@ export const WORK_HISTORY_EVENT = "ductura:work-history";
 export function requestWorkHistory(target: EventTarget = document): boolean {
   return !target.dispatchEvent(new Event(WORK_HISTORY_EVENT, { cancelable: true }));
 }
+
+let hosts = 0;
+/** A host that can answer (its document is known) says so; the returned function takes it back. */
+export function offerWorkHistory(): () => void {
+  hosts += 1;
+  let taken = false;
+  return () => { if (!taken) { taken = true; hosts -= 1; } };
+}
+/** True while some host on the page can open the dialog; entries without one are not offered. */
+export const workHistoryOffered = () => hosts > 0;

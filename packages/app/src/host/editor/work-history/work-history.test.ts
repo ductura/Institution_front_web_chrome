@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 // ED-16 (NF2-P14): "Povijest i usporedba": names of the versions, the dialog's states and the one request.
 import { act, createElement, type ReactNode } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { requestWorkHistory, WORK_HISTORY_EVENT } from "../../../../../../src/components/editor/commands/work-history-event.ts";
+import { requestWorkHistory, WORK_HISTORY_EVENT, workHistoryOffered } from "../../../../../../src/components/editor/commands/work-history-event.ts";
 import type { ComparisonApi } from "../../../../../../src/components/editor/diff/comparison-read.ts";
 import { fakeTimeMachinePort } from "../../student/time-machine/fake-port";
 import type { TimeMachinePort, Version } from "../../student/time-machine/model";
@@ -18,12 +18,19 @@ HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogEle
 HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) { this.open = false; };
 
 let host: HTMLDivElement | null = null;
-afterEach(() => { host?.remove(); host = null; });
+const roots: Root[] = [];
+afterEach(() => {
+  act(() => { roots.splice(0).forEach((root) => root.unmount()); });
+  document.body.replaceChildren();
+  host = null;
+});
 
 async function mount(node: ReactNode) {
   host = document.createElement("div");
   document.body.append(host);
-  await act(async () => { createRoot(host!).render(node); });
+  const root = createRoot(host);
+  roots.push(root);
+  await act(async () => { root.render(node); });
   return host;
 }
 const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 0)); });
@@ -99,9 +106,14 @@ describe("WorkHistoryHost", () => {
     expect(el.textContent).toContain(t.empty);
   });
 
-  it("lists nothing while the page has no document", async () => {
+  it("does not take a request while the page has no document, and does not open later by itself", async () => {
     const el = await mount(createElement(WorkHistoryHost, { documentId: "", replayHref: "/r", port: fakeTimeMachinePort(), client: noComparison }));
-    await ask();
+    expect(workHistoryOffered()).toBe(false);
+    let taken = true;
+    await act(async () => { taken = requestWorkHistory(); });
+    expect(taken).toBe(false);
+    await mount(createElement(WorkHistoryHost, { documentId: "dok-1", replayHref: "/r", port: fakeTimeMachinePort(), client: noComparison }));
+    expect(workHistoryOffered()).toBe(true);
     expect(el.querySelector("dialog")).toBeNull();
   });
 });
