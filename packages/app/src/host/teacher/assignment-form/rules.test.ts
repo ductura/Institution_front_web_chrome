@@ -85,6 +85,20 @@ describe("submission rules switches (NZ-4)", () => {
     expect(await readRules(callOf(() => ({ ok: false, status: 401, code: "unauthorized" })), "a1")).toEqual({ kind: "signedOut" });
   });
 
+  it("reads the late rule through teacher.assignment-late-submission.get; a failed late read leaves only that rule unknown (F4-NAS-R01)", async () => {
+    const three = (late: () => unknown) => callOf((id) => id === "teacher.assignment-late-submission.get" ? late()
+      : ok(id.includes("withdrawal") ? { allowed: true, changedAt: null } : { required: false, changedAt: null }));
+    const known = three(() => ok({ lateSubmissionAllowed: false }));
+    expect(await readRules(known, "a1")).toEqual({ kind: "ready", rules: { withdrawal: true, declarationRequired: false, lateAllowed: false } });
+    expect(known).toHaveBeenCalledWith("teacher.assignment-late-submission.get", { params: { assignmentId: "a1" }, query: undefined, body: undefined });
+    for (const late of [() => ({ ok: false, status: 503, code: "unavailable" }), () => ({ ok: false, status: 404, code: "not_found" }), () => { throw new Error("x"); }, () => ok({})]) {
+      const result = await readRules(three(late), "a1");
+      expect(result).toEqual({ kind: "ready", rules: { withdrawal: true, declarationRequired: false } });
+      expect(result.kind === "ready" && "lateAllowed" in result.rules).toBe(false);
+    }
+    expect(await readRules(three(() => ({ ok: false, status: 401, code: "unauthorized" })), "a1")).toEqual({ kind: "signedOut" });
+  });
+
   it("tells the student's view in the prototype wording", () => {
     expect(seesLine({ withdrawal: false, declarationRequired: false })).toBe("Student na koraku predaje vidi: predaju ne može povući; izjavu ne mora ispuniti.");
     expect(seesLine({ withdrawal: false, declarationRequired: false, lateAllowed: false }))

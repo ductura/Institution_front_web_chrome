@@ -107,19 +107,25 @@ export async function applyRules(call: Call, assignmentId: string, choices: Rule
   return failed;
 }
 
-/** The two switches of an existing assignment (teacher.submission-withdrawal.get, teacher.declaration-required.get). */
-export type CurrentRules = { readonly withdrawal: boolean; readonly declarationRequired: boolean };
+/**
+ * The switches of an existing assignment: teacher.submission-withdrawal.get, teacher.declaration-required.get and
+ * (F4-NAS-R01) teacher.assignment-late-submission.get. Without `lateAllowed` the late rule could not be read, so the
+ * edit page shows it disabled with a note while the other two stay usable.
+ */
+export type CurrentRules = { readonly withdrawal: boolean; readonly declarationRequired: boolean; readonly lateAllowed?: boolean };
 
 export async function readRules(call: Call, assignmentId: string): Promise<{ kind: "ready"; rules: CurrentRules } | { kind: "signedOut" | "unavailable" }> {
   try {
     const params = { assignmentId };
-    const [w, d] = await Promise.all([
+    const [w, d, late] = await Promise.all([
       call("teacher.submission-withdrawal.get", { params, ...none }),
       call("teacher.declaration-required.get", { params, ...none }),
+      call("teacher.assignment-late-submission.get", { params, ...none }).catch(() => null),
     ]);
-    if ((!w.ok && w.status === 401) || (!d.ok && d.status === 401)) return { kind: "signedOut" };
+    if ((!w.ok && w.status === 401) || (!d.ok && d.status === 401) || (late !== null && !late.ok && late.status === 401)) return { kind: "signedOut" };
     if (!w.ok || !d.ok) return { kind: "unavailable" };
-    return { kind: "ready", rules: { withdrawal: w.body.allowed, declarationRequired: d.body.required } };
+    const rules: CurrentRules = { withdrawal: w.body.allowed, declarationRequired: d.body.required };
+    return { kind: "ready", rules: late?.ok && typeof late.body.lateSubmissionAllowed === "boolean" ? { ...rules, lateAllowed: late.body.lateSubmissionAllowed } : rules };
   } catch {
     return { kind: "unavailable" };
   }
