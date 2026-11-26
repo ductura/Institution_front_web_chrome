@@ -87,6 +87,8 @@ export const OPERATOR_HOME = "/operater/mjerila-pilota";
 export { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 /** M1.8: where a refused page leads, with the refusal ("Nemate ovlasti za ovaj prikaz"). */
 export const NO_ACCESS = "/nema-ovlasti?kind=denied";
+/** WEB-OPERATER-POCETNA: the operator's pages have no index of their own; this path forwards to the first one the account may open. */
+export const OPERATOR_INDEX = "/operater";
 
 /** Whether a route is a page's path: the same segments, a bracketed one standing for any. */
 export function pathMatches(path: string, route: string): boolean {
@@ -236,6 +238,11 @@ export function resolve(route: string, role: ShellRole | null, accounts: readonl
   if (route === "/") {
     if (operator) return { kind: "redirect", to: OPERATOR_HOME };
     return role === null ? { kind: "noRole" } : { kind: "redirect", to: home };
+  }
+  if (route === OPERATOR_INDEX) {
+    if (accounts.includes("network_engineer")) return { kind: "redirect", to: OPERATOR_HOME };
+    if (accounts.includes("institution_admin")) return { kind: "redirect", to: PROBLEM_REPORTS };
+    return { kind: "notFound" };
   }
   const page = PAGES.find((p) => pathMatches(p.path, route));
   if (page === undefined) return { kind: "notFound" };
