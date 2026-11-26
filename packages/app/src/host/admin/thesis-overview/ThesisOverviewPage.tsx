@@ -125,7 +125,7 @@ export default function ThesisOverviewPage() {
             <CommitteeEditor
               key={open.documentId} documentId={open.documentId} value={open.read.members}
               onSaved={(members) => setRows((shown) => shown.map((r) => (r.documentId === open.documentId ? { ...r, committeeSize: members.length } : r)))}
-              onNotFound={() => setOpen(null)}
+              onNotFound={() => { const closing = open.documentId; setOpen((now) => (now !== null && now.documentId === closing ? null : now)); }}
             />
           )}
           <Button tone="secondary" onClick={() => setOpen(null)}>{t.closeCommittee}</Button>

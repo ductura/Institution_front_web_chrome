@@ -139,4 +139,26 @@ describe("Završni i diplomski radovi", () => {
     expect(button("Povjerenstvo")).toBeUndefined();
     expect(text()).toContain("Nije dostupno");
   });
+
+  it("zakašnjeli 404 rada A ne zatvara uređivač rada B", async () => {
+    let release: (r: Response) => void = () => undefined;
+    const late = new Promise<Response>((done) => { release = done; });
+    stub((c) => {
+      const p = c.url.pathname;
+      if (p.endsWith("/institution/thesis-overview")) return Response.json({ works: [work("a"), work("b")], next: null });
+      if (p.endsWith("/works/a/thesis-committee")) return c.method === "PUT" ? (late as unknown as Response) : Response.json({ members: [{ userId: "5b1f2c3d-0000-4000-8000-000000000001", name: { givenName: "Eva", familyName: "Izmišljena" }, role: "member" }], changedAt: null, changedByPart: null });
+      if (p.endsWith("/works/b/thesis-committee")) return Response.json({ members: [], changedAt: null, changedByPart: null });
+      return Response.json({ confirmed: [{ personId: "5b1f2c3d-0000-4000-8000-000000000001", name: { givenName: "Eva", familyName: "Izmišljena" } }] });
+    });
+    await mount();
+    const open = async (n: number) => { await act(async () => { [...host!.querySelectorAll("button")].filter((b) => b.textContent === "Povjerenstvo")[n]!.click(); }); await settle(); };
+    await open(0);
+    await click("Ukloni");
+    await act(async () => { (host!.querySelector('button[type="submit"]') as HTMLButtonElement).click(); });
+    await open(1);
+        await act(async () => { release(Response.json({ error: "not_found" }, { status: 404 })); });
+    await settle();
+    expect(host!.querySelector("form")).not.toBeNull();
+    expect(text()).toContain("Studentb");
+  });
 });
