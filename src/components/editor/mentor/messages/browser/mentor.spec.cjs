@@ -16,21 +16,24 @@ function serveFixture(page) {
 test("the teacher changes a deadline and both accounts read the same saved time", async ({ browser }) => {
   const teacher = await browser.newPage({ timezoneId: "America/Los_Angeles" });
   const student = await browser.newPage({ timezoneId: "Asia/Tokyo" });
+  // Shape of work.milestone-states.get (the "Etape" card, WEB-1520), not the retired /milestones read.
   let milestone = {
-    id: milestoneId, title: "Izmišljeni nacrt", description: "Raspored poglavlja.", state: "open", dueAt: "2026-11-27T16:00:00.000Z",
+    id: milestoneId, title: "Izmišljeni nacrt", description: "Raspored poglavlja.", state: "not_submitted",
+    dueAt: "2026-11-27T16:00:00.000Z", everSubmitted: false, submittedRevisionId: null, submittedAt: null,
+    revisionComment: null, revisionDueAt: null, revisionRequestedAt: null, approvedAt: null, approvalMessage: null,
   };
   let writes = 0;
 
   for (const page of [teacher, student]) {
     await serveFixture(page);
-    await page.route(`${api}/milestones`, (route) => {
+    await page.route(`${api}/milestone-states`, (route) => {
       expect(route.request().method()).toBe("GET");
       expect(route.request().postData()).toBeNull();
       return route.fulfill({ json: { milestones: [milestone] } });
     });
     await page.route(`${api}/messages`, (route) => route.fulfill({ json: { messages: [] } }));
   }
-  await teacher.route(`${api}/milestones/${milestoneId}`, (route) => {
+  await teacher.route(`${api}/milestones/${milestoneId}/details`, (route) => {
     expect(route.request().method()).toBe("PATCH");
     expect(route.request().postDataJSON()).toEqual({ dueAt: "2026-12-01T14:30:00.000Z" });
     writes++;
@@ -45,22 +48,23 @@ test("the teacher changes a deadline and both accounts read the same saved time"
   await teacher.goto(`${fixture}?role=teacher`);
   await teacher.getByText("Etape · 0 od 1 odobreno").click();
   await expect(teacher.locator("time")).toHaveText("27. studenoga 2026. 17:00");
-  await teacher.getByRole("button", { name: "Promijeni rok" }).click();
-  const editor = teacher.getByRole("dialog", { name: "Rok etape" });
-  await editor.getByLabel("Izmišljeni nacrt").fill("2026-12-01T15:30");
+  await teacher.getByRole("button", { name: "Uredi etape" }).click();
+  const editor = teacher.getByRole("dialog", { name: "Uredi etape" });
+  await editor.getByRole("textbox", { name: "Rok" }).fill("2026-12-01T15:30");
   await editor.getByRole("button", { name: "Spremi" }).click();
+  await editor.getByRole("button", { name: "Zatvori" }).click();
   await expect(teacher.locator("time")).toHaveText("1. prosinca 2026. 15:30");
   expect(writes).toBe(1);
 
   await student.reload();
   await student.getByText("Etape · 0 od 1 odobreno").click();
   await expect(student.locator("time")).toHaveText("1. prosinca 2026. 15:30");
-  await expect(student.getByRole("button", { name: "Promijeni rok" })).toHaveCount(0);
+  await expect(student.getByRole("button", { name: "Uredi etape" })).toHaveCount(0);
 
   await teacher.goto(`${fixture}?role=teacher&submitted`);
   await teacher.getByText("Etape · 0 od 1 odobreno").click();
   await expect(teacher.locator("time")).toHaveText("1. prosinca 2026. 15:30");
-  await expect(teacher.getByRole("button", { name: "Promijeni rok" })).toHaveCount(0);
+  await expect(teacher.getByRole("button", { name: "Uredi etape" })).toHaveCount(0);
   await teacher.close();
   await student.close();
 });
@@ -70,7 +74,7 @@ test("blank and refused messages keep the draft, and a saved message survives re
   const messages = [];
   let attempts = 0;
   const text = "Ovo je izmišljena poruka uz rad.";
-  await page.route(`${api}/milestones`, (route) => route.fulfill({ json: { milestones: [] } }));
+  await page.route(`${api}/milestone-states`, (route) => route.fulfill({ json: { milestones: [] } }));
   await page.route(`${api}/messages`, (route) => {
     if (route.request().method() === "GET") {
       expect(route.request().postData()).toBeNull();
