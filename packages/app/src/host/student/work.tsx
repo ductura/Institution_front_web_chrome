@@ -122,7 +122,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       // Its top bar is the plain one: the shell view switches and the history buttons only work on the text editor.
       const kind = workKindOf(assignments, assignmentId);
       if (read.kind === "ready" && frame.variant === "puno" && kind !== "text") {
-        return setShown({ kind: "page", node: <SlidesWork course={read.course} title={read.title} topBar={<WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle} />} length={length} unreadable={kind === "unreadable"} onRetry={() => setAttempt((n) => n + 1)} /> });
+        return setShown({ kind: "page", node: <SlidesWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={<WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle} />} length={length} unreadable={kind === "unreadable"} onRetry={() => setAttempt((n) => n + 1)} /> });
       }
       if (read.kind === "ready" && frame.variant === "puno") {
         return setShown({

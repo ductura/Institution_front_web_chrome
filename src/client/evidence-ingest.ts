@@ -69,6 +69,8 @@ export type OpenedWork = {
   schemaVersion?: 1 | 2 | 3;
   /** The server's hash of the work's revision zero; a v3 work at a later revision is verified with it (PIL-K-SPREMANJE-V3). */
   revisionZeroHash?: string;
+  /** WEB-V13-DNEVNIK-SINKRONIZACIJA: "slides" when the server says the work is a slides work; absent for text (the contract's field is optional). */
+  documentKind?: "slides";
   /** ED-22 (NF2-P26): the minute of the work's last signed save on the server; absent when there is none yet or the server did not state it. */
   lastSignedAt?: string;
 };
@@ -272,6 +274,7 @@ export function openedWorkFrom(value: unknown): OpenedWork | null {
     document, evidenceDomainId: keys.domain, receiptKeys: keys.keys, submitted,
     ...(schemaVersion === 1 || schemaVersion === 2 || schemaVersion === 3 ? { schemaVersion } : {}),
     ...(typeof revisionZeroHash === "string" ? { revisionZeroHash } : {}),
+    ...(value.documentKind === "slides" ? { documentKind: "slides" as const } : {}),
     ...(typeof lastSignedAt === "string" ? { lastSignedAt } : {}),
   };
 }

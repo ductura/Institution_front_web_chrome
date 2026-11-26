@@ -26,6 +26,19 @@ vi.mock("../../../../../src/client/api.ts", async (importOriginal) => ({
   },
 }));
 vi.mock("../../../../../src/components/editor/EditorPageWork.tsx", () => ({ default: () => createElement("p", null, "TEKSTNI-UREDNIK") }));
+// WEB-V13-DNEVNIK-SINKRONIZACIJA: the slides page now opens a journal session (Web Locks, IndexedDB, the open
+// route), which jsdom has none of; the session is stood in for here (it has its own tests in slides/sync) so
+// that this test keeps checking what it always checked: which editor the kind of work mounts.
+const session: { phase: string } = { phase: "ready" };
+vi.mock("../slides/sync/use-slides-session.ts", async () => {
+  const { slidesRevisionZeroDocument } = await import("../../../../editor-core/src/slides/index.ts");
+  return {
+    useSlidesSession: () => session.phase === "ready"
+      ? { phase: "ready", document: slidesRevisionZeroDocument(), readOnly: false, onSteps: () => {},
+          snapshot: { state: "LOCAL_DURABLE", failure: null, receiptVerified: false, closedBy: null, stopped: false, refused: false } }
+      : { phase: session.phase },
+  };
+});
 vi.mock("./work/requirements", () => ({ readWordRange: async () => null }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -58,6 +71,28 @@ describe("WorkPage by kind of work", { timeout: 30000 }, () => {
     const el = await open();
     expect(el.querySelector("[aria-label='Uređivač slajdova']")).not.toBeNull();
     expect(el.textContent).not.toContain("TEKSTNI-UREDNIK");
+  });
+  it("a slides work whose session cannot open says so and shows no editor, not an empty one", async () => {
+    kinds.documentKind = "slides";
+    session.phase = "unavailable";
+    try {
+      const el = await open();
+      expect(el.textContent).toContain("Spremanje na ovom uređaju nije moguće");
+      expect(el.querySelector("[aria-label='Uređivač slajdova']")).toBeNull();
+    } finally {
+      session.phase = "ready";
+    }
+  });
+  it("a slides work opened in another tab says so and saves nothing", async () => {
+    kinds.documentKind = "slides";
+    session.phase = "blocked";
+    try {
+      const el = await open();
+      expect(el.textContent).toContain("Rad je otvoren u drugoj kartici");
+      expect(el.querySelector("[aria-label='Uređivač slajdova']")).toBeNull();
+    } finally {
+      session.phase = "ready";
+    }
   });
   it("a kind the client does not know shows the error with a retry, never an editor", async () => {
     kinds.documentKind = "video";
