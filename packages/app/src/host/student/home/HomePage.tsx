@@ -14,6 +14,7 @@ import { nextPath, type Base } from "../../../bases";
 import { useHost } from "../../context";
 import { startWorkAction } from "../start-work/action";
 import { CodeCard, CodeForm } from "./CodeForm";
+import { DeadlinesExport } from "./DeadlinesExport";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
@@ -190,6 +191,7 @@ export function HomePage() {
               </ul>
             </div>
           ))}
+          <DeadlinesExport rows={rows} />
         </section>
         <CodeCard />
       </>

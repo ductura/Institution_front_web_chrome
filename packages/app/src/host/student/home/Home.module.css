@@ -50,4 +50,5 @@
 
 /* P-4: the sections of the list by deadline. Layout only. */
 .group { display: grid; gap: 8px; }
+.ics { display: grid; gap: 6px; justify-items: start; margin-top: 8px; }
 .groupHeading { margin: 0; font: 600 13.5px/1.4 var(--ff-ui); color: var(--ink-2); }
