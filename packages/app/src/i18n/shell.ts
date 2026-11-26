@@ -1,4 +1,4 @@
-import { navFor, type ShellRole } from "../../../../src/components/index.ts";
+import { navFor, type ShellRole } from "../../../../src/components/shell/nav.ts";
 
 import type { Page } from "../routes";
 import type { Catalogues } from "./catalogue";

@@ -1,7 +1,7 @@
 // Routes of the institution front (#2028 c.6993786629 §1, §3.3): the base the
 // app is served under, the page of a path for the signed-in role, and which
 // links the app opens itself. Pure functions; src/host/Host.tsx does the effects.
-import { HOW_IT_WORKS_HREF, homeHref, navFor, type ShellRole } from "../../../src/components/index.ts";
+import { HOW_IT_WORKS_HREF, homeHref, navFor, type ShellRole } from "../../../src/components/shell/nav.ts";
 import { messagesHr as t } from "../../../locales/hr.ts";
 import { consultationMessages } from "../../../src/components/teacher/consultation-records/messages.hr.ts";
 import { n11Messages } from "./host/teacher/n11/messages.hr.ts";
