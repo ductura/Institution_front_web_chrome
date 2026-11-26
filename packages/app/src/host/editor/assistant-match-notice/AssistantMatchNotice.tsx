@@ -6,6 +6,9 @@ import { Button, Dialog } from "@ductura/ui";
 import { explainAssistantMatch, MAX_EXPLANATION_LENGTH, readAssistantMatch, type AssistantMatch, type MatchCall, type MatchRead } from "./contract";
 import { noticeText as t } from "./messages.hr";
 import styles from "./AssistantMatchNotice.module.css";
+import { reportAlert } from "../../../../../../src/components/editor/layout-prefs/context-alerts.ts";
+
+const ALERT_KEY = "assistant-match";
 
 type Status = "idle" | "empty" | "sending" | "failed" | "rejected" | "conflict" | "signedOut";
 
@@ -32,6 +35,13 @@ export default function AssistantMatchNotice({ call, documentId, explainable = t
     });
     return () => { active = false; };
   }, [call, documentId, version]);
+
+  // ED-38: every match is also a line in the "Uz tekst" alert row; it opens the assistant group. Hiding
+  // the banner does not take the line away: the row points to the place, the banner explains it.
+  useEffect(() => {
+    reportAlert(ALERT_KEY, matches.length > 0 ? { group: "assistant", text: t.row(matches.length) } : null);
+  }, [matches.length]);
+  useEffect(() => () => reportAlert(ALERT_KEY, null), []);
 
   if (read === null || read.kind !== "ready") return null;
   const open = matches.filter((m) => !dismissed.has(m.segmentId));

@@ -9,6 +9,7 @@ import { editorPanelLayoutsHr as t, messagesHr } from "@/lib/i18n/messages.hr";
 
 import { useLocalEditor } from "../LocalDocument";
 import styles from "../SidePanels.module.css";
+import { useContextAlerts } from "./context-alerts";
 import { OpenCommentsReport, openCommentsLabel } from "./panel-counts";
 import type { PanelLayout } from "./preferences";
 
@@ -40,12 +41,18 @@ function ChapterContext({ openGroup }: { openGroup: (group: PanelGroup) => void 
     });
     return { title: `${heading.number}. ${heading.title || messagesHr.outline.untitledHeading}`, lines };
   } });
+  const alerts = useContextAlerts();
 
   return <>
     <div className={styles.chapterContext}>
       <span>{chapter ? t.writingIn : t.wholeWork}</span>
       <strong>{chapter?.title ?? t.noChapter}</strong>
     </div>
+    {alerts.length > 0 && <div className={styles.contextAlerts} data-context-alerts="">
+      {alerts.map((alert) => <button key={alert.key} type="button" onClick={() => openGroup(alert.group)}>
+        <span>{alert.text}</span><i aria-hidden="true">›</i>
+      </button>)}
+    </div>}
     <h2>{t.commentsHere}</h2>
     <Button tone="quiet" onClick={() => openGroup("comments")}>{t.groups.comments}</Button>
     <h2>{t.sourcesHere}</h2>
