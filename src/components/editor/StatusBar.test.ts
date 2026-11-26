@@ -112,9 +112,16 @@ describe("statusSaveOf", () => {
 // WEB-23 (S: E-7): the scope line beside the save state, and the read-only bar.
 describe("scopeLine", () => {
   it("writes the count and the range as E-7 does", () => {
-    expect(scopeLine(340, { min: 1200, max: 1600 })).toBe("340 riječi · opseg 1.200 do 1.600 · još 860 do donje granice · vidite samo Vi");
-    expect(scopeLine(1, null)).toBe("1 riječ · vidite samo Vi");
-    expect(scopeLine(12500, null)).toBe("12.500 riječi · vidite samo Vi");
+    expect(scopeLine(340, { min: 1200, max: 1600 })).toBe("340 riječi · opseg 1.200 do 1.600 · ≈ 1 str. · još 860 do donje granice · vidite samo Vi");
+    expect(scopeLine(1, null)).toBe("1 riječ · ≈ 1 str. · vidite samo Vi");
+    expect(scopeLine(12500, null)).toBe("12.500 riječi · ≈ 42 str. · vidite samo Vi");
+  });
+
+  it("estimates the pages from the count, never before the first word (ED-48, P2-24)", () => {
+    expect(scopeLine(0, null)).toBe("0 riječi · vidite samo Vi");
+    expect(scopeLine(1, null)).toContain("≈ 1 str.");
+    expect(scopeLine(900, null)).toContain("≈ 3 str.");
+    expect(scopeLine(null, { min: 1200, max: 1600 })).not.toContain("str.");
   });
 
   it("names the standing against the range as a fact about the task, never about the student (ED-04, NF2-P6)", () => {
@@ -125,8 +132,8 @@ describe("scopeLine", () => {
     expect(scopeStanding(1601, range)).toBe("above");
     expect(scopeStanding(null, range)).toBeNull();
     expect(scopeStanding(500, null)).toBeNull();
-    expect(scopeLine(1400, range)).toBe("1.400 riječi · opseg 1.200 do 1.600 · unutar opsega · vidite samo Vi");
-    expect(scopeLine(1640, range)).toBe("1.640 riječi · opseg 1.200 do 1.600 · iznad gornje granice za 40 · vidite samo Vi");
+    expect(scopeLine(1400, range)).toBe("1.400 riječi · opseg 1.200 do 1.600 · ≈ 5 str. · unutar opsega · vidite samo Vi");
+    expect(scopeLine(1640, range)).toBe("1.640 riječi · opseg 1.200 do 1.600 · ≈ 5 str. · iznad gornje granice za 40 · vidite samo Vi");
     expect(scopeLine(0, { min: 2000, max: 2500 })).toBe("0 riječi · opseg 2.000 do 2.500 · još 2.000 do donje granice · vidite samo Vi");
   });
 

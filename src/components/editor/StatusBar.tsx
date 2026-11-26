@@ -3,6 +3,7 @@ import { SaveStatus } from "@ductura/ui/save-status";
 import type { ReactNode } from "react";
 
 import { pluralHr } from "../../lib/i18n/hr";
+import { pagesOf } from "../../lib/i18n/length-line";
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
 
 import { ScopeAnnounce } from "./ScopeAnnounce";
@@ -77,6 +78,9 @@ export function scopeLine(words: number | null, range: ScopeRange): string | nul
   if (range !== null) {
     parts.push(t.workspace.scopeRange.replace("{min}", groupDot(range.min)).replace("{max}", groupDot(range.max)));
   }
+  // ED-48 (P2-24): "≈ n str." after the count and the range, as in the prototype; none before the first word.
+  const pages = words === null ? 0 : pagesOf(words);
+  if (pages > 0) parts.push(t.workspace.pagesApprox.replace("{pages}", String(pages)));
   const standing = scopeStanding(words, range);
   if (standing !== null && words !== null && range !== null) parts.push(scopeFact(standing, words, range));
   if (parts.length === 0) return null;
