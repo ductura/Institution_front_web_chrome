@@ -1,6 +1,7 @@
 export * from "./model.ts";
 export * from "./validate.ts";
 export * from "./ops.ts";
+export * from "./steps.ts";
 export {
   FORMULA_ERROR_CODES,
   FORMULA_PARSE_CODES,
