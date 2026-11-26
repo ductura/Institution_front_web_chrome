@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@ductura/ui";
+import { Button, Dialog } from "@ductura/ui";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 
@@ -12,6 +12,7 @@ import { AI_PURPOSES, type AiPurpose } from "./assignment-create";
 import {
   checkVersion,
   draftOf,
+  significantChanges,
   type ChangedField,
   type CurrentVersion,
   type VersionBody,
@@ -80,6 +81,7 @@ function VersionEditor({ current, backHref, onReload }: AssignmentVersionFormPro
   const [draft, setDraft] = useState<VersionDraft>(() => draftOf(current));
   const [result, setResult] = useState<VersionPublish | null>(null);
   const [pending, setPending] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const inFlight = useRef(false);
   const alive = useRef(true);
   useEffect(() => {
@@ -105,9 +107,16 @@ function VersionEditor({ current, backHref, onReload }: AssignmentVersionFormPro
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (inFlight.current || locked || check.kind !== "ready") return;
+    // NAS-07: a change to the deadline, the allowed use or the word range is published only after the teacher confirms it.
+    if (significantChanges(check.changes).length > 0) { setConfirming(true); return; }
+    send(check.body);
+  }
+
+  function send(body: VersionBody) {
+    if (inFlight.current || locked) return;
+    setConfirming(false);
     inFlight.current = true;
     setPending(true);
-    const body = check.body;
     void publishAssignmentVersion(current.assignmentId, body).then((reply) => {
       inFlight.current = false;
       if (!alive.current) return;
@@ -192,6 +201,16 @@ function VersionEditor({ current, backHref, onReload }: AssignmentVersionFormPro
           {pending ? n.pending : n.publish.replace("{n}", String(next))}
         </button>
         {error ? <p className={styles.notice} role="alert">{error}</p> : null}
+        {check.kind === "ready" ? (
+          <Dialog open={confirming} title={n.confirm.title.replace("{n}", String(next))} onClose={() => setConfirming(false)}
+            actions={<>
+              <Button type="button" onClick={() => send(check.body)}>{n.confirm.publish.replace("{n}", String(next))}</Button>
+              <Button type="button" tone="secondary" onClick={() => setConfirming(false)}>{n.confirm.cancel}</Button>
+            </>}>
+            <p>{n.confirm.lead.replace("{n}", String(next))}</p>
+            <ul>{significantChanges(check.changes).map((field) => <li key={field}>{n.fields[field]}</li>)}</ul>
+          </Dialog>
+        ) : null}
         {conflict && (onReload
           ? <Button type="button" onClick={onReload}>{n.reload}</Button>
           : <p><a href={`/nastavnik/zadatak/${current.assignmentId}/uredi`}>{n.reload}</a></p>)}

@@ -880,6 +880,12 @@ const en = {
       reload: "Load the current version",
       missing: "The assignment is not available to this account.",
       unavailable: "The assignment cannot be loaded right now. Please try again.",
+      confirm: {
+        title: "Publish version {n}?",
+        lead: "This changes what the student reads in the notice, so they will have to confirm version {n} again before they continue writing. Text already written stays as it is. Changed:",
+        publish: "Publish version {n}",
+        cancel: "Back to the changes",
+      },
       fields: {
         title: "Title",
         instructions: "Instructions for students",
