@@ -54,3 +54,12 @@ describe("P-10 previše pokušaja (E-5a)", () => {
     expect(enrolErrorPlace({ kind: "enrolled", courseId: "c" })).toEqual({ field: null, form: null });
   });
 });
+
+describe("P-B1 toast s imenom kolegija (R-17)", () => {
+  it("names the course and keeps the plain sentence without a name", async () => {
+    const { enrolledToast } = await import("../toast/messages.hr");
+    expect(enrolledToast("Izmišljeni seminar iz ekologije grada")).toBe("Upisani ste u kolegij Izmišljeni seminar iz ekologije grada.");
+    expect(enrolledToast("  ")).toBe("Upisani ste u kolegij.");
+    expect(enrolledToast()).toBe("Upisani ste u kolegij.");
+  });
+});

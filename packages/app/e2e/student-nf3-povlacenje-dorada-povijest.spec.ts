@@ -159,3 +159,64 @@ test("PR-16: without a request for this work the steps show no revision block", 
   await expect(main(page).getByRole("list", { name: "Koraci predaje" })).toBeVisible();
   await expect(main(page).getByRole("heading", { name: "Rad je kod Vas: dorada" })).toHaveCount(0);
 });
+
+// PRE-R05 (PRE-37): the whole resubmission on the "puno" server's own state, no answer faked: submit, withdraw,
+// the work open for writing again, submit a second time; the second receipt and two rows in „Moje predaje”.
+const pressOn = async (page: Page, name: string) => {
+  const button = main(page).getByRole("button", { name, exact: true });
+  await expect(button).not.toHaveAttribute("aria-disabled", "true");
+  await button.focus();
+  await page.keyboard.press("Enter");
+};
+const submitFromLastStep = async (page: Page) => {
+  await page.goto(`/app/web/rad/${T1}/predaja/slanje`);
+  await pressOn(page, "Predaj rad");
+  await page.getByRole("dialog", { name: "Predati rad?" }).getByRole("button", { name: "Predaj rad" }).click();
+  await expect(page).toHaveURL(new RegExp(`/rad/${T1}/predaja/potvrda(\\?|$)`));
+};
+
+test("PRE-R05: withdrawal, the work writable again, a second submission: a new receipt and two rows in „Moje predaje”", async ({ page }, info) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  const server = generatedServer("puno");
+  const calls: string[] = [];
+  await page.clock.setFixedTime(new Date(FIKSNI_DATUM));
+  await page.route("**/api/v1/**", (route) => {
+    const req = route.request();
+    const path = new URL(req.url()).pathname;
+    if (req.method() === "POST") calls.push(path);
+    const result = server.answer("student", req.method(), path, req.postData());
+    return result === "hang" ? undefined : route.fulfill(result);
+  });
+  const list = main(page).getByTestId("my-submissions");
+
+  // First submission: one receipt, one row in force.
+  await submitFromLastStep(page);
+  await expect(main(page).getByText("Predano 5. 11. 2026. u 23:59", { exact: true })).toBeVisible();
+  await expect(list.locator("> li")).toHaveCount(1);
+  await expect(list.locator("> li").first()).toContainText("Trenutno važeća predaja.");
+
+  // Withdrawal: the page says what comes next and offers the work again.
+  await pressOn(page, "Povuci predaju");
+  await page.getByRole("dialog", { name: "Povući predaju?" }).getByRole("button", { name: "Povuci predaju" }).click();
+  await expect(main(page).getByRole("heading", { name: "Predaja je povučena" })).toBeVisible();
+  await expect(list.locator("> li")).toHaveCount(1);
+  await expect(list.locator("> li").first()).toContainText("Predaja 1 · ");
+  await expect(list.locator("> li").first()).toContainText(/Povučena \d{1,2}\. \d{1,2}\. \d{4}\. u \d{2}:\d{2}\./);
+
+  // The editor is open for writing again.
+  await main(page).getByRole("link", { name: "Otvori radni prostor" }).last().click();
+  await expect(page).toHaveURL(new RegExp(`/rad/${T1}(\\?|$)`));
+  await expect(page.locator('.ProseMirror[contenteditable="true"]')).toBeVisible();
+
+  // Second submission: a new receipt, the earlier one withdrawn, the new one in force.
+  await submitFromLastStep(page);
+  await expect(main(page).getByText("Predano 5. 11. 2026. u 23:59", { exact: true })).toBeVisible();
+  await expect(main(page).getByRole("button", { name: "Povuci predaju", exact: true })).toBeVisible();
+  await expect(list.locator("> li")).toHaveCount(2);
+  await expect(list.locator("> li").first()).toContainText("Predaja 2 · ");
+  await expect(list.locator("> li").first()).toContainText("Trenutno važeća predaja.");
+  await expect(list.locator("> li").nth(1)).toContainText("Predaja 1 · ");
+  await expect(list.locator("> li").nth(1)).toContainText(/Povučena /);
+  expect(calls.filter((c) => c.endsWith("/submission/withdrawal"))).toHaveLength(1);
+  await axe(page, info, "ponovna-predaja");
+});

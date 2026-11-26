@@ -25,3 +25,22 @@ export const followingStep = (steps: readonly number[], at: number): number | nu
 
 /** The change before `at`, or null at the start. */
 export const precedingStep = (steps: readonly number[], at: number): number | null => [...steps].reverse().find((s) => s < at) ?? null;
+
+export type KeyAction = "toggle" | "previous" | "next" | "first" | "last";
+
+/**
+ * The reader's shortcuts inside the player: Space starts and stops, the arrows move one change, Home and End the first and the last.
+ * A field that uses the key itself (the slider, the selects) and a button (Space clicks it) keep it; a key with a modifier is never taken.
+ */
+export function keyAction(key: string, target: { tagName: string }, mods: { ctrl?: boolean; alt?: boolean; meta?: boolean; shift?: boolean } = {}): KeyAction | null {
+  if (mods.ctrl === true || mods.alt === true || mods.meta === true || mods.shift === true) return null;
+  const tag = target.tagName.toUpperCase();
+  if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return null;
+  if ((key === " " || key === "Spacebar") && tag !== "BUTTON") return "toggle";
+  if (tag === "BUTTON" && key !== "ArrowLeft" && key !== "ArrowRight" && key !== "Home" && key !== "End") return null;
+  if (key === "ArrowLeft") return "previous";
+  if (key === "ArrowRight") return "next";
+  if (key === "Home") return "first";
+  if (key === "End") return "last";
+  return null;
+}

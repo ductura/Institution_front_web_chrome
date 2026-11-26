@@ -2,9 +2,10 @@
 // in words both steps say alike. Two kinds of late submission are shown: after the deadline (the
 // server decides whether the assignment allows it), and late by an exception the teacher granted this
 // student (an individual extension read from student.deadline-history.get, granted after the
-// assignment's deadline had passed and still open). A submission the assignment does not allow after the deadline is
-// known only from the server's 409 not_open (PO-36: no field says so before), so it is an outcome of
-// step 4, never guessed here. Pure: the time and the reads come in.
+// assignment's deadline had passed and still open). F4-PRE-R01: whether the assignment takes a submission after
+// the deadline is read (student.assignment-late-submission.get) with the student's late-submission exceptions
+// (student.late-exceptions.get), so a closed submission is said before the click; the server's 409 not_open
+// stays the outcome when those reads fail. Pure: the time and the reads come in.
 import { atOf, dayOf } from "../steps/time";
 import type { SubmitStage } from "./model";
 import { submitText as t } from "./messages.hr";
@@ -12,8 +13,10 @@ import { submitText as t } from "./messages.hr";
 export type Timing =
   | { readonly kind: "open" }
   | { readonly kind: "extended"; readonly until: string }
-  /** After the deadline that counts: the submission will be marked late. */
-  | { readonly kind: "late"; readonly dueAt: string }
+  /** After the deadline that counts: the submission will be marked late. `allowed`: the assignment says it takes it. */
+  | { readonly kind: "late"; readonly dueAt: string; readonly allowed?: true }
+  /** F4-PRE-R01: after the deadline, the assignment takes no late submission and this student has no open exception. */
+  | { readonly kind: "forbidden"; readonly dueAt: string }
   /** The assignment's deadline passed; the teacher allowed this student to submit until `until`. */
   | { readonly kind: "exception"; readonly dueAt: string; readonly until: string }
   | { readonly kind: "submitted" }
@@ -57,11 +60,32 @@ export function exceptionFrom(body: unknown, extendedDueAt: string | null, dueAt
   return newest.scope === "one" && ms(newest.dueAt) === ms(extendedDueAt) && ms(newest.createdAt as string) > ms(dueAt);
 }
 
+type LateException = { readonly untilAt?: unknown };
+
+/**
+ * F4-PRE-R01: a late timing with the assignment's rule (student.assignment-late-submission.get) and this
+ * student's late-submission exceptions (student.late-exceptions.get body). Allowed: said so. Not allowed:
+ * the latest open exception (untilAt after now) is the deadline that counts, else the submission is closed.
+ * Anything unread (null) or odd leaves the timing as it was, so the server's 409 still decides.
+ */
+export function withLateRule(timing: Timing, allowed: boolean | null, exceptions: unknown, now: number): Timing {
+  if (timing.kind !== "late" || allowed === null) return timing;
+  if (allowed) return { kind: "late", dueAt: timing.dueAt, allowed: true };
+  const list = (exceptions as { exceptions?: unknown } | null)?.exceptions;
+  if (!Array.isArray(list)) return timing;
+  const open = (list as LateException[])
+    .map((e) => (typeof e.untilAt === "string" ? e.untilAt : null))
+    .filter((until): until is string => until !== null && Number.isFinite(ms(until)) && ms(until) > now)
+    .sort((a, b) => ms(b) - ms(a))[0];
+  return open === undefined ? { kind: "forbidden", dueAt: timing.dueAt } : { kind: "exception", dueAt: timing.dueAt, until: open };
+}
+
 const fill = (text: string, values: Record<string, string>) => text.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? "");
 
 /** The line both steps show about a late submission (E-8b, E-10a), or null when it is not late. */
 export function lateLine(timing: Timing): string | null {
-  if (timing.kind === "late") return fill(t.late.past, { due: atOf(timing.dueAt) });
+  if (timing.kind === "late") return fill(timing.allowed ? t.late.pastAllowed : t.late.past, { due: atOf(timing.dueAt) });
+  if (timing.kind === "forbidden") return fill(t.late.forbidden, { due: atOf(timing.dueAt) });
   if (timing.kind === "exception") return fill(t.late.exception, { due: atOf(timing.dueAt), until: atOf(timing.until) });
   return null;
 }
@@ -87,5 +111,5 @@ export function dialogLateLine(timing: Timing): string | null {
  * the line is neutral: nothing here says why the server refused.
  */
 export function forbiddenLines(timing: Timing): readonly string[] {
-  return timing.kind === "late" ? [fill(t.late.forbidden, { due: atOf(timing.dueAt) }), t.late.forbiddenMeta] : [t.late.notOpen];
+  return timing.kind === "late" || timing.kind === "forbidden" ? [fill(t.late.forbidden, { due: atOf(timing.dueAt) }), t.late.forbiddenMeta] : [t.late.notOpen];
 }

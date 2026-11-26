@@ -25,7 +25,7 @@ vi.mock("../../../../../src/client/api.ts", async (importOriginal) => ({
     return { ok: false, status: 404, code: "not_found" };
   },
 }));
-vi.mock("../../../../../src/components/editor/EditorPageWork.tsx", () => ({ default: () => createElement("p", null, "TEKSTNI-UREDNIK") }));
+vi.mock("../../../../../src/components/editor/EditorPageWork.tsx", () => ({ default: ({ topBar }: { topBar?: unknown }) => createElement("div", null, topBar as never, createElement("p", null, "TEKSTNI-UREDNIK")) }));
 // WEB-V13-DNEVNIK-SINKRONIZACIJA: the slides page now opens a journal session (Web Locks, IndexedDB, the open
 // route), which jsdom has none of; the session is stood in for here (it has its own tests in slides/sync) so
 // that this test keeps checking what it always checked: which editor the kind of work mounts.
@@ -110,6 +110,10 @@ describe("WorkPage by kind of work", { timeout: 30000 }, () => {
     const el = await open();
     expect(el.textContent).toContain("TEKSTNI-UREDNIK");
     expect(el.querySelector("[aria-label='Uređivač slajdova']")).toBeNull();
+  });
+  it("the text editor's shell links \"Kako vidi nastavnik\" to the student's own read-only view (F4-EDI-R14)", async () => {
+    const link = (await open()).querySelector("a[href$='/rad/" + ID + "/nastavnik']");
+    expect(link).not.toBeNull();
   });
   it("the slides page has the plain top bar: no text-editor shell switches", async () => {
     kinds.documentKind = "slides";

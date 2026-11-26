@@ -36,7 +36,7 @@ export const assignmentFormHr = {
     lateLegend: "Predaja nakon roka",
     lateAllowed: "Dopuštena (predaja se označi kao kasna)",
     lateDenied: "Nije dopuštena",
-    lateUnavailable: "Zabrana predaje nakon roka trenutačno nije dostupna. Do tada vrijedi pravilo poslužitelja.",
+    lateUnavailable: "Postavka predaje nakon roka ovdje se zasad ne može pročitati ni promijeniti. Vrijedi ona odabrana pri objavi zadatka.",
     withdrawalLegend: "Povlačenje predaje",
     withdrawalOn: "Student smije povući predaju dok rok traje",
     withdrawalOff: "Student ne smije povući predaju",
@@ -44,11 +44,13 @@ export const assignmentFormHr = {
     declarationOn: "Izjava je obavezna",
     declarationOff: "Izjava nije obavezna",
     seesIntro: "Student na koraku predaje vidi:",
+    seesLate: { on: "nakon roka može predati, a predaja se označi kao kasna", off: "nakon roka ne može predati" },
     seesWithdrawal: { on: "predaju može povući dok rok traje", off: "predaju ne može povući" },
     seesDeclaration: { on: "izjavu mora ispuniti", off: "izjavu ne mora ispuniti" },
     failed: {
       withdrawal: "Pravilo o povlačenju nije spremljeno. Zadatak je objavljen; pravilo postavite na stranici zadatka.",
       declaration: "Pravilo o izjavi nije spremljeno. Zadatak je objavljen; pravilo postavite na stranici zadatka.",
+      late: "Zabrana predaje nakon roka nije spremljena. Zadatak je objavljen, a predaja nakon roka zasad je dopuštena.",
     },
     live: {
       heading: "Pravila predaje",
@@ -110,7 +112,7 @@ export const assignmentFormHr = {
     aiCourse: "Prema pravilima kolegija", aiSummary: "Samo sažimanje literature", aiNone: "Bez pomoći Asistenta", groupsAll: "svi upisani studenti",
     toolsYes: "dopušteni uz izjavu", toolsNo: "nisu dopušteni", practice: "Probni zadatak, bez ocjene", regular: "Redovni zadatak",
     withdrawalOn: "dopušteno dok rok traje", withdrawalOff: "nije dopušteno", declarationOn: "obavezna", declarationOff: "nije obavezna",
-    lateServer: "prema pravilu poslužitelja",
+    lateOn: "dopuštena, predaja se označi kao kasna", lateOff: "nije dopuštena",
   },
   publish: "Objavi zadatak",
   backToForm: "Natrag na obrazac",
@@ -119,18 +121,38 @@ export const assignmentFormHr = {
 /** WEB-V13-VRSTA-ZADATKA: the teacher picks what the student writes, text or slides. */
 export const documentKindHr = {
   legend: "Vrsta dokumenta",
-  options: { text: "Tekst", slides: "Slajdovi" },
+  options: { text: "Tekst", slides: "Slajdovi", spreadsheet: "Tablica" },
   textHint: "Student piše tekstni rad u uredniku.",
   slidesHint: "Student izrađuje slajdove. Vrsta se određuje pri objavi zadatka.",
+  spreadsheetHint: "Student izrađuje tablicu s formulama. Vrsta se određuje pri objavi zadatka.",
   unknown: "nije prikazana",
   fixed: "Vrsta se određuje pri objavi zadatka; nova verzija je ne mijenja.",
 } as const;
 
-/** NF-4 NZ-15: the teacher's question beside the declaration, shown honestly until the server can set it. */
+/** NF-4 NZ-15: the teacher's question beside the declaration (teacher.declaration-question.get/put). */
 export const declarationQuestionHr = {
   label: "Pitanje studentu uz izjavu (nije obavezno)",
   hint: "Do {max} znakova. Student ga vidi na koraku „Izjava”; odgovor vidite uz izjavu na pregledu rada. Bez pitanja izjava radi kao i dosad.",
-  unavailable: "Postavljanje pitanja uz izjavu trenutačno nije dostupno. Zadatak se objavljuje bez pitanja.",
+  errors: {
+    tooLong: "Pitanje može imati najviše {max} znakova.",
+    invalid: "Pitanje sadrži znak koji nije dopušten.",
+  },
+  reviewLabel: "Pitanje uz izjavu",
+  reviewNone: "Bez pitanja",
+  failed: {
+    signedOut: "Pitanje uz izjavu nije spremljeno jer je prijava istekla. Prijavite se i dodajte ga na stranici za uređivanje zadatka.",
+    invalid: "Pitanje uz izjavu nije spremljeno jer ga poslužitelj nije prihvatio. Izmijenite ga na stranici za uređivanje zadatka.",
+    failed: "Zadatak je objavljen, ali pitanje uz izjavu nije spremljeno. Dodajte ga na stranici za uređivanje zadatka.",
+  },
+  live: {
+    loading: "Učitavanje pitanja uz izjavu…",
+    unavailable: "Pitanje uz izjavu trenutačno se ne može učitati. Pokušajte ponovno.",
+    retry: "Pokušaj ponovno",
+    save: "Spremi pitanje uz izjavu",
+    saved: "Pitanje uz izjavu je spremljeno.",
+    notSaved: "Pitanje uz izjavu nije spremljeno. Pokušajte ponovno.",
+    invalid: "Poslužitelj nije prihvatio pitanje. Provjerite tekst i pokušajte ponovno.",
+  },
 } as const;
 
 /** WEB-V17-TEMPLATE-PICK: the faculty template switch of the form and the outline shown under it. */

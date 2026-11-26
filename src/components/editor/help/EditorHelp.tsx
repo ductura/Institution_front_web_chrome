@@ -45,9 +45,11 @@ type Props = {
   fresh?: boolean;
   /** The open work: "Što Ductura bilježi" reads its rhythm setting (PIL-P1-RITAM-PREKIDAC). */
   documentId?: string;
+  /** The assignment of the open work: "Što Ductura bilježi" lists its conversations with the assistant. */
+  assignmentId?: string;
 };
 
-export function EditorHelpDialogs({ view, onClose, help, counts, notice, documentId }: Props) {
+export function EditorHelpDialogs({ view, onClose, help, counts, notice, documentId, assignmentId }: Props) {
   const close = <Button tone="quiet" onClick={onClose}>{t.close}</Button>;
   return <>
     <Dialog open={view === "writing"} title={t.settingsTitle} actions={close} onClose={onClose}>
@@ -79,7 +81,7 @@ export function EditorHelpDialogs({ view, onClose, help, counts, notice, documen
       </>}
     </Dialog>
     <Dialog open={view === "recorded"} title={t.recorded} actions={close} onClose={onClose}>
-      <WhatIsRecorded documentId={documentId} />
+      <WhatIsRecorded documentId={documentId} assignmentId={assignmentId} />
     </Dialog>
   </>;
 }

@@ -112,8 +112,10 @@ export function ErrorCard({ failure = "server", onRetry }: { failure?: "offline"
 }
 
 /** The footer for the variants without an editor: one chip, the length and, offline, "Bez mreže". */
-export function FrameStatus({ chip, length, withNet = false }: {
+export function FrameStatus({ chip, note, length, withNet = false }: {
   chip: ReactNode;
+  /** Plain words after the chip (a submitted work: "Samo za čitanje"). */
+  note?: string;
   length?: { words: number | null; range: ScopeRange };
   withNet?: boolean;
 }) {
@@ -122,6 +124,7 @@ export function FrameStatus({ chip, length, withNet = false }: {
   return (
     <footer className={statusStyles.bar} aria-label={t.workspace.status}>
       {chip}
+      {note === undefined ? null : <span className={statusStyles.scope}>{note}</span>}
       {scope === null ? null : <span className={statusStyles.scope}>{scope}</span>}
       {withNet && !online ? <span className={statusStyles.net}>{workText.offlineNet}</span> : null}
     </footer>

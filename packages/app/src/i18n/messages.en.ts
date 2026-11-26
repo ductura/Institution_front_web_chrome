@@ -53,6 +53,7 @@ export const profileEn: ProfileMessages = {
 
 export const pageLabelsEn = {
   originComposition: "Origin of the text",
+  studentTeacherView: "How the teacher sees it",
   studentInterview: "Conversation about the work",
   consultations: "Consultations",
   versionComparison: "Version comparison",
@@ -70,6 +71,9 @@ export const pageLabelsEn = {
   pilotMetrics: "Pilot measures",
   actionLog: "Log of actions",
   problemReports: "Problem reports",
+  systemHealth: "System state",
+  systemEvents: "System events",
+  securityKey: "Security key",
   facultySettings: "Faculty settings",
   facultyAssistant: "Assistant at the faculty",
   milestoneTemplate: "Milestone template",
@@ -106,6 +110,7 @@ export const hostTextEn = {
   signInNoRoleTitle: "Signed in",
   signInNoRoleBody: "This account has no role yet, so your space cannot be opened.",
   signOutFailed: "Signing out did not work. Please try again.",
+  signOutAll: "Sign out of all sessions",
   signIn: "Sign in",
   deadlineExtensions: "Deadline extension",
   mentorshipRequest: "Mentorship request",
