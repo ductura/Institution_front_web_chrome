@@ -13,6 +13,8 @@ Ispis sadrži pune Git SHA-ove weba, servera i Preloadera. Checkouti se zadano t
 
 - INT-13 (N07, DAN-887) je tok editora iz vala 1 (WEB-16: prihvaćanje WEB-14 i WEB-15), prije `e2e/editor-val1.spec.js` koji se pokretao samo uz `DUCTURA_STOG=1` na starom Nextu. `editor-val1.sistem.ts` ulazi kroz Preloader i piše u isporučenom `packages/app`: pisanje do „Spremljeno na poslužitelju”, osvježavanje, rad bez mreže, blokada druge kartice, svaki gumb statične trake, Poništi i Ponovi te axe na 1250 i 400 px. Prema G3 oznaka „Spremljeno na poslužitelju” vrijedi samo za potvrdu provjerenu u istoj sesiji stranice, pa nakon osvježavanja piše „Spremljeno na uređaju”; da je tekst na poslužitelju, test provjerava svježim kontekstom preglednika bez lokalnog dnevnika. Datoteka se po abecedi izvodi prije VS-1 i INT-03, dok je zajednički demo rad još otvoren. Za samostalno pokretanje koristi `pnpm test:sistem editor-val1`.
 
+- PM2-R10 (F4, A4) `k4-puni-tok.sistem.ts` je puni K-4 tok bez seed rada: nastavnik izrađuje izmišljeni kolegij, zadatak i kod za upis (kroz `/api/v1`), student se upisuje tim kodom na „Upis”, otvara zadatak i piše odlomak do „Spremljeno na poslužitelju”, a student i nastavnik čitaju isti `process-summary` (jednaki odgovori). Samostalno: `pnpm test:sistem k4-puni-tok`. `sistem.yml` je već posao `sistem` u `ci.yml` i u `ci-ok` (retci `needs` i okidač `e2e/sistem/`), pa ovaj test ulazi u obveznu provjeru.
+
 Za INT-04 nakon redovnog seeda učitaj `e2e/sistem/seed-int04.sql` u lokalnu ili CI bazu preko PostgreSQL socketa, istom administratorskom ulogom kao redovni seed. Za zadani Compose stog iz korijena web repoa na Linuxu ili u CI-ju pokreni:
 
 ```sh
