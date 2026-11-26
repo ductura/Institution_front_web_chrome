@@ -8,10 +8,18 @@
 // the mentorship's milestones and consultations come from mentor-dates.ts, and
 // the rail footer sets the words against the assignment's range (ED-37, dio 3).
 import { Button, TextField } from "@ductura/ui";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { createApi } from "../../../../../../src/client/api.ts";
+import { createTocStore, EMPTY_TOC, goToHeading } from "../../../../../editor-core/src/outline/index.ts";
+import { requestPanel } from "../../../../../../src/components/editor/layout-prefs/open-panel.ts";
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
+import {
+  allObservations, assistHr, BalancePanel, distribute, holesOf, loadNotes, nextSteps, NextStepCard, notesKey, QuickJump, ResumeCard, saveNotes,
+  StartWizard, ThreadPanel, withLast, withSelfNote, withTargets, workStatus, type JumpKind, type JumpPlace, type NextStepInput,
+  type StepTarget, type WorkNotes, type WorkRange,
+} from "../assist";
+import { EMPTY_HELP, helpDocumentOf } from "./chapter-help";
 import { ChapterLength } from "../chapter-length/ChapterLength";
 import { useChapterTargets } from "../chapter-length/use-chapter-targets";
 import {
@@ -20,7 +28,7 @@ import {
 } from "./left-model";
 import { readMentorDates, type MentorDates, type MentorDatesCall } from "./mentor-dates";
 import { leftHr as t } from "./messages.hr";
-import { useDeviceValue, useWorkSnapshot } from "./use-left";
+import { announceDeviceChange, useDeviceChange, useDeviceValue, useEditorRead, useWorkSnapshot } from "./use-left";
 import { HistorySection } from "./HistorySection";
 import { momentHr } from "../../student/work/frame";
 import styles from "./Left.module.css";
@@ -282,15 +290,130 @@ function Thread({ workId }: Props) {
   );
 }
 
+function noteStorage(): Storage | null {
+  try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
+}
+
+/** The student's own writing-help notes of the work (device only), read again when ChapterPanel or another tab writes them. */
+function useWritingNotes(workId: string): [WorkNotes, (change: (current: WorkNotes) => WorkNotes) => void] {
+  const [notes, setNotes] = useState<WorkNotes>(() => loadNotes(noteStorage(), workId));
+  useDeviceChange(notesKey(workId), () => setNotes(loadNotes(noteStorage(), workId)));
+  // A change starts from what the device holds now, so a note written elsewhere meanwhile is not overwritten.
+  const change = (apply: (current: WorkNotes) => WorkNotes) => {
+    const next = apply(loadNotes(noteStorage(), workId));
+    setNotes(next);
+    if (saveNotes(noteStorage(), workId, next)) announceDeviceChange(notesKey(workId));
+  };
+  return [notes, change];
+}
+
+/** ED-36 / EDI-R16: the chapters of the open document as the writing help reads them, the chapter under the cursor, and whether the text can be changed. */
+function useHelpState() {
+  const editor = useLocalEditor();
+  const store = useMemo(() => createTocStore(editor), [editor]);
+  const toc = useSyncExternalStore(store.subscribe, store.getSnapshot, () => EMPTY_TOC);
+  const help = useEditorRead(editor, (i) => helpDocumentOf(i.getJSON()), EMPTY_HELP);
+  const live = useEditorRead(editor, (i) => i.isEditable, false);
+  const current = help.chapters.some((c) => c.id === toc.currentKey) ? toc.currentKey : null;
+  return { editor, help, live, current };
+}
+
+const wizardEvent = "ductura:open-start-wizard";
+
+/** "Započnite rad": the three-step wizard puts a skeleton into an empty work; the question stays on this device with the thread. */
+function StartWork({ workId, open, onClose }: Props & { open: boolean; onClose: () => void }) {
+  const { editor, help, live } = useHelpState();
+  const [thread, setThread] = useDeviceValue("thread", workId, parseThread, EMPTY_THREAD);
+  return (
+    <StartWizard open={open} chapterCount={help.chapters.length} profileLabel={null} onClose={onClose}
+      onCreate={(skeleton) => {
+        if (!editor || editor.isDestroyed || !live) return false;
+        const nodes = [
+          ...(skeleton.title === "" ? [] : [{ type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: skeleton.title }] }]),
+          ...skeleton.chapters.flatMap((title) => [{ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: title }] }, { type: "paragraph" }]),
+        ];
+        if (!editor.chain().insertContentAt(editor.state.doc.content.size, nodes).run()) return false;
+        if (skeleton.question !== "") setThread({ ...thread, question: skeleton.question });
+        return true;
+      }} />
+  );
+}
+
+/** EDI-R16: "Sljedeći korak", "Nastavi gdje ste stali", "Brzi skok" and "Ravnoteža poglavlja" over the work as it is now. */
+function WritingHelp({ workId, range = null }: Props & { range?: WorkRange | null }) {
+  const { editor, help, live, current } = useHelpState();
+  const snap = useWorkSnapshot();
+  const [notes, change] = useWritingNotes(workId);
+  const [wizard, setWizard] = useState(false);
+  const [thread] = useDeviceValue("thread", workId, parseThread, EMPTY_THREAD);
+  const { chapters } = help;
+  const wholeRange: WorkRange = range ?? { min: null, max: null };
+  // The chapter the person stopped at is kept as they move on, so "Nastavi gdje ste stali" has somewhere to go back to.
+  useEffect(() => { if (current !== null && current !== notes.lastChapterId) change((n) => withLast(n, current)); },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [current]);
+  useEffect(() => {
+    const open = () => setWizard(true);
+    window.addEventListener(wizardEvent, open);
+    return () => window.removeEventListener(wizardEvent, open);
+  }, []);
+  const input = { chapters, thesis: thread.question, roles: notes.roles };
+  const todos = chapters.flatMap((c) => (notes.todos[c.id] ?? []).filter((x) => !x.done).slice(0, 1).map((x) => ({ chapterId: c.id, text: x.text })));
+  const stepInput: NextStepInput = { ...input, submitted: false, teacherView: false, range: wholeRange, todos };
+  const go = (id: string) => { if (editor && !editor.isDestroyed) goToHeading(editor, id); };
+  const onGo = (target: StepTarget) => {
+    if (target.kind === "chapter") go(target.id);
+    else if (target.kind === "wizard") setWizard(true);
+    else if (target.tab === "work" || target.tab === "comments" || target.tab === "sources") requestPanel(target.tab);
+  };
+  const places: Partial<Record<JumpKind, JumpPlace[]>> = {
+    hole: chapters.flatMap((c) => (holesOf([c]).count > 0 ? [{ chapterId: c.id }] : [])),
+    obs: allObservations(input).map((o) => ({ chapterId: o.chapterId })),
+  };
+  const resume = chapters.find((c) => c.id === notes.lastChapterId) ?? null;
+  const hasRange = wholeRange.min !== null && wholeRange.max !== null;
+  return (
+    <div className={styles.stack} data-writing-help="">
+      <NextStepCard steps={nextSteps(stepInput)} onGo={onGo} />
+      <ResumeCard chapter={resume} selfNote={notes.selfNote} editable={live} onGo={go} onSaveNote={(text) => change((n) => withSelfNote(n, text))} />
+      <QuickJump chapters={chapters} places={places} onJump={go} />
+      <BalancePanel chapters={chapters} targets={notes.targets} status={workStatus(snap.total, wholeRange)} onJump={go}
+        canDistribute={live && hasRange}
+        onDistribute={() => {
+          const targets = distribute(chapters, notes.roles, wholeRange);
+          if (!targets) return null;
+          change((n) => withTargets(n, targets));
+          return Object.keys(targets).length;
+        }} />
+      <StartWork workId={workId} open={wizard} onClose={() => setWizard(false)} />
+    </div>
+  );
+}
+
+/** EDI-R16: "Nit rada" of the writing help (question, hypotheses table, notes on the whole) and the entry to "Započnite rad". */
+function ThreadHelp({ workId }: Props) {
+  const { editor, help, live } = useHelpState();
+  const [thread] = useDeviceValue("thread", workId, parseThread, EMPTY_THREAD);
+  const [notes] = useWritingNotes(workId);
+  return (
+    <div className={styles.stack}>
+      <ThreadPanel input={{ chapters: help.chapters, thesis: thread.question, roles: notes.roles }} editable={false} onThesis={() => undefined}
+        onJump={(id) => { if (editor && !editor.isDestroyed) goToHeading(editor, id); }} />
+      {help.chapters.length === 0 && <Button tone="quiet" disabled={!live} onClick={() => window.dispatchEvent(new Event(wizardEvent))}>{assistHr.wizard.title}</Button>}
+    </div>
+  );
+}
+
 type SectionKey = "requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "history";
 
 /** The sections, keyed as the left panel expects them; "Povijest dokumenta" once the work's document is known. */
-export function leftSectionsFor(workId: string, documentId?: string, dueAt?: string | null): Partial<Record<SectionKey, ReactNode>> {
+export function leftSectionsFor(workId: string, documentId?: string, dueAt?: string | null, range?: WorkRange | null): Partial<Record<SectionKey, ReactNode>> {
   return {
     requirements: <Requirements />, figures: <Figures />, stash: <Stash workId={workId} />,
-    progress: <Progress dueAt={dueAt} />, deadlines: <Deadlines workId={workId} dueAt={dueAt} />, thread: <Thread workId={workId} />,
+    progress: <><WritingHelp workId={workId} range={range} /><Progress dueAt={dueAt} /></>, deadlines: <Deadlines workId={workId} dueAt={dueAt} />,
+    thread: <><Thread workId={workId} /><ThreadHelp workId={workId} /></>,
     ...(documentId ? { history: <HistorySection documentId={documentId} /> } : {}),
   };
 }
 
-export { Deadlines, dueLine, Figures, MentorDatesView, Progress, RailFooter, railFootLine, Requirements, Stash, Thread };
+export { Deadlines, dueLine, Figures, MentorDatesView, Progress, RailFooter, railFootLine, Requirements, Stash, Thread, ThreadHelp, WritingHelp };
