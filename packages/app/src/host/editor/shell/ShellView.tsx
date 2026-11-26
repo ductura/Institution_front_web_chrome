@@ -9,13 +9,20 @@ import { Button, SegmentedControl } from "@ductura/ui";
 
 import { TopBarSlot } from "../../../../../../src/components/editor/WorkspaceTopBar.tsx";
 import { requestWorkHistory } from "../../../../../../src/components/editor/commands/work-history-event.ts";
+import { dialogOffered, EDITOR_DIALOGS, requestDialog, type EditorDialog } from "../../../../../../src/components/editor/commands/dialog-request.ts";
 import { workHistoryHr } from "../work-history/messages.hr";
+import { importHostHr } from "../import/messages.hr";
+import { marksHr } from "../marks/messages.hr";
+import { rulesHr } from "../rules/messages.hr";
 import { EditorShortcutListHost } from "../shortcuts/EditorShortcutListHost";
 import { shellHr as t } from "./messages.hr";
 import styles from "./ShellView.module.css";
 import {
   DEFAULT_VIEW, keepWidths, readWidths, shellCss, watchWidths, WIDTH_KEYS, withOutline, withWidth, type ShellMode, type ShellView as View, type Side,
 } from "./shell-model";
+
+/** Each dialog's entry says what its own button said before (ED-60). */
+const DIALOG_LABEL: Record<EditorDialog, string> = { import: importHostHr.open, rules: rulesHr.open, marks: marksHr.legend.open };
 
 export type ShellViewProps = {
   /** The topBar the page already has; the view bar goes beside it. */
@@ -29,6 +36,7 @@ export type ShellViewProps = {
 
 export function ShellView({ children, teacherHref, mode = "write", editable = true }: ShellViewProps) {
   const [view, setView] = useState<View>(DEFAULT_VIEW);
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => setView((v) => ({ ...v, widths: readWidths() })), []);
   // ED-39: the dialog "Prilagodi panel" chooses the same widths; the menu follows it.
   useEffect(() => watchWidths((widths) => setView((v) => ({ ...v, widths }))), []);
@@ -68,13 +76,19 @@ export function ShellView({ children, teacherHref, mode = "write", editable = tr
         {/* ED-16 (NF2-P14): "Povijest" opens the one history dialog the page's host mounts. */}
         <Button tone="quiet" aria-haspopup="dialog" title={workHistoryHr.title} onClick={() => requestWorkHistory()}>{workHistoryHr.open}</Button>
       </div>
-      <details className={styles.view}>
+      {/* Read again on every opening: a dialog is offered only while its host can open it. */}
+      <details className={styles.view} onToggle={(event) => setMenuOpen(event.currentTarget.open)}>
         <summary>{t.viewMenu} ▾</summary>
         <div className={styles.menu}>
           <div className={styles.group}>
             <Button tone="quiet" size="small" aria-pressed={view.outlineOnly} title={t.outlineOnlyTitle}
               onClick={() => setView(withOutline(view, !view.outlineOnly))}>{t.outlineOnly}</Button>
             <Button tone="quiet" size="small" aria-haspopup="dialog" onClick={() => requestWorkHistory()}>{workHistoryHr.title}</Button>
+            {/* ED-60: the dialogs the prototype opens from a menu; under the shell nothing is drawn. */}
+            {menuOpen ? EDITOR_DIALOGS.filter(dialogOffered).map((name) => (
+              <Button key={name} tone="quiet" size="small" aria-haspopup="dialog"
+                onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); requestDialog(name); }}>{DIALOG_LABEL[name]}</Button>
+            )) : null}
           </div>
           {(["rail", "panel"] as const).map((side) => (
             <div key={side} className={styles.group} role="group" aria-label={`${t.widthsLabel}: ${t[side]}`}>

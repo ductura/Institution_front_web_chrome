@@ -13,6 +13,7 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { commentHighlightKey } from "../../../../../editor-core/src/editor/comment-anchor.ts";
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
 import { requestPanel } from "../../../../../../src/components/editor/layout-prefs/open-panel.ts";
+import { useDialogRequest } from "../../../../../../src/components/editor/commands/dialog-request.ts";
 import { allPlaces, counts, gutterDots, holeRemoval, nextPlace, placesAt, showGutter, type MarkKind, type Place } from "./marks-model";
 import { marksHr as t } from "./messages.hr";
 import styles from "./Marks.module.css";
@@ -116,6 +117,8 @@ export function MarksHost() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [pick]);
+  // ED-60: "Što znače oznake" opens from the view menu (dialog-request), as in the prototype.
+  useDialogRequest("marks", () => setLegend(true), !!editor && !editor.isDestroyed);
 
   if (!editor || editor.isDestroyed) return null;
   const go = (p: Place) => {
@@ -149,7 +152,6 @@ export function MarksHost() {
     <>
       <div className={styles.bar} role="group" aria-label={t.counters.group}>
         {counter("hole")}{counter("cmt")}{counter("plain")}
-        <Button tone="quiet" onClick={() => setLegend(true)} aria-haspopup="dialog">{t.legend.open}</Button>
       </div>
       {host && dots.length > 0 ? createPortal(
         <div className={styles.gutter} aria-hidden="true" data-gutter="" aria-label={t.gutter}>
