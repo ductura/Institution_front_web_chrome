@@ -110,6 +110,7 @@ export const hostTextEn = {
   signInNoRoleTitle: "Signed in",
   signInNoRoleBody: "This account has no role yet, so your space cannot be opened.",
   signOutFailed: "Signing out did not work. Please try again.",
+  signOutAll: "Sign out of all sessions",
   signIn: "Sign in",
   deadlineExtensions: "Deadline extension",
   mentorshipRequest: "Mentorship request",
