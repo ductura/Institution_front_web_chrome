@@ -27,7 +27,7 @@ export function WorkPlan({ documentId, name, title, base, onSignedOut, plan, rec
       <h2>{heading}</h2>
       <StagesCard key={revision} mentor documentId={documentId} current={always} onSessionEnd={onSignedOut} />
       <PlanActions documentId={documentId} onChanged={reread} onSignedOut={onSignedOut} call={plan} />
-      <AgreedCard documentId={documentId} base={base} read={records} />
+      <AgreedCard documentId={documentId} base={base} onSignedOut={onSignedOut} read={records} />
     </section>
   );
 }
