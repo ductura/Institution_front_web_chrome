@@ -22,6 +22,9 @@ export const editorPanelLayoutsHr = {
   same: "Kao na računalu",
   density: "Gustoća",
   densities: { airy: "Prozračno", dense: "Zbijeno" },
+  // ED-37 (P2-6): the chapter row parts, as in the prototype "Prilagodi panel".
+  row: "U retku poglavlja",
+  rowParts: { words: "Broj riječi", status: "Točka stanja", flags: "Napomene „za popraviti”" },
   width: "Širina na računalu",
   widths: { narrow: "Uska", medium: "Srednja", wide: "Široka" },
   settingsNote: "Postavke vrijede samo za Vas i pamte se u ovom pregledniku.",
