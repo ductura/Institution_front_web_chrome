@@ -1,8 +1,7 @@
 "use client";
 
 // WEB-V16-TEMA-MENTOR: the "Tema rada" section of the shared "Završni rad" panel. The mentor reads the proposal,
-// decides (approve; return with a required comment) and sees the versions; the student sees the same, with no
-// controls. After a write, and after a 409, the view shows what the server now says.
+// decides (approve; return with a required comment) and sees the versions; the student reads it in topic-student. After a write, and after a 409, the view shows what the server now says.
 import { useState } from "react";
 
 import { ActionRow, Button, Notice, Tag, TextArea } from "@ductura/ui";
@@ -85,6 +84,8 @@ export const section: ThesisSectionDef<TopicValue> = {
   id: "topic-mentor",
   order: 10,
   title: t.title,
-  read: (documentId) => readTopic(createApi(), documentId),
+  // The student has their own section (topic-student) with the proposal form; this one shows nothing to them
+  // and sends no request, so the panel never shows the topic twice.
+  read: async (documentId, role) => (role === "student" ? { kind: "notFound" } : readTopic(createApi(), documentId)),
   View: (props) => <TopicMentorView {...props} />,
 };
