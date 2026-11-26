@@ -56,3 +56,23 @@ export const sheetGridHr = {
     newName: (n: number) => `List${n}`,
   },
 } as const;
+
+// WEB-V14-SHEET-PAGE: the words of the spreadsheet work page. The save states themselves are worded by @ductura/ui.
+export const sheetPageHr = {
+  retry: "Pokušaj ponovno",
+  kindUnavailableTitle: "Vrsta rada nije dostupna",
+  kindUnavailableBody: "Vrstu ovog rada sada nije moguće pročitati, pa se rad ne otvara. Pokušajte ponovno.",
+  blockedTitle: "Rad je otvoren u drugoj kartici",
+  blockedBody: "Ova kartica ništa ne sprema. Nastavite u kartici u kojoj je rad otvoren ili je zatvorite pa se vratite ovdje.",
+  unavailableTitle: "Spremanje na ovom uređaju nije moguće",
+  unavailableBody: "Tablica se ne može otvoriti uz spremanje. Rad nije promijenjen.",
+  signedOutTitle: "Prijava je završena",
+  signedOutBody: "Prijavite se ponovno kako biste nastavili s radom.",
+  recoveryTitle: "Potrebna je odluka o spremljenoj verziji",
+  recoveryBody: "Verzija na ovom uređaju i verzija na poslužitelju se razlikuju. Prikazana je verzija s ovog uređaja i ne mijenja se.",
+  stoppedNote: "Zapis promjena je prekinut. Tablica se i dalje sprema na ovom uređaju, ali poslužitelj je više ne preuzima.",
+  refusedNote: "Poslužitelj nije preuzeo zadnju promjenu. Ponovno učitajte stranicu da se pošalje ponovno.",
+  journalNote: "Spremanje na ovom uređaju je zastalo. Ponovno učitajte stranicu.",
+  notRecordable: "Ova se promjena još ne može zabilježiti i nije primijenjena.",
+  submittedNote: "Rad je predan i tablica se samo čita.",
+} as const;

@@ -4,3 +4,9 @@ export const studentToastText = {
   close: "Zatvori",
   enrolled: "Upisani ste u kolegij.",
 } as const;
+
+/** P-B1: the toast after enrolment names the course; without a name it keeps the plain sentence. */
+export function enrolledToast(courseName?: string): string {
+  const name = courseName?.trim();
+  return name ? `Upisani ste u kolegij ${name}.` : studentToastText.enrolled;
+}

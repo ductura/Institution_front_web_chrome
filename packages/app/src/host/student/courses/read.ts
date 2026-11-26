@@ -55,7 +55,7 @@ export async function readCourses(call: CoursesCall, withStates: boolean, withTi
 }
 
 /** A time only for an assignment the work states prove submitted; a failed or unreadable answer leaves "Predano" alone. */
-async function readSubmitted(call: CoursesCall, states: ReadonlyMap<string, WorkState>): Promise<ReadonlyMap<string, Submitted>> {
+export async function readSubmitted(call: CoursesCall, states: ReadonlyMap<string, WorkState>): Promise<ReadonlyMap<string, Submitted>> {
   const submitted = new Map<string, Submitted>();
   try {
     const r = await call("student.assignment-submissions.get", NONE);
@@ -91,3 +91,20 @@ export async function readExtensions(call: HistoryCall, courses: readonly Course
 
 export const serverHistory: HistoryCall = (assignmentId) =>
   createApi()("student.deadline-history.get", { params: { assignmentId }, query: undefined, body: undefined });
+
+export type HomeExtras = { submitted: ReadonlyMap<string, Submitted>; extensions: ReadonlyMap<string, ExtensionNote> };
+
+/**
+ * E-2 (NF-1 P-6, P-7 on the home): the submission times for the whole list in one call (only when the work
+ * states are proven) and the history of each extended deadline (one call per extended assignment, none for the
+ * others). Either failing leaves its half empty; the row then says "Predano" or "Produljeni rok" alone.
+ */
+export async function readHomeExtras(
+  call: CoursesCall, history: HistoryCall, courses: readonly Course[], states: ReadonlyMap<string, WorkState> | null | undefined,
+): Promise<HomeExtras> {
+  const [submitted, extensions] = await Promise.all([
+    states ? readSubmitted(call, states) : Promise.resolve(new Map<string, Submitted>()),
+    readExtensions(history, courses),
+  ]);
+  return { submitted, extensions };
+}

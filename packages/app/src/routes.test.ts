@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH, ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -76,13 +76,13 @@ describe("the student's pages of Ductus app/", () => {
   it("open for a student under any id, with their own label", () => {
     expect(resolve("/zadatak/izm-1", "student")).toMatchObject({ kind: "page", page: { label: "Zadatak" } });
     expect(resolve("/rad/a1/predaja", "student")).toMatchObject({ kind: "page", page: { label: "Predaja rada" } });
-    expect(resolve("/zadaci/dnevnik-prakse", "student")).toMatchObject({ kind: "page", page: { label: "Dnevnik prakse", current: "/zadaci" } });
+    expect(resolve("/zadaci/dnevnik-prakse", "student")).toMatchObject({ kind: "page", page: { label: "Dnevnik prakse", current: "/zadaci/dnevnik-prakse" } });
     expect(resolve("/zadaci/dnevnik-prakse", "teacher")).not.toMatchObject({ kind: "page" });
-    expect(resolve("/zadaci/gradivo-kodiranja", "student")).toMatchObject({ kind: "page", page: { label: "Gradivo za kodiranje", current: "/zadaci" } });
+    expect(resolve("/zadaci/gradivo-kodiranja", "student")).toMatchObject({ kind: "page", page: { label: "Gradivo za kodiranje", current: "/zadaci/gradivo-kodiranja" } });
     expect(resolve("/zadaci/gradivo-kodiranja", "teacher")).not.toMatchObject({ kind: "page" });
-    expect(resolve("/zadaci/upitnici", "student")).toMatchObject({ kind: "page", page: { label: "Upitnici", current: "/zadaci" } });
+    expect(resolve("/zadaci/upitnici", "student")).toMatchObject({ kind: "page", page: { label: "Upitnici", current: "/zadaci/upitnici" } });
     expect(resolve("/zadaci/upitnici", "teacher")).not.toMatchObject({ kind: "page" });
-    expect(resolve("/zadaci/kodiranje-izvoz", "student")).toMatchObject({ kind: "page", page: { label: "Izvoz kodiranja", current: "/zadaci" } });
+    expect(resolve("/zadaci/kodiranje-izvoz", "student")).toMatchObject({ kind: "page", page: { label: "Izvoz kodiranja", current: "/zadaci/kodiranje-izvoz" } });
     expect(resolve("/zadaci/kodiranje-izvoz", "teacher")).not.toMatchObject({ kind: "page" });
     expect(resolve("/zadaci/kodiranje", "student")).toMatchObject({ kind: "page", page: { label: "Kodiranje", current: "/zadaci" } });
     expect(resolve("/zadaci/kodiranje", "teacher")).not.toMatchObject({ kind: "page" });
@@ -194,7 +194,7 @@ describe("the operator's page (WEB-NUZ-OPERATER, NF-7 OA-1)", () => {
     expect(publicPage(OPERATOR_HOME)).toBeNull();
     expect(internalRoute(`/app/web${OPERATOR_HOME}`, "/app/web")).toBe(OPERATOR_HOME);
     // NF-7 OA-3, OA-7 added the two pages shared with the administrator; nothing else is kept by account kind.
-    expect(PAGES.filter((p) => p.accounts !== undefined).map((p) => p.path)).toEqual([OPERATOR_HOME, ACTION_LOG, PROBLEM_REPORTS]);
+    expect(PAGES.filter((p) => p.accounts !== undefined).map((p) => p.path)).toEqual([OPERATOR_HOME, ACTION_LOG, PROBLEM_REPORTS, SYSTEM_HEALTH, SYSTEM_EVENTS, SECURITY_KEY]);
   });
 });
 
@@ -271,7 +271,7 @@ describe("the ISVU routes (WEB-V22-RUTE)", () => {
   const grades = `/nastavnik/kolegiji/${course}/isvu-ocjene`;
 
   it("opens the import for the administrator only, leading other roles home", () => {
-    expect(resolve("/ustanova/isvu", "admin")).toMatchObject({ kind: "page", page: { path: "/ustanova/isvu", current: "/ustanova" } });
+    expect(resolve("/ustanova/isvu", "admin")).toMatchObject({ kind: "page", page: { path: "/ustanova/isvu", current: "/ustanova/isvu" } });
     expect(resolve("/ustanova/isvu", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
     expect(resolve("/ustanova/isvu", "teacher")).toEqual({ kind: "redirect", to: "/nastavnik" });
     expect(resolve("/ustanova/isvu", null)).toEqual({ kind: "redirect", to: "/" });

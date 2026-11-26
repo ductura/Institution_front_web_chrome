@@ -1,0 +1,20 @@
+// WEB-V14-SHEET-EXPORT: Croatian texts of the spreadsheet export buttons. Invented wording where the prototype has none.
+export const sheetExportHr = {
+  groupLabel: "Izvoz tablice",
+  csv: "Izvezi CSV",
+  xlsx: "Izvezi .xlsx",
+  retry: "Pokušaj ponovno",
+  loading: (what: string) => `Pripremam ${what}…`,
+  doneCsv: "CSV je preuzet.",
+  doneXlsx: ".xlsx je preuzet.",
+  savedNote: "Izvoz sadrži zadnje stanje spremljeno na poslužitelju; izmjene koje još nisu poslane nisu u njemu.",
+  firstSheetNote: "CSV sadrži prvi list tablice.",
+  notFound: "Rad nije pronađen ili još nema verziju spremljenu na poslužitelju.",
+  invalid: "Izvoz nije moguće zatražiti za ovaj rad.",
+  unavailable: "Izvoz trenutačno nije dostupan. Pokušajte ponovno.",
+  mismatch: "Primljena datoteka ne odgovara otisku koji je dao poslužitelj, pa nije preuzeta.",
+  notAFile: "Poslužitelj nije vratio očekivanu datoteku, pa ništa nije preuzeto.",
+  offline: "Niste na mreži. Izvoz je moguć tek kad se veza vrati.",
+  csvWhat: "CSV",
+  xlsxWhat: ".xlsx",
+} as const;

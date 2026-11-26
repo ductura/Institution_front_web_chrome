@@ -10,7 +10,7 @@ import { courseStudentsMessages as text } from "./messages.hr";
 export type WorkStatus = "submitted" | "writing" | "not_submitted" | "unconfirmed" | "unknown";
 export type EvidenceRecord = "continuous" | "with_gaps";
 /** Request for a revision: only `open` and `reopened` wait for the student. */
-export type RevisionState = "open" | "reopened" | "accepted" | "closed";
+export type RevisionState = "open" | "reopened" | "accepted" | "closed" | "responded" | "withdrawn";
 
 export type RosterWork = {
   readonly assignmentId: string;
@@ -155,7 +155,8 @@ export const STATE_FILTERS: readonly Exclude<StateFilter, "">[] = ["notStarted",
 /** Whether one work is in the state; "late" is a submitted work the server marked after the deadline. */
 export function workInState(work: RosterWork, filter: Exclude<StateFilter, "">): boolean {
   switch (filter) {
-    case "notStarted": return work.status === "not_submitted";
+    // NAS-08: "unconfirmed" is a work not started whose notice is not acknowledged; it stays in this filter and count.
+    case "notStarted": return work.status === "not_submitted" || work.status === "unconfirmed";
     case "writing": return work.status === "writing";
     case "submitted": return work.status === "submitted";
     case "late": return work.status === "submitted" && work.afterDeadline === true;

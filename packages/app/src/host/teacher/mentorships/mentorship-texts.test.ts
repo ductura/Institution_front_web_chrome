@@ -7,7 +7,7 @@ import { consultHr } from "../../editor/work/consult/messages.hr";
 import { mentorshipRequestText } from "../../student/mentorship-request/messages.hr";
 import { keyDatesMessages } from "../key-dates/messages.hr";
 import { n12Messages } from "../n12/messages.hr";
-import { mentorPlanText, myStudentsText, overviewText, roundText } from "./messages.hr";
+import { mentorNotesText, mentorPlanText, myStudentsText, overviewText, roundText } from "./messages.hr";
 
 // NF-6 MK-17: one pass over every text of mentoring (the Mentor card, consultations, the record, the mentor's
 // pages, the timeline, the student's mentorship page). Functions are called with invented values so their
@@ -25,13 +25,13 @@ function strings(value: unknown, path: string, out: Array<[string, string]>): Ar
 }
 
 const CATALOGS = {
-  overviewText, myStudentsText, mentorPlanText, roundText, keyDatesMessages, mentorshipRequestText, mentorCardHr, consultHr, n12Messages,
+  overviewText, myStudentsText, mentorPlanText, mentorNotesText, roundText, keyDatesMessages, mentorshipRequestText, mentorCardHr, consultHr, n12Messages,
   mentoredWorks: messagesHr.mentoredWorks, mentorshipRequests: messagesHr.mentorshipRequests,
 };
 const ALL = Object.entries(CATALOGS).flatMap(([name, catalog]) => strings(catalog, name, []));
 /** The catalogs of this task's lane (teacher/mentorships, teacher/key-dates, student/mentorship-request). */
 /** WEB-NF6-RUNDA adds roundText ("Pregled runde", MK-8) to this lane. */
-const OWN = ["overviewText", "myStudentsText", "mentorPlanText", "roundText", "keyDatesMessages", "mentorshipRequestText"];
+const OWN = ["overviewText", "myStudentsText", "mentorPlanText", "mentorNotesText", "roundText", "keyDatesMessages", "mentorshipRequestText"];
 
 /**
  * Findings of the MK-17 pass in catalogs of the editor's lane (host/editor/**), which this task does not touch

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@ductura/ui";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import type { ReplayPlayer } from "@/client/replay-record/replay-player";
 import type { SessionMark } from "@/client/session-marks";
@@ -17,7 +17,7 @@ import type { DocumentNode, DocumentNodeV3 } from "@/domain/document";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { n09Messages as m } from "./messages.hr";
-import { followingStep, parseSpeed, playable, precedingStep, sourceTag, stepDelay, SPEEDS, type Speed } from "./model";
+import { followingStep, keyAction, parseSpeed, playable, precedingStep, sourceTag, stepDelay, SPEEDS, type Speed } from "./model";
 import styles from "./Replay.module.css";
 import { WorkPage, WorkPanel, workPageStyles as page } from "../n07/WorkPage";
 
@@ -117,10 +117,20 @@ export function N09Player({ player }: { player: Player }) {
   const scopeButton = (label: string, on: boolean, act: () => void) =>
     <button type="button" className={on ? "btn" : "btn secondary"} aria-pressed={on} onClick={act}>{label}</button>;
   const prev = precedingStep(steps, n);
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const act = keyAction(e.key, e.target as Element, { ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey, shift: e.shiftKey });
+    if (act === null) return;
+    e.preventDefault();
+    if (act === "toggle") toggle();
+    else if (act === "previous") seek(prev);
+    else if (act === "next") seek(next);
+    else if (act === "first") seek(steps[0] ?? null);
+    else seek(steps[steps.length - 1] ?? null);
+  };
   const spoken = change === null ? t.startLive : describeChange(n, change.kind, parts);
 
   return (
-    <div className={replayStyles.player}>
+    <div className={replayStyles.player} onKeyDown={onKeyDown}>
       <div className={styles.ctl} role="group" aria-label={m.controlsLabel}>
         <button type="button" className="btn" aria-pressed={playing} disabled={steps.length === 0} onClick={toggle}>{playing ? m.stop : m.play}</button>
         <button type="button" className={"btn secondary"} disabled={prev === null} onClick={() => seek(prev)}>{m.previous}</button>
@@ -137,6 +147,7 @@ export function N09Player({ player }: { player: Player }) {
         </label>
       </div>
       <p id="rp-jump-note" className={replayStyles.meta}>{m.jumpNote}</p>
+      <p className={replayStyles.meta}>{m.keys}</p>
       {steps.length > 0 && (
         <div className={styles.range}>
           <label htmlFor="rp-r" className={replayStyles.meta}>{m.slider}</label>

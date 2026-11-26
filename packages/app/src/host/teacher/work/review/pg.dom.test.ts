@@ -107,11 +107,12 @@ describe("NF-5 sections of Pregled rada", () => {
     expect(el.querySelector("button")).not.toBeNull();
   });
 
-  it("PG-7: shows the student's explanation, or says there is none, and says the finding read is missing", async () => {
+  it("PG-7: shows the student's explanation, or says there is none, and points to the finding explanations", async () => {
     const el = await mount(h(Notes, { documentId: DOC, extras: extras() }));
     expect(el.textContent).toContain("Izmišljeno objašnjenje studenta.");
     expect(el.textContent).toContain("Prigovor");
-    expect(el.querySelector('[data-missing="finding-explanation"]')).not.toBeNull();
+    expect(el.querySelector('[data-missing="finding-explanation"]')).toBeNull();
+    expect(el.textContent).toContain("Karti podrijetla");
     await act(async () => { root!.unmount(); });
     document.body.innerHTML = "";
     const none = await mount(h(Notes, { documentId: DOC, extras: extras({ disputes: async () => ({ kind: "ok", disputes: [] }) }) }));

@@ -210,6 +210,10 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
   await expect(page.getByRole("heading", { level: 2 })).toContainText("Vaš akademski identitet.");
   await expect(page.getByText("Lozinku upisujete samo kod AAI@EduHr.")).toBeVisible();
   await expect(page.getByText("Ne možete se prijaviti računom AAI@EduHr?")).toBeHidden();
+  // PAR2-A1: "Vaš prostor" in the role note, and the help lives in the card, not in the footer.
+  await expect(page.getByText("otvara se Vaš prostor prema dodijeljenoj ulozi")).toBeVisible();
+  await expect(page.getByRole("main").locator("details", { hasText: "Trebate pomoć?" })).toHaveCount(1);
+  await expect(page.getByRole("contentinfo").locator("details")).toHaveCount(0);
   await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).toHaveAttribute("open", "");
   await axe(page);
   expect(seen.login).toEqual([]);
@@ -233,6 +237,7 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
     const alert = page.getByRole("main").getByRole("alert");
     await expect(alert).toContainText("Prijava preko AAI@EduHr trenutačno ne odgovara. Pokušajte ponovno za nekoliko minuta.");
     await expect(alert.getByRole("link", { name: "Pokušaj ponovno" })).toBeVisible();
+    await expect(alert.getByRole("link", { name: "Na početnu" })).toHaveCount(0);
   }
 
   await page.goto("/app/web/prijava?stanje=bezuloge");

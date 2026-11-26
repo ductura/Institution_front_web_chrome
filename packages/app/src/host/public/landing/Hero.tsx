@@ -1,7 +1,6 @@
 import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr";
 
-import { appHref } from "../../../../../../src/components/shell/nav";
-
+import { EDGE_LINK } from "./edge";
 import styles from "./Hero.module.css";
 import { Preview } from "./Preview";
 
@@ -13,7 +12,7 @@ const t = messagesHr.landing.hero;
  * correction is CSS only, so it runs without script; reduced motion shows the
  * end state at once. Screen readers get the finished sentence.
  */
-export function Hero({ base }: { base: string }) {
+export function Hero() {
   return (
     <section className={styles.hero} aria-labelledby="pocetna-naslov">
       <div className={styles.heading}>
@@ -38,7 +37,7 @@ export function Hero({ base }: { base: string }) {
           {t.introEnd}
         </p>
         <div className={styles.buttons}>
-          <a className={`${styles.button} ${styles.primary}`} href={appHref(base, "/prijava")}>
+          <a className={`${styles.button} ${styles.primary}`} {...EDGE_LINK}>
             {t.signIn}
           </a>
           <a className={`${styles.button} ${styles.outline}`} href="#kako">
