@@ -33,12 +33,12 @@ describe("WEB-11 the course after the enrollment", () => {
       { id: OTHER, name: "Drugi izmišljeni kolegij", assignments: [assignment(Z, "2026-12-02T12:00:00.000Z")] },
       { id: COURSE, name: "Izmišljeni seminar iz ekologije grada", assignments: [assignment(K, "2026-12-15T12:00:00.000Z")] },
     ] }));
-    expect(await readCourse(api, COURSE, NOW)).toEqual({ kind: "assignment", assignmentId: K });
+    expect(await readCourse(api, COURSE, NOW)).toEqual({ kind: "assignment", assignmentId: K, courseName: "Izmišljeni seminar iz ekologije grada" });
   });
 
   it("tells a course without an open assignment from one the student is not in", async () => {
     const api = apiWith(() => json({ courses: [{ id: COURSE, name: "Izmišljeni kolegij", assignments: [] }] }));
-    expect(await readCourse(api, COURSE, NOW)).toEqual({ kind: "none" });
+    expect(await readCourse(api, COURSE, NOW)).toEqual({ kind: "none", courseName: "Izmišljeni kolegij" });
     expect(await readCourse(api, OTHER, NOW)).toEqual({ kind: "notFound" });
   });
 

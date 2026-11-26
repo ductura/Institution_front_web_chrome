@@ -6,6 +6,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
+import { exportPath } from "../questionnaire-export/model";
 import { questionnairePort, type Failure, type QuestionnairePort } from "./port";
 import {
   KINDS, MAX_QUESTIONS, answersOf, bodyOf, draftOf, emptyDraft, emptyQuestion, nextState, takesManualEntry,
@@ -128,8 +129,10 @@ export function SheetForm({ questionnaire, onSubmit, busy, notice }: {
   );
 }
 
-export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: {
+export function QuestionnairePanel({ courseId, courseName, port, onSignedOut, exportHref }: {
   courseId: string; courseName: string; port: QuestionnairePort; onSignedOut: () => void;
+  /** The link to the export of one questionnaire (F4-V18-22-R01); without it the list offers none. */
+  exportHref?: (questionnaireId: string) => string;
 }) {
   const [items, setItems] = useState<ListItem[] | null>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
@@ -249,6 +252,7 @@ export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: 
             {to !== null && <Button type="button" tone="quiet" disabled={busy} aria-label={text.actionFor(to === "open" ? text.publish : text.close, row.title)}
               onClick={() => setConfirm({ item: row, to })}>{to === "open" ? text.publish : text.close}</Button>}
             {takesManualEntry(row.state) && <Button type="button" tone="quiet" disabled={busy} aria-label={text.actionFor(text.manual, row.title)} onClick={() => void openManual(row)}>{text.manual}</Button>}
+            {row.state !== "draft" && exportHref !== undefined && <a href={exportHref(row.id)} aria-label={text.actionFor(text.exportResponses, row.title)}>{text.exportResponses}</a>}
           </>
         );
       },
@@ -316,7 +320,7 @@ export function CourseQuestionnaires({ courseId, courseName }: { courseId: strin
         onClick={() => setOpen(!open)}>{text.title}</Button>
       <div id={panelId} hidden={!open}>
         {open && <QuestionnairePanel courseId={courseId} courseName={courseName} port={port}
-          onSignedOut={() => goToSignIn(appHref(base, "/nastavnik"))} />}
+          onSignedOut={() => goToSignIn(appHref(base, "/nastavnik"))} exportHref={(id) => appHref(base, exportPath(id))} />}
       </div>
     </div>
   );

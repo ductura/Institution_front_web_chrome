@@ -5,8 +5,11 @@ import { expect, it } from "vitest";
 import { findForbiddenTerms } from "../../../../../scripts/forbidden-terms/terms.ts";
 import { actionLogMessages } from "./action-log/messages.hr";
 import { problemReportsMessages } from "./problem-reports/messages.hr";
+import { eventsMessages } from "./events/messages.hr";
+import { healthMessages } from "./health/messages.hr";
+import { securityKeyMessages } from "./webauthn/messages.hr";
 
-const DIRS = ["action-log", "problem-reports"].map((dir) => join(import.meta.dirname, dir));
+const DIRS = ["action-log", "problem-reports", "health", "events", "webauthn"].map((dir) => join(import.meta.dirname, dir));
 
 it("NF-7 OA-3, OA-7: the pages reach the server only through the shared client, in read.ts, and send no form of their own", () => {
   for (const dir of DIRS) {
@@ -23,7 +26,7 @@ it("NF-7 OA-3, OA-7: the pages reach the server only through the shared client, 
 });
 
 it("NF-7 OA-3, OA-7: the interface text holds no forbidden term and names no provider", () => {
-  const text = JSON.stringify([actionLogMessages, problemReportsMessages]);
+  const text = JSON.stringify([actionLogMessages, problemReportsMessages, healthMessages, eventsMessages, securityKeyMessages]);
   expect(findForbiddenTerms(text, "hr")).toEqual([]);
   expect(text).not.toMatch(/\bAI\b|model|OpenAI|Anthropic|Claude|GPT/i);
 });

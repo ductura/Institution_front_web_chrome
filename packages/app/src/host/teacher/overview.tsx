@@ -16,6 +16,7 @@ import { readAssignmentOverview, type TeacherCall } from "../../../../../src/cli
 import { createTeachingTeam } from "../../../../../src/client/teaching-team.ts";
 
 import { roleOf, type CardRole } from "./assignment-card/model";
+import { followUp } from "./assignment-facts/read";
 
 import N17Overview from "./n17/Overview";
 import { joinRows, type N17Port, type N17Read, type RowJoin } from "./n17/model";
@@ -80,14 +81,15 @@ export function overviewPort(scope: OverviewScope = { course: null, task: null }
         const works = courseWorks(call, course.id);
         const role = roleIn(call, course.id);
         return tasks.map(async (a) => {
-          const [overview, byTask, submissions, extensions, cardRole] = await Promise.all([
-            readAssignmentOverview(call as unknown as TeacherCall, a.id), works, submissionsOf(call, a.id), readDeadlineExtensions(call, a.id), role,
+          const [overview, byTask, submissions, extensions, cardRole, follow] = await Promise.all([
+            readAssignmentOverview(call as unknown as TeacherCall, a.id), works, submissionsOf(call, a.id), readDeadlineExtensions(call, a.id), role, followUp(call, a.id),
           ]);
           const join: RowJoin = {
             dueAt: a.dueAt,
             works: byTask === null ? null : byTask.get(a.id) ?? new Map(),
             submissions,
             extensions: extensions.kind === "ready" ? extensions.extensions : null,
+            followUp: follow,
           };
           return {
             assignmentId: a.id, title: a.title, courseName: course.name, courseId: course.id, dueAt: a.dueAt, role: cardRole,

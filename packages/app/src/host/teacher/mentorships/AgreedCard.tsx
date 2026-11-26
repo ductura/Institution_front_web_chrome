@@ -1,21 +1,25 @@
 "use client";
 
 // WEB-NF6-ETAPE (NF-6 MK-5, odluka 1: piše samo mentor, student čita): "Dogovoreno na konzultacijama" of one
-// work on N-16, from the latest record of the consultation log (work.consultation-records.get). Tasks with
-// check boxes are not in the contract (SRV-MENTOR-5): the card says so and leads to the log, where the
-// mentor writes the agreement as text. A failed read says "unavailable", never "none".
+// work on N-16, from the latest record of the consultation log (work.consultation-records.get), and a link to
+// the log. A failed read says "unavailable", never "none".
+// F4-MEN-R03: under it the tasks agreed at that consultation, which the mentor adds and ticks (AgreedTasks).
 import { Button, Card } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
 import { readConsultations, type ConsultationRecord } from "../../../../../../src/client/consultation-records";
 import { appHref } from "../../../../../../src/components/shell/nav";
+import type { TasksCall } from "./agreed-tasks";
+import { AgreedTasks } from "./AgreedTasks";
 import { mentorPlanText } from "./messages.hr";
 import { dayText, latestRecord } from "./model";
 
 const t = mentorPlanText.agreed;
 export type RecordsRead = (documentId: string) => Promise<readonly ConsultationRecord[] | null>;
 
-export function AgreedCard({ documentId, base, read = readConsultations }: { documentId: string; base: string; read?: RecordsRead }) {
+export function AgreedCard({ documentId, base, onSignedOut, read = readConsultations, tasks }: {
+  documentId: string; base: string; onSignedOut: () => void; read?: RecordsRead; tasks?: () => TasksCall;
+}) {
   const [records, setRecords] = useState<readonly ConsultationRecord[] | null | undefined>(undefined);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -46,9 +50,9 @@ export function AgreedCard({ documentId, base, read = readConsultations }: { doc
               <ul>{last.additions.map((addition) => <li key={addition.id}>{addition.text}</li>)}</ul>
             </>
           )}
+          <AgreedTasks documentId={documentId} recordId={last.id} onSignedOut={onSignedOut} call={tasks} />
         </>
       )}
-      <p>{t.tasks}</p>
       <p><a href={appHref(base, `/nastavnik/rad/${encodeURIComponent(documentId)}/konzultacije`)}>{t.openRecords}</a></p>
     </Card>
   );

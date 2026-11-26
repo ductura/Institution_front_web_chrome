@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { Button, RouteLoading } from "@ductura/ui";
 
 import { goToSignIn } from "@/client/api";
@@ -9,6 +10,7 @@ import { appHref } from "@/components/shell/nav";
 import styles from "./Notice.module.css";
 import { noticeWindow } from "./window";
 import { studentHostHr as t } from "../i18n/messages.hr";
+import { nextPath } from "../../../bases";
 import { useHost } from "../../context";
 import HostNotice from "../enrol/HostNotice";
 import { editorPath } from "../enrol/model";
@@ -20,6 +22,7 @@ export default function NoticePage({ assignmentId }: { assignmentId: string }) {
   const { base } = useHost();
   const here = appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}`);
   const [attempt, setAttempt] = useState(0);
+  const router = useRouter();
   const [notice, setNotice] = useState<StudentNoticeRead | null>(null);
 
   useEffect(() => {
@@ -38,6 +41,14 @@ export default function NoticePage({ assignmentId }: { assignmentId: string }) {
     setAttempt((previous) => previous + 1);
   };
 
+  const view = notice?.kind === "available" ? notice.view : null;
+  const timing = view ? noticeWindow(view.opensAt, view.dueAt, Date.now()) : null;
+  const viewId = view?.assignmentId;
+  // R-19: a fresh confirmation goes straight to the work (E-7).
+  const openWork = useCallback(() => {
+    if (viewId) router.push(nextPath(base, editorPath(viewId)));
+  }, [router, base, viewId]);
+
   return (
     <div className={`page ${styles.screen}`}>
       <p className={styles.back}>
@@ -45,15 +56,23 @@ export default function NoticePage({ assignmentId }: { assignmentId: string }) {
       </p>
       {notice === null ? <RouteLoading label={t.student.loading} /> : notice.kind === "available" ? (
         <>
-          <NoticeSummary view={notice.view} />
-          {/* WEB-V19-GRUPA: the way into the student's team on this assignment. */}
-          <p><a href={appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}/tim`)} data-testid="work-team-link">{workTeamText.title}</a></p>
-          {/* WEB-V19-RECENZIJA-STUDENT: the way into the anonymous peer review of this assignment. */}
-          <p><a href={appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}/recenzija`)} data-testid="peer-review-link">{peerReviewText.title}</a></p>
+          {/* E-6 `nijeotvoren`: only the card, no summary and no ways into the work. */}
+          {timing === "notOpen" ? null : (
+            <>
+              <NoticeSummary view={notice.view} />
+              {/* WEB-V19-GRUPA: the way into the student's team on this assignment. */}
+              <p><a href={appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}/tim`)} data-testid="work-team-link">{workTeamText.title}</a></p>
+              {/* WEB-V19-RECENZIJA-STUDENT: the way into the anonymous peer review of this assignment. */}
+              <p><a href={appHref(base, `/zadatak/${encodeURIComponent(assignmentId)}/recenzija`)} data-testid="peer-review-link">{peerReviewText.title}</a></p>
+            </>
+          )}
           <HostNotice
             view={notice.view}
-            timing={noticeWindow(notice.view.opensAt, notice.view.dueAt, Date.now())}
+            timing={timing ?? "open"}
             editorHref={appHref(base, editorPath(notice.view.assignmentId))}
+            backHref={appHref(base, "/zadaci")}
+            onReload={retry}
+            onOpenWork={openWork}
           />
         </>
       ) : (

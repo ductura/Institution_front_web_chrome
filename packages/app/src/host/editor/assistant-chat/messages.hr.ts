@@ -1,6 +1,6 @@
 // ED-10 (NF2-P10, ASIST-1..9): the Asistent card. Texts from the prototype (nf2.js aiCard), without what
 // the server cannot do yet: no "priloži izjavi" (declaration-v1 keeps ai.attachments empty), no
-// "Preostalo upita: n od 10" (the limit is not in the contract) and no sentence about simulated answers.
+// and no sentence about simulated answers. F4-EDI-R04: the day's count (limit and used) is now read from the server.
 export const assistantChatHr = {
   title: "Asistent",
   tag: {
@@ -39,6 +39,9 @@ export const assistantChatHr = {
   conversations: (n: number) => `Razgovori (${n})`,
   none: "Još nema razgovora. Svaki razgovor s Asistentom Ductura zabilježi, a Vi ga vidite ovdje.",
   thisDevice: "Prikazani su razgovori započeti na ovom uređaju.",
+  listUnavailable: "Popis razgovora s poslužitelja trenutačno se ne može učitati.",
+  remaining: (left: number, limit: number) => `Preostalo upita danas: ${left} od ${limit}.`,
+  remainingUnavailable: "Broj preostalih upita trenutačno se ne može učitati.",
   unreadable: "Razgovor se trenutačno ne može učitati.",
   loadingConversation: "Učitavam razgovor…",
   you: "Vi",
