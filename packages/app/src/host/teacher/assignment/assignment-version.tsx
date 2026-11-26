@@ -10,6 +10,7 @@ import { AssignmentCopy } from "../assignment-copy/AssignmentCopy";
 import { NoticePreview } from "../publish/NoticePreview";
 import { DocumentKindReadBack } from "../assignment-form/DocumentKindField";
 import { PracticeReadBack } from "../assignment-form/PracticeField";
+import { QuestionLive } from "../assignment-form/QuestionField";
 import { AssignmentPage, useAssignmentRead } from "./page-state";
 import SubmissionRulesLive from "./SubmissionRulesLive";
 
@@ -30,6 +31,7 @@ export default function AssignmentVersionPage({ assignmentId }: { assignmentId: 
         <DocumentKindReadBack current={current} />
         <AssignmentVersionForm current={current} backHref={href("/nastavnik")} onReload={retry} />
         <SubmissionRulesLive assignmentId={assignmentId} />
+        <QuestionLive assignmentId={assignmentId} />
       </>}
     </AssignmentPage>
   );
