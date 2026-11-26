@@ -5,7 +5,9 @@ import { join } from "node:path";
 
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: () => undefined }), useSearchParams: () => new URLSearchParams("") }));
 
 import { cataloguesFor } from "../i18n/catalogue";
 import { navLabel } from "../i18n/shell";
@@ -68,16 +70,15 @@ describe("the thin components", () => {
     }
   });
 
-  it("shows the Studomat entry in its own main and calls no server", () => {
-    const calls: unknown[] = [];
+  // WEB-V22-STUDOMAT-ULAZ replaced the body (outside its paths, intentional): the page says only "Preusmjeravanje"; behaviour is in studomat-entry.dom.test.ts.
+  it("shows the Studomat entry in its own main", () => {
     const real = globalThis.fetch;
-    globalThis.fetch = (async (...a: unknown[]) => { calls.push(a); return new Response("{}"); }) as typeof fetch;
+    globalThis.fetch = (() => new Promise(() => undefined)) as typeof fetch;
     try {
       const out = show("/ulaz/studomat", null, createElement(StudomatEntryRoute));
-      expect(out.querySelector("main#sadrzaj h1")?.textContent).toBe("Ulaz iz Studomata");
+      expect(out.querySelector("main#sadrzaj h1")?.textContent).toBe("Preusmjeravanje");
     } finally {
       globalThis.fetch = real;
     }
-    expect(calls).toEqual([]);
   });
 });

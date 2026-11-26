@@ -39,6 +39,8 @@ export type StatementRead =
       readonly question: TeacherQuestion | null;
       /** The student's answer the server holds; null when there is none. */
       readonly answer: QuestionAnswer | null;
+      /** ED-12 (NF2-P12): the tools outside Ductura the student declared (ai.declaredTools); absent where the port keeps none. */
+      readonly tools?: readonly DeclaredTool[];
     }
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
@@ -60,7 +62,16 @@ export interface StatementPort {
   attachPrintout(assignmentId: string, file: File): Promise<StatementWrite>;
   /** The answer to the teacher's question on the same draft (null takes it back); the answer is not obligatory. */
   saveAnswer(assignmentId: string, answer: AnswerWrite): Promise<StatementWrite>;
+  /** ED-12 (NF2-P12): the whole list of tools outside Ductura on the same draft; a port without it shows no list. */
+  saveTools?(assignmentId: string, tools: readonly DeclaredTool[]): Promise<StatementWrite>;
 }
+
+/** One tool outside Ductura, as the student declares it: the tool, what for, and in which phase of the work. */
+export type DeclaredTool = { readonly tool: string; readonly purpose: string; readonly phase: string };
+
+/** declaration-v1 (ai.declaredTools): at most this many tools, each field this many code points; the server checks again. */
+export const TOOLS_MAX = 20;
+export const TOOL_FIELD_MAX = 200;
 
 export type FileCheck =
   | { readonly kind: "ok" }
@@ -128,7 +139,17 @@ export function createStatementPort(call: Call = createApi(), options: Statement
         submitted: state.submitted || state.state === "bound",
         question: state.teacherQuestion ?? null,
         answer: state.questionAnswer ?? null,
+        tools: (state.draft?.ai ?? state.payload?.ai ?? null)?.declaredTools
+          .map((t) => ({ tool: t.toolLabel, purpose: t.purposeText, phase: t.phaseText })) ?? [],
       };
+    },
+
+    async saveTools(assignmentId, tools) {
+      const declaredTools = tools.map((t) => ({ toolLabel: t.tool, purposeText: t.purpose, phaseText: t.phase }));
+      // A listed tool means tools were used; an empty list leaves the declared use as it is.
+      const write = await writeDraft(call, session, assignmentId, { ai: declaredTools.length > 0 ? { use: "used", declaredTools } : { declaredTools } });
+      if (write.kind === "refused") return { kind: "rejected" };
+      return { kind: write.kind };
     },
 
     async saveAnswer(assignmentId, answer) {

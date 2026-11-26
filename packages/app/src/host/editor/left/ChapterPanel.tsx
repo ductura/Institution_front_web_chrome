@@ -3,7 +3,8 @@
 // WEB-2126: the chapter sheet under "Struktura" (prototype rail.js: state chip,
 // ↑↓, "Više radnji ⋯", purpose and note, thesis). The state, purpose, note and
 // thesis stay on this device; nothing here enters the text, the export or a
-// submission. "Pitaj mentora" needs the server, so it says "nedostupno".
+// submission. "Pitaj mentora" (ED-48) opens Komentari with a new comment on
+// the chapter's title; nothing is sent until the person publishes it.
 // ED-48: "Prikaži samo ovo poglavlje" hides the rest of the work on screen
 // (only-chapter.ts) until "Prikaži cijeli rad" or the sheet closes.
 // ED-36 (C-02, C-03, C-05): the writing help of the chapter sits under the
@@ -14,7 +15,9 @@ import { Button, Select, TextArea } from "@ductura/ui";
 
 import { createTocStore, EMPTY_TOC, goToHeading, headingPosition, moveChapterInEditor } from "../../../../../editor-core/src/outline/index.ts";
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
+import { requestPanel } from "../../../../../../src/components/editor/layout-prefs/open-panel.ts";
 import { ChapterHelp } from "../assist/ChapterHelp";
+import { askComment } from "../comments/ask-comment";
 import { loadNotes, notesKey, saveNotes, withPlan, withRole, withTodoAdded, withTodoDone, withTodoRemoved, type NoteStorage, type WorkNotes } from "../assist/work-notes";
 import { EMPTY_HELP, helpDocumentOf } from "./chapter-help";
 import { CHAPTER_STATES, defaultState, parseStates, parseTextMap, parseThread, EMPTY_THREAD, withText, type ChapterState } from "./left-model";
@@ -121,6 +124,15 @@ export function ChapterPanel({ workId }: { workId: string }) {
     editor.chain().setTextSelection({ from: pos + 1, to: pos + node.nodeSize - 1 }).focus().run();
     setMenu(false);
   };
+  // ED-48: the question stands on the chapter's title, as a comment the person writes in Komentari.
+  const askMentor = () => {
+    const node = heading();
+    setMenu(false);
+    if (!node || pos === null || node.textContent.trim() === "") { setMessage(t.chapter.askMentorUntitled); return; }
+    editor.chain().setTextSelection({ from: pos + 1, to: pos + node.nodeSize - 1 }).scrollIntoView().run();
+    requestPanel("comments");
+    askComment(t.chapter.askMentorDraft(node.textContent.trim()));
+  };
   const remove = () => {
     const node = heading();
     if (!node || pos === null) return;
@@ -149,7 +161,7 @@ export function ChapterPanel({ workId }: { workId: string }) {
           <Button tone="quiet" disabled={!live} onClick={rename}>{t.chapter.rename}</Button>
           <Button tone="quiet" disabled={!live || entry.level <= 1} onClick={() => setLevel(-1)}>{t.chapter.raise}</Button>
           <Button tone="quiet" disabled={!live || entry.level >= 3} onClick={() => setLevel(1)}>{t.chapter.lower}</Button>
-          <Button tone="quiet" aria-disabled="true" onClick={(e) => e.preventDefault()}>{t.chapter.askMentor} ({t.chapter.unavailable})</Button>
+          <Button tone="quiet" disabled={!live} onClick={askMentor}>{t.chapter.askMentor}</Button>
           <Button tone="quiet" onClick={() => { showOnlyChapter(editor, entry.key); setMenu(false); }}>{t.chapter.onlyThis}</Button>
           {confirm ? (
             <div role="alertdialog" aria-label={t.chapter.remove}>

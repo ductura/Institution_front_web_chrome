@@ -16,6 +16,7 @@ import styles from "../SidePanels.module.css";
 import { LeftPanel, type LeftSections } from "./LeftPanel";
 import { PanelSettings } from "./PanelSettings";
 import { FOCUS_MODE_EVENT, togglesFocus } from "./focus-mode";
+import { OPEN_PANEL_EVENT, requestedPanel } from "./open-panel";
 import { DEFAULT_PREFERENCES, effectiveLayout, readPreferences, writePreferences, type LayoutPreferences, type Side } from "./preferences";
 import { RightPanel, type PanelGroup, type RightSections } from "./RightPanel";
 
@@ -101,6 +102,20 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
       document.removeEventListener(FOCUS_MODE_EVENT, onRequest);
     };
   }, [focus]);
+
+  // ED-45: a mark's popover or the chapter sheet asks for a group ("Poveži u Literaturi" → Literatura).
+  useEffect(() => {
+    const onRequest = (event: Event) => {
+      const group = requestedPanel(event);
+      if (!group) return;
+      setFocus(false);
+      setSelection(group);
+      setContextView(group);
+      if (panelQuery.snapshot()) setDrawer("right");
+    };
+    document.addEventListener(OPEN_PANEL_EVENT, onRequest);
+    return () => document.removeEventListener(OPEN_PANEL_EVENT, onRequest);
+  }, []);
 
   const setSide = (side: Side, value: LayoutPreferences[Side]) => {
     const next = { ...prefs, [side]: value };

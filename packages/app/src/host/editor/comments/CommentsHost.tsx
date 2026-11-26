@@ -93,6 +93,12 @@ function SessionComments({ editor, documentId, session, submitted, signedOut = f
     e.chain().setTextSelection(range).scrollIntoView().run();
     e.view.focus();
   }, [port]);
+  const currentText = useCallback((place: Place): string | null => {
+    const e = liveOf(editorRef);
+    const anchor = e ? port.anchorOf(place) : null;
+    const range = e && anchor ? anchorRange(e.state.doc, anchor) : null;
+    return e && range ? e.state.doc.textBetween(range.from, range.to, " ") : null;
+  }, [port]);
   const onSessionEnd = useCallback(() => setEnded(true), []);
 
   // ED-42 („Novo”): the last visit is kept in this browser only. It is read once when the card opens,
@@ -109,7 +115,7 @@ function SessionComments({ editor, documentId, session, submitted, signedOut = f
   return (
     <>
       {submitted && <p className={styles.muted}>{t.submittedNote}</p>}
-      <CommentsPanel workId={documentId} role="student" submitted={submitted} port={port} selection={selection} docSize={docSize}
+      <CommentsPanel workId={documentId} role="student" submitted={submitted} port={port} selection={selection} docSize={docSize} currentText={currentText}
         seen={seen} onJump={onJump} onSessionEnd={onSessionEnd} onSeen={onSeen} changes={readMyChanges} />
     </>
   );

@@ -77,7 +77,7 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
   const view = (group: PanelGroup) => <div className={styles.rightContent}><h2>{label(group)}</h2>{content(group)}</div>;
   return <OpenCommentsReport.Provider value={setOpenComments}><div className={styles.rightLayout} data-layout={layout}>
     <div className={styles.rightSettings}>{settings}</div>
-    {layout === "a" && <PanelTabs label={messagesHr.workspace.panelTabs}
+    {layout === "a" && <PanelTabs label={messagesHr.workspace.panelTabs} selected={selection ?? undefined} onChange={(id) => onSelect(id as PanelGroup)}
       tabs={groups.map((id) => ({ id, label: t.groups[id], content: content(id), count: count(id) }))} />}
     {layout === "b" && <>
       <div className={`${styles.panelHeading} ${styles.contextHeading}`}>
