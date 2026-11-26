@@ -87,7 +87,9 @@ test.describe("ED-09 Pravila za ovaj zadatak", () => {
   test("the links lead to the notice and to the declaration", async ({ page }) => {
     const rules = await openRules(page);
     await expect(rules.getByRole("link", { name: "Pročitaj obavijest zadatka" })).toHaveAttribute("href", `/app/web/zadatak/${ID}`);
-    await expect(rules.getByRole("link", { name: "Izjava o korištenju alata" })).toHaveAttribute("href", `/app/web/rad/${ID}/predaja/izjava`);
+    // ED-12: in the editor the declaration opens its dialog in place; the full page stays one link away.
+    await expect(rules.getByRole("button", { name: "Izjava o korištenju alata" })).toHaveAttribute("aria-haspopup", "dialog");
+    await expect(rules.getByRole("link", { name: "Uredi izjavu" })).toHaveAttribute("href", `/app/web/rad/${ID}/predaja/izjava`);
   });
 
   test("Prije prve rečenice shows the assignment's instructions", async ({ page }) => {
@@ -100,13 +102,15 @@ test.describe("ED-09 Pravila za ovaj zadatak", () => {
     await expect(page.getByRole("dialog")).toContainText(INSTRUCTIONS);
   });
 
-  test("keyboard reaches both links", async ({ page }) => {
+  test("keyboard reaches the notice, the declaration and its page", async ({ page }) => {
     const rules = await openRules(page);
     const link = rules.getByRole("link", { name: "Pročitaj obavijest zadatka" });
     await link.focus();
     await expect(link).toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(rules.getByRole("link", { name: "Izjava o korištenju alata" })).toBeFocused();
+    await expect(rules.getByRole("button", { name: "Izjava o korištenju alata" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(rules.getByRole("link", { name: "Uredi izjavu" })).toBeFocused();
     expect(await hiddenFocus(page)).toEqual([]);
   });
 
