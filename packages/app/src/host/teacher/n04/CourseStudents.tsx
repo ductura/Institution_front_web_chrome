@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Select } from "@ductura/ui";
+import { useEffect, useRef, useState } from "react";
+import { Button, Dialog, Select } from "@ductura/ui";
 
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
@@ -9,7 +9,8 @@ import { TeacherPage, type TeacherRead } from "../shell/TeacherPage";
 import {
   extensionLine, groupOptions, listedStudents, loadRoster, notStartedCount, revisionLine, seminarDocumentId, stateLine, stateOptions,
   unavailablePort, workLabel,
-  type CourseStudentsPort, type RosterData, type RosterRead, type StateFilter, type StudentOrder,
+  changeLine, type CourseStudentsPort, type RosterData, type RosterRead, type StateFilter, type StudentChange, type StudentChangeAction,
+  type StudentOrder,
 } from "./model";
 import { courseStudentsMessages as text } from "./messages.hr";
 import { aggregatePath } from "../course-aggregate/model";
@@ -18,7 +19,8 @@ import { signInWhenSignedOut } from "./port";
 
 /**
  * N-04 "Popis studenata" (WEB-2143): every student across the assignments of the course, alphabetical,
- * the state of each work in words, "Čeka doradu" as text only. Read-only: a collaborator sees the same.
+ * the state of each work in words, "Čeka doradu" as text only. A port with `change` adds removal and permitted
+ * return (F4-PM1-R09), each after a confirmation; the server decides who may (403 is said, not hidden).
  * A failed read says "unavailable" with a button, never an empty list.
  */
 export default function CourseStudents({ courseId, port = unavailablePort }: { courseId: string; port?: CourseStudentsPort }) {
@@ -28,6 +30,26 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
   const [group, setGroup] = useState("");
   const [state, setState] = useState<StateFilter>("");
   const [order, setOrder] = useState<StudentOrder>("surname");
+
+  const [ask, setAsk] = useState<{ action: StudentChangeAction; studentId: string; name: string } | null>(null);
+  const [working, setWorking] = useState(false);
+  const [done, setDone] = useState<{ action: StudentChangeAction; outcome: StudentChange } | null>(null);
+  const inFlight = useRef(false);
+  const safe = useRef<HTMLButtonElement>(null);
+
+  const send = async () => {
+    if (ask === null || port.change === undefined || inFlight.current) return;
+    inFlight.current = true;
+    setWorking(true);
+    let outcome: StudentChange;
+    try { outcome = await port.change(ask.action, courseId, ask.studentId); } catch { outcome = "unknown"; }
+    inFlight.current = false;
+    setWorking(false);
+    setDone({ action: ask.action, outcome });
+    setAsk(null);
+    // A removal or a return that changed something: read the roster again, never patch it by hand.
+    if (outcome === "done") setAttempt((n) => n + 1);
+  };
 
   useEffect(() => {
     let live = true;
@@ -69,6 +91,9 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
             <Select label={text.orderLabel} value={order} onChange={(event) => setOrder(event.target.value as StudentOrder)}
               options={[{ value: "surname", label: text.orderSurname }, { value: "state", label: text.orderState }]} />
           </div>
+          {done !== null && (done.outcome === "done" || done.outcome === "nothing"
+            ? <p className="note" role="status" data-testid="n04-change">{changeLine(done.action, done.outcome)}</p>
+            : <p className="note" role="alert" data-testid="n04-change">{changeLine(done.action, done.outcome)}</p>)}
           {shown.length === 0 && <p className="note" role="status">{text.noMatch}</p>}
           <ul className="list" role="list">
             {shown.map((student) => (
@@ -80,6 +105,14 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
                   const extended = extensionLine(work);
                   return <span key={work.assignmentId} className="note" data-testid="n04-work">{workLabel(work)}: {stateLine(work)}.{extended === null ? "" : ` ${extended}`}{waits === null ? "" : ` ${waits}`}</span>;
                 })}
+                {port.change !== undefined && (
+                  <span className="acts">
+                    <Button tone="secondary" size="small" disabled={working}
+                      onClick={() => setAsk({ action: "remove", studentId: student.studentId, name: student.name ?? text.noName })}>{text.remove}</Button>
+                    <Button tone="secondary" size="small" disabled={working}
+                      onClick={() => setAsk({ action: "return", studentId: student.studentId, name: student.name ?? text.noName })}>{text.allowReturn}</Button>
+                  </span>
+                )}
                 {student.works.map((work) => {
                   const doc = seminarDocumentId(work);
                   return doc === null ? null : (
@@ -89,6 +122,16 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
               </li>
             ))}
           </ul>
+          <Dialog open={ask !== null} dismissible={!working} onClose={() => setAsk(null)} initialFocus={safe}
+            title={ask === null ? "" : ask.action === "return" ? text.returnTitle(ask.name) : text.removeTitle(ask.name)}
+            actions={(
+              <>
+                <Button busy={working} onClick={() => void send()}>{ask?.action === "return" ? text.allowReturn : text.remove}</Button>
+                <Button ref={safe} tone="secondary" disabled={working} onClick={() => setAsk(null)}>{text.cancel}</Button>
+              </>
+            )}>
+            <p>{ask?.action === "return" ? text.returnNote : text.removeNote}</p>
+          </Dialog>
         </>
       )} />
   );
