@@ -43,30 +43,30 @@ async function guarded<T>(run: () => Promise<Result<T>>): Promise<Result<T>> {
 }
 
 /** The port over the contract client; tests give a client over a fake transport. */
-export function questionnairePort(api: Api): QuestionnairePort {
+export function questionnairePort(call: Api): QuestionnairePort {
   return {
     list: (courseId) => guarded(async () => {
-      const r = await api("teacher.questionnaires.get", { params: { courseId }, query: undefined, body: undefined });
+      const r = await call("teacher.questionnaires.get", { params: { courseId }, query: undefined, body: undefined });
       return r.ok ? got(r.body?.questionnaires.slice()) : { kind: failure(r.status) };
     }),
     read: (id) => guarded(async () => {
-      const r = await api("teacher.questionnaire.get", { params: { id }, query: undefined, body: undefined });
+      const r = await call("teacher.questionnaire.get", { params: { id }, query: undefined, body: undefined });
       return r.ok ? got(r.body) : { kind: failure(r.status) };
     }),
     create: (courseId, body) => guarded(async () => {
-      const r = await api("teacher.questionnaires.post", { params: { courseId }, query: undefined, body });
+      const r = await call("teacher.questionnaires.post", { params: { courseId }, query: undefined, body });
       return r.ok ? got(r.body) : { kind: failure(r.status) };
     }),
     change: (id, body) => guarded(async () => {
-      const r = await api("teacher.questionnaire.patch", { params: { id }, query: undefined, body });
+      const r = await call("teacher.questionnaire.patch", { params: { id }, query: undefined, body });
       return r.ok ? got(r.body) : { kind: failure(r.status) };
     }),
     setState: (id, state) => guarded(async () => {
-      const r = await api("teacher.questionnaire-state.post", { params: { id }, query: undefined, body: { state } });
+      const r = await call("teacher.questionnaire-state.post", { params: { id }, query: undefined, body: { state } });
       return r.ok ? got(r.body?.state) : { kind: failure(r.status) };
     }),
     addSheet: (id, answers) => guarded<null>(async () => {
-      const r = await api("teacher.questionnaire-manual-responses.post", { params: { id }, query: undefined, body: { answers } });
+      const r = await call("teacher.questionnaire-manual-responses.post", { params: { id }, query: undefined, body: { answers } });
       return r.ok ? { kind: "ready", value: null } : { kind: failure(r.status) };
     }),
   };
