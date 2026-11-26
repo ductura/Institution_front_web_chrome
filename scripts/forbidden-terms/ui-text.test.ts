@@ -27,6 +27,7 @@ describe("UI text modules", () => {
       "**/labels.ts",
       "**/messages.ts",
       "**/copy.ts",
+      "**/messages.hr.ts",
       "packages/editor-core/src/editor/schema.ts",
     ]);
     for (const file of [

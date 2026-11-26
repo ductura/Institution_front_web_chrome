@@ -37,6 +37,8 @@ export const UI_TEXT_MODULES: readonly string[] = [
   "**/labels.ts",
   "**/messages.ts",
   "**/copy.ts",
+  // The Croatian message catalogues of the host screens (MEN-37).
+  "**/messages.hr.ts",
   // The editor placeholder (Ductus src/editor/schema.ts).
   "packages/editor-core/src/editor/schema.ts",
 ];
