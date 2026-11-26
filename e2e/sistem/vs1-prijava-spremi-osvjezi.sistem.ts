@@ -105,7 +105,7 @@ test('VS-1: kroz Preloader student piše u isporučenom packages/app, spremanje 
 
   const { workPath, opened } = await test.step('VS-1.1–VS-1.4: ulaz kroz Preloader, prijava preko AAI@EduHr i otvaranje vlastitog rada', async () => {
     await signInDemoStudent(page);
-    claims['VS-1.1'] = 'ulaz na / (Preloader) i povratak u /app/web/';
+    claims['VS-1.1'] = 'ulaz na / (Preloader) i povratak u /aplikacija/';
     claims['VS-1.2'] = 'prijava kroz lažni AAI@EduHr (D-09), sesija /api/v1/me = student';
     const [opened, workPath] = await Promise.all([
       page.waitForResponse((response) => /\/api\/v1\/evidence\/open$/.test(response.url()), { timeout: 30_000 }),

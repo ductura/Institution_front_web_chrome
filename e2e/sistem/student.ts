@@ -8,14 +8,14 @@ export type SeedAccount = 'demo-student' | 'demo-student-2' | 'demo-teacher' | '
 
 /**
  * Sign-in as a user enters (INT-10, DAN-887): the Preloader's first screen on
- * `/`, its "Prijava preko AAI@EduHr" (`/api/v1/auth/login?returnTo=/app/web/`),
- * the fake AAI@EduHr, and back on the shipped app under /app/web/, which leads
+ * `/`, its "Prijava preko AAI@EduHr" (`/api/v1/auth/login?returnTo=/aplikacija/`),
+ * the fake AAI@EduHr, and back on the shipped app under /aplikacija/, which leads
  * to the role's home page. `pick` chooses the account on the simulator's page.
  */
 export async function signInThroughPreloader(page: Page, pick: SeedAccount | ((page: Page) => Promise<void>)) {
   await page.goto('/');
   const signIn = page.getByRole('link', { name: 'Prijava preko AAI@EduHr', exact: true });
-  await expect(signIn).toHaveAttribute('href', '/api/v1/auth/login?returnTo=%2Fapp%2Fweb%2F');
+  await expect(signIn).toHaveAttribute('href', '/api/v1/auth/login?returnTo=%2Faplikacija%2F');
   await signIn.click();
   await expect(page).toHaveURL((url) => url.origin === oidcOrigin);
   if (typeof pick === 'function') await pick(page);
@@ -34,7 +34,7 @@ export async function signInDemoStudent(page: Page, account: 'demo-student' | 'd
   expect(await me.json()).toMatchObject({ roles: expect.arrayContaining(['student']) });
 }
 
-/** Opens the seed's work from the student's home page; returns its path (/app/web/rad/<id>). */
+/** Opens the seed's work from the student's home page; returns its path (/aplikacija/rad/<id>). */
 export async function openDemoWork(page: Page) {
   await page.getByRole('link', { name: /Seminarski rad: kućno kompostiranje/ }).first().click();
   const workPath = new RegExp(`^${appBase}/rad/[^/]+$`);
@@ -53,7 +53,7 @@ export async function dismissGuide(page: Page) {
 
 /**
  * The seed's assignment as the home page links it: to the work while it is
- * written, to the receipt once it is submitted (/app/web/rad/<id>/predaja/potvrda).
+ * written, to the receipt once it is submitted (/aplikacija/rad/<id>/predaja/potvrda).
  */
 export async function openDemoAssignment(page: Page) {
   await page.getByRole('link', { name: /Seminarski rad: kućno kompostiranje/ }).first().click();

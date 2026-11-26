@@ -51,7 +51,7 @@ async function serveTeacher(page: Page) {
 test("the mentor sees each work's stages and agreement, adds a stage, and is told a template conflict", async ({ page }, info) => {
   const sent = await serveTeacher(page);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   const plans = page.getByTestId("mentor-work-plan");
   await expect(plans).toHaveCount(2);
   const first = plans.first();
@@ -96,7 +96,7 @@ test("the mentor sees each work's stages and agreement, adds a stage, and is tol
 test("on a phone the mentor's plan has no sideways scroll and no axe findings", async ({ page }, info) => {
   await serveTeacher(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/app/web/nastavnik/mentorstva");
+  await page.goto("/aplikacija/nastavnik/mentorstva");
   await expect(page.getByTestId("mentor-work-plan")).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   for (const theme of ["dark", "light"] as const) {
@@ -125,7 +125,7 @@ for (const width of [1280, 390]) {
       return route.fulfill(result);
     });
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/app/web/zadaci/mentorstvo");
+    await page.goto("/aplikacija/zadaci/mentorstvo");
     await expect(page.getByRole("heading", { name: s.mine.title })).toBeVisible();
     await expect(page.getByTestId("my-mentorship")).toHaveText(/Diplomski rad: mentor Marko Izmišljeni/);
     await expect(page.getByText(s.mine.openedOn.replace("{date}", "3. studenoga 2026."))).toBeVisible();

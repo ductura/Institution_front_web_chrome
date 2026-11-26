@@ -2,12 +2,13 @@ import path from "node:path";
 
 import type { NextConfig } from "next";
 
+import { BASE_PATH } from "./src/bases.ts";
 import { institutionRewrites, institutionServerUrl } from "./src/rewrites.ts";
 
-// The institution front under /app/web/ and /app/chrome/ (#2028 c.6993786629
-// §1): basePath "/app" and the segment app/[base]/ (web or chrome). The edge
-// routes only those two prefixes here, so the build's own files are asked for
-// under /app/web/_next/ (assetPrefix) and Next serves them from there.
+// The institution front under /aplikacija/ (D-318, DAN-1574): basePath
+// "/aplikacija", the pages in the route group app/(host)/. The edge routes
+// only that prefix here, so the build's own files are asked for under
+// /aplikacija/_next/ and Next serves them from there.
 const root = path.join(import.meta.dirname, "../..");
 
 // The API path belongs to the institution server. Behind the edge it never reaches
@@ -17,17 +18,16 @@ const institutionServer = institutionServerUrl(process.env.INSTITUTION_SERVER_UR
 
 // PL-CSP-OKVIR (V21-14): the sandboxed code-run frame (public/code-run/) refuses to run code unless its own
 // page carries this policy (frame.js "fails closed"). No script from elsewhere, no network (no connect-src), a
-// Worker only from blob:, and only this origin may embed it. Source paths are relative to basePath "/app".
+// Worker only from blob:, and only this origin may embed it. Source paths are relative to basePath "/aplikacija".
 export const CODE_RUN_FRAME_CSP = "default-src 'none'; script-src 'self'; worker-src blob:; frame-ancestors 'self'";
 
 const nextConfig: NextConfig = {
-  basePath: "/app",
-  assetPrefix: "/app/web",
+  basePath: BASE_PATH,
   poweredByHeader: false,
   reactStrictMode: true,
   devIndicators: false,
   agentRules: false,
-  // /app/web/ is where sign-in returns (§3); the host reads both forms of a
+  // /aplikacija/ is where sign-in returns (§3); the host reads both forms of a
   // path, so neither is redirected to the other.
   skipTrailingSlashRedirect: true,
   // LOK-WEB-6: `next dev` serves its own scripts and HMR only to localhost, so a

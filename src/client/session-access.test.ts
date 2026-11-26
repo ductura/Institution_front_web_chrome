@@ -58,7 +58,7 @@ describe("routeWithTail", () => {
     expect(routeWithTail("/zadaci", "/zadaci")).toBe("/zadaci");
   });
   it("leaves a route that already has them", () => {
-    expect(routeWithTail("/app/web/zadaci?a=1", "/zadaci?a=1")).toBe("/zadaci?a=1");
+    expect(routeWithTail("/aplikacija/zadaci?a=1", "/zadaci?a=1")).toBe("/zadaci?a=1");
   });
 });
 

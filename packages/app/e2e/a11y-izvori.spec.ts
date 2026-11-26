@@ -15,7 +15,7 @@ async function openEditor(page: Page) {
     if (result === "hang") return undefined;
     return route.fulfill(result);
   });
-  await page.goto(`/app/web/rad/${T1}`);
+  await page.goto(`/aplikacija/rad/${T1}`);
   const sheet = page.locator('.ProseMirror[contenteditable="true"]').first();
   await expect(sheet).toBeVisible({ timeout: 20_000 });
   const skip = page.getByRole("button", { name: "Preskoči vodič" });

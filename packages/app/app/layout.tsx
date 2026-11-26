@@ -10,7 +10,7 @@ import { THEME_SCRIPT } from "../../../src/components/shell/theme.ts";
 
 export const metadata: Metadata = {
   title: t.app.name,
-  icons: { icon: { url: "/app/web/favicon.svg", type: "image/svg+xml" } },
+  icons: { icon: { url: "/aplikacija/favicon.svg", type: "image/svg+xml" } },
 };
 
 // Dark by default (D-188); a kept light choice is set before the body is
