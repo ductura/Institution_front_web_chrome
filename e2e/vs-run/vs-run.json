@@ -8,7 +8,7 @@
     "preloader": "0fadb6dd46159dd0337c2720d64f9fa1d7ee47c6"
   },
   "host": "packages/app",
-  "entry": "http://localhost:8000/ → http://localhost:8000/aplikacija/",
+  "entry": "http://localhost:8000/ → http://localhost:8000/app/web/",
   "serverPid": {
     "before": 4895,
     "after": 5760,
@@ -49,7 +49,7 @@
     {
       "id": "VS-1.1",
       "status": "PROLAZ",
-      "evidence": "ulaz na / (Preloader) i povratak u /aplikacija/"
+      "evidence": "ulaz na / (Preloader) i povratak u /app/web/"
     },
     {
       "id": "VS-1.2",
@@ -59,7 +59,7 @@
     {
       "id": "VS-1.3",
       "status": "PROLAZ",
-      "evidence": "isporučeni host packages/app poslužuje /aplikacija/rad/854def8d-807e-45a2-ae2e-51d2fc7d3314"
+      "evidence": "isporučeni host packages/app poslužuje /app/web/rad/854def8d-807e-45a2-ae2e-51d2fc7d3314"
     },
     {
       "id": "VS-1.4",
