@@ -152,7 +152,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             }}
             leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId, read.dueAt), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></>,
               footer: <RailFooter range={frame.range} dueAt={read.dueAt} />,
-              chapterMarks: (headingId, words) => <ChapterMarks workId={assignmentId} headingId={headingId} words={words} /> })}
+              chapterMarks: (headingId, words, show) => <ChapterMarks workId={assignmentId} headingId={headingId} words={words} show={show} /> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session, documentId }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />

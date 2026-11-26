@@ -17,7 +17,7 @@ import { LeftPanel, type LeftSections } from "./LeftPanel";
 import { PanelSettings } from "./PanelSettings";
 import { FOCUS_MODE_EVENT, togglesFocus } from "./focus-mode";
 import { OPEN_PANEL_EVENT, requestedPanel } from "./open-panel";
-import { DEFAULT_PREFERENCES, effectiveLayout, readPreferences, writePreferences, type LayoutPreferences, type Side } from "./preferences";
+import { DEFAULT_PREFERENCES, effectiveLayout, readPreferences, rowShows, writePreferences, type LayoutPreferences, type Side } from "./preferences";
 import { RightPanel, type PanelGroup, type RightSections } from "./RightPanel";
 
 const w = messagesHr.workspace;
@@ -132,7 +132,7 @@ export function EditorPanelLayout({ header, tools, status, title, children, left
   // Always the same wrapper, only its density changes: a new element would mount the side again and
   // close the open dialog, the open tab and the comments with it.
   const withDensity = (side: Side, node: ReactNode) => <div className={styles.density} data-density={prefs[side].dense ? "dense" : "airy"}>{node}</div>;
-  const left = withDensity("left", <LeftPanel layout={leftLayout} sections={leftSections} onJump={close}
+  const left = withDensity("left", <LeftPanel layout={leftLayout} sections={leftSections} onJump={close} row={rowShows(prefs.left)}
     settings={<PanelSettings side="left" value={prefs.left} onChange={(value) => setSide("left", value)}
       width={sizes.rail} onWidth={pickWidth("rail")} />} />);
   const sections = renderWork ? { ...rightSections, work: renderWork(close) } : rightSections;
