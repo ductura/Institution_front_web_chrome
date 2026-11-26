@@ -17,7 +17,7 @@ export type ConsultPanelProps = {
   /** The revision a new record refers to. */
   revision: number;
   slotsCall: SlotsApi | null;
-  /** Null until the server's working-criteria operations exist: the card says "nedostupno". */
+  /** The teacher's working-criteria transport; null makes the teacher's card say "nedostupno". Never drawn for the student. */
   criteriaCall: CriteriaCall | null;
   onSessionEnd?: () => void;
   /** The assignment has a rubric: it replaces the working criteria (WEB-V17-DORADE). */
@@ -29,7 +29,11 @@ export function ConsultPanel({ documentId, role, revision, slotsCall, criteriaCa
     <div data-consult-panel="">
       <ConsultSlots documentId={documentId} role={role} call={slotsCall} onSessionEnd={onSessionEnd} />
       <ConsultRecords documentId={documentId} role={role} revision={revision} />
-      <ConsultCriteria documentId={documentId} role={role} call={criteriaCall} onSessionEnd={onSessionEnd} byRubric={byRubric} />
+      {/* ED-35: the working criteria are the teacher's note; the student never sees them (PRODUCT.md §5, pravilo 17,
+          B-9). A rubric on the assignment is still named, since it is in the instructions the student has. */}
+      {role === "teacher" || byRubric
+        ? <ConsultCriteria documentId={documentId} role={role} call={criteriaCall} onSessionEnd={onSessionEnd} byRubric={byRubric} />
+        : null}
     </div>
   );
 }

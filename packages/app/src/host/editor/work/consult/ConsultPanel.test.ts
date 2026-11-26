@@ -9,12 +9,21 @@ const ID = "11111111-1111-4111-8111-111111111111";
 
 // Server rendering runs no effects: every part is in its loading state and no write control is drawn.
 describe("ConsultPanel", () => {
-  it("draws the three parts in their loading state with no write control", () => {
+  it("draws slots and records in their loading state with no write control, and no criteria for a collaborator", () => {
     const html = renderToStaticMarkup(createElement(ConsultPanel, { documentId: ID, role: "collaborator", revision: 1, slotsCall: null, criteriaCall: null }));
     expect(html).toContain("Učitavanje termina…");
     expect(html).toContain("Učitavanje zapisnika…");
-    expect(html).toContain("Učitavanje kriterija…");
+    expect(html).not.toContain("Učitavanje kriterija…");
     expect(html).not.toContain("<button");
+  });
+
+  it("ED-35 (B-9): the student never sees the working criteria, the teacher does", () => {
+    const student = renderToStaticMarkup(createElement(ConsultPanel, { documentId: ID, role: "student", revision: 1, slotsCall: null, criteriaCall: null }));
+    expect(student).not.toContain("Učitavanje kriterija…");
+    expect(student).not.toContain("Kriteriji ocjene");
+    expect(student).toContain("Učitavanje termina…");
+    const teacher = renderToStaticMarkup(createElement(ConsultPanel, { documentId: ID, role: "teacher", revision: 1, slotsCall: null, criteriaCall: null }));
+    expect(teacher).toContain("Učitavanje kriterija…");
   });
 
   it("with a rubric on the assignment says where the criteria are and draws no working criteria", () => {
