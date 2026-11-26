@@ -12,6 +12,7 @@ const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d2f";
 const SCOPE = "b".repeat(64);
 const TAG = "izmisljena-oznaka-prijave-0003";
 const PATH = `/app/web/rad/${ID}`;
+const CHROME_PATH = `/app/chrome/rad/${ID}`;
 
 async function server(page: Page) {
   await page.route("**/api/v1/me", (route) => route.fulfill({
@@ -28,9 +29,9 @@ async function server(page: Page) {
   // evidence/open: the shared fake answers with the contract's own opened work (fixtures/test).
 }
 
-async function openEditor(page: Page) {
+async function openEditor(page: Page, path = PATH) {
   await server(page);
-  await page.goto(PATH);
+  await page.goto(path);
   const editor = page.locator('.ProseMirror[contenteditable="true"]').first();
   await expect(editor).toBeVisible({ timeout: 20_000 });
   // At 390 px the guide panel lies over the text; the keyboard reaches the editor anyway.
@@ -153,6 +154,68 @@ for (const { id, label } of SHORTCUTS) {
     await PROBES[id]!(page);
   });
 }
+
+test("Lab S12: moves past the abbreviation and decimal, with separate undo and redo", {
+  tag: "@ductura-lab-sentence-move",
+}, async ({ page }) => {
+  const editor = await openEditor(page, CHROME_PATH);
+  const paragraph = editor.locator("p").last();
+  const first = "Rezultat je npr. dobar.";
+  const second = "Vrijednost je 3.14.";
+  const third = "Slijedi zaključak.";
+  const original = [first, second, third].join(" ");
+  const moved = [first, third, second].join(" ");
+
+  await page.keyboard.insertText(original);
+  await expect(paragraph).toHaveText(original);
+  await page.keyboard.press("Alt+ArrowUp");
+  await expect(paragraph).toHaveText(moved);
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(paragraph).toHaveText(original);
+  await page.keyboard.press("ControlOrMeta+Shift+z");
+  await expect(paragraph).toHaveText(moved);
+  await page.keyboard.press("Alt+ArrowDown");
+  await expect(paragraph).toHaveText(original);
+});
+
+test("Lab S13: moves a formatted quotation with its citation past initials and a date", {
+  tag: "@ductura-lab-sentence-move",
+}, async ({ page }) => {
+  const editor = await openEditor(page, CHROME_PATH);
+  const paragraph = editor.locator("p").last();
+  const first = "Prof. dr. sc. A. B. Čičak pisao je 12. 3. 2024.";
+  const quote = "„Zašto?”";
+  const citation = "(Žunić, 2023, str. 14).";
+  const second = quote + " " + citation;
+
+  await page.keyboard.insertText(first + " " + second);
+  await expect(paragraph).toHaveText(first + " " + second);
+  await paragraph.evaluate((element, { from, to }) => {
+    const text = element.firstChild!;
+    const selection = window.getSelection()!;
+    selection.setBaseAndExtent(text, from, text, to);
+  }, { from: first.length + 1, to: first.length + 1 + quote.length });
+  await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe(quote);
+  await page.keyboard.press("ControlOrMeta+b");
+  await expect(paragraph.locator("strong")).toHaveText(quote);
+  await page.keyboard.press("Control+End");
+  expect(await paragraph.locator("strong").textContent()).toBe(quote);
+  const blockId = await paragraph.getAttribute("data-node-id");
+  expect(blockId).toBeTruthy();
+
+  await page.keyboard.press("Alt+ArrowUp");
+  await expect(paragraph).toHaveText(second + " " + first);
+  await expect(paragraph.locator("strong")).toHaveText(quote);
+  await expect(paragraph).toHaveAttribute("data-node-id", blockId!);
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(paragraph).toHaveText(first + " " + second);
+  await expect(paragraph.locator("strong")).toHaveText(quote);
+  await expect(paragraph).toHaveAttribute("data-node-id", blockId!);
+  await page.keyboard.press("ControlOrMeta+Shift+z");
+  await expect(paragraph).toHaveText(second + " " + first);
+  await expect(paragraph.locator("strong")).toHaveText(quote);
+  await expect(paragraph).toHaveAttribute("data-node-id", blockId!);
+});
 
 test("Ctrl+/, ? and the Prečaci button open the same one list, with the rows of the one definition", async ({ page }) => {
   await openEditor(page);

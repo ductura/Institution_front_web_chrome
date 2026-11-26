@@ -8,6 +8,7 @@ const ci = Boolean(process.env.CI);
 // The fake institution server: nothing listens on port 9. The rewrites read it
 // when the app is built (src/rewrites.ts), so the CI step Build sets the same.
 const institutionServer = "http://127.0.0.1:9";
+const start = `pnpm exec next start --hostname 127.0.0.1 -p ${port}`;
 export default defineConfig({
   // e2e: the flows; tests/mobile: the 360 px view of the main screens (WEB-1806).
   testDir: ".",
@@ -23,7 +24,7 @@ export default defineConfig({
   webServer: {
     // In CI the step Build has built the app (with the same server URL), so
     // the server only starts it; locally the build stays in the command.
-    command: ci ? `pnpm exec next start -p ${port}` : `pnpm run build && pnpm exec next start -p ${port}`,
+    command: ci ? start : `pnpm run build && ${start}`,
     env: { INSTITUTION_SERVER_URL: institutionServer },
     url: `http://127.0.0.1:${port}/app/web/`,
     reuseExistingServer: !ci,
