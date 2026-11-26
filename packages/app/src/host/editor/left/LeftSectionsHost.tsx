@@ -15,7 +15,7 @@ import { createTocStore, EMPTY_TOC, goToHeading } from "../../../../../editor-co
 import { requestPanel } from "../../../../../../src/components/editor/layout-prefs/open-panel.ts";
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
 import {
-  allObservations, assistHr, BalancePanel, distribute, holesOf, loadNotes, nextSteps, NextStepCard, notesKey, QuickJump, ResumeCard, saveNotes,
+  allObservations, assistHr, BalancePanel, distribute, holesOf, EMPTY_NOTES, loadNotes, nextSteps, NextStepCard, notesKey, parseNotes, QuickJump, ResumeCard,
   StartWizard, ThreadPanel, withLast, withSelfNote, withTargets, workStatus, type JumpKind, type JumpPlace, type NextStepInput,
   type StepTarget, type WorkNotes, type WorkRange,
 } from "../assist";
@@ -294,15 +294,30 @@ function noteStorage(): Storage | null {
   try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
 }
 
+/** The cards' own fields (stopping place, message to self, chapter goals) live under their own key: ChapterPanel saves its whole,
+ * possibly stale, notes object under `notesKey` and would otherwise wipe them. Roles, plans and tasks are read from `notesKey`. */
+const ownKey = (workId: string) => `${notesKey(workId)}.cards`;
+const ownOf = (n: WorkNotes) => ({ ...EMPTY_NOTES, lastChapterId: n.lastChapterId, selfNote: n.selfNote, targets: n.targets });
+const readNotes = (workId: string): WorkNotes => {
+  const own = loadNotesAt(workId);
+  return { ...loadNotes(noteStorage(), workId), lastChapterId: own.lastChapterId, selfNote: own.selfNote, targets: own.targets };
+};
+function loadNotesAt(workId: string): WorkNotes {
+  try { return parseNotes(noteStorage()?.getItem(ownKey(workId))); } catch { return EMPTY_NOTES; }
+}
+
 /** The student's own writing-help notes of the work (device only), read again when ChapterPanel or another tab writes them. */
 function useWritingNotes(workId: string): [WorkNotes, (change: (current: WorkNotes) => WorkNotes) => void] {
-  const [notes, setNotes] = useState<WorkNotes>(() => loadNotes(noteStorage(), workId));
-  useDeviceChange(notesKey(workId), () => setNotes(loadNotes(noteStorage(), workId)));
-  // A change starts from what the device holds now, so a note written elsewhere meanwhile is not overwritten.
+  const [notes, setNotes] = useState<WorkNotes>(() => readNotes(workId));
+  useDeviceChange(notesKey(workId), () => setNotes(readNotes(workId)));
+  useDeviceChange(ownKey(workId), () => setNotes(readNotes(workId)));
   const change = (apply: (current: WorkNotes) => WorkNotes) => {
-    const next = apply(loadNotes(noteStorage(), workId));
+    const next = apply(readNotes(workId));
     setNotes(next);
-    if (saveNotes(noteStorage(), workId, next)) announceDeviceChange(notesKey(workId));
+    try {
+      noteStorage()?.setItem(ownKey(workId), JSON.stringify(ownOf(next)));
+      announceDeviceChange(ownKey(workId));
+    } catch { /* a full or blocked store keeps the value for this visit */ }
   };
   return [notes, change];
 }
@@ -328,11 +343,18 @@ function StartWork({ workId, open, onClose }: Props & { open: boolean; onClose: 
     <StartWizard open={open} chapterCount={help.chapters.length} profileLabel={null} onClose={onClose}
       onCreate={(skeleton) => {
         if (!editor || editor.isDestroyed || !live) return false;
-        const nodes = [
-          ...(skeleton.title === "" ? [] : [{ type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: skeleton.title }] }]),
-          ...skeleton.chapters.flatMap((title) => [{ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: title }] }, { type: "paragraph" }]),
-        ];
-        if (!editor.chain().insertContentAt(editor.state.doc.content.size, nodes).run()) return false;
+        // A work that already has a title keeps it; an empty one takes the typed title; only a work without one gets a new heading.
+        let titleAt: number | null = null;
+        let titleEmpty = false;
+        editor.state.doc.forEach((node, offset) => {
+          if (titleAt === null && node.type.name === "heading" && Number(node.attrs.level) === 1) { titleAt = offset; titleEmpty = node.textContent.trim() === ""; }
+        });
+        const chapterNodes = skeleton.chapters.flatMap((title) => [{ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: title }] }, { type: "paragraph" }]);
+        const titleNode = skeleton.title === "" || titleAt !== null ? [] : [{ type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: skeleton.title }] }];
+        // The chapters go to the end first, so the position of the title above them does not move.
+        const chain = editor.chain().insertContentAt(editor.state.doc.content.size, [...titleNode, ...chapterNodes]);
+        if (titleAt !== null && titleEmpty && skeleton.title !== "") chain.insertContentAt(titleAt + 1, skeleton.title);
+        if (!chain.run()) return false;
         if (skeleton.question !== "") setThread({ ...thread, question: skeleton.question });
         return true;
       }} />
@@ -345,6 +367,8 @@ function WritingHelp({ workId, range = null }: Props & { range?: WorkRange | nul
   const snap = useWorkSnapshot();
   const [notes, change] = useWritingNotes(workId);
   const [wizard, setWizard] = useState(false);
+  // Where the person stopped last time, kept for this visit; moving on only updates the place saved for the next one.
+  const [resumeAt] = useState(() => readNotes(workId).lastChapterId);
   const [thread] = useDeviceValue("thread", workId, parseThread, EMPTY_THREAD);
   const { chapters } = help;
   const wholeRange: WorkRange = range ?? { min: null, max: null };
@@ -370,7 +394,7 @@ function WritingHelp({ workId, range = null }: Props & { range?: WorkRange | nul
     hole: chapters.flatMap((c) => (holesOf([c]).count > 0 ? [{ chapterId: c.id }] : [])),
     obs: allObservations(input).map((o) => ({ chapterId: o.chapterId })),
   };
-  const resume = chapters.find((c) => c.id === notes.lastChapterId) ?? null;
+  const resume = chapters.find((c) => c.id === resumeAt) ?? null;
   const hasRange = wholeRange.min !== null && wholeRange.max !== null;
   return (
     <div className={styles.stack} data-writing-help="">
