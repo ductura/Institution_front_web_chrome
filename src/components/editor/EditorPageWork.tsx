@@ -303,7 +303,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         : reconnected ? [{ kind: "reconnected", sending: reconnectText(pending) }] : []} />
       <LocalEditor lastSignedAt={lastSignedAt} />
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
-      <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId}
+      <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId} assignmentId={assignmentId}
         fresh={phase === "ready" && editor?.isEmpty}
         notice={{ course, title, length: length?.range ?? undefined, instructions: hostSections?.instructions?.(ctx) ?? null }} />
     </EditorPanelLayout>
