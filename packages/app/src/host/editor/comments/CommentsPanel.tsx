@@ -60,6 +60,8 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   const [form, setForm] = useState<{ text: string; kind: Kind; save: boolean; place: Place | null }>({ text: "", kind: "must", save: false, place: null });
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // WEB-F4-EDI-R20: "Prethodni / Sljedeći" walks the comments now shown, in their order.
+  const [cursor, setCursor] = useState<string | null>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
@@ -110,6 +112,16 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   const live = comments;
   const counts = countsFor(live, role, seen);
   const shown = applyFilters(live, role, seen, turn, kindFilter, activeId ?? replyFor);
+  const at = shown.findIndex((c) => c.id === cursor);
+  const step = (by: 1 | -1) => {
+    if (shown.length === 0) return;
+    const next = shown[at < 0 ? (by === 1 ? 0 : shown.length - 1) : (at + by + shown.length) % shown.length]!;
+    setCursor(next.id);
+    if (!next.place.lost) onJump(next.place);
+    const card = [...document.querySelectorAll("[data-cid]")].find((el) => el.getAttribute("data-cid") === next.id);
+    if (card && typeof card.scrollIntoView === "function") card.scrollIntoView({ block: "nearest" });
+  };
+  const focusId = activeId ?? (at >= 0 ? cursor : null);
   const mentorWord = role === "teacher" ? "studenta" : "mentora";
 
   const run = async (call: () => Promise<Awaited<ReturnType<typeof safely>>>, ok: string, matches: (c: Comment) => boolean = () => true) => {
@@ -205,13 +217,20 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
         </details>
       </div>
       {shown.length === 0 && <p className={styles.muted}>{t.empty}</p>}
+      {shown.length > 1 && (
+        <div className={styles.actions} role="group" aria-label={t.stepGroup}>
+          <Button tone="ghost" size="dense" onClick={() => step(-1)}>{t.prevComment}</Button>
+          <span role="status" className={styles.muted}>{at < 0 ? t.stepNone(shown.length) : t.stepAt(at + 1, shown.length)}</span>
+          <Button tone="ghost" size="dense" onClick={() => step(1)}>{t.nextComment}</Button>
+        </div>
+      )}
       <ul className={styles.list}>
         {shown.map((c) => {
           const can = abilities(c, role, submitted);
           const tn = turnOf(c);
           const label = turnLabel(tn, role);
           return (
-            <li key={c.id} className={`${styles.card} ${c.id === activeId ? styles.active : ""} ${c.kind === "praise" ? styles.praise : ""}`} data-cid={c.id}>
+            <li key={c.id} className={`${styles.card} ${c.id === focusId ? styles.active : ""} ${c.kind === "praise" ? styles.praise : ""}`} data-cid={c.id}>
               <div className={styles.meta}>
                 {c.kind && <PillTag tone={kindTone(c.kind)}>{t.kinds[c.kind]}</PillTag>}
                 <PillTag tone={c.resolved ? "ok" : "neutral"}>{statusOf(c)}</PillTag>
