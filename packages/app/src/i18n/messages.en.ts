@@ -114,6 +114,7 @@ export const hostTextEn = {
   questionnaires: "Questionnaires",
   qualExport: "Coding export",
   qualCoding: "Coding",
+  questionnaireExport: "Questionnaire export",
   mentorPracticeJournal: "Students' practice journals",
   workTeam: "My team",
   workTeams: "Teams on the assignment",
