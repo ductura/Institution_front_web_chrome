@@ -98,8 +98,7 @@ export function NotesView({ read, onRetry }: { read: DisputeListOutcome | null; 
       <p className="note">{t.notesIntro}</p>
       {body}
       <p className="meta">{t.eventNote}</p>
-      <p className="note" data-missing="finding-explanation">{t.notesFinding}</p>
-      <p className="meta">{t.notesFindingReason}</p>
+      <p className="meta">{t.notesFindingWhere}</p>
     </section>
   );
 }
