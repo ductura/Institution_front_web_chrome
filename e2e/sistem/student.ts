@@ -8,16 +8,17 @@ export type SeedAccount = 'demo-student' | 'demo-student-2' | 'demo-teacher' | '
 
 /**
  * Sign-in as a user enters (INT-10, DAN-887): the Preloader's first screen on
- * `/`, its "Prijava preko AAI@EduHr" (`/api/v1/auth/login?returnTo=/aplikacija/`),
- * the fake AAI@EduHr, and back on the shipped app under /aplikacija/, which leads
+ * `/ulaz` (D-318), its link to the app's sign-in screen `/aplikacija/prijava`, which goes to
+ * `/api/v1/auth/login?returnTo=/aplikacija/`, the fake AAI@EduHr, and back on the shipped app under /aplikacija/, which leads
  * to the role's home page. `pick` chooses the account on the simulator's page.
  */
 export async function signInThroughPreloader(page: Page, pick: SeedAccount | ((page: Page) => Promise<void>)) {
-  await page.goto('/');
-  const signIn = page.getByRole('link', { name: 'Prijava preko AAI@EduHr', exact: true });
-  await expect(signIn).toHaveAttribute('href', '/api/v1/auth/login?returnTo=%2Faplikacija%2F');
-  await signIn.click();
-  await expect(page).toHaveURL((url) => url.origin === oidcOrigin);
+  await page.goto('/ulaz');
+  const open = page.locator('a#open-app');
+  await expect(open).toHaveAttribute('href', `${appBase}/prijava`);
+  await open.click();
+  // The app's sign-in screen leaves for the login of the institution server, which returns to /aplikacija/.
+  await expect(page).toHaveURL((url) => url.origin === oidcOrigin, { timeout: 30_000 });
   if (typeof pick === 'function') await pick(page);
   else await page.locator(`button[name="account"][value="${pick}"]`).click();
   // The first sign-in of a run is the first request the shipped app answers, and on a
