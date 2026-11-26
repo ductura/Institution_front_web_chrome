@@ -1,6 +1,6 @@
 // WEB-NF6-ETAPE (NF-6 MK-5, MK-6, MK-7): on N-16 the mentor sees, per started work, the stages with due dates,
 // descriptions and notes, adds a stage or applies the faculty template, and reads what was agreed at the
-// latest consultation; "Otvori mentorstvo" is not available yet. The student sees the mentor of an approved
+// latest consultation with its agreed tasks (F4-MEN-R03); "Otvori mentorstvo" is not available yet. The student sees the mentor of an approved
 // request and sends a declined one to another teacher. The server is the VIZ "puno" scenario over the
 // contract's vectors, with this page's reads and writes answered per test. Every person, text and identifier is invented.
 import { axe, setTheme } from "./a11y/check";
@@ -71,7 +71,7 @@ test("the mentor sees each work's stages and agreement, adds a stage, and is tol
   await expect(first.getByText("Izmišljeni opis: naslov i tri rečenice o temi.")).toBeVisible();
   await expect(first.getByText("Izmišljena napomena: proširiti metodu.")).toBeVisible();
   await expect(first.getByText("Izmišljeni dogovor: dovršiti uvod do idućeg tjedna.")).toBeVisible();
-  await expect(first.getByText(t.agreed.tasks)).toBeVisible();
+  await expect(first.getByRole("heading", { name: t.agreed.taskList.title })).toBeVisible();
   // F4-MEN-R01: the card offers the students of the teacher's courses; nothing is sent before the click.
   await expect(page.getByLabel(t.open.student).locator("option", { hasText: "Lana Izmišljena" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: t.open.button })).toBeEnabled();

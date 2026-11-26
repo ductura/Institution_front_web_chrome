@@ -165,8 +165,11 @@ export default function EditorPageWork({
   leftSections,
   footnoteDialog,
   toolbar,
+  startContent,
 }: {
   assignmentId: string;
+  /** F4-V17-R01: the blocks a work with no stored text starts with (the faculty template's skeleton); null for none. */
+  startContent?: (assignmentId: string) => Promise<readonly unknown[] | null>;
   /** The host's base path, for the links of a failed open (ED-01b); "" at the root. */
   base?: string;
   course: string;
@@ -216,7 +219,8 @@ export default function EditorPageWork({
     <>
       <SessionObserver tag={read.session.tag} at={read.session.at} />
       {/* The confirmed schema version is part of the key: another version mounts a new sheet (PIL-K-SHEMA-V3). */}
-      <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}:${read.schemaVersion ?? ""}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session} schemaVersion={read.schemaVersion}>
+      <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}:${read.schemaVersion ?? ""}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session} schemaVersion={read.schemaVersion}
+        startContent={startContent ? () => startContent(assignmentId) : undefined}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
           assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} schemaVersion={read.schemaVersion} lastSignedAt={read.lastSignedAt} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} footnoteDialog={footnoteDialog} toolbar={toolbar} triggers={triggers} literature={literature}
           statusExtra={statusExtra} useSupplements={useSupplements} />
@@ -303,7 +307,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
         : reconnected ? [{ kind: "reconnected", sending: reconnectText(pending) }] : []} />
       <LocalEditor lastSignedAt={lastSignedAt} />
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
-      <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId}
+      <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId} assignmentId={assignmentId}
         fresh={phase === "ready" && editor?.isEmpty}
         notice={{ course, title, length: length?.range ?? undefined, instructions: hostSections?.instructions?.(ctx) ?? null }} />
     </EditorPanelLayout>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extensionPath, gapsBanner, heading, links, sequence, showNotSubmittedBanner, stateLine, type Facts } from "./model";
+import { deadlinePassedFor, extensionPath, gapsBanner, heading, links, sequence, showNotSubmittedBanner, stateLine, type Facts } from "./model";
 import { workFrameMessages as text } from "./messages.hr";
 
 const receipt = { submittedAt: "2026-11-02T08:50:00.000Z", dueAt: "2026-11-02T22:59:00.000Z", afterDeadline: false, version: 2, record: "continuous" as const };
@@ -36,5 +36,13 @@ describe("N-06 frame model", () => {
     expect(showNotSubmittedBanner(open, null)).toBe(false);
     expect(showNotSubmittedBanner(open, true)).toBe(true);
     expect(extensionPath("a/1")).toBe("/nastavnik/zadatak/a%2F1/produljenje");
+  });
+  it("NAS-R05: the deadline comes from the course list, unknown when it is not there", () => {
+    const courses = [{ assignments: [{ id: "a1", dueAt: "2026-11-02T22:59:00.000Z" }] }];
+    const at = (s: string) => Date.parse(s);
+    expect(deadlinePassedFor("a1", courses, at("2026-11-03T00:00:00.000Z"))).toBe(true);
+    expect(deadlinePassedFor("a1", courses, at("2026-11-02T00:00:00.000Z"))).toBe(false);
+    expect(deadlinePassedFor("other", courses, 0)).toBeNull();
+    expect(deadlinePassedFor("a1", [{ assignments: [{ id: "a1", dueAt: "bad" }] }], 0)).toBeNull();
   });
 });

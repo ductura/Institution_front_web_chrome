@@ -5,13 +5,14 @@ import { Button, DataTable, type DataTableColumn } from "@ductura/ui";
 
 import { readAssistantMatch, type MatchCall } from "./contract";
 import { matchText as t } from "./match-messages.hr";
-import { matchRows, shareLabel, type MatchRead, type MatchRow } from "./match-model";
+import { explainedCount, matchRows, shareLabel, type MatchRead, type MatchRow } from "./match-model";
 
 /** No column sorts: the rows keep the server's order and are never ranked by size. */
 const COLUMNS: readonly DataTableColumn<MatchRow>[] = [
   { id: "words", header: t.colWords, cell: (row) => row.words },
   { id: "recorded", header: t.colRecorded, cell: (row) => row.recorded },
   { id: "attached", header: t.colAttached, cell: (row) => row.attached },
+  { id: "explanation", header: t.colExplanation, cell: (row) => row.explanation },
 ];
 
 /**
@@ -57,6 +58,7 @@ export function AssistantMatchView({ read, onRetry, level = 3, shareListed = fal
       {!(shareListed && read.percent > 0) && <p data-assistant-match-share><b>{shareLabel(read.percent)}</b></p>}
       <p className="note">{t.intro}</p>
       <p className="note">{t.neutral}</p>
+      {read.findings.length > 0 && <p data-assistant-match-explained>{t.explainedOf(explainedCount(read.findings).explained, read.findings.length)}</p>}
       <DataTable caption={t.caption} columns={COLUMNS} rows={matchRows(read.findings)} rowKey={(row) => row.key} empty={t.noConversation} />
     </section>
   );

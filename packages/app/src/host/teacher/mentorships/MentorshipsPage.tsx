@@ -27,6 +27,8 @@ import { OpenMentorshipCard } from "./OpenMentorshipCard";
 import type { OpenCall } from "./open-mentorship";
 import { ThesisPanel } from "../../thesis/ThesisPanel";
 import { WorkPlan } from "./WorkPlan";
+import { MentorNotes } from "./MentorNotes";
+import type { NotesCall } from "./notes-port";
 import { mentorJournalText } from "../practice-journal/messages.hr";
 import type { PlanCall } from "./plan-actions";
 import type { RecordsRead } from "./AgreedCard";
@@ -37,6 +39,7 @@ const worksCall = () => createApi() as unknown as MentoredWorksCall;
 const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
 const overviewCall = () => createApi() as unknown as OverviewCall;
 const openCall = () => createApi() as unknown as OpenCall;
+const notesCall = () => createApi() as unknown as NotesCall;
 
 /**
  * N-16 (WEB-1404): the requests of students (approve or decline), "Moji studenti"
@@ -48,9 +51,9 @@ const openCall = () => createApi() as unknown as OpenCall;
  * plan writes and what was agreed at the latest consultation, each read on its own.
  * WEB-NF6-PREGLED (MK-11): "Moji studenti" under the works list, what waits on the mentor first.
  */
-export default function MentorshipsPage({ requests = requestsCall, works = worksCall, keyDates = keyDatesCall, overview = overviewCall, open = openCall, plan, records }:
+export default function MentorshipsPage({ requests = requestsCall, works = worksCall, keyDates = keyDatesCall, overview = overviewCall, open = openCall, plan, records, notes = notesCall }:
   { requests?: () => MentorshipCall; works?: () => MentoredWorksCall; keyDates?: () => KeyDatesCall; overview?: () => OverviewCall;
-    open?: () => OpenCall; plan?: () => PlanCall; records?: RecordsRead }) {
+    open?: () => OpenCall; plan?: () => PlanCall; records?: RecordsRead; notes?: () => NotesCall }) {
   const { base } = useHost();
   const datesPort = useMemo(() => keyDatesPort(keyDates), [keyDates]);
   const here = appHref(base, HREF);
@@ -80,6 +83,10 @@ export default function MentorshipsPage({ requests = requestsCall, works = works
           ))}
           {mentorshipsOf(value.works).map((m) => (
             <KeyDates key={m.mentorshipId} mentorshipId={m.mentorshipId} port={datesPort} title={keyDatesMessages.forStudent(m.name)} />
+          ))}
+          {/* MEN-R14 (MEN-38): the mentor's private working notes, one card per mentorship. */}
+          {mentorshipsOf(value.works).map((m) => (
+            <MentorNotes key={m.mentorshipId} mentorshipId={m.mentorshipId} name={m.name} call={notes} onSignedOut={signedOut} />
           ))}
           <RequestsCard read={value.asked} here={here} call={requests()} onDecided={retry} />
           <OpenMentorshipCard call={open} onOpened={() => { setJustOpened(true); retry(); }} onSignedOut={signedOut} justOpened={justOpened} />

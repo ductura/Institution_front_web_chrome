@@ -87,8 +87,7 @@ export function WorkHistoryDialog({ open, onClose, documentId, port, client, rep
               </section>
               <section className={styles.section} aria-labelledby="work-history-compare">
                 <h3 id="work-history-compare">{t.compareTitle}</h3>
-                <p>{t.compareWith}</p>
-                <VersionComparison client={client} documentId={documentId} replayHref={replayHref} />
+                <VersionComparison mode="with" client={client} documentId={documentId} replayHref={replayHref} />
               </section>
             </>
           )}

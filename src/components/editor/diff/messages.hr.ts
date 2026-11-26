@@ -11,6 +11,7 @@ export const comparisonHr = {
   roundNumber: (n: number) => `Pregled runde ${n}`,
   whatsNew: "Što je novo",
   timeline: "Vremenska traka predaja",
+  compareWith: "Usporedi s …",
   from: "Od",
   to: "Do",
   onlyChanges: "Samo promjene",

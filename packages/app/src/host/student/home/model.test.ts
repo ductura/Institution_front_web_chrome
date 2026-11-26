@@ -7,7 +7,7 @@ import type { MyCourse } from "../read/assignments";
 import { normalizeCode as enrollRule } from "../enrol/enroll";
 import { CODE_MAX, cleanCode } from "../enrol/code";
 import { codeFromQuery } from "../enrol/model";
-import { continueRow, coursesWithoutTask, deadlineTag, sections, enrollRoute, flatRows, kindOf, nearTag, normalizeCode, rowAction, rowRoute, startsWork, type TaskRow } from "./model";
+import { continueRow, coursesWithoutTask, deadlineTag, sections, enrollRoute, flatRows, kindOf, nearTag, normalizeCode, rowAction, rowRoute, startsWork, extensionLine, submittedText, type TaskRow } from "./model";
 
 const NOW = Date.parse("2026-11-20T10:00:00Z");
 const A = { id: "a1", title: "Esej o izmišljenoj temi", dueAt: "2026-11-23T10:00:00Z", noticeFirst: false };
@@ -193,5 +193,32 @@ describe("INT-31 start only where no work exists", () => {
   it("the home page draws the start only through startsWork", () => {
     const page = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "HomePage.tsx"), "utf8");
     expect(page).toMatch(/action=\{startsWork\(row\.kind\) \? startWorkAction\(/);
+  });
+});
+
+describe("E-2 NF-1 P-6 and P-7 on the home", () => {
+  const fmt = (iso: string) => `<${iso.slice(0, 10)}>`;
+  const states = new Map([["a1", "submitted" as const], ["a3", "in_progress" as const]]);
+  const extras = {
+    submitted: new Map([["a1", { submittedAt: "2026-11-21T09:00:00Z", afterDeadline: true }]]),
+    extensions: new Map([["a3", { previousDueAt: "2026-12-30T10:00:00Z", scope: "one" as const, reasonId: null }]]),
+  };
+
+  it("says when a row was submitted, and after the deadline when the server says so", () => {
+    const [a1] = flatRows(COURSES, states, extras);
+    expect(submittedText(a1!, fmt)).toBe("Predano <2026-11-21>, nakon roka");
+  });
+
+  it("keeps plain \"Predano\" while no time is known", () => {
+    const [a1] = flatRows(COURSES, states);
+    expect(submittedText(a1!, fmt)).toBe("Predano");
+  });
+
+  it("gives the extension history only to an extended, unsubmitted row", () => {
+    const rows = flatRows(COURSES, states, extras);
+    expect(extensionLine(rows.find((r) => r.id === "a3")!, fmt)).toBe("Prethodni rok: <2026-12-30>. Vrijedi za samo Vas.");
+    expect(extensionLine(rows.find((r) => r.id === "a4")!, fmt)).toBeNull();
+    expect(extensionLine({ kind: "predano", extended: true, extension: extras.extensions.get("a3")! }, fmt)).toBeNull();
+    expect(extensionLine(flatRows(COURSES, states).find((r) => r.id === "a3")!, fmt)).toBeNull();
   });
 });

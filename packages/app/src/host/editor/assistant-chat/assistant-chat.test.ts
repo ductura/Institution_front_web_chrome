@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { AssistantChatView } from "./AssistantChat";
 import {
   SHOWN,
-  PURPOSE_CATALOG_VERSION, askablePurposes, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, titleOf,
+  PURPOSE_CATALOG_VERSION, askablePurposes, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, mergeConversations, requestsLeft, titleOf,
   type AssistantPort, type Message,
 } from "./assistant-chat";
 import { assistantChatHr } from "./messages.hr";
@@ -136,7 +136,10 @@ describe("ED-10 Asistent: the record", () => {
 });
 
 describe("ED-10 Asistent: the card", () => {
-  const idle: AssistantPort = { ask: async () => ({ kind: "unavailable" }), read: async () => ({ kind: "unavailable" }) };
+  const idle: AssistantPort = {
+    ask: async () => ({ kind: "unavailable" }), read: async () => ({ kind: "unavailable" }),
+    availability: async () => ({ kind: "unavailable" }), remaining: async () => ({ kind: "unavailable" }), conversations: async () => ({ kind: "unavailable" }),
+  };
   const out = (readOnly: boolean) =>
     renderToStaticMarkup(createElement(AssistantChatView, { assignmentId: ASSIGNMENT, scope: SCOPE, readOnly, port: idle }));
 
@@ -157,5 +160,44 @@ describe("ED-10 Asistent: the card", () => {
   it("names no model, no provider and no simulated answers", () => {
     const text = JSON.stringify(assistantChatHr, (_k, v: unknown) => (typeof v === "function" ? String(v(2)) : v));
     expect(text).not.toMatch(/model|GPT|Claude|Gemini|OpenAI|Anthropic|simulir|izmišlj|AI\b/i);
+  });
+});
+
+describe("F4-EDI-R04 Asistent: server reads", () => {
+  const ok = (body: unknown) => (async () => ({ ok: true, status: 200, body })) as never;
+  const fail = (status: number) => (async () => ({ ok: false, status, code: "x" })) as never;
+  const throws = (async () => { throw new Error("mreža"); }) as never;
+  const portOf = (call: never) => createAssistantPort(async () => json({}), call);
+
+  it("reads availability, today's count and the conversation list, oldest first", async () => {
+    expect(await portOf(ok({ assistantEnabled: false })).availability(ASSIGNMENT)).toEqual({ kind: "ok", enabled: false });
+    expect(await portOf(ok({ limit: 10, used: 4 })).remaining(ASSIGNMENT)).toEqual({ kind: "ok", limit: 10, used: 4 });
+    const other = "4d5e6f7a-8b9c-4d0e-8f1a-2b3c4d5e6f7a";
+    const row = (conversationId: string, createdAt: string) => ({ conversationId, purposeKey: "formatting", createdAt, requestCount: 1, lastActivityAt: createdAt });
+    const list = await portOf(ok({ assignmentId: ASSIGNMENT, conversations: [row(other, "2026-11-25T10:00:00.000Z"), row(CONV, "2026-11-24T10:00:00.000Z")] })).conversations(ASSIGNMENT);
+    expect(list).toEqual({ kind: "ok", conversations: [{ id: CONV, purposeKey: "formatting" }, { id: other, purposeKey: "formatting" }] });
+  });
+
+  it("another person's assignment (404), signed out (401), a server error or a lost answer are told apart, never read as empty", async () => {
+    for (const read of [(p: ReturnType<typeof portOf>) => p.availability(ASSIGNMENT), (p: ReturnType<typeof portOf>) => p.remaining(ASSIGNMENT), (p: ReturnType<typeof portOf>) => p.conversations(ASSIGNMENT)]) {
+      expect(await read(portOf(fail(404)))).toEqual({ kind: "notFound" });
+      expect(await read(portOf(fail(401)))).toEqual({ kind: "signedOut" });
+      expect(await read(portOf(fail(503)))).toEqual({ kind: "unavailable" });
+      expect(await read(portOf(throws))).toEqual({ kind: "unavailable" });
+    }
+  });
+
+  it("counts what is left and never goes below zero; no limit means no count", () => {
+    expect(requestsLeft({ kind: "ok", limit: 10, used: 4 })).toBe(6);
+    expect(requestsLeft({ kind: "ok", limit: 3, used: 5 })).toBe(0);
+    expect(requestsLeft({ kind: "ok", limit: null, used: 5 })).toBeNull();
+  });
+
+  it("the server list leads and a conversation only this device knows follows it", () => {
+    const a = { id: CONV, purposeKey: "formatting" }, b = { id: REQ, purposeKey: "translation" };
+    expect(mergeConversations([a], [a, b])).toEqual([a, b]);
+    expect(mergeConversations([], [b])).toEqual([b]);
+    const many = Array.from({ length: SHOWN + 2 }, (_, i) => ({ id: `${String(i).padStart(8, "0")}-0000-4000-8000-000000000000`, purposeKey: "formatting" }));
+    expect(mergeConversations(many, [])).toEqual(many.slice(-SHOWN));
   });
 });
