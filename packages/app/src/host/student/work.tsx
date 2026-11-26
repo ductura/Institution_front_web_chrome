@@ -45,6 +45,7 @@ import { LiteratureList } from "../editor/sources-mention/LiteratureList";
 import { MarksHost } from "../editor/marks/MarksHost";
 import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
+import { ChapterMarks } from "../editor/left/ChapterMarks";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
@@ -149,7 +150,9 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               </>,
               instructions: () => <><NoticeInstructions assignmentId={assignmentId} /><RubricCard assignmentId={assignmentId} here={here} /></>,
             }}
-            leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId, read.dueAt), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></>, footer: <RailFooter range={frame.range} dueAt={read.dueAt} /> })}
+            leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId, read.dueAt), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></>,
+              footer: <RailFooter range={frame.range} dueAt={read.dueAt} />,
+              chapterMarks: (headingId, words) => <ChapterMarks workId={assignmentId} headingId={headingId} words={words} /> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session, documentId }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />

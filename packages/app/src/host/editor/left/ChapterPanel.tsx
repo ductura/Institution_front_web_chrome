@@ -18,12 +18,12 @@ import { useLocalEditor } from "../../../../../../src/components/editor/LocalDoc
 import { requestPanel } from "../../../../../../src/components/editor/layout-prefs/open-panel.ts";
 import { ChapterHelp } from "../assist/ChapterHelp";
 import { askComment } from "../comments/ask-comment";
-import { loadNotes, saveNotes, withPlan, withRole, withTodoAdded, withTodoDone, withTodoRemoved, type NoteStorage, type WorkNotes } from "../assist/work-notes";
+import { loadNotes, notesKey, saveNotes, withPlan, withRole, withTodoAdded, withTodoDone, withTodoRemoved, type NoteStorage, type WorkNotes } from "../assist/work-notes";
 import { EMPTY_HELP, helpDocumentOf } from "./chapter-help";
 import { CHAPTER_STATES, defaultState, parseStates, parseTextMap, parseThread, EMPTY_THREAD, withText, type ChapterState } from "./left-model";
 import { leftHr as t } from "./messages.hr";
 import { ONLY_CHAPTER_KEY, onlyChapterKey, onlyChapterPlugin, showOnlyChapter } from "./only-chapter";
-import { useDeviceValue, useEditorRead, useWorkSnapshot } from "./use-left";
+import { announceDeviceChange, useDeviceValue, useEditorRead, useWorkSnapshot } from "./use-left";
 import styles from "./Left.module.css";
 
 function noteStorage(): NoteStorage | null {
@@ -49,7 +49,7 @@ export function ChapterPanel({ workId }: { workId: string }) {
   const live = useEditorRead(editor, (i) => i.isEditable, false);
   const help = useEditorRead(editor, (i) => helpDocumentOf(i.getJSON()), EMPTY_HELP);
   const [workNotes, setWorkNotes] = useState<WorkNotes>(() => loadNotes(noteStorage(), workId));
-  const keepNotes = (next: WorkNotes) => { setWorkNotes(next); saveNotes(noteStorage(), workId, next); };
+  const keepNotes = (next: WorkNotes) => { setWorkNotes(next); if (saveNotes(noteStorage(), workId, next)) announceDeviceChange(notesKey(workId)); };
   // "Prikaži samo ovo poglavlje" lives while this sheet is open; closing it shows the whole work again.
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
