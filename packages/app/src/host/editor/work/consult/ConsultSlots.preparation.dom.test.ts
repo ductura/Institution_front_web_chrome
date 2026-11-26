@@ -38,7 +38,7 @@ describe("ConsultSlots: Priloži pripremu", () => {
   let host: HTMLElement;
   afterEach(() => { act(() => root?.unmount()); root = undefined; document.body.innerHTML = ""; });
 
-  const mount = async (call: ReturnType<typeof server>, compose: () => Promise<PrepInput | null>, role: "student" | "teacher" = "student") => {
+  const mount = async (call: ReturnType<typeof server>, compose: (() => Promise<PrepInput | null>) | undefined, role: "student" | "teacher" = "student") => {
     host = document.createElement("div");
     document.body.append(host);
     root = createRoot(host);
@@ -70,6 +70,34 @@ describe("ConsultSlots: Priloži pripremu", () => {
     expect(calls[0]![0]).toBe(`/api/v1/works/${DOC}/consultation-slot-requests`);
     expect(calls[0]![1]).toMatchObject({ preparation: { text: "Moja izmijenjena priprema.", changedParagraphs: 3, resolvedComments: 2 } });
     expect(host.textContent).toContain("Moja izmijenjena priprema.");
+  });
+
+  it("a composition that finishes after the box was unchecked is dropped", async () => {
+    const calls: Call[] = [];
+    let finish: (v: PrepInput) => void = () => {};
+    await mount(server(calls), () => new Promise<PrepInput | null>((resolve) => { finish = resolve; }));
+    await open();
+    await click(checkbox());
+    await click(checkbox());
+    await act(async () => { finish(INPUT); });
+    expect(checkbox().checked).toBe(false);
+    expect(host.querySelector("textarea")).toBeNull();
+  });
+
+  it("the default composition reads the agreed tasks through the same client", async () => {
+    const seen: string[] = [];
+    const api = createApi({
+      baseUrl: "https://ductura.example.invalid",
+      fetchImpl: async (input) => {
+        const path = new URL(String(input)).pathname;
+        seen.push(path);
+        return new Response(JSON.stringify(path.endsWith("/consultation-slot-details") ? { slots: [] } : { tasks: [] }), { status: 200, headers: { "content-type": "application/json" } });
+      },
+    });
+    await mount(api, undefined as never);
+    await open();
+    await click(checkbox());
+    expect(seen.some((p) => p.endsWith("/consultation-tasks"))).toBe(true);
   });
 
   it("without the checkbox the request carries no preparation and uses the older route", async () => {

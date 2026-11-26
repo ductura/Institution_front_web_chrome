@@ -102,11 +102,21 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd, now = Date.
     if (outcome.kind === "promijenjeno") void read();
   };
 
+  // Each composition has a generation; a result is dropped once the box was unchecked, the form closed or another one started.
+  const composing = useRef(0);
+  const dropAttach = () => { composing.current += 1; setAttach(NO_ATTACH); };
   const toggleAttach = async (on: boolean) => {
-    if (!on) { setAttach(NO_ATTACH); return; }
+    if (!on) { dropAttach(); return; }
+    const mine = ++composing.current;
     setAttach({ kind: "making" });
-    const input = await (composePreparation ?? (() => prepPort(documentId).compose(null)))().catch(() => null);
-    if (!alive.current) return;
+    // The same agreed tasks as "Složi iz rada" in the Mentor card (work.consultation-tasks.get).
+    const readTasks = async (id: string) => {
+      if (!call) return null;
+      const answer = await call("work.consultation-tasks.get", { params: { documentId: id }, query: undefined, body: undefined });
+      return answer.ok ? answer.body.tasks : null;
+    };
+    const input = await (composePreparation ?? (() => prepPort(documentId, readTasks).compose(null)))().catch(() => null);
+    if (!alive.current || composing.current !== mine) return;
     setAttach(attachFrom(input));
   };
 
@@ -130,7 +140,7 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd, now = Date.
     inFlight.current.delete("new");
     if (!alive.current) return;
     settle(outcome);
-    if (outcome.kind === "saved") setAttach(NO_ATTACH);
+    if (outcome.kind === "saved") dropAttach();
     setRequest((f) => afterSlotWrite(f, outcome));
   };
 
@@ -227,7 +237,7 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd, now = Date.
             ) : null}
             <div className={styles.row}>
               <Button size="dense" disabled={request.busy || attach.kind === "making"} onClick={() => void sendRequest()}>{request.busy ? t.sending : t.requestSend}</Button>
-              <Button size="dense" tone="secondary" disabled={request.busy} onClick={() => { setRequest(IDLE_FORM); setAttach(NO_ATTACH); }}>{t.cancel}</Button>
+              <Button size="dense" tone="secondary" disabled={request.busy} onClick={() => { setRequest(IDLE_FORM); dropAttach(); }}>{t.cancel}</Button>
             </div>
             {request.error ? <p role="alert" className={styles.error}>{request.error}</p> : null}
           </div>
