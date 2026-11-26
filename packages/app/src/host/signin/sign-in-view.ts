@@ -33,3 +33,27 @@ export function signInViewOf(query: { get(name: string): string | null }): SignI
   if (asked !== null && Object.hasOwn(STANJE, asked)) return STANJE[asked]!;
   return "signIn";
 }
+
+/** A footer link of the sign-in screen; `href` null is a page that does not exist yet (shown as plain text). */
+export type FooterLink = { readonly key: "help" | "contact" | "privacy" | "terms" | "accessibility" | "status"; readonly href: string | null };
+
+/**
+ * The six links of the footer (KA-05-WEB, concept koncepti/prijava): Pomoć opens the help of this
+ * screen, Privatnost the landing page's section, Pristupačnost and Stanje the public pages.
+ * Kontakt and Uvjeti have no page yet, so they carry no href.
+ */
+export function footerLinks(href: (path: string) => string): FooterLink[] {
+  return [
+    { key: "help", href: href("/prijava?stanje=pomoc") },
+    { key: "contact", href: null },
+    { key: "privacy", href: "/#privatnost" },
+    { key: "terms", href: null },
+    { key: "accessibility", href: href("/pristupacnost") },
+    { key: "status", href: href("/stanje") },
+  ];
+}
+
+/** Where a visitor who already has a session goes instead of the sign-in screen. */
+export function skipTarget(session: { readonly kind: string }, home: string): string | null {
+  return session.kind === "signedIn" ? home : null;
+}

@@ -12,6 +12,15 @@ export type SignInText = {
   readonly noRoleWho: string;
   readonly noRoleContact: string;
   readonly helpAccessBody: string;
+  readonly logoSlot: string;
+  readonly footerLabel: string;
+  readonly footerHelp: string;
+  readonly footerContact: string;
+  readonly footerPrivacy: string;
+  readonly footerTerms: string;
+  readonly footerAccessibility: string;
+  readonly footerStatus: string;
+  readonly footerSoon: string;
 };
 
 const hr: SignInText = {
@@ -22,6 +31,15 @@ const hr: SignInText = {
   noRoleWho: "Ulogu dodjeljuje administrator fakulteta.",
   noRoleContact: "Javite se koordinatoru (administratoru fakulteta) na svojoj ustanovi.",
   helpAccessBody: "Javite se koordinatoru (administratoru fakulteta) na svojoj ustanovi.",
+  footerLabel: "Informacije",
+  logoSlot: "Prijava preko AAI@EduHr",
+  footerHelp: "Pomoć",
+  footerContact: "Kontakt",
+  footerPrivacy: "Privatnost",
+  footerTerms: "Uvjeti",
+  footerAccessibility: "Pristupačnost",
+  footerStatus: "Stanje",
+  footerSoon: "uskoro",
 };
 
 const en: SignInText = {
@@ -32,6 +50,15 @@ const en: SignInText = {
   noRoleWho: "Roles are assigned by the faculty administrator.",
   noRoleContact: "Contact the coordinator (the faculty administrator) at your institution.",
   helpAccessBody: "Contact the coordinator (the faculty administrator) at your institution.",
+  footerLabel: "Information",
+  logoSlot: "Sign-in through AAI@EduHr",
+  footerHelp: "Help",
+  footerContact: "Contact",
+  footerPrivacy: "Privacy",
+  footerTerms: "Terms",
+  footerAccessibility: "Accessibility",
+  footerStatus: "Status",
+  footerSoon: "coming soon",
 };
 
 export const signInText = { hr, en } as const;

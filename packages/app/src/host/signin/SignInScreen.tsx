@@ -6,11 +6,16 @@ import { useLocale } from "../../i18n";
 import { SignOutDialogButton } from "../SignOut";
 import screen from "../../../../../src/components/auth/SignInScreen.module.css";
 import own from "./SignIn.module.css";
-import type { SignInView } from "./sign-in-view";
+import type { FooterLink, SignInView } from "./sign-in-view";
 import { signInTextFor } from "./text";
 
 /** Official AAI@EduHr help: identity problems belong to the home institution (R-8). */
 const AAI_HELP_URL = "https://www.aaiedu.hr/kontakt";
+
+const footerKey = {
+  help: "footerHelp", contact: "footerContact", privacy: "footerPrivacy", terms: "footerTerms",
+  accessibility: "footerAccessibility", status: "footerStatus",
+} as const;
 
 export type SignInScreenProps = {
   view: SignInView;
@@ -18,6 +23,8 @@ export type SignInScreenProps = {
   href: string;
   /** The button and "Pokušaj ponovno": the page shows "preusmjeravanje" and leaves for `href`. */
   onStart: () => void;
+  /** The footer links; the page gives them under its base. */
+  footer?: readonly FooterLink[];
 };
 
 /**
@@ -28,7 +35,7 @@ export type SignInScreenProps = {
  * AAI@EduHr is the only way in (D-09): no role picker, e-mail or password
  * field; the button is a link to the login route, so it works without script.
  */
-export default function SignInScreen({ view, href, onStart }: SignInScreenProps) {
+export default function SignInScreen({ view, href, onStart, footer = [] }: SignInScreenProps) {
   const { work, app, locale } = useLocale();
   const p = work.prijava;
   const extra = signInTextFor(locale);
@@ -119,6 +126,8 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
           <span className={screen.aai} aria-hidden="true">aai</span> <span className={screen.buttonLabel}>{p.button}</span>{" "}
           <span aria-hidden="true">→</span>
         </a>
+        {/* The place of the AAI@EduHr logo; the official one is not downloaded without approval. */}
+        <p className={own.logoSlot} data-slot="aai-logo">{extra.logoSlot}</p>
         <p className={screen.note}>{p.passwordNote}</p>
         <div className={screen.role}>
           <h3 className={screen.roleTitle}>{p.roleTitle}</h3>
@@ -177,6 +186,22 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
       </main>
       <footer className={screen.footer}>
         <p className={screen.footerNote}>{p.footer}</p>
+        {footer.length > 0 ? (
+          <nav aria-label={extra.footerLabel}>
+            <ul className={own.footerLinks}>
+              {footer.map((link) => {
+                const label = extra[footerKey[link.key]];
+                return (
+                  <li key={link.key}>
+                    {link.href === null
+                      ? <span className={own.footerSoon}>{label} ({extra.footerSoon})</span>
+                      : <a className={screen.link} href={link.href}>{label}</a>}
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        ) : null}
       </footer>
     </div>
   );

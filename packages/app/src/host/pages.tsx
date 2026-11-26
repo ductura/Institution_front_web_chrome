@@ -9,7 +9,7 @@ import {
 } from "../../../../src/components/index.ts";
 import { readMyAssignments, type AssignmentsCall } from "../../../../src/components/student/my-assignments-read.ts";
 import { messagesHr as t } from "../../../../locales/hr.ts";
-import { createApi, goToSignIn, leaveFor, signInHref } from "../../../../src/client/api.ts";
+import { createApi, goToSignIn, leaveFor, readSession, signInHref } from "../../../../src/client/api.ts";
 
 import type { Base } from "../bases";
 import { internalRoute, routeOf } from "../routes";
@@ -26,7 +26,7 @@ import { CourseRhythm } from "./teacher/input-rhythm/mounts";
 import { startWorkAction } from "./student/start-work/action";
 import { HomePage } from "./student/home/HomePage";
 import SignInScreen from "./signin/SignInScreen";
-import { signInViewOf } from "./signin/sign-in-view";
+import { footerLinks, signInViewOf, skipTarget } from "./signin/sign-in-view";
 
 // The pages the host shows, one per route of app/(host)/. Each reads the
 // institution server only through src/client.
@@ -70,7 +70,20 @@ export function SignInPage() {
     setLeaving(true);
     leaveFor(href);
   };
-  return <SignInScreen view={leaving ? "redirecting" : signInViewOf(query)} href={href} onStart={start} />;
+  const home = appHref(base, route ?? "/");
+  // KA-05-WEB: a visitor who already has a session does not see the screen; GET /api/v1/me decides.
+  useEffect(() => {
+    let live = true;
+    void readSession().then((read) => {
+      const target = skipTarget(read, home);
+      if (live && target !== null) leaveFor(target);
+    });
+    return () => {
+      live = false;
+    };
+  }, [home]);
+  return <SignInScreen view={leaving ? "redirecting" : signInViewOf(query)} href={href} onStart={start}
+    footer={footerLinks((path) => appHref(base, path))} />;
 }
 
 /** S01 (E-2, WEB-2102) is its own page; S02 over student.assignments.get, read once per visit. */
