@@ -4,7 +4,7 @@
  * helpers, no UI and no formulas. The server keeps the same model; both sides
  * share golden-vectors.json.
  */
-import { canonicalizeJcs } from "../document/forensics/jcs.ts";
+import { canonicalizeJcs } from "../document/forensics/jcs";
 
 export const SHEET_SCHEMA_VERSION = 1;
 export const MAX_SHEETS = 5;
