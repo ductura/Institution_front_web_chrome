@@ -58,6 +58,17 @@ describe("ED-37 (P2-6, dio 4): the chapter row", () => {
     expect(el.textContent).toContain(leftHr.chapter.toFix(1));
   });
 
+  it("\"U retku poglavlja\" switches the dot and \"za popraviti\" off one by one", async () => {
+    localStorage.setItem(notesKey("rad-1"), JSON.stringify({ todos: { h1: [{ id: "t1", text: "izvor", done: false }] } }));
+    const noDot = await mount(createElement(ChapterMarks, { workId: "rad-1", headingId: "h1", words: 0, show: { status: false, flags: true } }));
+    expect(noDot.querySelector("[data-state]")).toBeNull();
+    expect(noDot.textContent).toContain(leftHr.chapter.toFix(1));
+    host?.remove();
+    const noFix = await mount(createElement(ChapterMarks, { workId: "rad-1", headingId: "h1", words: 0, show: { status: true, flags: false } }));
+    expect(noFix.querySelector("[data-state]")).not.toBeNull();
+    expect(noFix.textContent).not.toContain(leftHr.chapter.toFix(1));
+  });
+
   it("another work's change leaves the row as it is", async () => {
     const el = await mount(createElement(ChapterMarks, { workId: "rad-1", headingId: "h1", words: 0 }));
     await act(async () => {

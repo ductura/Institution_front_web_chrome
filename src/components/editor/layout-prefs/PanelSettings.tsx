@@ -1,12 +1,12 @@
 "use client";
 
-import { Button, Dialog } from "@ductura/ui";
+import { Button, Checkbox, Dialog } from "@ductura/ui";
 import { useState, type SyntheticEvent } from "react";
 
 import { editorPanelLayoutsHr as t } from "@/lib/i18n/messages.hr";
 
 import { DEFAULT_SETTINGS, type PanelSize } from "../layout/layout-settings";
-import { DEFAULT_PREFERENCES, LAYOUTS, type LayoutPreferences, type Side } from "./preferences";
+import { DEFAULT_PREFERENCES, LAYOUTS, ROW_PARTS, rowShows, withRowPart, type LayoutPreferences, type Side } from "./preferences";
 import styles from "../SidePanels.module.css";
 
 const WIDTHS = ["narrow", "medium", "wide"] as const satisfies readonly PanelSize[];
@@ -59,10 +59,15 @@ export function PanelSettings({ side, value, onChange, width, onWidth }: {
           <legend>{t.density}</legend>
           {([false, true] as const).map((dense) => <Button key={String(dense)} tone="quiet"
             aria-pressed={dense === (value.dense === true)}
-            onClick={() => onChange(dense ? { ...value, dense: true } : { layout: value.layout, mobile: value.mobile })}>
+            onClick={() => { const next = { ...value }; if (dense) next.dense = true; else delete next.dense; onChange(next); }}>
             {dense ? t.densities.dense : t.densities.airy}
           </Button>)}
         </fieldset>
+        {side === "left" && <fieldset className={styles.mobileChoices}>
+          <legend>{t.row}</legend>
+          {ROW_PARTS.map((part) => <Checkbox key={part} label={t.rowParts[part]} checked={rowShows(value)[part]}
+            onChange={(event) => onChange(withRowPart(value, part, event.currentTarget.checked))} />)}
+        </fieldset>}
         {width && onWidth && <fieldset className={styles.mobileChoices}>
           <legend>{t.width}</legend>
           {WIDTHS.map((size) => <Button key={size} tone="quiet" aria-pressed={size === width} onClick={() => onWidth(size)}>

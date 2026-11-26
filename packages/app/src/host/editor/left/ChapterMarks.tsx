@@ -21,15 +21,18 @@ export function chapterMarks(set: ChapterState | undefined, words: number, open:
   return { state: set ?? defaultState(words), fix: Math.max(0, open) };
 }
 
-export function ChapterMarks({ workId, headingId, words }: { workId: string; headingId: string; words: number }) {
+/** `show` (ED-37) follows "U retku poglavlja": the state dot and "za popraviti" can each be switched off. */
+export function ChapterMarks({ workId, headingId, words, show = { status: true, flags: true } }: {
+  workId: string; headingId: string; words: number; show?: { status: boolean; flags: boolean };
+}) {
   const [states] = useDeviceValue("states", workId, parseStates, {});
   const [notes, setNotes] = useState(() => loadNotes(noteStorage(), workId));
   useDeviceChange(notesKey(workId), () => setNotes(loadNotes(noteStorage(), workId)));
   const marks = chapterMarks(states[headingId], words, openTodos(notes, headingId).length);
   return (
     <span className={styles.marks} data-chapter-marks="">
-      {marks.fix > 0 && <small className={styles.fix}>{t.chapter.toFix(marks.fix)}</small>}
-      <span className={styles.dot} data-state={marks.state} role="img" aria-label={t.chapter.stateOf(t.chapter.states[marks.state])} title={t.chapter.stateOf(t.chapter.states[marks.state])} />
+      {show.flags && marks.fix > 0 && <small className={styles.fix}>{t.chapter.toFix(marks.fix)}</small>}
+      {show.status && <span className={styles.dot} data-state={marks.state} role="img" aria-label={t.chapter.stateOf(t.chapter.states[marks.state])} title={t.chapter.stateOf(t.chapter.states[marks.state])} />}
     </span>
   );
 }
