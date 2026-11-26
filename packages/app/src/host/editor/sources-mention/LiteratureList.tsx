@@ -15,6 +15,7 @@ import {
   placeExcerpt, unsourcedCitationPlaces, removeSourceTransaction, sourceDraftOf,
 } from "./mention-model";
 import { sourcesMentionHr as t } from "./messages.hr";
+import { RequiredLiterature } from "./RequiredLiterature";
 
 type Doc = NonNullable<ReturnType<typeof useLocalEditor>>["state"]["doc"];
 type Open = { kind: "link" | "add"; pos: number } | { kind: "edit"; id: string; draft: SourceDraft } | null;
@@ -43,7 +44,7 @@ function useDoc(): Doc | null {
  * "Poveži s izvorom" and "Dodaj izvor", then the sources of the work, cited or not yet, with "Citiraj",
  * "Uredi" and "Ukloni". Only the author of a work that is still open edits; others only read.
  */
-export function LiteratureList() {
+export function LiteratureList({ courseId = null }: { courseId?: string | null } = {}) {
   // ED-14: "Brzi izvor" asks the server (`sources.lookup.post`); only the identifier is sent.
   const lookup = useMemo(() => createSourceLookup(), []);
   const editor = useLocalEditor();
@@ -73,6 +74,7 @@ export function LiteratureList() {
   const trusted = (run: () => void) => (event: { isTrusted: boolean }) => { if (event.isTrusted) run(); };
 
   return <div ref={anchor}>
+    {courseId !== null && <RequiredLiterature courseId={courseId} />}
     {places.length > 0 && <section aria-label={t.plainHeading(places.length)}>
       <h3>{t.plainHeading(places.length)}</h3>
       <ul>

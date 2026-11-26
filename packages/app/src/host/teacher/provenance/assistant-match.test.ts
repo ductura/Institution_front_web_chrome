@@ -8,7 +8,7 @@ import { ProvenanceMapView } from "./ProvenanceMap";
 import { assistantMatchReader } from "./contract";
 import { DOCUMENT, FAKE_FINDING, fakeParts } from "./fake-match";
 import { matchText } from "./match-messages.hr";
-import { matchOf, matchRows, shareLabel, type MatchRead } from "./match-model";
+import { explainedCount, matchOf, matchRows, shareLabel, type MatchRead } from "./match-model";
 import { DEFAULT_SWITCHES } from "./model";
 
 // Invented work and conversation; no real person or text.
@@ -67,6 +67,35 @@ describe("PIL-P1-PODUDARANJE-KARTA: model", () => {
     expect(matchRows([FAKE_FINDING, second]).map((row) => row.words)).toEqual(["11 riječi", "21 riječ"]);
     const keys = matchRows([FAKE_FINDING, FAKE_FINDING]).map((row) => row.key);
     expect(new Set(keys).size).toBe(2);
+  });
+});
+
+describe("F4-NAS-R06: the student's explanation of each finding", () => {
+  const EXPLAINED = { ...FAKE_FINDING, messageId: "00000000-0000-4000-8000-00000000a002", explanation: { text: "Izmišljeno objašnjenje nalaza.", writtenAt: "2026-11-19T10:00:00.000Z" } };
+  const NOT_EXPLAINED = { ...FAKE_FINDING, explanation: null };
+
+  it("reads `explanation` of work.assistant-match.get through the contract", async () => {
+    const { read } = reader({ match: Response.json({ findings: [EXPLAINED, NOT_EXPLAINED] }), parts: Response.json({ parts: fakeParts(4) }) });
+    expect(await read(DOCUMENT)).toEqual({ kind: "ready", percent: 4, findings: [EXPLAINED, NOT_EXPLAINED] });
+    // An explanation outside the schema (empty text) is not shown: the section reads as unavailable.
+    const bad = reader({ match: Response.json({ findings: [{ ...FAKE_FINDING, explanation: { text: "", writtenAt: "2026-11-19T10:00:00.000Z" } }] }), parts: Response.json({ parts: fakeParts(4) }) });
+    expect(await bad.read(DOCUMENT)).toEqual({ kind: "unavailable" });
+  });
+
+  it("counts „Objašnjeno n od m”; a missing field counts as not explained, never as explained", () => {
+    expect(explainedCount([EXPLAINED, NOT_EXPLAINED, FAKE_FINDING])).toEqual({ explained: 1, total: 3 });
+    expect(explainedCount([])).toEqual({ explained: 0, total: 0 });
+    expect(matchRows([EXPLAINED])[0]?.explained).toBe(true);
+    expect(matchRows([NOT_EXPLAINED])[0]?.explained).toBe(false);
+  });
+
+  it("draws the explanation next to its finding and the count above the table", () => {
+    const out = view({ kind: "ready", percent: 4, findings: [EXPLAINED, NOT_EXPLAINED] });
+    expect(out).toContain("Objašnjeno 1 od 2");
+    expect(out).toContain("Izmišljeno objašnjenje nalaza.");
+    expect(out).toContain(matchText.noExplanation);
+    expect(out).toContain(matchText.colExplanation);
+    expect(view({ kind: "ready", percent: 4, findings: [] })).not.toContain("data-assistant-match-explained");
   });
 });
 

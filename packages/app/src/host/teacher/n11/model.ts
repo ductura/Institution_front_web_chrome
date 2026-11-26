@@ -57,13 +57,71 @@ export function defaultFrom(submitted: readonly N11Version[]): number | null {
 export const currentLine = (v: N11Version): string => text.current(formatDateTimeHr(v.savedMinute), v.revision);
 export const optionLabel = (v: N11Version): string => text.option(formatDateTimeHr(v.savedMinute), v.revision);
 
-const wordCount = (s: string): number => s.split(/\s+/).filter((w) => w !== "").length;
+export type N11Part = { readonly kind: "same" | "added" | "removed"; readonly text: string };
+/** One displayed block: whole-block change, or `changed` = a removed and an added paragraph compared word by word. */
+export type N11Row =
+  | { readonly change: "unchanged" | "removed" | "added"; readonly text: string }
+  | { readonly change: "changed"; readonly parts: readonly N11Part[] };
+
+const TOKEN = /\p{L}[\p{L}\p{N}'’-]*|\p{N}+|\s+|[^\s]/gu;
+const isWord = (token: string): boolean => /^[\p{L}\p{N}]/u.test(token);
+/** Above this many LCS cells the paragraph is shown as one removed and one added block (bounded memory and time). */
+const MAX_CELLS = 4_000_000;
+
+const wordCount = (s: string): number => (s.match(TOKEN) ?? []).filter(isWord).length;
+
+/** Word-by-word difference of two texts (longest common subsequence of words, spaces and punctuation); `null` over the size bound. */
+export function wordDiff(before: string, after: string): readonly N11Part[] | null {
+  const a = before.match(TOKEN) ?? [];
+  const b = after.match(TOKEN) ?? [];
+  if ((a.length + 1) * (b.length + 1) > MAX_CELLS) return null;
+  const width = b.length + 1;
+  const table = new Uint32Array((a.length + 1) * width);
+  for (let i = a.length - 1; i >= 0; i--) {
+    for (let j = b.length - 1; j >= 0; j--) {
+      table[i * width + j] = a[i] === b[j] ? table[(i + 1) * width + j + 1]! + 1 : Math.max(table[(i + 1) * width + j]!, table[i * width + j + 1]!);
+    }
+  }
+  const parts: { kind: N11Part["kind"]; text: string }[] = [];
+  const push = (kind: N11Part["kind"], text: string): void => {
+    const last = parts[parts.length - 1];
+    if (last?.kind === kind) last.text += text;
+    else parts.push({ kind, text });
+  };
+  let i = 0, j = 0;
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && a[i] === b[j]) { push("same", a[i]!); i++; j++; }
+    else if (i < a.length && (j === b.length || table[(i + 1) * width + j]! >= table[i * width + j + 1]!)) { push("removed", a[i]!); i++; }
+    else { push("added", b[j]!); j++; }
+  }
+  return parts;
+}
+
+/** A removed block directly followed by an added block of the same kind and level is one edited paragraph. */
+export function diffRows(blocks: readonly N11Block[]): readonly N11Row[] {
+  const rows: N11Row[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i]!;
+    const next = blocks[i + 1];
+    if (block.change === "removed" && next?.change === "added" && next.kind === block.kind && next.level === block.level) {
+      const parts = wordDiff(block.text, next.text);
+      if (parts !== null) { rows.push({ change: "changed", parts }); i++; continue; }
+    }
+    rows.push({ change: block.change, text: block.text });
+  }
+  return rows;
+}
 
 export function countWords(blocks: readonly N11Block[]): { readonly added: number; readonly removed: number } {
   let added = 0, removed = 0;
-  for (const { change, text: t } of blocks) {
-    if (change === "added") added += wordCount(t);
-    if (change === "removed") removed += wordCount(t);
+  for (const row of diffRows(blocks)) {
+    if (row.change === "changed") {
+      for (const { kind, text: t } of row.parts) {
+        if (kind === "added") added += wordCount(t);
+        if (kind === "removed") removed += wordCount(t);
+      }
+    } else if (row.change === "added") added += wordCount(row.text);
+    else if (row.change === "removed") removed += wordCount(row.text);
   }
   return { added, removed };
 }

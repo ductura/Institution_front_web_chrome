@@ -50,6 +50,7 @@ export const profileHr = {
 /** Labels of pages whose screens have no English table yet (routes.ts takes them from the screens' own Croatian tables). */
 export const pageLabelsHr = {
   originComposition: "Podrijetlo teksta",
+  studentTeacherView: "Kako vidi nastavnik",
   studentInterview: "Razgovor o radu",
   consultations: "Konzultacije",
   versionComparison: "Usporedba verzija",
@@ -67,6 +68,9 @@ export const pageLabelsHr = {
   pilotMetrics: "Mjerila pilota",
   actionLog: "Dnevnik radnji",
   problemReports: "Prijave problema",
+  systemHealth: "Stanje sustava",
+  systemEvents: "Događaji sustava",
+  securityKey: "Sigurnosni ključ",
   facultySettings: "Postavke fakulteta",
   facultyAssistant: "Asistent na fakultetu",
   milestoneTemplate: "Predložak etapa",

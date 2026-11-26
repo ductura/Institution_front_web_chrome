@@ -8,8 +8,8 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useAssignmentNotice } from "../assistant-rules/assistant-rules";
 import { assistantRulesHr } from "../assistant-rules/messages.hr";
 import {
-  SHOWN, askablePurposes, clockOf, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, newKey, titleOf,
-  type AssistantPort, type ConversationRead, type HeldChat, type Kept,
+  SHOWN, askablePurposes, clockOf, createAssistantPort, exchangesOf, heldChat, keepConversation, keptConversations, mergeConversations, newKey, requestsLeft, titleOf,
+  type AssistantPort, type AvailabilityRead, type ConversationRead, type ConversationsRead, type RemainingRead, type HeldChat, type Kept,
 } from "./assistant-chat";
 import { assistantChatHr as t } from "./messages.hr";
 import styles from "./AssistantChat.module.css";
@@ -107,7 +107,14 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
   const [say, setSay] = useState("");
   const [fieldError, setFieldError] = useState(false);
 
+  const [availability, setAvailability] = useState<AvailabilityRead | null>(null);
+  const [remaining, setRemaining] = useState<RemainingRead | null>(null);
+  const [listRead, setListRead] = useState<ConversationsRead | null>(null);
+
+  // Ids this instance has asked to read: the held list is shared with closed cards, so it cannot say that.
+  const requested = useRef(new Set<string>());
   const load = useCallback(async (id: string) => {
+    requested.current.add(id);
     const read = await port.read(id);
     setReads((prev) => ({ ...prev, [id]: read }));
   }, [port]);
@@ -119,6 +126,26 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
     for (const k of list) void load(k.id);
   }, [slot, scope, assignmentId, load, setKeptHeld]);
 
+  // Read from the server: whether the Asistent is on for the course, today's count and the conversation list.
+  const refreshRemaining = useCallback(async () => setRemaining(await port.remaining(assignmentId)), [port, assignmentId]);
+  const refreshList = useCallback(async (live: () => boolean = () => true) => {
+    const list = await port.conversations(assignmentId);
+    // A card closed meanwhile (drawer) must not change the held list or the state of a newer card.
+    if (!live()) return;
+    setListRead(list);
+    if (list.kind !== "ok") return;
+    const merged = mergeConversations(list.conversations, slot.kept ?? keptConversations(scope, assignmentId));
+    setKeptHeld(merged);
+    for (const k of merged) if (!requested.current.has(k.id)) void load(k.id);
+  }, [port, assignmentId, slot, scope, load, setKeptHeld]);
+  useEffect(() => {
+    let live = true;
+    void port.availability(assignmentId).then((a) => { if (live) setAvailability(a); });
+    void refreshRemaining();
+    void refreshList(() => live);
+    return () => { live = false; };
+  }, [port, assignmentId, refreshRemaining, refreshList]);
+
   const available = notice?.kind === "available" ? notice.view : null;
   const prohibited = available?.aiPolicy === "prohibited";
   const purposes = useMemo(() => askablePurposes(available?.aiPurposes ?? []), [available]);
@@ -126,7 +153,11 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
     if (purposes.length > 0 && !purposes.includes(purpose as (typeof purposes)[number])) setPurpose(purposes[0]!);
   }, [purposes, purpose, setPurpose]);
 
-  const blocked = banner === "disabled" || banner === "limit" || banner === "forbidden";
+  const serverOff = availability?.kind === "ok" && !availability.enabled;
+  const serverLimit = remaining?.kind === "ok" && requestsLeft(remaining) === 0;
+  const left = remaining?.kind === "ok" ? requestsLeft(remaining) : null;
+  // A request sent but not settled (pendingKey) can still be recovered with its key at the limit; new ones cannot.
+  const blocked = banner === "disabled" || banner === "limit" || banner === "forbidden" || serverOff || (serverLimit && pendingKey === null);
   const canAsk = !readOnly && available !== null && !prohibited && purposes.length > 0 && !blocked;
 
   async function send() {
@@ -162,6 +193,7 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
         setCurrent(id);
         await load(id);
       }
+      void refreshRemaining();
       if (outcome.kind === "answered") {
         // Only the question that was sent is cleared: never a newer draft.
         if (slot.draft === sent) setDraft("");
@@ -191,7 +223,7 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
     field.current?.focus();
   }
 
-  const tag = prohibited ? t.tag.prohibited : banner === "disabled" ? t.tag.disabled : banner === "limit" ? t.tag.limit : t.tag.on;
+  const tag = prohibited ? t.tag.prohibited : banner === "disabled" || serverOff ? t.tag.disabled : banner === "limit" || serverLimit ? t.tag.limit : t.tag.on;
   const newestFirst = [...kept].reverse();
   const purposeId = `${ids}-purpose`;
   const promptId = `${ids}-prompt`;
@@ -207,6 +239,11 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
 
       {!online ? <div className={`${styles.banner} ${styles.asb}`} role="status"><b>{t.offlineLead}</b>{t.offline}</div> : null}
       {prohibited ? <div className={`${styles.banner} ${styles.asb}`} role="status"><b>{t.prohibitedLead}</b>{t.prohibited}</div> : null}
+      {serverOff && banner === null ? <BannerView kind="disabled" onRetry={() => undefined} /> : null}
+      {serverLimit && !serverOff && banner === null ? <BannerView kind="limit" onRetry={() => undefined} /> : null}
+      {remaining?.kind === "ok" && remaining.limit !== null && !serverLimit
+        ? <p className={styles.muted} data-requests-left>{t.remaining(left ?? 0, remaining.limit)}</p> : null}
+      {remaining?.kind === "unavailable" ? <p className={styles.muted} role="status">{t.remainingUnavailable}</p> : null}
       {banner !== null ? <BannerView kind={banner} onRetry={() => void send()} /> : null}
 
       {readOnly ? <p className={styles.muted}>{t.readOnly}</p>
@@ -236,10 +273,11 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
         </form>
       ) : null}
 
+      {listRead !== null && listRead.kind !== "ok" && listRead.kind !== "signedOut" ? <p className={styles.muted} role="status">{t.listUnavailable}</p> : null}
       {kept.length === 0 ? <p className={styles.muted}>{t.none}</p> : <>
         <h4 className={styles.sub}>{t.conversations(kept.length)}</h4>
         {newestFirst.map((k, i) => <Conversation key={k.id} kept={k} read={reads[k.id]} open={i === 0} />)}
-        <p className={styles.muted}>{t.thisDevice}</p>
+        <p className={styles.muted}>{listRead?.kind === "ok" ? "" : t.thisDevice}</p>
       </>}
     </section>
   );

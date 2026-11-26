@@ -7,13 +7,12 @@ import { createApi, goToSignIn } from "@/client/api";
 import { readTeacherWorkReceipt } from "@/client/teacher-work";
 import { appHref } from "@/components/shell/nav";
 import { useProcessSummary } from "@/components/teacher/SummaryCard";
-import ReturnForRevisionDialog from "@/components/teacher/revision/ReturnForRevisionDialog";
 
 import { useHost } from "../../context";
-import { LIVE_PORT, type RevisionPort } from "../../editor/work/review/review-model";
 import AiDeclarationSection from "../ai-declaration/AiDeclarationSection";
 import { FallbackPanel, PreSubmitPanel } from "../pre-submit/PreSubmitPanel";
 import { showFallback } from "../pre-submit/model";
+import { RevisionSection } from "../revision";
 import { PracticeNotice } from "../submissions/grade/GradeGate";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
 import { fallbackKey, isSubmittedRead, qrCells, receiptView, type ReceiptInput, type ReceiptView, type Row } from "./model";
@@ -86,27 +85,13 @@ export function ReceiptPanel({ view, onRetry, onCopy, verifyHref }: {
   );
 }
 
-/** "Zatraži doradu": the dd-h dialog when a route carries it, otherwise said as unavailable (B-6). */
-function RevisionAction({ documentId, port, onDone }: { documentId: string; port: RevisionPort; onDone: () => void }) {
-  const [open, setOpen] = useState(false);
-  const post = port.returnForRevision;
-  if (post === null) return <span className="note" role="status">{text.revisionUnavailable}</span>;
-  const today = new Date().toISOString().slice(0, 10);
-  return (
-    <>
-      <Button onClick={() => setOpen(true)}>{text.revision}</Button>
-      <ReturnForRevisionDialog documentId={documentId} today={today} post={post} open={open}
-        onClose={() => setOpen(false)} onSent={() => { setOpen(false); onDone(); }} />
-    </>
-  );
-}
-
 /**
  * N-07 "Što je student predao" (WEB-2155): the frame, "Prije predaje", the receipt, the declaration and the
- * teacher's buttons. Reads only through src/client; the copy toast follows the browser's own answer.
+ * teacher's buttons. "Zatraži doradu" is the dd-h dialog of RevisionSection (NAS-38, F4-NAS-R07), the same as on N-06.
+ * Reads only through src/client; the copy toast follows the browser's own answer.
  */
-export default function N07ReceiptPage({ documentId, workHref, current, port = LIVE_PORT }: {
-  documentId: string; workHref: string; current: () => boolean; port?: RevisionPort;
+export default function N07ReceiptPage({ documentId, workHref, current }: {
+  documentId: string; workHref: string; current: () => boolean;
 }) {
   const { base } = useHost();
   const here = `${workHref}/predaja`;
@@ -147,6 +132,8 @@ export default function N07ReceiptPage({ documentId, workHref, current, port = L
   const full = view.kind === "pending" || view.kind === "submitted";
   const back = <a className="btn secondary" href={workHref}>{text.backToWork}</a>;
   return (
+    <RevisionSection documentId={documentId} current={current}>
+      {(rev) => (
     <WorkPage back={workHref} backLabel={text.backToWork} crumb={name ?? undefined}>
       {full && (
         <section className="panel">
@@ -156,6 +143,7 @@ export default function N07ReceiptPage({ documentId, workHref, current, port = L
           </div>
         </section>
       )}
+      {full && rev.banner}
       {practice && <PracticeNotice />}
       {submitted && <PreSubmitPanel outcome={summary.outcome} summaryHref={summaryHref} onReload={() => void summary.load()} />}
       <ReceiptPanel view={view} onRetry={retry} onCopy={copy} verifyHref={(path) => appHref(base, path)} />
@@ -164,11 +152,14 @@ export default function N07ReceiptPage({ documentId, workHref, current, port = L
       {(full || view.kind === "notSubmitted") && (
         <div className={styles.acts}>
           {back}
-          {full && <RevisionAction documentId={documentId} port={port} onDone={() => toasts.show(text.revisionDone)} />}
+          {full && rev.action}
           {full && <a className="btn secondary" href={appHref(base, "/nastavnik/brz-put")}>{text.fastPath}</a>}
         </div>
       )}
       <TeacherToastRegion toasts={toasts.toasts} onDismiss={toasts.dismiss} />
+      {rev.dialog}
     </WorkPage>
+      )}
+    </RevisionSection>
   );
 }

@@ -1,6 +1,7 @@
 // ED-10 (NF2-P10, ASIST-1..9): asking the Asistent and reading back what Ductura recorded.
 // student.assistant-request.post asks (with an Idempotency-Key, so a retry after a lost answer is the
 // same request); student.assistant-conversation.get reads a conversation, oldest message first.
+// F4-EDI-R04: availability, today's request count and the conversation list are read from the server too.
 import { assistantRequestCall, createApi, responseMatches, type AssistantRequestTransport } from "../../../../../../src/client/api.ts";
 import type { AiPurpose } from "../../../../../../src/components/teacher/assignment-create.ts";
 
@@ -43,9 +44,30 @@ export type ConversationRead =
   | { kind: "ok"; messages: readonly Message[] }
   | { kind: "signedOut" | "unavailable" };
 
+/** What the server says about the Asistent for one assignment (student.assignment-assistant.get). */
+export type AvailabilityRead = { kind: "ok"; enabled: boolean } | { kind: "signedOut" | "notFound" | "unavailable" };
+/** The day's request count (student.assignment-assistant-requests.get); limit null = no limit set. */
+export type RemainingRead = { kind: "ok"; limit: number | null; used: number } | { kind: "signedOut" | "notFound" | "unavailable" };
+/** The student's conversations on the assignment (student.assistant-conversations.get), oldest first. */
+export type ConversationsRead = { kind: "ok"; conversations: readonly Kept[] } | { kind: "signedOut" | "notFound" | "unavailable" };
+
 export interface AssistantPort {
   ask(input: AskInput, key: string): Promise<AskOutcome>;
   read(conversationId: string): Promise<ConversationRead>;
+  availability(assignmentId: string): Promise<AvailabilityRead>;
+  remaining(assignmentId: string): Promise<RemainingRead>;
+  conversations(assignmentId: string): Promise<ConversationsRead>;
+}
+
+/** Requests still allowed today; null when the server sets no limit. */
+export function requestsLeft(r: Extract<RemainingRead, { kind: "ok" }>): number | null {
+  return r.limit === null ? null : Math.max(0, r.limit - r.used);
+}
+
+/** The server list is the record; a conversation only this device knows (just asked) is kept after it. */
+export function mergeConversations(server: readonly Kept[], local: readonly Kept[]): Kept[] {
+  const ids = new Set(server.map((k) => k.id));
+  return [...server, ...local.filter((k) => !ids.has(k.id))].slice(-SHOWN);
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -105,6 +127,37 @@ export function createAssistantPort(
         return { kind: "unavailable" };
       }
     },
+
+    async availability(assignmentId) {
+      try {
+        const r = await call("student.assignment-assistant.get", { params: { assignmentId }, query: undefined, body: undefined });
+        if (r.ok) return { kind: "ok", enabled: r.body.assistantEnabled };
+        return { kind: r.status === 401 ? "signedOut" : r.status === 404 ? "notFound" : "unavailable" };
+      } catch {
+        return { kind: "unavailable" };
+      }
+    },
+
+    async remaining(assignmentId) {
+      try {
+        const r = await call("student.assignment-assistant-requests.get", { params: { assignmentId }, query: undefined, body: undefined });
+        if (r.ok) return { kind: "ok", limit: r.body.limit, used: r.body.used };
+        return { kind: r.status === 401 ? "signedOut" : r.status === 404 ? "notFound" : "unavailable" };
+      } catch {
+        return { kind: "unavailable" };
+      }
+    },
+
+    async conversations(assignmentId) {
+      try {
+        const r = await call("student.assistant-conversations.get", { params: { assignmentId }, query: undefined, body: undefined });
+        if (!r.ok) return { kind: r.status === 401 ? "signedOut" : r.status === 404 ? "notFound" : "unavailable" };
+        const sorted = [...r.body.conversations].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+        return { kind: "ok", conversations: sorted.map((c) => ({ id: c.conversationId, purposeKey: c.purposeKey })) };
+      } catch {
+        return { kind: "unavailable" };
+      }
+    },
   };
 }
 
@@ -131,9 +184,9 @@ export function clockOf(iso: string): string {
 }
 
 /**
- * The conversations of an assignment started on this device, newest last. No route lists a student's
- * conversations yet, so the card keeps their ids (and the purpose asked, which the conversation does
- * not return); the messages always come from the server.
+ * Conversation ids of an assignment, newest last. The server lists them (student.assistant-conversations.get);
+ * this device also keeps the ones it started, as the fallback while that list cannot be read. The messages
+ * always come from the server.
  */
 export type Kept = { readonly id: string; readonly purposeKey: string };
 

@@ -18,6 +18,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/rad/[assignmentId]/dnevnik-pristupa": (c) => c.t.accessLog.context,
   "/rad/[assignmentId]/reprodukcija": (c) => c.t.replay.titleStudent,
   "/rad/[assignmentId]/podrijetlo": (c) => c.app.pages.originComposition,
+  "/rad/[assignmentId]/nastavnik": (c) => c.app.pages.studentTeacherView,
   "/rad/[assignmentId]/razgovor": (c) => c.app.pages.studentInterview,
   "/nastavnik/kolegiji": (c) => c.t.teacherCourses.title,
   "/nastavnik/kolegiji/[courseId]/studenti": (c) => c.app.pages.courseStudents,
@@ -76,6 +77,9 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/operater/mjerila-pilota": (c) => c.app.pages.pilotMetrics,
   "/operater/dnevnik-radnji": (c) => c.app.pages.actionLog,
   "/operater/prijave-problema": (c) => c.app.pages.problemReports,
+  "/operater/stanje-sustava": (c) => c.app.pages.systemHealth,
+  "/operater/dogadaji": (c) => c.app.pages.systemEvents,
+  "/operater/sigurnosni-kljuc": (c) => c.app.pages.securityKey,
 };
 
 /**

@@ -61,3 +61,21 @@ export function templateBlocks(template: WorkTemplate, labels: Readonly<Record<T
   ]);
   return [...page, ...sections];
 }
+
+/**
+ * F4-V17-R01: what an opened work with no text starts with. The skeleton when the template
+ * was read; null (an empty sheet, as before) for no template, a signed-out session or a failed
+ * read. Nothing is made up, and a read that throws leaves the sheet empty.
+ */
+export function startContentFor(
+  read: (assignmentId: string) => Promise<TemplateRead>,
+  labels: Readonly<Record<TitleField, string>>,
+): (assignmentId: string) => Promise<readonly Block[] | null> {
+  return async (assignmentId) => {
+    let answer: TemplateRead;
+    try { answer = await read(assignmentId); } catch { return null; }
+    if (answer.kind !== "ready") return null;
+    const blocks = templateBlocks(answer.template, labels);
+    return blocks.length === 0 ? null : blocks;
+  };
+}

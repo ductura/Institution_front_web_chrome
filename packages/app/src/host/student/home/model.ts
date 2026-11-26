@@ -1,6 +1,6 @@
 import type { MyAssignment, MyCourse } from "../read/assignments";
 import type { WorkState } from "../read/works";
-import { practiceOf } from "../courses/model";
+import { extensionText, practiceOf, submittedLine, type ExtensionNote, type Submitted } from "../courses/model";
 import { cleanCode } from "../enrol/code";
 import { protoToday } from "./format";
 import { homeText as t } from "./messages.hr";
@@ -22,7 +22,17 @@ export type TaskRow = {
   readonly typeLabel: string;
   /** P-D1: the server said `isPractice: true`; the row then carries the "Probni" badge. */
   readonly practice: boolean;
+  /** NF-1 P-6: when it was submitted and whether after the deadline; absent until (and unless) the read answers. */
+  readonly submitted?: Submitted | null;
+  /** NF-1 P-7: the history of the extension behind `dueAt`; absent until (and unless) the read answers. */
+  readonly extension?: ExtensionNote | null;
 };
+
+/** The extra reads of the home, by assignment id. */
+export type Extras = {
+  readonly submitted: ReadonlyMap<string, Submitted>;
+  readonly extensions: ReadonlyMap<string, ExtensionNote>;
+} | null | undefined;
 
 /** The state of one work: the read's, and `null` where the work-state read did not answer. */
 export type States = ReadonlyMap<string, WorkState> | null | undefined;
@@ -37,7 +47,7 @@ export function kindOf(assignment: MyAssignment, states: States): RowKind {
 }
 
 /** The flat list of every visible assignment, courses in the read's order, each with its course. */
-export function flatRows(courses: readonly MyCourse[], states: States): TaskRow[] {
+export function flatRows(courses: readonly MyCourse[], states: States, extras?: Extras): TaskRow[] {
   return courses.flatMap((course) =>
     course.assignments.map((assignment): TaskRow => {
       const extended = typeof assignment.extendedDueAt === "string" && assignment.extendedDueAt !== "";
@@ -46,6 +56,7 @@ export function flatRows(courses: readonly MyCourse[], states: States): TaskRow[
         dueAt: extended ? (assignment.extendedDueAt as string) : assignment.dueAt, extended, originalDueAt: assignment.dueAt,
         typeLabel: assignment.workType === undefined ? t.taskFallback : t.workTypes[assignment.workType],
         practice: practiceOf(assignment),
+        submitted: extras?.submitted.get(assignment.id) ?? null, extension: extras?.extensions.get(assignment.id) ?? null,
       };
     }));
 }
@@ -172,4 +183,15 @@ export function rowAction(kind: RowKind): { label: string; primary: boolean } {
   if (kind === "predano") return { label: t.openWork, primary: false };
   if (kind === "obavijest") return { label: t.readNotice, primary: false };
   return { label: kind === "rad" ? t.openWork : t.openTask, primary: true };
+}
+
+/** NF-1 P-6: "Predano {vrijeme}" or "Predano {vrijeme}, nakon roka"; plain "Predano" while no time is known. */
+export function submittedText(row: Pick<TaskRow, "submitted">, format: (iso: string) => string): string {
+  return submittedLine(row.submitted, format);
+}
+
+/** NF-1 P-7: the history line of an extended, unsubmitted row, or null when the history is not known. */
+export function extensionLine(row: Pick<TaskRow, "kind" | "extended" | "extension">, format: (iso: string) => string): string | null {
+  if (row.kind === "predano" || !row.extended || !row.extension) return null;
+  return extensionText(row.extension, format);
 }
