@@ -1,5 +1,7 @@
 // WEB-2129 (par-e-oznake): text of the in-text marks, the gutter and the legend,
 // as in the prototype and INVENTAR-editor §2.6 text2 (Croatian).
+import { pluralHr } from "@/lib/i18n/hr";
+
 export const marksHr = {
   levelNames: { 0: "navod", 1: "obvezno", 2: "od mentora", 3: "savjet", 4: "odakle je tekst" },
   kinds: {
@@ -10,6 +12,8 @@ export const marksHr = {
     need: "Zatražena potvrda",
   },
   here: "Na ovom mjestu",
+  // ED-38: the line in the "Uz tekst" alert row (prune.js `ctxAlerts`, the student's wording).
+  needAlert: (n: number) => `Mentor traži potvrdu uz ${n} ${pluralHr(n, "navod", "navoda", "navoda")}`,
   // ED-45 (P2-17, dio 3): the ghost text of an empty paragraph (prototype app.js `ghostText`).
   ghost: {
     start: "Počnite pisati. Upišite @ za navod ili / za naredbe.",
