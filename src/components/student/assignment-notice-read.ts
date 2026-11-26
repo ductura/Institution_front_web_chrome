@@ -33,6 +33,8 @@ export interface NoticeView {
   aiPurposes: AiPurpose[];
   wordMin: number | null;
   wordMax: number | null;
+  /** ASIST-S1: the Assistant may only summarise literature; absent on a server that does not send it. */
+  aiSummaryOnly?: boolean;
   /** Server time of the student's acknowledgment of this version, or null. */
   acknowledgedAt: string | null;
 }
