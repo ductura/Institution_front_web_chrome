@@ -5,7 +5,7 @@
 // the form as typed; a success shows only from the server's answer (B-6). The collaborator only reads.
 // WEB-NF6-KONZ (MK-3): the topic of a request, every slot with its closing (consultation-slot-details),
 // and "Povuci zahtjev", "Odbij" and "Otkaži termin" through work.consultation-slot-close.post.
-import { Button, Checkbox, TextArea, TextField } from "@ductura/ui";
+import { Button, Checkbox, Details, TextArea, TextField } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
@@ -171,7 +171,7 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd, now = Date.
               <b>{statusText(role, slot)}</b>
               <p className={styles.muted}>{lineText(slot)}</p>
               <p className={styles.noteText}>{topicText(slot)}</p>
-              {slot.preparation ? <details><summary>{t.preparationLine}</summary><p className={styles.noteText}>{slot.preparation.text}</p></details> : null}
+              {slot.preparation ? <Details summary={t.preparationLine}><p className={styles.noteText}>{slot.preparation.text}</p></Details> : null}
               {closedText ? <p className={styles.muted}>{closedText}</p> : null}
               {actions.includes("confirm") ? <Button size="dense" disabled={form.busy} onClick={() => void act(slot, "confirm")}>{t.confirm}</Button> : null}
               {actions.includes("accept") ? <Button size="dense" disabled={form.busy} onClick={() => void act(slot, "accept")}>{t.accept.replace("{time}", timeText(slot.startsAt))}</Button> : null}

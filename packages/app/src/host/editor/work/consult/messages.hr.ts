@@ -29,7 +29,7 @@ export const consultHr = {
     attachCounts: "Izmijenjenih odlomaka: {changed} · riješenih komentara: {resolved}",
     attachTooLong: "Priprema je preduga. Skratite je na najviše {max} znakova.",
     attachBlank: "Priprema je prazna. Upišite tekst ili maknite prilog.",
-    preparationLine: "Priložena priprema:",
+    preparationLine: "Priložena priprema",
     topicTooLong: "Tema je preduga. Skratite je na najviše {max} znakova.",
     closedByYou: "Zatvorili ste {time}.",
     closedByTeacher: "Mentor je zatvorio {time}.",
