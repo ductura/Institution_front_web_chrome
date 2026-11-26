@@ -7,6 +7,7 @@ import type { ConsultationRecord } from "../../../../../../src/client/consultati
 import { AgreedCard, type RecordsRead } from "./AgreedCard";
 import { mentorPlanText as t } from "./messages.hr";
 import { OpenMentorshipCard } from "./OpenMentorshipCard";
+import type { OpenCall } from "./open-mentorship";
 import { PlanActions } from "./PlanActions";
 import type { PlanCall } from "./plan-actions";
 
@@ -70,12 +71,16 @@ describe("AgreedCard (MK-5)", () => {
   });
 });
 
-describe("OpenMentorshipCard (MK-7)", () => {
-  it("keeps 'Otvori mentorstvo' disabled and says why", async () => {
-    const host = await mount(h(OpenMentorshipCard));
-    const open = button(host, t.open.button);
-    expect(open.disabled).toBe(true);
-    expect(document.getElementById(open.getAttribute("aria-describedby")!)?.textContent).toBe(t.open.unavailable);
+describe("OpenMentorshipCard (MK-7, F4-MEN-R01)", () => {
+  it("keeps 'Otvori mentorstvo' disabled until the students are read, and sends nothing on its own", async () => {
+    const ids: string[] = [];
+    const call: OpenCall = async (id) => { ids.push(id); return { ok: false, status: 503, code: "unavailable" }; };
+    const host = await mount(h(OpenMentorshipCard, { call: () => call }));
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(button(host, t.open.button).disabled).toBe(true);
+    expect(host.textContent).toContain(t.open.studentsUnavailable);
+    expect(host.textContent).not.toContain("još nije dostupno");
+    expect(ids).toEqual(["teacher.courses.get"]);
   });
 });
 
