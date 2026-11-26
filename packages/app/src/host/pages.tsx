@@ -71,7 +71,7 @@ export function SignInPage() {
     leaveFor(href);
   };
   const home = appHref(base, route ?? "/");
-  // KA-05-WEB: a visitor who already has a session does not see the screen; GET /api/v1/me decides.
+  // KA-05-WEB: a visitor who already has a session does not see the screen; the session read (me) decides.
   useEffect(() => {
     let live = true;
     void readSession().then((read) => {

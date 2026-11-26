@@ -193,9 +193,9 @@ export default function SignInScreen({ view, href, onStart, footer = [] }: SignI
                 const label = extra[footerKey[link.key]];
                 return (
                   <li key={link.key}>
-                    {link.href === null
-                      ? <span className={own.footerSoon}>{label} ({extra.footerSoon})</span>
-                      : <a className={screen.link} href={link.href}>{label}</a>}
+                    {link.href !== null
+                      ? <a className={screen.link} href={link.href}>{label}</a>
+                      : <span className={own.footerSoon}>{label} ({extra.footerSoon})</span>}
                   </li>
                 );
               })}
