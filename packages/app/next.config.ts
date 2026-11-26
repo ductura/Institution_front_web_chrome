@@ -2,7 +2,7 @@ import path from "node:path";
 
 import type { NextConfig } from "next";
 
-import { institutionRewrites, institutionServerUrl } from "./src/rewrites.ts";
+import { institutionRedirects, institutionRewrites, institutionServerUrl } from "./src/rewrites.ts";
 
 // The institution front under /app/web/ and /app/chrome/ (#2028 c.6993786629
 // §1): basePath "/app" and the segment app/[base]/ (web or chrome). The edge
@@ -32,6 +32,9 @@ const nextConfig: NextConfig = {
   // The screens, locales and the client are imported from the workspace root.
   turbopack: { root },
   outputFileTracingRoot: root,
+  async redirects() {
+    return institutionRedirects();
+  },
   async rewrites() {
     return institutionRewrites(institutionServer, process.env.NODE_ENV);
   },
