@@ -11,6 +11,7 @@ import { QuickSource } from "@/components/editor/sources/quick-source/QuickSourc
 import { createSourceLookup } from "@/components/editor/sources/quick-source/server-lookup";
 import { documentSources } from "@/components/editor/sources/proofs/proof-sources";
 import { TriggerPopover } from "@/components/editor/triggers/TriggerPopover";
+import { useSlashCommands } from "../slash-commands";
 import { loadNotebook } from "../source-notebook/notebook";
 import { addSourceAt, jumpTo, mentionSources, nextPlace, unsourcedCitationPlaces, type MentionNote } from "./mention-model";
 import { sourcesMentionHr as t } from "./messages.hr";
@@ -61,6 +62,7 @@ export function SourcesMention({ documentId, openOrigin }: { documentId: string;
   const [quick, setQuick] = useState<{ author: string } | null>(null);
   const [problem, setProblem] = useState<"addFailed" | "limit" | null>(null);
 
+  const offered = useSlashCommands(editor);
   const read = useRead(editor);
   const sources = read.sources;
   const ids = useMemo(() => documentSources({ attrs: { sources } }), [sources]);
@@ -99,7 +101,8 @@ export function SourcesMention({ documentId, openOrigin }: { documentId: string;
       setProblem(null);
     },
     addSource: (author: string) => setQuick({ author }),
-    commands: openOrigin ? { podrijetlo: openOrigin } : undefined,
+    // ED-46 (P2-18): "/fusnota" and "/ref" come from the toolbar's Umetni dialogs (slash-commands).
+    commands: { ...offered, ...(openOrigin ? { podrijetlo: openOrigin } : {}) },
   };
   const places = read.places;
   const next = nextPlace(places, editor.state.selection.from);

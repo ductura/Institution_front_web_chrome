@@ -47,6 +47,7 @@ import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
 import { moveChapterInEditor } from "../../../../../editor-core/src/outline/index.ts";
 import { placeFromFlags, type ContextAction, type CursorPlace } from "./context-button";
+import { useOfferSlashCommands } from "../slash-commands";
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr } from "./messages.hr";
 import { MOBILE_MORE, type QuickTool } from "./quick-tools";
@@ -252,6 +253,9 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const focused = useEditorFocused(editor);
   const [quickMore, setQuickMore] = useState<MenuPoint | null>(null);
   const openCrossReference = v3.openInsert ? () => v3.openInsert?.("crossReference") : undefined;
+  // ED-46 (P2-18): "/fusnota" and "/ref" open the same dialogs as Umetni, and only when Umetni would.
+  useOfferSlashCommands(editor, writeOk && v3.openInsert
+    ? { fusnota: () => v3.openInsert?.("footnote"), ref: () => v3.openInsert?.("crossReference") } : {});
 
   const insert: Item[] = withPendingInserts([
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
