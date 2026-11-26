@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Details, Dialog, Tag } from "@ductura/ui";
 
+import { useDialogRequest } from "../../../../../../src/components/editor/commands/dialog-request.ts";
 import { fill, rulesHr as t } from "./messages.hr";
 import { AREA_ORDER, DEFAULT_PROFILE_ID, UNITS, profileById, profilesOf, unitById, type RuleProfile } from "./profiles";
 import {
@@ -52,9 +53,11 @@ export function RulesHost({ role = "student", readOnly = false, stats = null, pr
     setToast(fill(t.faculty.changed, { label: next.label }));
   };
 
+  // ED-60: opened from the view menu (dialog-request), as in the prototype; nothing is drawn under the shell.
+  useDialogRequest("rules", () => setOpen(true));
+
   return (
     <>
-      <Button tone="quiet" onClick={() => setOpen(true)}>{t.open}</Button>
       <Dialog
         open={open}
         title={view === "rules" ? t.card.title : view === "faculty" ? t.faculty.title : t.faculty.tableTitle}
