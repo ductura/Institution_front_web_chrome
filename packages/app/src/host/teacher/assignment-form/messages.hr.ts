@@ -119,9 +119,10 @@ export const assignmentFormHr = {
 /** WEB-V13-VRSTA-ZADATKA: the teacher picks what the student writes, text or slides. */
 export const documentKindHr = {
   legend: "Vrsta dokumenta",
-  options: { text: "Tekst", slides: "Slajdovi" },
+  options: { text: "Tekst", slides: "Slajdovi", spreadsheet: "Tablica" },
   textHint: "Student piše tekstni rad u uredniku.",
   slidesHint: "Student izrađuje slajdove. Vrsta se određuje pri objavi zadatka.",
+  spreadsheetHint: "Student izrađuje tablicu s formulama. Vrsta se određuje pri objavi zadatka.",
   unknown: "nije prikazana",
   fixed: "Vrsta se određuje pri objavi zadatka; nova verzija je ne mijenja.",
 } as const;

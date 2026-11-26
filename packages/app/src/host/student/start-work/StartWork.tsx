@@ -28,12 +28,14 @@ const defaultCall = () => startWorkCall();
  * going there again would not read the work again (INT-31): that page passes
  * `onOpened`, which reads it again in place of going to the editor.
  */
-export function StartWork({ assignmentId, title, call = defaultCall, onOpened, template = defaultRead }: {
+export function StartWork({ assignmentId, title, call = defaultCall, onOpened, template = defaultRead, spreadsheet = false }: {
   assignmentId: string;
   title: string;
   call?: () => StartWorkTransport;
   onOpened?: () => void;
   template?: (assignmentId: string) => Promise<TemplateRead>;
+  /** WEB-V14-SHEET-PAGE: a table has no text skeleton, so none is read or shown. */
+  spreadsheet?: boolean;
 }) {
   const { base } = useHost();
   const router = useRouter();
@@ -46,9 +48,10 @@ export function StartWork({ assignmentId, title, call = defaultCall, onOpened, t
   // (after the start this component is replaced by the editor); the start never waits for it.
   useEffect(() => {
     let live = true;
+    if (spreadsheet) return;
     void template(assignmentId).catch((): TemplateRead => ({ kind: "unavailable" })).then((read) => { if (live) setTpl(read); });
     return () => { live = false; };
-  }, [assignmentId, template]);
+  }, [assignmentId, template, spreadsheet]);
 
   async function start() {
     if (busy) return;
