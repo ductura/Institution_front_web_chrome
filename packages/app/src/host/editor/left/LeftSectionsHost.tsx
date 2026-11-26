@@ -5,7 +5,8 @@
 // shown; the faculty's rules, the revision deadline and the sources count come
 // from the server and say "nedostupno" until it gives them. ED-37 (P2-6): the
 // submission deadline is the assignment's `dueAt`, which the page already reads;
-// the mentorship's milestones and consultations come from mentor-dates.ts.
+// the mentorship's milestones and consultations come from mentor-dates.ts, and
+// the rail footer sets the words against the assignment's range (ED-37, dio 3).
 import { Button, TextField } from "@ductura/ui";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -28,14 +29,33 @@ type Props = { workId: string };
 /** The submission deadline of the assignment (an instant), or null when the page has none. */
 type Due = { dueAt?: string | null };
 
+/** Whole Zagreb days to the deadline ("za 3 dana" / "prošlo je 2 dana"), or null without a readable one. */
+function dueDays(dueAt: string | null | undefined, now: Date): string | null {
+  const day = dueAt ? zagrebDay(dueAt) : null;
+  const days = day === null ? null : daysUntil(day, now);
+  return days === null ? null : days < 0 ? t.deadlines.late(-days) : t.deadlines.in(days);
+}
+
 /** "15. 12. 2099., 23:59 · za 3 dana", or null when there is no readable deadline. */
 function dueLine(dueAt: string | null | undefined, now: Date): string | null {
   if (!dueAt) return null;
   const moment = momentHr(dueAt);
-  const day = zagrebDay(dueAt);
-  if (moment === null || day === null) return null;
-  const days = daysUntil(day, now);
-  return days === null ? moment : `${moment} · ${days < 0 ? t.deadlines.late(-days) : t.deadlines.in(days)}`;
+  if (moment === null || zagrebDay(dueAt) === null) return null;
+  const days = dueDays(dueAt, now);
+  return days === null ? moment : `${moment} · ${days}`;
+}
+
+/** The rail footer (prototype rail.js `foot`): words against the assignment's range, then the days to the deadline. */
+function railFootLine(words: number, range: { min: number; max: number } | null, dueAt: string | null | undefined, now: Date): string {
+  const days = dueDays(dueAt, now);
+  const scope = t.progress.footer(words, range?.min ?? null, range?.max ?? null);
+  return days === null ? scope : `${scope} · ${days}`;
+}
+
+/** ED-37 (dio 3): the footer under the left panel's sections, read from the text as it is. */
+function RailFooter({ range, dueAt, now = new Date() }: Due & { range: { min: number; max: number } | null; now?: Date }) {
+  const { total } = useWorkSnapshot();
+  return <p className={styles.muted} data-rail-foot="">{railFootLine(total, range, dueAt, now)}</p>;
 }
 const newId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
 
@@ -273,4 +293,4 @@ export function leftSectionsFor(workId: string, documentId?: string, dueAt?: str
   };
 }
 
-export { Deadlines, dueLine, Figures, MentorDatesView, Progress, Requirements, Stash, Thread };
+export { Deadlines, dueLine, Figures, MentorDatesView, Progress, RailFooter, railFootLine, Requirements, Stash, Thread };
