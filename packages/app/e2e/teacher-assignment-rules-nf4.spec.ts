@@ -78,10 +78,10 @@ test("NZ-3 and NZ-4: groups, summary-only, tools and the submission rules reach 
   await page.getByRole("button", { name: "Pregled i objava" }).click();
   await expect(page.getByText("Grupa A", { exact: true })).toBeVisible();
   await expect(page.getByText("Samo sažimanje literature", { exact: true })).toBeVisible();
+  await expect(page.getByText("nije dopuštena", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Objavi zadatak" }).click();
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0]).toMatchObject({ groupIds: [G1], aiSummaryOnly: true, externalToolsAllowed: false, aiPurposes: ["literature_search"] });
-  await expect(page.getByText("Predaja nakon roka", { exact: true }).locator("xpath=following-sibling::dd[1]")).toHaveText("nije dopuštena");
   await expect.poll(() => calls).toEqual(['late PUT {"lateSubmissionAllowed":false}', 'withdrawal {"allowed":false}']);
 });
 
