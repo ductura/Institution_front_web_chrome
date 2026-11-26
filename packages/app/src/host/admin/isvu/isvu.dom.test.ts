@@ -17,7 +17,7 @@ HTMLDialogElement.prototype.close = function close() { this.removeAttribute("ope
 let root: Root | null = null;
 let host: HTMLElement | null = null;
 const settle = () => act(async () => { await new Promise((done) => setTimeout(done, 0)); });
-type Call = { method: string; path: string };
+type Call = { method: string; path: string; query: string };
 type Handler = (call: Call) => Response | undefined;
 
 const ownCourses = { academicYear: "2026/2027", courses: [{ courseId: COURSE, name: "Izmišljeni kolegij", students: 0, holder: null, team: [], groups: [] }] };
@@ -30,7 +30,7 @@ function stub(handler: Handler) {
   const calls: Call[] = [];
   vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
     const r = input instanceof Request ? input : new Request(String(input), init);
-    const call = { method: r.method, path: new URL(r.url, "http://localhost").pathname };
+    const call = { method: r.method, path: new URL(r.url, "http://localhost").pathname, query: new URL(r.url, "http://localhost").search.slice(1) };
     calls.push(call);
     const own = handler(call);
     if (own) return own;
@@ -165,6 +165,46 @@ describe("Povezivanje s ISVU-om", () => {
     stub((c) => (c.path.endsWith("/isvu/courses") ? Response.json({ mode: "mock", courses: [] }) : undefined));
     await mount();
     expect(host!.querySelector('select[name="year"]')).not.toBeNull();
+  });
+
+  it("a 404 on the own courses is a read error, not 'source not enabled'", async () => {
+    stub((c) => (c.path.endsWith("/institution/admin/courses") ? Response.json({ error: "not_found" }, { status: 404 }) : undefined));
+    await mount();
+    expect(text()).toContain("Čitanje nije uspjelo");
+    expect(text()).not.toContain("Izvor nije uključen");
+  });
+
+  it("changing the year keeps the year selector and its focus", async () => {
+    let release: (r: Response) => void = () => undefined;
+    const slow = new Promise<Response>((done) => { release = done; });
+    stub((c) => {
+      if (c.path.endsWith("/institution/admin/academic-years")) return Response.json({ years: ["2026/2027", "2025/2026"] });
+      if (c.path.endsWith("/institution/admin/courses") && c.query === "academicYear=2025%2F2026") return slow as unknown as Response;
+      return undefined;
+    });
+    await mount();
+    const select = host!.querySelector('select[name="year"]') as HTMLSelectElement;
+    select.focus();
+    await act(async () => { select.value = "2025/2026"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    expect(text()).toContain("Učitavanje…");
+    expect(host!.querySelector('select[name="year"]')).toBe(select);
+    expect(document.activeElement).toBe(select);
+    await act(async () => { release(Response.json({ ...ownCourses, academicYear: "2025/2026" })); });
+    await settle();
+    expect(host!.querySelector('select[name="year"]')).toBe(select);
+  });
+
+  it("an answer arriving after unmount sets no state and logs nothing", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let release: (r: Response) => void = () => undefined;
+    const late = new Promise<Response>((done) => { release = done; });
+    stub((c) => (isPreview(c) ? (late as unknown as Response) : undefined));
+    await mount(); await pick(); await click("Pregledaj popis");
+    act(() => root!.unmount()); root = null;
+    await act(async () => { release(Response.json(mixed)); });
+    await settle();
+    expect(errors).not.toHaveBeenCalled();
+    errors.mockRestore();
   });
 
   it("a 401 on the confirmation is signed out, not a retry loop", async () => {

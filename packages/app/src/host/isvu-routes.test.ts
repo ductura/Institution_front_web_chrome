@@ -57,8 +57,14 @@ describe("the ISVU routes are mounted", () => {
 });
 
 describe("the thin components", () => {
-  it("shows the import's heading", () => {
-    expect(show("/ustanova/isvu", "admin", createElement(IsvuRoute)).querySelector("h1")?.textContent).toBe("Povezivanje s ISVU-om (probni izvor)");
+  it("shows the import's heading", async () => {
+    const real = globalThis.fetch;
+    globalThis.fetch = (() => new Promise(() => undefined)) as typeof fetch; // the page's reads stay pending: no answer after unmount
+    try {
+      expect(show("/ustanova/isvu", "admin", createElement(IsvuRoute)).querySelector("h1")?.textContent).toBe("Povezivanje s ISVU-om (probni izvor)");
+    } finally {
+      globalThis.fetch = real;
+    }
   });
 
   it("shows the grade export's heading for any course id, an unknown one too", () => {
