@@ -30,4 +30,7 @@ export const pilotMetricsMessages = {
   more: "Druge stranice operatera",
   actionLog: "Dnevnik radnji",
   problemReports: "Prijave problema",
+  systemHealth: "Stanje sustava",
+  systemEvents: "Događaji sustava",
+  securityKey: "Sigurnosni ključ",
 } as const;

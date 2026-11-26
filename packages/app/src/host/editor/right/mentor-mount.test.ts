@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
 import type { WorkMessage } from "../../../../../../src/client/work-messages";
 import { MentorMount } from "./MentorMount";
-import { abstractWords, seenAtOf, thesisShownOf, workStateOf } from "./mentor-mount";
+import { abstractWords, reportSeen, seenAtOf, thesisShownOf, unreportedSeen, workStateOf } from "./mentor-mount";
 
 const req = (number: number, state: RevisionRequest["state"], instruction = "Izmišljena uputa za doradu.", window = "2026-11-10T09:00:00.000Z"): RevisionRequest => ({
   id: `00000000-0000-4000-8000-00000000000${number}`, number, state, rowSeq: 1, anchor: {} as RevisionRequest["anchor"],
@@ -83,6 +83,12 @@ describe("MentorMount", () => {
     expect(html).toContain("data-consult-panel");
     expect(html).toContain("Kako mentor radi");
   });
+  // ED-35 (Daniel, Ductus#2058): the student must see the working criteria; without the call the card only says "nedostupno".
+  it("gives the student's consultations the read of the working criteria", () => {
+    const mount = readFileSync(join(import.meta.dirname, "MentorMount.tsx"), "utf8");
+    expect(mount).toMatch(/<ConsultPanel [^>]*role="student"[^>]*studentCriteriaCall=\{studentCriteriaCall\}/);
+    expect(mount).toMatch(/const studentCriteriaCall: StudentCriteriaCall = \(id, input\) => createApi\(\)\(id, \{ \.\.\.input, body: undefined \}\);/);
+  });
   it("is mounted in the student's editor in the Mentor tab, above the round's actions", () => {
     const work = readFileSync(join(import.meta.dirname, "..", "..", "student", "work.tsx"), "utf8");
     expect(work).toMatch(/import \{ MentorMount \} from "\.\.\/editor\/right\/MentorMount"/);
@@ -103,5 +109,42 @@ describe("thesisShownOf: \"Završni rad\" only for a mentored work (DEMO-POP-3)"
   it("keeps it when the list is unread or the assignment unknown; the panel's own 404 still decides", () => {
     expect(thesisShownOf({ ok: false }, "bbbb0000-0000-4000-8000-000000000002")).toBe(true);
     expect(thesisShownOf(listed, undefined)).toBe(true);
+  });
+});
+
+describe("MEN-R06: unreportedSeen and reportSeen (work.seen.post)", () => {
+  const api = (answer: (n: number) => Promise<{ ok: boolean }>) => {
+    let n = 0;
+    const calls: { documentId: string; items: { kind: string; id: string }[] }[] = [];
+    const fn = (async (_id: string, input: { params: { documentId: string }; body: { items: { kind: string; id: string }[] } }) => {
+      calls.push({ documentId: input.params.documentId, items: input.body.items });
+      return answer(n++);
+    }) as unknown as Parameters<typeof reportSeen>[0];
+    return { fn, calls };
+  };
+  it("lists each shown revision once, skips what was reported and ids the route would refuse", () => {
+    const a = req(1, "open"), b = req(2, "responded");
+    expect(unreportedSeen([a, b, a], new Set())).toEqual([{ kind: "revision_request", id: a.id }, { kind: "revision_request", id: b.id }]);
+    expect(unreportedSeen([a, b], new Set([a.id]))).toEqual([{ kind: "revision_request", id: b.id }]);
+    expect(unreportedSeen([{ ...a, id: "not-an-id" }], new Set())).toEqual([]);
+    expect(unreportedSeen([], new Set())).toEqual([]);
+  });
+  it("posts to this work only and returns the accepted ids", async () => {
+    const { fn, calls } = api(async () => ({ ok: true }));
+    const items = unreportedSeen([req(1, "open")], new Set());
+    expect(await reportSeen(fn, "rad-a", items)).toEqual([items[0]!.id]);
+    expect(calls).toEqual([{ documentId: "rad-a", items }]);
+  });
+  it("a refused or thrown call leaves the items unreported", async () => {
+    const items = unreportedSeen([req(1, "open")], new Set());
+    expect(await reportSeen(api(async () => ({ ok: false })).fn, "rad-a", items)).toEqual([]);
+    expect(await reportSeen(api(async () => { throw new Error("mreža"); }).fn, "rad-a", items)).toEqual([]);
+  });
+  it("sends at most 200 items a call", async () => {
+    const many = Array.from({ length: 450 }, (_, i) => ({ kind: "revision_request" as const, id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}` }));
+    const { fn, calls } = api(async (n) => ({ ok: n !== 1 }));
+    const done = await reportSeen(fn, "rad-a", many);
+    expect(calls.map((c) => c.items.length)).toEqual([200, 200, 50]);
+    expect(done).toHaveLength(250);
   });
 });

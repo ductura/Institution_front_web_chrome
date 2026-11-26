@@ -18,6 +18,7 @@ export const n09Messages = {
   /** The record carries no sessions (D-239 open question), so the jump is shown as unavailable. */
   jumpUnavailable: "nedostupno",
   jumpNote: "Skok na sesiju nije dostupan: zapis ne nosi sesije.",
+  keys: "Prečaci: razmak pokreće i zaustavlja, strelice lijevo i desno mijenjaju promjenu, Home i End vode na prvu i zadnju promjenu.",
   slider: "Promjena",
   sliderValue: (n: number, total: number): string => `Promjena ${n} od ${total}`,
   sourceLead: "izvor ove promjene:",

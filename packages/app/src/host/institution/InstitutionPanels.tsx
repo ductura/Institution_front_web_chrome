@@ -1,16 +1,17 @@
 "use client";
 
-import { Button, Card, Dialog, KeyValueList, Notice, Select, Tag } from "@ductura/ui";
+import { Button, Card, Dialog, KeyValueList, Notice, Select, Tag, TextField } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { zagrebParts } from "@/components/summary/zagreb-time";
 import { pluralHr } from "@/lib/i18n/hr";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
-import { institutionHostMessages as h } from "./messages.hr";
+import { assignGroupTeacher, createCourseGroup, groupName, MAX_GROUP_NAME, type GroupOutcome } from "./groups";
+import { courseGroupMessages as g, institutionHostMessages as h } from "./messages.hr";
 import {
-  changeTeacherRole, readAcademicYears, readAdminCourses, readTeacherRoles,
-  type FailedKind, type InstitutionCourse, type Read, type RoleAction, type RoleOutcome, type TeacherRoles,
+  changeCourseStudent, changeTeacherRole, readAcademicYears, readAdminCourses, readTeacherRoles,
+  type FailedKind, type InstitutionCourse, type Read, type RoleAction, type RoleOutcome, type StudentAction, type StudentOutcome, type TeacherRoles,
 } from "./reads";
 import { chosenYear, displayName, overviewCounts, yearLabel } from "./views";
 
@@ -224,7 +225,68 @@ export function UsersPanel() {
 
 // ---- /ustanova/kolegiji (A-03) ----------------------------------------------------------------
 
-type CoursesRead = { years: readonly string[]; year: string | null; courses: readonly InstitutionCourse[] };
+type Teachers = TeacherRoles["confirmed"];
+type CoursesRead = { years: readonly string[]; year: string | null; courses: readonly InstitutionCourse[]; teachers: Teachers | null };
+
+const groupLine = (outcome: GroupOutcome, done: string): string =>
+  outcome === "ok" ? done : outcome === "invalid" ? g.invalid : outcome === "unknown" ? g.unknown : g.ended;
+
+type GroupToolsProps = {
+  course: InstitutionCourse;
+  teachers: Teachers | null;
+  unnamed: string;
+  /** Tells the panel what happened and, after a change, asks it to read the courses again. */
+  report: (outcome: GroupOutcome, done: string) => void;
+};
+
+/** A new group of one course, and a confirmed teacher for each of its groups. Nothing is shown as done before the server says so. */
+function GroupTools({ course, teachers, unnamed, report }: GroupToolsProps) {
+  const [name, setName] = useState("");
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const [working, setWorking] = useState(false);
+  const inFlight = useRef(false);
+
+  const run = async (action: () => Promise<GroupOutcome>, done: string, onOk: () => void) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setWorking(true);
+    const outcome = await action();
+    inFlight.current = false;
+    setWorking(false);
+    if (outcome === "ok") onOk();
+    report(outcome, done);
+  };
+
+  return (
+    <>
+      <section aria-label={`${g.newGroupHeading}: ${course.name}`}>
+        <h3>{g.newGroupHeading}</h3>
+        <TextField label={g.nameLabel} hint={g.nameHint} maxLength={MAX_GROUP_NAME} value={name} disabled={working}
+          onChange={(event) => setName(event.target.value)} />
+        <Button disabled={working || groupName(name) === null}
+          onClick={() => void run(() => createCourseGroup(course.courseId, name), g.created, () => setName(""))}>{g.create}</Button>
+      </section>
+      {course.groups.length === 0 ? null : teachers === null ? <Notice tone="warn">{g.teachersUnavailable}</Notice> : course.groups.map((group) => {
+        const taken = new Set(group.teachers.map((teacher) => teacher.personId));
+        const options = teachers.filter((teacher) => !taken.has(teacher.personId));
+        const chosen = picked[group.groupId] ?? "";
+        return (
+          <section key={group.groupId} aria-label={`${g.assignLabel}: ${group.name}`}>
+            {options.length === 0 ? <Notice>{g.noTeachers}</Notice> : (
+              <>
+                <Select label={`${g.assignLabel}: ${group.name}`} value={chosen} placeholder={g.assignPlaceholder} disabled={working}
+                  options={options.map((teacher) => ({ value: teacher.personId, label: displayName(teacher.name, unnamed) }))}
+                  onChange={(event) => setPicked({ ...picked, [group.groupId]: event.target.value })} />
+                <Button disabled={working || chosen === ""}
+                  onClick={() => void run(() => assignGroupTeacher(group.groupId, chosen), g.assigned, () => setPicked({ ...picked, [group.groupId]: "" }))}>{g.assign}</Button>
+              </>
+            )}
+          </section>
+        );
+      })}
+    </>
+  );
+}
 
 const count = (n: number, forms: { one: string; few: string; many: string }) => `${n} ${pluralHr(n, forms.one, forms.few, forms.many)}`;
 
@@ -237,10 +299,20 @@ export function CoursesPanel() {
     const years = await readAcademicYears();
     if (years.kind !== "ok") return years;
     const year = chosenYear(years.value, asked);
-    if (year === null) return { kind: "ok", value: { years: years.value, year, courses: [] } };
-    const courses = await readAdminCourses(year);
-    return courses.kind === "ok" ? { kind: "ok", value: { years: years.value, year, courses: courses.value } } : courses;
+    if (year === null) return { kind: "ok", value: { years: years.value, year, courses: [], teachers: null } };
+    const [courses, roles] = await Promise.all([readAdminCourses(year), readTeacherRoles()]);
+    if (courses.kind !== "ok") return courses;
+    // A failed read of the teachers is not an empty list: the groups stay, the assignment says it is unavailable.
+    return { kind: "ok", value: { years: years.value, year, courses: courses.value, teachers: roles.kind === "ok" ? roles.value.confirmed : null } };
   });
+  const [change, setChange] = useState<{ ok: boolean; text: string } | null>(null);
+  const report = useCallback((outcome: GroupOutcome, done: string) => {
+    setChange({ ok: outcome === "ok", text: groupLine(outcome, done) });
+    // Whatever the answer, the list is read again: an unknown outcome is settled by what the server holds.
+    if (outcome === "ok" || outcome === "unknown") retryRef.current();
+  }, []);
+  const retryRef = useRef<() => void>(() => undefined);
+  retryRef.current = retry;
   // A year picked in the list asks again for its own courses.
   const first = useRef(true);
   useEffect(() => {
@@ -251,13 +323,15 @@ export function CoursesPanel() {
 
   if (state.kind === "loading") return <Waiting title={h.loading} />;
   if (state.kind !== "ok") return <Failed title={t.title} message={failure(state.kind, t.unavailable)} retry={retry} retryLabel={t.retry} />;
-  const { years, year, courses } = state.value;
+  const { years, year, courses, teachers } = state.value;
   if (year === null) {
     return <Card level={2} title={t.noCourses}><p>{t.emptyNote}</p></Card>;
   }
   const names = (people: readonly { name: Parameters<typeof displayName>[0] }[]) => people.map((p) => displayName(p.name, unnamed)).join(", ");
   return (
     <section aria-label={t.yearHeading.replace("{year}", yearLabel(year))}>
+      <div role="status">{change?.ok === true ? <p>{change.text}</p> : null}</div>
+      <div role="alert">{change !== null && !change.ok ? <p>{change.text}</p> : null}</div>
       <Select label={t.yearsLabel} value={year} options={years.map((y) => ({ value: y, label: yearLabel(y) }))}
         onChange={(event) => setAsked(event.target.value)} />
       {courses.length === 0 ? <Card level={2} title={t.emptyYear}><p>{t.emptyNote}</p></Card> : courses.map((course) => (
@@ -267,6 +341,7 @@ export function CoursesPanel() {
             { id: "holder", label: t.holder, value: course.holder === null ? t.noHolder : displayName(course.holder.name, unnamed) },
             { id: "team", label: t.team, value: course.team.length === 0 ? t.noTeam : names(course.team) },
           ]} />
+          <StudentActions courseId={course.courseId} onChanged={retry} />
           {course.groups.length === 0 ? <Notice>{t.noGroups}</Notice> : course.groups.map((group) => (
             <section key={group.groupId} aria-label={group.name}>
               <h3>{group.name}</h3>
@@ -276,8 +351,84 @@ export function CoursesPanel() {
               <p>{count(group.students, t.students)}</p>
             </section>
           ))}
+          <GroupTools course={course} teachers={teachers} unnamed={unnamed} report={report} />
         </Card>
       ))}
+    </section>
+  );
+}
+
+// ---- removal and return of a student (OPE-R03) -------------------------------------------------
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const studentLine = (action: StudentAction, kind: StudentOutcome["kind"]): string => {
+  const o = h.student.outcome;
+  switch (kind) {
+    case "done": return action === "remove" ? o.removed : o.returnAllowed;
+    case "nothing": return action === "remove" ? o.notRemoved : o.notAllowed;
+    case "unauthorized":
+    case "forbidden": return o.ended;
+    case "invalid": return o.invalid;
+    case "unknown": return o.unknown;
+  }
+};
+
+type StudentStep = { kind: "idle" } | { kind: "asking" | "working"; action: StudentAction } | { kind: "done"; action: StudentAction; outcome: StudentOutcome["kind"] };
+
+/** Removes a student from one course or permits the return, over the existing routes, after a confirmation. */
+export function StudentActions({ courseId, onChanged }: { courseId: string; onChanged: () => void }) {
+  const t = h.student;
+  const [studentId, setStudentId] = useState("");
+  const [step, setStep] = useState<StudentStep>({ kind: "idle" });
+  const inFlight = useRef(false);
+  const safe = useRef<HTMLButtonElement>(null);
+  const id = studentId.trim();
+  const valid = UUID.test(id);
+  const working = step.kind === "working";
+
+  const send = async () => {
+    if (step.kind !== "asking" || inFlight.current) return;
+    inFlight.current = true;
+    const { action } = step;
+    setStep({ kind: "working", action });
+    const { kind } = await changeCourseStudent(action, courseId, id);
+    inFlight.current = false;
+    setStep({ kind: "done", action, outcome: kind });
+    if (kind === "done") {
+      setStudentId("");
+      onChanged();
+    }
+  };
+
+  const action = step.kind === "asking" || step.kind === "working" ? step.action : null;
+  const ok = step.kind === "done" && (step.outcome === "done" || step.outcome === "nothing");
+  return (
+    <section aria-label={t.heading}>
+      <h3>{t.heading}</h3>
+      <p>{t.lead}</p>
+      <TextField label={t.field} hint={t.hint} value={studentId} autoComplete="off" spellCheck={false}
+        error={id !== "" && !valid ? t.invalidId : undefined} onChange={(event) => setStudentId(event.target.value)} />
+      <Button tone="secondary" size="small" disabled={!valid || working} onClick={() => setStep({ kind: "asking", action: "remove" })}>{t.remove}</Button>{" "}
+      <Button tone="secondary" size="small" disabled={!valid || working} onClick={() => setStep({ kind: "asking", action: "return" })}>{t.allowReturn}</Button>
+      <div role="status">{step.kind === "done" && ok ? <p>{studentLine(step.action, step.outcome)}</p> : null}</div>
+      <div role="alert">{step.kind === "done" && !ok ? <p>{studentLine(step.action, step.outcome)}</p> : null}</div>
+      <Notice>{t.directEnrolment}</Notice>
+      <Dialog
+        open={action !== null}
+        title={action === "return" ? t.returnTitle : t.removeTitle}
+        dismissible={!working}
+        onClose={() => setStep({ kind: "idle" })}
+        initialFocus={safe}
+        actions={(
+          <>
+            <Button busy={working} onClick={() => void send()}>{action === "return" ? t.allowReturn : t.remove}</Button>
+            <Button ref={safe} tone="secondary" busy={working} onClick={() => setStep({ kind: "idle" })}>{t.cancel}</Button>
+          </>
+        )}
+      >
+        <p>{action === "return" ? t.returnNote : t.removeNote}</p>
+      </Dialog>
     </section>
   );
 }

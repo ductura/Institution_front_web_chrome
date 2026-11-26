@@ -25,6 +25,15 @@ describe("WorkspaceTopBarView", () => {
     expect(html).not.toContain(t.workspace.submitOffline);
   });
 
+  it("leads the mark to Moji zadaci under the base the app is served under (EDI-R02)", () => {
+    const under = (base?: string) =>
+      renderToStaticMarkup(createElement(WorkspaceTopBarView, { assignmentId: ID, base, title: "Izmišljeni rad", online: true, theme: "dark", onTheme: () => {} }));
+    expect(under("/app/web")).toContain('href="/app/web/zadaci"');
+    expect(under("/app/chrome")).toContain('href="/app/chrome/zadaci"');
+    expect(under("/app/web")).not.toContain('href="/zadaci"');
+    expect(under()).toContain('href="/zadaci"');
+  });
+
   it("disables Predaja rada without a network and says why", () => {
     const html = bar(false);
     expect(html).not.toContain("/predaja");

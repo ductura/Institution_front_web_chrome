@@ -13,6 +13,8 @@ export type MatchFinding = {
   readonly runWords: number;
   readonly recordedAt: string;
   readonly attachedAt: string;
+  /** The student's own explanation of this finding, or null while there is none (`explanation` of the contract). */
+  readonly explanation?: { readonly text: string; readonly writtenAt: string } | null;
 };
 
 export type MatchRead =
@@ -40,7 +42,12 @@ export function shareLabel(percent: number): string {
   return `${originText.kindAssistantMatch} · ${value} · ${t.notProof}`;
 }
 
-export type MatchRow = { readonly key: string; readonly words: string; readonly recorded: string; readonly attached: string };
+export type MatchRow = { readonly key: string; readonly words: string; readonly recorded: string; readonly attached: string; readonly explanation: string; readonly explained: boolean };
+
+/** „Objašnjeno n od m”: findings with a student's explanation out of all findings. Counts only; no verdict, no ranking. */
+export function explainedCount(findings: readonly MatchFinding[]): { readonly explained: number; readonly total: number } {
+  return { explained: findings.filter((f) => f.explanation != null).length, total: findings.length };
+}
 
 /** One row per finding, in the server's order, never sorted or counted by size. */
 export function matchRows(findings: readonly MatchFinding[]): readonly MatchRow[] {
@@ -50,5 +57,7 @@ export function matchRows(findings: readonly MatchFinding[]): readonly MatchRow[
     words: t.words(f.runWords),
     recorded: formatDateTimeHr(f.recordedAt),
     attached: formatDateTimeHr(f.attachedAt),
+    explained: f.explanation != null,
+    explanation: f.explanation == null ? t.noExplanation : `${f.explanation.text} (${t.writtenAt(formatDateTimeHr(f.explanation.writtenAt))})`,
   }));
 }

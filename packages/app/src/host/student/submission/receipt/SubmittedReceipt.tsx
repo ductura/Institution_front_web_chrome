@@ -89,7 +89,7 @@ export default function SubmittedReceipt({ ports = SERVER, onSignIn, ...screen }
       <SheetSummary assignmentId={assignmentId} revision={revision} onSignIn={() => signIn.current()} />
       <SummaryPanel summary={summary} notes={notes} submitted confirmed={opensSending(gate)} kind={screen.kind}
         online={online} workHref={screen.workHref} onRetry={() => setAttempt((n) => n + 1)}
-        disputes={documentId === null ? undefined : { port: DISPUTES, documentId }}
+        assignmentId={assignmentId} disputes={documentId === null ? undefined : { port: DISPUTES, documentId }}
         onAddNote={async () => ({ kind: "nepoznato" })} onNoteAdded={() => undefined} />
     </>} />
   );

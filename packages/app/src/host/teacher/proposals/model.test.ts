@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { decideSuggestion, decisionsFor, listSuggestions } from "@/components/editor/suggestions";
 import { createTextAnchor } from "../../../../../editor-core/src/document/collaboration";
 import { findForbiddenTerms } from "../../../../../../scripts/forbidden-terms/terms.ts";
 import { teacherProposalsMessages } from "./messages.hr";
 import { orderedProposals, proposalsStatus, withdrawToast } from "./model";
-import { proposalsPort } from "./port";
+import { createProposalsPort } from "./port";
 
 type Reply = { status: number; body: unknown };
 const ID = "11111111-1111-4111-8111-111111111111";
@@ -32,11 +32,50 @@ describe("teacher proposals", () => {
     expect(withdrawToast("withdraw", await decideSuggestion(async () => reply(409), { id: ID, rowSeq: 2 }, "withdraw"), text)).toBeNull();
     expect(withdrawToast("withdraw", "ok", text)).toBe(text);
   });
-  it("the real port answers nothing, so the panel says unavailable", async () => {
-    const out = await listSuggestions(proposalsPort, "d");
-    expect(out).toEqual({ kind: "unavailable" });
-    expect(proposalsStatus(out, 0)).toBe(teacherProposalsMessages.unavailable);
-    expect(proposalsStatus({ kind: "ok", suggestions: [] }, 0)).toBe(teacherProposalsMessages.empty);
+  describe("the real port", () => {
+    const SID = "33333333-3333-4333-8333-333333333333";
+    const answer = (status: number, body?: unknown) => async () =>
+      new Response(body === undefined ? null : JSON.stringify(body), { status, headers: body === undefined ? {} : { "content-type": "application/json" } });
+    const cRow = (state = "pending") => ({ suggestionId: SID, anchor, text: "Taj odnos", state, isOwn: true,
+      baseHash: "a".repeat(64), createdWindow: "2026-11-03T08:15:00.000Z", decidedWindow: null });
+    it("lists through collaboration.suggestions-list and keeps nothing it cannot read", async () => {
+      const fetchImpl = vi.fn<(u: string, i?: RequestInit) => Promise<Response>>(answer(200, { suggestions: [cRow()] }));
+      const out = await listSuggestions(createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: fetchImpl as never }), "d");
+      expect(out.kind === "ok" && out.suggestions[0]).toMatchObject({ id: SID, replacement: "Taj odnos", state: "pending", isOwn: true });
+      expect(String(fetchImpl.mock.calls[0]![0])).toContain("/api/v1/suggestions/list");
+      expect(JSON.parse(String(fetchImpl.mock.calls[0]![1]!.body))).toEqual({ documentId: "d" });
+      const bad = await listSuggestions(createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: answer(200, { suggestions: [{ ...cRow(), text: 5 }] }) as never }), "d");
+      expect(bad).toEqual({ kind: "unavailable" });
+    });
+    it("keeps a deletion suggestion (empty text) in the list", async () => {
+      const port = createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: answer(200, { suggestions: [cRow(), { ...cRow(), suggestionId: "44444444-4444-4444-8444-444444444444", text: "" }] }) as never });
+      const out = await listSuggestions(port, "d");
+      expect(out.kind === "ok" && out.suggestions.map((s) => s.replacement)).toEqual(["Taj odnos", ""]);
+    });
+    it("a 200 the contract refuses is no confirmation", async () => {
+      const port = createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: answer(200, {}) as never });
+      expect(await decideSuggestion(port, { id: SID, rowSeq: 1 }, "accept")).toBe("unavailable");
+    });
+    it("maps 401, 403, 404 and 409 and never fakes a success", async () => {
+      const codes: Record<number, string> = { 401: "unauthorized", 403: "forbidden", 404: "not_found", 409: "conflict" };
+      const outcome = (status: number) => decideSuggestion(createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: answer(status, { error: codes[status] }) as never }), { id: SID, rowSeq: 1 }, "accept");
+      expect(await outcome(401)).toBe("signedOut");
+      expect(await outcome(403)).toBe("forbidden");
+      expect(await outcome(409)).toBe("conflict");
+      expect(await outcome(404)).toBe("unavailable");
+    });
+    it("reject sends only suggestionId; withdraw has no route and stays unavailable", async () => {
+      const fetchImpl = vi.fn<(u: string, i?: RequestInit) => Promise<Response>>(answer(204));
+      const port = createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: fetchImpl as never });
+      expect(await decideSuggestion(port, { id: SID, rowSeq: 1 }, "reject")).toBe("ok");
+      expect(JSON.parse(String(fetchImpl.mock.calls[0]![1]!.body))).toEqual({ suggestionId: SID });
+      expect(await decideSuggestion(port, { id: SID, rowSeq: 1 }, "withdraw")).toBe("unavailable");
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+    });
+    it("is offline-safe", async () => {
+      const port = createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: (async () => { throw new TypeError("offline"); }) as never });
+      expect(await listSuggestions(port, "d")).toEqual({ kind: "unavailable" });
+    });
   });
   it("keeps the order of making", () => {
     expect(orderedProposals([{ number: 2 }, { number: 1 }] as never).map((s) => s.number)).toEqual([1, 2]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionRow, Button, Card, Notice, SummaryList } from "@ductura/ui";
+import { ActionRow, Button, Card, SummaryList } from "@ductura/ui";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { messagesHr } from "@/lib/i18n/messages.hr";
@@ -9,6 +9,7 @@ import { goToSignIn } from "@/client/api";
 
 import { useHost } from "../../context";
 import { facultySettingsMessages as t } from "./messages.hr";
+import { readThesisFormsPart, readThesisSettingsPart, summariseThesisForms } from "./thesis-read";
 import {
   readRetentionPart, readRulesPart, readThresholdsPart, summariseRetention, summariseRules, summariseThresholds, type Part,
 } from "./read";
@@ -19,7 +20,7 @@ const refusal = { signedOut: t.signedOut, denied: t.denied, unavailable: t.unava
 
 /** One card over one read; a failed read shows its own error and retry, the other cards stay. */
 function Panel<T>({ title, read, link, children }: {
-  title: string; read: () => Promise<Part<T>>; link: { path: string; label: string }; children: (value: T) => ReactNode;
+  title: string; read: () => Promise<Part<T>>; link?: { path: string; label: string }; children: (value: T) => ReactNode;
 }) {
   const { base } = useHost();
   const [part, setPart] = useState<Part<T> | null>(null);
@@ -44,7 +45,7 @@ function Panel<T>({ title, read, link, children }: {
   return (
     <Card level={2} title={title}>
       {children(part.value)}
-      <p><a href={appHref(base, link.path)}>{link.label}</a></p>
+      {link !== undefined && <p><a href={appHref(base, link.path)}>{link.label}</a></p>}
     </Card>
   );
 }
@@ -83,7 +84,36 @@ export default function FacultySettingsPage() {
           );
         }}
       </Panel>
-      <Notice tone="info">{t.forms.title}: {t.forms.unavailable}</Notice>
+      <Panel title={t.forms.title} read={readThesisFormsPart}>
+        {(rows) => {
+          const sum = summariseThesisForms(rows);
+          return (
+            <>
+              <p>{rows.length === 0 ? t.forms.none : t.forms.count(sum.active, sum.total)}</p>
+              {rows.length > 0 && (
+                <ul>
+                  {rows.map((row) => (
+                    <li key={row.code}>
+                      {row.title} ({row.code}): {t.forms.version(row.version)}, {row.active ? t.forms.active : t.forms.withdrawn}, {t.forms.published(date.format(new Date(row.publishedAt)))}.
+                      {" "}{t.forms.forTypes}: {row.workTypes.map((w) => t.forms.workTypes[w]).join(", ")}.
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p>{t.forms.note}</p>
+            </>
+          );
+        }}
+      </Panel>
+      <Panel title={t.thesisSettings.title} read={readThesisSettingsPart}>
+        {(value) => (
+          <>
+            <p>{value.mentorConsentRequired ? t.thesisSettings.consentOn : t.thesisSettings.consentOff}</p>
+            <p>{value.changedAt === null ? t.thesisSettings.neverChanged : t.thesisSettings.changed(date.format(new Date(value.changedAt)))}</p>
+            <p>{t.thesisSettings.note}</p>
+          </>
+        )}
+      </Panel>
       <p><a href={appHref(base, "/ustanova/postavke/asistent")}>{t.assistant.title}</a></p>
     </>
   );
