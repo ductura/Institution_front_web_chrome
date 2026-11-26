@@ -760,8 +760,8 @@ const en = {
       howTitle: "HOW A STUDENT ENTERS",
       steps: [
         { bold: "Open Ductura in the browser.", rest: " Nothing to install; the desktop app is a choice, not a requirement." },
-        { bold: "Sign in with your existing AAI@EduHr account.", rest: " No new passwords." },
-        { bold: "Type the assignment code.", rest: "" },
+        { bold: "Sign in with your existing AAI@EduHr account." },
+        { bold: "Type the assignment code." },
       ],
       fine: "Each institution's data is kept separately.",
       notes: [
