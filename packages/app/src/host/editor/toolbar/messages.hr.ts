@@ -88,6 +88,13 @@ export const toolbarBehaviourHr = {
   menuReview: "Pregled",
   menuPlace: "Na ovom mjestu",
   menuUnavailable: "nedostupno",
+  // ED-44 (P2-16): the prototype's Prikaz (menu-view): the app's own light or dark, and its "Prikaz" group.
+  viewShellDark: "Tamna ljuska",
+  viewShellLight: "Svijetla ljuska",
+  viewToc: "Sadržaj na listu",
+  viewDiff: "Promjene od predaje mentoru",
+  viewHistory: "Povijest rada",
+  viewFirstLines: "Prvi redovi",
   tipShortcut: "Prečac",
   commentNeedsSelection: "Označite dio teksta unutar jednog odlomka.",
 } as const;

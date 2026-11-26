@@ -56,3 +56,17 @@ export function abstractWords(doc: Doc): number {
   });
   return words;
 }
+
+/** The answer of student.mentored-assignments.get, as much of it as the rule reads. */
+export type MentoredRead = { readonly ok: true; readonly body: { readonly assignments: readonly { readonly id: string }[] } } | { readonly ok: false };
+
+/**
+ * DEMO-POP-3: "Završni rad" belongs to a mentored work only. Only a list of the student's mentored works
+ * that leaves this assignment out hides it (a seminar then sends no thesis reads at all); an unread list
+ * or no assignment id keeps the panel, whose own reads still hide it on the server's 404.
+ */
+export function thesisShownOf(mentored: MentoredRead, assignmentId: string | undefined): boolean {
+  if (!assignmentId || !mentored.ok) return true;
+  const id = assignmentId.toLowerCase();
+  return mentored.body.assignments.some((a) => a.id.toLowerCase() === id);
+}
