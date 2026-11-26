@@ -13,6 +13,7 @@ export const hostText = {
   signInNoRoleTitle: "Prijava je uspjela",
   signInNoRoleBody: "Ovaj račun još nema dodijeljenu ulogu, pa se Vaš prostor ne može otvoriti.",
   signOutFailed: "Odjava nije uspjela. Pokušajte ponovno.",
+  signOutAll: "Odjavi sve sesije",
   signIn: "Prijava",
   // HOST-T3: the label of N-13 (WEB-1113) until locales/ has its catalogue.
   deadlineExtensions: "Produljenje roka",
