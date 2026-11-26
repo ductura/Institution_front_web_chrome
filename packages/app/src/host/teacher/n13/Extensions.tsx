@@ -7,7 +7,7 @@ import { appHref } from "../../../../../../src/components/shell/nav";
 import { goToSignIn } from "../../../../../../src/client/api";
 import { zagrebInstant } from "../../../../../../src/lib/i18n/zagreb";
 import { useHost } from "../../context";
-import { deadlinePassed, detailText, filterByStudent, studentSeesText, leadText, loadN13, noteOf, reasonOptions, recordN13, titleText, unavailablePort, type N13Port, type N13Read, type Note } from "./model";
+import { deadlinePassed, detailText, filterByStudent, studentSeesText, leadText, loadN13, noteOf, reasonOptions, recordN13, submissionWarning, titleText, unavailablePort, type N13Port, type N13Read, type Note } from "./model";
 import { n13Messages as text } from "./messages.hr";
 
 /**
@@ -62,6 +62,8 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
     }
   }
 
+  const warning = data === null ? null : submissionWarning(effective, studentId, students, data.submissions);
+
   return (
     <div className="page">
       <div className="pagehead">
@@ -111,6 +113,7 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
                 onChange={(e) => setStudentId(e.target.value)}
               />
             )}
+            {warning !== null && <div className="banner" role={warning.tone} data-testid="n13-existing-submission"><p><b>{warning.bold}</b>{warning.rest === null ? null : ` ${warning.rest}`}</p></div>}
             <TextField label={text.due} hint={text.dueHint} type="datetime-local" value={dueLocal} onChange={(e) => setDueLocal(e.target.value)} />
             <Select
               label={text.reason}
