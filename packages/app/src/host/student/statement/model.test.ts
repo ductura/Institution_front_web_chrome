@@ -71,3 +71,68 @@ describe("statement: printout and human help (WEB-1503)", () => {
     expect(port.attached).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+import { checkTools, saveTools, toolsAfterRead, toolsError } from "./model";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import DeclaredTools from "./DeclaredTools";
+
+const row = (tool: string, purpose = "lektura", phase = "završna verzija") => ({ tool, purpose, phase });
+
+describe("statement: tools outside Ductura (ED-12)", () => {
+  it("drops wholly empty rows, tidies spaces and asks for all three fields", () => {
+    expect(checkTools([row("  Rječnik   HJP "), row("", "", "")])).toEqual({ kind: "ok", tools: [row("Rječnik HJP")] });
+    expect(checkTools([row("Rječnik", "")]).kind).toBe("incomplete");
+    expect(checkTools([row("x".repeat(201))]).kind).toBe("tooLong");
+    expect(checkTools([row("č".repeat(200))]).kind).toBe("ok");
+    expect(checkTools(Array.from({ length: 21 }, (_, i) => row(`alat ${i}`))).kind).toBe("tooMany");
+    expect(checkTools([]).kind).toBe("ok");
+    expect(toolsError({ kind: "tooMany" })).toBe("Najviše 20 alata.");
+    expect(toolsError({ kind: "tooLong" })).toBe("Polje je predugo. Najviše 200 znakova.");
+  });
+
+  it("saves the whole list through the port and reads it back; unsaved rows survive a read", async () => {
+    const port = fakeStatementPort();
+    const read = await port.read(ID);
+    expect(toolsAfterRead(null, read)).toEqual([]);
+    expect(await saveTools(port, ID, read, [row(" Rječnik ")])).toEqual({ kind: "saved" });
+    expect(port.toolLists).toEqual([[row("Rječnik")]]);
+    const again = await port.read(ID);
+    expect(toolsAfterRead(null, again)).toEqual([row("Rječnik")]);
+    expect(toolsAfterRead([row("nespremljeno")], again)).toEqual([row("nespremljeno")]);
+    expect((await saveTools(port, ID, again, [row("Rječnik", "")])).kind).toBe("invalid");
+    expect(port.toolLists).toHaveLength(1);
+  });
+
+  it("sends nothing after submission or through a port without tools", async () => {
+    const port = fakeStatementPort();
+    port.submit();
+    const read = await port.read(ID);
+    expect((await saveTools(port, ID, read, [row("Rječnik")])).kind).toBe("readOnly");
+    const { saveTools: _drop, ...without } = fakeStatementPort();
+    expect((await saveTools(without, ID, await without.read(ID), [row("Rječnik")])).kind).toBe("readOnly");
+    expect(port.toolLists).toEqual([]);
+  });
+
+  it("renders the list with labelled fields, add and save; read only after submission", async () => {
+    const port = fakeStatementPort();
+    await port.saveTools?.(ID, [row("Rječnik")]);
+    const read = await port.read(ID);
+    if (read.kind !== "ready") throw new Error("ready");
+    const html = renderToStaticMarkup(createElement(DeclaredTools, { port, assignmentId: ID, read, onReload: () => {}, onSignIn: () => {} }));
+    expect(html).toContain("<legend>Vanjski alati</legend>");
+    expect(html).toContain('aria-label="Alat 1"');
+    expect(html).toContain("Rječnik");
+    expect(html).toContain("Dodaj alat");
+    expect(html).toContain("Spremi popis alata");
+    expect(html).toContain("Ukloni alat 1");
+    port.submit();
+    const done = await port.read(ID);
+    if (done.kind !== "ready") throw new Error("ready");
+    const locked = renderToStaticMarkup(createElement(DeclaredTools, { port, assignmentId: ID, read: done, onReload: () => {}, onSignIn: () => {} }));
+    expect(locked).not.toContain("Dodaj alat");
+    expect(locked).not.toContain("Spremi popis alata");
+    expect(locked).toContain("readOnly");
+  });
+});

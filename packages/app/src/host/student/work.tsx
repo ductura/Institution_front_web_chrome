@@ -21,6 +21,7 @@ import StatusBar from "../../../../../src/components/editor/StatusBar.tsx";
 import WorkspaceTopBar from "../../../../../src/components/editor/WorkspaceTopBar.tsx";
 import { workspaceFrame, type WorkspaceVariant } from "../../../../../src/components/editor/workspace-variant.ts";
 import { browserTransport, createApi, goToSignIn } from "../../../../../src/client/api.ts";
+import { withMentoredAssignments } from "../../../../../src/components/student/mentored-assignments.ts";
 import { messagesHr as t } from "../../../../../src/lib/i18n/messages.hr.ts";
 
 import { SaveState } from "@ductura/ui";
@@ -47,9 +48,12 @@ import { CommentsHost } from "../editor/comments/CommentsHost";
 import { ChapterPanel } from "../editor/left/ChapterPanel";
 import { FootnoteDialogHost } from "../editor/footnote/FootnoteHost";
 import { StudentToolbar } from "../editor/toolbar/StudentToolbar";
+import { CodeRunMount } from "../editor/code-run/CodeRunPanel";
 import { TableOfContentsMount } from "../editor/toc/TableOfContentsMount";
-import { leftSectionsFor } from "../editor/left/LeftSectionsHost";
+import { leftSectionsFor, RailFooter } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
+import { SlidesWork } from "../slides/editor/SlidesWork";
+import { workKindOf } from "../slides/editor/work-kind";
 import { RubricCard } from "./rubric/RubricCard";
 import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { WorkHistoryHost } from "../editor/work-history/WorkHistoryHost";
@@ -92,7 +96,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
     if (attempt > 0) setShown({ kind: "loading" });
     const here = appHref(base, `/rad/${assignmentId}`);
     void (async () => {
-      const client = createApi();
+      const client = withMentoredAssignments(createApi());
       const [assignments, work, wordRange] = await Promise.all([
         client("student.assignments.get", NONE).catch(() => UNREACHED),
         client("student.assignment-work.get", NONE).catch(() => UNREACHED),
@@ -113,19 +117,26 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       // WEB-2136: view mode, "samo naslovi" and panel widths, only where the panels are (the full editor).
       const topBar = frame.variant === "puno" ? <ShellView>{bar}</ShellView> : bar;
       const length = { words: null, range: frame.range };
+      // WEB-V13-UREDNIK: a slides work in progress opens the slides editor, anything else the text editor below.
+      // Its top bar is the plain one: the shell view switches and the history buttons only work on the text editor.
+      const kind = workKindOf(assignments, assignmentId);
+      if (read.kind === "ready" && frame.variant === "puno" && kind !== "text") {
+        return setShown({ kind: "page", node: <SlidesWork course={read.course} title={read.title} topBar={<WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle} />} length={length} unreadable={kind === "unreadable"} onRetry={() => setAttempt((n) => n + 1)} /> });
+      }
       if (read.kind === "ready" && frame.variant === "puno") {
         return setShown({
           kind: "page",
           node: <EditorPageWork assignmentId={assignmentId} base={base} course={read.course} title={read.title} topBar={topBar} length={length}
             statusExtra={<StatusExtras />} footnoteDialog={FootnoteDialogHost}
-            toolbar={(ctx) => <StudentToolbar {...ctx} />} useSupplements={rehearsalSupplementsFor(assignmentId)}
-            triggers={({ documentId }) => <SourcesMention documentId={documentId} />}
+            toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
+            triggers={({ documentId }) => <SourcesMention documentId={documentId}
+              openOrigin={() => router.push(nextPath(base, `/rad/${encodeURIComponent(assignmentId)}/podrijetlo`))} />}
             literature={() => <LiteratureList />}
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
-              work: ({ editor, documentId, submitted }) => <>
-                <MentorMount editor={editor} documentId={documentId} submitted={submitted} />
+              work: ({ editor, assignmentId: id, documentId, submitted }) => <>
+                <MentorMount editor={editor} assignmentId={id} documentId={documentId} submitted={submitted} />
                 <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />
               </>,
               // PIL-K-KOMENTARI-EDITOR: the Comments card over the real port, in place of the old CommentPanel.
@@ -138,7 +149,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               </>,
               instructions: () => <><NoticeInstructions assignmentId={assignmentId} /><RubricCard assignmentId={assignmentId} here={here} /></>,
             }}
-            leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></> })}
+            leftSections={({ documentId }) => ({ ...leftSectionsFor(assignmentId, documentId, read.dueAt), chapter: <><TableOfContentsMount /><ChapterPanel workId={assignmentId} /></>, footer: <RailFooter range={frame.range} dueAt={read.dueAt} /> })}
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session, documentId }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />

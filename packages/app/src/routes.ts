@@ -20,11 +20,13 @@ import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
 import { courseAggregateMessages } from "./host/teacher/course-aggregate/messages.hr";
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
-import { accessDeniedHr, profileHr } from "./i18n/messages.hr";
+import { accessDeniedHr, pageLabelsHr, profileHr } from "./i18n/messages.hr";
 import { originText } from "./host/teacher/provenance/origin-messages.hr";
 import { interviewMessages as studentInterviewText } from "./host/student/interview/messages.hr";
 import { thresholdMessages } from "./host/institution/origin-thresholds/messages.hr";
 import { facultySettingsMessages } from "./host/admin/faculty-settings/messages.hr";
+import { milestoneTemplateMessages } from "./host/admin/milestone-template/messages.hr";
+import { workTemplateMessages } from "./host/admin/work-template/messages.hr";
 import { myRightsMessages } from "./host/public/my-rights/messages.hr";
 import { pilotMetricsMessages } from "./host/operator/pilot-metrics/messages.hr";
 import { actionLogMessages } from "./host/operator/action-log/messages.hr";
@@ -33,8 +35,12 @@ import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
+import { peerReviewText } from "./host/student/peer-review/messages.hr";
 import { workTeamText } from "./host/student/work-team/messages.hr";
 import { teacherTeamText } from "./host/teacher/work-team/messages.hr";
+import { teacherPeerReviewText } from "./host/teacher/peer-review/messages.hr";
+import { codeTestsText } from "./host/teacher/code-tests/messages.hr";
+import { analysisPageMessages } from "./host/analysis/messages.hr";
 
 export { BASES, type Base } from "./bases";
 
@@ -81,6 +87,8 @@ export const OPERATOR_HOME = "/operater/mjerila-pilota";
 export { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 /** M1.8: where a refused page leads, with the refusal ("Nemate ovlasti za ovaj prikaz"). */
 export const NO_ACCESS = "/nema-ovlasti?kind=denied";
+/** WEB-OPERATER-POCETNA: the operator's pages have no index of their own; this path forwards to the first one the account may open. */
+export const OPERATOR_INDEX = "/operater";
 
 /** Whether a route is a page's path: the same segments, a bracketed one standing for any. */
 export function pathMatches(path: string, route: string): boolean {
@@ -117,8 +125,16 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/mentorstva/dnevnik-prakse", label: hostText.mentorPracticeJournal, kind: "pending", roles: ["teacher"], current: "/nastavnik/mentorstva" },
   // WEB-V19-GRUPA: the student's team on one assignment, entered from the assignment's notice by a link.
   { path: "/zadatak/[id]/tim", label: workTeamText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-RECENZIJA-STUDENT: the student's anonymous peer review of one assignment, entered from the assignment's notice by a link.
+  { path: "/zadatak/[id]/recenzija", label: peerReviewText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  { path: "/zadatak/[id]/recenzija/primljene", label: peerReviewText.received.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  { path: "/zadatak/[id]/recenzija/rad/[taskId]", label: peerReviewText.work.title, kind: "pending", roles: ["student"], current: "/zadaci" },
   // WEB-V19-GRUPA: the teacher's teams of one assignment, entered from the task's card in N-01 by a link.
   { path: "/nastavnik/zadatak/[assignmentId]/timovi", label: teacherTeamText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // WEB-V19-RECENZIJA-NASTAVNIK: the teacher's peer-review round of one assignment, entered from the task's card in N-01 by a link.
+  { path: "/nastavnik/zadatak/[assignmentId]/recenzija", label: teacherPeerReviewText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // WEB-V21-KOD-TESTOVI-OBRAZAC: the teacher's code tests of one assignment, a standalone screen reached by its path.
+  { path: "/nastavnik/zadatak/[assignmentId]/testovi", label: codeTestsText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // HOST-S1: the editor of one work.
   { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },
@@ -156,6 +172,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/merlin", label: merlinMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // PIL-D2-PREDAJE: the submissions of one assignment (WEB-1502), reached from the course card (N-01).
   { path: "/nastavnik/zadatak/[assignmentId]/predaje", label: submissionsMessages.pageTitle, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // WEB-V15-STRANICA: "Statistička analiza", not in the navigation (hidden until the server switches the function on).
+  { path: "/analiza", label: analysisPageMessages.title, kind: "pending", roles: ["teacher", "student"] },
   { path: HOW_IT_WORKS_HREF, label: t.shell.howItWorks, kind: "pending", roles: [], current: HOW_IT_WORKS_HREF },
   // WEB-1804 (M11.5): interface language, name and notifications, for everyone signed in.
   { path: "/profil", label: profileHr.title, kind: "pending", roles: [] },
@@ -167,6 +185,14 @@ export const PAGES: readonly Page[] = [
   // NF-7 OA-2 / OA-9: the faculty's settings in one place, and the assistant's settings (read only).
   { path: "/ustanova/postavke", label: facultySettingsMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
   { path: "/ustanova/postavke/asistent", label: facultySettingsMessages.assistant.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  // WEB-V16-ETAPE-ADMIN: the institution's milestone template.
+  { path: "/ustanova/etape", label: milestoneTemplateMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  // WEB-V17-TEMPLATE-ADMIN: the faculty's template of a work per type of work.
+  { path: "/ustanova/predlozak-rada", label: workTemplateMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  // WEB-V22-RUTE: the trial ISVU roster link, for the administrator, the grade export (teacher of the course) and the public entry from Studomat.
+  { path: "/ustanova/isvu", label: pageLabelsHr.isvuImport, kind: "pending", roles: ["admin"], current: "/ustanova" },
+  { path: "/nastavnik/kolegiji/[courseId]/isvu-ocjene", label: pageLabelsHr.isvuGrades, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  { path: "/ulaz/studomat", label: pageLabelsHr.studomatEntry, kind: "pending", roles: [], public: true },
   // NF-7 OA-5: "Moja prava", static help for everyone signed in.
   { path: "/moja-prava", label: myRightsMessages.title, kind: "pending", roles: [], current: "/moja-prava" },
   // WEB-NUZ-OPERATER (NF-7 OA-1, OA-12): the operator's view of the institution, the pilot's aggregates only.
@@ -180,6 +206,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nema-ovlasti", label: accessDeniedHr.pageTitle, kind: "pending", roles: [], public: true },
   // WEB-1805 (M11.6, F-03): the accessibility statement; public, as the law asks.
   { path: "/pristupacnost", label: t.shell.accessibilityStatement, kind: "pending", roles: [], public: true },
+  // DEMO-1: what the app is and the way to the demo; public, it reads no session.
+  { path: "/o-aplikaciji", label: t.landing.demo.pageTitle, kind: "pending", roles: [], public: true },
   // WEB-1302: the student's one-time download; public, the token in the link is the only key.
   { path: "/izvoz-podataka/[token]", label: studentDataDownloadMessages.labels.title, kind: "pending", roles: [], public: true },
   // WEB-2111 (R-41, V-5, C-6): the check of a receipt; public, anyone holding the receipt checks it.
@@ -210,6 +238,11 @@ export function resolve(route: string, role: ShellRole | null, accounts: readonl
   if (route === "/") {
     if (operator) return { kind: "redirect", to: OPERATOR_HOME };
     return role === null ? { kind: "noRole" } : { kind: "redirect", to: home };
+  }
+  if (route === OPERATOR_INDEX) {
+    if (accounts.includes("network_engineer")) return { kind: "redirect", to: OPERATOR_HOME };
+    if (accounts.includes("institution_admin")) return { kind: "redirect", to: PROBLEM_REPORTS };
+    return { kind: "notFound" };
   }
   const page = PAGES.find((p) => pathMatches(p.path, route));
   if (page === undefined) return { kind: "notFound" };

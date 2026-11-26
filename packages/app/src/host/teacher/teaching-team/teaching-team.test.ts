@@ -12,6 +12,7 @@ const holderId = "c0000000-0000-4000-8000-000000000002";
 const assistantId = "c0000000-0000-4000-8000-000000000003";
 const groupId = "c0000000-0000-4000-8000-000000000004";
 const studentId = "c0000000-0000-4000-8000-000000000005";
+const candidateId = "c0000000-0000-4000-8000-000000000006";
 const group = { id: groupId, name: "Seminar o oblacima" };
 const assistant = { id: assistantId, name: "Asistent Oblak" };
 const student = { id: studentId, name: "Student Jantar" };
@@ -29,9 +30,11 @@ describe("WEB-1405 teaching team", () => {
     const { transport, port } = setup();
     transport.mockResolvedValueOnce(Response.json(holder))
       .mockResolvedValueOnce(Response.json({ holderId, assistantIds: [] }))
+      .mockResolvedValueOnce(Response.json({ candidates: [] }))
       .mockResolvedValueOnce(Response.json({ updated: true }))
       .mockResolvedValueOnce(Response.json(holder))
       .mockResolvedValueOnce(Response.json({ holderId, assistantIds: [assistantId] }))
+      .mockResolvedValueOnce(Response.json({ candidates: [] }))
       .mockResolvedValueOnce(Response.json({ updated: true }));
 
     expect(await port.read()).toMatchObject({ kind: "ready", view: { assistantIds: [] } });
@@ -43,11 +46,37 @@ describe("WEB-1405 teaching team", () => {
       .toEqual([
         [`/api/v1/courses/${courseId}/team/view`, "GET", undefined],
         [`/api/v1/courses/${courseId}/team`, "GET", undefined],
+        [`/api/v1/courses/${courseId}/team/candidates`, "GET", undefined],
         [`/api/v1/courses/${courseId}/team`, "POST", { assistantIds: [assistantId] }],
         [`/api/v1/courses/${courseId}/team/view`, "GET", undefined],
         [`/api/v1/courses/${courseId}/team`, "GET", undefined],
+        [`/api/v1/courses/${courseId}/team/candidates`, "GET", undefined],
         [`/api/v1/courses/${courseId}/groups/${groupId}/members`, "PUT", { assistantIds: [assistantId], studentIds: [studentId] }],
       ]);
+  });
+
+  it("offers the holder the institution's other teachers as candidates and lists each person once (DEMO-POP-4)", async () => {
+    const { transport, port } = setup();
+    const candidate = { id: candidateId, name: "Nastavnica Kandidat" };
+    transport.mockResolvedValueOnce(Response.json(holder))
+      .mockResolvedValueOnce(Response.json({ holderId, assistantIds: [assistantId] }))
+      .mockResolvedValueOnce(Response.json({ candidates: [candidate, assistant] }));
+    const result = await port.read();
+
+    expect(result).toMatchObject({ kind: "ready", view: { assistants: [assistant, candidate], assistantIds: [assistantId] } });
+    if (result.kind !== "ready") return;
+    const html = renderToStaticMarkup(createElement(TeachingTeamContent, {
+      view: result.view, port, save: vi.fn(), busy: false, groupId: "", setGroupId: vi.fn(),
+    }));
+    expect(html).toContain(candidate.name);
+  });
+
+  it("does not show the roster when the candidates cannot be read", async () => {
+    const { transport, port } = setup();
+    transport.mockResolvedValueOnce(Response.json(holder))
+      .mockResolvedValueOnce(Response.json({ holderId, assistantIds: [] }))
+      .mockResolvedValueOnce(Response.json({ code: "forbidden" }, { status: 403 }));
+    expect(await port.read()).toEqual({ kind: "forbidden" });
   });
 
   it("shows the assistant only the scoped group and renders no editing controls", async () => {

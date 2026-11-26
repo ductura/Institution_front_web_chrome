@@ -7,7 +7,11 @@
 import { Button, Chip, Dialog, PillTag } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useReportOpenComments } from "@/components/editor/layout-prefs/panel-counts";
+
+import { ASK_COMMENT_EVENT, askedComment, takeAskedComment } from "./ask-comment";
 import styles from "./comments.module.css";
+import { MyChanges, type ReadMyChanges } from "./my-changes";
 import { commentsHr as t } from "./messages.hr";
 import {
   KINDS, abilities, applyFilters, bodyText, byRound, countsFor, isMine, messageFor, openForPrint, printText, quickReply,
@@ -16,13 +20,34 @@ import {
 } from "./model";
 
 type Load = { kind: "loading" } | { kind: "ready"; comments: readonly Comment[]; round: number; templates: readonly Template[] } | { kind: "unavailable" | "signedOut" };
-type Dlg = "rounds" | "print" | "templates" | "new" | null;
+type Dlg = "rounds" | "print" | "templates" | "new" | "changes" | null;
 
-export function CommentsPanel({ workId, role, submitted = false, port, selection, docSize, activeId, seen = 0, onJump, onSessionEnd, onSeen, now = Date.now }: {
+/**
+ * "Prije i poslije" of a comment: the text it was written on and the text in that place now, shown only when
+ * they differ. `now` is null when the place cannot be read; an empty place means the text was deleted.
+ */
+export function BeforeAfter({ quote, now }: { quote: string; now: string | null }) {
+  if (now === null || now === quote) return null;
+  return (
+    <details>
+      <summary className={styles.muted}>{t.beforeAfter}</summary>
+      <p className={styles.sub}>{t.whenWritten}</p>
+      <p className={styles.quote}>„{quote}”</p>
+      <p className={styles.sub}>{t.nowText}</p>
+      {now === "" ? <p className={styles.muted}><i>{t.alsoGone}</i></p> : <p className={styles.quote}>„{now}”</p>}
+    </details>
+  );
+}
+
+export function CommentsPanel({ workId, role, submitted = false, port, selection, docSize, currentText, activeId, seen = 0, onJump, onSessionEnd, onSeen, now = Date.now, changes }: {
   workId: string; role: Role; submitted?: boolean; port: CommentsPort | null;
+  /** The text at a comment's place in the document as it is now; null when it cannot be read. */
+  currentText?: (place: Place) => string | null;
   /** The last selection in the text, kept by the editor (buttons here must not lose it). */
   selection: () => Selection | null; docSize: () => number; activeId?: string | null; seen?: number;
   onJump: (place: Place) => void; onSessionEnd?: () => void; onSeen?: () => void; now?: () => number;
+  /** ED-42: the student's own changes since the last review; absent, the menu has no such item. */
+  changes?: ReadMyChanges;
 }) {
   const [load, setLoad] = useState<Load>({ kind: "loading" });
   const [turn, setTurn] = useState<TurnFilter>(null);
@@ -48,7 +73,28 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
     if (result.kind === "signedOut") onSessionEnd?.();
   }, [port, workId, onSessionEnd]);
   useEffect(() => { void read(); }, [read]);
+  // ED-48: "Pitaj mentora" from the chapter sheet opens a new comment on the chapter's title,
+  // its first line written; the card takes it once the list is read.
+  const [asked, setAsked] = useState<string | null>(null);
+  useEffect(() => {
+    if (submitted) return;
+    const early = takeAskedComment();
+    if (early !== null) setAsked(early);
+    const onAsk = (event: Event) => { if (askedComment(event) === null) return; const text = takeAskedComment(); if (text !== null) setAsked(text); };
+    document.addEventListener(ASK_COMMENT_EVENT, onAsk);
+    return () => document.removeEventListener(ASK_COMMENT_EVENT, onAsk);
+  }, [submitted]);
+  useEffect(() => {
+    if (asked === null || load.kind !== "ready") return;
+    setAsked(null);
+    const place = usableSelection(selection(), now(), docSize());
+    if (!place) { setMessage(t.needSelection); return; }
+    setForm({ text: asked, kind: "must", save: false, place });
+    setDlg("new");
+  }, [asked, load.kind, selection, now, docSize]);
   useEffect(() => () => { onSeen?.(); }, [onSeen]);
+  // ED-38 (P2-7): the count beside the card's tab, the same open comments the print lists.
+  useReportOpenComments(load.kind === "ready" ? openForPrint(load.comments).length : 0);
 
   if (load.kind === "loading") return <p role="status" className={styles.muted}>{t.loading}</p>;
   if (load.kind !== "ready") {
@@ -153,6 +199,7 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
             <button type="button" onClick={() => void read()}>{t.refresh}</button>
             <button type="button" onClick={() => setDlg("rounds")}>{t.rounds}</button>
             <button type="button" onClick={() => setDlg("print")}>{t.print}</button>
+            {role === "student" && changes && <button type="button" onClick={() => setDlg("changes")}>{t.myChanges}</button>}
             {role === "teacher" && <button type="button" onClick={() => setDlg("templates")}>{t.templatesTitle}</button>}
           </div>
         </details>
@@ -171,6 +218,7 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
                 {label && <PillTag tone={isMine(tn, role) ? "me" : "neutral"}>{label}</PillTag>}
               </div>
               <p className={styles.quote}>„{c.place.quote}”</p>
+              <BeforeAfter quote={c.place.quote} now={c.place.lost || !currentText ? null : currentText(c.place)} />
               <p className={styles.body}>{c.text}</p>
               {c.replies.map((r) => <p key={r.id} className={styles.reply}>{r.text}</p>)}
               <div className={styles.actions}>
@@ -245,6 +293,13 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
           ))}
         </div>
       </Dialog>
+
+      {changes && (
+        <Dialog open={dlg === "changes"} title={t.myChanges} onClose={() => setDlg(null)} actions={<Button tone="quiet" onClick={() => setDlg(null)}>{t.cancel}</Button>}>
+          <p className={styles.muted}>{t.myChangesNote}</p>
+          {dlg === "changes" && <MyChanges workId={workId} read={changes} />}
+        </Dialog>
+      )}
 
       <Dialog open={dlg === "templates"} title={t.templatesTitle} onClose={() => setDlg(null)} actions={<Button tone="quiet" onClick={() => setDlg(null)}>{t.cancel}</Button>}>
         <p className={styles.muted}>{t.templatesNote}</p>

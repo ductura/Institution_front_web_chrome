@@ -5,7 +5,10 @@ import { createEditorExtensionsV4 } from "@/editor";
 
 import { reviewDocOf } from "../review/model";
 import { runChecks } from "../review";
-import { MAX_BATCH_EDITS, applyAllFixes, applyFix, nextFix, scanFixes } from "./fixes";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { MAX_BATCH_EDITS, applyAllFixes, applyFix, changeAround, nextFix, scanFixes } from "./fixes";
+import { BeforeAfter } from "./TextFixesPanel";
 import { fixFor, stepAfter } from "./steps";
 
 const id = (n: number) => `${String(n).repeat(8)}-0000-4000-8000-${String(n).repeat(12)}`;
@@ -170,5 +173,42 @@ describe("review findings (Codex)", () => {
     expect(scanFixes(e.state.doc).fixes.length).toBe(200);
     e.commands.undo();
     expect(scanFixes(e.state.doc).fixes.length).toBe(1_200);
+  });
+});
+
+describe("Prije i poslije (ED-41)", () => {
+  it("keeps each edit apart from the words around it", () => {
+    expect(changeAround("Prvi  odlomak", [{ from: 4, to: 6, replacement: " " }])).toEqual([
+      { kind: "same", text: "Prvi" }, { kind: "edit", removed: "  ", added: " " }, { kind: "same", text: "odlomak" },
+    ]);
+    expect(changeAround("Reče \"da\" i ode.", [{ from: 5, to: 6, replacement: "„" }, { from: 8, to: 9, replacement: "”" }])).toEqual([
+      { kind: "same", text: "Reče " }, { kind: "edit", removed: "\"", added: "„" }, { kind: "same", text: "da" },
+      { kind: "edit", removed: "\"", added: "”" }, { kind: "same", text: " i ode." },
+    ]);
+    expect(changeAround("a,b", [{ from: 2, to: 2, replacement: " " }])).toEqual([
+      { kind: "same", text: "a," }, { kind: "edit", removed: "", added: " " }, { kind: "same", text: "b" },
+    ]);
+  });
+
+  it("cuts a long block on both sides with an ellipsis", () => {
+    const text = `${"početak ".repeat(5)}greška ,ovdje${" kraj".repeat(6)}`;
+    const at = text.indexOf(" ,");
+    const parts = changeAround(text, [{ from: at, to: at + 1, replacement: "" }]);
+    expect(parts[0]).toMatchObject({ kind: "same" });
+    expect((parts[0] as { text: string }).text.startsWith("…")).toBe(true);
+    expect((parts[2] as { text: string }).text.endsWith("…")).toBe(true);
+  });
+
+  it("every scanned fix carries its change", () => {
+    const e = make([block(1, ["Prvi  odlomak ,ovdje."])]);
+    for (const fix of scanFixes(e.state.doc).fixes) expect(fix.change.some((p) => p.kind === "edit")).toBe(true);
+  });
+
+  it("shows what goes struck out and what comes underlined, a space as ␣ read as razmak", () => {
+    const html = renderToStaticMarkup(createElement(BeforeAfter, { change: changeAround("Prvi  odlomak", [{ from: 4, to: 6, replacement: " " }]) }));
+    expect(html).toContain("<summary>Prije i poslije</summary>");
+    expect(html).toMatch(/<del><span aria-hidden="true">␣␣<\/span><span class="visually-hidden">2 razmak<\/span><\/del>/);
+    expect(html).toMatch(/<ins><span aria-hidden="true">␣<\/span><span class="visually-hidden">razmak<\/span><\/ins>/);
+    expect(renderToStaticMarkup(createElement(BeforeAfter, { change: [] }))).toBe("");
   });
 });

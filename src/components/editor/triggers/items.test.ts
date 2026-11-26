@@ -27,12 +27,26 @@ describe("editor triggers", () => {
     expect(addSource).toHaveBeenCalledWith("Ča");
   });
 
+  it("runs /podrijetlo through the host's command (ED-34, P2-9) and greys it without one", () => {
+    const podrijetlo = vi.fn();
+    const slash = { mode: "slash" as const, query: "podr", from: 0, to: 5 };
+    const [given] = triggerItems(slash, [], { commands: { podrijetlo } }, vi.fn());
+    expect(given).toMatchObject({ id: "podrijetlo", label: "/podrijetlo", disabled: false });
+    given?.run?.();
+    expect(podrijetlo).toHaveBeenCalledOnce();
+    expect(triggerItems(slash, [], {}, vi.fn())[0]?.disabled).toBe(true);
+  });
+
   it("keeps unavailable commands visible and cycles through usable entries only", () => {
     const items = triggerItems({ mode: "slash", query: "", from: 0, to: 1 }, [], {}, vi.fn());
     expect(items[0]).toMatchObject({ label: "/navod", disabled: true });
     expect(items.find(({ id }) => id === "tablica")?.disabled).toBe(true);
     // ED-03 (NF2-P5): a grey command says why, beside its name; an offered one does not.
-    for (const item of items.filter(({ disabled }) => disabled)) expect(item.hint).toMatch(/ · nije u pilotu$/);
+    for (const item of items.filter(({ disabled }) => disabled)) expect(item.hint).toMatch(/ · nije u pilotu(, dolazi s novom shemom teksta)?$/);
+    // ED-24 (NF2-P25): /tablica and /slika say they wait for the new text schema; other grey commands do not.
+    expect(items.find(({ id }) => id === "tablica")?.hint).toBe("s brojem i izvorom · nije u pilotu, dolazi s novom shemom teksta");
+    expect(items.find(({ id }) => id === "slika")?.hint).toBe("s brojem, naslovom i izvorom · nije u pilotu, dolazi s novom shemom teksta");
+    expect(items.find(({ id }) => id === "fusnota")?.hint).toBe("objašnjenje na dnu · nije u pilotu");
     const offered = triggerItems({ mode: "slash", query: "", from: 0, to: 1 }, [], { cite: vi.fn() }, vi.fn());
     expect(offered.find(({ id }) => id === "navod")).toMatchObject({ disabled: false, hint: "isto kao @" });
     expect(moveItem(items, -1, 1)).toBe(1);

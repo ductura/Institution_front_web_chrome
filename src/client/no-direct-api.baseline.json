@@ -123,6 +123,23 @@
  "packages/app/next.config.ts": [
   "import node:path"
  ],
+ "packages/app/public/code-run/frame.js": [
+  "Cache API",
+  "EventSource",
+  "Function constructor",
+  "WebSocket",
+  "WebTransport",
+  "XMLHttpRequest",
+  "code from URL",
+  "eval",
+  "fetch",
+  "global alias",
+  "importScripts",
+  "worker"
+ ],
+ "packages/app/src/host/editor/code-run/runner-frame.ts": [
+  "image or src"
+ ],
  "packages/app/src/rewrites.ts": [
   "API URL"
  ],
@@ -172,13 +189,6 @@
   "import fake-indexeddb",
   "import node:crypto",
   "import vitest"
- ],
- "src/components/editor/rich/blocks/FormulaDialog.tsx": [
-  "test file import",
-  "import katex/dist/katex.min.css"
- ],
- "src/components/editor/rich/blocks/katex-render.ts": [
-  "import katex"
  ],
  "src/components/editor/spelling/engine.ts": [
   "fetch",

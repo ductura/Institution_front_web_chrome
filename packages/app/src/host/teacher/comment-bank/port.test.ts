@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { commentBankPortFor, draftCommentsPortFor } from "./port";
-import { publishDraftGroup, publishMessage, removeBankEntry, saveDraftComment, visibleToStudent } from "./model";
+import { publishDraftGroup, publishMessage, removeBankEntry, saveBankEntry, saveDraftComment, updateBankEntry, visibleToStudent } from "./model";
 
 const WORK = "d1";
 const C1 = "3c9f0a1e-7b2d-4e5f-8a6b-1c2d3e4f5a60";
@@ -90,7 +90,7 @@ describe("comment bank port (WEB-1704)", () => {
     const port = commentBankPortFor(() => stub({
       "teacher.comment-bank.get": () => ({ ok: true, status: 200, body: { entries: [{ id: C1, kind: "must", text: "Navedite izvor.", createdAt: "2026-11-23T10:00:00.000Z" }] } }),
     }));
-    expect(await port.read()).toEqual({ kind: "ready", entries: [{ id: C1, title: "Obavezno", body: "Navedite izvor." }] });
+    expect(await port.read()).toEqual({ kind: "ready", entries: [{ id: C1, kind: "must", title: "Obavezno", label: null, body: "Navedite izvor." }] });
   });
 
   it("removes an entry only on the server's confirmation", async () => {
@@ -100,5 +100,59 @@ describe("comment bank port (WEB-1704)", () => {
     expect(await removeBankEntry(answer(204), C1)).toEqual({ kind: "removed" });
     expect(await removeBankEntry(answer(503), C1)).toEqual({ kind: "unknown" });
     expect(await removeBankEntry(answer(404), C1)).toEqual({ kind: "rejected" });
+  });
+
+  it("reads the teacher's label of an entry", async () => {
+    const port = commentBankPortFor(() => stub({
+      "teacher.comment-bank.get": () => ({ ok: true, status: 200, body: { entries: [{ id: C1, kind: "q", text: "Zašto?", label: "Pitanje o izvoru", createdAt: "2026-11-23T10:00:00.000Z" }] } }),
+    }));
+    expect(await port.read()).toMatchObject({ entries: [{ kind: "q", label: "Pitanje o izvoru" }] });
+  });
+
+  it("sends an edited entry through the PUT route and shows it only after 204", async () => {
+    const sent: unknown[] = [];
+    const answer = (status: number) => commentBankPortFor(() => stub({
+      "teacher.comment-bank-entry.put": (input) => { sent.push(input.body); return status === 204 ? { ok: true, status, body: undefined } : { ok: false, status }; },
+    }));
+    const input = { text: "Novi tekst", kind: "praise", label: "Pohvala" } as const;
+    expect(await updateBankEntry(answer(204), C1, input)).toEqual({
+      kind: "updated", entry: { id: C1, kind: "praise", title: "Pohvala", label: "Pohvala", body: "Novi tekst" },
+    });
+    expect(sent).toEqual([{ text: "Novi tekst", kind: "praise", label: "Pohvala" }]);
+    expect(await updateBankEntry(answer(503), C1, input)).toEqual({ kind: "unknown" });
+    expect(await updateBankEntry(answer(422), C1, input)).toEqual({ kind: "rejected" });
+    expect(await updateBankEntry(answer(401), C1, input)).toEqual({ kind: "signedOut" });
+  });
+
+  it("treats another teacher's or a missing entry (404) as gone, never as updated", async () => {
+    const port = commentBankPortFor(() => stub({ "teacher.comment-bank-entry.put": () => ({ ok: false, status: 404 }) }));
+    expect(await updateBankEntry(port, C1, { text: "Tekst", kind: "sugg", label: null })).toEqual({ kind: "gone" });
+  });
+
+  it("sends nothing for a bad input (blank text, long text, long or control label)", async () => {
+    const log: string[] = [];
+    const port = commentBankPortFor(() => stub({
+      "teacher.comment-bank.post": () => ({ ok: true, status: 201, body: { id: C1, createdAt: "2026-11-23T10:00:00.000Z" } }),
+      "teacher.comment-bank-entry.put": () => ({ ok: true, status: 204, body: undefined }),
+    }, log));
+    for (const input of [
+      { text: "   ", kind: "must", label: null },
+      { text: "a".repeat(2001), kind: "must", label: null },
+      { text: "Tekst", kind: "must", label: "x".repeat(41) },
+      { text: "Tekst", kind: "must", label: "a\u0007b" },
+    ] as const) {
+      expect(await saveBankEntry(port, input)).toEqual({ kind: "rejected" });
+      expect(await updateBankEntry(port, C1, input)).toEqual({ kind: "rejected" });
+    }
+    expect(log).toEqual([]);
+  });
+
+  it("saves a new entry as the server named it, and is unknown when the answer names none", async () => {
+    const good = commentBankPortFor(() => stub({ "teacher.comment-bank.post": () => ({ ok: true, status: 201, body: { id: C1, createdAt: "2026-11-23T10:00:00.000Z" } }) }));
+    expect(await saveBankEntry(good, { text: "Tekst", kind: "sugg", label: null })).toEqual({
+      kind: "saved", entry: { id: C1, kind: "sugg", title: "Prijedlog", label: null, body: "Tekst" },
+    });
+    const empty = commentBankPortFor(() => stub({ "teacher.comment-bank.post": () => ({ ok: true, status: 201, body: {} }) }));
+    expect(await saveBankEntry(empty, { text: "Tekst", kind: "sugg", label: null })).toEqual({ kind: "unknown" });
   });
 });

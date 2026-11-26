@@ -16,10 +16,12 @@ import {
   type ReadingPlace, type ReadingPort, type ReadingWrite, type ReturnNotice, type TasksRead,
 } from "../mentor";
 import { placeOf, positionOf, type PlaceEditor } from "../mentor/own-place";
+import { ThesisPanel } from "../../thesis/ThesisPanel";
 import { ConsultPanel } from "../work/consult/ConsultPanel";
 import { docWords } from "../mentor/prep-model";
 import { latestReturn } from "../mentor/round-feedback";
-import { abstractWords, seenAtOf, workStateOf } from "./mentor-mount";
+import { readRubric } from "../../student/rubric/read";
+import { abstractWords, seenAtOf, thesisShownOf, workStateOf, type MentoredRead } from "./mentor-mount";
 
 /** The clipboard, when the browser gives it. */
 const copyText = (text: string): Promise<boolean> =>
@@ -108,7 +110,9 @@ async function readAll(documentId: string): Promise<Reads> {
   };
 }
 
-export function MentorMount({ documentId, submitted, editor }: {
+export function MentorMount({ assignmentId, documentId, submitted, editor }: {
+  /** The assignment of the work; its rubric, when there is one, replaces the working criteria. */
+  assignmentId?: string;
   documentId: string; submitted: boolean;
   /** The open editor; the abstract's length is counted from its text. */
   editor: { readonly state: { readonly doc: Doc }; on(event: "update", fn: () => void): unknown; off(event: "update", fn: () => void): unknown } | null;
@@ -117,6 +121,25 @@ export function MentorMount({ documentId, submitted, editor }: {
   const [allWords, setAllWords] = useState<number | null>(null);
   const [reads, setReads] = useState<Reads>(LOADING);
   const [words, setWords] = useState<number | null>(null);
+  const [byRubric, setByRubric] = useState(false);
+  // DEMO-POP-3: null while the student's mentored works are read; the thesis panel waits for them.
+  const [thesis, setThesis] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    setThesis(null);
+    void createApi()("student.mentored-assignments.get", { params: undefined, query: undefined, body: undefined })
+      .catch(() => ({ ok: false }) as const)
+      .then((answer) => { if (live) setThesis(thesisShownOf(answer as MentoredRead, assignmentId)); });
+    return () => { live = false; };
+  }, [assignmentId]);
+  useEffect(() => {
+    setByRubric(false);
+    if (!assignmentId) return;
+    let live = true;
+    // Only a rubric with criteria replaces them; any other answer keeps the card as it was.
+    void readRubric(createApi(), assignmentId).then((read) => { if (live) setByRubric(read.kind === "ok"); });
+    return () => { live = false; };
+  }, [assignmentId]);
   useEffect(() => {
     let live = true;
     setReads(LOADING);
@@ -146,7 +169,7 @@ export function MentorMount({ documentId, submitted, editor }: {
         howText={null} words={words} prep={null}
         said={<SaidPanel read={said} now={new Date()} onRetry={() => setAttempt((n) => n + 1)} />}
         prepPanel={<PrepPanel port={prep} words={allWords} editable={!submitted} onCopy={copyText} />}
-        consult={<ConsultPanel documentId={documentId} role="student" revision={1} slotsCall={slotsCall} criteriaCall={null} />} />
+        consult={<ConsultPanel documentId={documentId} role="student" revision={1} slotsCall={slotsCall} criteriaCall={null} byRubric={byRubric} />} />
       {/* WEB-NF6-RUNDA (MK-9): only in the student's own editor, only before submission. */}
       {!submitted && <OwnPanel documentId={documentId} reading={reads.reading} mark={mark}
         currentPlace={placeEditor ? () => placeOf(placeEditor) : undefined}
@@ -155,6 +178,8 @@ export function MentorMount({ documentId, submitted, editor }: {
           if (pos !== null) placeEditor.commands?.focus(pos);
           return pos !== null;
         } : undefined} />}
+      {/* WEB-V16-KOSTUR: "Završni rad", only for a mentored work (DEMO-POP-3); the server's 404 still hides it. */}
+      {thesis && <ThesisPanel documentId={documentId} role="student" />}
     </>
   );
 }

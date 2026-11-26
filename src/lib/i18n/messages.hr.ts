@@ -20,6 +20,11 @@ export const editorPanelLayoutsHr = {
   layout: "Raspored",
   mobile: "Na mobitelu",
   same: "Kao na računalu",
+  density: "Gustoća",
+  densities: { airy: "Prozračno", dense: "Zbijeno" },
+  width: "Širina na računalu",
+  widths: { narrow: "Uska", medium: "Srednja", wide: "Široka" },
+  settingsNote: "Postavke vrijede samo za Vas i pamte se u ovom pregledniku.",
   reset: "Vrati zadano",
   done: "Gotovo",
   variants: {
@@ -52,6 +57,7 @@ export const editorPanelLayoutsHr = {
   writingIn: "Pišete u poglavlju",
   noChapter: "Kursor nije u poglavlju",
   commentsHere: "Komentari ovdje",
+  openComments: { one: "{count} otvoren komentar", few: "{count} otvorena komentara", many: "{count} otvorenih komentara" },
   sourcesHere: "Izvori ovdje",
   allSources: "Svi izvori i traženje",
   notesHere: "Za pogledati u tekstu",
@@ -1441,6 +1447,8 @@ export const hr = {
       noAssignments: "U ovom kolegiju zasad nema zadatka.",
       due: "Rok {time}",
       noticeFirst: "Prvo pročitajte obavijest",
+      // INT-31: the works of the student's open mentorships, which have no course.
+      mentoredGroup: "Radovi uz mentora",
     },
     // DAN-309 (M2.3-P02, B2): "Moji radovi" on /zadaci/radovi. Each state is
     // told only from what the server read returned; nothing about the text.

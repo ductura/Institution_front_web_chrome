@@ -69,7 +69,13 @@ export const pageLabelsHr = {
   problemReports: "Prijave problema",
   facultySettings: "Postavke fakulteta",
   facultyAssistant: "Asistent na fakultetu",
+  milestoneTemplate: "Predložak etapa",
+  workTemplate: "Predložak rada",
   myRights: "Moja prava",
+  isvuImport: "Povezivanje s ISVU-om (probni izvor)",
+  isvuGrades: "Izvoz ocjena u ISVU (probni izvor)",
+  analysis: "Statistička analiza",
+  studomatEntry: "Ulaz iz Studomata",
 };
 
 /** M1.8: the no-access and session-ended screen. English: `accessDeniedEn` in ./messages.en.ts. */

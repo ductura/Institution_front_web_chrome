@@ -21,4 +21,9 @@ export const hostText = {
   mentorPracticeJournal: "Dnevnik prakse studenata",
   workTeam: "Moj tim",
   workTeams: "Timovi na zadatku",
+  teacherPeerReview: "Recenzija među studentima",
+  teacherCodeTests: "Testovi uz zadatak",
+  peerReview: "Recenzija radova",
+  peerReviewReceived: "Primljene recenzije",
+  peerReviewWork: "Recenzija rada",
 } as const;

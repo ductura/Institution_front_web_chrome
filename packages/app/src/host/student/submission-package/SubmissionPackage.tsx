@@ -9,15 +9,17 @@ import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
 import { useHost } from "../../context";
-import { requestPackageLink, type PackageCall, type PackageLink } from "./contract";
-import { submissionPackageText as t } from "./messages.hr";
+import { PACKAGE_KIND, requestPackageLink, type PackageCall, type PackageKind, type PackageLink } from "./contract";
+import { portablePackageText, submissionPackageText } from "./messages.hr";
 
 const defaultCall = () => createApi() as unknown as PackageCall;
 
 export default function SubmissionPackage(
-  { assignmentId, submissionId, call = defaultCall, now = () => new Date() }:
-  { assignmentId: string; submissionId: string; call?: () => PackageCall; now?: () => Date },
+  { assignmentId, submissionId, kind = PACKAGE_KIND, call = defaultCall, now = () => new Date() }:
+  { assignmentId: string; submissionId: string; kind?: PackageKind; call?: () => PackageCall; now?: () => Date },
 ) {
+  // The registrar's package by default; the portfolio asks for the verifiable package (WEB-1807).
+  const t = kind === "package" ? portablePackageText : submissionPackageText;
   const { base } = useHost();
   const [link, setLink] = useState<{ submissionId: string; link: PackageLink } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,7 +37,7 @@ export default function SubmissionPackage(
     setBusy(true);
     setNote(null);
     const asked = submissionId;
-    const outcome = await requestPackageLink(call(), asked);
+    const outcome = await requestPackageLink(call(), asked, kind);
     setBusy(false);
     if (outcome.kind === "poveznica") setLink((cur) => (cur === null || cur.submissionId === asked ? { submissionId: asked, link: outcome.link } : cur));
     else if (outcome.kind === "session-expired") goToSignIn(appHref(base, `/rad/${encodeURIComponent(assignmentId)}/predaja/potvrda`));

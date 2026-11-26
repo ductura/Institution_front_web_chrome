@@ -69,7 +69,7 @@ export const BLOCK_ATOM_FIELDS: Readonly<Record<BlockAtomType, readonly string[]
 const OPTIONAL_FIELDS = new Set([
   "headerFill", "cellFills", "merges", "title", "source", "attachmentId", "attachmentSha256", "crop",
 ]);
-const TEXT_BLOCKS = new Set(["paragraph", "heading", "bulletItem", "numberedItem", "quote", "codeBlock"]);
+const TEXT_BLOCKS = new Set(["paragraph", "heading", "bulletItem", "orderedItem", "quote", "codeBlock"]);
 export const isBlockAtomType = (type: string): type is BlockAtomType => Object.hasOwn(BLOCK_ATOM_FIELDS, type);
 
 /** Attributes of each inline atom (contract v3 §3, v4 §4.1). */
@@ -143,7 +143,7 @@ function nodeToTiptapV4(node: DocumentNodeV4): TiptapNodeJSON {
   if (isBlockAtomType(node.type)) return { type: node.type, attrs: { ...id, ...blockAtomToAttrs(node as BlockAtomNode) } };
   if (node.type === "box") return { type: "box", attrs: { ...id, kind: node.kind }, content: node.children.map(nodeToTiptapV4) };
   const attrs: Record<string, unknown> =
-    node.type === "heading" || node.type === "numberedItem"
+    node.type === "heading"
       ? { ...id, level: node.level }
       : node.type === "paragraph"
         ? { ...id, variantGroup: node.variantGroup ?? null }
@@ -341,7 +341,7 @@ function projectBlockV4(raw: unknown, path: string, ctx: Ctx): DocumentNodeV4 | 
     return id === null ? null : ({ type, id, kind: attrs.kind, children: children as ParagraphNodeV4[] } as DocumentNodeV4);
   }
   const children = content.flatMap((child, i) => projectInlineV4(child, `${path}.content[${i}]`, errors) ?? []);
-  if ((type === "heading" || type === "numberedItem") && !isHeadingLevel(attrs.level)) {
+  if (type === "heading" && !isHeadingLevel(attrs.level)) {
     errors.push({ path: `${path}.attrs.level`, code: "TIPTAP_HEADING_LEVEL_INVALID" });
     return null;
   }
@@ -349,8 +349,6 @@ function projectBlockV4(raw: unknown, path: string, ctx: Ctx): DocumentNodeV4 | 
   switch (type) {
     case "heading":
       return { type, id, level: attrs.level as 1 | 2 | 3, children: children as TextNodeV4[] };
-    case "numberedItem":
-      return { type, id, level: attrs.level as 1 | 2 | 3, children };
     case "paragraph":
       return { type, id, children, ...(isEmpty(attrs.variantGroup) ? {} : { variantGroup: attrs.variantGroup as string }) };
     case "codeBlock":
@@ -362,7 +360,7 @@ function projectBlockV4(raw: unknown, path: string, ctx: Ctx): DocumentNodeV4 | 
         ...(isEmpty(attrs.caption) ? {} : { caption: attrs.caption as string }),
       };
     default:
-      return { type: type as "bulletItem" | "quote", id, children };
+      return { type: type as "bulletItem" | "orderedItem" | "quote", id, children };
   }
 }
 

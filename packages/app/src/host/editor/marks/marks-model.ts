@@ -73,7 +73,14 @@ export function nextPlace(places: readonly Place[], kind: MarkKind, from: number
   return same.find((p) => p.from > from) ?? same[0] ?? null;
 }
 
-export type Dot = { readonly kind: "cmt" | "hole"; readonly y: number; readonly offset: number; readonly place: Place };
+/** ED-45 (P2-17): what "Provjereno, ukloni" takes out: the mark and one space after it, so no double space is left. */
+export function holeRemoval(doc: PmNode, hole: Place): { from: number; to: number } {
+  const after = hole.to < doc.content.size ? doc.textBetween(hole.to, hole.to + 1, "", "") : "";
+  const before = hole.from > 0 ? doc.textBetween(hole.from - 1, hole.from, "", "") : "";
+  return { from: hole.from, to: hole.to + (after === " " && (before === "" || before === " ") ? 1 : 0) };
+}
+
+export type Dot ={ readonly kind: "cmt" | "hole"; readonly y: number; readonly offset: number; readonly place: Place };
 
 /** Gutter dots (comment, hole) at the height of the mark; dots at one height stack leftwards by 11 px. */
 export function gutterDots(places: readonly Place[], topOf: (pos: number) => number | null): Dot[] {

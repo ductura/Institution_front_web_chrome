@@ -28,6 +28,7 @@ import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import styles from "./CommentPanel.module.css";
 import { createVersionGate, placementVersion } from "./comment-version";
+import { useReportOpenComments } from "./layout-prefs/panel-counts";
 import { useLocalEditor, useLocalSignedOut, useLocalSubmitted } from "./LocalDocument";
 
 const t = messagesHr.comments;
@@ -206,6 +207,8 @@ function SessionCommentPanel({ documentId, session }: {
 
   const ranges = placed.flatMap((p) => (p.range && p.thread.state !== "resolved" ? [p.range] : []));
   const key = JSON.stringify(ranges);
+  // ED-38 (P2-7): the count beside the card's tab is what is marked in the text.
+  useReportOpenComments(ranges.length);
   useEffect(() => {
     if (!editor || editor.isDestroyed || !commentHighlightKey.get(editor.state)) return;
     editor.view.dispatch(editor.state.tr.setMeta(commentHighlightKey, JSON.parse(key) as CommentRange[]).setMeta("addToHistory", false));

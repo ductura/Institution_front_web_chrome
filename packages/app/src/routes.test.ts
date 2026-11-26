@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -169,6 +169,19 @@ describe("the operator's page (WEB-NUZ-OPERATER, NF-7 OA-1)", () => {
     expect(resolve("/profil", null, ["network_engineer"])).toMatchObject({ kind: "page" });
   });
 
+  it("forwards /operater to the first page the account may open (WEB-OPERATER-POCETNA)", () => {
+    expect(OPERATOR_INDEX).toBe("/operater");
+    expect(resolve(OPERATOR_INDEX, null, ["network_engineer"])).toEqual({ kind: "redirect", to: OPERATOR_HOME });
+    expect(resolve(OPERATOR_INDEX, "admin", ["institution_admin", "network_engineer"])).toEqual({ kind: "redirect", to: OPERATOR_HOME });
+    expect(resolve(OPERATOR_INDEX, "admin", ["institution_admin"])).toEqual({ kind: "redirect", to: PROBLEM_REPORTS });
+    expect(resolve(OPERATOR_INDEX, "teacher", ["teacher"])).toEqual({ kind: "notFound" });
+    expect(resolve(OPERATOR_INDEX, "student", ["student"])).toEqual({ kind: "notFound" });
+    expect(resolve(OPERATOR_INDEX, null, [])).toEqual({ kind: "notFound" });
+    // Without the account kinds (an older caller), there is nothing to forward to.
+    expect(resolve(OPERATOR_INDEX, "admin")).toEqual({ kind: "notFound" });
+    expect(publicPage(OPERATOR_INDEX)).toBeNull();
+  });
+
   it("is a page of the host, opened in the app, not a public page", () => {
     expect(publicPage(OPERATOR_HOME)).toBeNull();
     expect(internalRoute(`/app/web${OPERATOR_HOME}`, "/app/web")).toBe(OPERATOR_HOME);
@@ -203,6 +216,7 @@ describe("publicPage", () => {
     expect(publicPage("/stanje")).toMatchObject({ label: "Stanje sustava" });
     expect(publicPage("/prijava")).toMatchObject({ label: "Prijava" });
     expect(publicPage("/nema-ovlasti")).toMatchObject({ label: "Nema ovlasti" });
+    expect(publicPage("/o-aplikaciji")).toMatchObject({ label: "O aplikaciji" });
     expect(publicPage("/izvoz-podataka/izmisljeni-token")).toMatchObject({ label: "Izvoz mojih podataka" });
     expect(publicPage("/provjera")).toMatchObject({ label: "Provjera potvrde" });
     expect(publicPage("/izvoz-podataka")).toBeNull();
@@ -239,5 +253,39 @@ describe("internalRoute", () => {
     expect(internalRoute("/admin/prijava", "/app/web")).toBeNull();
     expect(internalRoute("/app/chrome/zadaci", "/app/web")).toBeNull();
     expect(internalRoute("#sadrzaj", "/app/web")).toBeNull();
+  });
+});
+
+// WEB-V22-RUTE: the three routes of the trial ISVU link (invented ids only).
+describe("the ISVU routes (WEB-V22-RUTE)", () => {
+  const course = "11111111-1111-4111-8111-111111111111";
+  const grades = `/nastavnik/kolegiji/${course}/isvu-ocjene`;
+
+  it("opens the import for the administrator only, leading other roles home", () => {
+    expect(resolve("/ustanova/isvu", "admin")).toMatchObject({ kind: "page", page: { path: "/ustanova/isvu", current: "/ustanova" } });
+    expect(resolve("/ustanova/isvu", "student")).toEqual({ kind: "redirect", to: "/zadaci" });
+    expect(resolve("/ustanova/isvu", "teacher")).toEqual({ kind: "redirect", to: "/nastavnik" });
+    expect(resolve("/ustanova/isvu", null)).toEqual({ kind: "redirect", to: "/" });
+  });
+
+  it("opens the grade export for the teacher only; any course id resolves and does not throw", () => {
+    expect(resolve(grades, "teacher")).toMatchObject({ kind: "page", page: { current: "/nastavnik" } });
+    expect(resolve("/nastavnik/kolegiji/ne-postoji/isvu-ocjene", "teacher")).toMatchObject({ kind: "page" });
+    expect(resolve("/nastavnik/kolegiji//isvu-ocjene", "teacher")).toEqual({ kind: "notFound" });
+    expect(resolve(grades, "student")).toEqual({ kind: "redirect", to: "/zadaci" });
+    expect(resolve(grades, "admin")).toEqual({ kind: "redirect", to: "/ustanova" });
+  });
+
+  it("opens the entry from Studomat without a session, next to /prijava", () => {
+    expect(publicPage("/ulaz/studomat")).toMatchObject({ public: true, roles: [] });
+    expect(publicPage("/prijava")).not.toBeNull();
+    expect(publicPage("/ulaz")).toBeNull();
+    expect(publicPage("/ulaz/studomat/x")).toBeNull();
+    for (const role of ["student", "teacher", "admin"] as const) expect(resolve("/ulaz/studomat", role)).toMatchObject({ kind: "page" });
+  });
+
+  it("leaves the route as an app link, so the host opens it without a reload", () => {
+    expect(internalRoute("/app/web/ulaz/studomat", "/app/web")).toBe("/ulaz/studomat");
+    expect(internalRoute("/ustanova/isvu", "/app/web")).toBe("/ustanova/isvu");
   });
 });

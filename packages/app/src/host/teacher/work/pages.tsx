@@ -3,6 +3,7 @@
 import { Button } from "@ductura/ui";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { createApi } from "@/client/api";
 import { watchSessionEnd } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
 import { readTeacherWorkAccess } from "@/client/teacher-work";
@@ -15,7 +16,7 @@ import RecordLimits from "@/components/teacher/RecordLimits";
 import { selectedRange, selectInBlock } from "@/components/teacher/selection";
 import { SummaryCardBody, useProcessSummary } from "@/components/teacher/SummaryCard";
 import { useComments } from "@/components/teacher/TeacherComments";
-import TeacherComments from "../comments/TeacherCommentsPanel";
+import TeacherComments, { type BankInsertion } from "../comments/TeacherCommentsPanel";
 import ProposalsPanel from "../proposals/ProposalsPanel";
 import { TextElementsView } from "../text-elements/TextElements";
 import { textElementsMessages } from "../text-elements/messages.hr";
@@ -49,6 +50,7 @@ import ChangesSinceReview from "../changes-since-review/ChangesSinceReview";
 import { changesPort } from "../changes-since-review/port";
 import CommentBank from "../comment-bank/CommentBank";
 import { commentBankPort, draftCommentsPort } from "../comment-bank/port";
+import { RubricMarks } from "./rubric/RubricMarks";
 import { teacherWorkMessages as workText } from "./messages.hr";
 import { useShownRevision } from "./shown-revision";
 import ReviewPage from "./review/ReviewPage";
@@ -148,6 +150,7 @@ function OpenWork({ documentId, path, view, session }: {
 }
 
 function LiveWork({ documentId, workHref, session }: { documentId: string; workHref: string; session: SessionMark }) {
+  const rubricCall = useMemo(() => createApi(), []);
   const { view, current } = useLiveView(documentId, session);
   const stopped = liveStopped(view);
   const summary = useProcessSummary(documentId, current, !stopped);
@@ -156,6 +159,8 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
   // WEB-2153: the shared reader shows only document v1; a v2/v3 text is read here, with citations and footnotes.
   const elementsState = useTextElements(documentId, !stopped && view.document === null && view.connection === "retrying", current);
   const [draft, setDraft] = useState<TextAnchor | null>(null);
+  // WEB-V17-BANK-INSERT: a bank text on its way into the new comment.
+  const [insertion, setInsertion] = useState<BankInsertion | null>(null);
   // INT-15: a new comment names the revision of the text on screen.
   const revision = useShownRevision(documentId, view.hash, view.submitted, current, !stopped && view.document !== null);
   const placed = stopped || comments.outcome?.kind !== "ok" ? [] : placeThreads(view.document, comments.outcome.threads);
@@ -191,17 +196,19 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
             <ReadOnlyMentor documentId={documentId} role="teacher" receiptHref={receiptHref} />
             <TeacherComments documentId={documentId} outcome={comments.outcome} placed={placed}
               nodeOrder={view.document?.nodes ?? []} current={current} readOnly={view.document === null}
-              draft={placeAnchor(view.document, draft) ? draft : null} revision={revision}
+              draft={placeAnchor(view.document, draft) ? draft : null} revision={revision} insert={insertion}
               onDraftDone={() => setDraft(null)}
               onReload={() => void comments.load()} onShow={({ nodeId, start, end }) => {
                 if (textRef.current) selectInBlock(textRef.current, nodeId, start, end);
               }} />
             {/* WEB-1704 (M6.7): deferred comments and the bank; a draft is anchored to the text selected in the work. */}
-            <CommentBank key={documentId} assignmentId={documentId} drafts={draftCommentsPort} bank={commentBankPort}
-              anchor={placeAnchor(view.document, draft) ? draft : null} />
+            <CommentBank key={`bank:${documentId}`} assignmentId={documentId} drafts={draftCommentsPort} bank={commentBankPort}
+              anchor={placeAnchor(view.document, draft) ? draft : null}
+              onInsert={(inserted) => setInsertion((now) => ({ n: (now?.n ?? 0) + 1, text: inserted }))} />
+            <RubricMarks key={`rubric:${documentId}`} documentId={documentId} call={rubricCall} />
             <ProposalsPanel documentId={documentId} send={proposalsPort} current={current} />
             {/* WEB-1704 (M6.7): changes since the last review, read from the server; marking only with a route. */}
-            <ChangesSinceReview key={documentId} documentId={documentId} port={changesPort} />
+            <ChangesSinceReview key={`changes:${documentId}`} documentId={documentId} port={changesPort} />
             <TeacherBibliographyHost documentId={documentId} submitted={view.submitted} />
             <SummaryCardBody outcome={summary.outcome} onReload={() => void summary.load()} />
             <ProvenanceMap documentId={documentId} />

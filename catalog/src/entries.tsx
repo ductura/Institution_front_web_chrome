@@ -1,6 +1,6 @@
 import {
   AssistantComingSoon, CheckActionList, AppointmentCalendar, Button, Card, Checkbox, Chip, CodeField, CommandPalette, CommentThread, DatePicker, ContextMenu, DataTable, Details, Dialog, Drawer, ErrorScreen, FindBar, Fingerprint,
-  EditorOnboarding, EditorOutline, ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, Popover, PreviewDialog, RouteLoading, SaveState, SegmentedControl, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
+  EditorOnboarding, EditorOutline, ActionRow, EntryList, FieldGrid, FormSection, Notice, OptionGroup, SummaryList, EditorProgress, EditorToolbar, Icon, ICON_NAMES, KeyValueList, ObjectToolbar, PanelTabs, TabCount, Popover, PreviewDialog, RouteLoading, SaveState, SegmentedControl, SearchableList, Select, ShortcutList, ShortcutListDialog, ShortcutsDialog,
   PillTag, SideShell, Skeleton, SourceForm, StateTag, Steps, SUBMISSION_STATES, Tag, TextArea, TextField, ToastRegion,
   type Appointment, type AppointmentCalendarLabels, type CommentThreadData, type CommentThreadLabels, type DatePickerLabels, type Command, type DataTableColumn, type FindBarLabels, type IconName, type MenuEntry, type ShortcutGroup, type ShortcutListGroup,
 } from "@ductura/ui";
@@ -609,6 +609,14 @@ export const ENTRIES = {
     ]} />,
     onemogućeno: () => <PanelTabs label="Ploče" tabs={[{ id: "pravila", label: "Pravila", content: <p>Zadatak je zatvoren.</p> }]} />,
   },
+  // The number beside a tab: PanelTabs shows it only above zero, so "prazno" is the tab without one.
+  TabCount: {
+    prazno: () => <span>Komentari</span>,
+    učitavanje: () => <span>Komentari <TabCount value={0} label="učitavanje komentara" /></span>,
+    greška: () => <span>Izvori <TabCount value={1} label="1 izvor se nije učitao" /></span>,
+    puno: () => <span>Komentari <TabCount value={12} label="12 otvorenih komentara" /></span>,
+    onemogućeno: () => <span>Pravila <TabCount value={2} label="2 pravila, zadatak je zatvoren" /></span>,
+  },
   Drawer: {
     prazno: () => <DrawerExample side="left" />,
     učitavanje: () => <Drawer open modal={false} side="left" title="Struktura rada" onClose={nothing}><p>Učitavanje…</p></Drawer>,
@@ -979,7 +987,7 @@ const proofPage: ProofPicture = {
   },
 };
 const sampleProof = (id: string, sourceId: string, page: string, note: string | null = null): SourceProof => ({
-  id, sourceId, page, note, createdAt: "2026-11-20T10:15:00.000Z", size: 24000,
+  id, sourceId, page, note,
   imagePath: `${proofsPath(PROOF_WORK, sourceId) ?? ""}/${id}/image`,
 });
 const proofSources = [{ id: PROOF_S1, label: "Izmišljenić (2020)" }, { id: PROOF_S2, label: "Primjerić i Uzorak (2019)" }];

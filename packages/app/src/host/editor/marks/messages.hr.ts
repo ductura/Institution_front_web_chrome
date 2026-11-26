@@ -10,6 +10,13 @@ export const marksHr = {
     need: "Zatražena potvrda",
   },
   here: "Na ovom mjestu",
+  // ED-45 (P2-17, dio 3): the ghost text of an empty paragraph (prototype app.js `ghostText`).
+  ghost: {
+    start: "Počnite pisati. Upišite @ za navod ili / za naredbe.",
+    intro: "Uvod: predmet i problem rada → cilj i istraživačko pitanje → izvori i metoda → kratak pregled poglavlja",
+    conclusion: "Zaključak: odgovor na pitanje iz uvoda → glavni nalazi → ograničenja rada → što ostaje otvoreno",
+    chapter: (title: string) => `Pitanja za početak (nestaju kad počnete pisati):\n– Što čitatelj mora znati na kraju poglavlja „${title}”?\n– Koji izvor ovdje najviše koristite i zašto?\n– Tvrdnja → dokaz s navodom (@) → objašnjenje → veza sa sljedećim odlomkom`,
+  },
   open: "otvori",
   close: "Zatvori",
   counters: {
@@ -38,11 +45,17 @@ export const marksHr = {
     who: "Tko vidi",
   },
   explain: {
-    hole: "Mjesto koje ste ostavili za poslije. Prije predaje ga provjerite ili uklonite oznaku.",
+    hole: "Zamijenite oznaku tekstom ili navodom. Dok stoji, rad se ne može predati.",
     plain: "Navod je upisan kao tekst i nije povezan s izvorom u Vašem popisu.",
     cmt: "Primjedba ili pitanje uz ovaj dio teksta. Odgovorite u kartici Komentari.",
     need: "Mentor traži da uz navod priložite potvrdu iz izvora.",
     cite: "Navod povezan s izvorom.",
+  },
+  // ED-45 (P2-17): what the popover of one mark offers (INVENTAR §2.6: holeNext, "Provjereno, ukloni").
+  actions: {
+    next: "Sljedeće mjesto ›",
+    checked: "Provjereno, ukloni",
+    link: "Poveži u Literaturi",
   },
   // INVENTAR §2.6 text2 "Privatna bilješka" and level 3/4 marks are not drawn here:
   // no API for private notes (Q-6), advice and origin marks wait on other tasks (B-1, C-13).
