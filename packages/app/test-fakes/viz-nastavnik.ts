@@ -51,6 +51,8 @@ export function nastavnik(vectors: readonly Vector[], tasks: { t1: string; t2: s
     switch (operation) {
       case "institution.teaching-team.get": return { status: 200, body: team };
       case "institution.teaching-team-view.get": return { status: 200, body: teamView };
+      // DEMO-POP-4: no other teachers to offer, so the team screen keeps its recorded look.
+      case "institution.teaching-team-candidates.get": return { status: 200, body: { candidates: [] } };
       case "teacher.course-students.get": return { status: 200, body: students };
       // The work belongs to T1 of Kolegij A, so the review's header names its course and task.
       case "teacher.work.get": return { status: 200, body: {

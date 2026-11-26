@@ -45,7 +45,12 @@ export function createTeachingTeam(courseId: string, api = createApi()) {
           assistantIds.some((id) => !directoryIds.has(id)) ||
           scope.body.groups.some(({ assistantIds: assigned }) => assigned.some((id) => !activeIds.has(id))) ||
           scope.body.students.some(({ groupId }) => groupId !== null && !groupIds.has(groupId))) return unavailable;
-        return { kind: "ready", view: { ...scope.body, assistantIds } };
+        // DEMO-POP-4: the course's directory lists only assistants already on it; the candidates are the
+        // institution's other confirmed teachers, so the holder can add one to the team.
+        const candidates = await api("institution.teaching-team-candidates.get", { params, query: undefined, body: undefined });
+        if (!candidates.ok) return failure(candidates.status);
+        const assistants = [...scope.body.assistants, ...candidates.body.candidates.filter(({ id }) => !directoryIds.has(id))];
+        return { kind: "ready", view: { ...scope.body, assistants, assistantIds } };
       } catch {
         return unavailable;
       }
