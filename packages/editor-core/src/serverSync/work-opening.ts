@@ -6,6 +6,9 @@ import type { DocumentSchemaVersion, VersionedDocument } from "../document/docum
 import { verifyVersionedDocumentSnapshot } from "../document/document/snapshot";
 import { verifyCanonicalEvidencePayloadV2 } from "../document/forensics/evidence-chain-v2";
 import type { EvidenceStepFormat } from "../document/forensics/evidence-segment-v2";
+import { SLIDES_REVISION_ZERO_SHA256, type SlidesDocument } from "../slides/model";
+import { verifySlidesSnapshot } from "../slides/json";
+import { SLIDE_STEP_FORMAT_V1 } from "../slides/steps";
 import type { EvidenceOpening, EvidenceSegmentTransaction } from "../sync/journal-types";
 
 const schema = {
@@ -27,7 +30,55 @@ export type VerifiedWorkOpening = Readonly<{
   schemaVersion: DocumentSchemaVersion;
   transactionFormat: EvidenceStepFormat;
   document: VersionedDocument;
+  /**
+   * WEB-V13-DNEVNIK-SINKRONIZACIJA: set to "slides" for a slides work and
+   * absent for every text work, so a text opening is byte for byte what it was.
+   * A slides opening is built only by `verifySlidesWorkOpening`; its `document`
+   * is a `SlidesDocument` (read it with `slidesOf`), its `schemaVersion` is the
+   * slides line's own 1 and means nothing for the text schemas.
+   */
+  documentKind?: "slides";
 }>;
+
+/**
+ * An open answer as `verifyWorkOpening` takes it: the journal's `EvidenceOpening`
+ * and, for a slides work, `documentKind: "slides"` as the server states it. (The
+ * shared type in sync/journal-types.ts stays as it was: it belongs to another lane.)
+ */
+export type OpeningInput = EvidenceOpening & Readonly<{ documentKind?: "slides" }>;
+
+/** The slides document of an opening of a slides work, or null for any other opening. */
+export function slidesOf(work: VerifiedWorkOpening): SlidesDocument | null {
+  return work.documentKind === "slides" ? (work.document as unknown as SlidesDocument) : null;
+}
+
+/**
+ * The open answer of a slides work, verified (contract slides-v1 §7): its
+ * snapshot is the exact JCS of a valid slides document with `documentHash`,
+ * revision 0 is the fixed revision zero of every slides work with an empty
+ * chain, and a later revision is a valid slides document. The revision zero of
+ * slides is one constant for all works, so no per-work proof is needed; a
+ * `proof` that is given must still be that constant for this work.
+ */
+export async function verifySlidesWorkOpening(
+  expectedDocumentId: string,
+  opened: OpeningInput,
+  proof?: RevisionZeroProof,
+): Promise<VerifiedWorkOpening | null> {
+  const { documentId, currentRevision, documentHash, document, headSegmentHash, lastSequenceTo } = opened;
+  if (documentId !== expectedDocumentId || documentId.length === 0 ||
+      !Number.isSafeInteger(currentRevision) || currentRevision < 0) return null;
+  if (proof !== undefined && (proof.documentId !== documentId || proof.sha256 !== SLIDES_REVISION_ZERO_SHA256)) return null;
+  const snapshot = await verifySlidesSnapshot(document);
+  if (!snapshot.ok || snapshot.sha256 !== documentHash) return null;
+  if (currentRevision === 0 &&
+      (snapshot.sha256 !== SLIDES_REVISION_ZERO_SHA256 || lastSequenceTo !== 0 || headSegmentHash !== null)) return null;
+  return Object.freeze({
+    [verified]: true as const, documentId, revision: currentRevision, snapshotSha256: snapshot.sha256,
+    schemaVersion: 1 as const, transactionFormat: SLIDE_STEP_FORMAT_V1,
+    document: snapshot.document as unknown as VersionedDocument, documentKind: "slides" as const,
+  });
+}
 
 /**
  * A revision zero snapshot is itself proof. For a later v3 revision the caller
@@ -36,9 +87,10 @@ export type VerifiedWorkOpening = Readonly<{
  */
 export async function verifyWorkOpening(
   expectedDocumentId: string,
-  opened: EvidenceOpening,
+  opened: OpeningInput,
   proof?: RevisionZeroProof,
 ): Promise<VerifiedWorkOpening | null> {
+  if (opened.documentKind === "slides") return verifySlidesWorkOpening(expectedDocumentId, opened, proof);
   const { documentId, currentRevision, documentHash, document, headSegmentHash, lastSequenceTo } = opened;
   if (documentId !== expectedDocumentId || documentId.length === 0 ||
       !Number.isSafeInteger(currentRevision) || currentRevision < 0) return null;
@@ -65,6 +117,15 @@ export async function matchesWorkOpening(
   tx: Pick<EvidenceSegmentTransaction, "document" | "segment" | "segmentHash">,
 ): Promise<boolean> {
   if (!matchesWorkSchema(opening, documentId, opening.schemaVersion)) return false;
+  if (opening.documentKind === "slides") {
+    const [slideSegment, slideSnapshot] = await Promise.all([
+      verifyCanonicalEvidencePayloadV2(tx.segment, SLIDE_STEP_FORMAT_V1),
+      verifySlidesSnapshot(tx.document),
+    ]);
+    return slideSegment.ok && slideSnapshot.ok && slideSegment.sha256 === tx.segmentHash &&
+      slideSegment.segment.documentId === documentId &&
+      slideSegment.segment.finalDocumentHash === slideSnapshot.sha256;
+  }
   const [segment, snapshot] = await Promise.all([
     verifyCanonicalEvidencePayloadV2(tx.segment, opening.transactionFormat),
     verifyVersionedDocumentSnapshot(tx.document),

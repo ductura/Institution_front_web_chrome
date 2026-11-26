@@ -27,14 +27,16 @@ export type SlideEditorSource =
 export type SlideEditorProps = {
   source: SlideEditorSource;
   /** Every change, as the steps it is made of, after the editor applied them. */
-  onSteps?: (steps: SlideStep[]) => void;
+  onSteps?: (steps: SlideStep[], after: SlidesDocument) => void;
+  /** Whether the editor says its changes are not saved (no journal behind it); the sync of a slides work turns it off. */
+  unsavedNote?: boolean;
   /** A fresh lowercase UUID v4 for a new slide or block. */
   newId?: () => string;
 };
 
 const freshId = () => crypto.randomUUID();
 
-export function SlideEditor({ source, onSteps, newId = freshId }: SlideEditorProps) {
+export function SlideEditor({ source, onSteps, newId = freshId, unsavedNote = true }: SlideEditorProps) {
   if (source.kind === "loading") return <Card title={t.region} busy />;
   if (source.kind === "error") {
     return (
@@ -45,10 +47,10 @@ export function SlideEditor({ source, onSteps, newId = freshId }: SlideEditorPro
       </Card>
     );
   }
-  return <ReadyEditor doc={source.doc} readOnly={source.readOnly === true} onSteps={onSteps} newId={newId} />;
+  return <ReadyEditor doc={source.doc} readOnly={source.readOnly === true} onSteps={onSteps} newId={newId} unsavedNote={unsavedNote} />;
 }
 
-function ReadyEditor({ doc, readOnly, onSteps, newId }: { doc: SlidesDocument; readOnly: boolean; onSteps?: SlideEditorProps["onSteps"]; newId: () => string }) {
+function ReadyEditor({ doc, readOnly, onSteps, newId, unsavedNote }: { doc: SlidesDocument; readOnly: boolean; onSteps?: SlideEditorProps["onSteps"]; newId: () => string; unsavedNote: boolean }) {
   const [state, setState] = useState<EditorState>(() => createEditorState(doc));
   const latest = useRef(state);
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -64,7 +66,7 @@ function ReadyEditor({ doc, readOnly, onSteps, newId }: { doc: SlidesDocument; r
       }
       latest.current = out.state;
       setState(out.state);
-      if (out.steps.length > 0) onSteps?.(out.steps);
+      if (out.steps.length > 0) onSteps?.(out.steps, out.state.doc);
     });
   }, [onSteps]);
 
@@ -78,7 +80,7 @@ function ReadyEditor({ doc, readOnly, onSteps, newId }: { doc: SlidesDocument; r
   };
   return (
     <div className={styles.editor} role="region" aria-label={t.region} onKeyDown={onKeyDown}>
-      <p>{readOnly ? t.submittedNote : t.notSavedNote}</p>
+      {(readOnly || unsavedNote) && <p>{readOnly ? t.submittedNote : t.notSavedNote}</p>}
       {!readOnly && (
         <div className={styles.row}>
           <Button tone="secondary" size="small" aria-disabled={state.past.length === 0 || undefined} onClick={() => run(undo)}>{t.undo}</Button>
