@@ -2,6 +2,7 @@ import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr";
 
 import { appHref } from "../../../../../../src/components/shell/nav";
 
+import { EDGE_SIGN_IN, openEdgeSignIn } from "./edge";
 import { Mark } from "./Mark";
 import styles from "./SiteHeader.module.css";
 
@@ -29,7 +30,7 @@ export function SiteHeader({ base }: { base: string }) {
             {label}
           </a>
         ))}
-        <a className={styles.signIn} href={appHref(base, "/prijava")}>
+        <a className={styles.signIn} href={EDGE_SIGN_IN} onClick={openEdgeSignIn}>
           {t.signIn}
         </a>
       </nav>
