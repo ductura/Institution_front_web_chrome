@@ -833,8 +833,8 @@ export const hr = {
       howTitle: "KAKO STUDENT ULAZI",
       steps: [
         { bold: "Otvorite Ducturu u pregledniku.", rest: " Instalacija ne treba; aplikacija za računalo je izbor, ne uvjet." },
-        { bold: "Prijavite se postojećim AAI@EduHr računom.", rest: " Nema novih lozinki." },
-        { bold: "Upišite kod zadatka.", rest: "" },
+        { bold: "Prijavite se postojećim AAI@EduHr računom." },
+        { bold: "Upišite kod zadatka." },
       ],
       fine: "Podaci svake ustanove čuvaju se zasebno.",
       notes: [

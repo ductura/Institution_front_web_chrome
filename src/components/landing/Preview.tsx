@@ -550,7 +550,7 @@ function start(root: HTMLElement): () => void {
   const playBtn = $("play");
   const tryEdit = $("try-edit");
   const showPlace = $("show-place");
-  const byline = cls(styles.byline);
+  const byline = cls(styles.byline!);
 
   let versions = VERSIONS;
   let lastVersion = 0;
@@ -574,7 +574,7 @@ function start(root: HTMLElement): () => void {
   function place(el: HTMLElement) {
     thumb.style.setProperty("--x", `${el.offsetLeft}px`);
     thumb.style.setProperty("--w", `${el.offsetWidth}px`);
-    options.forEach((o) => o.classList.toggle(styles.active, o === el));
+    options.forEach((o) => o.classList.toggle(styles.active!, o === el));
   }
   function show(p: string) {
     current = p;
@@ -615,13 +615,13 @@ function start(root: HTMLElement): () => void {
       if (!dragged) {
         dragged = true;
         stop();
-        toggle.classList.add(styles.dragging);
+        toggle.classList.add(styles.dragging!);
         toggle.setPointerCapture(drag.id);
       }
       const x = Math.min(Math.max(drag.k0 + dx, 4), toggle.clientWidth - thumb.offsetWidth - 4);
       thumb.style.setProperty("--x", `${x}px`);
       const b = nearest(x + thumb.offsetWidth / 2);
-      options.forEach((o) => o.classList.toggle(styles.active, o === b));
+      options.forEach((o) => o.classList.toggle(styles.active!, o === b));
     },
     on,
   );
@@ -629,7 +629,7 @@ function start(root: HTMLElement): () => void {
     if (!drag) return;
     drag = null;
     if (!dragged) return;
-    toggle.classList.remove(styles.dragging);
+    toggle.classList.remove(styles.dragging!);
     show(nearest(parseFloat(thumb.style.getPropertyValue("--x")) + thumb.offsetWidth / 2).dataset.p!);
   };
   toggle.addEventListener("pointerup", release, on);
@@ -661,9 +661,9 @@ function start(root: HTMLElement): () => void {
   const STATES = ["bold", "italic", "underline", "strikeThrough", "insertUnorderedList", "insertOrderedList"];
   function saved() {
     stateEl.textContent = t.saved;
-    savedEl.classList.remove(styles.saving, styles.redraw);
+    savedEl.classList.remove(styles.saving!, styles.redraw!);
     void savedEl.offsetWidth;
-    savedEl.classList.add(styles.redraw);
+    savedEl.classList.add(styles.redraw!);
   }
   function notice(text: string) {
     stateEl.textContent = text;
@@ -691,7 +691,7 @@ function start(root: HTMLElement): () => void {
           return;
         }
         if (k === "list") {
-          const dark = pis.classList.toggle(styles.dark);
+          const dark = pis.classList.toggle(styles.dark!);
           b.setAttribute("aria-pressed", String(dark));
           b.dataset.tip = dark ? t.tools.lightSheet : t.tools.darkSheet;
           b.setAttribute("aria-label", b.dataset.tip);
@@ -811,10 +811,10 @@ function start(root: HTMLElement): () => void {
           g?.focus();
         } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
           e.preventDefault();
-          items[(i + 1) % items.length].focus();
+          items[(i + 1) % items.length]!.focus();
         } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
           e.preventDefault();
-          items[(i - 1 + items.length) % items.length].focus();
+          items[(i - 1 + items.length) % items.length]!.focus();
         }
       },
       on,
@@ -885,12 +885,12 @@ function start(root: HTMLElement): () => void {
     const w = tip.offsetWidth;
     tip.style.left = `${Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8)}px`;
     tip.style.top = `${r.bottom + 8}px`;
-    tip.classList.add(styles.shown);
+    tip.classList.add(styles.shown!);
   }
   function hideTip() {
     clearTimeout(tipTimer);
-    if (tip.classList.contains(styles.shown)) tipLast = Date.now();
-    tip.classList.remove(styles.shown);
+    if (tip.classList.contains(styles.shown!)) tipLast = Date.now();
+    tip.classList.remove(styles.shown!);
   }
   all("[data-tip]").forEach((g) => {
     g.addEventListener(
@@ -966,7 +966,7 @@ function start(root: HTMLElement): () => void {
   }
   function change() {
     stateEl.textContent = t.saving;
-    savedEl.classList.add(styles.saving);
+    savedEl.classList.add(styles.saving!);
     clearTimeout(saveTimer);
     saveTimer = after(() => {
       saved();
@@ -986,11 +986,11 @@ function start(root: HTMLElement): () => void {
     return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
   }
   function mark(u: HTMLElement) {
-    const desk = cit.closest<HTMLElement>(cls(styles.desk))!;
+    const desk = cit.closest<HTMLElement>(cls(styles.desk!))!;
     const y = u.getBoundingClientRect().top - desk.getBoundingClientRect().top + desk.scrollTop;
     desk.scrollTo({ top: Math.max(0, y - desk.clientHeight / 3), behavior: "smooth" });
-    u.classList.add(styles.glow);
-    after(() => u.classList.remove(styles.glow), 1600);
+    u.classList.add(styles.glow!);
+    after(() => u.classList.remove(styles.glow!), 1600);
   }
   /* On opening the view the bars rise, the line is drawn and the figure counts up; reduced motion shows the end at once. */
   function again(el: HTMLElement, c: string) {
@@ -1046,14 +1046,14 @@ function start(root: HTMLElement): () => void {
       frame = requestAnimationFrame(() => (frame = requestAnimationFrame(widths)));
     } else widths();
     if (animate) {
-      again($("sessions"), styles.rise);
-      again($("timeline"), styles.drawn);
+      again($("sessions"), styles.rise!);
+      again($("timeline"), styles.drawn!);
     }
     const list = $("inserts");
     list.textContent = "";
     if (!pastes.length) {
       const li = document.createElement("li");
-      li.className = styles.none;
+      li.className = styles.none!;
       li.textContent = t.noInserts;
       list.append(li);
     }
@@ -1063,13 +1063,13 @@ function start(root: HTMLElement): () => void {
       b.type = "button";
       b.title = t.showInText;
       const nr = document.createElement("span");
-      nr.className = styles.num;
+      nr.className = styles.num!;
       nr.textContent = String(i + 1);
       const excerpt = document.createElement("span");
-      excerpt.className = styles.excerpt;
+      excerpt.className = styles.excerpt!;
       excerpt.textContent = `„${u.textContent!.split(/\s+/).slice(0, 4).join(" ")}…”`;
       const chars = document.createElement("span");
-      chars.className = styles.chars;
+      chars.className = styles.chars!;
       chars.textContent = fill(t.chars, { n: num(u.textContent!.length) });
       b.append(nr, excerpt, chars);
       b.addEventListener("click", () => {
@@ -1077,13 +1077,13 @@ function start(root: HTMLElement): () => void {
         mark(u);
       });
       /* the pointer links the item on the right and the paste on the sheet */
-      b.addEventListener("mouseenter", () => u.classList.add(styles.glow));
-      b.addEventListener("mouseleave", () => u.classList.remove(styles.glow));
-      b.addEventListener("focus", () => u.classList.add(styles.glow));
-      b.addEventListener("blur", () => u.classList.remove(styles.glow));
+      b.addEventListener("mouseenter", () => u.classList.add(styles.glow!));
+      b.addEventListener("mouseleave", () => u.classList.remove(styles.glow!));
+      b.addEventListener("focus", () => u.classList.add(styles.glow!));
+      b.addEventListener("blur", () => u.classList.remove(styles.glow!));
       u.title = fill(t.insertN, { n: i + 1 });
-      u.addEventListener("mouseenter", () => b.classList.add(styles.hot));
-      u.addEventListener("mouseleave", () => b.classList.remove(styles.hot));
+      u.addEventListener("mouseenter", () => b.classList.add(styles.hot!));
+      u.addEventListener("mouseleave", () => b.classList.remove(styles.hot!));
       li.append(b);
       list.append(li);
     });
@@ -1097,7 +1097,7 @@ function start(root: HTMLElement): () => void {
 
   /* Path of the text: the sheet goes back through versions 1 to the last. The text is split into sentences and
      pastes; each piece gets a version by how much text comes before it (a synthetic spread over four days). */
-  const when = (v: number) => t.times[versions <= 1 ? 8 : Math.round(((v - 1) * 8) / (versions - 1))];
+  const when = (v: number) => t.times[versions <= 1 ? 8 : Math.round(((v - 1) * 8) / (versions - 1))]!;
   let pieces: HTMLElement[] = [];
   function split() {
     pieces = [];
@@ -1110,7 +1110,7 @@ function start(root: HTMLElement): () => void {
           if (sentences.length < 2) {
             if (data.trim()) {
               const s = document.createElement("span");
-              s.className = styles.piece;
+              s.className = styles.piece!;
               c.replaceWith(s);
               s.append(c);
               parts.push([s, blk]);
@@ -1120,14 +1120,14 @@ function start(root: HTMLElement): () => void {
           const frag = document.createDocumentFragment();
           sentences.forEach((r) => {
             const s = document.createElement("span");
-            s.className = styles.piece;
+            s.className = styles.piece!;
             s.textContent = r;
             frag.append(s);
             parts.push([s, blk]);
           });
           c.replaceWith(frag);
         } else if (c instanceof HTMLElement) {
-          c.classList.add(styles.piece);
+          c.classList.add(styles.piece!);
           parts.push([c, blk]);
         }
       });
@@ -1161,7 +1161,7 @@ function start(root: HTMLElement): () => void {
     days.textContent = "";
     let lastDay = "";
     for (let v = 1; v <= versions; v++) {
-      const d = when(v).split(" ")[0];
+      const d = when(v).split(" ")[0]!;
       if (d === lastDay) continue;
       lastDay = d;
       const x = String(versions > 1 ? (v - 1) / (versions - 1) : 1);
@@ -1170,8 +1170,8 @@ function start(root: HTMLElement): () => void {
       const s = document.createElement("small");
       s.textContent = d;
       s.style.setProperty("--x", x);
-      if (v === 1) s.className = styles.firstDay;
-      else if (d === t.today) s.className = styles.lastDay;
+      if (v === 1) s.className = styles.firstDay!;
+      else if (d === t.today) s.className = styles.lastDay!;
       days.append(tick, s);
     }
     showVersion(versions);
@@ -1184,15 +1184,15 @@ function start(root: HTMLElement): () => void {
     let fresh = 0;
     pieces.forEach((k) => {
       const kv = Number(k.dataset.v);
-      k.classList.toggle(styles.gone, kv > v);
+      k.classList.toggle(styles.gone!, kv > v);
       const is = early && kv === v;
-      k.classList.toggle(styles.fresh, is);
+      k.classList.toggle(styles.fresh!, is);
       if (is) fresh += (k.textContent!.trim().match(/\S+/g) ?? []).length;
     });
-    const own = `:scope > ${cls(styles.piece)}`;
+    const own = `:scope > ${cls(styles.piece!)}`;
     [...cit.children].forEach((b) => {
       const k = [...b.querySelectorAll(own)];
-      b.classList.toggle(styles.gone, early && (!k.length || k.every((x) => x.classList.contains(styles.gone))));
+      b.classList.toggle(styles.gone!, early && (!k.length || k.every((x) => x.classList.contains(styles.gone!))));
     });
     $("pt-ver").textContent = fill(t.versionN, { n: v });
     $("pt-when").textContent = when(v);
@@ -1206,9 +1206,9 @@ function start(root: HTMLElement): () => void {
       hint.append(i, fill(t.newIn, { n: v, count: fresh, words: form(fresh, t.wordWord) }));
     }
     if (early) {
-      const first = cit.querySelector(`${cls(styles.piece)}${cls(styles.fresh)}`);
+      const first = cit.querySelector(`${cls(styles.piece!)}${cls(styles.fresh!)}`);
       if (first) {
-        const desk = cit.closest<HTMLElement>(cls(styles.desk))!;
+        const desk = cit.closest<HTMLElement>(cls(styles.desk!))!;
         const r = first.getBoundingClientRect();
         const s = desk.getBoundingClientRect();
         if (r.top < s.top + 24 || r.bottom > s.bottom - 24)
@@ -1299,7 +1299,7 @@ function start(root: HTMLElement): () => void {
       if (first < 0) first = i;
     });
     if (first < 0) return null;
-    const b = cit.children[first];
+    const b = cit.children[first]!;
     let where = t.where.text;
     if (b.matches("h2")) where = t.where.title;
     else if (b.matches("h3, h4")) where = t.where.chapter;
@@ -1357,7 +1357,7 @@ function start(root: HTMLElement): () => void {
     "click",
     () => {
       stop();
-      const m = cit.querySelector<HTMLElement>(cls(styles.changed)) ?? (diffBlock as HTMLElement | null);
+      const m = cit.querySelector<HTMLElement>(cls(styles.changed!)) ?? (diffBlock as HTMLElement | null);
       if (m) mark(m);
     },
     on,
@@ -1374,7 +1374,7 @@ function start(root: HTMLElement): () => void {
       if (i < 0) continue;
       n.splitText(i).deleteData(0, 1);
       const s = document.createElement("span");
-      s.className = styles.changed;
+      s.className = styles.changed!;
       s.title = t.changedLetter;
       s.textContent = "e";
       n.after(s);
@@ -1405,7 +1405,7 @@ function start(root: HTMLElement): () => void {
 
   /* Autoplay: until the visitor touches the preview it writes, pastes a passage, submits, shows the path of the
      text and the check (same, differs, same). */
-  const desk = pis.closest<HTMLElement>(cls(styles.desk))!;
+  const desk = pis.closest<HTMLElement>(cls(styles.desk!))!;
   function follow(el: Element) {
     const r = el.getBoundingClientRect();
     const s = desk.getBoundingClientRect();
@@ -1427,7 +1427,7 @@ function start(root: HTMLElement): () => void {
     let i = 0;
     const step = () => {
       if (touched) return;
-      p.append(text[i++]);
+      p.append(text[i++]!);
       change();
       follow(p);
       if (i < text.length) later(step, 34 + Math.random() * 62);

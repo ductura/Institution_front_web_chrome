@@ -139,7 +139,7 @@ export function Institutions({ locale = DEFAULT_INTERFACE_LOCALE }: { locale?: I
                           <li key={x.bold}>
                             <span>
                               <b>{x.bold}</b>
-                              {x.rest}
+                              {"rest" in x && x.rest}
                             </span>
                           </li>
                         ))}
