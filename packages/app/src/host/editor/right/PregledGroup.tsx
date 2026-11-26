@@ -12,6 +12,7 @@ import type { useLocalEditor } from "@/components/editor/LocalDocument";
 import { jumpToBlock } from "./jump";
 import { ReviewPanel } from "../../../../../../src/components/editor/review/ReviewPanel";
 import { readReviewDoc } from "../../../../../../src/components/editor/review/model";
+import { TextFixesPanel } from "../../../../../../src/components/editor/text-fixes/TextFixesPanel";
 import { createReadAloud, READ_ALOUD_MAX_RATE, READ_ALOUD_MIN_RATE, type ReadAloudController, type ReadAloudState } from "../read-aloud/controller";
 import { readAloudSupported } from "../read-aloud/support";
 import { readAloudRate } from "../reading-settings/rate-store";
@@ -63,8 +64,11 @@ export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds
       </>}
       {view === "nacrt" && <Nacrt editor={editor} doc={doc} scope={scope} />}
       {view === "pojmovnik" && <Pojmovnik doc={doc} scope={scope} workId={documentId} />}
-      {view === "provjere" && <ReviewPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />}
-      {view === "provjere" && assignmentId !== undefined && <QuoteCheck editor={editor} pmDoc={snapshot.doc} assignmentId={assignmentId} />}
+      {view === "provjere" && <>
+        <ReviewPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />
+        <TextFixesPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />
+        {assignmentId !== undefined && <QuoteCheck editor={editor} pmDoc={snapshot.doc} assignmentId={assignmentId} />}
+      </>}
     </section>
   );
 }

@@ -39,7 +39,14 @@ export type TextFix = {
   readonly edits: readonly FixEdit[];
   /** The words around the slip, shortened, for the list. */
   readonly excerpt: string;
+  /** "Prije i poslije": the words around the slip, with each edit apart (what goes and what comes). */
+  readonly change: readonly ChangePart[];
 };
+
+/** A run of the text around a fix: unchanged, or one edit (removed text and its replacement, either may be empty). */
+export type ChangePart =
+  | { readonly kind: "same"; readonly text: string }
+  | { readonly kind: "edit"; readonly removed: string; readonly added: string };
 
 export type FixScan = {
   /** The document scanned; a fix applies only to this document. */
@@ -66,6 +73,33 @@ const shorten = (text: string, from: number, to: number) => {
   const flat = text.slice(Math.max(0, from - 15), to + 15).replaceAll(LEAF, "").replace(/\s+/g, " ").trim();
   return flat.length > 50 ? `${flat.slice(0, 49)}…` : flat;
 };
+
+/**
+ * The words around a fix for "Prije i poslije", with block-local edits kept apart. Spaces stay as
+ * they are (a double space is the slip itself); a run cut at a word gets "…".
+ */
+export function changeAround(text: string, edits: readonly FixEdit[]): ChangePart[] {
+  const first = edits[0];
+  const last = edits[edits.length - 1];
+  if (!first || !last) return [];
+  const lo = Math.max(0, first.from - 15);
+  const hi = Math.min(text.length, last.to + 15);
+  const same = (from: number, to: number) => text.slice(from, to).replaceAll(LEAF, "");
+  const parts: ChangePart[] = [];
+  const push = (part: ChangePart) => { if (part.kind === "edit" || part.text !== "") parts.push(part); };
+  let at = lo;
+  for (const edit of edits) {
+    push({ kind: "same", text: same(at, edit.from) });
+    push({ kind: "edit", removed: text.slice(edit.from, edit.to), added: edit.replacement });
+    at = edit.to;
+  }
+  push({ kind: "same", text: same(at, hi) });
+  const head = parts[0];
+  if (lo > 0 && head?.kind === "same") parts[0] = { kind: "same", text: `…${head.text.trimStart()}` };
+  const tail = parts[parts.length - 1];
+  if (hi < text.length && tail?.kind === "same") parts[parts.length - 1] = { kind: "same", text: `${tail.text.trimEnd()}…` };
+  return parts;
+}
 
 /** The text of a textblock with one stand-in per atom and a flag per character for pasted or imported runs. */
 function flatten(block: PmNode): { text: string; flags: boolean[] } {
@@ -132,6 +166,7 @@ export function scanFixes(doc: PmNode): FixScan {
         id: `${raw.kind}:${blockPos}:${first.from}`, kind: raw.kind, blockId,
         edits: raw.edits.map((e) => ({ from: blockPos + 1 + e.from, to: blockPos + 1 + e.to, replacement: e.replacement })),
         excerpt: shorten(text, first.from, last.to),
+        change: changeAround(text, raw.edits),
       });
     }
   });
