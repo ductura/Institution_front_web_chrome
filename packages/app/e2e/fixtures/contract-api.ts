@@ -17,6 +17,12 @@ const rank = (v: Vector) => { const i = QUIET.indexOf(v.name); return i === -1 ?
 
 const size = (v: Vector) => JSON.stringify(v.response?.body ?? null).length;
 
+/** A vector that opens a work of another kind than text (workKind slides or spreadsheet); never a default for a page that expects text. */
+const otherKind = (v: Vector) => {
+  const kind = (v.response?.body as { workKind?: unknown } | undefined)?.workKind;
+  return typeof kind === "string" && kind !== "text";
+};
+
 /** Builds the resolver from a contract and its vectors (the generated files by default). */
 export function contractDefaults(contract: Contract, vectors: readonly Vector[]) {
   const routes = Object.entries(contract).map(([operation, { path, method, responses }]) => {
@@ -24,7 +30,9 @@ export function contractDefaults(contract: Contract, vectors: readonly Vector[])
     const pattern = new RegExp(`^${path.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\\?\{[^}]+\\?\}/g, "[^/]+")}$`);
     const ok = vectors.filter((v) => v.route === operation && v.response !== undefined && v.response.status >= 200 && v.response.status < 300);
     // The smallest successful vector, so a default never adds content a spec did not ask for.
-    const chosen = [...ok].sort((a, b) => size(a) - size(b) || rank(a) - rank(b))[0];
+    // A vector of another work kind is only the default when the operation has no other successful one.
+    const plain = ok.filter((v) => !otherKind(v));
+    const chosen = [...(plain.length > 0 ? plain : ok)].sort((a, b) => size(a) - size(b) || rank(a) - rank(b))[0];
     let answer: DefaultAnswer | null = null;
     if (chosen?.response !== undefined) {
       const { status, body, contentType } = chosen.response;
