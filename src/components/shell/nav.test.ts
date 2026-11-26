@@ -58,6 +58,17 @@ describe("navFor", () => {
     expect(student).toContain("/upis");
   });
 
+  // F4-V18-22-R01: screens that had no entry and were reached only by typing the path.
+  it("gives a student the questionnaires, the coding material and export, and the practice journal", () => {
+    const student = navFor("student").map((item) => item.href);
+    for (const href of ["/zadaci/upitnici", "/zadaci/gradivo-kodiranja", "/zadaci/kodiranje-izvoz", "/zadaci/dnevnik-prakse"]) expect(student).toContain(href);
+  });
+
+  it("gives the administrator the ISVU connection and nobody else", () => {
+    expect(navFor("admin")).toContainEqual({ href: "/ustanova/isvu", label: "Povezivanje s ISVU-om (probni izvor)" });
+    expect(navFor("student").concat(navFor("teacher")).some((item) => item.href === "/ustanova/isvu")).toBe(false);
+  });
+
   it("gives no item without a role", () => {
     expect(navFor(null)).toEqual([]);
   });
@@ -70,6 +81,7 @@ describe("navFor", () => {
       { href: "/ustanova/pravila", label: "Pravila fakulteta" },
       { href: "/ustanova/cuvanje", label: "Čuvanje podataka" },
       { href: "/ustanova/izvoz-podataka", label: "Izvoz podataka studenta" },
+      { href: "/ustanova/isvu", label: "Povezivanje s ISVU-om (probni izvor)" },
     ]);
     expect(navFor("teacher").concat(navFor("student")).some((item) => item.href.startsWith("/ustanova"))).toBe(false);
   });
