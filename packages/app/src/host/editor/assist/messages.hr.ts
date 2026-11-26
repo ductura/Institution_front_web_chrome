@@ -136,7 +136,6 @@ export const assistHr = {
     added: (title: string, n: number) => `Novo poglavlje ${title} (${n} riječi)`,
     grown: (title: string, n: number) => `${title}: ${n} riječi više`,
     shrunk: (title: string, n: number) => `${title}: ${n} riječi manje`,
-    go: (title: string) => `Idi na ${title}`,
   },
   resume: {
     label: (num: string, title: string) => `Nastavi gdje ste stali: ${num} ${title}`,

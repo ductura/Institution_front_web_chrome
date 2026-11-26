@@ -44,7 +44,7 @@ export function WhatsNewCard({ changes, onGo }: { changes: readonly Change[]; on
     <section className={styles.card} aria-label={t.whatsNew.title} data-whats-new="">
       <span className={styles.label}>{t.whatsNew.title}</span>
       <ul className={styles.list}>
-        {changes.map((c) => <li key={c.chapter.id}><button type="button" className={styles.next} aria-label={t.whatsNew.go(c.chapter.title)} onClick={() => onGo(c.chapter.id)}>{text(c)}</button></li>)}
+        {changes.map((c) => <li key={c.chapter.id}><button type="button" className={styles.next} onClick={() => onGo(c.chapter.id)}>{text(c)}</button></li>)}
       </ul>
     </section>
   );

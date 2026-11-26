@@ -37,3 +37,12 @@ describe("WhatsNewCard", () => {
     expect(src).toContain("<ResumeCard");
   });
 });
+
+describe("WhatsNewCard accessible name", () => {
+  it("keeps the change description as the button name", () => {
+    const el = render([{ chapter: chapter("b", "Okvir"), kind: "grown", delta: 30 }], vi.fn());
+    const b = el.querySelector("li button");
+    expect(b?.hasAttribute("aria-label")).toBe(false);
+    expect(b?.textContent).toBe("Okvir: 30 riječi više");
+  });
+});
