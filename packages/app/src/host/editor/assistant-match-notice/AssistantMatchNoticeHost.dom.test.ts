@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createAssistantMatchCall } from "@/client/assistant-match";
 
+import { useContextAlerts } from "../../../../../../src/components/editor/layout-prefs/context-alerts.ts";
 import { AssistantMatchNoticeHost } from "./AssistantMatchNoticeHost";
 import { noticeText } from "./messages.hr";
 
@@ -40,6 +41,25 @@ describe("AssistantMatchNoticeHost", () => {
     expect(banner?.getAttribute("role")).toBe("status");
     expect(banner?.textContent).toContain(`${noticeText.title}. ${noticeText.neutral}`);
     expect(host.textContent).not.toContain(noticeText.explainOpen);
+  });
+
+  // ED-38: the match is also a line in the "Uz tekst" alert row, which stays after the banner is hidden
+  // and goes away with the editor.
+  it("reports the match to the \"Uz tekst\" alert row and takes it back on unmount", async () => {
+    const seen: string[] = [];
+    const Probe = () => { seen.push(useContextAlerts().map((a) => `${a.group}:${a.text}`).join("|")); return null; };
+    const probeRoot = createRoot(document.createElement("div"));
+    act(() => probeRoot.render(h(Probe)));
+    await mount(server({ ok: true, status: 200, headers: {}, body: { findings: [FINDING] } }));
+    expect(seen.at(-1)).toBe(`assistant:${noticeText.row(1)}`);
+    expect(noticeText.row(1)).toBe("1 mjesto se podudara s odgovorom pomoćnika");
+    expect(noticeText.row(3)).toBe("3 mjesta se podudaraju s odgovorom pomoćnika");
+    act(() => (host.querySelector("[data-match='p-1'] button:last-of-type") as HTMLButtonElement).click());
+    expect(host.querySelector("[data-match='p-1']")).toBeNull();
+    expect(seen.at(-1)).toBe(`assistant:${noticeText.row(1)}`);
+    act(() => root?.unmount()); root = undefined;
+    expect(seen.at(-1)).toBe("");
+    act(() => probeRoot.unmount());
   });
 
   it("in the writable editor offers \"Objasni, ako želiš…\" (ED-13, NF2-P13)", async () => {
@@ -79,6 +99,8 @@ describe("AssistantMatchNoticeHost", () => {
   it("never says the text was copied", async () => {
     await mount(server({ ok: true, status: 200, headers: {}, body: { findings: [FINDING] } }));
     expect(host.textContent?.toLowerCase()).not.toMatch(/prepis/u);
-    for (const text of Object.values(noticeText)) expect(text.toLowerCase()).not.toMatch(/prepis/u);
+    // ED-38: the alert-row line is a function of the count; its words are checked for 1, 2 and 5.
+    const texts = Object.values(noticeText).flatMap((v) => (typeof v === "function" ? [1, 2, 5].map(v) : [v]));
+    for (const text of texts) expect(text.toLowerCase()).not.toMatch(/prepis/u);
   });
 });
