@@ -43,8 +43,14 @@ export type RosterRead =
   | { readonly kind: "signedOut" }
   | { readonly kind: "unavailable" };
 
+/** F4-PM1-R09: what the server said to a removal or a permitted return (institution.student-removal/-return.post). */
+export type StudentChange = "done" | "nothing" | "unauthorized" | "forbidden" | "invalid" | "unknown";
+export type StudentChangeAction = "remove" | "return";
+
 export interface CourseStudentsPort {
   read(courseId: string): Promise<RosterRead>;
+  /** Absent: the screen offers no change (read only). Never throws; an answer that proves nothing is "unknown". */
+  change?(action: StudentChangeAction, courseId: string, studentId: string): Promise<StudentChange>;
 }
 
 /** Without a port the honest answer is "unavailable"; the route mounts the real one (./port.ts). */
@@ -223,5 +229,18 @@ export async function loadRoster(port: CourseStudentsPort, courseId: string): Pr
     return read.kind === "ready" && !consistent(read.data) ? { kind: "unavailable" } : read;
   } catch {
     return { kind: "unavailable" };
+  }
+}
+
+/** The words for what the server answered to a removal or a permitted return. */
+export function changeLine(action: StudentChangeAction, outcome: StudentChange): string {
+  const o = text.changeOutcome;
+  switch (outcome) {
+    case "done": return action === "remove" ? o.removed : o.returnAllowed;
+    case "nothing": return action === "remove" ? o.notRemoved : o.notAllowed;
+    case "unauthorized":
+    case "forbidden": return o.ended;
+    case "invalid": return o.invalid;
+    default: return o.unknown;
   }
 }
