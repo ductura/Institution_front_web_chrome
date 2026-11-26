@@ -7,14 +7,27 @@
  * shows the work: the student's editor, the teacher's live text, replay and the
  * submission view.
  *
- * No font file is shipped yet: the owner picks the font and confirms its licence
- * (fonts/dyslexia/README.md). Until then only local() sources are named, so no
- * network request is possible (A-13: no CDN).
+ * Font: OpenDyslexic (SIL OFL 1.1), served from our own origin (fonts/dyslexia/,
+ * README.md has source, version and checksums). local() comes first, url() after;
+ * no CDN and no remote request (A-13).
  */
 @font-face {
   font-family: "Ductura Dyslexia";
-  src: local("Lexend"), local("Lexend Regular"), local("OpenDyslexic"), local("OpenDyslexic Regular");
-  font-weight: 400 600;
+  src:
+    local("OpenDyslexic"),
+    local("OpenDyslexic Regular"),
+    url("../fonts/dyslexia/OpenDyslexic-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Ductura Dyslexia";
+  src:
+    local("OpenDyslexic Bold"),
+    url("../fonts/dyslexia/OpenDyslexic-Bold.woff2") format("woff2");
+  font-weight: 500 700;
   font-style: normal;
   font-display: swap;
 }
