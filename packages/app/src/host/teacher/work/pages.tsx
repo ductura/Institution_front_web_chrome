@@ -55,6 +55,7 @@ import { teacherWorkMessages as workText } from "./messages.hr";
 import { useShownRevision } from "./shown-revision";
 import ReviewPage from "./review/ReviewPage";
 import { reviewMessages } from "./review/messages.hr";
+import { SlidesOrWork } from "../slides/SlidesReview";
 import linkStyles from "./links.module.css";
 
 const VIEWS = {
@@ -146,7 +147,9 @@ function OpenWork({ documentId, path, view, session }: {
   if (view === "replay") {
     return <ReplayPage documentId={documentId} session={session} workHref={workHref} />;
   }
-  return <LiveWork documentId={documentId} workHref={workHref} session={session} />;
+  // WEB-V13-NASTAVNIK-PREGLED: a slides work opens the slides reading, any other work this page.
+  return <SlidesOrWork key={documentId} documentId={documentId} path={path}
+    fallback={<LiveWork documentId={documentId} workHref={workHref} session={session} />} />;
 }
 
 function LiveWork({ documentId, workHref, session }: { documentId: string; workHref: string; session: SessionMark }) {
