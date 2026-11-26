@@ -61,10 +61,9 @@ export function placesAt(places: readonly Place[], pos: number): Place[] {
   return places.filter((p) => pos >= p.from && pos <= p.to).sort((a, b) => rank(a) - rank(b) || a.from - b.from);
 }
 
-export function counts(places: readonly Place[]): Record<"hole" | "cmt" | "plain", number> {
-  const n = { hole: 0, cmt: 0, plain: 0 };
-  for (const p of places) if (p.kind === "hole" || p.kind === "cmt" || p.kind === "plain") n[p.kind] += 1;
-  return n;
+/** ED-60: the popover offers "Sljedeće mjesto ›" only when its kind has another mark (no counter bar any more). */
+export function hasNext(places: readonly Place[], kind: MarkKind): boolean {
+  return places.filter((p) => p.kind === kind).length > 1;
 }
 
 /** The mark after `from` of one kind, wrapping to the first; null when there is none. */
