@@ -64,7 +64,9 @@ test("P-14: with every task submitted the button says there is nothing to export
   await expect(button).toHaveAccessibleDescription("Nema rokova za izvoz: svi zadaci su predani.");
   let downloaded = false;
   page.on("download", () => { downloaded = true; });
-  await button.click();
+  // aria-disabled keeps the button focusable, so Playwright's click would wait for it to be enabled; a keyboard
+  // user reaches it and presses Enter, which is what this checks.
+  await button.press("Enter");
   await expect(page.getByRole("status").filter({ hasText: "Nema rokova za izvoz." })).toBeVisible();
   expect(downloaded).toBe(false);
   await axe(page);

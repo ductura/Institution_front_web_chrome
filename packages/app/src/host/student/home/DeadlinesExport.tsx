@@ -3,21 +3,15 @@
 import { Button } from "@ductura/ui";
 import { useState } from "react";
 
+import { downloadBlob } from "../../../../../../src/components/editor/EarlierDraft";
 import { deadlinesIcs, exportable, ICS_FILE } from "./calendar";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
 import type { TaskRow } from "./model";
 
-/** Hands the text to the browser as a file; nothing leaves the browser. */
+/** Hands the text to the browser as a file through the one download helper (no-direct-api); nothing leaves the browser. */
 function saveFile(text: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/calendar;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = ICS_FILE;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  downloadBlob(new Blob([text], { type: "text/calendar;charset=utf-8" }), ICS_FILE);
 }
 
 /**
