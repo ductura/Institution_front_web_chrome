@@ -10,7 +10,7 @@ const hole: Place = { kind: "hole", level: 1, name: "Za provjeru", from: 6, to: 
 const plain: Place = { kind: "plain", level: 1, name: "Navod upisan kao tekst", from: 12, to: 28 };
 const noop = () => {};
 const html = (place: Place, more: boolean, editable: boolean) =>
-  renderToStaticMarkup(createElement(MarkActions, { place, more, editable, onNext: noop, onRemove: noop }));
+  renderToStaticMarkup(createElement(MarkActions, { place, more, editable, onNext: noop, onRemove: noop, onLink: noop }));
 
 describe("popover of one mark", () => {
   it("says what a hole asks and offers to remove it and go to the next one", () => {
@@ -28,7 +28,13 @@ describe("popover of one mark", () => {
 
   it("offers no next place when the mark is the only one of its kind", () => {
     expect(html(hole, false, true)).not.toContain("Sljedeće mjesto");
-    expect(html(plain, false, true)).not.toContain("<button");
+    expect(html(plain, false, false)).not.toContain("<button");
+  });
+
+  it("offers to link a citation typed as text in Literatura, only while the text can be written", () => {
+    expect(html(plain, false, true)).toContain("Poveži u Literaturi");
+    expect(html(plain, false, false)).not.toContain("Poveži u Literaturi");
+    expect(html(hole, true, true)).not.toContain("Poveži u Literaturi");
   });
 
   it("explains a citation typed as text and never offers to remove it", () => {
