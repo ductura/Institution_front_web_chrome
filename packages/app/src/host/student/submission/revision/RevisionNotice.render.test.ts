@@ -52,7 +52,7 @@ describe("RevisionNotice (PR-16)", () => {
     expect(sent).toHaveLength(1);
   });
 
-  it.each([[401, "Prijava je istekla"], [403, "ne možete poslati"], [409, "rok istekao"], [null, "odgovor nije potvrđen"]])(
+  it.each([[401, "Prijava je istekla"], [403, "ne možete poslati"], [409, "rok istekao"], [null, "nije moglo biti potvrđeno"]])(
     "does not claim success when the send answers %s", async (status, text) => {
       const el = await render(page([REQUEST]), false, async () => status);
       await act(async () => { el.querySelector("button")!.click(); });

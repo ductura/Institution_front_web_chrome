@@ -14,5 +14,5 @@ export const revisionText = {
   sendSessionExpired: "Prijava je istekla. Prijavite se ponovno i pošaljite doradu.",
   sendForbidden: "Doradu za ovaj rad ne možete poslati.",
   sendConflict: "Dorada se trenutačno ne može poslati: rad nije vraćen na doradu ili je rok istekao.",
-  sendUnknown: "Dorada nije poslana jer odgovor nije potvrđen. Pokušajte ponovno.",
+  sendUnknown: "Slanje dorade nije moglo biti potvrđeno. Provjerite stanje rada prije ponovnog slanja.",
 } as const;
