@@ -34,6 +34,11 @@ const nav = (t: Messages): Record<ShellRole, readonly NavItem[]> => ({
     { href: "/zadaci/radovi", label: t.shell.nav.works },
     { href: "/rad", label: t.shell.nav.workspace },
     { href: "/upis", label: t.shell.nav.enroll },
+    // F4-V18-22-R01: screens that were reached only by typing the path.
+    { href: "/zadaci/upitnici", label: t.shell.nav.questionnaires },
+    { href: "/zadaci/gradivo-kodiranja", label: t.shell.nav.codingMaterials },
+    { href: "/zadaci/kodiranje-izvoz", label: t.shell.nav.codingExport },
+    { href: "/zadaci/dnevnik-prakse", label: t.shell.nav.practiceJournal },
   ],
   // DAN-313 (A-01): the administrator's overview of their own institution.
   admin: [
@@ -48,6 +53,8 @@ const nav = (t: Messages): Record<ShellRole, readonly NavItem[]> => ({
     { href: "/ustanova/cuvanje", label: t.shell.nav.dataRetention },
     // WEB-1302 (SRV-1308): the registry office's requests, started by the administrator.
     { href: "/ustanova/izvoz-podataka", label: t.shell.nav.studentDataExport },
+    // F4-V18-22-R01 (V22-08): the ISVU connection, until now reached only by its path.
+    { href: "/ustanova/isvu", label: t.shell.nav.isvu },
   ],
 });
 

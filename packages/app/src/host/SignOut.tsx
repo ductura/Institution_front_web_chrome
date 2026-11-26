@@ -26,6 +26,7 @@ export function SignOutDialogButton({ className, label }: { className?: string; 
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [all, setAll] = useState(false);
   const stay = useRef<HTMLButtonElement>(null);
 
   const close = () => {
@@ -33,10 +34,13 @@ export function SignOutDialogButton({ className, label }: { className?: string; 
     setOpen(false);
     setFailed(false);
   };
-  const confirm = async () => {
+  const confirm = async (everywhere: boolean) => {
+    setAll(everywhere);
     setBusy(true);
     setFailed(false);
-    if (await signOutHere(null, browserSignOutDeps())) {
+    if (await signOutHere(null, browserSignOutDeps(everywhere))) {
+      // The provider logout is followed through the plain logout route in both
+      // cases: it works without the cookie the route above just cleared.
       followLogoutNatively();
       return;
     }
@@ -56,7 +60,8 @@ export function SignOutDialogButton({ className, label }: { className?: string; 
         actions={
           <>
             <Button ref={stay} tone="quiet" onClick={close} disabled={busy}>{work.auth.logoutStay}</Button>
-            <Button busy={busy} onClick={() => void confirm()}>{busy ? work.auth.loggingOut : work.auth.logoutConfirm}</Button>
+            <Button tone="quiet" busy={busy && all} onClick={() => void confirm(true)} disabled={busy}>{busy && all ? work.auth.loggingOut : app.host.signOutAll}</Button>
+            <Button busy={busy && !all} onClick={() => void confirm(false)} disabled={busy}>{busy && !all ? work.auth.loggingOut : work.auth.logoutConfirm}</Button>
           </>
         }
       >
