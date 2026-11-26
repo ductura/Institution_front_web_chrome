@@ -76,7 +76,7 @@ export const summaryText = {
     recordedTitle: "Zabilježeno u Ducturi",
     studentTitle: "Izjava studenta",
     recordedRevision: "Izjava se odnosi na verziju {n}.",
-    recordedAt: "Potvrđena {at}.",
+    recordedAt: "Izjava je potvrđena {at}.",
     recordedDraft: "Još nije potvrđena (nacrt).",
     ownWorkYes: "Vlastiti rad: potvrđeno.",
     ownWorkNo: "Vlastiti rad: još nije potvrđeno.",
