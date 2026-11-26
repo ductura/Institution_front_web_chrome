@@ -143,13 +143,14 @@ test("NZ-5: a student without a submission after the deadline gets an exception 
       { studentId: S1, givenName: "Ana", familyName: "Izmišljenić", groupName: null, submitted: false, requestedMinute: null, afterDeadline: null, evidenceRecord: null },
     ] })));
     await page.route(`**/api/v1/teacher/assignments/${id}/submissions`, (route) => route.fulfill(json({ submissions: [] })));
-    await page.route(`**/api/v1/teacher/assignments/${id}/deadline-extensions`, (route) => {
-      if (route.request().method() === "GET") return route.fulfill(json({ extensions: [] }));
+    await page.route(`**/api/v1/teacher/assignments/${id}/deadline-extensions`, (route) => route.fulfill(json({ extensions: [] })));
+    await page.route(`**/api/v1/teacher/assignments/${id}/late-submission-exceptions`, (route) => {
+      if (route.request().method() === "GET") return route.fulfill(json({ exceptions: [] }));
       const body = route.request().postDataJSON() as Record<string, unknown>;
       posts.push(body);
-      return route.fulfill(json({ existingSubmissionsUnchanged: true, extension: {
-        id: "6b4b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c41", scope: "one", studentId: S1, previousDueAt: "2026-11-08T22:59:00.000Z",
-        dueAt: body.dueAt, reasonId: body.reasonId, createdBy: "6b3b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c31", createdAt: "2026-11-24T10:00:00.000Z",
+      return route.fulfill(json({ exception: {
+        id: "6b4b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c41", studentId: S1, untilAt: body.untilAt, reasonId: body.reasonId,
+        createdBy: "6b3b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c31", createdAt: "2026-11-24T10:00:00.000Z",
       } }, 201));
     });
   }
@@ -159,7 +160,7 @@ test("NZ-5: a student without a submission after the deadline gets an exception 
   await page.getByRole("button", { name: /Dopusti predaju nakon roka… Ana/ }).focus();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: /Dopusti predaju nakon roka: Ana/ });
-  await expect(dialog.getByText("Student vidi novi rok i razlog, a zapis se ne briše.")).toBeVisible();
+  await expect(dialog.getByText("Student vidi do kada smije predati, a zapis se ne briše.")).toBeVisible();
   await checkAxe(page, info, "late");
   await page.setViewportSize({ width: 1280, height: 900 });
   await dialog.getByRole("button", { name: "Zabilježi iznimku" }).click();
@@ -169,5 +170,5 @@ test("NZ-5: a student without a submission after the deadline gets an exception 
   await dialog.getByRole("button", { name: "Zabilježi iznimku" }).click();
   // The message stays on screen after the facts are read again (it is not part of the row that is mounted again).
   await expect(page.getByRole("status").filter({ hasText: "Zabilježeno: predaja je dopuštena do" })).toBeVisible();
-  expect(posts).toEqual([{ scope: "one", studentId: S1, dueAt: "2099-01-10T11:00:00.000Z", reasonId: "technical" }]);
+  expect(posts).toEqual([{ studentId: S1, untilAt: "2099-01-10T11:00:00.000Z", reasonId: "technical" }]);
 });

@@ -71,7 +71,9 @@ describe("WorkHistoryHost", () => {
     expect([...el.querySelectorAll("[data-work-history] li button")].map((b) => b.textContent))
       .toEqual([`Verzija 3${t.day("2026-11-20T09:15:00.000Z")}`, `Predaja 1${t.day("2026-11-19T10:00:00.000Z")}`, `Verzija 1${t.day("2026-11-18T08:30:00.000Z")}`]);
     expect(el.textContent).toContain(t.compareTitle);
-    expect(el.textContent).toContain(t.compareWith);
+    // Without two sent versions there is nothing to choose: the reason is shown instead of the menu.
+    expect(el.textContent).toContain("Za usporedbu su potrebne dvije poslane verzije.");
+    expect(el.querySelector("[data-work-history] select")).toBeNull();
   });
 
   it("shows one version only for reading and goes back to the list", async () => {
@@ -115,5 +117,31 @@ describe("WorkHistoryHost", () => {
     await mount(createElement(WorkHistoryHost, { documentId: "dok-1", replayHref: "/r", port: fakeTimeMachinePort(), client: noComparison }));
     expect(workHistoryOffered()).toBe(true);
     expect(el.querySelector("dialog")).toBeNull();
+  });
+
+  it("offers one menu \"Usporedi s …\" of the sent versions and compares it with the newest sent one", async () => {
+    const sent = (revision: number) => ({ kind: "submission", revision, savedMinute: "2026-11-20T09:15:00.000Z" });
+    const calls: string[] = [];
+    const client = (async (id: string, input: { query?: { from: string; to: string } }) => {
+      if (id === "work.versions.get") return { ok: true, body: { versions: [sent(7), sent(5), sent(3)], nextBeforeRevision: null } };
+      calls.push(`${input.query!.from}>${input.query!.to}`);
+      return { ok: true, body: { from: Number(input.query!.from), to: Number(input.query!.to), blocks: [] } };
+    }) as unknown as ComparisonApi;
+    const el = await mount(createElement(WorkHistoryHost, { documentId: "dok-1", replayHref: "/r", port: fakeTimeMachinePort(), client }));
+    await ask();
+    await settle();
+    const selects = [...el.querySelectorAll("[data-work-history] select")];
+    expect(selects).toHaveLength(1);
+    expect(el.querySelector("label")?.textContent).toBe("Usporedi s …");
+    // The newest sent version is the fixed side, so it is not offered as a choice.
+    expect([...selects[0]!.querySelectorAll("option")].map((o) => o.value)).toEqual(["5", "3"]);
+    expect(calls).toEqual(["5>7"]);
+    await act(async () => {
+      const select = selects[0] as HTMLSelectElement;
+      select.value = "3";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await settle();
+    expect(calls).toEqual(["5>7", "3>7"]);
   });
 });

@@ -560,16 +560,40 @@ export async function signOut(options: ApiOptions = {}): Promise<boolean> {
   }
 }
 
-/** The path of POST auth.logout.post, read from the contract; throws unless there is exactly one local one. */
-export function logoutPath(paths: Paths): string {
-  const found = Object.entries(paths).filter(([, methods]) => methods.post?.operationId === "auth.logout.post");
+/**
+ * Signs out of every session of the person through auth.logout-all.post
+ * (OPE-30, 303 on success). True when the server ended them; the caller then
+ * calls followLogoutNatively, as after signOut.
+ */
+export async function signOutAll(options: ApiOptions = {}): Promise<boolean> {
+  try {
+    const result = await createApi(options)("auth.logout-all.post", { params: undefined, query: undefined, body: undefined } as Input<"auth.logout-all.post">);
+    return result.ok;
+  } catch {
+    return false;
+  }
+}
+
+function postPathOf(paths: Paths, operationId: "auth.logout.post" | "auth.logout-all.post"): string {
+  const found = Object.entries(paths).filter(([, methods]) => methods.post?.operationId === operationId);
   const path = found[0]?.[0];
   if (found.length !== 1 || path === undefined || !path.startsWith("/") || path.startsWith("//")) {
-    throw new Error("contract: no single POST auth.logout.post");
+    throw new Error(`contract: no single POST ${operationId}`);
   }
   return path;
 }
+
+/** The path of POST auth.logout.post, read from the contract; throws unless there is exactly one local one. */
+export function logoutPath(paths: Paths): string {
+  return postPathOf(paths, "auth.logout.post");
+}
 export const LOGOUT_PATH = logoutPath((openapi as unknown as { paths: Paths }).paths);
+
+/** The path of POST auth.logout-all.post, read from the contract the same way. */
+export function logoutAllPath(paths: Paths): string {
+  return postPathOf(paths, "auth.logout-all.post");
+}
+export const LOGOUT_ALL_PATH = logoutAllPath((openapi as unknown as { paths: Paths }).paths);
 
 /**
  * WEB-39 (DAN-212): after `signOut` confirmed, the same POST once more,

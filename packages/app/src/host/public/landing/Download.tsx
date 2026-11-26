@@ -2,6 +2,7 @@ import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../
 
 import { appHref } from "../../../../../../src/components/shell/nav";
 
+import { EDGE_LINK } from "./edge";
 import s from "./Download.module.css";
 import h from "./Hero.module.css";
 import { Mark } from "./Mark";
@@ -29,7 +30,7 @@ export function Download({ base, locale = DEFAULT_INTERFACE_LOCALE }: Props) {
         </div>
         <p className={s.small}>
           {t.orStart}
-          <a href={appHref(base, "/prijava")}>{t.orLink}</a>
+          <a {...EDGE_LINK}>{t.orLink}</a>
         </p>
       </div>
     </section>

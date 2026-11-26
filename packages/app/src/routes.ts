@@ -33,8 +33,12 @@ import { myRightsMessages } from "./host/public/my-rights/messages.hr";
 import { pilotMetricsMessages } from "./host/operator/pilot-metrics/messages.hr";
 import { actionLogMessages } from "./host/operator/action-log/messages.hr";
 import { problemReportsMessages } from "./host/operator/problem-reports/messages.hr";
-import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
+import { ACTION_LOG, PROBLEM_REPORTS, SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH } from "./host/operator/paths";
+import { healthMessages } from "./host/operator/health/messages.hr";
+import { eventsMessages } from "./host/operator/events/messages.hr";
+import { securityKeyMessages } from "./host/operator/webauthn/messages.hr";
 import { hostText } from "./text";
+import { teacherViewText } from "./host/student/work/teacher-view/messages.hr";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
 import { qualExportText } from "./host/student/qual-export/messages.hr";
@@ -90,7 +94,7 @@ export type Page = {
 
 /** NF-7 OA-1: the operator's own page, the pilot's aggregate measures; the operator's home. */
 export const OPERATOR_HOME = "/operater/mjerila-pilota";
-export { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
+export { ACTION_LOG, PROBLEM_REPORTS, SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH } from "./host/operator/paths";
 /** M1.8: where a refused page leads, with the refusal ("Nemate ovlasti za ovaj prikaz"). */
 export const NO_ACCESS = "/nema-ovlasti?kind=denied";
 /** WEB-OPERATER-POCETNA: the operator's pages have no index of their own; this path forwards to the first one the account may open. */
@@ -125,8 +129,7 @@ export const PAGES: readonly Page[] = [
   { path: "/upis/kolegij/[courseId]", label: t.student.enroll.title, kind: "pending", roles: ["student"], current: "/upis" },
   // WEB-1404: the student's request for a mentor.
   { path: "/zadaci/mentorstvo", label: hostText.mentorshipRequest, kind: "pending", roles: ["student"], current: "/zadaci" },
-  // WEB-V19-DNEVNIK-STUDENT: the student's journal of a professional practice.
-  { path: "/zadaci/dnevnik-prakse", label: practiceJournalText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-DNEVNIK-STUDENT: the student's journal of a professional practice.  Entered from nav.ts (F4-V18-22-R01).
   // WEB-V19-DNEVNIK-MENTOR: the mentor's side of the journal, entered from N-16 by a link.
   { path: "/nastavnik/mentorstva/dnevnik-prakse", label: hostText.mentorPracticeJournal, kind: "pending", roles: ["teacher"], current: "/nastavnik/mentorstva" },
   // WEB-V19-GRUPA: the student's team on one assignment, entered from the assignment's notice by a link.
@@ -141,12 +144,9 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/recenzija", label: teacherPeerReviewText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // WEB-V21-KOD-TESTOVI-OBRAZAC: the teacher's code tests of one assignment, a standalone screen reached by its path.
   { path: "/nastavnik/zadatak/[assignmentId]/testovi", label: codeTestsText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
-  // WEB-V18-KODIRANJE-GRADIVO: the student's own material for qualitative coding.
-  { path: "/zadaci/gradivo-kodiranja", label: qualMaterialsText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
-  // WEB-V18-UPITNIK-ISPUNJAVANJE: the open questionnaires of the student's courses.
-  { path: "/zadaci/upitnici", label: questionnaireText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
-  // WEB-V18-KODIRANJE-IZVOZ: the student's own codebook and marked passages as JSON and CSV.
-  { path: "/zadaci/kodiranje-izvoz", label: qualExportText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V18-KODIRANJE-GRADIVO: the student's own material for qualitative coding.  Entered from nav.ts (F4-V18-22-R01).
+  // WEB-V18-UPITNIK-ISPUNJAVANJE: the open questionnaires of the student's courses.  Entered from nav.ts (F4-V18-22-R01).
+  // WEB-V18-KODIRANJE-IZVOZ: the student's own codebook and marked passages as JSON and CSV.  Entered from nav.ts (F4-V18-22-R01).
   // WEB-V18-KODIRANJE-OZNAKE: the codebook and the marking of one material (`?gradivo=`), entered from the material list.
   { path: "/zadaci/kodiranje", label: qualCodingText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
   // HOST-S1: the editor of one work.
@@ -160,6 +160,8 @@ export const PAGES: readonly Page[] = [
   { path: "/rad/[assignmentId]/dnevnik-pristupa", label: t.accessLog.context, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/reprodukcija", label: t.replay.titleStudent, kind: "pending", roles: ["student"] },
   // PIL-P1-SASTAV-STUDENT: the student sees the same composition as the teacher (P-1 rule 2.2).
+  // F4-EDI-R14: "Kako vidi nastavnik", the student's own work read only.
+  { path: "/rad/[assignmentId]/nastavnik", label: teacherViewText.title, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/podrijetlo", label: originText.title, kind: "pending", roles: ["student"] },
   // PIL-K-RAZGOVOR: the student's side of the teacher's interview preparation (N-14, WEB-1531).
   { path: "/rad/[assignmentId]/razgovor", label: studentInterviewText.pageTitle, kind: "pending", roles: ["student"] },
@@ -208,7 +210,6 @@ export const PAGES: readonly Page[] = [
   // WEB-V17-TEMPLATE-ADMIN: the faculty's template of a work per type of work.
   { path: "/ustanova/predlozak-rada", label: workTemplateMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
   // WEB-V22-RUTE: the trial ISVU roster link, for the administrator, the grade export (teacher of the course) and the public entry from Studomat.
-  { path: "/ustanova/isvu", label: pageLabelsHr.isvuImport, kind: "pending", roles: ["admin"], current: "/ustanova" },
   { path: "/nastavnik/kolegiji/[courseId]/isvu-ocjene", label: pageLabelsHr.isvuGrades, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/ulaz/studomat", label: pageLabelsHr.studomatEntry, kind: "pending", roles: [], public: true },
   // NF-7 OA-5: "Moja prava", static help for everyone signed in.
@@ -218,6 +219,10 @@ export const PAGES: readonly Page[] = [
   // NF-7 OA-3, OA-7: the log of actions and the problem reports, for the operator and the faculty's administrator.
   { path: ACTION_LOG, label: actionLogMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
   { path: PROBLEM_REPORTS, label: problemReportsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
+  // F4-PM2-R16 (E2): the operator's own pages: the state of the system, its events and the confirmation by a security key.
+  { path: SYSTEM_HEALTH, label: healthMessages.title, kind: "pending", roles: [], accounts: ["network_engineer"], current: OPERATOR_HOME },
+  { path: SYSTEM_EVENTS, label: eventsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer"], current: OPERATOR_HOME },
+  { path: SECURITY_KEY, label: securityKeyMessages.title, kind: "pending", roles: [], accounts: ["network_engineer"], current: OPERATOR_HOME },
   // DAN-1520: the public home page after the owner's concept; public, it is the way in.
   { path: "/naslovnica", label: workText.landing.header.home, kind: "pending", roles: [], public: true },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },

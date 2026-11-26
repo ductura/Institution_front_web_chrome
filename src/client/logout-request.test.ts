@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { LOGOUT_PATH, logoutPath } from "./api";
+import { LOGOUT_ALL_PATH, LOGOUT_PATH, logoutAllPath, logoutPath } from "./api";
 import { LOGOUT_TIMEOUT_MS } from "./logout-hold";
-import { followLogoutNatively, postLogout, signOutHere, type SignOutDeps } from "./logout-request";
+import { browserSignOutDeps, followLogoutNatively, postLogout, postLogoutAll, signOutHere, type SignOutDeps } from "./logout-request";
 import { CURRENT_KEY, ENDED_KEY, hasEnded, type CookieJar, type MarkStore } from "./session-marks";
 
 // DAN-99: the shell's sign-out is the editor's request. F-285: it ends the
@@ -245,5 +245,65 @@ describe("logoutPath (WEB-39)", () => {
       body: { append: (node: typeof form) => void appended.push(node) } as unknown as HTMLElement,
     });
     expect(appended).toEqual([expect.objectContaining({ method: "post", action: LOGOUT_PATH, hidden: true, submitted: true })]);
+  });
+});
+
+describe("postLogoutAll: auth.logout-all.post, true only for the route's redirect (OPE-30)", () => {
+  it.each(ANSWERS)("%s", async (_name, fetchOf, reached) => {
+    const fetchImpl = fetchOf();
+    await expect(postLogoutAll(fetchImpl)).resolves.toBe(reached);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledWith(new URL(`https://demo.example.test${LOGOUT_ALL_PATH}`), expect.objectContaining({
+      method: "POST", redirect: "manual", cache: "no-store",
+    }));
+  });
+
+  it("goes to its own route, not the single sign-out's", () => {
+    expect(LOGOUT_ALL_PATH).toBe("/api/v1/auth/logout-all");
+    expect(LOGOUT_ALL_PATH).not.toBe(LOGOUT_PATH);
+  });
+
+  it("a refusal (403) or an unavailable server ends nothing on this device", async () => {
+    for (const status of [403, 503]) {
+      const store = storeOf("works");
+      const jar = cookieJar();
+      const announce = vi.fn();
+      const fetchImpl = vi.fn(async () => response("basic", status));
+      await expect(signOutHere(A, { post: () => postLogoutAll(fetchImpl), store, jar, announce })).resolves.toBe(false);
+      expectUntouched(store, jar, announce);
+    }
+  });
+
+  it("ends the session here once the route confirmed it", async () => {
+    const store = storeOf("works");
+    const jar = cookieJar();
+    const announce = vi.fn();
+    const fetchImpl = vi.fn(async () => response("opaqueredirect", 0));
+    await expect(signOutHere(A, { post: () => postLogoutAll(fetchImpl), store, jar, announce })).resolves.toBe(true);
+    expect(hasEnded(store, A, jar)).toBe(true);
+  });
+
+  it("the shell picks the route by its flag", async () => {
+    const fetchImpl = vi.fn(async () => response("opaqueredirect", 0));
+    vi.stubGlobal("fetch", fetchImpl);
+    await browserSignOutDeps(true).post();
+    await browserSignOutDeps(false).post();
+    const urls = fetchImpl.mock.calls.map((call) => String((call as unknown[])[0]));
+    expect(urls[0]).toContain("/auth/logout-all");
+    expect(urls[1]).not.toContain("/auth/logout-all");
+  });
+});
+
+describe("logoutAllPath (OPE-30)", () => {
+  const post = (operationId: string) => ({ post: { operationId, responses: {} } });
+
+  it("reads the route from the contract", () => {
+    expect(logoutAllPath({ "/x/logout": post("auth.logout.post"), "/x/logout-all": post("auth.logout-all.post") })).toBe("/x/logout-all");
+  });
+
+  it("throws when the contract has none, two, or no local path", () => {
+    expect(() => logoutAllPath({ "/x/logout": post("auth.logout.post") })).toThrow("auth.logout-all.post");
+    expect(() => logoutAllPath({ "/a": post("auth.logout-all.post"), "/b": post("auth.logout-all.post") })).toThrow("auth.logout-all.post");
+    expect(() => logoutAllPath({ "//evil.example/x": post("auth.logout-all.post") })).toThrow("auth.logout-all.post");
   });
 });
