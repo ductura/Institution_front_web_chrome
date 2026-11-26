@@ -44,7 +44,7 @@ function legacyRow(row: unknown): Record<string, unknown> | null {
   return { anchor, id: suggestionId, is_own: isOwn, opened_window: createdWindow, replacement: text, row_seq: 1, state };
 }
 
-/** `options` is for tests and other origins; the page's own origin and fetch by default. */
+/** `options` is for tests and other origins; the page's own origin and transport by default. */
 export function createProposalsPort(options: ApiOptions = {}): Transport {
   return async (path, body): Promise<Reply> => {
     const call = callFor(path, body);
