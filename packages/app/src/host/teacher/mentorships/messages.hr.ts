@@ -110,3 +110,26 @@ export const mentorPlanText = {
     openRecords: "Otvori zapisnik konzultacija",
   },
 } as const;
+
+/** MEN-R14 (MEN-38): the mentor's private working notes of one mentorship on N-16. */
+export const mentorNotesText = {
+  title: (name: string): string => `Radne bilješke: ${name}`,
+  lead: "Vidite ih samo Vi kao mentor. Student ih ne vidi i ne ulaze u ocjenu.",
+  loading: "Učitavam bilješke…",
+  unavailable: "Bilješke trenutačno nisu dostupne. Pokušajte ponovno.",
+  notFound: "Mentorstvo više nije dostupno.",
+  signedOut: "Sesija je istekla. Prijavite se ponovno.",
+  retry: "Pokušaj ponovno",
+  empty: "Još nema bilješki.",
+  field: "Nova bilješka",
+  hint: "Do 4000 znakova. Bilješka se zapisuje i ne može se kasnije mijenjati.",
+  add: "Dodaj bilješku",
+  refresh: "Osvježi popis bilješki",
+  saving: "Spremam…",
+  needed: "Upišite tekst bilješke.",
+  tooLong: "Bilješka je predugačka.",
+  saved: "Bilješka je zapisana na poslužitelju.",
+  invalid: "Bilješka nije ispravna. Provjerite tekst i pokušajte ponovno.",
+  forbidden: "Bilješke može pisati samo mentor.",
+  unknown: "Nije poznato je li bilješka zapisana. Osvježite prikaz prije novog pokušaja. Ono što ste upisali je sačuvano.",
+} as const;
