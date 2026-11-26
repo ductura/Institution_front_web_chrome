@@ -1,0 +1,86 @@
+/* DAN-1520: header of koncepti/naslovnica (.vrh), on the shared tokens. */
+.header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 26px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home,
+.home:hover {
+  color: var(--ink);
+}
+
+.home {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font: 600 23px/1 var(--ff-ui);
+  letter-spacing: -0.03em;
+}
+
+.home svg {
+  display: block;
+  flex: none;
+}
+
+.nav {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  font: 500 15px var(--ff-ui);
+  letter-spacing: -0.01em;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--ink-3);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.nav a:hover {
+  color: var(--ink);
+}
+
+.nav .signIn {
+  color: var(--accent);
+}
+
+.nav .signIn:hover {
+  color: var(--accent-hover);
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 16px 20px;
+  }
+
+  .home {
+    font-size: 21px;
+    gap: 10px;
+  }
+
+  .home svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nav {
+    gap: 20px;
+  }
+
+  .nav .section {
+    display: none;
+  }
+}

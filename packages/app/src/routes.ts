@@ -163,6 +163,8 @@ export const PAGES: readonly Page[] = [
   // NF-7 OA-3, OA-7: the log of actions and the problem reports, for the operator and the faculty's administrator.
   { path: ACTION_LOG, label: actionLogMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
   { path: PROBLEM_REPORTS, label: problemReportsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
+  // DAN-1520: the public home page after the owner's concept; public, it is the way in.
+  { path: "/naslovnica", label: workText.landing.header.home, kind: "pending", roles: [], public: true },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
   { path: "/prijava", label: hostText.signIn, kind: "pending", roles: [], public: true },
   // M1.8: 401/403 and an ended session; public, since an ended session cannot be read.
