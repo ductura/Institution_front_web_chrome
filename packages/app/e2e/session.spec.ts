@@ -462,9 +462,11 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   await expect(page.getByText("Trenutačno nema planiranih održavanja.")).toBeVisible();
   await expect(page.getByText("Nema zabilježenih prekida.")).toBeVisible();
   expect(seen.login).toEqual([]);
+  expect(seen.me).toBe(0);
   await axe(page);
   expect(errors).toEqual([]);
 
+  // KA-05-WEB: the sign-in reads the session once per visit (to skip itself when signed in); Stanje never does.
   await page.goto("/aplikacija/prijava?returnTo=%2Fzadaci%2Fkolegiji");
   await page.getByRole("link", { name: "Prijava sustavom AAI@EduHr" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
@@ -475,7 +477,7 @@ test("Stanje sustava and Prijava open without reading the session", async ({ pag
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(seen.login).toHaveLength(2);
   expect(new URL(seen.login[1]!).searchParams.get("returnTo")).toBe("/aplikacija/");
-  expect(seen.me).toBe(0);
+  expect(seen.me).toBe(2);
 });
 
 test("Stanje sustava has no horizontal scroll at 360 px", async ({ page }) => {
