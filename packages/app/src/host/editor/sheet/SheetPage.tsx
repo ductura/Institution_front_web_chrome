@@ -28,6 +28,7 @@ import type { QueuedTransaction } from "../../../../../editor-core/src/sync/jour
 import { createDrainRunner, type DrainJournal, type DrainRunner } from "../../../../../editor-core/src/sync/runner/drain-runner.ts";
 import { createEvidenceTransport, evidenceVerifierFor } from "../../../../../editor-core/src/sync/runner/evidence-transport.ts";
 import type { SyncState } from "../../../../../editor-core/src/sync/states.ts";
+import SheetExport from "../sheet-export/SheetExport";
 import { SheetGrid } from "./SheetGrid";
 import { sheetPageHr as t } from "./messages.hr";
 
@@ -155,7 +156,7 @@ export type SheetSession =
   | { phase: "unavailable" }
   | { phase: "signed-out" }
   | { phase: "recovery"; document: SheetDocument | null; state: SyncState }
-  | { phase: "ready"; document: SheetDocument; readOnly: boolean; state: SyncState; stopped: boolean; journalHalted: boolean; refused: boolean;
+  | { phase: "ready"; documentId: string; document: SheetDocument; readOnly: boolean; state: SyncState; stopped: boolean; journalHalted: boolean; refused: boolean;
       onChange: (next: SheetDocument) => Promise<boolean> };
 
 const noBrowserStorage = () => typeof navigator === "undefined" || !navigator.locks || typeof indexedDB === "undefined" || !indexedDB;
@@ -255,7 +256,7 @@ export function useSheetSession(assignmentId: string, attempt = 0): SheetSession
           else if (stored === "SYNCING") state = "LOCAL_DURABLE";
           else if (stored === "SYNCED" && !syncedHere) state = "LOCAL_DURABLE";
           setSession({
-            phase: "ready", document: latest, readOnly: closed, state, onChange,
+            phase: "ready", documentId, document: latest, readOnly: closed, state, onChange,
             stopped: snap.failure?.kind === "evidence_stopped", journalHalted: snap.failure?.kind === "journal", refused,
           });
         };
@@ -423,12 +424,12 @@ function SessionPage({ assignmentId, course, title, topBar, length, onRetry }: F
   const submitted = session.phase === "ready" && session.readOnly;
   return (
     <EditorPage course={course} title={title} topBar={topBar} status={<StatusBar save={sheetStatusOf(session)} readOnly={submitted} length={length} />}>
-      <Body session={session} retry={retry} />
+      <Body session={session} retry={retry} assignmentId={assignmentId} title={title} />
     </EditorPage>
   );
 }
 
-function Body({ session, retry }: { session: SheetSession; retry: () => void }) {
+function Body({ session, retry, assignmentId, title }: { session: SheetSession; retry: () => void; assignmentId: string; title: string | null }) {
   const [refusal, setRefusal] = useState(false);
   switch (session.phase) {
     case "loading": return <SheetGrid state="loading" document={null} onChange={() => {}} />;
@@ -455,6 +456,7 @@ function Body({ session, retry }: { session: SheetSession; retry: () => void }) 
         {refusal && <p role="alert">{t.notRecordable}</p>}
         <SheetGrid state="ready" document={session.document} readOnly={session.readOnly || session.journalHalted}
           onChange={(next) => { void session.onChange(next).then((ok) => setRefusal(!ok)); }} />
+        <SheetExport documentId={session.documentId} title={title} here={`/rad/${assignmentId}`} />
       </>
     );
   }
