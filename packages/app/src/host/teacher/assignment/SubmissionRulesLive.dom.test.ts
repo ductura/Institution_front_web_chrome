@@ -65,6 +65,44 @@ describe("SubmissionRulesLive (NZ-4)", () => {
     expect(client.mock.calls.filter(([id]) => id === "teacher.submission-withdrawal.get").length).toBe(2);
   });
 
+  it("F4-NAS-R01: shows the late rule as the server has it and saves a change only after the PUT echoes it", async () => {
+    const late = (id: string, i: { body?: unknown }) => {
+      if (id === "teacher.assignment-late-submission.get") return ok({ lateSubmissionAllowed: true });
+      if (id === "institution.assignment-late-submission.put") return ok({ lateSubmissionAllowed: (i.body as { lateSubmissionAllowed: boolean }).lateSubmissionAllowed });
+      return state(id, i);
+    };
+    const { host, client } = await mount(late);
+    expect(host.querySelector<HTMLInputElement>('input[name="live-late"][value="yes"]')?.checked).toBe(true);
+    expect(host.querySelector<HTMLInputElement>('input[name="live-late"][value="no"]')?.matches(":disabled")).toBe(false);
+    expect(document.body.textContent).not.toContain(f.submitRules.lateUnavailable);
+    await radio("live-late", "no");
+    await act(async () => { button(l.save).click(); });
+    await act(async () => { button(l.confirm).click(); });
+    expect(client).toHaveBeenCalledWith("institution.assignment-late-submission.put", expect.objectContaining({ params: { assignmentId: "a1" }, body: { lateSubmissionAllowed: false } }));
+    expect(client).not.toHaveBeenCalledWith("teacher.submission-withdrawal.post", expect.anything());
+    expect(document.querySelector('[role="status"]')?.textContent).toBe(l.saved);
+  });
+
+  it("F4-NAS-R01: a late PUT answer with another value is not saved, and the rules are read again", async () => {
+    const { client } = await mount((id, i) => {
+      if (id === "teacher.assignment-late-submission.get") return ok({ lateSubmissionAllowed: true });
+      if (id === "institution.assignment-late-submission.put") return ok({ lateSubmissionAllowed: true });
+      return state(id, i);
+    });
+    await radio("live-late", "no");
+    await act(async () => { button(l.save).click(); });
+    await act(async () => { button(l.confirm).click(); });
+    expect(document.querySelector('[role="alert"]')?.textContent).toBe(l.notSaved);
+    expect(client.mock.calls.filter(([id]) => id === "teacher.assignment-late-submission.get").length).toBe(2);
+  });
+
+  it("F4-NAS-R01: when the late rule cannot be read, only it stays disabled with its note", async () => {
+    const { host } = await mount((id, i) => (id === "teacher.assignment-late-submission.get" ? { ok: false, status: 503, code: "unavailable" } : state(id, i)));
+    expect(document.body.textContent).toContain(f.submitRules.lateUnavailable);
+    expect(host.querySelector<HTMLInputElement>('input[name="live-late"][value="no"]')?.matches(":disabled")).toBe(true);
+    expect(host.querySelector<HTMLInputElement>('input[name="live-withdrawal"][value="off"]')?.matches(":disabled")).toBe(false);
+  });
+
   it("says the rules cannot be read, with a retry, never an empty panel", async () => {
     await mount(() => ({ ok: false, status: 503, code: "unavailable" }));
     expect(document.body.textContent).toContain(l.unavailable);
