@@ -1,7 +1,7 @@
 // Rules of the statement view (WEB-1503), kept apart from React so they are tested directly.
 import {
-  checkPrintout, type AnswerWrite, type HumanHelp, type HumanHelpKind, type StatementFile, type StatementPort, type StatementRead,
-  type StatementWrite, type AttachmentLimits,
+  checkPrintout, TOOL_FIELD_MAX, TOOLS_MAX, type AnswerWrite, type DeclaredTool, type HumanHelp, type HumanHelpKind, type StatementFile,
+  type StatementPort, type StatementRead, type StatementWrite, type AttachmentLimits,
 } from "../../../../../../src/client/statement.ts";
 import { megabytes, statementMessages as text } from "./messages.hr";
 
@@ -65,6 +65,48 @@ export function writeNotice(write: StatementWrite): { readonly tone: "status" | 
     case "conflict": return { tone: "alert", message: text.conflict };
     case "rejected": case "readOnly": return { tone: "alert", message: text.rejected };
     default: return { tone: "alert", message: text.failed };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ED-12 (NF2-P12): the tools outside Ductura (alat, svrha, faza).
+
+const field = (raw: string) => raw.replace(/\s+/g, " ").normalize("NFC").trim();
+
+/** A row is complete with all three fields, each within the limit; a row left wholly empty is dropped. */
+export type ToolsCheck = { readonly kind: "ok"; readonly tools: readonly DeclaredTool[] } | { readonly kind: "incomplete" | "tooLong" | "tooMany" };
+
+export function checkTools(rows: readonly DeclaredTool[]): ToolsCheck {
+  const tools = rows.map((r) => ({ tool: field(r.tool), purpose: field(r.purpose), phase: field(r.phase) }))
+    .filter((r) => r.tool !== "" || r.purpose !== "" || r.phase !== "");
+  if (tools.length > TOOLS_MAX) return { kind: "tooMany" };
+  if (tools.some((r) => r.tool === "" || r.purpose === "" || r.phase === "")) return { kind: "incomplete" };
+  if (tools.some((r) => [r.tool, r.purpose, r.phase].some((v) => [...v].length > TOOL_FIELD_MAX))) return { kind: "tooLong" };
+  return { kind: "ok", tools };
+}
+
+/** The rows after a read: unsaved edits are kept; otherwise the declared tools, or none. */
+export function toolsAfterRead(draft: readonly DeclaredTool[] | null, read: StatementRead): readonly DeclaredTool[] | null {
+  if (draft !== null || read.kind !== "ready") return draft;
+  return read.tools ?? [];
+}
+
+/** Sends the list only while the view is open for writing, the port keeps tools and every row is complete. */
+export async function saveTools(port: StatementPort, id: string, read: StatementRead, rows: readonly DeclaredTool[]): Promise<StatementWrite | { kind: "invalid"; check: ToolsCheck }> {
+  if (read.kind !== "ready" || isReadOnly(read) || port.saveTools === undefined) return { kind: "readOnly" };
+  const check = checkTools(rows);
+  if (check.kind !== "ok") return { kind: "invalid", check };
+  try { return await port.saveTools(id, check.tools); }
+  catch { return { kind: "unavailable" }; }
+}
+
+/** The alert under the list for a list the server would not take, or null. */
+export function toolsError(check: ToolsCheck): string | null {
+  switch (check.kind) {
+    case "ok": return null;
+    case "incomplete": return text.tools.incomplete;
+    case "tooLong": return text.tools.tooLong.replace("{max}", String(TOOL_FIELD_MAX));
+    case "tooMany": return text.tools.tooMany.replace("{max}", String(TOOLS_MAX));
   }
 }
 
