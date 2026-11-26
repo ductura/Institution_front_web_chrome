@@ -18,7 +18,7 @@ import {
   type Sheet,
   type SheetCell,
   type SheetDocument,
-} from "./model.ts";
+} from "./model";
 
 export type SheetValidationCode =
   | "not_object"
