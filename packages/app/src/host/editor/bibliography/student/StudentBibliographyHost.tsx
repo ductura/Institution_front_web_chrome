@@ -12,6 +12,7 @@ import {
 import styles from "./StudentBibliography.module.css";
 import { planImport } from "./import-refs";
 import { defaultEffectiveStyle, effectiveStyle, styledLiterature, type EffectiveStyle } from "./styled-entries";
+import { RecommendedSources } from "../../proof-requests/ProofRequests";
 import { useInstitutionStyle } from "../../citation-styles/use-institution-style";
 import { bibliographyStudentHr as t } from "./messages.hr";
 import { readStates, stateCounts, toggleState, writeStates, type SourceState, type SourceStates } from "./source-state";
@@ -94,7 +95,7 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId }: Props) 
   if (sources.length === 0) return <div className={styles.content}>
     <p role="status">{t.empty}</p>
     <ImportRefs editor={editor} sources={sources} editable={editable} />
-    <Unavailable />
+    <Unavailable assignmentId={assignmentId} />
   </div>;
 
   const cited = stats.filter((s) => s.places.length > 0).length;
@@ -143,7 +144,7 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId }: Props) 
     <Overview open={overviewOpen} onClose={() => setOverviewOpen(false)} stats={stats} showProofs={Boolean(proofCounts)} />
     <ImportRefs editor={editor} sources={sources} editable={editable} />
     <StyledList json={json} sources={sources} assignmentId={assignmentId} />
-    <Unavailable />
+    <Unavailable assignmentId={assignmentId} />
     <p role="status">{message}</p>
   </div>;
 }
@@ -210,9 +211,11 @@ function StyledView({ json, sources, shown }: StyledProps & { shown: EffectiveSt
   </Details>;
 }
 
-function Unavailable() {
+function Unavailable({ assignmentId }: { assignmentId: string | undefined }) {
   return <Details summary={t.notYet}>
-    <p><b>{t.recommended}.</b> {t.recommendedUnavailable}</p>
+    {assignmentId === undefined
+      ? <p><b>{t.recommended}.</b> {t.recommendedUnavailable}</p>
+      : <RecommendedSources assignmentId={assignmentId} />}
     <p><b>{t.mandatory}.</b> {t.mandatoryUnavailable}</p>
   </Details>;
 }
