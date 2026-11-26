@@ -346,9 +346,3 @@ test("a thesis section that cannot be read says so and is not shown as empty", a
   await expect(stage.getByRole("alert")).toBeVisible();
   await expect(stage.getByText(thesisHr.empty)).toHaveCount(0);
 });
-
-test.fixme("the administrator names the committee of a work (CommitteeEditor is mounted by WEB-V16-POPIS-FAKULTET, not built yet)", async () => {
-  // When the page exists: open it as the administrator, pick a chair and a member, save, and read the same list
-  // as the student and the mentor in the panel (step 7 above, without the preset); two chairs and six members are
-  // refused before any request, as in committee.test.ts.
-});
