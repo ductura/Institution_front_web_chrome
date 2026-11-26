@@ -11,7 +11,7 @@
 import "./text-size.css";
 
 import { useEffect, useState } from "react";
-import { Button, ContextMenu, type MenuEntry, type MenuPoint, type ShellTheme } from "@ductura/ui";
+import { Button, ContextMenu, Dialog, type MenuEntry, type MenuPoint, type ShellTheme } from "@ductura/ui";
 import type { Editor } from "@tiptap/core";
 
 import { BLOCK_STYLES, blockStyleOf, stateOf, TOOLS, type ToolbarState as EditorState } from "@/components/editor/EditorToolbarFor";
@@ -45,7 +45,7 @@ import { stemHr } from "../stem/messages.hr";
 import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
-import { moveChapterInEditor } from "../../../../../editor-core/src/outline/index.ts";
+import { moveChapterInEditor, type TocEditor } from "../../../../../editor-core/src/outline/index.ts";
 import { placeFromFlags, type ContextAction, type CursorPlace } from "./context-button";
 import { useOfferSlashCommands } from "../slash-commands";
 import { EditorToolbarHost } from "./EditorToolbarHost";
@@ -55,7 +55,8 @@ import { canStep, DEFAULT_ZOOM, loadZoom, saveZoom, snapZoom, stepZoom, zoomPerc
 import { MobileQuickBar } from "./ToolbarBehaviour";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
-import { currentShell, pendingViewItems, setShell, shellItems } from "./view-menu";
+import { currentShell, pendingViewItems, readClean, setClean, setShell, shellItems, viewItems } from "./view-menu";
+import { DraftPanelHost } from "../draft-panel/DraftPanelHost";
 
 /** The browser's storage, reached lazily: even reaching it can throw. */
 const localStore = () => window.localStorage;
@@ -236,7 +237,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const formula = useFormulaHost(editor, confirmedWorkSchemaVersion, formulaToolsOf(skeletonProfile));
   const code = useCodeBlockHost(editor, confirmedWorkSchemaVersion);
   const latexStyle = useLatexStyle(typeof window === "undefined" ? null : assignmentIdFromPath(window.location.pathname));
-  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | null>(null);
+  const [dialog, setDialog] = useState<"parts" | "citation" | "reading" | "skeleton" | "structure" | null>(null);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
   const writeOk = live(editor) && state.editable;
   const toast = useStudentToast();
@@ -257,6 +258,9 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   // ED-44: the app's own light or dark ("Ljuska"); read after mount, as the inline theme script set it.
   const [shell, setShellTheme] = useState<ShellTheme>("dark");
   useEffect(() => { setShellTheme(currentShell(document.documentElement, localStore)); }, []);
+  // "Čisti tekst": read after mount, as the shell theme is.
+  const [clean, setCleanText] = useState(false);
+  useEffect(() => { const on = readClean(document.documentElement, localStore); setCleanText(on); setClean(document.documentElement, localStore, on); }, []);
   const focused = useEditorFocused(editor);
   const [quickMore, setQuickMore] = useState<MenuPoint | null>(null);
   const openCrossReference = v3.openInsert ? () => v3.openInsert?.("crossReference") : undefined;
@@ -287,6 +291,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "citationSettings", label: workPartsMessages.citationTitle },
     { id: "readingSettings", label: readingSettingsHr.menu },
     ...textSizeItems(zoom),
+    ...viewItems(clean),
     ...pendingViewItems(),
   ];
   return (
@@ -322,6 +327,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       <Menu label={t.toolbar.view} items={view} onSelect={(id) => {
         if (id === "citationSettings") setDialog("citation");
         else if (id === "readingSettings") setDialog("reading");
+        else if (id === "structure") setDialog("structure");
+        else if (id === "cleanText") setCleanText(setClean(document.documentElement, localStore, !clean));
         else if (id === "textSmaller" || id === "textLarger") onZoom(id === "textSmaller" ? -1 : 1);
         else if (id === "shell:dark" || id === "shell:light") setShellTheme(setShell(document.documentElement, localStore, id === "shell:light" ? "light" : "dark"));
         else if (id === "dark" || id === "light") setSheetTheme(id);
@@ -350,6 +357,11 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         }} />
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
       {dialog === "skeleton" && editor && <SkeletonDialog editor={editor} profile={skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null} onClose={() => setDialog(null)} />}
+      {dialog === "structure" && (
+        <Dialog open title={toolbarBehaviourHr.viewStructure} onClose={() => setDialog(null)}>
+          <DraftPanelHost editor={editor as unknown as TocEditor | null} workId={workPartsKey} />
+        </Dialog>
+      )}
       {dialog === "citation" && <EditorCitationSettings onClose={() => setDialog(null)} />}
       {/* Always mounted: it creates the reading store, which puts the saved data-reading-* on <html> after a refresh. */}
       <ReadingSettingsDialog open={dialog === "reading"} onClose={() => setDialog(null)} />

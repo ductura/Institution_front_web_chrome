@@ -91,6 +91,8 @@ export const toolbarBehaviourHr = {
   // ED-44 (P2-16): the prototype's Prikaz (menu-view): the app's own light or dark, and its "Prikaz" group.
   viewShellDark: "Tamna ljuska",
   viewShellLight: "Svijetla ljuska",
+  viewStructure: "Struktura rada",
+  viewCleanText: "Čisti tekst (bez savjeta)",
   viewToc: "Sadržaj na listu",
   viewDiff: "Promjene od predaje mentoru",
   viewHistory: "Povijest rada",
