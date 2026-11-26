@@ -52,6 +52,10 @@ test("NZ-3 and NZ-4: groups, summary-only, tools and the submission rules reach 
     calls.push(`withdrawal ${route.request().postData()}`);
     return route.fulfill(json({ allowed: false, changedAt: "2026-11-24T10:00:00.000Z" }));
   });
+  await page.route(`**/api/v1/institution/assignments/${A1}/late-submission`, (route) => {
+    calls.push(`late ${route.request().method()} ${route.request().postData()}`);
+    return route.fulfill(json({ lateSubmissionAllowed: false }));
+  });
   await page.goto(`/app/web/nastavnik/zadatak/novi?kolegij=${K1}`);
   await expect(page.getByRole("group", { name: "Grupe" })).toBeVisible();
   await checkAxe(page, info, "form");
@@ -65,10 +69,11 @@ test("NZ-3 and NZ-4: groups, summary-only, tools and the submission rules reach 
   await page.keyboard.press("Space");
   await page.getByLabel("Samo sažimanje literature, uz izjavu").check();
   await page.getByLabel("Nisu dopušteni u ovom zadatku").check();
-  await expect(page.getByText("Zabrana predaje nakon roka trenutačno nije dostupna.")).toBeVisible();
-  await expect(page.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeDisabled();
+  // F4-NAS-R01: late submission is a working choice, allowed at the start.
+  await expect(page.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeChecked();
+  await page.getByLabel("Nije dopuštena", { exact: true }).check();
   await page.getByLabel("Student ne smije povući predaju").check();
-  await expect(page.getByText("Student na koraku predaje vidi: predaju ne može povući; izjavu mora ispuniti.")).toBeVisible();
+  await expect(page.getByText("Student na koraku predaje vidi: nakon roka ne može predati; predaju ne može povući; izjavu mora ispuniti.")).toBeVisible();
 
   await page.getByRole("button", { name: "Pregled i objava" }).click();
   await expect(page.getByText("Grupa A", { exact: true })).toBeVisible();
@@ -76,7 +81,8 @@ test("NZ-3 and NZ-4: groups, summary-only, tools and the submission rules reach 
   await page.getByRole("button", { name: "Objavi zadatak" }).click();
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0]).toMatchObject({ groupIds: [G1], aiSummaryOnly: true, externalToolsAllowed: false, aiPurposes: ["literature_search"] });
-  await expect.poll(() => calls).toEqual(['withdrawal {"allowed":false}']);
+  await expect(page.getByText("Predaja nakon roka", { exact: true }).locator("xpath=following-sibling::dd[1]")).toHaveText("nije dopuštena");
+  await expect.poll(() => calls).toEqual(['late PUT {"lateSubmissionAllowed":false}', 'withdrawal {"allowed":false}']);
 });
 
 test("NZ-3: no group ticked is refused with a sentence", async ({ page }) => {
@@ -108,6 +114,9 @@ test("NZ-4: the edit page reads the switches, asks first and says saved only aft
   const panel = page.locator("div.card").filter({ has: page.getByRole("region", { name: "Pravila predaje" }) });
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("button", { name: "Spremi pravila predaje" })).toBeDisabled();
+  // F4-NAS-R01: the teacher has no route to read the late rule yet, so here it stays disabled and says so.
+  await expect(panel.getByText("Postavka predaje nakon roka ovdje se zasad ne može pročitati ni promijeniti.")).toBeVisible();
+  await expect(panel.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeDisabled();
   await checkAxe(page, info, "edit");
   await page.setViewportSize({ width: 1280, height: 900 });
 

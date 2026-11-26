@@ -19,9 +19,11 @@ export type RuleChoices = {
   readonly withdrawal: boolean;
   /** On by default: the faculty form is always asked unless the teacher turns it off (decision 6, 23. 11.). */
   readonly declarationRequired: boolean;
+  /** F4-NAS-R01: a submission after the deadline; allowed by default on the server, so set only when turned off. */
+  readonly lateAllowed: boolean;
 };
 
-export const defaultChoices: RuleChoices = { groupIds: null, summaryOnly: false, externalTools: true, withdrawal: true, declarationRequired: true };
+export const defaultChoices: RuleChoices = { groupIds: null, summaryOnly: false, externalTools: true, withdrawal: true, declarationRequired: true, lateAllowed: true };
 
 const none = { query: undefined, body: undefined } as const;
 
@@ -60,7 +62,7 @@ export function groupsMissing(groups: GroupsRead | null, choices: RuleChoices): 
 }
 
 export type SwitchOutcome = "set" | "failed" | "signedOut";
-export type RuleName = "withdrawal" | "declaration";
+export type RuleName = "withdrawal" | "declaration" | "late";
 
 /** teacher.submission-withdrawal.post: set only when the answer repeats the value sent. */
 export async function setWithdrawal(call: Call, assignmentId: string, allowed: boolean): Promise<SwitchOutcome> {
@@ -84,9 +86,21 @@ export async function setDeclarationRequired(call: Call, assignmentId: string, r
   }
 }
 
+/** institution.assignment-late-submission.put (F4-NAS-R01): set only when the answer repeats the value sent. */
+export async function setLateSubmission(call: Call, assignmentId: string, allowed: boolean): Promise<SwitchOutcome> {
+  try {
+    const result = await call("institution.assignment-late-submission.put", { params: { assignmentId }, query: undefined, body: { lateSubmissionAllowed: allowed } });
+    if (!result.ok) return result.status === 401 ? "signedOut" : "failed";
+    return result.body.lateSubmissionAllowed === allowed ? "set" : "failed";
+  } catch {
+    return "failed";
+  }
+}
+
 /** The switches of a new assignment that differ from the defaults, set one by one; returns the ones that failed. */
 export async function applyRules(call: Call, assignmentId: string, choices: RuleChoices): Promise<RuleName[]> {
   const failed: RuleName[] = [];
+  if (choices.lateAllowed !== defaultChoices.lateAllowed && (await setLateSubmission(call, assignmentId, choices.lateAllowed)) !== "set") failed.push("late");
   if (choices.withdrawal !== defaultChoices.withdrawal && (await setWithdrawal(call, assignmentId, choices.withdrawal)) !== "set") failed.push("withdrawal");
   if (choices.declarationRequired !== defaultChoices.declarationRequired &&
       (await setDeclarationRequired(call, assignmentId, choices.declarationRequired)) !== "set") failed.push("declaration");

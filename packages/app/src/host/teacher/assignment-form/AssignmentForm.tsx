@@ -120,7 +120,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
     if (outcome.ok) {
       // Withdrawal and the declaration are switches of the new assignment: set after the create answer, each by its route.
       const id = result.kind === "available" ? result.id : null;
-      setRuleFailures(id === null ? [] : await (setRules ?? ((assignmentId, picked) => applyRules(createApi() as Call, assignmentId, picked)))(id, choices).catch((): RuleName[] => ["withdrawal", "declaration"]));
+      setRuleFailures(id === null ? [] : await (setRules ?? ((assignmentId, picked) => applyRules(createApi() as Call, assignmentId, picked)))(id, choices).catch((): RuleName[] => ["late", "withdrawal", "declaration"]));
       setRubricOutcome(id === null ? "none" : await (setRubricFor ?? ((assignmentId, picked) => saveRubric(createApi() as Call, assignmentId, picked)))(id, rubric).catch((): SaveOutcome => "failed"));
       setTemplateOutcome(id === null ? "none" : await (setTemplateFor ?? ((assignmentId, use) => saveTemplate(createApi() as Call, assignmentId, use)))(id, useTemplate).catch((): TemplateOutcome => "failed"));
       setPhase("published");
@@ -165,7 +165,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
       { id: "tools", label: f.labels.tools, value: choices.externalTools ? f.values.toolsYes : f.values.toolsNo },
       { id: "rubric", label: rubricFormHr.reviewLabel, value: rubric.length > 0 ? rubricFormHr.review(rubric.length) : rubricFormHr.none },
       { id: "template", label: templateFieldHr.reviewLabel, value: useTemplate ? templateFieldHr.reviewOn : templateFieldHr.reviewOff },
-      { id: "late", label: f.labels.late, value: f.values.lateServer },
+      { id: "late", label: f.labels.late, value: choices.lateAllowed ? f.values.lateOn : f.values.lateOff },
       { id: "withdrawal", label: f.labels.withdrawal, value: choices.withdrawal ? f.values.withdrawalOn : f.values.withdrawalOff },
       { id: "declaration", label: f.labels.declaration, value: choices.declarationRequired ? f.values.declarationOn : f.values.declarationOff },
     ];

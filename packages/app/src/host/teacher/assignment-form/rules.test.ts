@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { seesLine } from "./SubmissionRules";
-import { applyRules, bodyExtras, defaultChoices, groupsMissing, readGroups, readRules, setDeclarationRequired, setWithdrawal, type Call } from "./rules";
+import { applyRules, bodyExtras, defaultChoices, groupsMissing, readGroups, readRules, setDeclarationRequired, setLateSubmission, setWithdrawal, type Call } from "./rules";
 
 const ok = (body: unknown) => ({ ok: true, status: 200, body });
 const callOf = (answer: (id: string, input: { body?: unknown }) => unknown) =>
@@ -60,6 +60,23 @@ describe("submission rules switches (NZ-4)", () => {
     expect(await applyRules(failing, "a1", { ...defaultChoices, withdrawal: false, declarationRequired: false })).toEqual(["withdrawal", "declaration"]);
   });
 
+  it("sets the late rule through institution.assignment-late-submission.put only when turned off (F4-NAS-R01)", async () => {
+    const echo = callOf((_id, i) => ok({ lateSubmissionAllowed: (i.body as { lateSubmissionAllowed: boolean }).lateSubmissionAllowed }));
+    expect(await setLateSubmission(echo, "a1", false)).toBe("set");
+    expect(echo).toHaveBeenCalledWith("institution.assignment-late-submission.put", { params: { assignmentId: "a1" }, query: undefined, body: { lateSubmissionAllowed: false } });
+    expect(await setLateSubmission(callOf(() => ok({ lateSubmissionAllowed: true })), "a1", false)).toBe("failed");
+    expect(await setLateSubmission(callOf(() => ({ ok: false, status: 401, code: "unauthorized" })), "a1", false)).toBe("signedOut");
+    expect(await setLateSubmission(callOf(() => ({ ok: false, status: 404, code: "not_found" })), "a1", false)).toBe("failed");
+    expect(await setLateSubmission(callOf(() => { throw new Error("x"); }), "a1", false)).toBe("failed");
+    const call = callOf((_id, i) => ok({ lateSubmissionAllowed: (i.body as { lateSubmissionAllowed: boolean }).lateSubmissionAllowed }));
+    expect(await applyRules(call, "a1", defaultChoices)).toEqual([]);
+    expect(call).not.toHaveBeenCalled();
+    expect(await applyRules(call, "a1", { ...defaultChoices, lateAllowed: false })).toEqual([]);
+    expect(call).toHaveBeenCalledTimes(1);
+    const failing = callOf(() => ({ ok: false, status: 503, code: "unavailable" }));
+    expect(await applyRules(failing, "a1", { ...defaultChoices, lateAllowed: false })).toEqual(["late"]);
+  });
+
   it("reads both switches, and either failing is unavailable", async () => {
     const both = callOf((id) => ok(id.includes("withdrawal") ? { allowed: false, changedAt: null } : { required: true, changedAt: null }));
     expect(await readRules(both, "a1")).toEqual({ kind: "ready", rules: { withdrawal: false, declarationRequired: true } });
@@ -70,5 +87,7 @@ describe("submission rules switches (NZ-4)", () => {
 
   it("tells the student's view in the prototype wording", () => {
     expect(seesLine({ withdrawal: false, declarationRequired: false })).toBe("Student na koraku predaje vidi: predaju ne može povući; izjavu ne mora ispuniti.");
+    expect(seesLine({ withdrawal: false, declarationRequired: false, lateAllowed: false }))
+      .toBe("Student na koraku predaje vidi: nakon roka ne može predati; predaju ne može povući; izjavu ne mora ispuniti.");
   });
 });
