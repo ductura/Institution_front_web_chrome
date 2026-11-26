@@ -27,6 +27,16 @@ describe("editor triggers", () => {
     expect(addSource).toHaveBeenCalledWith("Ča");
   });
 
+  it("runs /podrijetlo through the host's command (ED-34, P2-9) and greys it without one", () => {
+    const podrijetlo = vi.fn();
+    const slash = { mode: "slash" as const, query: "podr", from: 0, to: 5 };
+    const [given] = triggerItems(slash, [], { commands: { podrijetlo } }, vi.fn());
+    expect(given).toMatchObject({ id: "podrijetlo", label: "/podrijetlo", disabled: false });
+    given?.run?.();
+    expect(podrijetlo).toHaveBeenCalledOnce();
+    expect(triggerItems(slash, [], {}, vi.fn())[0]?.disabled).toBe(true);
+  });
+
   it("keeps unavailable commands visible and cycles through usable entries only", () => {
     const items = triggerItems({ mode: "slash", query: "", from: 0, to: 1 }, [], {}, vi.fn());
     expect(items[0]).toMatchObject({ label: "/navod", disabled: true });

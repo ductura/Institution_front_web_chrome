@@ -62,6 +62,14 @@ export function statusSaveOf(read: SaveRead): StatusSave | null {
 /** The assignment's word limits as student.assignment-requirements.get gives them (WEB-22). */
 export type ScopeRange = { readonly min: number; readonly max: number } | null;
 
+/**
+ * ED-48 (P2-24): the page estimate as the prototype makes it (app.js, rules.js, text2.js):
+ * 350 words a page, rounded up, at least one; none before the first word. The orchestrator
+ * set the prototype as the source; length-line's 300 is a different, older measure.
+ */
+export const WORDS_PER_PAGE = 350;
+export const pagesApprox = (words: number): number => (words > 0 ? Math.max(1, Math.ceil(words / WORDS_PER_PAGE)) : 0);
+
 /** "1.200": thousands grouped with a dot, as E-7 writes the range. */
 export const groupDot = (n: number): string => String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
@@ -77,6 +85,9 @@ export function scopeLine(words: number | null, range: ScopeRange): string | nul
   if (range !== null) {
     parts.push(t.workspace.scopeRange.replace("{min}", groupDot(range.min)).replace("{max}", groupDot(range.max)));
   }
+  // ED-48 (P2-24): "≈ n str." after the count and the range, as in the prototype; none before the first word.
+  const pages = words === null ? 0 : pagesApprox(words);
+  if (pages > 0) parts.push(t.workspace.pagesApprox.replace("{pages}", String(pages)));
   const standing = scopeStanding(words, range);
   if (standing !== null && words !== null && range !== null) parts.push(scopeFact(standing, words, range));
   if (parts.length === 0) return null;

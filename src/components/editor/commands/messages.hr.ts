@@ -2,6 +2,8 @@ export const editorCommandsHr = {
   palette: "Naredbe",
   chapters: "Poglavlja",
   goTo: "Idi na",
+  sources: "Izvori",
+  cite: "umetni navod",
   shortcuts: "Prečaci",
   find: "Traži",
   findAndReplace: "Traži i zamijeni",

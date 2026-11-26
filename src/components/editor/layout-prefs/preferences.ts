@@ -2,7 +2,8 @@ export const LAYOUTS = ["a", "b", "c"] as const;
 export type PanelLayout = (typeof LAYOUTS)[number];
 export type MobileLayout = PanelLayout | "same";
 export type Side = "left" | "right";
-export type LayoutPreferences = Record<Side, { layout: PanelLayout; mobile: MobileLayout }>;
+/** `dense` (ED-39, "Gustoća: Zbijeno") is kept only when chosen; without it the side is "Prozračno". */
+export type LayoutPreferences = Record<Side, { layout: PanelLayout; mobile: MobileLayout; dense?: true }>;
 
 export const DEFAULT_PREFERENCES: LayoutPreferences = {
   left: { layout: "a", mobile: "c" },
@@ -18,10 +19,11 @@ export function isPanelLayout(value: unknown): value is PanelLayout {
 function readSide(side: Side, value: unknown): LayoutPreferences[Side] {
   const defaults = DEFAULT_PREFERENCES[side];
   if (typeof value !== "object" || value === null) return defaults;
-  const { layout, mobile } = value as Record<string, unknown>;
+  const { layout, mobile, dense } = value as Record<string, unknown>;
   return {
     layout: isPanelLayout(layout) ? layout : defaults.layout,
     mobile: mobile === "same" || isPanelLayout(mobile) ? mobile : defaults.mobile,
+    ...(dense === true ? { dense: true as const } : {}),
   };
 }
 

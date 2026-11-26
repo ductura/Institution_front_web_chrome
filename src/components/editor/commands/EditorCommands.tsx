@@ -6,6 +6,7 @@ import { Button, CommandPalette, ShortcutsDialog } from "@ductura/ui";
 
 import { useLocalEditor, useLocalSignedOut } from "../LocalDocument";
 import { FindRow } from "../find/FindRow";
+import { OpenFindContext } from "./open-find";
 import { editorCommandsHr as t } from "./messages.hr";
 import { paletteActions } from "./palette";
 import { requestShortcutList } from "./shortcut-definitions";
@@ -25,6 +26,12 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
     doc: current.state.doc, selection: current.state.selection, editable: current.isEditable,
   }, equalityFn: (a, b) => a?.doc === b?.doc && a?.selection === b?.selection && a?.editable === b?.editable });
 
+  // Ctrl+F and the toolbar's "Traži" (ED-34): open the row, or move into it when it is already open.
+  const openFind = () => {
+    setFinding(true);
+    toolbar.current?.parentElement?.querySelector<HTMLInputElement>("[data-find-replace] input[type='search']")?.focus();
+  };
+
   useEffect(() => {
     if (!editor) return;
     const keyDown = (event: KeyboardEvent) => {
@@ -40,8 +47,7 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
       if (action === "find") {
         if (dialog !== null) return;
         event.preventDefault();
-        setFinding(true);
-        toolbar.current?.parentElement?.querySelector<HTMLInputElement>("[data-find-replace] input[type='search']")?.focus();
+        openFind();
         return;
       }
       event.preventDefault();
@@ -68,7 +74,7 @@ export default function EditorCommands({ children }: { children: ReactNode }) {
       <div className={styles.row} ref={toolbar} onKeyDown={(event) => {
         if (event.key === "Escape" && !event.defaultPrevented) editor?.view.focus();
       }}>
-        <div className={styles.tools}>{children}</div>
+        <div className={styles.tools}><OpenFindContext.Provider value={editor ? openFind : null}>{children}</OpenFindContext.Provider></div>
         {editor ? <Button tone="quiet" data-command-trigger="" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K"
           title={`${t.palette} (Ctrl+K)`} onClick={() => setDialog("palette")}>
           {t.palette}

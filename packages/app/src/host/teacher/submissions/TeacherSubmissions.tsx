@@ -15,6 +15,7 @@ import type { HistoryCall } from "./history/contract";
 import { historyMountText } from "./history/messages.hr";
 import SubmissionHistory from "./history/SubmissionHistory";
 import WithdrawalSwitch from "./history/WithdrawalSwitch";
+import V4Blocks from "./v4-view/V4Blocks";
 
 /**
  * The submissions of one assignment in its detail (WEB-1502; M7.2): student, revision, time and the
@@ -124,6 +125,7 @@ function SubmittedVersionView(
 
 function DocumentText({ view }: { view: ReturnType<typeof documentBlocks> }) {
   if (view.kind === "unreadable") return <p role="alert">{text.unreadable}</p>;
+  if (view.kind === "v4") return <V4Blocks document={view.document} />;
   const block = (b: DocumentBlock, i: number) => {
     if (b.kind === "heading") return <h4 key={i}>{b.text}</h4>;
     if (b.kind === "quote") return <blockquote key={i}>{b.text}</blockquote>;

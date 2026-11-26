@@ -20,7 +20,9 @@ import { CommentsPanel } from "./CommentsPanel";
 import styles from "./comments.module.css";
 import { commentsHr as t } from "./messages.hr";
 import type { Place, Selection } from "./model";
+import { readMyChanges } from "./my-changes";
 import { commentsPort } from "./port";
+import { browserSeenStorage, readSeen, writeSeen } from "./seen-store";
 
 type Editor = NonNullable<HostSectionContext["editor"]>;
 
@@ -93,13 +95,22 @@ function SessionComments({ editor, documentId, session, submitted, signedOut = f
   }, [port]);
   const onSessionEnd = useCallback(() => setEnded(true), []);
 
+  // ED-42 („Novo”): the last visit is kept in this browser only. It is read once when the card opens,
+  // so what was new stays marked while the card is open, and recorded when the card closes or the
+  // page is left. Without a record (first visit, storage off) nothing is claimed new.
+  const [seen] = useState(() => readSeen(browserSeenStorage(), documentId));
+  const onSeen = useCallback(() => { writeSeen(browserSeenStorage(), documentId, Date.now()); }, [documentId]);
+  useEffect(() => {
+    window.addEventListener("pagehide", onSeen);
+    return () => window.removeEventListener("pagehide", onSeen);
+  }, [onSeen]);
+
   if (stopped) return <p role="status" className={styles.muted}>{t.signedOut}</p>;
   return (
     <>
       {submitted && <p className={styles.muted}>{t.submittedNote}</p>}
-      {/* No record of the student's last visit exists: nothing is claimed new. */}
       <CommentsPanel workId={documentId} role="student" submitted={submitted} port={port} selection={selection} docSize={docSize}
-        seen={Number.POSITIVE_INFINITY} onJump={onJump} onSessionEnd={onSessionEnd} />
+        seen={seen} onJump={onJump} onSessionEnd={onSessionEnd} onSeen={onSeen} changes={readMyChanges} />
     </>
   );
 }

@@ -1,12 +1,11 @@
-import { portableRecordCall } from "./api";
+import { portableRecordCall, portableRecordIdFits } from "./api";
 
 /**
  * The portable record of a submission, the student's download (WEB-1304; plan M7.10).
  *
- * TODO(ugovor): student.portable-record.get is not in @ductura/contracts yet, and the answer is a
- * file, not JSON, so createApi cannot carry it. This is the one place the page reaches the route
- * (through portableRecordCall in api.ts, the only file allowed an API URL); the transport is injectable.
- * When the contract has the route this moves onto createApi and keeps its result type.
+ * The route is student.portable-record.get of the contract. The answer is a file, not JSON, so
+ * createApi cannot carry it: portableRecordCall, in the client module that owns API paths, takes the contract's path and this module
+ * reads the answer. The id must fit the contract's params before anything is sent.
  *
  * The answer maps onto one closed table, and the page never says more than it knows:
  * - 200 with a non-empty body is `ready` with the bytes the server sent, untouched;
@@ -23,8 +22,6 @@ export type PortableRecordOptions = {
   readonly transport?: Parameters<typeof portableRecordCall>[0];
 };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function filenameOf(header: string | null, submissionId: string): string {
   const named = header === null ? null : /filename="?([A-Za-z0-9._-]{1,120})"?/.exec(header)?.[1];
   return named ?? `prenosivi-zapis-${submissionId.slice(0, 8).toLowerCase()}.zip`;
@@ -33,7 +30,7 @@ function filenameOf(header: string | null, submissionId: string): string {
 export async function downloadPortableRecord(
   submissionId: string, options: PortableRecordOptions = {},
 ): Promise<PortableRecordResult> {
-  if (!UUID.test(submissionId)) return { kind: "notFound" };
+  if (!portableRecordIdFits(submissionId)) return { kind: "notFound" };
   try {
     const response = await portableRecordCall(options.transport, options.baseUrl)(submissionId);
     if (response.status === 401) return { kind: "signedOut" };

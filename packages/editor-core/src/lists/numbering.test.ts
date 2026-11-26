@@ -1,37 +1,27 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 
-import { numberedListNumbers } from "./numbering";
+import { orderedListNumbers } from "./numbering";
 
-const item = (level: number) => ({ type: "numberedItem", level });
+const item = { type: "orderedItem" };
 const para = { type: "paragraph" };
 
-describe("numberedListNumbers (WEB-1608)", () => {
-  it("numbers a nested list 1., 1.1., 1.2., 2., 2.1.", () => {
-    expect(numberedListNumbers([item(1), item(2), item(2), item(1), item(2)])).toEqual(["1.", "1.1.", "1.2.", "2.", "2.1."]);
+describe("orderedListNumbers (contract v4 §2.2)", () => {
+  it("numbers a run of consecutive items from 1 by position", () => {
+    expect(orderedListNumbers([item, item, item])).toEqual(["1.", "2.", "3."]);
   });
 
-  it("goes to three levels and back", () => {
-    expect(numberedListNumbers([item(1), item(2), item(3), item(3), item(2), item(1)])).toEqual([
-      "1.", "1.1.", "1.1.1.", "1.1.2.", "1.2.", "2.",
-    ]);
+  it("restarts at 1 after any other block, which gets no number", () => {
+    expect(orderedListNumbers([item, item, para, item])).toEqual(["1.", "2.", null, "1."]);
+    expect(orderedListNumbers([item, { type: "bulletItem" }, item])).toEqual(["1.", null, "1."]);
+    expect(orderedListNumbers([item, { type: "heading" }, item, item])).toEqual(["1.", null, "1.", "2."]);
   });
 
-  it("restarts after any other block and gives it no number", () => {
-    expect(numberedListNumbers([item(1), item(1), para, item(1)])).toEqual(["1.", "2.", null, "1."]);
-    expect(numberedListNumbers([item(1), { type: "bulletItem" }, item(1)])).toEqual(["1.", null, "1."]);
-  });
-
-  it("never skips a level: a deeper first item counts as one level deeper", () => {
-    expect(numberedListNumbers([item(3), item(3), item(3)])).toEqual(["1.", "1.1.", "1.1.1."]);
-    expect(numberedListNumbers([item(1), item(3)])).toEqual(["1.", "1.1."]);
-  });
-
-  it("clamps a wrong level into 1..3 and reads a missing one as 1", () => {
-    expect(numberedListNumbers([item(0), { type: "numberedItem" }, item(9)])).toEqual(["1.", "2.", "2.1."]);
+  it("has no levels: a stray level field does not nest", () => {
+    expect(orderedListNumbers([{ type: "orderedItem", level: 3 } as { type: string }, { type: "orderedItem", level: 1 } as { type: string }])).toEqual(["1.", "2."]);
   });
 
   it("is empty for an empty document", () => {
-    expect(numberedListNumbers([])).toEqual([]);
+    expect(orderedListNumbers([])).toEqual([]);
   });
 });

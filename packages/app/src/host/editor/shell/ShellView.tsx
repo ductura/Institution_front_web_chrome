@@ -14,7 +14,7 @@ import { EditorShortcutListHost } from "../shortcuts/EditorShortcutListHost";
 import { shellHr as t } from "./messages.hr";
 import styles from "./ShellView.module.css";
 import {
-  DEFAULT_VIEW, keepWidths, readWidths, shellCss, WIDTH_KEYS, withOutline, withWidth, type ShellMode, type ShellView as View, type Side,
+  DEFAULT_VIEW, keepWidths, readWidths, shellCss, watchWidths, WIDTH_KEYS, withOutline, withWidth, type ShellMode, type ShellView as View, type Side,
 } from "./shell-model";
 
 export type ShellViewProps = {
@@ -30,6 +30,8 @@ export type ShellViewProps = {
 export function ShellView({ children, teacherHref, mode = "write", editable = true }: ShellViewProps) {
   const [view, setView] = useState<View>(DEFAULT_VIEW);
   useEffect(() => setView((v) => ({ ...v, widths: readWidths() })), []);
+  // ED-39: the dialog "Prilagodi panel" chooses the same widths; the menu follows it.
+  useEffect(() => watchWidths((widths) => setView((v) => ({ ...v, widths }))), []);
   // Typing is off while only the headings are shown: the editor is inert for that time.
   useEffect(() => {
     if (!view.outlineOnly) return;

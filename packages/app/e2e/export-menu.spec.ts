@@ -51,7 +51,9 @@ test.describe("ED-06 Izvezi", () => {
     await openEditor(page);
     await exportMenu(page).click();
     const names = await page.getByRole("menuitem").allInnerTexts();
-    expect(names.map((n) => n.trim())).toEqual(["Pregled ispisa", "Stavi tekst rada u međuspremnik"]);
+    // WEB-V21-STEM-LATEX-IZVOZ: the LaTeX item follows; the fixture's work is not in schema v4, so it is off and says why.
+    expect(names.map((n) => n.trim().split("\n")[0])).toEqual(["Pregled ispisa", "Stavi tekst rada u međuspremnik", "LaTeX (rad.tex)"]);
+    await expect(item(page, "LaTeX (rad.tex)")).toBeDisabled();
   });
 
   test("Pregled ispisa opens the print preview", async ({ page }) => {

@@ -4,36 +4,23 @@
  * the browser (a PDF never leaves the device); only the JPEG of the chosen
  * rectangle, its page and an optional note are sent.
  *
- * Routes (same origin, with the session cookie):
- * - GET  <proofs> with no body: 200 { proofs: SourceProof[] };
- * - POST <proofs> multipart { image, page, note? }: 201 SourceProof;
- * - GET  <imagePath> with no body: 200 image/jpeg.
- * where <proofs> is `student/assignments/{assignmentId}/sources/{sourceId}/proofs`
- * under SERVER_PREFIX.
- *
- * TODO(ugovor): the routes are not in @ductura/contracts yet (no SRV card on
- * the migration base). Multipart and a JPEG answer are outside what createApi
- * reads, so, like EditorPage.scope.ts, this module calls api.ts's
- * browserTransport and checks every answer against the closed local shapes
- * below. When the contract carries them, the shapes move there. An input that
- * breaks a shape is never sent (`odbijeno`).
+ * Routes come from the contract (migration-contracts.generated.json, DAN-1558):
+ * - student.source-proofs.get through createApi, which checks the answer;
+ * - student.source-proofs.post is multipart, which createApi does not send, so
+ *   the path is the contract's and the 201 is checked with responseMatches;
+ * - student.source-proof-image.get answers a JPEG, read here as bytes.
+ * An input that breaks a shape is never sent (`odbijeno`).
  */
 
-import { browserTransport, SERVER_PREFIX } from "./api";
+import { browserTransport, createApi, responseMatches, type ApiResult } from "./api";
+import migrationContracts from "./migration-contracts.generated.json" with { type: "json" };
+import type { MigrationOperations } from "./migration-contract-types.generated";
 import { matchesSchema, type Schema } from "./schema-check";
 
-export type SourceProof = {
-  readonly id: string;
-  readonly sourceId: string;
-  /** The page of the source the cut-out is from, as the student wrote it ("14", "xii"). */
-  readonly page: string;
-  readonly note: string | null;
-  readonly createdAt: string;
-  /** Bytes of the stored JPEG. */
-  readonly size: number;
-  /** Same-origin path of the JPEG, under this proof's own route. */
-  readonly imagePath: string;
-};
+type ProofBody = MigrationOperations["student.source-proofs.get"]["success"]["body"]["proofs"][number];
+
+/** A proof as the contract gives it (id, page, note, imagePath) and the source it was asked for. */
+export type SourceProof = ProofBody & { readonly sourceId: string };
 
 export type ProofDraft = {
   /** The cut-out, already encoded as JPEG by the browser. */
@@ -63,42 +50,23 @@ export type ProofsOptions = {
   readonly transport?: typeof browserTransport;
 };
 
-/** Limits of the local shape (proposal; the server checks them again). */
+/** Limits: page and note are the contract's; the image limit is the local proposal (the server checks again). */
 export const PROOF_IMAGE_MAX_BYTES = 400_000;
-export const PROOF_PAGE_MAX = 20;
-export const PROOF_NOTE_MAX = 500;
-export const PROOFS_MAX = 50;
+export const PROOF_PAGE_MAX = 30;
+export const PROOF_NOTE_MAX = 2000;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SEGMENT = /^[A-Za-z0-9_~-][A-Za-z0-9._~-]*$/;
 const JPEG = "image/jpeg";
 
-const UUID_SCHEMA: Schema = { type: "string", pattern: UUID.source };
-const PROOF: Schema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["id", "sourceId", "page", "note", "createdAt", "size", "imagePath"],
-  properties: {
-    id: UUID_SCHEMA,
-    sourceId: UUID_SCHEMA,
-    page: { type: "string", minLength: 1, maxLength: PROOF_PAGE_MAX },
-    note: { anyOf: [{ type: "null" }, { type: "string", minLength: 1, maxLength: PROOF_NOTE_MAX }] },
-    createdAt: { type: "string", format: "date-time" },
-    size: { type: "integer", minimum: 1, maximum: PROOF_IMAGE_MAX_BYTES },
-    imagePath: { type: "string", minLength: 1, maxLength: 512 },
-  },
-};
-const PROOFS: Schema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["proofs"],
-  properties: { proofs: { type: "array", maxItems: PROOFS_MAX, items: PROOF } },
-};
+const PROOFS_ROUTE = migrationContracts["student.source-proofs.get"];
+const PROOF_ROUTE = migrationContracts["student.source-proofs.post"];
+const PROOF_SCHEMA = PROOF_ROUTE.responses["201"].content["application/json"].schema as Schema;
 
 /** The proofs route of one source of one work; null unless both are UUIDs. */
 export function proofsPath(assignmentId: string, sourceId: string): string | null {
   if (!UUID.test(assignmentId) || !UUID.test(sourceId)) return null;
-  return `${SERVER_PREFIX}student/assignments/${assignmentId}/sources/${sourceId}/proofs`;
+  return PROOFS_ROUTE.path.replace("{assignmentId}", assignmentId).replace("{sourceId}", sourceId);
 }
 
 /** The page as it is sent: trimmed, inner runs of space made one. */
@@ -129,12 +97,10 @@ export function imagePathFits(imagePath: string, assignmentId: string, sourceId:
   return rest.length >= 1 && rest.length <= 3 && rest.every((part) => SEGMENT.test(part) && part !== "." && part !== "..");
 }
 
-/** A proof of the shape that also names this source and a path under its route. */
-function proofOf(body: unknown, assignmentId: string, sourceId: string): SourceProof | null {
-  if (!matchesSchema(PROOF, body)) return null;
-  const proof = body as SourceProof;
-  if (proof.sourceId !== sourceId || !imagePathFits(proof.imagePath, assignmentId, sourceId)) return null;
-  return proof;
+/** A proof the contract accepts that also has a path under this source's own route. */
+function proofOf(body: ProofBody, assignmentId: string, sourceId: string): SourceProof | null {
+  if (!imagePathFits(body.imagePath, assignmentId, sourceId)) return null;
+  return { ...body, sourceId };
 }
 
 function failure(status: number): ProofFailure {
@@ -148,23 +114,16 @@ function failure(status: number): ProofFailure {
   }
 }
 
-const isJson = (res: Response) => res.headers.get("content-type")?.startsWith("application/json") === true;
 const UNKNOWN = { kind: "nepoznato" } as const;
 
-/** The proofs of one source, oldest first as the server keeps them. */
+/** The proofs of one source, as the server keeps them. */
 export async function listProofs(assignmentId: string, sourceId: string, options: ProofsOptions = {}): Promise<ProofsRead> {
-  const path = proofsPath(assignmentId, sourceId);
-  if (path === null) return { kind: "greska", code: "not_found" };
-  const transport = options.transport ?? browserTransport;
+  if (proofsPath(assignmentId, sourceId) === null) return { kind: "greska", code: "not_found" };
+  const api = createApi({ baseUrl: options.baseUrl, fetchImpl: options.transport });
   try {
-    const res = await transport(new URL(path, options.baseUrl ?? globalThis.location.origin), {
-      method: "GET", credentials: "include", redirect: "manual", headers: { accept: "application/json" },
-    });
-    if (res.status !== 200) return failure(res.status);
-    if (!isJson(res)) return UNKNOWN;
-    const body: unknown = await res.json();
-    if (!matchesSchema(PROOFS, body)) return UNKNOWN;
-    const proofs = (body as { proofs: unknown[] }).proofs.map((p) => proofOf(p, assignmentId, sourceId));
+    const res: ApiResult<"student.source-proofs.get"> = await api("student.source-proofs.get", { params: { assignmentId, sourceId }, query: undefined, body: undefined });
+    if (!res.ok) return res.status === 0 ? UNKNOWN : failure(res.status);
+    const proofs = res.body.proofs.map((p) => proofOf(p, assignmentId, sourceId));
     if (proofs.some((p) => p === null)) return UNKNOWN;
     return { kind: "ok", proofs: proofs as SourceProof[] };
   } catch {
@@ -199,8 +158,11 @@ export async function uploadProof(
       method: "POST", credentials: "include", redirect: "manual", headers: { accept: "application/json" }, body: form,
     });
     if (res.status !== 201) return failure(res.status);
-    if (!isJson(res)) return UNKNOWN;
-    const proof = proofOf(await res.json(), assignmentId, sourceId);
+    if (res.headers.get("content-type")?.startsWith("application/json") !== true) return UNKNOWN;
+    const bytes = await res.arrayBuffer();
+    const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (!responseMatches("student.source-proofs.post", 201, body, bytes.byteLength) || !matchesSchema(PROOF_SCHEMA, body)) return UNKNOWN;
+    const proof = proofOf(body as ProofBody, assignmentId, sourceId);
     return proof === null ? UNKNOWN : { kind: "ok", proof };
   } catch {
     return UNKNOWN;

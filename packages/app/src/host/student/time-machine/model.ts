@@ -63,7 +63,7 @@ function inlineText(node: unknown, sources: readonly unknown[]): string {
   return childrenOf(node).map((child) => inlineText(child, sources)).join("");
 }
 
-const BLOCKS = new Set(["paragraph", "heading", "bulletItem", "quote", "numberedItem", "codeBlock", "box", "table", "tableRow", "tableCell", "tableHeader"]);
+const BLOCKS = new Set(["paragraph", "heading", "bulletItem", "quote", "orderedItem", "codeBlock", "box", "table", "tableRow", "tableCell", "tableHeader"]);
 
 /** One block becomes one or more text blocks: the paragraphs of a box and the cells of a table stay apart. */
 function collect(node: Record<string, unknown>, sources: readonly unknown[], out: TextBlock[]): void {

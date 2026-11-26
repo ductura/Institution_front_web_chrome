@@ -15,6 +15,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { appHref } from "../../../../../../src/components/index.ts";
 import { assignmentIdOf, editorWorkRead } from "../../../../../../src/components/editor/EditorPage.read.ts";
+import { withMentoredAssignments } from "../../../../../../src/components/student/mentored-assignments.ts";
 import { readSubmittedWork } from "../../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
 import ReplayView from "../../../../../../src/components/replay/ReplayView.tsx";
 import { pageHref, readAccessLogPage, type AccessLogCursor, type AccessLogRead } from "../access-log/read.ts";
@@ -57,7 +58,7 @@ export function useWorkDocument(raw: string, suffix: string): WorkDocument | nul
     }
     const here = appHref(base, `${workPath(assignmentId)}/${suffix}`);
     void (async () => {
-      const client = createApi();
+      const client = withMentoredAssignments(createApi());
       const [assignments, work] = await Promise.all([
         client("student.assignments.get", NONE).catch(() => UNREACHED),
         client("student.assignment-work.get", NONE).catch(() => UNREACHED),

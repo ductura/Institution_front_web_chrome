@@ -96,7 +96,7 @@ function block(node: DocumentNodeV4, ctx: Ctx): string {
     case "paragraph": return inline(node.children, ctx);
     case "quote": return `\\begin{quote}\n${inline(node.children, ctx)}\n\\end{quote}`;
     case "bulletItem":
-    case "numberedItem": return `\\item ${inline(node.children, ctx)}`;
+    case "orderedItem": return `\\item ${inline(node.children, ctx)}`;
     case "formula": return `\\begin{equation}\\label{${labelOf("formula", node.id)}}\n${node.tex}\n\\end{equation}`;
     case "codeBlock": {
       const caption = node.caption ? `,caption={${texEscape(node.caption)}}` : "";
@@ -127,7 +127,7 @@ export function buildTex(doc: CanonicalDocumentV4, opts: TexOptions): string {
   let list: "itemize" | "enumerate" | null = null;
   const close = () => { if (list !== null) { body.push(`\\end{${list}}`); list = null; } };
   for (const node of doc.nodes) {
-    const want = node.type === "bulletItem" ? "itemize" : node.type === "numberedItem" ? "enumerate" : null;
+    const want = node.type === "bulletItem" ? "itemize" : node.type === "orderedItem" ? "enumerate" : null;
     if (want !== list) { close(); if (want !== null) { body.push(`\\begin{${want}}`); list = want; } }
     body.push(block(node, ctx));
   }

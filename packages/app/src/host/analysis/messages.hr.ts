@@ -1,0 +1,21 @@
+/** WEB-V15-STRANICA: texts of the page "Statistička analiza"; the parts keep their own texts in their own folders. */
+export const analysisPageMessages = {
+  title: "Statistička analiza",
+  lead: "Učitajte skup podataka, odaberite analizu i pogledajte rezultat. Isti podaci i ista verzija analize uvijek daju isti rezultat.",
+  inventedBadge: "izmišljeni podaci",
+  notSaved: "Podaci se ne spremaju. Skup ostaje u ovom pregledniku i šalje se samo u zahtjevu za izračun.",
+  loading: "Učitavanje popisa analiza…",
+  off: "Funkcija nije uključena.",
+  offBody: "Statistička analiza trenutačno nije uključena za ovu ustanovu.",
+  unavailable: "Popis analiza trenutačno nije dostupan. Pokušajte ponovno.",
+  failed: "Popis analiza nije moguće učitati.",
+  retry: "Pokušaj ponovno",
+  stepsLabel: "Koraci analize",
+  steps: { dataset: "Skup podataka", analysis: "Analiza", result: "Rezultat" },
+  stepOf: "Korak {n} od 3",
+  next: "Dalje",
+  back: "Natrag",
+  newAnalysis: "Nova analiza",
+  needDataset: "Za nastavak učitajte skup podataka.",
+  needRun: "Rezultat se pojavljuje nakon izračuna.",
+} as const;

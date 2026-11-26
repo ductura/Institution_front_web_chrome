@@ -22,7 +22,7 @@ describe("Karta podrijetla with the assistant match", () => {
     const host = document.createElement("div");
     document.body.append(host);
     root = createRoot(host);
-    await act(async () => { root?.render(h(ProvenanceMap, { documentId: DOCUMENT, call: marked, matchCall: call })); });
+    await act(async () => { root?.render(h(ProvenanceMap, { documentId: DOCUMENT, call: marked, matchCall: call, textCall: async () => ({ kind: "noRanges" as const }) })); });
     return { host, calls };
   };
 

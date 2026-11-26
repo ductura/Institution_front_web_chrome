@@ -18,5 +18,5 @@ export function PregledHost({ editor, assignmentId, documentId }: Pick<Props, "e
     }).catch(() => { if (live) setIds(null); });
     return () => { live = false; };
   }, [assignmentId]);
-  return <PregledGroup editor={editor} documentId={documentId} enabledCheckIds={ids} />;
+  return <PregledGroup editor={editor} documentId={documentId} assignmentId={assignmentId} enabledCheckIds={ids} />;
 }
