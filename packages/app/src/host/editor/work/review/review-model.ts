@@ -1,5 +1,6 @@
 import { returnStatus } from "../../../../../../../src/client/return-for-revision.ts";
 import type { RevisionRequest } from "../../../../../../../src/client/revision-requests.ts";
+import { sendRevisionStatus } from "../../../../../../../src/client/revision-send.ts";
 
 /** What the review cards decide from the revision requests the server listed. */
 export type RoundView =
@@ -41,9 +42,9 @@ export type RevisionPort = {
 
 /**
  * Live port: "Vrati na doradu" is `work.return-for-revision.post` (WEB-2155B). The deadline is optional here, as on
- * the work page; "send" is still not in the contract extract, so it stays unavailable.
+ * the work page. ED-43: "Pošalji doradu" is `collaboration.revision-send.post` (SRV vlak #807).
  */
 export const LIVE_PORT: RevisionPort = {
-  send: null,
+  send: ({ documentId, message }) => sendRevisionStatus(documentId, message),
   returnForRevision: ({ documentId, instruction, dueAt }) => returnStatus(documentId, instruction, dueAt),
 };
