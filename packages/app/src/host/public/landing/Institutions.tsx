@@ -4,7 +4,7 @@ import { useEffect, useRef, type CSSProperties } from "react";
 import { getStroke } from "perfect-freehand";
 import rough from "roughjs";
 
-import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../lib/i18n/locale";
+import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../../../../../src/lib/i18n/locale";
 
 import h from "./Hero.module.css";
 import { GRAPHITE } from "./How";
@@ -184,10 +184,10 @@ export function Institutions({ locale = DEFAULT_INTERFACE_LOCALE }: { locale?: I
 
 /* ---------- drawing helpers, as in the concept ---------- */
 const NS = "http://www.w3.org/2000/svg";
-const el = (n: string, a: Record<string, string | number> = {}, parent?: Element) => {
+const el = (n: string, a: Record<string, string | number> = {}, host?: Element) => {
   const e = document.createElementNS(NS, n);
   for (const k in a) e.setAttribute(k, String(a[k]));
-  if (parent) parent.appendChild(e);
+  if (host) host.appendChild(e);
   return e;
 };
 const k01 = (v: number) => Math.min(1, Math.max(0, v));

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../lib/i18n/locale";
+import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../../../../../src/lib/i18n/locale";
 
 import { CommentIcon, ConversationIcon, OriginMapIcon, ProcessSummaryIcon } from "./icons";
 import l from "./Landing.module.css";

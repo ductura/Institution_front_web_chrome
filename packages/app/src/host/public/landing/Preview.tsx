@@ -2,8 +2,8 @@
 
 import { memo, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 
-import { pluralHr } from "../../lib/i18n/hr";
-import { messagesHr } from "../../lib/i18n/messages.hr";
+import { pluralHr } from "../../../../../../src/lib/i18n/hr";
+import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr";
 
 import {
   BulletListIcon,

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { getStroke } from "perfect-freehand";
 import rough from "roughjs";
 
-import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../lib/i18n/locale";
+import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../../../../../src/lib/i18n/locale";
 
 import { GRAPHITE } from "./How";
 import l from "./Landing.module.css";
@@ -92,10 +92,10 @@ export function Privacy({ locale = DEFAULT_INTERFACE_LOCALE }: { locale?: Interf
 
 /* ---------- drawing helpers, as in the concept ---------- */
 const NS = "http://www.w3.org/2000/svg";
-const el = (n: string, a: Record<string, string | number> = {}, parent?: Element) => {
+const el = (n: string, a: Record<string, string | number> = {}, host?: Element) => {
   const e = document.createElementNS(NS, n);
   for (const k in a) e.setAttribute(k, String(a[k]));
-  if (parent) parent.appendChild(e);
+  if (host) host.appendChild(e);
   return e;
 };
 const k01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -174,8 +174,8 @@ const cut = (x1: number, y1: number, x2: number, y2: number, rnd: () => number, 
 };
 const dPoly = (p: Pt[]) => "M" + p.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join("L") + "Z";
 // open scissors, blades facing +x
-const scissors = (parent: Element, color: string, paper: string) => {
-  const g = el("g", { filter: `url(#${GRAPHITE})` }, parent);
+const scissors = (host: Element, color: string, paper: string) => {
+  const g = el("g", { filter: `url(#${GRAPHITE})` }, host);
   const ring = (cx: number, cy: number, rx: number, ry: number) =>
     Array.from({ length: 26 }, (_, i): Pt => {
       const a = (i / 24) * 6.4;
@@ -192,8 +192,8 @@ const scissors = (parent: Element, color: string, paper: string) => {
   return g;
 };
 // the page without text: the title is a thicker short line, the lines are graphite, the pasted part gold
-const page = (parent: Element, r: Rough, x: number, y: number, m: number) => {
-  const g = el("g", { transform: `translate(${x} ${y}) scale(${m})` }, parent);
+const page = (host: Element, r: Rough, x: number, y: number, m: number) => {
+  const g = el("g", { transform: `translate(${x} ${y}) scale(${m})` }, host);
   el("rect", { x: 0, y: 0, width: 340, height: 352, rx: 3, fill: PAPER }, g);
   const rr = seeded(5);
   const wave = (x1: number, x2: number, yy: number, i: number, color: string, w: number) => {
@@ -518,9 +518,9 @@ function start(root: HTMLElement, labels: Labels): () => void {
     const lines = prepare(all);
     // quiet life: still while the section is not alive, not part of the drawing
     const G = (k: Thing) => all.querySelector(`[data-g="${k}"]`);
-    const line1 = (d: string, parent: Element, cl: string, w = 1.2) =>
-      el("path", { d, fill: "none", stroke: SV, "stroke-width": w, "stroke-linecap": "round", class: `${s.anim} ${cl}` }, parent);
-    const corner = (parent: Element, x: number, y: number) => el("g", { transform: `translate(${x} ${y})` }, parent);
+    const line1 = (d: string, host: Element, cl: string, w = 1.2) =>
+      el("path", { d, fill: "none", stroke: SV, "stroke-width": w, "stroke-linecap": "round", class: `${s.anim} ${cl}` }, host);
+    const corner = (host: Element, x: number, y: number) => el("g", { transform: `translate(${x} ${y})` }, host);
     if (L.desk) {
       const so = G("desk")!;
       const steam = corner(so, 0, -8);

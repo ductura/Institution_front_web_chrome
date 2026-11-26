@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { annotate, annotationGroup } from "rough-notation";
 
-import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../lib/i18n/locale";
+import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../../../../../src/lib/i18n/locale";
 
 import l from "./Landing.module.css";
 import s from "./Questions.module.css";

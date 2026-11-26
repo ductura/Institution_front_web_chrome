@@ -1,6 +1,6 @@
-import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../lib/i18n/locale";
+import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../../../../../src/lib/i18n/locale";
 
-import { appHref } from "../shell/nav";
+import { appHref } from "../../../../../../src/components/shell/nav";
 
 import s from "./Download.module.css";
 import h from "./Hero.module.css";

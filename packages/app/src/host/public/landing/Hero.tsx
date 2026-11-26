@@ -1,6 +1,6 @@
-import { messagesHr } from "../../lib/i18n/messages.hr";
+import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr";
 
-import { appHref } from "../shell/nav";
+import { appHref } from "../../../../../../src/components/shell/nav";
 
 import styles from "./Hero.module.css";
 import { Preview } from "./Preview";

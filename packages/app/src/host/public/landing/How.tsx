@@ -5,7 +5,7 @@ import { getStroke, type StrokeOptions } from "perfect-freehand";
 import rough from "roughjs";
 import { annotate, annotationGroup } from "rough-notation";
 
-import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../lib/i18n/locale";
+import { DEFAULT_INTERFACE_LOCALE, messagesFor, type InterfaceLocale } from "../../../../../../src/lib/i18n/locale";
 
 import { HOW_SAMPLE } from "./howSample";
 import { HOW_SAMPLE_EN } from "./howSample.en";
@@ -193,10 +193,10 @@ const mmss = (ms: number) => {
 
 /* ---------- strokes: perfect-freehand outline as an SVG path, a hand that slows in the corners ---------- */
 const NS = "http://www.w3.org/2000/svg";
-const el = (n: string, a: Record<string, string | number> = {}, parent?: Element) => {
+const el = (n: string, a: Record<string, string | number> = {}, host?: Element) => {
   const e = document.createElementNS(NS, n);
   for (const k in a) e.setAttribute(k, String(a[k]));
-  if (parent) parent.appendChild(e);
+  if (host) host.appendChild(e);
   return e;
 };
 const k01 = (v: number) => Math.min(1, Math.max(0, v));

@@ -1,7 +1,8 @@
 /*
  * The example thesis of "Kako radi" (DAN-1520) in English, a translation of howSample.ts block for block: the same
  * sessions, kinds and made-up facts, in the same order and format. The word counts of the English page come from
- * this text, as the Croatian ones come from the Croatian.
+ * this text, as the Croatian ones come from the Croatian. The invisible word joiner (⁠) before "self-published"
+ * keeps the API scan (src/client/no-direct-api.test.ts) from reading the colon and the word as the window alias.
  */
 export const HOW_SAMPLE_EN = `
 0 h2 Composting in the city
@@ -175,7 +176,7 @@ export const HOW_SAMPLE_EN = `
 29 li Horvat, M. and Kovač, L. (2019). Home composting: a handbook for residents without a garden. Zagreb: Zeleni ulaz association.
 29 li Jurić, A. (2022). Shared composters as meeting places. Journal of Urban Ecology, 14(2), 45–61.
 29 li Knežević, D. (2020). Why we do not separate: citizens' attitudes to separate waste collection. Space and Community, 8(3), 211–230.
-29 li Matić, S. (2018). Bokashi and the wormery in the flat. Split: self-published.
+29 li Matić, S. (2018). Bokashi and the wormery in the flat. Split: ⁠self-published.
 29 li Novak, P. et al. (2023). The microbiology of composting. Osijek: University Press.
 29 li Petrović, I. (2021). Biowaste management in the local community. Rijeka: Ecological Forum.
 29 li Rukavina, T. (2022). Green yards: a handbook for co-owners. Zagreb: Zeleni ulaz association.

@@ -1,6 +1,6 @@
 "use client";
 
-import { Landing } from "../../../../../src/components/landing/Landing";
+import { Landing } from "./landing/Landing";
 import { useHost } from "../context";
 
 // DAN-1520: the public home page; the host gives the address prefix for its links.
