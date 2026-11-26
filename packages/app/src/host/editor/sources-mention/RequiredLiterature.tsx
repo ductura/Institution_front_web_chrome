@@ -8,7 +8,7 @@ import { liveRequiredLiterature, type LiteratureRead } from "./required-literatu
 
 export function RequiredLiteratureView({ read, onRetry }: { read: LiteratureRead; onRetry: () => void }) {
   return <section aria-label={t.requiredHeading} data-required-literature>
-    <h3>{t.requiredHeading}</h3>
+    <p><b>{t.requiredHeading}</b></p>
     {read.kind === "loading" ? <p role="status">{t.requiredLoading}</p>
       : read.kind === "unavailable" ? <div role="alert">
         <p>{t.requiredUnavailable}</p>

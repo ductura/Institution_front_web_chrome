@@ -61,5 +61,7 @@ describe("EDI-R11 obvezna literatura: view", () => {
     const list = html({ kind: "ready", sources: [{ id: "s1", label: "Izmišljena knjiga" }] });
     expect(list).toContain("<li>Izmišljena knjiga</li>");
     expect(list).toContain(t.requiredHeading);
+    // A heading here would skip a level in the sources card (WCAG 1.3.1, e2e/a11y/screens.spec.ts).
+    expect(list).not.toMatch(/<h[1-6]/);
   });
 });
