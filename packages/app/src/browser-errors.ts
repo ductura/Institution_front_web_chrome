@@ -1,10 +1,10 @@
 // DAN-1568: what the browser may say about an error nobody caught: its kind,
-// a class of four words, the app's route and the app's version. Never the
+// a class of four words, the page of the app as a code and the app's version,
+// the four fields of client.error.post (ductura/Institution_server#795). Never the
 // message, the stack, a file name, the address with its query, or anything
 // typed into a field. Pure functions and one small reporter; the sender is
 // given from outside and goes through src/client/api.ts once the institution
 // server has a route for it. Until then nothing here is installed.
-import { PAGES } from "./routes";
 
 export const BROWSER_ERROR_KINDS = ["error", "unhandledrejection", "render"] as const;
 export type BrowserErrorKind = (typeof BROWSER_ERROR_KINDS)[number];
@@ -12,12 +12,30 @@ export type BrowserErrorKind = (typeof BROWSER_ERROR_KINDS)[number];
 export const BROWSER_ERROR_CLASSES = ["type_error", "range_error", "reference_error", "syntax_error", "other"] as const;
 export type BrowserErrorClass = (typeof BROWSER_ERROR_CLASSES)[number];
 
+/** The codes of client.error.post for the pages of this app; any other path is "other". */
+export const PAGE_CODES: Readonly<Record<string, string>> = Object.freeze({
+  "/": "home",
+  "/kako-radi": "how_it_works",
+  "/rad": "work",
+  "/upis": "enroll",
+  "/zadaci": "assignments",
+  "/zadaci/kolegiji": "assignment_courses",
+  "/zadaci/radovi": "assignment_works",
+  "/nastavnik": "teacher",
+  "/nastavnik/brz-put": "teacher_fast_path",
+  "/nastavnik/mentorstva": "teacher_mentorships",
+  "/ustanova": "institution",
+  "/ustanova/kolegiji": "institution_courses",
+  "/ustanova/korisnici": "institution_users",
+  "/ustanova/pravila": "institution_rules",
+});
+
 export type BrowserErrorRecord = {
-  readonly kind: BrowserErrorKind;
+  readonly appVersion: string;
   readonly errorClass: BrowserErrorClass;
-  /** A route of the app as written in routes.ts, or "other". Never the address. */
-  readonly route: string;
-  readonly version: string;
+  readonly kind: BrowserErrorKind;
+  /** A code of PAGE_CODES or "other". Never the address. */
+  readonly page: string;
 };
 
 /** The class of a thrown value from its prototype alone; never throws, never reads a property. */
@@ -33,9 +51,9 @@ export function errorClassOf(value: unknown): BrowserErrorClass {
   return "other";
 }
 
-/** The route as the app names it: one of PAGES, "/" or "other". An id or a query never passes. */
-export function routeName(route: string): string {
-  return route === "/" || PAGES.some((page) => page.path === route) ? route : "other";
+/** The page code of an app route. An id, a query or an unknown path is "other"; an inherited name never matches. */
+export function pageCode(route: string): string {
+  return Object.hasOwn(PAGE_CODES, route) ? PAGE_CODES[route]! : "other";
 }
 
 const VERSION = /^\d{1,4}\.\d{1,4}\.\d{1,4}$/;
@@ -72,7 +90,7 @@ export function createBrowserErrorReporter(options: {
         const key = `${kind}:${errorClass}`;
         if (seen.has(key) || seen.size >= limit) return false;
         seen.add(key);
-        const record: BrowserErrorRecord = { kind, errorClass, route: routeName(options.route()), version };
+        const record: BrowserErrorRecord = { appVersion: version, errorClass, kind, page: pageCode(options.route()) };
         const sent = options.send(Object.freeze(record));
         // A rejected send is an unhandled rejection of its own unless it is caught here.
         if (sent instanceof Promise) sent.catch(() => undefined);
