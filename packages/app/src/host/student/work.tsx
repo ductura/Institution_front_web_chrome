@@ -118,8 +118,9 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       const bar = <WorkspaceTopBar assignmentId={assignmentId} base={base} title={title} subtitle={subtitle}
         readOnly={frame.variant === "predano"} inert={frame.variant === "greska"}
         useBeforeCount={frame.variant === "puno" ? beforeSubmissionFor(assignmentId) : undefined} />;
+      // F4-EDI-R14: "Kako vidi nastavnik" leads to the student's own read-only view (no teacher data).
       // WEB-2136: view mode, "samo naslovi" and panel widths, only where the panels are (the full editor).
-      const topBar = frame.variant === "puno" ? <ShellView>{bar}</ShellView> : bar;
+      const topBar = frame.variant === "puno" ? <ShellView teacherHref={appHref(base, `/rad/${assignmentId}/nastavnik`)}>{bar}</ShellView> : bar;
       const length = { words: null, range: frame.range };
       // WEB-V13-UREDNIK: a slides work in progress opens the slides editor, anything else the text editor below.
       // Its top bar is the plain one: the shell view switches and the history buttons only work on the text editor.
