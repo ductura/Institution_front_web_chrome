@@ -42,6 +42,7 @@ export const submitText = {
   // NF-3 PR-17, Daniel's answer 3: late after the deadline, late by the teacher's exception, and not open.
   late: {
     past: "Rok je prošao {due}. Predaja će biti označena kao predaja nakon roka; dopušta li zadatak predaju nakon roka, poslužitelj provjerava pri predaji.",
+    pastAllowed: "Rok je prošao {due}. Zadatak dopušta predaju nakon roka; predaja će biti označena kao predaja nakon roka.",
     exception: "Rok je prošao {due}. Nastavnik je za Vas iznimno odobrio kasnu predaju do {until}. Predaja će biti označena kao predaja nakon roka.",
     exceptionTag: "Iznimka do {until}",
     exceptionDue: "Rok iznimke",

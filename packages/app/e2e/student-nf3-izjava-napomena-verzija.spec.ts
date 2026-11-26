@@ -58,6 +58,8 @@ type Answers = {
   addNote?: number;
   /** The moment of the page. */
   now?: string;
+  /** F4-PRE-R01: the late rule and the late exceptions answer 503, so the page does not know the rule. */
+  lateUnknown?: boolean;
 };
 
 /** The "puno" student on T1, with the declaration, the text and the notes of this test. */
@@ -79,6 +81,9 @@ async function student(page: Page, answers: Answers = {}) {
     }
     if (req.method() === "POST" && path === "/api/v1/evidence/open") return route.fulfill({ json: OPENED });
     if (req.method() === "GET" && path.endsWith("/submission-notes")) return route.fulfill({ json: { notes } });
+    if (answers.lateUnknown && req.method() === "GET" && /\/late-submission(-exceptions)?$/.test(path)) {
+      return route.fulfill({ status: 503, json: { status: "unavailable" } });
+    }
     if (req.method() === "POST" && path === "/api/v1/student/submission-notes") {
       if ((answers.addNote ?? 201) !== 201) return route.fulfill({ status: answers.addNote, json: { status: "unavailable" } });
       const note = { ...NOTE, text: (req.postDataJSON() as { text: string }).text };
@@ -182,7 +187,7 @@ test("PR-6: an answer that does not add the note is an alert, and nothing is sho
 
 test("PR-17: after the deadline step 3 says calmly that the submission will be marked late, and names no consequence", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
-  await student(page, { now: "2026-11-10T12:00:00+01:00" });
+  await student(page, { now: "2026-11-10T12:00:00+01:00", lateUnknown: true });
   await page.goto(`/app/web/rad/${T1}/predaja/pregled`);
   const late = main(page).locator("#sb-late");
   await expect(late).toHaveText(/^Rok je prošao 8\. 11\. 2026\. u 23:59\. Predaja će biti označena kao predaja nakon roka;/);

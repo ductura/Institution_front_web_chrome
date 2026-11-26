@@ -74,6 +74,25 @@ describe("step 4 declaration gate (PIL-K-IZJAVA-VRATA)", () => {
     expect(submitWork).not.toHaveBeenCalled();
   });
 
+  it("a submission the assignment does not take after the deadline is said before the click and never sent (F4-PRE-R01)", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => {
+      root?.render(h(SubmitStep, { assignmentId: ASSIGNMENT, title: "Izmišljeni rad", stage: { kind: "closed", dueAt: "2026-11-01T10:00:00.000Z" },
+        dueAt: "2026-11-01T10:00:00.000Z", timing: { kind: "forbidden", dueAt: "2026-11-01T10:00:00.000Z" }, declarationGate: gateServer(() => CONFIRMED).read }));
+    });
+    await settle();
+    const button = submitButton(host);
+    expect(button?.getAttribute("aria-disabled")).toBe("true");
+    expect(button?.getAttribute("aria-describedby")).toBe("sb-late");
+    expect(host.querySelector("#sb-late")?.textContent).toContain("Predaja za ovaj zadatak više nije otvorena.");
+    expect(host.textContent).toContain(t.late.forbiddenMeta);
+    await trySubmit(host);
+    expect(document.querySelector("dialog[open]")).toBeNull();
+    expect(submitWork).not.toHaveBeenCalled();
+  });
+
   it("a declaration the server holds as confirmed opens sending", async () => {
     submitWork.mockResolvedValue({ kind: "nepoznato" });
     const host = await mount(gateServer(() => CONFIRMED).read);
