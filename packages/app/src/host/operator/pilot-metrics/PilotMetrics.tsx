@@ -3,7 +3,7 @@
 import { Button, Card, DataTable, type DataTableColumn } from "@ductura/ui";
 import { useEffect, useState } from "react";
 
-import { ACTION_LOG, PROBLEM_REPORTS } from "../paths";
+import { ACTION_LOG, PROBLEM_REPORTS, SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH } from "../paths";
 import { appHref } from "@/components/index";
 import { useHost } from "../../context";
 import { pilotMetricsMessages as t } from "./messages.hr";
@@ -76,6 +76,9 @@ export function PilotMetrics() {
       <nav aria-label={t.more}>
         <p><a href={appHref(base, ACTION_LOG)}>{t.actionLog}</a></p>
         <p><a href={appHref(base, PROBLEM_REPORTS)}>{t.problemReports}</a></p>
+        <p><a href={appHref(base, SYSTEM_HEALTH)}>{t.systemHealth}</a></p>
+        <p><a href={appHref(base, SYSTEM_EVENTS)}>{t.systemEvents}</a></p>
+        <p><a href={appHref(base, SECURITY_KEY)}>{t.securityKey}</a></p>
       </nav>
       {view.kind === "loading" && <Card title={t.overview} level={2} busy />}
       {view.kind === "denied" && <Card title={t.overview} level={2} error={t.denied} />}
