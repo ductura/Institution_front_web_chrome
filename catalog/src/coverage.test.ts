@@ -149,6 +149,7 @@ const PENDING_SCREEN_ENTRIES = new Set([
   "editor/mentor/milestones/StagesCard.tsx", // WEB: landed without a catalogue entry; awaits its lane.
   "editor/find-replace/FindReplaceBar.tsx", // WEB-1605: needs a live editor; its FindBar is catalogued in @ductura/ui.
   "editor/find/FindRow.tsx", // VIZ-E1: the prototype's single-row find bar; needs a live editor like FindReplaceBar, whose FindBar is catalogued in @ductura/ui.
+  "editor/ConflictDialog.tsx", // F4-EDI-R05: opens only for a work in CONFLICT, which needs a live evidence session; its Dialog and DiffView are catalogued in @ductura/ui.
   "editor/student-milestones/StudentMilestones.tsx", // WEB-1521: not mounted yet (needs the mentor work context); awaits its entry with the mount.
 ]);
 
