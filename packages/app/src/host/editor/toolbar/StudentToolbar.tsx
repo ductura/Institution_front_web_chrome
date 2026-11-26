@@ -11,7 +11,7 @@
 import "./text-size.css";
 
 import { useEffect, useState } from "react";
-import { Button, ContextMenu, type MenuEntry, type MenuPoint } from "@ductura/ui";
+import { Button, ContextMenu, type MenuEntry, type MenuPoint, type ShellTheme } from "@ductura/ui";
 import type { Editor } from "@tiptap/core";
 
 import { BLOCK_STYLES, blockStyleOf, stateOf, TOOLS, type ToolbarState as EditorState } from "@/components/editor/EditorToolbarFor";
@@ -54,6 +54,10 @@ import { canStep, DEFAULT_ZOOM, loadZoom, saveZoom, snapZoom, stepZoom, zoomPerc
 import { MobileQuickBar } from "./ToolbarBehaviour";
 import type { BlockStyle, ToolbarCommands, ToolbarState } from "./toolbar-model";
 import { DEFAULT_PREFS, loadPrefs, savePrefs, type ToolbarPrefs } from "./toolbar-prefs";
+import { currentShell, pendingViewItems, setShell, shellItems } from "./view-menu";
+
+/** The browser's storage, reached lazily: even reaching it can throw. */
+const localStore = () => window.localStorage;
 
 /** "Stavi tekst rada u međuspremnik": text with [n] marks and the footnote list (v3). False when refused. */
 async function copyWorkText(editor: Editor | null): Promise<boolean> {
@@ -234,6 +238,9 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     if (next === zoom) return;
     setZoom(next); saveZoom(next); applyZoom(next); toast(zoomToast(next));
   };
+  // ED-44: the app's own light or dark ("Ljuska"); read after mount, as the inline theme script set it.
+  const [shell, setShellTheme] = useState<ShellTheme>("dark");
+  useEffect(() => { setShellTheme(currentShell(document.documentElement, localStore)); }, []);
   const focused = useEditorFocused(editor);
   const [quickMore, setQuickMore] = useState<MenuPoint | null>(null);
   const openCrossReference = v3.openInsert ? () => v3.openInsert?.("crossReference") : undefined;
@@ -257,9 +264,11 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const view: Item[] = [
     { id: "dark", label: `${theme === "dark" ? "✓ " : ""}${t.workspace.sheetThemeDark}` },
     { id: "light", label: `${theme === "light" ? "✓ " : ""}${t.workspace.sheetThemeLight}` },
+    ...shellItems(shell),
     { id: "citationSettings", label: workPartsMessages.citationTitle },
     { id: "readingSettings", label: readingSettingsHr.menu },
     ...textSizeItems(zoom),
+    ...pendingViewItems(),
   ];
   return (
     <>
@@ -295,7 +304,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
         if (id === "citationSettings") setDialog("citation");
         else if (id === "readingSettings") setDialog("reading");
         else if (id === "textSmaller" || id === "textLarger") onZoom(id === "textSmaller" ? -1 : 1);
-        else setSheetTheme(id === "light" ? "light" : "dark");
+        else if (id === "shell:dark" || id === "shell:light") setShellTheme(setShell(document.documentElement, localStore, id === "shell:light" ? "light" : "dark"));
+        else if (id === "dark" || id === "light") setSheetTheme(id);
       }} />
       <Menu label={t.toolbar.export} items={[...exportMenuItems(editor), latexMenuItem(editor, confirmedWorkSchemaVersion, latexStyle)]}
         onSelect={(id) => {
