@@ -19,6 +19,7 @@ import type { Stage } from "../../../../../../../src/components/predaja/stage.ts
 import { readWork } from "../../../../../../../src/components/student/Submission.tsx";
 
 import FormatCheck from "../../../editor/format-check/FormatCheck";
+import SheetSummary from "../sheet/SheetSummary";
 import StepLink from "../steps/StepLink";
 import { stepsText } from "../steps/messages.hr";
 import { checksText as c } from "./messages.hr";
@@ -199,6 +200,8 @@ export default function BeforeSubmitStep({
             </>}
         </StepSection>
         <FormatCheck assignmentId={assignmentId} readWork={PORTS.readWork} />
+        {/* WEB-V14-SHEET-SUBMIT: a spreadsheet work shows its kind and counts; any other work shows nothing here. */}
+        <SheetSummary assignmentId={assignmentId} onSignIn={() => signIn.current()} />
         <StepLink href="#sb-notes" onClick={openNote}>{c.addNote}</StepLink>
         {online && nextHint !== undefined && <p className="meta" id={hint}>{nextHint}</p>}
         <StepActions>
