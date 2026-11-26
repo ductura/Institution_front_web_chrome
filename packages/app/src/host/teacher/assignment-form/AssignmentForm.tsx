@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   AI_PURPOSES, assignmentBody, type AssignmentCreation, type AssignmentDraft, type WorkType,
 } from "@/components/teacher/assignment-create";
-import { createApi } from "@/client/api";
+import { createApi, leaveFor } from "@/client/api";
 import { publishAssignment } from "@/components/teacher/TeacherSetup/assignment-mutations";
 import { assignmentSetupMessages as setup } from "@/components/teacher/TeacherSetup/messages.hr";
 import type { TeacherCourse } from "@/components/teacher/teacher-courses-read";
@@ -45,7 +45,8 @@ const loadOutlineDefault: LoadOutline = (workType) => readOutline(createApi() as
 type ApplyRules = (assignmentId: string, choices: RuleChoices) => Promise<RuleName[]>;
 type FormDraft = AssignmentDraft & { practice?: boolean; documentKind?: DocumentKind };
 type Navigate = (href: string) => void;
-const goTo: Navigate = (href) => window.location.assign(href);
+/** Every navigation out of a page goes through the client's one exit (no-direct-api). */
+const goTo: Navigate = leaveFor;
 type Phase = "form" | "review" | "publishing" | "published";
 
 const a = t.teacher.assignment;
