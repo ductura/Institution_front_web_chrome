@@ -3,6 +3,8 @@
 // WEB-NF6-RUNDA (NF-6 MK-8): "Što je mentor rekao", the mentor's comment, the deadline of the revision and
 // what is still open on the text, in one place of the Mentor card. The caller reads; `undefined` is still
 // reading, `null` is a failed read (with "Pokušaj ponovno"), never "nothing said".
+import { useEffect } from "react";
+
 import { Button } from "@ductura/ui";
 
 import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
@@ -14,7 +16,13 @@ const t = mentorCardHr.said;
 
 export type SaidRead = { readonly ret: ReturnNotice | null; readonly requests: readonly RevisionRequest[] };
 
-export function SaidPanel({ read, now, onRetry }: { read: SaidRead | null | undefined; now: Date; onRetry?: () => void }) {
+export function SaidPanel({ read, now, onRetry, onShown }: {
+  read: SaidRead | null | undefined; now: Date; onRetry?: () => void;
+  /** MEN-R06: called with the revisions once they are on screen, so "student je vidio" can be recorded. */
+  onShown?: (requests: readonly RevisionRequest[]) => void;
+}) {
+  const requests = read ? read.requests : null;
+  useEffect(() => { if (requests && requests.length > 0) onShown?.(requests); }, [requests, onShown]);
   const view = read ? saidView(read.ret, read.requests, now) : null;
   return (
     <section aria-label={t.title} data-mentor-said="">

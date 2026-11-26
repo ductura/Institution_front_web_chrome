@@ -1,6 +1,7 @@
 // WEB-NUZ-MENTOR-1 (NF-6 MK-1): the pure rules of the Mentor card's mount point in the right panel.
 // The server gives no work-review state; the card's state is read from what it does give (the revision
 // requests and the submitted flag), and anything those cannot tell is "nedostupno", never a guess (B-6).
+import type { createApi } from "../../../../../../src/client/api";
 import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
 import type { WorkMessage } from "../../../../../../src/client/work-messages";
 
@@ -69,4 +70,42 @@ export function thesisShownOf(mentored: MentoredRead, assignmentId: string | und
   if (!assignmentId || !mentored.ok) return true;
   const id = assignmentId.toLowerCase();
   return mentored.body.assignments.some((a) => a.id.toLowerCase() === id);
+}
+
+/** The ids work.seen.post takes: lower-case UUIDs (the route's pattern). */
+const SEEN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/** The most items one work.seen.post takes. */
+export const SEEN_CHUNK = 200;
+
+type Api = ReturnType<typeof createApi>;
+
+export type SeenItem = { readonly kind: "revision_request"; readonly id: string };
+
+/**
+ * MEN-R06 (MEN-21): the revisions ("dorade") the student has been shown and the server has not been told about
+ * yet. `reported` holds what this page already sent, so a re-read does not send the same item again.
+ */
+export function unreportedSeen(requests: readonly RevisionRequest[], reported: ReadonlySet<string>): SeenItem[] {
+  const out: SeenItem[] = [];
+  for (const r of requests) {
+    const id = r.id.toLowerCase();
+    if (SEEN_ID.test(id) && !reported.has(id) && !out.some((o) => o.id === id)) out.push({ kind: "revision_request", id });
+  }
+  return out;
+}
+
+/**
+ * Tells the server which items the student saw, 200 at a time. Returns the ids the server accepted (answered
+ * 200); a failed or thrown call leaves its items unreported, so the next read tries again. Never throws.
+ */
+export async function reportSeen(api: Api, documentId: string, items: readonly SeenItem[]): Promise<string[]> {
+  const done: string[] = [];
+  for (let at = 0; at < items.length; at += SEEN_CHUNK) {
+    const chunk = items.slice(at, at + SEEN_CHUNK);
+    try {
+      const answer = await api("work.seen.post", { params: { documentId }, query: undefined, body: { items: chunk } });
+      if (answer.ok) done.push(...chunk.map((i) => i.id));
+    } catch { /* unreported: the next read tries again */ }
+  }
+  return done;
 }

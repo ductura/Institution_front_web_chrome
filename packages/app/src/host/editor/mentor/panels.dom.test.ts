@@ -79,6 +79,17 @@ describe("SaidPanel", () => {
     expect(full.querySelector("blockquote")?.textContent).toBe(ret.comment);
     expect(full.textContent).toContain("Rok dorade:");
   });
+  it("MEN-R06: tells the caller which revisions are on screen, and nothing while loading, failed or empty", async () => {
+    const now = new Date("2026-11-22T10:00:00");
+    const shown = vi.fn();
+    await mount(h(SaidPanel, { read: undefined, now, onShown: shown }));
+    await mount(h(SaidPanel, { read: null, now, onShown: shown }));
+    await mount(h(SaidPanel, { read: { ret: null, requests: [] }, now, onShown: shown }));
+    expect(shown).not.toHaveBeenCalled();
+    const requests = [{ id: "00000000-0000-4000-8000-000000000001", number: 1, state: "open", rowSeq: 1, anchor: {}, versions: [] }] as never;
+    await mount(h(SaidPanel, { read: { ret: null, requests }, now, onShown: shown }));
+    expect(shown).toHaveBeenCalledWith(requests);
+  });
 });
 
 describe("OwnPanel", () => {
