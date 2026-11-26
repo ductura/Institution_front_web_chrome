@@ -113,6 +113,7 @@ export const hostTextEn = {
   qualMaterials: "Material for coding",
   qualExport: "Coding export",
   qualCoding: "Coding",
+  questionnaireExport: "Questionnaire export",
   mentorPracticeJournal: "Students' practice journals",
   workTeam: "My team",
   workTeams: "Teams on the assignment",

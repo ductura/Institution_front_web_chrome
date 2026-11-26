@@ -21,6 +21,7 @@ export const hostText = {
   qualMaterials: "Gradivo za kodiranje",
   qualExport: "Izvoz kodiranja",
   qualCoding: "Kodiranje",
+  questionnaireExport: "Izvoz odgovora upitnika",
   mentorPracticeJournal: "Dnevnik prakse studenata",
   workTeam: "Moj tim",
   workTeams: "Timovi na zadatku",

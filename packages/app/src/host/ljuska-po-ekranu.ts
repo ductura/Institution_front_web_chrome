@@ -63,6 +63,7 @@ export const SCREEN_FRAMES: readonly ScreenFrame[] = [
   n("/nastavnik/brz-put", "N-05 Brz put", "side"),
   n("/nastavnik/zbirni", "N-17 Zbirni pregled", "side"),
   n("/nastavnik/kolegiji/[courseId]/zbirno", "N-17 Zbirni pregled", "side"),
+  n("/nastavnik/upitnici/[questionnaireId]/izvoz", "Izvoz odgovora upitnika", "side"),
   n("/nastavnik/rad/[id]", "N-06/N-07/N-08 Rad", "none"),
   n("/nastavnik/rad/[id]/predaja", "N-07 Što je student predao", "none"),
   n("/nastavnik/rad/[id]/sazetak", "N-10 Sažetak i karta podrijetla", "none"),
