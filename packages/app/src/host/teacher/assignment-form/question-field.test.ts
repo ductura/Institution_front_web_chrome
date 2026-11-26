@@ -1,26 +1,54 @@
 // @vitest-environment jsdom
-// NF-4 NZ-15: the question beside the declaration in the assignment form, honest until a route sets it.
-import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
-import { describe, expect, it } from "vitest";
+// NF-4 NZ-15: the question beside the declaration, wired to teacher.declaration-question.get/put.
+import { describe, expect, it, vi } from "vitest";
 
-import { declarationQuestionHr as t } from "./messages.hr";
-import { DECLARATION_QUESTION_MAX_CHARS, QuestionField } from "./QuestionField";
+import { DECLARATION_QUESTION_MAX_CHARS, checkQuestion, normalizeQuestion, readQuestion, saveQuestion } from "./QuestionField";
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+const ID = "11111111-1111-4111-8111-111111111111";
+type C = Parameters<typeof readQuestion>[0];
+const client = (answer: unknown) => vi.fn(async () => answer) as unknown as C & ReturnType<typeof vi.fn>;
 
-describe("QuestionField (NZ-15)", () => {
-  it("is disabled, names its limit and says that asking is not available yet", async () => {
-    const host = document.createElement("div");
-    document.body.append(host);
-    const root = createRoot(host);
-    await act(async () => { root.render(createElement(QuestionField)); });
-    const area = host.querySelector("textarea")!;
-    expect(area.disabled).toBe(true);
-    expect(host.querySelector("label")?.textContent).toContain(t.label);
-    expect(host.textContent).toContain(`Do ${DECLARATION_QUESTION_MAX_CHARS} znakova.`);
-    expect(host.textContent).toContain(t.unavailable);
-    act(() => root.unmount());
-    host.remove();
+describe("question text checks", () => {
+  it("normalizes to NFC, trims and turns empty into null", () => {
+    expect(normalizeQuestion("  é  ")).toBe("é");
+    expect(normalizeQuestion("   ")).toBeNull();
+  });
+  it("counts code points and refuses control characters", () => {
+    expect(checkQuestion("x".repeat(DECLARATION_QUESTION_MAX_CHARS))).toBeNull();
+    expect(checkQuestion("x".repeat(DECLARATION_QUESTION_MAX_CHARS + 1))).toBe("tooLong");
+    expect(checkQuestion("😀".repeat(DECLARATION_QUESTION_MAX_CHARS))).toBeNull();
+    expect(checkQuestion("a\u0000b")).toBe("invalid");
+    expect(checkQuestion("a\nb")).toBeNull();
+  });
+});
+
+describe("readQuestion / saveQuestion", () => {
+  it("reads the question and never takes a refusal for 'no question'", async () => {
+    expect(await readQuestion(client({ ok: true, status: 200, body: { question: "Zašto?", changedAt: null } }), ID)).toEqual({ kind: "ready", question: "Zašto?" });
+    expect(await readQuestion(client({ ok: false, status: 404 }), ID)).toEqual({ kind: "unavailable" });
+    expect(await readQuestion(client({ ok: false, status: 401 }), ID)).toEqual({ kind: "signedOut" });
+    const boom = vi.fn(async () => { throw new Error("x"); }) as unknown as C;
+    expect(await readQuestion(boom, ID)).toEqual({ kind: "unavailable" });
+  });
+  it("sends the normalized question and counts as saved only when the answer repeats it", async () => {
+    const ok = client({ ok: true, status: 200, body: { question: "Zašto?", changedAt: "2026-11-26T10:00:00.000Z" } });
+    expect(await saveQuestion(ok, ID, "  Zašto? ")).toBe("saved");
+    expect(ok).toHaveBeenCalledWith("teacher.declaration-question.put", { params: { assignmentId: ID }, query: undefined, body: { question: "Zašto?" } });
+    expect(await saveQuestion(client({ ok: true, status: 200, body: { question: null, changedAt: null } }), ID, "Zašto?")).toBe("failed");
+  });
+  it("clears with an empty text, but skips sending for a new assignment without question", async () => {
+    const ok = client({ ok: true, status: 200, body: { question: null, changedAt: null } });
+    expect(await saveQuestion(ok, ID, "  ")).toBe("saved");
+    const none = client({ ok: true });
+    expect(await saveQuestion(none, ID, "", { skipEmpty: true })).toBe("none");
+    expect(none).not.toHaveBeenCalled();
+  });
+  it("does not send an invalid text and maps refusals", async () => {
+    const never = client({ ok: true });
+    expect(await saveQuestion(never, ID, "x".repeat(501))).toBe("invalid");
+    expect(never).not.toHaveBeenCalled();
+    expect(await saveQuestion(client({ ok: false, status: 401 }), ID, "a")).toBe("signedOut");
+    expect(await saveQuestion(client({ ok: false, status: 422 }), ID, "a")).toBe("invalid");
+    expect(await saveQuestion(client({ ok: false, status: 404 }), ID, "a")).toBe("failed");
   });
 });
