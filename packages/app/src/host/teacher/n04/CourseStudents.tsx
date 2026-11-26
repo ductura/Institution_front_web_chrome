@@ -31,9 +31,9 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
   const [state, setState] = useState<StateFilter>("");
   const [order, setOrder] = useState<StudentOrder>("surname");
 
-  const [ask, setAsk] = useState<{ action: StudentChangeAction; studentId: string; name: string } | null>(null);
+  const [ask, setAsk] = useState<{ op: StudentChangeAction; studentId: string; name: string } | null>(null);
   const [working, setWorking] = useState(false);
-  const [done, setDone] = useState<{ action: StudentChangeAction; outcome: StudentChange } | null>(null);
+  const [done, setDone] = useState<{ op: StudentChangeAction; outcome: StudentChange } | null>(null);
   // Students removed here stay offered for "Dopusti povratak": the roster no longer lists them.
   const [removed, setRemoved] = useState<readonly { studentId: string; name: string }[]>([]);
   const inFlight = useRef(false);
@@ -44,16 +44,16 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
     inFlight.current = true;
     setWorking(true);
     let outcome: StudentChange;
-    try { outcome = await port.change(ask.action, courseId, ask.studentId); } catch { outcome = "unknown"; }
+    try { outcome = await port.change(ask.op, courseId, ask.studentId); } catch { outcome = "unknown"; }
     inFlight.current = false;
     setWorking(false);
-    setDone({ action: ask.action, outcome });
+    setDone({ op: ask?.op, outcome });
     setAsk(null);
     // A removal or a return that changed something: read the roster again, never patch it by hand.
     if (outcome === "done") {
       setAttempt((n) => n + 1);
       const { studentId, name } = ask;
-      setRemoved((list) => ask.action === "remove"
+      setRemoved((list) => ask?.op === "remove"
         ? (list.some((r) => r.studentId === studentId) ? list : [...list, { studentId, name }])
         : list.filter((r) => r.studentId !== studentId));
     }
@@ -78,14 +78,14 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
 
   const dialog = (
     <Dialog open={ask !== null} dismissible={!working} onClose={() => setAsk(null)} initialFocus={safe}
-      title={ask === null ? "" : ask.action === "return" ? text.returnTitle(ask.name) : text.removeTitle(ask.name)}
+      title={ask === null ? "" : ask?.op === "return" ? text.returnTitle(ask.name) : text.removeTitle(ask.name)}
       actions={(
         <>
-          <Button busy={working} onClick={() => void send()}>{ask?.action === "return" ? text.allowReturn : text.remove}</Button>
+          <Button busy={working} onClick={() => void send()}>{ask?.op === "return" ? text.allowReturn : text.remove}</Button>
           <Button ref={safe} tone="secondary" disabled={working} onClick={() => setAsk(null)}>{text.cancel}</Button>
         </>
       )}>
-      <p>{ask?.action === "return" ? text.returnNote : text.removeNote}</p>
+      <p>{ask?.op === "return" ? text.returnNote : text.removeNote}</p>
     </Dialog>
   );
 
@@ -97,7 +97,7 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
             <li key={r.studentId} className="item">
               <span className="title">{r.name}</span>
               <Button tone="secondary" size="small" disabled={working}
-                onClick={() => setAsk({ action: "return", studentId: r.studentId, name: r.name })}>{text.allowReturn}</Button>
+                onClick={() => setAsk({ op: "return", studentId: r.studentId, name: r.name })}>{text.allowReturn}</Button>
             </li>
           ))}
         </ul>
@@ -132,8 +132,8 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
               options={[{ value: "surname", label: text.orderSurname }, { value: "state", label: text.orderState }]} />
           </div>
           {done !== null && (done.outcome === "done" || done.outcome === "nothing"
-            ? <p className="note" role="status" data-testid="n04-change">{changeLine(done.action, done.outcome)}</p>
-            : <p className="note" role="alert" data-testid="n04-change">{changeLine(done.action, done.outcome)}</p>)}
+            ? <p className="note" role="status" data-testid="n04-change">{changeLine(done.op, done.outcome)}</p>
+            : <p className="note" role="alert" data-testid="n04-change">{changeLine(done.op, done.outcome)}</p>)}
           {shown.length === 0 && <p className="note" role="status">{text.noMatch}</p>}
           <ul className="list" role="list">
             {shown.map((student) => (
@@ -148,9 +148,9 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
                 {port.change !== undefined && (
                   <span className="acts">
                     <Button tone="secondary" size="small" disabled={working}
-                      onClick={() => setAsk({ action: "remove", studentId: student.studentId, name: student.name ?? text.noName })}>{text.remove}</Button>
+                      onClick={() => setAsk({ op: "remove", studentId: student.studentId, name: student.name ?? text.noName })}>{text.remove}</Button>
                     <Button tone="secondary" size="small" disabled={working}
-                      onClick={() => setAsk({ action: "return", studentId: student.studentId, name: student.name ?? text.noName })}>{text.allowReturn}</Button>
+                      onClick={() => setAsk({ op: "return", studentId: student.studentId, name: student.name ?? text.noName })}>{text.allowReturn}</Button>
                   </span>
                 )}
                 {student.works.map((work) => {
