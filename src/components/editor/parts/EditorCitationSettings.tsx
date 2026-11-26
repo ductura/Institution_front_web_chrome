@@ -20,6 +20,7 @@ export function EditorCitationSettings({ onClose }: { onClose: () => void }) {
         { id: "profile", label: t.profile, value: settings.profileId === "fpzg-opci-akademski-rad"
           ? t.defaultProfile : settings.profileId ?? t.profileUnavailable },
       ]} /> : <p role="status">{t.loadingSettings}</p>}
+      {settings && <p data-style-note="">{t.styleByInstitution}</p>}
       {settings && !settings.formattingStyle && <p role="status">{t.unsupportedStyle}</p>}
     </Dialog>
   );

@@ -24,6 +24,8 @@ export const workPartsMessages = {
   defaultProfile: "FPZG – opći akademski rad",
   profileUnavailable: "Profil trenutačno nije dostupan.",
   unsupportedStyle: "Editor trenutačno ne može oblikovati navode i literaturu u ovom stilu.",
+  // NF2-P24: the style is chosen by the institution, not in the editor; the pilot runs at FPZG.
+  styleByInstitution: "Stil citiranja postavka je ustanove, a ne Vaš izbor u editoru. U pilotu na FPZG-u vrijedi stil FPZG.",
   citationStyles: new Map([
     ["fpzg", "FPZG"], ["apa", "APA"], ["chicago", "Chicago"],
     ["ieee", "IEEE"], ["vancouver", "Vancouver"], ["fusnote", "Navodi u fusnotama"],

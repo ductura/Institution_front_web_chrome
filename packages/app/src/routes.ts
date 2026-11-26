@@ -18,6 +18,7 @@ import { publicVerificationHr } from "../../../src/components/public-verificatio
 import { VERIFY_PATH } from "./host/public/verify/model";
 import { courseStudentsMessages } from "./host/teacher/n04/messages.hr";
 import { courseAggregateMessages } from "./host/teacher/course-aggregate/messages.hr";
+import { questionnaireExportText } from "./host/teacher/questionnaire-export/messages.hr";
 import { merlinMessages } from "./host/teacher/merlin/messages.hr";
 import { submissionsMessages } from "./host/teacher/submissions/messages.hr";
 import { accessDeniedHr, pageLabelsHr, profileHr } from "./i18n/messages.hr";
@@ -167,6 +168,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/kolegiji/[courseId]/studenti", label: courseStudentsMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // PIL-K-ZBIRNO: the course aggregate (N-17), reached from the course roster (N-04).
   { path: "/nastavnik/kolegiji/[courseId]/zbirno", label: courseAggregateMessages.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // WEB-V18-UPITNIK-IZVOZ: the export of a questionnaire's responses (JSON and CSV); the author's list links here.
+  { path: "/nastavnik/upitnici/[questionnaireId]/izvoz", label: questionnaireExportText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/nastavnik/rad/[id]", label: t.liveView.context, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/reprodukcija", label: t.replay.titleTeacher, kind: "pending", roles: ["teacher"] },
   { path: "/nastavnik/rad/[id]/predaja", label: workText.receipt.title, kind: "pending", roles: ["teacher"] },
