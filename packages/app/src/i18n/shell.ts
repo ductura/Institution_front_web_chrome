@@ -76,6 +76,9 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/operater/mjerila-pilota": (c) => c.app.pages.pilotMetrics,
   "/operater/dnevnik-radnji": (c) => c.app.pages.actionLog,
   "/operater/prijave-problema": (c) => c.app.pages.problemReports,
+  "/operater/stanje-sustava": (c) => c.app.pages.systemHealth,
+  "/operater/dogadaji": (c) => c.app.pages.systemEvents,
+  "/operater/sigurnosni-kljuc": (c) => c.app.pages.securityKey,
 };
 
 /**

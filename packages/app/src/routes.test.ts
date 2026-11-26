@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH, ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -194,7 +194,7 @@ describe("the operator's page (WEB-NUZ-OPERATER, NF-7 OA-1)", () => {
     expect(publicPage(OPERATOR_HOME)).toBeNull();
     expect(internalRoute(`/app/web${OPERATOR_HOME}`, "/app/web")).toBe(OPERATOR_HOME);
     // NF-7 OA-3, OA-7 added the two pages shared with the administrator; nothing else is kept by account kind.
-    expect(PAGES.filter((p) => p.accounts !== undefined).map((p) => p.path)).toEqual([OPERATOR_HOME, ACTION_LOG, PROBLEM_REPORTS]);
+    expect(PAGES.filter((p) => p.accounts !== undefined).map((p) => p.path)).toEqual([OPERATOR_HOME, ACTION_LOG, PROBLEM_REPORTS, SYSTEM_HEALTH, SYSTEM_EVENTS, SECURITY_KEY]);
   });
 });
 
