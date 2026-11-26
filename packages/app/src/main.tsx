@@ -6,6 +6,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "./App";
+import ErrorBoundary from "./ErrorBoundary";
 import { baseOf } from "./routes";
 
 // The kept theme, dark by default (D-188); storage may be blocked.
@@ -21,7 +22,10 @@ const root = document.getElementById("root");
 if (root !== null) {
   createRoot(root).render(
     <StrictMode>
-      <App base={baseOf(window.location.pathname)} />
+      {/* DAN-1568: a screen that throws while it renders leaves the error screen, not an empty page. */}
+      <ErrorBoundary>
+        <App base={baseOf(window.location.pathname)} />
+      </ErrorBoundary>
     </StrictMode>,
   );
 }
