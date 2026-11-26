@@ -36,6 +36,7 @@ import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
+import { qualExportText } from "./host/student/qual-export/messages.hr";
 import { qualCodingText } from "./host/student/qual-coding/messages.hr";
 import { qualMaterialsText } from "./host/student/qual-materials/messages.hr";
 import { peerReviewText } from "./host/student/peer-review/messages.hr";
@@ -140,6 +141,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/testovi", label: codeTestsText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // WEB-V18-KODIRANJE-GRADIVO: the student's own material for qualitative coding.
   { path: "/zadaci/gradivo-kodiranja", label: qualMaterialsText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V18-KODIRANJE-IZVOZ: the student's own codebook and marked passages as JSON and CSV.
+  { path: "/zadaci/kodiranje-izvoz", label: qualExportText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
   // WEB-V18-KODIRANJE-OZNAKE: the codebook and the marking of one material (`?gradivo=`), entered from the material list.
   { path: "/zadaci/kodiranje", label: qualCodingText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
   // HOST-S1: the editor of one work.
