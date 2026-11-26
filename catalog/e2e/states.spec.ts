@@ -114,7 +114,7 @@ const shellOf = async (c: Locator, nav: boolean, crumb: string | null) => {
 const studentNav = async (c: Locator) => {
   // The side bar is a drawer below 800 px, so the items are read from the DOM, not by visibility.
   const items = c.locator(`nav[aria-label="${t.shell.workNav}"] a`);
-  await expect(items).toHaveCount(5);
+  await expect(items).toHaveCount(9);
   await expect(items.first()).toHaveAttribute("aria-current", "page");
   await expect(items.first()).toHaveAttribute("href", "/zadaci");
 };
@@ -701,7 +701,7 @@ for (const theme of THEMES) {
       expect(Math.abs(area.x - (rail.x + rail.width))).toBeLessThanOrEqual(0.5);
 
       const links = aside.locator("a");
-      await expect(links).toHaveCount(8); // logo, five items, "Kako Ductura radi", "Izjava o pristupačnosti" (WEB-1805)
+      await expect(links).toHaveCount(12); // logo, nine items (F4-V18-22-R01), "Kako Ductura radi", "Izjava o pristupačnosti" (WEB-1805)
       for (const box of await links.evaluateAll((all) => all.map((a) => a.getBoundingClientRect().toJSON() as DOMRect))) {
         expect(box.width).toBeGreaterThanOrEqual(44);
         expect(box.height).toBeGreaterThanOrEqual(44);

@@ -57,6 +57,11 @@ export const hr = {
       dataRetention: "Čuvanje podataka",
       // WEB-1302 (SRV-1308): the student data export, /ustanova/izvoz-podataka.
       studentDataExport: "Izvoz podataka studenta",
+      questionnaires: "Upitnici",
+      codingMaterials: "Gradivo za kodiranje",
+      codingExport: "Izvoz kodiranja",
+      practiceJournal: "Dnevnik prakse",
+      isvu: "Povezivanje s ISVU-om (probni izvor)",
     },
     role: { teacher: "Nastavnik", student: "Student", admin: "Administrator" },
     demoNote: "Nijedan stvarni osobni podatak.",
