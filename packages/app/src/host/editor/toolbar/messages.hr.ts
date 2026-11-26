@@ -92,6 +92,7 @@ export const toolbarBehaviourHr = {
   viewShellDark: "Tamna ljuska",
   viewShellLight: "Svijetla ljuska",
   viewStructure: "Struktura rada",
+  viewStructureClose: "Zatvori",
   viewCleanText: "Čisti tekst (bez savjeta)",
   viewToc: "Sadržaj na listu",
   viewDiff: "Promjene od predaje mentoru",

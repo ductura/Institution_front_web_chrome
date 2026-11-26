@@ -358,7 +358,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
       {dialog === "parts" && editor && <EditorWorkParts editor={editor} storageKey={workPartsKey} onClose={() => setDialog(null)} />}
       {dialog === "skeleton" && editor && <SkeletonDialog editor={editor} profile={skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null} onClose={() => setDialog(null)} />}
       {dialog === "structure" && (
-        <Dialog open title={toolbarBehaviourHr.viewStructure} onClose={() => setDialog(null)}>
+        <Dialog open title={toolbarBehaviourHr.viewStructure} onClose={() => setDialog(null)}
+          actions={<Button onClick={() => setDialog(null)}>{toolbarBehaviourHr.viewStructureClose}</Button>}>
           <DraftPanelHost editor={editor as unknown as TocEditor | null} workId={workPartsKey} />
         </Dialog>
       )}
