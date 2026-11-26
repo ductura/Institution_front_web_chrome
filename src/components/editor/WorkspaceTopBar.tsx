@@ -5,6 +5,7 @@ import { Button } from "@ductura/ui";
 
 import { useOnline } from "../../client/online-status";
 import { messagesHr as t } from "../../lib/i18n/messages.hr";
+import { appHref } from "../shell/nav";
 import type { SheetTheme } from "../../lib/ui/sheet-theme";
 import { setSheetTheme, useSheetTheme } from "../shell/useSheetTheme";
 import { beforeCountText } from "./submission-rehearsal/declaration-gate";
@@ -14,6 +15,8 @@ import styles from "./WorkspaceTopBar.module.css";
 
 export type WorkspaceTopBarProps = {
   readonly assignmentId: string;
+  /** EDI-R02: the prefix the app is served under (/app/web or /app/chrome); "" when it is served at the root. */
+  readonly base?: string;
   /** The assignment's title, or null when the read could not give it. */
   readonly title: string | null;
   /** The line under the title ("Kolegij · rok 8. 11. 2026., 23:59"), or null when it is not known. */
@@ -50,6 +53,7 @@ const OFFLINE_NOTE = "radni-prostor-bez-mreze";
  */
 export function WorkspaceTopBarView({
   assignmentId,
+  base = "",
   title,
   subtitle = null,
   readOnly = false,
@@ -67,7 +71,7 @@ export function WorkspaceTopBarView({
   const slot = useContext(TopBarSlot);
   return (
     <header className={styles.bar} aria-label={t.workspace.barLabel}>
-      <a className={styles.mark} href="/zadaci" title={t.workspace.backToAssignments} aria-label={`Ductura: ${t.workspace.backToAssignments.replace("← ", "")}`}>
+      <a className={styles.mark} href={appHref(base, "/zadaci")} title={t.workspace.backToAssignments} aria-label={`Ductura: ${t.workspace.backToAssignments.replace("← ", "")}`}>
         Ductu<b>ra</b>
       </a>
       <span className={styles.crumb}>
