@@ -60115,5 +60115,61 @@
         "unavailable"
       ]
     }
+  },
+  "teacher.assignment-late-submission.get": {
+    "path": "/api/v1/teacher/assignments/{assignmentId}/late-submission",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the value in force",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "lateSubmissionAllowed"
+              ],
+              "properties": {
+                "lateSubmissionAllowed": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
