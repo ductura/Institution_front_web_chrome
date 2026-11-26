@@ -40,6 +40,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/zadaci/dnevnik-prakse": (c) => c.app.host.practiceJournal,
   "/zadaci/gradivo-kodiranja": (c) => c.app.host.qualMaterials,
   "/zadaci/kodiranje-izvoz": (c) => c.app.host.qualExport,
+  "/zadaci/kodiranje": (c) => c.app.host.qualCoding,
   "/nastavnik/mentorstva/dnevnik-prakse": (c) => c.app.host.mentorPracticeJournal,
   "/zadatak/[id]/tim": (c) => c.app.host.workTeam,
   "/nastavnik/zadatak/[assignmentId]/timovi": (c) => c.app.host.workTeams,

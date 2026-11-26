@@ -36,6 +36,7 @@ import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
 import { qualExportText } from "./host/student/qual-export/messages.hr";
+import { qualCodingText } from "./host/student/qual-coding/messages.hr";
 import { qualMaterialsText } from "./host/student/qual-materials/messages.hr";
 import { peerReviewText } from "./host/student/peer-review/messages.hr";
 import { workTeamText } from "./host/student/work-team/messages.hr";
@@ -141,6 +142,8 @@ export const PAGES: readonly Page[] = [
   { path: "/zadaci/gradivo-kodiranja", label: qualMaterialsText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
   // WEB-V18-KODIRANJE-IZVOZ: the student's own codebook and marked passages as JSON and CSV.
   { path: "/zadaci/kodiranje-izvoz", label: qualExportText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V18-KODIRANJE-OZNAKE: the codebook and the marking of one material (`?gradivo=`), entered from the material list.
+  { path: "/zadaci/kodiranje", label: qualCodingText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
   // HOST-S1: the editor of one work.
   { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },

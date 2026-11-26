@@ -21,6 +21,8 @@ export const qualMaterialsText = {
   open: "Otvori",
   openAria: "Otvori gradivo: {title}",
   opened: "Otvoreno",
+  code: "Kodiraj",
+  codeAria: "Kodiraj gradivo: {title}",
   remove: "Obriši",
   removeAria: "Obriši gradivo: {title}",
   viewTitle: "Pregled gradiva",
