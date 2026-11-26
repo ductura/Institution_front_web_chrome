@@ -138,6 +138,8 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
               work: ({ editor, assignmentId: id, documentId, submitted }) => <>
                 <MentorMount editor={editor} assignmentId={id} documentId={documentId} submitted={submitted} />
+                {/* ED-60 (Daniel, Ductus#2058 c.7185479035): the teacher's direct edits are set here, above the round's actions. */}
+                <DirectEditSettingHost documentId={documentId} here={here} submitted={submitted} />
                 <RevisionActionsHost documentId={documentId} role="student" today={new Date().toISOString().slice(0, 10)} />
               </>,
               // PIL-K-KOMENTARI-EDITOR: the Comments card over the real port, in place of the old CommentPanel.
@@ -156,7 +158,6 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             renderPdf={(version) => <PdfExport assignmentId={assignmentId} version={version} here={`/rad/${assignmentId}`} />}
             sessionControls={({ scope, session, documentId }) => <>
               <EditorSessionControls scope={scope} session={session} assignmentId={assignmentId} documentId={documentId} />
-              <DirectEditSettingHost documentId={documentId} here={here} />
               <AssistantMatchNoticeHost documentId={documentId} />
               {/* ED-16 (NF2-P14): the one "Povijest i usporedba" dialog, asked by the header, Prikaz, Ctrl+K and the left panel. */}
               <WorkHistoryHost documentId={documentId} replayHref={appHref(base, `/rad/${assignmentId}/reprodukcija`)} />
