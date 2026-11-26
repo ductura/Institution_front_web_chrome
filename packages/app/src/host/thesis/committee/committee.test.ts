@@ -172,6 +172,16 @@ describe("CommitteeEditor (administrator)", () => {
       act(() => root?.unmount()); root = null; document.body.innerHTML = "";
     }
   });
+  it("the fields are locked while the request runs, so a later edit cannot be overwritten by the answer", async () => {
+    let release: (a: Answer) => void = () => {};
+    const call = vi.fn((op: string) => (op === "institution.teacher-roles.get" ? Promise.resolve(ok(teachers(7))) : new Promise<Answer>((r) => { release = r; })));
+    const host = await editor([], call);
+    await change(host.querySelector('select[name="add"]')!, id(1));
+    await submit(host);
+    expect((host.querySelector('[data-testid="editor-fields"]') as HTMLFieldSetElement).disabled).toBe(true);
+    await act(async () => { release(ok(committee([member(1, "member")]))); });
+    expect((host.querySelector('[data-testid="editor-fields"]') as HTMLFieldSetElement).disabled).toBe(false);
+  });
   it("404 on save tells the caller the work is gone", async () => {
     const onNotFound = vi.fn();
     const host = await editor([], base(fail(404, "not_found")), { onNotFound });

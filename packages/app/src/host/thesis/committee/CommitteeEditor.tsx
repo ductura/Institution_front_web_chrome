@@ -48,6 +48,7 @@ export function CommitteeEditor({ documentId, value, call = () => createApi(), o
   const full = draft.length >= MAX_MEMBERS;
 
   async function save() {
+    if (busy) return;
     setNote(null);
     if (problem !== null) { setNote({ tone: "alert", text: t.problems[problem] }); return; }
     setBusy(true);
@@ -65,6 +66,7 @@ export function CommitteeEditor({ documentId, value, call = () => createApi(), o
 
   return (
     <form aria-label={t.editor.title} onSubmit={(e) => { e.preventDefault(); void save(); }}>
+      <fieldset disabled={busy} aria-busy={busy} data-testid="editor-fields">
       <p>{t.editor.hint}</p>
       <Notice>{t.noAccessNote}</Notice>
       {draft.length === 0 ? <p>{t.editor.empty}</p> : (
@@ -89,6 +91,7 @@ export function CommitteeEditor({ documentId, value, call = () => createApi(), o
         )
       ) : null}
       {problem !== null ? <p role="alert">{t.problems[problem]}</p> : null}
+      </fieldset>
       <Button type="submit" busy={busy}>{busy ? t.editor.saving : t.editor.save}</Button>
       {note !== null ? <p data-testid="note" role={note.tone === "alert" ? "alert" : "status"}>{note.text}</p> : null}
     </form>
