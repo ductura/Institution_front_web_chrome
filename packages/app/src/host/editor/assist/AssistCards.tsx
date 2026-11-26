@@ -11,6 +11,7 @@ import { Button, TextArea } from "@ductura/ui";
 import type { AssistChapter } from "./blocks";
 import { balanceRows, statusText, type BalanceStatus } from "./balance";
 import { deadlineRows, type Deadline } from "./deadlines";
+import type { Change } from "./since-last";
 import { chipsOf, filterHeadings, nextPlace, type JumpKind, type JumpPlace } from "./jump";
 import type { Step, StepTarget } from "./next-step";
 import { assistHr as t } from "./messages.hr";
@@ -31,6 +32,20 @@ export function NextStepCard({ steps, onGo }: { steps: readonly Step[]; onGo: (t
           {more && <ul className={styles.list}>{rest.map((step, i) => <li key={i}><button type="button" className={styles.next} onClick={() => go(step)}>{step.text}</button></li>)}</ul>}
         </>
       )}
+    </section>
+  );
+}
+
+/** MEN-24: what changed in the work since the last session; nothing is shown when nothing did. */
+export function WhatsNewCard({ changes, onGo }: { changes: readonly Change[]; onGo: (id: string) => void }) {
+  if (changes.length === 0) return null;
+  const text = (c: Change) => (c.kind === "added" ? t.whatsNew.added : c.kind === "grown" ? t.whatsNew.grown : t.whatsNew.shrunk)(c.chapter.title, c.delta);
+  return (
+    <section className={styles.card} aria-label={t.whatsNew.title} data-whats-new="">
+      <span className={styles.label}>{t.whatsNew.title}</span>
+      <ul className={styles.list}>
+        {changes.map((c) => <li key={c.chapter.id}><button type="button" className={styles.next} aria-label={t.whatsNew.go(c.chapter.title)} onClick={() => onGo(c.chapter.id)}>{text(c)}</button></li>)}
+      </ul>
     </section>
   );
 }
