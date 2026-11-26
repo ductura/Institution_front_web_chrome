@@ -140,6 +140,7 @@ export default function QualMaterialsPage({ call = defaultCall }: { call?: () =>
                 {openId === m.id ? <span>{t.opened}</span> : (
                   <Button tone="quiet" aria-label={t.openAria.replace("{title}", m.title)} onClick={() => setOpenId(m.id)}>{t.open}</Button>
                 )}{" "}
+                <a href={appHref(base, `/zadaci/kodiranje?gradivo=${m.id}`)} aria-label={t.codeAria.replace("{title}", m.title)}>{t.code}</a>{" "}
                 <Button tone="quiet" disabled={busy} aria-label={t.removeAria.replace("{title}", m.title)} onClick={() => setAsking(m)}>{t.remove}</Button>
               </li>
             ))}
