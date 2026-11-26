@@ -11,8 +11,13 @@ export const n13Messages = {
   // NZ-2 (Daniel, NF-4 odluka 5): extension also for an assignment whose deadline has passed.
   passedTitle: "Rok ovog zadatka je prošao.",
   passedBody: "Produljenje je i dalje moguće: student koji nije predao može predati do novog roka.",
-  // NZ-5 varijanta B: the server has no route for a separate late-submission exception yet.
-  exceptionUnavailable: "Posebna iznimka za predaju nakon roka, s vlastitim zapisom, još nije dostupna. Predaju nakon roka jednom studentu omogućite produljenjem roka za tog studenta.",
+  // NZ-5 varijanta B: the exception for a late submission has a record of its own, shown in the list with the mark „iznimka”.
+  exceptionNote: "Student koji nije predao može dobiti i posebnu iznimku za predaju nakon roka; ona se bilježi zasebno i u popisu ima oznaku „iznimka”.",
+  lateMark: "iznimka",
+  lateTitle: "Iznimke za predaju nakon roka",
+  lateUntil: "predaja dopuštena do",
+  lateEmpty: "Nijedna iznimka za predaju nakon roka nije zabilježena.",
+  lateUnavailable: "Iznimke za predaju nakon roka trenutačno nisu dostupne. Pokušajte ponovno.",
   unavailable: "Rokove trenutačno nije moguće učitati. Pokušajte ponovno.",
   listUnavailable: "Produljeni rokovi trenutačno nisu dostupni. Pokušajte ponovno.",
   retry: "Pokušaj ponovno",

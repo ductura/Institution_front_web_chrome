@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import { Button, Select, TextField } from "@ductura/ui";
 
 import { appHref } from "../../../../../../src/components/shell/nav";
-import { goToSignIn } from "../../../../../../src/client/api";
+import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { zagrebInstant } from "../../../../../../src/lib/i18n/zagreb";
 import { useHost } from "../../context";
+import { readLateExceptions, type LateExceptionRecord } from "../assignment-facts/late-exception";
+import { whenHr } from "../assignment-facts/model";
+import { assignmentFactsMessages as lateText } from "../assignment-facts/messages.hr";
 import { deadlinePassed, detailText, filterByStudent, studentSeesText, leadText, loadN13, noteOf, reasonOptions, recordN13, titleText, unavailablePort, type N13Port, type N13Read, type Note } from "./model";
 import { n13Messages as text } from "./messages.hr";
 
@@ -15,7 +18,10 @@ import { n13Messages as text } from "./messages.hr";
  * the closed list) and the list "Produljeni rokovi". A note follows only the server's answer (B-6); after a recorded
  * extension the page reads again. A failed read says so with a button, never an empty list.
  */
-export default function N13Extensions({ assignmentId, port = unavailablePort }: { assignmentId: string; port?: N13Port }) {
+export type LateExceptionsRead = (assignmentId: string) => ReturnType<typeof readLateExceptions>;
+const readLate: LateExceptionsRead = (assignmentId) => readLateExceptions(createApi(), assignmentId);
+
+export default function N13Extensions({ assignmentId, port = unavailablePort, readLate: readLateList = readLate }: { assignmentId: string; port?: N13Port; readLate?: LateExceptionsRead }) {
   const { base } = useHost();
   const [read, setRead] = useState<N13Read | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -26,6 +32,8 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
   const [filter, setFilter] = useState("");
+  /** null: not read yet; "unavailable": the read failed (said so, never an empty list). */
+  const [late, setLate] = useState<readonly LateExceptionRecord[] | "unavailable" | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -34,8 +42,11 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
       if (next.kind === "signedOut") goToSignIn(appHref(base, `/nastavnik/zadatak/${encodeURIComponent(assignmentId)}/produljenje`));
       setRead(next);
     });
+    void readLateList(assignmentId).then((next) => {
+      if (live) setLate(next.kind === "ready" ? next.exceptions : "unavailable");
+    }, () => { if (live) setLate("unavailable"); });
     return () => { live = false; };
-  }, [port, assignmentId, attempt, base]);
+  }, [port, readLateList, assignmentId, attempt, base]);
 
   const data = read?.kind === "ready" ? read.data : null;
   const students = data?.students ?? null;
@@ -85,7 +96,7 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
           {deadlinePassed(data.context, Date.now()) && (
             <div className="banner" role="status">
               <p><b>{text.passedTitle}</b> {text.passedBody}</p>
-              <p className="note">{text.exceptionUnavailable}</p>
+              <p className="note">{text.exceptionNote}</p>
             </div>
           )}
           {note !== null && (
@@ -156,6 +167,24 @@ export default function N13Extensions({ assignmentId, port = unavailablePort }: 
                 </ul>
                 <p className="meta">{text.keptNote}</p>
               </>
+            )}
+          </section>
+          <section className="card" aria-labelledby="ki-h">
+            <h2 id="ki-h">{text.lateTitle}</h2>
+            {late === null ? <p className="note" role="status">{text.loading}</p> : late === "unavailable" ? (
+              <>
+                <p className="note" role="alert">{text.lateUnavailable}</p>
+                <div className="sb-acts"><Button tone="secondary" onClick={() => setAttempt((n) => n + 1)}>{text.retry}</Button></div>
+              </>
+            ) : late.length === 0 ? <p className="note">{text.lateEmpty}</p> : (
+              <ul className="list">
+                {late.map((e) => (
+                  <li key={e.id} className="item">
+                    <span className="title">{(students ?? []).find((s) => s.studentId === e.studentId)?.name ?? text.unnamed} <span className="badge">{text.lateMark}</span></span>
+                    <span className="meta">{`${text.lateUntil} ${whenHr(e.untilAt) ?? e.untilAt} · ${text.reasonLabel}: ${e.reasonId === null ? text.reasonHidden : lateText.late.reasons[e.reasonId]} · ${text.recordedBy} ${e.reasonId === null ? text.byOther : text.byYou}, ${whenHr(e.createdAt) ?? e.createdAt}`}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
         </>
