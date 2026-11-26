@@ -6,9 +6,10 @@ import type { CardRole } from "../assignment-card/model";
 import { compareHr } from "../../../../../editor-core/src/document/text/compare-hr";
 import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
 import { deadlineOf, whenHr, type Extension } from "../assignment-facts/model";
+import type { FollowUpStudent } from "../assignment-facts/read";
 import { n17Messages as text } from "./messages.hr";
 
-export type Revision = { readonly state: "open" | "reopened" | "accepted" | "closed" };
+export type Revision = { readonly state: "open" | "reopened" | "accepted" | "closed" | "responded" | "withdrawn" };
 export type N17Row = {
   readonly studentId: string;
   readonly name: string | null;
@@ -28,6 +29,10 @@ export type N17Row = {
   readonly dueAt?: string;
   /** Absent: the read does not say. `null`: no revision was requested. */
   readonly revision?: Revision | null;
+  /** NAS-08: did this student acknowledge the assignment notice (teacher.assignment-follow-up.get)? Absent: not read. */
+  readonly noticeAcknowledged?: boolean;
+  /** NAS-12: open revision requests of this student; absent when not read. */
+  readonly openRevisions?: number;
 };
 
 export type N17Card = {
@@ -100,6 +105,8 @@ export type RowJoin = {
   /** teacher.submissions.get, by student. */
   readonly submissions: ReadonlyMap<string, { readonly revision: number | null; readonly documentId: string | null }> | null;
   readonly extensions: readonly Extension[] | null;
+  /** NAS-R02: teacher.assignment-follow-up.get, by student; null or absent when it was not read. */
+  readonly followUp?: ReadonlyMap<string, FollowUpStudent> | null;
 };
 
 /**
@@ -114,10 +121,19 @@ export function joinRows(rows: readonly N17Row[], join: RowJoin, now: number): r
     const documentId = work?.documentId ?? sub?.documentId ?? row.documentId ?? null;
     const deadline = join.extensions === null ? null : deadlineOf(row.studentId, join.dueAt, join.extensions);
     const passed = deadline !== null && Date.parse(deadline.dueAt) <= now;
-    const phase: N17Row["phase"] = row.submitted || work === undefined ? row.phase
+    const follow = join.followUp?.get(row.studentId);
+    const base: N17Row["phase"] = row.submitted || work === undefined ? row.phase
       : work.state === "not_started" ? "notStarted" : work.state === "in_progress" && !passed ? "writing" : row.phase;
+    // NAS-08: a student who has not acknowledged the notice and has not submitted is "obavijest nije potvrđena".
+    const phase: N17Row["phase"] = follow !== undefined && follow.noticeAcknowledgedAt === null && !row.submitted && base !== "writing" ? "unconfirmed" : base;
     return {
       ...row,
+      ...(follow === undefined ? {} : {
+        noticeAcknowledged: follow.noticeAcknowledgedAt !== null,
+        openRevisions: follow.openRevisionCount,
+        // NAS-10: the revision column from the server; `responded` waits for the teacher.
+        revision: follow.revisionState === null ? null : { state: follow.revisionState },
+      }),
       ...(documentId === null ? {} : { documentId }),
       ...(phase === undefined ? {} : { phase }),
       ...(sub === undefined ? {} : { version: sub.revision }),
@@ -156,6 +172,10 @@ export function summaryLine(rows: readonly N17Row[]): string {
   if (not > 0) parts.push(text.summary.notSubmitted(not));
   if (notStarted > 0) parts.push(text.summary.notStarted(notStarted));
   if (unconfirmed > 0) parts.push(text.summary.unconfirmed(unconfirmed));
+  // NAS-08: "Potvrdilo n od m", only when every row says whether its notice was acknowledged.
+  if (rows.length > 0 && rows.every((r) => r.noticeAcknowledged !== undefined)) {
+    parts.push(text.summary.acknowledged(rows.filter((r) => r.noticeAcknowledged === true).length, rows.length));
+  }
   return parts.length === 0 ? text.summary.noRows : parts.join(", ");
 }
 
