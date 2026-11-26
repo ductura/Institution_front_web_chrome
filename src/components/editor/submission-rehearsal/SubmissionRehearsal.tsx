@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { Button, CheckActionList, Dialog } from "@ductura/ui";
 import { useEditorState, type Editor } from "@tiptap/react";
 
+import { createApi, type ApiOptions } from "@/client/api";
 import { listComments, type CommentThread } from "@/client/comments";
 import { watchSessionEnd } from "@/client/session-end";
 import type { SessionMark } from "@/client/session-marks";
@@ -21,6 +22,35 @@ import styles from "./SubmissionRehearsal.module.css";
 import { beforeSubmission, declarationText, useDeclarationGate, type GateRead } from "./declaration-gate";
 import { rehearsalMessagesHr as t } from "./messages.hr";
 import { loadRequirements, rangeDetail, readRehearsal, wordsLabel, type Requirements } from "./rehearsal-model";
+
+export type ConsentRead =
+  | { readonly kind: "given" | "withdrawn" }
+  | { readonly kind: "none"; readonly required: boolean }
+  | { readonly kind: "unavailable" };
+
+/** The mentor's consent as the server holds it (work.mentor-consent.get); any failure is "unavailable", never "none". */
+export async function loadMentorConsent(documentId: string, options?: ApiOptions): Promise<ConsentRead> {
+  try {
+    const answer = await createApi(options)("work.mentor-consent.get", {
+      params: { documentId }, query: undefined, body: undefined,
+    });
+    if (!answer.ok || answer.status !== 200) return { kind: "unavailable" };
+    const { state, requiredForSubmission } = answer.body;
+    if (state === "given" || state === "withdrawn") return { kind: state };
+    if (state === "none") return { kind: "none", required: requiredForSubmission };
+    return { kind: "unavailable" };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}
+
+export function consentDetail(consent: ConsentRead | undefined): string {
+  if (consent === undefined) return t.approvalChecking;
+  if (consent.kind === "given") return t.approvalGiven;
+  if (consent.kind === "withdrawn") return t.approvalWithdrawn;
+  if (consent.kind === "none") return consent.required ? t.approvalNoneRequired : t.approvalNone;
+  return t.approvalUnavailable;
+}
 
 type Supplement = { detail: string; open?: () => void };
 
@@ -82,6 +112,7 @@ function RehearsalDialog({
   const [showPackage, setShowPackage] = useState(false);
   const [requirements, setRequirements] = useState<Requirements>(null);
   const [loadedComments, setLoadedComments] = useState<readonly CommentThread[]>();
+  const [consent, setConsent] = useState<ConsentRead>();
   const doc = useEditorState({ editor, selector: ({ editor }) => editor.state.doc, equalityFn: (a, b) => a === b });
   const model = useMemo(() => readRehearsal(doc, enabledChecks), [doc, enabledChecks]);
   // WEB-NUZ-PREDAJA-1 (PR-2): the declaration as the server holds it, the same read the steps of the
@@ -93,12 +124,14 @@ function RehearsalDialog({
     const current = () => active && !watch.ended();
     if (current()) {
       void loadRequirements(assignmentId).then((result) => { if (current()) setRequirements(result); });
+      // A caller that already knows the approval passes it; otherwise the server is asked.
+      if (documentId && approval === undefined) void loadMentorConsent(documentId).then((result) => { if (current()) setConsent(result); });
       if (documentId) void listComments(documentId, current).then((result) => {
         if (current() && result.kind === "ok") setLoadedComments(result.threads);
       });
     }
     return () => { active = false; watch.close(); };
-  }, [assignmentId, documentId, session, close]);
+  }, [assignmentId, documentId, session, close, approval]);
 
   function leaveFor(action: () => void) {
     // The shared dialog must release focus before the editor or the next preview takes it.
@@ -133,7 +166,8 @@ function RehearsalDialog({
     approval: approval ?? "none", openPlaces: places.length, summaryWritten: Boolean(abstract?.text && summary?.text),
     declaration: gate.kind === "confirmed" || gate.kind === "not_required" ? "filled" : "missing",
   });
-  const approvalDetail = approval === undefined ? t.approvalUnavailable : rows.find((row) => row.id === "approval")?.detail;
+  const approvalDetail = approval !== undefined ? rows.find((row) => row.id === "approval")?.detail
+    : documentId ? consentDetail(consent) : t.approvalUnavailable;
   const form = messagesHr.beforeSubmit;
   const firstPlace = model.places[0];
   const missing = beforeSubmission(gate, places.length);
