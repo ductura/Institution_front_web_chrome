@@ -18,6 +18,7 @@ export const hostText = {
   deadlineExtensions: "Produljenje roka",
   mentorshipRequest: "Zahtjev za mentorstvo",
   practiceJournal: "Dnevnik prakse",
+  qualMaterials: "Gradivo za kodiranje",
   mentorPracticeJournal: "Dnevnik prakse studenata",
   workTeam: "Moj tim",
   workTeams: "Timovi na zadatku",

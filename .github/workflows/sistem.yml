@@ -5,11 +5,23 @@ name: Sistem
 # packages/app ovog repoa (`pnpm build` + `pnpm start`, ista izgradnja kao
 # isporuka) i lokalni edge Preloadera na :8000 (`/` = Preloader, `/api/v1` =
 # server, `/app/web` = packages/app). Student ulazi kroz `/`. Zatim
-# `pnpm test:sistem` (INT-02..05 i INT-13, tok editora iz vala 1). Nije
-# required check i ne ulazi u ci-ok.
+# `pnpm test:sistem` (INT-02..05 i INT-13, tok editora iz vala 1).
 # Prijava je samo lažni OIDC (D-09), svi podaci su izmišljeni (demo seed),
 # bez tajni.
+# Okidači (Daniel 25. 11., opcija 1 na WEB#682): ci.yml ga poziva kao posao
+# `sistem` (workflow_call), pa je dio ci-ok-a. `changes` u ci.yml ga uključuje
+# na svaki push u bazu, na PR koji dira editor, e2e/sistem ili njegovu
+# konfiguraciju, i na sve što pokreće svaki posao (korijen, .github/). Ručno:
+# workflow_dispatch. Bez vlastitog concurrency-ja: otkazivanje vodi ci.yml.
 on:
+  workflow_call:
+    inputs:
+      server_ref:
+        type: string
+        default: migracija/kopija-ductus-backend
+      preloader_ref:
+        type: string
+        default: main
   workflow_dispatch:
     inputs:
       server_ref:
@@ -20,9 +32,6 @@ on:
         default: main
 permissions:
   contents: read
-concurrency:
-  group: sistem-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   sistem:
     runs-on: ubuntu-latest
