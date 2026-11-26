@@ -5,7 +5,7 @@ import { Button, DiffView } from "@ductura/ui";
 
 import { goToSignIn } from "../../../../../../src/client/api";
 import {
-  countWords, currentLine, defaultFrom, hasChanges, loadComparison, loadVersions, olderChoices, optionLabel, submittedVersions,
+  countWords, currentLine, defaultFrom, diffRows, hasChanges, loadComparison, loadVersions, olderChoices, optionLabel, submittedVersions,
   type N11Compare, type N11Port, type N11Version, type N11Versions,
 } from "./model";
 import { n11Messages as text } from "./messages.hr";
@@ -53,9 +53,9 @@ function Result({ port, documentId, from, to, signInHref }: { port: N11Port; doc
       <p className="meta">{text.wordsNote}</p>
       {!hasChanges(read.blocks) && <p className="note" role="status">{text.noChanges}</p>}
       <div className={`sheet ${styles.paper} ${styles.cmp}`}>
-        {read.blocks.map(({ change, text: t }, index) => change === "unchanged"
-          ? <p key={index} style={wrap}>{t}</p>
-          : <DiffView key={index} parts={[{ kind: change, text: t }]} />)}
+        {diffRows(read.blocks).map((row, index) => row.change === "unchanged"
+          ? <p key={index} style={wrap}>{row.text}</p>
+          : <DiffView key={index} parts={row.change === "changed" ? row.parts : [{ kind: row.change, text: row.text }]} />)}
       </div>
     </>
   );
