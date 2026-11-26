@@ -3,12 +3,13 @@
 // WEB-2126: the chapter sheet under "Struktura" (prototype rail.js: state chip,
 // ↑↓, "Više radnji ⋯", purpose and note, thesis). The state, purpose, note and
 // thesis stay on this device; nothing here enters the text, the export or a
-// submission. "Pitaj mentora" and "Prikaži samo ovo poglavlje" need the server
-// or a view the editor does not offer yet, so they say "nedostupno".
+// submission. "Pitaj mentora" needs the server, so it says "nedostupno".
+// ED-48: "Prikaži samo ovo poglavlje" hides the rest of the work on screen
+// (only-chapter.ts) until "Prikaži cijeli rad" or the sheet closes.
 // ED-36 (C-02, C-03, C-05): the writing help of the chapter sits under the
 // note: its role, "Što ovdje ide", what the text shows, the review that marks
 // it "gotovo", the plan, own tasks and the sources it cites.
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Button, Select, TextArea } from "@ductura/ui";
 
 import { createTocStore, EMPTY_TOC, goToHeading, headingPosition, moveChapterInEditor } from "../../../../../editor-core/src/outline/index.ts";
@@ -18,6 +19,7 @@ import { loadNotes, saveNotes, withPlan, withRole, withTodoAdded, withTodoDone, 
 import { EMPTY_HELP, helpDocumentOf } from "./chapter-help";
 import { CHAPTER_STATES, defaultState, parseStates, parseTextMap, parseThread, EMPTY_THREAD, withText, type ChapterState } from "./left-model";
 import { leftHr as t } from "./messages.hr";
+import { ONLY_CHAPTER_KEY, onlyChapterKey, onlyChapterPlugin, showOnlyChapter } from "./only-chapter";
 import { useDeviceValue, useEditorRead, useWorkSnapshot } from "./use-left";
 import styles from "./Left.module.css";
 
@@ -45,6 +47,13 @@ export function ChapterPanel({ workId }: { workId: string }) {
   const help = useEditorRead(editor, (i) => helpDocumentOf(i.getJSON()), EMPTY_HELP);
   const [workNotes, setWorkNotes] = useState<WorkNotes>(() => loadNotes(noteStorage(), workId));
   const keepNotes = (next: WorkNotes) => { setWorkNotes(next); saveNotes(noteStorage(), workId, next); };
+  // "Prikaži samo ovo poglavlje" lives while this sheet is open; closing it shows the whole work again.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.registerPlugin(onlyChapterPlugin());
+    return () => { if (!editor.isDestroyed) editor.unregisterPlugin(ONLY_CHAPTER_KEY); };
+  }, [editor]);
+  const onlyKey = useEditorRead<string | null>(editor, (i) => onlyChapterKey(i.state), null);
 
   const thesis = (
     <div className={styles.stack}>
@@ -60,8 +69,16 @@ export function ChapterPanel({ workId }: { workId: string }) {
     </div>
   );
 
+  const onlyTitle = onlyKey === null ? null : toc.entries.find((e) => e.key === onlyKey)?.title ?? "";
+  const onlyBanner = onlyTitle === null ? null : (
+    <p className={styles.row} role="status">
+      <span>{t.chapter.onlyShown(onlyTitle)}</span>
+      <Button tone="quiet" onClick={() => { if (editor) showOnlyChapter(editor, null); }}>{t.chapter.showAll}</Button>
+    </p>
+  );
+
   if (!entry || !editor || editor.isDestroyed) {
-    return <div className={styles.sheet}>{thesis}<p className={styles.muted}>{snap.headings.length === 0 ? t.title.none : t.chapter.none}</p></div>;
+    return <div className={styles.sheet}>{onlyBanner}{thesis}<p className={styles.muted}>{snap.headings.length === 0 ? t.title.none : t.chapter.none}</p></div>;
   }
 
   const words = snap.words[index] ?? 0;
@@ -114,6 +131,7 @@ export function ChapterPanel({ workId }: { workId: string }) {
 
   return (
     <div className={styles.sheet} role="group" aria-label={t.chapter.label}>
+      {onlyBanner}
       {thesis}
       <div className={styles.row}>
         <Select label={t.chapter.state} value={state} disabled={!live}
@@ -132,7 +150,7 @@ export function ChapterPanel({ workId }: { workId: string }) {
           <Button tone="quiet" disabled={!live || entry.level <= 1} onClick={() => setLevel(-1)}>{t.chapter.raise}</Button>
           <Button tone="quiet" disabled={!live || entry.level >= 3} onClick={() => setLevel(1)}>{t.chapter.lower}</Button>
           <Button tone="quiet" aria-disabled="true" onClick={(e) => e.preventDefault()}>{t.chapter.askMentor} ({t.chapter.unavailable})</Button>
-          <Button tone="quiet" aria-disabled="true" onClick={(e) => e.preventDefault()}>{t.chapter.onlyThis} ({t.chapter.unavailable})</Button>
+          <Button tone="quiet" onClick={() => { showOnlyChapter(editor, entry.key); setMenu(false); }}>{t.chapter.onlyThis}</Button>
           {confirm ? (
             <div role="alertdialog" aria-label={t.chapter.remove}>
               <p>{t.chapter.removeConfirm}</p>
