@@ -9,7 +9,7 @@ export { Dialog, type DialogProps } from "./components/Dialog";
 export { DiffView, type DiffPart, type DiffViewProps } from "./components/diff-view/DiffView";
 export { Drawer, type DrawerProps, type DrawerSide } from "./components/drawer";
 export { ErrorScreen, type ErrorScreenProps } from "./components/ErrorScreen";
-export { PanelTabs, type PanelTab, type PanelTabsProps } from "./components/PanelTabs";
+export { PanelTabs, TabCount, type PanelTab, type PanelTabsProps } from "./components/PanelTabs";
 export { SegmentedControl, type SegmentedControlProps, type SegmentedOption } from "./components/segmented/SegmentedControl";
 export { PortableRecordCard, type PortableRecordCardProps, type PortableRecordLabels, type PortableRecordState } from "./components/portable-record";
 export { Popover, type PopoverProps } from "./components/popover";

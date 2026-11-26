@@ -57,6 +57,7 @@ export const editorPanelLayoutsHr = {
   writingIn: "Pišete u poglavlju",
   noChapter: "Kursor nije u poglavlju",
   commentsHere: "Komentari ovdje",
+  openComments: { one: "{count} otvoren komentar", few: "{count} otvorena komentara", many: "{count} otvorenih komentara" },
   sourcesHere: "Izvori ovdje",
   allSources: "Svi izvori i traženje",
   notesHere: "Za pogledati u tekstu",

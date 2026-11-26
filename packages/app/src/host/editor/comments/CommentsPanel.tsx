@@ -7,6 +7,8 @@
 import { Button, Chip, Dialog, PillTag } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useReportOpenComments } from "@/components/editor/layout-prefs/panel-counts";
+
 import styles from "./comments.module.css";
 import { MyChanges, type ReadMyChanges } from "./my-changes";
 import { commentsHr as t } from "./messages.hr";
@@ -52,6 +54,8 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   }, [port, workId, onSessionEnd]);
   useEffect(() => { void read(); }, [read]);
   useEffect(() => () => { onSeen?.(); }, [onSeen]);
+  // ED-38 (P2-7): the count beside the card's tab, the same open comments the print lists.
+  useReportOpenComments(load.kind === "ready" ? openForPrint(load.comments).length : 0);
 
   if (load.kind === "loading") return <p role="status" className={styles.muted}>{t.loading}</p>;
   if (load.kind !== "ready") {
