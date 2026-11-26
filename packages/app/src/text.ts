@@ -19,6 +19,7 @@ export const hostText = {
   mentorshipRequest: "Zahtjev za mentorstvo",
   practiceJournal: "Dnevnik prakse",
   qualMaterials: "Gradivo za kodiranje",
+  qualExport: "Izvoz kodiranja",
   qualCoding: "Kodiranje",
   mentorPracticeJournal: "Dnevnik prakse studenata",
   workTeam: "Moj tim",
