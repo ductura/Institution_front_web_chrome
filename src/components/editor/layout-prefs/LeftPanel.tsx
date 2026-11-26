@@ -18,7 +18,24 @@ const w = messagesHr.workspace;
 const headingKey = (heading: NumberedHeading) => heading.id ?? `pos-${heading.pos}`;
 const headingLabel = (heading: NumberedHeading) => `${heading.number}. ${heading.title || messagesHr.outline.untitledHeading}`;
 
-export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "history" | "chapter", ReactNode>>;
+export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "history" | "chapter", ReactNode>> & {
+  /** ED-37 (P2-6): what a chapter row shows after its title and words (the state dot, "za popraviti"); in every layout. */
+  chapterMarks?: (headingId: string, words: number) => ReactNode;
+};
+
+/** ED-37: the subchapters (level 3) that a folded chapter (level 2) hides in the list; the rest stay. */
+export function visibleHeadings<H extends { level: number }>(headings: readonly H[], folded: (heading: H) => boolean): H[] {
+  let hiding = false;
+  return headings.filter((heading) => {
+    if (heading.level <= 2) { hiding = heading.level === 2 && folded(heading); return true; }
+    return !hiding;
+  });
+}
+
+/** ED-37: the chapters (level 2) that have subchapters, the only ones with a fold button. */
+export function foldable<H extends { level: number }>(headings: readonly H[]): Set<H> {
+  return new Set(headings.filter((heading, index) => heading.level === 2 && (headings[index + 1]?.level ?? 0) > 2));
+}
 
 type Outline = { headings: NumberedHeading[]; current: NumberedHeading | undefined; words?: readonly number[] };
 
@@ -90,8 +107,17 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
   const label = (heading: NumberedHeading) => {
     const words = wordsByPosition.get(heading.pos);
     const target = heading.id ? targets.get(heading.id) : undefined;
-    return <span>{headingLabel(heading)}{words !== undefined && <ChapterLength words={words} target={target} />}</span>;
+    return <span>{headingLabel(heading)}{words !== undefined && <ChapterLength words={words} target={target} />}
+      {heading.id && sections.chapterMarks?.(heading.id, words ?? 0)}</span>;
   };
+  const [folded, setFolded] = useState<ReadonlySet<string>>(() => new Set());
+  const withKids = foldable(data.headings);
+  const allFolded = withKids.size > 0 && [...withKids].every((heading) => folded.has(headingKey(heading)));
+  const fold = (heading: NumberedHeading) => setFolded((old) => {
+    const next = new Set(old);
+    if (!next.delete(headingKey(heading))) next.add(headingKey(heading));
+    return next;
+  });
   const go = (heading: NumberedHeading) => {
     if (!editor || editor.isDestroyed) return;
     const pos = heading.id ? blockPosition(editor.state.doc, heading.id) : heading.pos;
@@ -102,11 +128,18 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
   };
   // "Povijest dokumenta" is a group only for a caller that gives it; others get no empty group.
   const content = Object.entries(t.leftSections).filter(([key]) => key !== "history" || sections.history !== undefined).map(([key, label]) => ({
-    id: key, label, content: sections[key as keyof LeftSections] ?? <p className="rail-empty">{t.emptyGroup}</p>,
+    id: key, label, content: sections[key as Exclude<keyof LeftSections, "chapterMarks">] ?? <p className="rail-empty">{t.emptyGroup}</p>,
   }));
   const outline = data.headings.length ? <nav aria-label={messagesHr.outline.label}>
+    {withKids.size > 0 && <Button tone="quiet" onClick={() => setFolded(allFolded ? new Set() : new Set([...withKids].map(headingKey)))}>
+      {allFolded ? t.expandAll : t.collapseAll}
+    </Button>}
     <ol className="outline">
-      {data.headings.map((heading) => <li key={headingKey(heading)} data-level={heading.level} className="outline__item">
+      {visibleHeadings(data.headings, (heading) => folded.has(headingKey(heading))).map((heading) => <li key={headingKey(heading)} data-level={heading.level} className="outline__item">
+        {withKids.has(heading) && <Button tone="quiet" aria-expanded={!folded.has(headingKey(heading))}
+          aria-label={t.foldChapter(heading.title || messagesHr.outline.untitledHeading)} onClick={() => fold(heading)}>
+          <span aria-hidden="true">{folded.has(headingKey(heading)) ? "▸" : "▾"}</span>
+        </Button>}
         <Button tone="quiet" className="outline__link" aria-current={heading === data.current ? "location" : undefined}
           onClick={() => go(heading)}>{label(heading)}</Button>
       </li>)}
