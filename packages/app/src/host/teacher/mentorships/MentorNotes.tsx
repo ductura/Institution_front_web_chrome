@@ -7,13 +7,10 @@
 import { Button, Card, TextArea } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { formatDateHr } from "@/lib/i18n/hr";
 import { mentorNotesText as t } from "./messages.hr";
 import { addNote, NOTE_MAX, readNotes, type NotesCall, type NotesRead, type NoteOutcome } from "./notes-port";
 
-const dayOf = (iso: string): string => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T/.exec(iso);
-  return m === null ? iso : `${Number(m[3])}. ${Number(m[2])}. ${m[1]}.`;
-};
 const said: Record<Exclude<NoteOutcome, "saved" | "signedOut">, string> = {
   invalid: t.invalid, forbidden: t.forbidden, notFound: t.notFound, unknown: t.unknown,
 };
@@ -67,7 +64,8 @@ export function MentorNotes({ mentorshipId, name, call, onSignedOut }:
         <p className="note">{t.lead}</p>
         {read?.kind === "ready" && (read.notes.length === 0 ? <p>{t.empty}</p> : (
           <ul>{read.notes.map((n) => (
-            <li key={n.id}><span className="meta">{dayOf(n.createdAt)}</span><br />{n.body}</li>
+            <li key={n.id}><span className="meta">{formatDateHr(n.createdAt)}</span><br />
+              {n.body.split("\n").map((line, i) => <span key={i}>{i > 0 && <br />}{line}</span>)}</li>
           ))}</ul>
         ))}
         {read?.kind === "ready" && (
@@ -75,6 +73,7 @@ export function MentorNotes({ mentorshipId, name, call, onSignedOut }:
             {ok && <p role="status">{t.saved}</p>}
             <TextArea label={t.field} hint={t.hint} value={text} error={error} disabled={busy}
               onChange={(event) => { setText(event.currentTarget.value); setError(undefined); setOk(false); }} />
+            {error === t.unknown && <p><Button tone="quiet" disabled={busy} onClick={() => setAttempt((n) => n + 1)}>{t.refresh}</Button></p>}
             <p><Button busy={busy} disabled={busy} onClick={() => void save()}>{busy ? t.saving : t.add}</Button></p>
           </>
         )}

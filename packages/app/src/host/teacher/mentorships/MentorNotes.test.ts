@@ -70,6 +70,23 @@ describe("MentorNotes (MEN-R14)", () => {
     expect(host.querySelector("textarea")!.value).toBe("");
   });
 
+  it("offers a refresh that keeps the draft after an uncertain write, and reads the list again", async () => {
+    const host = await show(server({ post: { ok: true, status: 200, body: {} } }));
+    await type(host, "Izmišljena bilješka.");
+    await press(host);
+    const refresh = [...host.querySelectorAll("button")].find((b) => b.textContent === t.refresh)!;
+    await act(async () => { refresh.click(); });
+    expect(calls).toEqual(["mentorship.notes.get", "mentorship.notes.post", "mentorship.notes.get"]);
+    expect(host.querySelector("textarea")!.value).toBe("Izmišljena bilješka.");
+  });
+
+  it("shows the date in Zagreb time and keeps line breaks of a note", async () => {
+    stored.set(MENTORSHIP, [{ ...note(1, "Prvi redak\nDrugi redak"), createdAt: "2026-11-10T23:30:00.000Z" }]);
+    const host = await show(server());
+    expect(host.textContent).toContain("11. studenoga 2026.");
+    expect(host.querySelectorAll("li br").length).toBeGreaterThanOrEqual(2);
+  });
+
   it("refuses a blank note without calling the server", async () => {
     const host = await show(server());
     await type(host, "   ");

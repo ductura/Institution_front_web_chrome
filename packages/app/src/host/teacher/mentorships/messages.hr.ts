@@ -124,6 +124,7 @@ export const mentorNotesText = {
   field: "Nova bilješka",
   hint: "Do 4000 znakova. Bilješka se zapisuje i ne može se kasnije mijenjati.",
   add: "Dodaj bilješku",
+  refresh: "Osvježi popis bilješki",
   saving: "Spremam…",
   needed: "Upišite tekst bilješke.",
   tooLong: "Bilješka je predugačka.",
