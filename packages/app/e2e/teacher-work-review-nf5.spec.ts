@@ -106,13 +106,14 @@ test("PG-5: with the details the transfer from the Asistent is listed too", asyn
   await expect(page.locator('[data-nf5="PG-5"]').getByText(p.transfer)).toBeVisible();
 });
 
-test("PG-7: the student's explanation is read before any conclusion, with the finding read said to be missing", async ({ page }) => {
+test("PG-7: the student's explanation is read before any conclusion, and the finding explanation counted in Karta podrijetla", async ({ page }) => {
   await fakeServer(page);
   await page.goto(`${review}?kartica=podrijetlo`);
   const section = page.locator('[data-nf5="PG-7"]');
   await expect(section.getByText("Izmišljeno objašnjenje studenta.")).toBeVisible();
   await expect(section.getByText(p.eventOrdinal(1))).toBeVisible();
-  await expect(section.locator('[data-missing="finding-explanation"]')).toBeVisible();
+  await expect(section.locator('[data-missing="finding-explanation"]')).toHaveCount(0);
+  await expect(page.locator("[data-assistant-match-explained]")).toHaveText("Objašnjeno 0 od 1");
 });
 
 test("PG-9: published comments and drafts marked „nije objavljeno”, read only", async ({ page }) => {
