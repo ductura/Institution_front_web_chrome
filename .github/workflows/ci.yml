@@ -58,6 +58,7 @@ jobs:
       app: ${{ steps.paths.outputs.app }}
       app-build: ${{ steps.paths.outputs.app-build }}
       baselines: ${{ steps.paths.outputs.baselines }}
+      sistem: ${{ steps.paths.outputs.sistem }}
     steps:
       # Depth 2 is enough: on a pull request HEAD is the merge commit and the
       # base sha is its first parent. If the base moved after the merge commit
@@ -74,8 +75,8 @@ jobs:
         run: |
           # changes:begin
           set -uo pipefail
-          emit() { printf 'test=%s\nclient=%s\nui=%s\napp=%s\napp-build=%s\nbaselines=%s\n' "$1" "$2" "$3" "$4" "$4" "$5" | tee -a "$GITHUB_OUTPUT"; }
-          all() { b=true; [ "$EVENT" != "pull_request" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b"; exit 0; }
+          emit() { printf 'test=%s\nclient=%s\nui=%s\napp=%s\napp-build=%s\nbaselines=%s\nsistem=%s\n' "$1" "$2" "$3" "$4" "$4" "$5" "$6" | tee -a "$GITHUB_OUTPUT"; }
+          all() { b=true; [ "$EVENT" != "pull_request" ] || b=false; echo "changes: running every job ($1)"; emit true true true true "$b" true; exit 0; }
           [ "$EVENT" = "pull_request" ] || all "not a pull request"
           [ -n "$BASE" ] || all "no base sha"
           # If the base moved after the merge commit was made, the base sha is
@@ -98,7 +99,8 @@ jobs:
           u="$(hit '^(packages/|catalog/|src/|scripts/forbidden-terms/|locales/)')"
           a="$(hit '^(packages/|src/|locales/)')"
           b="$(hit '^(catalog/|packages/ui/)')"
-          emit "$t" "$c" "$u" "$a" "$b"
+          s="$(hit '^(packages/app/src/host/editor/|e2e/sistem/|playwright\.sistem\.config\.ts$)')"
+          emit "$t" "$c" "$u" "$a" "$b" "$s"
           # changes:end
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 22 }
@@ -586,13 +588,25 @@ jobs:
         if: failure()
         with: { name: "app-report-${{ strategy.job-index }}", path: packages/app/test-results/ }
 
+  # The system pass on the real stack (INT-08, INT-10): sistem.yml as a
+  # reusable workflow (Daniel 25. 11. 2026, option 1 on WEB#682). It runs on
+  # every push to the base, on a pull request that changes the editor host,
+  # e2e/sistem/ or its config, and on everything that runs every job.
+  # ci-ok needs it.
+  sistem:
+    needs: changes
+    if: ${{ needs.changes.outputs.sistem == 'true' }}
+    uses: ./.github/workflows/sistem.yml
+    permissions:
+      contents: read
+
   # The one required status (DAN-885): green only when every job above
   # succeeded; failure, cancelled, skipped or a missing result fails it.
   # A plain job, so the check is named exactly ci-ok.
   ci-ok:
     name: ci-ok
     if: ${{ always() }}
-    needs: [changes, test, ui, app-build, app]
+    needs: [changes, test, ui, app-build, app, sistem]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
