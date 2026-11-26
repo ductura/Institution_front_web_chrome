@@ -108,6 +108,17 @@ describe("proposals in the student's Comments card", () => {
     expect(b.host.textContent).toContain(t.proposalsUnavailable);
   });
 
+  it("a missing proposals route (404), a refusal or a dropped connection never hides the comments (WEB vlak)", async () => {
+    for (const reply of [() => json(404), () => json(403), () => json(401), () => { throw new TypeError("network"); }]) {
+      const { host } = await mount(reply as never);
+      // The thread of the comments route is on screen whatever the proposals route answered.
+      expect(host.textContent).toContain("Tvrdnja traži izvor.");
+      expect(host.textContent).toContain("Jasan uvod.");
+      expect(button(host, t.reply)).toBeDefined();
+      act(() => root?.unmount());
+    }
+  });
+
   it("no proposals: no section", async () => {
     const { host } = await mount(() => json(200, { suggestions: [] }));
     expect(host.textContent).not.toContain(s.title);
