@@ -23,6 +23,8 @@ import {
 } from "../sync/states";
 import { storableDocument } from "../editor";
 import type { AtomicDexieJournal } from "./atomic-dexie-journal";
+// WEB-V14-SHEET-JOURNAL: a spreadsheet work is saved by `SheetSaver`, not by this saver.
+export { SheetSaver } from "./sheet-saver";
 
 /**
  * Why saving stopped. `limit` is this module's own bound on the queue (no
