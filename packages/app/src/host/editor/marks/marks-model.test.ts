@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Schema } from "@tiptap/pm/model";
 
-import { allPlaces, counts, gutterDots, nextPlace, placesAt, showGutter } from "./marks-model";
+import { allPlaces, counts, gutterDots, holeRemoval, nextPlace, placesAt, showGutter } from "./marks-model";
 
 const schema = new Schema({
   nodes: {
@@ -40,6 +40,19 @@ describe("marks model (WEB-2129)", () => {
     const dots = gutterDots(allPlaces(doc, [{ from: 9, to: 12 }]), (pos) => (pos === 2 ? null : 40));
     expect(dots.map((d) => [d.kind, d.offset])).toEqual([["hole", 0], ["cmt", 11]]);
     expect(dots.every((d) => d.y === 40)).toBe(true);
+  });
+  // ED-45: "Provjereno, ukloni" leaves the sentence as it would read without the mark.
+  it("takes the hole out with one space, never leaving two or eating punctuation", () => {
+    const left = (text: string) => {
+      const d = schema.node("doc", null, [p(schema.text(text))]);
+      const range = holeRemoval(d, allPlaces(d, []).find((x) => x.kind === "hole")!);
+      return d.textBetween(0, range.from, "", "") + d.textBetween(range.to, d.content.size, "", "");
+    };
+    expect(left("Uvod [?] i tekst.")).toBe("Uvod i tekst.");
+    expect(left("[?] Početak.")).toBe("Početak.");
+    expect(left("Kraj [?].")).toBe("Kraj .");
+    expect(left("Riječ[?] dalje.")).toBe("Riječ dalje.");
+    expect(left("Kraj [?]")).toBe("Kraj ");
   });
   it("draws the gutter only wider than 1050 px", () => {
     expect(showGutter(1050)).toBe(false);
