@@ -97,3 +97,43 @@ function statusKind(status: number, confirming: boolean): RoleOutcome["kind"] {
   if ([400, 413, 415, 422].includes(status)) return "invalid";
   return confirming && status === 404 ? "notCandidate" : "unknown";
 }
+
+export type StudentAction = "remove" | "return";
+export type StudentOutcome = {
+  kind:
+    | "done" // 200 with true: removed, or return permitted
+    | "nothing" // 200 with false: the student was not enrolled (remove) or nothing changed (return)
+    | "unauthorized" // 401
+    | "forbidden" // 403
+    | "invalid" // 400, 413, 415, 422
+    | "unknown"; // anything else: the change may or may not have happened
+};
+
+/** Removes a student from a course, or permits the student's return, over the existing routes. */
+export async function changeCourseStudent(
+  action: StudentAction, courseId: string, studentId: string, options: ApiOptions = {},
+): Promise<StudentOutcome> {
+  if (!UUID.test(courseId) || !UUID.test(studentId)) return { kind: "invalid" };
+  const input = { params: { courseId, studentId }, query: undefined, body: {} } as const;
+  try {
+    const api = createApi(options);
+    const result = action === "remove"
+      ? await api("institution.student-removal.post", input)
+      : await api("institution.student-return.post", input);
+    if (result.ok) {
+      const yes = action === "remove"
+        ? (result.body as { removed: boolean }).removed
+        : (result.body as { allowed: boolean }).allowed;
+      return { kind: yes ? "done" : "nothing" };
+    }
+    return { kind: studentStatus(result.status) };
+  } catch {
+    return { kind: "unknown" };
+  }
+}
+
+function studentStatus(status: number): StudentOutcome["kind"] {
+  if (status === 401) return "unauthorized";
+  if (status === 403) return "forbidden";
+  return [400, 413, 415, 422].includes(status) ? "invalid" : "unknown";
+}
