@@ -114,7 +114,7 @@ const shellOf = async (c: Locator, nav: boolean, crumb: string | null) => {
 const studentNav = async (c: Locator) => {
   // The side bar is a drawer below 800 px, so the items are read from the DOM, not by visibility.
   const items = c.locator(`nav[aria-label="${t.shell.workNav}"] a`);
-  await expect(items).toHaveCount(5);
+  await expect(items).toHaveCount(9);
   await expect(items.first()).toHaveAttribute("aria-current", "page");
   await expect(items.first()).toHaveAttribute("href", "/zadaci");
 };
