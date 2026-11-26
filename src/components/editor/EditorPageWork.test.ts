@@ -10,6 +10,7 @@ import { emptyDocument, type DocumentTransaction } from "@/domain/document";
 import { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
 
 import type { ScopeRead } from "./EditorPage.scope";
+import { blockedLastSavedText } from "./blocked-notice";
 import { openReadOf, readWork, type WorkReaders } from "./EditorPageWork";
 
 // WEB-14b/14c: what the page does with the person's journal scope and each
@@ -36,6 +37,16 @@ describe("openReadOf", () => {
   it("hands the server-confirmed schema version on, and nothing when the server states none", () => {
     expect(openReadOf({ status: "opened", work: { ...work(DOC_A), schemaVersion: 3 } }, SCOPE, SESSION)).toMatchObject({ kind: "ready", schemaVersion: 3 });
     expect(openReadOf({ status: "opened", work: work(DOC_A) }, SCOPE, SESSION)).not.toHaveProperty("schemaVersion");
+  });
+
+  it("hands the server's minute of the last signed save on, and nothing without one (ED-22)", () => {
+    const at = "2026-11-26T13:32:00.000Z";
+    expect(openReadOf({ status: "opened", work: { ...work(DOC_A), lastSignedAt: at } }, SCOPE, SESSION)).toMatchObject({ kind: "ready", lastSignedAt: at });
+    expect(openReadOf({ status: "opened", work: work(DOC_A) }, SCOPE, SESSION)).not.toHaveProperty("lastSignedAt");
+  });
+
+  it("says the last save on the server in Zagreb time (ED-22)", () => {
+    expect(blockedLastSavedText("2026-11-26T13:32:00.000Z")).toBe("Zadnje spremanje na poslužitelju: 26. studenoga 2026. u 14:32.");
   });
 
   // ED-01b: each answer names its own cause, so the sheet can offer its own way out.

@@ -76,6 +76,7 @@ import {
 } from "./document-saver";
 import type { EvidenceSession, SheetDocument } from "./evidence-session";
 import LogoutDialog from "./LogoutDialog";
+import { blockedLastSavedText } from "./blocked-notice";
 import { StoppedReport } from "./stopped-report/StoppedReport";
 import { endRun } from "./run-refs";
 import { livePublishAction } from "./live-hold";
@@ -822,7 +823,11 @@ function exportText(editor: Editor): void {
  * the manuscript only: the notices above it are interface text and keep the
  * page's language. Without a known language nothing is marked.
  */
-export function LocalEditor({ lang = null }: { lang?: WorkLanguage | null } = {}) {
+export function LocalEditor({ lang = null, lastSignedAt }: {
+  lang?: WorkLanguage | null;
+  /** ED-22 (NF2-P26): the server's minute of the last signed save, said while another tab holds the work. */
+  lastSignedAt?: string;
+} = {}) {
   const value = useLocalDocument();
   const { editor, phase } = value;
   const failure = failureOf(value);
@@ -847,7 +852,8 @@ export function LocalEditor({ lang = null }: { lang?: WorkLanguage | null } = {}
         <p className="editor-notice">{t.editor.sendStoppedSaved}</p>
       ) : null}
       <div className="editor-notice" role="status">
-        {phase === "blocked" ? <p>{t.editor.blockedHint}</p>
+        {phase === "blocked" ? <p>{t.editor.blockedHint}{lastSignedAt
+          ? ` ${blockedLastSavedText(lastSignedAt)}` : null}</p>
           : phase === "ready" && value.snapshot?.closedBy === "submission" ? <p>{t.editor.submittedReadOnly}</p>
           : null}
       </div>
