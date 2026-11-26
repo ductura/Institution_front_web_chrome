@@ -42,8 +42,9 @@ const KEYS = ["anchor", "id", "is_own", "opened_window", "replacement", "row_seq
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** Empty text is a deletion suggestion: the contract (suggestions.post, `text`) allows 0 to 2000 characters. */
 export const isReplacement = (value: unknown): value is string =>
-  typeof value === "string" && [...value].length >= 1 && [...value].length <= SUGGESTION_TEXT_MAX;
+  typeof value === "string" && [...value].length <= SUGGESTION_TEXT_MAX;
 
 /** Suggestions from the body of `list`; null for any row out of shape. */
 export function suggestionsFromList(value: unknown): Suggestion[] | null {

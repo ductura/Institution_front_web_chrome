@@ -53,7 +53,8 @@ export function createProposalsPort(options: ApiOptions = {}): Transport {
       const input = { params: undefined, query: undefined, body: call.body } as unknown as Input<ApiOperationId>;
       const result = await createApi(options)(call.id as never, input as never) as
         { ok: boolean; status: number; body?: unknown };
-      if (!result.ok) return { status: result.status, body: null };
+      // A failed result with a success status (the API refused an answer out of contract) is no answer.
+      if (!result.ok) return result.status >= 400 ? { status: result.status, body: null } : null;
       if (call.id === "collaboration.suggestions-list.post") {
         const rows = isObject(result.body) && Array.isArray(result.body.suggestions) ? result.body.suggestions as unknown[] : null;
         const mapped = rows?.map(legacyRow) ?? null;

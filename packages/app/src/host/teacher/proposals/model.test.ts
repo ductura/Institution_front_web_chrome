@@ -47,6 +47,15 @@ describe("teacher proposals", () => {
       const bad = await listSuggestions(createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: answer(200, { suggestions: [{ ...cRow(), text: 5 }] }) as never }), "d");
       expect(bad).toEqual({ kind: "unavailable" });
     });
+    it("keeps a deletion suggestion (empty text) in the list", async () => {
+      const port = createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: answer(200, { suggestions: [cRow(), { ...cRow(), suggestionId: "44444444-4444-4444-8444-444444444444", text: "" }] }) as never });
+      const out = await listSuggestions(port, "d");
+      expect(out.kind === "ok" && out.suggestions.map((s) => s.replacement)).toEqual(["Taj odnos", ""]);
+    });
+    it("a 200 the contract refuses is no confirmation", async () => {
+      const port = createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: answer(200, {}) as never });
+      expect(await decideSuggestion(port, { id: SID, rowSeq: 1 }, "accept")).toBe("unavailable");
+    });
     it("maps 401, 403, 404 and 409 and never fakes a success", async () => {
       const codes: Record<number, string> = { 401: "unauthorized", 403: "forbidden", 404: "not_found", 409: "conflict" };
       const outcome = (status: number) => decideSuggestion(createProposalsPort({ baseUrl: "https://ductura.test", fetchImpl: answer(status, { error: codes[status] }) as never }), { id: SID, rowSeq: 1 }, "accept");
