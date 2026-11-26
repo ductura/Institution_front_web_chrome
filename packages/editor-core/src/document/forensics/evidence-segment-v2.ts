@@ -1,4 +1,5 @@
 import { EDIT_STEP_FORMAT_V1, EDIT_STEP_FORMAT_V2, EDIT_STEP_FORMAT_V3, EDIT_STEP_FORMAT_V4, parseEditSteps } from "../document/edit-step";
+import { SLIDE_STEP_FORMAT_V1, parseSlideSteps } from "../../slides/steps";
 import { sha256WebCrypto } from "./crypto";
 import { canonicalizeJcs, type JcsJsonValue } from "./jcs";
 
@@ -83,7 +84,16 @@ export type EvidenceStepFormat =
   | typeof EDIT_STEP_FORMAT_V1
   | typeof EDIT_STEP_FORMAT_V2
   | typeof EDIT_STEP_FORMAT_V3
-  | typeof EDIT_STEP_FORMAT_V4;
+  | typeof EDIT_STEP_FORMAT_V4
+  /**
+   * WEB-V13-DNEVNIK-SINKRONIZACIJA: the step format of a slides work, mirror of
+   * `EVIDENCE_SLIDE_TRANSACTION_FORMAT_V1` of the server
+   * (server/domain/forensics/evidence-segment-v2.ts, SRV-V13-EVIDENCE-KORACI).
+   * Its steps are read by the slides' own `parseSlideSteps`, never by a second
+   * reader here; which format a work takes stays the caller's choice by the
+   * kind of the work, so a text work never accepts it.
+   */
+  | typeof SLIDE_STEP_FORMAT_V1;
 
 export type EvidenceCaptureContextV2 = {
   editorModel: (typeof EVIDENCE_EDITOR_MODELS_V2)[number];
@@ -355,6 +365,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * is over the bytes that were sent and a cleaned copy is not what was sent.
  */
 function areSteps(value: unknown, format: EvidenceStepFormat): value is EvidenceStepV2[] {
+  if (format === SLIDE_STEP_FORMAT_V1) return parseSlideSteps(value).ok;
   return parseEditSteps(format, value).ok;
 }
 
