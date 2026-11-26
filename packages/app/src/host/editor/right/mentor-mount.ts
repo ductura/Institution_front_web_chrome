@@ -98,12 +98,12 @@ export function unreportedSeen(requests: readonly RevisionRequest[], reported: R
  * Tells the server which items the student saw, 200 at a time. Returns the ids the server accepted (answered
  * 200); a failed or thrown call leaves its items unreported, so the next read tries again. Never throws.
  */
-export async function reportSeen(api: Api, documentId: string, items: readonly SeenItem[]): Promise<string[]> {
+export async function reportSeen(call: Api, documentId: string, items: readonly SeenItem[]): Promise<string[]> {
   const done: string[] = [];
   for (let at = 0; at < items.length; at += SEEN_CHUNK) {
     const chunk = items.slice(at, at + SEEN_CHUNK);
     try {
-      const answer = await api("work.seen.post", { params: { documentId }, query: undefined, body: { items: chunk } });
+      const answer = await call("work.seen.post", { params: { documentId }, query: undefined, body: { items: chunk } });
       if (answer.ok) done.push(...chunk.map((i) => i.id));
     } catch { /* unreported: the next read tries again */ }
   }
