@@ -38,11 +38,19 @@ async function server(page: Page, options: { startDelayMs?: number } = {}) {
   return seen;
 }
 
+/** STU-R07: the home row has one button, "Otvori zadatak"; "Započni rad" is on the task page it opens. */
+async function openTask(page: Page) {
+  await page.goto("/app/web/zadaci");
+  await expect(page.getByRole("button", { name: s.startFor.replace("{title}", TITLE) })).toHaveCount(0);
+  await page.getByRole("link", { name: /^Otvori zadatak/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+}
+
 const startButton = (page: Page) => page.getByRole("button", { name: s.startFor.replace("{title}", TITLE) });
 
 test("the student starts the work, refreshes, and the work is there; the row then opens the same work", async ({ page }) => {
   const seen = await server(page);
-  await page.goto("/app/web/zadaci/kolegiji");
+  await openTask(page);
   await expect(startButton(page)).toBeVisible();
   expect((await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()).violations).toEqual([]);
   expect(seen.starts).toBe(0);
@@ -65,39 +73,38 @@ test("the student starts the work, refreshes, and the work is there; the row the
 
 test("a double click makes one work and sends one request", async ({ page }) => {
   const seen = await server(page, { startDelayMs: 400 });
-  await page.goto("/app/web/zadaci/kolegiji");
+  await openTask(page);
   await startButton(page).dblclick();
-  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+  // The task page reads again in place; the work exists once the start button is gone.
+  await expect(startButton(page)).toHaveCount(0);
   expect(seen).toEqual({ starts: 1, made: 1 });
 });
 
-test("the card names the language of the work and the version of the faculty rules while the editor opens", async ({ page }) => {
-  await server(page);
-  await page.goto("/app/web/zadaci/kolegiji");
-  // Hold the editor's route so the card stays in view after the answer.
-  let release: () => void = () => undefined;
-  const held = new Promise<void>((resolve) => { release = resolve; });
-  await page.route(`**/app/web/rad/${ID}**`, async (route) => { await held; await route.continue(); });
+// The line "Rad je otvoren. Jezik rada: hrvatski. Pravila fakulteta: verzija 3." belonged to the list card, which went
+// to the editor; the task page reads in place, and that text is held by StartWork.dom.test.ts ("Jezik rada: hrvatski").
+test("after the start the task page leaves the empty state in place, with no second start", async ({ page }) => {
+  const seen = await server(page);
+  await openTask(page);
+  await expect(page.getByText("Rad još nije započet.")).toBeVisible();
   await startButton(page).click();
-  await expect(page.getByRole("status").filter({ hasText: s.opened })).toHaveText(
-"Rad je otvoren. Jezik rada: hrvatski. Pravila fakulteta: verzija 3.");
-  release();
+  await expect(page.getByText("Rad još nije započet.")).toHaveCount(0);
   await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
+  expect(seen).toEqual({ starts: 1, made: 1 });
 });
 
 test("a 404 leads to the no-access screen of WEB-1401, which does not say whether the assignment exists", async ({ page }) => {
   await server(page);
   await page.route(START, (route) => route.fulfill({ status: 404, json: { code: "not_found" } }));
-  await page.goto("/app/web/zadaci/kolegiji");
+  await openTask(page);
   await startButton(page).click();
-  await expect(page).toHaveURL(/\/app\/web\/nema-ovlasti\?kind=denied&returnTo=%2Fzadaci%2Fkolegiji$/);
+  await expect(page).toHaveURL(/\/app\/web\/nema-ovlasti\?kind=denied&returnTo=%2Fzadaci$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nemate ovlasti za ovaj prikaz");
 });
 
 test("a 409 conflict (notice not acknowledged or not open yet) leads to the assignment, not to an unknown note", async ({ page }) => {
   await server(page);
   await page.route(START, (route) => route.fulfill({ status: 409, json: { code: "conflict" } }));
-  await page.goto("/app/web/zadaci/kolegiji");
+  await openTask(page);
   await startButton(page).click();
   await expect(page).toHaveURL(new RegExp(`/app/web/zadatak/${ID}$`));
   await expect(page.getByText(s.unknown)).toHaveCount(0);
@@ -110,10 +117,10 @@ test("an unknown answer stays on the card with a note, and the next click opens 
     if (failOnce) { failOnce = false; return route.fulfill({ status: 503, json: { code: "unavailable" } }); }
     return route.fallback();
   });
-  await page.goto("/app/web/zadaci/kolegiji");
+  await openTask(page);
   await startButton(page).click();
   await expect(page.getByRole("alert").filter({ hasText: s.unknown })).toBeVisible();
-  await expect(page).toHaveURL(/\/app\/web\/zadaci\/kolegiji$/);
+  await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
   await startButton(page).click();
   await expect(page).toHaveURL(new RegExp(`/app/web/rad/${ID}$`));
   expect(seen).toEqual({ starts: 1, made: 1 });
