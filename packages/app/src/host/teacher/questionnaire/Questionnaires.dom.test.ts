@@ -193,6 +193,20 @@ describe("questionnaire panel", () => {
     expect(host!.textContent).toContain(text.manualConflict);
   });
 
+  it("keeps the typed answers when the server rejects the sheet, and clears them after a saved one", async () => {
+    let verdict: "conflict" | "ready" = "conflict";
+    const addSheet = vi.fn(async (): Promise<Result<null>> => (verdict === "ready" ? ready(null) : { kind: "unavailable" }));
+    await show(fake({ addSheet, list: async () => ready([item("open")]), read: async () => ready(full("open")) }));
+    await click(text.actionFor(text.manual, item("open").title));
+    await type(field("2. Koliko ste zadovoljni?"), "3");
+    await click(text.manualSubmit);
+    expect(field("2. Koliko ste zadovoljni?").value).toBe("3");
+    verdict = "ready";
+    await click(text.manualSubmit);
+    expect(host!.textContent).toContain(text.manualSaved);
+    expect(field("2. Koliko ste zadovoljni?").value).toBe("");
+  });
+
   it("refuses manual entry for a draft that was read as one", async () => {
     await show(fake({ list: async () => ready([item("open")]), read: async () => ready(full("draft")) }));
     await click(text.actionFor(text.manual, item("open").title));

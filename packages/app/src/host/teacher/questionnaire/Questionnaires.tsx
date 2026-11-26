@@ -139,6 +139,7 @@ export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: 
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [problem, setProblem] = useState<{ problem: Problem; index: number | null } | null>(null);
   const [sheetNotice, setSheetNotice] = useState<Feedback>(null);
+  const [sheetRound, setSheetRound] = useState(0);
   const [attempt, setAttempt] = useState(0);
   const pending = useRef(false);
 
@@ -224,7 +225,7 @@ export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: 
   async function sendSheet(questionnaire: Questionnaire, answers: Parameters<QuestionnairePort["addSheet"]>[1]) {
     await run(async () => {
       const result = await port.addSheet(questionnaire.id, answers);
-      if (result.kind === "ready") { setSheetNotice({ error: false, label: text.manualSaved }); void reload(); }
+      if (result.kind === "ready") { setSheetNotice({ error: false, label: text.manualSaved }); setSheetRound((n) => n + 1); void reload(); }
       else {
         if (result.kind === "signedOut") onSignedOut();
         setSheetNotice({ error: true, label: result.kind === "invalid" || result.kind === "conflict" ? text.manualConflict : failureText(result.kind) });
@@ -271,7 +272,7 @@ export function QuestionnairePanel({ courseId, courseName, port, onSignedOut }: 
       <div>
         <h3>{text.manualTitle(mode.questionnaire.title)}</h3>
         {busy && <p role="status">{text.saving}</p>}
-        <SheetForm key={sheetNotice?.label ?? "sheet"} questionnaire={mode.questionnaire} busy={busy} notice={sheetNotice}
+        <SheetForm key={sheetRound} questionnaire={mode.questionnaire} busy={busy} notice={sheetNotice}
           onSubmit={(checked) => void sendSheet(mode.questionnaire, checked.answers)} />
         <Button type="button" tone="quiet" disabled={busy} onClick={() => { setMode({ kind: "list" }); setFeedback(null); }}>{text.close2}</Button>
       </div>
