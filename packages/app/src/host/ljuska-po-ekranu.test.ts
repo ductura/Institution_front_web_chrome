@@ -27,6 +27,7 @@ describe("frame per screen (prototype shell: side | none, narrow)", () => {
     expect(isNarrow("/zadaci", "student")).toBe(false);
     expect(frameOf("/zadaci/dnevnik-prakse", "student")).toMatchObject({ shell: "side", narrow: false });
     expect(frameOf("/zadaci/gradivo-kodiranja", "student")).toMatchObject({ shell: "side", narrow: false });
+    expect(frameOf("/zadaci/upitnici", "student")).toMatchObject({ shell: "side", narrow: false });
     expect(frameOf("/zadaci/kodiranje-izvoz", "student")).toMatchObject({ shell: "side", narrow: false });
     expect(frameOf("/zadaci/kodiranje", "student")).toMatchObject({ shell: "side", narrow: false });
     expect(frameOf("/zadatak/a1/tim", "student")).toMatchObject({ shell: "side", narrow: true });
