@@ -41,7 +41,7 @@ jobs:
       - name: Browser
         run: pnpm --filter @ductura/app exec playwright install --with-deps chromium
       - name: Tests of the gate
-        run: node --test packages/app/e2e/viz/prag.test.ts packages/app/e2e/viz/tablica.test.ts
+        run: node --test packages/app/e2e/viz/prag.test.ts packages/app/e2e/viz/tablica.test.ts packages/app/e2e/viz/ekrani.test.ts
       - name: Start the app over the fake institution server
         run: |
           cd packages/app
