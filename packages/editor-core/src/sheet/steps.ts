@@ -17,8 +17,8 @@
 // Hashing is WebCrypto (as for slides), so application is async.
 // Assumption (as on the server): inserting or removing a row or a column moves the
 // cells only; the text of a formula is not rewritten.
-import { canonicalizeJcs } from "../document/forensics/jcs.ts";
-import { hasOnlyKeys, isPlainObject, ownProperty } from "../document/json.ts";
+import { canonicalizeJcs } from "../document/forensics/jcs";
+import { hasOnlyKeys, isPlainObject, ownProperty } from "../document/json";
 
 import {
   MAX_FORMULA_LENGTH,
@@ -30,8 +30,8 @@ import {
   type Sheet,
   type SheetCell,
   type SheetDocument,
-} from "./model.ts";
-import { validateSheetDocument } from "./validate.ts";
+} from "./model";
+import { validateSheetDocument } from "./validate";
 
 /** Value of `captureContext.transactionFormat` for spreadsheet documents. */
 export const SHEET_STEP_FORMAT_V1 = "ductus-sheet-steps-v1" as const;
