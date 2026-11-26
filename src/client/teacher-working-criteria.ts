@@ -1,8 +1,9 @@
 /**
  * The teacher's working criteria for one work (WEB-1112; E 3.5 mentor3, B-9).
- * Six criteria are the teacher's working note: the student never sees them
- * and never asks for them (B-9, 19. 11. 2026), so nothing in the student's
- * code imports this module.
+ * Six criteria are the teacher's working note, written only by the teacher.
+ * Since Daniel's decision of 26. 11. 2026 (Ductus#2058, replacing B-9) the
+ * student who owns the work reads them too, each teacher's separately, through
+ * student-working-criteria.ts, which shares the criterion's shape from here.
  *
  * Both routes are in the migration contract in the server's shape (LOK-WEB-20,
  * openapi v1). teacher.working-criteria.get answers 200 {criteria}: always the
@@ -56,7 +57,7 @@ export type CriterionWrite =
 const UNKNOWN = { kind: "nepoznato" } as const;
 const CODE_POINT = "[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]";
 // openapi v1: a work id is 1 to 256 code points, trimmed, without a control character.
-const WORK_ID: Schema = {
+export const WORK_ID: Schema = {
   type: "string",
   pattern: `^(?!\\s)(?:${CODE_POINT}|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])`,
 };
@@ -65,7 +66,7 @@ const ASSESSMENT: Schema = { anyOf: [{ type: "null" }, ...ASSESSMENTS.map((a) =>
 const NOTE: Schema = { anyOf: [{ type: "null" }, { type: "string", minLength: 1, maxLength: NOTE_MAX }] };
 const closed = (properties: Record<string, Schema>): Schema =>
   ({ type: "object", additionalProperties: false, required: Object.keys(properties), properties });
-const CRITERION: Schema = closed({
+export const CRITERION: Schema = closed({
   id: CRITERION_ID, label: { type: "string", pattern: "^workingCriteria\\.[a-z]+$" }, assessment: ASSESSMENT, note: NOTE,
 });
 const LIST: Schema = closed({ criteria: { type: "array", minItems: CRITERIA_COUNT, maxItems: CRITERIA_COUNT, items: CRITERION } });

@@ -1,8 +1,8 @@
 "use client";
 
-// WEB-2122 (prototype mentor3, "Kriteriji ocjene"; decision 22. 11. 2026: visible to the student).
-// The teacher sets three assessments and a note per criterion; the student and the collaborator only
-// read. Until the server's criteria operations exist (`call` is null) the card says "nedostupno".
+// WEB-2122 (prototype mentor3, "Kriteriji ocjene"). The teacher sets three assessments and a note per
+// criterion; the collaborator only reads. The student reads each teacher's criteria through StudentCriteria
+// (ED-35, Daniel's decision of 26. 11. 2026). While `call` is null the card says "nedostupno".
 import { Button } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 

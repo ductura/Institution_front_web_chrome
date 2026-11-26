@@ -99,6 +99,10 @@ export const consultHr = {
     byRubric: "Za ovaj rad vrijede kriteriji ocjenjivanja iz uputa zadatka.",
     retry: "Pokušaj ponovno",
     unrated: "još nije ocijenjeno",
+    /** ED-35: the student reads each teacher's criteria separately. */
+    teacherLine: "Nastavnik: {name}",
+    teacherUnnamed: "Nastavnik (ime nije upisano)",
+    noneYet: "Nastavnik još nije postavio kriterije za ovaj rad.",
     /** The criteria's text by id; the server sends only the id and a message key (LOK-WEB-20). */
     names: {
       topic: "Tema, cilj i istraživačko pitanje",
