@@ -79,7 +79,7 @@ export async function publishConfig(basedOn: number | null, draft: ConfigDraft, 
       body: { expectedVersion: basedOn ?? 0, citationStyle: "fpzg", workLanguages: ordered(draft.workLanguages), defaultWorkLanguage: draft.defaultWorkLanguage },
     });
     if (answer.ok) return { kind: "published", version: answer.body.version };
-    if (answer.status === 422 || answer.status === 0) return { kind: "invalid", message: invalid };
+    if (answer.status === 422) return { kind: "invalid", message: invalid };
     if (answer.status === 409) return { kind: "stale" };
     if (answer.status === 401 || answer.status === 403) return { kind: "denied" };
   } catch {

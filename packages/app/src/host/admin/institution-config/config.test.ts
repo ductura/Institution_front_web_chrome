@@ -74,6 +74,10 @@ describe("postavke ustanove: objava", () => {
     const result = await run();
     expect(result.kind).toBe(kind);
   });
+  it("nečitljiv odgovor (status 0) nije odbijanje vrijednosti nego nepotvrđena objava", async () => {
+    const { run } = send(() => new Response("{", { status: 201 }));
+    await expect(run()).resolves.toEqual({ kind: "unavailable" });
+  });
   it("prekid mreže nije objava", async () => {
     const fetchImpl = async () => { throw new Error("offline"); };
     await expect(publishConfig(1, draftOf(version(1)), t.invalid, { baseUrl, fetchImpl })).resolves.toEqual({ kind: "unavailable" });
