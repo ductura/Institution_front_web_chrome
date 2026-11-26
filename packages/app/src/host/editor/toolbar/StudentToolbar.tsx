@@ -42,6 +42,7 @@ import { skeletonAvailable } from "../areas/skeleton/skeleton";
 import { skeletonMessages } from "../areas/skeleton/messages.hr";
 import { assignmentIdFromPath, downloadLatex, latexMenuItem, useLatexStyle } from "../stem/latex-export-menu";
 import { stemHr } from "../stem/messages.hr";
+import { SpeechControls } from "@/components/editor/addons/SpeechControls";
 import { ReadAloudControls } from "../read-aloud/ReadAloudControls";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { ReadingSettingsDialog } from "../reading-settings/ReadingSettingsDialog";
@@ -83,6 +84,14 @@ export function exportMenuItems(editor: Editor | null): { id: string; label: str
 }
 
 const live = (editor: Editor | null): editor is Editor => !!editor && !editor.isDestroyed && editor.isEditable;
+
+/** ED-R18: a dictated phrase typed at the caret (over the selection) with a space after it; false when the editor is not writable. */
+export function insertDictatedPhrase(editor: Editor | null, phrase: string): boolean {
+  const text = phrase.trim();
+  if (!text || !live(editor)) return false;
+  editor.chain().focus().command(({ tr }) => { tr.insertText(`${text} `); return true; }).run();
+  return true;
+}
 
 /** The editor's state as the toolbar model wants it. The V2 schema has no numbered list, so it is never on. */
 export function toolbarStateOf(s: EditorState): ToolbarState {
@@ -333,6 +342,8 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
           else if (id === "copy") void copyWorkText(editor).then((ok) => toast(copyToastText(ok)));
         }} />
       <ReadAloudControls editor={editor} />
+      {/* ED-R18: dictation into the document; reading aloud is the menu above, so only "Diktiraj" shows. */}
+      <SpeechControls reading={false} editable={writeOk} getText={() => ""} onPhrase={(phrase) => { insertDictatedPhrase(editor, phrase); }} />
       <MobileQuickBar editable={writeOk} focused={focused} dialogOpen={dialog !== null} canUndo={state.canUndo} hide={HIDDEN_QUICK_TOOLS}
         onTool={(id, at) => {
           if (id === "undo") toolbarCommands(editor).undo();
