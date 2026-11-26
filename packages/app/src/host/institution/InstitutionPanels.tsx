@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Dialog, KeyValueList, Notice, Select, Tag } from "@ductura/ui";
+import { Button, Card, Dialog, KeyValueList, Notice, Select, Tag, TextField } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { zagrebParts } from "@/components/summary/zagreb-time";
@@ -9,8 +9,8 @@ import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { institutionHostMessages as h } from "./messages.hr";
 import {
-  changeTeacherRole, readAcademicYears, readAdminCourses, readTeacherRoles,
-  type FailedKind, type InstitutionCourse, type Read, type RoleAction, type RoleOutcome, type TeacherRoles,
+  changeCourseStudent, changeTeacherRole, readAcademicYears, readAdminCourses, readTeacherRoles,
+  type FailedKind, type InstitutionCourse, type Read, type RoleAction, type RoleOutcome, type StudentAction, type StudentOutcome, type TeacherRoles,
 } from "./reads";
 import { chosenYear, displayName, overviewCounts, yearLabel } from "./views";
 
@@ -267,6 +267,7 @@ export function CoursesPanel() {
             { id: "holder", label: t.holder, value: course.holder === null ? t.noHolder : displayName(course.holder.name, unnamed) },
             { id: "team", label: t.team, value: course.team.length === 0 ? t.noTeam : names(course.team) },
           ]} />
+          <StudentActions courseId={course.courseId} onChanged={retry} />
           {course.groups.length === 0 ? <Notice>{t.noGroups}</Notice> : course.groups.map((group) => (
             <section key={group.groupId} aria-label={group.name}>
               <h3>{group.name}</h3>
@@ -278,6 +279,81 @@ export function CoursesPanel() {
           ))}
         </Card>
       ))}
+    </section>
+  );
+}
+
+// ---- removal and return of a student (OPE-R03) -------------------------------------------------
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const studentLine = (action: StudentAction, kind: StudentOutcome["kind"]): string => {
+  const o = h.student.outcome;
+  switch (kind) {
+    case "done": return action === "remove" ? o.removed : o.returnAllowed;
+    case "nothing": return action === "remove" ? o.notRemoved : o.notAllowed;
+    case "unauthorized":
+    case "forbidden": return o.ended;
+    case "invalid": return o.invalid;
+    case "unknown": return o.unknown;
+  }
+};
+
+type StudentStep = { kind: "idle" } | { kind: "asking" | "working"; action: StudentAction } | { kind: "done"; action: StudentAction; outcome: StudentOutcome["kind"] };
+
+/** Removes a student from one course or permits the return, over the existing routes, after a confirmation. */
+export function StudentActions({ courseId, onChanged }: { courseId: string; onChanged: () => void }) {
+  const t = h.student;
+  const [studentId, setStudentId] = useState("");
+  const [step, setStep] = useState<StudentStep>({ kind: "idle" });
+  const inFlight = useRef(false);
+  const safe = useRef<HTMLButtonElement>(null);
+  const id = studentId.trim();
+  const valid = UUID.test(id);
+  const working = step.kind === "working";
+
+  const send = async () => {
+    if (step.kind !== "asking" || inFlight.current) return;
+    inFlight.current = true;
+    const { action } = step;
+    setStep({ kind: "working", action });
+    const { kind } = await changeCourseStudent(action, courseId, id);
+    inFlight.current = false;
+    setStep({ kind: "done", action, outcome: kind });
+    if (kind === "done") {
+      setStudentId("");
+      onChanged();
+    }
+  };
+
+  const action = step.kind === "asking" || step.kind === "working" ? step.action : null;
+  const ok = step.kind === "done" && (step.outcome === "done" || step.outcome === "nothing");
+  return (
+    <section aria-label={t.heading}>
+      <h3>{t.heading}</h3>
+      <p>{t.lead}</p>
+      <TextField label={t.field} hint={t.hint} value={studentId} autoComplete="off" spellCheck={false}
+        error={id !== "" && !valid ? t.invalidId : undefined} onChange={(event) => setStudentId(event.target.value)} />
+      <Button tone="secondary" size="small" disabled={!valid || working} onClick={() => setStep({ kind: "asking", action: "remove" })}>{t.remove}</Button>{" "}
+      <Button tone="secondary" size="small" disabled={!valid || working} onClick={() => setStep({ kind: "asking", action: "return" })}>{t.allowReturn}</Button>
+      <div role="status">{step.kind === "done" && ok ? <p>{studentLine(step.action, step.outcome)}</p> : null}</div>
+      <div role="alert">{step.kind === "done" && !ok ? <p>{studentLine(step.action, step.outcome)}</p> : null}</div>
+      <Notice>{t.directEnrolment}</Notice>
+      <Dialog
+        open={action !== null}
+        title={action === "return" ? t.returnTitle : t.removeTitle}
+        dismissible={!working}
+        onClose={() => setStep({ kind: "idle" })}
+        initialFocus={safe}
+        actions={(
+          <>
+            <Button busy={working} onClick={() => void send()}>{action === "return" ? t.allowReturn : t.remove}</Button>
+            <Button ref={safe} tone="secondary" busy={working} onClick={() => setStep({ kind: "idle" })}>{t.cancel}</Button>
+          </>
+        )}
+      >
+        <p>{action === "return" ? t.returnNote : t.removeNote}</p>
+      </Dialog>
     </section>
   );
 }
