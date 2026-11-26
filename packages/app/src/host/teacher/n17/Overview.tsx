@@ -27,6 +27,8 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
   const [stateFilter, setStateFilter] = useState<N17StateFilter>("");
   const [groupFilter, setGroupFilter] = useState("");
   const narrow = useNarrow();
+  // A chosen group that the read no longer has counts as "all": the select, the rows and "Očisti filtre" agree.
+  const activeGroup = (cards: readonly N17Card[]): string => groupFilterOptions(allRows(cards)).some((o) => o.value === groupFilter) ? groupFilter : "";
 
   useEffect(() => {
     let live = true;
@@ -60,7 +62,7 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
           {(() => {
             const rows = allRows(cards);
             const groups = groupFilterOptions(rows);
-            const group = groups.some((o) => o.value === groupFilter) ? groupFilter : "";
+            const group = activeGroup(cards);
             return (
               <div className="acts" role="group" aria-label={text.filters.label} data-testid="n17-filters">
                 <Select label={text.filters.stateLabel} options={[...stateFilterOptions(rows)]} value={stateFilter}
@@ -75,7 +77,7 @@ export default function N17Overview({ port = unavailablePort }: { port?: N17Port
               </div>
             );
           })()}
-          {cards.map((card) => { const shown = (rows: readonly N17Row[]) => filteredRows(rows, stateFilter, groupFilter); return (
+          {cards.map((card) => { const shown = (rows: readonly N17Row[]) => filteredRows(rows, stateFilter, activeGroup(cards)); return (
             <section key={card.assignmentId} className="card" aria-labelledby={`n17-${card.assignmentId}`} data-testid="n17-card">
               <h2 id={`n17-${card.assignmentId}`}>{text.cardTitle(card.courseName, card.title)}</h2>
               {cardDeadline(card, Date.now()) === null ? null : <p className="meta">{cardDeadline(card, Date.now())}</p>}
