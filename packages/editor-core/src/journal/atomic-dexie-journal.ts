@@ -35,6 +35,9 @@ import { isEvidenceProfileIdV2 } from "../document/forensics/evidence-segment-v2
 import { commitRequestFromTransaction } from "../serverSync/contract";
 import { REVISION_ZERO_SHA256, REVISION_ZERO_V2_SHA256, REVISION_ZERO_V3_SHA256 } from "../document/document/revision-zero";
 import { matchesWorkSchema, verifyWorkOpening, type VerifiedWorkOpening } from "../serverSync/work-opening";
+import { verifySlidesSnapshot } from "../slides/json";
+import { SLIDES_REVISION_ZERO_SHA256 } from "../slides/model";
+import { validateSlidesDocument } from "../slides/validate";
 import type {
   EvidenceOpening, EvidenceSegmentInput, EvidenceSegmentTransaction, EvidenceStop, EvidenceTiming,
   JournalContents, JournalSnapshot, PendingTransaction, QueuedTransaction, SalvageCopy, SyncMeta,
@@ -95,7 +98,7 @@ class JournalDatabase extends Dexie {
   control!: Table<JournalControl, string>;
   timings!: Table<EvidenceTiming, string>;
   salvage!: Table<Omit<SalvageCopy<VersionedDocument>, "id"> & { id?: number }, number>;
-  works!: Table<StoredWorkOpening, string>;
+  works!: Table<StoredOpening, string>;
   /** Set once ANOTHER connection deletes this database (logout elsewhere). */
   deletedElsewhere = false;
   private everOpened = false;
@@ -219,6 +222,36 @@ function canonicalTx(documentId: string, input: DocumentTransaction): DocumentTr
   }
 }
 
+/**
+ * WEB-V13-DNEVNIK-SINKRONIZACIJA: the stored opening with the kind of the work.
+ * `documentKind` is "slides" for a slides work and absent for text, so every
+ * record made before is read as text. (The shared row type in
+ * sync/journal-types.ts is unchanged: it belongs to another lane.)
+ */
+type StoredOpening = StoredWorkOpening & { documentKind?: "slides" };
+
+/** Whether a stored or verified document is a slides document (a text document has no such key). */
+const isSlidesDocument = (document: unknown): boolean =>
+  typeof document === "object" && document !== null && (document as { documentKind?: unknown }).documentKind === "slides";
+
+/**
+ * The one reader of snapshot bytes for a work: slides under a slides opening,
+ * versioned text under any other verified opening, and v1 text without one.
+ * What a reader does not take is refused, so a slides snapshot never reads as
+ * text and a text snapshot never reads as slides.
+ */
+function snapshotVerifierFor(work?: VerifiedWorkOpening) {
+  if (work?.documentKind === "slides") {
+    return async (bytes: Uint8Array) => {
+      const checked = await verifySlidesSnapshot(bytes);
+      return checked.ok
+        ? { ok: true as const, sha256: checked.sha256, document: checked.document as unknown as VersionedDocument }
+        : { ok: false as const };
+    };
+  }
+  return work ? verifyVersionedDocumentSnapshot : verifyDocumentSnapshot;
+}
+
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const isSegmentRow = (row: QueuedRow) => row.tx?.kind === "EVIDENCE_SEGMENT";
 
@@ -245,7 +278,7 @@ async function verifySegment(
   const documentBytes = new Uint8Array(input.document);
   const [payload, snapshot] = await Promise.all([
     verifyCanonicalEvidencePayloadV2(segmentBytes, work?.transactionFormat),
-    (work ? verifyVersionedDocumentSnapshot : verifyDocumentSnapshot)(documentBytes),
+    snapshotVerifierFor(work)(documentBytes),
   ]);
   if (!payload.ok || !snapshot.ok || payload.sha256 !== input.sha256 ||
       payload.segment.documentId !== documentId ||
@@ -299,6 +332,14 @@ type VerifiedOpening = {
 };
 
 function assertWorkSchema(documentId: string, document: VersionedDocument | undefined, work?: VerifiedWorkOpening): void {
+  // A slides work holds only slides documents and a slides document sits only
+  // under a slides opening: the text reader never takes one (no `work` given).
+  if (work?.documentKind === "slides" || isSlidesDocument(document)) {
+    if (document && !(work?.documentKind === "slides" && isSlidesDocument(document) && matchesWorkSchema(work, documentId, 1))) {
+      throw new JournalError("invalid_input");
+    }
+    return;
+  }
   if (document && (work ? !matchesWorkSchema(work, documentId, document.schemaVersion) : document.schemaVersion !== 1)) {
     throw new JournalError("invalid_input");
   }
@@ -321,7 +362,7 @@ async function verifyOpening(documentId: string, opened: EvidenceOpening, work?:
     throw new JournalError("invalid_input");
   }
   const bytes = new Uint8Array(document);
-  const verified = await (work ? verifyVersionedDocumentSnapshot : verifyDocumentSnapshot)(bytes);
+  const verified = await snapshotVerifierFor(work)(bytes);
   if (!verified.ok || verified.sha256 !== documentHash) throw new JournalError("invalid_input");
   assertWorkSchema(documentId, verified.document, work);
   if (work && (work.revision !== currentRevision || work.snapshotSha256 !== documentHash)) {
@@ -334,7 +375,15 @@ async function verifyOpening(documentId: string, opened: EvidenceOpening, work?:
 const REVISION_ZERO_OF = { 1: REVISION_ZERO_SHA256, 2: REVISION_ZERO_V2_SHA256, 3: REVISION_ZERO_V3_SHA256 } as const;
 
 /** The row `readVerifiedWork` verifies again: the answer `opening` checked under `work`. */
-function storedOpening(documentId: string, opening: VerifiedOpening, work: VerifiedWorkOpening, verifiedAt: string): StoredWorkOpening {
+function storedOpening(documentId: string, opening: VerifiedOpening, work: VerifiedWorkOpening, verifiedAt: string): StoredOpening {
+  if (work.documentKind === "slides") {
+    return {
+      documentId, currentRevision: opening.currentRevision, documentHash: opening.documentHash,
+      headSegmentHash: opening.headSegmentHash, lastSequenceTo: opening.lastSequenceTo, document: opening.bytes,
+      evidenceProfileId: opening.evidenceProfileId, schemaVersion: 1, documentKind: "slides",
+      revisionZeroHash: SLIDES_REVISION_ZERO_SHA256, verifiedAt,
+    };
+  }
   return {
     documentId, currentRevision: opening.currentRevision, documentHash: opening.documentHash,
     headSegmentHash: opening.headSegmentHash, lastSequenceTo: opening.lastSequenceTo, document: opening.bytes,
@@ -344,14 +393,18 @@ function storedOpening(documentId: string, opening: VerifiedOpening, work: Verif
 }
 
 /** A stored opening of the right shape for `documentId`; anything else reads as none. */
-function wellFormedOpening(documentId: string, row: StoredWorkOpening | undefined): row is StoredWorkOpening {
+function wellFormedOpening(documentId: string, row: StoredOpening | undefined): row is StoredOpening {
+  const slides = row?.documentKind === "slides";
   return row !== undefined && row !== null && typeof row === "object" && row.documentId === documentId &&
     validSeq(row.currentRevision) && validSeq(row.lastSequenceTo) &&
     typeof row.documentHash === "string" && SHA256_HEX.test(row.documentHash) &&
     (row.headSegmentHash === null || (typeof row.headSegmentHash === "string" && SHA256_HEX.test(row.headSegmentHash))) &&
     row.document instanceof Uint8Array && isEvidenceProfileIdV2(row.evidenceProfileId) &&
-    (row.schemaVersion === 1 || row.schemaVersion === 2 || row.schemaVersion === 3) &&
-    row.revisionZeroHash === REVISION_ZERO_OF[row.schemaVersion];
+    (row.documentKind === undefined || row.documentKind === "slides") &&
+    (slides
+      ? row.schemaVersion === 1 && row.revisionZeroHash === SLIDES_REVISION_ZERO_SHA256
+      : (row.schemaVersion === 1 || row.schemaVersion === 2 || row.schemaVersion === 3) &&
+        row.revisionZeroHash === REVISION_ZERO_OF[row.schemaVersion]);
 }
 
 /** Nothing on this document is owed to, or missing from, the server. */
@@ -783,7 +836,9 @@ export class AtomicDexieJournal {
     documentId: string, document: VersionedDocument, reason: EvidenceStop,
     savedAt: string, expectedLocalSeq: number, work?: VerifiedWorkOpening,
   ): Promise<SyncMeta> {
-    const checked = (work ? validateVersionedDocument : validateDocument)(document);
+    const checked = work?.documentKind === "slides"
+      ? validateSlidesDocument(document) as unknown as ReturnType<typeof validateDocument>
+      : (work ? validateVersionedDocument : validateDocument)(document);
     if (!validDocumentId(documentId) || !canonicalUtc(savedAt) || !validSeq(expectedLocalSeq) ||
         !checked.ok || !["gap", "unsupported_step", "block_identity", "too_large"].includes(reason)) {
       throw new JournalError("invalid_input");
@@ -1020,7 +1075,8 @@ export class AtomicDexieJournal {
       }));
     // Web Crypto runs after the transaction (I6).
     if (!wellFormedOpening(documentId, row) || !snapshot || !meta?.evidenceHead ||
-        snapshot.document?.schemaVersion !== row.schemaVersion || !validSeq(snapshot.revision) ||
+        snapshot.document?.schemaVersion !== row.schemaVersion ||
+        isSlidesDocument(snapshot.document) !== (row.documentKind === "slides") || !validSeq(snapshot.revision) ||
         snapshot.revision < row.currentRevision || !validSeq(meta.evidenceHead.lastSequenceTo) ||
         meta.evidenceHead.lastSequenceTo < row.lastSequenceTo || meta.evidenceProfileId !== row.evidenceProfileId) {
       return null;
@@ -1030,8 +1086,9 @@ export class AtomicDexieJournal {
         documentId, currentRevision: row.currentRevision, documentHash: row.documentHash,
         headSegmentHash: row.headSegmentHash, lastSequenceTo: row.lastSequenceTo,
         document: new Uint8Array(row.document), evidenceProfileId: row.evidenceProfileId,
+        ...(row.documentKind === "slides" ? { documentKind: "slides" as const } : {}),
       }, { documentId, sha256: row.revisionZeroHash });
-      return work && work.schemaVersion === row.schemaVersion && work.revision === row.currentRevision &&
+      return work && work.schemaVersion === row.schemaVersion && work.documentKind === row.documentKind && work.revision === row.currentRevision &&
         work.snapshotSha256 === row.documentHash ? work : null;
     } catch {
       return null;
