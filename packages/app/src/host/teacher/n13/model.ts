@@ -7,12 +7,17 @@ import { n13Messages as text } from "./messages.hr";
 
 export type N13Context = { readonly task: string | null; readonly course: string | null; readonly dueAt: string | null };
 
+/** One student's recorded submission of the assignment (teacher.assignment-submissions.post); only those with `submitted`. */
+export type ExtensionSubmission = { readonly studentId: string; readonly requestedMinute: string };
+
 export type N13Data = {
   readonly context: N13Context;
   /** null: the list of extensions could not be read (shown as such, never as "none"). */
   readonly extensions: readonly DeadlineExtension[] | null;
   /** null: the students could not be read; only "all students" is then offered. */
   readonly students: readonly ExtensionStudent[] | null;
+  /** null: the submissions could not be read; the page then says it cannot tell, never "nobody has submitted". */
+  readonly submissions: readonly ExtensionSubmission[] | null;
 };
 
 export type N13Read = { readonly kind: "ready"; readonly data: N13Data } | { readonly kind: "signedOut" } | { readonly kind: "unavailable" };
@@ -106,4 +111,26 @@ export function filterByStudent(extensions: readonly DeadlineExtension[], studen
 export function studentSeesText(extension: DeadlineExtension): string {
   const reason = extension.reasonId === null ? null : text.reasons[extension.reasonId];
   return text.studentSees(formatDateTimeHr(extension.previousDueAt), reason);
+}
+
+export type SubmissionWarning = { readonly tone: "status" | "alert"; readonly bold: string; readonly rest: string | null };
+
+/**
+ * NAS-R14 (NAS-26): before the extension is saved, what the teacher is told about submissions that already exist in the
+ * scope, with the time each was requested. null when there is nothing to say (no student chosen yet, or nobody submitted).
+ * Unreadable submissions are said as such (never "nobody has submitted").
+ */
+export function submissionWarning(
+  scope: "one" | "all", studentId: string, students: readonly ExtensionStudent[] | null, submissions: readonly ExtensionSubmission[] | null,
+): SubmissionWarning | null {
+  if (scope === "one" && studentId === "") return null;
+  if (submissions === null) return { tone: "status", bold: text.submissionsUnknown, rest: null };
+  const nameOf = (id: string) => (students ?? []).find((s) => s.studentId === id)?.name ?? text.unnamed;
+  if (scope === "one") {
+    const found = submissions.find((s) => s.studentId === studentId);
+    return found === undefined ? null : { tone: "status", bold: text.existingOne(nameOf(studentId), formatDateTimeHr(found.requestedMinute)), rest: text.existingRest };
+  }
+  if (submissions.length === 0) return null;
+  const lines = submissions.map((s) => `${nameOf(s.studentId)} (${formatDateTimeHr(s.requestedMinute)})`).join(", ");
+  return { tone: "status", bold: text.existingAll(submissions.length), rest: `${lines}. ${text.existingRest}` };
 }
