@@ -57,6 +57,8 @@ export const rehearsalMessagesHr = {
   uncited: "Necitirani izvori",
   proofs: "Potvrde koje traži mentor",
   forms: "Obrasci fakulteta",
+  thesisFormsCount: "Obrasci završnog rada: {accepted} od {total} prihvaćeno.",
+  thesisFormsUnavailable: "Obrasci završnog rada trenutačno nisu dostupni.",
   close: "Zatvori",
   open: "Otvori",
   print: "Kako će izgledati ispis",

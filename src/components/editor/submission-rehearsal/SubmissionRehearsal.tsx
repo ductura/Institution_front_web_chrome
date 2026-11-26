@@ -44,6 +44,39 @@ export async function loadMentorConsent(documentId: string, options?: ApiOptions
   }
 }
 
+export type ThesisFormsRead =
+  | { readonly kind: "ready"; readonly total: number; readonly accepted: number }
+  | { readonly kind: "none" }
+  | { readonly kind: "unavailable" };
+
+/**
+ * The thesis forms of this work as the server holds them (work.thesis-forms.get). A 404 means the work has no
+ * mentorship, so there are no thesis forms ("none", the row keeps the declaration form); any other failure or
+ * a wrong shape is "unavailable", never a count.
+ */
+export async function loadThesisForms(documentId: string, options?: ApiOptions): Promise<ThesisFormsRead> {
+  try {
+    const answer = await createApi(options)("work.thesis-forms.get", {
+      params: { documentId }, query: undefined, body: undefined,
+    });
+    if (!answer.ok) return answer.status === 404 ? { kind: "none" } : { kind: "unavailable" };
+    const forms: unknown = answer.status === 200 ? (answer.body as { forms?: unknown }).forms : undefined;
+    if (!Array.isArray(forms) || forms.some((form) => typeof form?.state !== "string")) return { kind: "unavailable" };
+    return forms.length === 0 ? { kind: "none" }
+      : { kind: "ready", total: forms.length, accepted: forms.filter((form) => form.state === "accepted").length };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}
+
+/** The row "Obrasci fakulteta": the declaration form's detail, then the thesis forms when the server has any. */
+export function formsDetail(declaration: string | undefined, forms: ThesisFormsRead | undefined): string | undefined {
+  if (forms === undefined || forms.kind === "none") return declaration;
+  const thesis = forms.kind === "unavailable" ? t.thesisFormsUnavailable
+    : t.thesisFormsCount.replace("{accepted}", String(forms.accepted)).replace("{total}", String(forms.total));
+  return declaration ? `${declaration} ${thesis}` : thesis;
+}
+
 export function consentDetail(consent: ConsentRead | undefined): string {
   if (consent === undefined) return t.approvalChecking;
   if (consent.kind === "given") return t.approvalGiven;
@@ -113,6 +146,7 @@ function RehearsalDialog({
   const [requirements, setRequirements] = useState<Requirements>(null);
   const [loadedComments, setLoadedComments] = useState<readonly CommentThread[]>();
   const [consent, setConsent] = useState<ConsentRead>();
+  const [thesisForms, setThesisForms] = useState<ThesisFormsRead>();
   const doc = useEditorState({ editor, selector: ({ editor }) => editor.state.doc, equalityFn: (a, b) => a === b });
   const model = useMemo(() => readRehearsal(doc, enabledChecks), [doc, enabledChecks]);
   // WEB-NUZ-PREDAJA-1 (PR-2): the declaration as the server holds it, the same read the steps of the
@@ -126,6 +160,7 @@ function RehearsalDialog({
       void loadRequirements(assignmentId).then((result) => { if (current()) setRequirements(result); });
       // A caller that already knows the approval passes it; otherwise the server is asked.
       if (documentId && approval === undefined) void loadMentorConsent(documentId).then((result) => { if (current()) setConsent(result); });
+      if (documentId) void loadThesisForms(documentId).then((result) => { if (current()) setThesisForms(result); });
       if (documentId) void listComments(documentId, current).then((result) => {
         if (current() && result.kind === "ok") setLoadedComments(result.threads);
       });
@@ -230,8 +265,9 @@ function RehearsalDialog({
       {(["facultyRequirements", "uncited", "proofs", "forms"] as const).map((key) => {
         const supplement = supplements?.[key];
         const go = supplement?.open;
-        return supplement && <Row key={key} title={t[key]} open={go && (() => leaveFor(go))}>
-          {supplement.detail}
+        const detail = key === "forms" ? formsDetail(supplement?.detail, thesisForms) : supplement?.detail;
+        return (supplement || (detail !== undefined)) && <Row key={key} title={t[key]} open={go && (() => leaveFor(go))}>
+          {detail}
         </Row>;
       })}
       <Row title={form.form}>{form.formNotRun}</Row>
