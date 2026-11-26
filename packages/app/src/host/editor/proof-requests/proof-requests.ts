@@ -1,6 +1,6 @@
 // ED-15 (NF2-P8, P2-10b): the proofs the mentor asked the student for, at the top of the Izvori card
 // (prototype nf2.js reqBlock). Read from student.source-proof-requests.get; the mentor's working notes
-// never reach the student. Recommended sources have no student route yet and are not shown here.
+// never reach the student. Recommended sources are read in recommended-sources.ts.
 import { createApi } from "../../../../../../src/client/api.ts";
 
 export type ProofRequest = {
