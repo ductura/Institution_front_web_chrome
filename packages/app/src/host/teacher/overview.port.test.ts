@@ -38,6 +38,7 @@ const ANSWERS: Record<string, unknown> = {
   [`/teacher/assignments/${A1}/deadline-extensions`]: { extensions: [] },
   [`/courses/${K1}/team/view`]: { role: "holder", holderId: S2, assistants: [], students: [], groups: [] },
   [`/courses/${K1}/team`]: { holderId: S2, assistantIds: [] },
+  [`/courses/${K1}/team/candidates`]: { candidates: [] },
 };
 
 function client(answers: Record<string, unknown>, asked: string[] = []) {
