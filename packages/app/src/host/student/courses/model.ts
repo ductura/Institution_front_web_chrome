@@ -1,6 +1,7 @@
 // WEB-2103 (paritet E-3/E-4): what the two pages show of the reads. Pure
 // functions over what student.assignments.get and student.assignment-work.get
 // returned; nothing is guessed (no submit time, no state the reads do not prove).
+import { zagrebWall } from "../../../../../../src/lib/i18n/zagreb.ts";
 import { coursesText as t } from "./messages.hr";
 
 export type WorkType = keyof typeof t.workTypes;
@@ -36,14 +37,32 @@ export const ROW_ACTION: Record<RowKind, { label: string; primary: boolean }> = 
   task: { label: "Otvori zadatak", primary: true },
 };
 
-/** "Rok za 3 dana" for a deadline in 1..7 whole days, "Rok je danas" within a day; none otherwise (incl. past). */
-export function nearTag(dueIso: string, now: Date): string | null {
-  const ms = Date.parse(dueIso) - now.getTime();
+/** PAR2-A3: the contract's "2026/2027" as the prototype writes it on the course card, "2026./27."; anything else as it came. */
+export function yearLabel(year: string): string {
+  const m = /^(\d{4})\/\d{2}(\d{2})$/u.exec(year);
+  return m ? `${m[1]}./${m[2]}.` : year;
+}
+
+const sameZagrebDay =(a: number, b: number) => {
+  const x = zagrebWall(a);
+  const y = zagrebWall(b);
+  return x.year === y.year && x.month === y.month && x.day === y.day;
+};
+
+/**
+ * PAR2-A3: the one deadline tag of a task row, on E-2 and E-3 alike. "Rok je danas" when the deadline falls on
+ * today's date in Zagreb, otherwise "Rok za N dan/dana" for a deadline at most 7 started days ahead; none for a
+ * past, far or unreadable deadline.
+ */
+export function nearTag(dueIso: string, now: number | Date): string | null {
+  const due = Date.parse(dueIso);
+  const at = typeof now === "number" ? now : now.getTime();
+  const ms = due - at;
   if (!Number.isFinite(ms) || ms < 0) return null;
   const days = Math.ceil(ms / 86_400_000);
   if (days > 7) return null;
-  if (days <= 1) return t.dueToday;
-  return t.dueSoon.replace("{n}", String(days)).replace("{unit}", days % 10 === 1 && days !== 11 ? t.dayOne : t.dayMany);
+  if (sameZagrebDay(due, at)) return t.dueToday;
+  return t.dueSoon.replace("{n}", String(days)).replace("{unit}", days % 10 === 1 && days % 100 !== 11 ? t.dayOne : t.dayMany);
 }
 
 /**

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { effectiveDue, extensionOf, extensionText, groupLabels, matchesState, mentorLabel, nearTag, practiceOf, rowKind, stateFilterOf, submittedLine, submittedOf, workTypeLabel } from "./model";
+import { effectiveDue, extensionOf, extensionText, groupLabels, matchesState, mentorLabel, nearTag, practiceOf, rowKind, stateFilterOf, submittedLine, submittedOf, workTypeLabel, yearLabel } from "./model";
+import { coursesText } from "./messages.hr";
+import { homeText } from "../home/messages.hr";
+import { nearTag as homeNearTag } from "../home/model";
 import { readCourses, readExtensions, type Course, type CoursesCall } from "./read";
 
 const NOW = new Date("2026-11-22T10:00:00Z");
@@ -24,9 +27,33 @@ describe("E-3/E-4 model", () => {
   });
   it("tags near deadlines only", () => {
     expect(nearTag("2026-11-25T10:00:00Z", NOW)).toBe("Rok za 3 dana");
-    expect(nearTag("2026-11-23T08:00:00Z", NOW)).toBe("Rok je danas");
+    // PAR2-A3: 22 h ahead is tomorrow in Zagreb, so not "danas" (E-2 said "Rok za 1 dan" for the same row).
+    expect(nearTag("2026-11-23T08:00:00Z", NOW)).toBe("Rok za 1 dan");
     expect(nearTag("2026-12-30T10:00:00Z", NOW)).toBeNull();
     expect(nearTag("2026-11-20T10:00:00Z", NOW)).toBeNull();
+  });
+  it("says Rok je danas only for a deadline on today's Zagreb date, for a Date or epoch now (PAR2-A3)", () => {
+    expect(nearTag("2026-11-22T22:59:00Z", NOW)).toBe("Rok je danas");
+    expect(nearTag("2026-11-22T22:59:00Z", NOW.getTime())).toBe("Rok je danas");
+    // 23:30 UTC on the 22nd is already the 23rd in Zagreb (UTC+1).
+    expect(nearTag("2026-11-22T23:30:00Z", NOW)).toBe("Rok za 1 dan");
+    expect(nearTag("2026-11-22T10:00:00Z", NOW)).toBe("Rok je danas");
+    expect(nearTag("2026-11-29T10:00:00Z", NOW)).toBe("Rok za 7 dana");
+    expect(nearTag("2026-11-29T10:00:01Z", NOW)).toBeNull();
+    expect(nearTag("nije datum", NOW)).toBeNull();
+  });
+  it("writes the academic year as the prototype's course card does (PAR2-A3)", () => {
+    expect(yearLabel("2026/2027")).toBe("2026./27.");
+    expect(yearLabel("2025/2026")).toBe("2025./26.");
+    expect(yearLabel("2026./2027.")).toBe("2026./2027.");
+    expect(yearLabel("")).toBe("");
+  });
+  it("has one work-type map for E-2 and E-3 (PAR2-A3)", () => {
+    expect(workTypeLabel("short_paper")).toBe("Podnesak");
+    expect(homeText.workTypes).toBe(coursesText.workTypes);
+    expect(homeText.signedOut).toBe(coursesText.signedOut);
+    expect(homeText.signIn).toBe(coursesText.signIn);
+    expect(homeNearTag).toBe(nearTag);
   });
   it("marks practice only when the server says isPractice: true (P-D1)", () => {
     const base = { id: "a", title: "Izmišljeni probni esej", dueAt: "2026-12-01T10:00:00Z", noticeFirst: false };

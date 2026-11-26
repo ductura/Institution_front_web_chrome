@@ -53,7 +53,8 @@ describe("deadline tag", () => {
   it("names the days within a week, never past or far ahead", () => {
     expect(nearTag(A.dueAt, NOW)).toBe("Rok za 3 dana");
     expect(nearTag("2026-11-21T09:00:00Z", NOW)).toBe("Rok za 1 dan");
-    expect(nearTag("2026-11-20T11:00:00Z", NOW)).toBe("Rok za 1 dan");
+    // PAR2-A3: an hour ahead on the same Zagreb date is today, as on E-3.
+    expect(nearTag("2026-11-20T11:00:00Z", NOW)).toBe("Rok je danas");
     expect(nearTag("2026-11-20T09:00:00Z", NOW)).toBeNull();
     expect(nearTag("2026-12-30T10:00:00Z", NOW)).toBeNull();
     expect(nearTag("nije datum", NOW)).toBeNull();
