@@ -56,10 +56,20 @@ izmjereni na žici; što je procjena, označeno je „procjena”.
   (`LocalDocument.tsx:386`) nakon stanke od 400 ms / `pagehide` / skrivena
   stranica. Dok je spremanje u letu, novi prijedlog se prepisuje (`this.next`,
   `evidence-session.ts:357`, `:426-437`), dakle najviše jedan kandidat čeka.
-- Jedno spremanje = jedan **segment** (svi događaji zabilježeni od zadnjeg
+- Jedno spremanje = jedan ili više **segmenata** (vidi niže) (svi događaji zabilježeni od zadnjeg
   segmenta: `recorder.takeSegment`, `:459-497`) zapisan u lokalni dnevnik, pa
-  `kick()` → drain. Drain šalje **najnoviji** red i smatra starije
-  nadomještenima (`planDrain`, `drain.ts:105-111`, `drain-runner.ts:103-122`).
+  `kick()` → drain. Za evidenciju drain šalje redove **od najstarijeg i ne
+  nadomješta ih**: `planDrain` uz vrstu `EVIDENCE_SEGMENT` ima `inOrder`
+  (`drain.ts:438`, `:456`, `:464`), pa se svaki segment šalje kao zaseban
+  commit. Zaostatak (spori odgovori, rad bez mreže) se ne smanjuje, nego se
+  naknadno šalje u cijelosti. Nadomještanje najnovijim vrijedi samo za
+  druge vrste redaka.
+- Jedno spremanje može dati **više segmenata**: `takeSegment` ograničava
+  segment na raspon < `MAX_SEGMENT_SPAN_MS` = 30 s, `MAX_SEGMENT_EVENTS` =
+  5000 događaja i 2 MiB (`capture.ts:58-60`, `:348`, `:387-388`), a
+  `saveCovered` ponavlja petlju dok ima segmenata
+  (`evidence-session.ts:459-497`). Tko tipka > 30 s bez stanke od 400 ms,
+  dobije npr. 2 segmenta iz jednog flusha.
 - Jedan zahtjev `evidence.commit.post` nosi **segment i cijeli dokument**
   nakon njega, oboje base64 (`evidence-ingest.ts:375-381`): tijelo ≈
   4/3·(S + D) + ~0,3 KB ovojnice (UUID-ovi, revizija). Granice: segment ≤ 2 MiB,
@@ -97,21 +107,21 @@ n puta (1.2).
 ## 2. Model: događaji po minuti
 
 Oznake: **D** = JCS bajtovi dokumenta, **S** = bajtovi jednog segmenta,
-**k** = broj spremanja (flush nakon stanke ≥ 400 ms) u minuti.
+**k** = broj spremanja (flush nakon stanke ≥ 400 ms) u minuti, **n** = broj segmenata u minuti (n ≥ k; n = k ako nijedno pisanje bez stanke ne traje 30 s).
 
 | Događaj | Okidač | Zahtjeva/min | Bajtova po zahtjevu (gore) | Bajtova po zahtjevu (dolje) |
 | --- | --- | --- | --- | --- |
-| `evidence.commit.post` | spremanje segmenta | ≈ k (drain šalje najnoviji; za sporih odgovora manje) | ≈ 4/3·(S + D) + 0,3 KB | potpisana potvrda, procjena ~1–2 KB |
+| `evidence.commit.post` | svaki segment (po jedan commit, redom) | = broj segmenata/min ≥ k (≥ k + ⌊30 s-raspona⌋ kod pisanja bez stanke); nikad manje zbog sporih odgovora, samo zaostatak | ≈ 4/3·(S + D) + 0,3 KB | potpisana potvrda, procjena ~1–2 KB |
 | `evidence.commit.post` ponavljanje (202) | `pending_signature` | 1 po isteku odgode (1, 2, 4, 8, 16, 30 s) dok ne stigne potvrda | isto kao gore (isti ključ) | procjena ~0,3 KB |
 | `live.document.put` | ponuda nakon spremanja, ≥ 1 s razmaka | ≤ min(k, 60); preskače se nepromijenjeno | ≈ D (JCS tekst, pa JSON; uz zaglavlje If-Match) | procjena ~0,2 KB (token) |
 | `live.document.get` (nastavnik, vidljiva kartica) | 1 s nakon odgovora | ≤ 60 po kartici | ~0,3 KB zaglavlja | 304: ≈ 0 tijela; 200: ≈ D (najviše uz svaku promjenu) |
-| `evidence.open.post` | učitavanje; `online`; nakon segmenta ako rad nepoznat | ≈ 0 u mirnom radu | ~0,1 KB | ~1–3 KB (dokument D u base64 + ključevi) |
+| `evidence.open.post` | učitavanje; `online`; nakon segmenta ako rad nepoznat | ≈ 0 u mirnom radu | ~0,1 KB | ≈ 4/3·D + metapodaci (ključevi, hashevi) ≈ 0,5–1 KB; kraći ≈ 4,5 KB, veći ≈ 61 KB (`evidence-ingest.ts:257-264`) |
 
 ## 3. Bajtovi po minuti za kraći i veći dokument
 
 Pretpostavke (procjena; mjeri NAC-F1-SRV): kraći D ≈ 3 KB (≈ 2 000 znakova),
 veći D ≈ 45 KB (≈ 30 000 znakova). Aktivno pisanje ≈ 200 znakova/min s
-pauzom ≥ 400 ms otprilike svakih 5 s ⇒ **k = 12**; događaj u segmentu ≈ 0,3 KB
+pauzom ≥ 400 ms otprilike svakih 5 s ⇒ **k = n = 12**; događaj u segmentu ≈ 0,3 KB
 (dva SHA-256 hexa = 128 B + koraci), pa S ≈ (200 / 12) · 0,3 KB + 0,6 KB
 zaglavlja ≈ 5,6 KB po segmentu. Ovo je najgori razuman slučaj za **jednog**
 studenta koji piše cijelu minutu.
