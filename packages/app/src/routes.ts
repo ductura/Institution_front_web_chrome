@@ -35,6 +35,7 @@ import { actionLogMessages } from "./host/operator/action-log/messages.hr";
 import { problemReportsMessages } from "./host/operator/problem-reports/messages.hr";
 import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 import { hostText } from "./text";
+import { teacherViewText } from "./host/student/work/teacher-view/messages.hr";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
 import { qualExportText } from "./host/student/qual-export/messages.hr";
@@ -160,6 +161,8 @@ export const PAGES: readonly Page[] = [
   { path: "/rad/[assignmentId]/dnevnik-pristupa", label: t.accessLog.context, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/reprodukcija", label: t.replay.titleStudent, kind: "pending", roles: ["student"] },
   // PIL-P1-SASTAV-STUDENT: the student sees the same composition as the teacher (P-1 rule 2.2).
+  // F4-EDI-R14: "Kako vidi nastavnik", the student's own work read only.
+  { path: "/rad/[assignmentId]/nastavnik", label: teacherViewText.title, kind: "pending", roles: ["student"] },
   { path: "/rad/[assignmentId]/podrijetlo", label: originText.title, kind: "pending", roles: ["student"] },
   // PIL-K-RAZGOVOR: the student's side of the teacher's interview preparation (N-14, WEB-1531).
   { path: "/rad/[assignmentId]/razgovor", label: studentInterviewText.pageTitle, kind: "pending", roles: ["student"] },
