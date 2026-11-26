@@ -2,6 +2,7 @@
 // Only what the server states is shown; a fact it does not give is said as unavailable, never invented (B-6).
 import { formatDateTimeHr } from "../../../../../../src/lib/i18n/hr";
 import type { VersionedDocument } from "../../../../../editor-core/src/document/document";
+import { deriveChapters } from "../../../../../editor-core/src/document/document/chapters";
 import { buildElements } from "../text-elements/model";
 import type { ElementsRead } from "../text-elements/reader";
 import { preSubmitMessages as text } from "./messages.hr";
@@ -52,17 +53,17 @@ export type Places =
   | { readonly kind: "places"; readonly rows: readonly string[] };
 
 /**
- * One row per citation whose source the document does not hold, as "2. Teorijski okvir, odlomak 4": the numbered heading
- * it sits under and its paragraph number there (prototype `beforePanel`). Before any heading the row is "Odlomak N".
+ * One row per citation whose source the document does not hold, as "2. Teorijski okvir, odlomak 4": the chapter
+ * (shared numbering) it sits under and its paragraph number there (prototype `beforePanel`). Before any heading the row is "Odlomak N".
  */
 export function openPlaces(doc: VersionedDocument): readonly string[] {
   const rows: string[] = [];
-  let heading = 0;
+  // Heading numbers come from the shared chapter projection ("1", "1.1", "2"), keyed by the heading's block id.
+  const chapters = new Map(deriveChapters(doc).chapters.map((c) => [c.blockId as string, `${c.number}. ${c.title}`]));
   let title: string | null = null;
   let paragraph = 0;
   for (const block of buildElements(doc).blocks) {
-    const label = block.pieces.map((p) => (p.kind === "text" ? p.text : "")).join("").trim();
-    if (block.type === "heading") { heading += 1; title = `${heading}. ${label}`; paragraph = 0; continue; }
+    if (block.type === "heading") { title = chapters.get(block.id) ?? null; paragraph = 0; continue; }
     paragraph += 1;
     for (const piece of block.pieces) {
       if (piece.kind === "open") rows.push(title === null ? text.placeNoHeading(paragraph) : text.place(title, paragraph));

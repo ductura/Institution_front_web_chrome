@@ -47,6 +47,11 @@ describe("N-07 open places for a source (NAS-R20)", () => {
     ]);
     expect(openPlaces(d)).toEqual(["Odlomak 1", "2. Teorijski okvir, odlomak 2", "2. Teorijski okvir, odlomak 2"]);
   });
+  it("sub-chapters follow the shared numbering (1, 1.1, 2), not a flat count", () => {
+    const sub = (n: number, text: string) => ({ ...heading(n, text), level: 2 });
+    const d = doc([heading(1, "Uvod"), sub(2, "Cilj"), para(1, [OPEN]), heading(3, "Analiza"), para(2, [OPEN])]);
+    expect(openPlaces(d)).toEqual(["1.1. Cilj, odlomak 1", "2. Analiza, odlomak 1"]);
+  });
   it("a read document without open places says none", () => {
     expect(placesFromRead({ kind: "document", document: doc([heading(1, "Uvod"), para(1, [known])]) })).toEqual({ kind: "none" });
     expect(placesFromRead({ kind: "empty" })).toEqual({ kind: "none" });
