@@ -42,6 +42,7 @@ import { PregledHost } from "../editor/right/PregledHost";
 import { MentorMount } from "../editor/right/MentorMount";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
+import { courseIdOf } from "../editor/sources-mention/required-literature";
 import { MarksHost } from "../editor/marks/MarksHost";
 import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
@@ -132,7 +133,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId}
               openOrigin={() => router.push(nextPath(base, `/rad/${encodeURIComponent(assignmentId)}/podrijetlo`))} />}
-            literature={() => <LiteratureList />}
+            literature={() => <LiteratureList courseId={courseIdOf(assignments, assignmentId)} />}
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
