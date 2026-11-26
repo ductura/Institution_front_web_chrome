@@ -17,7 +17,8 @@ import { CodeCard, CodeForm } from "./CodeForm";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
-import { continueRow, coursesWithoutTask, deadlineTag, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, startsWork, type Order, type RowKind, type TaskRow } from "./model";
+import { readHomeExtras } from "../courses/read";
+import { continueRow, coursesWithoutTask, deadlineTag, extensionLine, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, startsWork, submittedText, type Extras, type Order, type RowKind, type TaskRow } from "./model";
 
 const dueText = protoDateTime;
 
@@ -25,6 +26,7 @@ function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base
   const { label, primary } = rowAction(row.kind);
   const near = row.kind === "predano" ? null : nearTag(row.dueAt, now);
   const deadline = deadlineTag(row, now);
+  const extension = extensionLine(row, dueText);
   // E-2h: the row's link names the task and is described by the line with the deadline and its tags.
   const whenId = `po-rok-${row.id}`;
   return (
@@ -33,9 +35,10 @@ function Row({ row, now, base, action }: { row: TaskRow; now: number; base: Base
         <span className={styles.eyebrow}>{row.course}</span>
         <span className={styles.title}>{row.title}</span>
         <span className={styles.when} id={whenId}>
-          {row.kind === "predano" ? <span>{t.submitted}</span> : <span>{(row.extended ? t.extendedDue : t.due).replace("{due}", dueText(row.dueAt))}</span>}
+          {row.kind === "predano" ? <span>{submittedText(row, dueText)}</span> : <span>{(row.extended ? t.extendedDue : t.due).replace("{due}", dueText(row.dueAt))}</span>}
           {near === null ? null : <Tag tone="warn">{near}</Tag>}
           {deadline === null ? null : <Tag tone={deadline.kind === "late" ? "warn" : "neutral"}>{deadline.text}</Tag>}
+          {extension === null ? null : <span className={styles.meta}>{extension}</span>}
           {row.kind === "obavijest" ? <Tag tone="open">{t.noticeFirst}</Tag> : null}
           <PracticeBadge practice={row.practice} />
         </span>
@@ -118,6 +121,17 @@ export function HomePage() {
       live = false;
     };
   }, [attempt]);
+  const [extras, setExtras] = useState<Extras>(null);
+  useEffect(() => {
+    setExtras(null);
+    if (read === null || read.kind !== "ready") return;
+    let live = true;
+    const api = createApi();
+    const history = (assignmentId: string) => api("student.deadline-history.get", { params: { assignmentId }, query: undefined, body: undefined });
+    void readHomeExtras(api as unknown as Parameters<typeof readHomeExtras>[0], history, read.courses as unknown as Parameters<typeof readHomeExtras>[2], read.states)
+      .then((result) => { if (live) setExtras(result); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [read]);
   const go = (route: string) => router.push(nextPath(base, route));
 
   let body;
@@ -148,7 +162,7 @@ export function HomePage() {
     );
   } else if (read.courses.length === 0) body = <Empty />;
   else {
-    const rows = flatRows(read.courses, read.states);
+    const rows = flatRows(read.courses, read.states, extras);
     const now = Date.now();
     const current = continueRow(rows);
     body = rows.length === 0 ? <CoursesWithoutTask courses={coursesWithoutTask(read.courses)} /> : (
