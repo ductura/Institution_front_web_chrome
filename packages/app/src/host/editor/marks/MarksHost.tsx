@@ -16,6 +16,9 @@ import { requestPanel } from "../../../../../../src/components/editor/layout-pre
 import { allPlaces, counts, gutterDots, holeRemoval, nextPlace, placesAt, showGutter, type MarkKind, type Place } from "./marks-model";
 import { marksHr as t } from "./messages.hr";
 import styles from "./Marks.module.css";
+import { reportAlert } from "../../../../../../src/components/editor/layout-prefs/context-alerts.ts";
+
+const NEED_ALERT = "marks-need-proof";
 import { GHOST_KEY, ghostPlugin } from "./ghost";
 
 const KEY = new PluginKey("ductusMarks");
@@ -97,6 +100,11 @@ export function MarksHost() {
     return () => { editor.off("transaction", read); };
   }, [editor]);
   const n = useMemo(() => counts(places), [places]);
+  // ED-38 (prune.js ctxAlerts): citations with a confirmation the mentor asked for are a line in the
+  // "Uz tekst" alert row; it opens the sources group, where the request is answered.
+  const needs = places.filter((p) => p.kind === "need").length;
+  useEffect(() => { reportAlert(NEED_ALERT, needs > 0 ? { group: "sources", text: t.needAlert(needs) } : null); }, [needs]);
+  useEffect(() => () => reportAlert(NEED_ALERT, null), []);
 
   // One click, one popover: a single mark opens its own explanation, several open "Na ovom mjestu".
   useEffect(() => {

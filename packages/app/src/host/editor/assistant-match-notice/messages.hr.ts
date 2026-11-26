@@ -1,5 +1,7 @@
 // The student's notice about an assistant match (WEB-1230; D-41; D-58), as in the prototype (nf2.js, NF2-P13).
 // It never says "prepisano" and is never a verdict.
+import { pluralHr } from "@/lib/i18n/hr";
+
 export const noticeText = {
   title: "Dio teksta podudara se s odgovorom pomoćnika",
   neutral: "Ovo je obična usporedba teksta i ništa ne govori o autorstvu.",
@@ -18,4 +20,6 @@ export const noticeText = {
   conflict: "Za ovaj dio objašnjenje je već zabilježeno.",
   signedOut: "Sesija je istekla. Prijavi se ponovno.",
   dismiss: "Sakrij obavijest",
+  // ED-38: the line in the "Uz tekst" alert row (prune.js `ctxAlerts`).
+  row: (n: number) => `${n} ${pluralHr(n, "mjesto se podudara", "mjesta se podudaraju", "mjesta se podudara")} s odgovorom pomoćnika`,
 } as const;
