@@ -8,6 +8,7 @@ import { resolve } from "node:path";
 import { imeScenarija } from "../../test-fakes/viz-scenariji";
 import { ASSIGNMENT_ID as ASSIGNMENT, COURSE_ID } from "../a11y/fake-server";
 import { SCREENS, type Screen } from "../a11y/screens";
+import { pairScreens } from "./ekrani";
 
 /** The prototype file under VIZ_PROTOTIPOVI and its hash route. */
 export type Proto = { readonly file: string; readonly hash?: string };
@@ -65,7 +66,7 @@ export type Pair = { readonly screen: Screen; readonly proto: Proto | null; read
 export const slug = (name: string) =>
   name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-export const PAIRS: readonly Pair[] = [...SCREENS, ...EXTRA].map((screen) => ({ screen, proto: PROTO[screen.name] ?? null, slug: slug(screen.name) }));
+export const PAIRS: readonly Pair[] = pairScreens(SCREENS, EXTRA).map((screen) => ({ screen, proto: PROTO[screen.name] ?? null, slug: slug(screen.name) }));
 
 /** The prototype breakpoints are 640, 1050 and 1250 px; one width inside each range (GRADITELJ.md). */
 export const WIDTHS = [390, 768, 1100, 1280] as const;
