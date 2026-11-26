@@ -15,10 +15,10 @@
 .button:disabled { cursor: not-allowed; color: var(--ink-3); }
 .button:focus-visible, .link:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
 .text { white-space: nowrap; }
-/* Narrow widths: the buttons keep their icons, the words go (the name stays in aria-label), targets grow. */
+/* Narrow widths: the buttons keep their icons, the words go (the name stays in aria-label), targets grow to 44 px (NF2-P4). */
 @media (max-width: 640px) {
   .toolbar { padding: 4px 6px; }
-  .button { min-width: 40px; min-height: 40px; }
+  .button { min-width: 44px; min-height: 44px; }
   .text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .secondary { display: none; }
 }

@@ -27,13 +27,14 @@ const html = (state: ProvenanceState, switches: MapSwitches = DEFAULT_SWITCHES) 
   renderToStaticMarkup(createElement(ProvenanceMapView, { state, switches, onSwitches: () => {}, onRetry: () => {} }));
 
 describe("WEB-2158 Karta podrijetla: model", () => {
-  it("has no marks when only typed text and the assistant match have a share", () => {
-    expect(readOfParts(parts({ typed: 90, assistant_match: 10 }))).toEqual({ kind: "noMarks" });
+  it("has no marks when only typed text has a share", () => {
+    expect(readOfParts(parts({ typed: 100 }))).toEqual({ kind: "noMarks" });
     expect(readOfParts(parts())).toEqual({ kind: "noMarks" });
   });
 
-  it("has marks for any paste, import or assistant transfer, also below one percent", () => {
-    for (const kind of ["pasted_known", "pasted_unknown", "imported_file", "assistant_inserted"] as const) {
+  // PG-2 (WEB-NF5-KARTA): a work whose only mark is the match with an answer of the Asistent reads its marked text.
+  it("has marks for any paste, import, assistant transfer or assistant match, also below one percent", () => {
+    for (const kind of ["pasted_known", "pasted_unknown", "imported_file", "assistant_inserted", "assistant_match"] as const) {
       expect(readOfParts(parts({ typed: 99.6, [kind]: 0.4 }))).toEqual({ kind: "marked" });
     }
   });

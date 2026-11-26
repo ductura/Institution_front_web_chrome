@@ -16,9 +16,13 @@ export type ToolbarBehaviourInput = {
   prefs: ToolbarPrefs;
   onPrefs: (next: ToolbarPrefs) => void;
   collapsed?: readonly string[];
+  /** ED-30: the toolbar folds by width itself. */
+  fit?: boolean;
   place?: CursorPlace;
   intro?: "write" | "review" | "locked";
   onContextAction?: (id: ContextAction) => void;
+  /** ED-31: context actions the shell's editor cannot run yet. */
+  hideContext?: readonly ContextAction[];
 };
 
 export function EditorToolbarHost({ state, commands, behaviour, label, labels, omit }: {
@@ -34,7 +38,7 @@ export function EditorToolbarHost({ state, commands, behaviour, label, labels, o
     .map((g) => ({ ...g, actions: g.actions.filter((a) => !omit?.includes(a.id)).map((a) => (labels?.[a.id] ? { ...a, label: labels[a.id]! } : a)) }))
     .filter((g) => g.actions.length > 0);
   if (!behaviour) return <EditorToolbar groups={groups} label={label} />;
-  return <ToolbarWithBehaviour groups={groups} editable={state.editable} {...behaviour} />;
+  return <ToolbarWithBehaviour groups={groups} editable={state.editable} label={label} {...behaviour} />;
 }
 
 export function EditorOutlineHost({ headings, positions, cursor, onGo }: {

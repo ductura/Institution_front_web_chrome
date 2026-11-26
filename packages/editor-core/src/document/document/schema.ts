@@ -472,17 +472,13 @@ export type HeadingNodeV4 = {
 export type BulletItemNodeV4 = { type: "bulletItem"; id: NodeId; children: InlineNodeV4[] };
 export type QuoteNodeV4 = { type: "quote"; id: NodeId; children: InlineNodeV4[] };
 /**
- * An item of a numbered list (WEB-1608, M5.V1): a flat text block like the
- * bullet item, `level` 1 to 3 gives the nesting ("1.", "1.1.", "1.1.1.").
- * The number is never stored: it is derived from the order of the items
- * (`numberedListNumbers`), so the editor and the export always agree.
+ * An item of a numbered list (contract v4 §2.2, SRV#754): a flat text block
+ * like the bullet item, with no field but `type`, `id` and `children`; no
+ * nesting. The number is never stored: it is the item's position in a run of
+ * consecutive items (`orderedListNumbers`), so the editor and the export
+ * always agree.
  */
-export type NumberedItemNodeV4 = {
-  type: "numberedItem";
-  id: NodeId;
-  level: HeadingLevel;
-  children: InlineNodeV4[];
-};
+export type OrderedItemNodeV4 = { type: "orderedItem"; id: NodeId; children: InlineNodeV4[] };
 /** Text only, every text node with `marks: []` (§4.2). */
 export type CodeBlockNode = {
   type: "codeBlock";
@@ -500,7 +496,7 @@ export type DocumentNodeV4 =
   | ParagraphNodeV4
   | HeadingNodeV4
   | BulletItemNodeV4
-  | NumberedItemNodeV4
+  | OrderedItemNodeV4
   | QuoteNodeV4
   | CodeBlockNode
   | BoxNode

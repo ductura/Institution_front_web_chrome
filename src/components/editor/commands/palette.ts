@@ -3,13 +3,21 @@ import type { Command } from "@ductura/ui";
 import { numberedHeadings } from "@/editor";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
+import { citationRange, insertCitation } from "../citations/citation-document";
 import { requestFocusMode } from "../layout-prefs/focus-mode";
+import { documentSources } from "../sources/proofs/proof-sources";
 import { requestWorkHistory, workHistoryOffered } from "./work-history-event";
 import { BLOCK_STYLES, stateOf, TOOLS } from "../EditorToolbarFor";
 import { convertBlock, copyText, insertHole } from "../toolbar-menu";
 import { editorCommandsHr as text } from "./messages.hr";
 
 type Action = Command & { run?: () => void };
+
+/**
+ * What a submitted (read-only) work still offers: reading, finding, viewing and exporting, as the prototype's
+ * palette in its read mode (toolbar2.js, flag "smije i kad je rad predan"). Focus mode stays (WEB-1605).
+ */
+const READABLE = new Set(["shortcuts", "find", "history", "focus", "copy", "outline", "docx", "print"]);
 
 export function paletteActions(editor: Editor, showShortcuts: () => void, openFind?: () => void): Action[] {
   const state = stateOf(editor);
@@ -19,7 +27,7 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
   const edit = (fn: () => void) => () => {
     if (!editor.isDestroyed && editor.isEditable) fn();
   };
-  return [
+  const commands = [
     action("shortcuts", text.shortcuts, showShortcuts, "Ctrl+/"),
     action("find", text.findAndReplace, openFind, "Ctrl+F"),
     // ED-16 (NF2-P14): the one history dialog, offered only where a host knows the document.
@@ -40,11 +48,42 @@ export function paletteActions(editor: Editor, showShortcuts: () => void, openFi
     action("outline", text.outline, undefined, "Ctrl+\\"),
     action("docx", t.toolbar.exportItems.docx),
     action("print", t.toolbar.exportItems.print),
+  ];
+  return [
+    // ED-46 (P2-18): a submitted work lists only what it still allows, not a page of disabled writing tools.
+    ...(state.editable ? commands : commands.filter(({ id }) => READABLE.has(id))),
+    // Chapters and sources come with a typed query only (prototype: "Poglavlja" and "Izvori" under the commands).
     ...numberedHeadings(editor.state.doc).filter(({ title }) => title).map(({ pos, title, number }): Action => ({
-      id: `heading:${pos}`, group: text.chapters, label: `${number} ${title}`.trim(), hint: text.goTo,
+      id: `heading:${pos}`, group: text.chapters, label: `${number} ${title}`.trim(), hint: text.goTo, searchOnly: true,
       run: () => {
         if (!editor.isDestroyed) editor.chain().focus().setTextSelection(pos + 1).scrollIntoView().run();
       },
     })),
+    ...(state.editable ? sourceActions(editor) : []),
   ];
+}
+
+/** "Izvori": each source of the work, found by author, year or title; Enter cites it where the cursor is. */
+function sourceActions(editor: Editor): Action[] {
+  const raw: unknown = editor.state.doc.attrs.sources;
+  const titles = new Map((Array.isArray(raw) ? raw : []).flatMap((s: unknown) => {
+    const source = s as { id?: unknown; title?: unknown } | null;
+    return typeof source?.id === "string" && typeof source.title === "string" ? [[source.id, source.title] as const] : [];
+  }));
+  const cite = (sourceId: string) => {
+    if (editor.isDestroyed || !editor.isEditable) return;
+    const range = citationRange(editor.state);
+    const tr = range && insertCitation(editor.state, range, sourceId, "");
+    if (tr) editor.view.dispatch(tr);
+    editor.commands.focus();
+  };
+  const canCite = citationRange(editor.state) !== null;
+  return documentSources({ attrs: { sources: raw } } as never).map(({ id, label }): Action => {
+    const title = titles.get(id);
+    return {
+      id: `source:${id}`, group: text.sources, searchOnly: true, disabled: !canCite,
+      label: title && !label.includes(title) ? `${label}, ${title}` : label, hint: text.cite,
+      run: () => cite(id),
+    };
+  });
 }

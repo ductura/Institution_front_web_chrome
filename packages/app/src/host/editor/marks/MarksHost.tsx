@@ -12,7 +12,7 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 
 import { commentHighlightKey } from "../../../../../editor-core/src/editor/comment-anchor.ts";
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
-import { allPlaces, counts, gutterDots, nextPlace, placesAt, showGutter, type MarkKind, type Place } from "./marks-model";
+import { allPlaces, counts, gutterDots, holeRemoval, nextPlace, placesAt, showGutter, type MarkKind, type Place } from "./marks-model";
 import { marksHr as t } from "./messages.hr";
 import styles from "./Marks.module.css";
 
@@ -36,6 +36,28 @@ function marksPlugin() {
       },
     },
   });
+}
+
+/**
+ * ED-45 (P2-17): the popover of one mark, as in the prototype: the explanation, "Sljedeće mjesto ›"
+ * when there is another mark of the kind, and for "Za provjeru" "Provjereno, ukloni" (only when the
+ * text can be written; a submitted work only explains).
+ */
+export function MarkActions({ place, more, editable, onNext, onRemove }: {
+  place: Place; more: boolean; editable: boolean; onNext: () => void; onRemove: () => void;
+}) {
+  const hole = place.kind === "hole";
+  return (
+    <>
+      <p>{t.explain[place.kind]}</p>
+      {(more || (hole && editable)) && (
+        <div className={styles.actions}>
+          {hole && editable && <Button onClick={onRemove}>{t.actions.checked}</Button>}
+          {more && <Button tone="quiet" onClick={onNext}>{t.actions.next}</Button>}
+        </div>
+      )}
+    </>
+  );
 }
 
 export function MarksHost() {
@@ -97,6 +119,12 @@ export function MarksHost() {
     const target = nextPlace(places, kind, editor.state.selection.to);
     if (target) go(target);
   };
+  // ED-45: "Provjereno, ukloni" takes the [?] out; only while the text can be written.
+  const remove = (p: Place) => {
+    setPick(null);
+    if (!editor.isEditable || p.kind !== "hole") return;
+    editor.chain().focus().deleteRange(holeRemoval(editor.state.doc, p)).run();
+  };
   const host = editor.view.dom.parentElement;
   const base = host?.getBoundingClientRect();
   const dots = !host || !base || !showGutter(width) ? [] : gutterDots(places, (pos) => {
@@ -133,7 +161,8 @@ export function MarksHost() {
                 <Button tone="quiet" onClick={() => go(p)}>{p.name} <span className={styles.level}>· {t.levelNames[p.level]} · {t.open}</span></Button>
               </li>))}
             </ul>
-          ) : <p>{t.explain[pick.at[0]!.kind]}</p>}
+          ) : <MarkActions place={pick.at[0]!} more={places.filter((p) => p.kind === pick.at[0]!.kind).length > 1}
+                editable={editor.isEditable} onNext={() => jump(pick.at[0]!.kind)} onRemove={() => remove(pick.at[0]!)} />}
           <Button tone="quiet" onClick={() => setPick(null)}>{t.close}</Button>
         </div>
       ) : null}

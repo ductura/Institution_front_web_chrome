@@ -3,8 +3,11 @@
 // the map shows is the assistant match's own, in its section (match-model.ts).
 import { provenanceText as t } from "./messages.hr";
 
-/** The origin kinds that put a mark on the map: paste, import and transfer from the assistant (prototype). */
-export const MARKED_KINDS = ["pasted_known", "pasted_unknown", "imported_file", "assistant_inserted"] as const;
+/**
+ * The origin kinds that put a mark on the map: paste, import, transfer from the assistant (prototype) and the match
+ * with an answer of the Asistent, which the marked text names in words (PG-2, WEB-NF5-KARTA).
+ */
+export const MARKED_KINDS = ["pasted_known", "pasted_unknown", "imported_file", "assistant_inserted", "assistant_match"] as const;
 
 export type ProvenancePart = { readonly kind: string; readonly percent: number };
 

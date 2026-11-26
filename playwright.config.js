@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// e2e matrica (DAN-755, docs/PLAN.md §6): isti scenariji u svakom stupcu.
+// e2e matrica (DAN-755, docs/plan/PLAN-MIGRACIJE.md §6 i §8 t. 16): isti scenariji u svakom stupcu.
 // CI znači da je CI postavljen i neprazan (Playwrightova konvencija).
 const ci = Boolean(process.env.CI);
 // Pravi Chrome i Edge traže instalirane preglednike: CI ih instalira i tada su

@@ -21,7 +21,7 @@ import { ConsultPanel } from "../work/consult/ConsultPanel";
 import { docWords } from "../mentor/prep-model";
 import { latestReturn } from "../mentor/round-feedback";
 import { readRubric } from "../../student/rubric/read";
-import { abstractWords, seenAtOf, workStateOf } from "./mentor-mount";
+import { abstractWords, seenAtOf, thesisShownOf, workStateOf, type MentoredRead } from "./mentor-mount";
 
 /** The clipboard, when the browser gives it. */
 const copyText = (text: string): Promise<boolean> =>
@@ -122,6 +122,16 @@ export function MentorMount({ assignmentId, documentId, submitted, editor }: {
   const [reads, setReads] = useState<Reads>(LOADING);
   const [words, setWords] = useState<number | null>(null);
   const [byRubric, setByRubric] = useState(false);
+  // DEMO-POP-3: null while the student's mentored works are read; the thesis panel waits for them.
+  const [thesis, setThesis] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    setThesis(null);
+    void createApi()("student.mentored-assignments.get", { params: undefined, query: undefined, body: undefined })
+      .catch(() => ({ ok: false }) as const)
+      .then((answer) => { if (live) setThesis(thesisShownOf(answer as MentoredRead, assignmentId)); });
+    return () => { live = false; };
+  }, [assignmentId]);
   useEffect(() => {
     setByRubric(false);
     if (!assignmentId) return;
@@ -168,8 +178,8 @@ export function MentorMount({ assignmentId, documentId, submitted, editor }: {
           if (pos !== null) placeEditor.commands?.focus(pos);
           return pos !== null;
         } : undefined} />}
-      {/* WEB-V16-KOSTUR: "Završni rad"; the server's 404 hides it for a work without a mentorship. */}
-      <ThesisPanel documentId={documentId} role="student" />
+      {/* WEB-V16-KOSTUR: "Završni rad", only for a mentored work (DEMO-POP-3); the server's 404 still hides it. */}
+      {thesis && <ThesisPanel documentId={documentId} role="student" />}
     </>
   );
 }

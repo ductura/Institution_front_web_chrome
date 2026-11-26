@@ -21,6 +21,12 @@ export type LayoutSettings = { readonly rail: RailSize; readonly panel: PanelSiz
 
 export const DEFAULT_SETTINGS: LayoutSettings = { rail: "medium", panel: "medium" };
 export const STORAGE_KEY = "ductura.editor.layout";
+/**
+ * ED-39: the event a width choice sends on the page (detail: the new
+ * LayoutSettings), so the shell's "Raspored" menu and the panel dialog
+ * "Prilagodi panel" never show two different widths.
+ */
+export const SETTINGS_EVENT = "ductura:editor-layout";
 
 const isKey = (table: Readonly<Record<string, number>>, v: unknown): boolean =>
   typeof v === "string" && Object.prototype.hasOwnProperty.call(table, v);
@@ -56,10 +62,30 @@ export function saveSettings(
 ): boolean {
   try {
     storage?.setItem(STORAGE_KEY, JSON.stringify(settings));
+    announce(settings);
     return storage !== undefined;
   } catch {
     return false;
   }
+}
+
+/** Tells the page about a width choice; without a page (tests, server) nothing happens. */
+function announce(settings: LayoutSettings): void {
+  try {
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(new CustomEvent<LayoutSettings>(SETTINGS_EVENT, { detail: settings }));
+    }
+  } catch {
+    // A page without events still keeps the choice.
+  }
+}
+
+/** Calls `onChange` with every width choice made on the page; returns the unsubscribe. */
+export function onSettingsChange(onChange: (settings: LayoutSettings) => void): () => void {
+  if (typeof window === "undefined") return () => undefined;
+  const listener = (event: Event) => onChange(parseSettings(JSON.stringify((event as CustomEvent<unknown>).detail ?? null)));
+  window.addEventListener(SETTINGS_EVENT, listener);
+  return () => window.removeEventListener(SETTINGS_EVENT, listener);
 }
 
 function safeStorage(): Storage | undefined {

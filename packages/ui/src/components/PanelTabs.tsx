@@ -1,12 +1,19 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import styles from "./PanelTabs.module.css";
 
 export type PanelTab = {
   /** Stable key, also part of the element ids. */
   id: string;
   label: string;
   content: ReactNode;
+  /**
+   * A number next to the name (prototype `.cnt`, e.g. open comments), shown only
+   * when above zero; `label` is the whole phrase for assistive technology
+   * ("3 otvorena komentara"), the digit itself is hidden from it.
+   */
+  count?: { value: number; label: string };
 };
 
 export type PanelTabsProps = {
@@ -18,6 +25,17 @@ export type PanelTabsProps = {
   /** Told the id of every tab that opens (click or keys); the page may keep it, e.g. in the address. */
   onChange?: (id: string) => void;
 };
+
+/** The number beside a tab or panel button: the digit for the eye, the phrase for a screen reader. */
+export function TabCount({ value, label }: { value: number; label: string }) {
+  return (
+    <>
+      <span className={`panel-tabs__count ${styles.count}`} aria-hidden="true">{value}</span>
+      {/* In parentheses: a hidden span is read as its own block, so a leading comma would get a space before it. */}
+      <span className="visually-hidden">({label})</span>
+    </>
+  );
+}
 
 /**
  * The tabs of the right panel (design editor-v11 §5.1; moved from the web's shell, WEB-06): a sticky strip of
@@ -74,6 +92,7 @@ export function PanelTabs({ label, tabs, initial, onChange }: PanelTabsProps) {
             onClick={() => setOpen(tab.id)}
           >
             {tab.label}
+            {tab.count && tab.count.value > 0 ? <TabCount {...tab.count} /> : null}
           </button>
         ))}
       </div>

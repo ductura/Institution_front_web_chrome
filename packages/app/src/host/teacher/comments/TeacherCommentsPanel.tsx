@@ -5,6 +5,7 @@ import {
   changeThreadState, createRevisionComment, replyComment,
   type CreateOutcome, type ListOutcome, type ReplyOutcome,
 } from "@/client/comments";
+import { insertIntoComment } from "../comment-bank/model";
 import { limitBody, type TextAnchor } from "@/domain/collaboration";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 import type { TextRange } from "@/components/teacher/comment-place";
@@ -16,6 +17,11 @@ import styles from "@/components/teacher/LiveWorkView.module.css";
 
 import { COMMENT_TOAST_MS, teacherCommentsMessages as t } from "./messages.hr";
 import { entryWho, revisionLabel, threadTitle } from "./model";
+
+/** A bank text to put into the comment being written; `n` grows with every insertion, so the same text can be inserted twice. */
+export type BankInsertion = { readonly n: number; readonly text: string };
+/** The comment limit of limitBody (code points). */
+const COMMENT_LIMIT = 2000;
 
 const c = messagesHr.comments;
 const tt = messagesHr.teacherComments;
@@ -95,11 +101,18 @@ function ThreadCard({ placed, current, readOnly, onChanged, onShow, onToast }: {
  * and `revision` names that text (INT-15). While the revision is not known no
  * comment is sent: the server takes none from a teacher without it.
  */
-function NewComment({ documentId, anchor, revision, current, onDone }: {
+function NewComment({ documentId, anchor, revision, current, onDone, insert }: {
   documentId: string; anchor: TextAnchor; revision: number | null; current: () => boolean;
-  onDone: (created: boolean) => void;
+  onDone: (created: boolean) => void; insert: BankInsertion | null;
 }) {
   const [body, setBody] = useState("");
+  // An insertion that was already there when the form opened is not applied again.
+  const applied = useRef(insert?.n ?? 0);
+  useEffect(() => {
+    if (insert === null || insert.n === applied.current) return;
+    applied.current = insert.n;
+    setBody((now) => insertIntoComment(now, insert.text, COMMENT_LIMIT));
+  }, [insert]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Exclude<CreateOutcome, "ok"> | null>(null);
   const titleId = useId();
@@ -192,7 +205,7 @@ function ConsultationPrint({ placed, nodeOrder, current }: {
  * Same data and props as the shared `TeacherComments`; the list comes from the server only.
  */
 export default function TeacherCommentsPanel({
-  documentId, outcome, placed, nodeOrder, draft, revision, current, readOnly = false, onReload, onDraftDone, onShow,
+  documentId, outcome, placed, nodeOrder, draft, revision, current, readOnly = false, insert = null, onReload, onDraftDone, onShow,
 }: {
   documentId: string;
   outcome: ListOutcome | null;
@@ -203,6 +216,8 @@ export default function TeacherCommentsPanel({
   revision: number | null;
   current: () => boolean;
   readOnly?: boolean;
+  /** A text from the comment bank for the new comment (WEB-V17-BANK-INSERT). */
+  insert?: BankInsertion | null;
   onReload: () => void;
   onDraftDone: () => void;
   onShow: (range: TextRange) => void;
@@ -231,7 +246,7 @@ export default function TeacherCommentsPanel({
       <p className={styles.muted}>{t.note}</p>
       {!readOnly && outcome?.kind === "ok" && (draft ? (
         <NewComment key={`${documentId}:${draft.nodeId}:${draft.startHint}:${draft.endHint}:${draft.quote}`}
-          documentId={documentId} anchor={draft} revision={revision} current={current}
+          documentId={documentId} anchor={draft} revision={revision} current={current} insert={insert}
           onDone={(created) => { onDraftDone(); if (created) { setToast(t.added); onReload(); } }} />
       ) : <p className={styles.muted}>{t.hint}</p>)}
       {list}

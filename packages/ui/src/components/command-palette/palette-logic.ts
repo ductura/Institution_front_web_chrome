@@ -8,6 +8,8 @@ export type Command = {
   group: string;
   /** Visible but not runnable (the prototype hides; the plan shows them disabled). */
   disabled?: boolean;
+  /** Listed only for a typed query (the prototype's chapters and sources), never in the empty list or as recent. */
+  searchOnly?: boolean;
 };
 
 export const MAX_EMPTY = 10;
@@ -29,10 +31,11 @@ export function matches(command: Command, query: string): boolean {
 export function visibleCommands(commands: readonly Command[], query: string, recent: readonly string[]): Command[] {
   const q = query.trim();
   if (q === "") {
-    const byId = new Map(commands.map((c) => [c.id, c]));
+    const listed = commands.filter((c) => !c.searchOnly);
+    const byId = new Map(listed.map((c) => [c.id, c]));
     const recents = recent.map((id) => byId.get(id)).filter((c): c is Command => c !== undefined).slice(0, MAX_RECENT);
     const seen = new Set(recents.map((c) => c.id));
-    return [...recents, ...commands.filter((c) => !seen.has(c.id))].slice(0, MAX_EMPTY);
+    return [...recents, ...listed.filter((c) => !seen.has(c.id))].slice(0, MAX_EMPTY);
   }
   const first = fold(q).split(/\s+/)[0] ?? "";
   const found = commands.filter((c) => matches(c, q));

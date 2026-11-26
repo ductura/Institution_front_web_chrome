@@ -26,6 +26,11 @@ export const stemHr = {
   },
   latex: {
     item: "LaTeX (.tex)",
+    menuItem: "LaTeX (rad.tex)",
+    menuNeedsV4: "Izvoz u LaTeX traži rad u novom obliku dokumenta (formule, kod).",
+    menuStyleLoading: "Stil navođenja ustanove se učitava.",
+    menuStyleFailed: "Stil navođenja ustanove trenutačno nije dostupan.",
+    menuInvalid: "Rad se ne može pretvoriti u LaTeX u ovom stanju.",
     note: "Za odsjeke koji ga traže.",
     untitled: "Rad bez naslova",
     done: "Preuzet je rad.tex.",

@@ -103,7 +103,7 @@ test('a pull request installs and runs chromium only, every other event the full
   const steps = jobSteps('test');
   const pr = steps.find((s) => typeof s.run === 'string' && /playwright install/.test(s.run) && s.if === "${{ github.event_name == 'pull_request' }}");
   assert.ok(pr, 'pull request install step');
-  assert.equal(pr.run.trim(), 'npx playwright install --with-deps chromium');
+  assert.equal(pr.run.trim(), 'pnpm exec playwright install --with-deps chromium');
   const fn = steps.find((s) => typeof s.run === 'string' && s.run.includes('test:functional'));
   assert.equal(fn.env.DUCTURA_PR_CHROMIUM_ONLY, "${{ github.event_name == 'pull_request' }}");
   assert.equal(fn.if, undefined, 'functional tests run on every event');
