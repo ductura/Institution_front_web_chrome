@@ -48,10 +48,17 @@
   align-items: center;
   gap: 2px;
   min-width: 0;
+  /* Its width comes from the row, not from its tools: without this the icon bar's min-content widened
+     the editor column at 320 px and pushed the header past the viewport. Size only, so menus still show. */
+  contain: inline-size;
 }
 
+/* No item grows, and none is wider than the row: at 320 px the icon bar is held to the row's width,
+   so its fit (toolbar-fit) moves tools into "Više" instead of the page scrolling sideways (WCAG 1.4.10). */
 .toolbar > * {
   flex: none;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .guideAnchor {
