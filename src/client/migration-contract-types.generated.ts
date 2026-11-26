@@ -37,6 +37,7 @@
 // Faza 3: student.assignments.get, evidence.open.post, student-work.start.post, student-work.works.get, work.version.get from Institution_server 8ea96ad4 (API 1.148.0).
 // Faza 3: teacher.questionnaires.get, teacher.questionnaires.post, teacher.questionnaire.get, teacher.questionnaire.patch, teacher.questionnaire-state.post from Institution_server 3fe9d894 (API 1.149.0).
 // Faza 3: evidence.open.post, student.qual-materials.get, student.qual-materials.post, student.qual-material.get, student.qual-material.delete, institution.teaching-team-candidates.get from Institution_server 07bbab0e (API 1.150.0).
+// Faza 3: institution.assistant-request-limit.get, institution.assistant-request-limit.put, institution.thesis-overview.get, student.assignment-assistant-requests.get, student.assignment-assistant.get, student.qual-code.delete, student.qual-code.patch, student.qual-codes.get, student.qual-codes.post, student.questionnaire-responses.post, student.questionnaire.get, student.questionnaires.get, teacher.course-assistant.get, teacher.course-assistant.put, teacher.questionnaire-export.get, teacher.questionnaire-manual-responses.post, work.export-sheet-csv.get, work.thesis-committee.get, work.thesis-committee.put from Institution_server 4629ff36 (API 1.152.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -2508,5 +2509,138 @@ export type MigrationOperations = {
     body: undefined;
     success: { status: 200; body: { "candidates": ({ "id": string; "name": string })[] }; headers: {  } };
     errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "institution.assistant-request-limit.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "version": number; "limit": number | null }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "unavailable";
+  };
+  "institution.assistant-request-limit.put": {
+    params: undefined;
+    query: undefined;
+    body: { "expectedVersion": number; "limit": number | null };
+    success: { status: 200; body: { "version": number; "limit": number | null }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "forbidden" | "invalid_input" | "conflict" | "unavailable";
+  };
+  "institution.thesis-overview.get": {
+    params: undefined;
+    query: { "stage"?: "none" | "submitted_to_office" | "defense_scheduled" | "defended"; "limit"?: string; "after"?: string };
+    body: undefined;
+    success: { status: 200; body: { "works": ({ "documentId": string | null; "workType": "bachelor_thesis" | "master_thesis" | "specialist_thesis" | "doctoral_thesis"; "mentorName": { "givenName": string; "familyName": string } | null; "studentName": { "givenName": string; "familyName": string } | null; "stage": "none" | "submitted_to_office" | "defense_scheduled" | "defended"; "defenseAt": string | null; "topicState": "none" | "proposed" | "approved" | "returned"; "committeeSize": number })[]; "next": string | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
+  };
+  "student.assignment-assistant-requests.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "limit": number | null; "used": number }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "student.assignment-assistant.get": {
+    params: { "assignmentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "assistantEnabled": boolean }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "student.qual-code.delete": {
+    params: { "id": string };
+    query: { "confirm"?: "true" };
+    body: undefined;
+    success: { status: 204; body: undefined; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unavailable" | "not_found" | "invalid_input" | "conflict";
+  };
+  "student.qual-code.patch": {
+    params: { "id": string };
+    query: undefined;
+    body: { "name"?: string; "description"?: string; "order"?: number };
+    success: { status: 200; body: { "id": string; "name": string; "description": string; "order": number }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unavailable" | "not_found" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "conflict";
+  };
+  "student.qual-codes.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "codes": ({ "id": string; "name": string; "description": string; "order": number })[] }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "unavailable";
+  };
+  "student.qual-codes.post": {
+    params: undefined;
+    query: undefined;
+    body: { "name": string; "description"?: string };
+    success: { status: 201; body: { "id": string; "name": string; "description": string; "order": number }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unavailable" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "conflict";
+  };
+  "student.questionnaire-responses.post": {
+    params: { "id": string };
+    query: undefined;
+    body: { "answers": ({ "questionId": string; "value": string | number | (string)[] })[] };
+    success: { status: 204; body: undefined; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "conflict" | "unavailable";
+  };
+  "student.questionnaire.get": {
+    params: { "id": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "id": string; "courseId": string; "title": string; "participated": boolean; "questions": ({ "id": string; "order": number; "kind": "single" | "multiple" | "scale" | "number" | "text"; "text": string; "options": ({ "code": string; "label": string })[] | null; "scale": { "min": number; "max": number } | null })[] }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "student.questionnaires.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "questionnaires": ({ "id": string; "courseId": string; "title": string; "participated": boolean })[] }; headers: {  } };
+    errorCode: "unauthorized" | "unavailable";
+  };
+  "teacher.course-assistant.get": {
+    params: { "courseId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "enabled": boolean }; headers: {  } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "teacher.course-assistant.put": {
+    params: { "courseId": string };
+    query: undefined;
+    body: { "enabled": boolean };
+    success: { status: 200; body: { "enabled": boolean }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable";
+  };
+  "teacher.questionnaire-export.get": {
+    params: { "id": string };
+    query: { "includeText"?: "true" | "false"; [key: string]: unknown };
+    body: undefined;
+    success: { status: 200; body: { "schema": "questionnaire-export-v1"; "questionnaireId": string; "variables": ({ "questionId": string; "order": number; "kind": "single" | "multiple" | "scale" | "number" | "text"; "label": string; "options": ({ "code": string; "label": string })[] })[]; "rows": ({ "n": number; "values": { [key: string]: unknown } })[]; "responseCount": number; "includesText": boolean }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "not_found" | "conflict" | "unavailable";
+  };
+  "teacher.questionnaire-manual-responses.post": {
+    params: { "id": string };
+    query: undefined;
+    body: { "answers": ({ "questionId": string; "value": string | number | (string)[] })[] };
+    success: { status: 204; body: undefined; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "conflict" | "unavailable";
+  };
+  "work.export-sheet-csv.get": {
+    params: { "documentId": string };
+    query: { "sheet"?: string };
+    body: undefined;
+    success: { status: 200; body: Blob; headers: { "content-disposition"?: string } };
+    errorCode: "unauthorized" | "not_found" | "invalid_input" | "unavailable";
+  };
+  "work.thesis-committee.get": {
+    params: { "documentId": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "members": ({ "userId": string; "name": { "givenName": string; "familyName": string } | null; "role": "chair" | "member" })[]; "changedAt": string | null; "changedByPart": "faculty" | null }; headers: { "cache-control"?: string } };
+    errorCode: "unauthorized" | "not_found" | "unavailable";
+  };
+  "work.thesis-committee.put": {
+    params: { "documentId": string };
+    query: undefined;
+    body: { "members": ({ "userId": string; "role": "chair" | "member" })[] };
+    success: { status: 200; body: { "members": ({ "userId": string; "name": { "givenName": string; "familyName": string } | null; "role": "chair" | "member" })[]; "changedAt": string | null; "changedByPart": "faculty" | null }; headers: { "cache-control"?: string } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "not_found" | "unavailable" | "invalid_json" | "forbidden" | "unsupported_media_type" | "invalid_input";
   };
 };

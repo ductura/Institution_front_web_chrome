@@ -55974,5 +55974,2077 @@
         "unavailable"
       ]
     }
+  },
+  "institution.assistant-request-limit.get": {
+    "path": "/api/v1/institution/assistant/request-limit",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the request limit in force",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "version",
+                "limit"
+              ],
+              "properties": {
+                "version": {
+                  "minimum": 0,
+                  "maximum": 2147483647,
+                  "type": "integer"
+                },
+                "limit": {
+                  "anyOf": [
+                    {
+                      "minimum": 1,
+                      "maximum": 2147483647,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.assistant-request-limit.put": {
+    "path": "/api/v1/institution/assistant/request-limit",
+    "method": "PUT",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "expectedVersion",
+        "limit"
+      ],
+      "properties": {
+        "expectedVersion": {
+          "minimum": 0,
+          "maximum": 2147483646,
+          "type": "integer"
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "maximum": 2147483647,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the request limit in force",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "version",
+                "limit"
+              ],
+              "properties": {
+                "version": {
+                  "minimum": 0,
+                  "maximum": 2147483647,
+                  "type": "integer"
+                },
+                "limit": {
+                  "anyOf": [
+                    {
+                      "minimum": 1,
+                      "maximum": 2147483647,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.thesis-overview.get": {
+    "path": "/api/v1/institution/thesis-overview",
+    "method": "GET",
+    "query": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "stage": {
+          "anyOf": [
+            {
+              "const": "none",
+              "type": "string"
+            },
+            {
+              "const": "submitted_to_office",
+              "type": "string"
+            },
+            {
+              "const": "defense_scheduled",
+              "type": "string"
+            },
+            {
+              "const": "defended",
+              "type": "string"
+            }
+          ]
+        },
+        "limit": {
+          "pattern": "^(?:[1-9]|[1-9]\\d|1\\d\\d|200)$",
+          "type": "string"
+        },
+        "after": {
+          "pattern": "^[A-Za-z0-9_-]{1,120}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "A page of theses, possibly none",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "works",
+                "next"
+              ],
+              "properties": {
+                "works": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "documentId",
+                      "workType",
+                      "mentorName",
+                      "studentName",
+                      "stage",
+                      "defenseAt",
+                      "topicState",
+                      "committeeSize"
+                    ],
+                    "properties": {
+                      "documentId": {
+                        "anyOf": [
+                          {
+                            "minLength": 1,
+                            "maxLength": 256,
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "workType": {
+                        "anyOf": [
+                          {
+                            "const": "bachelor_thesis",
+                            "type": "string"
+                          },
+                          {
+                            "const": "master_thesis",
+                            "type": "string"
+                          },
+                          {
+                            "const": "specialist_thesis",
+                            "type": "string"
+                          },
+                          {
+                            "const": "doctoral_thesis",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "mentorName": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "givenName",
+                              "familyName"
+                            ],
+                            "properties": {
+                              "givenName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "familyName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "studentName": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "givenName",
+                              "familyName"
+                            ],
+                            "properties": {
+                              "givenName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "familyName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "stage": {
+                        "anyOf": [
+                          {
+                            "const": "none",
+                            "type": "string"
+                          },
+                          {
+                            "const": "submitted_to_office",
+                            "type": "string"
+                          },
+                          {
+                            "const": "defense_scheduled",
+                            "type": "string"
+                          },
+                          {
+                            "const": "defended",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "defenseAt": {
+                        "anyOf": [
+                          {
+                            "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,3})?(?:Z|[+-](?:[01]\\d|2[0-3]):[0-5]\\d)$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "topicState": {
+                        "anyOf": [
+                          {
+                            "const": "none",
+                            "type": "string"
+                          },
+                          {
+                            "const": "proposed",
+                            "type": "string"
+                          },
+                          {
+                            "const": "approved",
+                            "type": "string"
+                          },
+                          {
+                            "const": "returned",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "committeeSize": {
+                        "minimum": 0,
+                        "maximum": 5,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "next": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[A-Za-z0-9_-]{1,120}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.assignment-assistant-requests.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/assistant/requests",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the daily request count",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "limit",
+                "used"
+              ],
+              "properties": {
+                "limit": {
+                  "anyOf": [
+                    {
+                      "minimum": 1,
+                      "maximum": 2147483647,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "used": {
+                  "minimum": 0,
+                  "maximum": 2147483647,
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.assignment-assistant.get": {
+    "path": "/api/v1/student/assignments/{assignmentId}/assistant",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "assignmentId"
+      ],
+      "properties": {
+        "assignmentId": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the availability",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "assistantEnabled"
+              ],
+              "properties": {
+                "assistantEnabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.qual-code.delete": {
+    "path": "/api/v1/student/qual/codes/{id}",
+    "method": "DELETE",
+    "params": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "query": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "confirm": {
+          "const": "true",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "204": {
+        "description": "removed"
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.qual-code.patch": {
+    "path": "/api/v1/student/qual/codes/{id}",
+    "method": "PATCH",
+    "params": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "minProperties": 1,
+      "type": "object",
+      "properties": {
+        "name": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,80}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "description": {
+          "pattern": "^(?:|(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,500}(?<!\\s))(?![\\s\\S])",
+          "type": "string"
+        },
+        "order": {
+          "minimum": 1,
+          "maximum": 200,
+          "type": "integer"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the code",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "description",
+                "order"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "name": {
+                  "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,80}(?<!\\s)(?![\\s\\S])",
+                  "type": "string"
+                },
+                "description": {
+                  "pattern": "^(?:|(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,500}(?<!\\s))(?![\\s\\S])",
+                  "type": "string"
+                },
+                "order": {
+                  "minimum": 1,
+                  "maximum": 200,
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.qual-codes.get": {
+    "path": "/api/v1/student/qual/codes",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the codebook, in the owner's order",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "codes"
+              ],
+              "properties": {
+                "codes": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "description",
+                      "order"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "name": {
+                        "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,80}(?<!\\s)(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "description": {
+                        "pattern": "^(?:|(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,500}(?<!\\s))(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "order": {
+                        "minimum": 1,
+                        "maximum": 200,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.qual-codes.post": {
+    "path": "/api/v1/student/qual/codes",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,80}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "description": {
+          "pattern": "^(?:|(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,500}(?<!\\s))(?![\\s\\S])",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the created code",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "description",
+                "order"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "name": {
+                  "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,80}(?<!\\s)(?![\\s\\S])",
+                  "type": "string"
+                },
+                "description": {
+                  "pattern": "^(?:|(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,500}(?<!\\s))(?![\\s\\S])",
+                  "type": "string"
+                },
+                "order": {
+                  "minimum": 1,
+                  "maximum": 200,
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.questionnaire-responses.post": {
+    "path": "/api/v1/student/questionnaires/{id}/responses",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "answers"
+      ],
+      "properties": {
+        "answers": {
+          "minItems": 1,
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "questionId",
+              "value"
+            ],
+            "properties": {
+              "questionId": {
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "type": "string"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "maxLength": 2000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 40,
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "204": {
+        "description": "the sheet is stored"
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.questionnaire.get": {
+    "path": "/api/v1/student/questionnaires/{id}",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the form",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "courseId",
+                "title",
+                "participated",
+                "questions"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "courseId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "title": {
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                "participated": {
+                  "type": "boolean"
+                },
+                "questions": {
+                  "minItems": 1,
+                  "maxItems": 40,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "order",
+                      "kind",
+                      "text",
+                      "options",
+                      "scale"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "order": {
+                        "minimum": 1,
+                        "maximum": 40,
+                        "type": "integer"
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "const": "single",
+                            "type": "string"
+                          },
+                          {
+                            "const": "multiple",
+                            "type": "string"
+                          },
+                          {
+                            "const": "scale",
+                            "type": "string"
+                          },
+                          {
+                            "const": "number",
+                            "type": "string"
+                          },
+                          {
+                            "const": "text",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "text": {
+                        "minLength": 1,
+                        "maxLength": 500,
+                        "type": "string"
+                      },
+                      "options": {
+                        "anyOf": [
+                          {
+                            "minItems": 2,
+                            "maxItems": 20,
+                            "type": "array",
+                            "items": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "code",
+                                "label"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+                                  "type": "string"
+                                },
+                                "label": {
+                                  "minLength": 1,
+                                  "maxLength": 120,
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "scale": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "min",
+                              "max"
+                            ],
+                            "properties": {
+                              "min": {
+                                "minimum": 0,
+                                "maximum": 9,
+                                "type": "integer"
+                              },
+                              "max": {
+                                "minimum": 1,
+                                "maximum": 10,
+                                "type": "integer"
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.questionnaires.get": {
+    "path": "/api/v1/student/questionnaires",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the open questionnaires",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "questionnaires"
+              ],
+              "properties": {
+                "questionnaires": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "courseId",
+                      "title",
+                      "participated"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "courseId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "title": {
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "participated": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.course-assistant.get": {
+    "path": "/api/v1/teacher/courses/{courseId}/assistant",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the state of the course's switch",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "enabled"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.course-assistant.put": {
+    "path": "/api/v1/teacher/courses/{courseId}/assistant",
+    "method": "PUT",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the state in force",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "enabled"
+              ],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.questionnaire-export.get": {
+    "path": "/api/v1/teacher/questionnaires/{id}/export",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "query": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "includeText": {
+          "anyOf": [
+            {
+              "const": "true",
+              "type": "string"
+            },
+            {
+              "const": "false",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the export",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "schema",
+                "questionnaireId",
+                "variables",
+                "rows",
+                "responseCount",
+                "includesText"
+              ],
+              "properties": {
+                "schema": {
+                  "const": "questionnaire-export-v1",
+                  "type": "string"
+                },
+                "questionnaireId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "variables": {
+                  "maxItems": 40,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "questionId",
+                      "order",
+                      "kind",
+                      "label",
+                      "options"
+                    ],
+                    "properties": {
+                      "questionId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "order": {
+                        "minimum": 1,
+                        "maximum": 40,
+                        "type": "integer"
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "const": "single",
+                            "type": "string"
+                          },
+                          {
+                            "const": "multiple",
+                            "type": "string"
+                          },
+                          {
+                            "const": "scale",
+                            "type": "string"
+                          },
+                          {
+                            "const": "number",
+                            "type": "string"
+                          },
+                          {
+                            "const": "text",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "minLength": 1,
+                        "maxLength": 500,
+                        "type": "string"
+                      },
+                      "options": {
+                        "maxItems": 20,
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "code",
+                            "label"
+                          ],
+                          "properties": {
+                            "code": {
+                              "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+                              "type": "string"
+                            },
+                            "label": {
+                              "minLength": 1,
+                              "maxLength": 120,
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "n",
+                      "values"
+                    ],
+                    "properties": {
+                      "n": {
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "values": {
+                        "type": "object",
+                        "patternProperties": {
+                          "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$": {
+                            "anyOf": [
+                              {
+                                "minLength": 1,
+                                "maxLength": 2000,
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "minItems": 1,
+                                "maxItems": 20,
+                                "type": "array",
+                                "items": {
+                                  "minLength": 1,
+                                  "maxLength": 40,
+                                  "type": "string"
+                                }
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responseCount": {
+                  "minimum": 5,
+                  "type": "integer"
+                },
+                "includesText": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "teacher.questionnaire-manual-responses.post": {
+    "path": "/api/v1/teacher/questionnaires/{id}/responses/manual",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "answers"
+      ],
+      "properties": {
+        "answers": {
+          "minItems": 1,
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "questionId",
+              "value"
+            ],
+            "properties": {
+              "questionId": {
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "type": "string"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "minLength": 1,
+                    "maxLength": 2000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 40,
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "204": {
+        "description": "the sheet is stored"
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.export-sheet-csv.get": {
+    "path": "/api/v1/works/{documentId}/export/csv",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "query": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "sheet": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the CSV bytes of the sheet",
+        "headers": {
+          "content-disposition": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "text/csv": {
+            "schema": {
+              "type": "string",
+              "contentMediaType": "text/csv"
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.thesis-committee.get": {
+    "path": "/api/v1/works/{documentId}/thesis-committee",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "The committee in force",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "members",
+                "changedAt",
+                "changedByPart"
+              ],
+              "properties": {
+                "members": {
+                  "maxItems": 5,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "userId",
+                      "name",
+                      "role"
+                    ],
+                    "properties": {
+                      "userId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "name": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "givenName",
+                              "familyName"
+                            ],
+                            "properties": {
+                              "givenName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "familyName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "role": {
+                        "anyOf": [
+                          {
+                            "const": "chair",
+                            "type": "string"
+                          },
+                          {
+                            "const": "member",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "changedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,3})?(?:Z|[+-](?:[01]\\d|2[0-3]):[0-5]\\d)(?![\\s\\S])",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "changedByPart": {
+                  "anyOf": [
+                    {
+                      "const": "faculty",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.thesis-committee.put": {
+    "path": "/api/v1/works/{documentId}/thesis-committee",
+    "method": "PUT",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "members"
+      ],
+      "properties": {
+        "members": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "userId",
+              "role"
+            ],
+            "properties": {
+              "userId": {
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                "type": "string"
+              },
+              "role": {
+                "anyOf": [
+                  {
+                    "const": "chair",
+                    "type": "string"
+                  },
+                  {
+                    "const": "member",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "The committee in force",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "members",
+                "changedAt",
+                "changedByPart"
+              ],
+              "properties": {
+                "members": {
+                  "maxItems": 5,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "userId",
+                      "name",
+                      "role"
+                    ],
+                    "properties": {
+                      "userId": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "name": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "givenName",
+                              "familyName"
+                            ],
+                            "properties": {
+                              "givenName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              },
+                              "familyName": {
+                                "pattern": "^(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\uD800-\\uDFFF]){1,255}(?![\\s\\S])",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "role": {
+                        "anyOf": [
+                          {
+                            "const": "chair",
+                            "type": "string"
+                          },
+                          {
+                            "const": "member",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "changedAt": {
+                  "anyOf": [
+                    {
+                      "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,3})?(?:Z|[+-](?:[01]\\d|2[0-3]):[0-5]\\d)(?![\\s\\S])",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "changedByPart": {
+                  "anyOf": [
+                    {
+                      "const": "faculty",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
