@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { enrolText } from '../../packages/app/src/host/student/enrol/messages.hr';
 import { app, webOrigin } from './stog';
 import { describePageOnFailure, signInDemoStudent, signInThroughPreloader } from './student';
 
@@ -36,7 +35,7 @@ test('PM2-R10: nastavnik stvara zadatak i kod, student se upisuje i piše, oba v
     const teacher = await teacherContext.newPage();
     const student = await studentContext.newPage();
 
-    const { courseId, assignmentId, code } = await test.step('Nastavnik stvara kolegij, zadatak i kod za upis', async () => {
+    const { assignmentId, code } = await test.step('Nastavnik stvara kolegij, zadatak i kod za upis', async () => {
       await signInThroughPreloader(teacher, 'demo-teacher');
       await expect(teacher).toHaveURL(`${webOrigin}${app('/nastavnik')}`);
 
@@ -65,7 +64,7 @@ test('PM2-R10: nastavnik stvara zadatak i kod, student se upisuje i piše, oba v
 
       await teacher.reload();
       await expect(teacher.getByRole('heading', { name: courseName, exact: true })).toBeVisible();
-      return { courseId, assignmentId: assignment.body.id as string, code: issued.body.code as string };
+      return { assignmentId: assignment.body.id as string, code: issued.body.code as string };
     });
 
     await test.step('Student se upisuje kodom na stranici Upis i otvara zadatak', async () => {
@@ -73,8 +72,12 @@ test('PM2-R10: nastavnik stvara zadatak i kod, student se upisuje i piše, oba v
       await student.goto(app('/upis'));
       await student.getByLabel('Kod kolegija').fill(code);
       await student.getByRole('button', { name: 'Upiši', exact: true }).click();
-      await expect(student).toHaveURL((url) => url.pathname.includes(courseId), { timeout: 30_000 });
-      await student.getByRole('link', { name: enrolText.openAssignment }).first().click();
+      // The enrolment leads to the assignment's notice (/zadatak/<id>); the editor opens only after
+      // the student acknowledges what is recorded.
+      await expect(student).toHaveURL(`${webOrigin}${app(`/zadatak/${assignmentId}`)}`, { timeout: 30_000 });
+      await student.getByRole('checkbox', { name: /Pročitao\/la sam obavijest/ }).check();
+      await student.getByRole('button', { name: 'Potvrdi i otvori editor', exact: true }).click();
+      await student.getByRole('link', { name: 'Otvori editor', exact: true }).click();
       await expect(student).toHaveURL(`${webOrigin}${app(`/rad/${assignmentId}`)}`);
     });
 
