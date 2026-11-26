@@ -146,6 +146,8 @@ const size = (v: Vector) => JSON.stringify(v.response?.body ?? null).length;
  */
 const VEKTOR: Readonly<Record<string, string>> = {
   "evidence.open.post": "opened-after-commit",
+  // The fullest work.version.get vector is a slides work (documentKind "slides"); the teacher's text works are text.
+  "work.version.get": "snapshot",
 };
 
 /** Choices of one run of a scenario: what the submission of T1 answers (PR-19). */
