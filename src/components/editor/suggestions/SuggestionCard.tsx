@@ -23,8 +23,10 @@ export const decisionsFor = (viewer: Viewer, suggestion: Pick<Suggestion, "state
 export const hintFor = (viewer: Viewer, state: Suggestion["state"]): string =>
   state === "pending" ? (viewer === "student" ? t.hint.pendingStudent : t.hint.pendingTeacher) : t.hint[state];
 
-export function SuggestionCard({ suggestion, viewer, onDecide }: {
+export function SuggestionCard({ suggestion, viewer, onDecide, readOnly = false }: {
   suggestion: Suggestion; viewer: Viewer; onDecide: (decision: Decision) => Promise<ActionOutcome>;
+  /** The card is only read (a submitted work): the hint stays, no action is offered. */
+  readOnly?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ActionOutcome | null>(null);
@@ -49,7 +51,7 @@ export function SuggestionCard({ suggestion, viewer, onDecide }: {
       <p className={styles.hint}>{hintFor(viewer, suggestion.state)}</p>
       {error && error !== "ok" ? <p className={styles.error} role="alert">{t.errors[error]}</p> : null}
       <div className={styles.actions}>
-        {decisionsFor(viewer, suggestion).map((d) => (
+        {(readOnly ? [] : decisionsFor(viewer, suggestion)).map((d) => (
           <button key={d} type="button" disabled={busy} onClick={() => void run(d)}>{busy ? t.sending : label[d]}</button>
         ))}
       </div>
