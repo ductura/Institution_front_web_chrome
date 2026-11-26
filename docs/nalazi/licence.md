@@ -22,8 +22,8 @@ Cilj: popis licenci svih ovisnosti (WEB, SRV, Preloader), fontova i prototipa; s
 
 | # | Stavka | Licenca | Gdje | Kamo ulazi (procjena) | Zašto za potvrdu |
 |---|---|---|---|---|---|
-| 1 | `@img/sharp-libvips-*` (10 paketa), `@img/sharp-win32-*` (3), `@img/sharp-wasm32` (1) | LGPL-3.0-or-later (uz Apache-2.0 / MIT) | WEB | Opcionalna ovisnost `next` (obrada slika); ulazi samo ako se koristi `next/image`. Aplikacija se gradi Viteom (`packages/app`), pa vjerojatno ne ulazi u isporuku. | LGPL: obveze pri distribuciji binarnih datoteka (obavijest, zamjenjivost biblioteke). |
-| 2 | `lightningcss` (12 paketa) | MPL-2.0 | WEB, SRV, Preloader | Alat za gradnju (Vite/vitest tranzitivno), ne ulazi u isporuku. | MPL-2.0: copyleft na razini datoteke; vrijedi samo ako se mijenjaju ili distribuiraju datoteke te biblioteke. |
+| 1 | `@img/sharp-libvips-*` (10 paketa), `@img/sharp-win32-*` (3), `@img/sharp-wasm32` (1) | LGPL-3.0-or-later (uz Apache-2.0 / MIT) | WEB | Opcionalna ovisnost produkcijskog paketa `next`. Isporučeni host `packages/app` koristi `next build` i `next start` (`.github/workflows/sistem.yml`, INT-10), pa se **ne može isključiti** da binarne datoteke ulaze u isporučeni artefakt. `next/image` se u kodu ne koristi, ali to samo po sebi ne dokazuje da se binarne datoteke ne distribuiraju. Distribucijski status je otvoren do provjere stvarnog artefakta. | LGPL: obveze pri distribuciji binarnih datoteka (obavijest, zamjenjivost biblioteke). |
+| 2 | `lightningcss` (12 paketa) | MPL-2.0 | WEB, SRV, Preloader | Alat za gradnju (tranzitivno preko alata za gradnju i testove), ne ulazi u isporuku. | MPL-2.0: copyleft na razini datoteke; vrijedi samo ako se mijenjaju ili distribuiraju datoteke te biblioteke. |
 | 3 | `axe-core`, `@axe-core/playwright` | MPL-2.0 | WEB, Preloader | Samo testovi dostupnosti (devDependencies). | Isto kao 2; ne isporučuje se. |
 | 4 | `caniuse-lite` | CC-BY-4.0 | WEB | Podatkovna baza za alate (browserslist), ne ulazi u isporuku. | CC-BY traži imenovanje ako se distribuira. |
 | 5 | Hrvatski Hunspell rječnik `public/dictionaries/hr/` (`hr.aff`, `hr.dic`) | „LGPL/SISSL license, 2003” (autor Denis Lackovic, OpenOffice rječnik) | WEB (isporučuje se kao statička datoteka) | **Isporučuje se korisniku.** | Dvostruka licenca LGPL/SISSL s neprecizno navedenom verzijom; treba odabrati licencu i ispuniti obveze (tekst licence uz rječnik, izvor). Najvažnija stavka na popisu. |
@@ -164,7 +164,7 @@ Napomene:
 ## 6. Prijedlog odluke za Daniela
 
 1. **Hrvatski rječnik (stavka 5)**: odabrati koja se licenca primjenjuje (LGPL ili SISSL), dodati cijeli tekst licence uz `public/dictionaries/hr/` i oznaku izvora (OpenOffice, Denis Lackovic). Do odluke je to jedina ovisnost koja se stvarno isporučuje korisniku, a nije jasno permisivna.
-2. **LGPL `sharp-libvips` (stavka 1)**: potvrditi da se `next/image` ne koristi u isporuci (gradnja je Vite); ako je tako, nema obveza. Ako se koristi, LGPL obveze pri distribuciji.
+2. **LGPL `sharp-libvips` (stavka 1)**: ostaje otvoreno. Host je Next, a `sharp` je opcionalna ovisnost `next`; provjeriti stvarni isporučeni artefakt (sadrži li `@img/sharp-libvips-*`) i tek tada odlučiti o LGPL obvezama (obavijest, zamjenjivost). `next/image` se ne koristi, ali to nije dokaz da biblioteke nisu u isporuci.
 3. **MPL-2.0 alati (stavke 2, 3)**: prihvatiti kao alate bez distribucije (bez izmjene izvornog koda biblioteka).
 4. **`caniuse-lite` (stavka 4)**: prihvatiti kao alat bez distribucije.
 5. **Font za disleksiju (stavka 6)** i **izvor pravila `unizg.json` (§5)**: čekaju odluku vlasnika.
