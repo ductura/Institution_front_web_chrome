@@ -42,6 +42,8 @@ import { PregledHost } from "../editor/right/PregledHost";
 import { MentorMount } from "../editor/right/MentorMount";
 import { SourcesMention } from "../editor/sources-mention/SourcesMention";
 import { LiteratureList } from "../editor/sources-mention/LiteratureList";
+import { StudentBibliographyHost } from "../editor/bibliography/student/StudentBibliographyHost";
+import { useLocalEditor } from "../../../../../src/components/editor/LocalDocument.tsx";
 import { MarksHost } from "../editor/marks/MarksHost";
 import { ReadAloudHost } from "../editor/read-aloud/ReadAloudHost";
 import { CommentsHost } from "../editor/comments/CommentsHost";
@@ -132,7 +134,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
             toolbar={(ctx) => <><StudentToolbar {...ctx} /><CodeRunMount assignmentId={assignmentId} /></>} useSupplements={rehearsalSupplementsFor(assignmentId)}
             triggers={({ documentId }) => <SourcesMention documentId={documentId}
               openOrigin={() => router.push(nextPath(base, `/rad/${encodeURIComponent(assignmentId)}/podrijetlo`))} />}
-            literature={() => <LiteratureList />}
+            literature={({ documentId }) => <><LiteratureList /><BibliographyMount documentId={documentId} assignmentId={assignmentId} /></>}
             hostSections={{
               review: ({ editor, assignmentId: id, documentId }) => <PregledHost editor={editor} assignmentId={id} documentId={documentId} />,
               // WEB-NUZ-MENTOR-1 (MK-1): the whole Mentor card above the round's actions in the "Mentor" tab.
@@ -218,4 +220,10 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
     );
   }
   return <>{shown.node}</>;
+}
+
+/** V18-22-R02 (V20-11, V20-14): the list of literature in the institution's style, under the sources of the work. */
+function BibliographyMount({ documentId, assignmentId }: { documentId: string; assignmentId: string }) {
+  const editor = useLocalEditor();
+  return editor ? <StudentBibliographyHost documentId={documentId} editor={editor} assignmentId={assignmentId} /> : null;
 }
