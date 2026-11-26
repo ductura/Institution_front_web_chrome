@@ -318,6 +318,18 @@
         "aiSummaryOnly": {
           "type": "boolean"
         },
+        "documentKind": {
+          "anyOf": [
+            {
+              "const": "text",
+              "type": "string"
+            },
+            {
+              "const": "slides",
+              "type": "string"
+            }
+          ]
+        },
         "isPractice": {
           "default": false,
           "type": "boolean"
@@ -14125,6 +14137,18 @@
             },
             {
               "type": "null"
+            }
+          ]
+        },
+        "documentKind": {
+          "anyOf": [
+            {
+              "const": "text",
+              "type": "string"
+            },
+            {
+              "const": "slides",
+              "type": "string"
             }
           ]
         }
@@ -59563,6 +59587,93 @@
       ],
       "415": [
         "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "work.export-slides.get": {
+    "path": "/api/v1/works/{documentId}/export-slides",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "documentId"
+      ],
+      "properties": {
+        "documentId": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,256}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "query": {
+      "type": "object",
+      "required": [
+        "format"
+      ],
+      "properties": {
+        "format": {
+          "anyOf": [
+            {
+              "const": "pptx",
+              "type": "string"
+            },
+            {
+              "const": "pdf",
+              "type": "string"
+            }
+          ]
+        },
+        "versionId": {
+          "pattern": "^[1-9][0-9]{0,15}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the .pptx or the PDF bytes of the version",
+        "headers": {
+          "x-export-snapshot-sha256": {
+            "schema": {
+              "type": "string"
+            }
+          },
+          "content-disposition": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation": {
+            "schema": {
+              "type": "string",
+              "contentMediaType": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            }
+          },
+          "application/pdf": {
+            "schema": {
+              "type": "string",
+              "contentMediaType": "application/pdf"
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
       ],
       "422": [
         "invalid_input"
