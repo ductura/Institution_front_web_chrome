@@ -1,6 +1,6 @@
 // Probe port for the tests and the catalogue until declaration-v1 has a route. Invented data.
 import type {
-  AnswerWrite, AttachmentLimits, HumanHelp, QuestionAnswer, StatementPort, StatementRead, TeacherQuestion,
+  AnswerWrite, AttachmentLimits, DeclaredTool, HumanHelp, QuestionAnswer, StatementPort, StatementRead, TeacherQuestion,
 } from "../../../../../../src/client/statement.ts";
 
 /** NF-3 PR-20: an invented teacher's question for the probe port. */
@@ -17,9 +17,11 @@ export const PROBE_LIMITS: AttachmentLimits = {
 };
 
 export function fakeStatementPort(submitted = false, question: TeacherQuestion | null = null): StatementPort & {
-  readonly attached: string[]; readonly saved: HumanHelp[]; readonly answers: AnswerWrite[]; submit(): void;
+  readonly attached: string[]; readonly saved: HumanHelp[]; readonly answers: AnswerWrite[]; readonly toolLists: (readonly DeclaredTool[])[]; submit(): void;
 } {
   let isSubmitted = submitted;
+  let tools: readonly DeclaredTool[] = [];
+  const toolLists: (readonly DeclaredTool[])[] = [];
   let answer: QuestionAnswer | null = null;
   const answers: AnswerWrite[] = [];
   let humanHelp: HumanHelp | null = null;
@@ -27,13 +29,17 @@ export function fakeStatementPort(submitted = false, question: TeacherQuestion |
   const attached: string[] = [];
   const saved: HumanHelp[] = [];
   return {
-    attached, saved, answers,
+    attached, saved, answers, toolLists,
     submit() { isSubmitted = true; },
+    async saveTools(_id, next) {
+      if (isSubmitted) return { kind: "readOnly" };
+      tools = next; toolLists.push(next); return { kind: "saved" };
+    },
     async read(): Promise<StatementRead> {
       return {
         kind: "ready", statementText: "Izmišljeni tekst izjave sa servera.",
         helpKinds: ["none", "proofreading", "content", "other"], limits: PROBE_LIMITS,
-        humanHelp, attachment, submitted: isSubmitted, question, answer,
+        humanHelp, attachment, submitted: isSubmitted, question, answer, tools,
       };
     },
     async saveHumanHelp(_id, help) {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button, Select, TextArea } from "@ductura/ui";
 
 import type { HumanHelp, HumanHelpKind, StatementPort, StatementRead } from "../../../../../../src/client/statement.ts";
+import DeclaredTools from "./DeclaredTools";
 import { attachFile, helpAfterRead, helpValid, isReadOnly, saveHelp, withKind, writeNotice } from "./model";
 import { statementMessages as text } from "./messages.hr";
 
@@ -66,6 +67,9 @@ export default function StudentStatement({ port, assignmentId, read, onReload, o
     <section aria-labelledby="statement-h" data-statement-readonly={locked || undefined}>
       <h4 id="statement-h">{text.title}</h4>
       <p>{read.statementText}</p>
+      {port.saveTools !== undefined && (
+        <DeclaredTools port={port} assignmentId={assignmentId} read={read} onReload={onReload} onSignIn={onSignIn} />
+      )}
       <Select label={text.helpLegend} disabled={locked} value={kind}
         options={read.helpKinds.map((k) => ({ value: k, label: text.helpKinds[k] }))}
         onChange={(event) => setDraft(withKind(help, event.target.value as HumanHelpKind))} />

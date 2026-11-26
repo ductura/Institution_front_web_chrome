@@ -25,6 +25,23 @@ export const statementMessages = {
   failed: "Izjavu nije bilo moguće spremiti. Pokušaj ponovno.",
   rejected: "Poslužitelj nije prihvatio izjavu.",
   conflict: "Izjava se u međuvremenu promijenila. Učitana je verzija s poslužitelja; Vaš unos je zadržan, provjerite ga i spremite ponovno.",
+  // ED-12 (NF2-P12, prototype nf2decl): the tools outside Ductura.
+  tools: {
+    title: "Vanjski alati",
+    note: "Navedite alate koje ste koristili izvan Ducture. Razgovori s Asistentom bilježe se sami.",
+    none: "Niste naveli nijedan vanjski alat.",
+    row: "Alat {n}",
+    tool: "Alat",
+    purpose: "Svrha",
+    phase: "Faza rada",
+    add: "Dodaj alat",
+    remove: "Ukloni alat {n}",
+    save: "Spremi popis alata",
+    saved: "Popis alata je spremljen na poslužitelju.",
+    incomplete: "Za svaki alat upišite alat, svrhu i fazu rada.",
+    tooLong: "Polje je predugo. Najviše {max} znakova.",
+    tooMany: "Najviše {max} alata.",
+  },
   // NF-3 PR-20 (E-9): the teacher's question beside the declaration and the student's answer.
   question: {
     title: "Pitanje nastavnika",
