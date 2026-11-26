@@ -48,6 +48,7 @@ export const marksHr = {
   actions: {
     next: "Sljedeće mjesto ›",
     checked: "Provjereno, ukloni",
+    link: "Poveži u Literaturi",
   },
   // INVENTAR §2.6 text2 "Privatna bilješka" and level 3/4 marks are not drawn here:
   // no API for private notes (Q-6), advice and origin marks wait on other tasks (B-1, C-13).

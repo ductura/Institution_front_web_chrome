@@ -13,7 +13,7 @@ import { useEditorState, type Editor } from "@tiptap/react";
 
 import { jumpTo, readReviewDoc, runChecks } from "../review";
 import { ignore, readIgnored, splitIgnored, writeIgnored } from "../review/ignored";
-import { applyAllFixes, applyFix, scanFixes, type ApplyOutcome } from "./fixes";
+import { applyAllFixes, applyFix, scanFixes, type ApplyOutcome, type ChangePart } from "./fixes";
 import { textFixesMessagesHr as t } from "./messages.hr";
 import { fixFor, stepAfter } from "./steps";
 
@@ -36,6 +36,8 @@ export function TextFixesPanel({ editor, documentId, enabledCheckIds }: TextFixe
   const [cur, setCur] = useState<string | null>(null);
   const [seen, setSeen] = useState<string[]>([]);
   const [note, setNote] = useState<string | null>(null);
+  // The document right after the last fix made here: "Vrati" undoes it only while the text is still that.
+  const [fixed, setFixed] = useState<Editor["state"]["doc"] | null>(null);
   if (!editor || editor.isDestroyed || !scan) return null;
 
   // Read at each render and merged at each write: the Pregled card keeps its marks under the same key.
@@ -43,7 +45,14 @@ export function TextFixesPanel({ editor, documentId, enabledCheckIds }: TextFixe
   const run = (outcome: ApplyOutcome, done: string) => {
     if (!outcome.ok) { setNote(outcome.reason === "stale" ? t.stale : t.empty); return; }
     editor.view.dispatch(outcome.tr);
+    setFixed(editor.state.doc);
     setNote(done.replace("{n}", String(outcome.count)));
+  };
+  const undo = () => {
+    // A fix is its own history step (closeHistory), so one undo takes back exactly it.
+    const ok = editor.state.doc === fixed && editor.commands.undo();
+    setFixed(null);
+    setNote(ok ? t.undone : t.undoStale);
   };
   const atCur = cur === null ? -1 : open.findIndex((f) => f.id === cur);
   // The finding shown stays until it is solved or marked; then the walk continues with the one after it.
@@ -68,6 +77,7 @@ export function TextFixesPanel({ editor, documentId, enabledCheckIds }: TextFixe
             <li key={fix.id}>
               <strong>{t.kind[fix.kind]}</strong> {fix.excerpt}{" "}
               <Button tone="quiet" onClick={() => run(applyFix(editor.state, scan, fix.id), t.fixedOne)}>{t.fixOne}</Button>
+              <BeforeAfter change={fix.change} />
             </li>
           ))}
         </ul>
@@ -89,6 +99,31 @@ export function TextFixesPanel({ editor, documentId, enabledCheckIds }: TextFixe
         </div>
       )}
       {note && <p role="status">{note}</p>}
+      {fixed !== null && editor.state.doc === fixed && <Button tone="quiet" onClick={undo}>{t.undo}</Button>}
     </section>
+  );
+}
+
+/** A space the slip is about, shown as ␣ and read as "razmak". */
+function Shown({ text }: { text: string }) {
+  if (text === "") return null;
+  if (text.trim() !== "") return <>{text}</>;
+  return <><span aria-hidden="true">{"␣".repeat(text.length)}</span><span className="visually-hidden">{text.length > 1 ? `${text.length} ${t.space}` : t.space}</span></>;
+}
+
+/** "Prije i poslije" of one fix: the words around it with what goes struck out and what comes underlined. */
+export function BeforeAfter({ change }: { change: readonly ChangePart[] }) {
+  if (change.length === 0) return null;
+  const side = (which: "removed" | "added") => change.map((part, i) => (
+    part.kind === "same" ? <span key={i}>{part.text}</span>
+      : which === "removed" ? (part.removed && <del key={i}><Shown text={part.removed} /></del>)
+      : (part.added && <ins key={i}><Shown text={part.added} /></ins>)
+  ));
+  return (
+    <details>
+      <summary>{t.beforeAfter}</summary>
+      <p><small>{t.before}:</small> <span style={{ whiteSpace: "pre-wrap" }}>{side("removed")}</span></p>
+      <p><small>{t.after}:</small> <span style={{ whiteSpace: "pre-wrap" }}>{side("added")}</span></p>
+    </details>
   );
 }
