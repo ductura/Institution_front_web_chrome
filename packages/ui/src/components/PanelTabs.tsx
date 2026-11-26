@@ -24,6 +24,11 @@ export type PanelTabsProps = {
   initial?: string;
   /** Told the id of every tab that opens (click or keys); the page may keep it, e.g. in the address. */
   onChange?: (id: string) => void;
+  /**
+   * The tab the page asks for (ED-45: "Poveži u Literaturi" opens Literatura); every change opens it, and
+   * the person's own clicks still work. With `onChange` keeping it, the page and the tabs always agree.
+   */
+  selected?: string;
 };
 
 /** The number beside a tab or panel button: the digit for the eye, the phrase for a screen reader. */
@@ -49,10 +54,16 @@ export function TabCount({ value, label }: { value: number; label: string }) {
  * Keyboard (WAI-ARIA tabs pattern, automatic activation): the list is one Tab
  * stop; Left/Right move and open, Home/End go to the ends.
  */
-export function PanelTabs({ label, tabs, initial, onChange }: PanelTabsProps) {
+export function PanelTabs({ label, tabs, initial, onChange, selected }: PanelTabsProps) {
   const base = useId();
-  const first = tabs.some((tab) => tab.id === initial) ? initial : tabs[0]?.id;
+  const known = (id: string | undefined) => id !== undefined && tabs.some((tab) => tab.id === id);
+  const first = known(selected) ? selected : known(initial) ? initial : tabs[0]?.id;
   const [open, setShown] = useState(first);
+  const [asked, setAsked] = useState(selected);
+  if (selected !== asked) {
+    setAsked(selected);
+    if (known(selected)) setShown(selected);
+  }
   const setOpen = (id: string) => { setShown(id); onChange?.(id); };
   const buttons = useRef(new Map<string, HTMLButtonElement>());
 
