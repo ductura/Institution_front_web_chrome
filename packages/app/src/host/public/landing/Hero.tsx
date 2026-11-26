@@ -1,6 +1,6 @@
 import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr";
 
-import { EDGE_SIGN_IN, openEdgeSignIn } from "./edge";
+import { EDGE_LINK } from "./edge";
 import styles from "./Hero.module.css";
 import { Preview } from "./Preview";
 
@@ -37,7 +37,7 @@ export function Hero() {
           {t.introEnd}
         </p>
         <div className={styles.buttons}>
-          <a className={`${styles.button} ${styles.primary}`} href={EDGE_SIGN_IN} onClick={openEdgeSignIn}>
+          <a className={`${styles.button} ${styles.primary}`} {...EDGE_LINK}>
             {t.signIn}
           </a>
           <a className={`${styles.button} ${styles.outline}`} href="#kako">

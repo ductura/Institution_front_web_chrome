@@ -1,10 +1,10 @@
 // @vitest-environment node
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { Download } from "./Download";
-import { EDGE_SIGN_IN, openEdgeSignIn } from "./edge";
+import { EDGE_LINK, EDGE_SIGN_IN } from "./edge";
 import { Landing } from "./Landing";
 
 // DAN-1574: the three sign-in buttons lead to the edge path /prijava (the
@@ -31,19 +31,10 @@ describe("landing sign-in buttons (DAN-1574)", () => {
   });
 });
 
-describe("openEdgeSignIn", () => {
-  const event = (over: object = {}) => ({ defaultPrevented: false, button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, preventDefault: vi.fn(), ...over });
-  it("takes a plain click as a full page load of the edge path", () => {
-    const assign = vi.fn();
-    vi.stubGlobal("window", { location: { assign } });
-    const e = event();
-    openEdgeSignIn(e as never);
-    expect(e.preventDefault).toHaveBeenCalled();
-    expect(assign).toHaveBeenCalledWith("/prijava");
-    const other = event({ ctrlKey: true });
-    openEdgeSignIn(other as never);
-    expect(other.preventDefault).not.toHaveBeenCalled();
-    expect(assign).toHaveBeenCalledTimes(1);
-    vi.unstubAllGlobals();
+describe("edge link", () => {
+  it("is left to the browser by the host (target other than _self) and is a full load of /prijava", () => {
+    expect(EDGE_LINK).toEqual({ href: "/prijava", target: "_top" });
+    const html = renderToStaticMarkup(createElement(Landing, { base: "/app/web" }));
+    expect(html.match(/href="\/prijava"[^>]*target="_top"|target="_top"[^>]*href="\/prijava"/g)).toHaveLength(3);
   });
 });
