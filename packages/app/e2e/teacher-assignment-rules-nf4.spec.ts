@@ -97,6 +97,46 @@ test("NZ-3: no group ticked is refused with a sentence", async ({ page }) => {
   await expect(page.getByRole("alert").filter({ hasText: "odaberite barem jednu grupu" }).first()).toBeVisible();
 });
 
+test("F4-NAS-R01: the edit page reads the late rule and saves a change through the PUT after asking", async ({ page }, info) => {
+  await teacher(page);
+  const calls: string[] = [];
+  await page.route(`**/api/v1/institution/assignments/${A1}`, (route) => route.fulfill(json({
+    assignmentId: A1, courseId: K1, versionNo: 1, title: "Izmišljeni seminar", instructions: "", workType: "seminar_paper",
+    opensAt: "2026-10-01T08:00:00.000Z", dueAt: "2099-12-15T22:59:00.000Z", aiPolicy: "partially_allowed", aiPurposes: ["literature_search"],
+    evidenceProfile: "basic", importAllowed: false, wordMin: null, wordMax: null,
+  })));
+  await page.route(`**/api/v1/teacher/assignments/${A1}/submission-withdrawal`, (route) => route.fulfill(json({ allowed: true, changedAt: null })));
+  await page.route(`**/api/v1/teacher/assignments/${A1}/declaration-required`, (route) => route.fulfill(json({ required: true, changedAt: null })));
+  await page.route(`**/api/v1/teacher/assignments/${A1}/late-submission`, (route) => {
+    calls.push(`get ${route.request().method()}`);
+    return route.fulfill(json({ lateSubmissionAllowed: true }));
+  });
+  await page.route(`**/api/v1/institution/assignments/${A1}/late-submission`, (route) => {
+    calls.push(`put ${route.request().method()} ${route.request().postData()}`);
+    return route.fulfill(json({ lateSubmissionAllowed: false }));
+  });
+  await page.goto(`/app/web/nastavnik/zadatak/${A1}/uredi`);
+  const panel = page.locator("div.card").filter({ has: page.getByRole("region", { name: "Pravila predaje" }) });
+  await expect(panel.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeChecked();
+  await expect(panel.getByLabel("Nije dopuštena")).toBeEnabled();
+  await expect(panel.getByText("Postavka predaje nakon roka ovdje se zasad ne može pročitati ni promijeniti.")).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "Spremi pravila predaje" })).toBeDisabled();
+  await checkAxe(page, info, "edit-late");
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await panel.getByLabel("Nije dopuštena").check();
+  await expect(panel.getByText("nakon roka ne može predati")).toBeVisible();
+  await panel.getByRole("button", { name: "Spremi pravila predaje" }).focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", { name: "Promjena pravila predaje" });
+  await expect(dialog.getByText("Ova izmjena mijenja pravila koja su studenti već vidjeli.")).toBeVisible();
+  expect(calls.filter((c) => c.startsWith("put"))).toEqual([]);
+  await dialog.getByRole("button", { name: "Spremi izmjenu" }).click();
+  await expect(panel.getByText("Pravila predaje su spremljena.")).toBeVisible();
+  expect(calls.filter((c) => c.startsWith("put"))).toEqual(['put PUT {"lateSubmissionAllowed":false}']);
+  expect(calls.filter((c) => c.startsWith("get"))).toEqual(["get GET"]);
+});
+
 test("NZ-4: the edit page reads the switches, asks first and says saved only after the answer", async ({ page }, info) => {
   await teacher(page);
   const puts: string[] = [];
@@ -109,12 +149,13 @@ test("NZ-4: the edit page reads the switches, asks first and says saved only aft
     ? route.fulfill(json({ allowed: true, changedAt: null }))
     : (puts.push(route.request().postData() ?? ""), route.fulfill(json({ allowed: false, changedAt: "2026-11-24T10:00:00.000Z" }))));
   await page.route(`**/api/v1/teacher/assignments/${A1}/declaration-required`, (route) => route.fulfill(json({ required: true, changedAt: null })));
+  // F4-NAS-R01: here the late rule cannot be read (503), so only it stays disabled and says so.
+  await page.route(`**/api/v1/teacher/assignments/${A1}/late-submission`, (route) => route.fulfill(json({ status: "unavailable" }, 503)));
   await page.goto(`/app/web/nastavnik/zadatak/${A1}/uredi`);
   // The panel is the card around the section "Pravila predaje"; its button and note stand beside the section.
   const panel = page.locator("div.card").filter({ has: page.getByRole("region", { name: "Pravila predaje" }) });
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("button", { name: "Spremi pravila predaje" })).toBeDisabled();
-  // F4-NAS-R01: the teacher has no route to read the late rule yet, so here it stays disabled and says so.
   await expect(panel.getByText("Postavka predaje nakon roka ovdje se zasad ne može pročitati ni promijeniti.")).toBeVisible();
   await expect(panel.getByLabel("Dopuštena (predaja se označi kao kasna)")).toBeDisabled();
   await checkAxe(page, info, "edit");
