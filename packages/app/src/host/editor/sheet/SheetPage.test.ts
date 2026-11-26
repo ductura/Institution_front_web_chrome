@@ -27,6 +27,15 @@ describe("stepsBetween", () => {
     const narrower = edited((d) => { d.sheets[0]!.columns = 2; });
     expect((await stepsBetween(base(), narrower))!.map((s) => s.type)).toEqual(["columnRemove"]);
   });
+  it("appends a row to a full sheet without hashing every candidate position", async () => {
+    const full = structuredClone(base());
+    full.sheets[0]!.rows = 100; full.sheets[0]!.columns = 10;
+    for (let r = 1; r <= 100; r += 1) for (let c = 1; c <= 10; c += 1) full.sheets[0]!.cells[`${String.fromCharCode(64 + c)}${r}`] = { value: r * c };
+    const after = structuredClone(full); after.sheets[0]!.rows = 101;
+    const started = Date.now();
+    expect((await stepsBetween(full, after))!).toEqual([{ type: "rowInsert", sheetId: "s1", row: 101 }]);
+    expect(Date.now() - started).toBeLessThan(1500);
+  });
   it("records a rename, and says nothing for an unchanged document", async () => {
     const renamed = edited((d) => { d.sheets[0]!.name = "Proračun"; });
     expect((await stepsBetween(base(), renamed))!.map((s) => s.type)).toEqual(["sheetRename"]);

@@ -44,6 +44,29 @@ const cellsOfLine = (sheet: Sheet, axis: "row" | "column", at: number): Record<s
 
 const sameCell = (a: SheetCell, b: SheetCell) => a.formula === b.formula && Object.is(a.value, b.value);
 
+/** How many cells differ once the line at `at` is inserted (grow) or removed in `from`, compared with `to`; no hashing. */
+function shiftCost(from: Sheet, to: Sheet, axis: "row" | "column", at: number, grow: boolean): number {
+  const moved = new Map<string, SheetCell>();
+  for (const [ref, cell] of Object.entries(from.cells)) {
+    const p = parseCellRef(ref)!;
+    const c = axis === "row" ? p.row : p.column;
+    if (!grow && c === at) continue;
+    const n = grow ? (c >= at ? c + 1 : c) : (c > at ? c - 1 : c);
+    moved.set(axis === "row" ? `${p.column}:${n}` : `${n}:${p.row}`, cell);
+  }
+  let cost = 0;
+  const seen = new Set<string>();
+  for (const [ref, cell] of Object.entries(to.cells)) {
+    const p = parseCellRef(ref)!;
+    const key = `${p.column}:${p.row}`;
+    seen.add(key);
+    const m = moved.get(key);
+    if (m === undefined || !sameCell(m, cell)) cost += 1;
+  }
+  for (const key of moved.keys()) if (!seen.has(key)) cost += 1;
+  return cost;
+}
+
 /** The cell steps that turn `from` into `to` (same size); null when a cell cannot be written as a step. */
 async function cellSteps(sheetId: string, from: Sheet, to: Sheet): Promise<SheetStep[] | null> {
   const steps: SheetStep[] = [];
@@ -94,19 +117,22 @@ export async function stepsBetween(before: SheetDocument, after: SheetDocument):
       const axis = dRows !== 0 ? "row" : "column";
       const grow = (dRows || dCols) > 0;
       const limit = (axis === "row" ? from.rows : from.columns) + (grow ? 1 : 0);
-      let best: { step: SheetStep; cost: number } | null = null;
+      // Cheap first: the position is the one whose shift of the cells leaves the fewest differences (no hashing).
+      let best: { at: number; cost: number } | null = null;
       for (let at = 1; at <= limit; at += 1) {
-        const step: SheetStep = grow
-          ? (axis === "row" ? { type: "rowInsert", sheetId: to.id, row: at } : { type: "columnInsert", sheetId: to.id, column: at })
-          : (axis === "row"
-            ? { type: "rowRemove", sheetId: to.id, row: at, removedSha256: await sheetCellsSha256(cellsOfLine(current(), "row", at)) }
-            : { type: "columnRemove", sheetId: to.id, column: at, removedSha256: await sheetCellsSha256(cellsOfLine(current(), "column", at)) });
-        const applied = await applySheetSteps(working, [step]);
-        if (!applied.ok) continue;
-        const rest = await cellSteps(to.id, applied.doc.sheets[i]!, to);
-        if (rest !== null && (best === null || rest.length < best.cost)) best = { step, cost: rest.length };
+        const cost = shiftCost(current(), to, axis, at, grow);
+        if (best === null || cost < best.cost) best = { at, cost };
       }
-      if (best === null || !(await push(best.step))) return null;
+      if (best === null) return null;
+      const at = best.at;
+      const step: SheetStep = grow
+        ? (axis === "row" ? { type: "rowInsert", sheetId: to.id, row: at } : { type: "columnInsert", sheetId: to.id, column: at })
+        : (axis === "row"
+          ? { type: "rowRemove", sheetId: to.id, row: at, removedSha256: await sheetCellsSha256(cellsOfLine(current(), "row", at)) }
+          : { type: "columnRemove", sheetId: to.id, column: at, removedSha256: await sheetCellsSha256(cellsOfLine(current(), "column", at)) });
+      best = { at, cost: 0 };
+      const chosen = { step };
+      if (!(await push(chosen.step))) return null;
     }
     const rest = await cellSteps(to.id, current(), to);
     if (rest === null) return null;
@@ -214,10 +240,13 @@ export function useSheetSession(assignmentId: string, attempt = 0): SheetSession
           });
         }
 
+        // The state the journal holds after the last drain step; null until a step ran since the last local save.
+        let drained: SyncState | null = null;
         const publish = () => {
-          if (disposed) return;
+          // An ended session (sign-out in another tab, page left) never shows an editable grid again.
+          if (disposed || abort.signal.aborted) return;
           const snap = saver.snapshot();
-          const stored = snap.state;
+          const stored = drained ?? snap.state;
           let state: SyncState = stored;
           if (STICKY.has(stored)) return setSession({ phase: "recovery", document: latest, state: stored });
           if (snap.failure?.kind === "journal") state = "ERROR";
@@ -241,6 +270,10 @@ export function useSheetSession(assignmentId: string, attempt = 0): SheetSession
               const result = await runner.step(documentId);
               refused = result.kind === "needs_retry";
               if (result.kind === "sent" && result.state === "SYNCED") syncedHere = true;
+              // The journal's own state after the step: an acknowledged send, or a conflict that needs the recovery card.
+              const meta = (await journal.readEvidence(documentId, verified).catch(() => null))?.meta;
+              if (meta) drained = meta.state;
+              if (drained !== null && STICKY.has(drained)) { publish(); return; }
               if (result.kind === "sent") continue;
               if (result.kind === "waiting" && !disposed) {
                 setTimeout(() => void drive(), Math.max(0, result.notBefore - Date.now()));
@@ -252,19 +285,23 @@ export function useSheetSession(assignmentId: string, attempt = 0): SheetSession
           publish();
         };
 
-        const flush = () => {
+        // Local recording (edit, flush) is one queue; draining to the server is not in it, so a slow request
+        // never holds back the next edit (each edit is recorded against the newest document).
+        const flush = (send = true) => {
           if (timer !== null) { clearTimeout(timer); timer = null; }
-          return (queue = queue.then(() => saver.flush()).then(() => { publish(); return drive(); }).catch(() => { publish(); }));
+          const saved = (queue = queue.then(() => saver.flush()).then(() => { drained = null; publish(); }).catch(() => { publish(); }));
+          return send ? saved.then(() => drive()) : saved;
         };
 
         async function onChange(next: SheetDocument): Promise<boolean> {
-          if (closed || disposed) return false;
+          if (closed || disposed || abort.signal.aborted) return false;
           const result = (queue = queue.then(async () => {
             const steps = await stepsBetween(latest, next);
             if (steps === null) return false;
             if (steps.length === 0) return true;
             latest = next;
             syncedHere = false;
+            drained = null;
             await saver.edit({ steps, document: next });
             if (timer !== null) clearTimeout(timer);
             timer = setTimeout(() => { timer = null; void flush(); }, SAVE_DEBOUNCE_MS);
@@ -289,7 +326,7 @@ export function useSheetSession(assignmentId: string, attempt = 0): SheetSession
         globalThis.removeEventListener?.("online", onlineAgain);
         document.removeEventListener("visibilitychange", hide);
         unwatch();
-        await flush();
+        await flush(false);
         dispose();
       } catch {
         if (!disposed) setSession({ phase: "unavailable" });
