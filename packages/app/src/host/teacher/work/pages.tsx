@@ -56,6 +56,7 @@ import { useShownRevision } from "./shown-revision";
 import ReviewPage from "./review/ReviewPage";
 import { reviewMessages } from "./review/messages.hr";
 import { SlidesOrWork } from "../slides/SlidesReview";
+import { SheetOrWork } from "./sheet/SheetReview";
 import linkStyles from "./links.module.css";
 
 const VIEWS = {
@@ -148,8 +149,10 @@ function OpenWork({ documentId, path, view, session }: {
     return <ReplayPage documentId={documentId} session={session} workHref={workHref} />;
   }
   // WEB-V13-NASTAVNIK-PREGLED: a slides work opens the slides reading, any other work this page.
-  return <SlidesOrWork key={documentId} documentId={documentId} path={path}
-    fallback={<LiveWork documentId={documentId} workHref={workHref} session={session} />} />;
+  // WEB-V14-SHEET-SUBMIT: a spreadsheet work opens the read-only grid; every other kind falls through to the line above.
+  return <SheetOrWork key={documentId} documentId={documentId} path={path} fallback={
+    <SlidesOrWork documentId={documentId} path={path}
+      fallback={<LiveWork documentId={documentId} workHref={workHref} session={session} />} />} />;
 }
 
 function LiveWork({ documentId, workHref, session }: { documentId: string; workHref: string; session: SessionMark }) {
