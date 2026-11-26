@@ -6,10 +6,12 @@ import { useEffect, useState, type ReactNode } from "react";
 import { WorkPage } from "../n07/WorkPage";
 import { RevisionSection } from "../revision";
 import styles from "./frame.module.css";
+import { createApi } from "@/client/api";
 import { appHref } from "@/components/shell/nav";
+import { readTeacherCourses } from "@/components/teacher/teacher-courses-read";
 import { liveWorkHref } from "@/components/teacher/LiveWorkFrame";
 import { useHost } from "../../context";
-import { extensionPath, gapsBanner, heading, isSubmitted, links, sequence, showNotSubmittedBanner, stateLine, type Facts, type ProcessGap } from "./model";
+import { deadlinePassedFor, extensionPath, gapsBanner, heading, isSubmitted, links, sequence, showNotSubmittedBanner, stateLine, type Facts, type ProcessGap } from "./model";
 import { readFrame, type FrameRead } from "./read";
 import { workFrameMessages as text } from "./messages.hr";
 
@@ -17,7 +19,7 @@ import { workFrameMessages as text } from "./messages.hr";
  * N-06 frame around the work (WEB-2150): back link, heading, state line, "Slijed rada", links, previous/next work
  * and the banners. The text and the aside stay the page's (LiveText, comments, summary); nothing here writes.
  */
-export default function WorkFrame({ documentId, current = () => true, gaps, deadlinePassed = null, started = true, text: body, aside }: {
+export default function WorkFrame({ documentId, current = () => true, gaps, deadlinePassed: given = null, started = true, text: body, aside }: {
   documentId: string; current?: () => boolean; gaps: readonly ProcessGap[]; deadlinePassed?: boolean | null; started?: boolean;
   text: ReactNode; aside: ReactNode;
 }) {
@@ -30,6 +32,20 @@ export default function WorkFrame({ documentId, current = () => true, gaps, dead
     void readFrame(documentId).then((next) => { if (live) setRead(next); });
     return () => { live = false; };
   }, [documentId, attempt]);
+
+  // NAS-R05: the deadline comes from teacher.courses.get, only for an unsubmitted work; an explicit prop wins.
+  const [courseDeadline, setCourseDeadline] = useState<boolean | null>(null);
+  const unsubmittedId = read?.kind === "ready" && read.facts.state === "nije_predano" ? read.facts.assignmentId : null;
+  useEffect(() => {
+    setCourseDeadline(null);
+    if (unsubmittedId === null || given !== null) return;
+    let live = true;
+    void readTeacherCourses(createApi()).then((courses) => {
+      if (live && courses.kind === "ready") setCourseDeadline(deadlinePassedFor(unsubmittedId, courses.courses, Date.now()));
+    });
+    return () => { live = false; };
+  }, [unsubmittedId, given]);
+  const deadlinePassed = given ?? courseDeadline;
 
   const workPath = liveWorkHref(documentId) ?? "";
   const backHref = appHref(base, "/nastavnik/kolegiji");
