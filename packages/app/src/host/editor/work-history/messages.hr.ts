@@ -13,7 +13,6 @@ export const workHistoryHr = {
   listTitle: (n: number) => `Verzije rada (${n})`,
   more: "Prikazane su samo najnovije verzije kad ih je više od stranice.",
   compareTitle: "Usporedba poslanih verzija",
-  compareWith: "Usporedi s …",
   readOnly: (name: string) => `${name} · samo za čitanje`,
   back: "Natrag na popis",
   loadingText: "Učitavam tekst verzije…",
