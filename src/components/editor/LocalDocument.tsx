@@ -575,8 +575,17 @@ export function LocalDocumentProvider({
         if (result.kind !== "ready") {
           // Only the evidence session's own sticky state; the local saver's
           // keeps its recovery notice as before (D8).
-          setStickyLoad(evidence !== null && result.kind === "recovery" && result.reason === "sticky");
+          const sticky = evidence !== null && result.kind === "recovery" && result.reason === "sticky";
+          setStickyLoad(sticky);
           setPhase(result.kind);
+          // F4-EDI-R05: a sticky load keeps the lock, the journal and the evidence session until the
+          // run ends, since the conflict dialog reads and takes the server's version through them.
+          if (sticky) {
+            await new Promise<void>((resolve) => {
+              release = resolve;
+              if (disposed) resolve();
+            });
+          }
           return;
         }
         if (!writingClosed(saver.snapshot())) {
@@ -586,7 +595,13 @@ export function LocalDocumentProvider({
         setPhase("ready");
         // F4-EDI-R05: the text of this device goes in as one change on the server's version, so the
         // saver journals it, the recorder records it and the drain sends it as a new commit.
-        if (keep && readyRef.current) applyKeptDocument(editor, keep, sheet);
+        if (keep && readyRef.current && applyKeptDocument(editor, keep, sheet)) {
+          // The replacement raises no update itself: the change goes on as the author's own would.
+          editsRef.current += 1;
+          saver.edit();
+          dirtyRef.current = true;
+          flushRef.current();
+        }
         // Only a signed-in person who acknowledged the notice publishes; the
         // local demo journal never does, nor a submitted work (O2, #756). A v3
         // sheet publishes under exactly these rules (INT-26): the gate does not

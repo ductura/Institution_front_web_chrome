@@ -12,7 +12,7 @@
 import type { Editor } from "@tiptap/core";
 
 import type { CanonicalDocument, CanonicalDocumentV3 } from "@/domain/document";
-import { canonicalToTiptap, canonicalToTiptapV3 } from "@/editor";
+import { replaceWithStoredDocument, replaceWithStoredDocumentV3 } from "@/editor";
 
 import type { SheetDocument } from "./evidence-session";
 
@@ -20,16 +20,28 @@ export type ConflictChoice = "server" | "mine";
 
 export type ConflictPart = { kind: "same" | "added" | "removed"; text: string };
 
-/** The text of a canonical document, blocks separated by a blank line. */
+/**
+ * The text of a canonical document, blocks separated by a blank line. A v3
+ * citation is shown as `[sourceId, locator]` and the work's source records
+ * follow as blocks of their own, so a difference in them is seen before the
+ * author discards a version (review c.4712144285).
+ */
 export function documentText(doc: SheetDocument): string {
   const collect = (value: unknown): string => {
     if (Array.isArray(value)) return value.map(collect).join("");
     if (value === null || typeof value !== "object") return "";
-    const node = value as { text?: unknown; children?: unknown; content?: unknown };
-    return (typeof node.text === "string" ? node.text : "") + collect(node.children) + collect(node.content);
+    const node = value as { text?: unknown; children?: unknown; content?: unknown; sourceId?: unknown; locator?: unknown };
+    const cited = typeof node.sourceId === "string"
+      ? `[${node.sourceId}${typeof node.locator === "string" && node.locator ? `, ${node.locator}` : ""}]` : "";
+    return (typeof node.text === "string" ? node.text : "") + cited + collect(node.children) + collect(node.content);
   };
-  const blocks = (doc as { nodes?: unknown }).nodes;
-  return Array.isArray(blocks) ? blocks.map(collect).join("\n\n") : "";
+  const record = doc as { nodes?: unknown; sources?: unknown };
+  const blocks = Array.isArray(record.nodes) ? record.nodes.map(collect) : [];
+  const sources = Array.isArray(record.sources)
+    ? record.sources.map((source: unknown) => source !== null && typeof source === "object"
+      ? Object.values(source).filter((v): v is string => typeof v === "string").join(" · ") : "")
+    : [];
+  return [...blocks, ...sources.filter((line) => line.length > 0)].join("\n\n");
 }
 
 /** Past this many cells of the word table the middle is shown whole, not word by word. */
@@ -78,14 +90,18 @@ export function conflictParts(local: string, server: string): ConflictPart[] {
 }
 
 /**
- * The kept text goes into the sheet the way a change of the author does (one
- * editor command with an update), so the saver journals it, the recorder
- * records it and the drain sends it. False when the sheet is not writable.
+ * The kept text goes into the sheet as the stored document it is, ids and (v3)
+ * sources included, so references still find their targets (review
+ * c.4712144293, c.4712144277). That replacement raises no update of its own and
+ * the transaction is still seen by the recorder, so the caller raises the
+ * change like an edit of the author (`onUpdate`). False when the sheet is not
+ * writable or the document is refused.
  */
 export function applyKeptDocument(editor: Editor, doc: SheetDocument, sheet: 1 | 3): boolean {
   if (!editor.isEditable) return false;
-  const content = sheet === 3 ? canonicalToTiptapV3(doc as CanonicalDocumentV3) : canonicalToTiptap(doc as CanonicalDocument);
-  return editor.commands.setContent(content, { emitUpdate: true });
+  return sheet === 3
+    ? replaceWithStoredDocumentV3(editor.view, doc as CanonicalDocumentV3).ok
+    : replaceWithStoredDocument(editor.view, doc as CanonicalDocument).ok;
 }
 
 /** How a choice ended: the sheet reloads on "done"; the other two leave everything as it was. */

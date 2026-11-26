@@ -20,6 +20,16 @@ describe("documentText", () => {
     ] };
     expect(documentText(doc as never)).toBe("Prvi odlomak\n\nDrugi");
   });
+  it("shows a citation's source and locator and the source records, so a difference in them is seen", () => {
+    const doc = (locator: string, title: string) => ({ schemaVersion: 3, nodes: [
+      { id: "a", type: "paragraph", children: [{ text: "Tvrdnja " }, { type: "citation", sourceId: "s1", locator }] },
+    ], sources: [{ id: "s1", title }] });
+    const a = documentText(doc("str. 4", "Izmišljena knjiga") as never);
+    expect(a).toContain("[s1, str. 4]");
+    expect(a).toContain("Izmišljena knjiga");
+    expect(documentText(doc("str. 9", "Izmišljena knjiga") as never)).not.toBe(a);
+    expect(documentText(doc("str. 4", "Druga knjiga") as never)).not.toBe(a);
+  });
   it("is empty for a document with no blocks", () => {
     expect(documentText({ schemaVersion: 1, nodes: [] } as never)).toBe("");
   });
@@ -69,6 +79,8 @@ describe("the dialog's two choices", () => {
     // Both choices take the server's version first; "mine" types the kept text in as an ordinary change.
     expect(sheet).toContain("evidence.adoptServer(true)");
     expect(sheet).toContain("applyKeptDocument(editor, keep, sheet)");
+    // A sticky load holds the lock and the session (review c.4712144263), or the dialog could read nothing.
+    expect(sheet).toMatch(/if \(sticky\) \{\s+await new Promise<void>\(\(resolve\) => \{\s+release = resolve;/);
     const dialog = source("ConflictDialog.tsx");
     expect(dialog).toContain('choose("server")');
     expect(dialog).toContain('choose("mine")');
