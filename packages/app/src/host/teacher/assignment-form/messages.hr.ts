@@ -105,7 +105,7 @@ export const assignmentFormHr = {
   },
   reviewHeading: "Podaci zadatka",
   reviewIntro: "Provjerite podatke. Zadatak se objavljuje tek kad ovdje potvrdite objavu.",
-  labels: { course: "Kolegij", title: "Naslov", workType: "Vrsta rada", opens: "Otvaranje", due: "Rok", words: "Opseg", groups: "Grupe", ai: "Asistent", tools: "Vanjski alati", kind: "Vrsta zadatka", withdrawal: "Povlačenje predaje", declaration: "Izjava pri predaji", late: "Predaja nakon roka" },
+  labels: { course: "Kolegij", title: "Naslov", workType: "Vrsta rada", opens: "Otvaranje", due: "Rok", words: "Opseg", groups: "Grupe", ai: "Asistent", tools: "Vanjski alati", kind: "Vrsta zadatka", documentKind: "Vrsta dokumenta", withdrawal: "Povlačenje predaje", declaration: "Izjava pri predaji", late: "Predaja nakon roka" },
   values: {
     aiCourse: "Prema pravilima kolegija", aiSummary: "Samo sažimanje literature", aiNone: "Bez pomoći Asistenta", groupsAll: "svi upisani studenti",
     toolsYes: "dopušteni uz izjavu", toolsNo: "nisu dopušteni", practice: "Probni zadatak, bez ocjene", regular: "Redovni zadatak",
@@ -114,6 +114,16 @@ export const assignmentFormHr = {
   },
   publish: "Objavi zadatak",
   backToForm: "Natrag na obrazac",
+} as const;
+
+/** WEB-V13-VRSTA-ZADATKA: the teacher picks what the student writes, text or slides. */
+export const documentKindHr = {
+  legend: "Vrsta dokumenta",
+  options: { text: "Tekst", slides: "Slajdovi" },
+  textHint: "Student piše tekstni rad u uredniku.",
+  slidesHint: "Student izrađuje slajdove. Vrsta se određuje pri objavi zadatka.",
+  unknown: "nije prikazana",
+  fixed: "Vrsta se određuje pri objavi zadatka; nova verzija je ne mijenja.",
 } as const;
 
 /** NF-4 NZ-15: the teacher's question beside the declaration, shown honestly until the server can set it. */
