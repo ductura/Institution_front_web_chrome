@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseTemplate, templateBlocks, type TitleField } from "./template";
+import { parseTemplate, startContentFor, templateBlocks, type TemplateRead, type TitleField } from "./template";
 import { readTemplate } from "./template-port";
 
 // Invented data only.
@@ -36,5 +36,26 @@ describe("readTemplate", () => {
     expect((await readTemplate("a", (async () => ({ ok: false, status: 503 })) as never)).kind).toBe("unavailable");
     expect((await readTemplate("a", (async () => { throw new Error("x"); }) as never)).kind).toBe("unavailable");
     expect((await readTemplate("a", (async () => ({ ok: true, status: 200, body: {} })) as never)).kind).toBe("unavailable");
+  });
+});
+
+describe("startContentFor (F4-V17-R01)", () => {
+  const ready: TemplateRead = { kind: "ready", template: parseTemplate(body)! };
+  const reading = (answer: TemplateRead) => startContentFor(async () => answer, labels);
+  it("gives the skeleton blocks of a template that was read", async () => {
+    const blocks = await reading(ready)("a");
+    expect(blocks).toEqual(templateBlocks(parseTemplate(body)!, labels));
+    expect(blocks?.[0]?.content?.[0]?.text).toBe("Naslov: ");
+  });
+  it.each([["none"], ["signedOut"], ["unavailable"]] as const)("gives nothing, never made-up text, for %s", async (kind) => {
+    expect(await reading({ kind })("a")).toBeNull();
+  });
+  it("gives nothing when the read throws", async () => {
+    expect(await startContentFor(async () => { throw new Error("x"); }, labels)("a")).toBeNull();
+  });
+  it("asks for the assignment it was given", async () => {
+    const asked: string[] = [];
+    await startContentFor(async (id) => { asked.push(id); return { kind: "none" }; }, labels)("zad-1");
+    expect(asked).toEqual(["zad-1"]);
   });
 });
