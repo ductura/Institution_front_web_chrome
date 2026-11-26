@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { readException } from "./exception";
+import { readException, withLateReads } from "./exception";
 import { submitText as t } from "./messages.hr";
-import { dialogLateLine, exceptionFrom, forbiddenLines, isLate, lateLine, timingOf, timingTag } from "./timing";
+import { dialogLateLine, exceptionFrom, forbiddenLines, isLate, lateLine, timingOf, timingTag, withLateRule } from "./timing";
 
 // WEB-NUZ-PREDAJA-2 (NF-3 PR-7, PR-17, Daniel's answer 3). Invented deadlines only.
 const NOW = Date.parse("2026-11-20T10:00:00.000Z");
@@ -10,6 +10,45 @@ const DUE = "2026-11-12T22:59:00.000Z";
 const UNTIL = "2026-11-25T22:59:00.000Z";
 const ext = (scope: "one" | "all", dueAt: string, createdAt: string): Record<string, string> =>
   ({ id: "00000000-0000-4000-8000-000000000001", scope, previousDueAt: DUE, dueAt, reasonId: "justified", createdAt });
+
+describe("withLateRule and withLateReads (F4-PRE-R01)", () => {
+  const late = { kind: "late", dueAt: DUE } as const;
+  const exc = (untilAt: string) => ({ id: "00000000-0000-4000-8000-000000000002", kind: "exception", untilAt, reasonId: "justified", createdAt: "2026-11-13T09:00:00.000Z" });
+
+  it("says a closed submission before the click, and an open exception is the deadline that counts", () => {
+    expect(withLateRule(late, false, { exceptions: [] }, NOW)).toEqual({ kind: "forbidden", dueAt: DUE });
+    expect(withLateRule(late, false, { exceptions: [exc("2026-11-15T10:00:00.000Z")] }, NOW)).toEqual({ kind: "forbidden", dueAt: DUE });
+    expect(withLateRule(late, false, { exceptions: [exc("2026-11-15T10:00:00.000Z"), exc(UNTIL)] }, NOW)).toEqual({ kind: "exception", dueAt: DUE, until: UNTIL });
+    expect(withLateRule(late, true, null, NOW)).toEqual({ kind: "late", dueAt: DUE, allowed: true });
+  });
+
+  it("leaves the timing as it was when a read failed or the timing is not late", () => {
+    expect(withLateRule(late, null, { exceptions: [] }, NOW)).toBe(late);
+    expect(withLateRule(late, false, null, NOW)).toBe(late);
+    expect(withLateRule(late, false, { odd: true }, NOW)).toBe(late);
+    expect(withLateRule({ kind: "open" }, false, { exceptions: [] }, NOW)).toEqual({ kind: "open" });
+  });
+
+  it("words: the closed line before the click, no dialog, no late mark, and the 409 panel names the deadline", () => {
+    const closed = { kind: "forbidden", dueAt: DUE } as const;
+    expect(lateLine(closed)).toBe(t.late.forbidden.replace("{due}", "12. 11. 2026. u 23:59"));
+    expect(isLate(closed)).toBe(false);
+    expect(dialogLateLine(closed)).toBeNull();
+    expect(forbiddenLines(closed)).toEqual([t.late.forbidden.replace("{due}", "12. 11. 2026. u 23:59"), t.late.forbiddenMeta]);
+    expect(lateLine({ kind: "late", dueAt: DUE, allowed: true })).toBe(t.late.pastAllowed.replace("{due}", "12. 11. 2026. u 23:59"));
+  });
+
+  it("reads both routes only for a late timing, and a failed read leaves it", async () => {
+    const rule = vi.fn(async () => ({ ok: true, body: { lateSubmissionAllowed: false } }));
+    const exceptions = vi.fn(async () => ({ ok: true, body: { exceptions: [] } }));
+    expect(await withLateReads(late, "a1", NOW, { rule, exceptions })).toEqual({ kind: "forbidden", dueAt: DUE });
+    expect(rule).toHaveBeenCalledWith("a1");
+    expect(await withLateReads({ kind: "open" }, "a1", NOW, { rule, exceptions })).toEqual({ kind: "open" });
+    expect(rule).toHaveBeenCalledTimes(1);
+    expect(await withLateReads(late, "a1", NOW, { rule: async () => ({ ok: false }), exceptions })).toBe(late);
+    expect(await withLateReads(late, "a1", NOW, { rule, exceptions: async () => { throw new Error("offline"); } })).toBe(late);
+  });
+});
 
 describe("timingOf", () => {
   it("is late after the deadline that counts, and an exception only for the student's own extension after the deadline", () => {
