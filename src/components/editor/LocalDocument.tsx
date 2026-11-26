@@ -297,7 +297,7 @@ export function LocalDocumentProvider({
   schemaVersion?: number;
   /**
    * F4-V17-R01: the blocks a work with no stored text starts with (the faculty template's
-   * skeleton), or null for none. Asked once per opened journal, never for a stored document.
+   * skeleton), or null for none. Asked once per opened journal; only an empty sheet takes it, so stored text is never touched.
    */
   startContent?: () => Promise<readonly unknown[] | null>;
   children: ReactNode;
@@ -589,9 +589,11 @@ export function LocalDocumentProvider({
           editor.setEditable(true, false);
         }
         setPhase("ready");
-        // F4-V17-R01: a work with nothing stored starts with the faculty template's skeleton.
+        // F4-V17-R01: a work whose loaded text is empty starts with the faculty template's skeleton.
+        // The evidence session always returns a document (the server's opening one, empty for a new
+        // work), so "fresh" is read from the sheet itself: seedStartContent takes only an empty sheet.
         // A failed read leaves the sheet empty, as before; the author can always start typing.
-        if (!result.document && readyRef.current && startContentRef.current) {
+        if (readyRef.current && startContentRef.current) {
           void startContentRef.current().catch(() => null).then((blocks) => {
             if (!disposed && readyRef.current && !editor.isDestroyed) seedStartContent(editor, blocks);
           });
