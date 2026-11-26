@@ -2586,6 +2586,31 @@ export const whatIsRecordedHr = {
   not: { heading: "Što ne bilježi", text: "Koje tipke pritišćeš, koliko brzo tipkaš kao broj, ništa izvan Ducture." },
   who: { heading: "Tko vidi", text: "Ti i tvoj nastavnik ili mentor, isto i u isto vrijeme." },
   note: "Ništa od ovoga nije ocjena ni tvrdnja o autorstvu.",
+  /** F4-EDI-R06: read-only overview of what the work holds besides the text. */
+  recorded: {
+    heading: "Što je još zabilježeno uz rad",
+    loading: "Učitavam…",
+    unavailable: "Trenutačno nije dostupno.",
+    signedOut: "Sesija je istekla. Prijavi se ponovno pa opet otvori ovaj prozor.",
+    conversations: {
+      heading: "Razgovori s pomoćnikom",
+      none: "Nema razgovora.",
+      count: "Razgovora: {conversations}, upita: {requests}.",
+      last: "Zadnji upit: {date}.",
+      unknown: "Razgovori se prikazuju kad je rad otvoren iz zadatka.",
+    },
+    transfers: {
+      heading: "Prijenosi u rad",
+      imported_file: "Uvezeno iz datoteke",
+      pasted_known: "Zalijepljeno, s objašnjenjem",
+      pasted_unknown: "Zalijepljeno, bez objašnjenja",
+      percent: "{percent} %",
+    },
+    attachments: {
+      heading: "Prilozi",
+      unavailable: "Popis priloga trenutačno nije dostupan.",
+    },
+  },
 } as const;
 
 /** WEB-0910, PIL-P1-RITAM-PREKIDAC: the rhythm setting in the dialog "Što Ductura bilježi dok pišeš". */
