@@ -138,4 +138,12 @@ describe("parsers read the shape from the contract (INT-12)", () => {
     const other = { ...key, keyId: "izmisljeni-kljuc-2", evidenceDomainId: "0f1e2d3c-4b5a-4968-8776-655443322110" };
     expect(openedWorkFrom({ ...body, receiptKeys: [key, other] })).toBeNull();
   });
+
+  it("evidence.open.post: lastSignedAt is read as given, absent when null, and refused when it is no calendar minute (ED-22)", () => {
+    const body = first("evidence.open.post", "opened").response.body as Record<string, unknown>;
+    expect(openedWorkFrom({ ...body, lastSignedAt: "2026-11-26T13:32:00.000Z" })?.lastSignedAt).toBe("2026-11-26T13:32:00.000Z");
+    expect(openedWorkFrom({ ...body, lastSignedAt: null })).not.toHaveProperty("lastSignedAt");
+    expect(openedWorkFrom({ ...body, lastSignedAt: "2026-02-30T13:32:00.000Z" })).toBeNull();
+    expect(openedWorkFrom({ ...body, lastSignedAt: "2026-11-26T13:32:17.000Z" })).toBeNull();
+  });
 });
