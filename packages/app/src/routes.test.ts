@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -167,6 +167,19 @@ describe("the operator's page (WEB-NUZ-OPERATER, NF-7 OA-1)", () => {
     expect(resolve("/ustanova", null, ["network_engineer"])).toEqual({ kind: "redirect", to: "/" });
     expect(resolve("/kako-radi", null, ["network_engineer"])).toMatchObject({ kind: "page" });
     expect(resolve("/profil", null, ["network_engineer"])).toMatchObject({ kind: "page" });
+  });
+
+  it("forwards /operater to the first page the account may open (WEB-OPERATER-POCETNA)", () => {
+    expect(OPERATOR_INDEX).toBe("/operater");
+    expect(resolve(OPERATOR_INDEX, null, ["network_engineer"])).toEqual({ kind: "redirect", to: OPERATOR_HOME });
+    expect(resolve(OPERATOR_INDEX, "admin", ["institution_admin", "network_engineer"])).toEqual({ kind: "redirect", to: OPERATOR_HOME });
+    expect(resolve(OPERATOR_INDEX, "admin", ["institution_admin"])).toEqual({ kind: "redirect", to: PROBLEM_REPORTS });
+    expect(resolve(OPERATOR_INDEX, "teacher", ["teacher"])).toEqual({ kind: "notFound" });
+    expect(resolve(OPERATOR_INDEX, "student", ["student"])).toEqual({ kind: "notFound" });
+    expect(resolve(OPERATOR_INDEX, null, [])).toEqual({ kind: "notFound" });
+    // Without the account kinds (an older caller), there is nothing to forward to.
+    expect(resolve(OPERATOR_INDEX, "admin")).toEqual({ kind: "notFound" });
+    expect(publicPage(OPERATOR_INDEX)).toBeNull();
   });
 
   it("is a page of the host, opened in the app, not a public page", () => {
