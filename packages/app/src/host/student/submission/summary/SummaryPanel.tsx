@@ -3,7 +3,7 @@
 // PD-1 on step 3 and 5 (WEB-2108, VIZ-S4): the process summary in the prototype's panel, the eleven
 // sections as `.sb-state` blocks, each marked observed or declared (Ductura_student.html, `summary()`).
 import { Button, StepActions, StepDetails, StepKv, StepLine, StepLoading, StepPanel, StepSection, ToastRegion, Tag, useToasts } from "@ductura/ui";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { createApi } from "../../../../../../../src/client/api.ts";
 
@@ -15,7 +15,7 @@ import type { NoteAdded } from "../../../../../../../src/components/predaja/Note
 import { EventDisputeSlot, EventDisputesProvider } from "../../event-dispute/EventDisputes";
 import { summaryText as t } from "./messages.hr";
 import { summaryEventId, type SummaryEventSection } from "./model";
-import { LOADING_EXTRAS, readExtras, type Read, type SummaryExtras } from "./extras";
+import { LOADING_EXTRAS, readDeclarationBlocks, readExtras, type Read, type SummaryExtras } from "./extras";
 import NoteForm from "./NoteForm";
 import { noteText, panelSections } from "./panel-model";
 
@@ -40,11 +40,13 @@ export type SummaryPanelProps = {
    * document and shown under each session, paste and gap. Without it the events stand alone.
    */
   readonly assignmentId?: string;
+  /** Changes when the declaration was read again (the dialog closed); the declaration's blocks are then read again too. */
+  readonly declarationKey?: unknown;
   readonly disputes?: { readonly port: EventDisputesPort; readonly documentId: string };
 };
 
 /** The sections the summary route does not carry, read once per assignment and work (F4-PRE-R04). */
-function useExtras(assignmentId: string | undefined, documentId: string | undefined): SummaryExtras | undefined {
+function useExtras(assignmentId: string | undefined, documentId: string | undefined, declarationKey: unknown): SummaryExtras | undefined {
   const [extras, setExtras] = useState<SummaryExtras>(LOADING_EXTRAS);
   useEffect(() => {
     if (assignmentId === undefined || documentId === undefined) return undefined;
@@ -53,6 +55,15 @@ function useExtras(assignmentId: string | undefined, documentId: string | undefi
     readExtras(assignmentId, documentId, createApi(), (part) => { if (live) setExtras((now) => ({ ...now, ...part })); });
     return () => { live = false; };
   }, [assignmentId, documentId]);
+  // The declaration changes inside the dialog while the ids stay: its blocks are read again, the rest is not.
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; return undefined; }
+    if (assignmentId === undefined) return undefined;
+    let live = true;
+    void readDeclarationBlocks(assignmentId, createApi()).then((declaration) => { if (live) setExtras((now) => ({ ...now, declaration })); });
+    return () => { live = false; };
+  }, [declarationKey]); // eslint-disable-line react-hooks/exhaustive-deps
   return assignmentId === undefined || documentId === undefined ? undefined : extras;
 }
 
@@ -116,7 +127,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
   }
   const s = panelSections(summary.summary, { submitted });
   const { disputes } = props;
-  const extras = useExtras(props.assignmentId, disputes?.documentId);
+  const extras = useExtras(props.assignmentId, disputes?.documentId, props.declarationKey);
   const marked = disputes !== undefined;
   const body = (
     <>
