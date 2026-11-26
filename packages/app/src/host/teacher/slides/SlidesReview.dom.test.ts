@@ -53,6 +53,11 @@ describe("SlidesOrWork", () => {
     expect(reads.revision).not.toHaveBeenCalled();
   });
 
+  it("does not hold a text work back while the kind is still being read", async () => {
+    await act(async () => { root.render(h(SlidesOrWork, { documentId: "doc-1", path: "/nastavnik/rad/doc-1", fallback: h("p", null, "TEKSTNA STRANICA"), read: () => new Promise(() => {}) })); });
+    expect(host.textContent).toBe("TEKSTNA STRANICA");
+  });
+
   it("opens the slides of a slides work on the newest revision, with the speaker notes, read-only", async () => {
     await mount({ kind: "slides", revisions, more: false });
     expect(reads.revision).toHaveBeenCalledWith("doc-1", 2);

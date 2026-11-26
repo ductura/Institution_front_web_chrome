@@ -21,7 +21,8 @@ import { readSlidesRevision, readSlidesRevisions, type Revision, type RevisionRe
 function Block({ block }: { block: SlideBlock }) {
   if (block.type === "image") return <p>{fill(t.imageBlock, { alt: block.alt })}</p>;
   if (block.type === "list") return <ul>{block.items.map((item, index) => <li key={index}>{item}</li>)}</ul>;
-  return block.type === "heading" ? <h3>{block.text}</h3> : <p>{block.text}</p>;
+  // Paragraph text may hold line breaks the student typed; they are kept.
+  return block.type === "heading" ? <h3>{block.text}</h3> : <p style={{ whiteSpace: "pre-wrap" }}>{block.text}</p>;
 }
 
 function SlideView({ slide, index, total }: { slide: Slide; index: number; total: number }) {
@@ -36,7 +37,7 @@ function SlideView({ slide, index, total }: { slide: Slide; index: number; total
         );
       })}
       <h3>{t.notesTitle}</h3>
-      <p>{slide.notes ?? t.noNotes}</p>
+      <p style={{ whiteSpace: "pre-wrap" }}>{slide.notes ?? t.noNotes}</p>
     </section>
   );
 }
@@ -148,8 +149,9 @@ export function SlidesOrWork({ documentId, path, fallback, read = readSlidesRevi
     void read(documentId).then((value) => { if (live) setAnswer(value); });
     return () => { live = false; };
   }, [documentId, read]);
-  if (answer === null) return <div className="page"><p role="status">{t.loading}</p></div>;
-  if (answer.kind === "slides") return <SlidesReview key={documentId} documentId={documentId} path={path} revisions={answer.revisions} more={answer.more} />;
+  // The existing page is shown at once and stays until the kind is known to be slides: a read of the kind that
+  // is slow or never answers must not hold a text work back.
+  if (answer?.kind === "slides") return <SlidesReview key={documentId} documentId={documentId} path={path} revisions={answer.revisions} more={answer.more} />;
   // Text works, and every failed read of the kind, keep the existing page, which shows its own 401/404/unavailable.
   return <>{fallback}</>;
 }
