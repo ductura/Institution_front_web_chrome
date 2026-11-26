@@ -69,6 +69,8 @@ export type OpenedWork = {
   schemaVersion?: 1 | 2 | 3;
   /** The server's hash of the work's revision zero; a v3 work at a later revision is verified with it (PIL-K-SPREMANJE-V3). */
   revisionZeroHash?: string;
+  /** ED-22 (NF2-P26): the minute of the work's last signed save on the server; absent when there is none yet or the server did not state it. */
+  lastSignedAt?: string;
 };
 
 export type OpenOutcome =
@@ -105,6 +107,12 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 
 const isCount = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+
+/** An ISO instant that reads back as itself, so 2026-02-30 is not taken for 2 March. */
+function isCalendarInstant(text: string): boolean {
+  const epochMs = Date.parse(text);
+  return !Number.isNaN(epochMs) && new Date(epochMs).toISOString() === text;
+}
 
 export function encodeBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -256,11 +264,15 @@ export function openedWorkFrom(value: unknown): OpenedWork | null {
   }
   const schemaVersion = value.schemaVersion;
   const revisionZeroHash = value.revisionZeroHash;
+  const lastSignedAt = value.lastSignedAt;
+  // The contract states the minute's shape; a minute that is no calendar minute is not shown.
+  if (typeof lastSignedAt === "string" && !isCalendarInstant(lastSignedAt)) return null;
   return {
     documentId, evidenceProfileId, currentRevision, documentHash, headSegmentHash, lastSequenceTo,
     document, evidenceDomainId: keys.domain, receiptKeys: keys.keys, submitted,
     ...(schemaVersion === 1 || schemaVersion === 2 || schemaVersion === 3 ? { schemaVersion } : {}),
     ...(typeof revisionZeroHash === "string" ? { revisionZeroHash } : {}),
+    ...(typeof lastSignedAt === "string" ? { lastSignedAt } : {}),
   };
 }
 

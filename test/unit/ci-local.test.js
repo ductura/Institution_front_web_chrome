@@ -25,9 +25,9 @@ for (const [files, expected] of cases) {
 }
 
 test('ci:local reads the rules from ci.yml: a changed rule in the workflow changes the plan', () => {
-  const changed = readWorkflow(workflowText.replace("b=\"$(hit '^(catalog/|packages/ui/)')\"", "b=\"$(hit '^(packages/ui/)')\""));
+  const changed = readWorkflow(workflowText.replace("u=\"$(hit '^(packages/|catalog/|", "u=\"$(hit '^(packages/|"));
   assert.notEqual(changed, wf);
-  assert.equal(running(changed, ['catalog/src/a.ts']), 'changes,ui');
+  assert.equal(running(changed, ['catalog/src/a.ts']), 'changes,ui-baselines');
 });
 
 test('ci:local: with no change list every job runs, as on a push', () => {
@@ -40,7 +40,7 @@ test('ci:local: every check step of a needed job is in the plan; only runner set
   const jobs = plan(wf, decide(wf, ['any'], { event: 'workflow_dispatch' }));
   const ui = jobs.find((j) => j.id === 'ui');
   const names = ui.runs.flatMap((r) => r.steps.filter((s) => s.kind === 'check').map((s) => `${r.name} > ${s.name}`));
-  for (const want of ['ui (checks) > Typecheck', 'ui (unit) > Unit tests', 'ui (behaviour 3/3) > Behaviour tests', 'ui (axe-dark) > Axe tests', 'ui (axe-light) > Axe tests']) {
+  for (const want of ['ui (checks) > Typecheck', 'ui (checks) > Unit tests', 'ui (unit) > Unit tests', 'ui (behaviour 3/3) > Behaviour tests', 'ui (axe) > Axe tests of the catalogue (dark shell)', 'ui (axe) > Axe tests of the catalogue (light shell)']) {
     assert.ok(names.some((n) => n.startsWith(want)), want);
   }
   const setup = jobs.flatMap((j) => j.runs.flatMap((r) => r.steps.filter((s) => s.kind === 'setup').map((s) => s.name)));

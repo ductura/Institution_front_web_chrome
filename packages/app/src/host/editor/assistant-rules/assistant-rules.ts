@@ -37,6 +37,8 @@ export function instructionsOf(read: StudentNoticeRead | null): string | null {
 
 export const noticePath = (assignmentId: string) => `/zadatak/${encodeURIComponent(assignmentId)}`;
 export const declarationPath = (assignmentId: string) => `/rad/${encodeURIComponent(assignmentId)}/predaja/izjava`;
+/** The work itself: where a sign-in from the declaration's dialog comes back to. */
+export const workPath = (assignmentId: string) => `/rad/${encodeURIComponent(assignmentId)}`;
 
 type Reader = (assignmentId: string) => Promise<StudentNoticeRead>;
 const cache = new Map<string, Promise<StudentNoticeRead>>();

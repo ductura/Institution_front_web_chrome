@@ -15,7 +15,34 @@ export type WorkComment = {
   readonly savedAt: string;
 };
 
-export type BankEntry = { readonly id: string; readonly title: string; readonly body: string };
+export type BankKind = "must" | "sugg" | "q" | "praise";
+export const BANK_KINDS: readonly BankKind[] = ["must", "sugg", "q", "praise"];
+
+/** `title` is the kind's Croatian name; `label` is the teacher's own short label, or null. */
+export type BankEntry = {
+  readonly id: string; readonly kind: BankKind; readonly title: string; readonly label: string | null; readonly body: string;
+};
+
+/** What the teacher writes into the bank: the text, its kind and an optional label (1 to 40 characters). */
+export type BankInput = { readonly text: string; readonly kind: BankKind; readonly label: string | null };
+
+export const BANK_TEXT_MAX = 2000;
+export const BANK_LABEL_MAX = 40;
+
+/** A bank entry is saved only when the server named it (201 with an id); anything else leaves the list as it was. */
+export type BankSave =
+  | { readonly kind: "saved"; readonly entry: BankEntry }
+  | { readonly kind: "signedOut" }
+  | { readonly kind: "rejected" }
+  | { readonly kind: "unknown" };
+
+/** An entry is changed only when the server confirmed it (204). A 404 means the entry is no longer the teacher's to edit. */
+export type BankUpdate =
+  | { readonly kind: "updated"; readonly entry: BankEntry }
+  | { readonly kind: "gone" }
+  | { readonly kind: "signedOut" }
+  | { readonly kind: "rejected" }
+  | { readonly kind: "unknown" };
 
 /** Where in the text a new draft is anchored; the server takes no draft without one. */
 export type DraftAnchor = {
@@ -63,6 +90,8 @@ export interface DraftCommentsPort {
 export interface CommentBankPort {
   read(): Promise<BankRead>;
   remove(entryId: string): Promise<BankRemove>;
+  save(input: BankInput): Promise<BankSave>;
+  update(entryId: string, input: BankInput): Promise<BankUpdate>;
 }
 
 /** The only comments a student is ever shown: drafts are filtered out here and nowhere else. */
@@ -73,14 +102,42 @@ export function visibleToStudent(comments: readonly WorkComment[]): readonly Wor
 const fold = (value: string): string =>
   value.normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().replace(/đ/g, "d");
 
-/** Bank entries whose title or text holds every word of the query; accents and case do not matter. */
-export function searchBank(entries: readonly BankEntry[], query: string): readonly BankEntry[] {
+/** Bank entries that match the kind (null = any) and hold every word of the query in the text, kind name or label; accents and case do not matter. */
+export function searchBank(entries: readonly BankEntry[], query: string, kind: BankKind | null = null): readonly BankEntry[] {
   const words = fold(query).split(/\s+/).filter((word) => word !== "");
-  if (words.length === 0) return entries;
   return entries.filter((entry) => {
-    const haystack = fold(`${entry.title} ${entry.body}`);
+    if (kind !== null && entry.kind !== kind) return false;
+    if (words.length === 0) return true;
+    const haystack = fold(`${entry.title} ${entry.label ?? ""} ${entry.body}`);
     return words.every((word) => haystack.includes(word));
   });
+}
+
+const codePoints = (value: string): number => [...value].length;
+// eslint-disable-next-line no-control-regex
+const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
+
+export type BankInputError = "emptyText" | "textTooLong" | "labelTooLong" | "labelInvalid";
+
+/**
+ * The input as it is sent (NFC, empty label = none), or the reason it is not sent. The server holds
+ * the same limits (text 1 to 2000 characters with a visible one, label 1 to 40 without control characters).
+ */
+export function normalizeBankInput(text: string, kind: BankKind, label: string): { ok: true; input: BankInput } | { ok: false; error: BankInputError } {
+  const body = text.normalize("NFC");
+  if (body.trim() === "") return { ok: false, error: "emptyText" };
+  if (codePoints(body) > BANK_TEXT_MAX) return { ok: false, error: "textTooLong" };
+  const shortLabel = label.normalize("NFC").trim();
+  if (shortLabel === "") return { ok: true, input: { text: body, kind, label: null } };
+  if (CONTROL.test(shortLabel)) return { ok: false, error: "labelInvalid" };
+  if (codePoints(shortLabel) > BANK_LABEL_MAX) return { ok: false, error: "labelTooLong" };
+  return { ok: true, input: { text: body, kind, label: shortLabel } };
+}
+
+/** Adds a bank entry text to the comment being written; a blank line separates it from what is there, and the limit is kept. */
+export function insertIntoComment(current: string, inserted: string, limit: number): string {
+  const joined = current.trim() === "" ? inserted : `${current.replace(/\s+$/, "")}\n\n${inserted}`;
+  return [...joined].slice(0, limit).join("");
 }
 
 /** Saves a draft; an empty text is never sent, and an answer that does not repeat the text is unknown. */
@@ -142,6 +199,47 @@ export async function removeBankEntry(port: CommentBankPort, entryId: string): P
     return await port.remove(entryId);
   } catch {
     return { kind: "unknown" };
+  }
+}
+
+/** Saves a new bank entry; an invalid input is never sent. */
+export async function saveBankEntry(port: CommentBankPort, input: BankInput): Promise<BankSave> {
+  const checked = normalizeBankInput(input.text, input.kind, input.label ?? "");
+  if (!checked.ok) return { kind: "rejected" };
+  try {
+    return await port.save(checked.input);
+  } catch {
+    return { kind: "unknown" };
+  }
+}
+
+/** Changes a bank entry; an invalid input is never sent, and the list changes only on "updated". */
+export async function updateBankEntry(port: CommentBankPort, entryId: string, input: BankInput): Promise<BankUpdate> {
+  const checked = normalizeBankInput(input.text, input.kind, input.label ?? "");
+  if (!checked.ok) return { kind: "rejected" };
+  try {
+    return await port.update(entryId, checked.input);
+  } catch {
+    return { kind: "unknown" };
+  }
+}
+
+export function saveEntryMessage(result: BankSave): string {
+  switch (result.kind) {
+    case "saved": return text.entrySaved;
+    case "signedOut": return text.signedOut;
+    case "rejected": return text.failed;
+    case "unknown": return text.unknown;
+  }
+}
+
+export function updateMessage(result: BankUpdate): string {
+  switch (result.kind) {
+    case "updated": return text.entryUpdated;
+    case "gone": return text.entryGone;
+    case "signedOut": return text.signedOut;
+    case "rejected": return text.failed;
+    case "unknown": return text.unknown;
   }
 }
 

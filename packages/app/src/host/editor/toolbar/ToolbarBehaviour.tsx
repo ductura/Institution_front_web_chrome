@@ -11,6 +11,7 @@ import { toolbarBehaviourHr as t } from "./messages.hr";
 import { quickBarVisible, QUICK_TOOLS, QUICK_MAX_WIDTH, keyboardInset, type QuickTool } from "./quick-tools";
 import { displayShortcut, showDelay, TIP_HIDE_MS, TIP_TOUCH_HIDE_MS, tipPlace, toolTip, type ToolTip } from "./tool-tip";
 import { arrangeToolbar, arrangedIds, customisableIds, moveTool, resetPrefs, setLook, toggleTool, type ToolbarLook, type ToolbarPrefs } from "./toolbar-prefs";
+import { nextToFold, wrapsToSecondRow } from "./toolbar-fit";
 import { ReadingSettingsDialog, readingStore } from "../reading-settings/ReadingSettingsDialog";
 import { readingSettingsHr } from "../reading-settings/messages.hr";
 import { canStep, stepZoom, zoomPercent } from "./text-size";
@@ -143,11 +144,17 @@ export function CustomiseToolbarDialog({ open, groups, prefs, intro, onChange, o
 }
 
 /** The context button and its menu; hidden where the cursor has nothing of its own to offer. */
-function ContextButton({ place, editable, onAction }: { place: CursorPlace; editable: boolean; onAction: (id: ContextAction) => void }) {
+function ContextButton({ place, editable, hide = [], onAction }: {
+  place: CursorPlace; editable: boolean;
+  /** ED-31: actions the shell's editor cannot run yet; the button goes when none is left. */
+  hide?: readonly ContextAction[];
+  onAction: (id: ContextAction) => void;
+}) {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const model = contextButton(place, editable);
-  if (model === null) return null;
-  const entries: MenuEntry[] = model.items.map((i) => ({ kind: "item", id: i.id, label: i.checked ? `✓ ${i.label}` : i.label, hint: i.hint }));
+  const items = model?.items.filter((i) => !hide.includes(i.id as ContextAction)) ?? [];
+  if (model === null || items.length === 0) return null;
+  const entries: MenuEntry[] = items.map((i) => ({ kind: "item", id: i.id, label: i.checked ? `✓ ${i.label}` : i.label, hint: i.hint }));
   return (
     <span className={styles.ctx}>
       <Button tone="quiet" aria-haspopup="menu" title={model.description}
@@ -164,19 +171,62 @@ export type ToolbarBehaviourProps = {
   onPrefs: (next: ToolbarPrefs) => void;
   /** Tools that do not fit the width go to Više; the shell measures and reports them (the prototype's fit()). */
   collapsed?: readonly string[];
+  /** ED-30: the toolbar measures itself and folds what does not fit one row; `collapsed` is then not used. */
+  fit?: boolean;
+  /** The bar's accessible name (PIL-K-TRAKA keeps the one of the toolbar it replaced). */
+  label?: string;
   place?: CursorPlace;
   editable: boolean;
   intro?: "write" | "review" | "locked";
   onContextAction?: (id: ContextAction) => void;
+  /** ED-31: context actions the shell cannot run yet. */
+  hideContext?: readonly ContextAction[];
 };
 
+/**
+ * ED-30: the tools folded into Više so the bar keeps one row. Measured before paint: a width change or a new
+ * arrangement starts again from none folded, then one tool at a time goes until the bar fits.
+ */
+function useFold(wrap: RefObject<HTMLDivElement | null>, on: boolean, groups: readonly EditorToolbarGroup[], prefs: ToolbarPrefs): string[] {
+  const [folded, setFolded] = useState<string[]>([]);
+  const [width, setWidth] = useState(0);
+  const onBar = customisableIds(groups).filter((id) => !prefs.off.includes(id));
+  const key = `${onBar.join(",")}|${prefs.look}|${prefs.order.join(",")}|${width}`;
+  const last = useRef(key);
+  useLayoutEffect(() => {
+    if (!on) return;
+    if (last.current !== key) {
+      last.current = key;
+      if (folded.length > 0) { setFolded([]); return; }
+    }
+    const bar = wrap.current?.querySelector<HTMLElement>('[role="toolbar"]');
+    if (!bar) return;
+    const tops = [...bar.children].filter((c): c is HTMLElement => c instanceof HTMLElement).map((c) => c.offsetTop);
+    if (!wrapsToSecondRow(tops)) return;
+    const next = nextToFold(onBar, folded);
+    if (next !== null) setFolded([...folded, next]);
+  });
+  useEffect(() => {
+    const el = wrap.current;
+    if (!on || !el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      const w = Math.round(entry?.contentRect.width ?? 0);
+      setWidth((prev) => (prev === w ? prev : w));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [wrap, on]);
+  return folded;
+}
+
 /** The toolbar with its tool tips, look, Više, customising and context button. */
-export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], place = { kind: "text" }, editable, intro = "write", onContextAction }: ToolbarBehaviourProps) {
+export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], fit = false, label, place = { kind: "text" }, editable, intro = "write", onContextAction, hideContext }: ToolbarBehaviourProps) {
   const wrap = useRef<HTMLDivElement>(null);
   const [customising, setCustomising] = useState(false);
   const [readingOpen, setReadingOpen] = useState(false);
   const [moreAt, setMoreAt] = useState<MenuPoint | null>(null);
-  const arranged = arrangeToolbar(groups, prefs, collapsed);
+  const folded = useFold(wrap, fit, groups, prefs);
+  const arranged = arrangeToolbar(groups, prefs, fit ? folded : collapsed);
   const moreGroup: EditorToolbarGroup = { id: "more", label: t.more, actions: [{
     id: MORE_ID, label: t.more, icon: "chevronDown",
     onSelect: () => {
@@ -205,8 +255,8 @@ export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], p
 
   return (
     <div ref={wrap} className={styles.wrap} data-look={prefs.look}>
-      <EditorToolbar groups={drawn} />
-      <ContextButton place={place} editable={editable} onAction={onContextAction ?? (() => undefined)} />
+      <EditorToolbar groups={drawn} label={label} />
+      <ContextButton place={place} editable={editable} hide={hideContext} onAction={onContextAction ?? (() => undefined)} />
       <ContextMenu anchor={moreAt} entries={moreEntries} label={t.more} onClose={() => setMoreAt(null)}
         onSelect={(id) => {
           setMoreAt(null);
@@ -222,8 +272,12 @@ export function ToolbarWithBehaviour({ groups, prefs, onPrefs, collapsed = [], p
 }
 
 /** "Brzi alati": above the keyboard on a phone, while the editor has the focus. */
-export function MobileQuickBar({ editable, focused, dialogOpen = false, canUndo, onTool }: {
-  editable: boolean; focused: boolean; dialogOpen?: boolean; canUndo: boolean; onTool: (id: QuickTool["id"]) => void;
+export function MobileQuickBar({ editable, focused, dialogOpen = false, canUndo, hide = [], onTool }: {
+  editable: boolean; focused: boolean; dialogOpen?: boolean; canUndo: boolean;
+  /** ED-31: tools the shell's editor has no action for yet. */
+  hide?: readonly QuickTool["id"][];
+  /** `at` is the bottom left of the pressed button, for the menu of "Više". */
+  onTool: (id: QuickTool["id"], at: MenuPoint) => void;
 }) {
   const [width, setWidth] = useState(() => (typeof window === "undefined" ? 1024 : window.innerWidth));
   const [inset, setInset] = useState(0);
@@ -243,8 +297,9 @@ export function MobileQuickBar({ editable, focused, dialogOpen = false, canUndo,
     <div role="toolbar" aria-label={t.quickTools} className={`${styles.quick} ${styles.fixedBottom}`} style={{ ["--keyboard-inset" as string]: `${inset}px` }}
       // A press in the bar must not take the focus (and the selection) out of the text.
       onPointerDown={(e) => e.preventDefault()}>
-      {QUICK_TOOLS.map((q) => (
-        <button key={q.id} type="button" aria-label={q.label} disabled={q.id === "undo" && !canUndo} onClick={() => onTool(q.id)}>{q.label}</button>
+      {QUICK_TOOLS.filter((q) => !hide.includes(q.id)).map((q) => (
+        <button key={q.id} type="button" aria-label={q.label} disabled={q.id === "undo" && !canUndo}
+          onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); onTool(q.id, { x: b.left, y: b.top }); }}>{q.label}</button>
       ))}
     </div>
   );

@@ -1,17 +1,24 @@
 "use client";
 
-import { Button, Dialog } from "@ductura/ui";
+import { Button, Checkbox, Dialog } from "@ductura/ui";
 import { useState, type SyntheticEvent } from "react";
 
 import { editorPanelLayoutsHr as t } from "@/lib/i18n/messages.hr";
 
-import { DEFAULT_PREFERENCES, LAYOUTS, type LayoutPreferences, type Side } from "./preferences";
+import { DEFAULT_SETTINGS, type PanelSize } from "../layout/layout-settings";
+import { DEFAULT_PREFERENCES, LAYOUTS, ROW_PARTS, rowShows, withRowPart, type LayoutPreferences, type Side } from "./preferences";
 import styles from "../SidePanels.module.css";
 
-export function PanelSettings({ side, value, onChange }: {
+const WIDTHS = ["narrow", "medium", "wide"] as const satisfies readonly PanelSize[];
+type Width = (typeof WIDTHS)[number];
+
+export function PanelSettings({ side, value, onChange, width, onWidth }: {
   side: Side;
   value: LayoutPreferences[Side];
   onChange: (value: LayoutPreferences[Side]) => void;
+  /** ED-39: the side's width on a computer (the same choice as the shell's "Raspored" menu). */
+  width?: Width;
+  onWidth?: (width: Width) => void;
 }) {
   const [open, setOpen] = useState(false);
   const title = t.customize[side];
@@ -27,9 +34,13 @@ export function PanelSettings({ side, value, onChange }: {
     {open && <div {...{ onCancel: (event: SyntheticEvent) => event.stopPropagation() }}
       onKeyDown={(event) => { if (event.defaultPrevented) event.stopPropagation(); }}>
       <Dialog open title={title} onClose={() => setOpen(false)} actions={<>
-        <Button tone="quiet" onClick={() => onChange(DEFAULT_PREFERENCES[side])}>{t.reset}</Button>
+        <Button tone="quiet" onClick={() => {
+          onChange(DEFAULT_PREFERENCES[side]);
+          onWidth?.(DEFAULT_SETTINGS[side === "left" ? "rail" : "panel"]);
+        }}>{t.reset}</Button>
         <Button onClick={() => setOpen(false)}>{t.done}</Button>
       </>}>
+        <p className={styles.settingsNote}>{t.settingsNote}</p>
         <fieldset className={styles.layoutChoices}>
           <legend>{t.layout}</legend>
           {LAYOUTS.map((layout) => <Button key={layout} tone="quiet" aria-pressed={layout === value.layout}
@@ -44,6 +55,25 @@ export function PanelSettings({ side, value, onChange }: {
             {mobile === "same" ? t.same : labels[mobile]}
           </Button>)}
         </fieldset>
+        <fieldset className={styles.mobileChoices}>
+          <legend>{t.density}</legend>
+          {([false, true] as const).map((dense) => <Button key={String(dense)} tone="quiet"
+            aria-pressed={dense === (value.dense === true)}
+            onClick={() => { const next = { ...value }; if (dense) next.dense = true; else delete next.dense; onChange(next); }}>
+            {dense ? t.densities.dense : t.densities.airy}
+          </Button>)}
+        </fieldset>
+        {side === "left" && <fieldset className={styles.mobileChoices}>
+          <legend>{t.row}</legend>
+          {ROW_PARTS.map((part) => <Checkbox key={part} label={t.rowParts[part]} checked={rowShows(value)[part]}
+            onChange={(event) => onChange(withRowPart(value, part, event.currentTarget.checked))} />)}
+        </fieldset>}
+        {width && onWidth && <fieldset className={styles.mobileChoices}>
+          <legend>{t.width}</legend>
+          {WIDTHS.map((size) => <Button key={size} tone="quiet" aria-pressed={size === width} onClick={() => onWidth(size)}>
+            {t.widths[size]}
+          </Button>)}
+        </fieldset>}
       </Dialog>
     </div>}
   </>;

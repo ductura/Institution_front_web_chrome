@@ -23,6 +23,7 @@ import { factsOf, interruptedOf, publishedIn, type AssignmentReads } from "./mod
 import { readCourseFacts, type CourseFactsRead } from "./read";
 import { AssignmentRhythm } from "../input-rhythm/mounts";
 import { teacherTeamText } from "../work-team/messages.hr";
+import { teacherPeerReviewText } from "../peer-review/messages.hr";
 
 /** The facts of one course, read once per visit and per "Pokušaj ponovno". */
 function useCourseFacts(course: TeacherCourse): [CourseFactsRead | null, () => void, () => void] {
@@ -98,6 +99,9 @@ export function CourseTasks({ course }: { course: TeacherCourse }) {
           {/* WEB-V19-GRUPA: the way into the teams of this task. */}
           <p className="note"><a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(assignment.id)}/timovi`)} data-testid="work-teams-link"
             aria-label={`${teacherTeamText.title}: ${assignment.title}`}>{teacherTeamText.title}</a></p>
+          {/* WEB-V19-RECENZIJA-NASTAVNIK: the way into the peer-review round of this task. */}
+          <p className="note"><a href={appHref(base, `/nastavnik/zadatak/${encodeURIComponent(assignment.id)}/recenzija`)} data-testid="peer-review-link"
+            aria-label={`${teacherPeerReviewText.link}: ${assignment.title}`}>{teacherPeerReviewText.link}</a></p>
           <AssignmentRhythm courseId={course.id} assignmentId={assignment.id} title={assignment.title} />
           <TaskActions assignment={assignment} />
         </div>

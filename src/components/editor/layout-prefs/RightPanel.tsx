@@ -1,14 +1,15 @@
 "use client";
 
-import { Button, Details, PanelTabs } from "@ductura/ui";
+import { Button, Details, PanelTabs, TabCount } from "@ductura/ui";
 import { useEditorState } from "@tiptap/react";
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import { currentHeading, numberedHeadings } from "@/editor";
 import { editorPanelLayoutsHr as t, messagesHr } from "@/lib/i18n/messages.hr";
 
 import { useLocalEditor } from "../LocalDocument";
 import styles from "../SidePanels.module.css";
+import { OpenCommentsReport, openCommentsLabel } from "./panel-counts";
 import type { PanelLayout } from "./preferences";
 
 const groups = ["sources", "comments", "review", "work", "assistant"] as const;
@@ -65,14 +66,19 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
   onSelect: (group: PanelGroup | null) => void;
   drawer: boolean;
 }) {
+  // Reported by the comments card below (useReportOpenComments).
+  const [openComments, setOpenComments] = useState(0);
+  const count = (group: PanelGroup) =>
+    group === "comments" && openComments > 0 ? { value: openComments, label: openCommentsLabel(openComments) } : undefined;
+  const badge = (group: PanelGroup) => { const c = count(group); return c ? <TabCount {...c} /> : null; };
   const content = (group: PanelGroup) => sections[group] ?? <p className="rail-empty">{t.emptyGroup}</p>;
   const shown = selection ?? (drawer ? groups[0] : null);
   const label = (group: PanelGroup) => group === "work" ? t.workFull : t.groups[group];
   const view = (group: PanelGroup) => <div className={styles.rightContent}><h2>{label(group)}</h2>{content(group)}</div>;
-  return <div className={styles.rightLayout} data-layout={layout}>
+  return <OpenCommentsReport.Provider value={setOpenComments}><div className={styles.rightLayout} data-layout={layout}>
     <div className={styles.rightSettings}>{settings}</div>
-    {layout === "a" && <PanelTabs label={messagesHr.workspace.panelTabs}
-      tabs={groups.map((id) => ({ id, label: t.groups[id], content: content(id) }))} />}
+    {layout === "a" && <PanelTabs label={messagesHr.workspace.panelTabs} selected={selection ?? undefined} onChange={(id) => onSelect(id as PanelGroup)}
+      tabs={groups.map((id) => ({ id, label: t.groups[id], content: content(id), count: count(id) }))} />}
     {layout === "b" && <>
       <div className={`${styles.panelHeading} ${styles.contextHeading}`}>
         {selection ? <Button tone="quiet" onClick={() => onSelect(null)}>{t.backToContext}</Button> : <span>{t.variants.right.b}</span>}
@@ -81,7 +87,7 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
         <ChapterContext openGroup={onSelect} />
         <h2>{t.wholeWork}</h2>
         <div className={styles.workGroups}>
-          {groups.map((group) => <Button key={group} tone="quiet" onClick={() => onSelect(group)}>{label(group)}</Button>)}
+          {groups.map((group) => <Button key={group} tone="quiet" onClick={() => onSelect(group)}>{label(group)}{badge(group)}</Button>)}
         </div>
       </div>}
     </>}
@@ -91,10 +97,10 @@ export function RightPanel({ layout, sections = {}, settings, selection, onSelec
           onClick={() => onSelect(!drawer && shown === group ? null : group)}>
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={icons[group]} /></svg>
-          {t.groups[group]}
+          <span>{t.groups[group]}{badge(group)}</span>
         </Button>)}
       </div>
       {shown && view(shown)}
     </>}
-  </div>;
+  </div></OpenCommentsReport.Provider>;
 }

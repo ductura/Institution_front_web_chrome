@@ -111,6 +111,7 @@ const NO_MUTABLE_FIELDS = new Set<string>([
   "work.restore.post no-matching-revision",
   "work.restore.post recorded",
   "work.version.get diff",
+  "work.version.get slides-snapshot",
   "work.version.get snapshot",
 ]);
 

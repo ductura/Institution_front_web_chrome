@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { StudentNoticeRead } from "../../../../../../src/client/student-notice.ts";
 import type { NoticeView } from "../../../../../../src/components/student/assignment-notice-read.ts";
 import { AssistantRulesView } from "./AssistantRules";
-import { declarationPath, forgetNotices, instructionsOf, noticeOnce, noticePath, rulesViewOf } from "./assistant-rules";
+import { declarationPath, forgetNotices, instructionsOf, noticeOnce, noticePath, rulesViewOf, workPath } from "./assistant-rules";
 
 const ID = "0f0e0d0c-0b0a-4908-8706-050403020100";
 const view = (over: Partial<NoticeView> = {}): NoticeView => ({
@@ -69,6 +69,17 @@ describe("ED-09 Pravila za ovaj zadatak", () => {
   it("builds the routes of the notice and the declaration", () => {
     expect(noticePath(ID)).toBe(`/zadatak/${ID}`);
     expect(declarationPath(ID)).toBe(`/rad/${ID}/predaja/izjava`);
+    expect(workPath(ID)).toBe(`/rad/${ID}`);
+  });
+
+  it("ED-12: in the editor the declaration opens its dialog and filling it in stays a link", () => {
+    const out = renderToStaticMarkup(createElement(AssistantRulesView, {
+      view: rulesViewOf(available()), noticeHref: "/zadatak/x", declarationHref: "/rad/x/predaja/izjava", onDeclaration: () => undefined,
+    }));
+    expect(out).toMatch(/<button type="button"[^>]*aria-haspopup="dialog"[^>]*>Izjava o korištenju alata<\/button>/);
+    expect(out).not.toContain(">Izjava o korištenju alata</a>");
+    expect(out).toContain('href="/rad/x/predaja/izjava">Uredi izjavu</a>');
+    expect(out).toContain('href="/zadatak/x">Pročitaj obavijest zadatka</a>');
   });
 
   it("reads the notice once per assignment and asks again after a failure", async () => {

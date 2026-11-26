@@ -6,3 +6,4 @@
  * (here src/editor/), so its relative imports stay as they were.
  */
 export const EDITOR_CORE_PACKAGE = "@ductura/editor-core";
+export * from "./sheet/index.ts";

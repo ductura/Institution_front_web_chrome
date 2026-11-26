@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 
-import { DEFAULT_PREFERENCES, effectiveLayout, PREFERENCES_KEY, readPreferences, writePreferences } from "./preferences";
+import { DEFAULT_PREFERENCES, effectiveLayout, PREFERENCES_KEY, readPreferences, rowShows, withRowPart, writePreferences } from "./preferences";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -24,8 +24,32 @@ it("ignores invalid values without losing valid settings from the same record", 
   expect(getItem).toHaveBeenCalledWith(PREFERENCES_KEY);
 });
 
+// ED-39: "Gustoća: Zbijeno" is kept per side; anything but `true` reads as "Prozračno" (no key).
+it("keeps a dense side and reads anything else as airy", () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal("window", { localStorage: { getItem: values.get.bind(values), setItem: values.set.bind(values) } });
+  writePreferences({ left: { layout: "a", mobile: "c", dense: true }, right: { layout: "a", mobile: "same" } });
+  expect(readPreferences()).toEqual({ left: { layout: "a", mobile: "c", dense: true }, right: { layout: "a", mobile: "same" } });
+  values.set(PREFERENCES_KEY, '{"left":{"layout":"b","mobile":"c","dense":"yes"},"right":{"layout":"a","mobile":"same","dense":false}}');
+  expect(readPreferences()).toEqual({ left: { layout: "b", mobile: "c" }, right: { layout: "a", mobile: "same" } });
+});
+
 it("uses the defaults when the browser disallows access to storage", () => {
   vi.stubGlobal("window", { get localStorage() { throw new Error("denied"); } });
   expect(readPreferences()).toEqual(DEFAULT_PREFERENCES);
   expect(() => writePreferences(DEFAULT_PREFERENCES)).not.toThrow();
+});
+
+// ED-37 (P2-6) "U retku poglavlja": the row shows all by default; switched-off parts are kept in a fixed
+// order, unknown ones dropped, and switching every part back on leaves no key.
+it("keeps the chapter row parts switched off and nothing when all are on", () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal("window", { localStorage: { getItem: values.get.bind(values), setItem: values.set.bind(values) } });
+  expect(rowShows(DEFAULT_PREFERENCES.left)).toEqual({ words: true, status: true, flags: true });
+  const off = withRowPart(withRowPart({ ...DEFAULT_PREFERENCES.left, dense: true }, "flags", false), "words", false);
+  expect(off).toEqual({ layout: "a", mobile: "c", dense: true, hideRow: ["words", "flags"] });
+  expect(rowShows(off)).toEqual({ words: false, status: true, flags: false });
+  expect(withRowPart(withRowPart(off, "words", true), "flags", true)).toEqual({ layout: "a", mobile: "c", dense: true });
+  values.set(PREFERENCES_KEY, '{"left":{"layout":"a","mobile":"c","hideRow":["status","bogus","status"]},"right":{"layout":"a","mobile":"same","hideRow":"words"}}');
+  expect(readPreferences()).toEqual({ left: { layout: "a", mobile: "c", hideRow: ["status"] }, right: { layout: "a", mobile: "same" } });
 });

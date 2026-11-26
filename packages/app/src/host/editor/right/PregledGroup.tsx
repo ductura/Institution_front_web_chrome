@@ -12,9 +12,15 @@ import type { useLocalEditor } from "@/components/editor/LocalDocument";
 import { jumpToBlock } from "./jump";
 import { ReviewPanel } from "../../../../../../src/components/editor/review/ReviewPanel";
 import { readReviewDoc } from "../../../../../../src/components/editor/review/model";
+import { TextFixesPanel } from "../../../../../../src/components/editor/text-fixes/TextFixesPanel";
 import { createReadAloud, READ_ALOUD_MAX_RATE, READ_ALOUD_MIN_RATE, type ReadAloudController, type ReadAloudState } from "../read-aloud/controller";
 import { readAloudSupported } from "../read-aloud/support";
 import { readAloudRate } from "../reading-settings/rate-store";
+import { listProofs } from "../../../../../../src/client/source-proofs";
+import { tiptapToCanonicalV4 } from "../../../../../editor-core/src/editor/interop-v4.ts";
+import QuoteReviewCard from "../stem/QuoteReviewCard";
+import type { EvidenceBySource } from "../stem/quote-check";
+import { loadQuoteEvidence, quotedSources } from "./quote-evidence";
 
 import { pregledHr as t } from "./messages.hr";
 import {
@@ -28,9 +34,11 @@ const VIEWS: readonly View[] = ["nacrt", "pojmovnik", "provjere"];
 
 const browserStorage = (): TermStorage | null => { try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; } };
 
-export function PregledGroup({ editor, documentId, enabledCheckIds = null }: {
+export function PregledGroup({ editor, documentId, assignmentId, enabledCheckIds = null }: {
   editor: Editor | null | undefined;
   documentId: string;
+  /** The work's assignment; without it the quote check (ED-40) is not shown. */
+  assignmentId?: string;
   /** Check ids the institution enabled; null when none were read (every check of this build runs). */
   enabledCheckIds?: readonly string[] | null;
 }) {
@@ -56,9 +64,36 @@ export function PregledGroup({ editor, documentId, enabledCheckIds = null }: {
       </>}
       {view === "nacrt" && <Nacrt editor={editor} doc={doc} scope={scope} />}
       {view === "pojmovnik" && <Pojmovnik doc={doc} scope={scope} workId={documentId} />}
-      {view === "provjere" && <ReviewPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />}
+      {view === "provjere" && <>
+        <ReviewPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />
+        <TextFixesPanel editor={editor} documentId={documentId} enabledCheckIds={enabledCheckIds} />
+        {assignmentId !== undefined && <QuoteCheck editor={editor} pmDoc={snapshot.doc} assignmentId={assignmentId} />}
+      </>}
     </section>
   );
+}
+
+/**
+ * ED-40 (P2-11): "Navodi prema izvoru" under Provjere. Only a work in schema v4 has the quotes and citations
+ * the check reads; the notes of the quoted sources come through student.source-proofs.get (option 1).
+ */
+function QuoteCheck({ editor, pmDoc, assignmentId }: { editor: Editor; pmDoc: Editor["state"]["doc"]; assignmentId: string }) {
+  const doc = useMemo(() => {
+    const read = tiptapToCanonicalV4(editor.getJSON());
+    return read.ok ? read.doc : null;
+  }, [editor, pmDoc]); // eslint-disable-line react-hooks/exhaustive-deps
+  const key = doc === null ? "" : quotedSources(doc).join(",");
+  const [evidence, setEvidence] = useState<{ for: string; read: EvidenceBySource | null } | null>(null);
+  useEffect(() => {
+    if (doc === null) return;
+    let live = true;
+    void loadQuoteEvidence(key === "" ? [] : key.split(","), (sourceId) => listProofs(assignmentId, sourceId))
+      .then((read) => { if (live) setEvidence({ for: key, read }); });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignmentId, key]);
+  if (doc === null) return null;
+  return <QuoteReviewCard doc={doc} evidence={evidence !== null && evidence.for === key ? evidence.read : null} />;
 }
 
 /** The document and the cursor of the open editor, read again after every transaction. */

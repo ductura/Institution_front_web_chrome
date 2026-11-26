@@ -11,6 +11,8 @@ import {
 } from "./bibliography-model";
 import styles from "./StudentBibliography.module.css";
 import { planImport } from "./import-refs";
+import { defaultEffectiveStyle, effectiveStyle, styledLiterature, type EffectiveStyle } from "./styled-entries";
+import { useInstitutionStyle } from "../../citation-styles/use-institution-style";
 import { bibliographyStudentHr as t } from "./messages.hr";
 import { readStates, stateCounts, toggleState, writeStates, type SourceState, type SourceStates } from "./source-state";
 
@@ -20,6 +22,8 @@ type Props = {
   editor: Editor;
   /** Number of proofs per source, when the proofs are known; the column is hidden otherwise. */
   proofCounts?: ReadonlyMap<string, number>;
+  /** The assignment of the work: needed to read the style of the institution; without it the FPZG style is shown. */
+  assignmentId?: string;
 };
 
 const MAX_FILE = 1_000_000;
@@ -31,7 +35,7 @@ export function StudentBibliographyHost(props: Props) {
   </Details>;
 }
 
-function Bibliography({ documentId, editor, proofCounts }: Props) {
+function Bibliography({ documentId, editor, proofCounts, assignmentId }: Props) {
   const [doc, setDoc] = useState(() => (editor.isDestroyed ? null : editor.state.doc));
   useEffect(() => {
     const sync = () => setDoc(editor.isDestroyed ? null : editor.state.doc);
@@ -138,6 +142,7 @@ function Bibliography({ documentId, editor, proofCounts }: Props) {
     <Button tone="quiet" onClick={() => setOverviewOpen(true)}>{t.overview}</Button>
     <Overview open={overviewOpen} onClose={() => setOverviewOpen(false)} stats={stats} showProofs={Boolean(proofCounts)} />
     <ImportRefs editor={editor} sources={sources} editable={editable} />
+    <StyledList json={json} sources={sources} assignmentId={assignmentId} />
     <Unavailable />
     <p role="status">{message}</p>
   </div>;
@@ -169,6 +174,40 @@ function Overview({ open, onClose, stats, showProofs }: { open: boolean; onClose
     </table>
     <p><small>{t.overviewUnavailable}</small></p>
   </Dialog>;
+}
+
+type StyledProps = { json: Parameters<typeof styledLiterature>[0]; sources: readonly BibSource[] };
+
+/** Without an assignment there is no institution style to read: the default FPZG style, no request. */
+function StyledList({ assignmentId, ...rest }: StyledProps & { assignmentId: string | undefined }) {
+  return assignmentId === undefined ? <StyledView {...rest} shown={defaultEffectiveStyle()} /> : <StyledLive {...rest} assignmentId={assignmentId} />;
+}
+
+function StyledLive({ assignmentId, ...rest }: StyledProps & { assignmentId: string }) {
+  const read = useInstitutionStyle(assignmentId);
+  return <StyledView {...rest} shown={effectiveStyle(read)} />;
+}
+
+function StyledView({ json, sources, shown }: StyledProps & { shown: EffectiveStyle }) {
+  const out = useMemo(() => styledLiterature(json, shown.style), [json, shown.style]);
+  const label = (id: string) => sources.find((s) => s.id === id)?.label ?? id;
+  return <Details summary={t.styledTitle}>
+    <div className={styles.content}>
+      {shown.label && <p><strong>{shown.label}</strong></p>}
+      {shown.note && <p role="status"><small>{shown.note}</small></p>}
+      <p><small>{t.styledReadOnly}</small></p>
+      {out.entries.length === 0 ? <p>{t.styledNone}</p> : <ol className={styles.list}>
+        {out.entries.map((e) => <li key={e.sourceId} className={styles.item}>{e.text}</li>)}
+      </ol>}
+      {out.unformatted.length > 0 && <p><small>{t.styledUnformatted(out.unformatted.map(label).join("; "))}</small></p>}
+      {out.orphanCitations > 0 && <p><small>{t.styledOrphans(out.orphanCitations)}</small></p>}
+      {out.citations.length > 0 && <Details summary={`${t.styledInText} (${out.citations.length})`}>
+        <ul className={styles.list}>
+          {out.citations.map((c) => <li key={c.index}>{c.text} <small>{label(c.sourceId)}</small></li>)}
+        </ul>
+      </Details>}
+    </div>
+  </Details>;
 }
 
 function Unavailable() {

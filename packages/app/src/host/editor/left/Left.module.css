@@ -8,4 +8,9 @@
 .chip { display: inline-block; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--rule, currentColor); font-size: 0.8125em; }
 .menu { display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--rule, rgba(0, 0, 0, 0.2)); border-radius: 6px; padding: 4px; }
 .sheet { border-block-start: 1px solid var(--rule, rgba(0, 0, 0, 0.15)); padding-block-start: 10px; }
+.marks { display: inline-flex; align-items: center; gap: 6px; margin-inline-start: 6px; }
+.fix { color: var(--warn, currentColor); font-size: 0.8125em; }
+.dot { display: inline-block; inline-size: 8px; block-size: 8px; border-radius: 50%; border: 1px solid var(--rule, currentColor); flex: none; }
+.dot[data-state="working"] { background: var(--warn, currentColor); border-color: var(--warn, currentColor); }
+.dot[data-state="done"] { background: var(--accent, currentColor); border-color: var(--accent, currentColor); }
 .live { min-block-size: 1.2em; margin: 0; font-size: 0.875em; }

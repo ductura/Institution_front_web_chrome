@@ -32,6 +32,7 @@ async function teacher(page: Page, { students = true } = {}) {
   await page.route(`**/api/v1/courses/${K1}/team/view`, (route) => route.fulfill(json({
     role: "holder", holderId: TEACHER, assistants: [], students: [], groups: [],
   })));
+  await page.route(`**/api/v1/courses/${K1}/team/candidates`, (route) => route.fulfill(json({ candidates: [] })));
   await page.route(`**/api/v1/courses/${K1}/team`, (route) => route.request().method() === "GET"
     ? route.fulfill(json({ holderId: TEACHER, assistantIds: [] })) : route.fallback());
   await page.route(`**/api/v1/institution/assignments/*`, (route) => route.fulfill(json({ code: "not_found" }, 404)));

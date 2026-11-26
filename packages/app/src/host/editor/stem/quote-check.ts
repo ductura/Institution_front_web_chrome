@@ -29,7 +29,7 @@ const QUOTE = /„([^„“”]+)[“”]/g;
 export function findQuotes(doc: CanonicalDocumentV4): FoundQuote[] {
   const found: FoundQuote[] = [];
   for (const node of doc.nodes) {
-    if (node.type !== "paragraph" && node.type !== "bulletItem" && node.type !== "quote" && node.type !== "numberedItem") continue;
+    if (node.type !== "paragraph" && node.type !== "bulletItem" && node.type !== "quote" && node.type !== "orderedItem") continue;
     scan(node.id, node.children, found);
   }
   return found;

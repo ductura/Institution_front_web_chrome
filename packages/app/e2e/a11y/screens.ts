@@ -25,6 +25,7 @@ export const SCREENS: readonly Screen[] = [
   { name: "nema ovlasti", path: "/nema-ovlasti?kind=denied", role: null },
   { name: "prijava istekla", path: "/nema-ovlasti?kind=expired", role: null },
   { name: "izjava o pristupačnosti", path: "/pristupacnost", role: null },
+  { name: "o aplikaciji", path: "/o-aplikaciji", role: null },
   { name: "preuzimanje izvoza podataka", path: "/izvoz-podataka/IzmisljeniTokenZaProvjeruPristupacnosti_001", role: null },
   // Student.
   { name: "student: moji zadaci", path: "/zadaci", role: "student" },
@@ -33,6 +34,9 @@ export const SCREENS: readonly Screen[] = [
   { name: "student: radni prostor", path: "/rad", role: "student" },
   { name: "student: zahtjev za mentorstvo", path: "/zadaci/mentorstvo", role: "student" },
   { name: "student: dnevnik prakse", path: "/zadaci/dnevnik-prakse", role: "student" },
+  { name: "student: gradivo za kodiranje", path: "/zadaci/gradivo-kodiranja", role: "student" },
+  { name: "student: upitnici", path: "/zadaci/upitnici", role: "student" },
+  { name: "student: izvoz kodiranja", path: "/zadaci/kodiranje-izvoz", role: "student" },
   { name: "student: upis kodom", path: "/upis", role: "student" },
   { name: "student: upis u kolegij", path: `/upis/kolegij/${COURSE_ID}`, role: "student" },
   { name: "student: zadatak", path: `/zadatak/${A}`, role: "student" },
@@ -49,6 +53,8 @@ export const SCREENS: readonly Screen[] = [
   { name: "student: razgovor o radu", path: `/rad/${A}/razgovor`, role: "student" },
   { name: "student: kako Ductura radi", path: "/kako-radi", role: "student" },
   { name: "student: postavke profila", path: "/profil", role: "student" },
+  // WEB-V15-E2E: "Statistička analiza" (the function is off until the server switches it on; the scenario answers the catalogue).
+  { name: "student: statistička analiza", path: "/analiza", role: "student" },
   // Operator (WEB-NUZ-OPERATER): its own page in the host, no longer public.
   { name: "operater: mjerila pilota", path: "/operater/mjerila-pilota", role: "network_engineer" },
   // Teacher.

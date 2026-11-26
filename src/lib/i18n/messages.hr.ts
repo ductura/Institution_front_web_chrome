@@ -20,6 +20,14 @@ export const editorPanelLayoutsHr = {
   layout: "Raspored",
   mobile: "Na mobitelu",
   same: "Kao na računalu",
+  density: "Gustoća",
+  densities: { airy: "Prozračno", dense: "Zbijeno" },
+  // ED-37 (P2-6): the chapter row parts, as in the prototype "Prilagodi panel".
+  row: "U retku poglavlja",
+  rowParts: { words: "Broj riječi", status: "Točka stanja", flags: "Napomene „za popraviti”" },
+  width: "Širina na računalu",
+  widths: { narrow: "Uska", medium: "Srednja", wide: "Široka" },
+  settingsNote: "Postavke vrijede samo za Vas i pamte se u ovom pregledniku.",
   reset: "Vrati zadano",
   done: "Gotovo",
   variants: {
@@ -45,6 +53,9 @@ export const editorPanelLayoutsHr = {
   allChapters: "‹ Sva poglavlja",
   subchapters: "Potpoglavlja",
   noSubchapters: "Poglavlje nema potpoglavlja.",
+  collapseAll: "Sklopi sve",
+  expandAll: "Rasklopi sve",
+  foldChapter: (title: string) => `Sklopi ili rasklopi potpoglavlja: ${title}`,
   groups: { sources: "Izvori", comments: "Komentari", review: "Pregled", work: "Mentor", assistant: "Asistent" },
   workFull: "Mentor i predaja",
   emptyGroup: "Ovdje još nema sadržaja.",
@@ -52,6 +63,7 @@ export const editorPanelLayoutsHr = {
   writingIn: "Pišete u poglavlju",
   noChapter: "Kursor nije u poglavlju",
   commentsHere: "Komentari ovdje",
+  openComments: { one: "{count} otvoren komentar", few: "{count} otvorena komentara", many: "{count} otvorenih komentara" },
   sourcesHere: "Izvori ovdje",
   allSources: "Svi izvori i traženje",
   notesHere: "Za pogledati u tekstu",
@@ -1139,6 +1151,8 @@ export const hr = {
     submittedReadOnly:
       "Rad je predan, pa se ovdje više ne može pisati. Izmjene napravljene nakon predaje nisu u predanom radu i ostaju samo na ovom uređaju.",
     blockedHint: "Ova kartica ništa ne sprema dok je druga otvorena. Kad je zatvorite, tekst se ovdje ponovno učitava.",
+    /** ED-22 (NF2-P26): the server's minute of the last signed save, from the open answer. */
+    blockedLastSaved: "Zadnje spremanje na poslužitelju: {when}.",
     failureQuota: "Na uređaju nema dovoljno prostora, pa se promjene više ne spremaju. Izvezite tekst da ga ne izgubite.",
     failureUnavailable: "Spremanje na ovom uređaju nije dostupno. Izvezite tekst da ga ne izgubite.",
     failureLimit: "Lokalni zapis je dosegao granicu, pa se promjene više ne spremaju. Izvezite tekst da ga ne izgubite.",

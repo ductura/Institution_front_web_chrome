@@ -65,6 +65,9 @@ import {
 } from "@/client/logout-hold";
 import { AtomicDexieJournal } from "@/lib/journal/atomic-dexie-journal";
 import { CroatianQuotes } from "../../../packages/editor-core/src/typography/croatian-quotes";
+import { DashEllipsis } from "../../../packages/editor-core/src/typography/dash-ellipsis";
+// ED-33 (P2-2): Alt+Shift+↑/↓ moves the chapter, Alt+↑/↓ the sentence (listed in commands/shortcut-definitions.ts).
+import { ChapterMove, SentenceMove } from "../../../packages/editor-core/src/outline";
 import type { SaverFailure } from "@/lib/journal/local-document-saver";
 
 import {
@@ -73,6 +76,7 @@ import {
 } from "./document-saver";
 import type { EvidenceSession, SheetDocument } from "./evidence-session";
 import LogoutDialog from "./LogoutDialog";
+import { blockedLastSavedText } from "./blocked-notice";
 import { StoppedReport } from "./stopped-report/StoppedReport";
 import { endRun } from "./run-refs";
 import { livePublishAction } from "./live-hold";
@@ -363,8 +367,9 @@ export function LocalDocumentProvider({
     // The source observer's priority puts it before ArrowCollapse's keydown.
     // ChapterNumbers: heading numbers as decorations, never text (DAN-395).
     // CroatianQuotes: a typed straight quote becomes „ ” or ‚ ’ (WEB-1605).
+    // DashEllipsis: " - " becomes " – " and "..." becomes "…" (ED-48).
     // PIL-K-SPREMANJE-V3: the v3 schema (footnote, cross reference) only for a confirmed v3 work.
-    extensions: [...(sheet === 3 ? createEditorExtensionsV3(t.editor.placeholder) : createEditorExtensions(t.editor.placeholder)), StorableInput, ArrowCollapse, ChapterNumbers, CroatianQuotes, observer.extension],
+    extensions: [...(sheet === 3 ? createEditorExtensionsV3(t.editor.placeholder) : createEditorExtensions(t.editor.placeholder)), StorableInput, ArrowCollapse, ChapterNumbers, ChapterMove, SentenceMove, CroatianQuotes, DashEllipsis, observer.extension],
     editable: false,
     immediatelyRender: false,
     injectCSS: false, // app/prosemirror.css (DAN-489)
@@ -818,7 +823,11 @@ function exportText(editor: Editor): void {
  * the manuscript only: the notices above it are interface text and keep the
  * page's language. Without a known language nothing is marked.
  */
-export function LocalEditor({ lang = null }: { lang?: WorkLanguage | null } = {}) {
+export function LocalEditor({ lang = null, lastSignedAt }: {
+  lang?: WorkLanguage | null;
+  /** ED-22 (NF2-P26): the server's minute of the last signed save, said while another tab holds the work. */
+  lastSignedAt?: string;
+} = {}) {
   const value = useLocalDocument();
   const { editor, phase } = value;
   const failure = failureOf(value);
@@ -843,7 +852,8 @@ export function LocalEditor({ lang = null }: { lang?: WorkLanguage | null } = {}
         <p className="editor-notice">{t.editor.sendStoppedSaved}</p>
       ) : null}
       <div className="editor-notice" role="status">
-        {phase === "blocked" ? <p>{t.editor.blockedHint}</p>
+        {phase === "blocked" ? <p>{t.editor.blockedHint}{lastSignedAt
+          ? ` ${blockedLastSavedText(lastSignedAt)}` : null}</p>
           : phase === "ready" && value.snapshot?.closedBy === "submission" ? <p>{t.editor.submittedReadOnly}</p>
           : null}
       </div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
+import { ACTION_LOG, baseOf, crumbsOf, internalRoute, NO_ACCESS, OPERATOR_HOME, OPERATOR_INDEX, PROBLEM_REPORTS, PAGES, pathMatches, publicPage, resolve, routeOf, shellRole } from "./routes";
 
 describe("baseOf and routeOf", () => {
   it("serves the same app under /app/web and /app/chrome", () => {
@@ -78,6 +78,14 @@ describe("the student's pages of Ductus app/", () => {
     expect(resolve("/rad/a1/predaja", "student")).toMatchObject({ kind: "page", page: { label: "Predaja rada" } });
     expect(resolve("/zadaci/dnevnik-prakse", "student")).toMatchObject({ kind: "page", page: { label: "Dnevnik prakse", current: "/zadaci" } });
     expect(resolve("/zadaci/dnevnik-prakse", "teacher")).not.toMatchObject({ kind: "page" });
+    expect(resolve("/zadaci/gradivo-kodiranja", "student")).toMatchObject({ kind: "page", page: { label: "Gradivo za kodiranje", current: "/zadaci" } });
+    expect(resolve("/zadaci/gradivo-kodiranja", "teacher")).not.toMatchObject({ kind: "page" });
+    expect(resolve("/zadaci/upitnici", "student")).toMatchObject({ kind: "page", page: { label: "Upitnici", current: "/zadaci" } });
+    expect(resolve("/zadaci/upitnici", "teacher")).not.toMatchObject({ kind: "page" });
+    expect(resolve("/zadaci/kodiranje-izvoz", "student")).toMatchObject({ kind: "page", page: { label: "Izvoz kodiranja", current: "/zadaci" } });
+    expect(resolve("/zadaci/kodiranje-izvoz", "teacher")).not.toMatchObject({ kind: "page" });
+    expect(resolve("/zadaci/kodiranje", "student")).toMatchObject({ kind: "page", page: { label: "Kodiranje", current: "/zadaci" } });
+    expect(resolve("/zadaci/kodiranje", "teacher")).not.toMatchObject({ kind: "page" });
     expect(resolve("/zadatak/a1/tim", "student")).toMatchObject({ kind: "page", page: { label: "Moj tim", current: "/zadaci" } });
     expect(resolve("/zadatak/a1/tim", "teacher")).not.toMatchObject({ kind: "page" });
     expect(resolve("/nastavnik/zadatak/a1/timovi", "teacher")).toMatchObject({ kind: "page", page: { label: "Timovi na zadatku" } });
@@ -169,6 +177,19 @@ describe("the operator's page (WEB-NUZ-OPERATER, NF-7 OA-1)", () => {
     expect(resolve("/profil", null, ["network_engineer"])).toMatchObject({ kind: "page" });
   });
 
+  it("forwards /operater to the first page the account may open (WEB-OPERATER-POCETNA)", () => {
+    expect(OPERATOR_INDEX).toBe("/operater");
+    expect(resolve(OPERATOR_INDEX, null, ["network_engineer"])).toEqual({ kind: "redirect", to: OPERATOR_HOME });
+    expect(resolve(OPERATOR_INDEX, "admin", ["institution_admin", "network_engineer"])).toEqual({ kind: "redirect", to: OPERATOR_HOME });
+    expect(resolve(OPERATOR_INDEX, "admin", ["institution_admin"])).toEqual({ kind: "redirect", to: PROBLEM_REPORTS });
+    expect(resolve(OPERATOR_INDEX, "teacher", ["teacher"])).toEqual({ kind: "notFound" });
+    expect(resolve(OPERATOR_INDEX, "student", ["student"])).toEqual({ kind: "notFound" });
+    expect(resolve(OPERATOR_INDEX, null, [])).toEqual({ kind: "notFound" });
+    // Without the account kinds (an older caller), there is nothing to forward to.
+    expect(resolve(OPERATOR_INDEX, "admin")).toEqual({ kind: "notFound" });
+    expect(publicPage(OPERATOR_INDEX)).toBeNull();
+  });
+
   it("is a page of the host, opened in the app, not a public page", () => {
     expect(publicPage(OPERATOR_HOME)).toBeNull();
     expect(internalRoute(`/app/web${OPERATOR_HOME}`, "/app/web")).toBe(OPERATOR_HOME);
@@ -203,6 +224,7 @@ describe("publicPage", () => {
     expect(publicPage("/stanje")).toMatchObject({ label: "Stanje sustava" });
     expect(publicPage("/prijava")).toMatchObject({ label: "Prijava" });
     expect(publicPage("/nema-ovlasti")).toMatchObject({ label: "Nema ovlasti" });
+    expect(publicPage("/o-aplikaciji")).toMatchObject({ label: "O aplikaciji" });
     expect(publicPage("/izvoz-podataka/izmisljeni-token")).toMatchObject({ label: "Izvoz mojih podataka" });
     expect(publicPage("/provjera")).toMatchObject({ label: "Provjera potvrde" });
     expect(publicPage("/izvoz-podataka")).toBeNull();

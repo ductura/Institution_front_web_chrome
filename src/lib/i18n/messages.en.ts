@@ -1076,6 +1076,7 @@ const en = {
     submittedReadOnly:
       "The work has been submitted, so you can no longer write here. Changes made after submission are not in the submitted work and stay only on this device.",
     blockedHint: "This tab stores nothing while the other one is open. Once you close it, the text loads here again.",
+    blockedLastSaved: "Last save on the server: {when}.",
     failureQuota: "There is not enough space on the device, so changes are no longer being stored. Export the text so you do not lose it.",
     failureUnavailable: "Storing on this device is not available. Export the text so you do not lose it.",
     failureLimit: "The local record has reached its limit, so changes are no longer being stored. Export the text so you do not lose it.",

@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import type { RevisionRequest } from "../../../../../../src/client/revision-requests";
 import type { WorkMessage } from "../../../../../../src/client/work-messages";
 import { MentorMount } from "./MentorMount";
-import { abstractWords, seenAtOf, workStateOf } from "./mentor-mount";
+import { abstractWords, seenAtOf, thesisShownOf, workStateOf } from "./mentor-mount";
 
 const req = (number: number, state: RevisionRequest["state"], instruction = "Izmišljena uputa za doradu.", window = "2026-11-10T09:00:00.000Z"): RevisionRequest => ({
   id: `00000000-0000-4000-8000-00000000000${number}`, number, state, rowSeq: 1, anchor: {} as RevisionRequest["anchor"],
@@ -87,5 +87,20 @@ describe("MentorMount", () => {
     const work = readFileSync(join(import.meta.dirname, "..", "..", "student", "work.tsx"), "utf8");
     expect(work).toMatch(/import \{ MentorMount \} from "\.\.\/editor\/right\/MentorMount"/);
     expect(work).toMatch(/work: \(\{ editor, assignmentId: id, documentId, submitted \}\) => <>\s*<MentorMount editor=\{editor\} assignmentId=\{id\} documentId=\{documentId\} submitted=\{submitted\} \/>\s*<RevisionActionsHost /);
+  });
+});
+
+describe("thesisShownOf: \"Završni rad\" only for a mentored work (DEMO-POP-3)", () => {
+  const listed = { ok: true, body: { assignments: [{ id: "AAAA0000-0000-4000-8000-000000000001" }] } } as const;
+  it("shows it for a work the student's mentored works name, whatever the case of the id", () => {
+    expect(thesisShownOf(listed, "aaaa0000-0000-4000-8000-000000000001")).toBe(true);
+  });
+  it("hides it for a course work (a seminar) the list leaves out", () => {
+    expect(thesisShownOf(listed, "bbbb0000-0000-4000-8000-000000000002")).toBe(false);
+    expect(thesisShownOf({ ok: true, body: { assignments: [] } }, "bbbb0000-0000-4000-8000-000000000002")).toBe(false);
+  });
+  it("keeps it when the list is unread or the assignment unknown; the panel's own 404 still decides", () => {
+    expect(thesisShownOf({ ok: false }, "bbbb0000-0000-4000-8000-000000000002")).toBe(true);
+    expect(thesisShownOf(listed, undefined)).toBe(true);
   });
 });

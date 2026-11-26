@@ -63,6 +63,15 @@ describe("Povijest dokumenta in the left panel (PIL-D7-POVIJEST, mount)", () => 
     expect(withHistory.textContent).toContain("sadržaj povijesti");
   });
 
+  it("ED-37: the footer stands under the sections in every layout and is never a group of its own", async () => {
+    for (const layout of ["a", "b", "c"] as const) {
+      const el = await mount(createElement(LeftPanel, { layout, sections: { footer: createElement("p", { "data-rail-foot": "" }, "1200 od 3000 do 5000 riječi") }, settings: null, onJump: () => undefined }));
+      expect(el.querySelector("[data-rail-foot]")?.textContent).toBe("1200 od 3000 do 5000 riječi");
+      expect(groups(el)).not.toContain("1200 od 3000 do 5000 riječi");
+      host?.remove();
+    }
+  });
+
   it("HistorySection holds the versions and the restore on the same port, and the way into Povijest i usporedba (ED-16)", async () => {
     const port = fakeTimeMachinePort();
     const versions = vi.spyOn(port, "versions");

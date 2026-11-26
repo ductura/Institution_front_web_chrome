@@ -1,0 +1,787 @@
+{
+ "_comment": "Golden vectors for SheetDocument v1 (invented data only). valid: input passes validateSheetDocument; canonical/sha256 are the RFC 8785 text of input and its SHA-256 (hex); code/path are the first validation error. Generated from the inputs; the server model must produce the same.",
+ "vectors": [
+  {
+   "name": "empty-minimal",
+   "valid": true,
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 1,
+      "columns": 1,
+      "cells": {}
+     }
+    ]
+   },
+   "canonical": "{\"kind\":\"spreadsheet\",\"schemaVersion\":1,\"sheets\":[{\"cells\":{},\"columns\":1,\"id\":\"s1\",\"name\":\"List1\",\"rows\":1}]}",
+   "sha256": "47b3096ccb969d39011a022b5d1c48224d502b0c1bec846a2033ca6449d0f4d0"
+  },
+  {
+   "name": "text-number-formula",
+   "valid": true,
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": {
+        "value": "Ana"
+       },
+       "B1": {
+        "value": 2.5
+       },
+       "C1": {
+        "value": null,
+        "formula": "=SUM(B1:B2)"
+       }
+      }
+     }
+    ]
+   },
+   "canonical": "{\"kind\":\"spreadsheet\",\"schemaVersion\":1,\"sheets\":[{\"cells\":{\"A1\":{\"value\":\"Ana\"},\"B1\":{\"value\":2.5},\"C1\":{\"formula\":\"=SUM(B1:B2)\",\"value\":null}},\"columns\":3,\"id\":\"s1\",\"name\":\"List1\",\"rows\":3}]}",
+   "sha256": "362d382a8c7478d5eb49221831563157be154365f3df5629875069fea80c00da"
+  },
+  {
+   "name": "max-dimensions",
+   "valid": true,
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 200,
+      "columns": 26,
+      "cells": {
+       "Z200": {
+        "value": "kraj"
+       }
+      }
+     }
+    ]
+   },
+   "canonical": "{\"kind\":\"spreadsheet\",\"schemaVersion\":1,\"sheets\":[{\"cells\":{\"Z200\":{\"value\":\"kraj\"}},\"columns\":26,\"id\":\"s1\",\"name\":\"List1\",\"rows\":200}]}",
+   "sha256": "3cb0c0fba728b68189fc376be6e8d8a1e7cace74c0595fa98aa33bc0890cd1c2"
+  },
+  {
+   "name": "five-sheets",
+   "valid": true,
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 1,
+      "columns": 1,
+      "cells": {}
+     },
+     {
+      "id": "s2",
+      "name": "List2",
+      "rows": 1,
+      "columns": 1,
+      "cells": {}
+     },
+     {
+      "id": "s3",
+      "name": "List3",
+      "rows": 1,
+      "columns": 1,
+      "cells": {}
+     },
+     {
+      "id": "s4",
+      "name": "List4",
+      "rows": 1,
+      "columns": 1,
+      "cells": {}
+     },
+     {
+      "id": "s5",
+      "name": "List5",
+      "rows": 1,
+      "columns": 1,
+      "cells": {}
+     }
+    ]
+   },
+   "canonical": "{\"kind\":\"spreadsheet\",\"schemaVersion\":1,\"sheets\":[{\"cells\":{},\"columns\":1,\"id\":\"s1\",\"name\":\"List1\",\"rows\":1},{\"cells\":{},\"columns\":1,\"id\":\"s2\",\"name\":\"List2\",\"rows\":1},{\"cells\":{},\"columns\":1,\"id\":\"s3\",\"name\":\"List3\",\"rows\":1},{\"cells\":{},\"columns\":1,\"id\":\"s4\",\"name\":\"List4\",\"rows\":1},{\"cells\":{},\"columns\":1,\"id\":\"s5\",\"name\":\"List5\",\"rows\":1}]}",
+   "sha256": "39855389c3694e9a67be9ef113ccef31d145212c72632442ff041e3394ccf8ce"
+  },
+  {
+   "name": "name-31-chars",
+   "valid": true,
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "ččččččččččččččččččččččččččččččč",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   },
+   "canonical": "{\"kind\":\"spreadsheet\",\"schemaVersion\":1,\"sheets\":[{\"cells\":{},\"columns\":3,\"id\":\"s1\",\"name\":\"ččččččččččččččččččččččččččččččč\",\"rows\":3}]}",
+   "sha256": "b6fdbe83ecc51d602bdf92f5029aa48f22f8d1fcb48736a987bf23729a7afd27"
+  },
+  {
+   "name": "unicode-text",
+   "valid": true,
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": {
+        "value": "šđčćž 😀"
+       }
+      }
+     }
+    ]
+   },
+   "canonical": "{\"kind\":\"spreadsheet\",\"schemaVersion\":1,\"sheets\":[{\"cells\":{\"A1\":{\"value\":\"šđčćž 😀\"}},\"columns\":3,\"id\":\"s1\",\"name\":\"List1\",\"rows\":3}]}",
+   "sha256": "d313365b3938eeafbf9ce46b9c92222eaeb42deace617f7e032add7b1764698d"
+  },
+  {
+   "name": "not-object",
+   "valid": false,
+   "code": "not_object",
+   "input": null
+  },
+  {
+   "name": "array-root",
+   "valid": false,
+   "code": "not_object",
+   "input": []
+  },
+  {
+   "name": "unknown-root-field",
+   "valid": false,
+   "code": "unknown_field",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ],
+    "extra": 1
+   }
+  },
+  {
+   "name": "missing-sheets",
+   "valid": false,
+   "code": "missing_field",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet"
+   }
+  },
+  {
+   "name": "schema-version-2",
+   "valid": false,
+   "code": "bad_schema_version",
+   "input": {
+    "schemaVersion": 2,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "kind-text",
+   "valid": false,
+   "code": "bad_kind",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "text",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "no-sheets",
+   "valid": false,
+   "code": "bad_sheets",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": []
+   }
+  },
+  {
+   "name": "six-sheets",
+   "valid": false,
+   "code": "too_many_sheets",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "L1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     },
+     {
+      "id": "s2",
+      "name": "L2",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     },
+     {
+      "id": "s3",
+      "name": "L3",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     },
+     {
+      "id": "s4",
+      "name": "L4",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     },
+     {
+      "id": "s5",
+      "name": "L5",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     },
+     {
+      "id": "s6",
+      "name": "L6",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "duplicate-sheet-id",
+   "valid": false,
+   "code": "duplicate_sheet_id",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     },
+     {
+      "id": "s1",
+      "name": "Drugi",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "duplicate-sheet-name-case",
+   "valid": false,
+   "code": "duplicate_sheet_name",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     },
+     {
+      "id": "s2",
+      "name": "LIST1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "name-32-chars",
+   "valid": false,
+   "code": "bad_sheet_name",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "name-empty",
+   "valid": false,
+   "code": "bad_sheet_name",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "rows-201",
+   "valid": false,
+   "code": "bad_dimension",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 201,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "rows-zero",
+   "valid": false,
+   "code": "bad_dimension",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 0,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "columns-27",
+   "valid": false,
+   "code": "bad_dimension",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 27,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "rows-fractional",
+   "valid": false,
+   "code": "bad_dimension",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 1.5,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "unknown-sheet-field",
+   "valid": false,
+   "code": "unknown_field",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {},
+      "color": "red"
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell-ref-lowercase",
+   "valid": false,
+   "code": "bad_cell_ref",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "a1": {
+        "value": 1
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell-ref-row-zero",
+   "valid": false,
+   "code": "bad_cell_ref",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A0": {
+        "value": 1
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell-ref-two-letters",
+   "valid": false,
+   "code": "bad_cell_ref",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "AA1": {
+        "value": 1
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell-out-of-rows",
+   "valid": false,
+   "code": "cell_out_of_bounds",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A4": {
+        "value": 1
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell-out-of-columns",
+   "valid": false,
+   "code": "cell_out_of_bounds",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "D1": {
+        "value": 1
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell-unknown-field",
+   "valid": false,
+   "code": "unknown_field",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": {
+        "value": 1,
+        "style": "b"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell-boolean-value",
+   "valid": false,
+   "code": "bad_cell_value",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": {
+        "value": true
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell-text-1001",
+   "valid": false,
+   "code": "bad_cell_value",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": {
+        "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "formula-no-equals",
+   "valid": false,
+   "code": "bad_formula",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": {
+        "value": null,
+        "formula": "SUM(A2)"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "formula-501-chars",
+   "valid": false,
+   "code": "bad_formula",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": {
+        "value": null,
+        "formula": "=11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "sheet-id-empty",
+   "valid": false,
+   "code": "bad_sheet_id",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {}
+     }
+    ]
+   }
+  },
+  {
+   "name": "cell-not-object",
+   "valid": false,
+   "code": "bad_cell",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": "x"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "empty-cell-stored",
+   "valid": false,
+   "code": "empty_cell_stored",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": {
+        "value": null
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "empty-string-cell-stored",
+   "valid": false,
+   "code": "empty_cell_stored",
+   "input": {
+    "schemaVersion": 1,
+    "kind": "spreadsheet",
+    "sheets": [
+     {
+      "id": "s1",
+      "name": "List1",
+      "rows": 3,
+      "columns": 3,
+      "cells": {
+       "A1": {
+        "value": ""
+       }
+      }
+     }
+    ]
+   }
+  }
+ ]
+}
