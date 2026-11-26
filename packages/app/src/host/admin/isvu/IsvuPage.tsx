@@ -39,6 +39,13 @@ export default function IsvuPage() {
   const ticket = useRef(0);
   const sending = useRef(false);
   const previewTicket = useRef(0);
+  const alive = useRef(false);
+
+  // After unmount no answer may set state; the flag is re-armed on mount so a strict-mode remount keeps working.
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; ticket.current += 1; previewTicket.current += 1; };
+  }, []);
 
   useEffect(() => {
     const mine = ++ticket.current;
@@ -75,7 +82,7 @@ export default function IsvuPage() {
     const mine = ++previewTicket.current;
     setShown({ kind: "busy" }); setResult(null);
     const r = await previewImport(courseId, sourceKey);
-    if (mine !== previewTicket.current) return; // the choice changed meanwhile: this answer is for another course
+    if (!alive.current || mine !== previewTicket.current) return; // the choice changed meanwhile: this answer is for another course
     if (r.kind === "signedOut") { setLoad("signedOut"); return; }
     setShown(r.kind === "ok" ? { kind: "preview", value: r.value } : { kind: "failed", failure: r.kind });
   };
@@ -84,7 +91,9 @@ export default function IsvuPage() {
     if (shown.kind !== "preview" || sending.current) return;
     sending.current = true; setConfirming(true); setConfirmError(undefined);
     const r = await confirmImport(shown.value.importId);
-    sending.current = false; setConfirming(false);
+    sending.current = false;
+    if (!alive.current) return;
+    setConfirming(false);
     if (r.kind === "signedOut") { setAsking(false); setLoad("signedOut"); return; }
     if (r.kind === "ok") { setAsking(false); setResult(r.value); setShown({ kind: "none" }); return; }
     if (r.kind === "expired") { setAsking(false); setShown({ kind: "failed", failure: "expired" }); return; }
@@ -119,7 +128,7 @@ export default function IsvuPage() {
           <Button onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>
         </div>
       )}
-      {(load === "ready" || load === "empty") && years.length > 0 && (
+      {(load === "ready" || load === "empty" || load === "loading") && years.length > 0 && (
         <Select label={t.yearLabel} name="year" value={year} options={years.map((y) => ({ value: y, label: y }))} onChange={(e) => setYear(e.target.value)} />
       )}
       {load === "empty" && <p role="status">{source.length === 0 && courses.length > 0 ? m.empty : t.noCourses}</p>}
