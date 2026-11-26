@@ -14,3 +14,16 @@ export const proofRequestsHr = {
   how: "Potvrdu prilažete u odjeljku „Potvrde iz izvora” niže.",
   only: "Vidite samo ono što je nastavnik namijenio studentu; radne bilješke mentora ne vidite.",
 } as const;
+
+// Texts of the sources the mentor recommended or required (EDI-R12).
+export const recommendedSourcesHr = {
+  title: "Preporučeni izvori",
+  loading: "Učitavam preporuke mentora…",
+  error: "Preporuke mentora trenutačno nije moguće dohvatiti.",
+  signedOut: "Prijava je istekla. Prijavite se ponovno da vidite preporuke mentora.",
+  retry: "Pokušaj ponovno",
+  none: "Mentor za sada nije preporučio nijedan izvor.",
+  recommended: "preporučeno",
+  required: "obvezno",
+  only: "Vidite samo izvore koje je mentor namijenio studentu.",
+} as const;
