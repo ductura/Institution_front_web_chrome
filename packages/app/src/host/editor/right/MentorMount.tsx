@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { createApi } from "../../../../../../src/client/api.ts";
 import { readConsultationSlots, type ConsultationSlot, type SlotsApi } from "../../../../../../src/client/consultation-slots.ts";
+import type { StudentCriteriaCall } from "../../../../../../src/client/student-working-criteria.ts";
 import { listRevisionRequests, type RevisionRequest } from "../../../../../../src/client/revision-requests.ts";
 import { readWorkMessages, type WorkMessage } from "../../../../../../src/client/work-messages.ts";
 import { readWorkMilestones, type WorkMilestone } from "../../../../../../src/client/work-milestones.ts";
@@ -39,6 +40,8 @@ type Reads = {
 };
 /** The slots' client, made at call time (the page's origin is read then, not while rendering). */
 const slotsCall = ((...args: Parameters<SlotsApi>) => createApi()(...args)) as SlotsApi;
+/** ED-35: the student's read of each teacher's working criteria, made at call time like the slots' client. */
+const studentCriteriaCall: StudentCriteriaCall = (id, input) => createApi()(id, { ...input, body: undefined });
 const LOADING: Reads = { requests: undefined, milestones: undefined, messages: undefined, slots: undefined, returns: undefined, reading: undefined };
 
 /** The most pages of returns read before the list counts as unread (50 returns a page). */
@@ -169,7 +172,7 @@ export function MentorMount({ assignmentId, documentId, submitted, editor }: {
         howText={null} words={words} prep={null}
         said={<SaidPanel read={said} now={new Date()} onRetry={() => setAttempt((n) => n + 1)} />}
         prepPanel={<PrepPanel port={prep} words={allWords} editable={!submitted} onCopy={copyText} />}
-        consult={<ConsultPanel documentId={documentId} role="student" revision={1} slotsCall={slotsCall} criteriaCall={null} byRubric={byRubric} />} />
+        consult={<ConsultPanel documentId={documentId} role="student" revision={1} slotsCall={slotsCall} criteriaCall={null} studentCriteriaCall={studentCriteriaCall} byRubric={byRubric} />} />
       {/* WEB-NF6-RUNDA (MK-9): only in the student's own editor, only before submission. */}
       {!submitted && <OwnPanel documentId={documentId} reading={reads.reading} mark={mark}
         currentPlace={placeEditor ? () => placeOf(placeEditor) : undefined}

@@ -83,6 +83,12 @@ describe("MentorMount", () => {
     expect(html).toContain("data-consult-panel");
     expect(html).toContain("Kako mentor radi");
   });
+  // ED-35 (Daniel, Ductus#2058): the student must see the working criteria; without the call the card only says "nedostupno".
+  it("gives the student's consultations the read of the working criteria", () => {
+    const mount = readFileSync(join(import.meta.dirname, "MentorMount.tsx"), "utf8");
+    expect(mount).toMatch(/<ConsultPanel [^>]*role="student"[^>]*studentCriteriaCall=\{studentCriteriaCall\}/);
+    expect(mount).toMatch(/const studentCriteriaCall: StudentCriteriaCall = \(id, input\) => createApi\(\)\(id, \{ \.\.\.input, body: undefined \}\);/);
+  });
   it("is mounted in the student's editor in the Mentor tab, above the round's actions", () => {
     const work = readFileSync(join(import.meta.dirname, "..", "..", "student", "work.tsx"), "utf8");
     expect(work).toMatch(/import \{ MentorMount \} from "\.\.\/editor\/right\/MentorMount"/);
