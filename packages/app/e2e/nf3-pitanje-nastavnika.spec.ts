@@ -1,7 +1,7 @@
 // WEB-NF3-PITANJE (NF-3 PR-20, NF-4 NZ-15, NF-5 PG-6): the teacher's question beside the declaration.
 // The student answers it on step 2 „Izjava” (by keyboard, on the server's draft); after submission it is
 // read only. The teacher sees the question and the answer in the declaration card of „Pregled rada”, and
-// the assignment form shows honestly that a question cannot be set yet. axe at 390 and 1280 px in both
+// the assignment form takes the question (teacher.declaration-question.put). axe at 390 and 1280 px in both
 // themes. The server is faked per test over the contract's vectors; every person, text and id is invented.
 import { readFileSync } from "node:fs";
 
@@ -153,7 +153,7 @@ const K1 = "6b1d0e9f-8a7b-4c6d-9e5f-4a3b2c1d0e11";
 
 for (const width of [390, 1280]) {
   for (const theme of ["light", "dark"] as const) {
-    test(`NZ-15: the question field in the assignment form is disabled and says why (${width} px, ${theme})`, async ({ page }, info) => {
+    test(`NZ-15: the question field in the assignment form takes a question and names its limit (${width} px, ${theme})`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await page.route("**/api/v1/me", (route) => route.fulfill({ json: {
         role: "teacher", displayName: "Iva Izmišljena", institution: { slug: "izm", displayName: "Izmišljeni fakultet" },
@@ -165,8 +165,13 @@ for (const width of [390, 1280]) {
       await page.goto(`/app/web/nastavnik/zadatak/novi?kolegij=${K1}`);
       await setTheme(page, theme);
       const field = page.getByLabel("Pitanje studentu uz izjavu (nije obavezno)");
-      await expect(field).toBeDisabled();
-      await expect(page.getByText("Postavljanje pitanja uz izjavu trenutačno nije dostupno. Zadatak se objavljuje bez pitanja.")).toBeVisible();
+      await expect(field).toBeEnabled();
+      await expect(page.getByText("Do 500 znakova.", { exact: false })).toBeVisible();
+      await expect(page.getByText("trenutačno nije dostupno", { exact: false })).toHaveCount(0);
+      await field.fill("Koji Vam je izmišljeni izvor najviše pomogao?");
+      await expect(field).toHaveValue("Koji Vam je izmišljeni izvor najviše pomogao?");
+      await field.fill("x".repeat(501));
+      await expect(page.getByText("Pitanje može imati najviše 500 znakova.")).toBeVisible();
       await axe(page, info, `nf4-nz15-${width}-${theme}`);
     });
   }
