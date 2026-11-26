@@ -33,7 +33,10 @@ import { myRightsMessages } from "./host/public/my-rights/messages.hr";
 import { pilotMetricsMessages } from "./host/operator/pilot-metrics/messages.hr";
 import { actionLogMessages } from "./host/operator/action-log/messages.hr";
 import { problemReportsMessages } from "./host/operator/problem-reports/messages.hr";
-import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
+import { ACTION_LOG, PROBLEM_REPORTS, SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH } from "./host/operator/paths";
+import { healthMessages } from "./host/operator/health/messages.hr";
+import { eventsMessages } from "./host/operator/events/messages.hr";
+import { securityKeyMessages } from "./host/operator/webauthn/messages.hr";
 import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
@@ -90,7 +93,7 @@ export type Page = {
 
 /** NF-7 OA-1: the operator's own page, the pilot's aggregate measures; the operator's home. */
 export const OPERATOR_HOME = "/operater/mjerila-pilota";
-export { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
+export { ACTION_LOG, PROBLEM_REPORTS, SECURITY_KEY, SYSTEM_EVENTS, SYSTEM_HEALTH } from "./host/operator/paths";
 /** M1.8: where a refused page leads, with the refusal ("Nemate ovlasti za ovaj prikaz"). */
 export const NO_ACCESS = "/nema-ovlasti?kind=denied";
 /** WEB-OPERATER-POCETNA: the operator's pages have no index of their own; this path forwards to the first one the account may open. */
@@ -218,6 +221,10 @@ export const PAGES: readonly Page[] = [
   // NF-7 OA-3, OA-7: the log of actions and the problem reports, for the operator and the faculty's administrator.
   { path: ACTION_LOG, label: actionLogMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
   { path: PROBLEM_REPORTS, label: problemReportsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer", "institution_admin"], current: OPERATOR_HOME },
+  // F4-PM2-R16 (E2): the operator's own pages: the state of the system, its events and the confirmation by a security key.
+  { path: SYSTEM_HEALTH, label: healthMessages.title, kind: "pending", roles: [], accounts: ["network_engineer"], current: OPERATOR_HOME },
+  { path: SYSTEM_EVENTS, label: eventsMessages.title, kind: "pending", roles: [], accounts: ["network_engineer"], current: OPERATOR_HOME },
+  { path: SECURITY_KEY, label: securityKeyMessages.title, kind: "pending", roles: [], accounts: ["network_engineer"], current: OPERATOR_HOME },
   // DAN-1520: the public home page after the owner's concept; public, it is the way in.
   { path: "/naslovnica", label: workText.landing.header.home, kind: "pending", roles: [], public: true },
   { path: "/stanje", label: t.statusPage.pageTitle, kind: "pending", roles: [], public: true },
