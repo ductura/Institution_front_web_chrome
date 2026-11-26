@@ -20,6 +20,7 @@ import { n09Messages as m } from "./messages.hr";
 import { followingStep, keyAction, parseSpeed, playable, precedingStep, sourceTag, stepDelay, SPEEDS, type Speed } from "./model";
 import styles from "./Replay.module.css";
 import { WorkPage, WorkPanel, workPageStyles as page } from "../n07/WorkPage";
+import { useTaskCrumb } from "../n06/task-context";
 
 const t = messagesHr.replay;
 type Player = Extract<ReplayPlayer, { ok: true }>;
@@ -218,6 +219,8 @@ export function N09Player({ player }: { player: Player }) {
 /** N-09 page (prototype `reprodukcija`): the work page frame, the panel `rp-h`, the state of the reading, the player and the foot line. */
 export default function ReplayPage({ documentId, session, workHref }: { documentId: string; session: SessionMark | null; workHref: string }) {
   const { outcome, retry } = useReplay(documentId, session);
+  // F4-NAS-R12: the student, the kind of work and the assignment's title above the panel.
+  const crumb = useTaskCrumb(documentId);
   let panel: ReactNode;
   if (outcome.kind === "loading") {
     panel = (
@@ -244,5 +247,5 @@ export default function ReplayPage({ documentId, session, workHref }: { document
       </WorkPanel>
     );
   } else panel = <WorkPanel id="pg-h" title={m.title}><p className="note" role="alert">{outcome.kind === "notFound" ? t.notFound : t.signedOut}</p></WorkPanel>;
-  return <WorkPage back={workHref} backLabel={m.backToWork}>{panel}</WorkPage>;
+  return <WorkPage back={workHref} backLabel={m.backToWork} crumb={crumb}>{panel}</WorkPage>;
 }

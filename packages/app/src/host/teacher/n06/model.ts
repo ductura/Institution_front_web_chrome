@@ -79,7 +79,11 @@ export const extensionPath = (assignmentId: string): string => `/nastavnik/zadat
 export function deadlinePassedFor(
   assignmentId: string, courses: readonly { readonly assignments: readonly { readonly id: string; readonly dueAt: string }[] }[], now: number,
 ): boolean | null {
-  const due = courses.flatMap((c) => c.assignments).find((a) => a.id === assignmentId)?.dueAt;
-  const ms = due === undefined ? Number.NaN : Date.parse(due);
+  return duePassed(courses.flatMap((c) => c.assignments).find((a) => a.id === assignmentId)?.dueAt, now);
+}
+
+/** Whether a due date has passed; null when there is none or it is not a date (F4-NAS-R12 reads it with the title). */
+export function duePassed(dueAt: string | undefined, now: number): boolean | null {
+  const ms = dueAt === undefined ? Number.NaN : Date.parse(dueAt);
   return Number.isFinite(ms) ? ms < now : null;
 }
