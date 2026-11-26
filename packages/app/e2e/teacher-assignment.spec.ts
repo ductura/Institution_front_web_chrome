@@ -4,6 +4,7 @@ import { expect, test, type Page } from "./fixtures/test";
 import { assignmentSetupMessages as wizard } from "../../../src/components/teacher/TeacherSetup/messages.hr";
 import type { TeacherCourse } from "../../../src/components/teacher/teacher-courses-read";
 import { messagesHr } from "../../../src/lib/i18n/messages.hr";
+import { publishHr } from "../src/host/teacher/publish/messages.hr";
 
 const fixtures = JSON.parse(readFileSync(new URL("./fixtures/teacher.json", import.meta.url), "utf8")) as {
   "teacher.courses.get": { courses: TeacherCourse[] };
@@ -53,11 +54,14 @@ test("teacher selects a course and sees publication only after the API confirms 
   await page.getByRole("button", { name: "Pregled i objava" }).click();
   try {
     await page.getByRole("button", { name: assignment.publish, exact: true }).click();
-    await expect(page.getByRole("status").filter({ hasText: assignment.pending })).toBeVisible();
+    // NAS-19: the prototype's loading text, and no confirmation before the server answered.
+    await expect(page.getByRole("status").filter({ hasText: publishHr.pending })).toBeVisible();
     await expect(page.getByText(wizard.publishedNotice)).toHaveCount(0);
   } finally {
     confirm();
   }
+  // Back on /nastavnik, the toast says it (F4-NAS-R13).
+  await expect(page).toHaveURL("/app/web/nastavnik");
   await expect(page.getByRole("status").filter({ hasText: wizard.publishedNotice })).toBeVisible();
 });
 

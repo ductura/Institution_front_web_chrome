@@ -7,6 +7,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { HostContext, type HostValue } from "../../context";
 import AssignmentForm from "./AssignmentForm";
 import { assignmentFormHr as f } from "./messages.hr";
+import { publishHr } from "../publish/messages.hr";
+import { takePublished } from "../publish/published-handoff";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const HOST = { base: "/app/web", page: { path: "/nastavnik" }, role: "teacher" } as unknown as HostValue;
@@ -110,6 +112,67 @@ describe("AssignmentForm flow (NZ-3, NZ-4)", () => {
   it("says the groups cannot be read and still lets the assignment go to everyone", async () => {
     const host = await mount({ publish: vi.fn(), loadGroups: async () => ({ kind: "unavailable" }) });
     expect(host.textContent).toContain(f.groups.unavailable);
+  });
+});
+
+describe("AssignmentForm publish outcome (F4-NAS-R13, NAS-19)", () => {
+  let root: Root | undefined;
+  afterEach(() => { act(() => root?.unmount()); document.body.innerHTML = ""; sessionStorage.clear(); });
+  const click = async (el: Element) => { await act(async () => { (el as HTMLElement).click(); }); };
+  const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === label)!;
+
+  async function toReview(props: Record<string, unknown>) {
+    sessionStorage.clear();
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root?.render(h(HostContext.Provider, { value: HOST }, h(AssignmentForm, { course, loadGroups: async () => ({ kind: "ready", groups: [] }), setRules: async () => [], ...props } as never))); });
+    const set = async (el: HTMLInputElement, value: string) => { await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(el, value); el.dispatchEvent(new Event("input", { bubbles: true })); }); };
+    await set([...host.querySelectorAll("input")].find((i) => i.maxLength === 160)!, "Izmišljeni seminar");
+    const when = host.querySelectorAll<HTMLInputElement>('input[type="datetime-local"]');
+    await set(when[0]!, "2027-01-10T10:00");
+    await set(when[1]!, "2027-01-30T16:00");
+    await click(button(f.review));
+    return host;
+  }
+
+  it("says „Objava zadatka u tijeku…” while the server has not answered", async () => {
+    let answer: (v: { kind: "available"; id: string }) => void = () => {};
+    const publish = () => new Promise<{ kind: "available"; id: string }>((r) => { answer = r; });
+    const navigate = vi.fn();
+    await toReview({ publish, navigate, doneHref: "/app/web/nastavnik" });
+    await click(button(f.publish));
+    const busy = document.querySelector('[aria-busy="true"] [role="status"]');
+    expect(busy?.textContent).toBe(publishHr.pending);
+    expect(navigate).not.toHaveBeenCalled();
+    await act(async () => { answer({ kind: "available", id: "a-new" }); });
+  });
+
+  it("goes back to /nastavnik with the mark for the toast only after the server confirmed", async () => {
+    const navigate = vi.fn();
+    await toReview({ publish: async () => ({ kind: "available" as const, id: "a-new" }), navigate, doneHref: "/app/web/nastavnik" });
+    await click(button(f.publish));
+    expect(navigate).toHaveBeenCalledWith("/app/web/nastavnik");
+    expect(takePublished()).toBe(true);
+  });
+
+  it("stays on the form without a mark when the server refused", async () => {
+    const navigate = vi.fn();
+    await toReview({ publish: async () => ({ kind: "forbidden" as const }), navigate });
+    await click(button(f.publish));
+    expect(navigate).not.toHaveBeenCalled();
+    expect(takePublished()).toBe(false);
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain(publishHr.refused);
+  });
+
+  it("keeps the confirmation and the alert here when a follow-up switch failed", async () => {
+    const navigate = vi.fn();
+    await toReview({ publish: async () => ({ kind: "available" as const, id: "a-new" }), setRules: async () => ["late"], navigate });
+    await click(button(f.publish));
+    expect(navigate).not.toHaveBeenCalled();
+    expect(takePublished()).toBe(false);
+    expect(document.body.textContent).toContain(publishHr.published);
+    expect(document.querySelector('[role="alert"]')?.textContent).toBe(f.submitRules.failed.late);
   });
 });
 
