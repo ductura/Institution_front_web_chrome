@@ -330,6 +330,22 @@
             }
           ]
         },
+        "workKind": {
+          "anyOf": [
+            {
+              "const": "text",
+              "type": "string"
+            },
+            {
+              "const": "slides",
+              "type": "string"
+            },
+            {
+              "const": "spreadsheet",
+              "type": "string"
+            }
+          ]
+        },
         "isPractice": {
           "default": false,
           "type": "boolean"
@@ -1079,6 +1095,22 @@
                                 },
                                 {
                                   "const": "slides",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "workKind": {
+                              "anyOf": [
+                                {
+                                  "const": "text",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "slides",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "spreadsheet",
                                   "type": "string"
                                 }
                               ]
@@ -13228,6 +13260,22 @@
                     }
                   ]
                 },
+                "workKind": {
+                  "anyOf": [
+                    {
+                      "const": "text",
+                      "type": "string"
+                    },
+                    {
+                      "const": "slides",
+                      "type": "string"
+                    },
+                    {
+                      "const": "spreadsheet",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "slidesSchemaVersion": {
                   "const": 1,
                   "type": "number"
@@ -14148,6 +14196,22 @@
             },
             {
               "const": "slides",
+              "type": "string"
+            }
+          ]
+        },
+        "workKind": {
+          "anyOf": [
+            {
+              "const": "text",
+              "type": "string"
+            },
+            {
+              "const": "slides",
+              "type": "string"
+            },
+            {
+              "const": "spreadsheet",
               "type": "string"
             }
           ]
@@ -18748,6 +18812,22 @@
                       "type": "string"
                     }
                   ]
+                },
+                "workKind": {
+                  "anyOf": [
+                    {
+                      "const": "text",
+                      "type": "string"
+                    },
+                    {
+                      "const": "slides",
+                      "type": "string"
+                    },
+                    {
+                      "const": "spreadsheet",
+                      "type": "string"
+                    }
+                  ]
                 }
               }
             }
@@ -18904,6 +18984,22 @@
                           },
                           {
                             "const": "slides",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "workKind": {
+                        "anyOf": [
+                          {
+                            "const": "text",
+                            "type": "string"
+                          },
+                          {
+                            "const": "slides",
+                            "type": "string"
+                          },
+                          {
+                            "const": "spreadsheet",
                             "type": "string"
                           }
                         ]
@@ -32657,6 +32753,22 @@
                         },
                         {
                           "const": "slides",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "workKind": {
+                      "anyOf": [
+                        {
+                          "const": "text",
+                          "type": "string"
+                        },
+                        {
+                          "const": "slides",
+                          "type": "string"
+                        },
+                        {
+                          "const": "spreadsheet",
                           "type": "string"
                         }
                       ]
@@ -59680,6 +59792,158 @@
       ],
       "503": [
         "unavailable"
+      ]
+    }
+  },
+  "client.error.post": {
+    "path": "/api/v1/client-error",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "appVersion",
+        "errorClass",
+        "kind",
+        "page"
+      ],
+      "properties": {
+        "appVersion": {
+          "pattern": "^(?:0|[1-9][0-9]{0,5})\\.(?:0|[1-9][0-9]{0,5})\\.(?:0|[1-9][0-9]{0,5})$",
+          "type": "string"
+        },
+        "errorClass": {
+          "anyOf": [
+            {
+              "const": "type_error",
+              "type": "string"
+            },
+            {
+              "const": "range_error",
+              "type": "string"
+            },
+            {
+              "const": "reference_error",
+              "type": "string"
+            },
+            {
+              "const": "syntax_error",
+              "type": "string"
+            },
+            {
+              "const": "other",
+              "type": "string"
+            }
+          ]
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "const": "error",
+              "type": "string"
+            },
+            {
+              "const": "unhandledrejection",
+              "type": "string"
+            },
+            {
+              "const": "render",
+              "type": "string"
+            }
+          ]
+        },
+        "page": {
+          "anyOf": [
+            {
+              "const": "home",
+              "type": "string"
+            },
+            {
+              "const": "how_it_works",
+              "type": "string"
+            },
+            {
+              "const": "work",
+              "type": "string"
+            },
+            {
+              "const": "enroll",
+              "type": "string"
+            },
+            {
+              "const": "assignments",
+              "type": "string"
+            },
+            {
+              "const": "assignment_courses",
+              "type": "string"
+            },
+            {
+              "const": "assignment_works",
+              "type": "string"
+            },
+            {
+              "const": "teacher",
+              "type": "string"
+            },
+            {
+              "const": "teacher_fast_path",
+              "type": "string"
+            },
+            {
+              "const": "teacher_mentorships",
+              "type": "string"
+            },
+            {
+              "const": "institution",
+              "type": "string"
+            },
+            {
+              "const": "institution_courses",
+              "type": "string"
+            },
+            {
+              "const": "institution_users",
+              "type": "string"
+            },
+            {
+              "const": "institution_rules",
+              "type": "string"
+            },
+            {
+              "const": "other",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "responses": {
+      "204": {
+        "description": "recorded"
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json",
+        "invalid_input"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
       ]
     }
   }

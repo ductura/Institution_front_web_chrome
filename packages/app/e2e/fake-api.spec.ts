@@ -60,6 +60,15 @@ test("the quietest vector is the default, and a 204-only operation answers 204",
   expect(defaults.withoutDefault()).toEqual([]);
 });
 
+test("a vector of another work kind is not the default while a text one exists", () => {
+  const route = { "x.otvori.post": { path: "/api/v1/x/otvori", method: "POST" } };
+  const pick = (vs: Parameters<typeof contractDefaults>[1]) => contractDefaults(route, vs).operation("POST", "/api/v1/x/otvori")?.answer?.body;
+  const text = { route: "x.otvori.post", name: "opened", response: { status: 200, body: { status: "opened", documentId: "izmisljeni-dokument-1", note: "dulji tekst odgovora" } } };
+  const sheet = { route: "x.otvori.post", name: "opened-spreadsheet", response: { status: 200, body: { status: "opened", workKind: "spreadsheet" } } };
+  expect(pick([sheet, text])).toBe(JSON.stringify(text.response.body));
+  expect(pick([sheet])).toBe(JSON.stringify(sheet.response.body));
+});
+
 test("a request outside the contract has no default", () => {
   const defaults = contractDefaults(contract, vectors);
   expect(defaults.operation("GET", "/api/v1/izmisljeno/nepostojece")).toBeNull();
