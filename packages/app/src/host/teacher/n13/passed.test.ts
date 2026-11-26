@@ -14,9 +14,9 @@ describe("N-13 passed deadline (NZ-2)", () => {
     expect(deadlinePassed({ task: null, course: null, dueAt: null }, NOW)).toBe(false);
     expect(deadlinePassed({ task: null, course: null, dueAt: "nije datum" }, NOW)).toBe(false);
   });
-  it("says the prototype's banner and that variant B is not available yet", () => {
+  it("says the prototype's banner and the note on the separate exception (variant B)", () => {
     expect(m.passedTitle).toBe("Rok ovog zadatka je prošao.");
     expect(m.passedBody).toBe("Produljenje je i dalje moguće: student koji nije predao može predati do novog roka.");
-    expect(m.exceptionUnavailable).toMatch(/još nije dostupna/);
+    expect(m.exceptionNote).toMatch(/iznimka/);
   });
 });

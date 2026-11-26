@@ -88,7 +88,7 @@ test("NZ-2: the extension chooser offers a passed deadline and N-13 says it has 
   await dialog.getByRole("link", { name: "Nastavi" }).click();
   await expect(page).toHaveURL(`/app/web/nastavnik/zadatak/${A2}/produljenje`);
   await expect(page.getByText("Rok ovog zadatka je prošao.")).toBeVisible();
-  await expect(page.getByText(/Posebna iznimka za predaju nakon roka.*još nije dostupna/)).toBeVisible();
+  await expect(page.getByText(/posebnu iznimku za predaju nakon roka.*oznaku „iznimka”/)).toBeVisible();
 });
 
 test("NZ-2: the Merlin chooser goes to the export of the chosen assignment", async ({ page }) => {

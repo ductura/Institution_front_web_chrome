@@ -52,3 +52,32 @@ describe("N13Extensions filter (NZ-6)", () => {
     expect(other).toContain(t.studentSeesHidden);
   });
 });
+
+describe("N13Extensions late exceptions (NZ-5, variant B)", () => {
+  let root: Root | undefined;
+  afterEach(() => { act(() => root?.unmount()); root = undefined; document.body.innerHTML = ""; });
+  const exception = { id: "x-1", studentId: "s-4", untilAt: "2026-11-20T22:59:00.000Z", reasonId: "technical", createdBy: "t-1", createdAt: "2026-11-09T08:00:00.000Z" } as const;
+  const mount = async (late: unknown) => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => { root?.render(h(HostContext.Provider, { value: HOST }, h(N13Extensions, { assignmentId: "a-1", port: fakeN13Port(), readLate: late as never }))); });
+    return host;
+  };
+
+  it("lists a recorded exception with the mark „iznimka”, the student and the deadline", async () => {
+    const host = await mount(async () => ({ kind: "ready", exceptions: [exception] }));
+    const li = host.querySelector("#ki-h")!.parentElement!.querySelector("li")!;
+    expect(li.textContent).toContain("Dora Matić");
+    expect(li.textContent).toContain(t.lateMark);
+    expect(li.textContent).toContain("Tehnička poteškoća");
+    expect(li.textContent).toContain("20. 11. 2026. u 23:59");
+  });
+  it("says so when the read fails, and says none when there are none", async () => {
+    expect((await mount(async () => ({ kind: "nepoznato" }))).textContent).toContain(t.lateUnavailable);
+    act(() => root?.unmount()); document.body.innerHTML = "";
+    const host = await mount(async () => ({ kind: "ready", exceptions: [] }));
+    expect(host.textContent).toContain(t.lateEmpty);
+    expect(host.textContent).not.toContain(t.lateUnavailable);
+  });
+});
