@@ -113,7 +113,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       const title = read.kind === "ready" ? read.title : null;
       const subtitle = read.kind === "ready" ? courseLine(read.course, read.dueAt) : null;
       // WEB-NUZ-PREDAJA-1 (P-17): only the full editor has the text the count reads, so only it counts.
-      const bar = <WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle}
+      const bar = <WorkspaceTopBar assignmentId={assignmentId} base={base} title={title} subtitle={subtitle}
         readOnly={frame.variant === "predano"} inert={frame.variant === "greska"}
         useBeforeCount={frame.variant === "puno" ? beforeSubmissionFor(assignmentId) : undefined} />;
       // WEB-2136: view mode, "samo naslovi" and panel widths, only where the panels are (the full editor).
@@ -123,7 +123,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       // Its top bar is the plain one: the shell view switches and the history buttons only work on the text editor.
       const kind = workKindOf(assignments, assignmentId);
       if (read.kind === "ready" && frame.variant === "puno" && kind !== "text") {
-        return setShown({ kind: "page", node: <SlidesWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={<WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle} />} length={length} unreadable={kind === "unreadable"} onRetry={() => setAttempt((n) => n + 1)} /> });
+        return setShown({ kind: "page", node: <SlidesWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={<WorkspaceTopBar assignmentId={assignmentId} base={base} title={title} subtitle={subtitle} />} length={length} unreadable={kind === "unreadable"} onRetry={() => setAttempt((n) => n + 1)} /> });
       }
       if (read.kind === "ready" && frame.variant === "puno") {
         return setShown({
@@ -214,7 +214,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
   if (shown.kind === "loading") {
     // E-7 `ucitavanje`: the frame with a disabled "Predaja rada" and the card of grey bars.
     return (
-      <EditorPage course={null} title={null} topBar={<WorkspaceTopBar assignmentId={assignmentId} title={null} inert />}
+      <EditorPage course={null} title={null} topBar={<WorkspaceTopBar assignmentId={assignmentId} base={base} title={null} inert />}
         stand={<LoadingCard />} status={<FrameStatus chip={<SaveState state="LOCAL_DURABLE" label={workText.loading} />} />}>
         {null}
       </EditorPage>
