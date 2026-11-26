@@ -43,12 +43,12 @@ Ograničenja:
 | Mentorstvo i konzultacije (NF-6) | 21 | 16 | 1 | 0 | 0 | 38 |
 | Operater i administracija (NF-7) | 18 | 8 | 0 | 3 | 1 | 30 |
 | Valovi 13–17 | 55 | 10 | 4 | 0 | 0 | 69 |
-| Valovi 18–22 | 45 | 18 | 5 | 0 | 0 | 68 |
-| PLAN-MIGRACIJE: opseg, valovi 1–12, zadaci valova 1–5 (PM1) | 89 | 11 | 0 | 12 | 0 | 112 |
-| PLAN-MIGRACIJE: cjeline M0–M11, faze A–E (PM2) | 100 | 19 | 4 | 11 | 5 | 139 |
-| **Ukupno** | **486** | **137** | **27** | **34** | **6** | **690** |
+| Valovi 18–22 | 46 | 17 | 5 | 0 | 0 | 68 |
+| PLAN-MIGRACIJE: opseg, valovi 1–12, zadaci valova 1–5 (PM1) | 88 | 12 | 0 | 12 | 0 | 112 |
+| PLAN-MIGRACIJE: cjeline M0–M11, faze A–E (PM2) | 98 | 21 | 4 | 11 | 5 | 139 |
+| **Ukupno** | **482** | **141** | **27** | **34** | **6** | **690** |
 
-Bez odgođenih stavki ostaje 656 stavki: IMA 74 %, DJELOMIČNO 21 %, FALI 4 %, NEPOTVRĐENO 1 %. Popis na kraju ima 139 prijedloga zadataka.
+Bez odgođenih stavki ostaje 656 stavki: IMA 73 %, DJELOMIČNO 21 %, FALI 4 %, NEPOTVRĐENO 1 %. Popis na kraju ima 141 prijedlog zadatka.
 
 Opći obrazac: većina rupa je na WEB-u. Na SRV-u ruta postoji i testirana je, ali je WEB ne poziva, ekran nije montiran ili priključak (port) vraća `null`. Na SRV-u ugovor bez handlera ima samo `institution.enrollments.post`, a `ops.events.get` je također u popisu `CONTRACT_ONLY` u `server/contracts/inventory.ts`. Veće serverske rupe su otvaranje radova koji nisu tekst (slajdovi i tablica), shema dokumenta v4, rekonstrukcija i kontrolne točke u workeru te prilozi izjavi.
 
@@ -67,7 +67,7 @@ Opći obrazac: većina rupa je na WEB-u. Na SRV-u ruta postoji i testirana je, a
 11. **Student ne vidi kriterije ocjene ni izvore** (PM1-R04, PM1-R05). `student.working-criteria.get` nije u izvatku ugovora i WEB ga ne poziva, a test još traži suprotno od odluke od 22. i 26. 11. Za preporučene i obvezne izvore ekran piše da nisu dostupni.
 12. **Neuspjela prijava ne stiže do WEB stanja greške** (STU-R01). Server vraća svoju HTML stranicu (`failurePage`), pa stanja P-15 i E-1 u stvarnom toku nikad nisu vidljiva.
 13. **Administracija bez sučelja za postojeće rute** (OPE-R01, OPE-R02, OPE-R03, OPE-R04). Stranica Asistenta prikazuje upisanu konstantu „isključen”. Uklanjanje i povratak studenta te grupe kolegija i nastavnici grupe nemaju sučelje. Kartica obrazaca fakulteta je statična.
-14. **Ugrađeni ekrani bez ulaza ili nemontirani** (V18-22-R01, V18-22-R02, V17-R01). Upitnici, gradivo i izvoz kodiranja, dnevnik prakse i ISVU otvaraju se samo upisom putanje. `StudentBibliographyHost` nije montiran, a e2e za njega je `.pending`. Kostur predloška rada se samo prikazuje i ne upisuje se u dokument.
+14. **Ugrađeni ekrani bez ulaza ili nemontirani** (V18-22-R01, V17-R01, PM1-R12). Upitnici, gradivo i izvoz kodiranja, dnevnik prakse i ISVU otvaraju se samo upisom putanje. Naslovnica i oblik stranice (`CoverPage`, `PageFormatDialog`) nemaju proizvodnog pozivatelja. Kostur predloška rada se samo prikazuje i ne upisuje se u dokument.
 15. **Provjere koje drže otvorene rupe** (MEN-R05, PM2-R10, PRE-R05). Test mentorskih tekstova drži 4 otvorena nalaza rječnika zabranjenih izraza (`OPEN_ELSEWHERE`), a skener ne čita `**/messages.hr.ts`. Puni K-4 tok nema obvezni e2e jer `sistem.yml` radi samo ručno. Povlačenje i ponovna predaja nemaju WEB test.
 
 ## Tablice po području
@@ -515,10 +515,10 @@ Napomena o (b) i (a): kad je zadatak vala čisto SRV (domena, migracija), u (b) 
 
 ### Valovi 18–22
 Izvori: WEB `docs/nalazi/val18-razlika.md` §5–6, `val19-razlika.md` §5 i §9, `val20-razlika.md` §3 i §6, `val21-razlika.md` §3, §5 i §8, `val22-razlika.md` §4 i §7. Jedna stavka je jedan redak tablice za orkestratora (u valu 21 i preduvjet PL-CSP-OKVIR, koji je redak te tablice). Kod je provjeren na WEB HEAD 77e18f7 i SRV HEAD 0b7531e. Kratice putanja: `host/` = WEB `packages/app/src/host/`, `app/` = WEB `packages/app/app/[base]/`, `SRV:` = Institution_server. Kad je funkcija samo na jednoj strani, druga je „n/p”.
-Brojke: IMA 45 · DJELOMIČNO 18 · FALI 5 · ODGOĐENO 0 · NEPOTVRĐENO 0 (ukupno 68)
+Brojke: IMA 46 · DJELOMIČNO 17 · FALI 5 · ODGOĐENO 0 · NEPOTVRĐENO 0 (ukupno 68)
 - Val 18 (upitnici, kvalitativno kodiranje): IMA 10 · DJELOMIČNO 4 · FALI 0 · ODGOĐENO 0 · NEPOTVRĐENO 0 (ukupno 14)
 - Val 19 (dnevnik prakse, timovi, recenzija među studentima): IMA 12 · DJELOMIČNO 2 · FALI 0 · ODGOĐENO 0 · NEPOTVRĐENO 0 (ukupno 14)
-- Val 20 (font, način čitanja, čitanje naglas, stilovi citiranja): IMA 11 · DJELOMIČNO 3 · FALI 0 · ODGOĐENO 0 · NEPOTVRĐENO 0 (ukupno 14)
+- Val 20 (font, način čitanja, čitanje naglas, stilovi citiranja): IMA 12 · DJELOMIČNO 2 · FALI 0 · ODGOĐENO 0 · NEPOTVRĐENO 0 (ukupno 14)
 - Val 21 (društvene znanosti, STEM, programski zadaci): IMA 7 · DJELOMIČNO 7 · FALI 1 · ODGOĐENO 0 · NEPOTVRĐENO 0 (ukupno 15)
 - Val 22 (probni ISVU, Studomat): IMA 5 · DJELOMIČNO 2 · FALI 4 · ODGOĐENO 0 · NEPOTVRĐENO 0 (ukupno 11)
 
@@ -562,10 +562,10 @@ Brojke: IMA 45 · DJELOMIČNO 18 · FALI 5 · ODGOĐENO 0 · NEPOTVRĐENO 0 (uku
 | V20-08 | Stilovi APA i Chicago | val20 §3 t.8 WEB-V20-STIL-APA-CHICAGO | n/p | `config/citation-styles/apa.json`, `chicago.json` | `host/editor/citation-styles/styles-apa-chicago.test.ts` | IMA | — |
 | V20-09 | Stilovi IEEE i Vancouver | val20 §3 t.9 WEB-V20-STIL-IEEE-VANCOUVER | n/p | `config/citation-styles/ieee.json`, `vancouver.json` | `host/editor/citation-styles/styles-ieee-vancouver.test.ts` | IMA | — |
 | V20-10 | Katalog stilova i čitanje stila ustanove | val20 §3 t.10 WEB-V20-STIL-ODABIR | `openapi: student.text-check-config.get` (polje `citationStyle`) | `host/editor/citation-styles/catalog.ts`, `use-institution-style.ts` (koristi ga `host/editor/stem/latex-export-menu.ts`) | `host/editor/citation-styles/catalog.test.ts`, `use-institution-style.test.ts` | IMA | — |
-| V20-11 | Popis literature i navodi u stilu ustanove | val20 §3 t.11 WEB-V20-STIL-POPIS | kao V20-10 | `host/editor/bibliography/student/styled-entries.ts`, `StudentBibliographyHost.tsx` | `host/editor/bibliography/student/styled-entries.test.ts` | DJELOMIČNO | `StudentBibliographyHost` se ne montira ni u jednoj ruti (osim u vlastitoj datoteci nijedan uvoz ne postoji), pa student popis u stilu ustanove ne vidi. |
+| V20-11 | Popis literature i navodi u stilu ustanove | val20 §3 t.11 WEB-V20-STIL-POPIS | kao V20-10 | `host/editor/bibliography/student/styled-entries.ts`, `StudentBibliographyHost.tsx` (montiran kroz `src/components/editor/sources/proofs/editor-source-proofs.ts` u panelu izvora `src/components/editor/EditorPageWork.tsx`) | `host/editor/bibliography/student/styled-entries.test.ts` | IMA | Ispravljeno nakon pregleda: komponenta je montirana. Aktivni e2e za popis fali (V20-14). |
 | V20-12 | Student čita stil svoje ustanove (`citationStyle`) | val20 §3 t.12 SRV-V20-STIL-STUDENT | `SRV: server/contracts/routes/text-check-config.ts`, `server/http/text-check-config/index.ts` | `src/client/text-check-config.ts` | `SRV: server/http/text-check-config/text-check-config.integration.test.ts`; WEB `src/client/text-check-config.test.ts` | IMA | — |
 | V20-13 | Ustanova prihvaća sve stilove iz kataloga | val20 §3 t.13 SRV-V20-STILOVI-USTANOVA | `SRV: server/database/institution-config/schema.ts` (`CITATION_STYLES`), `server/settings/institutions.ts` | n/p (samo server) | `SRV: server/settings/institutions.test.ts` | IMA | — |
-| V20-14 | E2E vala 20 | val20 §3 t.14 WEB-V20-E2E | n/p | — | `e2e/val20-razlika.spec.js` (font, način čitanja, naglas, axe, 404) | DJELOMIČNO | Korak „popis literature za stil ustanove” postoji samo u `e2e/val20-razlika-popis.spec.js.pending`, koji Playwright ne pokreće; čeka montažu iz V20-11. |
+| V20-14 | E2E vala 20 | val20 §3 t.14 WEB-V20-E2E | n/p | — | `e2e/val20-razlika.spec.js` (font, način čitanja, naglas, axe, 404) | DJELOMIČNO | Korak „popis literature za stil ustanove” postoji samo u `e2e/val20-razlika-popis.spec.js.pending`, koji Playwright ne pokreće. |
 | V21-01 | Kostur odjeljaka za područje `dru` | val21 §5 t.1 WEB-V21-DRU-KOSTUR | n/p (samo preglednik) | `host/editor/areas/skeleton/SkeletonDialog.tsx` (u `StudentToolbar.tsx`) | `host/editor/areas/skeleton/skeleton.test.ts` | IMA | — |
 | V21-02 | Ručne provjere po području | val21 §5 t.2 WEB-V21-DRU-ZAHTJEVI-PODRUCJA | n/p | `host/editor/rules/area-checks.ts` (u `rules-model.ts`) | `host/editor/rules/area-checks.test.ts` | IMA | — |
 | V21-03 | Lokalni KaTeX prikaz formula | val21 §5 t.3 WEB-V21-STEM-KATEX-JEZGRA | n/p | `host/editor/formula/render.ts`, `limits.ts`; `katex` 0.16.22 u `packages/app/package.json` | `host/editor/formula/render.test.ts`, `limits.test.ts` | IMA | — |
@@ -595,7 +595,7 @@ Brojke: IMA 45 · DJELOMIČNO 18 · FALI 5 · ODGOĐENO 0 · NEPOTVRĐENO 0 (uku
 
 ### Plan migracije (SRV): opseg, valovi 1–12, zadaci valova 1–5
 Izvori: `Institution_server/docs/plan/PLAN-MIGRACIJE.md` r. 58–112 („Funkcionalni opseg proizvoda”, „Proširenja nakon pilota”, „Dodaci pilotu” P-D1–P-D8) i r. 911–1830 (katalog valova 1–12, zadaci SRV-01–SRV-32 i WEB-01–WEB-36 valova 1–5). Kod provjeren na SRV 0b7531e i WEB 77e18f7.
-Brojke: IMA 89 · DJELOMIČNO 11 · FALI 0 · ODGOĐENO 12 · NEPOTVRĐENO 0 (ukupno 112)
+Brojke: IMA 88 · DJELOMIČNO 12 · FALI 0 · ODGOĐENO 12 · NEPOTVRĐENO 0 (ukupno 112)
 
 Napomene o metodi: (a) = path u `openapi/v1.json` i handler u `server/http/**`. Na serveru je samo `institution.enrollments.post` ugovor bez handlera (`CONTRACT_ONLY` u `server/contracts/inventory.ts`; uz njega je ondje još `ops.events.get`). Sve ostale rute s 401 montirane su: to provjerava `tests/db/logout-old-cookie.integration.test.ts` (T5). (b) = isporučeni host `packages/app` (stranice `packages/app/app/[base]/**`, ekrani `packages/app/src/host/**`, `src/components/**`, klijent `src/client/**`). Stari Next u `src/app` se po `e2e/sistem/README.md` više ne poslužuje. WEB dobiva ugovore iz izvatka `src/client/migration-contracts.generated.json` (385 od 387 operacija; fale `student.working-criteria.get` i `client.error.post`). U stupcima (a), (b) i (c) „n/p” znači da stavka nije primjenjiva.
 
@@ -693,7 +693,7 @@ Napomene o metodi: (a) = path u `openapi/v1.json` i handler u `server/http/**`. 
 | PM1-90 | Tablica, formula (KaTeX), blok koda, okvir, prijelom, strani jezik, marker (shema v4) | Val 10 | shema v4 u `server/domain/document/` (`golden-vectors-v4.test.ts`) | `src/components/editor/rich/blocks/`, `rich/table-image/TableBar.tsx`, `addons/MarkerPalette.tsx` | `blocks.test.tsx`, `table-image.test.tsx`, `addons.test.tsx`, `validate-marks-v4.test.ts` | IMA | — |
 | PM1-91 | Slika s obrezivanjem kao privitak rada | Val 10 | `server/http/attachments/` (`work.attachments.post/get`) | `src/components/editor/rich/table-image/CropDialog.tsx`, `attachment.ts` | `attachments/attachments.integration.test.ts`, `table-image.test.tsx` | DJELOMIČNO | Učitavanje slike u WEB-u nije spojeno na server: nitko ne predaje `PostAttachment`, a `work.attachments.*` se nigdje ne zove. |
 | PM1-92 | Uvoz teksta i oznaka uvezenog i zalijepljenog teksta (B-7) | Val 10 | `server/http/import/` | `packages/app/src/host/editor/import/ImportHost.tsx`, `src/client/import.ts` | `import/index.integration.test.ts`, `ImportHost.dom.test.ts`, e2e `packages/app/e2e/import.spec.ts` | IMA | Zalijepljeni tekst bilježi se kroz podrijetlo (`pasted_*`), ali WEB ne šalje segmente (vidi PM1-88). |
-| PM1-93 | Naslovnica, oblik stranice, pregled ispisa | Val 10 | n/p | `src/components/editor/pages/CoverPage.tsx`, `PageFormatDialog.tsx`, `print-export/PrintExportDialog.tsx` | `pages.test.tsx`, `print-event.test.ts` (i `test:editor10e`) | IMA | — |
+| PM1-93 | Naslovnica, oblik stranice, pregled ispisa | Val 10 | n/p | `src/components/editor/pages/CoverPage.tsx`, `PageFormatDialog.tsx`, `print-export/PrintExportDialog.tsx` | `pages.test.tsx`, `print-event.test.ts` (i `test:editor10e`) | DJELOMIČNO | `CoverPage`, `CoverDialog` i `PageFormatDialog` nemaju proizvodnog pozivatelja (samo `pages.test.tsx`); pregled ispisa je ugrađen. Vidi paritet-editor-2 B94. |
 | PM1-94 | Izvoz rada na serveru (.docx, PDF) | Val 10 | `server/http/work-export/`, `server/http/export/` (`work.export-pdf.get`) | `src/components/editor/print-export/docx-download/DocxDownload.tsx`, `packages/app/src/host/editor/export/pdf.ts` | `work-export/index.integration.test.ts`, `export/work-pdf.integration.test.ts`, `work-export.test.ts`, e2e `export-menu.spec.ts` | IMA | — |
 | PM1-95 | Diktiranje i čitanje naglas (C-14) | Val 10 | n/p | `src/components/editor/addons/SpeechControls.tsx`, `packages/app/src/host/editor/read-aloud/` | `addons.test.tsx`, `read-aloud/controller.test.ts` | IMA | — |
 | PM1-96 | Pregled, Sitnice, pravopis, „Riješi redom” (11a) | Val 11 | `text-check-config/` (pravila provjera) | `src/components/editor/review/ReviewPanel.tsx`, `src/components/editor/spelling/` | `review.test.ts`, `spelling.test.ts`, e2e `sitnice-provjere.spec.ts` | IMA | — |
@@ -718,7 +718,7 @@ Napomene o metodi: (a) = path u `openapi/v1.json` i handler u `server/http/**`. 
 
 ### Plan migracije (SRV): cjeline M0–M11 i faze A–E
 Izvori: `Institution_server/docs/plan/PLAN-MIGRACIJE.md`, r. 2665–3122 („Funkcionalne cjeline M0–M11”, „Uvjetni koraci (val 3, T3)”, „Ekrani izvan faza”) i r. 3225–3650 („6. Faza A” do „10. Faza E”, „11. Zajednička matrica stanja”). Provjereno na SRV `0b7531e` i WEB `77e18f7`.
-Brojke: IMA 100 · DJELOMIČNO 19 · FALI 4 · ODGOĐENO 11 · NEPOTVRĐENO 5 (ukupno 139)
+Brojke: IMA 98 · DJELOMIČNO 21 · FALI 4 · ODGOĐENO 11 · NEPOTVRĐENO 5 (ukupno 139)
 
 Napomene o metodi:
 - Koraci koji se ponavljaju u M-cjelinama i fazama spojeni su u jedan redak. Izvor navodi oba (npr. „M2.3 + B1/B2”).
@@ -771,7 +771,7 @@ Napomene o metodi:
 | PM2-42 | Citat u tekstu i bibliografija kao čvorovi | M5.1 | n/p (evidencija: `server/domain/document/edit-step.ts`) | `packages/editor-core/src/editor/citation.ts`, `packages/app/src/host/editor/bibliography` | `packages/editor-core/src/editor/citation.test.ts` | IMA | |
 | PM2-43 | Traka alata, popis naslova, napredak naspram opsega | M5.2 | n/p (klijentski editor) | `packages/app/src/host/editor/toolbar`, `editor/toc` | `packages/app/src/host/editor/toolbar/toolbar-behaviour.test.ts` | IMA | |
 | PM2-44 | Numerirani naslovi i sadržaj | M5.3 | n/p | `packages/editor-core/src/editor/chapter-numbers.ts`, `packages/app/src/host/editor/toc` | `chapter-numbers.test.ts`, `toc-model.test.ts` | IMA | |
-| PM2-45 | Opća naslovna stranica (val 1) | M5.4 | `openapi: /institution/work-templates/{workType}` | `src/components/editor/pages/CoverPage.tsx` | `src/components/editor/pages/pages.test.tsx`, `server/http/work-template/work-template.integration.test.ts` | IMA | Predložak iz paketa Lekte je po planu poslije |
+| PM2-45 | Opća naslovna stranica (val 1) | M5.4 | `openapi: /institution/work-templates/{workType}` | `src/components/editor/pages/CoverPage.tsx` | `src/components/editor/pages/pages.test.tsx`, `server/http/work-template/work-template.integration.test.ts` | DJELOMIČNO | Nije montirano (vidi PM1-93); predložak iz paketa Lekte je po planu poslije. |
 | PM2-46 | Fusnote | M5.5 | n/p (`server/domain/document/edit-step.ts`) | `packages/app/src/host/editor/footnote` | `footnote-model.test.ts`, `packages/editor-core/src/editor/footnote-mark.test.ts` | IMA | |
 | PM2-47 | Tablice, slike s opisom (privatni spremnik), popisi, pozivi na prikaze | M5.6 | `openapi: /student/assignments/{assignmentId}/attachments`, `/work-attachments/{attachmentId}`; pgTAP `156-work-attachment.sql` | `src/components/editor/rich/table-image/attachment.ts`, `src/components/editor/crossref/CrossReferenceDialog.tsx` | `CrossReferenceDialog.test.tsx` | DJELOMIČNO | WEB ne zove `work.attachments.*`. `PostAttachment` nema implementaciju, pa se slika ne šalje na poslužitelj |
 | PM2-48 | DOI i ISBN; provjera „pronađeno / nije pronađeno” | M5.7 | `openapi: /api/v1/sources/lookup`, `server/source-lookup/` | `src/components/editor/sources/quick-source/server-lookup.ts` | `server/http/source-lookup.integration.test.ts`, `packages/app/e2e/quick-source-lookup.spec.ts` | IMA | |
@@ -853,7 +853,7 @@ Napomene o metodi:
 | PM2-124 | Produkcijski Dockerfile, Caddy, OpenTofu, proba povrata baze i bucketa | M11.2 + E3 | `infra/web/Dockerfile`, `render.yaml`, `render.staging.yaml` | n/p | `infra/web/dockerfile.test.ts`, `infra/web/render-blueprint.test.ts` | DJELOMIČNO | Nema Caddyja ni OpenTofua (umjesto njih Render). Nema probe povrata stvarne baze i bucketa |
 | PM2-125 | Health, readiness, provjera okoline, strukturirani log | M11.3 | `openapi: /api/v1/health`, `/ready`; `server/log/`, `server/http/startup-log.ts` | `src/components/status/status-loader.ts` | `server/http/health.test.ts`, `server/http/ready.test.ts` | IMA | |
 | PM2-126 | Staging s AAI Labom; stvarni pilot i podaci | M11.4 + E3 | `render.staging.yaml` | n/p | — | NEPOTVRĐENO | Ovisi o računima, Labu i stagingu. Kodom se ne može potvrditi |
-| PM2-127 | Sučelje na engleskom i postavke profila | M11.5 | `openapi: /profile/interface-locale`, `/settings/values` | `packages/app/src/i18n/LocaleProvider.tsx`, `src/lib/i18n/messages.en.ts` | `tests/unit/interface-locale-routes.test.ts`, `packages/app/e2e/profile.spec.ts` | IMA | |
+| PM2-127 | Sučelje na engleskom i postavke profila | M11.5 | `openapi: /profile/interface-locale`, `/settings/values` | `packages/app/src/i18n/LocaleProvider.tsx`, `src/lib/i18n/messages.en.ts` | `tests/unit/interface-locale-routes.test.ts`, `packages/app/e2e/profile.spec.ts` | DJELOMIČNO | Ljuska i profil se prevode, ali ekrani poput `host/student/home/HomePage.tsx` izravno uvoze `messages.hr` bez `useLocale`; `profile.spec.ts` ne provjerava sadržaj ekrana. |
 | PM2-128 | Pristupačnost WCAG 2.2 AA, izjava; stanja i responsive kroz svaki rez | M11.6 + E1 | n/p | `packages/app/app/[base]/pristupacnost/AccessibilityStatement.tsx`, `packages/app/tests/mobile` | `packages/app/e2e/a11y/screens.spec.ts`, `packages/app/tests/mobile/mobile.spec.ts` | IMA | Ručna provjera čitačem (`e2e/a11y/RUCNA-PROVJERA.md`) i UX test s 5 + 5 korisnika su organizacijski (nepotvrđeno) |
 | PM2-129 | Statusna stranica (i postupak incidenta) | M11.7 | `openapi: /api/v1/status`, `server/http/status/index.ts` | `src/components/status/StatusView.ts`, ruta `/stanje` | `server/http/status/status.integration.test.ts`, `src/components/status/status-view.test.ts` | IMA | Dokument postupka incidenta nisam provjeravao |
 | PM2-130 | Prije pilota: nadzor i uzbune, ograničenja zahtjeva, SBOM, pentest | M11.9 | `server/alarms/readiness-alarms.ts`, `server/http/rate-limit/`, `.github/workflows/sbom.yml` | n/p | `server/alarms/readiness-alarms.test.ts`, `server/http/rate-limit/account-limit.integration.test.ts` | IMA | Vanjski pentest je radnja vlasnika (nepotvrđeno). Izričite postavke izvornih mapa nema, vrijedi zadano ponašanje Nexta |
@@ -1007,7 +1007,7 @@ Oblik: `ID | repo | opis | putanje`. Redoslijed unutar područja ide od najvažn
 | ID | repo | opis | putanje |
 |---|---|---|---|
 | V18-22-R01 | WEB | Ulazne poveznice za ekrane do kojih se sada dolazi samo putanjom: student (upitnici, gradivo za kodiranje, izvoz kodiranja, dnevnik prakse), nastavnik (izvoz upitnika s popisa upitnika), administrator (ISVU). Odnosi se na V18-10, V18-11, V18-12, V18-14, V19-04 i V22-08. | `src/components/shell/nav.ts`, `host/student/home/HomePage.tsx`, `host/teacher/questionnaire/Questionnaires.tsx` |
-| V18-22-R02 | WEB | Montirati `StudentBibliographyHost` u editor studenta, preimenovati `val20-razlika-popis.spec.js.pending` u `.spec.js` i pokrenuti ga (V20-11, V20-14). | `host/editor/bibliography/student/StudentBibliographyHost.tsx`, `host/student/work.tsx`, `e2e/val20-razlika-popis.spec.js.pending` |
+| V18-22-R02 | WEB | Preimenovati `val20-razlika-popis.spec.js.pending` u `.spec.js` i pokrenuti ga; komponenta je već montirana (V20-14). | `e2e/val20-razlika-popis.spec.js.pending` |
 | V18-22-R03 | WEB+SRV | Kritični preduvjeti KR-V4-SRV (`schemaVersion` 4 u `student.work.open`, commit i replay, rekonstrukcija predaje) i KR-V4-WEB (`LocalDocument` s `createEditorExtensionsV4`). Bez njih su V21-05 do V21-09, V21-13 i V21-15 nedostupni. Prvo treba odluka vlasnika „v4 u pilotu ili poslije”. | `SRV: server/contracts/routes/evidence.ts`, `server/evidence/submission-reconstruction.ts`; WEB `src/components/editor/LocalDocument.tsx` |
 | V18-22-R04 | WEB | PL-CSP-OKVIR: zaglavlje CSP za `/code-run/:path*`; bez njega okvir odbija pokrenuti kod (V21-14, V21-13). | `packages/app/next.config.ts` ili `packages/app/vercel.json` |
 | V18-22-R05 | SRV | Doprinos tima: ugraditi SRV-1222 (zapis `provenance-share` po predaji) i proslijediti `readParts` u `createWorkTeamStore` (V19-08). | `SRV: server/database/work-team/index.ts`, `server/server.ts` |
@@ -1031,6 +1031,7 @@ Oblik: `ID | repo | opis | putanje`. Redoslijed unutar područja ide od najvažn
 | PM1-R08 | WEB | Upravljanje grupama kolegija za nositelja i suradnika (`institution.course-groups.post`, `institution.course-group-teachers.post`). | `packages/app/src/host/teacher/teaching-team/`, `src/client/` |
 | PM1-R09 | WEB | Uklanjanje studenta iz kolegija i dopuštenje povratka (`institution.student-removal.post`, `institution.student-return.post`) na popisu studenata N-04. | `packages/app/src/host/teacher/n04/` |
 | PM1-R10 | WEB | Gumb za PDF pojedinačne potvrde kod nastavnika (`teacher.receipt-pdf.get`) na N-07. | `src/app/nastavnik/rad/[id]/predaja/page.tsx`, `packages/app/src/host/teacher/n07/` |
+| PM1-R12 | WEB | Montirati naslovnicu i dijalog oblika stranice u studentski editor (PM1-93, PM2-45, paritet-editor-2 B94) i dodati test montaže. | `src/components/editor/pages/CoverPage.tsx`, `CoverDialog.tsx`, `PageFormatDialog.tsx`, `src/components/editor/EditorPageWork.tsx` |
 | PM1-R11 | SRV+WEB | Objaviti izdanje `@ductura/contracts` 3.x i podići WEB s 2.9.1 + izvatka na objavljeni paket. | `packages/contracts/`, `src/client/package.json`, `src/client/migration-contract*.generated.*` |
 
 ### Plan migracije
@@ -1059,3 +1060,4 @@ Oblik: `ID | repo | opis | putanje`. Redoslijed unutar područja ide od najvažn
 | PM2-R20 | WEB | „Moj rad u brojkama” (M7.13), nakon #1030 | `packages/app/src/host/student` |
 | PM2-R21 | WEB+SRV | Čitanje spremljenih verzija iz OneDrivea, SharePointa i Google Drivea (M8.11) | `server/import/` |
 | PM2-R22 | SRV | Spike B0.2 (M3.4), nakon B0.1 | `spikes/` |
+| PM2-R23 | WEB | Povezati sadržaj ekrana s odabranim jezikom (`useLocale` i engleski katalozi umjesto izravnog uvoza `messages.hr`), počevši od početne studenta; e2e koji provjerava sadržaj ekrana na engleskom (PM2-127). | `packages/app/src/host/student/home/HomePage.tsx`, `packages/app/src/i18n/LocaleProvider.tsx`, `packages/app/e2e/profile.spec.ts` |
