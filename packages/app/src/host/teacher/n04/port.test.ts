@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createApi } from "../../../../../../src/client/api";
 import { signInHref } from "../../../../../../src/client/api";
 import vectors from "../../../../../../src/client/migration-contract-vectors.generated.json" with { type: "json" };
-import { loadRoster, stateLine, workStatusOf } from "./model";
+import { loadRoster, notStartedCount, stateLine, workInState, workStatusOf } from "./model";
 import { courseStudentsPort, signInWhenSignedOut } from "./port";
 
 // PIL-K-N04: the roster read through the real port, createApi over invented answers of the contract.
@@ -70,7 +70,7 @@ describe("N-04 real port (PIL-K-N04)", () => {
     const follow = { students: [
       item(ids[0]!, { noticeAcknowledgedAt: "2026-11-02T10:00:00.000Z", noticeVersionNo: 1, revisionState: "open", revisionChangedAt: "2026-11-03T10:00:00.000Z", openRevisionCount: 1 }),
       item(ids[1]!, { noticeAcknowledgedAt: "2026-11-02T10:00:00.000Z", noticeVersionNo: 1 }),
-      item(ids[2]!, {}),
+      item(ids[2]!, { revisionState: "withdrawn", revisionChangedAt: "2026-11-03T10:00:00.000Z", openRevisionCount: 1 }),
     ] };
     const call = courseStudentsPort(() => createApi({
       baseUrl: "http://127.0.0.1:1",
@@ -83,8 +83,11 @@ describe("N-04 real port (PIL-K-N04)", () => {
     const read = await loadRoster(call, COURSE);
     if (read.kind !== "ready") throw new Error("not ready");
     const works = read.data.students.map((s) => s.works[0]!);
-    expect(works.map((w) => w.revision)).toEqual([{ state: "open", deadline: null }, null, null]);
+    expect(works.map((w) => w.revision)).toEqual([{ state: "open", deadline: null }, null, { state: "open", deadline: null }]);
     expect(works.map((w) => w.status)).toEqual(["submitted", "writing", "unconfirmed"]);
+    // An unconfirmed work is still not started: it stays in that filter and count.
+    expect(notStartedCount(read.data.students)).toBe(1);
+    expect(workInState(works[2]!, "revision")).toBe(true);
   });
   it("keeps the roster when the course read fails, without names", async () => {
     const read = await loadRoster(port(ROSTER, vector("teacher.courses.get", "unavailable")), COURSE);

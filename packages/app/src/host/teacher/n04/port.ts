@@ -10,7 +10,7 @@ import { createApi, goToSignIn } from "../../../../../../src/client/api";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { readTeacherCourses, type TeacherCoursesCall } from "../../../../../../src/components/teacher/teacher-courses-read";
 import { deadlineOf, type Extension, type SubmissionDetail } from "../assignment-facts/model";
-import { details, extensions, followUp, type FollowUp } from "../assignment-facts/read";
+import { details, extensions, followUp, type FollowUp, type FollowUpStudent } from "../assignment-facts/read";
 import { rosterPath, workStatusOf, type CourseStudentsPort, type RosterRead, type RosterWork, type WorkStatus } from "./model";
 
 export type RosterCall = ReturnType<typeof createApi>;
@@ -32,6 +32,12 @@ type AssignmentFacts = {
   readonly followUp?: FollowUp | null;
 };
 
+/** NAS-10: an open request still waits for the student whatever the state of the last one (`openRevisionCount`). */
+function revisionOf(follow: FollowUpStudent): RosterWork["revision"] {
+  if (follow.openRevisionCount > 0) return { state: "open", deadline: null };
+  return follow.revisionState === null ? null : { state: follow.revisionState, deadline: null };
+}
+
 /** NZ-10: the fields of one work the reads give; a part that was not read is left out, never guessed. */
 export function factsOf(facts: AssignmentFacts | undefined, studentId: string): Partial<RosterWork> {
   if (facts === undefined) return {};
@@ -40,7 +46,7 @@ export function factsOf(facts: AssignmentFacts | undefined, studentId: string): 
   const follow = facts.followUp?.get(studentId);
   return {
     // NAS-10/NAS-11: the revision column and its filter come from the server; it gives no revision deadline.
-    ...(follow === undefined ? {} : { revision: follow.revisionState === null ? null : { state: follow.revisionState, deadline: null } }),
+    ...(follow === undefined ? {} : { revision: revisionOf(follow) }),
     ...(detail === undefined ? {} : {
       submittedAt: detail.requestedMinute,
       ...(detail.afterDeadline === null ? {} : { afterDeadline: detail.afterDeadline }),
