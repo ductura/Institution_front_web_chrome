@@ -17,7 +17,7 @@ import { CodeCard, CodeForm } from "./CodeForm";
 import { protoDateTime, protoToday } from "./format";
 import styles from "./Home.module.css";
 import { homeText as t } from "./messages.hr";
-import { readHomeExtras } from "../courses/read";
+import { readHomeExtras, serverHistory } from "../courses/read";
 import { continueRow, coursesWithoutTask, deadlineTag, extensionLine, flatRows, nearTag, ORDERS, rowAction, rowRoute, sections, startsWork, submittedText, type Extras, type Order, type RowKind, type TaskRow } from "./model";
 
 const dueText = protoDateTime;
@@ -126,9 +126,8 @@ export function HomePage() {
     setExtras(null);
     if (read === null || read.kind !== "ready") return;
     let live = true;
-    const api = createApi();
-    const history = (assignmentId: string) => api("student.deadline-history.get", { params: { assignmentId }, query: undefined, body: undefined });
-    void readHomeExtras(api as unknown as Parameters<typeof readHomeExtras>[0], history, read.courses as unknown as Parameters<typeof readHomeExtras>[2], read.states)
+    const call = createApi();
+    void readHomeExtras(call as unknown as Parameters<typeof readHomeExtras>[0], serverHistory, read.courses as unknown as Parameters<typeof readHomeExtras>[2], read.states)
       .then((result) => { if (live) setExtras(result); }).catch(() => undefined);
     return () => { live = false; };
   }, [read]);
