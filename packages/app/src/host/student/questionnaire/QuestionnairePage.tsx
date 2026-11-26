@@ -27,6 +27,7 @@ export default function QuestionnairePage({ call = defaultCall }: { call?: () =>
   const [attempt, setAttempt] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
   const [note, setNote] = useState<Note | null>(null);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -44,7 +45,8 @@ export default function QuestionnairePage({ call = defaultCall }: { call?: () =>
   async function reconcile(): Promise<ListRead> {
     const result = await readList(call());
     if (result.kind === "signedOut") goToSignIn(here);
-    setList(result);
+    // A failed re-read must not replace the list: that would drop the form and the answers typed into it.
+    if (result.kind === "ok") setList(result);
     return result;
   }
   const back = <p><a href={appHref(base, "/zadaci")}><span aria-hidden="true">← </span>{t.back}</a></p>;
@@ -74,7 +76,7 @@ export default function QuestionnairePage({ call = defaultCall }: { call?: () =>
                 <strong>{row.title}</strong>{" "}
                 {row.participated
                   ? <><Tag tone="accent">{t.filled}</Tag><br /><span>{t.filledHint}</span></>
-                  : <Button tone="quiet" aria-label={t.fillAria.replace("{title}", row.title)} onClick={() => { setNote(null); setOpenId(row.id); }}>{t.fill}</Button>}
+                  : <Button tone="quiet" disabled={sending} aria-label={t.fillAria.replace("{title}", row.title)} onClick={() => { setNote(null); setOpenId(row.id); }}>{t.fill}</Button>}
               </li>
             ))}
           </ul>
@@ -83,7 +85,7 @@ export default function QuestionnairePage({ call = defaultCall }: { call?: () =>
       {openId !== null && rows.some((r) => r.id === openId && !r.participated) && (
         <FormCard
           key={openId} id={openId} title={rows.find((r) => r.id === openId)!.title} call={call} here={here}
-          onClose={() => setOpenId(null)}
+          onClose={() => setOpenId(null)} onBusy={setSending}
           onFinished={async (outcome) => {
             setOpenId(null);
             setNote(outcome === "saved" ? { tone: "status", text: t.saved } : outcome === "conflict" ? { tone: "alert", text: t.conflict }
@@ -105,8 +107,8 @@ export default function QuestionnairePage({ call = defaultCall }: { call?: () =>
 
 type Finish = "saved" | "conflict" | "gone";
 
-function FormCard({ id, title, call, here, onClose, onFinished, onUnknown }: {
-  id: string; title: string; call: () => Api; here: string; onClose: () => void;
+function FormCard({ id, title, call, here, onClose, onBusy, onFinished, onUnknown }: {
+  id: string; title: string; call: () => Api; here: string; onClose: () => void; onBusy: (busy: boolean) => void;
   onFinished: (outcome: Finish) => Promise<void>; onUnknown: () => Promise<boolean>;
 }) {
   const [read, setRead] = useState<FormRead | null>(null);
@@ -138,16 +140,18 @@ function FormCard({ id, title, call, here, onClose, onFinished, onUnknown }: {
   if (read.form.participated) {
     return <Card level={2} title={card}><p role="status">{t.filledHint}</p><p><Button tone="quiet" onClick={onClose}>{t.close}</Button></p></Card>;
   }
-  return <Sheet form={read.form} card={card} call={call} here={here} onClose={onClose} onFinished={onFinished} onUnknown={onUnknown} />;
+  return <Sheet form={read.form} card={card} call={call} here={here} onClose={onClose} onBusy={onBusy} onFinished={onFinished} onUnknown={onUnknown} />;
 }
 
-function Sheet({ form, card, call, here, onClose, onFinished, onUnknown }: {
-  form: Form; card: string; call: () => Api; here: string; onClose: () => void;
+function Sheet({ form, card, call, here, onClose, onBusy, onFinished, onUnknown }: {
+  form: Form; card: string; call: () => Api; here: string; onClose: () => void; onBusy: (busy: boolean) => void;
   onFinished: (outcome: Finish) => Promise<void>; onUnknown: () => Promise<boolean>;
 }) {
   const [fields, setFields] = useState<Fields>(() => Object.fromEntries(form.questions.map((q) => [q.id, emptyField(q)])));
   const [error, setError] = useState<{ questionId: string | null; text: string } | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusyState] = useState(false);
+  // The page also locks its list while a sheet is on the way, so the finished request cannot close another form.
+  const setBusy = (value: boolean) => { setBusyState(value); onBusy(value); };
   const questions = [...form.questions].sort((a, b) => a.order - b.order);
   const set = (qid: string, value: string | readonly string[]) => setFields((f) => ({ ...f, [qid]: value }));
   const errorOf = (qid: string) => (error?.questionId === qid ? error.text : undefined);
@@ -165,9 +169,9 @@ function Sheet({ form, card, call, here, onClose, onFinished, onUnknown }: {
     setBusy(true);
     const outcome = await sendSheet(call(), form.id, { answers: built.answers });
     if (outcome.kind === "signedOut") { setBusy(false); goToSignIn(here); return; }
-    if (outcome.kind === "saved") { await onFinished("saved"); return; }
-    if (outcome.kind === "conflict") { await onFinished("conflict"); return; }
-    if (outcome.kind === "notFound") { await onFinished("gone"); return; }
+    if (outcome.kind === "saved") { await onFinished("saved"); setBusy(false); return; }
+    if (outcome.kind === "conflict") { await onFinished("conflict"); setBusy(false); return; }
+    if (outcome.kind === "notFound") { await onFinished("gone"); setBusy(false); return; }
     if (outcome.kind === "invalid") { setError({ questionId: null, text: t.invalid }); setBusy(false); return; }
     // Unknown: the page asks the server whether the sheet was kept before it lets the student send again.
     const kept = await onUnknown();

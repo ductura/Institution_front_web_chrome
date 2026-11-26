@@ -161,4 +161,37 @@ describe("QuestionnairePage in the browser", () => {
     expect(text()).toContain(t.saved);
     expect(host.querySelector("form")).toBeNull();
   });
+
+  it("keeps the typed answers when the sheet and the re-read both fail", async () => {
+    const { call } = apiOf({
+      "student.questionnaires.get": (n) => (n === 1 ? ok({ questionnaires: [ROW_A] }) : fail(503, "unavailable")), "student.questionnaire.get": () => ok(FORM),
+      "student.questionnaire-responses.post": () => fail(503, "unavailable"),
+    });
+    await render(call);
+    await click(button(t.fillAria.replace("{title}", ROW_A.title)));
+    await pick("da");
+    await submit();
+    expect(text()).toContain(t.unknown);
+    expect((host.querySelector('input[type=radio][value="da"]') as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("locks the fill buttons while a sheet is on the way", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const calls: string[] = [];
+    const fn = vi.fn(async (id: string) => {
+      calls.push(id);
+      if (id === "student.questionnaires.get") return ok({ questionnaires: [ROW_A, { ...ROW_A, id: B, title: "Drugi upitnik" }] });
+      if (id === "student.questionnaire.get") return ok(FORM);
+      await gate;
+      return ok(undefined, 204);
+    });
+    await render((() => fn) as never);
+    await click(button(t.fillAria.replace("{title}", ROW_A.title)));
+    await pick("da");
+    const sending = submit();
+    await act(async () => { await Promise.resolve(); });
+    expect(button(t.fillAria.replace("{title}", "Drugi upitnik")).disabled).toBe(true);
+    await act(async () => { release(); await sending; });
+  });
 });
