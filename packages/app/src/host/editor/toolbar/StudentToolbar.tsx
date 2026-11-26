@@ -177,6 +177,21 @@ function useEditorFocused(editor: Editor | null): boolean {
 
 type Item = { id: string; label: string; disabled?: boolean; /** The reason an item is off, shown beside it. */ hint?: string };
 
+/** ED-44 (P2-16): the prototype's "Umetni" items the host cannot insert yet; shown, never hidden (Val 6). */
+export const PENDING_INSERTS = ["cite", "newSource", "table", "image", "phrase", "variant"] as const;
+/** The prototype's order of "Umetni"; the host's own items not in the prototype follow. */
+const INSERT_ORDER = ["cite", "newSource", "table", "image", "footnote", "xref", "formula", "inlineFormula", "codeBlock", "hole", "phrase", "variant"];
+
+/** The host's insert items with the prototype's pending ones put in their place, disabled and marked "nedostupno". */
+export function withPendingInserts(items: readonly Item[]): Item[] {
+  const pending = PENDING_INSERTS.map((id): Item => ({
+    id, label: t.toolbar.insertItems[id], disabled: true, hint: toolbarBehaviourHr.menuUnavailable,
+  }));
+  const all = [...items, ...pending.filter((p) => !items.some((i) => i.id === p.id))];
+  const rank = (id: string) => { const at = INSERT_ORDER.indexOf(id); return at < 0 ? INSERT_ORDER.length : at; };
+  return all.map((item, at) => ({ item, at })).sort((a, b) => rank(a.item.id) - rank(b.item.id) || a.at - b.at).map((x) => x.item);
+}
+
 function Menu({ label, items, onSelect }: { label: string; items: readonly Item[]; onSelect: (id: string) => void }) {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const entries: MenuEntry[] = items.map((i) => ({ kind: "item", id: i.id, label: i.label, disabled: i.disabled, hint: i.hint }));
@@ -238,7 +253,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
   const [quickMore, setQuickMore] = useState<MenuPoint | null>(null);
   const openCrossReference = v3.openInsert ? () => v3.openInsert?.("crossReference") : undefined;
 
-  const insert: Item[] = [
+  const insert: Item[] = withPendingInserts([
     { id: "footnote", label: t.toolbar.insertItems.footnote, disabled: !writeOk || !v3.openInsert },
     { id: "xref", label: crossReferenceMessages.title, disabled: !writeOk || !v3.openInsert },
     { id: "formula", label: formulaHostHr.insertBlock, disabled: !writeOk || !formula.availability.enabled, hint: formula.availability.enabled ? undefined : formula.availability.reason },
@@ -247,7 +262,7 @@ export function StudentToolbar({ workPartsKey, footnoteDialog, confirmedWorkSche
     { id: "hole", label: t.toolbar.insertItems.hole, disabled: !writeOk },
     { id: "workParts", label: workPartsMessages.title, disabled: !writeOk },
     { id: "skeleton", label: skeletonMessages.menu, disabled: !writeOk || !skeletonAvailable(skeletonProfile ?? profileById(DEFAULT_PROFILE_ID) ?? null) },
-  ];
+  ]);
   const convert: Item[] = [
     { id: "toQuote", label: t.toolbar.convertItems.toQuote, disabled: !writeOk || state.quote },
     { id: "fromQuote", label: t.toolbar.convertItems.fromQuote, disabled: !writeOk || !state.quote },
