@@ -191,7 +191,9 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               ? <FrameStatus chip={<SaveState state="ERROR" label={workText.errorStatus} />} />
               : frame.variant === "prazno"
                 ? <FrameStatus chip={<SaveState state="LOCAL_DURABLE" label={workText.newWork} />} length={length} withNet />
-                : <StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
+                : frame.variant === "predano" && submittedAt !== null
+                  ? <FrameStatus chip={<SaveState state="SYNCED" label={workText.submittedStatus.replace("{at}", submittedAt)} />} length={length} />
+                  : <StatusBar save={null} readOnly={frame.variant === "predano"} length={length} />}
             aside={frame.variant === "predano" && <>
               <ReadOnlyMentor role="student" submitted documentId={receipt?.documentId} submittedAt={receipt?.requestedAt} />
               {receipt?.documentId === undefined ? null : <DirectEditSettingHost documentId={receipt.documentId} here={here} submitted />}
