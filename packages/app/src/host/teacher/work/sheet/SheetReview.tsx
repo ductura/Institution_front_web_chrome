@@ -29,7 +29,7 @@ export function SheetOrWork({ documentId, path, fallback, read = readSheetReview
   const kind = answer?.kind;
   useEffect(() => { if (kind === "signedOut") goToSignIn(appHref(base, path)); }, [kind, base, path]);
 
-  if (answer === null || answer.kind === "text" || answer.kind === "signedOut" || answer.kind === "notFound") return <>{fallback}</>;
+  if (answer === null || answer.kind === "text" || answer.kind === "unknown" || answer.kind === "signedOut" || answer.kind === "notFound") return <>{fallback}</>;
   return (
     <div className="page">
       <h1>{t.title}</h1>

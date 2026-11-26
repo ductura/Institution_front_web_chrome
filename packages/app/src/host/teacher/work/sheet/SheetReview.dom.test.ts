@@ -26,7 +26,7 @@ describe("SheetOrWork", () => {
   };
 
   it("keeps the existing page for another kind, somebody else's work (404) and 401 (which shows its own state)", async () => {
-    for (const kind of ["text", "notFound", "signedOut"] as const) { await mount(async () => ({ kind })); expect(host.textContent).toBe("TEKSTNA STRANICA"); }
+    for (const kind of ["text", "unknown", "notFound", "signedOut"] as const) { await mount(async () => ({ kind })); expect(host.textContent).toBe("TEKSTNA STRANICA"); }
     expect(signIn).toHaveBeenCalled();
   });
   it("does not hold another work back while the kind is still being read", async () => {

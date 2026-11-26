@@ -12,17 +12,21 @@ import { readSheetWork, type SheetWorkRead } from "./read.ts";
 
 const line = (n: number, words: { one: string; few: string; many: string }) => sheetsWord(n, words).replace("{n}", String(n));
 
-export default function SheetSummary({ assignmentId, read = readSheetWork, onSignIn }: {
-  assignmentId: string; read?: (assignmentId: string) => Promise<SheetWorkRead>; onSignIn?: () => void;
+export default function SheetSummary({ assignmentId, revision, read = readSheetWork, onSignIn }: {
+  assignmentId: string;
+  /** The revision a receipt names; the summary is shown only for exactly that revision. */
+  revision?: number;
+  read?: (assignmentId: string, call: undefined, revision?: number) => Promise<SheetWorkRead>;
+  onSignIn?: () => void;
 }) {
   const [state, setState] = useState<SheetWorkRead | "loading">("loading");
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let live = true;
     setState("loading");
-    void read(assignmentId).then((answer) => { if (live) setState(answer); });
+    void read(assignmentId, undefined, revision).then((answer) => { if (live) setState(answer); });
     return () => { live = false; };
-  }, [assignmentId, read, attempt]);
+  }, [assignmentId, revision, read, attempt]);
   useEffect(() => { if (state !== "loading" && state.kind === "signIn") onSignIn?.(); }, [state, onSignIn]);
 
   if (state !== "loading" && (state.kind === "other" || state.kind === "signIn")) return null;

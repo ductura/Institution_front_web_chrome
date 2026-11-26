@@ -10,13 +10,15 @@ export type SheetWorkRead =
   | { readonly kind: "sheet"; readonly revision: number; readonly summary: SheetSummary }
   | { readonly kind: "other" | "empty" | "signIn" | "unavailable" };
 
-export async function readSheetWork(assignmentId: string, call: Call = createApi({ protocol: "1" })): Promise<SheetWorkRead> {
+export async function readSheetWork(assignmentId: string, call: Call = createApi({ protocol: "1" }), expectedRevision?: number): Promise<SheetWorkRead> {
   try {
     const result = await call("evidence.open.post", { params: undefined, query: undefined, body: { assignmentId } });
     if (!result.ok) return { kind: result.status === 401 ? "signIn" : "unavailable" };
     const work = result.body;
     if (work.workKind !== "spreadsheet") return { kind: "other" };
     if (work.currentRevision === 0) return { kind: "empty" };
+    // A receipt names one revision; another one is not what was submitted.
+    if (expectedRevision !== undefined && work.currentRevision !== expectedRevision) return { kind: "unavailable" };
     const summary = summaryOfDocument(work.document);
     return summary === null ? { kind: "unavailable" } : { kind: "sheet", revision: work.currentRevision, summary };
   } catch {

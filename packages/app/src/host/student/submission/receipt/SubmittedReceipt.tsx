@@ -86,7 +86,7 @@ export default function SubmittedReceipt({ ports = SERVER, onSignIn, ...screen }
   return (
     <ReceiptScreen {...screen} given={given} summary={<>
       {/* WEB-V14-SHEET-SUBMIT: the kind and counts of a spreadsheet work; nothing for any other kind. */}
-      <SheetSummary assignmentId={assignmentId} onSignIn={() => signIn.current()} />
+      <SheetSummary assignmentId={assignmentId} revision={revision} onSignIn={() => signIn.current()} />
       <SummaryPanel summary={summary} notes={notes} submitted confirmed={opensSending(gate)} kind={screen.kind}
         online={online} workHref={screen.workHref} onRetry={() => setAttempt((n) => n + 1)}
         disputes={documentId === null ? undefined : { port: DISPUTES, documentId }}

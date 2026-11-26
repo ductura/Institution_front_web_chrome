@@ -15,6 +15,11 @@ describe("readSheetWork", () => {
     expect(await readSheetWork("a", callOf(ok({ currentRevision: 2, document })))).toEqual({ kind: "other" });
     expect(await readSheetWork("a", callOf(ok({ workKind: "spreadsheet", currentRevision: 0, document })))).toEqual({ kind: "empty" });
   });
+  it("with an expected revision, another current revision is unavailable, not the submitted content", async () => {
+    const answer = ok({ workKind: "spreadsheet", currentRevision: 3, document });
+    expect(await readSheetWork("a", callOf(answer), 2)).toEqual({ kind: "unavailable" });
+    expect(await readSheetWork("a", callOf(answer), 3)).toMatchObject({ kind: "sheet", revision: 3 });
+  });
   it("a broken document or a failed read is unavailable, never other or empty; 401 is signIn", async () => {
     expect(await readSheetWork("a", callOf(ok({ workKind: "spreadsheet", currentRevision: 1, document: btoa("{}") })))).toEqual({ kind: "unavailable" });
     expect(await readSheetWork("a", callOf({ ok: false, status: 503 }))).toEqual({ kind: "unavailable" });

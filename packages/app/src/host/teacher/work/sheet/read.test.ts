@@ -21,13 +21,15 @@ describe("readSheetReview", () => {
   it("somebody else's work is notFound, and 401 and a failure stay apart", async () => {
     expect(await readSheetReview("d", callOf({ "work.versions.get": no(404) }))).toEqual({ kind: "notFound" });
     expect(await readSheetReview("d", callOf({ "work.versions.get": versions, "work.version.get": no(404) }))).toEqual({ kind: "notFound" });
+    // The kind is not known: the existing page stays instead of a sheet error.
+    expect(await readSheetReview("d", callOf({ "work.versions.get": versions, "work.version.get": no(503) }))).toEqual({ kind: "unknown" });
     expect(await readSheetReview("d", callOf({ "work.versions.get": no(401) }))).toEqual({ kind: "signedOut" });
-    expect(await readSheetReview("d", callOf({ "work.versions.get": no(500) }))).toEqual({ kind: "unavailable" });
+    expect(await readSheetReview("d", callOf({ "work.versions.get": no(500) }))).toEqual({ kind: "unknown" });
   });
   it("a document that is not the canonical bytes of a valid sheet is invalid", async () => {
     const bad = (document: string) => callOf({ "work.versions.get": versions, "work.version.get": ok({ revision: 3, document, workKind: "spreadsheet" }) });
     expect(await readSheetReview("d", bad("{}"))).toEqual({ kind: "invalid" });
-    expect(await readSheetReview("d", bad("not json"))).toEqual({ kind: "unavailable" });
+    expect(await readSheetReview("d", bad("not json"))).toEqual({ kind: "invalid" });
     expect(await readSheetReview("d", bad(JSON.stringify(JSON.parse(text), null, 2)))).toEqual({ kind: "invalid" });
   });
 });

@@ -8,9 +8,11 @@ type Call = ReturnType<typeof createApi>;
 
 export type SheetRead =
   | { readonly kind: "sheet"; readonly revision: number; readonly document: SheetDocument }
-  | { readonly kind: "text" | "signedOut" | "notFound" | "unavailable" | "invalid" };
+  // "unknown": the kind of the work could not be established; the existing page stays (it reads on its own).
+  // "unavailable"/"invalid": the work is known to be a spreadsheet but its document cannot be shown.
+  | { readonly kind: "text" | "signedOut" | "notFound" | "unknown" | "unavailable" | "invalid" };
 
-const failure = (status: number): SheetRead => ({ kind: status === 401 ? "signedOut" : status === 404 ? "notFound" : "unavailable" });
+const failure = (status: number): SheetRead => ({ kind: status === 401 ? "signedOut" : status === 404 ? "notFound" : "unknown" });
 
 export async function readSheetReview(documentId: string, call: Call = createApi()): Promise<SheetRead> {
   try {
@@ -20,14 +22,16 @@ export async function readSheetReview(documentId: string, call: Call = createApi
     if (newest === null) return { kind: "text" };
     const one = await call("work.version.get", { params: { documentId, revision: String(newest) }, query: {}, body: undefined });
     if (!one.ok) return failure(one.status);
-    if (!("document" in one.body)) return { kind: "unavailable" };
+    if (!("document" in one.body)) return { kind: "unknown" };
     if (one.body.workKind !== "spreadsheet") return { kind: "text" };
     if (one.body.revision !== newest) return { kind: "unavailable" };
-    const checked = validateSheetDocument(JSON.parse(one.body.document));
+    let parsed: unknown;
+    try { parsed = JSON.parse(one.body.document); } catch { return { kind: "invalid" }; }
+    const checked = validateSheetDocument(parsed);
     // Only the exact canonical bytes of a valid sheet are shown.
     return checked.ok && canonicalSheetDocument(checked.value) === one.body.document
       ? { kind: "sheet", revision: newest, document: checked.value } : { kind: "invalid" };
   } catch {
-    return { kind: "unavailable" };
+    return { kind: "unknown" };
   }
 }
