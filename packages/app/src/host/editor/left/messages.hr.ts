@@ -23,10 +23,12 @@ export const leftHr = {
     note: "Bilješka uz poglavlje",
     noteHint: "Bilješka je samo za vas: ne ulazi u tekst, izvoz ni predaju.",
     askMentor: "Pitaj mentora",
+    /** The first line of the new comment on the chapter's title (prototype `hAsk`). */
+    askMentorDraft: (title: string) => `Pitanje uz poglavlje „${title}”: `,
+    askMentorUntitled: "Poglavlje nema naslova, pa pitanje nema na čemu stajati.",
     onlyThis: "Prikaži samo ovo poglavlje",
     onlyShown: (title: string) => `Prikazano samo poglavlje „${title}”.`,
     showAll: "Prikaži cijeli rad",
-    unavailable: "nedostupno",
     remove: "Obriši poglavlje",
     removeConfirm: "Obrisati poglavlje i sve u njemu? Radnju možete poništiti s Ctrl+Z.",
     removeYes: "Da, obriši",

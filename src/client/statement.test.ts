@@ -19,6 +19,7 @@ describe("statement client (WEB-1503)", () => {
       "src/client/statement.ts",
       "packages/app/src/host/student/statement/StudentStatement.tsx",
       "packages/app/src/host/student/statement/model.ts",
+      "packages/app/src/host/student/statement/DeclaredTools.tsx",
       "packages/app/src/host/student/statement/messages.hr.ts",
     ];
     for (const file of files) expect(readFileSync(new URL(file, root), "utf8"), file).not.toMatch(/\b(fetch|XMLHttpRequest|sendBeacon|EventSource|WebSocket|Worker)\b|\/api\b|@ductura\/(contracts|test-fakes)/);
@@ -152,5 +153,37 @@ describe("statement adapter (PIL-K-IZJAVA-PORT)", () => {
     expect(s.sent[0]).toMatchObject({ method: "POST", path: `/api/v1/student/assignments/${ASSIGNMENT}/declaration-attachments`, type: "text/plain" });
     const broken = server(() => json(200, { ...answer, extra: true }));
     expect(await broken.port.attachPrintout(ASSIGNMENT, file("a.txt", "text/plain", 1))).toEqual({ kind: "unavailable" });
+  });
+});
+
+describe("statement adapter: tools outside Ductura (ED-12)", () => {
+  it("reads ai.declaredTools and saves the whole list on the same PUT, marking use", async () => {
+    const tool = { toolLabel: "Rječnik HJP", purposeText: "provjera značenja", phaseText: "pisanje" };
+    const draft = {
+      baseVersion: 0, revision: 1, form: FORM, ownWork: { confirmed: false }, humanHelp: { received: false, entries: [] },
+      ai: { use: null, declaredTools: [tool], attachments: [], externalAttachmentIds: [] }, confirm: false,
+    };
+    const held = { ...STATE, state: "draft", version: 1, draft };
+    const s = server(() => json(200, held));
+    const read = await s.port.read(ASSIGNMENT);
+    expect(read).toMatchObject({ kind: "ready", tools: [{ tool: "Rječnik HJP", purpose: "provjera značenja", phase: "pisanje" }] });
+    const next = [{ tool: "Rječnik HJP", purpose: "provjera značenja", phase: "pisanje" }, { tool: "Zotero", purpose: "popis literature", phase: "istraživanje" }];
+    expect(await s.port.saveTools?.(ASSIGNMENT, next)).toEqual({ kind: "saved" });
+    const put = s.sent.find((r) => r.method === "PUT");
+    expect(matchesSchema(contracts["student.declaration.put"].body as Schema, put?.body)).toBe(true);
+    expect(put?.body).toMatchObject({
+      baseVersion: 1,
+      ai: { use: "used", declaredTools: [tool, { toolLabel: "Zotero", purposeText: "popis literature", phaseText: "istraživanje" }] },
+    });
+  });
+
+  it("an empty list empties declaredTools and leaves the declared use; no draft reads as no tools", async () => {
+    expect(await server(() => json(200, STATE)).port.read(ASSIGNMENT)).toMatchObject({ tools: [] });
+    const s = server((method) => (method === "GET" ? json(200, STATE) : json(200, { ...STATE, state: "draft", version: 1 })));
+    await s.port.read(ASSIGNMENT);
+    expect(await s.port.saveTools?.(ASSIGNMENT, [])).toEqual({ kind: "saved" });
+    const put = s.sent.find((r) => r.method === "PUT");
+    expect(matchesSchema(contracts["student.declaration.put"].body as Schema, put?.body)).toBe(true);
+    expect((put?.body as { ai: { declaredTools: unknown[] } }).ai.declaredTools).toEqual([]);
   });
 });
