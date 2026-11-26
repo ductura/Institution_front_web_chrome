@@ -4,10 +4,13 @@
 // Odloženo, Napredak, Rokovi, Nit rada). Only what the work itself holds is
 // shown; the faculty's rules, the revision deadline and the sources count come
 // from the server and say "nedostupno" until it gives them. ED-37 (P2-6): the
-// submission deadline is the assignment's `dueAt`, which the page already reads.
+// submission deadline is the assignment's `dueAt`, which the page already reads;
+// the mentorship's milestones and consultations come from mentor-dates.ts, and
+// the rail footer sets the words against the assignment's range (ED-37, dio 3).
 import { Button, TextField } from "@ductura/ui";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { createApi } from "../../../../../../src/client/api.ts";
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
 import { ChapterLength } from "../chapter-length/ChapterLength";
 import { useChapterTargets } from "../chapter-length/use-chapter-targets";
@@ -15,6 +18,7 @@ import {
   addDeadline, daysUntil, EMPTY_THREAD, goalStatus, MAX_HYPOTHESES, pagesOf, parseDeadlines, parseStash, parseThread, preview,
   progressRatio, stashAdd, stashRemove, zagrebDay, type OwnDeadline,
 } from "./left-model";
+import { readMentorDates, type MentorDates, type MentorDatesCall } from "./mentor-dates";
 import { leftHr as t } from "./messages.hr";
 import { useDeviceValue, useWorkSnapshot } from "./use-left";
 import { HistorySection } from "./HistorySection";
@@ -25,14 +29,33 @@ type Props = { workId: string };
 /** The submission deadline of the assignment (an instant), or null when the page has none. */
 type Due = { dueAt?: string | null };
 
+/** Whole Zagreb days to the deadline ("za 3 dana" / "prošlo je 2 dana"), or null without a readable one. */
+function dueDays(dueAt: string | null | undefined, now: Date): string | null {
+  const day = dueAt ? zagrebDay(dueAt) : null;
+  const days = day === null ? null : daysUntil(day, now);
+  return days === null ? null : days < 0 ? t.deadlines.late(-days) : t.deadlines.in(days);
+}
+
 /** "15. 12. 2099., 23:59 · za 3 dana", or null when there is no readable deadline. */
 function dueLine(dueAt: string | null | undefined, now: Date): string | null {
   if (!dueAt) return null;
   const moment = momentHr(dueAt);
-  const day = zagrebDay(dueAt);
-  if (moment === null || day === null) return null;
-  const days = daysUntil(day, now);
-  return days === null ? moment : `${moment} · ${days < 0 ? t.deadlines.late(-days) : t.deadlines.in(days)}`;
+  if (moment === null || zagrebDay(dueAt) === null) return null;
+  const days = dueDays(dueAt, now);
+  return days === null ? moment : `${moment} · ${days}`;
+}
+
+/** The rail footer (prototype rail.js `foot`): words against the assignment's range, then the days to the deadline. */
+function railFootLine(words: number, range: { min: number; max: number } | null, dueAt: string | null | undefined, now: Date): string {
+  const days = dueDays(dueAt, now);
+  const scope = t.progress.footer(words, range?.min ?? null, range?.max ?? null);
+  return days === null ? scope : `${scope} · ${days}`;
+}
+
+/** ED-37 (dio 3): the footer under the left panel's sections, read from the text as it is. */
+function RailFooter({ range, dueAt, now = new Date() }: Due & { range: { min: number; max: number } | null; now?: Date }) {
+  const { total } = useWorkSnapshot();
+  return <p className={styles.muted} data-rail-foot="">{railFootLine(total, range, dueAt, now)}</p>;
 }
 const newId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
 
@@ -159,6 +182,39 @@ function Progress({ dueAt, now = new Date() }: Due & { now?: Date }) {
   );
 }
 
+/** ED-37 (dio 2): the mentorship's milestones and consultations ahead, as read; nothing is made up. */
+function MentorDatesView({ dates }: { dates: MentorDates }) {
+  const line = (text: string) => <p>{t.deadlines.mentorship}: <span className={styles.muted}>{text}</span></p>;
+  if (dates.kind === "loading") return line(t.deadlines.mentorshipLoading);
+  if (dates.kind === "none") return line(t.deadlines.mentorshipNone);
+  if (dates.kind === "signedOut") return line(t.deadlines.mentorshipSignedOut);
+  if (dates.kind === "unavailable") return line(t.deadlines.mentorshipUnavailable);
+  return (
+    <div data-mentor-dates="">
+      <p>{t.deadlines.mentorship}:{dates.ahead.length === 0 && <> <span className={styles.muted}>{t.deadlines.mentorshipEmpty}</span></>}</p>
+      {dates.ahead.length > 0 && (
+        <ul className={styles.list}>
+          {dates.ahead.map((r) => <li key={`${r.kind}:${r.id}`}>{r.label} · {r.when} · {r.relative}</li>)}
+        </ul>
+      )}
+      {dates.past > 0 && <p className={styles.muted}>{t.deadlines.mentorshipPast(dates.past)}</p>}
+    </div>
+  );
+}
+
+const realMentorDates = (workId: string) => readMentorDates(createApi() as unknown as MentorDatesCall, workId);
+
+function MentorDatesBlock({ workId, read = realMentorDates }: Props & { read?: (workId: string) => Promise<MentorDates> }) {
+  const [dates, setDates] = useState<MentorDates>({ kind: "loading" });
+  useEffect(() => {
+    let live = true;
+    setDates({ kind: "loading" });
+    void read(workId).then((d) => { if (live) setDates(d); }, () => { if (live) setDates({ kind: "unavailable" }); });
+    return () => { live = false; };
+  }, [workId, read]);
+  return <MentorDatesView dates={dates} />;
+}
+
 function Deadlines({ workId, dueAt, now = new Date() }: Props & Due & { now?: Date }) {
   const due = dueLine(dueAt, now);
   const [items, setItems] = useDeviceValue<OwnDeadline[]>("deadlines", workId, parseDeadlines, []);
@@ -180,6 +236,7 @@ function Deadlines({ workId, dueAt, now = new Date() }: Props & Due & { now?: Da
       <p data-due={due === null ? undefined : ""}>{t.deadlines.submission}: {due ?? <span className={styles.muted}>{t.deadlines.submissionUnavailable}</span>}</p>
       <p>{t.deadlines.revision}: <span className={styles.muted}>{t.deadlines.revisionUnavailable}</span></p>
       <p>{t.deadlines.faculty}: <span className={styles.muted}>{t.deadlines.facultyUnavailable}</span></p>
+      <MentorDatesBlock workId={workId} />
       <h3>{t.deadlines.own}</h3>
       {items.length === 0 ? <p className={styles.muted}>{t.deadlines.ownEmpty}</p> : (
         <ul className={styles.list}>
@@ -236,4 +293,4 @@ export function leftSectionsFor(workId: string, documentId?: string, dueAt?: str
   };
 }
 
-export { Deadlines, dueLine, Figures, Progress, Requirements, Stash, Thread };
+export { Deadlines, dueLine, Figures, MentorDatesView, Progress, RailFooter, railFootLine, Requirements, Stash, Thread };

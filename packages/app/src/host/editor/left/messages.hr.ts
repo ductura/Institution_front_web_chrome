@@ -98,6 +98,13 @@ export const leftHr = {
     invalid: "Upišite naziv i datum.",
     faculty: "Fakultet",
     facultyUnavailable: "Rokovi fakulteta nisu dostupni.",
+    mentorship: "Mentorstvo",
+    mentorshipLoading: "Učitavam etape i konzultacije.",
+    mentorshipNone: "Rad nije dio mentorstva.",
+    mentorshipEmpty: "Nema nadolazećih etapa ni konzultacija.",
+    mentorshipPast: (n: number) => (n === 1 ? "Jedan je rok mentorstva prošao." : `Prošlih rokova mentorstva: ${n}.`),
+    mentorshipUnavailable: "Etape i konzultacije nisu dostupne.",
+    mentorshipSignedOut: "Prijavite se ponovo da vidite etape i konzultacije.",
   },
   thread: {
     question: "Pitanje rada",
