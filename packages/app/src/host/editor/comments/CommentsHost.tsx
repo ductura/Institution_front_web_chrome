@@ -54,8 +54,15 @@ function Proposals({ editorRef, documentId, submitted, current }: {
       const plan = editor ? planAcceptance(editor.state.doc, s) : null;
       if (!editor || !plan) return "invalid";
       const out = await decideProposal(s.id, "accept");
-      if (out === "ok" && current() && !editor.isDestroyed) editor.view.dispatch(acceptanceTransaction(editor.state, plan, s.id));
-      if (out === "ok" || out === "conflict") void load();
+      if (out === "ok") {
+        // The student may have kept typing while the server answered: the place is found again in the
+        // text as it is now, never reused from before. Not found any more: the text stays as it is.
+        const now = current() && !editor.isDestroyed ? planAcceptance(editor.state.doc, s) : null;
+        if (now) editor.view.dispatch(acceptanceTransaction(editor.state, now, s.id));
+        void load();
+        return now || !current() || editor.isDestroyed ? "ok" : "conflict";
+      }
+      if (out === "conflict") void load();
       return out;
     }
     const out = await decideProposal(s.id, "reject");

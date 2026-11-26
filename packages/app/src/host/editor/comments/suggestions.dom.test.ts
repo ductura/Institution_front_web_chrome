@@ -76,6 +76,22 @@ describe("proposals in the student's Comments card", () => {
     expect(second.host.textContent).toContain(s.errors.conflict);
   });
 
+  it("text typed while the server answers: the place is found again, never reused", async () => {
+    const schema = new Schema({
+      nodes: { doc: { content: "paragraph+" }, text: { group: "inline" }, paragraph: { content: "text*", group: "block", attrs: { nodeId: { default: null } } } },
+    });
+    const para = schema.nodes.paragraph!.create({ nodeId: ANCHOR.nodeId }, schema.text("Tema je kućno kompostiranje u gradu"));
+    let state = EditorState.create({ doc: schema.nodes.doc!.create(null, para) });
+    const editor = { get state() { return state; }, isDestroyed: false, view: { dispatch: (tr: never) => { state = state.apply(tr); } } };
+    const { host } = await mount((url) => {
+      if (url.endsWith("/list")) return json(200, { suggestions: [row("pending")] });
+      state = state.apply(state.tr.insertText("Uvod. ", 1)); // typed before the place while the request was out
+      return json(200, { suggestionId: SID, state: "accepted", baseHash: "a".repeat(64), text: "x", change: { source: "teacher-suggestion", suggestionId: SID, nodeId: ANCHOR.nodeId, start: 8, end: 27, removed: "", inserted: "" } });
+    }, false, editor);
+    await act(async () => { button(host, s.accept)!.click(); });
+    expect(state.doc.textContent).toBe("Uvod. Tema je kompostiranje u kućanstvu u gradu");
+  });
+
   it("a submitted work shows proposals but offers no action", async () => {
     const { host } = await mount(() => json(200, { suggestions: [row("pending")] }), true);
     expect(host.textContent).toContain("kompostiranje u kućanstvu");
