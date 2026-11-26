@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Schema } from "@tiptap/pm/model";
 
-import { allPlaces, counts, gutterDots, holeRemoval, nextPlace, placesAt, showGutter } from "./marks-model";
+import { allPlaces, gutterDots, hasNext, holeRemoval, nextPlace, placesAt, showGutter } from "./marks-model";
 
 const schema = new Schema({
   nodes: {
@@ -23,7 +23,15 @@ describe("marks model (WEB-2129)", () => {
     expect(places.map((x) => [x.kind, x.level])).toEqual([["cmt", 2], ["hole", 1], ["plain", 1], ["need", 2]]);
     expect(places.find((x) => x.kind === "cmt")!.name).toBe("Komentar: vod");
   });
-  it("counts the three counters", () => expect(counts(places)).toEqual({ hole: 1, cmt: 1, plain: 1 }));
+  // ED-60: the counter bar is gone; the jump lives in the popover, offered only when its kind has another mark.
+  it("offers the popover's next place only when the kind has another mark", () => {
+    expect(hasNext(places, "hole")).toBe(false);
+    const two = allPlaces(schema.node("doc", null, [p(schema.text("A [?] b [?] c."))]), []);
+    expect(hasNext(two, "hole")).toBe(true);
+    const first = two.find((x) => x.kind === "hole")!;
+    expect(nextPlace(two, "hole", first.to)).not.toBe(first);
+    expect(hasNext(two, "cmt")).toBe(false);
+  });
   it("offers 'Na ovom mjestu' only where marks overlap, level 1 first", () => {
     const hole = places.find((x) => x.kind === "hole")!;
     const overlap = placesAt(allPlaces(doc, [{ from: hole.from, to: hole.to }]), hole.from + 1);

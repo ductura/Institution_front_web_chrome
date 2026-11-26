@@ -1,10 +1,10 @@
 "use client";
 
 // WEB-2129 (par-e-oznake): marks in the text, the gutter, "Na ovom mjestu", the
-// legend and the counters with a jump. Rendered inside the LocalDocumentProvider
+// legend (from the view menu) and the jump from a mark's popover. Rendered inside the LocalDocumentProvider
 // (sessionControls of the work page), so it reads the live editor and only draws:
 // decorations and an overlay, never a change of the document.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button, Dialog } from "@ductura/ui";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
@@ -13,7 +13,8 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { commentHighlightKey } from "../../../../../editor-core/src/editor/comment-anchor.ts";
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
 import { requestPanel } from "../../../../../../src/components/editor/layout-prefs/open-panel.ts";
-import { allPlaces, counts, gutterDots, holeRemoval, nextPlace, placesAt, showGutter, type MarkKind, type Place } from "./marks-model";
+import { useDialogRequest } from "../../../../../../src/components/editor/commands/dialog-request.ts";
+import { allPlaces, gutterDots, hasNext, holeRemoval, nextPlace, placesAt, showGutter, type MarkKind, type Place } from "./marks-model";
 import { marksHr as t } from "./messages.hr";
 import styles from "./Marks.module.css";
 import { GHOST_KEY, ghostPlugin } from "./ghost";
@@ -96,7 +97,6 @@ export function MarksHost() {
     editor.on("transaction", read);
     return () => { editor.off("transaction", read); };
   }, [editor]);
-  const n = useMemo(() => counts(places), [places]);
 
   // One click, one popover: a single mark opens its own explanation, several open "Na ovom mjestu".
   useEffect(() => {
@@ -116,6 +116,8 @@ export function MarksHost() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [pick]);
+  // ED-60: "Što znače oznake" opens from the view menu (dialog-request), as in the prototype.
+  useDialogRequest("marks", () => setLegend(true), !!editor && !editor.isDestroyed);
 
   if (!editor || editor.isDestroyed) return null;
   const go = (p: Place) => {
@@ -138,19 +140,10 @@ export function MarksHost() {
     try { return editor.view.coordsAtPos(pos).top - base.top; } catch { return null; }
   });
 
-  const counter = (kind: "hole" | "cmt" | "plain") => (
-    <Button key={kind} tone="quiet" disabled={n[kind] === 0} onClick={() => jump(kind)}
-      aria-label={`${t.counters[kind].replace("{count}", String(n[kind]))}. ${n[kind] ? t.counters.next : t.counters.none}`}>
-      {t.counters[kind].replace("{count}", String(n[kind]))}
-    </Button>
-  );
-
+  // ED-60 (Ductus#2058 c.7187555639): no counter bar under the editor, as in the prototype, whose
+  // counts are in the review; the jump to the next mark of a kind is the popover's "Sljedeće mjesto ›".
   return (
     <>
-      <div className={styles.bar} role="group" aria-label={t.counters.group}>
-        {counter("hole")}{counter("cmt")}{counter("plain")}
-        <Button tone="quiet" onClick={() => setLegend(true)} aria-haspopup="dialog">{t.legend.open}</Button>
-      </div>
       {host && dots.length > 0 ? createPortal(
         <div className={styles.gutter} aria-hidden="true" data-gutter="" aria-label={t.gutter}>
           {dots.map((d) => (
@@ -168,7 +161,7 @@ export function MarksHost() {
                 <Button tone="quiet" onClick={() => go(p)}>{p.name} <span className={styles.level}>· {t.levelNames[p.level]} · {t.open}</span></Button>
               </li>))}
             </ul>
-          ) : <MarkActions place={pick.at[0]!} more={places.filter((p) => p.kind === pick.at[0]!.kind).length > 1}
+          ) : <MarkActions place={pick.at[0]!} more={hasNext(places, pick.at[0]!.kind)}
                 editable={editor.isEditable} onNext={() => jump(pick.at[0]!.kind)} onRemove={() => remove(pick.at[0]!)}
                 onLink={() => { setPick(null); requestPanel("sources"); }} />}
           <Button tone="quiet" onClick={() => setPick(null)}>{t.close}</Button>

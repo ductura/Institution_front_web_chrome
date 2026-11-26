@@ -6,9 +6,9 @@
 // by hand). Run: pnpm viz, or
 // pnpm viz --grep "student: rad".
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import { axe, setTheme } from "../a11y/check";
 import { otvori } from "./otvori";
@@ -21,6 +21,16 @@ const PROTOTIPOVI_ZADANO = resolve(import.meta.dirname, "../../../../docs/protot
 const PROTOTIPOVI = resolve(process.env.VIZ_PROTOTIPOVI ?? PROTOTIPOVI_ZADANO);
 /** Content that changes between runs (dates, generated names) is painted over in both shots. */
 const MASK = "[data-viz-mask]";
+/**
+ * ED-60: prototypes known to load a file that is not in the repository, each with its reason. Without it
+ * the prototype is an empty shell (compared, a 30-40 % "difference" that meant nothing), so only then is
+ * its test skipped; VIZ_PROTOTIPOVI may point at a copy that has it.
+ */
+const NEEDS: Readonly<Record<string, readonly { file: string; why: string }[]>> = {
+  "editor/index.html": [
+    { file: "vendor/tiptap.js", why: "paket Tiptap prototipa nije u repozitoriju (licenca vendor datoteka)" },
+  ],
+};
 
 for (const { screen, proto, slug } of PAIRS) {
   for (const width of WIDTHS) {
@@ -42,14 +52,15 @@ for (const { screen, proto, slug } of PAIRS) {
     test(`${screen.name} · ${width} · prototip`, async ({ page }) => {
       const file = resolve(PROTOTIPOVI, proto.file);
       test.skip(!existsSync(file), `nema prototipa ${file} (VIZ_PROTOTIPOVI)`);
+      const missing = (NEEDS[proto.file] ?? []).filter((need) => !existsSync(resolve(dirname(file), need.file)));
+      test.skip(missing.length > 0, missing.map((need) => `${proto.file} bez ${need.file}: ${need.why}`).join("; "));
       await page.setViewportSize({ width, height: 900 });
-      // ED-60: a prototype whose script failed (the editor without its vendor/tiptap.js, which is not in
-      // the repository) is an empty shell; compared, it gave a 30-40 % "difference" that meant nothing.
+      // Any other script error is a broken prototype and fails the test: it is never skipped quietly.
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(error.message));
       await page.goto(pathToFileURL(file).href + (proto.hash ? `#${proto.hash}` : ""));
       await page.waitForLoadState("networkidle");
-      test.skip(errors.length > 0, `prototip se nije pokrenuo (${errors[0]}); VIZ_PROTOTIPOVI s mapom vendor`);
+      expect(errors, `skripta prototipa ${proto.file} je pala`).toEqual([]);
       await page.locator("html").evaluate((html, theme) => html.setAttribute("data-theme", theme), THEME);
       // The prototype's own screen/state switcher is not part of the design.
       await page.addStyleTag({ content: "#proto-bar{display:none!important}" });

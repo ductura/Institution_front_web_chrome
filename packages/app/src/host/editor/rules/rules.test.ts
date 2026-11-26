@@ -93,10 +93,12 @@ describe("faculty list", () => {
 });
 
 describe("RulesHost", () => {
-  it("draws only the opening button until it is opened", () => {
+  it("draws nothing until the view menu opens it (ED-60: no button under the shell)", () => {
     const html = renderToStaticMarkup(createElement(RulesHost, {}));
-    expect(html).toContain("Zahtjevi i fakultet");
+    expect(html).not.toContain("Zahtjevi i fakultet");
     expect(html).not.toContain("Lekta");
+    // The menu entry keeps the words of the old button.
+    expect(rulesHr.open).toBe("Zahtjevi i fakultet");
   });
   it("keeps the interface text free of real people and of forbidden words", () => {
     const text = JSON.stringify(rulesHr).toLowerCase() + JSON.stringify(PROFILES).toLowerCase();
