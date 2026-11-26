@@ -129,8 +129,25 @@ export function useSlidesSession(assignmentId: string, attempt = 0): SlidesSessi
           onSteps: (steps, after) => mine.record(steps, after),
         });
         unsubscribe = mine.subscribe((snapshot) => {
+          // A sticky state stops the saver for good: the editor is replaced by the recovery card at once,
+          // never left writable over changes that would not be saved.
+          if (snapshot.state === "CONFLICT" || snapshot.state === "RECOVERY_REQUIRED") {
+            setSession({ phase: "recovery", document: mine.currentDocument(), state: snapshot.state, adopt: (confirmed) => mine.adoptServer(confirmed) });
+            return;
+          }
           setSession((now) => now.phase === "ready" ? { ...now, snapshot, readOnly: snapshot.closedBy !== null } : now);
         });
+        // Leaving or hiding the page must not lose what is inside the save debounce (as in LocalDocument).
+        const leave = () => { void mine.flush().catch(() => {}); };
+        const hide = () => { if (document.visibilityState === "hidden") leave(); };
+        globalThis.addEventListener?.("pagehide", leave);
+        document.addEventListener("visibilitychange", hide);
+        const dropLifecycle = unsubscribe;
+        unsubscribe = () => {
+          dropLifecycle();
+          globalThis.removeEventListener?.("pagehide", leave);
+          document.removeEventListener("visibilitychange", hide);
+        };
       }
       // Held for the life of the page.
       if (!abort.signal.aborted) await new Promise<void>((resolve) => abort.signal.addEventListener("abort", () => resolve(), { once: true }));
