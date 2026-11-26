@@ -35,8 +35,15 @@ describe("documentKind on the bodies", () => {
     expect(kindOf(undefined)).toBe("text");
     expect(kindOf("video")).toBe("text");
     expect(kindOf("slides")).toBe("slides");
+    expect(kindOf("spreadsheet")).toBe("spreadsheet");
     expect(withDocumentKind(base(), {})).toMatchObject({ documentKind: "text" });
     expect(withDocumentKind(base(), { documentKind: "slides" })).toMatchObject({ documentKind: "slides" });
+  });
+
+  it("sends a table as workKind spreadsheet beside documentKind text (the enum is not widened)", () => {
+    const body = withDocumentKind(base(), { documentKind: "spreadsheet" });
+    expect(body).toMatchObject({ documentKind: "text", workKind: "spreadsheet" });
+    expect(withDocumentKind(base(), { documentKind: "slides" })).not.toHaveProperty("workKind");
   });
 
   it("reaches the wire of the create route through the typed client", async () => {
@@ -75,6 +82,7 @@ describe("DocumentKindReadBack (edit page)", () => {
     expect(text({ documentKind: "text" })).toContain(k.options.text);
     expect(text({})).toContain(k.unknown);
     expect(text({ documentKind: "video" })).toContain(k.unknown);
+    expect(text({ documentKind: "text", workKind: "spreadsheet" })).toContain(k.options.spreadsheet);
   });
 });
 
@@ -120,6 +128,17 @@ describe("AssignmentForm document kind", () => {
     expect(document.body.textContent).toContain(k.options.slides);
     await click(button(f.publish));
     expect(sentBody(publish)).toMatchObject({ documentKind: "slides" });
+  });
+
+  it("sends workKind: spreadsheet when Tablica is picked", async () => {
+    const publish = vi.fn(async () => ({ kind: "available" as const, id: "a-new" }));
+    await start({ publish });
+    await click(radio("spreadsheet"));
+    expect(document.body.textContent).toContain(k.spreadsheetHint);
+    await click(button(f.review));
+    expect(document.body.textContent).toContain(k.options.spreadsheet);
+    await click(button(f.publish));
+    expect(sentBody(publish)).toMatchObject({ documentKind: "text", workKind: "spreadsheet" });
   });
 
   it("shows a contract refusal as an error, not as published", async () => {
