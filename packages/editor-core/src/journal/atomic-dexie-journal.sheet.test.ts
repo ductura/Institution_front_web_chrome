@@ -184,6 +184,36 @@ describe("SheetSaver", () => {
     expect((contents.snapshot!.document as unknown as { sheets: { cells: object }[] }).sheets[0]!.cells).toHaveProperty("A1");
   });
 
+  it("writes events closed before a stop, then keeps saving the document uncovered", async () => {
+    const { saver, journal, work } = await saverFor();
+    await saver.load();
+    const t = Date.parse(UTC);
+    const d1 = structuredClone(zero);
+    d1.sheets[0]!.cells.A1 = { value: 7 } as never;
+    await saver.edit({ steps: [a1], at: t, document: d1 });
+    const d2 = structuredClone(d1);
+    d2.sheets[0]!.cells.B1 = { value: 5 } as never;
+    // A pause closes the first event; the unreadable step then stops the recorder.
+    await saver.edit({ steps: [b1], at: t + 5000, document: d2 });
+    const bad = { type: "cellSet", sheetId: S, ref: "C1", value: 1, time: 5 } as unknown as SheetStep;
+    const d3 = structuredClone(d2);
+    d3.sheets[0]!.cells.C1 = { value: 1 } as never;
+    await saver.edit({ steps: [bad], at: t + 10_000, document: d3 });
+    await saver.flush();
+    expect(saver.snapshot().failure).toEqual({ kind: "evidence_stopped", reason: "unsupported_step" });
+    let contents = await journal.readEvidence(DOC, work);
+    expect(contents.pending).toHaveLength(1);
+    // A later edit is still saved, not dropped by a journal failure.
+    const d4 = structuredClone(d3);
+    d4.sheets[0]!.cells.D1 = { value: 2 } as never;
+    await saver.edit({ steps: [a1], at: t + 20_000, document: d4 });
+    await saver.flush();
+    expect(saver.snapshot().failure).toEqual({ kind: "evidence_stopped", reason: "unsupported_step" });
+    contents = await journal.readEvidence(DOC, work);
+    expect(contents.pending).toHaveLength(1);
+    expect((contents.snapshot!.document as unknown as { sheets: { cells: object }[] }).sheets[0]!.cells).toHaveProperty("D1");
+  });
+
   it("halts when another tab moved the journal, and writes nothing over it", async () => {
     const { saver, journal, work } = await saverFor();
     await saver.load();

@@ -155,36 +155,58 @@ export class SheetSaver {
       const recorder = this.recorder;
       if (recorder === null || this.halted) return;
       recorder.close();
-      if (this.profileId === null) return;
-      try {
-        for (;;) {
-          const built = await recorder.takeSegment({
-            documentId: this.documentId, sessionId: this.sessionId, segmentId: this.newId(),
-            evidenceProfileId: this.profileId, sequenceFrom: this.head.lastSequenceTo + 1,
-            predecessorSegmentHash: this.head.segmentHash,
-          });
-          if (built === null) break;
-          try {
-            const saved = await this.journal.saveSegment(this.documentId, built, this.now().toISOString(), this.localSeq, this.work);
-            this.localSeq = saved.localSeq;
-            this.state = saved.meta.state;
-            this.head = { segmentHash: built.sha256, lastSequenceTo: built.segment.sequenceTo };
-          } catch (error) {
-            this.halt(error);
-            return;
-          }
-        }
-      } catch (error) {
-        if (!(error instanceof SheetCaptureError)) throw error;
-        await this.stopEvidence(error.code);
-        return;
-      }
-      this.emit();
+      // Once evidence stopped, the journal takes no more segments: only the document is kept.
+      if (this.failure !== null) return this.keepUncovered();
+      const stopped = await this.drain(recorder);
+      if (this.halted) return;
+      if (stopped !== null) await this.stopEvidence(stopped);
+      else this.emit();
     });
   }
 
-  /** The recorder stopped: the author's document is saved without evidence, for good. */
+  /**
+   * Writes the closed events as segments. Returns why the recorder stopped (the
+   * closed events before the failure were written first), or null when it did not.
+   */
+  private async drain(recorder: SheetRecorder): Promise<SheetCaptureFailure | null> {
+    if (this.profileId === null) return null;
+    for (;;) {
+      let built;
+      try {
+        built = await recorder.takeSegment({
+          documentId: this.documentId, sessionId: this.sessionId, segmentId: this.newId(),
+          evidenceProfileId: this.profileId, sequenceFrom: this.head.lastSequenceTo + 1,
+          predecessorSegmentHash: this.head.segmentHash,
+        });
+      } catch (error) {
+        if (error instanceof SheetCaptureError) return error.code;
+        throw error;
+      }
+      if (built === null) return null;
+      try {
+        const saved = await this.journal.saveSegment(this.documentId, built, this.now().toISOString(), this.localSeq, this.work);
+        this.localSeq = saved.localSeq;
+        this.state = saved.meta.state;
+        this.head = { segmentHash: built.sha256, lastSequenceTo: built.segment.sequenceTo };
+      } catch (error) {
+        this.halt(error);
+        return null;
+      }
+    }
+  }
+
+  /**
+   * The recorder stopped: the events closed before it are written first (the journal
+   * refuses segments once the stop is stored), then the author's document is saved
+   * without evidence, for good.
+   */
   private async stopEvidence(reason: SheetCaptureFailure): Promise<void> {
+    const recorder = this.recorder;
+    if (recorder !== null) {
+      recorder.close();
+      await this.drain(recorder);
+      if (this.halted) return;
+    }
     this.failure = { kind: "evidence_stopped", reason };
     await this.keepUncovered();
   }
