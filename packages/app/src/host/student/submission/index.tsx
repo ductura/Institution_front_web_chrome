@@ -37,6 +37,8 @@ import AfterSubmission from "./history/AfterSubmission";
 import DeclarationCorrection from "./declaration/DeclarationCorrection";
 import RevisionNotice from "./revision/RevisionNotice";
 import SubmitStep from "./submit/SubmitStep";
+import SlidesSubmit from "../../slides/submit/SlidesSubmit";
+import { workKindOf } from "../../slides/editor/work-kind";
 import { extendedDueOf, submitStageOf } from "./submit/model";
 import { readException } from "./submit/exception";
 import { timingOf, type Timing } from "./submit/timing";
@@ -48,7 +50,7 @@ type Step = "" | "izjava" | "pregled" | "slanje" | "potvrda";
 
 /** What the checked assignment allows a step to show. */
 type Checked =
-  | { readonly kind: "ready"; readonly course: string; readonly title: string; readonly workState: string; readonly stage: Stage; readonly dueAt: string; readonly extendedDueAt: string | null }
+  | { readonly kind: "ready"; readonly course: string; readonly title: string; readonly workState: string; readonly stage: Stage; readonly dueAt: string; readonly extendedDueAt: string | null; readonly slides: boolean }
   | { readonly kind: "unavailable" };
 
 type Shown<T> = { kind: "loading" } | { kind: "notFound" } | { kind: "ready"; value: T };
@@ -87,7 +89,7 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
       if (read.kind === "noticeFirst") return router.replace(nextPath(base, `/zadatak/${assignmentId}`));
       if (read.kind === "notFound") return setShown({ kind: "notFound" });
       const checked: Checked = read.kind === "ready"
-        ? { kind: "ready", course: read.course, title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()), dueAt: read.dueAt, extendedDueAt: extendedDueOf(assignments.ok ? assignments.body : null, assignmentId) }
+        ? { kind: "ready", course: read.course, title: read.title, workState: read.workState, stage: stageOf(read.workState, read.dueAt, Date.now()), dueAt: read.dueAt, extendedDueAt: extendedDueOf(assignments.ok ? assignments.body : null, assignmentId), slides: workKindOf(assignments, assignmentId) === "slides" }
         : { kind: "unavailable" };
       const value = await then(checked, assignmentId);
       if (live && value !== null) setShown({ kind: "ready", value });
@@ -236,9 +238,13 @@ export function SubmitStepPage({ assignmentId }: { assignmentId: string }) {
         <StepsShell step="submit" work={checked} workHref={workHref} label={stepsText.panelLabel}
           receiptHref={hrefOf(stepPath(id, "potvrda"))} onRetry={shown.reload}
           revision={<RevisionNotice assignmentId={id} />}>
-          <SubmitStep assignmentId={id} title={checked.kind === "ready" ? checked.title : ""} dueAt={checked.kind === "ready" ? checked.dueAt : null}
-            stage={checked.kind === "ready" ? submitStageOf(checked.workState, checked.dueAt, checked.extendedDueAt, Date.now()) : { kind: "unavailable" }}
-            timing={timing} />
+          {/* WEB-V13-PREDAJA: a slides work is submitted by its own step; every other work by the text step. */}
+          {checked.kind === "ready" && checked.slides
+            ? <SlidesSubmit assignmentId={id} title={checked.title} dueAt={checked.dueAt}
+                stage={submitStageOf(checked.workState, checked.dueAt, checked.extendedDueAt, Date.now())} timing={timing} />
+            : <SubmitStep assignmentId={id} title={checked.kind === "ready" ? checked.title : ""} dueAt={checked.kind === "ready" ? checked.dueAt : null}
+                stage={checked.kind === "ready" ? submitStageOf(checked.workState, checked.dueAt, checked.extendedDueAt, Date.now()) : { kind: "unavailable" }}
+                timing={timing} />}
         </StepsShell>
       )}
     </Shown>
