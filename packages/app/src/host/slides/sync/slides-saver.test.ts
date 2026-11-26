@@ -114,3 +114,46 @@ describe("the slides session", () => {
     expect(contents.meta?.evidenceStopped).toBeDefined();
   });
 });
+
+describe("review findings of #847", () => {
+  it("tries to save again after a failed write instead of stopping for the session", async () => {
+    const { saver, journal } = build(kit.nextScope(), async () => ({ status: "opened", work: await work() }));
+    await saver.load();
+    const real = journal.saveSegment.bind(journal);
+    let fail = true;
+    (journal as unknown as { saveSegment: unknown }).saveSegment = async (...args: Parameters<typeof real>) => {
+      if (fail) throw Object.assign(new Error("quota"), { name: "QuotaExceededError" });
+      return real(...args);
+    };
+    saver.record([addSlide], withSlide(), "unattributed", Date.parse("2026-11-26T10:00:00Z"));
+    await saver.flush();
+    expect(saver.snapshot().state).toBe("ERROR");
+    fail = false;
+    await saver.flush();
+    expect(saver.snapshot().failure).toBeNull();
+    expect(saver.snapshot().state).toBe("LOCAL_DURABLE");
+  });
+
+  it("does not turn an edit made during the final read into an evidence stop", async () => {
+    const { saver, journal } = build(kit.nextScope(), async () => ({ status: "opened", work: await work() }));
+    await saver.load();
+    const real = journal.readEvidence.bind(journal);
+    let reads = 0;
+    let saved = false;
+    const realSave = journal.saveSegment.bind(journal);
+    (journal as unknown as { saveSegment: unknown }).saveSegment = async (...args: Parameters<typeof realSave>) => { const r = await realSave(...args); saved = true; return r; };
+    const second: SlideStep = { type: "layoutSet", slideId: NEW_SLIDE, layout: "titleContent" };
+    (journal as unknown as { readEvidence: unknown }).readEvidence = async (...args: Parameters<typeof real>) => {
+      const out = await real(...args);
+      if (saved) reads += 1;
+      // The author edits while the last read of the save is pending.
+      if (reads === 2) saver.record([second], { ...withSlide(), slides: [ZERO.slides[0]!, { id: NEW_SLIDE, layout: "titleContent", blocks: [] }] }, "unattributed", Date.parse("2026-11-26T10:00:05Z"));
+      return out;
+    };
+    saver.record([addSlide], withSlide(), "unattributed", Date.parse("2026-11-26T10:00:00Z"));
+    await saver.flush();
+    await saver.flush();
+    expect(saver.snapshot().stopped).toBe(false);
+    expect(saver.snapshot().state).toBe("LOCAL_DURABLE");
+  });
+});

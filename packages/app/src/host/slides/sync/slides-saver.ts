@@ -139,6 +139,11 @@ export class SlidesSaver {
     };
   }
 
+  /** The editor's newest document as the saver holds it (shown read-only in recovery). */
+  currentDocument(): SlidesDocument | null {
+    return this.latest;
+  }
+
   subscribe(listener: (snapshot: SlidesSnapshot) => void): () => void {
     this.listeners.add(listener);
     return () => { this.listeners.delete(listener); };
@@ -252,6 +257,8 @@ export class SlidesSaver {
   async flush(): Promise<void> {
     this.clearSaveTimer();
     if (!this.loaded || this.halted || this.closedBy || this.adopting) return;
+    // A recoverable failure (e.g. a full quota) does not end the session: a new flush tries again.
+    this.failure = null;
     if (this.flight) {
       await this.flight;
       if (this.gen === this.cleanGen) return;
@@ -359,8 +366,11 @@ export class SlidesSaver {
     if (gen !== this.gen) return false;
     // The journal must hold the exact bytes of the editor's document, else a
     // change escaped the recorder and the chain cannot cover it.
+    const expected = this.latest;
     const journalText = decoder.decode(slidesBytesOf((await this.readJournal()).snapshot?.document));
-    if (this.latest && journalText !== slidesSnapshotText(this.latest)) return this.saveUncovered("gap");
+    // An edit made while the journal was read belongs to the next save, not to a gap.
+    if (gen !== this.gen) return false;
+    if (expected && journalText !== slidesSnapshotText(expected)) return this.saveUncovered("gap");
     return true;
   }
 
