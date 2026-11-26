@@ -11,7 +11,7 @@ import { stateOf } from "../../../../../../src/components/editor/EditorToolbarFo
 import { EditorToolbarHost } from "./EditorToolbarHost";
 import { toolbarBehaviourHr as t } from "./messages.hr";
 import {
-  applyZoom, cursorPlaceOf, HIDDEN_QUICK_TOOLS, hiddenContextActions, quickMoreItems, runContextAction, textSizeItems,
+  applyZoom, cursorPlaceOf, HIDDEN_QUICK_TOOLS, hiddenContextActions, insertDictatedPhrase, quickMoreItems, runContextAction, textSizeItems,
   toolbarCommands, toolbarStateOf,
 } from "./StudentToolbar";
 import { DEFAULT_PREFS } from "./toolbar-prefs";
@@ -154,5 +154,23 @@ describe("Brzi alati on a phone", () => {
     toolbarCommands(e).toggleItalic();
     const items = quickMoreItems(stateOf(e));
     expect(items.find((i) => i.id === "italic")!.label).toBe(`✓ ${t.mobileItalic}`);
+  });
+});
+
+// ED-R18: dictation is mounted in the student's toolbar; a final phrase is typed at the caret.
+describe("insertDictatedPhrase (ED-R18)", () => {
+  it("types the phrase with a space at the caret", () => {
+    const e = editorWith([p("Pocetak")], 0);
+    e.commands.setTextSelection(e.state.doc.content.size - 1);
+    expect(insertDictatedPhrase(e, "  novi tekst ")).toBe(true);
+    expect(e.getText()).toBe("Pocetaknovi tekst ");
+  });
+  it("refuses an empty phrase, a locked editor and no editor", () => {
+    const e = editorWith([p("A")], 0);
+    expect(insertDictatedPhrase(e, "   ")).toBe(false);
+    e.setEditable(false);
+    expect(insertDictatedPhrase(e, "x")).toBe(false);
+    expect(e.getText()).toBe("A");
+    expect(insertDictatedPhrase(null, "x")).toBe(false);
   });
 });
