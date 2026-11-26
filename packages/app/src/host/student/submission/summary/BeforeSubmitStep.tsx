@@ -214,7 +214,7 @@ export default function BeforeSubmitStep({
         onClose={() => { setDeclaring(false); readGate(); }} />
       <SummaryPanel summary={summary} notes={notes} submitted={submitted} confirmed={confirmed} kind={kind}
         online={online} workHref={workHref} onRetry={retry}
-        disputes={documentId === null ? undefined : { port: DISPUTES, documentId }} noteOpen={noteOpen} onNoteOpen={setNoteOpen}
+        assignmentId={assignmentId} declarationKey={gate} disputes={documentId === null ? undefined : { port: DISPUTES, documentId }} noteOpen={noteOpen} onNoteOpen={setNoteOpen}
         onAddNote={(text) => saveNote(NOTES, assignmentId, text)}
         onNoteAdded={(note) => setNotes((now) => now.kind === "ready" ? { kind: "ready", notes: [...now.notes, note] } : now)} />
     </>
