@@ -1,0 +1,20 @@
+// F4-EDI-R14: the student's read-only view of their own work as the teacher's layout shows it.
+export const teacherViewText = {
+  title: "Kako vidi nastavnik",
+  lead: "Pregled Vašeg rada samo za čitanje, složen kao u pogledu nastavnika. Prikazano je samo ono što i sami dobivate: bez ocjena u nacrtu, bez privatnih bilješki i bez tuđih radova.",
+  facts: "Podaci o radu",
+  task: "Zadatak",
+  course: "Kolegij",
+  due: "Rok",
+  state: "Stanje rada",
+  states: { not_started: "Rad još nije započet", in_progress: "Rad je u tijeku", submitted: "Rad je predan" },
+  seen: "Što nastavnik može otvoriti",
+  seenLead: "Isti prikazi koje imate i sami:",
+  origin: "Podrijetlo teksta",
+  replay: "Reprodukcija Vašeg rada",
+  back: "Natrag na rad",
+  loading: "Učitavanje…",
+  unavailable: "Pregled se trenutačno ne može učitati.",
+  retry: "Pokušaj ponovno",
+  invalid: "Taj rad ne postoji.",
+} as const;
