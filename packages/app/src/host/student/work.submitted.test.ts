@@ -46,6 +46,8 @@ describe("WorkPage, a submitted work", { timeout: 30000 }, () => {
   it("the footer says when it was submitted", async () => {
     const el = await open();
     expect(el.querySelector("footer")?.textContent).toContain("Predano 8. 11. 2026., 22:30");
+    expect(el.querySelector("footer")?.textContent).toContain("Samo za čitanje");
+    expect(el.querySelectorAll('[contenteditable="true"], [contenteditable="plaintext-only"]').length).toBe(0);
   });
   it("without a readable receipt the footer keeps the plain read-only chip", async () => {
     answer.receipt = { kind: "nepoznato" };
