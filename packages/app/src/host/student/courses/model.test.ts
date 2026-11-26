@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { effectiveDue, extensionOf, extensionText, groupLabels, matchesState, mentorLabel, nearTag, practiceOf, rowKind, stateFilterOf, submittedLine, submittedOf, workTypeLabel, yearLabel } from "./model";
+import { deadlineTagOf, effectiveDue, extensionOf, extensionText, groupLabels, matchesState, mentorLabel, nearTag, practiceOf, rowKind, stateFilterOf, submittedLine, submittedOf, workTypeLabel, yearLabel } from "./model";
 import { coursesText } from "./messages.hr";
 import { homeText } from "../home/messages.hr";
 import { nearTag as homeNearTag } from "../home/model";
@@ -204,5 +204,23 @@ describe("NF-1 P-7: the history of an extended deadline", () => {
     }, [course]);
     expect(asked.sort()).toEqual(["a", "d"]);
     expect([...notes.keys()]).toEqual(["a"]);
+  });
+});
+
+describe("P-3 deadline tag on E-3 and E-4 (one function with E-2)", () => {
+  const now = Date.parse("2026-11-22T10:00:00Z");
+  const base = { submitted: false, dueAt: "2026-11-18T22:59:00.000Z", extended: false, originalDueAt: "2026-11-18T22:59:00.000Z" };
+  it("says the deadline has passed, with its date in Zagreb", () => {
+    expect(deadlineTagOf(base, now)).toEqual({ kind: "late", text: "Rok je prošao 18. 11. 2026." });
+  });
+  it("tells a running extension apart: the original deadline has passed", () => {
+    expect(deadlineTagOf({ ...base, dueAt: "2026-11-30T22:59:00.000Z", extended: true }, now))
+      .toEqual({ kind: "extension", text: "Izvorni rok je prošao 18. 11. 2026." });
+    expect(deadlineTagOf({ ...base, dueAt: "2026-11-19T22:59:00.000Z", extended: true }, now)?.kind).toBe("late");
+  });
+  it("is none for a submitted work, before the deadline and for a deadline that does not parse", () => {
+    expect(deadlineTagOf({ ...base, submitted: true }, now)).toBeNull();
+    expect(deadlineTagOf({ ...base, dueAt: "2026-11-30T10:00:00Z", originalDueAt: "2026-11-30T10:00:00Z" }, now)).toBeNull();
+    expect(deadlineTagOf({ ...base, dueAt: "nije datum" }, now)).toBeNull();
   });
 });

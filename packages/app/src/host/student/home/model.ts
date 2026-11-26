@@ -1,8 +1,7 @@
 import type { MyAssignment, MyCourse } from "../read/assignments";
 import type { WorkState } from "../read/works";
-import { extensionText, nearTag, practiceOf, submittedLine, type ExtensionNote, type Submitted } from "../courses/model";
+import { deadlineTagOf, extensionText, nearTag, practiceOf, submittedLine, type DeadlineTag, type ExtensionNote, type Submitted } from "../courses/model";
 import { cleanCode } from "../enrol/code";
-import { protoToday } from "./format";
 import { homeText as t } from "./messages.hr";
 
 /** The row kinds of the prototype's `kind(t, s)`, in the order of its checks. */
@@ -122,25 +121,11 @@ export function coursesWithoutTask(courses: readonly MyCourse[]): MyCourse[] {
 /** PAR2-A3: E-2 uses the same deadline tag as E-3. */
 export { nearTag };
 
-/**
- * P-3 (E-2a): the deadline tag of a row that is not submitted. "Rok je prošao {datum}"
- * once the deadline that applies (the extended one when given) has passed. While an
- * extension the teacher gave this student still runs, the row says the original
- * deadline has passed, so both states are told apart. Null for a submitted row
- * and before the original deadline. The tag describes the deadline, not the student.
- */
-export type DeadlineTag = { readonly kind: "late" | "extension"; readonly text: string };
+/** P-3 (E-2a): the row's deadline tag; the rule itself is the one function of courses/model.ts, shared with E-3 and E-4. */
+export type { DeadlineTag };
 
 export function deadlineTag(row: Pick<TaskRow, "kind" | "dueAt" | "extended" | "originalDueAt">, now: number): DeadlineTag | null {
-  if (row.kind === "predano") return null;
-  const due = Date.parse(row.dueAt);
-  if (Number.isNaN(due)) return null;
-  if (due < now) return { kind: "late", text: t.late.replace("{date}", protoToday(new Date(due))) };
-  const original = Date.parse(row.originalDueAt);
-  if (row.extended && !Number.isNaN(original) && original < now) {
-    return { kind: "extension", text: t.originalPassed.replace("{date}", protoToday(new Date(original))) };
-  }
-  return null;
+  return deadlineTagOf({ submitted: row.kind === "predano", dueAt: row.dueAt, extended: row.extended, originalDueAt: row.originalDueAt }, now);
 }
 
 /** P-11: the one code rule (enrol/code.ts), the same as on E-5 and before sending. */
