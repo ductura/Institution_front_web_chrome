@@ -1,6 +1,7 @@
-import type { CloseAction, CloseWrite, ConsultationSlot, DetailState, SlotAction, SlotDetail, SlotWrite } from "../../../../../../../src/client/consultation-slots";
+import { PREPARATION_MAX, optionalText, type PreparationAttachment, type CloseAction, CloseWrite, ConsultationSlot, DetailState, SlotAction, SlotDetail, SlotWrite } from "../../../../../../../src/client/consultation-slots";
 import { NOTE_MAX, type Assessment, type CriterionInput, type CriterionWrite, type WorkingCriterion } from "../../../../../../../src/client/teacher-working-criteria";
 
+import { prepText, type PrepInput } from "../../mentor/mentor-model";
 import { consultHr as t } from "./messages.hr";
 
 /** The collaborator only reads and comments (INVENTAR §7 t. 5): no slot, record or criterion writes. */
@@ -49,7 +50,7 @@ export function closeActionsFor(role: Role, slot: { readonly state: DetailState;
 
 /** A slot from the older routes (no closing, maybe no topic) as a detail, keeping what the list already knew. */
 export function asDetail(saved: ConsultationSlot, known?: SlotDetail): SlotDetail {
-  return { ...saved, topic: saved.topic !== undefined ? saved.topic : (known?.topic ?? null), closing: null, preparation: known?.preparation ?? null };
+  return { ...saved, topic: saved.topic !== undefined ? saved.topic : (known?.topic ?? null), closing: null, preparation: "preparation" in saved && saved.preparation !== undefined ? (saved.preparation as SlotDetail["preparation"]) : (known?.preparation ?? null) };
 }
 
 export const topicText = (slot: { readonly topic: string | null }): string =>
@@ -72,6 +73,26 @@ export function slotFailure(outcome: Exclude<SlotWrite, { kind: "saved" }>): str
   if (outcome.kind === "promijenjeno") return t.slots.errors.changed;
   if (outcome.kind === "greska") return outcome.code === "not_found" ? t.slots.errors.notFound : t.slots.errors.invalid;
   return t.slots.errors.unknown;
+}
+
+/** "Priloži pripremu" of a new request: off, being composed, not composable, or the text with the two counts it carries. */
+export type Attach =
+  | { readonly kind: "off" } | { readonly kind: "making" } | { readonly kind: "unavailable" }
+  | { readonly kind: "ready"; readonly text: string; readonly changed: number; readonly resolved: number };
+export const NO_ATTACH: Attach = { kind: "off" };
+
+/** The composed preparation as an attachment; null when a count the page cannot know is missing (never guessed). */
+export function attachFrom(input: PrepInput | null): Attach {
+  if (input === null || input.changed === null || input.resolved === null) return { kind: "unavailable" };
+  return { kind: "ready", text: prepText(input), changed: input.changed, resolved: input.resolved };
+}
+
+/** The attachment as the client sends it: undefined when off, null when it cannot be sent (blank or too long text). */
+export function attachment(attach: Attach): PreparationAttachment | undefined | null {
+  if (attach.kind === "off") return undefined;
+  if (attach.kind !== "ready") return null;
+  const text = optionalText(attach.text, PREPARATION_MAX);
+  return text === undefined || text === null ? null : { text, changedParagraphs: attach.changed, resolvedComments: attach.resolved };
 }
 
 export type Form = { readonly open: boolean; readonly draft: string; readonly busy: boolean; readonly error: string | null; readonly topic?: string };
