@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useReportOpenComments } from "@/components/editor/layout-prefs/panel-counts";
 
+import { ASK_COMMENT_EVENT, askedComment, takeAskedComment } from "./ask-comment";
 import styles from "./comments.module.css";
 import { MyChanges, type ReadMyChanges } from "./my-changes";
 import { commentsHr as t } from "./messages.hr";
@@ -72,6 +73,25 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
     if (result.kind === "signedOut") onSessionEnd?.();
   }, [port, workId, onSessionEnd]);
   useEffect(() => { void read(); }, [read]);
+  // ED-48: "Pitaj mentora" from the chapter sheet opens a new comment on the chapter's title,
+  // its first line written; the card takes it once the list is read.
+  const [asked, setAsked] = useState<string | null>(null);
+  useEffect(() => {
+    if (submitted) return;
+    const early = takeAskedComment();
+    if (early !== null) setAsked(early);
+    const onAsk = (event: Event) => { if (askedComment(event) === null) return; const text = takeAskedComment(); if (text !== null) setAsked(text); };
+    document.addEventListener(ASK_COMMENT_EVENT, onAsk);
+    return () => document.removeEventListener(ASK_COMMENT_EVENT, onAsk);
+  }, [submitted]);
+  useEffect(() => {
+    if (asked === null || load.kind !== "ready") return;
+    setAsked(null);
+    const place = usableSelection(selection(), now(), docSize());
+    if (!place) { setMessage(t.needSelection); return; }
+    setForm({ text: asked, kind: "must", save: false, place });
+    setDlg("new");
+  }, [asked, load.kind, selection, now, docSize]);
   useEffect(() => () => { onSeen?.(); }, [onSeen]);
   // ED-38 (P2-7): the count beside the card's tab, the same open comments the print lists.
   useReportOpenComments(load.kind === "ready" ? openForPrint(load.comments).length : 0);
