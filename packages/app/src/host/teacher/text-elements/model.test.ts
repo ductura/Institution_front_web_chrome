@@ -25,3 +25,16 @@ describe("text elements", () => {
     expect(e.notes).toEqual([]);
   });
 });
+
+import { elementsOfLive } from "./model";
+describe("elementsOfLive (NAS-R19)", () => {
+  it("draws a v3 text with a footnote as elements", () => {
+    const e = elementsOfLive(doc([{ type: "footnote", text: "Bilješka." }]));
+    expect(e?.notes).toEqual([{ number: 1, text: "Bilješka." }]);
+  });
+  it("leaves a v3 text without elements, a v1 text and no text to the shared reader", () => {
+    expect(elementsOfLive(doc([{ type: "text", text: "a", marks: [] }]))).toBeNull();
+    expect(elementsOfLive({ schemaVersion: 1 })).toBeNull();
+    expect(elementsOfLive(null)).toBeNull();
+  });
+});

@@ -53,3 +53,14 @@ export function buildElements(doc: VersionedDocument): Elements {
   });
   return { blocks, notes, hasElements };
 }
+
+/**
+ * The elements of the document the shared live reader already holds (NAS-R19): a v3 text with a
+ * citation or footnote is drawn by the elements view as the main path, not only when the reader fails.
+ * Null for any other text, which the shared reader draws as before.
+ */
+export function elementsOfLive(doc: { schemaVersion: number } | null): Elements | null {
+  if (doc === null || doc.schemaVersion !== 3) return null;
+  const elements = buildElements(doc as VersionedDocument);
+  return elements.hasElements ? elements : null;
+}
