@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { consentDetail, formsDetail, loadMentorConsent, loadThesisForms } from "./SubmissionRehearsal";
+import { consentDetail, thesisFormsDetail, loadMentorConsent, loadThesisForms } from "./SubmissionRehearsal";
 import { rehearsalMessagesHr as t } from "./messages.hr";
 
 const documentId = "a8ee8f83-2949-4a99-b358-be77cd4938dd";
@@ -72,10 +72,10 @@ describe("thesis forms in the submission rehearsal (MEN-R07)", () => {
     expect(await loadThesisForms(documentId, { baseUrl, fetchImpl })).toEqual({ kind: "unavailable" });
   });
 
-  it("words the row: declaration form first, then the thesis forms, unavailable is said", () => {
-    expect(formsDetail("Obrazac izjave: a.", undefined)).toBe("Obrazac izjave: a.");
-    expect(formsDetail("Obrazac izjave: a.", { kind: "none" })).toBe("Obrazac izjave: a.");
-    expect(formsDetail("Obrazac izjave: a.", { kind: "ready", total: 3, accepted: 1 })).toBe("Obrazac izjave: a. Obrasci završnog rada: 1 od 3 prihvaćeno.");
-    expect(formsDetail(undefined, { kind: "unavailable" })).toBe(t.thesisFormsUnavailable);
+  it("words the row only when the server has thesis forms; unavailable is said", () => {
+    expect(thesisFormsDetail(undefined)).toBeUndefined();
+    expect(thesisFormsDetail({ kind: "none" })).toBeUndefined();
+    expect(thesisFormsDetail({ kind: "ready", total: 3, accepted: 1 })).toBe("1 od 3 prihvaćeno.");
+    expect(thesisFormsDetail({ kind: "unavailable" })).toBe(t.thesisFormsUnavailable);
   });
 });

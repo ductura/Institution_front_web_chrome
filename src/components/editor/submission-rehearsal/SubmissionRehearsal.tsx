@@ -69,12 +69,11 @@ export async function loadThesisForms(documentId: string, options?: ApiOptions):
   }
 }
 
-/** The row "Obrasci fakulteta": the declaration form's detail, then the thesis forms when the server has any. */
-export function formsDetail(declaration: string | undefined, forms: ThesisFormsRead | undefined): string | undefined {
-  if (forms === undefined || forms.kind === "none") return declaration;
-  const thesis = forms.kind === "unavailable" ? t.thesisFormsUnavailable
+/** The row "Obrasci završnog rada": what the server says of the thesis forms; none when the work has none. */
+export function thesisFormsDetail(forms: ThesisFormsRead | undefined): string | undefined {
+  if (forms === undefined || forms.kind === "none") return undefined;
+  return forms.kind === "unavailable" ? t.thesisFormsUnavailable
     : t.thesisFormsCount.replace("{accepted}", String(forms.accepted)).replace("{total}", String(forms.total));
-  return declaration ? `${declaration} ${thesis}` : thesis;
 }
 
 export function consentDetail(consent: ConsentRead | undefined): string {
@@ -203,6 +202,7 @@ function RehearsalDialog({
   });
   const approvalDetail = approval !== undefined ? rows.find((row) => row.id === "approval")?.detail
     : documentId ? consentDetail(consent) : t.approvalUnavailable;
+  const thesisFormsText = thesisFormsDetail(thesisForms);
   const form = messagesHr.beforeSubmit;
   const firstPlace = model.places[0];
   const missing = beforeSubmission(gate, places.length);
@@ -265,11 +265,11 @@ function RehearsalDialog({
       {(["facultyRequirements", "uncited", "proofs", "forms"] as const).map((key) => {
         const supplement = supplements?.[key];
         const go = supplement?.open;
-        const detail = key === "forms" ? formsDetail(supplement?.detail, thesisForms) : supplement?.detail;
-        return (supplement || (detail !== undefined)) && <Row key={key} title={t[key]} open={go && (() => leaveFor(go))}>
-          {detail}
+        return supplement && <Row key={key} title={t[key]} open={go && (() => leaveFor(go))}>
+          {supplement.detail}
         </Row>;
       })}
+      {thesisFormsText !== undefined && <Row title={t.thesisForms}>{thesisFormsText}</Row>}
       <Row title={form.form}>{form.formNotRun}</Row>
     </dl>
 
