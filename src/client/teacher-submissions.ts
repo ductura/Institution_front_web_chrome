@@ -30,7 +30,8 @@ import { RESPONSES } from "./api";
 import { matchesSchema, type Schema } from "./schema-check";
 import type { Read } from "./submission";
 
-export type SubmissionsRoute = "teacher.submissions.get" | "teacher.submission-detail.get";
+export type SubmissionsRoute =
+  | "teacher.submissions.get" | "teacher.submission-detail.get" | "teacher.receipt-pdf.get" | "teacher.work.get";
 
 /** The transport; the page that mounts the screen binds it. */
 export type SubmissionsCall = (
@@ -119,4 +120,61 @@ export function submissionsPort(call: SubmissionsCall): TeacherSubmissionsPort {
     list: (assignmentId) => readTeacherSubmissions(call, assignmentId),
     open: (assignmentId, studentId) => readSubmittedVersion(call, assignmentId, studentId),
   };
+}
+
+/** What "Preuzmi PDF potvrde" gets: the file to save, or why there is none (NAS-53, F4-NAS-R10). */
+export type ReceiptPdfRead =
+  | { readonly kind: "ok"; readonly blob: Blob; readonly filename: string }
+  | { readonly kind: "session-expired" }
+  | { readonly kind: "notFound" }
+  | { readonly kind: "failed" };
+
+const PDF = contractSchema("teacher.receipt-pdf.get");
+const WORK = contractSchema("teacher.work.get");
+const FAILED = { kind: "failed" } as const;
+
+/** Standard Base64 into bytes; anything else (or a body that is not a PDF) is no file. */
+function pdfBytes(base64: string): Uint8Array | null {
+  try {
+    const raw = atob(base64);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
+    return raw.startsWith("%PDF-") ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * teacher.receipt-pdf.get: the PDF of the receipt of one student's submission. The server builds the file
+ * (and its QR code); the browser only decodes it. Another teacher's or another student's work is the
+ * server's 404 (`notFound`); every other refusal is one `failed`.
+ */
+export async function readTeacherReceiptPdf(call: SubmissionsCall, assignmentId: string, studentId: string): Promise<ReceiptPdfRead> {
+  try {
+    const result = await call("teacher.receipt-pdf.get", { params: { assignmentId, studentId } });
+    if (!result.ok) return result.status === 401 ? { kind: "session-expired" } : result.status === 404 ? { kind: "notFound" } : FAILED;
+    if (result.status !== 200 || !matchesSchema(PDF, result.body)) return FAILED;
+    const { filename, pdfBase64 } = result.body as { filename: string; pdfBase64: string };
+    const bytes = pdfBytes(pdfBase64);
+    return bytes === null ? FAILED : { kind: "ok", blob: new Blob([bytes as BlobPart], { type: "application/pdf" }), filename };
+  } catch {
+    return FAILED;
+  }
+}
+
+/**
+ * The same, for the work the N-07 page shows: teacher.work.get names the assignment and the student, and a
+ * work other than the one asked for is `failed`, never somebody else's file.
+ */
+export async function readTeacherWorkReceiptPdf(call: SubmissionsCall, documentId: string): Promise<ReceiptPdfRead> {
+  try {
+    const work = await call("teacher.work.get", { params: { documentId } });
+    if (!work.ok) return work.status === 401 ? { kind: "session-expired" } : work.status === 404 ? { kind: "notFound" } : FAILED;
+    if (work.status !== 200 || !matchesSchema(WORK, work.body)) return FAILED;
+    const { documentId: got, assignmentId, studentId } = work.body as { documentId: string | null; assignmentId: string; studentId: string };
+    return got === documentId ? await readTeacherReceiptPdf(call, assignmentId, studentId) : FAILED;
+  } catch {
+    return FAILED;
+  }
 }
