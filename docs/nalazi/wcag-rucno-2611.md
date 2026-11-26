@@ -22,14 +22,14 @@ Dokument samo bilježi nalaze, bez proizvodnog koda. Svaki nalaz je prijedlog za
 
 | Područje | Ishod |
 |---|---|
-| Tipkovnica | PROLAZ uz W3 i W9. Nema zamke fokusa. „Preskoči na sadržaj” postoji i radi. Alatna traka editora koristi jedan Tab i strelice (roving tabindex). Izbornici editora rade sa strelicama, a Esc vraća fokus na gumb. Dijalozi „Odjava”, „Prvi koraci” i „Predati rad?” su modalni (`<dialog>`), drže fokus i zatvaraju se tipkom Esc. |
+| Tipkovnica | PROLAZ uz W3 i W9. Nema zamke fokusa. „Preskoči na sadržaj” postoji i radi. Alatna traka editora koristi jedan Tab i strelice (roving tabindex). Izbornici editora rade sa strelicama, a Esc vraća fokus na gumb. Dijalozi „Odjava” i „Prvi koraci” drže fokus i zatvaraju se tipkom Esc. Dijalog „Predati rad?” je modalni `<dialog>` s fokusom na prvom gumbu (Esc nije isproban, da se predaja ne bi ponavljala). |
 | Vidljiv fokus | PROLAZ na svim provjerenim ekranima: zlatni obrub. |
 | Nazivi, uloge, orijentiri | Uglavnom PROLAZ: `lang="hr"`, naslovi stranica, `main`, nijedna kontrola bez naziva, sva polja imaju oznaku. Tablica predaja ima `caption`, `scope`, `aria-sort`, najavu sortiranja i omotač s `aria-labelledby`. Koraci predaje imaju `aria-current`, a promjenu rute najavljuje Next najavljivač (naslov stranice). Nalazi W2, W3, W4 i W7. |
 | Kontrast | Jedan NALAZ (W1). Ostali tekst prolazi 4,5:1 odnosno 3:1 prema heurističkoj provjeri iz stilova (vidi ograničenja). |
-| Raspored 640 px (zum 200 %) | PROLAZ: `/zadaci`, `/zadatak/{id}`, `/rad/{id}`, `potvrda`, `/nastavnik`, `predaje`, `brz-put`. |
+| Raspored 640 px (zum 200 %) | PROLAZ: `/zadaci`, `/zadatak/{id}`, `potvrda`, `/nastavnik`, `predaje`, `brz-put`. Editor: stranica stane, ali utor gornje trake reže 18 px (W6). |
 | Raspored 320 px (zum 400 %) | `/zadaci`, `predaje`, `brz-put`, `/nastavnik`, `potvrda` PROLAZ. Editor NALAZ (W6). |
 | Nastavnikov pregled (Brz put) | PROLAZ: navigacija „Studenti” s `aria-current`, „Sljedeći” zadržava fokus, žive regije (`polite`, `status`) dobivaju tekst, nema kontrola bez naziva. Jedini niski kontrast je značka W1. |
-| Predaja (koraci 2–5) | PROLAZ uz W7 i W8. Statusne poruke spremanja izjave i potvrde idu u `role="status"`. |
+| Predaja (koraci 2–5) | PROLAZ uz W7 i W8. Statusne poruke spremanja izjave, potvrde i „Kopiraj otisak” („Otisak je u međuspremniku …”) idu u `role="status"`. |
 | Ostalo | W5 (preporuka), W9 (niska važnost). |
 | Ranije VIZ-WCAG stavke | N1 (predaje na 320 px), N2 (cilj PDF/DOCX, sada 58×44 i 73×44 px) i N4 (poveznica za preskakanje) su na stvarnom stogu **popravljeni**. |
 
@@ -64,7 +64,7 @@ Prijedlog: premjestiti fokus na naslov prikazane verzije (`tabindex="-1"`), a na
 
 Isti ekran. U stupcu „Student” i u nazivima gumba piše, na primjer, „Otvori predanu verziju: 367b9c9b-d29f-…” i „Povijest predaja: …”. Čitač zaslona čita cijeli UUID, a vizualno se 36 znakova lomi u pet redaka.
 
-Brz put za isti zadatak iste studente prikazuje imenom (izmišljena demo imena), pa prikaz nije dosljedan. Ako je UUID namjerna pseudonimizacija (anonimno ocjenjivanje), onda je Brz put ne poštuje i treba ga uskladiti. Ako nije, tablica predaja treba prikazati ime iz upisa. U oba slučaja prijedlog je kratka čitljiva oznaka („Student 1”…) ili ime, nikad sirovi UUID.
+Brz put za isti zadatak prikazuje studente drukčije (imenom), pa prikaz nije dosljedan. Prijedlog: kratka čitljiva oznaka („Student 1”…) ili ime, prema pravilu prikaza koje odredi vlasnik, ali nikad sirovi UUID kao vidljivi tekst ili naziv kontrole.
 
 ### W5 – Natpisi u bočnoj traci lome se usred riječi (preporuka; 1.4.8 i 1.4.12)
 
@@ -82,7 +82,7 @@ Prijedlog: šira traka ili samo ikone s vidljivim opisom pri fokusu ili prelasku
 
 ### W6 – Gornja traka editora na 320 px postaje uzak klizni prozor (1.4.10 Reflow, AA)
 
-Ekran: `/rad/{id}` (rad u tijeku) u okviru širine 320 px. Stranica se ne pomiče vodoravno (širina sadržaja 305 px), ali utor gornje trake (`WorkspaceTopBar` slot, `overflow-x: auto`) širok je samo 38 px i skriva 376 px kontrola: „Prečaci”, „Povijest” i „Raspored ▾” (u njemu „Samo naslovi”, „Povijest i usporedba” i širine „Uska”, „Srednja”, „Široka”). Do njih se dolazi samo vodoravnim pomicanjem unutar 38 px. Na 640 px traka stane (PROLAZ).
+Ekran: `/rad/{id}` (rad u tijeku) u okviru širine 320 px. Stranica se ne pomiče vodoravno (širina sadržaja 305 px), ali utor gornje trake (`WorkspaceTopBar` slot, `overflow-x: auto`) širok je samo 38 px i skriva 376 px kontrola: „Prečaci”, „Povijest” i „Raspored ▾” (u njemu „Samo naslovi”, „Povijest i usporedba” i širine „Uska”, „Srednja”, „Široka”). Do njih se dolazi samo vodoravnim pomicanjem unutar 38 px. I na 640 px (zum 200 %) utor je uži od sadržaja (358 px prema 376 px), pa je dio „Raspored ▾” odrezan.
 
 Koraci: otvorite editor na 320 px ili zumirajte na 400 % na 1280 px.
 Napomena: `WorkspaceTopBar.tsx` je Lab putanja.
@@ -98,9 +98,9 @@ Napomena: oba ekrana su na Lab putanjama (`host/student/work/**`, `host/student/
 
 Ekran: `/rad/{id}/predaja/izjava`, „Spremi izjavu” i „Spremi popis alata”. Na radu koji ima spremljenu reviziju spremanje radi: PUT `/declaration` vraća 200, živa regija javlja „Izjava o pomoći je spremljena na poslužitelju.”, „Potvrđujem izjavu” se sprema i predaja se može dovršiti (koraci 3–5 provedeni do „Predano …”).
 
-Greška se javlja kad klijent sam odbije spremanje, bez ijednog zahtjeva prema poslužitelju. Prema kodu (`writeDraft` i `nextDraft` u `src/client/declaration.ts`) to se događa kad rad nema spremljenu reviziju (`currentRevision` je `null` ili manji od 1) ili kad sesija koraka nema stanje izjave. Na demo stogu dva studentska zadatka imaju `currentRevision: null`. Tada živa regija prikaže samo „Izjavu nije bilo moguće spremiti. Pokušaj ponovno.” Poruka ne kaže uzrok, a ponovni pokušaj ništa ne mijenja, jer korisnik prvo mora nešto napisati i spremiti u editoru.
+Ranije u ovoj provjeri, na istom stogu, „Spremi izjavu” i „Spremi popis alata” nisu poslali nijedan zahtjev i živa regija je prikazala samo „Izjavu nije bilo moguće spremiti. Pokušaj ponovno.” Ponovno izazvati grešku nije uspjelo: rad bez revizije uopće ne pušta na izjavu (preusmjerava na upute). Vjerojatni uzrok, pročitan iz koda (`writeDraft` i `nextDraft` u `src/client/declaration.ts`), jest da klijent sam odbije spremanje kad `currentRevision` nije barem 1 ili kad sesija koraka nema stanje izjave, i tada uvijek pokaže istu generičku poruku. Nalaz je u tome što poruka ne kaže uzrok, a ponovni pokušaj ne pomaže.
 
-Prijedlog: za odbijanje bez revizije posebna poruka, npr. „Izjavu možete spremiti kad u radu postoji spremljena verzija. Vratite se u editor i spremite rad.”, ili onemogućiti korak izjave dok revizija ne postoji, uz objašnjenje. Poruka se obraća korisniku s „ti”, a ostatak sučelja s „Vi” (već zabilježeno u lekturi kao L-02-051).
+Prijedlog: za svaki razlog odbijanja na klijentu posebna poruka koja kaže što učiniti (npr. za rad bez spremljene verzije: „Vratite se u editor i spremite rad.”), a za neuspjeh na poslužitelju poruka s uputom za ponovni pokušaj. Poruka se obraća korisniku s „ti”, a ostatak sučelja s „Vi” (već zabilježeno u lekturi kao L-02-051).
 Napomena: `declaration.ts` i `submission/` su Lab putanje.
 
 ### W9 – Potvrda obavijesti gubi fokus (2.4.3 Focus Order, niska važnost)
@@ -113,7 +113,7 @@ Isto ponašanje (fokus na `body`) imaju i prijelazi između koraka predaje („D
 ## Funkcionalna zapažanja (izvan WCAG-a, za Orkestratora)
 
 1. **Editor:** pri brzom tipkanju u `/rad/{id}` konzola javlja `Maximum update depth exceeded`, a stog prolazi kroz `Editor.emit` (tiptap) i `forceStoreRerender`. Viđeno na razvojnom buildu (`next dev`), koji ovakve greške javlja glasnije od produkcijskog. Tekst se vidi upisan, ali treba provjeriti gubi li se spremanje. Ovo je Lab putanja editora.
-2. **Izjava:** korak izjave dostupan je i za rad bez spremljene revizije, a spremanje tada ne može uspjeti (W8). Treba odlučiti treba li tok predaje uopće pustiti do izjave dok rad nema reviziju. Lab putanja.
+2. **Izjava:** jednom je „Spremi izjavu” odbijeno bez zahtjeva prema poslužitelju (W8), a kasnije na drugom radu spremanje radi. Točan uvjet nije ponovljen. Treba ga utvrditi testom na Lab putanji `declaration.ts`.
 
 ## Ograničenja provjere
 
@@ -121,5 +121,6 @@ Isto ponašanje (fokus na `body`) imaju i prijelazi između koraka predaje („D
 - Kontrast je izračunat heuristički iz računatih stilova (boja teksta prema prvoj neprozirnoj podlozi roditelja). Tekst na slikama, gradijentima i poluprozirnim podlogama nije obuhvaćen. Po ekranu je ispisano najviše 12 pogodaka, a stvarni pogoci bili su samo W1.
 - Zum je simuliran okvirom (`iframe`) širine 640 i 320 px, ne stvarnim zumom preglednika.
 - Svijetla tema provjerena je samo za W1. Ostalo je provjereno u tamnoj temi.
-- Predaja je provedena do kraja na jednom demo radu. Povlačenje predaje nije isprobano.
+- Predaja je provedena do kraja na jednom demo radu („kućno kompostiranje”, demo studentica), pa je taj rad na demo stogu sada predan. Povlačenje predaje nije isprobano.
+- Greška iz W8 nije ponovljena; uzrok je vjerojatan, pročitan iz koda.
 - Nisu obuhvaćeni „Radovi uz mentora”, „Zbirni” ni recenzija među studentima.
