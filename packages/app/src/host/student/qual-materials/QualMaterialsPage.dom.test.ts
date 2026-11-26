@@ -107,12 +107,33 @@ describe("QualMaterialsPage in the browser", () => {
     expect(text()).toContain(t.unknown);
   });
 
+  it("keeps the form locked until the list is read again after a lost answer, so the draft cannot be sent twice", async () => {
+    let release: (a: Answer) => void = () => undefined;
+    const second = new Promise<Answer>((resolve) => { release = resolve; });
+    let reads = 0;
+    const fn = vi.fn(async (id: string) => {
+      if (id === "student.qual-materials.get") { reads += 1; return reads === 1 ? ok({ materials: [] }) : second; }
+      return fail(503, "unavailable");
+    });
+    await render(() => fn as never);
+    await type(host.querySelector("input")!, "Intervju A");
+    await type(host.querySelector("textarea")!, "Tekst.");
+    await submit();
+    expect(host.querySelector("textarea")!.readOnly).toBe(true);
+    await submit();
+    expect(fn.mock.calls.filter(([id]) => id === "student.qual-materials.post")).toHaveLength(1);
+    await act(async () => { release(ok({ materials: [ROW_B] })); });
+    expect(host.querySelector("textarea")!.readOnly).toBe(false);
+    expect(host.querySelectorAll("[data-testid=material]")).toHaveLength(1);
+  });
+
   it("opens one material and shows its lines", async () => {
     const d = apiOf({ "student.qual-materials.get": LIST([ROW_A]), "student.qual-material.get": () => ok(ONE_A) });
     await render(d.call);
     await act(async () => { button(t.openAria.replace("{title}", "Intervju A")).click(); });
     expect(d.calls.find((c) => c.id === "student.qual-material.get")!.input.params).toEqual({ id: ROW_A.id });
     expect([...host.querySelectorAll("[data-testid=material-text] p")].map((p) => p.textContent)).toEqual(["Prvi izmišljeni redak.", "Drugi izmišljeni redak."]);
+    expect(host.querySelector<HTMLElement>("[data-testid=material-text] p")!.style.whiteSpace).toBe("pre-wrap");
   });
 
   it("reads a material that is not found (another student's) as gone, and a failed read as an error", async () => {

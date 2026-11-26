@@ -52,6 +52,13 @@ export default function QualMaterialsPage({ call = defaultCall }: { call?: () =>
   }, [attempt]);
 
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
+  // After a write the list is read again while the form stays locked, so a lost answer cannot be retried
+  // before the page knows whether the server kept it.
+  async function reconcile() {
+    const result = await readMaterials(call());
+    if (result.kind === "signedOut") { goToSignIn(here); return; }
+    setList(result);
+  }
   const back = <p><a href={appHref(base, "/zadaci")}><span aria-hidden="true">← </span>{t.back}</a></p>;
   const head = <header><h1>{t.title}</h1><p>{t.lead}</p></header>;
 
@@ -78,8 +85,7 @@ export default function QualMaterialsPage({ call = defaultCall }: { call?: () =>
     setError(null);
     setBusy(true);
     const outcome = await addMaterial(call(), checked.value);
-    setBusy(false);
-    if (outcome.kind === "signedOut") { goToSignIn(here); return; }
+    if (outcome.kind === "signedOut") { setBusy(false); goToSignIn(here); return; }
     if (outcome.kind === "saved") {
       setNote({ tone: "status", text: t.saved });
       setDraft(EMPTY_DRAFT);
@@ -87,21 +93,22 @@ export default function QualMaterialsPage({ call = defaultCall }: { call?: () =>
       setNote({ tone: "alert", text: ADD_TEXT[outcome.kind] });
     }
     // The server may know something the page did not (a conflict, a lost answer): read again either way.
-    reload();
+    await reconcile();
+    setBusy(false);
   }
 
   async function confirmRemove(row: MaterialRow) {
     if (busy) return;
     setBusy(true);
     const outcome = await removeMaterial(call(), row.id);
-    setBusy(false);
-    if (outcome.kind === "signedOut") { goToSignIn(here); return; }
+    if (outcome.kind === "signedOut") { setBusy(false); goToSignIn(here); return; }
     setAsking(null);
     if (openId === row.id) setOpenId(null);
     if (outcome.kind === "removed") setNote({ tone: "status", text: t.removed });
     else if (outcome.kind === "notFound") setNote({ tone: "alert", text: t.gone });
     else setNote({ tone: "alert", text: t.removeUnknown });
-    reload();
+    await reconcile();
+    setBusy(false);
   }
 
   return (
@@ -193,7 +200,7 @@ function Viewer({ id, call, here, onClose, onGone }: { id: string; call: () => A
     <Card level={2} title={`${t.viewTitle}: ${m.title}`}>
       <p><Tag>{t.kind[m.kind]}</Tag>{" "}{m.locked && <Tag tone="warn">{t.locked}</Tag>}</p>
       <div data-testid="material-text">
-        {linesOf(m.text).map((line, index) => (line === "" ? null : <p key={index} data-line={index}>{line}</p>))}
+        {linesOf(m.text).map((line, index) => (line === "" ? null : <p key={index} data-line={index} style={{ whiteSpace: "pre-wrap" }}>{line}</p>))}
       </div>
       <p><Button tone="quiet" onClick={onClose}>{t.viewClose}</Button></p>
     </Card>
