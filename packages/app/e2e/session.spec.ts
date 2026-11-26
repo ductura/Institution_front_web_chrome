@@ -219,7 +219,9 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
   await expect(page.locator("details", { hasText: "Prvi dolazak ili imate kod zadatka?" })).toHaveAttribute("open", "");
   await axe(page);
   expect(seen.login).toEqual([]);
-  expect(seen.me).toBe(0);
+  expect(seen.me).toBe(1); // KA-05-WEB: one read per visit, to skip the screen when signed in.
+  // KA-05-WEB: the footer of the concept, six links.
+  await expect(page.getByRole("contentinfo").getByRole("navigation").getByRole("link")).toHaveCount(6);
 
   await page.goto("/aplikacija/prijava?stanje=pomoc");
   await expect(page.locator("details", { hasText: "Trebate pomoć?" })).toHaveAttribute("open", "");
@@ -250,7 +252,15 @@ test("/prijava shows the six variants of E-1 and goes to AAI@EduHr only from the
   await page.getByRole("link", { name: "Pokušaj ponovno" }).click();
   await page.waitForURL(/\/api\/v1\/auth\/login\?returnTo=/, { waitUntil: "commit" });
   expect(new URL(seen.login[0]!).searchParams.get("returnTo")).toBe("/aplikacija/zadaci/kolegiji");
-  expect(errors).toEqual([]);
+  // A signed-out visitor's read of /me answers 401, which the browser logs; nothing else may be logged.
+  expect(errors.filter((e) => !e.includes("401 (Unauthorized)"))).toEqual([]);
+});
+
+test("/prijava is skipped when the session exists (KA-05-WEB)", async ({ page }) => {
+  await fakeServer(page, { status: 200, body: { role: "student", roles: ["student"], displayName: "Student Jedan" } });
+  await page.goto("/aplikacija/prijava");
+  await expect(page).toHaveURL((url) => url.pathname !== "/aplikacija/prijava");
+  await expect(page.getByText("Dobro došli")).toHaveCount(0);
 });
 
 test("an unanswering institution server shows a retry, not an empty app", async ({ page }) => {
