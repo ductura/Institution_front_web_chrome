@@ -139,6 +139,13 @@
 .chapterContext { display: grid; gap: 4px; padding: 10px 12px; background: var(--well); border-radius: var(--radius); }
 .chapterContext span { font-size: 12px; color: var(--ink-2); }
 .chapterContext strong { font: 500 16px var(--ff-display); }
+/* ED-38: the alert row of "Uz tekst" (prototype editor.css .ctxal/.ctxa). */
+.contextAlerts { margin: 8px 0 4px; border: 1px solid var(--rule-2); border-radius: var(--radius); overflow: hidden; }
+.contextAlerts button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 8px 10px; border: 0; border-bottom: 1px solid var(--rule-2); background: none; color: inherit; font: inherit; font-size: 12.5px; min-height: 38px; cursor: pointer; }
+.contextAlerts button:last-child { border-bottom: 0; }
+.contextAlerts button:hover { background: var(--hover); }
+.contextAlerts span { flex: 1; }
+.contextAlerts i { font-style: normal; color: var(--ink-3); }
 .workGroups { display: grid; }
 .workGroups button { justify-content: start; border-bottom: 1px solid var(--rule-2); border-radius: 0; }
 .iconStrip { display: flex; flex-direction: column; width: 66px; flex: none; gap: 4px; padding: 8px 4px; border-left: 1px solid var(--rule-2); }
