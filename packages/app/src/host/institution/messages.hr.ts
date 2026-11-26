@@ -15,3 +15,22 @@ export const institutionHostMessages = {
   noYear: "Ustanova još nema akademskih godina.",
   yearPick: "Akademska godina",
 } as const;
+
+/** F4-OPE-R04 (OPE-20): the groups of a course, made and given a teacher by the administrator. */
+export const courseGroupMessages = {
+  newGroupHeading: "Nova grupa kolegija",
+  nameLabel: "Naziv grupe",
+  nameHint: "Najviše 80 znakova.",
+  create: "Izradi grupu",
+  assignLabel: "Nastavnik grupe",
+  assignPlaceholder: "Odaberite potvrđenog nastavnika",
+  assign: "Dodijeli nastavnika",
+  noTeachers: "Nema potvrđenih nastavnika koje bi se moglo dodijeliti.",
+  teachersUnavailable: "Popis potvrđenih nastavnika trenutačno nije dostupan, pa se nastavnik grupe ne može dodijeliti.",
+  created: "Grupa je izrađena.",
+  assigned: "Nastavnik je dodijeljen grupi.",
+  invalid: "Unos nije prihvaćen. Naziv grupe mora imati 1 do 80 znakova, bez razmaka na početku i na kraju.",
+  ended: "Prijava je istekla ili nemate pristup. Prijavite se ponovno.",
+  unknown: "Nije potvrđeno je li promjena spremljena. Provjerite stanje popisa.",
+  check: "Provjeri stanje",
+} as const;
