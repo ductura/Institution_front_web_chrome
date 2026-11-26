@@ -111,7 +111,10 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
   const [remaining, setRemaining] = useState<RemainingRead | null>(null);
   const [listRead, setListRead] = useState<ConversationsRead | null>(null);
 
+  // Ids this instance has asked to read: the held list is shared with closed cards, so it cannot say that.
+  const requested = useRef(new Set<string>());
   const load = useCallback(async (id: string) => {
+    requested.current.add(id);
     const read = await port.read(id);
     setReads((prev) => ({ ...prev, [id]: read }));
   }, [port]);
@@ -125,20 +128,21 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
 
   // Read from the server: whether the Asistent is on for the course, today's count and the conversation list.
   const refreshRemaining = useCallback(async () => setRemaining(await port.remaining(assignmentId)), [port, assignmentId]);
-  const refreshList = useCallback(async () => {
+  const refreshList = useCallback(async (live: () => boolean = () => true) => {
     const list = await port.conversations(assignmentId);
+    // A card closed meanwhile (drawer) must not change the held list or the state of a newer card.
+    if (!live()) return;
     setListRead(list);
     if (list.kind !== "ok") return;
     const merged = mergeConversations(list.conversations, slot.kept ?? keptConversations(scope, assignmentId));
-    const known = new Set((slot.kept ?? []).map((k) => k.id));
     setKeptHeld(merged);
-    for (const k of merged) if (!known.has(k.id)) void load(k.id);
+    for (const k of merged) if (!requested.current.has(k.id)) void load(k.id);
   }, [port, assignmentId, slot, scope, load, setKeptHeld]);
   useEffect(() => {
     let live = true;
     void port.availability(assignmentId).then((a) => { if (live) setAvailability(a); });
     void refreshRemaining();
-    void refreshList();
+    void refreshList(() => live);
     return () => { live = false; };
   }, [port, assignmentId, refreshRemaining, refreshList]);
 
@@ -152,7 +156,8 @@ export function AssistantChatView({ assignmentId, scope, readOnly, port }: { ass
   const serverOff = availability?.kind === "ok" && !availability.enabled;
   const serverLimit = remaining?.kind === "ok" && requestsLeft(remaining) === 0;
   const left = remaining?.kind === "ok" ? requestsLeft(remaining) : null;
-  const blocked = banner === "disabled" || banner === "limit" || banner === "forbidden" || serverOff || serverLimit;
+  // A request sent but not settled (pendingKey) can still be recovered with its key at the limit; new ones cannot.
+  const blocked = banner === "disabled" || banner === "limit" || banner === "forbidden" || serverOff || (serverLimit && pendingKey === null);
   const canAsk = !readOnly && available !== null && !prohibited && purposes.length > 0 && !blocked;
 
   async function send() {
