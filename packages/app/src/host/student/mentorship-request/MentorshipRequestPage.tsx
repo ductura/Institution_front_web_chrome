@@ -15,12 +15,15 @@ import KeyDates from "../../teacher/key-dates/KeyDates";
 import { keyDatesPort, type KeyDatesCall } from "../../teacher/key-dates/contract";
 import { keyDatesMessages } from "../../teacher/key-dates/messages.hr";
 import { mentorshipRequestText as t } from "./messages.hr";
+import { readOpened, withoutApproved, type OpenedCall, type OpenedMentorship, type OpenedRead } from "./opened";
 import { approvedOf, canRetarget, readMentorCandidates, readMyMentorshipRequests, sendRequest, statusText, withdrawRequest, type Note } from "./model";
 
 /** The student's transport: the contract routes of mentorship.* through createApi. */
 const defaultCall = () => studentMentorshipCall();
 /** MK-13: the same timeline the mentor sees (mentorship.key-dates.get), for each approved mentorship. */
 const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
+/** F4-MEN-R01: notifications.mentorship-opened.list.get, the mentorships a teacher opened for the student. */
+const openedCall = () => createApi() as unknown as OpenedCall;
 
 /**
  * Student: "Zahtjev za mentorstvo" (WEB-1404). The form sends a request, the list
@@ -28,14 +31,17 @@ const keyDatesCall = () => createApi() as unknown as KeyDatesCall;
  * and a pending one can be withdrawn. A note follows only the server's answer (B-6).
  * WEB-NF6-ETAPE (MK-7): "Moje mentorstvo" names the mentor of each approved request; a declined one says
  * its reason is not available yet (2148; not in the contract) and can go to another teacher.
+ * F4-MEN-R01 (odluka 4): "Moje mentorstvo" also lists each mentorship a teacher opened for the student
+ * (notifications.mentorship-opened), read on its own; its failure says so and never hides the requests.
  * `call` is for tests; the page uses the client.
  */
-export default function MentorshipRequestPage({ call = defaultCall, keyDates = keyDatesCall }:
-  { call?: () => StudentMentorshipCall; keyDates?: () => KeyDatesCall }) {
+export default function MentorshipRequestPage({ call = defaultCall, keyDates = keyDatesCall, openedBy = openedCall }:
+  { call?: () => StudentMentorshipCall; keyDates?: () => KeyDatesCall; openedBy?: () => OpenedCall }) {
   const { base } = useHost();
   const datesPort = useMemo(() => keyDatesPort(keyDates), [keyDates]);
   const here = appHref(base, "/zadaci/mentorstvo");
   const [read, setRead] = useState<MentorshipRead | null>(null);
+  const [opened, setOpened] = useState<OpenedRead | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [candidates, setCandidates] = useState<CandidatesRead | null>(null);
   const [teacherId, setTeacherId] = useState("");
@@ -50,6 +56,11 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
       if (!live) return;
       if (result.kind === "session-expired") goToSignIn(here);
       setRead(result);
+    });
+    void readOpened(openedBy()).then((result) => {
+      if (!live) return;
+      if (result.kind === "signedOut") goToSignIn(here);
+      setOpened(result);
     });
     void readMentorCandidates(call()).then((result) => {
       if (!live) return;
@@ -97,7 +108,7 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
   }
 
   let list;
-  let mine = null;
+  let approved: ReturnType<typeof approvedOf> | null = null;
   if (read === null || read.kind === "session-expired") list = <RouteLoading label={hostText.loading} />;
   else if (read.kind === "nepoznato") {
     list = (
@@ -107,25 +118,7 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
       </Card>
     );
   } else {
-    const approved = approvedOf(read.requests);
-    mine = (
-      <Card level={2} title={t.mine.title}>
-        {approved.length === 0 ? <p>{t.mine.empty}</p> : (
-          <>
-            <ul>
-              {approved.map((request) => (
-                <li key={request.requestId} data-testid="my-mentorship">
-                  <strong>{t.mine.mentor.replace("{type}", t.workTypes[request.workType]).replace("{name}", nameText(request.teacherName) ?? t.teacherUnnamed)}</strong>
-                  <br />
-                  <span>{t.mine.openedOn.replace("{date}", formatDateHr(request.endedAt ?? request.requestedAt))}</span>
-                </li>
-              ))}
-            </ul>
-            <p>{t.mine.start} <a href={appHref(base, "/zadaci")}>{t.mine.toTasks}</a></p>
-          </>
-        )}
-      </Card>
-    );
+    approved = approvedOf(read.requests);
     list = (
       <Card level={2} title={t.listTitle}>
         {read.requests.length === 0 ? <p>{t.empty}</p> : (
@@ -166,6 +159,40 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
     );
   }
 
+  // F4-MEN-R01: the mentorships a teacher opened stand first; one that is also an approved request shows once.
+  const openedList: OpenedMentorship[] = opened?.kind === "ready"
+    ? withoutApproved(opened.opened, (approved ?? []).flatMap((r) => (r.mentorshipId === null ? [] : [r.mentorshipId]))) : [];
+  const shown = openedList.length + (approved?.length ?? 0);
+  const mine = approved === null && opened?.kind !== "ready" && opened?.kind !== "unavailable" ? null : (
+    <Card level={2} title={t.mine.title}>
+      {opened?.kind === "unavailable" && <p role="alert">{t.mine.openedUnavailable}</p>}
+      {shown === 0 && approved !== null && opened?.kind === "ready" && <p>{t.mine.empty}</p>}
+      {shown > 0 && (
+        <>
+          <ul>
+            {openedList.map((o) => (
+              <li key={o.id} data-testid="my-mentorship">
+                <strong>{t.mine.mentor.replace("{type}", t.workTypes[o.workType]).replace("{name}", nameText(o.mentorName) ?? t.teacherUnnamed)}</strong>
+                {o.readAt === null && <>{" "}<Tag tone="accent">{t.mine.openedNew}</Tag></>}
+                <br />
+                <span>{t.mine.openedOn.replace("{date}", formatDateHr(o.createdAt))}</span>
+                {o.topic !== null && <><br /><span>{t.mine.openedTopic.replace("{topic}", o.topic)}</span></>}
+              </li>
+            ))}
+            {(approved ?? []).map((request) => (
+              <li key={request.requestId} data-testid="my-mentorship">
+                <strong>{t.mine.mentor.replace("{type}", t.workTypes[request.workType]).replace("{name}", nameText(request.teacherName) ?? t.teacherUnnamed)}</strong>
+                <br />
+                <span>{t.mine.openedOn.replace("{date}", formatDateHr(request.endedAt ?? request.requestedAt))}</span>
+              </li>
+            ))}
+          </ul>
+          <p>{t.mine.start} <a href={appHref(base, "/zadaci")}>{t.mine.toTasks}</a></p>
+        </>
+      )}
+    </Card>
+  );
+
   return (
     <div className="page">
       <p><a href={appHref(base, "/zadaci")}><span aria-hidden="true">← </span>{t.back}</a></p>
@@ -194,6 +221,10 @@ export default function MentorshipRequestPage({ call = defaultCall, keyDates = k
         <KeyDates key={r.mentorshipId} mentorshipId={r.mentorshipId} port={datesPort}
           title={keyDatesMessages.forMentor(nameText(r.teacherName) ?? t.teacherUnnamed)} />,
       ]))}
+      {openedList.map((o) => (
+        <KeyDates key={o.mentorshipId} mentorshipId={o.mentorshipId} port={datesPort}
+          title={keyDatesMessages.forMentor(nameText(o.mentorName) ?? t.teacherUnnamed)} />
+      ))}
     </div>
   );
 }
