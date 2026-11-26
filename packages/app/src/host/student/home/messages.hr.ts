@@ -18,8 +18,6 @@ export const homeText = {
   coursesWithoutTask: "Kolegiji bez zadatka",
   due: "Rok: {due}",
   submitted: "Predano",
-  late: "Rok je prošao {date}",
-  originalPassed: "Izvorni rok je prošao {date}",
   noticeFirst: "Prvo pročitajte obavijest",
   extendedDue: "Produljeni rok: {due}",
   codeHeading: "Imate kod novog kolegija?",

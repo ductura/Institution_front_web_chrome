@@ -18,7 +18,7 @@ import { nextPath, type Base } from "../../../bases";
 import { useHost } from "../../context";
 import { protoDateTime } from "../home/format";
 import { coursesText as t } from "./messages.hr";
-import { effectiveDue, extensionText, groupLabels, nearTag, practiceOf, ROW_ACTION, rowKind, submittedLine, yearLabel, type ExtensionNote, type RowKind, type Submitted } from "./model";
+import { deadlineTagOf, effectiveDue, extensionText, groupLabels, nearTag, practiceOf, ROW_ACTION, rowKind, submittedLine, yearLabel, type ExtensionNote, type RowKind, type Submitted } from "./model";
 import { readCourses, readExtensions, serverHistory, type Assignment, type Course, type CoursesCall, type CoursesRead } from "./read";
 import own from "./courses.module.css";
 
@@ -110,6 +110,7 @@ export function TaskItem({ a, course, kind, now, line, extension, submitted }: {
   const { base } = useHost();
   const due = effectiveDue(a.dueAt, a.extendedDueAt);
   const near = kind === "submitted" ? null : nearTag(due, now);
+  const deadline = deadlineTagOf({ submitted: kind === "submitted", dueAt: due, extended: typeof a.extendedDueAt === "string" && a.extendedDueAt !== "", originalDueAt: a.dueAt }, now.getTime());
   const action = ROW_ACTION[kind];
   const route = kind === "submitted" ? `/rad/${encodeURIComponent(a.id)}/predaja/potvrda` : kind === "notice" ? `/zadatak/${encodeURIComponent(a.id)}` : `/rad/${encodeURIComponent(a.id)}`;
   const extended = typeof a.extendedDueAt === "string" && a.extendedDueAt !== "" && kind !== "submitted";
@@ -123,6 +124,7 @@ export function TaskItem({ a, course, kind, now, line, extension, submitted }: {
         <span className={own.when} id={whenId}>
           {line ?? (kind === "submitted" ? <span>{submittedLine(submitted, whenHr)}</span> : <span>{t.dueLabel.replace("{time}", whenHr(due))}</span>)}
           {line === undefined && near !== null ? <Tag tone="warn">{near}</Tag> : null}
+          {deadline === null ? null : <Tag tone={deadline.kind === "late" ? "warn" : "neutral"}>{deadline.text}</Tag>}
           {line === undefined && kind === "notice" ? <Tag tone="open">{t.noticeFirst}</Tag> : null}
           {extended ? <Tag tone="open">{t.extended}</Tag> : null}
           <PracticeBadge practice={practiceOf(a)} />
