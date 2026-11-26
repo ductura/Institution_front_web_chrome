@@ -19,28 +19,47 @@ const REQUEST = {
 
 let root: Root | null = null;
 let host: HTMLElement | null = null;
-async function render(call: RevisionCall, onDeclaration = false) {
+async function render(call: RevisionCall, onDeclaration = false, send?: (documentId: string) => Promise<number | null>) {
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => root!.render(createElement(RevisionNotice, { assignmentId: ASSIGNMENT, call: () => call, onDeclaration })));
+  await act(async () => root!.render(createElement(RevisionNotice, { assignmentId: ASSIGNMENT, call: () => call, onDeclaration, send })));
   await act(async () => { for (let i = 0; i < 4; i += 1) await new Promise((r) => setTimeout(r, 0)); });
   return host;
 }
 afterEach(() => { act(() => root?.unmount()); host?.remove(); });
 
 describe("RevisionNotice (PR-16)", () => {
-  it("shows the deadline beside the title, the comment, and an unavailable „Pošalji doradu” with its reason", async () => {
+  it("shows the deadline beside the title, the comment, and a working „Pošalji doradu”", async () => {
     const el = await render(page([REQUEST]));
     expect(el.querySelector("h2")?.textContent).toBe("Rad je kod Vas: dorada");
     expect(el.textContent).toContain("Dorada do 15. 12. 2026. u 13:00");
     expect(el.textContent).toContain("Izmišljeni komentar: doradite uvod.");
     const send = el.querySelector("button")!;
     expect(send.textContent).toBe("Pošalji doradu");
-    expect(send.getAttribute("aria-disabled")).toBe("true");
-    expect(document.getElementById(send.getAttribute("aria-describedby")!)?.textContent).toBe("Slanje dorade trenutačno nije dostupno.");
+    expect(send.getAttribute("aria-disabled")).toBeNull();
     expect(el.textContent).not.toContain("pregledajte izjavu");
   });
+
+  it("sends the revision for the document of the request and says so only after a confirmed round", async () => {
+    const sent: string[] = [];
+    const el = await render(page([REQUEST]), false, async (id) => { sent.push(id); return 200; });
+    await act(async () => { el.querySelector("button")!.click(); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(sent).toEqual(["izmisljeni-rad-1"]);
+    expect(el.textContent).toContain("Dorada je poslana nastavniku.");
+    await act(async () => { el.querySelector("button")!.click(); });
+    expect(sent).toHaveLength(1);
+  });
+
+  it.each([[401, "Prijava je istekla"], [403, "ne možete poslati"], [409, "rok istekao"], [null, "odgovor nije potvrđen"]])(
+    "does not claim success when the send answers %s", async (status, text) => {
+      const el = await render(page([REQUEST]), false, async () => status);
+      await act(async () => { el.querySelector("button")!.click(); });
+      await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+      expect(el.textContent).toContain(text);
+      expect(el.textContent).not.toContain("Dorada je poslana");
+    });
 
   it("on the declaration step asks to look at the declaration again", async () => {
     const el = await render(page([REQUEST]), true);
