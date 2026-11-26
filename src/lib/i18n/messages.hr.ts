@@ -1148,6 +1148,8 @@ export const hr = {
     submittedReadOnly:
       "Rad je predan, pa se ovdje više ne može pisati. Izmjene napravljene nakon predaje nisu u predanom radu i ostaju samo na ovom uređaju.",
     blockedHint: "Ova kartica ništa ne sprema dok je druga otvorena. Kad je zatvorite, tekst se ovdje ponovno učitava.",
+    /** ED-22 (NF2-P26): the server's minute of the last signed save, from the open answer. */
+    blockedLastSaved: "Zadnje spremanje na poslužitelju: {when}.",
     failureQuota: "Na uređaju nema dovoljno prostora, pa se promjene više ne spremaju. Izvezite tekst da ga ne izgubite.",
     failureUnavailable: "Spremanje na ovom uređaju nije dostupno. Izvezite tekst da ga ne izgubite.",
     failureLimit: "Lokalni zapis je dosegao granicu, pa se promjene više ne spremaju. Izvezite tekst da ga ne izgubite.",

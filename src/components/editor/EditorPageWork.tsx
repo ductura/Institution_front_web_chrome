@@ -81,7 +81,9 @@ export type HostSections = {
 
 export type OpenRead =
   | { readonly kind: "opening" }
-  | { readonly kind: "ready"; readonly documentId: string; readonly scope: string; readonly session: SessionMark; readonly schemaVersion?: number }
+  | { readonly kind: "ready"; readonly documentId: string; readonly scope: string; readonly session: SessionMark; readonly schemaVersion?: number;
+    /** ED-22 (NF2-P26): the server's minute of the last signed save, said while another tab holds the work. */
+    readonly lastSignedAt?: string }
   /** ED-01b: the cause of a failed open, said with its one way out. */
   | { readonly kind: "failed"; readonly failure: OpenFailure };
 
@@ -92,7 +94,8 @@ export function openReadOf(outcome: OpenOutcome, scope: string, session: Session
   switch (outcome.status) {
     case "opened":
       return { kind: "ready", documentId: outcome.work.documentId, scope, session,
-        ...(outcome.work.schemaVersion === undefined ? {} : { schemaVersion: outcome.work.schemaVersion }) };
+        ...(outcome.work.schemaVersion === undefined ? {} : { schemaVersion: outcome.work.schemaVersion }),
+        ...(outcome.work.lastSignedAt === undefined ? {} : { lastSignedAt: outcome.work.lastSignedAt }) };
     case "unauthenticated":
       return failed("signedOut");
     case "not_found":
@@ -215,7 +218,7 @@ export default function EditorPageWork({
       {/* The confirmed schema version is part of the key: another version mounts a new sheet (PIL-K-SHEMA-V3). */}
       <LocalDocumentProvider key={`${read.session.tag}:${read.scope}:${read.documentId}:${read.schemaVersion ?? ""}`} scope={read.scope} documentId={read.documentId} assignmentId={assignmentId} session={read.session} schemaVersion={read.schemaVersion}>
         <WorkSurface course={course} title={title} topBar={topBar} length={length}
-          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} schemaVersion={read.schemaVersion} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} footnoteDialog={footnoteDialog} toolbar={toolbar} triggers={triggers} literature={literature}
+          assignmentId={assignmentId} documentId={read.documentId} scope={read.scope} session={read.session} schemaVersion={read.schemaVersion} lastSignedAt={read.lastSignedAt} saveSummary={Boolean(sessionControls)} renderPdf={renderPdf} hostSections={hostSections} leftSections={leftSections} footnoteDialog={footnoteDialog} toolbar={toolbar} triggers={triggers} literature={literature}
           statusExtra={statusExtra} useSupplements={useSupplements} />
         {sessionControls?.(read)}
       </LocalDocumentProvider>
@@ -225,7 +228,7 @@ export default function EditorPageWork({
 
 const noSupplements = (): SubmissionRehearsalProps["supplements"] => undefined;
 
-function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, schemaVersion, saveSummary, renderPdf, hostSections, leftSections, footnoteDialog, toolbar, triggers, literature, statusExtra, useSupplements }: {
+function WorkSurface({ course, title, topBar, length, assignmentId, documentId, scope, session, schemaVersion, lastSignedAt, saveSummary, renderPdf, hostSections, leftSections, footnoteDialog, toolbar, triggers, literature, statusExtra, useSupplements }: {
   course: string;
   title: string;
   topBar?: ReactNode;
@@ -235,6 +238,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
   scope: string;
   session: SessionMark;
   schemaVersion?: number;
+  lastSignedAt?: string;
   saveSummary: boolean;
   renderPdf?: RenderPdf;
   statusExtra?: ReactNode;
@@ -297,7 +301,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       <EditorNotices notices={!online
         ? [{ kind: "offline", savingLocally, resumesSync: true, waiting: pending ? offlineWaitingText(pending) : null }]
         : reconnected ? [{ kind: "reconnected", sending: reconnectText(pending) }] : []} />
-      <LocalEditor />
+      <LocalEditor lastSignedAt={lastSignedAt} />
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId}
         fresh={phase === "ready" && editor?.isEmpty}
