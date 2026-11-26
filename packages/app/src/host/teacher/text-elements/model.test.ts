@@ -38,3 +38,13 @@ describe("elementsOfLive (NAS-R19)", () => {
     expect(elementsOfLive(null)).toBeNull();
   });
 });
+
+describe("cross references (NAS-R19)", () => {
+  it("keeps the heading a cross reference points to", () => {
+    const H = "44444444-4444-4444-8444-444444444444";
+    const d = { schemaVersion: 3, sources: [], nodes: [
+      { type: "heading", id: H, level: 1, children: [{ type: "text", text: "Uvod", marks: [] }] },
+      { type: "paragraph", id: "22222222-2222-4222-8222-222222222222", children: [{ type: "crossReference", targetId: H }] }] } as never;
+    expect(elementsOfLive(d)?.blocks[1]!.pieces[0]).toEqual({ kind: "ref", heading: "Uvod" });
+  });
+});

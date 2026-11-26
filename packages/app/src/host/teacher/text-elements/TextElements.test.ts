@@ -18,3 +18,15 @@ describe("TextElementsView", () => {
     expect(html).toContain('data-node-id="22222222-2222-4222-8222-222222222222"');
   });
 });
+
+describe("cross reference rendering", () => {
+  it("draws the referenced heading as an atom", () => {
+    const H = "44444444-4444-4444-8444-444444444444";
+    const d = { schemaVersion: 3, sources: [], nodes: [
+      { type: "heading", id: H, level: 1, children: [{ type: "text", text: "Uvod", marks: [] }] },
+      { type: "paragraph", id: "22222222-2222-4222-8222-222222222222", children: [{ type: "crossReference", targetId: H }] }] } as never;
+    const html = renderToStaticMarkup(h(TextElementsView, { elements: buildElements(d) }));
+    expect(html).toContain('data-atom="crossReference"');
+    expect(html).toContain("[upućivanje: Uvod]");
+  });
+});

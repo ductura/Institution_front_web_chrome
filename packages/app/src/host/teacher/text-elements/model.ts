@@ -11,7 +11,7 @@ export type Piece =
   | { kind: "cite"; label: string }
   | { kind: "open" }
   | { kind: "note"; number: number }
-  | { kind: "ref" };
+  | { kind: "ref"; heading: string };
 
 export type Block = { id: string; type: DocumentNode["type"]; level?: number; pieces: Piece[] };
 export type Elements = { blocks: Block[]; notes: { number: number; text: string }[]; hasElements: boolean };
@@ -47,7 +47,12 @@ export function buildElements(doc: VersionedDocument): Elements {
       } else if (child.type === "footnote") {
         notes.push({ number: notes.length + 1, text: child.text });
         pieces.push({ kind: "note", number: notes.length });
-      } else pieces.push({ kind: "ref" });
+      } else {
+        const target = (doc.nodes as readonly DocumentNodeV3[]).find((n) => n.id === child.targetId);
+        const heading = target?.type === "heading"
+          ? (target.children as readonly InlineNodeV3[]).map((c) => (c.type === "text" ? c.text : "")).join("").trim() : "";
+        pieces.push({ kind: "ref", heading });
+      }
     }
     return { id: node.id, type: node.type, ...(node.type === "heading" ? { level: node.level } : {}), pieces };
   });

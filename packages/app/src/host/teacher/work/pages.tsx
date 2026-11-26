@@ -187,7 +187,11 @@ function LiveWork({ documentId, workHref, session }: { documentId: string; workH
       <WorkFrame documentId={documentId} current={current} gaps={gaps}
         text={<>
           {shownElements !== null
-            ? <div ref={textRef} onMouseUp={select} onKeyUp={select}><TextElementsView elements={shownElements} /></div>
+            ? <>
+              {liveElements !== null && <p><span className="sync-chip" data-tone={view.submitted ? "ok" : view.connection === "live" ? "ok" : "warn"} role="status">
+                <span className="sync-chip__dot" aria-hidden="true" />{view.submitted ? t.liveView.submitted : t.liveView.connection[view.connection]}</span></p>}
+              <div ref={textRef} onMouseUp={select} onKeyUp={select}><TextElementsView elements={shownElements} /></div>
+            </>
             : <>
               {view.connection === "retrying" && view.document === null && <p role="alert">{workText.liveUnavailable}</p>}
               {elementsState.unavailable && <p role="status">{textElementsMessages.unavailable}</p>}
