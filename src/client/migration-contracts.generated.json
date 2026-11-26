@@ -59197,5 +59197,379 @@
         "unavailable"
       ]
     }
+  },
+  "institution.isvu-courses.get": {
+    "path": "/api/v1/institution/admin/isvu/courses",
+    "method": "GET",
+    "query": {
+      "type": "object",
+      "required": [
+        "academicYear"
+      ],
+      "properties": {
+        "academicYear": {
+          "pattern": "^\\d{4}/\\d{4}(?![\\s\\S])",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the courses of the trial source",
+        "headers": {
+          "cache-control": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "mode",
+                "courses"
+              ],
+              "properties": {
+                "mode": {
+                  "const": "mock",
+                  "type": "string"
+                },
+                "courses": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "sourceCourseKey",
+                      "name",
+                      "academicYear",
+                      "enrolledCount"
+                    ],
+                    "properties": {
+                      "sourceCourseKey": {
+                        "pattern": "^[A-Za-z0-9._-]{1,64}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "name": {
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "academicYear": {
+                        "pattern": "^\\d{4}/\\d{4}(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "enrolledCount": {
+                        "minimum": 0,
+                        "maximum": 1000,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "institution.isvu-roster-imports.post": {
+    "path": "/api/v1/institution/admin/courses/{courseId}/isvu-roster-imports",
+    "method": "POST",
+    "params": {
+      "type": "object",
+      "required": [
+        "courseId"
+      ],
+      "properties": {
+        "courseId": {
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "sourceCourseKey"
+      ],
+      "properties": {
+        "sourceCourseKey": {
+          "pattern": "^[A-Za-z0-9._-]{1,64}(?![\\s\\S])",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "the preview; nothing enrolled",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "importId",
+                "source",
+                "expiresAt",
+                "counts",
+                "rows"
+              ],
+              "properties": {
+                "importId": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+                  "type": "string"
+                },
+                "source": {
+                  "const": "isvu",
+                  "type": "string"
+                },
+                "expiresAt": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                  "type": "string"
+                },
+                "counts": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "new",
+                    "alreadyEnrolled",
+                    "unsuitable"
+                  ],
+                  "properties": {
+                    "new": {
+                      "minimum": 0,
+                      "maximum": 1000,
+                      "type": "integer"
+                    },
+                    "alreadyEnrolled": {
+                      "minimum": 0,
+                      "maximum": 1000,
+                      "type": "integer"
+                    },
+                    "unsuitable": {
+                      "minimum": 0,
+                      "maximum": 1000,
+                      "type": "integer"
+                    }
+                  }
+                },
+                "rows": {
+                  "maxItems": 1000,
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "line",
+                          "identifier",
+                          "givenName",
+                          "familyName",
+                          "status",
+                          "reason"
+                        ],
+                        "properties": {
+                          "line": {
+                            "minimum": 2,
+                            "type": "integer"
+                          },
+                          "identifier": {
+                            "maxLength": 255,
+                            "type": "string"
+                          },
+                          "givenName": {
+                            "maxLength": 200,
+                            "type": "string"
+                          },
+                          "familyName": {
+                            "maxLength": 200,
+                            "type": "string"
+                          },
+                          "status": {
+                            "const": "new",
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "null"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "line",
+                          "identifier",
+                          "givenName",
+                          "familyName",
+                          "status",
+                          "reason"
+                        ],
+                        "properties": {
+                          "line": {
+                            "minimum": 2,
+                            "type": "integer"
+                          },
+                          "identifier": {
+                            "maxLength": 255,
+                            "type": "string"
+                          },
+                          "givenName": {
+                            "maxLength": 200,
+                            "type": "string"
+                          },
+                          "familyName": {
+                            "maxLength": 200,
+                            "type": "string"
+                          },
+                          "status": {
+                            "const": "already_enrolled",
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "null"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "line",
+                          "identifier",
+                          "givenName",
+                          "familyName",
+                          "status",
+                          "reason"
+                        ],
+                        "properties": {
+                          "line": {
+                            "minimum": 2,
+                            "type": "integer"
+                          },
+                          "identifier": {
+                            "maxLength": 255,
+                            "type": "string"
+                          },
+                          "givenName": {
+                            "maxLength": 200,
+                            "type": "string"
+                          },
+                          "familyName": {
+                            "maxLength": 200,
+                            "type": "string"
+                          },
+                          "status": {
+                            "const": "unsuitable",
+                            "type": "string"
+                          },
+                          "reason": {
+                            "anyOf": [
+                              {
+                                "const": "invalid_identifier",
+                                "type": "string"
+                              },
+                              {
+                                "const": "missing_name",
+                                "type": "string"
+                              },
+                              {
+                                "const": "duplicate",
+                                "type": "string"
+                              },
+                              {
+                                "const": "unknown_account",
+                                "type": "string"
+                              },
+                              {
+                                "const": "ineligible_account",
+                                "type": "string"
+                              },
+                              {
+                                "const": "name_mismatch",
+                                "type": "string"
+                              },
+                              {
+                                "const": "removed",
+                                "type": "string"
+                              },
+                              {
+                                "const": "course_teacher",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site",
+        "forbidden"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
