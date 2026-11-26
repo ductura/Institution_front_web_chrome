@@ -35,7 +35,7 @@ Adrese (D-318): `basePath` je `/aplikacija`, a stranice su u grupi ruta `app/(ho
 | `app/(host)/stanje/` | Javno „Stanje sustava” bez čitanja sesije. `StatusBoard` čita `platform.status.get` kroz `src/client` i prikazuje rezultate, zastarjelost ili grešku s ponovnim pokušajem. |
 | `app/(host)/prijava/` | Javna stranica vodi ravno na prijavu preko AAI@EduHr (D-09) i vraća na traženu stranicu pod istom bazom. |
 | `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx` | Greška stranice, greška korijenskog layouta i nepostojeća stranica, na hrvatskom. |
-| `app/(host)/[[...path]]/` | `/` pod bazom (domaćin vodi na početni ekran uloge) i putanje bez stranice („Stranica ne postoji” u ljusci). |
+| `app/(host)/page.tsx` i `app/(host)/[...path]/` | `/` pod bazom (domaćin vodi na početni ekran uloge) i putanje bez stranice („Stranica ne postoji” u ljusci). |
 | `src/routes.ts` | Čiste funkcije: baza, putanja, stranica po ulozi (rute iz `src/components/shell/nav.ts` i stranice Ductusa s dinamičkim segmentom, npr. `/zadatak/[id]`), preusmjeravanje na početni ekran uloge. |
 | `tsconfig.json` | Uz stroge opcije i Ductusov alias `@/` iz `src/components/tsconfig.json`, da domaćin montira ekrane kopirane iz Ductusa (HOST). |
 | `vitest.config.ts` | Jedinični testovi čistih dijelova (`src/**/*.test.ts`). |

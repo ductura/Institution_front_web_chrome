@@ -27,9 +27,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   devIndicators: false,
   agentRules: false,
-  // /aplikacija/ is where sign-in returns (§3); the host reads both forms of a
-  // path, so neither is redirected to the other.
-  skipTrailingSlashRedirect: true,
+  // No skipTrailingSlashRedirect: with it Next answers "/aplikacija/" with an empty
+  // page (no route for the bare base with a slash); "/aplikacija/" now leads to "/aplikacija".
   // LOK-WEB-6: `next dev` serves its own scripts and HMR only to localhost, so a
   // page opened on 127.0.0.1 hung on "Učitavanje". Development only; a build
   // ignores it.
