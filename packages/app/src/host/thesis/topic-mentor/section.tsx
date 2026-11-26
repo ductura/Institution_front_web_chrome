@@ -29,6 +29,8 @@ export function TopicMentorView({ documentId, role, value: first, reload, call =
     setBusy(true);
     const o = await decide(call, documentId, role, value, decision, comment);
     setMessage(o);
+    // A 404 means the work is gone for this reader: the frame must read again and hide the section.
+    if (o === "notFound") reload();
     if (o === "saved" || o === "conflict") {
       if (o === "saved") { setComment(""); setAttempted(false); }
       const r = await readTopic(call, documentId).catch(() => null);

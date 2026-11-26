@@ -114,6 +114,14 @@ describe("view", () => {
     expect(el.textContent).toContain(topicMentorHr.conflict);
     expect(el.textContent).toContain("Izmišljena tema 3");
   });
+  it("a decision answered with 404 reloads the section so the frame can hide it", async () => {
+    const reload = vi.fn();
+    const el = mount("mentor", topic(), fake(() => fail(404)), reload);
+    await act(async () => { button(el, topicMentorHr.approve)!.click(); });
+    await flush();
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(el.textContent).toContain(topicMentorHr.notFound);
+  });
   it("an approved topic can be returned with a reason, and the view then shows the server's state", async () => {
     const returned = { ...wire("returned", 2), decision: { version: 2, decision: "returned", comment: "Suziti temu.", decidedAt: "2026-03-05T09:00:00Z" } };
     const call = fake((id) => (id === "work.thesis-topic-decision.post" ? ok(returned) : ok(returned)));
