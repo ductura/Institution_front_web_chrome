@@ -16,15 +16,69 @@ import { anchorRange } from "../../../../../editor-core/src/editor/comment-ancho
 import { NODE_ID_ATTRIBUTE } from "../../../../../editor-core/src/editor/interop.ts";
 import type { HostSectionContext } from "../../../../../../src/components/editor/EditorPageWork.tsx";
 
+import { SuggestionCard, acceptanceTransaction, editorSuggestionsHr, planAcceptance, type ActionOutcome, type Decision, type Suggestion } from "../../../../../../src/components/editor/suggestions/index.ts";
+
 import { CommentsPanel } from "./CommentsPanel";
 import styles from "./comments.module.css";
 import { commentsHr as t } from "./messages.hr";
 import type { Place, Selection } from "./model";
 import { readMyChanges } from "./my-changes";
 import { commentsPort } from "./port";
+import { decideProposal, readProposals, type ProposalsRead } from "./suggestions-port";
 import { browserSeenStorage, readSeen, writeSeen } from "./seen-store";
 
 type Editor = NonNullable<HostSectionContext["editor"]>;
+
+/**
+ * EDI-R10 (N-08): the teacher's proposals as cards of the student's Comments card, with "Prihvati" and
+ * "Odbij". Acceptance is the student's own change: the place is found in the text this editor holds
+ * BEFORE the server is asked, and a place not found reliably asks nothing and changes nothing; only
+ * when the server confirms is the text changed. A read-only view (submitted, no editor) offers no action.
+ */
+function Proposals({ editorRef, documentId, submitted, current }: {
+  editorRef: { readonly current: Editor | null }; documentId: string; submitted: boolean; current: () => boolean;
+}) {
+  const [read, setRead] = useState<ProposalsRead>({ kind: "unavailable" });
+  const [loaded, setLoaded] = useState(false);
+  const alive = useRef(true);
+  const load = useCallback(async () => {
+    const out = current() ? await readProposals(documentId) : ({ kind: "signedOut" } as const);
+    if (alive.current) { setRead(out); setLoaded(true); }
+  }, [documentId, current]);
+  useEffect(() => { alive.current = true; void load(); return () => { alive.current = false; }; }, [load]);
+
+  const decide = async (s: Suggestion, decision: Decision): Promise<ActionOutcome> => {
+    if (decision === "withdraw" || submitted || !current()) return "forbidden";
+    const editor = liveOf(editorRef);
+    if (decision === "accept") {
+      const plan = editor ? planAcceptance(editor.state.doc, s) : null;
+      if (!editor || !plan) return "invalid";
+      const out = await decideProposal(s.id, "accept");
+      if (out === "ok" && current() && !editor.isDestroyed) editor.view.dispatch(acceptanceTransaction(editor.state, plan, s.id));
+      if (out === "ok" || out === "conflict") void load();
+      return out;
+    }
+    const out = await decideProposal(s.id, "reject");
+    if (out === "ok" || out === "conflict") void load();
+    return out;
+  };
+
+  if (!loaded) return <p role="status" className={styles.muted}>{t.proposalsLoading}</p>;
+  if (read.kind === "signedOut") return null;
+  if (read.kind !== "ok") return <p role="status" className={styles.muted}>{t.proposalsUnavailable}</p>;
+  // Only a proposal still open or already decided is a card; nothing to show is no section at all.
+  if (read.suggestions.length === 0) return null;
+  return (
+    <section aria-label={editorSuggestionsHr.title}>
+      <h3>{editorSuggestionsHr.title}</h3>
+      <p className={styles.muted}>{editorSuggestionsHr.note}</p>
+      {submitted && <p className={styles.muted}>{t.proposalsReadOnly}</p>}
+      {read.suggestions.map((s) => (
+        <SuggestionCard key={s.id} suggestion={s} viewer="student" readOnly={submitted} onDecide={(d) => decide(s, d)} />
+      ))}
+    </section>
+  );
+}
 
 /** The anchor for a place inside one paragraph of `doc`, or null (another paragraph, blank, too long). */
 export function anchorAt(doc: PmNode, place: Place): TextAnchor | null {
@@ -117,6 +171,7 @@ function SessionComments({ editor, documentId, session, submitted, signedOut = f
       {submitted && <p className={styles.muted}>{t.submittedNote}</p>}
       <CommentsPanel workId={documentId} role="student" submitted={submitted} port={port} selection={selection} docSize={docSize} currentText={currentText}
         seen={seen} onJump={onJump} onSessionEnd={onSessionEnd} onSeen={onSeen} changes={readMyChanges} />
+      <Proposals editorRef={editorRef} documentId={documentId} submitted={submitted} current={current} />
     </>
   );
 }
