@@ -39,12 +39,14 @@ describe("EDI-R11 obvezna literatura: reading", () => {
 });
 
 describe("EDI-R11 course of the assignment", () => {
-  const assignments = { courses: [{ id: "c-other", name: "x", assignments: [{ id: "zzz" }] }, { id: C, name: "y", assignments: [{ id: A.toUpperCase() }] }] };
-  it("finds the course holding the assignment, case-insensitively, otherwise null", () => {
-    expect(courseIdOf(assignments, A)).toBe(C);
-    expect(courseIdOf(assignments, "nema")).toBeNull();
+  const body = { courses: [{ id: "c-other", name: "x", assignments: [{ id: "zzz" }] }, { id: C, name: "y", assignments: [{ id: A.toUpperCase() }] }] };
+  it("reads the course from the answer envelope, case-insensitively, otherwise null", () => {
+    expect(courseIdOf({ ok: true, body }, A)).toBe(C);
+    expect(courseIdOf({ ok: true, body }, "nema")).toBeNull();
     expect(courseIdOf({ ok: false }, A)).toBeNull();
     expect(courseIdOf(undefined, A)).toBeNull();
+    // The bare body is not the answer: it must not be taken for it.
+    expect(courseIdOf(body as never, A)).toBeNull();
   });
 });
 

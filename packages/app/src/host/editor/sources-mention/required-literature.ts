@@ -58,9 +58,10 @@ export async function readRequiredLiterature(call: LiteratureCall, courseId: str
 
 export const liveRequiredLiterature = (courseId: string) => readRequiredLiterature(createApi() as unknown as LiteratureCall, courseId);
 
-/** The course the assignment belongs to, from student.assignments.get; null when the assignment is not in any course. */
-export function courseIdOf(assignments: unknown, assignmentId: string): string | null {
-  const courses = (assignments as { courses?: unknown } | null | undefined)?.courses;
+/** The course the assignment belongs to, from the answer of student.assignments.get ({ ok, body }); null when it failed or the assignment is in no course. */
+export function courseIdOf(assignments: { readonly ok?: boolean; readonly body?: unknown } | null | undefined, assignmentId: string): string | null {
+  if (assignments?.ok !== true) return null;
+  const courses = (assignments.body as { courses?: unknown } | null | undefined)?.courses;
   if (!Array.isArray(courses)) return null;
   const wanted = assignmentId.toLowerCase();
   for (const course of courses as { id?: unknown; assignments?: unknown }[]) {
