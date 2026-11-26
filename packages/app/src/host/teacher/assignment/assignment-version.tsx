@@ -8,6 +8,7 @@ import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { AssignmentCopy } from "../assignment-copy/AssignmentCopy";
 import { NoticePreview } from "../publish/NoticePreview";
+import { DocumentKindReadBack } from "../assignment-form/DocumentKindField";
 import { PracticeReadBack } from "../assignment-form/PracticeField";
 import { AssignmentPage, useAssignmentRead } from "./page-state";
 import SubmissionRulesLive from "./SubmissionRulesLive";
@@ -26,6 +27,7 @@ export default function AssignmentVersionPage({ assignmentId }: { assignmentId: 
         <AssignmentCopy current={current} href={href} startOpen={copy} />
         <NoticePreview fields={{ versionNo: current.versionNo, dueAt: current.dueAt, aiPolicy: current.aiPolicy, aiPurposes: current.aiPurposes, importAllowed: current.importAllowed, wordMin: current.wordMin ?? null, wordMax: current.wordMax ?? null }} />
         <PracticeReadBack current={current} />
+        <DocumentKindReadBack current={current} />
         <AssignmentVersionForm current={current} backHref={href("/nastavnik")} onReload={retry} />
         <SubmissionRulesLive assignmentId={assignmentId} />
       </>}
