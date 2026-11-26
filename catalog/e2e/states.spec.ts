@@ -701,7 +701,7 @@ for (const theme of THEMES) {
       expect(Math.abs(area.x - (rail.x + rail.width))).toBeLessThanOrEqual(0.5);
 
       const links = aside.locator("a");
-      await expect(links).toHaveCount(8); // logo, five items, "Kako Ductura radi", "Izjava o pristupačnosti" (WEB-1805)
+      await expect(links).toHaveCount(12); // logo, nine items (F4-V18-22-R01), "Kako Ductura radi", "Izjava o pristupačnosti" (WEB-1805)
       for (const box of await links.evaluateAll((all) => all.map((a) => a.getBoundingClientRect().toJSON() as DOMRect))) {
         expect(box.width).toBeGreaterThanOrEqual(44);
         expect(box.height).toBeGreaterThanOrEqual(44);
