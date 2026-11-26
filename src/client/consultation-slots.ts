@@ -35,7 +35,7 @@ export const pageSlotsCall = ((...args: Parameters<SlotsApi>) => createApi()(...
 
 export type SlotsRead = Read<{ readonly kind: "ready"; readonly slots: readonly ConsultationSlot[] }>;
 export type SlotWrite =
-  | { readonly kind: "saved"; readonly slot: ConsultationSlot | SlotDetail }
+  | { readonly kind: "saved"; readonly slot: ConsultationSlot }
   | { readonly kind: "session-expired" }
   /** 409: the slot was changed or removed meanwhile; the list is read again. */
   | { readonly kind: "promijenjeno" }
@@ -112,33 +112,40 @@ export function validPreparation(p: PreparationAttachment): boolean {
   return optionalText(p.text, PREPARATION_MAX) === p.text && count(p.changedParagraphs) && count(p.resolvedComments);
 }
 
-/**
- * POST: the student asks for a slot, with an optional topic and an optional preparation ("Priloži pripremu").
- * Without a preparation the request goes through work.consultation-slots.post as before; with one it goes through
- * work.consultation-slot-requests.post and is saved only when the answer carries the same preparation (B-6).
- */
-export async function requestConsultationSlot(
-  client: SlotsApi, documentId: string, startsAt: string, topic?: string, preparation?: PreparationAttachment,
-): Promise<SlotWrite> {
+/** POST: the student asks for a slot, with an optional topic. Saved only from a `requested` slot with the time (and topic) asked. */
+export async function requestConsultationSlot(client: SlotsApi, documentId: string, startsAt: string, topic?: string): Promise<SlotWrite> {
   if (!validStartsAt(startsAt)) return { kind: "greska", code: "invalid" };
   if (topic !== undefined && optionalText(topic, TOPIC_MAX) !== topic) return { kind: "greska", code: "invalid" };
-  if (preparation !== undefined && !validPreparation(preparation)) return { kind: "greska", code: "invalid" };
   try {
-    const base = topic === undefined ? { startsAt } : { startsAt, topic };
-    const result = preparation === undefined
-      ? await client("work.consultation-slots.post", { params: { documentId }, query: undefined, body: base })
-      : await client("work.consultation-slot-requests.post", {
-        params: { documentId }, query: undefined,
-        body: { ...base, preparation: { text: preparation.text, changedParagraphs: preparation.changedParagraphs, resolvedComments: preparation.resolvedComments } },
-      });
+    const body = topic === undefined ? { startsAt } : { startsAt, topic };
+    const result = await client("work.consultation-slots.post", { params: { documentId }, query: undefined, body });
     if (!result.ok) return failure(result);
     const slot = result.body;
     if (topic !== undefined && slot.topic !== topic) return UNKNOWN;
-    if (preparation !== undefined) {
-      const kept = "preparation" in slot ? slot.preparation : null;
-      if (kept === null || kept === undefined || kept.text !== preparation.text
-        || kept.changedParagraphs !== preparation.changedParagraphs || kept.resolvedComments !== preparation.resolvedComments) return UNKNOWN;
-    }
+    return slot.state === "requested" && Date.parse(slot.startsAt) === Date.parse(startsAt) ? { kind: "saved", slot } : UNKNOWN;
+  } catch {
+    return UNKNOWN;
+  }
+}
+
+/**
+ * POST with a preparation ("Priloži pripremu", MEN-26) through work.consultation-slot-requests.post. Saved only
+ * when the answer is a `requested` slot with the time (and topic) asked that carries the same preparation (B-6).
+ */
+export async function requestConsultationSlotWithPreparation(
+  client: SlotsApi, documentId: string, startsAt: string, topic: string | undefined, preparation: PreparationAttachment,
+): Promise<CloseWrite> {
+  if (!validStartsAt(startsAt) || !validPreparation(preparation)) return { kind: "greska", code: "invalid" };
+  if (topic !== undefined && optionalText(topic, TOPIC_MAX) !== topic) return { kind: "greska", code: "invalid" };
+  try {
+    const base = topic === undefined ? { startsAt } : { startsAt, topic };
+    const sent = { text: preparation.text, changedParagraphs: preparation.changedParagraphs, resolvedComments: preparation.resolvedComments };
+    const result = await client("work.consultation-slot-requests.post", { params: { documentId }, query: undefined, body: { ...base, preparation: sent } });
+    if (!result.ok) return failure(result);
+    const slot = result.body;
+    const kept = slot.preparation;
+    if (kept === null || kept.text !== sent.text || kept.changedParagraphs !== sent.changedParagraphs || kept.resolvedComments !== sent.resolvedComments) return UNKNOWN;
+    if (topic !== undefined && slot.topic !== topic) return UNKNOWN;
     return slot.state === "requested" && Date.parse(slot.startsAt) === Date.parse(startsAt) ? { kind: "saved", slot } : UNKNOWN;
   } catch {
     return UNKNOWN;

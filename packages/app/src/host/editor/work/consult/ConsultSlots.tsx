@@ -9,8 +9,8 @@ import { Button, Checkbox, TextArea, TextField } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
-  PREPARATION_MAX, REASON_MAX, TOPIC_MAX, closeConsultationSlot, optionalText, readSlotDetails, requestConsultationSlot, updateConsultationSlot,
-  type CloseAction, type ConsultationSlot, type SlotAction, type SlotDetail, type SlotsApi, type SlotWrite,
+  PREPARATION_MAX, REASON_MAX, TOPIC_MAX, closeConsultationSlot, optionalText, readSlotDetails, requestConsultationSlot, requestConsultationSlotWithPreparation, updateConsultationSlot,
+  type CloseAction, type CloseWrite, type ConsultationSlot, type SlotAction, type SlotDetail, type SlotsApi, type SlotWrite,
 } from "../../../../../../../src/client/consultation-slots";
 
 import styles from "./Consult.module.css";
@@ -63,7 +63,7 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd, now = Date.
     const detail = "closing" in saved ? saved : asDetail(saved, l.slots.find((s) => s.id === saved.id));
     return { kind: "ready", slots: withSlot(l.slots, detail) };
   });
-  const settle = (outcome: SlotWrite) => {
+  const settle = (outcome: SlotWrite | CloseWrite) => {
     if (outcome.kind === "saved") place(outcome.slot);
     if (outcome.kind === "session-expired") onSessionEnd?.();
     if (outcome.kind === "promijenjeno") void read();
@@ -136,7 +136,7 @@ export function ConsultSlots({ documentId, role, call, onSessionEnd, now = Date.
     setNotice(null);
     setRequest((f) => ({ ...f, busy: true, error: null }));
     // An unavailable preparation is not sent: the request goes without it, as the checkbox says.
-    const outcome = await requestConsultationSlot(call, documentId, iso, topic, prep ?? undefined);
+    const outcome = prep ? await requestConsultationSlotWithPreparation(call, documentId, iso, topic, prep) : await requestConsultationSlot(call, documentId, iso, topic);
     inFlight.current.delete("new");
     if (!alive.current) return;
     settle(outcome);

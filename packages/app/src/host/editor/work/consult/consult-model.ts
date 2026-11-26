@@ -102,7 +102,7 @@ export const IDLE_FORM: Form = { open: false, draft: "", busy: false, error: nul
 export type Closing = { readonly action: CloseAction; readonly reason: string; readonly busy: boolean; readonly error: string | null };
 
 /** After a write: saved closes and clears the form; anything else keeps it as typed, with the reason. */
-export const afterSlotWrite = (form: Form, outcome: SlotWrite): Form =>
+export const afterSlotWrite = (form: Form, outcome: SlotWrite | CloseWrite): Form =>
   outcome.kind === "saved" ? IDLE_FORM : { ...form, busy: false, error: slotFailure(outcome) };
 
 /** The criterion's text, from its id (the server's label is only a message key). */
