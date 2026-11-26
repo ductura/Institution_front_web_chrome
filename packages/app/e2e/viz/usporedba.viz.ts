@@ -43,8 +43,13 @@ for (const { screen, proto, slug } of PAIRS) {
       const file = resolve(PROTOTIPOVI, proto.file);
       test.skip(!existsSync(file), `nema prototipa ${file} (VIZ_PROTOTIPOVI)`);
       await page.setViewportSize({ width, height: 900 });
+      // ED-60: a prototype whose script failed (the editor without its vendor/tiptap.js, which is not in
+      // the repository) is an empty shell; compared, it gave a 30-40 % "difference" that meant nothing.
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
       await page.goto(pathToFileURL(file).href + (proto.hash ? `#${proto.hash}` : ""));
       await page.waitForLoadState("networkidle");
+      test.skip(errors.length > 0, `prototip se nije pokrenuo (${errors[0]}); VIZ_PROTOTIPOVI s mapom vendor`);
       await page.locator("html").evaluate((html, theme) => html.setAttribute("data-theme", theme), THEME);
       // The prototype's own screen/state switcher is not part of the design.
       await page.addStyleTag({ content: "#proto-bar{display:none!important}" });
