@@ -71,13 +71,40 @@ function storage(): Storage | null {
   try { return window.localStorage; } catch { return null; }
 }
 
-/** A value kept on this device only, per work. A failed write keeps the value for this visit. */
+const DEVICE_EVENT = "ductura:device-value";
+
+/** Tells every reader of a device value on this page that `key` was written (ED-37: the chapter row and the sheet). */
+export function announceDeviceChange(key: string): void {
+  try { window.dispatchEvent(new CustomEvent(DEVICE_EVENT, { detail: key })); } catch { /* no window: nothing listens */ }
+}
+
+/** Calls `onChange` when a device value under `key` changes on this page or in another tab. */
+export function useDeviceChange(key: string, onChange: () => void): void {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const changed = (e: Event) => {
+      const written = e instanceof StorageEvent ? e.key : (e as CustomEvent<string>).detail;
+      if (written === key) onChange();
+    };
+    window.addEventListener(DEVICE_EVENT, changed);
+    window.addEventListener("storage", changed);
+    return () => { window.removeEventListener(DEVICE_EVENT, changed); window.removeEventListener("storage", changed); };
+    // onChange reads the latest storage and needs no identity of its own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+}
+
+/** A value kept on this device only, per work. A failed write keeps the value for this visit. Every reader of
+ * the same value on the page follows a successful write (ED-37: the dot in the chapter row follows the sheet). */
 export function useDeviceValue<T>(kind: string, workId: string, parse: (raw: unknown) => T, fallback: T): [T, (next: T) => boolean] {
   const key = storageKey(kind, workId);
   const [value, setValue] = useState<T>(() => readJson(storage(), key, parse, fallback));
+  useDeviceChange(key, () => setValue(readJson(storage(), key, parse, fallback)));
   const set = useCallback((next: T) => {
     setValue(next);
-    return writeJson(storage(), key, next);
+    const written = writeJson(storage(), key, next);
+    if (written) announceDeviceChange(key);
+    return written;
   }, [key]);
   return [value, set];
 }
