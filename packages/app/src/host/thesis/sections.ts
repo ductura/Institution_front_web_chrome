@@ -7,6 +7,7 @@ import { section as committee } from "./committee/section";
 import { section as forms } from "./forms/section";
 import { orderSections, type ThesisSectionDef } from "./model";
 import { section as stage } from "./stage/section";
+import { section as topicStudent } from "./topic-student/section";
 
 const modules: readonly ThesisSectionDef<never>[] = [
   // The registry holds sections of any value type; `never` is the frame's erased form (model.ts).
@@ -14,6 +15,7 @@ const modules: readonly ThesisSectionDef<never>[] = [
   stage as unknown as ThesisSectionDef<never>,
   stagesStudent as unknown as ThesisSectionDef<never>,
   committee as unknown as ThesisSectionDef<never>,
+  topicStudent as unknown as ThesisSectionDef<never>,
 ];
 
 export const registeredSections: readonly ThesisSectionDef<never>[] = orderSections(modules);

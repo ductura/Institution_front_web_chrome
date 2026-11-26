@@ -23,4 +23,5 @@ export const assistantRulesHr = {
   outside: "Alate koje koristite izvan Ducture navedite u izjavi pri predaji.",
   readNotice: "Pročitaj obavijest zadatka",
   declaration: "Izjava o korištenju alata",
+  editDeclaration: "Uredi izjavu",
 } as const;

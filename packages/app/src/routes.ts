@@ -36,6 +36,7 @@ import { ACTION_LOG, PROBLEM_REPORTS } from "./host/operator/paths";
 import { hostText } from "./text";
 import { reviewMessages } from "./host/teacher/work/review/messages.hr";
 import { practiceJournalText } from "./host/student/practice-journal/messages.hr";
+import { qualMaterialsText } from "./host/student/qual-materials/messages.hr";
 import { peerReviewText } from "./host/student/peer-review/messages.hr";
 import { workTeamText } from "./host/student/work-team/messages.hr";
 import { teacherTeamText } from "./host/teacher/work-team/messages.hr";
@@ -136,6 +137,8 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/recenzija", label: teacherPeerReviewText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // WEB-V21-KOD-TESTOVI-OBRAZAC: the teacher's code tests of one assignment, a standalone screen reached by its path.
   { path: "/nastavnik/zadatak/[assignmentId]/testovi", label: codeTestsText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
+  // WEB-V18-KODIRANJE-GRADIVO: the student's own material for qualitative coding.
+  { path: "/zadaci/gradivo-kodiranja", label: qualMaterialsText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
   // HOST-S1: the editor of one work.
   { path: "/rad/[assignmentId]", label: t.workspace.title, kind: "pending", roles: ["student"], current: "/rad" },
   { path: "/rad/[assignmentId]/predaja", label: t.submission.title, kind: "pending", roles: ["student"] },

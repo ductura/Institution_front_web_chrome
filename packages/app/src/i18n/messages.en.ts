@@ -110,6 +110,7 @@ export const hostTextEn = {
   deadlineExtensions: "Deadline extension",
   mentorshipRequest: "Mentorship request",
   practiceJournal: "Practice journal",
+  qualMaterials: "Material for coding",
   mentorPracticeJournal: "Students' practice journals",
   workTeam: "My team",
   workTeams: "Teams on the assignment",
