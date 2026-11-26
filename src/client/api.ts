@@ -704,19 +704,25 @@ export function startWorkCall(transport: typeof fetch = browserTransport): Start
 }
 
 /**
- * WEB-1304 (plan M7.10): the student's portable record, GET /api/v1/student/submissions/{id}/portable-record.
- * Not in the pinned contract yet (TODO(ugovor)) and the answer is a file, not JSON, so createApi
- * does not know it; kept here, the only file allowed an API URL. The id is a path segment, encoded;
- * the caller (client/portable-record.ts) reads the answer.
+ * WEB-1304 (plan M7.10): the student's portable record, student.portable-record.get. The answer is a
+ * file, not JSON, so createApi does not read it; the path and the id's shape come from the contract
+ * and the caller (client/portable-record.ts) reads the answer. The id is a path segment, encoded.
  */
+const PORTABLE_RECORD = migrationContracts["student.portable-record.get"];
+
 export type PortableRecordTransport = (submissionId: string) => Promise<Response>;
 
 export function portableRecordCall(transport: typeof fetch = browserTransport, baseUrl: string = globalThis.location.origin): PortableRecordTransport {
-  return (submissionId) => transport(new URL(`/api/v1/student/submissions/${encodeURIComponent(submissionId)}/portable-record`, baseUrl), {
-    method: "GET",
+  return (submissionId) => transport(new URL(PORTABLE_RECORD.path.replace("{submissionId}", encodeURIComponent(submissionId)), baseUrl), {
+    method: PORTABLE_RECORD.method,
     redirect: "manual",
     credentials: "same-origin",
   });
+}
+
+/** Whether an id is one the contract's params accept (a UUID). */
+export function portableRecordIdFits(submissionId: string): boolean {
+  return matchesSchema(PORTABLE_RECORD.params as Schema, { submissionId });
 }
 
 /**
