@@ -43,6 +43,19 @@ describe("CourseStudents removal and return (F4-PM1-R09)", () => {
     expect(document.querySelector('[data-testid="n04-change"]')?.textContent).toBe(t.changeOutcome.removed);
   });
 
+  it("a removed student stays offered for return after the roster is read again", async () => {
+    const { change, reads } = await mount("done");
+    reads.mockImplementation(async () => ({ kind: "ready" as const, data: { courseName: "Izmišljeni kolegij", students: [] } }));
+    await click(button(t.remove));
+    await click([...document.querySelectorAll("dialog button")].find((b) => b.textContent === t.remove));
+    const removed = document.querySelector('[data-testid="n04-removed"]');
+    expect(removed?.textContent).toContain("Ana Šarić");
+    await click([...removed!.querySelectorAll("button")].find((b) => b.textContent === t.allowReturn));
+    await click([...document.querySelectorAll("dialog button")].find((b) => b.textContent === t.allowReturn));
+    expect(change).toHaveBeenLastCalledWith("return", "c1", STUDENTS[0]!.studentId);
+    expect(document.querySelector('[data-testid="n04-removed"]')).toBeNull();
+  });
+
   it("cancel sends nothing; a refusal is said, not hidden; a return is its own action", async () => {
     const { change } = await mount("forbidden");
     await click(button(t.remove));

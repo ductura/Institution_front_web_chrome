@@ -34,6 +34,8 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
   const [ask, setAsk] = useState<{ action: StudentChangeAction; studentId: string; name: string } | null>(null);
   const [working, setWorking] = useState(false);
   const [done, setDone] = useState<{ action: StudentChangeAction; outcome: StudentChange } | null>(null);
+  // Students removed here stay offered for "Dopusti povratak": the roster no longer lists them.
+  const [removed, setRemoved] = useState<readonly { studentId: string; name: string }[]>([]);
   const inFlight = useRef(false);
   const safe = useRef<HTMLButtonElement>(null);
 
@@ -48,7 +50,13 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
     setDone({ action: ask.action, outcome });
     setAsk(null);
     // A removal or a return that changed something: read the roster again, never patch it by hand.
-    if (outcome === "done") setAttempt((n) => n + 1);
+    if (outcome === "done") {
+      setAttempt((n) => n + 1);
+      const { studentId, name } = ask;
+      setRemoved((list) => ask.action === "remove"
+        ? (list.some((r) => r.studentId === studentId) ? list : [...list, { studentId, name }])
+        : list.filter((r) => r.studentId !== studentId));
+    }
   };
 
   useEffect(() => {
@@ -68,16 +76,48 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
   const shown = data === null ? [] : listedStudents(data.students, options.some((o) => o.value === group) ? group : "", state, order);
   const teacherRead: TeacherRead<RosterData> | null = read === null ? null : read.kind === "ready" ? { kind: "ready", value: read.data } : { kind: read.kind };
 
+  const dialog = (
+    <Dialog open={ask !== null} dismissible={!working} onClose={() => setAsk(null)} initialFocus={safe}
+      title={ask === null ? "" : ask.action === "return" ? text.returnTitle(ask.name) : text.removeTitle(ask.name)}
+      actions={(
+        <>
+          <Button busy={working} onClick={() => void send()}>{ask?.action === "return" ? text.allowReturn : text.remove}</Button>
+          <Button ref={safe} tone="secondary" disabled={working} onClick={() => setAsk(null)}>{text.cancel}</Button>
+        </>
+      )}>
+      <p>{ask?.action === "return" ? text.returnNote : text.removeNote}</p>
+    </Dialog>
+  );
+
+  const removedSection = removed.length === 0 ? null : (
+    <section aria-label={text.removedHeading} data-testid="n04-removed">
+        <h3>{text.removedHeading}</h3>
+        <ul className="list" role="list">
+          {removed.map((r) => (
+            <li key={r.studentId} className="item">
+              <span className="title">{r.name}</span>
+              <Button tone="secondary" size="small" disabled={working}
+                onClick={() => setAsk({ action: "return", studentId: r.studentId, name: r.name })}>{text.allowReturn}</Button>
+            </li>
+          ))}
+        </ul>
+      </section>
+  );
+
   return (
     <TeacherPage title={title} lead={text.lead} loading={text.loading} read={teacherRead} retry={() => setAttempt((n) => n + 1)}
       unavailable={text.unavailable} retryLabel={text.retry}
       actions={() => <a className="btn secondary" href={appHref(base, aggregatePath(courseId))}>{text.aggregateLink}</a>}
       ready={(roster) => roster.students.length === 0 ? (
+        <>
         <section className="card center" aria-labelledby="n04-prazno">
           <h2 id="n04-prazno">{text.emptyTitle}</h2>
           <p className="note">{text.emptyBody}</p>
           <a className="btn" href={appHref(base, issueCodePath(courseId))}>{text.emptyAction}</a>
         </section>
+        {removedSection}
+        {dialog}
+        </>
       ) : (
         <>
           <p className="note" role="status" data-testid="n04-not-started">{text.notStartedCount(notStartedCount(roster.students))}</p>
@@ -122,16 +162,8 @@ export default function CourseStudents({ courseId, port = unavailablePort }: { c
               </li>
             ))}
           </ul>
-          <Dialog open={ask !== null} dismissible={!working} onClose={() => setAsk(null)} initialFocus={safe}
-            title={ask === null ? "" : ask.action === "return" ? text.returnTitle(ask.name) : text.removeTitle(ask.name)}
-            actions={(
-              <>
-                <Button busy={working} onClick={() => void send()}>{ask?.action === "return" ? text.allowReturn : text.remove}</Button>
-                <Button ref={safe} tone="secondary" disabled={working} onClick={() => setAsk(null)}>{text.cancel}</Button>
-              </>
-            )}>
-            <p>{ask?.action === "return" ? text.returnNote : text.removeNote}</p>
-          </Dialog>
+          {removedSection}
+          {dialog}
         </>
       )} />
   );

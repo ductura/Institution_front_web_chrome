@@ -49,6 +49,7 @@ export const courseStudentsMessages = {
   remove: "Ukloni iz kolegija",
   allowReturn: "Dopusti povratak",
   cancel: "Odustani",
+  removedHeading: "Uklonjeni u ovoj sesiji",
   removeTitle: (name: string): string => `Ukloniti studenta ${name} iz kolegija?`,
   returnTitle: (name: string): string => `Dopustiti studentu ${name} povratak u kolegij?`,
   removeNote: "Student više neće biti upisan u ovaj kolegij.",
