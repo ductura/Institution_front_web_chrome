@@ -20,5 +20,5 @@ export default defineConfig({
       },
     },
   },
-  test: { include: ["src/**/*.test.ts", "reference-report/**/*.test.ts"] },
+  test: { include: ["src/**/*.test.ts", "e2e/reference-report/**/*.test.ts"] },
 });

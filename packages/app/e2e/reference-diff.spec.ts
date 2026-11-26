@@ -3,7 +3,7 @@
 // of another size is told apart and counted over the larger area.
 import { expect, test, type Page } from "@playwright/test";
 
-import { diffImages } from "../reference-report/diff.ts";
+import { diffImages } from "./reference-report/diff.ts";
 
 async function draw(page: Page, width: number, height: number, quarter: string): Promise<string> {
   await page.setViewportSize({ width, height });

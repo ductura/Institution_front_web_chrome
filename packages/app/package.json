@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "reference:report": "playwright test -c reference-report/playwright.config.ts"
+    "reference:report": "playwright test -c e2e/reference-report/playwright.config.ts"
   },
   "dependencies": {
     "@ductura/ui": "workspace:*",

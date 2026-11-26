@@ -1,6 +1,6 @@
 # docs/design/reference
 
-Odobrene referentne slike ekrana koji su spojeni u ovom repou. Vlasnik je 25. 11. 2026. odlučio da referentne slike idu u novi repo; uz njih ih čita `packages/app/reference-report` (DAN-1565).
+Odobrene referentne slike ekrana koji su spojeni u ovom repou. Vlasnik je 25. 11. 2026. odlučio da referentne slike idu u novi repo; uz njih ih čita `packages/app/e2e/reference-report` (DAN-1565).
 
 | Mapa | Ekrani | Izvor |
 | --- | --- | --- |

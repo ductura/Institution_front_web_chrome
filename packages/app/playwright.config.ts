@@ -6,6 +6,8 @@ import { defineConfig, devices } from "@playwright/test";
 const port = 5191;
 export default defineConfig({
   testDir: "./e2e",
+  // The reference report (DAN-1565) is a command of its own, not a test of this run.
+  testIgnore: "**/reference-report/**",
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   use: { baseURL: `http://127.0.0.1:${port}`, trace: "retain-on-failure" },

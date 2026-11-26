@@ -17,10 +17,10 @@ import { captureName, referencePath, SCREENS, THEMES, WIDTHS, type ReportScreen 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (path: string) => JSON.parse(readFileSync(join(here, path), "utf8")) as unknown;
 const INSTITUTION = "Izmišljeni fakultet za testove";
-const assignments = read("../../../src/components/student/fixtures/student.assignments.get.json") as {
+const assignments = read("../../../../src/components/student/fixtures/student.assignments.get.json") as {
   vectors: { name: string; response: { body: unknown } }[];
 };
-const teacher = read("../e2e/fixtures/teacher.json") as Record<string, unknown>;
+const teacher = read("../fixtures/teacher.json") as Record<string, unknown>;
 const BODIES: Readonly<Record<string, unknown>> = {
   "student/assignments": assignments.vectors.find((v) => v.name === "ready")!.response.body,
   "teacher/courses": teacher["teacher.courses.get"],
@@ -31,7 +31,7 @@ const ME: Readonly<Record<ReportScreen["role"], unknown>> = {
   teacher: { roles: ["teacher"], institutionName: INSTITUTION },
 };
 
-const referenceRoot = resolve(process.env.DUCTURA_REFERENCES ?? join(here, "../../../docs/design/reference"));
+const referenceRoot = resolve(process.env.DUCTURA_REFERENCES ?? join(here, "../../../../docs/design/reference"));
 const outDir = resolve(process.env.DUCTURA_REFERENCE_REPORT ?? join(here, "dist"));
 
 /** The institution server of one role: invented data only, and nothing leaves the browser. */

@@ -1,4 +1,4 @@
-# packages/app/reference-report
+# packages/app/e2e/reference-report
 
 Usporedni izvještaj stvarnih ekrana prema referentnim slikama (DAN-1565). Katalog komponenti uspoređuje komponente s vlastitim prethodnim snimkama; ovaj alat snima stvarnu aplikaciju i stavlja je uz referentnu sliku (Ductus `docs/SESSIONS.md` §6).
 
@@ -6,7 +6,7 @@ Usporedni izvještaj stvarnih ekrana prema referentnim slikama (DAN-1565). Katal
 pnpm --filter @ductura/app run reference:report
 ```
 
-Izvještaj je `packages/app/reference-report/dist/index.html` (mapa se ne sprema u git; `DUCTURA_REFERENCE_REPORT` je mijenja). To je jedna datoteka sa svim slikama u sebi i otvara se bez mreže. Uz nju su u `dist/snimke/` same snimke ekrana.
+Izvještaj je `packages/app/e2e/reference-report/dist/index.html` (mapa se ne sprema u git; `DUCTURA_REFERENCE_REPORT` je mijenja). To je jedna datoteka sa svim slikama u sebi i otvara se bez mreže. Uz nju su u `dist/snimke/` same snimke ekrana.
 
 ## Što radi
 
@@ -18,9 +18,11 @@ Izvještaj je `packages/app/reference-report/dist/index.html` (mapa se ne sprema
 | Datoteka | Što |
 | --- | --- |
 | `screens.ts` | Ekrani, širine, teme i ime referentne slike za svaki ekran. |
-| `diff.ts` | Razlika dviju slika u pregledniku (canvas), bez nove ovisnosti. Pokriva je `e2e/reference-diff.spec.ts`. |
+| `diff.ts` | Razlika dviju slika u pregledniku (canvas), bez nove ovisnosti. Pokriva je `../reference-diff.spec.ts`. |
 | `html.ts` | Izvještaj kao tekst. Pokriva ga `html.test.ts`. |
-| `capture.spec.ts` | Snimanje i pisanje izvještaja. Nije dio `test:e2e`. |
+| `capture.spec.ts` | Snimanje i pisanje izvještaja. Nije dio `test:e2e` (`testIgnore` u `playwright.config.ts`). |
+
+Mapa je pod `e2e/` jer `src/client/no-direct-api.test.ts` čita sve ostalo pod `packages/` kao kôd koji ide u preglednik; alat je testni i ne ide.
 
 ## Odakle referentne slike
 

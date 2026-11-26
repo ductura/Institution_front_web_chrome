@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { findForbiddenTerms } from "../../../scripts/forbidden-terms/terms.ts";
+import { findForbiddenTerms } from "../../../../scripts/forbidden-terms/terms.ts";
 import { buildReport, formatPercent, reportText, type ReportRow } from "./html.ts";
 import { captureName, referencePath, SCREENS, THEMES, WIDTHS } from "./screens.ts";
 
@@ -63,7 +63,7 @@ describe("screens", () => {
 
 describe("reference images", () => {
   it("exist in this repository for every screen, theme and width that names one", () => {
-    const root = new URL("../../../docs/design/reference/", import.meta.url);
+    const root = new URL("../../../../docs/design/reference/", import.meta.url);
     const missing = SCREENS.flatMap((screen) => THEMES.flatMap((theme) => WIDTHS.map((width) => referencePath(screen, theme, width))))
       .filter((file): file is string => file !== null)
       .filter((file) => !existsSync(new URL(file, root)));
