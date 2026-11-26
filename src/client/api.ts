@@ -61,7 +61,7 @@ export const RESPONSES: ReadonlyMap<string, Readonly<Record<string, ResponseSpec
 
 /**
  * Operations the server's extract is ahead of the published package on, where the package refuses an input the server
- * takes (a general comment, anchor null; access-log and login with no query). Their refused inputs go by the extract's route; remove with the package bump.
+ * takes (a general comment, anchor null; access-log and login with no query; the assignment's `documentKind`, WEB-V13). Their refused inputs go by the extract's route; remove with the package bump.
  */
 /** True when the extract's route for the operation takes this input (the package may refuse it). */
 export function acceptedByExtract(id: string, input: { readonly params?: unknown; readonly query?: unknown; readonly body?: unknown }): boolean {
@@ -69,7 +69,11 @@ export function acceptedByExtract(id: string, input: { readonly params?: unknown
   return route !== undefined && acceptsPart(route.query, input.query) && acceptsPart(route.params, input.params) && acceptsPart(route.body, input.body);
 }
 
-export const AHEAD_OF_PACKAGE: ReadonlySet<string> = new Set(["collaboration.comments.post", "student.access-log.get", "auth.login.get"]);
+export const AHEAD_OF_PACKAGE: ReadonlySet<string> = new Set([
+  "collaboration.comments.post", "student.access-log.get", "auth.login.get",
+  // WEB-V13-VRSTA-ZADATKA: the package's body names no `documentKind`; the extract's route takes it (SRV-V13-UGOVOR-VRSTA, WEB#828).
+  "institution.course-assignments.post", "institution.assignment-versions.post",
+]);
 
 const PARTS = ["params", "query", "body"] as const;
 type Part = (typeof PARTS)[number];

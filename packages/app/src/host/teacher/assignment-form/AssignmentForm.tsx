@@ -15,12 +15,13 @@ import { wordRangeHr } from "@/lib/i18n/length-line";
 import { messagesHr as t } from "@/lib/i18n/messages.hr";
 
 import { checkForm, errorSummary, withPractice, type FormErrors } from "./form-checks";
+import { DocumentKindField, withDocumentKind, kindOf, type DocumentKind } from "./DocumentKindField";
 import { ImportAllowedField } from "./ImportAllowedField";
 import { PracticeField } from "./PracticeField";
 import { QuestionField } from "./QuestionField";
 import { SubmissionRules, seesLine } from "./SubmissionRules";
 import { applyRules, bodyExtras, defaultChoices, groupsMissing, readGroups, type Call, type GroupsRead, type RuleChoices, type RuleName } from "./rules";
-import { assignmentFormHr as f, templateFieldHr } from "./messages.hr";
+import { assignmentFormHr as f, documentKindHr, templateFieldHr } from "./messages.hr";
 import { readOutline, saveTemplate, TemplateField, type LoadOutline, type TemplateOutcome } from "./TemplateField";
 import { rubricFormHr } from "../rubric/messages.hr";
 import { saveRubric, type SaveOutcome } from "../rubric/port";
@@ -32,14 +33,14 @@ import { isUncertain, publishOutcome } from "../publish/publish-outcome";
 
 type Course = Pick<TeacherCourse, "id" | "name" | "academicYear" | "aiPolicy">;
 /** `isPractice` is the contract's practice-assignment flag (WEB-1901); the server stores it and returns it, no grade field exists for it. */
-type PracticeBody = NonNullable<ReturnType<typeof assignmentBody>> & { isPractice?: true };
+type PracticeBody = NonNullable<ReturnType<typeof assignmentBody>> & { isPractice?: true; documentKind?: DocumentKind };
 type Publish = (courseId: string, body: PracticeBody, requestKey: string) => Promise<AssignmentCreation>;
 type LoadGroups = (courseId: string) => Promise<GroupsRead>;
 type SaveRubric = (assignmentId: string, rubric: Rubric) => Promise<SaveOutcome>;
 type SaveTemplate = (assignmentId: string, use: boolean) => Promise<TemplateOutcome>;
 const loadOutlineDefault: LoadOutline = (workType) => readOutline(createApi() as Call, workType);
 type ApplyRules = (assignmentId: string, choices: RuleChoices) => Promise<RuleName[]>;
-type FormDraft = AssignmentDraft & { practice?: boolean };
+type FormDraft = AssignmentDraft & { practice?: boolean; documentKind?: DocumentKind };
 type Phase = "form" | "review" | "publishing" | "published";
 
 const a = t.teacher.assignment;
@@ -107,7 +108,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
     const body = assignmentBody(draft, course.aiPolicy);
     if (!body) { setPhase("form"); setFailure(a.errors.invalid); return; }
     const base = courseProhibits || body.aiPurposes.length === 0 ? body : { ...body, aiPolicy: course.aiPolicy };
-    const aiBody = withPractice({ ...base, ...bodyExtras({ ...choices, summaryOnly: choices.summaryOnly && allowsHelp }, groups?.kind === "ready" ? groups.groups.length : null) }, draft);
+    const aiBody = withDocumentKind(withPractice({ ...base, ...bodyExtras({ ...choices, summaryOnly: choices.summaryOnly && allowsHelp }, groups?.kind === "ready" ? groups.groups.length : null) }, draft), draft);
     const serialized = JSON.stringify(aiBody);
     // One retry key per body, so a repeated click after an unclear reply cannot create a second assignment.
     if (request.current?.body !== serialized) request.current = { body: serialized, key: crypto.randomUUID() };
@@ -153,6 +154,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
     const rows = [
       { id: "course", label: f.labels.course, value: course.name },
       { id: "kind", label: f.labels.kind, value: draft.practice === true ? f.values.practice : f.values.regular },
+      { id: "documentKind", label: f.labels.documentKind, value: documentKindHr.options[kindOf(draft.documentKind)] },
       { id: "title", label: f.labels.title, value: draft.title.trim() },
       { id: "workType", label: f.labels.workType, value: a.workTypes[draft.workType as "seminar_paper" | "essay"] },
       { id: "opens", label: f.labels.opens, value: formatDateTimeHr(draft.opensAt) },
@@ -209,6 +211,7 @@ export default function AssignmentForm({ course, publish = publishAssignment, ca
             onChange={(event) => set("workType", event.target.value as WorkType)} />
           <TextArea label={f.fields.description} rows={4} value={draft.instructions} maxLength={20_000}
             {...invalid("instructions")} onChange={(event) => set("instructions", event.target.value)} />
+          <DocumentKindField value={kindOf(draft.documentKind)} onChange={(value) => set("documentKind", value)} />
           <PracticeField checked={draft.practice === true} onChange={(value) => set("practice", value)} />
         </Section>
 
