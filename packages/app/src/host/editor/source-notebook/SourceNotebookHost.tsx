@@ -111,13 +111,13 @@ function NotebookNotes({ documentId, editor, sources, canInsert }: Props) {
     </div>}
     {form
       ? <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-        {form.noteId === null && <Select label={t.formSource} placeholder={t.formSourcePlaceholder} value={form.sourceId}
+        {form.noteId === null && <Select label={t.formSource} busy={busy} placeholder={t.formSourcePlaceholder} value={form.sourceId}
           options={workSources.map((s) => ({ value: s.id, label: s.label }))}
           error={formError === "needSource" ? t.needSource : undefined}
           onChange={(event) => setForm({ ...form, sourceId: event.currentTarget.value })} />}
-        <TextArea label={t.formQuote} value={form.draft.quote} maxLength={4000} onChange={(e) => field("quote", e.currentTarget.value)} />
-        <TextField label={t.formPage} value={form.draft.page} maxLength={80} onChange={(e) => field("page", e.currentTarget.value)} />
-        <TextArea label={t.formNote} value={form.draft.note} maxLength={4000}
+        <TextArea label={t.formQuote} busy={busy} value={form.draft.quote} maxLength={4000} onChange={(e) => field("quote", e.currentTarget.value)} />
+        <TextField label={t.formPage} busy={busy} value={form.draft.page} maxLength={80} onChange={(e) => field("page", e.currentTarget.value)} />
+        <TextArea label={t.formNote} busy={busy} value={form.draft.note} maxLength={4000}
           error={formError === "needText" ? t.needText : undefined} onChange={(e) => field("note", e.currentTarget.value)} />
         <Button type="submit" disabled={busy}>{t.save}</Button>
         <Button type="button" tone="quiet" disabled={busy} onClick={() => { setForm(null); setFormError(null); }}>{t.cancel}</Button>
