@@ -137,6 +137,11 @@ describe("view", () => {
 });
 
 describe("registration and texts", () => {
+  it("the student gets no mentor section and no request is sent (topic-student owns that view)", async () => {
+    const call = fake(() => ok(wire()));
+    expect(await section.read("d1", "student")).toEqual({ kind: "notFound" });
+    expect(call).not.toHaveBeenCalled();
+  });
   it("the section is registered in the panel's registry", async () => {
     const { registeredSections } = await import("../sections");
     expect(registeredSections.map((s) => s.id)).toContain(section.id);

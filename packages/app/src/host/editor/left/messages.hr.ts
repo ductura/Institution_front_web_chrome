@@ -7,6 +7,8 @@ export const leftHr = {
     none: "Kursor nije u poglavlju.",
     state: "Stanje poglavlja",
     states: { draft: "skica", working: "u radu", done: "gotovo" },
+    stateOf: (state: string) => `Stanje: ${state}`,
+    toFix: (n: number) => `${n} za popraviti`,
     moveUp: "Pomakni poglavlje gore",
     moveDown: "Pomakni poglavlje dolje",
     alreadyFirst: "Poglavlje je već prvo.",
