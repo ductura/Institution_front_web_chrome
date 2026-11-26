@@ -54,7 +54,7 @@ describe("SlidesOrWork", () => {
   });
 
   it("does not hold a text work back while the kind is still being read", async () => {
-    await act(async () => { root.render(h(SlidesOrWork, { documentId: "doc-1", path: "/nastavnik/rad/doc-1", fallback: h("p", null, "TEKSTNA STRANICA"), read: () => new Promise(() => {}) })); });
+    await act(async () => { root.render(h(SlidesOrWork, { documentId: "doc-1", path: "/nastavnik/rad/doc-1", fallback: h("p", null, "TEKSTNA STRANICA"), read: (() => new Promise(() => {})) as never })); });
     expect(host.textContent).toBe("TEKSTNA STRANICA");
   });
 
