@@ -109,8 +109,8 @@ export default function QuestionnaireExportPage({ questionnaireId, call = defaul
     setLoadingText(false);
     if (next.kind === "signedOut") { goToSignIn(here); return; }
     if (next.kind === "ok") { setRead(next); setConfirmed(false); return; }
-    // Anything else keeps the export on screen and says so: a failed read never turns into "no text".
-    setNote({ tone: "alert", text: t.textLoadFailed });
+    // Anything else keeps the export on screen and says which one: a failed drop says free text is still in it.
+    setNote({ tone: "alert", text: include ? t.textLoadFailed : t.textDropFailed });
   }
 
   return (

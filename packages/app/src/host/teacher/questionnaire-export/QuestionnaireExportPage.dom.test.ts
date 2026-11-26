@@ -95,6 +95,21 @@ describe("QuestionnaireExportPage in the browser", () => {
     expect(text()).toContain("Broj odgovora: 7.");
   });
 
+  it("says that free text is still included when dropping it fails", async () => {
+    let fail503 = false;
+    const { call } = apiOf({
+      "teacher.questionnaire-export.get": (q) => ((q as { includeText?: string }).includeText === "true" ? ok(WITH_TEXT) : fail503 ? fail(503, "unavailable") : ok(EXPORT)),
+      "teacher.questionnaire.get": () => TITLE,
+    });
+    await render(call);
+    await act(async () => { host.querySelector<HTMLInputElement>("input[type=checkbox]")!.click(); });
+    await click(button(t.textLoad));
+    fail503 = true;
+    await click(button(t.textDrop));
+    expect(host.querySelector("[role=alert]")?.textContent).toBe(t.textDropFailed);
+    expect(text()).toContain(t.textOn);
+  });
+
   it("offers JSON and CSV and notes success only after the file is prepared", async () => {
     const { call } = apiOf({ "teacher.questionnaire-export.get": exportOf, "teacher.questionnaire.get": () => TITLE });
     await render(call);

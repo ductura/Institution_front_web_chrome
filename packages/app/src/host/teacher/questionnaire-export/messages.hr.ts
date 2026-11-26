@@ -33,6 +33,7 @@ export const questionnaireExportText = {
   textLoad: "Učitaj izvoz sa slobodnim tekstom",
   textDrop: "Vrati izvoz bez slobodnog teksta",
   textLoadFailed: "Izvoz sa slobodnim tekstom nije učitan. Prikazan je izvoz bez njega.",
+  textDropFailed: "Izvoz bez slobodnog teksta nije učitan. Slobodni tekst i dalje je u izvozu i u datotekama koje preuzmete.",
   textNone: "Upitnik nema pitanja sa slobodnim tekstom.",
   downloadTitle: "Preuzimanje",
   downloadJson: "Preuzmi JSON",
