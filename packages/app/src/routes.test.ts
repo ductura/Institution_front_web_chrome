@@ -80,6 +80,8 @@ describe("the student's pages of Ductus app/", () => {
     expect(resolve("/zadaci/dnevnik-prakse", "teacher")).not.toMatchObject({ kind: "page" });
     expect(resolve("/zadaci/gradivo-kodiranja", "student")).toMatchObject({ kind: "page", page: { label: "Gradivo za kodiranje", current: "/zadaci" } });
     expect(resolve("/zadaci/gradivo-kodiranja", "teacher")).not.toMatchObject({ kind: "page" });
+    expect(resolve("/zadaci/upitnici", "student")).toMatchObject({ kind: "page", page: { label: "Upitnici", current: "/zadaci" } });
+    expect(resolve("/zadaci/upitnici", "teacher")).not.toMatchObject({ kind: "page" });
     expect(resolve("/zadaci/kodiranje-izvoz", "student")).toMatchObject({ kind: "page", page: { label: "Izvoz kodiranja", current: "/zadaci" } });
     expect(resolve("/zadaci/kodiranje-izvoz", "teacher")).not.toMatchObject({ kind: "page" });
     expect(resolve("/zadaci/kodiranje", "student")).toMatchObject({ kind: "page", page: { label: "Kodiranje", current: "/zadaci" } });

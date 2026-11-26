@@ -35,6 +35,7 @@ export const SCREENS: readonly Screen[] = [
   { name: "student: zahtjev za mentorstvo", path: "/zadaci/mentorstvo", role: "student" },
   { name: "student: dnevnik prakse", path: "/zadaci/dnevnik-prakse", role: "student" },
   { name: "student: gradivo za kodiranje", path: "/zadaci/gradivo-kodiranja", role: "student" },
+  { name: "student: upitnici", path: "/zadaci/upitnici", role: "student" },
   { name: "student: izvoz kodiranja", path: "/zadaci/kodiranje-izvoz", role: "student" },
   { name: "student: upis kodom", path: "/upis", role: "student" },
   { name: "student: upis u kolegij", path: `/upis/kolegij/${COURSE_ID}`, role: "student" },
