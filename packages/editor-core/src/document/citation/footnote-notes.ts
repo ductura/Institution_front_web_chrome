@@ -43,6 +43,10 @@ function withPage(text: string, locator: string | undefined, style: CitationStyl
   return `${text}, ${FOOTNOTE_LABELS.pages} ${shown}`;
 }
 
+function ended(text: string): string {
+  return text.endsWith(".") ? text : `${text}.`;
+}
+
 function withoutId(source: DocumentSource): Source {
   const rest: Partial<DocumentSource> = { ...source };
   delete rest.id;
@@ -84,16 +88,16 @@ export function deriveFootnoteNotes(document: CanonicalDocumentV3, style: Citati
         const short = () => `${authorsShort(source, style)}, ${FOOTNOTE_LABELS.workCited}`;
         const wasSeen = seen.has(doc.id);
         if (via !== undefined) {
-          push("secondary", withPage(`${via}, ${FOOTNOTE_LABELS.citedAfter}: ${wasSeen ? short() : full()}`, child.locator, style) + ".");
+          push("secondary", ended(withPage(`${via}, ${FOOTNOTE_LABELS.citedAfter}: ${wasSeen ? short() : full()}`, child.locator, style)));
           previous = undefined;
         } else if (previous === doc.id) {
-          push("ibid", withPage(FOOTNOTE_LABELS.ibid.replace(/\.$/, ""), child.locator, style) + ".");
+          push("ibid", ended(withPage(FOOTNOTE_LABELS.ibid, child.locator, style)));
           previous = doc.id;
         } else if (wasSeen) {
-          push("short", withPage(short(), child.locator, style) + ".");
+          push("short", ended(withPage(short(), child.locator, style)));
           previous = doc.id;
         } else {
-          push("full", withPage(full(), child.locator, style) + ".");
+          push("full", ended(withPage(full(), child.locator, style)));
           previous = doc.id;
         }
         seen.add(doc.id);

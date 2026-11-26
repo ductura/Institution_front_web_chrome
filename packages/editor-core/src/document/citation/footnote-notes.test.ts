@@ -29,7 +29,7 @@ describe("deriveFootnoteNotes (F4-EDI-R19)", () => {
     const n = deriveFootnoteNotes(doc([book(1), book(2)], [cite(1, "9"), cite(1, "10-12"), cite(1), cite(2), cite(1, "4")]), style);
     expect(n.map((x) => x.kind)).toEqual(["full", "ibid", "ibid", "full", "short"]);
     expect(n[0]!.text).toMatch(/^Prezime1, Ime \(2020\) Izvor 1\. .*, str\. 9\.$/);
-    expect(n[1]!.text).toBe("Ibid, str. 10–12.");
+    expect(n[1]!.text).toBe("Ibid., str. 10–12.");
     expect(n[2]!.text).toBe("Ibid.");
     expect(n[4]!.text).toBe("Prezime1, nav. dj., str. 4.");
     expect(n.map((x) => x.number)).toEqual([1, 2, 3, 4, 5]);
@@ -45,6 +45,13 @@ describe("deriveFootnoteNotes (F4-EDI-R19)", () => {
     const t = texts(doc([book(1)], [cite(1, "5", "Drugi, Autor (2019)"), cite(1, "6")]));
     expect(t[0]).toMatch(/^Drugi, Autor \(2019\), cit\. prema: Prezime1, Ime \(2020\) Izvor 1\. .*, str\. 5\.$/);
     expect(t[1]).toBe("Prezime1, nav. dj., str. 6.");
+  });
+
+  it("keeps one final period for abbreviations with and without a page", () => {
+    const t = texts(doc([book(1), book(2)], [cite(1), cite(1, "3"), cite(2), cite(1)]));
+    expect(t[1]).toBe("Ibid., str. 3.");
+    expect(t[3]).toBe("Prezime1, nav. dj.");
+    expect(t.every((x) => !x.endsWith(".."))).toBe(true);
   });
 
   it("shows an unknown source honestly and breaks the sequence", () => {
