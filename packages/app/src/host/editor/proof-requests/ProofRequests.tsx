@@ -6,7 +6,8 @@ import { Button, Details } from "@ductura/ui";
 import { useCallback, useEffect, useState } from "react";
 
 import { liveRequests, openRows, type RequestsRead } from "./proof-requests";
-import { proofRequestsHr as t } from "./messages.hr";
+import { liveRecommended, type RecommendedRead } from "./recommended-sources";
+import { proofRequestsHr as t, recommendedSourcesHr as r12 } from "./messages.hr";
 import styles from "./ProofRequests.module.css";
 
 type Source = { readonly id: string; readonly label: string };
@@ -50,4 +51,43 @@ export function ProofRequests({ assignmentId, sources, read = liveRequests }: {
   }, [assignmentId, read, attempt]);
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
   return <ProofRequestsView read={state} sources={sources} now={Date.now()} onRetry={retry} />;
+}
+
+export function RecommendedSourcesView({ read, onRetry }: { read: RecommendedRead; onRetry: () => void }) {
+  return <section aria-label={r12.title} data-recommended-sources>
+    <strong>{r12.title}</strong>
+    {read.kind === "loading" ? <p role="status">{r12.loading}</p>
+      : read.kind === "signedOut" ? <p role="alert">{r12.signedOut}</p>
+      : read.kind === "unavailable" ? <div role="alert">
+        <p><b>{r12.error}</b></p>
+        <Button tone="quiet" onClick={onRetry}>{r12.retry}</Button>
+      </div>
+      : read.sources.length === 0 ? <p>{r12.none}</p>
+      : <>
+        <ul className={styles.list}>
+          {read.sources.map((s) => <li key={s.id} className={styles.item}>
+            <b>{s.label}</b>
+            {s.title !== "" && s.title !== s.label && <span>{s.title}</span>}
+            <small>{s.requirement === "required" ? r12.required : r12.recommended}</small>
+          </li>)}
+        </ul>
+        <p><small>{r12.only}</small></p>
+      </>}
+  </section>;
+}
+
+export function RecommendedSources({ assignmentId, read = liveRecommended }: {
+  assignmentId: string;
+  read?: (assignmentId: string) => Promise<RecommendedRead>;
+}) {
+  const [state, setState] = useState<RecommendedRead>({ kind: "loading" });
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let live = true;
+    setState({ kind: "loading" });
+    void read(assignmentId).then((next) => { if (live) setState(next); });
+    return () => { live = false; };
+  }, [assignmentId, read, attempt]);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  return <RecommendedSourcesView read={state} onRetry={retry} />;
 }
