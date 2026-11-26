@@ -53754,5 +53754,360 @@
         "unavailable"
       ]
     }
+  },
+  "student.qual-materials.get": {
+    "path": "/api/v1/student/qual/materials",
+    "method": "GET",
+    "responses": {
+      "200": {
+        "description": "the caller's materials",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "materials"
+              ],
+              "properties": {
+                "materials": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "title",
+                      "kind",
+                      "createdOn",
+                      "charCount",
+                      "segmentCount",
+                      "locked"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                        "type": "string"
+                      },
+                      "title": {
+                        "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                        "type": "string"
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "const": "interview",
+                            "type": "string"
+                          },
+                          {
+                            "const": "note",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "createdOn": {
+                        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                        "type": "string"
+                      },
+                      "charCount": {
+                        "minimum": 0,
+                        "maximum": 2147483647,
+                        "type": "integer"
+                      },
+                      "segmentCount": {
+                        "minimum": 0,
+                        "maximum": 2147483647,
+                        "type": "integer"
+                      },
+                      "locked": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.qual-materials.post": {
+    "path": "/api/v1/student/qual/materials",
+    "method": "POST",
+    "body": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "title",
+        "kind",
+        "text"
+      ],
+      "properties": {
+        "title": {
+          "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "const": "interview",
+              "type": "string"
+            },
+            {
+              "const": "note",
+              "type": "string"
+            }
+          ]
+        },
+        "text": {
+          "minLength": 1,
+          "maxLength": 200000,
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "the kept material",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "title",
+                "kind",
+                "text",
+                "createdOn",
+                "segmentCount",
+                "locked"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "title": {
+                  "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                  "type": "string"
+                },
+                "kind": {
+                  "anyOf": [
+                    {
+                      "const": "interview",
+                      "type": "string"
+                    },
+                    {
+                      "const": "note",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "text": {
+                  "minLength": 1,
+                  "maxLength": 200000,
+                  "type": "string"
+                },
+                "createdOn": {
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "segmentCount": {
+                  "minimum": 0,
+                  "maximum": 2147483647,
+                  "type": "integer"
+                },
+                "locked": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error",
+        "invalid_json"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "409": [
+        "conflict"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "415": [
+        "unsupported_media_type"
+      ],
+      "422": [
+        "invalid_input"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.qual-material.get": {
+    "path": "/api/v1/student/qual/materials/{id}",
+    "method": "GET",
+    "params": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "200": {
+        "description": "the material",
+        "content": {
+          "application/json": {
+            "schema": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "id",
+                "title",
+                "kind",
+                "text",
+                "createdOn",
+                "segmentCount",
+                "locked"
+              ],
+              "properties": {
+                "id": {
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "type": "string"
+                },
+                "title": {
+                  "pattern": "^(?!\\s)(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[^\\u0000-\\u001f\\u007f-\\u009f\\uD800-\\uDFFF]){1,200}(?<!\\s)(?![\\s\\S])",
+                  "type": "string"
+                },
+                "kind": {
+                  "anyOf": [
+                    {
+                      "const": "interview",
+                      "type": "string"
+                    },
+                    {
+                      "const": "note",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "text": {
+                  "minLength": 1,
+                  "maxLength": 200000,
+                  "type": "string"
+                },
+                "createdOn": {
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "segmentCount": {
+                  "minimum": 0,
+                  "maximum": 2147483647,
+                  "type": "integer"
+                },
+                "locked": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": [
+        "unauthorized"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
+  },
+  "student.qual-material.delete": {
+    "path": "/api/v1/student/qual/materials/{id}",
+    "method": "DELETE",
+    "params": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responses": {
+      "204": {
+        "description": "removed"
+      }
+    },
+    "errors": {
+      "400": [
+        "content_length_invalid",
+        "content_length_mismatch",
+        "body_stream_error"
+      ],
+      "401": [
+        "unauthorized"
+      ],
+      "403": [
+        "origin_missing",
+        "origin_mismatch",
+        "cross_site"
+      ],
+      "404": [
+        "not_found"
+      ],
+      "408": [
+        "body_timeout"
+      ],
+      "413": [
+        "body_too_large"
+      ],
+      "503": [
+        "unavailable"
+      ]
+    }
   }
 }
