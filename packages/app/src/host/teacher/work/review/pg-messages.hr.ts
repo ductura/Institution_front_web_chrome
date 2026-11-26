@@ -78,8 +78,7 @@ export const pgMessages = {
   notesLoading: "Učitavam objašnjenja…",
   notesUnavailable: "Objašnjenja trenutačno nije moguće dohvatiti. To ne znači da ih nema.",
   notesForbidden: "Objašnjenja studenta vide samo nastavnik zadatka i mentor.",
-  notesFinding: "Objašnjenje uz nalaz podudaranja: čitanje još nije dostupno.",
-  notesFindingReason: "Poslužitelj još ne daje studentovo objašnjenje uz isti nalaz, pa se ne zna je li nalaz objašnjen. Ne nagađa se.",
+  notesFindingWhere: "Objašnjenja uz nalaze podudaranja s odgovorom pomoćnika vide se u Karti podrijetla, uz svaki nalaz.",
   noteBy: (kind: string, when: string): string => `${kind} · ${when}`,
 
   // PG-9: what the student has already received, read only.
