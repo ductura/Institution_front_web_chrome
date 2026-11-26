@@ -16,6 +16,7 @@ import { noticeText } from "./messages.hr";
 
 import { NoticeMeta } from "../notice/NoticeMeta";
 import styles from "../notice/Notice.module.css";
+import { assistantState } from "../notice/summary";
 import type { NoticeWindow } from "../notice/window";
 import own from "./HostNotice.module.css";
 
@@ -76,13 +77,16 @@ function ToolsCard({ view }: { view: NoticeView }) {
   );
 }
 
-function RecordCard({ extended }: { extended: boolean }) {
+function RecordCard({ extended, assistant }: { extended: boolean; assistant: boolean }) {
   return (
     <section className={styles.card} aria-labelledby="biljezi">
       <div className={own.cols}>
         <section>
           <h2 id="biljezi">{s.recordedHeading}</h2>
-          <ul>{Object.values(s.recorded).map((text) => <li key={text}>{text}</li>)}</ul>
+          <ul>
+            {Object.values(s.recorded).map((text) => <li key={text}>{text}</li>)}
+            {assistant ? <li>{s.recordedAssistant}</li> : null}
+          </ul>
         </section>
         <section>
           <h2>{s.notRecordedHeading}</h2>
@@ -166,7 +170,7 @@ export default function HostNotice({ view, timing, editorHref, backHref, onReloa
   const body = (
     <>
       <ToolsCard view={view} />
-      <RecordCard extended={view.evidenceProfile === "extended"} />
+      <RecordCard extended={view.evidenceProfile === "extended"} assistant={assistantState(view) !== "unavailable"} />
     </>
   );
 
