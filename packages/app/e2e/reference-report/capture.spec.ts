@@ -60,6 +60,8 @@ test("writes the report of real screens next to their reference images", async (
         await fakeServer(page, screen.role);
         await page.goto(`/app/web${screen.route}`);
         await expect(page.getByRole("heading", { level: 1 })).toHaveText(screen.heading);
+        // The heading is there while the screen still loads; the invented data is not.
+        await expect(page.getByText(screen.content).first()).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
         const shot = await page.screenshot({ fullPage: true, animations: "disabled" });
         writeFileSync(join(outDir, "snimke", captureName(screen, theme, width)), shot);

@@ -4,7 +4,7 @@
 import type { Page } from "@playwright/test";
 
 export type ImageDiff = {
-  /** Share of differing pixels of the larger of the two areas, 0 to 100. */
+  /** Share of differing pixels of the area either image covers, 0 to 100. */
   readonly percent: number;
   readonly sameSize: boolean;
   /** PNG, base64: differing pixels in one colour over a faded reference. */
@@ -16,7 +16,8 @@ export const CHANNEL_TOLERANCE = 16;
 
 /**
  * Compares `reference` and `actual` (PNG, base64) from the top left corner.
- * A pixel that exists in only one of them differs. Runs on `page`, which must
+ * A pixel that exists in only one of them differs; a place neither image
+ * covers is not a pixel of the comparison. Runs on `page`, which must
  * be on a document that may draw data URLs to a canvas (any http page).
  */
 export async function diffImages(page: Page, reference: string, actual: string): Promise<ImageDiff> {
@@ -45,11 +46,16 @@ export async function diffImages(page: Page, reference: string, actual: string):
     const context = out.getContext("2d")!;
     const result = context.createImageData(width, height);
     let differing = 0;
+    let covered = 0;
     for (let i = 0; i < pa.length; i += 4) {
       const x = (i / 4) % width;
       const y = Math.floor(i / 4 / width);
-      const inBoth = x < a.naturalWidth && y < a.naturalHeight && x < b.naturalWidth && y < b.naturalHeight;
-      let differs = !inBoth;
+      const inA = x < a.naturalWidth && y < a.naturalHeight;
+      const inB = x < b.naturalWidth && y < b.naturalHeight;
+      // Outside both images: left transparent and out of the count.
+      if (!inA && !inB) continue;
+      covered += 1;
+      let differs = !(inA && inB);
       for (let c = 0; c < 4 && !differs; c++) differs = Math.abs(pa[i + c]! - pb[i + c]!) > tolerance;
       if (differs) {
         differing += 1;
@@ -63,7 +69,7 @@ export async function diffImages(page: Page, reference: string, actual: string):
     }
     context.putImageData(result, 0, 0);
     return {
-      percent: (differing / (width * height)) * 100,
+      percent: (differing / covered) * 100,
       sameSize: a.naturalWidth === b.naturalWidth && a.naturalHeight === b.naturalHeight,
       diffBase64: out.toDataURL("image/png").split(",")[1]!,
     };

@@ -16,6 +16,8 @@ export type ReportScreen = {
   readonly role: "student" | "teacher";
   /** Level 1 heading the screen shows once its data is read. */
   readonly heading: string;
+  /** Text of the invented data, visible only once the screen's read has answered. */
+  readonly content: string;
   /**
    * Path of the reference images under the reference root, without
    * `-<theme>-<width>.png`; null when no reference is known for the screen.
@@ -25,19 +27,19 @@ export type ReportScreen = {
 
 export const SCREENS: readonly ReportScreen[] = [
   {
-    id: "S-02", route: "/zadaci", role: "student", heading: "Vaš studentski prostor",
+    id: "S-02", route: "/zadaci", role: "student", heading: "Vaš studentski prostor", content: "Izmišljeni zadatak 1",
     reference: "m2-student-reference/snimke/pocetna-kolegiji",
   },
   {
-    id: "S-03", route: "/zadaci/kolegiji", role: "student", heading: "Moji kolegiji",
+    id: "S-03", route: "/zadaci/kolegiji", role: "student", heading: "Moji kolegiji", content: "Izmišljeni zadatak 1",
     reference: "m2-student-reference/snimke/pocetna-kolegiji",
   },
   {
-    id: "N-01", route: "/nastavnik", role: "teacher", heading: "Moji kolegiji",
+    id: "N-01", route: "/nastavnik", role: "teacher", heading: "Moji kolegiji", content: "Izmišljeni kolegij nastavnika",
     reference: "m2-nastavnik-reference/snimke/n01",
   },
   {
-    id: "N-16", route: "/nastavnik/mentorstva", role: "teacher", heading: "Radovi uz mentora",
+    id: "N-16", route: "/nastavnik/mentorstva", role: "teacher", heading: "Radovi uz mentora", content: "Izmišljeni diplomski rad",
     reference: "m2-nastavnik-reference/snimke/n04-n16",
   },
 ];
