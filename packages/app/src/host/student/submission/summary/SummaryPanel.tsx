@@ -3,7 +3,9 @@
 // PD-1 on step 3 and 5 (WEB-2108, VIZ-S4): the process summary in the prototype's panel, the eleven
 // sections as `.sb-state` blocks, each marked observed or declared (Ductura_student.html, `summary()`).
 import { Button, StepActions, StepDetails, StepKv, StepLine, StepLoading, StepPanel, StepSection, ToastRegion, Tag, useToasts } from "@ductura/ui";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+
+import { createApi } from "../../../../../../../src/client/api.ts";
 
 import type { EventDisputesPort } from "../../../../../../../src/client/event-disputes.ts";
 import type { SubmissionNote } from "../../../../../../../src/client/submission.ts";
@@ -13,6 +15,7 @@ import type { NoteAdded } from "../../../../../../../src/components/predaja/Note
 import { EventDisputeSlot, EventDisputesProvider } from "../../event-dispute/EventDisputes";
 import { summaryText as t } from "./messages.hr";
 import { summaryEventId, type SummaryEventSection } from "./model";
+import { LOADING_EXTRAS, readExtras, type Read, type SummaryExtras } from "./extras";
 import NoteForm from "./NoteForm";
 import { noteText, panelSections } from "./panel-model";
 
@@ -36,8 +39,29 @@ export type SummaryPanelProps = {
    * The supplements and disputes of the summary's events (WEB-1305, R-08): read once for the work's
    * document and shown under each session, paste and gap. Without it the events stand alone.
    */
+  readonly assignmentId?: string;
   readonly disputes?: { readonly port: EventDisputesPort; readonly documentId: string };
 };
+
+/** The sections the summary route does not carry, read once per assignment and work (F4-PRE-R04). */
+function useExtras(assignmentId: string | undefined, documentId: string | undefined): SummaryExtras | undefined {
+  const [extras, setExtras] = useState<SummaryExtras>(LOADING_EXTRAS);
+  useEffect(() => {
+    if (assignmentId === undefined || documentId === undefined) return undefined;
+    let live = true;
+    setExtras(LOADING_EXTRAS);
+    readExtras(assignmentId, documentId, createApi(), (part) => { if (live) setExtras((now) => ({ ...now, ...part })); });
+    return () => { live = false; };
+  }, [assignmentId, documentId]);
+  return assignmentId === undefined || documentId === undefined ? undefined : extras;
+}
+
+/** Loading and failure of one extra read are said as such, never as "nothing there". */
+function Extra<T>({ read, fallback, children }: { read: Read<T> | undefined; fallback: string; children: (value: T) => ReactNode }) {
+  if (read === undefined || read.kind === "unavailable") return <p className="note">{fallback}</p>;
+  if (read.kind === "loading") return <p className="note" role="status">{t.loading}</p>;
+  return <>{children(read.value)}</>;
+}
 
 const observed = <Tag>{t.observed}</Tag>;
 const declared = <Tag tone="open">{t.declared}</Tag>;
@@ -92,6 +116,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
   }
   const s = panelSections(summary.summary, { submitted });
   const { disputes } = props;
+  const extras = useExtras(props.assignmentId, disputes?.documentId);
   const marked = disputes !== undefined;
   const body = (
     <>
@@ -109,7 +134,9 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         <p className="note">{t.editing.note}</p>
       </Part>
       <Part title={t.versions.title} tag={observed}>
-        <p className="note">{t.versions.unavailable}</p>
+        <Extra read={extras?.versions} fallback={t.versions.unavailable}>{(v) => v.lines.length === 0 ? <p>{t.versions.none}</p> : (
+          <><ul className="facts">{v.lines.map((line, i) => <li key={i}>{line}</li>)}</ul>{v.more && <p className="meta">{t.versions.more}</p>}</>
+        )}</Extra>
       </Part>
       <Part title={t.pastes.title}>
         {s.pastes.items.length === 0 ? <p>{t.pastes.none}</p> : (
@@ -126,7 +153,12 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         <p className="meta">{s.pastes.meta}</p>
       </Part>
       <Part title={t.assistant.title}>
-        <p className="note">{t.assistant.unavailable}</p>
+        <Extra read={extras?.assistant} fallback={t.assistant.unavailable}>{(a) => (
+          <>
+            <p>{a.enabled ? t.assistant.enabled : t.assistant.disabled}</p>
+            {a.enabled && (a.lines.length === 0 ? <p>{t.assistant.none}</p> : <ul className="facts">{a.lines.map((line, i) => <li key={i}>{line}</li>)}</ul>)}
+          </>
+        )}</Extra>
         <p className="meta">{t.assistant.meta}</p>
       </Part>
       <Part title={t.gaps.title} tag={observed}>
@@ -134,8 +166,15 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         {s.gaps.hint && <p className="meta">{s.gaps.hint}</p>}
       </Part>
       <Part title={t.declaration.title}>
-        {confirmed || submitted ? <><p className="meta">{t.declaration.confirmed}</p><p className="note">{t.declaration.detailsUnavailable}</p></>
-          : <p>{t.declaration.missing}</p>}
+        {confirmed || submitted ? <>
+          <p className="meta">{t.declaration.confirmed}</p>
+          <Extra read={extras?.declaration} fallback={t.declaration.detailsUnavailable}>{(blocks) => blocks === null
+            ? <p className="note">{t.declaration.detailsUnavailable}</p>
+            : <>
+              <StepSection label={t.declaration.recordedTitle} heading>{blocks.recorded.map((line, i) => <p key={i}>{line}</p>)}</StepSection>
+              <StepSection label={t.declaration.studentTitle} heading>{blocks.student.map((line, i) => <p key={i}>{line}</p>)}</StepSection>
+            </>}</Extra>
+        </> : <p>{t.declaration.missing}</p>}
       </Part>
       {notes}
       <Part title={t.record.title} tag={observed}>
@@ -143,6 +182,15 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         {s.record.unchanged && <p className="meta">{s.record.unchanged}</p>}
       </Part>
       <Part title={t.provenance.title}>
+        <Extra read={extras?.provenance} fallback={t.provenance.unavailable}>{(p) => (
+          <>
+            <StepSection label={t.provenance.sharesTitle} heading><ul className="facts">{p.shares.map((line, i) => <li key={i}>{line}</li>)}</ul></StepSection>
+            <StepSection label={t.provenance.marksTitle} heading>
+              {p.marks.length === 0 ? <p>{t.provenance.none}</p> : <ul className="facts">{p.marks.map((line, i) => <li key={i}>{line}</li>)}</ul>}
+            </StepSection>
+            <p className="meta">{t.provenance.notice}</p>
+          </>
+        )}</Extra>
         <p className="meta">{t.provenance.meta}</p>
         <a href={workHref}>{t.provenance.link}</a>
       </Part>
