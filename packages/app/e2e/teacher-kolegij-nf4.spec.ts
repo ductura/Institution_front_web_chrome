@@ -55,6 +55,7 @@ async function teacher(page: Page, { role = "holder" as Role, code = "valid" as 
     role: "assistant",
     groups: [{ id: GROUP, name: "Grupa 2", students: PEOPLE.map((p) => ({ id: p.studentId, name: `${p.givenName} ${p.familyName}` })) }],
   })));
+  await page.route(`**/api/v1/courses/${K1}/team/candidates`, (route) => route.fulfill(json({ candidates: [] })));
   await page.route(`**/api/v1/courses/${K1}/team`, async (route) => {
     if (route.request().method() === "GET") return route.fulfill(json({ holderId: TEACHER, assistantIds }));
     assistantIds = (route.request().postDataJSON() as { assistantIds: string[] }).assistantIds;

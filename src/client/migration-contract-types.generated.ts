@@ -36,6 +36,7 @@
 // Faza 3: work.thesis-topic.get, work.thesis-topic.put, work.thesis-topic-decision.post from Institution_server 4b1c71bc (API 1.146.0).
 // Faza 3: student.assignments.get, evidence.open.post, student-work.start.post, student-work.works.get, work.version.get from Institution_server 8ea96ad4 (API 1.148.0).
 // Faza 3: teacher.questionnaires.get, teacher.questionnaires.post, teacher.questionnaire.get, teacher.questionnaire.patch, teacher.questionnaire-state.post from Institution_server 3fe9d894 (API 1.149.0).
+// Faza 3: evidence.open.post, student.qual-materials.get, student.qual-materials.post, student.qual-material.get, student.qual-material.delete, institution.teaching-team-candidates.get from Institution_server 07bbab0e (API 1.150.0).
 export type MigrationOperations = {
   "institution.admin-courses.post": {
     params: undefined;
@@ -650,7 +651,7 @@ export type MigrationOperations = {
     params: undefined;
     query: undefined;
     body: { "assignmentId": string; "start"?: boolean };
-    success: { status: 200; body: { "status": "opened"; "documentId": string; "evidenceProfileId": string; "currentRevision": number; "documentHash": string; "headSegmentHash": string | null; "lastSequenceTo": number; "schemaVersion"?: 1 | 2 | 3; "revisionZeroHash"?: string; "documentKind"?: "text" | "slides"; "slidesSchemaVersion"?: 1; "sheetSchemaVersion"?: 1; "document": string; "receiptKeys": ({ "algorithm": "Ed25519" | "ECDSA_P256_SHA256" | "RSA_PSS_SHA256"; "keyId": string; "keyVersion": string; "encoding": "spki-der"; "keyBase64Url": string; "evidenceDomainId": string; "purpose": "receipt"; "validFrom": string; "validTo": string | null; "revokedAt": string | null })[]; "submitted": boolean }; headers: {  } };
+    success: { status: 200; body: { "status": "opened"; "documentId": string; "evidenceProfileId": string; "currentRevision": number; "documentHash": string; "headSegmentHash": string | null; "lastSequenceTo": number; "schemaVersion"?: 1 | 2 | 3; "revisionZeroHash"?: string; "documentKind"?: "text" | "slides"; "slidesSchemaVersion"?: 1; "sheetSchemaVersion"?: 1; "document": string; "receiptKeys": ({ "algorithm": "Ed25519" | "ECDSA_P256_SHA256" | "RSA_PSS_SHA256"; "keyId": string; "keyVersion": string; "encoding": "spki-der"; "keyBase64Url": string; "evidenceDomainId": string; "purpose": "receipt"; "validFrom": string; "validTo": string | null; "revokedAt": string | null })[]; "submitted": boolean; "lastSignedAt"?: string | null }; headers: {  } };
     errorCode: "forbidden" | "upgrade_required" | "unsupported_media_type" | "unauthenticated" | "too_large" | "timeout" | "bad_request" | "invalid" | "not_found" | "not_accepting" | "not_started" | "unavailable";
   };
   "evidence.replay.post": {
@@ -2472,5 +2473,40 @@ export type MigrationOperations = {
     body: { "state": "open" | "closed" };
     success: { status: 200; body: { "id": string; "state": "open" | "closed" }; headers: { "cache-control"?: string } };
     errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unsupported_media_type" | "invalid_json" | "invalid_input" | "not_found" | "unavailable" | "conflict";
+  };
+  "student.qual-materials.get": {
+    params: undefined;
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "materials": ({ "id": string; "title": string; "kind": "interview" | "note"; "createdOn": string; "charCount": number; "segmentCount": number; "locked": boolean })[] }; headers: {  } };
+    errorCode: "unauthorized" | "unavailable";
+  };
+  "student.qual-materials.post": {
+    params: undefined;
+    query: undefined;
+    body: { "title": string; "kind": "interview" | "note"; "text": string };
+    success: { status: 201; body: { "id": string; "title": string; "kind": "interview" | "note"; "text": string; "createdOn": string; "segmentCount": number; "locked": boolean }; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unavailable" | "unsupported_media_type" | "invalid_json" | "conflict" | "invalid_input";
+  };
+  "student.qual-material.get": {
+    params: { "id": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "id": string; "title": string; "kind": "interview" | "note"; "text": string; "createdOn": string; "segmentCount": number; "locked": boolean }; headers: {  } };
+    errorCode: "unauthorized" | "unavailable" | "not_found";
+  };
+  "student.qual-material.delete": {
+    params: { "id": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 204; body: undefined; headers: {  } };
+    errorCode: "origin_missing" | "origin_mismatch" | "cross_site" | "body_too_large" | "body_timeout" | "content_length_invalid" | "content_length_mismatch" | "body_stream_error" | "unauthorized" | "unavailable" | "not_found";
+  };
+  "institution.teaching-team-candidates.get": {
+    params: { "id": string };
+    query: undefined;
+    body: undefined;
+    success: { status: 200; body: { "candidates": ({ "id": string; "name": string })[] }; headers: {  } };
+    errorCode: "unauthorized" | "forbidden" | "invalid_input" | "unavailable";
   };
 };

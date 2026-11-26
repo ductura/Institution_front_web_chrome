@@ -46,6 +46,8 @@ async function fakeServer(page: Page, me: Me) {
   // WEB-2144: each course card reads the caller's role from the teaching-team view; here the teacher holds the course alone.
   await page.route("**/api/v1/courses/*/team/view", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(HOLDER_VIEW) }));
+  await page.route("**/api/v1/courses/*/team/candidates", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ candidates: [] }) }));
   await page.route("**/api/v1/courses/*/team", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ holderId: TEAM_HOLDER_ID, assistantIds: [] }) }));
   await page.route("**/api/v1/teacher/courses", (route) =>

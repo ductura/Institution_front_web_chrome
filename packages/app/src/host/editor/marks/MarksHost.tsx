@@ -16,6 +16,7 @@ import { requestPanel } from "../../../../../../src/components/editor/layout-pre
 import { allPlaces, counts, gutterDots, holeRemoval, nextPlace, placesAt, showGutter, type MarkKind, type Place } from "./marks-model";
 import { marksHr as t } from "./messages.hr";
 import styles from "./Marks.module.css";
+import { GHOST_KEY, ghostPlugin } from "./ghost";
 
 const KEY = new PluginKey("ductusMarks");
 const CLASS: Partial<Record<MarkKind, string>> = { hole: styles.hole, plain: styles.plain, need: styles.need };
@@ -73,7 +74,9 @@ export function MarksHost() {
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     editor.registerPlugin(marksPlugin());
-    return () => { if (!editor.isDestroyed) editor.unregisterPlugin(KEY); };
+    // ED-45: the ghost text of an empty paragraph; none while the text cannot be written.
+    editor.registerPlugin(ghostPlugin(() => editor.isEditable, styles.ghost ?? ""));
+    return () => { if (!editor.isDestroyed) { editor.unregisterPlugin(KEY); editor.unregisterPlugin(GHOST_KEY); } };
   }, [editor]);
   useEffect(() => {
     const onResize = () => setWidth(window.innerWidth);
