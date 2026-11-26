@@ -62,6 +62,30 @@ describe("N-04 real port (PIL-K-N04)", () => {
     }
   });
 
+  it("NAS-10/NAS-11: the revision of each work and the unconfirmed notice come from teacher.assignment-follow-up.get", async () => {
+    const ids = (ROSTER as { body: { students: { studentId: string }[] } }).body.students.map((s) => s.studentId);
+    const item = (studentId: string, over: object) => ({
+      studentId, noticeReadAt: null, noticeAcknowledgedAt: null, noticeVersionNo: null, revisionState: null, revisionChangedAt: null, openRevisionCount: 0, ...over,
+    });
+    const follow = { students: [
+      item(ids[0]!, { noticeAcknowledgedAt: "2026-11-02T10:00:00.000Z", noticeVersionNo: 1, revisionState: "open", revisionChangedAt: "2026-11-03T10:00:00.000Z", openRevisionCount: 1 }),
+      item(ids[1]!, { noticeAcknowledgedAt: "2026-11-02T10:00:00.000Z", noticeVersionNo: 1 }),
+      item(ids[2]!, {}),
+    ] };
+    const call = courseStudentsPort(() => createApi({
+      baseUrl: "http://127.0.0.1:1",
+      fetchImpl: async (input) => {
+        const url = String(input instanceof Request ? input.url : input);
+        const body = url.endsWith("/follow-up") ? follow : url.includes("/students") ? ROSTER.body : COURSES;
+        return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+      },
+    }));
+    const read = await loadRoster(call, COURSE);
+    if (read.kind !== "ready") throw new Error("not ready");
+    const works = read.data.students.map((s) => s.works[0]!);
+    expect(works.map((w) => w.revision)).toEqual([{ state: "open", deadline: null }, null, null]);
+    expect(works.map((w) => w.status)).toEqual(["submitted", "writing", "unconfirmed"]);
+  });
   it("keeps the roster when the course read fails, without names", async () => {
     const read = await loadRoster(port(ROSTER, vector("teacher.courses.get", "unavailable")), COURSE);
     expect(read.kind).toBe("ready");

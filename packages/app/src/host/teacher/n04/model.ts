@@ -10,7 +10,7 @@ import { courseStudentsMessages as text } from "./messages.hr";
 export type WorkStatus = "submitted" | "writing" | "not_submitted" | "unconfirmed" | "unknown";
 export type EvidenceRecord = "continuous" | "with_gaps";
 /** Request for a revision: only `open` and `reopened` wait for the student. */
-export type RevisionState = "open" | "reopened" | "accepted" | "closed";
+export type RevisionState = "open" | "reopened" | "accepted" | "closed" | "responded" | "withdrawn";
 
 export type RosterWork = {
   readonly assignmentId: string;
