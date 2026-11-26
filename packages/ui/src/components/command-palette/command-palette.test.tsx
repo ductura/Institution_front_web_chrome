@@ -24,6 +24,11 @@ describe("command palette logic", () => {
     expect(visibleCommands(many, "", [])).toHaveLength(10);
     expect(visibleCommands(many, "x", [])).toHaveLength(14);
   });
+  it("lists search-only items (chapters, sources) only for a query, never as recent", () => {
+    const withChapter = [...cmds, { id: "h", label: "1 Uvod", group: "Poglavlja", searchOnly: true }];
+    expect(visibleCommands(withChapter, "", ["h"]).map((c) => c.id)).toEqual(["a", "b", "c", "d"]);
+    expect(visibleCommands(withChapter, "uvod", []).map((c) => c.id)).toEqual(["h"]);
+  });
   it("labels recent section and keeps groups in order", () => {
     expect(sections(visibleCommands(cmds, "", ["d"]), "", ["d"]).map((s) => s.title)).toEqual(["Nedavno", "Naredbe", "Prikaz"]);
   });

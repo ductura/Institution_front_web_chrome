@@ -24,6 +24,8 @@ export const leftHr = {
     noteHint: "Bilješka je samo za vas: ne ulazi u tekst, izvoz ni predaju.",
     askMentor: "Pitaj mentora",
     onlyThis: "Prikaži samo ovo poglavlje",
+    onlyShown: (title: string) => `Prikazano samo poglavlje „${title}”.`,
+    showAll: "Prikaži cijeli rad",
     unavailable: "nedostupno",
     remove: "Obriši poglavlje",
     removeConfirm: "Obrisati poglavlje i sve u njemu? Radnju možete poništiti s Ctrl+Z.",
