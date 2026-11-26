@@ -125,8 +125,7 @@ export const PAGES: readonly Page[] = [
   { path: "/upis/kolegij/[courseId]", label: t.student.enroll.title, kind: "pending", roles: ["student"], current: "/upis" },
   // WEB-1404: the student's request for a mentor.
   { path: "/zadaci/mentorstvo", label: hostText.mentorshipRequest, kind: "pending", roles: ["student"], current: "/zadaci" },
-  // WEB-V19-DNEVNIK-STUDENT: the student's journal of a professional practice.
-  { path: "/zadaci/dnevnik-prakse", label: practiceJournalText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V19-DNEVNIK-STUDENT: the student's journal of a professional practice.  Entered from nav.ts (F4-V18-22-R01).
   // WEB-V19-DNEVNIK-MENTOR: the mentor's side of the journal, entered from N-16 by a link.
   { path: "/nastavnik/mentorstva/dnevnik-prakse", label: hostText.mentorPracticeJournal, kind: "pending", roles: ["teacher"], current: "/nastavnik/mentorstva" },
   // WEB-V19-GRUPA: the student's team on one assignment, entered from the assignment's notice by a link.
@@ -141,12 +140,9 @@ export const PAGES: readonly Page[] = [
   { path: "/nastavnik/zadatak/[assignmentId]/recenzija", label: teacherPeerReviewText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   // WEB-V21-KOD-TESTOVI-OBRAZAC: the teacher's code tests of one assignment, a standalone screen reached by its path.
   { path: "/nastavnik/zadatak/[assignmentId]/testovi", label: codeTestsText.title, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
-  // WEB-V18-KODIRANJE-GRADIVO: the student's own material for qualitative coding.
-  { path: "/zadaci/gradivo-kodiranja", label: qualMaterialsText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
-  // WEB-V18-UPITNIK-ISPUNJAVANJE: the open questionnaires of the student's courses.
-  { path: "/zadaci/upitnici", label: questionnaireText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
-  // WEB-V18-KODIRANJE-IZVOZ: the student's own codebook and marked passages as JSON and CSV.
-  { path: "/zadaci/kodiranje-izvoz", label: qualExportText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
+  // WEB-V18-KODIRANJE-GRADIVO: the student's own material for qualitative coding.  Entered from nav.ts (F4-V18-22-R01).
+  // WEB-V18-UPITNIK-ISPUNJAVANJE: the open questionnaires of the student's courses.  Entered from nav.ts (F4-V18-22-R01).
+  // WEB-V18-KODIRANJE-IZVOZ: the student's own codebook and marked passages as JSON and CSV.  Entered from nav.ts (F4-V18-22-R01).
   // WEB-V18-KODIRANJE-OZNAKE: the codebook and the marking of one material (`?gradivo=`), entered from the material list.
   { path: "/zadaci/kodiranje", label: qualCodingText.title, kind: "pending", roles: ["student"], current: "/zadaci" },
   // HOST-S1: the editor of one work.
@@ -208,7 +204,6 @@ export const PAGES: readonly Page[] = [
   // WEB-V17-TEMPLATE-ADMIN: the faculty's template of a work per type of work.
   { path: "/ustanova/predlozak-rada", label: workTemplateMessages.title, kind: "pending", roles: ["admin"], current: "/ustanova" },
   // WEB-V22-RUTE: the trial ISVU roster link, for the administrator, the grade export (teacher of the course) and the public entry from Studomat.
-  { path: "/ustanova/isvu", label: pageLabelsHr.isvuImport, kind: "pending", roles: ["admin"], current: "/ustanova" },
   { path: "/nastavnik/kolegiji/[courseId]/isvu-ocjene", label: pageLabelsHr.isvuGrades, kind: "pending", roles: ["teacher"], current: "/nastavnik" },
   { path: "/ulaz/studomat", label: pageLabelsHr.studomatEntry, kind: "pending", roles: [], public: true },
   // NF-7 OA-5: "Moja prava", static help for everyone signed in.
