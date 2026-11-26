@@ -19,6 +19,7 @@ import { useDeclarationGate, opensSending, serverGate, type GateRead } from "../
 import { wordCount } from "../submit/model";
 import { givenLines } from "./given";
 import ReceiptScreen, { type ReceiptScreenProps } from "./ReceiptScreen";
+import SheetSummary from "../sheet/SheetSummary";
 
 /** What the page reads for a submitted work; the server's routes by default, recorded ones in tests. */
 export type SubmittedPorts = {
@@ -83,11 +84,13 @@ export default function SubmittedReceipt({ ports = SERVER, onSignIn, ...screen }
   const summary = work.summary.kind === "signIn" ? { kind: "error" as const } : work.summary;
   const documentId = summary.kind === "ready" ? summary.documentId : null;
   return (
-    <ReceiptScreen {...screen} given={given} summary={
+    <ReceiptScreen {...screen} given={given} summary={<>
+      {/* WEB-V14-SHEET-SUBMIT: the kind and counts of a spreadsheet work; nothing for any other kind. */}
+      <SheetSummary assignmentId={assignmentId} revision={revision} onSignIn={() => signIn.current()} />
       <SummaryPanel summary={summary} notes={notes} submitted confirmed={opensSending(gate)} kind={screen.kind}
         online={online} workHref={screen.workHref} onRetry={() => setAttempt((n) => n + 1)}
         disputes={documentId === null ? undefined : { port: DISPUTES, documentId }}
         onAddNote={async () => ({ kind: "nepoznato" })} onNoteAdded={() => undefined} />
-    } />
+    </>} />
   );
 }

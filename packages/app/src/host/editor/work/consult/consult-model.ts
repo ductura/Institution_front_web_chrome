@@ -110,6 +110,6 @@ export function criterionFailure(outcome: Exclude<CriterionWrite, { kind: "saved
   return t.criteria.errors.unknown;
 }
 
-/** Only the teacher writes criteria; the student and the collaborator read them (WEB-2122 decision, 22. 11. 2026). */
+/** Only the teacher writes criteria; the student (ED-35, decision of 26. 11. 2026) and the collaborator read them. */
 export const canEditCriteria = (role: Role): boolean => role === "teacher";
 export const canWriteRecords = (role: Role): boolean => role === "teacher";

@@ -18,6 +18,7 @@
  */
 
 import type { CanonicalDocument } from "../document/document";
+import type { SheetDocument } from "../sheet/model";
 
 /** A document with the revision it is based on. */
 export type RevisionedDocument = {
@@ -57,5 +58,19 @@ export function resolveInitialDocument(
     };
   }
 
+  return { mode: "error" };
+}
+
+/**
+ * WEB-V14-SHEET-JOURNAL: the same three cases for a spreadsheet work, chosen by the
+ * kind of the work (`documentKind: "spreadsheet"`). The journal's snapshot wins, then
+ * the server's document, and neither is `error`, never an empty sheet.
+ */
+export function resolveInitialSheet(
+  journalSnapshot: { document: SheetDocument; revision: number } | null | undefined,
+  serverDocument: { document: SheetDocument; revision: number } | null | undefined,
+): { mode: "edit"; document: SheetDocument; revision: number; from: "journal" | "server" } | { mode: "error" } {
+  if (journalSnapshot) return { mode: "edit", ...journalSnapshot, from: "journal" };
+  if (serverDocument) return { mode: "edit", ...serverDocument, from: "server" };
   return { mode: "error" };
 }

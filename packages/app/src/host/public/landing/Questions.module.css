@@ -1,0 +1,114 @@
+/*
+ * DAN-1520: #pitanja of koncepti/naslovnica. One printed sheet; the questions are
+ * handwritten in the margin, and a gold bracket is drawn by each answer when the
+ * sheet enters the view.
+ */
+.questions {
+  --papir: #f2eee5;
+  --p-ink: #242422;
+  --p-ink-2: #55534d;
+  --p-ink-3: #5c5a54;
+  --p-zlato: #806529;
+  --p-crta: #34332f1f;
+}
+
+.sheet {
+  position: relative;
+  background: var(--papir);
+  color: var(--p-ink);
+  border-radius: 4px;
+  padding: 44px 56px 30px 0;
+  box-shadow:
+    0 1px 2px #0000001f,
+    0 20px 44px -26px #00000066;
+}
+
+.sheet::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 284px;
+  width: 1px;
+  background: linear-gradient(180deg, #80652900, #8065294d 8%, #8065294d 92%, #80652900);
+}
+
+.sheet header {
+  margin: 0 0 14px 324px;
+}
+
+.sheet h3 {
+  font: 400 24px/1.2 var(--ff-display);
+  letter-spacing: normal;
+  color: var(--p-ink);
+  margin: 0 0 6px;
+}
+
+.audience {
+  font: 400 11.5px var(--ff-mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--p-ink-3);
+  margin: 0;
+}
+
+.sheet dl {
+  margin: 0;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 284px minmax(0, 1fr);
+  align-items: start;
+  padding: 18px 0;
+  border-top: 1px solid var(--p-crta);
+}
+
+.item dt {
+  padding: 2px 30px 0 32px;
+  text-align: right;
+  font: italic 400 19px/1.25 var(--ff-manuscript);
+  color: var(--p-ink-2);
+  transform: rotate(-1.5deg);
+  transform-origin: 100% 50%;
+  text-wrap: balance;
+}
+
+.item dd {
+  margin: 0 0 0 40px;
+  max-width: 58ch;
+  font: 400 16.5px/1.65 var(--ff-manuscript);
+  color: var(--p-ink);
+  text-wrap: pretty;
+}
+
+@media (max-width: 760px) {
+  .sheet {
+    padding: 30px 22px 18px 26px;
+  }
+
+  .sheet::before {
+    left: 12px;
+  }
+
+  .sheet header {
+    margin: 0 0 10px;
+  }
+
+  .item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .item dt {
+    padding: 0;
+    text-align: left;
+    transform: rotate(-1deg);
+    transform-origin: 0 50%;
+  }
+
+  .item dd {
+    margin-left: 14px;
+    font-size: 16px;
+  }
+}

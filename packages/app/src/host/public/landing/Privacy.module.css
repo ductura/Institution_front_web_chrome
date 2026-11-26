@@ -1,0 +1,340 @@
+/*
+ * DAN-1520: #privatnost of koncepti/naslovnica. The scene starts dark, the light
+ * falls only on the page, scissors cut a dashed line around it and the things
+ * outside it fade one by one. There is no text in the scene; the facts are in the
+ * three columns under it. Without JS the finished drawing is shown.
+ */
+.intro {
+  text-wrap: pretty;
+}
+
+.scene {
+  position: relative;
+  aspect-ratio: 1000 / 560;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0b0b0a;
+  box-shadow: 0 30px 60px -40px #000c;
+}
+
+:root[data-theme="light"] .scene {
+  box-shadow: 0 24px 50px -30px #0004;
+}
+
+.scene > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.scene .live,
+.scene .narrow {
+  display: none;
+}
+
+.privacy[data-js] .scene .still {
+  display: none !important;
+}
+
+.privacy[data-js] .scene .live {
+  display: block;
+}
+
+.thing {
+  transition: opacity 0.9s ease;
+}
+
+.faded {
+  opacity: 0.36;
+}
+
+.label {
+  fill: #d6d2c8;
+  font-family: var(--ff-mono);
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+
+.named .label {
+  opacity: 1;
+}
+
+/* quiet life in the scene once it is drawn and in view */
+.live .anim {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.live .steam,
+.live .note,
+.live .dot,
+.live .wave,
+.live .cursor,
+.live .tab,
+.live .line {
+  opacity: 0;
+}
+
+.privacy[data-alive] .steam {
+  animation: steam 3.2s ease-out infinite;
+}
+
+.privacy[data-alive] .steam + .steam {
+  animation-delay: 1.6s;
+}
+
+.privacy[data-alive] .note {
+  animation: note 4.2s ease-out infinite;
+}
+
+.privacy[data-alive] .note:nth-of-type(2) {
+  animation-delay: 1.4s;
+}
+
+.privacy[data-alive] .note:nth-of-type(3) {
+  animation-delay: 2.8s;
+}
+
+.privacy[data-alive] .disc {
+  animation: spin 7s linear infinite;
+}
+
+.privacy[data-alive] .dot {
+  animation: dot 1.4s ease-in-out infinite;
+}
+
+.privacy[data-alive] .dot:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+
+.privacy[data-alive] .dot:nth-of-type(3) {
+  animation-delay: 0.4s;
+}
+
+.privacy[data-alive] .wave {
+  animation: wave 2.6s ease-out infinite;
+}
+
+.privacy[data-alive] .wave:nth-of-type(2) {
+  animation-delay: 0.5s;
+}
+
+.privacy[data-alive] .cursor {
+  animation: cursor 1.1s steps(1) infinite;
+}
+
+.privacy[data-alive] .tab {
+  animation: tab 7.5s ease-in-out infinite;
+}
+
+.privacy[data-alive] .tab:nth-of-type(2) {
+  animation-delay: 2.5s;
+}
+
+.privacy[data-alive] .tab:nth-of-type(3) {
+  animation-delay: 5s;
+}
+
+.privacy[data-alive] .line {
+  animation: line 5.5s ease-in-out infinite;
+}
+
+@keyframes steam {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
+
+@keyframes note {
+  0% {
+    opacity: 0;
+    transform: translate(0, 4px) rotate(-6deg);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(14px, -34px) rotate(8deg);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+@keyframes wave {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes cursor {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes tab {
+  0%,
+  40%,
+  100% {
+    opacity: 0;
+  }
+  8%,
+  30% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes line {
+  0% {
+    opacity: 1;
+    stroke-dashoffset: 1;
+  }
+  45%,
+  80% {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+  100% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
+}
+
+.border {
+  transition:
+    stroke-width 0.25s ease,
+    stroke 0.25s ease;
+}
+
+.border.hit {
+  stroke-width: 3;
+  stroke: #faf9f5;
+}
+
+/* Three columns under the scene, laid out like the legend in #kako: a small hand
+   drawing, a short sentence, the explanation. The drawing by "Ostalo je Vaše." is
+   blurred, because that is what we do not see. */
+.panes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px 40px;
+  margin-top: 40px;
+  text-align: center;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.small {
+  display: block;
+  width: 150px;
+  height: auto;
+  aspect-ratio: 160 / 110;
+  margin: 0 0 12px;
+  overflow: visible;
+}
+
+.small .full {
+  fill: var(--ink-2);
+}
+
+.small .gold {
+  fill: var(--accent);
+}
+
+.pane:nth-child(2) .small {
+  filter: blur(0.7px);
+  opacity: 0.85;
+}
+
+.pane h3 {
+  font: 400 23px var(--ff-display);
+  letter-spacing: normal;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.pane p {
+  margin: 0;
+  max-width: 30ch;
+  color: var(--ink-3);
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thing {
+    transition: none;
+  }
+
+  .privacy[data-alive] .live * {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .panes {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .small {
+    width: 128px;
+  }
+}
+
+@media (max-width: 640px) {
+  .scene {
+    aspect-ratio: 400 / 640;
+  }
+
+  .scene .still.wide {
+    display: none;
+  }
+
+  .scene .still.narrow {
+    display: block;
+  }
+}
