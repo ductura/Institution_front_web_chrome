@@ -147,4 +147,29 @@ describe("Povezivanje s ISVU-om", () => {
     await mount(); await click("Pregledaj popis");
     expect(calls.some(isPreview)).toBe(false);
   });
+
+  it("a late preview for course A is dropped after the choice changed to B", async () => {
+    let release: (r: Response) => void = () => undefined;
+    const late = new Promise<Response>((done) => { release = done; });
+    const calls = stub((c) => (isPreview(c) ? (late as unknown as Response) : undefined));
+    await mount(); await pick(); await click("Pregledaj popis");
+    await choose("source", "");
+    await act(async () => { release(Response.json(mixed)); });
+    await settle();
+    expect(host!.querySelector("table")).toBeNull();
+    expect(button("Potvrdi upis…")).toBeUndefined();
+    expect(calls.some(isConfirm)).toBe(false);
+  });
+
+  it("the year selector stays when the chosen year has no courses", async () => {
+    stub((c) => (c.path.endsWith("/isvu/courses") ? Response.json({ mode: "mock", courses: [] }) : undefined));
+    await mount();
+    expect(host!.querySelector('select[name="year"]')).not.toBeNull();
+  });
+
+  it("a 401 on the confirmation is signed out, not a retry loop", async () => {
+    stub((c) => (isPreview(c) ? Response.json(mixed) : isConfirm(c) ? Response.json({ error: "unauthorized" }, { status: 401 }) : undefined));
+    await mount(); await pick(); await click("Pregledaj popis"); await click("Potvrdi upis…"); await click("Potvrdi upis");
+    expect(text()).toContain("Prijava je istekla");
+  });
 });

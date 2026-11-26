@@ -38,9 +38,11 @@ export default function IsvuPage() {
   const [result, setResult] = useState<ImportResult | null>(null);
   const ticket = useRef(0);
   const sending = useRef(false);
+  const previewTicket = useRef(0);
 
   useEffect(() => {
     const mine = ++ticket.current;
+    previewTicket.current += 1;
     setLoad("loading"); setCourses([]); setSource([]); setShown({ kind: "none" }); setResult(null); setCourseId(""); setSourceKey("");
     void (async () => {
       let chosen = year;
@@ -66,12 +68,15 @@ export default function IsvuPage() {
     if (load === "signedOut") goToSignIn(appHref(base, "/ustanova/isvu"));
   }, [load, base]);
 
-  const pick = (setter: (v: string) => void) => (v: string) => { setter(v); setShown({ kind: "none" }); setResult(null); };
+  const pick = (setter: (v: string) => void) => (v: string) => { previewTicket.current += 1; setter(v); setShown({ kind: "none" }); setResult(null); };
 
   const runPreview = async () => {
     if (courseId === "" || sourceKey === "" || shown.kind === "busy") return;
+    const mine = ++previewTicket.current;
     setShown({ kind: "busy" }); setResult(null);
     const r = await previewImport(courseId, sourceKey);
+    if (mine !== previewTicket.current) return; // the choice changed meanwhile: this answer is for another course
+    if (r.kind === "signedOut") { setLoad("signedOut"); return; }
     setShown(r.kind === "ok" ? { kind: "preview", value: r.value } : { kind: "failed", failure: r.kind });
   };
 
@@ -80,6 +85,7 @@ export default function IsvuPage() {
     sending.current = true; setConfirming(true); setConfirmError(undefined);
     const r = await confirmImport(shown.value.importId);
     sending.current = false; setConfirming(false);
+    if (r.kind === "signedOut") { setAsking(false); setLoad("signedOut"); return; }
     if (r.kind === "ok") { setAsking(false); setResult(r.value); setShown({ kind: "none" }); return; }
     if (r.kind === "expired") { setAsking(false); setShown({ kind: "failed", failure: "expired" }); return; }
     if (r.kind === "disabled") { setAsking(false); setShown({ kind: "failed", failure: "disabled" }); return; }
@@ -113,11 +119,13 @@ export default function IsvuPage() {
           <Button onClick={() => setAttempt((n) => n + 1)}>{t.retry}</Button>
         </div>
       )}
+      {(load === "ready" || load === "empty") && years.length > 0 && (
+        <Select label={t.yearLabel} name="year" value={year} options={years.map((y) => ({ value: y, label: y }))} onChange={(e) => setYear(e.target.value)} />
+      )}
       {load === "empty" && <p role="status">{source.length === 0 && courses.length > 0 ? m.empty : t.noCourses}</p>}
       {load === "ready" && (
         <>
           <div className={styles.row}>
-            <Select label={t.yearLabel} name="year" value={year} options={years.map((y) => ({ value: y, label: y }))} onChange={(e) => setYear(e.target.value)} />
             <Select label={t.courseLabel} name="course" value={courseId} placeholder={t.choose}
               options={courses.map((c) => ({ value: c.courseId, label: c.name }))} onChange={(e) => pick(setCourseId)(e.target.value)} />
             <Select label={t.sourceLabel} name="source" value={sourceKey} placeholder={t.choose}
