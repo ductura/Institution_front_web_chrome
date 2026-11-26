@@ -208,6 +208,9 @@ export function sheetRevisionZeroDocument(): SheetDocument {
   };
 }
 
+/** SHA-256 of the JCS text of revision 0 (a constant of the server, one for every spreadsheet work). */
+export const SHEET_REVISION_ZERO_SHA256 = "70f7ffa27faf9f771316120c2b2f94e351aed32af3b94177d4c85ff56b0066e4";
+
 // ---------------------------------------------------------------- application
 
 export type ApplySheetStepErrorCode =
@@ -328,4 +331,45 @@ export async function applySheetSteps(doc: SheetDocument, steps: readonly SheetS
     current = applied.doc;
   }
   return { ok: true, doc: current };
+}
+
+// ---------------------------------------------------------------- snapshot
+
+/** UTF-8 bytes of the JCS text of a document: what is hashed, signed and sent. */
+export function sheetSnapshotBytes(doc: SheetDocument): Uint8Array {
+  return new TextEncoder().encode(canonicalizeJcs(doc as never));
+}
+
+export type SheetSnapshotVerification =
+  | { ok: true; document: SheetDocument; text: string; sha256: string }
+  | { ok: false; reason: "too_large" | "invalid" };
+
+/**
+ * A snapshot is accepted only as the exact JCS bytes of a valid spreadsheet
+ * document (strict UTF-8, no byte order mark, canonical form identical to the
+ * received text), as for slides.
+ */
+export async function verifySheetSnapshot(bytes: Uint8Array): Promise<SheetSnapshotVerification> {
+  if (!(bytes instanceof Uint8Array)) return { ok: false, reason: "invalid" };
+  if (bytes.byteLength > MAX_SHEET_SNAPSHOT_BYTES) return { ok: false, reason: "too_large" };
+  const received = new Uint8Array(bytes);
+  let text: string;
+  let parsed: unknown;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(received);
+    parsed = JSON.parse(text);
+  } catch {
+    return { ok: false, reason: "invalid" };
+  }
+  let valid: ReturnType<typeof validateSheetDocument>;
+  let canonical: string;
+  try {
+    valid = validateSheetDocument(parsed);
+    if (!valid.ok) return { ok: false, reason: "invalid" };
+    canonical = canonicalizeJcs(valid.value as never);
+  } catch {
+    return { ok: false, reason: "invalid" };
+  }
+  if (canonical !== text) return { ok: false, reason: "invalid" };
+  return { ok: true, document: valid.value, text, sha256: await sheetTextSha256(text) };
 }
