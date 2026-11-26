@@ -73,6 +73,7 @@ export const pageLabelsEn = {
   facultySettings: "Faculty settings",
   facultyAssistant: "Assistant at the faculty",
   milestoneTemplate: "Milestone template",
+  thesisOverview: "Final and graduate theses",
   workTemplate: "Work template",
   myRights: "My rights",
   isvuImport: "Connection to ISVU (trial source)",
