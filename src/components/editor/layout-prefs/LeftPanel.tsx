@@ -18,7 +18,8 @@ const w = messagesHr.workspace;
 const headingKey = (heading: NumberedHeading) => heading.id ?? `pos-${heading.pos}`;
 const headingLabel = (heading: NumberedHeading) => `${heading.number}. ${heading.title || messagesHr.outline.untitledHeading}`;
 
-export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "history" | "chapter", ReactNode>> & {
+/** `footer` (ED-37) stands under the sections in every layout, as the prototype's rail footer. */
+export type LeftSections = Partial<Record<"requirements" | "figures" | "stash" | "progress" | "deadlines" | "thread" | "history" | "chapter" | "footer", ReactNode>> & {
   /** ED-37 (P2-6): what a chapter row shows after its title and words (the state dot, "za popraviti"); in every layout. */
   chapterMarks?: (headingId: string, words: number) => ReactNode;
 };
@@ -153,5 +154,6 @@ export function LeftPanel({ layout, sections = {}, settings, onJump }: {
       {sections.chapter}
       {content.map(({ id, label, content: section }) => <Details key={id} summary={label}>{section}</Details>)}
     </>}
+    {sections.footer}
   </>;
 }
