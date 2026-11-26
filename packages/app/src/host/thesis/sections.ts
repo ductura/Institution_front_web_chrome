@@ -3,6 +3,7 @@
 //   import { section as forms } from "./forms/section";   …   [forms as unknown as ThesisSectionDef<never>]
 // Each `section.tsx` exports `section` (see ThesisSectionDef in model.ts).
 import { section as stagesStudent } from "./stages-student/section";
+import { section as committee } from "./committee/section";
 import { section as forms } from "./forms/section";
 import { orderSections, type ThesisSectionDef } from "./model";
 import { section as stage } from "./stage/section";
@@ -16,6 +17,7 @@ const modules: readonly ThesisSectionDef<never>[] = [
   stagesStudent as unknown as ThesisSectionDef<never>,
   topicStudent as unknown as ThesisSectionDef<never>,
   topicMentor as unknown as ThesisSectionDef<never>,
+  committee as unknown as ThesisSectionDef<never>,
 ];
 
 export const registeredSections: readonly ThesisSectionDef<never>[] = orderSections(modules);
