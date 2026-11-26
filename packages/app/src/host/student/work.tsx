@@ -56,6 +56,8 @@ import { leftSectionsFor, RailFooter } from "../editor/left/LeftSectionsHost";
 import { StartWork } from "./start-work/StartWork";
 import { SlidesWork } from "../slides/editor/SlidesWork";
 import { workKindOf } from "../slides/editor/work-kind";
+import { SheetPage } from "../editor/sheet/SheetPage";
+import { pageKindOf } from "../editor/sheet/kind-port";
 import { RubricCard } from "./rubric/RubricCard";
 import { DirectEditSettingHost } from "./direct-edit-setting/DirectEditSetting";
 import { WorkHistoryHost } from "../editor/work-history/WorkHistoryHost";
@@ -67,7 +69,7 @@ const NONE = { params: undefined, query: undefined, body: undefined } as const;
 const UNREACHED = { ok: false, status: 0 } as const;
 
 /** What the sheet holds when no editor is mounted. */
-function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: string | null, reread: () => void): ReactNode {
+function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: string | null, reread: () => void, spreadsheet = false): ReactNode {
   if (variant === "predano") return <SheetNote>{t.editor.submittedReadOnly}</SheetNote>;
   // WEB-2105: E-7 `prazno`: the empty sheet with its placeholder, and the way to start (the server decides).
   if (variant === "prazno") {
@@ -75,7 +77,7 @@ function sheetBody(variant: WorkspaceVariant, assignmentId: string, title: strin
       <>
         <SheetNote>{workText.notStarted}</SheetNote>
         <p aria-hidden="true">{workText.placeholder}</p>
-        <StartWork assignmentId={assignmentId} title={title ?? ""} onOpened={reread} />
+        <StartWork assignmentId={assignmentId} title={title ?? ""} onOpened={reread} spreadsheet={spreadsheet} />
       </>
     );
   }
@@ -122,6 +124,11 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
       // WEB-V13-UREDNIK: a slides work in progress opens the slides editor, anything else the text editor below.
       // Its top bar is the plain one: the shell view switches and the history buttons only work on the text editor.
       const kind = workKindOf(assignments, assignmentId);
+      // WEB-V14-SHEET-PAGE: a spreadsheet work (`workKind ?? documentKind`) opens the grid; the slides branch below is unchanged.
+      const spreadsheet = pageKindOf(assignments, assignmentId) === "spreadsheet";
+      if (read.kind === "ready" && frame.variant === "puno" && spreadsheet) {
+        return setShown({ kind: "page", node: <SheetPage assignmentId={assignmentId} course={read.course} title={read.title} topBar={<WorkspaceTopBar assignmentId={assignmentId} title={title} subtitle={subtitle} />} length={length} unreadable={false} onRetry={() => setAttempt((n) => n + 1)} /> });
+      }
       if (read.kind === "ready" && frame.variant === "puno" && kind !== "text") {
         return setShown({ kind: "page", node: <SlidesWork assignmentId={assignmentId} course={read.course} title={read.title} topBar={<WorkspaceTopBar assignmentId={assignmentId} base={base} title={title} subtitle={subtitle} />} length={length} unreadable={kind === "unreadable"} onRetry={() => setAttempt((n) => n + 1)} /> });
       }
@@ -199,7 +206,7 @@ export function WorkPage({ assignmentId }: { assignmentId: string }) {
               {receipt?.documentId === undefined ? null : <CommentsHost editor={null} documentId={receipt.documentId} session={null} submitted />}
             </>}
           >
-            {sheetBody(frame.variant, assignmentId, title, () => setAttempt((n) => n + 1))}
+            {sheetBody(frame.variant, assignmentId, title, () => setAttempt((n) => n + 1), spreadsheet)}
           </EditorPage>
         ),
       });
