@@ -47,6 +47,12 @@ async function press(page: Page, name: string) {
   await page.keyboard.press("Enter");
 }
 
+// ED-60: as in the prototype, the dialog opens from the shell's "Raspored" menu, not from a button under it.
+async function fromMenu(page: Page, name: string) {
+  await page.locator("summary", { hasText: "Raspored" }).first().click();
+  await press(page, name);
+}
+
 const file = (name: string, size = 12) => ({ name, mimeType: "application/octet-stream", buffer: Buffer.alloc(size, 1) });
 
 for (const { width, theme } of [{ width: 1280, theme: "dark" as const }, { width: 390, theme: "light" as const }]) {
@@ -56,7 +62,7 @@ for (const { width, theme } of [{ width: 1280, theme: "dark" as const }, { width
     test("the preview adds nothing until Potvrdi uvoz, then the text is at the end of the work", async ({ page }, info) => {
       const { dialog, asked } = await openEditor(page, { preview: PREVIEW, confirm: CONFIRMED });
       await setTheme(page, theme);
-      await press(page, "Uvezi tekst iz datoteke");
+      await fromMenu(page, "Uvezi tekst iz datoteke");
       await expect(dialog.getByRole("heading", { name: "Uvezi tekst iz datoteke" })).toBeVisible();
       await expect(dialog.getByText("Datoteka (.docx ili .pdf, do 2 MB)")).toBeVisible();
       await axe(page, info, `import-pick-${width}-${theme}`);
@@ -79,7 +85,7 @@ for (const { width, theme } of [{ width: 1280, theme: "dark" as const }, { width
     test("a wrong format and a file over 2 MB are refused before any request", async ({ page }, info) => {
       const { dialog, asked } = await openEditor(page, { preview: PREVIEW, confirm: CONFIRMED });
       await setTheme(page, theme);
-      await press(page, "Uvezi tekst iz datoteke");
+      await fromMenu(page, "Uvezi tekst iz datoteke");
       const input = dialog.getByLabel("Datoteka (.docx ili .pdf, do 2 MB)");
       await input.setInputFiles(file("izmisljeni-rad.odt"));
       await press(page, "Pregledaj uvoz");
@@ -98,7 +104,7 @@ test.describe("ED-20 Uvezi tekst iz datoteke, odgovori poslužitelja", () => {
 
   test("a PDF without a text layer is named as such", async ({ page }) => {
     const { dialog } = await openEditor(page, { preview: { status: 422, json: { code: "pdf_no_text_layer" } }, confirm: CONFIRMED });
-    await press(page, "Uvezi tekst iz datoteke");
+    await fromMenu(page, "Uvezi tekst iz datoteke");
     await dialog.getByLabel("Datoteka (.docx ili .pdf, do 2 MB)").setInputFiles(file("izmisljeni-sken.pdf"));
     await press(page, "Pregledaj uvoz");
     await expect(dialog.getByRole("alert")).toHaveText("PDF nema sloj teksta, na primjer kad je skeniran. Odaberite DOCX ili PDF s tekstom.");
@@ -106,7 +112,7 @@ test.describe("ED-20 Uvezi tekst iz datoteke, odgovori poslužitelja", () => {
 
   test("when the work changed since the preview nothing is added and the student starts over", async ({ page }) => {
     const { dialog } = await openEditor(page, { preview: PREVIEW, confirm: { status: 409, json: { code: "import_revision_changed" } } });
-    await press(page, "Uvezi tekst iz datoteke");
+    await fromMenu(page, "Uvezi tekst iz datoteke");
     await dialog.getByLabel("Datoteka (.docx ili .pdf, do 2 MB)").setInputFiles(file("izmisljeni-rad.docx"));
     await press(page, "Pregledaj uvoz");
     await press(page, "Potvrdi uvoz");
@@ -117,7 +123,7 @@ test.describe("ED-20 Uvezi tekst iz datoteke, odgovori poslužitelja", () => {
 
   test("offline the import asks for the network", async ({ page, context }) => {
     const { dialog, asked } = await openEditor(page, { preview: PREVIEW, confirm: CONFIRMED });
-    await press(page, "Uvezi tekst iz datoteke");
+    await fromMenu(page, "Uvezi tekst iz datoteke");
     await dialog.getByLabel("Datoteka (.docx ili .pdf, do 2 MB)").setInputFiles(file("izmisljeni-rad.docx"));
     await context.setOffline(true);
     await press(page, "Pregledaj uvoz");

@@ -7,6 +7,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 const editor = vi.hoisted(() => ({ value: null as null | Record<string, unknown> }));
 vi.mock("../../../../../../src/components/editor/LocalDocument.tsx", () => ({ useLocalEditor: () => editor.value }));
 
+import { dialogOffered, requestDialog } from "../../../../../../src/components/editor/commands/dialog-request.ts";
 import { ImportHost } from "./ImportHost";
 
 const D = "33333333-3333-4333-8333-333333333333";
@@ -53,12 +54,25 @@ describe("ImportHost", () => {
     editor.value = { isDestroyed: false, isEditable: false, chain: () => null };
     act(() => root.render(h(ImportHost, { documentId: D })));
     expect(host.innerHTML).toBe("");
+    // ED-60: nor does the view menu offer it; a request is not taken.
+    expect(dialogOffered("import")).toBe(false);
+    expect(requestDialog("import")).toBe(false);
+  });
+
+  it("opens from the view menu's request, with no button of its own under the shell (ED-60)", () => {
+    act(() => root.render(h(ImportHost, { documentId: D })));
+    expect(host.querySelector("button")).toBeNull();
+    expect(dialogOffered("import")).toBe(true);
+    let taken = false;
+    act(() => { taken = requestDialog("import"); });
+    expect(taken).toBe(true);
+    expect(document.querySelector("dialog")).not.toBeNull();
   });
 
   it("previews, adds nothing before Potvrdi uvoz, then puts the text at the end", async () => {
     const api = fakeApi({ "work.imports.post": { ok: true, status: 201, body: BODY }, "work.imports.confirm.post": { ok: true, status: 200, body: { importId: I, eventId: "e-1" } } });
     act(() => root.render(h(ImportHost, { documentId: D, api })));
-    act(() => button("Uvezi tekst iz datoteke").click());
+    act(() => { requestDialog("import"); });
     expect(document.querySelector("dialog")?.textContent).toContain("Datoteka (.docx ili .pdf, do 2 MB)");
     await choose("rad.docx");
     const dialog = document.querySelector("dialog")!;
@@ -76,7 +90,7 @@ describe("ImportHost", () => {
     let calls = 0;
     const api = (async () => { calls += 1; return { ok: false, status: 403, code: "import_not_allowed" }; }) as unknown as NonNullable<Parameters<typeof ImportHost>[0]["api"]>;
     act(() => root.render(h(ImportHost, { documentId: D, api })));
-    act(() => button("Uvezi tekst iz datoteke").click());
+    act(() => { requestDialog("import"); });
     await choose("rad.odt");
     expect(document.querySelector("[role=alert]")?.textContent).toBe("Podržani su samo .docx i .pdf.");
     await choose("rad.pdf", 2 * 1024 * 1024 + 1);
@@ -90,7 +104,7 @@ describe("ImportHost", () => {
   it("starts over when the work changed since the preview", async () => {
     const api = fakeApi({ "work.imports.post": { ok: true, status: 201, body: BODY }, "work.imports.confirm.post": { ok: false, status: 409, code: "import_revision_changed" } });
     act(() => root.render(h(ImportHost, { documentId: D, api })));
-    act(() => button("Uvezi tekst iz datoteke").click());
+    act(() => { requestDialog("import"); });
     await choose("rad.docx");
     await act(async () => button("Potvrdi uvoz").click());
     await settle();
@@ -116,7 +130,7 @@ describe("ImportHost", () => {
     const api = (async () => { calls += 1; return {}; }) as unknown as NonNullable<Parameters<typeof ImportHost>[0]["api"]>;
     (editor.value as Record<string, unknown>).schema = { nodes: { codeBlock: {} }, marks: { imported: {} } };
     act(() => root.render(h(ImportHost, { documentId: D, api })));
-    act(() => button("Uvezi tekst iz datoteke").click());
+    act(() => { requestDialog("import"); });
     await chooseNotebook(NOTEBOOK);
     const dialog = document.querySelector("dialog")!;
     expect(dialog.textContent).toContain("Odbačeno izlaza (HTML, JavaScript, slike i ostalo): 1.");
@@ -131,7 +145,7 @@ describe("ImportHost", () => {
 
   it("refuses a broken notebook with a message, and inserts nothing when the editor has no code blocks", async () => {
     act(() => root.render(h(ImportHost, { documentId: D })));
-    act(() => button("Uvezi tekst iz datoteke").click());
+    act(() => { requestDialog("import"); });
     await chooseNotebook("{ nije json");
     expect(document.querySelector("[role=alert]")?.textContent).toBe("Bilježnicu nije moguće pročitati. Provjerite je li ispravna.");
     await chooseNotebook(NOTEBOOK);
@@ -143,7 +157,7 @@ describe("ImportHost", () => {
   it("keeps the preview and inserts nothing for a markdown-only notebook when the editor lacks the imported mark", async () => {
     (editor.value as Record<string, unknown>).schema = { nodes: {}, marks: {} };
     act(() => root.render(h(ImportHost, { documentId: D })));
-    act(() => button("Uvezi tekst iz datoteke").click());
+    act(() => { requestDialog("import"); });
     await chooseNotebook(JSON.stringify({ cells: [{ cell_type: "markdown", source: "Izmišljeno" }] }));
     await act(async () => button("Potvrdi uvoz").click());
     expect(inserted).toEqual([]);

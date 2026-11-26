@@ -23,14 +23,6 @@ export const marksHr = {
   },
   open: "otvori",
   close: "Zatvori",
-  counters: {
-    group: "Oznake u tekstu",
-    hole: "Za provjeru ({count})",
-    cmt: "Komentari ({count})",
-    plain: "Navodi bez izvora ({count})",
-    next: "Skoči na sljedeće",
-    none: "Nema oznaka ove vrste.",
-  },
   gutter: "Rub lista s oznakama",
   legend: {
     open: "Što znače oznake",

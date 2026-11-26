@@ -3,12 +3,13 @@
 // ED-20 (NF2-P19, WEB-1801): "Uvezi tekst iz datoteke". The file goes to the
 // server through the client's previewImport, the student reads the preview,
 // and only "Potvrdi uvoz" (confirmImport) puts the text
-// at the end of the work. The button is there only while the work can be edited.
+// at the end of the work. It opens only while the work can be edited.
 import { useRef, useState } from "react";
 import { Button, Dialog } from "@ductura/ui";
 
 import { useLocalEditor } from "../../../../../../src/components/editor/LocalDocument.tsx";
 import { confirmImport, previewImport } from "../../../../../../src/client/import.ts";
+import { useDialogRequest } from "../../../../../../src/components/editor/commands/dialog-request.ts";
 
 import { afterConfirm, afterNotebook, afterPreview, editorContent, notebookContent, START, type ImportState } from "./import-model";
 import { ipynbHr } from "./ipynb/messages.hr";
@@ -35,8 +36,11 @@ export function ImportHost({ documentId, api }: Props) {
   const input = useRef<HTMLInputElement>(null);
   /** Id of the latest request; an answer to an older one is ignored. */
   const latest = useRef(0);
+  const writable = documentId !== "" && !!editor && !editor.isDestroyed && editor.isEditable;
+  // ED-60: opened from the view menu (dialog-request), as in the prototype; nothing is drawn under the shell.
+  useDialogRequest("import", () => { setDone(""); setOpen(true); }, writable);
 
-  if (documentId === "" || !editor || editor.isDestroyed || !editor.isEditable) return null;
+  if (!writable || !editor) return null;
 
   const close = () => { latest.current += 1; setOpen(false); setState(START); };
   const run = async () => {
@@ -106,7 +110,6 @@ export function ImportHost({ documentId, api }: Props) {
       </>;
   return (
     <>
-      <Button tone="quiet" aria-haspopup="dialog" onClick={() => { setDone(""); setOpen(true); }}>{t.open}</Button>
       <span role="status" className="sr-only">{done}</span>
       {open && (
         <Dialog open title={t.title} onClose={close} actions={actions}>
