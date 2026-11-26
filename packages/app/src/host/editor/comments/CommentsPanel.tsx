@@ -7,7 +7,10 @@
 import { Button, Chip, Dialog, PillTag } from "@ductura/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useReportOpenComments } from "@/components/editor/layout-prefs/panel-counts";
+
 import styles from "./comments.module.css";
+import { MyChanges, type ReadMyChanges } from "./my-changes";
 import { commentsHr as t } from "./messages.hr";
 import {
   KINDS, abilities, applyFilters, bodyText, byRound, countsFor, isMine, messageFor, openForPrint, printText, quickReply,
@@ -16,7 +19,7 @@ import {
 } from "./model";
 
 type Load = { kind: "loading" } | { kind: "ready"; comments: readonly Comment[]; round: number; templates: readonly Template[] } | { kind: "unavailable" | "signedOut" };
-type Dlg = "rounds" | "print" | "templates" | "new" | null;
+type Dlg = "rounds" | "print" | "templates" | "new" | "changes" | null;
 
 /**
  * "Prije i poslije" of a comment: the text it was written on and the text in that place now, shown only when
@@ -35,13 +38,15 @@ export function BeforeAfter({ quote, now }: { quote: string; now: string | null 
   );
 }
 
-export function CommentsPanel({ workId, role, submitted = false, port, selection, docSize, currentText, activeId, seen = 0, onJump, onSessionEnd, onSeen, now = Date.now }: {
+export function CommentsPanel({ workId, role, submitted = false, port, selection, docSize, currentText, activeId, seen = 0, onJump, onSessionEnd, onSeen, now = Date.now, changes }: {
   workId: string; role: Role; submitted?: boolean; port: CommentsPort | null;
   /** The text at a comment's place in the document as it is now; null when it cannot be read. */
   currentText?: (place: Place) => string | null;
   /** The last selection in the text, kept by the editor (buttons here must not lose it). */
   selection: () => Selection | null; docSize: () => number; activeId?: string | null; seen?: number;
   onJump: (place: Place) => void; onSessionEnd?: () => void; onSeen?: () => void; now?: () => number;
+  /** ED-42: the student's own changes since the last review; absent, the menu has no such item. */
+  changes?: ReadMyChanges;
 }) {
   const [load, setLoad] = useState<Load>({ kind: "loading" });
   const [turn, setTurn] = useState<TurnFilter>(null);
@@ -68,6 +73,8 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
   }, [port, workId, onSessionEnd]);
   useEffect(() => { void read(); }, [read]);
   useEffect(() => () => { onSeen?.(); }, [onSeen]);
+  // ED-38 (P2-7): the count beside the card's tab, the same open comments the print lists.
+  useReportOpenComments(load.kind === "ready" ? openForPrint(load.comments).length : 0);
 
   if (load.kind === "loading") return <p role="status" className={styles.muted}>{t.loading}</p>;
   if (load.kind !== "ready") {
@@ -172,6 +179,7 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
             <button type="button" onClick={() => void read()}>{t.refresh}</button>
             <button type="button" onClick={() => setDlg("rounds")}>{t.rounds}</button>
             <button type="button" onClick={() => setDlg("print")}>{t.print}</button>
+            {role === "student" && changes && <button type="button" onClick={() => setDlg("changes")}>{t.myChanges}</button>}
             {role === "teacher" && <button type="button" onClick={() => setDlg("templates")}>{t.templatesTitle}</button>}
           </div>
         </details>
@@ -265,6 +273,13 @@ export function CommentsPanel({ workId, role, submitted = false, port, selection
           ))}
         </div>
       </Dialog>
+
+      {changes && (
+        <Dialog open={dlg === "changes"} title={t.myChanges} onClose={() => setDlg(null)} actions={<Button tone="quiet" onClick={() => setDlg(null)}>{t.cancel}</Button>}>
+          <p className={styles.muted}>{t.myChangesNote}</p>
+          {dlg === "changes" && <MyChanges workId={workId} read={changes} />}
+        </Dialog>
+      )}
 
       <Dialog open={dlg === "templates"} title={t.templatesTitle} onClose={() => setDlg(null)} actions={<Button tone="quiet" onClick={() => setDlg(null)}>{t.cancel}</Button>}>
         <p className={styles.muted}>{t.templatesNote}</p>

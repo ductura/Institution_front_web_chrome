@@ -9,7 +9,7 @@
     "build": "pnpm --filter @ductura/app run build",
     "dev": "pnpm --filter @ductura/app run dev",
     "start": "pnpm --filter @ductura/app run start",
-    "test": "npm run test:helpers && npm run test:functional && npm run test:editor6e && npm run test:editor10e && npm run test:editor11e && npm run test:mentor && npm run test:mentor-timeline",
+    "test": "pnpm run test:helpers && pnpm run test:functional && pnpm run test:editor6e && pnpm run test:editor10e && pnpm run test:editor11e && pnpm run test:mentor && pnpm run test:mentor-timeline",
     "test:helpers": "node --test \"test/unit/*.test.js\" \"e2e/vs-run/*.test.mjs\"",
     "test:functional": "playwright test",
     "test:sistem": "playwright test --config playwright.sistem.config.ts",

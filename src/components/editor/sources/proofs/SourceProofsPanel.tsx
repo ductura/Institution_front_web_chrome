@@ -14,7 +14,6 @@ import { Button, Dialog } from "@ductura/ui";
 import { useCallback, useEffect, useId, useRef, useState, type ClipboardEvent } from "react";
 
 import type { SourceProof } from "../../../../client/source-proofs";
-import { zagrebParts } from "../../../summary/zagreb-time";
 
 import { pictureFromFile, type ProofPicture } from "./crop";
 import { proofsHr as t } from "./messages.hr";
@@ -308,7 +307,6 @@ function ProofThumb({ proof, deps, onOpen }: { proof: SourceProof; deps: ProofsD
 function ProofView({ proof, picture: shown, label, deps, onClose }: {
   proof: SourceProof; picture: ProofPicture | null; label: string; deps: ProofsDeps; onClose: () => void;
 }) {
-  const when = zagrebParts(proof.createdAt);
   // Opened before its thumbnail finished: the viewer reads the image itself (undefined while loading).
   const [picture, setPicture] = useState<ProofPicture | null | undefined>(shown ?? undefined);
   useEffect(() => {
@@ -320,7 +318,7 @@ function ProofView({ proof, picture: shown, label, deps, onClose }: {
   return (
     <Dialog open title={t.viewTitle} onClose={onClose} actions={<Button onClick={onClose}>{t.close}</Button>}>
       <p>{label}</p>
-      <p className={styles.muted}>{t.viewMeta.replace("{page}", proof.page).replace("{when}", when ? `${when.date} ${when.time}` : proof.createdAt)}</p>
+      <p className={styles.muted}>{t.viewMeta.replace("{page}", proof.page)}</p>
       {proof.note && <p>{t.viewNote.replace("{note}", proof.note)}</p>}
       {picture ? <PictureCanvas picture={picture} className={styles.view} label={t.viewAlt.replace("{page}", proof.page)} />
         : picture === undefined ? <p className={styles.muted} role="status">{t.loading}</p>

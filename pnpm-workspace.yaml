@@ -1,6 +1,8 @@
 # pnpm workspace for the React packages (DAN-750, web 2.c1) and the forbidden
-# terms scan of locales (DAN-753, 2.c4-a0). The root skeleton
-# keeps npm and package-lock.json until 2.c3 and E-0.3 move it over.
+# terms scan of locales (DAN-753, 2.c4-a0). The root skeleton is part of the
+# same pnpm install; pnpm-lock.yaml is the only lockfile (DAN-1541), and
+# src/client keeps its own, installed with --ignore-workspace, because of the
+# scoped registry token.
 packages:
   - packages/*
   - catalog

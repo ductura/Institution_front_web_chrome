@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { appHref } from "../../../../../../src/components/index.ts";
 import { assignmentIdOf, editorWorkRead } from "../../../../../../src/components/editor/EditorPage.read.ts";
+import { withMentoredAssignments } from "../../../../../../src/components/student/mentored-assignments.ts";
 import { readSubmittedWork } from "../../../../../../src/components/editor/mentor/work-state/submitted-work-read.ts";
 import { studentReceiptRead, type ReceiptRead } from "../../../../../../src/components/predaja/ReceiptPanel.tsx";
 import { stageOf, type Stage } from "../../../../../../src/components/predaja/stage.ts";
@@ -75,7 +76,7 @@ function useChecked<T>(raw: string, step: Step, then: (checked: Checked, assignm
       return;
     }
     void (async () => {
-      const client = createApi();
+      const client = withMentoredAssignments(createApi());
       const [assignments, work] = await Promise.all([
         client("student.assignments.get", NONE).catch(() => UNREACHED),
         client("student.assignment-work.get", NONE).catch(() => UNREACHED),

@@ -25,6 +25,7 @@ export const SCREENS: readonly Screen[] = [
   { name: "nema ovlasti", path: "/nema-ovlasti?kind=denied", role: null },
   { name: "prijava istekla", path: "/nema-ovlasti?kind=expired", role: null },
   { name: "izjava o pristupačnosti", path: "/pristupacnost", role: null },
+  { name: "o aplikaciji", path: "/o-aplikaciji", role: null },
   { name: "preuzimanje izvoza podataka", path: "/izvoz-podataka/IzmisljeniTokenZaProvjeruPristupacnosti_001", role: null },
   // Student.
   { name: "student: moji zadaci", path: "/zadaci", role: "student" },
