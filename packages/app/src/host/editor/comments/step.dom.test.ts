@@ -60,4 +60,30 @@ describe("previous / next comment", () => {
     const one = await mount([FAKE_COMMENTS[0]!]);
     expect(one.host.textContent).not.toContain(t.nextComment);
   });
+
+  it("a newly published comment stays in the list and joins the stepping", async () => {
+    HTMLDialogElement.prototype.showModal = function showModal() { this.setAttribute("open", ""); };
+    HTMLDialogElement.prototype.close = function close() { this.removeAttribute("open"); };
+    const host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    const sel = () => ({ from: 5, to: 20, quote: "Izmišljeni označeni tekst.", at: Date.now(), sameParagraph: true });
+    await act(async () => {
+      root?.render(h(CommentsPanel, { workId: "w", role: "student", port: fakeCommentsPort(), selection: sel, docSize: () => 100, onJump: () => {} }));
+    });
+    await press(t.newTitle);
+    const field = document.querySelector("textarea") as HTMLTextAreaElement;
+    await act(async () => {
+      const set = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
+      set.call(field, "Izmišljeni novi komentar.");
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await press(t.publish);
+    expect(host.querySelectorAll("li[data-cid]").length).toBe(4);
+    expect(host.textContent).toContain("Izmišljeni novi komentar.");
+    expect(host.textContent).toContain(t.stepNone(4));
+    await press(t.prevComment);
+    expect(host.textContent).toContain(t.stepAt(4, 4));
+    expect(active()).not.toBeNull();
+  });
 });
