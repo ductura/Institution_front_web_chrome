@@ -1,0 +1,227 @@
+/* DAN-1520: opening section of koncepti/naslovnica (.uvod), on the shared tokens. */
+.hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 64px;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 160px 40px 110px;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.heading h1 {
+  font: 400 clamp(40px, 6vw, 84px)/1.04 var(--ff-display);
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.line {
+  display: block;
+}
+
+.second {
+  color: var(--ink-muted);
+}
+
+/* The title shows a correction: "dokazuje" struck through in pencil, "pokazuje" written in, a note in the margin. */
+.correction {
+  position: relative;
+  white-space: nowrap;
+}
+
+.correction del {
+  position: relative;
+  text-decoration: none;
+  color: var(--ink-muted);
+  font-weight: 400;
+  opacity: 0.55;
+  margin-right: 0.22em;
+}
+
+.correction del::after {
+  content: "";
+  position: absolute;
+  left: -3%;
+  right: -3%;
+  top: 54%;
+  height: 0.07em;
+  border-radius: 1em;
+  background: var(--accent);
+  transform: rotate(-2.5deg) scaleX(0);
+  transform-origin: left center;
+  animation: strike 0.55s cubic-bezier(0.6, 0, 0.3, 1) 0.9s forwards;
+}
+
+.correction ins {
+  position: relative;
+  text-decoration: none;
+  display: inline-block;
+  clip-path: inset(-40% 100% -10% 0);
+  animation: write 0.9s steps(8, end) 1.55s forwards;
+}
+
+.note {
+  position: absolute;
+  left: 30%;
+  bottom: 92%;
+  white-space: nowrap;
+  font: italic 400 clamp(15px, 1.5vw, 20px)/1 var(--ff-manuscript);
+  letter-spacing: 0;
+  color: var(--accent);
+  transform: rotate(-4deg);
+  opacity: 0;
+  animation: note 0.6s ease 2.7s forwards;
+}
+
+.note::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 100%;
+  width: 12px;
+  height: 14px;
+  border-left: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  border-bottom-left-radius: 10px;
+  opacity: 0.7;
+}
+
+@keyframes strike {
+  to {
+    transform: rotate(-2.5deg) scaleX(1);
+  }
+}
+
+@keyframes write {
+  to {
+    clip-path: inset(-40% 0 -10% 0);
+  }
+}
+
+@keyframes note {
+  from {
+    opacity: 0;
+    transform: rotate(-4deg) translateY(4px);
+  }
+
+  to {
+    opacity: 0.9;
+    transform: rotate(-4deg);
+  }
+}
+
+.text {
+  font: 400 17.5px/1.6 var(--ff-ui);
+  color: var(--ink-2);
+  max-width: 500px;
+  margin: 30px auto 0;
+  text-wrap: pretty;
+}
+
+.text b {
+  font-weight: 400;
+  color: var(--ink);
+}
+
+/* Button: min-height 46, padding 0 24, radius 999, 500 15px. */
+.buttons {
+  margin-top: 40px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 24px;
+  border-radius: 999px;
+  text-decoration: none;
+  font: 500 15px var(--ff-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.primary,
+.primary:hover {
+  color: var(--accent-ink);
+}
+
+.primary {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.outline {
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--raised-rule);
+}
+
+.outline:hover {
+  color: var(--ink);
+  background: var(--hover);
+}
+
+@media (max-width: 640px) {
+  .hero {
+    gap: 56px;
+    padding: 104px 20px 72px;
+  }
+
+  .heading {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .text {
+    margin-left: 0;
+  }
+
+  .buttons {
+    justify-content: flex-start;
+  }
+
+  .correction {
+    display: block;
+  }
+
+  .note {
+    left: 12%;
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .correction del::after,
+  .correction ins,
+  .note {
+    animation-duration: 0.01s !important;
+    animation-delay: 0s !important;
+  }
+}

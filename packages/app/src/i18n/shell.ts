@@ -52,6 +52,7 @@ const LABELS: Readonly<Record<string, Label>> = {
   "/zadatak/[id]/recenzija/primljene": (c) => c.app.host.peerReviewReceived,
   "/zadatak/[id]/recenzija/rad/[taskId]": (c) => c.app.host.peerReviewWork,
   "/kako-radi": (c) => c.t.shell.howItWorks,
+  "/naslovnica": (c) => c.work.landing.header.home,
   "/stanje": (c) => c.t.statusPage.pageTitle,
   "/prijava": (c) => c.app.host.signIn,
   "/nema-ovlasti": (c) => c.app.accessDenied.pageTitle,
