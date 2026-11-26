@@ -13,6 +13,7 @@ import styles from "./StudentBibliography.module.css";
 import { planImport } from "./import-refs";
 import { defaultEffectiveStyle, effectiveStyle, styledLiterature, type EffectiveStyle } from "./styled-entries";
 import { RecommendedSources } from "../../proof-requests/ProofRequests";
+import { RequiredLiterature } from "../../sources-mention/RequiredLiterature";
 import { useInstitutionStyle } from "../../citation-styles/use-institution-style";
 import { bibliographyStudentHr as t } from "./messages.hr";
 import { readStates, stateCounts, toggleState, writeStates, type SourceState, type SourceStates } from "./source-state";
@@ -25,6 +26,8 @@ type Props = {
   proofCounts?: ReadonlyMap<string, number>;
   /** The assignment of the work: needed to read the style of the institution; without it the FPZG style is shown. */
   assignmentId?: string;
+  /** The course of the assignment: needed to read its required literature; without it the section says it is not available. */
+  courseId?: string | null;
 };
 
 const MAX_FILE = 1_000_000;
@@ -36,7 +39,7 @@ export function StudentBibliographyHost(props: Props) {
   </Details>;
 }
 
-function Bibliography({ documentId, editor, proofCounts, assignmentId }: Props) {
+function Bibliography({ documentId, editor, proofCounts, assignmentId, courseId }: Props) {
   const [doc, setDoc] = useState(() => (editor.isDestroyed ? null : editor.state.doc));
   useEffect(() => {
     const sync = () => setDoc(editor.isDestroyed ? null : editor.state.doc);
@@ -95,7 +98,7 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId }: Props) 
   if (sources.length === 0) return <div className={styles.content}>
     <p role="status">{t.empty}</p>
     <ImportRefs editor={editor} sources={sources} editable={editable} />
-    <Unavailable assignmentId={assignmentId} />
+    <Unavailable assignmentId={assignmentId} courseId={courseId} />
   </div>;
 
   const cited = stats.filter((s) => s.places.length > 0).length;
@@ -144,7 +147,7 @@ function Bibliography({ documentId, editor, proofCounts, assignmentId }: Props) 
     <Overview open={overviewOpen} onClose={() => setOverviewOpen(false)} stats={stats} showProofs={Boolean(proofCounts)} />
     <ImportRefs editor={editor} sources={sources} editable={editable} />
     <StyledList json={json} sources={sources} assignmentId={assignmentId} />
-    <Unavailable assignmentId={assignmentId} />
+    <Unavailable assignmentId={assignmentId} courseId={courseId} />
     <p role="status">{message}</p>
   </div>;
 }
@@ -211,12 +214,13 @@ function StyledView({ json, sources, shown }: StyledProps & { shown: EffectiveSt
   </Details>;
 }
 
-function Unavailable({ assignmentId }: { assignmentId: string | undefined }) {
+export function Unavailable({ assignmentId, courseId }: { assignmentId: string | undefined; courseId: string | null | undefined }) {
   return <Details summary={t.notYet}>
     {assignmentId === undefined
       ? <p><b>{t.recommended}.</b> {t.recommendedUnavailable}</p>
       : <RecommendedSources assignmentId={assignmentId} />}
-    <p><b>{t.mandatory}.</b> {t.mandatoryUnavailable}</p>
+    {typeof courseId === "string" ? <RequiredLiterature courseId={courseId} />
+      : <p><b>{t.mandatory}.</b> {t.mandatoryUnavailable}</p>}
   </Details>;
 }
 
