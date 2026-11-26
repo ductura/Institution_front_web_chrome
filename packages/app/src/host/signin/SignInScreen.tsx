@@ -43,6 +43,20 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
   const home = <a className={own.homeLink} href="/">{work.auth.home}</a>;
   const retry = <a className={screen.button} href={href} onClick={start}>{work.auth.retry}</a>;
 
+  // PAR2-A1 (E-1): the help sits inside the default card, open for `pomoc`.
+  const help = (
+    <details className={screen.help} open={view === "help"}>
+      <summary>{p.helpSummary}</summary>
+      <div className={screen.helpBody}>
+        <h3 className={screen.roleTitle}>{p.helpAaiTitle}</h3>
+        <p className={screen.small}>{p.helpAaiBody}</p>
+        <a className={screen.link} href={AAI_HELP_URL} rel="noopener noreferrer">{p.helpAaiLink}</a>
+        <h3 className={screen.roleTitle}>{p.helpAccessTitle}</h3>
+        <p className={screen.small}>{extra.helpAccessBody}</p>
+      </div>
+    </details>
+  );
+
   let card;
   if (view === "redirecting") {
     card = (
@@ -72,7 +86,7 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
         <p className={screen.body}>{view === "failed" ? work.auth.failedBody : work.auth.unavailableBody}</p>
         <div className={own.actions}>
           {retry}
-          {home}
+          {view === "failed" ? home : null}
         </div>
       </section>
     );
@@ -114,6 +128,7 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
           <summary>{p.codeSummary}</summary>
           <p className={screen.small}>{p.codeNote}</p>
         </details>
+        {help}
       </section>
     );
   }
@@ -162,16 +177,6 @@ export default function SignInScreen({ view, href, onStart }: SignInScreenProps)
       </main>
       <footer className={screen.footer}>
         <p className={screen.footerNote}>{p.footer}</p>
-        <details className={screen.help} open={view === "help"}>
-          <summary>{p.helpSummary}</summary>
-          <div className={screen.helpBody}>
-            <h3 className={screen.roleTitle}>{p.helpAaiTitle}</h3>
-            <p className={screen.small}>{p.helpAaiBody}</p>
-            <a className={screen.link} href={AAI_HELP_URL} rel="noopener noreferrer">{p.helpAaiLink}</a>
-            <h3 className={screen.roleTitle}>{p.helpAccessTitle}</h3>
-            <p className={screen.small}>{extra.helpAccessBody}</p>
-          </div>
-        </details>
       </footer>
     </div>
   );

@@ -20,6 +20,7 @@ export const questionnaireMessages = {
   publish: "Objavi",
   close: "Zatvori upitnik",
   manual: "Ručni unos odgovora",
+  exportResponses: "Izvoz odgovora",
   actionFor: (action: string, title: string): string => `${action}: ${title}`,
   confirmPublish: (title: string): string => `Objaviti upitnik „${title}”? Nakon objave pitanja se ne mogu mijenjati.`,
   confirmClose: (title: string): string => `Zatvoriti upitnik „${title}”? Zatvaranje se ne može poništiti.`,

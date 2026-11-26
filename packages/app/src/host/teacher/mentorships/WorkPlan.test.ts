@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type { ConsultationRecord } from "../../../../../../src/client/consultation-records";
 import { AgreedCard, type RecordsRead } from "./AgreedCard";
+import type { TasksCall } from "./agreed-tasks";
 import { mentorPlanText as t } from "./messages.hr";
 import { OpenMentorshipCard } from "./OpenMentorshipCard";
 import { PlanActions } from "./PlanActions";
@@ -47,21 +48,31 @@ function type(input: HTMLInputElement, value: string) {
 }
 
 describe("AgreedCard (MK-5)", () => {
-  it("shows the latest consultation's agreement and additions, says tasks are not available and links the log", async () => {
+  it("shows the latest consultation's agreement, additions and agreed tasks, and links the log", async () => {
     const read: RecordsRead = async () => [record("2026-11-05", "Staro."), record("2026-11-20", "Izmišljeni dogovor: dovršiti uvod.")];
-    const host = await mount(h(AgreedCard, { documentId: DOC, base: "web", read }));
+    const latest = record("2026-11-20", "").id;
+    const task = (id: string, recordId: string, text: string) => ({ id, recordId, position: 1, text, done: false, markedAt: null, createdAt: "2026-11-20T10:00:00.000Z" });
+    const tasks = () => (async () => ({ ok: true, status: 200, body: { tasks: [
+      task("00000000-0000-4000-8000-00000000a001", latest, "Izmišljeni zadatak: dovršiti uvod"),
+      task("00000000-0000-4000-8000-00000000a002", "00000000-0000-4000-8000-0000000a0b05", "Stari zadatak"),
+    ] } })) as TasksCall;
+    const host = await mount(h(AgreedCard, { documentId: DOC, base: "web", onSignedOut: () => {}, read, tasks }));
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
     expect(host.textContent).toContain(t.agreed.last.replace("{date}", "20. 11. 2026.").replace("{topic}", "Izmišljena tema"));
     expect(host.textContent).toContain("Izmišljeni dogovor: dovršiti uvod.");
     expect(host.textContent).not.toContain("Staro.");
     expect(host.textContent).toContain("Izmišljena dopuna");
-    expect(host.textContent).toContain(t.agreed.tasks);
+    expect(host.textContent).toContain(t.agreed.taskList.title);
+    expect(host.querySelector("input[type=checkbox]")?.closest("label")?.textContent).toBe("Izmišljeni zadatak: dovršiti uvod");
+    expect(host.textContent).not.toContain("Stari zadatak");
+    expect(host.textContent).not.toContain("još nije moguće");
     expect(host.querySelector("a")?.getAttribute("href")).toContain(`/nastavnik/rad/${DOC}/konzultacije`);
   });
 
   it("a failed read says unavailable with a retry, never the empty text", async () => {
     let calls = 0;
     const read: RecordsRead = async () => { calls++; return calls === 1 ? null : []; };
-    const host = await mount(h(AgreedCard, { documentId: DOC, base: "web", read }));
+    const host = await mount(h(AgreedCard, { documentId: DOC, base: "web", onSignedOut: () => {}, read }));
     expect(host.querySelector("[role=alert]")?.textContent).toBe(t.agreed.unavailable);
     expect(host.textContent).not.toContain(t.agreed.empty);
     await act(async () => { button(host, t.agreed.retry).click(); });

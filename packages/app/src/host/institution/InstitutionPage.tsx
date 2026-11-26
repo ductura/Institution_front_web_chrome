@@ -6,6 +6,7 @@ import { appHref } from "@/components/index";
 import { messagesHr } from "@/lib/i18n/messages.hr";
 
 import { useHost } from "../context";
+import ConfigPage from "../admin/institution-config/ConfigPage";
 import RulesPage from "../admin/institution-config/RulesPage";
 import { CoursesPanel, OverviewPanel, UsersPanel } from "./InstitutionPanels";
 import type { messagesHr as t } from "./messages.hr";
@@ -22,6 +23,7 @@ export default function InstitutionPage({ view }: { view: keyof typeof t }) {
       {view === "overview" && <OverviewPanel />}
       {view === "users" && <UsersPanel />}
       {view === "rules" && <RulesPage />}
+      {view === "rules" && <ConfigPage />}
       {view === "courses" && <CoursesPanel />}
       {view === "courses" && (
         <section aria-labelledby="novi-kolegij">

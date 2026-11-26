@@ -30,3 +30,9 @@ export function deadlineRows(deadlines: readonly Deadline[], today: Date): Deadl
     return [{ key: d.key, label: d.label, when: `${formatDate(d.date)} · ${rel}`, note: d.note, past: days < 0, days }];
   }).sort((a, b) => a.days - b.days);
 }
+
+/** Words to write each day to cover `remaining` words in `days` days, rounded up; 0 when nothing is left or no day remains. */
+export function dailyPace(remaining: number, days: number): number {
+  if (!(remaining > 0) || !(days >= 1)) return 0;
+  return Math.ceil(remaining / Math.floor(days));
+}

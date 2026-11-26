@@ -11,7 +11,8 @@ import { comparisonHr as t } from "./messages.hr";
 export const emptyText = (versions: number): string => versions === 1 ? `${t.empty} ${t.oneVersion}` : t.empty;
 
 export type VersionComparisonProps = { client: ComparisonApi; documentId: string; replayHref: string };
-type Mode = "page" | "submissions" | "round";
+/** "with": one menu "Usporedi s …" of the sent versions against the newest sent one (decision 2160). */
+type Mode = "page" | "with" | "submissions" | "round";
 
 function ReadFailure({ message, retry }: { message: string; retry: () => void }) {
   return <div><p role="alert">{message}</p><Button tone="quiet" onClick={retry}>{t.retry}</Button></div>;
@@ -43,14 +44,17 @@ function VersionPicker({ client, documentId, versions, mode }: Pick<VersionCompa
   const [from, setFrom] = useState(previous?.revision ?? 0);
   const [to, setTo] = useState(newest?.revision ?? 0);
   const [onlyChanges, setOnlyChanges] = useState(mode !== "page");
-  const options = versions.map(({ revision, savedMinute }) => ({ value: String(revision), label: t.version(revision, savedMinute) }));
+  const choices = mode === "with" ? versions.slice(1) : versions;
+  const options = choices.map(({ revision, savedMinute }) => ({ value: String(revision), label: t.version(revision, savedMinute) }));
   return (
     <>
       {mode === "submissions" && <div role="group" aria-label={t.timeline}>
         {options.map(({ value, label }) => <Button key={value} tone="quiet" aria-pressed={Number(value) === from}
           onClick={() => setFrom(Number(value))}>{label}</Button>)}
       </div>}
-      {mode !== "round" && <>
+      {mode === "with" && <Select label={t.compareWith} options={options} value={from}
+        onChange={(event) => setFrom(Number(event.currentTarget.value))} />}
+      {mode !== "round" && mode !== "with" && <>
         <Select label={t.from} options={options} value={from} onChange={(event) => setFrom(Number(event.currentTarget.value))} />
         <Select label={t.to} options={options} value={to} onChange={(event) => setTo(Number(event.currentTarget.value))} />
       </>}
@@ -64,7 +68,7 @@ function VersionPicker({ client, documentId, versions, mode }: Pick<VersionCompa
 function VersionsRead({ client, documentId, replayHref, mode }: VersionComparisonProps & { mode: Mode }) {
   const [read, setRead] = useState<Read<Versions>>();
   const [attempt, setAttempt] = useState(0);
-  const limit = mode === "page" ? Infinity : 8;
+  const limit = mode === "page" || mode === "with" ? Infinity : 8;
   useEffect(() => {
     const controller = new AbortController();
     void readSubmittedVersions(client, documentId, controller.signal, limit).then((result) => {

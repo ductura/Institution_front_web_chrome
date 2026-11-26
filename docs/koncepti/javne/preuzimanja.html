@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../zajednicko/tokeni.css">
+<link rel="stylesheet" href="stil.css">
+<title>Ductura za računalo</title>
+<!-- /preuzimanja. Dok paketi ne postoje, ovo je stranica „uskoro” (vlasnik, 26. 11. 2026.).
+     Tekst: naslovnica (#preuzmi) i messages.hr.ts:835. Nema datuma ni verzija, jer ih nitko nije odredio (D-302, D-306). -->
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="znak" viewBox="0 0 120 120">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M38 22 V98" stroke="#faf9f5" stroke-width="40"/>
+      <path d="M38 22 C104 22 104 98 38 98" stroke="#faf9f5" stroke-width="40"/>
+      <path d="M38 22 C104 22 104 98 38 98" stroke="#c8aa6e" stroke-width="24"/>
+      <path d="M38 22 V98" stroke="#8fb0e0" stroke-width="24"/>
+      <path d="M38 22 V48" stroke="#8fb0e0" stroke-width="24"/>
+      <path d="M38 98 C60 98 76 94 86 84" stroke="#c8aa6e" stroke-width="24" opacity=".85"/>
+    </g>
+  </symbol>
+  <symbol id="slojevi" viewBox="0 0 1440 558" preserveAspectRatio="none">
+    <path style="fill:var(--sheet)" d="M0 120C240 60 480 40 720 90S1200 150 1440 70V558H0Z"/>
+    <path style="fill:var(--card)" d="M0 230C260 170 520 200 760 230S1180 190 1440 150V558H0Z"/>
+    <path style="fill:var(--hover)" d="M0 330C300 290 560 300 800 330S1200 300 1440 260V558H0Z"/>
+    <path style="fill:none;stroke:var(--accent);stroke-opacity:.32;stroke-width:1.2" vector-effect="non-scaling-stroke" d="M0 318C280 296 520 344 820 332S1220 290 1440 306"/>
+    <path style="fill:var(--rule-2);fill-opacity:.45" d="M0 400C300 370 600 390 880 410S1240 370 1440 380V558H0Z"/>
+    <path style="fill:var(--rule-2);fill-opacity:.65" d="M0 470C320 440 620 470 900 480S1260 450 1440 460V558H0Z"/>
+    <path style="fill:var(--rule-2);fill-opacity:.85" d="M0 520C360 500 700 530 1000 520S1300 505 1440 515V558H0Z"/>
+  </symbol>
+</svg>
+
+<header class="vrh">
+  <a class="znak-mali" href="../naslovnica/index.html"><svg width="32" height="32" aria-hidden="true"><use href="#znak"/></svg>Ductura</a>
+  <nav aria-label="Glavno"><a href="../prijava/index.html">Prijava</a></nav>
+</header>
+
+<div class="pozadina" aria-hidden="true"></div>
+
+<main>
+  <svg class="slojevi" aria-hidden="true"><use href="#slojevi"/></svg>
+
+  <section class="sredina" aria-labelledby="h">
+    <h1 id="h"><span class="red">Ductura za računalo</span><span class="red drugi">stiže uskoro.</span></h1>
+    <p class="uvod">Isti prostor za pisanje kao u pregledniku, i kad mreža zakaže. Instalacija ne treba; aplikacija za računalo je izbor, ne uvjet.</p>
+
+    <dl class="sustavi">
+      <div><dt>Windows</dt><dd>U pripremi</dd></div>
+      <div><dt>macOS</dt><dd>U pripremi</dd></div>
+    </dl>
+
+    <div class="gumbi">
+      <a class="gumb glavni" href="../prijava/index.html">Nastavite u pregledniku<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+    </div>
+    <p class="napomena">Prijava je ista kao u aplikaciji: računom AAI@EduHr.</p>
+  </section>
+</main>
+
+<footer class="dno">
+  <div class="dno-unutra">
+    <a class="znak-mali" href="../naslovnica/index.html"><svg width="26" height="26" aria-hidden="true"><use href="#znak"/></svg>Ductura<small>2026.</small></a>
+    <nav aria-label="Podnožje"><a href="pomoc.html">Pomoć</a><a href="kontakt.html">Kontakt</a><a href="privatnost.html">Privatnost</a><a href="uvjeti-koristenja.html">Uvjeti korištenja</a><a href="#">Pristupačnost</a><a href="#">Stanje sustava</a></nav>
+  </div>
+</footer>
+
+</body>
+</html>

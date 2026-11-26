@@ -253,8 +253,19 @@ function wordsOf(doc: SheetDocument, sheet: SheetSchemaVersion): number {
   return sheet === 3 ? documentWordCount(doc) : countWords(doc as CanonicalDocument);
 }
 
+/**
+ * F4-V17-R01: the faculty template's skeleton (title lines, headings, hint paragraphs) as editor
+ * blocks, put into a work that has nothing yet. Only an empty, writable sheet takes it, and
+ * only once: text the author typed meanwhile is never overwritten. It is one ordinary edit,
+ * so it is saved and recorded like any other; false when nothing was put in.
+ */
+export function seedStartContent(editor: Editor, blocks: readonly unknown[] | null | undefined): boolean {
+  if (!blocks || blocks.length === 0 || !editor.isEditable || !editor.isEmpty) return false;
+  return editor.commands.setContent({ type: "doc", content: blocks as never[] });
+}
+
 export function LocalDocumentProvider({
-  scope, documentId, assignmentId = null, session = null, livePublish = false, publishHeld = false, schemaVersion, children,
+  scope, documentId, assignmentId = null, session = null, livePublish = false, publishHeld = false, schemaVersion, startContent, children,
 }: {
   scope: string;
   documentId: string;
@@ -284,8 +295,15 @@ export function LocalDocumentProvider({
    * unknown or other version keeps the v1 sheet, journal and evidence.
    */
   schemaVersion?: number;
+  /**
+   * F4-V17-R01: the blocks a work with no stored text starts with (the faculty template's
+   * skeleton), or null for none. Asked once per opened journal; only an empty sheet takes it, so stored text is never touched.
+   */
+  startContent?: () => Promise<readonly unknown[] | null>;
   children: ReactNode;
 }) {
+  const startContentRef = useRef(startContent);
+  useLayoutEffect(() => { startContentRef.current = startContent; });
   const sheet: SheetSchemaVersion = assignmentId ? sheetSchemaVersion(schemaVersion) : 1;
   // Read by the save flush, which is made once.
   const sheetRef = useRef(sheet);
@@ -571,6 +589,15 @@ export function LocalDocumentProvider({
           editor.setEditable(true, false);
         }
         setPhase("ready");
+        // F4-V17-R01: a work whose loaded text is empty starts with the faculty template's skeleton.
+        // The evidence session always returns a document (the server's opening one, empty for a new
+        // work), so "fresh" is read from the sheet itself: seedStartContent takes only an empty sheet.
+        // A failed read leaves the sheet empty, as before; the author can always start typing.
+        if (readyRef.current && startContentRef.current) {
+          void startContentRef.current().catch(() => null).then((blocks) => {
+            if (!disposed && readyRef.current && !editor.isDestroyed) seedStartContent(editor, blocks);
+          });
+        }
         // Only a signed-in person who acknowledged the notice publishes; the
         // local demo journal never does, nor a submitted work (O2, #756). A v3
         // sheet publishes under exactly these rules (INT-26): the gate does not

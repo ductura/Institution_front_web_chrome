@@ -1,0 +1,21 @@
+/** Interface text of "Događaji sustava" (F4-PM2-R16, E2): ops.events.get, read only. Events hold no name or address. */
+export const eventsMessages = {
+  title: "Događaji sustava",
+  lead: "Zapisi poslužitelja iz posljednja 24 sata: vrsta događaja i vrijeme, bez imena i podataka o osobama.",
+  eventsTitle: "Događaji",
+  table: "Događaji sustava",
+  time: "Vrijeme",
+  kind: "Vrsta",
+  account: "Vrsta računa",
+  noAccount: "nije prijavljen račun",
+  filter: "Prikaži vrste koje počinju s",
+  filterHint: "Na primjer „restore” ili „job”. Prazno prikazuje sve.",
+  noMatch: "Nijedan događaj ne odgovara filtru.",
+  emptyTitle: "Nema događaja",
+  emptyBody: "U posljednja 24 sata poslužitelj nije zapisao nijedan događaj.",
+  denied: "Za pregled događaja potreban je operaterski pristup.",
+  unavailable: "Događaje trenutačno nije moguće učitati. Pokušajte ponovno.",
+  retry: "Pokušaj ponovno",
+  more: "Učitaj starije događaje",
+  moreFailed: "Starije događaje nije moguće učitati. Pokušajte ponovno.",
+} as const;

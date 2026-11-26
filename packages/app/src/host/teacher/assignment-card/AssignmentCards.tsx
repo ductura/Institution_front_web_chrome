@@ -11,6 +11,7 @@ import { codeOutcome } from "../../../../../../src/components/teacher/kolegiji/c
 import { newAssignmentHref } from "../../../../../../src/components/teacher/links";
 import type { TeacherCourse } from "../../../../../../src/components/teacher/teacher-courses-read";
 import { useHost } from "../../context";
+import { followUp, openRevisions } from "../assignment-facts/read";
 import { canRevoke, chosenInstant, codeStateOf, codeStateText, firstValidUntil, revocationOf, type CodeState } from "./code-state";
 import { assignmentCardMessages as t } from "./messages.hr";
 import {
@@ -37,6 +38,19 @@ function useTeam(courseId: string): { view: TeachingTeamView | null; done: boole
   return state;
 }
 
+/** NAS-12: "Dorada: n otvorenih" from teacher.assignment-follow-up.get; "nedostupno" while unread or when it failed. */
+function useOpenRevisions(assignmentId: string): { done: boolean; count: number | null } {
+  const [state, setState] = useState<{ done: boolean; count: number | null }>({ done: false, count: null });
+  useEffect(() => {
+    let live = true;
+    void followUp(createApi(), assignmentId).then((read) => {
+      if (live) setState({ done: true, count: openRevisions(read) });
+    });
+    return () => { live = false; };
+  }, [assignmentId]);
+  return state;
+}
+
 function Field({ name, children }: { name: string; children: string }) {
   return <div><span className={styles.label}>{name}</span>{children}</div>;
 }
@@ -58,7 +72,10 @@ export function TaskActions({ assignment }: { assignment: { readonly id: string;
   const link = (path: string, label: string, primary = false) => (
     <a className={primary ? "btn small" : "btn secondary small"} href={appHref(base, path)} aria-label={`${label}: ${assignment.title}`}>{label}</a>
   );
+  const revisions = useOpenRevisions(assignment.id);
   return (
+    <>
+    {revisions.done ? <p className="meta">{t.openRevisions(revisions.count)}</p> : null}
     <div className="acts" role="group" aria-label={`${t.taskActions}: ${assignment.title}`}>
       {link(paths.submissions, t.submissions)}
       {writes ? link(paths.edit, t.edit) : null}
@@ -67,6 +84,7 @@ export function TaskActions({ assignment }: { assignment: { readonly id: string;
       {writes ? link(paths.merlin, t.taskMerlin) : null}
       {link(paths.fastPath, t.fastPath, true)}
     </div>
+    </>
   );
 }
 

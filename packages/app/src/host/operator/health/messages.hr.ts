@@ -1,0 +1,23 @@
+/** Interface text of "Stanje sustava" (F4-PM2-R16, E2): platform.health.get and platform.ready.get, read only. */
+export const healthMessages = {
+  title: "Stanje sustava",
+  lead: "Je li poslužitelj živ i spreman te radi li svaka njegova usluga. Nema podataka o osobama.",
+  serviceTitle: "Poslužitelj",
+  readyTitle: "Spremnost usluga",
+  loading: "Učitavanje stanja sustava…",
+  unavailable: "Stanje sustava trenutačno nije moguće učitati. Pokušajte ponovno.",
+  retry: "Pokušaj ponovno",
+  table: "Stanje usluga",
+  measure: "Usluga",
+  value: "Stanje",
+  alive: "Poslužitelj odgovara",
+  database: "Glavna baza",
+  apiVersion: "Inačica sučelja",
+  serverVersion: "Inačica poslužitelja",
+  minClientVersion: "Najstarija podržana inačica klijenta",
+  notReported: "Poslužitelj to ne javlja",
+  capabilities: { database: "Baza podataka", storage: "Pohrana", signing: "Potpisivanje", queue: "Red poslova" },
+  states: { ok: "u redu", degraded: "smanjeno", nedostupno: "nedostupno", nije_konfigurirano: "nije podešeno" },
+  notReady: "Poslužitelj nije spreman. Razlog je zapisan na poslužitelju, ovdje se ne prikazuje.",
+  draining: "Poslužitelj se gasi i ne prima nove zahtjeve.",
+} as const;

@@ -9,6 +9,7 @@ export {
   normalizePages,
   sortBibliography,
 } from "./format";
+export { deriveFootnoteNotes, FOOTNOTE_LABELS, type FootnoteNote, type FootnoteNoteKind } from "./footnote-notes";
 export { CitationStyleError, parseCitationStyle, type CitationStyle } from "./style";
 export * from "./types";
 
