@@ -6,25 +6,117 @@
  */
 
 import { Extension, type Editor } from "@tiptap/core";
-import { TextSelection } from "@tiptap/pm/state";
+import { closeHistory } from "@tiptap/pm/history";
+import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 
 import type { MoveDirection } from "./move";
 
 /** A sentence as offsets into its paragraph's text: [from, to) without the spaces around it. */
 export type SentenceSpan = { readonly from: number; readonly to: number };
 
-/** Text up to an end mark and its closing quotes or bracket, or up to the end of the paragraph. */
-const SENTENCE = /[^.!?…]+(?:[.!?…]+[”"»)]*|$)/gu;
+/** The text of a paragraph as the plan reads it: one character for each inline atom. */
+const ATOM = "\uFFFC";
+const MOVE_HISTORY = new PluginKey("sentenceMoveHistory");
 
-/** The sentences of a paragraph's text (inline atoms count as one character each). */
+const END_MARK = /[.!?…]+[“”"‘’'«»)\]}]*(?:\uFFFC+[.!?…]*)?/gu;
+const NUMBER_DATE = /(?<![\p{L}\d])\d{1,2}\.[^\S\r\n]*\d{1,2}\.[^\S\r\n]*\d{4}(?!\d)/gu;
+const WRITTEN_DATE = /(?<![\p{L}\d])\d{1,2}\.(?=[^\S\r\n]+(?:siječnja|veljače|ožujka|travnja|svibnja|lipnja|srpnja|kolovoza|rujna|listopada|studenoga|studenog|prosinca)(?!\p{L}))/giu;
+const SHORT_DATE = /(?<![\p{L}\d])\d{1,2}\.[^\S\r\n]+(?:sij|velj|ožu|tra|svi|lip|srp|kol|ruj|lis|stu|pro)\.[^\S\r\n]+\d{4}(?!\d)/giu;
+const DOTTED_FORM = /(?<![\p{L}\d])(?:d\.[^\S\r\n]*o\.[^\S\r\n]*o\.|p\.[^\S\r\n]*n\.[^\S\r\n]*e\.|pr\.[^\S\r\n]*Kr\.)/giu;
+
+// Titles and introductory abbreviations can be followed by an uppercase word.
+const PREFIX = new Set(["npr", "tj", "tzv", "odn", "usp", "prof", "dr", "doc", "mr", "sc", "dipl", "ing"]);
+const NUMBER_PREFIX = new Set(["str", "br", "čl", "st", "toč", "sl", "tab", "sv", "god"]);
+const OPTIONAL_END = new Set(["itd", "itp", "sl", "dr", "sur", "al", "etc", "ibid", "god", "g"]);
+const INITIAL = /^(?:\p{Lu}|Lj|Nj|Dž)$/u;
+const NAME_OR_INITIAL = /^(?:\p{Lu}[\p{L}\p{M}]+|\p{Lu}\.)/u;
+const CONTINUATION = /^[\p{Ll},;:]/u;
+const CLOSE_QUOTE = /[“”"‘’'«»]/u;
+const ORDINAL_CONTEXT = /^(?:(?:čl|st|toč)\.|(?:godine|stoljeća|poglavlje|izdanje)(?!\p{L}))/iu;
+const NUMBERED_REFERENCE = /(?:^|[^\p{L}])(?:čl|st|toč)\.[^\S\r\n]+\d+$/iu;
+const CITATION = /(?:\((?=[^()[\]\r\n]*\p{L})[^()[\]\r\n]*?[,\s]\d{4}[a-z]?(?!\d)[^()[\]\r\n]*\)|\[\d+(?:[^\S\r\n]*[,–-][^\S\r\n]*\d+)*\])([.!?…]*)/gu;
+
+function punctuationContext(text: string) {
+  const internal = new Set<number>();
+  const abbreviationEnds = new Set<number>();
+  const citations = new Map<number, { to: number; hasEndMark: boolean }>();
+  for (const pattern of [NUMBER_DATE, WRITTEN_DATE, SHORT_DATE, DOTTED_FORM]) {
+    for (const match of text.matchAll(pattern)) {
+      for (const dot of match[0].matchAll(/\./g)) {
+        const set = pattern === DOTTED_FORM && dot.index === match[0].length - 1 ? abbreviationEnds : internal;
+        set.add(match.index + dot.index);
+      }
+    }
+  }
+  for (const match of text.matchAll(CITATION)) {
+    const ending = match[1] ?? "";
+    const reference = match[0].slice(0, match[0].length - ending.length);
+    for (const mark of reference.matchAll(/[.!?…]/gu)) internal.add(match.index + mark.index);
+    citations.set(match.index, { to: match.index + match[0].length, hasEndMark: ending !== "" });
+  }
+  return { internal, abbreviationEnds, citations };
+}
+
+function continuesAfterPeriod(text: string, index: number, start: number, next: string): boolean {
+  const before = text.slice(Math.max(start, index - 24), index);
+  if (/\d$/.test(before)) {
+    if (/^\d/.test(text.slice(index + 1, index + 2))) return true;
+    // A year has a period in running Croatian prose as well as at sentence end.
+    return ORDINAL_CONTEXT.test(next) ||
+      (CONTINUATION.test(next) && (/(?:^|\D)\d{4}$/.test(before) || NUMBERED_REFERENCE.test(before)));
+  }
+  const word = before.match(/[\p{L}\p{M}]+$/u)?.[0] ?? "";
+  const lower = word.toLowerCase();
+  if (NUMBER_PREFIX.has(lower) && /^\d/.test(next)) return true;
+  if (OPTIONAL_END.has(lower) && CONTINUATION.test(next)) return true;
+  if ((lower === "sur" || lower === "al") && /^\(\d{4}[a-z]?(?:\)|[,;:])/u.test(next)) return true;
+  if (lower === "dr" && /(?:^|[^\p{L}])i[^\S\r\n]+dr$/iu.test(before)) return false;
+  if (PREFIX.has(lower) && /^[\p{L}\d(„“«"]/u.test(next)) return true;
+  return INITIAL.test(word) && NAME_OR_INITIAL.test(next);
+}
+
+/** UTF-16 ranges into the unmodified paragraph projection. */
 export function sentenceSpans(text: string): SentenceSpan[] {
   const out: SentenceSpan[] = [];
-  for (const m of text.matchAll(SENTENCE)) {
-    const raw = m[0];
-    if (raw.trim() === "") continue;
-    const from = m.index + (raw.length - raw.trimStart().length);
-    out.push({ from, to: m.index + raw.trimEnd().length });
+  const { internal, abbreviationEnds, citations } = punctuationContext(text);
+  const horizontalSpace = /[^\S\r\n]*/y;
+  let start = 0;
+  let consumedThrough = 0;
+  const emit = (end: number) => {
+    const raw = text.slice(start, end);
+    if (!/[^.!?…\s]/u.test(raw)) return;
+    out.push({ from: start + raw.length - raw.trimStart().length, to: start + raw.trimEnd().length });
+    start = end;
+  };
+
+  for (const mark of text.matchAll(END_MARK)) {
+    if (mark.index < consumedThrough || internal.has(mark.index)) continue;
+    const raw = mark[0];
+    const end = mark.index + raw.length;
+    horizontalSpace.lastIndex = end;
+    horizontalSpace.exec(text);
+    const nextIndex = horizontalSpace.lastIndex;
+    const next = text.slice(nextIndex, nextIndex + 16);
+    if (raw === "." && (
+      (abbreviationEnds.has(mark.index) && /^[\p{Ll}\d,;:]/u.test(next)) ||
+      continuesAfterPeriod(text, mark.index, start, next)
+    )) continue;
+
+    const citation = citations.get(nextIndex);
+    if (citation) {
+      consumedThrough = citation.to;
+      horizontalSpace.lastIndex = consumedThrough;
+      horizontalSpace.exec(text);
+      const following = horizontalSpace.lastIndex;
+      if (!citation.hasEndMark && CONTINUATION.test(text.slice(following, following + 1))) continue;
+      emit(consumedThrough);
+      continue;
+    }
+    // The reporting clause after a quotation can still belong to that sentence.
+    if (CLOSE_QUOTE.test(raw) && CONTINUATION.test(next)) continue;
+    emit(end);
   }
+  emit(text.length);
   return out;
 }
 
@@ -49,9 +141,6 @@ export function planSentenceMove(text: string, offset: number, direction: MoveDi
   return { ok: true, first: spans[a]!, second: spans[b]!, moving: i < j ? "first" : "second" };
 }
 
-/** The text of a paragraph as the plan reads it: one character for each inline atom. */
-const ATOM = "￼";
-
 /** Moves the sentence holding the cursor; false when it cannot (not in a paragraph, read-only, no neighbour). */
 export function moveSentenceInEditor(editor: Editor, direction: MoveDirection): boolean {
   if (editor.view.isDestroyed === true || !editor.isEditable) return false;
@@ -67,7 +156,8 @@ export function moveSentenceInEditor(editor: Editor, direction: MoveDirection): 
   const slice = (from: number, to: number) => state.doc.slice(start + from, start + to).content;
   // second + the space between + first, in place of first … second.
   const swapped = slice(second.from, second.to).append(slice(first.to, second.from)).append(slice(first.from, first.to));
-  const tr = state.tr.replaceWith(start + first.from, start + second.to, swapped);
+  const tr = closeHistory(state.tr.replaceWith(start + first.from, start + second.to, swapped));
+  tr.setMeta(MOVE_HISTORY, true);
   // The cursor stays at the start of the sentence that moved.
   const movedStart = plan.moving === "second" ? first.from : first.from + (second.to - second.from) + (second.from - first.to);
   tr.setSelection(TextSelection.create(tr.doc, start + movedStart));
@@ -78,6 +168,17 @@ export function moveSentenceInEditor(editor: Editor, direction: MoveDirection): 
 /** Alt+↑/↓ moves the sentence holding the cursor within its paragraph (prototype, Više → Rečenica gore/dolje). */
 export const SentenceMove = Extension.create({
   name: "sentenceMove",
+  addProseMirrorPlugins() {
+    return [new Plugin({
+      key: MOVE_HISTORY,
+      appendTransaction(transactions, _oldState, newState) {
+        // As with FindReplaceHistory, typing after the move gets its own undo step.
+        return transactions.some((tr) => tr.docChanged && tr.getMeta(MOVE_HISTORY) === true)
+          ? closeHistory(newState.tr)
+          : null;
+      },
+    })];
+  },
   addKeyboardShortcuts() {
     return {
       "Alt-ArrowUp": () => moveSentenceInEditor(this.editor, "up"),
