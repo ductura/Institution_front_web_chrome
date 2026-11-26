@@ -3,8 +3,11 @@
 // WEB-NF6-ETAPE (NF-6 MK-5, MK-6): one work of a mentorship on N-16 in one view: its stages with state, due
 // date, description and the mentor's note (the shared "Etape" card, WEB-1520: odobri, zatraži doradu s rokom,
 // uredi rokove), the plan writes beside it, and what was agreed at the latest consultation.
+// F4-MEN-R02: the messages beside the work (work.messages.get/post), the shared card from the student's side
+// with the mentor as the teacher sender.
 import { useCallback, useState } from "react";
 
+import { WorkMessages } from "../../../../../../src/components/editor/mentor/messages/WorkMessages";
 import { StagesCard } from "../../../../../../src/components/editor/mentor/milestones/StagesCard";
 import { mentorPlanText as t } from "./messages.hr";
 import { AgreedCard, type RecordsRead } from "./AgreedCard";
@@ -28,6 +31,7 @@ export function WorkPlan({ documentId, name, title, base, onSignedOut, plan, rec
       <StagesCard key={revision} mentor documentId={documentId} current={always} onSessionEnd={onSignedOut} />
       <PlanActions documentId={documentId} onChanged={reread} onSignedOut={onSignedOut} call={plan} />
       <AgreedCard documentId={documentId} base={base} read={records} />
+      <WorkMessages role="teacher" documentId={documentId} current={always} onSessionEnd={onSignedOut} />
     </section>
   );
 }
