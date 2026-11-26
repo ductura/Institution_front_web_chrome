@@ -2250,7 +2250,7 @@ export const hr = {
     button: "Prijava sustavom AAI@EduHr",
     passwordNote: "Lozinku upisujete samo kod AAI@EduHr.",
     roleTitle: "Jedan ulaz. Vaš prostor.",
-    roleBody: "Nakon prijave otvara se vaš prostor prema dodijeljenoj ulozi. Ulogu nastavnika potvrđuje administrator fakulteta.",
+    roleBody: "Nakon prijave otvara se Vaš prostor prema dodijeljenoj ulozi. Ulogu nastavnika potvrđuje administrator fakulteta.",
     codeSummary: "Prvi dolazak ili imate kod zadatka?",
     codeNote: "Prvo se prijavite sustavom AAI@EduHr. Kod zadatka od nastavnika upisujete nakon prijave.",
     footer: "Identitet AAI@EduHr · pristup prema dodijeljenoj ulozi",
