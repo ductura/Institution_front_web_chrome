@@ -8,9 +8,12 @@ const ci = Boolean(process.env.CI);
 // DUCTURA_BRANDED=1; inače se ta dva projekta ne registriraju (nema preskakanja).
 const branded = ci || process.env.DUCTURA_BRANDED === '1';
 
-// Na pull requestu CI vrti samo projekt chromium (brži CI); puna matrica ide na
-// push na bazu i main te na noćnom rasporedu. Bez varijable matrica je cijela.
-const chromiumOnly = process.env.DUCTURA_PR_CHROMIUM_ONLY === 'true';
+// Na pull requestu CI vrti tri motora preglednika: chromium, firefox i webkit
+// (PM2-R13, plan M0.3: obvezna provjera na svakom PR-u). Pravi Chrome i Edge te
+// mobilna i tablet emulacija ostaju na pushu na bazu i main te na noćnom
+// rasporedu. Bez varijable matrica je cijela.
+const PR_ENGINES = ['chromium', 'firefox', 'webkit'];
+const prEngines = process.env.DUCTURA_PR_ENGINES === 'true';
 
 const matrix = [
   { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
@@ -34,5 +37,5 @@ export default defineConfig({
   fullyParallel: false,
   use: { baseURL: 'http://127.0.0.1:5173', trace: 'retain-on-failure' },
   webServer: { command: 'node dev-server.mjs', url: 'http://127.0.0.1:5173', reuseExistingServer: !ci },
-  projects: matrix.filter((p) => (branded || !p.branded) && (!chromiumOnly || p.name === 'chromium')).map(({ name, use }) => ({ name, use })),
+  projects: matrix.filter((p) => (branded || !p.branded) && (!prEngines || PR_ENGINES.includes(p.name))).map(({ name, use }) => ({ name, use })),
 });
