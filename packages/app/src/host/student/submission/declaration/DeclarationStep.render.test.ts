@@ -36,7 +36,9 @@ const error = (status: number, code: string) => json(status, { error: code, code
 function server(start: typeof STATE, answer?: () => Promise<Response> | Response) {
   let state = { ...start };
   const puts: unknown[] = [];
-  const fetchImpl: typeof fetch = async (_input, init) => {
+  const fetchImpl: typeof fetch = async (input, init) => {
+    // F4-PRE-R02: the assistant's list of conversations; none here.
+    if (String(input).includes("/assistant-conversations")) return json(200, { assignmentId: ASSIGNMENT, conversations: [] });
     if ((init?.method ?? "GET") === "GET") return json(200, state);
     const body = JSON.parse(String(init?.body)) as { confirm: boolean };
     puts.push(body);

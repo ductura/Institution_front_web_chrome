@@ -39,6 +39,9 @@ export const submitText = {
   lateConfirm: "Razumijem da će predaja biti označena kao predaja nakon roka.",
   lateConfirmWhy: "Predaja je moguća kad potvrdite ovu rečenicu.",
   declarationRow: "Izjava",
+  // F4-PRE-R02: the prototype's row (Ductura_student.html, step 4), shown only when there are conversations.
+  conversationsRow: "Razgovori uz izjavu",
+  conversationsAttached: "{a} priloženo",
   // NF-3 PR-17, Daniel's answer 3: late after the deadline, late by the teacher's exception, and not open.
   late: {
     past: "Rok je prošao {due}. Predaja će biti označena kao predaja nakon roka; dopušta li zadatak predaju nakon roka, poslužitelj provjerava pri predaji.",
