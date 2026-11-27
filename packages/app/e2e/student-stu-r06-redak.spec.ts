@@ -37,7 +37,7 @@ const COURSES = { courses: [{ id: COURSE, name: "Izmišljeni kolegij medija", ac
   { id: TOMORROW, title: "Sažetak izmišljenog članka", dueAt: "2026-11-23T08:00:00.000Z", noticeFirst: false, workType: "essay" },
 ] }] };
 
-for (const path of ["/app/web/zadaci", "/app/web/zadaci/kolegiji"]) {
+for (const path of ["/aplikacija/zadaci", "/aplikacija/zadaci/kolegiji"]) {
   test(`one deadline tag for the same rows on ${path} (PAR2-A3)`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await student(page, { status: 200, json: COURSES });
@@ -64,7 +64,7 @@ for (const path of ["/app/web/zadaci", "/app/web/zadaci/kolegiji"]) {
 
 test("the course card on E-3 writes the year as 2026./27. (PAR2-A3)", async ({ page }) => {
   await student(page, { status: 200, json: COURSES });
-  await page.goto("/app/web/zadaci/kolegiji");
+  await page.goto("/aplikacija/zadaci/kolegiji");
   await expect(page.getByText("Kolegij · 2026./27.", { exact: true })).toBeVisible();
   await expect(page.getByText("2026./2027.")).toHaveCount(0);
 });
