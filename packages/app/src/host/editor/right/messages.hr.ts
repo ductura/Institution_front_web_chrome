@@ -43,4 +43,12 @@ export const pregledHr = {
   maxTerms: "Pojmovnik je pun. Ukloni neki pojam da dodaš novi.",
   duplicate: "Taj pojam već postoji.",
   storageOff: "Pohrana u pregledniku nije dostupna; pojmovi se neće sačuvati.",
+  // ED-73 (prototip features.js `bars`): Oblik rečenica odlomka s kursorom.
+  oblik: "Oblik rečenica",
+  shapeIntro: "Duljina svake rečenice u odlomku s kursorom.",
+  shapeEmpty: "U odlomku nema rečenica.",
+  shapeHint: "Izmjena kratkih i dugih rečenica čini tekst čitljivijim.",
+  shapeList: "Rečenice odlomka po duljini",
+  shapeBar: (index: number, words: number, long: boolean) =>
+    `${index}. rečenica: ${words} ${words % 10 === 1 && words % 100 !== 11 ? "riječ" : "riječi"}${long ? ", duga (više od 40 riječi)" : ""}`,
 } as const;
