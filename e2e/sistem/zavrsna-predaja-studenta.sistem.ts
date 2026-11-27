@@ -226,15 +226,24 @@ test('INT-03: student sinkronizira odlomke, potvrdi Izjavu i preda rad', async (
     return body.receipt;
   });
 
-  await test.step('Potvrda predaje prikazuje isti otisak i nakon osvježavanja', async () => {
+  await test.step('Potvrda predaje ne prikazuje otisak, ali ga nudi za kopiranje, i nakon osvježavanja', async () => {
     await expect(page).toHaveURL((url) => url.pathname === `${submissionPath}/potvrda`);
-    // E-11: the fingerprint in groups of four characters (receipt/model.ts fingerprintGroups).
-    const grouped = receipt.payload.artifactSha256.match(/.{4}/g).join(' ');
-    await expect(page.getByRole('heading', { name: /^Predano / })).toBeVisible();
-    const fingerprint = page.getByText(grouped, { exact: true });
-    await expect(fingerprint, 'Otisak nakon predaje').toBeVisible();
+    // S-08 K1, K2 (Ductus#2059): the SHA-256 string is no longer shown, in groups or whole; the note and the
+    // button that copies it stay. The receipt's artifactSha256 itself is checked above and in the stored receipt below.
+    const sha = receipt.payload.artifactSha256;
+    const grouped = sha.match(/.{4}/g).join(' ');
+    const copy = page.getByRole('button', { name: 'Otisak u međuspremnik' });
+    const note = page.getByText('Niz znakova izračunan iz točnog predanog teksta.', { exact: false });
+    const hidden = async (when: string) => {
+      await expect(page.getByRole('heading', { name: /^Predano / }), when).toBeVisible();
+      await expect(copy, `Gumb za kopiranje: ${when}`).toBeVisible();
+      await expect(note, `Napomena o otisku: ${when}`).toBeVisible();
+      await expect(page.getByText(grouped, { exact: true }), `Otisak u skupinama: ${when}`).toHaveCount(0);
+      await expect(page.getByText(sha, { exact: true }), `Otisak u cijelosti: ${when}`).toHaveCount(0);
+    };
+    await hidden('nakon predaje');
     await page.reload();
-    await expect(fingerprint, 'Isti otisak nakon osvježavanja').toBeVisible();
+    await hidden('nakon osvježavanja');
   });
 
   await test.step('Ponovno otvaranje rada dopušta samo čitanje', async () => {
