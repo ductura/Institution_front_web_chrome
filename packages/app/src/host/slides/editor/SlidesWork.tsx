@@ -1,6 +1,6 @@
 "use client";
 
-// WEB-V13-UREDNIK: the work page of a slides work, mounted by host/student/work.tsx
+// WEB-V13-UREDNIK: the work page of a slides work, mounted by host/student/WorkEditorPage.tsx
 // (one branch on the kind). WEB-V13-DNEVNIK-SINKRONIZACIJA: the document now comes
 // from the slides session (journal and evidence, sync/use-slides-session.ts): the
 // journal's own document, saved on the device and sent to the server, with the

@@ -77,6 +77,8 @@ export type HostSections = {
   assistant?: (ctx: HostSectionContext) => ReactNode;
   /** ED-09 (NF2-P9): the assignment's instructions in "Prvi redak"; none without it. */
   instructions?: (ctx: HostSectionContext) => ReactNode;
+  /** ED-71: what the host shows on the sheet above the text (prototype `#toc`, "Sadržaj na listu"). */
+  sheetTop?: (ctx: HostSectionContext) => ReactNode;
 };
 
 export type OpenRead =
@@ -305,6 +307,7 @@ function WorkSurface({ course, title, topBar, length, assignmentId, documentId, 
       <EditorNotices notices={!online
         ? [{ kind: "offline", savingLocally, resumesSync: true, waiting: pending ? offlineWaitingText(pending) : null }]
         : reconnected ? [{ kind: "reconnected", sending: reconnectText(pending) }] : []} />
+      {hostSections?.sheetTop?.(ctx)}
       <LocalEditor lastSignedAt={lastSignedAt} />
       {triggers ? triggers({ documentId }) : <TriggerPopover editor={editor} />}
       <EditorHelpDialogs view={view} onClose={() => setView(null)} help={help} documentId={documentId} assignmentId={assignmentId}
