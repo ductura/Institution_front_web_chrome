@@ -22,6 +22,9 @@ export const n17Messages = {
     revision: "Dorada",
   },
   noName: "Ime nije dostupno",
+  // F4-PM2-R08 (D-50): the mark only, never a reason; the same words as teacher.accommodation in src/lib/i18n.
+  accommodation: "(odobrena prilagodba)",
+  accommodationsUnavailable: "Oznake odobrene prilagodbe trenutačno nisu dostupne. Pokušajte ponovno.",
   // NAS-R15 (NZ-11)
   filters: {
     label: "Prikaz",

@@ -18,6 +18,18 @@ export const noticeText = {
   heroAccent: "rečenice",
 };
 
+// F4-STU-R11 (P-16, INVENTAR-student E-6c): the table of what changed between two versions of the notice.
+export const changesText = {
+  caption: "Što se promijenilo (v{from} → v{to})",
+  item: "Stavka",
+  before: "Bilo (v{from})",
+  after: "Sada (v{to})",
+  due: "Rok",
+  words: "Opseg riječi",
+  tools: "Pravilo uporabe alata",
+  allowed: "Dopušteno: {purposes}.",
+};
+
 // E-5 `MSG` of the prototype: the text for the states the prototype names
 // (neispravan, istekao, mreza, and previse of P-10); other refusals keep the shared
 // text. A code that does not exist and an expired one keep one text on purpose:

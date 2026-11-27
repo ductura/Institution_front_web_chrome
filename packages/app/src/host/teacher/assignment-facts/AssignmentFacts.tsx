@@ -16,6 +16,8 @@ import { dueText } from "../assignment-card/model";
 import { TaskActions } from "../assignment-card/AssignmentCards";
 import { usePractice } from "../assignment-card/practice";
 import { TeacherToastRegion, useTeacherToasts } from "../toast";
+import { publishHr } from "../publish/messages.hr";
+import { takePublished } from "../publish/published-handoff";
 import { LateException, type LateResult } from "./LateException";
 import { offersLate } from "./late-exception";
 import { assignmentFactsMessages as text } from "./messages.hr";
@@ -118,6 +120,9 @@ export function InterruptedPublish({ onChecked }: { onChecked: () => void }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const { toasts, show, dismiss } = useTeacherToasts();
+
+  // NAS-19: the assignment form came back here after the server confirmed a publish.
+  useEffect(() => { if (takePublished()) show(publishHr.published); }, [show]);
 
   async function check() {
     if (busy || which === null) return;
