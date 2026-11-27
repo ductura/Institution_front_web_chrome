@@ -14,7 +14,7 @@ import { requestPanel } from "@/components/editor/layout-prefs/open-panel";
 import { useLocalEditor } from "@/components/editor/LocalDocument";
 import { anchorRange, commentHighlightKey, commentHighlightPlugin } from "../../../../../editor-core/src/editor/comment-anchor.ts";
 
-import { COMMENT_CARD_EVENT, cardFits, cardPosition } from "./comment-card";
+import { COMMENT_CARD_EVENT, cardFits, cardPosition, commentAt } from "./comment-card";
 import styles from "./comments.module.css";
 import { commentsHr as t } from "./messages.hr";
 import { abilities, type Comment } from "./model";
@@ -25,12 +25,8 @@ export function openInText(comments: readonly Comment[]): Comment[] {
   return comments.filter((c) => !c.resolved && !c.place.lost).sort((a, b) => a.place.from - b.place.from);
 }
 
-/** The comment at `pos`: an open one first, the shortest place when several cover it. */
-export function commentAt(comments: readonly Comment[], pos: number): Comment | null {
-  const hit = comments.filter((c) => !c.place.lost && c.place.from <= pos && pos <= c.place.to);
-  hit.sort((a, b) => Number(a.resolved) - Number(b.resolved) || (a.place.to - a.place.from) - (b.place.to - b.place.from));
-  return hit[0] ?? null;
-}
+// ED-119: the comment at a position moved to comment-card (the panel asks for it too); kept here for callers.
+export { commentAt };
 
 export function CommentCard({ comment, comments, submitted, busy, onClose, onStep, onReply, onResolve }: {
   comment: Comment; comments: readonly Comment[]; submitted: boolean; busy?: boolean;
