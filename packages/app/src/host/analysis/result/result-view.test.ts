@@ -42,8 +42,10 @@ describe("prikaz po vrsti rezultata", () => {
     expect(out).toContain("1,25");
     expect(out).toContain("nije definirano");
     expect(out).toContain("1.0.0");
-    expect(out).toContain("0123 4567 89ab cdef");
-    expect(out).toContain("fedc ba98 7654 3210");
+    // The fingerprints are not shown (V15 B): the labels and the copy buttons stay, the digest text does not.
+    expect(out).not.toContain("0123 4567 89ab cdef");
+    expect(out).not.toContain("fedc ba98 7654 3210");
+    expect(out).not.toContain("<code>");
     expect(out).toContain(resultMessages.sampleNote);
     expect(out).not.toMatch(/12\.5|>0<\/td>.*nije definirano/);
   });
@@ -87,6 +89,16 @@ describe("stanja", () => {
     const out = html(state);
     expect(out).toContain(resultMessages[key]);
     expect(out).not.toContain(resultMessages.emptyTitle);
+  });
+  it("D7/D8: nedostupno je okvir role=alert s poveznicom, ostale greške su isti okvir bez poveznice", () => {
+    const withRetry = renderToStaticMarkup(createElement(ResultView, { state: { kind: "unavailable" }, onRetry: () => undefined }));
+    expect(withRetry).toContain('role="alert"');
+    expect(withRetry).toMatch(/<button[^>]*>Pokušaj ponovno<\/button>/);
+    for (const state of [{ kind: "off" }, { kind: "tooLarge" }, { kind: "invalid", code: "invalid_input" }, { kind: "failed", status: 500, code: "x" }] as AnalysisRunState[]) {
+      const out = renderToStaticMarkup(createElement(ResultView, { state, onRetry: () => undefined }));
+      expect(out, state.kind).toContain('role="alert"');
+      expect(out, state.kind).not.toContain(resultMessages.retry);
+    }
   });
   it("uspješan izračun bez stupaca je prazan, ali ne greška", () => {
     const out = html({ kind: "ready", data: { ...descriptive, result: { kind: "descriptive", columns: [] } } });

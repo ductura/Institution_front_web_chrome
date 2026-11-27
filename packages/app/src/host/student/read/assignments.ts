@@ -27,6 +27,8 @@ export type MyCourse = {
 export type MyAssignmentsRead =
   | { kind: "ready"; courses: MyCourse[] }
   | { kind: "signedOut" }
+  /** DIZ S-02 (Z7, R8): 403 is its own state, not a read error. */
+  | { kind: "denied" }
   | { kind: "unavailable" };
 
 /** What MyAssignments needs of createApi(): one route, its answers only. */
@@ -37,14 +39,15 @@ export type AssignmentsCall = (
 
 /**
  * One call of student.assignments.get. 200 is the list as it came (createApi
- * already checked it against the schema), 401 signed out, and everything else
+ * already checked it against the schema), 401 signed out, 403 denied, and everything else
  * unavailable, a broken connection included: never an empty or older list.
  */
 export async function readMyAssignments(call: AssignmentsCall): Promise<MyAssignmentsRead> {
   try {
     const result = await call("student.assignments.get", { params: undefined, query: undefined, body: undefined });
     if (result.ok) return { kind: "ready", courses: result.body.courses };
-    return result.status === 401 ? { kind: "signedOut" } : { kind: "unavailable" };
+    if (result.status === 401) return { kind: "signedOut" };
+    return result.status === 403 ? { kind: "denied" } : { kind: "unavailable" };
   } catch {
     return { kind: "unavailable" };
   }

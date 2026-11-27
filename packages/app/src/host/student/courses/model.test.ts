@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deadlineTagOf, effectiveDue, extensionOf, extensionText, groupLabels, matchesState, mentorLabel, nearTag, practiceOf, rowKind, stateFilterOf, submittedLine, submittedOf, workTypeLabel, yearLabel } from "./model";
+import { deadlineTagOf, effectiveDue, extensionOf, extensionText, groupLabels, matchesState, mentorLabel, nearTag, practiceOf, rowKind, stateFilterOf, submittedLine, submittedOf, workMeta, workTypeLabel, yearLabel } from "./model";
 import { coursesText } from "./messages.hr";
 import { homeText } from "../home/messages.hr";
 import { nearTag as homeNearTag } from "../home/model";
@@ -18,6 +18,14 @@ describe("E-3/E-4 model", () => {
     expect(workTypeLabel("nepoznato")).toBeNull();
     expect(mentorLabel({ id: "m", givenName: "Iva", familyName: "Izmišljenić" })).toBe("Mentor: Iva Izmišljenić");
     expect(mentorLabel(null)).toBeNull();
+  });
+  it("joins work kind and mentor for E-3, and says nothing for what the answer lacks (STU-R14)", () => {
+    const mentor = { id: "m", givenName: "Iva", familyName: "Izmišljenić" };
+    expect(workMeta({ workType: "essay", mentor })).toBe("Esej · Mentor: Iva Izmišljenić");
+    expect(workMeta({ workType: "essay", mentor: null })).toBe("Esej");
+    expect(workMeta({ mentor })).toBe("Mentor: Iva Izmišljenić");
+    expect(workMeta({ workType: "nepoznato" })).toBeNull();
+    expect(workMeta({})).toBeNull();
   });
   it("picks the row kind in the order submitted, notice, work, task", () => {
     expect(rowKind(true, "submitted")).toBe("submitted");

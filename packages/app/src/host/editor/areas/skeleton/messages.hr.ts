@@ -4,6 +4,7 @@ export const skeletonMessages = {
   title: "Kostur rada",
   intro: "Odaberite odjeljke čiji će se naslovi dodati na kraj rada. Umeću se samo naslovi; tekst pišete sami.",
   present: "već u radu",
+  presentLabel: (title: string) => `${title} (već u radu)`,
   none: "Svi odjeljci s popisa već postoje u radu.",
   confirm: "Umetni naslove",
   cancel: "Odustani",

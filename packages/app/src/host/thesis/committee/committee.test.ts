@@ -194,4 +194,22 @@ describe("CommitteeEditor (administrator)", () => {
     expect(host.querySelector('[role="alert"]')?.textContent).toContain("Popis nastavnika trenutačno nije dostupan");
     expect(host.textContent).not.toContain("Nema potvrđenih nastavnika");
   });
+
+  describe("people without a shown name (V16)", () => {
+  const noTeachers = vi.fn(async (op: string) => (op === "institution.teacher-roles.get" ? ok({ pending: [], confirmed: [] }) : ok(committee([]))));
+  it("are told apart by a number, never by a piece of their identifier", async () => {
+    const call = noTeachers;
+    const host = await editor([member(1, "chair", null), member(2, "member", null), member(3, "member")], call);
+    const text = host.textContent ?? "";
+    expect(text).toContain("Osoba bez prikazanog imena 1");
+    expect(text).toContain("Osoba bez prikazanog imena 2");
+    expect(text).not.toContain(id(1).slice(0, 8));
+    expect(text).not.toMatch(/\(0000/);
+  });
+  it("a single unnamed person has no number", async () => {
+    const host = await editor([member(1, "chair", null), member(2, "member")], noTeachers);
+    expect(host.textContent).toContain("Osoba bez prikazanog imena");
+    expect(host.textContent).not.toContain("Osoba bez prikazanog imena 1");
+  });
+});
 });

@@ -368,7 +368,7 @@ for (const [file, expected] of [['docs/x.md', ''], ['packages/ui/a.css', 'app,ui
     const outputs = changesFor([file]);
     assert.equal(on(outputs), expected);
     assert.equal(outputs.test, 'false', 'the job test is off, so only line-endings checks CRLF');
-    const results = Object.fromEntries(['test', 'ui', 'app-build', 'app'].map((j) => [j, outputs[j] === 'true' ? 'success' : 'skipped']));
+    const results = Object.fromEntries(['test', 'ui', 'app'].map((j) => [j, outputs[j] === 'true' ? 'success' : 'skipped']));
     assert.equal(run(withChanges(results, outputs)).code, 0, 'green with the check passing');
     const skippedAll = Object.fromEntries(Object.keys(results).map((j) => [j, 'skipped']));
     for (const r of ['failure', 'cancelled']) {
@@ -522,13 +522,16 @@ test('the client checks run in the ui part checks when changes says client', () 
   assert.equal(jobsOf(workflow).client, undefined, 'no separate client job');
 });
 
-// ZEL-CI-RED: the host is built once in app-build and every app shard starts
-// that build; no shard builds again.
-test('app shards download the one build of app-build', () => {
+// ZEL-CI-RED: the host is built once and every app shard starts that build;
+// no shard builds again. CI-RED-KARIKE: the build is a step of `changes`, not a
+// job of its own (one wait for a runner less), and runs only when app or
+// sistem needs it.
+test('app shards download the one build of changes', () => {
   const jobs = jobsOf(workflow);
-  const build = jobs['app-build'];
+  const build = jobs.changes;
   const app = jobs.app;
-  assert.deepEqual([...needsOf(app)].sort(), ['app-build', 'changes']);
+  assert.deepEqual(needsOf(app), ['changes']);
+  assert.equal(jobs['app-build'], undefined, 'no separate app-build job');
   const step = build.steps.find((s) => s.run === 'pnpm run build');
   assert.equal(step?.env?.INSTITUTION_SERVER_URL, 'http://127.0.0.1:9');
   const upload = build.steps.find((s) => String(s.uses).startsWith('actions/upload-artifact@'));
@@ -553,16 +556,23 @@ test('concurrency cancels older pull request and base runs, never main', () => {
   assert.doesNotMatch(cancel, /refs\/heads\/main/);
 });
 
-// CI-WEB-NOGE: the system pass takes the build of app-build instead of
+// CI-WEB-NOGE: the system pass takes the build of changes instead of
 // building the host itself; the fake server URL baked into it is replaced.
-test('sistem downloads the build of app-build and does not build again', () => {
+test('sistem downloads the build of changes and does not build again', () => {
   const jobs = jobsOf(workflow);
-  assert.deepEqual([...needsOf(jobs.sistem)].sort(), ['app-build', 'changes']);
+  assert.deepEqual(needsOf(jobs.sistem), ['changes']);
   assert.equal(jobs.sistem.with?.build_artifact, true);
-  const ifApp = jobs['app-build'].if;
-  assert.match(ifApp, /outputs\.app-build == 'true'/);
-  assert.match(ifApp, /outputs\.sistem == 'true'/);
-  const sistem = jobsOf(workflowOf(readFileSync(new URL('sistem.yml', dir), 'utf8'))).sistem;
+  // Every step after the CRLF check is the build, on only when app or sistem
+  // needs it; the CRLF check itself has no if.
+  const steps = jobs.changes.steps;
+  const build = steps.slice(steps.findIndex((s) => String(s.run ?? '').includes('# line-endings:begin')) + 1);
+  assert.ok(build.some((s) => s.run === 'pnpm run build'), 'changes builds the host');
+  for (const s of build) {
+    const label = s.name ?? s.uses ?? s.run;
+    assert.match(String(s.if), /steps\.paths\.outputs\.app-build == 'true'/, label);
+    assert.match(String(s.if), /steps\.paths\.outputs\.sistem == 'true'/, label);
+  }
+  const sistem =jobsOf(workflowOf(readFileSync(new URL('sistem.yml', dir), 'utf8'))).sistem;
   const download = sistem.steps.find((s) => String(s.uses).startsWith('actions/download-artifact@'));
   assert.equal(download.with.name, 'app-build');
   assert.equal(download.with.path, 'Institution_front_web_chrome/packages/app/.next');

@@ -6,6 +6,8 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { appHref } from "@/components/index";
 import { goToSignIn } from "@/client/api";
 
+import { DeniedState, LoadAlert } from "../../states/States";
+
 import { useHost } from "../../context";
 import { workTemplateMessages as t } from "./messages.hr";
 import {
@@ -14,7 +16,7 @@ import {
 } from "./model";
 import { readTemplate, saveTemplate, type TemplateRead } from "./read";
 
-const date = new Intl.DateTimeFormat("hr-HR", { dateStyle: "medium", timeZone: "Europe/Zagreb" });
+const date = new Intl.DateTimeFormat("hr-HR", { dateStyle: "long", timeZone: "Europe/Zagreb" });
 const versionLine = (v: TemplateVersion) => t.versionOf.replace("{n}", String(v.version)).replace("{date}", date.format(new Date(v.effectiveFrom)));
 
 const historyColumns: DataTableColumn<TemplateVersion>[] = [
@@ -35,7 +37,7 @@ function Current({ version }: { version: TemplateVersion | null }) {
       {version.titlePage.length === 0 ? <p>{t.titlePageNone}</p> : <ul>{version.titlePage.map((f) => <li key={f}>{t.titleFields[f]}</li>)}</ul>}
       <h3>{t.sectionsHeading}</h3>
       {version.sections.length === 0 ? <p>{t.noSections}</p> : (
-        <ol>{version.sections.map((s, i) => <li key={i}>{s.title} ({s.hint === "" ? t.noHint : s.hint})</li>)}</ol>
+        <ol>{version.sections.map((s, i) => <li key={i}>{s.title}, {s.hint === "" ? t.noHint : s.hint}</li>)}</ol>
       )}
       <p>{t.citationHeading}: {t.citationStyle}</p>
     </section>
@@ -117,7 +119,7 @@ function TemplateForm({ workType, current, onSaved, onStale, onRefused }: {
         <Button tone="quiet" onClick={() => { setDraft(draftOf(current)); setErrors({ rows: {} }); setFailure(null); setHint(null); }}>{t.reset}</Button>
       </div>
       {hint !== null && <p role="status">{hint}</p>}
-      {failure !== null && <p role="alert">{failure}</p>}
+      {failure !== null && <LoadAlert body={failure} />}
     </section>
   );
 }
@@ -141,20 +143,16 @@ function TypeEditor({ workType }: { workType: WorkType }) {
   }, [read, base]);
 
   if (read.kind === "loading") return <p role="status">{t.loading}</p>;
-  if (read.kind === "signedOut") return <p role="alert">{t.signedOut}</p>;
-  if (read.kind === "denied") return <p role="alert">{t.denied}</p>;
+  // 401: only the redirect to the sign-in above, no text on the page (A3).
+  if (read.kind === "signedOut") return null;
+  if (read.kind === "denied") return <DeniedState title={t.deniedTitle} backLabel={t.backToOwn} backHref={appHref(base, "/ustanova")} />;
   if (read.kind !== "ready") {
-    return (
-      <div>
-        <p role="alert">{t.unavailable}</p>
-        <Button onClick={() => { setRead({ kind: "loading" }); reload(); }}>{t.retry}</Button>
-      </div>
-    );
+    return <LoadAlert body={t.unavailable} retry={{ label: t.retry, onRetry: () => { setRead({ kind: "loading" }); reload(); } }} />;
   }
   return (
     <>
       {notice !== null && <p role="status">{notice}</p>}
-      {stale && <p role="alert">{t.stale}</p>}
+      {stale && <LoadAlert body={t.stale} />}
       <Current version={read.current} />
       <TemplateForm
         key={`${workType}-${read.current?.version ?? 0}`}

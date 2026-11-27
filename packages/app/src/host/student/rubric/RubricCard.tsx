@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-import { Button, Card, RouteLoading } from "@ductura/ui";
+import { Card, RouteLoading } from "@ductura/ui";
 import { createApi, goToSignIn } from "@/client/api";
+
+import { LoadAlert } from "../../states/States";
 
 import { rubricText as t } from "./messages.hr";
 import { readRubric, type RubricRead } from "./read";
@@ -16,8 +18,7 @@ export function RubricView({ read, retry }: { read: RubricRead | null; retry: ()
   if (read.kind === "unavailable") {
     return (
       <Card level={2} title={t.title}>
-        <p role="alert" data-testid="rubric-state">{t.unavailable}</p>
-        <p><Button tone="quiet" onClick={retry}>{t.retry}</Button></p>
+        <div data-testid="rubric-state"><LoadAlert body={t.unavailable} retry={{ label: t.retry, onRetry: retry }} /></div>
       </Card>
     );
   }
