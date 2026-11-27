@@ -5,7 +5,7 @@ import { expect, test, type Page } from "./fixtures/test";
 
 const ID = "4d5e6f7a-8b9c-4dad-9e1f-2a3b4c5d6e72";
 const COURSE = "8b9c0d1e-2f3a-4b4c-9d5e-6f7a8b9c0d72";
-const PATH = `/app/web/rad/${ID}`;
+const PATH = `/aplikacija/rad/${ID}`;
 
 async function server(page: Page) {
   await page.route("**/api/v1/me", (route) => route.fulfill({
