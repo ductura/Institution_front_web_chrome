@@ -54,6 +54,7 @@ describe("WorkspaceTopBarView", () => {
   it("shows the course line and hides Predaja rada on a read only work", () => {
     const html = renderToStaticMarkup(
       createElement(WorkspaceTopBarView, {
+        // Design alignment 27. 11. 2026. (S-07, text 2): parts joined by a comma, full date.
         assignmentId: ID, title: "Izmišljeni rad", subtitle: "Izmišljeni kolegij, Esej, rok 8. studenoga 2026. u 23:59",
         readOnly: true, online: true, theme: "dark", onTheme: () => {},
       }),

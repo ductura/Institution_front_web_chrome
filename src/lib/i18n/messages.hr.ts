@@ -1400,6 +1400,8 @@ export const hr = {
     viewModes: "Prikaz",
     // #711 F1, za potvrdu: the name of the top bar region (course, assignment, view, submission).
     barLabel: "Zadatak i prikaz",
+    // Design alignment 27. 11. 2026. (text 2): the line under the title, "{kolegij}, {vrsta}, rok {rok}".
+    subtitleDue: "rok {time}",
     modeWriting: "Pisanje",
     modeTeacherView: "Kako vidi nastavnik",
     // #732 item 7 (owner 6397193676): the line above the teacher's view, and why the switch is off.
@@ -1965,6 +1967,8 @@ export const hr = {
     works: {
       title: "Moji radovi",
       lede: "Vaši radovi na svim kolegijima i njihovo stanje.",
+      // Design alignment 27. 11. 2026. (R5): the works' own expired sign-in.
+      signedOut: "Prijavite se da vidite svoje radove.",
       search: "Traži po naslovu ili kolegiju",
       year: "Akademska godina",
       allYears: "Sve godine",

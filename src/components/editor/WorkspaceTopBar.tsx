@@ -19,7 +19,7 @@ export type WorkspaceTopBarProps = {
   readonly base?: string;
   /** The assignment's title, or null when the read could not give it. */
   readonly title: string | null;
-  /** The line under the title ("Kolegij, vrsta, rok 30. studenoga 2026. u 23:59"), or null when it is not known. */
+  /** The line under the title ("Uvod u znanstveno pisanje, Esej, rok 30. studenoga 2026. u 23:59"), or null when it is not known. */
   readonly subtitle?: string | null;
   /** A work that is read only has no "Predaja rada" (the prototype hides it). */
   readonly readOnly?: boolean;
