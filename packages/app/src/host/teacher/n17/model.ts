@@ -33,6 +33,8 @@ export type N17Row = {
   readonly noticeAcknowledged?: boolean;
   /** NAS-12: open revision requests of this student; absent when not read. */
   readonly openRevisions?: number;
+  /** F4-PM2-R08 (D-50): the student marked an approved accommodation on this work; absent when not read. */
+  readonly accommodation?: boolean;
 };
 
 export type N17Card = {
@@ -46,6 +48,8 @@ export type N17Card = {
   readonly role?: CardRole;
   /** null: the read of this assignment failed. */
   readonly rows: readonly N17Row[] | null;
+  /** F4-PM2-R08: the accommodation marks of this assignment could not be read (said once, never as unmarked). */
+  readonly accommodationsUnavailable?: boolean;
 };
 
 export type N17Read =
@@ -107,6 +111,8 @@ export type RowJoin = {
   readonly extensions: readonly Extension[] | null;
   /** NAS-R02: teacher.assignment-follow-up.get, by student; null or absent when it was not read. */
   readonly followUp?: ReadonlyMap<string, FollowUpStudent> | null;
+  /** F4-PM2-R08: teacher.student-accommodation.get, by student; null or absent when it was not read. */
+  readonly accommodations?: ReadonlyMap<string, boolean> | null;
 };
 
 /**
@@ -122,6 +128,7 @@ export function joinRows(rows: readonly N17Row[], join: RowJoin, now: number): r
     const deadline = join.extensions === null ? null : deadlineOf(row.studentId, join.dueAt, join.extensions);
     const passed = deadline !== null && Date.parse(deadline.dueAt) <= now;
     const follow = join.followUp?.get(row.studentId);
+    const marked = join.accommodations?.get(row.studentId);
     const base: N17Row["phase"] = row.submitted || work === undefined ? row.phase
       : work.state === "not_started" ? "notStarted" : work.state === "in_progress" && !passed ? "writing" : row.phase;
     // NAS-08: a student who has not acknowledged the notice and has not submitted is "obavijest nije potvrđena".
@@ -134,6 +141,7 @@ export function joinRows(rows: readonly N17Row[], join: RowJoin, now: number): r
         // NAS-10: the revision column from the server; `responded` waits for the teacher.
         revision: follow.revisionState === null ? null : { state: follow.revisionState },
       }),
+      ...(marked === undefined ? {} : { accommodation: marked }),
       ...(documentId === null ? {} : { documentId }),
       ...(phase === undefined ? {} : { phase }),
       ...(sub === undefined ? {} : { version: sub.revision }),
