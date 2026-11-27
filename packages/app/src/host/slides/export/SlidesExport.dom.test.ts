@@ -36,19 +36,20 @@ describe("SlidesExport in the browser", () => {
     const request = await render(false, ready("pdf"));
     expect(button(t.pptx).disabled).toBe(true);
     expect(button(t.pdf).disabled).toBe(true);
-    expect(host.textContent).toContain(t.notConfirmed);
+    expect(host.querySelector("[role=note]")).toBeNull();
     await click(button(t.pdf));
     expect(request).not.toHaveBeenCalled();
     expect(download).not.toHaveBeenCalled();
   });
 
-  it("downloads the .pptx under the title and shows the snapshot digest", async () => {
+  it("downloads the .pptx under the title and shows no digest of the snapshot (N14, A6)", async () => {
     const request = await render(true, ready("pptx"));
     await click(button(t.pptx));
     expect(request).toHaveBeenCalledWith("doc-1", "pptx", null, expect.anything());
     expect(download).toHaveBeenCalledWith(expect.any(Blob), "Moji slajdovi.pptx");
     expect(host.textContent).toContain(t.readyPptx);
-    expect(host.textContent).toContain(t.snapshot(SHA.slice(0, 12)));
+    expect(host.textContent).not.toContain(SHA.slice(0, 12));
+    expect(host.textContent).not.toContain("Sažetak snimke");
   });
 
   it("shows the preparation state while the answer is pending", async () => {
@@ -66,9 +67,20 @@ describe("SlidesExport in the browser", () => {
   ] as const)("%s is its own message and downloads nothing", async (kind, message) => {
     await render(true, { kind } as ExportResult);
     await click(button(t.pdf));
-    expect(host.querySelector("[role=alert]")?.textContent).toContain(message);
+    const alert = host.querySelector("[role=alert]")!;
+    expect(alert.textContent).toBe(message); // the frame holds only the message (N13) ...
+    const retry = [...host.querySelectorAll("button")].find((b) => b.textContent === t.retry)!;
+    expect(retry.closest("[role=alert]")).toBeNull(); // ... and "Pokušaj ponovno" is a link under it
     expect(download).not.toHaveBeenCalled();
     expect(button(t.pdf).disabled).toBe(false);
+  });
+
+  it("\"Pokušaj ponovno\" asks for the same format again", async () => {
+    const request = await render(true, { kind: "failed" } as ExportResult);
+    await click(button(t.pptx));
+    await click([...host.querySelectorAll("button")].find((b) => b.textContent === t.retry)!);
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(request).toHaveBeenLastCalledWith("doc-1", "pptx", null, expect.anything());
   });
 
   it("goes to sign-in when signed out", async () => {

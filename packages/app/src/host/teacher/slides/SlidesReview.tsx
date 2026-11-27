@@ -11,7 +11,10 @@ import { Button, Select } from "@ductura/ui";
 import { goToSignIn } from "../../../../../../src/client/api.ts";
 import { appHref } from "../../../../../../src/components/shell/nav.ts";
 import { LAYOUT_SLOTS, type Slide, type SlideBlock, type SlidesDocument } from "../../../../../editor-core/src/slides/index.ts";
+import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr.ts";
 import { useHost } from "../../context";
+import { humanTime } from "../../slides/human-time.ts";
+import { LoadAlert, NotFoundState } from "../../states/States";
 import SlidesExport from "../../slides/export/SlidesExport.tsx";
 import { SlideDiff } from "./SlideDiff.tsx";
 import { fill, layoutNames, slidesReviewText as t, slotNames } from "./messages.hr.ts";
@@ -42,9 +45,13 @@ function SlideView({ slide, index, total }: { slide: Slide; index: number; total
   );
 }
 
-const revisionLabel = (r: Revision) => fill(t.revisionOption, {
-  n: r.revision, kind: r.kind === "submission" ? t.kindSubmission : t.kindCheckpoint, minute: r.savedMinute.slice(0, 16).replace("T", " "),
-});
+/** A4: "Revizija 7 (predano, 8. prosinca 2026. u 21:14)", no ISO minute. */
+const revisionLabel = (r: Revision) => {
+  const time = humanTime(r.savedMinute);
+  return fill(time === "" ? t.revisionOptionNoTime : t.revisionOption, {
+    n: r.revision, kind: r.kind === "submission" ? t.kindSubmission : t.kindCheckpoint, time,
+  });
+};
 
 type Loaded = { readonly revision: number; readonly state: RevisionRead };
 
@@ -60,9 +67,11 @@ function useRevision(documentId: string, revision: number | null, attempt: numbe
   return revision !== null && loaded?.revision === revision ? loaded.state : "loading";
 }
 
-function Failure({ state, onRetry }: { state: { kind: "signedOut" | "notFound" | "unavailable" | "invalid" }; onRetry: () => void }) {
-  const text = state.kind === "signedOut" ? t.signedOut : state.kind === "notFound" ? t.notFound : state.kind === "invalid" ? t.invalid : t.unavailable;
-  return <><p role="alert">{text}</p>{state.kind === "notFound" ? null : <Button onClick={onRetry}>{t.retry}</Button>}</>;
+/** A2/A3: 401 goes to sign-in (no read error), 404 is "Stranica ne postoji" (someone else's work is 404 too), the rest is a frame with its retry. */
+function Failure({ state, onRetry, home }: { state: { kind: "signedOut" | "notFound" | "unavailable" | "invalid" }; onRetry: () => void; home: string }) {
+  if (state.kind === "signedOut") return <p role="status">{t.signedOut}</p>;
+  if (state.kind === "notFound") return <NotFoundState title={messagesHr.errorPage.notFoundTitle} back={{ label: messagesHr.access.backToOwn, href: home }} />;
+  return <LoadAlert body={state.kind === "invalid" ? t.invalid : t.unavailable} retry={{ label: t.retry, onRetry }} />;
 }
 
 export function SlidesReview({ documentId, path, revisions, more }: {
@@ -80,6 +89,7 @@ export function SlidesReview({ documentId, path, revisions, more }: {
   const at = ordered.findIndex((r) => r.revision === shown);
   const options = revisions.map((r) => ({ value: String(r.revision), label: revisionLabel(r) }));
   const retry = () => setAttempt((n) => n + 1);
+  const home = appHref(base, "/nastavnik");
 
   const pick = (revision: number) => { setShown(revision); setSlideIndex(0); };
   const doc: SlidesDocument | null = main !== "loading" && main.kind === "ready" ? main.document : null;
@@ -99,7 +109,7 @@ export function SlidesReview({ documentId, path, revisions, more }: {
         {more ? <p role="note">{t.olderExist}</p> : null}
       </section>
       {main === "loading" ? <p role="status">{t.loading}</p> : null}
-      {failed !== null ? <Failure state={failed} onRetry={retry} /> : null}
+      {failed !== null ? <Failure state={failed} onRetry={retry} home={home} /> : null}
       {doc !== null ? (
         doc.slides.length === 0 ? <p role="status">{t.noSlides}</p> : (
           <>
@@ -126,7 +136,7 @@ export function SlidesReview({ documentId, path, revisions, more }: {
             {compareWith === shown ? <p role="note">{t.compareSame}</p> : null}
             {compareWith !== null && compareWith !== shown ? (
               other === "loading" || main === "loading" ? <p role="status">{t.compareLoading}</p>
-                : other.kind !== "ready" ? <Failure state={other} onRetry={retry} />
+                : other.kind !== "ready" ? <Failure state={other} onRetry={retry} home={home} />
                 : doc === null ? null
                 : compareWith < shown ? <SlideDiff older={other.document} newer={doc} /> : <SlideDiff older={doc} newer={other.document} />
             ) : null}

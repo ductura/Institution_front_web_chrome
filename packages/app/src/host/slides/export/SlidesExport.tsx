@@ -10,6 +10,7 @@ import { goToSignIn } from "../../../../../../src/client/api";
 import { downloadBlob } from "../../../../../../src/components/editor/EarlierDraft";
 import { appHref } from "../../../../../../src/components/shell/nav";
 import { useHost } from "../../context";
+import { LoadAlert } from "../../states/States";
 import { exportFileName, requestSlidesExport, type ExportFormat, type ExportResult } from "./export-model.ts";
 import { slidesExportText as t } from "./messages.hr.ts";
 
@@ -18,6 +19,7 @@ type Shown =
   | { readonly kind: "preparing" }
   | Exclude<ExportResult, { kind: "signed-out" }>;
 
+// N13: the failure is a frame of its own (A2) with "Pokušaj ponovno" as a link under it, not one joined text.
 const FAILURE: Partial<Record<Shown["kind"], string>> = {
   "not-found": t.notFound, invalid: t.invalid, mismatch: t.mismatch, expired: t.expired, failed: t.failed,
 };
@@ -43,6 +45,7 @@ export default function SlidesExport({ documentId, title, confirmed, versionId =
   useEffect(() => () => control.current?.abort(), []);
 
   async function start(format: ExportFormat) {
+    lastFormat.current = format;
     control.current?.abort();
     const mine = new AbortController();
     control.current = mine;
@@ -55,6 +58,7 @@ export default function SlidesExport({ documentId, title, confirmed, versionId =
   }
 
   const busy = shown.kind === "preparing";
+  const lastFormat = useRef<ExportFormat>("pdf");
   const failure = FAILURE[shown.kind];
   const off = busy || !confirmed;
   return (
@@ -63,14 +67,11 @@ export default function SlidesExport({ documentId, title, confirmed, versionId =
         <Button onClick={() => void start("pptx")} disabled={off}>{t.pptx}</Button>
         <Button onClick={() => void start("pdf")} disabled={off}>{t.pdf}</Button>
       </div>
-      {!confirmed ? <p role="note">{t.notConfirmed}</p> : null}
       {busy ? <p role="status">{t.preparing}</p> : null}
-      {failure !== undefined ? <p role="alert">{failure} {t.retry}</p> : null}
+      {failure !== undefined ? <LoadAlert body={failure} retry={{ label: t.retry, onRetry: () => void start(lastFormat.current) }} /> : null}
       {shown.kind === "ready" ? (
         <div role="status">
           <p>{shown.format === "pdf" ? t.readyPdf : t.readyPptx}</p>
-          <p>{t.snapshot(shown.snapshotSha256.slice(0, 12))}</p>
-          <p>{t.snapshotHint}</p>
         </div>
       ) : null}
     </section>

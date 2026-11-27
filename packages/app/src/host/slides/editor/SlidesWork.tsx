@@ -7,8 +7,12 @@
 // status bar claiming only the state the session reached. A second tab, an
 // unreadable kind, a missing sign-in and a sticky state each have their own card;
 // none of them is shown as "no data".
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button, Card } from "@ductura/ui";
+import { goToSignIn } from "../../../../../../src/client/api.ts";
+import { appHref } from "../../../../../../src/components/shell/nav.ts";
+import { useHost } from "../../context";
+import { LoadAlert } from "../../states/States";
 import EditorPage from "../../../../../../src/components/editor/EditorPage.tsx";
 import StatusBar, { type StatusSave } from "../../../../../../src/components/editor/StatusBar.tsx";
 import { SlideEditor, type SlideEditorSource } from "./SlideEditor.tsx";
@@ -52,19 +56,26 @@ function SessionWork({ assignmentId, course, title, topBar, length, onRetry }: F
   const submitted = session.phase === "ready" && session.readOnly;
   return (
     <EditorPage course={course} title={title} topBar={topBar} status={<StatusBar save={slidesStatusOf(session)} readOnly={submitted} length={length} />}>
-      <Body session={session} retry={retry} />
+      <Body session={session} retry={retry} assignmentId={assignmentId} />
     </EditorPage>
   );
 }
 
-function Body({ session, retry }: { session: SlidesSession; retry: () => void }) {
+/** U9 (401): the local changes stay in the journal on this device; sign-in goes through AAI@EduHr and returns to the work. */
+function SignedOut({ assignmentId }: { assignmentId: string }) {
+  const { base } = useHost();
+  useEffect(() => { goToSignIn(appHref(base, `/rad/${encodeURIComponent(assignmentId)}`)); }, [assignmentId, base]);
+  return <Card title={sync.signedOutTitle}><p role="status">{sync.signedOutBody}</p></Card>;
+}
+
+function Body({ session, retry, assignmentId }: { session: SlidesSession; retry: () => void; assignmentId: string }) {
   switch (session.phase) {
     case "loading": return <SlideEditor source={{ kind: "loading" }} />;
     case "blocked": return <Card title={sync.blockedTitle}><p role="status">{sync.blockedBody}</p></Card>;
-    case "signed-out": return <Card title={sync.signedOutTitle}><p role="status">{sync.signedOutBody}</p></Card>;
+    case "signed-out": return <SignedOut assignmentId={assignmentId} />;
     case "unavailable": return (
       <Card title={sync.unavailableTitle}>
-        <p role="alert">{sync.unavailableBody}</p>
+        <LoadAlert body={sync.unavailableBody} />
         <Button tone="secondary" onClick={retry}>{sync.retry}</Button>
       </Card>
     );
@@ -73,8 +84,8 @@ function Body({ session, retry }: { session: SlidesSession; retry: () => void })
       const source: SlideEditorSource = { kind: "ready", doc: session.document, readOnly: session.readOnly };
       return (
         <>
-          {session.snapshot.stopped && <p role="alert">{sync.stoppedNote}</p>}
-          {session.snapshot.refused && <p role="alert">{sync.refusedNote}</p>}
+          {session.snapshot.stopped && <LoadAlert body={sync.stoppedNote} />}
+          {session.snapshot.refused && <LoadAlert body={sync.refusedNote} />}
           <SlideEditor source={source} onSteps={session.onSteps} unsavedNote={false} />
         </>
       );
@@ -94,7 +105,7 @@ function Recovery({ session }: { session: Extract<SlidesSession, { phase: "recov
       {step === "done" ? <p role="status">{sync.adoptDone}</p> : (
         <>
           <p>{sync.adoptNote}</p>
-          {step === "failed" && <p role="alert">{sync.adoptFailed}</p>}
+          {step === "failed" && <LoadAlert body={sync.adoptFailed} />}
           {step === "confirm"
             ? <Button tone="secondary" onClick={() => void take()}>{sync.adoptConfirm}</Button>
             : <Button tone="secondary" onClick={() => setStep("confirm")}>{sync.adopt}</Button>}

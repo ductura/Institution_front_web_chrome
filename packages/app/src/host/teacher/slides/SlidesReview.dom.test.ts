@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { slidesSnapshotText, type Slide, type SlidesDocument } from "../../../../../editor-core/src/slides/index.ts";
+import { messagesHr } from "../../../../../../src/lib/i18n/messages.hr.ts";
 import { slidesReviewText as t } from "./messages.hr.ts";
 
 const signIn = vi.hoisted(() => vi.fn());
@@ -87,12 +88,24 @@ describe("SlidesOrWork", () => {
   it("shows an error, not an empty deck, when a revision cannot be read", async () => {
     reads.revision.mockImplementation(async () => ({ kind: "unavailable" }));
     await mount({ kind: "slides", revisions, more: false });
-    expect(host.querySelector("[role=alert]")?.textContent).toBe(t.unavailable);
+    const frame = host.querySelector("[role=alert]")!;
+    expect(frame.textContent).toBe(t.unavailable); // N3: the message is the frame (A2) ...
+    expect(frame.textContent).not.toContain(t.retry); // ... and "Pokušaj ponovno" is under it
+    expect(host.textContent).toContain(t.retry);
     expect(host.textContent).not.toContain(t.noSlides);
     reads.revision.mockImplementation(async () => ({ kind: "notFound" }));
     await click(button(t.retry));
-    expect(host.querySelector("[role=alert]")?.textContent).toBe(t.notFound);
-    expect(host.querySelector("[role=alert]")?.parentElement?.textContent).not.toContain(t.retry);
+    // 404 (also somebody else's work) is "Stranica ne postoji" (A3), not a read error: no alert and no retry.
+    expect(host.querySelector("[role=alert]")).toBeNull();
+    expect(host.textContent).toContain(messagesHr.errorPage.notFoundTitle);
+    expect(host.textContent).not.toContain(t.retry);
+  });
+
+  it("writes the time of a revision for people, not as an ISO minute (A4)", async () => {
+    await mount({ kind: "slides", revisions, more: false });
+    const labels = [...host.querySelectorAll("option")].map((o) => o.textContent);
+    expect(labels).toContain("Revizija 2 (predano, 20. studenoga 2026. u 12:00)");
+    expect(labels.join(" ")).not.toMatch(/\d{4}-\d{2}-\d{2}|T\d{2}:/);
   });
 
   it("sends a signed-out teacher to sign-in", async () => {
